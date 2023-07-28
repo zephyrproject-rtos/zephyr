@@ -20,25 +20,20 @@ extern "C" {
  * @{
  */
 
-/**
- * @name Reboot types
- * @anchor REBOOT_TYPES
- * @{
- */
-
-/** Warm reboot. */
-#define SYS_REBOOT_WARM 0
-/** Cold reboot. */
-#define SYS_REBOOT_COLD 1
-
-/** @} */
+/** Reboot modes. */
+enum sys_reboot_mode {
+	/** Warm reboot. */
+	SYS_REBOOT_WARM,
+	/** Cold reboot. */
+	SYS_REBOOT_COLD,
+};
 
 /**
  * @brief Reboot the system.
  *
- * @param type Reboot type (see @ref REBOOT_TYPES)
+ * @param mode Reboot mode.
  */
-FUNC_NORETURN void sys_reboot(int type);
+FUNC_NORETURN void sys_reboot(enum sys_reboot_mode mode);
 
 /** @} */
 

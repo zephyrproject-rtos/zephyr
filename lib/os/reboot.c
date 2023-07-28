@@ -10,9 +10,9 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/toolchain.h>
 
-extern void sys_arch_reboot(int type);
+extern void sys_arch_reboot(enum sys_reboot_mode mode);
 
-FUNC_NORETURN void sys_reboot(int type)
+FUNC_NORETURN void sys_reboot(enum sys_reboot_mode mode)
 {
 	(void)irq_lock();
 
@@ -24,7 +24,7 @@ FUNC_NORETURN void sys_reboot(int type)
 		sys_clock_disable();
 	}
 
-	sys_arch_reboot(type);
+	sys_arch_reboot(mode);
 
 	CODE_UNREACHABLE;
 }

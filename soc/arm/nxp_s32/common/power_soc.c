@@ -35,7 +35,7 @@ BUILD_ASSERT(POWER_IP_PERFORM_RESET_API == STD_ON, "Power Reset API must be enab
  *   trimming is maintained.
  * - No BISTs are executed after functional reset.
  */
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
 	Power_Ip_MC_RGM_ConfigType mc_rgm_cfg = { 0 };
 
@@ -44,7 +44,7 @@ void sys_arch_reboot(int type)
 		.PMCConfigPtr = NULL
 	};
 
-	switch (type) {
+	switch (mode) {
 	case SYS_REBOOT_COLD:
 		/* Destructive reset */
 		mc_rgm_cfg.ResetType = MCU_DEST_RESET;

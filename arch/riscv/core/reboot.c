@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/reboot.h>
 
 /**
  * @brief Reset the system
@@ -21,7 +22,7 @@
  * Each RISC-V SoC that has reset feature should implement own reset function.
  */
 
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 }

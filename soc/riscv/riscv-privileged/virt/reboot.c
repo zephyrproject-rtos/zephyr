@@ -13,9 +13,9 @@
 /* Reboot machine */
 #define FINISHER_REBOOT		0x7777
 
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 
 	sys_write32(FINISHER_REBOOT, SIFIVE_SYSCON_TEST);
 

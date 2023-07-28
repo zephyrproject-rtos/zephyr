@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/reboot.h>
 #include <soc.h>
 #include <driverlib/rom.h>
 #include <driverlib/rom_map.h>
@@ -14,9 +15,9 @@
 
 #ifdef CONFIG_REBOOT
 /* Overrides the weak ARM implementation */
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	MAP_PRCMMCUReset(type == SYS_REBOOT_COLD);
+	MAP_PRCMMCUReset(mode == SYS_REBOOT_COLD);
 
 	for (;;) {
 		/* wait for reset */

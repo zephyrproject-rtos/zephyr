@@ -25,9 +25,9 @@
  * \pre The implementation requires the TFM_PARTITION_PLATFORM be defined.
  */
 
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 
 	(void)tfm_platform_system_reset();
 

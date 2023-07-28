@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(soc);
  * This is deprecated and has been replaced with the boot mode retention
  * subsystem
  */
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
+	nrf_power_gpregret_set(NRF_POWER, (uint8_t)mode);
 	NVIC_SystemReset();
 
 	CODE_UNREACHABLE;

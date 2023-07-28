@@ -60,9 +60,9 @@ static const scg_lpfll_config_t rv32m1_lpfll_cfg = {
 };
 
 #ifdef CONFIG_REBOOT
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 
 	EVENT_UNIT->SLPCTRL |= EVENT_SLPCTRL_SYSRSTREQST_MASK;
 

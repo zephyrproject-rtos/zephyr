@@ -24,6 +24,9 @@
 #include "posix_board_if.h"
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include <zephyr/tracing/tracing.h>
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/reboot.h>
+#endif /* CONFIG_REBOOT */
 
 #if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 #error "The POSIX architecture needs a custom busy_wait implementation. \
@@ -52,9 +55,9 @@ void arch_cpu_atomic_idle(unsigned int key)
  *
  * Does nothing
  */
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	posix_print_warning("System reboot (%d) requested, will now exit\n", type);
+	posix_print_warning("System reboot (%d) requested, will now exit\n", mode);
 	posix_exit(1);
 }
 #endif /* CONFIG_REBOOT && !CONFIG_REBOOT_NO_ARCH */

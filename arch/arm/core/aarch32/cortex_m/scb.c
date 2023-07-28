@@ -21,6 +21,7 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/reboot.h>
 
 #if defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <fsl_sysmpu.h>
@@ -35,9 +36,9 @@
  *
  */
 
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 
 	NVIC_SystemReset();
 

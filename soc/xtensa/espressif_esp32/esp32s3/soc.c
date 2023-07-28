@@ -20,6 +20,10 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/reboot.h>
+#endif /* CONFIG_REBOOT */
+
 #include "esp_private/system_internal.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
@@ -173,7 +177,7 @@ int IRAM_ATTR arch_printk_char_out(int c)
 }
 
 #ifdef CONFIG_REBOOT
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
 	esp_restart_noos();
 }

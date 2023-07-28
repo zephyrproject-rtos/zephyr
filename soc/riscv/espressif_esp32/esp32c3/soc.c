@@ -20,6 +20,10 @@
 #include <soc/interrupt_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/reboot.h>
+#endif /* CONFIG_REBOOT */
+
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <string.h>
@@ -171,7 +175,7 @@ void FUNC_NORETURN IRAM_ATTR esp_restart_noos(void)
 	}
 }
 
-void sys_arch_reboot(int type)
+void sys_arch_reboot(enum sys_reboot_mode mode)
 {
 	esp_restart_noos();
 }

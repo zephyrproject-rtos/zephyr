@@ -9,9 +9,9 @@
 
 #include <fsl_common.h>
 
-void z_sys_reboot(enum sys_reboot_type type)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
-	ARG_UNUSED(type);
+	ARG_UNUSED(mode);
 
 	/*
 	 * On the RT685, the warm reset will not complete correctly unless the
