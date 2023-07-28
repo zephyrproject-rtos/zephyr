@@ -689,6 +689,13 @@
 			status = "okay";
 		};
 
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
+
+			status = "disabled";
+		};
+
 		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
