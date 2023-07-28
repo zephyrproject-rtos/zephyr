@@ -12,6 +12,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/toolchain.h>
 
 /* reboot through Reset Control Register (I/O port 0xcf9) */
 
@@ -20,21 +21,14 @@
 #define X86_RST_CNT_CPU_RST 0x4
 #define X86_RST_CNT_FULL_RST 0x08
 
-static inline void cold_reboot(void)
-{
-	uint8_t reset_value = X86_RST_CNT_CPU_RST | X86_RST_CNT_SYS_RST |
-				X86_RST_CNT_FULL_RST;
-	sys_out8(reset_value, X86_RST_CNT_REG);
-}
-
 void __weak sys_arch_reboot(int type)
 {
-	switch (type) {
-	case SYS_REBOOT_COLD:
-		cold_reboot();
-		break;
-	default:
-		/* do nothing */
-		break;
+	ARG_UNUSED(type);
+
+	sys_out8(X86_RST_CNT_CPU_RST | X86_RST_CNT_SYS_RST | X86_RST_CNT_FULL_RST,
+		 X86_RST_CNT_REG);
+
+	for (;;) {
+		/* wait for reboot */
 	}
 }
