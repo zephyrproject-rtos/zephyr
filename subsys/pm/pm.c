@@ -45,7 +45,6 @@ static struct k_spinlock pm_notifier_lock;
 #ifdef CONFIG_PM_DEVICE
 TYPE_SECTION_START_EXTERN(const struct device *, pm_device_slots);
 
-#if !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
@@ -100,7 +99,6 @@ static void pm_resume_devices(void)
 
 	num_susp = 0;
 }
-#endif  /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
 #endif	/* CONFIG_PM_DEVICE */
 
 /*
@@ -194,7 +192,7 @@ bool pm_system_suspend(int32_t ticks)
 		return false;
 	}
 
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+#ifdef CONFIG_PM_DEVICE
 	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
 			if (pm_suspend_devices()) {
@@ -238,7 +236,7 @@ bool pm_system_suspend(int32_t ticks)
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
+#if defined(CONFIG_PM_DEVICE)
 	if (atomic_add(&_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}
