@@ -573,13 +573,25 @@
  * @brief Get the Bosch M_CAN Message RAM base address
  *
  * For devicetree nodes with dedicated Message RAM area defined via devicetree, this macro returns
- * the base address of the Message RAM, taking in the Message RAM offset into account.
+ * the base address of the Message RAM.
  *
  * @param node_id node identifier
- * @return the Bosch M_CAN Message RAM base address
+ * @return the Bosch M_CAN Message RAM base address (MRBA)
+ */
+#define CAN_MCAN_DT_MRBA(node_id)                                                                  \
+	(mem_addr_t)DT_REG_ADDR_BY_NAME(node_id, message_ram)
+
+/**
+ * @brief Get the Bosch M_CAN Message RAM address
+ *
+ * For devicetree nodes with dedicated Message RAM area defined via devicetree, this macro returns
+ * the address of the Message RAM, taking in the Message RAM offset into account.
+ *
+ * @param node_id node identifier
+ * @return the Bosch M_CAN Message RAM address
  */
 #define CAN_MCAN_DT_MRAM_ADDR(node_id)                                                             \
-	(mem_addr_t)(DT_REG_ADDR_BY_NAME(node_id, message_ram) + CAN_MCAN_DT_MRAM_OFFSET(node_id))
+	(mem_addr_t)(CAN_MCAN_DT_MRBA(node_id) + CAN_MCAN_DT_MRAM_OFFSET(node_id))
 
 /**
  * @brief Get the Bosch M_CAN Message RAM size
@@ -783,9 +795,17 @@
 #define CAN_MCAN_DT_INST_MCAN_ADDR(inst) CAN_MCAN_DT_MCAN_ADDR(DT_DRV_INST(inst))
 
 /**
+ * @brief Equivalent to CAN_MCAN_DT_MRBA(DT_DRV_INST(inst))
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the Bosch M_CAN Message RAM Base Address (MRBA)
+ * @see CAN_MCAN_DT_MRBA()
+ */
+#define CAN_MCAN_DT_INST_MRBA(inst) CAN_MCAN_DT_MRBA(DT_DRV_INST(inst))
+
+/**
  * @brief Equivalent to CAN_MCAN_DT_MRAM_ADDR(DT_DRV_INST(inst))
  * @param inst DT_DRV_COMPAT instance number
- * @return the Bosch M_CAN Message RAM base address
+ * @return the Bosch M_CAN Message RAM address
  * @see CAN_MCAN_DT_MRAM_ADDR()
  */
 #define CAN_MCAN_DT_INST_MRAM_ADDR(inst) CAN_MCAN_DT_MRAM_ADDR(DT_DRV_INST(inst))
