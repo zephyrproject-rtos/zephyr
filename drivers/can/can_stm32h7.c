@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(can_stm32h7, CONFIG_CAN_LOG_LEVEL);
 
 struct can_stm32h7_config {
 	mm_reg_t base;
+	mem_addr_t mrba;
 	mem_addr_t mram;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
@@ -132,7 +133,7 @@ static int can_stm32h7_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_mcan_configure_mram(dev, stm32h7_cfg->mram, stm32h7_cfg->mram);
+	ret = can_mcan_configure_mram(dev, stm32h7_cfg->mrba, stm32h7_cfg->mram);
 	if (ret != 0) {
 		return ret;
 	}
@@ -205,6 +206,7 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 									    \
 	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {	    \
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			    \
+		.mrba = CAN_MCAN_DT_INST_MRBA(n),			    \
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),			    \
 		.config_irq = stm32h7_mcan_irq_config_##n,		    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		    \
