@@ -42,7 +42,14 @@ static struct pm_state_info z_cpus_pm_forced_state[] = {
 static struct k_spinlock pm_forced_state_lock;
 static struct k_spinlock pm_notifier_lock;
 
-#ifdef CONFIG_PM_DEVICE
+#define DT_PM_DEVICE_ENABLED(node_id)						\
+	COND_CODE_1(DT_PROP_OR(node_id, zephyr_pm_device_enabled, false),	\
+		(1 +), ())
+
+#define DT_PM_DEVICE_NEEDED			\
+	(DT_FOREACH_STATUS_OKAY(zephyr_power_state, DT_PM_DEVICE_ENABLED) 0)
+
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 TYPE_SECTION_START_EXTERN(const struct device *, pm_device_slots);
 
 /* Number of devices successfully suspended. */
@@ -99,7 +106,7 @@ static void pm_resume_devices(void)
 
 	num_susp = 0;
 }
-#endif	/* CONFIG_PM_DEVICE */
+#endif	/* defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED */
 
 /*
  * Function called to notify when the system is entering / exiting a
@@ -192,7 +199,7 @@ bool pm_system_suspend(int32_t ticks)
 		return false;
 	}
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if (z_cpus_pm_state[id].pm_device_enabled) {
 			if (pm_suspend_devices()) {
@@ -235,8 +242,8 @@ bool pm_system_suspend(int32_t ticks)
 	pm_state_set(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 	pm_stats_stop();
 
+#if defined(CONFIG_PM_DEVICE) && DT_PM_DEVICE_NEEDED
 	/* Wake up sequence starts here */
-#if defined(CONFIG_PM_DEVICE)
 	if (atomic_add(&_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}
