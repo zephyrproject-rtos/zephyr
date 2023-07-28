@@ -15,26 +15,6 @@
 #ifdef CONFIG_REBOOT
 BUILD_ASSERT(POWER_IP_PERFORM_RESET_API == STD_ON, "Power Reset API must be enabled");
 
-/*
- * Overrides default weak implementation of system reboot.
- *
- * SYS_REBOOT_COLD (Destructive Reset):
- * - Leads most parts of the chip, except a few modules, to reset. SRAM content
- *   is lost after this reset event.
- * - Flash is always reset, so an updated value of the option bits is reloaded
- *   in volatile registers outside of the Flash array.
- * - Trimming is lost.
- * - STCU is reset and configured BISTs are executed.
- *
- * SYS_REBOOT_WARM (Functional Reset):
- * - Leads all the communication peripherals and cores to reset. The communication
- *   protocols' sanity is not guaranteed and they are assumed to be reinitialized
- *   after reset. The SRAM content, and the functionality of certain modules, is
- *   preserved across functional reset.
- * - The volatile registers are not reset; in case of a reset event, the
- *   trimming is maintained.
- * - No BISTs are executed after functional reset.
- */
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	Power_Ip_MC_RGM_ConfigType mc_rgm_cfg = { 0 };

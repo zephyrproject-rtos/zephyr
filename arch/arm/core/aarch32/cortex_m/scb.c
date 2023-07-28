@@ -28,14 +28,6 @@
 #endif
 
 #if defined(CONFIG_REBOOT) && !defined(CONFIG_REBOOT_NO_ARCH)
-/**
- *
- * @brief Reset the system
- *
- * This routine resets the processor.
- *
- */
-
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);

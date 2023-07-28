@@ -14,7 +14,6 @@
 #include <driverlib/prcm.h>
 
 #ifdef CONFIG_REBOOT
-/* Overrides the weak ARM implementation */
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	MAP_PRCMMCUReset(mode == SYS_REBOOT_COLD);

@@ -113,9 +113,6 @@ static int soc_b91_init(void)
 }
 
 #ifdef CONFIG_REBOOT
-/**
- * @brief Reset the system.
- */
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);

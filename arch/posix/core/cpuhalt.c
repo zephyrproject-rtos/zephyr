@@ -50,11 +50,6 @@ void arch_cpu_atomic_idle(unsigned int key)
 }
 
 #if defined(CONFIG_REBOOT) && !defined(CONFIG_REBOOT_NO_ARCH)
-/**
- * @brief Stub for z_sys_reboot
- *
- * Does nothing
- */
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	posix_print_warning("System reboot (%d) requested, will now exit\n", mode);

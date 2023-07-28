@@ -23,11 +23,6 @@
 LOG_MODULE_REGISTER(soc);
 
 #if defined(CONFIG_REBOOT) && defined(CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET)
-/* Overrides the weak ARM implementation:
- * Set general purpose retention register and reboot
- * This is deprecated and has been replaced with the boot mode retention
- * subsystem
- */
 void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	nrf_power_gpregret_set(NRF_POWER, (uint8_t)mode);
