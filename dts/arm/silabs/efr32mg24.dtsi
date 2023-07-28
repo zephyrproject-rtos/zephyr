@@ -68,6 +68,13 @@
 			status = "disabled";
 		};
 
+		burtc0: burtc@50064000 {
+			compatible = "silabs,gecko-burtc";
+			reg = <0x50064000 0x3034>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
 		se: semailbox@5c021000 {
 			compatible = "silabs,gecko-semailbox";
 			reg = <0x5c021000 0x1000>;
