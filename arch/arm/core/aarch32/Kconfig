@@ -145,7 +145,6 @@ config STACK_ALIGN_DOUBLE_WORD
 
 config RUNTIME_NMI
 	bool "Attach an NMI handler at runtime"
-	select REBOOT
 	help
 	  The kernel provides a simple NMI handler that simply hangs in a tight
 	  loop if triggered. This fills the requirement that there must be an
