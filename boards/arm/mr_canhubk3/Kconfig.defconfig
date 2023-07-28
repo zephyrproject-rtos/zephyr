@@ -13,4 +13,11 @@ config UART_CONSOLE
 
 endif # SERIAL
 
+if CAN
+
+config GPIO
+	default y
+
+endif # CAN
+
 endif # BOARD_MR_CANHUBK3
