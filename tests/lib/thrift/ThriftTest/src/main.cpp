@@ -148,11 +148,10 @@ static void thrift_test_before(void *data)
 static void thrift_test_after(void *data)
 {
 	ARG_UNUSED(data);
-	void *unused;
 
 	context.server->stop();
 
-	pthread_join(context.server_thread, &unused);
+	pthread_join(context.server_thread, NULL);
 
 	context.server.reset();
 	context.client.reset();
