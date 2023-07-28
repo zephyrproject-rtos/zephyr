@@ -39,6 +39,7 @@ struct mcux_lpi2c_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
+	uint32_t startup_delay;
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
@@ -520,6 +521,8 @@ static int mcux_lpi2c_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
+	k_busy_wait(config->startup_delay);
+
 	return 0;
 }
 
@@ -555,6 +558,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+		.startup_delay = DT_INST_PROP(n, startup_delay_us),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\

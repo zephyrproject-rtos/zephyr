@@ -17,3 +17,7 @@ properties:
   clock-frequency:
     type: int
     description: Initial clock frequency in Hz
+  startup-delay-us:
+    type: int
+    default: 0
+    description: Startup time, in microseconds
