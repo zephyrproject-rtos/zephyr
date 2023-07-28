@@ -50,6 +50,8 @@ struct cdc_acm_uart_fifo {
 struct cdc_acm_uart_data {
 	/* Pointer to the associated USBD class node */
 	struct usbd_class_node *c_nd;
+	/* IAD iFunction descriptor node */
+	struct usbd_desc_node *const iad_desc_nd;
 	/* Line Coding Structure */
 	struct cdc_acm_line_coding line_coding;
 	/* SetControlLineState bitmap */
@@ -394,12 +396,34 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 {
 	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	const struct device *dev = c_nd->data->priv;
+	struct cdc_acm_uart_data *data = dev->data;
 
 	desc->iad_cdc.bFirstInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
 
+	if (usbd_add_descriptor(c_nd->data->uds_ctx, data->iad_desc_nd)) {
+		LOG_ERR("Failed to add iFunction string descriptor");
+	} else {
+		desc->iad_cdc.iFunction = usbd_get_descriptor_idx(data->iad_desc_nd);
+		desc->if0.iInterface = usbd_get_descriptor_idx(data->iad_desc_nd);
+		desc->if1.iInterface = usbd_get_descriptor_idx(data->iad_desc_nd);
+	}
+
 	return 0;
+}
+
+static void usbd_cdc_acm_shutdown(struct usbd_class_node *const c_nd)
+{
+	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	const struct device *dev = c_nd->data->priv;
+	struct cdc_acm_uart_data *data = dev->data;
+
+	desc->iad_cdc.iFunction = 0;
+	desc->if0.iInterface = 0;
+	desc->if1.iInterface = 0;
+	usbd_remove_descriptor(data->iad_desc_nd);
 }
 
 static int cdc_acm_send_notification(const struct device *dev,
@@ -991,6 +1015,7 @@ struct usbd_class_api usbd_cdc_acm_api = {
 	.control_to_host = usbd_cdc_acm_cth,
 	.control_to_dev = usbd_cdc_acm_ctd,
 	.init = usbd_cdc_acm_init,
+	.shutdown = usbd_cdc_acm_shutdown,
 };
 
 #define CDC_ACM_DEFINE_DESCRIPTOR(n)						\
@@ -1102,6 +1127,9 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		     " is not assigned to a USB device controller");		\
 										\
 	CDC_ACM_DEFINE_DESCRIPTOR(n);						\
+	USBD_DESC_STRING_DEFINE(iad_desc_nd_##n,				\
+				DT_NODE_FULL_NAME(DT_DRV_INST(n)),		\
+				USBD_DUT_STRING_INTERFACE);			\
 										\
 	static struct usbd_class_data usbd_cdc_acm_data_##n;			\
 										\
@@ -1118,6 +1146,7 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
+		.iad_desc_nd = &iad_desc_nd_##n,				\
 	};									\
 										\
 	static struct usbd_class_data usbd_cdc_acm_data_##n = {			\
