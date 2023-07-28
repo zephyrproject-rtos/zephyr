@@ -28,13 +28,6 @@ properties:
     type: int
     required: true
     description: Mapped memory address of direct read access for spi nor flash.
-  min-erase-size:
-    type: int
-    default: 0x10000
-    description: Minimum erase size of spi nor flash.
-    enum:
-      - 0x1000  # 4KB (Sector Erase)
-      - 0x10000 # 64KB (Block Erase)
   max-timeout:
     type: int
     default: 10000
