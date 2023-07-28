@@ -8,7 +8,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 extern void sys_arch_reboot(int type);
 
@@ -26,9 +26,5 @@ FUNC_NORETURN void sys_reboot(int type)
 
 	sys_arch_reboot(type);
 
-	/* should never get here */
-	printk("Failed to reboot: spinning endlessly...\n");
-	for (;;) {
-		k_cpu_idle();
-	}
+	CODE_UNREACHABLE;
 }
