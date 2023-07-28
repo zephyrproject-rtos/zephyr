@@ -43,8 +43,10 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 /* Time to set pin in order to exit shutdown mode */
 #define PIN_DELAY_TIME K_MSEC(1)
 
-/* Time it takes device to initialize before doing any configuration */
-#define INIT_TIME K_MSEC(100)
+/* Delay from power up or shutdown exit to chip entering active state, this is
+ * defined as 250ms typical in the datasheet (Power-up communication delay).
+ */
+#define POWER_UP_DELAY_MS 300
 
 /* Data memory size */
 #define BQ27XXX_DM_SZ 32
@@ -624,6 +626,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 	struct bq274xx_data *data = dev->data;
 	int ret;
 	uint16_t id;
+	int32_t delay_remainder_ms;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
@@ -636,6 +639,12 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif
+
+	delay_remainder_ms = POWER_UP_DELAY_MS - k_uptime_get_32();
+	if (delay_remainder_ms > 0) {
+		LOG_DBG("Power up delay remainder: %dms", delay_remainder_ms);
+		k_msleep(delay_remainder_ms);
+	}
 
 	ret = bq274xx_get_device_type(dev, &id);
 	if (ret < 0) {
@@ -731,7 +740,7 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 	}
 
 	if (!config->lazy_loading) {
-		k_sleep(INIT_TIME);
+		k_sleep(K_MSEC(POWER_UP_DELAY_MS));
 
 		ret = bq274xx_gauge_configure(dev);
 		if (ret < 0) {
