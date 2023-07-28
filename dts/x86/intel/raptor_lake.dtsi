@@ -528,6 +528,8 @@
 		tco_wdt: tco_wdt@400 {
 			compatible = "intel,tco-wdt";
 			reg = <0x0400 0x20>;
+
+			status = "disabled";
 		};
 	};
 };
