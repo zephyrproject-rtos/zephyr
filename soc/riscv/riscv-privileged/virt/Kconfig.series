@@ -5,3 +5,4 @@ config SOC_SERIES_RISCV_VIRT
 	bool "QEMU RISC-V VirtIO Board"
 	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGED
+	select HAS_REBOOT

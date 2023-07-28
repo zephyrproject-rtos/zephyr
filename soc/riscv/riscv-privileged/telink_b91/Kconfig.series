@@ -12,5 +12,6 @@ config SOC_SERIES_RISCV_TELINK_B91
 	select RISCV_ISA_EXT_ZIFENCEI
 	select SOC_FAMILY_RISCV_PRIVILEGED
 	select HAS_TELINK_DRIVERS
+	select HAS_REBOOT
 	help
 	  Enable support for Telink B91 SoC

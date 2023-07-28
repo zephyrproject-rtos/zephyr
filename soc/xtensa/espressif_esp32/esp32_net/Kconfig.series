@@ -8,5 +8,6 @@ config SOC_SERIES_ESP32_NET
 	select CLOCK_CONTROL
 	select DYNAMIC_INTERRUPTS
 	select HAS_ESPRESSIF_HAL
+	select HAS_REBOOT
 	help
 	  Enable support for Espressif ESP32_NET

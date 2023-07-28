@@ -159,6 +159,11 @@ config MPSC_CLEAR_ALLOCATED
 	  When enabled packet space is zeroed before returning from allocation.
 endif
 
+config HAS_REBOOT
+	bool
+	help
+	  Option to signal that reboot functionality is implemented.
+
 config REBOOT_NO_ARCH
 	bool
 	help
@@ -171,6 +176,7 @@ config REBOOT_NO_ARCH
 
 config REBOOT
 	bool "Reboot functionality"
+	depends on HAS_REBOOT
 	help
 	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
