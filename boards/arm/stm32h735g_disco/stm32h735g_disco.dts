@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds {
@@ -73,6 +74,16 @@
 	div-p = <1>;
 	div-q = <4>;
 	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <80>;
+	div-p = <5>;
+	div-q = <5>;
+	div-r = <5>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -188,4 +199,47 @@
 
 &vbat {
 	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_ph14 &fdcan1_tx_ph13>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&fdcan2 {
+	pinctrl-0 = <&fdcan2_rx_pb5 &fdcan2_tx_pb6>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&fdcan3 {
+	pinctrl-0 = <&fdcan3_rx_pf6 &fdcan3_tx_pf7>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	/* Solder bridges SB29 and SB30 need to be closed for this to work */
+	status = "disabled";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
 };
