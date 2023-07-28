@@ -153,6 +153,9 @@ enum img_mgmt_ret_code_t {
 
 	/** The image it too large to fit. */
 	IMG_MGMT_RET_RC_INVALID_IMAGE_TOO_LARGE,
+
+	/** The amount of data sent is larger than the provided image size. */
+	IMG_MGMT_RET_RC_INVALID_IMAGE_DATA_OVERRUN,
 };
 
 /**
@@ -356,6 +359,7 @@ extern const char *img_mgmt_err_str_flash_write_failed;
 extern const char *img_mgmt_err_str_downgrade;
 extern const char *img_mgmt_err_str_image_bad_flash_addr;
 extern const char *img_mgmt_err_str_image_too_large;
+extern const char *img_mgmt_err_str_data_overrun;
 #else
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn)
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) NULL
