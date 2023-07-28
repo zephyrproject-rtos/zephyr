@@ -15,7 +15,11 @@
 /* Overrides the weak ARM implementation */
 void sys_arch_reboot(int type)
 {
-	MAP_PRCMMCUReset(!!type);
+	MAP_PRCMMCUReset(type == SYS_REBOOT_COLD);
+
+	for (;;) {
+		/* wait for reset */
+	}
 }
 
 static int ti_cc32xx_init(void)
