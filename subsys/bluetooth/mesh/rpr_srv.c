@@ -371,7 +371,7 @@ static void link_close(enum bt_mesh_rpr_status status,
 
 static void outbound_pdu_report_send(void)
 {
-	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, true);
+	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, false);
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_PDU_OUTBOUND_REPORT, 1);
 	bt_mesh_model_msg_init(&buf, RPR_OP_PDU_OUTBOUND_REPORT);
