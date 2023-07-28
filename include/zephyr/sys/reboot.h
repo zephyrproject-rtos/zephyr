@@ -22,10 +22,22 @@ extern "C" {
 
 /** Reboot modes. */
 enum sys_reboot_mode {
-	/** Warm reboot. */
-	SYS_REBOOT_WARM,
-	/** Cold reboot. */
+	/**
+	 * Cold reboot.
+	 *
+	 * The system will be rebooted in a way comparable to a power on reset.
+	 * What this means depends on the platform, but you can usually expect
+	 * the device to boot from ROM, and its peripherals to be
+	 * re-initialiazed.
+	 */
 	SYS_REBOOT_COLD,
+	/**
+	 * Warm reboot.
+	 *
+	 * Typically a faster and lighter reboot compared to SYS_REBOOT_COLD.
+	 * Exact meaning is greatly platform dependent.
+	 */
+	SYS_REBOOT_WARM,
 };
 
 /**
