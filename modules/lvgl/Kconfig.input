@@ -55,4 +55,17 @@ config LV_Z_POINTER_INPUT_MSGQ_COUNT
 	help
 	  Size of the pointer message queue buffering input events.
 
+config LV_Z_BUTTON_INPUT
+	bool "Input lvgl button"
+	default y
+	depends on INPUT
+	depends on DT_HAS_ZEPHYR_LVGL_BUTTON_INPUT_ENABLED
+
+config LV_Z_BUTTON_INPUT_MSGQ_COUNT
+	int "Input button queue message count"
+	default 4
+	depends on LV_Z_BUTTON_INPUT
+	help
+	  Size of the button message queue buffering input events.
+
 endmenu
