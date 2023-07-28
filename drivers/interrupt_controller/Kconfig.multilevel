@@ -52,6 +52,13 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 2
 	  interrupts.
 
+config EXTEND_2ND_LEVEL_INTERRUPTS
+	bool "Support more than 255 level 2 interrupts"
+	depends on 2ND_LEVEL_INTERRUPTS
+	help
+	  Allow more than 255 level 2 interrupts by folding the lebel 3 field
+	  into level 2.
+
 prev-level-num = 1
 cur-level-num = 2
 cur-level = 2ND
@@ -74,7 +81,7 @@ rsource "Kconfig.multilevel.aggregator_template"
 
 config 3RD_LEVEL_INTERRUPTS
 	bool "Third-level interrupt support"
-	depends on 2ND_LEVEL_INTERRUPTS
+	depends on 2ND_LEVEL_INTERRUPTS && !EXTEND_2ND_LEVEL_INTERRUPTS
 	help
 	  Third level interrupts are used to increase the number of
 	  addressable interrupts in a system.

@@ -311,6 +311,12 @@ def main():
             else:
                 # Figure out third level interrupt position
                 debug('IRQ = ' + hex(irq))
+                if "CONFIG_EXTENDED_2ND_LEVEL_INTERRUPTS" in syms:
+                    global SECND_LVL_INTERRUPTS
+                    global THIRD_LVL_INTERRUPTS
+                    SECND_LVL_INTERRUPTS = 0x00FFFF00
+                    THIRD_LVL_INTERRUPTS = 0
+
                 irq3 = (irq & THIRD_LVL_INTERRUPTS) >> 16
                 irq2 = (irq & SECND_LVL_INTERRUPTS) >> 8
                 irq1 = irq & FIRST_LVL_INTERRUPTS
