@@ -17,6 +17,7 @@ tests:
   sample.modules.canopennode:
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
       and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
+      and CONFIG_HAS_REBOOT
     platform_exclude:
       - nucleo_h723zg
       - nucleo_h743zi
@@ -31,4 +32,5 @@ tests:
       - frdm_k64f
     extra_args: canopennode_CONF_FILE=prj_img_mgmt.conf
   sample.modules.canopennode.no_storage:
+    filter: CONFIG_HAS_REBOOT
     extra_args: CONF_FILE=prj_no_storage.conf

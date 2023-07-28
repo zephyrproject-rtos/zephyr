@@ -5,7 +5,7 @@
 
 menuconfig TASK_WDT
 	bool "Task-level software watchdog"
-	select REBOOT
+	depends on REBOOT
 	help
 	  Enable task watchdog
 

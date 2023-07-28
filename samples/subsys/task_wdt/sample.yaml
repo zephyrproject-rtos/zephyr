@@ -15,6 +15,7 @@ common:
       - "Resetting device...(.*)"
       - "Task watchdog sample application."
   depends_on: watchdog
+  filter: CONFIG_HAS_REBOOT
   platform_exclude:
     - s32z270dc2_rtu0_r52
     - s32z270dc2_rtu1_r52

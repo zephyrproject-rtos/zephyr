@@ -74,7 +74,7 @@ config ZTEST_TC_UTIL_USER_OVERRIDE
 
 config ZTEST_RETEST_IF_PASSED
 	bool "Reset the board to test again if the test passed"
-	select REBOOT
+	depends on REBOOT
 	help
 	  If the test passed reset the board so it is run again.  This
 	  may be used as an alternative to manual resets when

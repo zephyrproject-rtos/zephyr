@@ -15,8 +15,9 @@ void otPlatReset(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	/* This function does nothing on the Posix platform. */
+#ifdef CONFIG_REBOOT
 	sys_reboot(SYS_REBOOT_WARM);
+#endif
 }
 
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)

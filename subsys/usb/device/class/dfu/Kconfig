@@ -49,7 +49,7 @@ config USB_DFU_ENABLE_UPLOAD
 
 config USB_DFU_REBOOT
 	bool "Reboot after download"
-	select REBOOT
+	depends on REBOOT
 	help
 	  When enabled the device will automatically reboot after a download
 	  so the bootloader can swap the images.

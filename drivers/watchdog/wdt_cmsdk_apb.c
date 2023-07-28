@@ -163,9 +163,8 @@ static void wdog_cmsdk_apb_isr(void)
 	 * Check if the watchdog was the reason of the NMI interrupt
 	 * and if not, exit immediately
 	 */
-	if (!wdog_cmsdk_apb_has_fired()) {
+	if (IS_ENABLED(CONFIG_REBOOT) && !wdog_cmsdk_apb_has_fired()) {
 		printk("NMI received! Rebooting...\n");
-		/* In ARM implementation sys_reboot ignores the parameter */
 		sys_reboot(0);
 	} else {
 		if (user_cb != NULL) {
