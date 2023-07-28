@@ -674,6 +674,15 @@ config BUILD_OUTPUT_INFO_HEADER
 	  - VMA address of each segment
 	  - Size of each segment
 
+config BUILD_ALIGN_LMA
+	bool "Align LMA in output image"
+	default y if BUILD_OUTPUT_ADJUST_LMA!=""
+	help
+	  Ensure that the LMA for each section in the output image respects
+	  the alignment requirements of that section. This is required for
+	  some tooling, such as objcopy, to be able to adjust the LMA of the
+	  ELF file.
+
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
 	help
