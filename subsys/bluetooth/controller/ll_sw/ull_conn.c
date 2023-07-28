@@ -803,7 +803,7 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
 	}
 }
 
-int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
+void ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 {
 	struct pdu_data *pdu_rx;
 	struct ll_conn *conn;
@@ -813,7 +813,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
-		return 0;
+		return;
 	}
 
 	ull_cp_tx_ntf(conn);
@@ -828,7 +828,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 
 		ull_cp_rx(conn, link, *rx);
 
-		return 0;
+		return;
 	}
 
 	case PDU_DATA_LLID_DATA_CONTINUE:
@@ -860,9 +860,6 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 
 		break;
 	}
-
-
-	return 0;
 }
 
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
