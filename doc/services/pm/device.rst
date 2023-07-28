@@ -69,12 +69,6 @@ option for device power management.
 
 .. note::
 
-    This type of device power management is disabled when
-    :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` is set to ``y`` (that is
-    the default value when :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled)
-
-.. note::
-
    Devices are suspended only when the last active core is entering a low power
    state and devices are resumed by the first core that becomes active.
 
