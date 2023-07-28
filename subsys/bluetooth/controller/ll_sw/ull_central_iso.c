@@ -485,8 +485,10 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 		if (!cig->central.test) {
 			/* Make sure specified Max_Transport_Latency is not exceeded */
-			LL_ASSERT(c_latency <= cig->c_latency);
-			LL_ASSERT(p_latency <= cig->p_latency);
+			if (c_latency > cig->c_latency || p_latency > cig->p_latency) {
+				/* Invalid Max_Transport_Latency */
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
 		}
 
 		c_max_latency = MAX(c_max_latency, c_latency);
