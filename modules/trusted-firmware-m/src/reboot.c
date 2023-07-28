@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/kernel.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/toolchain.h>
 
 #include "tfm_platform_api.h"
 
