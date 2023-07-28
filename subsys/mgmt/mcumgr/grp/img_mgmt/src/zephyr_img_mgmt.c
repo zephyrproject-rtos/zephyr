@@ -570,6 +570,8 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 	if (req->off == 0) {
 		/* First upload chunk. */
+		const struct flash_area *fa;
+
 		if (req->img_data.len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
@@ -614,30 +616,35 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			return IMG_MGMT_RET_RC_NO_FREE_SLOT;
 		}
 
+		rc = flash_area_open(action->area_id, &fa);
+		if (rc) {
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+				img_mgmt_err_str_flash_open_failed);
+			LOG_ERR("Failed to open flash area ID %u: %d", action->area_id, rc);
+			return IMG_MGMT_RET_RC_FLASH_OPEN_FAILED;
+		}
+
+		/* Check that the area is of sufficient size to store the new image */
+		if (req->size > fa->fa_size) {
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+				img_mgmt_err_str_image_too_large);
+			flash_area_close(fa);
+			LOG_ERR("Upload too large for slot: %u > %u", req->size, fa->fa_size);
+			return IMG_MGMT_RET_RC_INVALID_IMAGE_TOO_LARGE;
+		}
+
 #if defined(CONFIG_MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED) {
-			const struct flash_area *fa;
-
-			rc = flash_area_open(action->area_id, &fa);
-			if (rc) {
-				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
-					img_mgmt_err_str_flash_open_failed);
-				LOG_ERR("Failed to open flash area ID %u: %d", action->area_id,
-					rc);
-				return IMG_MGMT_RET_RC_FLASH_OPEN_FAILED;
-			}
-
 			if (fa->fa_off != hdr->ih_load_addr) {
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_image_bad_flash_addr);
 				flash_area_close(fa);
 				return IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS;
 			}
-
-			flash_area_close(fa);
 		}
 #endif
 
+		flash_area_close(fa);
 
 		if (req->upgrade) {
 			/* User specified upgrade-only. Make sure new image version is
