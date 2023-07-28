@@ -5,6 +5,7 @@
 
 menuconfig PM_CPU_OPS
 	bool "CPU power management drivers"
+	select HAS_REBOOT
 	help
 	  Enable CPU power management drivers configuration
 

@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(psci);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
+#ifdef CONFIG_REBOOT
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/reboot.h>
+#endif /* CONFIG_REBOOT */
+
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include "pm_cpu_ops_psci.h"
 
@@ -92,6 +98,7 @@ void z_sys_poweroff(void)
 }
 #endif /* CONFIG_POWEROFF */
 
+#ifdef CONFIG_REBOOT
 /**
  * This function checks whether the given ID is supported or not, using
  * PSCI_FEATURES command.PSCI_FEATURES is supported from version 1.0 onwards.
@@ -107,27 +114,27 @@ static int psci_features_check(unsigned long function_id)
 	return psci_data.invoke_psci_fn(PSCI_FN_NATIVE(1_0, PSCI_FEATURES), function_id, 0, 0);
 }
 
-int pm_system_reset(unsigned char reset_type)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	int ret;
 
-	if (psci_data.conduit == SMCCC_CONDUIT_NONE) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(psci_data.conduit != SMCCC_CONDUIT_NONE);
 
-	if ((reset_type == SYS_WARM_RESET) &&
+	if ((mode == SYS_REBOOT_WARM) &&
 	    (!psci_features_check(PSCI_FN_NATIVE(1_1, SYSTEM_RESET2)))) {
 		ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(1_1, SYSTEM_RESET2), 0, 0, 0);
-	} else if (reset_type == SYS_COLD_RESET) {
-		ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, SYSTEM_RESET), 0, 0, 0);
 	} else {
-		LOG_ERR("Invalid system reset type issued");
-		return -EINVAL;
+		ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, SYSTEM_RESET), 0, 0, 0);
 	}
 
-	return psci_to_dev_err(ret);
+	if (ret != 0) {
+		printk("Reboot failed (%d) - halting\n", ret);
+	}
 
+	for (;;) {
+	}
 }
+#endif /* CONFIG_REBOOT */
 
 static unsigned long __invoke_psci_fn_hvc(unsigned long function_id,
 					  unsigned long arg0,
