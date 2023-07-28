@@ -24,7 +24,7 @@ source "modules/Kconfig.esp32"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
-source "modules/Kconfig.lvgl"
+source "modules/lvgl/Kconfig"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
@@ -104,6 +104,9 @@ comment "THRIFT module not available."
 
 comment "Segger module not available."
 	depends on !ZEPHYR_SEGGER_MODULE
+
+comment "LVGL module not available."
+	depends on !ZEPHYR_LVGL_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
