@@ -7,13 +7,12 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
 
 #define WDT_CHANNEL_COUNT DT_PROP(DT_WDT_COUNTER, num_channels)
 #define DT_WDT_COUNTER DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 
 #define WDT_SUPPORTED_CFG_FLAGS (WDT_FLAG_RESET_NONE | WDT_FLAG_RESET_SOC)
-
-extern void sys_arch_reboot(int type);
 
 struct wdt_counter_data {
 	wdt_callback_t callback[CONFIG_WDT_COUNTER_CH_COUNT];
@@ -62,7 +61,7 @@ static void counter_alarm_callback(const struct device *dev,
 
 	if (data->flags[chan_id] & WDT_FLAG_RESET_SOC) {
 		LOG_PANIC();
-		sys_arch_reboot(0);
+		sys_reboot(SYS_REBOOT_WARM);
 	}
 }
 
