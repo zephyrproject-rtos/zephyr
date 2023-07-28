@@ -31,3 +31,9 @@ properties:
     type: int
     description: |
         Worst case latency in microseconds required to exit the idle state.
+  zephyr,pm-device-disabled:
+    type: boolean
+    description: |
+       Disable system managed device power management for this state. When set,
+       the power management subsystem will not suspend devices before entering
+       this state.
