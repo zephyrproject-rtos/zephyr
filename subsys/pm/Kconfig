@@ -123,8 +123,9 @@ config PM_DEVICE_RUNTIME
 
 config PM_DEVICE_RUNTIME_EXCLUSIVE
 	depends on PM_DEVICE_RUNTIME
-	bool "Use only on Runtime Power Management on system suspend / resume"
+	bool "[DEPRECATED] Use only on Runtime Power Management on system suspend / resume"
 	default y
+	select DEPRECATED
 	help
 	  On system suspend / resume do not trigger the Device PM hooks but
 	  only rely on Runtime PM to manage the devices power states.
