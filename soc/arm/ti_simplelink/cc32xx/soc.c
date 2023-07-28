@@ -12,6 +12,7 @@
 #include <driverlib/rom_map.h>
 #include <driverlib/prcm.h>
 
+#ifdef CONFIG_REBOOT
 /* Overrides the weak ARM implementation */
 void sys_arch_reboot(int type)
 {
@@ -21,6 +22,7 @@ void sys_arch_reboot(int type)
 		/* wait for reset */
 	}
 }
+#endif /* CONFIG_REBOOT */
 
 static int ti_cc32xx_init(void)
 {

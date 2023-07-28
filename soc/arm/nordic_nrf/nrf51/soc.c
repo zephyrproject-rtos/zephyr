@@ -21,7 +21,7 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-#ifdef CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET
+#if defined(CONFIG_REBOOT) && defined(CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET)
 /* Overrides the weak ARM implementation:
  * Set general purpose retention register and reboot
  * This is deprecated and has been replaced with the boot mode retention

@@ -8,7 +8,6 @@ zephyr_library_sources(
   irq_manage.c
   isr.S
   prep_c.c
-  reboot.c
   reset.S
   switch.S
   thread.c
@@ -25,4 +24,5 @@ zephyr_library_sources_ifdef(CONFIG_RISCV_PMP pmp.c pmp.S)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
+zephyr_library_sources_ifdef(CONFIG_REBOOT reboot.c)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)

@@ -59,6 +59,7 @@ static const scg_lpfll_config_t rv32m1_lpfll_cfg = {
 	.trimConfig = NULL,
 };
 
+#ifdef CONFIG_REBOOT
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
@@ -69,6 +70,7 @@ void sys_arch_reboot(int type)
 		/* wait for reset */
 	}
 }
+#endif /* CONFIG_REBOOT */
 
 void arch_irq_enable(unsigned int irq)
 {

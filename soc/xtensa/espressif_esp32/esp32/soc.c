@@ -194,6 +194,7 @@ int IRAM_ATTR arch_printk_char_out(int c)
 	return 0;
 }
 
+#ifdef CONFIG_REBOOT
 void sys_arch_reboot(int type)
 {
 	esp_restart_noos();
@@ -266,3 +267,4 @@ void FUNC_NORETURN IRAM_ATTR esp_restart_noos(void)
 		;
 	}
 }
+#endif /* CONFIG_REBOOT */

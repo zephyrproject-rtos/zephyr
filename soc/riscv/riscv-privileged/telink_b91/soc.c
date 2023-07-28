@@ -112,6 +112,7 @@ static int soc_b91_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_REBOOT
 /**
  * @brief Reset the system.
  */
@@ -125,5 +126,6 @@ void sys_arch_reboot(int type)
 		/* wait for reboot */
 	}
 }
+#endif /* CONFIG_REBOOT */
 
 SYS_INIT(soc_b91_init, PRE_KERNEL_1, 0);
