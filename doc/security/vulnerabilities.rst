@@ -1329,4 +1329,12 @@ This has been fixed in main for v3.4.0
 CVE-2023-1902
 -------------
 
-Under embargo until 2023/07/04
+HCI Connection Creation Dangling State Reference Re-use
+
+- `Zephyr project bug tracker GHSA-fx9g-8fr2-q899
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fx9g-8fr2-q899>`_
+
+This has been fixed in main for v3.4.0
+
+- `PR 56709 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
