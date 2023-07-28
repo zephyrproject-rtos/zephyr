@@ -18,6 +18,7 @@ config NUM_IRQS
 
 config PM
 	default n
+	select COUNTER
 
 choice PM_POLICY
 	default PM_POLICY_DEFAULT

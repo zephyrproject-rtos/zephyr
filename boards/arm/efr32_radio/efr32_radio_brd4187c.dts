@@ -99,6 +99,10 @@
 	status = "okay";
 };
 
+&stimer0 {
+	status = "okay";
+};
+
 &se {
 	status = "okay";
 };
