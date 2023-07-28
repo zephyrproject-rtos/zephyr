@@ -1316,7 +1316,15 @@ This has been fixed in main for v3.3.0
 CVE-2023-1901
 -------------
 
-Under embargo until 2023/07/04
+HCI send_sync Dangling Semaphore Reference Re-use
+
+- `Zephyr project bug tracker GHSA-xvvm-8mcm-9cq3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xvvm-8mcm-9cq3>`_
+
+This has been fixed in main for v3.4.0
+
+- `PR 56709 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
 
 CVE-2023-1902
 -------------
