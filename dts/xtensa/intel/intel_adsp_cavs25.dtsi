@@ -52,6 +52,7 @@
 				power-state-name = "soft-off";
 				min-residency-us = <2147483647>;
 				exit-latency-us = <0>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};

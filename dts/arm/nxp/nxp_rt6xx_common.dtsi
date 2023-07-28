@@ -44,6 +44,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <1000>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};

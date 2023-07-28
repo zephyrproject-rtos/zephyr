@@ -74,6 +74,7 @@
 				power-state-name = "standby";
 				min-residency-us = <20000>;
 				exit-latency-us = <2000>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};

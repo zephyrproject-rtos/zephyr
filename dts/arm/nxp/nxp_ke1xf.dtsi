@@ -41,18 +41,21 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <0>;
+				zephyr,pm-device-enabled;
 			};
 
 			pstop1: pstop1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
+				zephyr,pm-device-enabled;
 			};
 
 			pstop2: pstop2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};

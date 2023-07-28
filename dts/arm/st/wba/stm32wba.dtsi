@@ -50,12 +50,14 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
 				min-residency-us = <100>;
+				zephyr,pm-device-enabled;
 			};
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
+				zephyr,pm-device-enabled;
 			};
 			standby: state2 {
 				compatible = "zephyr,power-state";

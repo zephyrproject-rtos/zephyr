@@ -35,6 +35,7 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <0>;
 				min-residency-us = <1000>;
+				zephyr,pm-device-enabled;
 			};
 
 			suspend_to_idle1: suspend-to-idle1 {
@@ -42,6 +43,7 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
 				min-residency-us = <201000>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};

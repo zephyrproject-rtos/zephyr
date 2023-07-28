@@ -194,7 +194,7 @@ bool pm_system_suspend(int32_t ticks)
 
 #ifdef CONFIG_PM_DEVICE
 	if (atomic_sub(&_cpus_active, 1) == 1) {
-		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
+		if (z_cpus_pm_state[id].pm_device_enabled) {
 			if (pm_suspend_devices()) {
 				pm_resume_devices();
 				z_cpus_pm_state[id].state = PM_STATE_ACTIVE;

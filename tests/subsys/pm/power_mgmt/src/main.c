@@ -242,6 +242,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
+		info.pm_device_enabled = true;
 		info.state = PM_STATE_SUSPEND_TO_IDLE;
 	} else {
 		/* only test pm_policy_next_state()

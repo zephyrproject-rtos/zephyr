@@ -40,18 +40,21 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <1>;
 				min-residency-us = <100>;
+				zephyr,pm-device-enabled;
 			};
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
+				zephyr,pm-device-enabled;
 			};
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
 				min-residency-us = <900>;
+				zephyr,pm-device-enabled;
 			};
 		};
 	};
