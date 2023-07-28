@@ -175,7 +175,7 @@ void FUNC_NORETURN IRAM_ATTR esp_restart_noos(void)
 	}
 }
 
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	esp_restart_noos();
 }

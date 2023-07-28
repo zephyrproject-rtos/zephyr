@@ -22,7 +22,7 @@
  * Each RISC-V SoC that has reset feature should implement own reset function.
  */
 
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 }

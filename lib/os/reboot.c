@@ -22,5 +22,5 @@ void sys_reboot(enum sys_reboot_mode mode)
 		sys_clock_disable();
 	}
 
-	sys_arch_reboot(mode);
+	z_sys_reboot(mode);
 }

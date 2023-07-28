@@ -177,7 +177,7 @@ int IRAM_ATTR arch_printk_char_out(int c)
 }
 
 #ifdef CONFIG_REBOOT
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	esp_restart_noos();
 }

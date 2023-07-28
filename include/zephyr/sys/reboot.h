@@ -52,7 +52,7 @@ enum sys_reboot_mode {
  *
  * @param mode Reboot mode.
  */
-FUNC_NORETURN void sys_arch_reboot(enum sys_reboot_mode mode);
+FUNC_NORETURN void z_sys_reboot(enum sys_reboot_mode mode);
 
 /** @endcond */
 

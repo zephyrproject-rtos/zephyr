@@ -116,7 +116,7 @@ static int soc_b91_init(void)
 /**
  * @brief Reset the system.
  */
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 

@@ -60,7 +60,7 @@ static const scg_lpfll_config_t rv32m1_lpfll_cfg = {
 };
 
 #ifdef CONFIG_REBOOT
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 

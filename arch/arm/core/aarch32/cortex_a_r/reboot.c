@@ -21,7 +21,7 @@
  *
  */
 
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 }

@@ -21,7 +21,7 @@
 #define X86_RST_CNT_CPU_RST 0x4
 #define X86_RST_CNT_FULL_RST 0x08
 
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 

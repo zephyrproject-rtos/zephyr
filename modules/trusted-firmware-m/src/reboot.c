@@ -20,12 +20,12 @@
  *
  * The function requests Trusted-Firmware-M to reset the processor,
  * on behalf of the Non-Secure application. The function overrides
- * the weak implementation of sys_arch_reboot() in scb.c.
+ * the weak implementation of z_sys_reboot() in scb.c.
  *
  * \pre The implementation requires the TFM_PARTITION_PLATFORM be defined.
  */
 
-void sys_arch_reboot(enum sys_reboot_mode mode)
+void z_sys_reboot(enum sys_reboot_mode mode)
 {
 	ARG_UNUSED(mode);
 
