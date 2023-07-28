@@ -12,6 +12,8 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+
 zephyr_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_XIP
   flash_clock_setup.c
   )
