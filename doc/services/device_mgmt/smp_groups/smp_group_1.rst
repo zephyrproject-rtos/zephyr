@@ -269,7 +269,7 @@ CBOR data of request:
         (str,opt)"len"      : (uint)
         (str)"off"          : (uint)
         (str,opt)"sha"      : (byte str)
-        (str,opt)"data"     : (byte str)
+        (str)"data"         : (byte str)
         (str,opt)"upgrade"  : (bool)
     }
 
@@ -278,40 +278,44 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "image"               | optional image number, it does not have to appear |
-    |                       | in request at all, in which case it is assumed to |
-    |                       | be 0; only request with "off" 0 can contain       |
-    |                       | image number                                      |
-    +-----------------------+---------------------------------------------------+
-    | "len"                 | optional length of an image, it only appears in   |
-    |                       | the first packet of request, where "off" is 0     |
-    +-----------------------+---------------------------------------------------+
-    | "off"                 | offset of image chunk the request carries         |
-    +-----------------------+---------------------------------------------------+
-    | "sha"                 | SHA256 hash of an upload; this is used to         |
-    |                       | identify an upload session (e.g. to allow MCUmgr  |
-    |                       | to continue a broken session), and for image      |
-    |                       | verification purposes. This must be a full SHA256 |
-    |                       | hash of the whole image being uploaded, or not    |
-    |                       | included if the hash is not available (in which   |
-    |                       | case, upload session continuation and image       |
-    |                       | verification functionality will be unavailable).  |
-    |                       | Should only be present if "off" is zero.          |
-    +-----------------------+---------------------------------------------------+
-    | "data"                | optional image data                               |
-    +-----------------------+---------------------------------------------------+
-    | "upgrade"             | optional flag that states that only upgrade       |
-    |                       | should be allowed, so if the version of uploaded  |
-    |                       | software is not higher then already on a device,  |
-    |                       | the image upload will be rejected.                |
-    |                       | Zephyr only compares major, minor and revision    |
-    |                       | (x.y.z).                                          |
-    +-----------------------+---------------------------------------------------+
+    +-----------+--------------------------------------------------------------------------------+
+    | "image"   | optional image number, it does not have to appear in request at all, in which  |
+    |           | case it is assumed to be 0. Should only be present when "off" is 0.            |
+    +-----------+--------------------------------------------------------------------------------+
+    | "len"     | optional length of an image. Must appear when "off" is 0.                      |
+    +-----------+--------------------------------------------------------------------------------+
+    | "off"     | offset of image chunk the request carries.                                     |
+    +-----------+--------------------------------------------------------------------------------+
+    | "sha"     | SHA256 hash of an upload; this is used to identify an upload session (e.g. to  |
+    |           | allow MCUmgr to continue a broken session), and for image verification         |
+    |           | purposes. This must be a full SHA256 hash of the whole image being uploaded,   |
+    |           | or not included if the hash is not available (in which  case, upload session   |
+    |           | continuation and image verification functionality will be unavailable). Should |
+    |           | only be present when "off" is 0.                                               |
+    +-----------+--------------------------------------------------------------------------------+
+    | "data"    | image data to write at provided offset.                                        |
+    +-----------+--------------------------------------------------------------------------------+
+    | "upgrade" | optional flag that states that only upgrade should be allowed, so if the       |
+    |           | version of uploaded software is not higher then already on a device, the image |
+    |           | upload will be rejected. Zephyr compares major, minor and revision (x.y.z) by  |
+    |           | default unless                                                                 |
+    |           | :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER` is set,   |
+    |           | whereby it will compare build numbers too. Should only be present when "off"   |
+    |           | is 0.                                                                          |
+    +-----------+--------------------------------------------------------------------------------+
 
 .. note::
     There is no field representing size of chunk that is carried as "data" because
     that information is embedded within "data" field itself.
+
+.. note::
+    It is possible that a server will respond to an upload with "off" of 0, this
+    may happen if an upload on another transport (or outside of MCUmgr entirely)
+    is started, if the device has rebooted or if a packet has been lost. If this
+    happens, a client must re-send all the required and optional fields that it
+    sent in the original first packet so that the upload state can be re-created
+    by the server. If the original fields are not included, the upload will be
+    unable to continue.
 
 The MCUmgr library uses "sha" field to tag ongoing update session, to be able
 to continue it in case when it gets broken, and for upload verification
