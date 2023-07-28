@@ -56,6 +56,11 @@ __net_socket struct spair {
 	uint8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
 };
 
+#ifdef CONFIG_NET_SOCKETPAIR_STATIC
+K_MEM_SLAB_DEFINE_STATIC(spair_slab, sizeof(struct spair), CONFIG_NET_SOCKETPAIR_MAX * 2,
+			 __alignof__(struct spair));
+#endif /* CONFIG_NET_SOCKETPAIR_STATIC */
+
 /* forward declaration */
 static const struct socket_op_vtable spair_fd_op_vtable;
 
@@ -188,7 +193,9 @@ static void spair_delete(struct spair *spair)
 
 	/* ensure no private information is released to the memory pool */
 	memset(spair, 0, sizeof(*spair));
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_NET_SOCKETPAIR_STATIC
+	k_mem_slab_free(&spair_slab, (void **) &spair);
+#elif CONFIG_USERSPACE
 	k_object_free(spair);
 #else
 	k_free(spair);
@@ -213,7 +220,14 @@ static struct spair *spair_new(void)
 	struct spair *spair;
 	int res;
 
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_NET_SOCKETPAIR_STATIC
+
+	res = k_mem_slab_alloc(&spair_slab, (void **) &spair, K_NO_WAIT);
+	if (res != 0) {
+		spair = NULL;
+	}
+
+#elif CONFIG_USERSPACE
 	struct z_object *zo = z_dynamic_object_create(sizeof(*spair));
 
 	if (zo == NULL) {

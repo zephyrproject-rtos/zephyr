@@ -246,17 +246,37 @@ config NET_SOCKETS_CAN_RECEIVERS
 config NET_SOCKETPAIR
 	bool "Support for socketpair"
 	select PIPES
-	depends on HEAP_MEM_POOL_SIZE != 0
 	help
 	  Communicate over a pair of connected, unnamed UNIX domain sockets.
+
+if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
 	default 64
 	range 1 4096
-	depends on NET_SOCKETPAIR
 	help
 	  Buffer size for socketpair(2)
+
+choice
+	prompt "Memory management for socketpair"
+	default NET_SOCKETPAIR_HEAP if HEAP_MEM_POOL_SIZE != 0
+
+config NET_SOCKETPAIR_STATIC
+	bool "Pre-allocate memory statically"
+
+config NET_SOCKETPAIR_HEAP
+	bool "Use heap for allocating socketpairs"
+	depends on HEAP_MEM_POOL_SIZE != 0
+
+endchoice
+
+if NET_SOCKETPAIR_STATIC
+config NET_SOCKETPAIR_MAX
+	int "How many socketpairs to pre-allocate"
+	default 1
+endif
+endif
 
 config NET_SOCKETS_NET_MGMT
 	bool "Network management socket support [EXPERIMENTAL]"
