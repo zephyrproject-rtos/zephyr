@@ -61,6 +61,10 @@
 	clock-frequency = <39000000>;
 };
 
+&pstate_em3 {
+	status = "disabled";
+};
+
 &usart0 {
 	current-speed = <115200>;
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(9)>;
