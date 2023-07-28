@@ -1,0 +1,61 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LVGL_MODULE
+	bool
+
+config LVGL
+	bool "LVGL support"
+	help
+	  This option enables the LVGL graphics library.
+
+if LVGL
+
+config LV_USE_MONKEY
+	bool
+
+config LV_DPI_DEF
+	int
+
+config LV_CONF_SKIP
+	bool
+	default n
+
+config APP_LINK_WITH_LVGL
+	bool "Link 'app' with LVGL"
+	default y
+	help
+	  Add LVGL header files to the 'app' include path. It may be
+	  disabled if the include paths for LVGL are causing aliasing
+	  issues for 'app'.
+
+config LV_Z_USE_FILESYSTEM
+	bool "LVGL file system support"
+	depends on FILE_SYSTEM
+	default y if FILE_SYSTEM
+	help
+	  Enable LittlevGL file system
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+	prompt "Color depth (bits per pixel)"
+
+	config LV_COLOR_DEPTH_32
+		bool "32: ARGB8888"
+	config LV_COLOR_DEPTH_16
+		bool "16: RGB565"
+	config LV_COLOR_DEPTH_8
+		bool "8: RGB232"
+	config LV_COLOR_DEPTH_1
+		bool "1: monochrome"
+endchoice
+
+config LV_COLOR_16_SWAP
+	bool
+
+rsource "Kconfig.memory"
+rsource "Kconfig.input"
+rsource "Kconfig.shell"
+
+
+endif
