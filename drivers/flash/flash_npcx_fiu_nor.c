@@ -23,6 +23,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
 
+#define BLOCK_64K_SIZE KB(64)
+#define BLOCK_4K_SIZE  KB(4)
+
 /* Device config */
 struct flash_npcx_nor_config {
 	/* QSPI bus device for mutex control and bus configuration */
@@ -31,8 +34,6 @@ struct flash_npcx_nor_config {
 	uintptr_t mapped_addr;
 	/* Size of nor device in bytes, from size property */
 	uint32_t flash_size;
-	/* Minimum size for flash erase */
-	uint32_t min_erase_size;
 	/* Maximum chip erase time-out in ms */
 	uint32_t max_timeout;
 	/* SPI Nor device configuration on QSPI bus */
@@ -253,12 +254,12 @@ static int flash_npcx_nor_read(const struct device *dev, off_t addr,
 	return 0;
 }
 
-static int flash_npcx_nor_erase(const struct device *dev, off_t addr,
-				  size_t size)
+static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_npcx_nor_config *config = dev->config;
 	int ret = 0;
-	uint8_t opcode;
+	bool offset_4k_aligned = SPI_NOR_IS_SECTOR_ALIGNED(addr);
+	bool offset_64k_aligned = SPI_NOR_IS_64K_ALIGNED(addr);
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -267,13 +268,13 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr,
 	}
 
 	/* address must be sector-aligned */
-	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
+	if (!offset_4k_aligned) {
 		LOG_ERR("Addr %ld is not sector-aligned", addr);
 		return -EINVAL;
 	}
 
 	/* size must be a multiple of sectors */
-	if ((size % config->min_erase_size) != 0) {
+	if ((size % BLOCK_4K_SIZE) != 0) {
 		LOG_ERR("Size %d is not a multiple of sectors", size);
 		return -EINVAL;
 	}
@@ -284,20 +285,22 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr,
 		/* Send chip erase command */
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_CE);
 		return flash_npcx_nor_wait_until_ready(dev);
-	} else if (config->min_erase_size == KB(4)) {
-		opcode = SPI_NOR_CMD_SE;
-	} else if (config->min_erase_size == KB(64)) {
-		opcode = SPI_NOR_CMD_BE;
-	} else {
-		return -EINVAL;
 	}
 
 	while (size > 0) {
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 		/* Send page/block erase command with addr */
-		flash_npcx_uma_cmd_by_addr(dev, opcode, addr);
-		addr += config->min_erase_size;
-		size -= config->min_erase_size;
+		if ((size >= BLOCK_64K_SIZE) && offset_64k_aligned) {
+			flash_npcx_uma_cmd_by_addr(dev, SPI_NOR_CMD_BE, addr);
+			addr += BLOCK_64K_SIZE;
+			size -= BLOCK_64K_SIZE;
+		} else if ((size >= BLOCK_4K_SIZE) && offset_4k_aligned) {
+			flash_npcx_uma_cmd_by_addr(dev, SPI_NOR_CMD_SE, addr);
+			addr += BLOCK_4K_SIZE;
+			size -= BLOCK_4K_SIZE;
+		} else {
+			return -EINVAL;
+		}
 		ret = flash_npcx_nor_wait_until_ready(dev);
 		if (ret != 0) {
 			break;
@@ -600,7 +603,6 @@ static const struct flash_npcx_nor_config flash_npcx_nor_config_##n = {		\
 	.qspi_bus = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),			\
 	.mapped_addr = DT_INST_PROP(n, mapped_addr),				\
 	.flash_size = DT_INST_PROP(n, size) / 8,				\
-	.min_erase_size = DT_INST_PROP(n, min_erase_size),			\
 	.max_timeout = DT_INST_PROP(n, max_timeout),				\
 	.qspi_cfg = {								\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
