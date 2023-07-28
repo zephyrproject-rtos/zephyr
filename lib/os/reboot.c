@@ -17,15 +17,8 @@ FUNC_NORETURN void sys_reboot(int type)
 	(void)irq_lock();
 
 	/* Disable caches to ensure all data is flushed */
-#if defined(CONFIG_ARCH_CACHE)
-#if defined(CONFIG_DCACHE)
 	sys_cache_data_disable();
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
 	sys_cache_instr_disable();
-#endif /* CONFIG_ICACHE */
-#endif /* CONFIG_ARCH_CACHE */
 
 	if (IS_ENABLED(CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT)) {
 		sys_clock_disable();
