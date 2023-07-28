@@ -28,6 +28,10 @@ static int stm32f3_init(void)
 	/* At reset, system core clock is set to 8 MHz from HSI */
 	SystemCoreClock = 8000000;
 
+#ifdef CONFIG_STM32_PREFETCH_DISABLE
+	__HAL_FLASH_PREFETCH_BUFFER_DISABLE();
+#endif /* CONFIG_STM32_PREFETCH_DISABLE */
+
 	/* Allow reflashing the board */
 	LL_DBGMCU_EnableDBGSleepMode();
 

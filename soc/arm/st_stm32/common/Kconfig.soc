@@ -21,6 +21,12 @@ config USE_STM32_ASSERT
 	help
 	  Enable asserts in STM32Cube HAL and LL drivers.
 
+config STM32_PREFETCH_DISABLE
+	bool "disable the STM32Cube HAL flash prefetch"
+	default n
+	help
+	  Disable PREFETCH whatever the STM32Cube stm32XX_hal_conf.h
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
