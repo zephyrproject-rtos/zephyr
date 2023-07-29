@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
@@ -61,7 +62,7 @@ static void uart_sedi_cb(struct device *port);
 	static K_SEM_DEFINE(uart_##n##_sync_read_sem, 0, 1);	      \
 	static const struct uart_sedi_config_info config_info_##n = { \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),		      \
-		.instance = SEDI_UART_##n,			      \
+		.instance = DT_INST_PROP(n, peripheral_id),	      \
 		.baud_rate = DT_INST_PROP(n, current_speed),	      \
 		UART_CONFIG_FLOW_CTRL_SET(n),			      \
 		UART_CONFIG_LINE_CTRL_SET,			      \
