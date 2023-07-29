@@ -14,6 +14,7 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(sensor_shell);
 
@@ -286,8 +287,14 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 
 		scaled_value = llabs(scaled_value);
 		numerator = (int)FIELD_GET(GENMASK64(31 + shift, 31), scaled_value);
-		denominator =
-			(int)((FIELD_GET(GENMASK64(30, 0), scaled_value) * 1000000) / INT32_MAX);
+		denominator = (int)DIV_ROUND_CLOSEST(
+				FIELD_GET(GENMASK64(30, 0), scaled_value) * 1000000,
+				INT32_MAX);
+
+		if (denominator == 1000000) {
+			numerator++;
+			denominator = 0;
+		}
 
 		if (channel >= ARRAY_SIZE(sensor_channel_name)) {
 			shell_print(ctx->sh, "channel idx=%d value=%s%d.%06d", channel,
