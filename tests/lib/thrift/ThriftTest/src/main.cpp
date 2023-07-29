@@ -153,13 +153,13 @@ static void thrift_test_after(void *data)
 
 	pthread_join(context.server_thread, NULL);
 
-	context.server.reset();
-	context.client.reset();
-
 	for (auto &fd : context.fds) {
 		close(fd);
 		fd = -1;
 	}
+
+	context.client.reset();
+	context.server.reset();
 }
 
 ZTEST_SUITE(thrift, NULL, thrift_test_setup, thrift_test_before, thrift_test_after, NULL);
