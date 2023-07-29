@@ -2066,4 +2066,13 @@ ZTEST(net_socket_tcp, test_ioctl_fionread_v6)
 	test_ioctl_fionread_common(AF_INET6);
 }
 
-ZTEST_SUITE(net_socket_tcp, NULL, setup, NULL, NULL, NULL);
+static void after(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	for (int i = 0; i < CONFIG_POSIX_MAX_FDS; ++i) {
+		(void)zsock_close(i);
+	}
+}
+
+ZTEST_SUITE(net_socket_tcp, NULL, setup, NULL, after, NULL);
