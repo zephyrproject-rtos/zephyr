@@ -5,7 +5,7 @@ description: W5500 standalone 10/100BASE-T Ethernet controller with SPI interfac
 
 compatible: "wiznet,w5500"
 
-include: [spi-device.yaml, ethernet.yaml]
+include: [spi-device.yaml, ethernet-controller.yaml]
 
 properties:
   int-gpios:

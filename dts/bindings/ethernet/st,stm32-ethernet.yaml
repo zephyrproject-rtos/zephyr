@@ -5,7 +5,7 @@ description: ST STM32 Ethernet
 
 compatible: "st,stm32-ethernet"
 
-include: [ethernet.yaml, pinctrl-device.yaml]
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
