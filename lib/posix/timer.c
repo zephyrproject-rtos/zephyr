@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/posix/signal.h>
 #include <zephyr/posix/time.h>
 
 #define ACTIVE 1
@@ -16,8 +17,8 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
 struct timer_obj {
 	struct k_timer ztimer;
-	void (*sigev_notify_function)(sigval val);
-	sigval val;
+	void (*sigev_notify_function)(union sigval val);
+	union sigval val;
 	struct timespec interval;	/* Reload value */
 	uint32_t reload;			/* Reload value in ms */
 	uint32_t status;
