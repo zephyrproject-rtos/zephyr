@@ -77,7 +77,8 @@ int sigismember(const sigset_t *set, int signo)
 
 char *strsignal(int signum)
 {
-	static char buf[sizeof("RT signal " STRINGIFY(SIGRTMAX))];
+	/* Using -INT_MAX here because compiler resolves INT_MIN to (-2147483647 - 1) */
+	static char buf[sizeof("RT signal -" STRINGIFY(INT_MAX))];
 
 	if (!signo_valid(signum)) {
 		errno = EINVAL;
