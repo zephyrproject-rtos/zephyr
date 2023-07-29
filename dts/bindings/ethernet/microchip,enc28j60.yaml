@@ -5,7 +5,7 @@ description: ENC28J60 standalone 10BASE-T Ethernet controller with SPI interface
 
 compatible: "microchip,enc28j60"
 
-include: [spi-device.yaml, ethernet.yaml]
+include: [spi-device.yaml, ethernet-controller.yaml]
 
 properties:
   int-gpios:
