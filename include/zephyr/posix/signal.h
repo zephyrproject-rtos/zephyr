@@ -24,20 +24,20 @@ extern "C" {
 #define SIGEV_THREAD 3
 #endif
 
-typedef union sigval {
+typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
+
+union sigval {
 	int sival_int;
 	void *sival_ptr;
-} sigval;
+};
 
-typedef struct sigevent {
+struct sigevent {
 	int sigev_notify;
 	int sigev_signo;
-	sigval sigev_value;
-	void (*sigev_notify_function)(sigval val);
-	#ifdef CONFIG_PTHREAD_IPC
+	union sigval sigev_value;
+	void (*sigev_notify_function)(union sigval val);
 	pthread_attr_t *sigev_notify_attributes;
-	#endif
-} sigevent;
+};
 
 #ifdef __cplusplus
 }
