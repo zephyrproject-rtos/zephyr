@@ -17,14 +17,6 @@ static void uart_sedi_cb(struct device *port);
 
 #define DT_DRV_COMPAT intel_sedi_uart
 
-/* Helper macro to set flow control. */
-#define UART_CONFIG_FLOW_CTRL_SET(n) \
-	.hw_fc = DT_INST_PROP(n, hw_flow_control)
-
-/* Helper macro to set line control. */
-#define UART_CONFIG_LINE_CTRL_SET \
-	.line_ctrl = SEDI_UART_LC_8N1
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 /*  UART IRQ handler declaration.  */
 #define  UART_IRQ_HANDLER_DECL(n) \
@@ -64,12 +56,9 @@ static void uart_sedi_cb(struct device *port);
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),		      \
 		.instance = DT_INST_PROP(n, peripheral_id),	      \
 		.baud_rate = DT_INST_PROP(n, current_speed),	      \
-		UART_CONFIG_FLOW_CTRL_SET(n),			      \
-		UART_CONFIG_LINE_CTRL_SET,			      \
+		.hw_fc = DT_INST_PROP(n, hw_flow_control),	      \
+		.line_ctrl = SEDI_UART_LC_8N1,			      \
 		.mutex = &uart_##n##_mutex,			      \
-		.tx_sem = &uart_##n##_tx_sem,			      \
-		.rx_sem = &uart_##n##_rx_sem,			      \
-		.sync_read_sem = &uart_##n##_sync_read_sem,	      \
 		UART_CONFIG_IRQ_HANDLER_SET(n)			      \
 	};							      \
 								      \
@@ -91,22 +80,6 @@ static void uart_sedi_cb(struct device *port);
 	(((const struct uart_sedi_config_info *) \
 	  dev->config)->instance)
 
-/* Convenient macro to get tx semamphore */
-#define GET_TX_SEM(dev)				 \
-	(((const struct uart_sedi_config_info *) \
-	  dev->config)->tx_sem)
-
-
-/* Convenient macro to get rx sempahore */
-#define GET_RX_SEM(dev)				 \
-	(((const struct uart_sedi_config_info *) \
-	  dev->config)->rx_sem)
-
-/* Convenient macro to get sync_read sempahore */
-#define GET_SYNC_READ_SEM(dev)			 \
-	(((const struct uart_sedi_config_info *) \
-	  dev->config)->sync_read_sem)
-
 #define GET_MUTEX(dev)				 \
 	(((const struct uart_sedi_config_info *) \
 	  dev->config)->mutex)
@@ -123,11 +96,8 @@ struct uart_sedi_config_info {
 	sedi_uart_lc_t line_ctrl;
 
 	struct k_mutex *mutex;
-	struct k_sem *tx_sem;
-	struct k_sem *rx_sem;
-	struct k_sem *sync_read_sem;
-	/* Enable / disable hardware flow control for UART. */
 
+	/* Enable / disable hardware flow control for UART. */
 	bool hw_fc;
 
 	/* UART irq configuration function when supporting interrupt
