@@ -1286,4 +1286,13 @@ ZTEST(net_socket_udp, test_23_v6_dgram_overflow)
 			    BUF_AND_SIZE(test_str_all_tx_bufs));
 }
 
-ZTEST_SUITE(net_socket_udp, NULL, NULL, NULL, NULL, NULL);
+static void after(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	for (int i = 0; i < CONFIG_POSIX_MAX_FDS; ++i) {
+		(void)zsock_close(i);
+	}
+}
+
+ZTEST_SUITE(net_socket_udp, NULL, NULL, NULL, after, NULL);
