@@ -196,7 +196,8 @@ ZTEST(posix_apis, test_signal_ismember)
 
 ZTEST(posix_apis, test_signal_strsignal)
 {
-	char buf[sizeof("RT signal " STRINGIFY(SIGRTMAX))] = {0};
+	/* Using -INT_MAX here because compiler resolves INT_MIN to (-2147483647 - 1) */
+	char buf[sizeof("RT signal -" STRINGIFY(INT_MAX))] = {0};
 
 	zassert_mem_equal(strsignal(-1), "Invalid signal", sizeof("Invalid signal"));
 	zassert_mem_equal(strsignal(0), "Invalid signal", sizeof("Invalid signal"));
