@@ -27,4 +27,3 @@ tests:
       - CONFIG_EMUL=y
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
       - CONFIG_SENSOR_ASYNC_API=y
-    build_only: false
