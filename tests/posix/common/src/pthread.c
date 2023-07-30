@@ -812,3 +812,24 @@ ZTEST(posix_apis, test_pthread_dynamic_stacks)
 	zassert_ok(pthread_join(th, NULL));
 	zassert_equal(0xB105F00D, x);
 }
+
+static void *non_null_retval(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return (void *)0x42427373;
+}
+
+ZTEST(posix_apis, test_pthread_return_val)
+{
+	pthread_t pth;
+	void *ret = NULL;
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
+
+	zassert_ok(pthread_create(&pth, &attr, non_null_retval, NULL));
+	zassert_ok(pthread_join(pth, &ret));
+	zassert_equal(ret, (void *)0x42427373);
+}
