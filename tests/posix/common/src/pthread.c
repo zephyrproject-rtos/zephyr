@@ -793,9 +793,12 @@ ZTEST(posix_apis, test_pthread_equal)
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
 }
 
+/* A 32-bit value to use between threads for validation */
+#define BIOS_FOOD 0xB105F00D
+
 static void *fun(void *arg)
 {
-	*((uint32_t *)arg) = 0xB105F00D;
+	*((uint32_t *)arg) = BIOS_FOOD;
 	return NULL;
 }
 
@@ -810,7 +813,28 @@ ZTEST(posix_apis, test_pthread_dynamic_stacks)
 
 	zassert_ok(pthread_create(&th, NULL, fun, &x));
 	zassert_ok(pthread_join(th, NULL));
-	zassert_equal(0xB105F00D, x);
+	zassert_equal(BIOS_FOOD, x);
+}
+
+static void *non_null_retval(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return (void *)BIOS_FOOD;
+}
+
+ZTEST(posix_apis, test_pthread_return_val)
+{
+	pthread_t pth;
+	void *ret = NULL;
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
+
+	zassert_ok(pthread_create(&pth, &attr, non_null_retval, NULL));
+	zassert_ok(pthread_join(pth, &ret));
+	zassert_equal(ret, (void *)BIOS_FOOD);
 }
 
 static void *detached(void *arg)
@@ -831,7 +855,7 @@ ZTEST(posix_apis, test_pthread_join_detached)
 	zassert_ok(pthread_create(&pth, &attr, detached, NULL));
 	zassert_ok(pthread_detach(pth));
 	/* note, this was required to be EINVAL previously but is now undefined behaviour */
-	zassert_equal(EINVAL, pthread_join(pth, NULL));
+	zassert_not_equal(0, pthread_join(pth, NULL));
 
 	/* need to allow this thread to be clean-up by the recycler */
 	k_msleep(500);
