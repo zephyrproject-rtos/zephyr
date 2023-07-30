@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define MAX_TIMEOUT_SECS (10 * 60UL)
+#define MAX_TIMEOUT_MSECS (1 * 1000UL)
 
 struct private_data {
 	struct k_sem semaphore;
@@ -98,10 +98,10 @@ static int cmd_open(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sip_svc_controller *ctrl;
 	uint32_t c_token;
-	unsigned long seconds = 0;
+	unsigned long mseconds = 0;
 	int err;
 	char *endptr;
-	k_timeout_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_MSEC(MAX_TIMEOUT_MSECS);
 
 	err = parse_common_args(sh, argv, (void **)&ctrl);
 	if (err < 0) {
@@ -120,18 +120,19 @@ static int cmd_open(const struct shell *sh, size_t argc, char **argv)
 
 	if (argc > 3) {
 		errno = 0;
-		seconds = strtoul(argv[3], &endptr, 10);
+		mseconds = strtoul(argv[3], &endptr, 10);
 		if (errno == ERANGE) {
 			shell_error(sh, "Out of range value");
 			return -ERANGE;
 		} else if (errno || endptr == argv[3] || *endptr) {
 			shell_error(sh, "Invalid Argument");
 			return -EINVAL;
-		} else if (seconds <= MAX_TIMEOUT_SECS) {
-			timeout = K_SECONDS(seconds);
+		} else if (mseconds <= MAX_TIMEOUT_MSECS) {
+			timeout = K_MSEC(mseconds);
 		} else {
-			timeout = K_SECONDS(MAX_TIMEOUT_SECS);
-			shell_error(sh, "Setting timeout value to %lu", MAX_TIMEOUT_SECS);
+			timeout = K_MSEC(MAX_TIMEOUT_MSECS);
+			shell_error(sh, "Setting timeout value to %lu milliseconds",
+				    MAX_TIMEOUT_MSECS);
 		}
 	}
 
@@ -376,7 +377,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_sip_svc, SHELL_CMD_ARG(reg, NULL, "<method>", cmd_reg, 2, 0),
 	SHELL_CMD_ARG(unreg, NULL, "<method> <token>", cmd_unreg, 3, 0),
-	SHELL_CMD_ARG(open, NULL, "<method> <token> <[timeout_sec]>", cmd_open, 3, 1),
+	SHELL_CMD_ARG(open, NULL, "<method> <token> <[timeout_msec]>", cmd_open, 3, 1),
 	SHELL_CMD_ARG(close, NULL, "<method> <token>", cmd_close, 3, 0),
 	SHELL_CMD_ARG(send, NULL, "<method> <token> <a0> [<a1> <a2> ... <a7>]", cmd_send, 4, 7),
 	SHELL_CMD_ARG(info, NULL, "<method>", cmd_info, 2, 0), SHELL_SUBCMD_SET_END);
