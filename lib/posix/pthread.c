@@ -656,6 +656,12 @@ int pthread_join(pthread_t pthread, void **status)
 		err = k_thread_join(&t->thread, K_FOREVER);
 		/* other possibilities? */
 		__ASSERT_NO_MSG(err == 0);
+
+		if (status != NULL) {
+			*status = t->retval;
+		}
+
+		posix_thread_recycle();
 	}
 
 	return 0;
