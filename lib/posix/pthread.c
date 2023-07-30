@@ -658,7 +658,7 @@ int pthread_join(pthread_t pthread, void **status)
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
