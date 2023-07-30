@@ -623,7 +623,6 @@ int pthread_join(pthread_t pthread, void **status)
 {
 	int err;
 	int ret;
-	k_spinlock_key_t key;
 	struct posix_thread *t;
 
 	if (pthread == pthread_self()) {
@@ -636,29 +635,41 @@ int pthread_join(pthread_t pthread, void **status)
 	}
 
 	ret = 0;
-	key = k_spin_lock(&pthread_pool_lock);
-	if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
-		ret = EINVAL;
-	} else if (t->qid == POSIX_THREAD_READY_Q) {
-		/* marginal chance thread has moved to ready_q between to_posix_thread() and here */
-		ret = ESRCH;
-	} else {
+	K_SPINLOCK(&pthread_pool_lock)
+	{
+		if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
+			ret = EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+
+		if (t->qid == POSIX_THREAD_READY_Q) {
+			/* in case thread has moved to ready_q between to_posix_thread() and here */
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
 		/*
 		 * thread is joinable and is in run_q or done_q.
 		 * let's ensure that the thread cannot be joined again after this point.
 		 */
 		t->detachstate = PTHREAD_CREATE_DETACHED;
-		ret = 0;
-	}
-	k_spin_unlock(&pthread_pool_lock, key);
-
-	if (ret == 0) {
-		err = k_thread_join(&t->thread, K_FOREVER);
-		/* other possibilities? */
-		__ASSERT_NO_MSG(err == 0);
 	}
 
-	return ret;
+	if (ret != 0) {
+		return ret;
+	}
+
+	err = k_thread_join(&t->thread, K_FOREVER);
+	/* other possibilities? */
+	__ASSERT_NO_MSG(err == 0);
+
+	if (status != NULL) {
+		*status = t->retval;
+	}
+
+	posix_thread_recycle();
+
+	return 0;
 }
 
 /**
