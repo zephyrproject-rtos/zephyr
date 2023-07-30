@@ -664,7 +664,7 @@ int pthread_join(pthread_t pthread, void **status)
 		posix_thread_recycle();
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
