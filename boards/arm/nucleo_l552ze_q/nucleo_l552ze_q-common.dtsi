@@ -12,7 +12,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		blue_led_1: led_2 {
