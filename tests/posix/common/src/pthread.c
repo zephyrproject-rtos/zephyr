@@ -812,3 +812,27 @@ ZTEST(posix_apis, test_pthread_dynamic_stacks)
 	zassert_ok(pthread_join(th, NULL));
 	zassert_equal(0xB105F00D, x);
 }
+
+static void *detached(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return NULL;
+}
+
+ZTEST(posix_apis, test_pthread_join_detached)
+{
+	pthread_t pth;
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
+
+	zassert_ok(pthread_create(&pth, &attr, detached, NULL));
+	zassert_ok(pthread_detach(pth));
+	/* note, this was required to be EINVAL previously but is now undefined behaviour */
+	zassert_equal(EINVAL, pthread_join(pth, NULL));
+
+	/* need to allow this thread to be clean-up by the recycler */
+	k_msleep(500);
+}
