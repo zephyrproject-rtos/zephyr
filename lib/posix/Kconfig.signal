@@ -8,13 +8,14 @@ config POSIX_SIGNAL
 	help
 	  Enable support for POSIX signal APIs.
 
-if POSIX_SIGNAL
 config POSIX_RTSIG_MAX
 	int "Maximum number of realtime signals"
 	default 31
 	help
 	  Define the maximum number of realtime signals (RTSIG_MAX).
 	  The range of realtime signals is [SIGRTMIN .. (SIGRTMIN+RTSIG_MAX)]
+
+if POSIX_SIGNAL
 
 config POSIX_SIGNAL_STRING_DESC
 	bool "Use full description for the strsignal API"

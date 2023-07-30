@@ -8,11 +8,10 @@
 
 #include "posix_types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define SIG_DFL ((sighandler_t)0)
+#define SIG_ERR ((sighandler_t)1)
+#define SIG_IGN ((sighandler_t)-1)
 
-#ifdef CONFIG_POSIX_SIGNAL
 #define SIGHUP    1  /**< Hangup */
 #define SIGINT    2  /**< Interrupt */
 #define SIGQUIT   3  /**< Quit */
@@ -51,6 +50,10 @@ extern "C" {
 
 BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
@@ -61,7 +64,6 @@ int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signo);
 int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
-#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
@@ -91,6 +93,9 @@ typedef struct sigevent {
 	pthread_attr_t *sigev_notify_attributes;
 	#endif
 } sigevent;
+
+typedef void (*sighandler_t)(int signo);
+sighandler_t signal(int signum, sighandler_t handler);
 
 #ifdef __cplusplus
 }

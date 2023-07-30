@@ -7,6 +7,10 @@ type = timer_t
 type-function = timer_create
 source "lib/posix/Kconfig.template.pooled_type"
 
+config POSIX_TIMER
+	bool
+	imply POSIX_SIGNAL
+
 config TIMER_CREATE_WAIT
 	int "Time to wait for timer availability (in msec) in POSIX application"
 	default 100
