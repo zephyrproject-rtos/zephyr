@@ -15,7 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define MAX_TIMEOUT_SECS (10 * 60UL)
+#define MAX_TIMEOUT_MSECS (1 * 1000UL)
 
 struct private_data {
 	struct k_sem semaphore;
@@ -76,10 +76,10 @@ static int cmd_unreg(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_open(const struct shell *sh, size_t argc, char **argv)
 {
-	unsigned long seconds = 0;
+	unsigned long mseconds = 0;
 	int err;
 	char *endptr;
-	k_timeout_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_MSEC(MAX_TIMEOUT_MSECS);
 
 	if (!mb_smc_ctrl) {
 		shell_print(sh, "Mailbox client is not registered");
@@ -88,18 +88,18 @@ static int cmd_open(const struct shell *sh, size_t argc, char **argv)
 
 	if (argc > 1) {
 		errno = 0;
-		seconds = strtoul(argv[1], &endptr, 10);
+		mseconds = strtoul(argv[1], &endptr, 10);
 		if (errno == ERANGE) {
 			shell_error(sh, "out of range value");
 			return -ERANGE;
 		} else if (errno || endptr == argv[1] || *endptr) {
 			return -errno;
-		} else if (seconds <= MAX_TIMEOUT_SECS) {
-			timeout = K_SECONDS(seconds);
+		} else if (mseconds <= MAX_TIMEOUT_MSECS) {
+			timeout = K_MSEC(mseconds);
 		} else {
-			timeout = K_SECONDS(MAX_TIMEOUT_SECS);
-			shell_error(sh, "Setting timeout value to %lu seconds",
-					MAX_TIMEOUT_SECS);
+			timeout = K_MSEC(MAX_TIMEOUT_MSECS);
+			shell_error(sh, "Setting timeout value to %lu milliseconds",
+				    MAX_TIMEOUT_MSECS);
 		}
 	}
 
@@ -281,11 +281,11 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		} else if (errno || endptr == argv[2] || *endptr) {
 			shell_error(sh, "Invalid argument");
 			return -EINVAL;
-		} else if (msecond <= (MSEC_PER_SEC * MAX_TIMEOUT_SECS)) {
+		} else if (msecond <= (MSEC_PER_SEC * MAX_TIMEOUT_MSECS)) {
 			timeout = K_MSEC(msecond);
 		} else {
-			timeout = K_SECONDS(MAX_TIMEOUT_SECS);
-			shell_error(sh, "Setting timeout value to %lu seconds", MAX_TIMEOUT_SECS);
+			timeout = K_SECONDS(MAX_TIMEOUT_MSECS);
+			shell_error(sh, "Setting timeout value to %lu seconds", MAX_TIMEOUT_MSECS);
 		}
 	}
 
@@ -337,7 +337,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_mailbox, SHELL_CMD_ARG(reg, NULL, "<service>", cmd_reg, 2, 0),
 	SHELL_CMD_ARG(unreg, NULL, NULL, cmd_unreg, 1, 0),
-	SHELL_CMD_ARG(open, NULL, "[<timeout_sec>]", cmd_open, 1, 1),
+	SHELL_CMD_ARG(open, NULL, "[<timeout_msec>]", cmd_open, 1, 1),
 	SHELL_CMD_ARG(close, NULL, NULL, cmd_close, 1, 0),
 	SHELL_CMD_ARG(send, NULL,
 		      "<hex list, example (SYNC): \"2001 11223344 aabbccdd\"> [<timeout_msec>]",
