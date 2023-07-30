@@ -129,8 +129,7 @@ static inline bool is_sip_svc_controller(void *ct)
 		return false;
 	}
 
-	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl)
-	{
+	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl) {
 		if ((void *)ctrl == ct) {
 			return true;
 		}
@@ -320,10 +319,8 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 		 * Acquire open lock, when only one client can transact at
 		 * a time.
 		 */
-		ret = k_mutex_lock(&ctrl->open_mutex, K_NO_WAIT);
-		if (ret != 0) {
-			LOG_DBG("0x%x didn't get open lock, wait for it to be released, %d",
-				c_token, ret);
+		if (!atomic_cas(&ctrl->open_lock, SIP_SVC_OPEN_UNLOCKED, SIP_SVC_OPEN_LOCKED)) {
+			LOG_DBG("0x%x didn't get open lock, wait for it to be released", c_token);
 			k_mutex_unlock(&ctrl->data_mutex);
 			continue;
 		}
@@ -337,6 +334,7 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 		return 0;
 	}
 
+	k_timer_stop(&timer);
 	LOG_ERR("Timedout at %s for 0x%x", __func__, c_token);
 	return -ETIMEDOUT;
 }
@@ -386,7 +384,7 @@ int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_
 	}
 
 #if CONFIG_ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
-	k_mutex_unlock(&ctrl->open_mutex);
+	(void)atomic_set(&ctrl->open_lock, SIP_SVC_OPEN_UNLOCKED);
 #endif
 	k_mutex_unlock(&ctrl->data_mutex);
 
@@ -802,8 +800,7 @@ void *sip_svc_get_controller(char *method)
 	/**
 	 * For more info on below code check @ref SIP_SVC_CONTROLLER_DEFINE()
 	 */
-	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl)
-	{
+	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl) {
 		if (!strncmp(ctrl->method, method, SIP_SVC_SUBSYS_CONDUIT_NAME_LENGTH)) {
 			return (void *)ctrl;
 		}
@@ -831,8 +828,7 @@ static int sip_svc_subsys_init(void)
 	 * SIP_SVC_CONTROLLER_DEFINE(),see @ref SIP_SVC_CONTROLLER_DEFINE() for more
 	 * info.
 	 */
-	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl)
-	{
+	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl) {
 		if (!device_is_ready(ctrl->dev)) {
 			LOG_ERR("device not ready");
 			return -ENODEV;
@@ -926,10 +922,11 @@ static int sip_svc_subsys_init(void)
 		ctrl->active_job_cnt = 0;
 		ctrl->active_async_job_cnt = 0;
 
-		/* Initialize mutex */
+		/* Initialize atomic variable */
 #if CONFIG_ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
-		k_mutex_init(&ctrl->open_mutex);
+		(void)atomic_set(&ctrl->open_lock, SIP_SVC_OPEN_UNLOCKED);
 #endif
+		/* Initialize mutex */
 		k_mutex_init(&ctrl->data_mutex);
 
 		ctrl->init = true;
