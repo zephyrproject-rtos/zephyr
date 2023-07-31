@@ -111,7 +111,7 @@ void mgmt_callback_unregister(struct mgmt_callback *callback)
 }
 
 enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data_size,
-					 int32_t *ret_rc, uint16_t *ret_group)
+					 int32_t *err_rc, uint16_t *err_group)
 {
 	sys_snode_t *snp, *sns;
 	bool failed = false;
@@ -119,8 +119,8 @@ enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data
 	uint16_t group = MGMT_EVT_GET_GROUP(event);
 	enum mgmt_cb_return return_status = MGMT_CB_OK;
 
-	*ret_rc = MGMT_ERR_EOK;
-	*ret_group = 0;
+	*err_rc = MGMT_ERR_EOK;
+	*err_group = 0;
 
 	/*
 	 * Search through the linked list for entries that have registered for this event and
@@ -139,24 +139,24 @@ enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data
 		    (MGMT_EVT_GET_GROUP(loop_group->event_id) == group &&
 		     (MGMT_EVT_GET_ID(event) & MGMT_EVT_GET_ID(loop_group->event_id)) ==
 		     MGMT_EVT_GET_ID(event))) {
-			int32_t cached_rc = *ret_rc;
-			uint16_t cached_group = *ret_group;
+			int32_t cached_rc = *err_rc;
+			uint16_t cached_group = *err_group;
 			enum mgmt_cb_return status;
 
 			status = loop_group->callback(event, return_status, &cached_rc,
 						      &cached_group, &abort_more, data,
 						      data_size);
 
-			__ASSERT((status <= MGMT_CB_ERROR_RET),
+			__ASSERT((status <= MGMT_CB_ERROR_ERR),
 				 "Invalid status returned by MCUmgr handler: %d", status);
 
 			if (status != MGMT_CB_OK && failed == false) {
 				failed = true;
 				return_status = status;
-				*ret_rc = cached_rc;
+				*err_rc = cached_rc;
 
-				if (status == MGMT_CB_ERROR_RET) {
-					*ret_group = cached_group;
+				if (status == MGMT_CB_ERROR_ERR) {
+					*err_group = cached_group;
 				}
 			}
 
