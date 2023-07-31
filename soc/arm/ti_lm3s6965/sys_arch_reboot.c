@@ -43,4 +43,8 @@ void sys_arch_reboot(int type)
 			"bx r0\n\t"
 			:::);
 	}
+
+	for (;;) {
+		/* wait for reboot */
+	}
 }
