@@ -36,3 +36,27 @@ properties:
     description: |
       Maximum number of bits available in the EasyDMA MAXCNT register. This
       property must be set at SoC level DTS files.
+
+  wake-gpios:
+    type: phandle-array
+    description: |
+      Optional bi-directional line that allows SPI master to indicate to SPI
+      slave (by setting the line high) that a transfer is to occur, so that
+      the latter can prepare (and indicate its readiness) for handling that
+      transfer when it is actually needed, and stay in any desired low-power
+      state otherwise.
+      The protocol is as follows:
+      - initially, SPI slave configures its WAKE line pin as an input and SPI
+        master keeps the line in the low state
+      - when a transfer is to be performed, SPI master configures its WAKE
+        line pin as an input with pull-up; this changes the line state to
+        high but allows SPI slave to override that state
+      - when SPI slave detects the high state of the WAKE line, it prepares
+        for the transfer and when everything is ready, it drives the WAKE
+        line low by configuring its pin as an output
+      - the generated high-to-low transition on the WAKE line is a signal
+        to SPI master that it can proceed with the transfer
+      - SPI slave releases the line by configuring its pin back to be an input
+        and SPI master again keeps the line in the low state
+      Please note that the line must be configured and properly handled on
+      both sides for the mechanism to work correctly.

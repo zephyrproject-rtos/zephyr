@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(spi_nrfx_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
+#include "spi_nrfx_common.h"
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
@@ -29,6 +30,7 @@ struct spi_nrfx_config {
 	nrfx_spi_config_t def_config;
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
+	uint32_t wake_pin;
 };
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context);
@@ -231,6 +233,18 @@ static int transceive(const struct device *dev,
 	if (error == 0) {
 		dev_data->busy = true;
 
+		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
+			error = spi_nrfx_wake_request(dev_config->wake_pin);
+			if (error == -ETIMEDOUT) {
+				LOG_WRN("Waiting for WAKE acknowledgment timed out");
+				/* If timeout occurs, try to perform the transfer
+				 * anyway, just in case the slave device was unable
+				 * to signal that it was already awaken and prepared
+				 * for the transfer.
+				 */
+			}
+		}
+
 		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
 		spi_context_cs_control(&dev_data->ctx, true);
 
@@ -363,6 +377,18 @@ static int spi_nrfx_init(const struct device *dev)
 		return err;
 	}
 
+	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
+		err = spi_nrfx_wake_init(dev_config->wake_pin);
+		if (err == -ENODEV) {
+			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
+			return err;
+		}
+		if (err == -EIO) {
+			LOG_ERR("Failed to configure WAKE pin");
+			return err;
+		}
+	}
+
 	dev_config->irq_connect();
 
 	err = spi_context_cs_configure_all(&dev_data->ctx);
@@ -413,7 +439,12 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),		       \
+		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPI(idx), wake_gpios,      \
+						    WAKE_PIN_NOT_USED),	       \
 	};								       \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPI(idx), wake_gpios) ||		       \
+		     !(DT_GPIO_FLAGS(SPI(idx), wake_gpios) & GPIO_ACTIVE_LOW), \
+		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_nrfx_init,					       \
