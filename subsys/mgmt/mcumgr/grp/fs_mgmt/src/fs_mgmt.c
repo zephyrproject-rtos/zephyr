@@ -280,9 +280,9 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 		rc = fs_open(&fs_mgmt_ctxt.file, path, FS_O_READ);
 
 		if (rc != 0) {
-			if (rc == EINVAL) {
+			if (rc == -EINVAL) {
 				rc = FS_MGMT_RET_RC_FILE_INVALID_NAME;
-			} else if (ENOENT) {
+			} else if (rc == -ENOENT) {
 				rc = FS_MGMT_RET_RC_FILE_NOT_FOUND;
 			} else {
 				rc = FS_MGMT_RET_RC_UNKNOWN;
@@ -422,9 +422,9 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 		rc = fs_open(&fs_mgmt_ctxt.file, file_name, FS_O_CREATE | FS_O_WRITE);
 
 		if (rc != 0) {
-			if (rc == EINVAL) {
+			if (rc == -EINVAL) {
 				rc = FS_MGMT_RET_RC_FILE_INVALID_NAME;
-			} else if (ENOENT) {
+			} else if (rc == -ENOENT) {
 				rc = FS_MGMT_RET_RC_FILE_NOT_FOUND;
 			} else {
 				rc = FS_MGMT_RET_RC_UNKNOWN;
@@ -741,9 +741,9 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	rc = fs_open(&file, path, FS_O_READ);
 
 	if (rc != 0) {
-		if (rc == EINVAL) {
+		if (rc == -EINVAL) {
 			rc = FS_MGMT_RET_RC_FILE_INVALID_NAME;
-		} else if (ENOENT) {
+		} else if (rc == -ENOENT) {
 			rc = FS_MGMT_RET_RC_FILE_NOT_FOUND;
 		} else {
 			rc = FS_MGMT_RET_RC_UNKNOWN;
