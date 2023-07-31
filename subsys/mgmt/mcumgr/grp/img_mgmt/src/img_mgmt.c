@@ -775,18 +775,18 @@ static int img_mgmt_translate_error_code(uint16_t ret)
 	switch (ret) {
 	case IMG_MGMT_RET_RC_NO_IMAGE:
 	case IMG_MGMT_RET_RC_NO_TLVS:
-	rc = MGMT_ERR_ENOENT;
-	break;
+		rc = MGMT_ERR_ENOENT;
+		break;
 
 	case IMG_MGMT_RET_RC_NO_FREE_SLOT:
 	case IMG_MGMT_RET_RC_CURRENT_VERSION_IS_NEWER:
 	case IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING:
-	rc = MGMT_ERR_EBADSTATE;
-	break;
+		rc = MGMT_ERR_EBADSTATE;
+		break;
 
 	case IMG_MGMT_RET_RC_NO_FREE_MEMORY:
-	rc = MGMT_ERR_ENOMEM;
-	break;
+		rc = MGMT_ERR_ENOMEM;
+		break;
 
 	case IMG_MGMT_RET_RC_INVALID_SLOT:
 	case IMG_MGMT_RET_RC_INVALID_PAGE_OFFSET:
@@ -795,8 +795,8 @@ static int img_mgmt_translate_error_code(uint16_t ret)
 	case IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER:
 	case IMG_MGMT_RET_RC_INVALID_HASH:
 	case IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS:
-	rc = MGMT_ERR_EINVAL;
-	break;
+		rc = MGMT_ERR_EINVAL;
+		break;
 
 	case IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL:
 	case IMG_MGMT_RET_RC_VERSION_GET_FAILED:
@@ -816,8 +816,8 @@ static int img_mgmt_translate_error_code(uint16_t ret)
 	case IMG_MGMT_RET_RC_INVALID_IMAGE_TOO_LARGE:
 	case IMG_MGMT_RET_RC_INVALID_IMAGE_DATA_OVERRUN:
 	case IMG_MGMT_RET_RC_UNKNOWN:
-	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		default:
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;

@@ -688,12 +688,12 @@ static int os_mgmt_translate_error_code(uint16_t ret)
 
 	switch (ret) {
 	case OS_MGMT_RET_RC_INVALID_FORMAT:
-	rc = MGMT_ERR_EINVAL;
-	break;
+		rc = MGMT_ERR_EINVAL;
+		break;
 
 	case OS_MGMT_RET_RC_UNKNOWN:
 	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;
