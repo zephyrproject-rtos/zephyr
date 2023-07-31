@@ -56,7 +56,7 @@ static int example_mgmt_test(struct smp_streamer *ctxt)
 
 	/* If the value of "uint_key" is over 50, return an error of "not wanted" */
 	if (uint_value > 50) {
-		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_EXAMPLE, EXAMPLE_MGMT_RET_RC_NOT_WANTED);
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_EXAMPLE, EXAMPLE_MGMT_ERR_NOT_WANTED);
 		goto end;
 	}
 
@@ -86,8 +86,8 @@ static int example_mgmt_other(struct smp_streamer *ctxt)
 #if defined(CONFIG_MCUMGR_GRP_EXAMPLE_OTHER_HOOK)
 	struct example_mgmt_other_data other_data;
 	enum mgmt_cb_return status;
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	LOG_DBG("Example other function called");
@@ -106,17 +106,17 @@ static int example_mgmt_other(struct smp_streamer *ctxt)
 	/* Send request to application to check what to do */
 	other_data.user_value = user_value;
 	status = mgmt_callback_notify(MGMT_EVT_OP_EXAMPLE_OTHER, &other_data, sizeof(other_data),
-				      &ret_rc, &ret_group);
+				      &err_rc, &err_group);
 	if (status != MGMT_CB_OK) {
 		/* If a callback returned an RC error, exit out, if it returned a group error
 		 * code, add the error code to the response and return to the calling function to
 		 * have it sent back to the client
 		 */
 		if (status == MGMT_CB_ERROR_RC) {
-			return ret_rc;
+			return err_rc;
 		}
 
-		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 		goto end;
 	}
 #endif
@@ -140,22 +140,22 @@ end:
  * only for general SMP/MCUmgr errors. The success/OK error code is not used in translation
  * functions as it is automatically handled by the base SMP code.
  */
-static int example_mgmt_translate_error_code(uint16_t ret)
+static int example_mgmt_translate_error_code(uint16_t err)
 {
 	int rc;
 
-	switch (ret) {
-	case EXAMPLE_MGMT_RET_RC_NOT_WANTED:
-	rc = MGMT_ERR_ENOENT;
-	break;
+	switch (err) {
+	case EXAMPLE_MGMT_ERR_NOT_WANTED:
+		rc = MGMT_ERR_ENOENT;
+		break;
 
-	case EXAMPLE_MGMT_RET_RC_REJECTED_BY_HOOK:
-	rc = MGMT_ERR_EBADSTATE;
-	break;
+	case EXAMPLE_MGMT_ERR_REJECTED_BY_HOOK:
+		rc = MGMT_ERR_EBADSTATE;
+		break;
 
-	case EXAMPLE_MGMT_RET_RC_UNKNOWN:
+	case EXAMPLE_MGMT_ERR_UNKNOWN:
 	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;

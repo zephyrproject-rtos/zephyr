@@ -80,7 +80,7 @@ stat_mgmt_walk_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t o
 		entry.value = *(uint64_t *) stat_val;
 		break;
 	default:
-		return STAT_MGMT_RET_RC_INVALID_STAT_SIZE;
+		return STAT_MGMT_ERR_INVALID_STAT_SIZE;
 	}
 
 	entry.name = name;
@@ -96,7 +96,7 @@ stat_mgmt_foreach_entry(zcbor_state_t *zse, const char *group_name, stat_mgmt_fo
 
 	hdr = stats_group_find(group_name);
 	if (hdr == NULL) {
-		return STAT_MGMT_RET_RC_INVALID_GROUP;
+		return STAT_MGMT_ERR_INVALID_GROUP;
 	}
 
 	walk_arg = (struct stat_mgmt_walk_arg) {
@@ -145,8 +145,8 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
 		LOG_ERR("Invalid stat name: %s", stat_name);
-		ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC,
-				     STAT_MGMT_RET_RC_INVALID_STAT_NAME);
+		ok = smp_add_cmd_err(zse, ZEPHYR_MGMT_GRP_BASIC,
+				     STAT_MGMT_ERR_INVALID_STAT_NAME);
 		goto end;
 	}
 
@@ -166,13 +166,13 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 		int rc = stat_mgmt_foreach_entry(zse, stat_name,
 						 stat_mgmt_cb_encode);
 
-		if (rc != STAT_MGMT_RET_RC_OK) {
-			if (rc != STAT_MGMT_RET_RC_INVALID_GROUP &&
-			    rc != STAT_MGMT_RET_RC_INVALID_STAT_SIZE) {
-				rc = STAT_MGMT_RET_RC_WALK_ABORTED;
+		if (rc != STAT_MGMT_ERR_OK) {
+			if (rc != STAT_MGMT_ERR_INVALID_GROUP &&
+			    rc != STAT_MGMT_ERR_INVALID_STAT_SIZE) {
+				rc = STAT_MGMT_ERR_WALK_ABORTED;
 			}
 
-			ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
+			ok = smp_add_cmd_err(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
 		}
 	}
 
@@ -230,25 +230,25 @@ stat_mgmt_list(struct smp_streamer *ctxt)
 /*
  * @brief	Translate stat mgmt group error code into MCUmgr error code
  *
- * @param ret	#stat_mgmt_ret_code_t error code
+ * @param ret	#stat_mgmt_err_code_t error code
  *
  * @return	#mcumgr_err_t error code
  */
-static int stat_mgmt_translate_error_code(uint16_t ret)
+static int stat_mgmt_translate_error_code(uint16_t err)
 {
 	int rc;
 
-	switch (ret) {
-	case STAT_MGMT_RET_RC_INVALID_GROUP:
-	case STAT_MGMT_RET_RC_INVALID_STAT_NAME:
+	switch (err) {
+	case STAT_MGMT_ERR_INVALID_GROUP:
+	case STAT_MGMT_ERR_INVALID_STAT_NAME:
 		rc = MGMT_ERR_ENOENT;
 		break;
 
-	case STAT_MGMT_RET_RC_INVALID_STAT_SIZE:
+	case STAT_MGMT_ERR_INVALID_STAT_SIZE:
 		rc = MGMT_ERR_EINVAL;
 		break;
 
-	case STAT_MGMT_RET_RC_WALK_ABORTED:
+	case STAT_MGMT_ERR_WALK_ABORTED:
 	default:
 		rc = MGMT_ERR_EUNKNOWN;
 	}

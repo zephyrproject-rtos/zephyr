@@ -107,9 +107,9 @@ struct smp_streamer {
 int smp_process_request_packet(struct smp_streamer *streamer, void *req);
 
 /**
- * @brief Appends a "ret" response
+ * @brief Appends an "err" response
  *
- * This appends a ret response to a pending outgoing response which contains a
+ * This appends an err response to a pending outgoing response which contains a
  * result code for a specific group. Note that error codes are specific to the
  * command group they are emitted from).
  *
@@ -119,17 +119,23 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *req);
  *
  * @return true on success, false on failure (memory error).
  */
-bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret);
+bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret);
+
+/** @deprecated Deprecated after Zephyr 3.4, use smp_add_cmd_err() instead */
+__deprecated inline bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret)
+{
+	return smp_add_cmd_err(zse, group, ret);
+}
 
 #if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 /** @typedef	smp_translate_error_fn
  * @brief	Translates a SMP version 2 error response to a legacy SMP version 1 error code.
  *
- * @param ret	The SMP version 2 error ret/rc value.
+ * @param ret	The SMP version 2 group error value.
  *
  * @return	#enum mcumgr_err_t Legacy SMP version 1 error code to return to client.
  */
-typedef int (*smp_translate_error_fn)(uint16_t ret);
+typedef int (*smp_translate_error_fn)(uint16_t err);
 #endif
 
 #ifdef __cplusplus
