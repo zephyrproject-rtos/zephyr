@@ -2326,13 +2326,19 @@ NXP Platforms:
     - boards/arm/frdm_k*/
     - boards/arm/lpcxpress*/
     - boards/arm/twr_*/
+    - boards/arm/s32*/
+    - boards/arm/mr_canhubk3/
     - soc/arm/nxp_*/
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
     - drivers/*/*mcux*.c
+    - drivers/*/*nxp*
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
     - soc/xtensa/nxp_adsp/
+    - samples/boards/nxp*/
+    - include/zephyr/dt-bindings/*/nxp*
+    - include/zephyr/drivers/*/*nxp*
   labels:
     - "platform: NXP"
 
