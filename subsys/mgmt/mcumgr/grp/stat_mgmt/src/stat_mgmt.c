@@ -254,16 +254,16 @@ static int stat_mgmt_translate_error_code(uint16_t ret)
 	switch (ret) {
 	case STAT_MGMT_RET_RC_INVALID_GROUP:
 	case STAT_MGMT_RET_RC_INVALID_STAT_NAME:
-	rc = MGMT_ERR_ENOENT;
-	break;
+		rc = MGMT_ERR_ENOENT;
+		break;
 
 	case STAT_MGMT_RET_RC_INVALID_STAT_SIZE:
-	rc = MGMT_ERR_EINVAL;
-	break;
+		rc = MGMT_ERR_EINVAL;
+		break;
 
 	case STAT_MGMT_RET_RC_WALK_ABORTED:
 	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;

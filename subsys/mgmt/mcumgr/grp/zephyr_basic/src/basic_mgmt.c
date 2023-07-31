@@ -78,16 +78,16 @@ static int zephyr_basic_group_translate_error_code(uint16_t ret)
 
 	switch (ret) {
 	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED:
-	rc = MGMT_ERR_ENOENT;
-	break;
+		rc = MGMT_ERR_ENOENT;
+		break;
 
 	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL:
 	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED:
-	rc = MGMT_ERR_EOK;
-	break;
+		rc = MGMT_ERR_EOK;
+		break;
 
 	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;
