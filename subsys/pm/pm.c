@@ -110,7 +110,7 @@ static void pm_resume_devices(void)
  * Function called to notify when the system is entering / exiting a
  * power state
  */
-static inline void pm_state_notify(bool entering_state)
+static inline void pm_state_notify(uint8_t direction)
 {
 	struct pm_notifier *notifier;
 	k_spinlock_key_t pm_notifier_key;
@@ -118,7 +118,7 @@ static inline void pm_state_notify(bool entering_state)
 
 	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
 	SYS_SLIST_FOR_EACH_CONTAINER(&pm_notifiers, notifier, _node) {
-		if (entering_state) {
+		if (direction & PM_STATE_ENTRY) {
 			callback = notifier->state_entry;
 		} else {
 			callback = notifier->state_exit;
@@ -149,9 +149,12 @@ void pm_system_resume(void)
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
 		pm_state_exit_post_ops(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
-		pm_state_notify(false);
+		/* Exiting low-power state */
+		pm_state_notify(PM_STATE_EXIT);
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
+		/* Entering active state */
+		pm_state_notify(PM_STATE_ENTRY);
 	}
 }
 
@@ -175,6 +178,9 @@ bool pm_system_suspend(int32_t ticks)
 	k_spinlock_key_t key;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
+
+	/* Exiting active state */
+	pm_state_notify(PM_STATE_EXIT);
 
 	key = k_spin_lock(&pm_forced_state_lock);
 	if (z_cpus_pm_forced_state[id].state != PM_STATE_ACTIVE) {
@@ -233,8 +239,8 @@ bool pm_system_suspend(int32_t ticks)
 	 */
 	k_sched_lock();
 	pm_stats_start();
-	/* Enter power state */
-	pm_state_notify(true);
+	/* Entering low-power state */
+	pm_state_notify(PM_STATE_ENTRY);
 	atomic_set_bit(z_post_ops_required, id);
 	pm_state_set(z_cpus_pm_state[id].state, z_cpus_pm_state[id].substate_id);
 	pm_stats_stop();
