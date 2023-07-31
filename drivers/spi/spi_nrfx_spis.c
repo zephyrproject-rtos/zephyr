@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <nrfx_spis.h>
 
@@ -18,6 +19,8 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
+	struct k_sem wake_sem;
+	struct gpio_callback wake_cb_data;
 };
 
 struct spi_nrfx_config {
@@ -26,6 +29,7 @@ struct spi_nrfx_config {
 	void (*irq_connect)(void);
 	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
+	struct gpio_dt_spec wake_gpio;
 };
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
@@ -130,6 +134,32 @@ static int prepare_for_transfer(const struct device *dev,
 	return 0;
 }
 
+static void wake_callback(const struct device *dev, struct gpio_callback *cb,
+			  uint32_t pins)
+{
+	struct spi_nrfx_data *dev_data =
+		CONTAINER_OF(cb, struct spi_nrfx_data, wake_cb_data);
+	const struct spi_nrfx_config *dev_config = dev_data->dev->config;
+
+	(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
+					      GPIO_INT_DISABLE);
+	k_sem_give(&dev_data->wake_sem);
+}
+
+static void wait_for_wake(struct spi_nrfx_data *dev_data,
+			  const struct spi_nrfx_config *dev_config)
+{
+	/* If the WAKE line is low, wait until it goes high - this is a signal
+	 * from the master that it wants to perform a transfer.
+	 */
+	if (gpio_pin_get_raw(dev_config->wake_gpio.port,
+			     dev_config->wake_gpio.pin) == 0) {
+		(void)gpio_pin_interrupt_configure_dt(&dev_config->wake_gpio,
+						      GPIO_INT_LEVEL_HIGH);
+		(void)k_sem_take(&dev_data->wake_sem, K_FOREVER);
+	}
+}
+
 static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
@@ -139,6 +169,7 @@ static int transceive(const struct device *dev,
 		      void *userdata)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -155,13 +186,40 @@ static int transceive(const struct device *dev,
 		LOG_ERR("Only buffers located in RAM are supported");
 		error = -ENOTSUP;
 	} else {
+		if (dev_config->wake_gpio.port) {
+			wait_for_wake(dev_data, dev_config);
+
+			nrf_spis_enable(dev_config->spis.p_reg);
+		}
+
 		error = prepare_for_transfer(dev,
 				tx_bufs ? tx_bufs->buffers[0].buf : NULL,
 				tx_bufs ? tx_bufs->buffers[0].len : 0,
 				rx_bufs ? rx_bufs->buffers[0].buf : NULL,
 				rx_bufs ? rx_bufs->buffers[0].len : 0);
 		if (error == 0) {
+			if (dev_config->wake_gpio.port) {
+				/* Set the WAKE line low (tie it to ground)
+				 * to signal readiness to handle the transfer.
+				 */
+				gpio_pin_set_raw(dev_config->wake_gpio.port,
+						 dev_config->wake_gpio.pin,
+						 0);
+				/* Set the WAKE line back high (i.e. disconnect
+				 * output for its pin since it's configured in
+				 * open drain mode) so that it can be controlled
+				 * by the other side again.
+				 */
+				gpio_pin_set_raw(dev_config->wake_gpio.port,
+						 dev_config->wake_gpio.pin,
+						 1);
+			}
+
 			error = spi_context_wait_for_completion(&dev_data->ctx);
+		}
+
+		if (dev_config->wake_gpio.port) {
+			nrf_spis_disable(dev_config->spis.p_reg);
 		}
 	}
 
@@ -245,6 +303,42 @@ static int spi_nrfx_init(const struct device *dev)
 		return -EBUSY;
 	}
 
+	if (dev_config->wake_gpio.port) {
+		if (!device_is_ready(dev_config->wake_gpio.port)) {
+			return -ENODEV;
+		}
+
+		/* In open drain mode, the output is disconnected when set to
+		 * the high state, so the following will effectively configure
+		 * the pin as an input only.
+		 */
+		err = gpio_pin_configure_dt(&dev_config->wake_gpio,
+					    GPIO_INPUT |
+					    GPIO_OUTPUT_HIGH |
+					    GPIO_OPEN_DRAIN);
+		if (err < 0) {
+			return err;
+		}
+
+		gpio_init_callback(&dev_data->wake_cb_data, wake_callback,
+				   BIT(dev_config->wake_gpio.pin));
+		err = gpio_add_callback(dev_config->wake_gpio.port,
+					&dev_data->wake_cb_data);
+		if (err < 0) {
+			return err;
+		}
+
+		/* When the WAKE line is used, the SPIS peripheral is enabled
+		 * only after the master signals that it wants to perform a
+		 * transfer and it is disabled right after the transfer is done.
+		 * Waiting for the WAKE line to go high, what can be done using
+		 * the GPIO PORT event, instead of just waiting for the transfer
+		 * with the SPIS peripheral enabled, significantly reduces idle
+		 * power consumption.
+		 */
+		nrf_spis_disable(dev_config->spis.p_reg);
+	}
+
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
 	return 0;
@@ -270,6 +364,8 @@ static int spi_nrfx_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		.dev  = DEVICE_DT_GET(SPIS(idx)),			       \
+		.wake_sem = Z_SEM_INITIALIZER(				       \
+			spi_##idx##_data.wake_sem, 0, 1),		       \
 	};								       \
 	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
@@ -288,7 +384,11 @@ static int spi_nrfx_init(const struct device *dev)
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
 		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
+		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 	};								       \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
+		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
+		     "WAKE line must be configured as active high");	       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
 			    NULL,					       \

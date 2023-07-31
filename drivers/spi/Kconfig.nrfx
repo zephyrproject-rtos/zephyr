@@ -66,4 +66,13 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
 
+config SPI_NRFX_WAKE_TIMEOUT_US
+	int "Maximum time to wait for SPI slave to wake up"
+	default 200
+	help
+	  Maximum amount of time (in microseconds) that SPI master should wait
+	  for SPI slave to wake up after the WAKE line is asserted. Used only
+	  by instances that have the WAKE line configured (see the wake-gpios
+	  devicetree property).
+
 endif # SPI_NRFX
