@@ -415,6 +415,7 @@ otError otPlatCryptoSha256Finish(otCryptoContext *aContext, uint8_t *aHash, uint
 
 void otPlatCryptoRandomInit(void)
 {
+	psa_crypto_init();
 }
 
 void otPlatCryptoRandomDeinit(void)
