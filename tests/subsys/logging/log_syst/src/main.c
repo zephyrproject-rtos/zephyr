@@ -100,6 +100,18 @@ ZTEST(log_syst, test_log_syst_data_multiple_args)
 /* Testcase to validate the SYST output of float data */
 ZTEST(log_syst, test_log_syst_float_data)
 {
+#if defined(__clang__) && !defined(CONFIG_FPU)
+	/* Clang would generate floating pointer instructions
+	 * to process floats as there usually is no soft float
+	 * support from host or vendor LLVM toolchain. Without
+	 * CONFIG_FPU enabled, the platform runs assuming no
+	 * floating point instructions would be used, and
+	 * encountering such instructions would result in
+	 * exception. So skip this test if CONFIG_FPU is not
+	 * enabled to avoid such exceptions.
+	 */
+	ztest_test_skip();
+#else
 	LOG_DBG("Debug message example, %f", 1.223);
 
 	const char *sub_type = SUB_TYPE;
@@ -107,6 +119,7 @@ ZTEST(log_syst, test_log_syst_float_data)
 	"4465627567206D657373616765206578616D706C652C20256600C520B0726891F33F";
 
 	validate_msg(type, optional_flags, module_id, sub_type, payload);
+#endif
 }
 
 #else
