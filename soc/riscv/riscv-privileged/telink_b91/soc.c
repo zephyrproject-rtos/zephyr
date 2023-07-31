@@ -120,6 +120,10 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	reg_reset = SOFT_RESET;
+
+	for (;;) {
+		/* wait for reboot */
+	}
 }
 
 SYS_INIT(soc_b91_init, PRE_KERNEL_1, 0);
