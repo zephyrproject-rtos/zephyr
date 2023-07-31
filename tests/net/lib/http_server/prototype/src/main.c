@@ -252,7 +252,7 @@ static void server_thread_stp_fn(void *arg0, void *arg1, void *arg2)
 	k_sleep(K_SECONDS(2));
 
 	ctx->infinite = 0;
-	int program_status = http2_server_start(ctx, 1000);
+	int program_status = http2_server_start(ctx);
 
 	zassert_equal(program_status, 0,
 		      "The server didn't shut down successfully");
@@ -297,6 +297,36 @@ ZTEST(server_function_tests, test_http2_server_init)
 	zassert_true(server_fd >= 0, "Failed to initiate server socket");
 
 	close(server_fd);
+}
+
+ZTEST(server_function_tests, test_get_frame_type_name)
+{
+	zassert_equal(strcmp(get_frame_type_name(DATA_FRAME), "DATA"), 0,
+		      "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(HEADERS_FRAME), "HEADERS"), 0,
+		      "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(PRIORITY_FRAME), "PRIORITY"),
+		      0, "Unexpected frame type");
+	zassert_equal(
+	    strcmp(get_frame_type_name(RST_STREAM_FRAME), "RST_STREAM"), 0,
+	    "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(SETTINGS_FRAME), "SETTINGS"),
+		      0, "Unexpected frame type");
+	zassert_equal(
+	    strcmp(get_frame_type_name(PUSH_PROMISE_FRAME), "PUSH_PROMISE"), 0,
+	    "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(PING_FRAME), "PING"), 0,
+		      "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(GOAWAY_FRAME), "GOAWAY"), 0,
+		      "Unexpected frame type");
+	zassert_equal(
+	    strcmp(get_frame_type_name(WINDOW_UPDATE_FRAME), "WINDOW_UPDATE"),
+	    0, "Unexpected frame type");
+	zassert_equal(
+	    strcmp(get_frame_type_name(CONTINUATION_FRAME), "CONTINUATION"), 0,
+	    "Unexpected frame type");
+	zassert_equal(strcmp(get_frame_type_name(9999), "UNKNOWN"), 0,
+		      "Unexpected frame type");
 }
 
 ZTEST(server_function_tests, test_parse_http2_frames)
