@@ -88,8 +88,11 @@ void z_arm64_el3_init(void)
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
 		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
-		SCR_HCE_BIT |		/* Do not trap HVC */
-		SCR_SMD_BIT);		/* Do not trap SMC */
+		SCR_HCE_BIT);		/* Do not trap HVC */
+#ifndef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	reg |= SCR_SMD_BIT;		/* Do not trap SMC */
+#endif
+
 	write_scr_el3(reg);
 
 #if defined(CONFIG_GIC_V3)

@@ -141,6 +141,10 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 GTEXT(z_arm64_sync_exc)
 SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
+#ifdef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	bl	z_arm64_el3_service
+#endif
+
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
 
