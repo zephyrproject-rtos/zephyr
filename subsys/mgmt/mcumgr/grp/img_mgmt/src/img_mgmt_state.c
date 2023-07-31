@@ -183,7 +183,7 @@ img_mgmt_state_set_pending(int slot, int permanent)
 	 * run if it is a loader in a split image setup.
 	 */
 	if (state_flags & IMG_MGMT_STATE_F_CONFIRMED && slot != 0) {
-		rc = IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING;
+		rc = IMG_MGMT_ERR_IMAGE_ALREADY_PENDING;
 		goto done;
 	}
 
@@ -204,21 +204,21 @@ img_mgmt_state_confirm(void)
 	int rc;
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	/* Confirm disallowed if a test is pending. */
 	if (img_mgmt_state_any_pending()) {
-		rc = IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING;
+		rc = IMG_MGMT_ERR_IMAGE_ALREADY_PENDING;
 		goto err;
 	}
 
 	rc = img_mgmt_write_confirmed();
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &ret_rc,
-				   &ret_group);
+	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
+				   &err_group);
 #endif
 
 err:
@@ -305,8 +305,8 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	bool active = (slot == img_mgmt_active_slot(img_mgmt_active_image()));
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	if (active) {
@@ -320,11 +320,11 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 
 	/* Confirm disallowed if a test is pending. */
 	if (active && img_mgmt_state_any_pending()) {
-		return IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING;
+		return IMG_MGMT_ERR_IMAGE_ALREADY_PENDING;
 	}
 
 	if (flash_area_open(area_id, &fa) != 0) {
-		return IMG_MGMT_RET_RC_FLASH_OPEN_FAILED;
+		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
 	rc = boot_set_next(fa, active, confirm);
@@ -338,13 +338,13 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 
 		/* Translate from boot util error code to IMG mgmt group error code */
 		if (rc == BOOT_EFLASH) {
-			rc = IMG_MGMT_RET_RC_FLASH_WRITE_FAILED;
+			rc = IMG_MGMT_ERR_FLASH_WRITE_FAILED;
 		} else if (rc == BOOT_EBADVECT) {
-			rc = IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE;
+			rc = IMG_MGMT_ERR_INVALID_IMAGE_VECTOR_TABLE;
 		} else if (rc == BOOT_EBADIMAGE) {
-			rc = IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC;
+			rc = IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
 		} else {
-			rc = IMG_MGMT_RET_RC_UNKNOWN;
+			rc = IMG_MGMT_ERR_UNKNOWN;
 		}
 	}
 	flash_area_close(fa);
@@ -352,8 +352,8 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
 	if (active) {
 		/* Confirm event is only sent for active slot */
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &ret_rc,
-					   &ret_group);
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
+					   &err_group);
 	}
 #endif
 
@@ -396,15 +396,15 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 			slot = img_mgmt_active_slot(img_mgmt_active_image());
 		} else {
 			/* A 'test' without a hash is invalid. */
-			ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE,
-					     IMG_MGMT_RET_RC_INVALID_HASH);
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE,
+					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
 	} else if (zhash.len != IMAGE_HASH_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
-		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_RET_RC_INVALID_HASH);
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
 		uint8_t hash[IMAGE_HASH_LEN];
@@ -413,15 +413,15 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 
 		slot = img_mgmt_find_by_hash(hash, NULL);
 		if (slot < 0) {
-			ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE,
-					     IMG_MGMT_RET_RC_HASH_NOT_FOUND);
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE,
+					     IMG_MGMT_ERR_HASH_NOT_FOUND);
 			goto end;
 		}
 	}
 
 	rc = img_mgmt_set_next_boot_slot(slot, confirm);
 	if (rc != 0) {
-		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_IMAGE, rc);
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, rc);
 		goto end;
 	}
 

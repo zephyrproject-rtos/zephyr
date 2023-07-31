@@ -25,17 +25,17 @@ static int storage_erase(void)
 
 	if (rc < 0) {
 		LOG_ERR("Failed to open flash area");
-		rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED;
+		rc = ZEPHYRBASIC_MGMT_ERR_FLASH_OPEN_FAILED;
 	} else {
 		if (flash_area_get_device(fa) == NULL) {
 			LOG_ERR("Failed to get flash area device");
-			rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL;
+			rc = ZEPHYRBASIC_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL;
 		} else {
 			rc = flash_area_erase(fa, 0, fa->fa_size);
 
 			if (rc < 0) {
 				LOG_ERR("Failed to erase flash area");
-				rc = ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED;
+				rc = ZEPHYRBASIC_MGMT_ERR_FLASH_ERASE_FAILED;
 			}
 		}
 
@@ -53,8 +53,8 @@ static int storage_erase_handler(struct smp_streamer *ctxt)
 
 	rc = storage_erase();
 
-	if (rc != ZEPHYR_MGMT_GRP_CMD_RC_OK) {
-		ok = smp_add_cmd_ret(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
+	if (rc != ZEPHYRBASIC_MGMT_ERR_OK) {
+		ok = smp_add_cmd_err(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
 	}
 
 	if (!ok) {
@@ -68,7 +68,7 @@ static int storage_erase_handler(struct smp_streamer *ctxt)
 /*
  * @brief	Translate zephyr basic group error code into MCUmgr error code
  *
- * @param ret	#zephyr_basic_group_ret_code_t error code
+ * @param ret	#zephyr_basic_group_err_code_t error code
  *
  * @return	#mcumgr_err_t error code
  */
@@ -77,12 +77,12 @@ static int zephyr_basic_group_translate_error_code(uint16_t ret)
 	int rc;
 
 	switch (ret) {
-	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_OPEN_FAILED:
+	case ZEPHYRBASIC_MGMT_ERR_FLASH_OPEN_FAILED:
 		rc = MGMT_ERR_ENOENT;
 		break;
 
-	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_CONFIG_QUERY_FAIL:
-	case ZEPHYR_MGMT_GRP_CMD_RC_FLASH_ERASE_FAILED:
+	case ZEPHYRBASIC_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL:
+	case ZEPHYRBASIC_MGMT_ERR_FLASH_ERASE_FAILED:
 		rc = MGMT_ERR_EOK;
 		break;
 

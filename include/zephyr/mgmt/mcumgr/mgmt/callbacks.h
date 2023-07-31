@@ -58,15 +58,18 @@ enum mgmt_cb_return {
 	/** No error. */
 	MGMT_CB_OK,
 
-	/** SMP protocol error and ``ret_rc`` contains the #mcumgr_err_t error code. */
+	/** SMP protocol error and ``err_rc`` contains the #mcumgr_err_t error code. */
 	MGMT_CB_ERROR_RC,
 
 	/**
-	 * Group (application-level) error and ``ret_group`` contains the group ID that caused
-	 * the error and ``ret_rc`` contians the error code of that group to return.
+	 * Group (application-level) error and ``err_group`` contains the group ID that caused
+	 * the error and ``err_rc`` contians the error code of that group to return.
 	 */
-	MGMT_CB_ERROR_RET,
+	MGMT_CB_ERROR_ERR,
 };
+
+/* Deprecated after Zephyr 3.4, use MGMT_CB_ERROR_ERR instead */
+#define MGMT_CB_ERROR_RET __DEPRECATED_MACRO MGMT_CB_ERROR_ERR
 
 /**
  * @typedef mgmt_cb
@@ -80,16 +83,16 @@ enum mgmt_cb_return {
  *			is being called for a notification only, the return code will be ignored).
  * @param rc		If ``prev_status`` is #MGMT_CB_ERROR_RC then this is the SMP error that
  *			was returned by the first handler that failed. If ``prev_status`` is
- *			#MGMT_CB_ERROR_RET then this will be the group error rc code returned by
+ *			#MGMT_CB_ERROR_ERR then this will be the group error rc code returned by
  *			the first handler that failed. If the handler wishes to raise an SMP
  *			error, this must be set to the #mcumgr_err_t status and #MGMT_CB_ERROR_RC
  *			must be returned by the function, if the handler wishes to raise a ret
- *			error, this must be set to the group ret status and #MGMT_CB_ERROR_RET
+ *			error, this must be set to the group ret status and #MGMT_CB_ERROR_ERR
  *			must be returned by the function.
- * @param group		If ``prev_status`` is #MGMT_CB_ERROR_RET then this is the group of the
+ * @param group		If ``prev_status`` is #MGMT_CB_ERROR_ERR then this is the group of the
  *			ret error that was returned by the first handler that failed. If the
  *			handler wishes to raise a ret error, this must be set to the group ret
- *			status and #MGMT_CB_ERROR_RET must be returned by the function.
+ *			status and #MGMT_CB_ERROR_ERR must be returned by the function.
  * @param abort_more	Set to true to abort further processing by additional handlers.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if no data is provided).
@@ -249,18 +252,18 @@ uint8_t mgmt_evt_get_index(uint32_t event);
  * @param event		#mcumgr_op_t.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if none).
- * @param ret_rc	Pointer to rc value.
- * @param ret_group	Pointer to group value.
+ * @param err_rc	Pointer to rc value.
+ * @param err_group	Pointer to group value.
  *
  * @return		#mgmt_cb_return either #MGMT_CB_OK if all handlers returned it, or
  *			#MGMT_CB_ERROR_RC if the first failed handler returned an SMP error (in
- *			which case ``ret_rc`` will be updated with the SMP error) or
- *			#MGMT_CB_ERROR_RET if the first failed handler returned a ret group and
- *			error (in which case ``ret_group`` will be updated with the failed group
- *			ID and ``ret_rc`` will be updated with the group-specific error code).
+ *			which case ``err_rc`` will be updated with the SMP error) or
+ *			#MGMT_CB_ERROR_ERR if the first failed handler returned a ret group and
+ *			error (in which case ``err_group`` will be updated with the failed group
+ *			ID and ``err_rc`` will be updated with the group-specific error code).
  */
 enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data_size,
-					 int32_t *ret_rc, uint16_t *ret_group);
+					 int32_t *err_rc, uint16_t *err_group);
 
 /**
  * @brief Register event callback function.

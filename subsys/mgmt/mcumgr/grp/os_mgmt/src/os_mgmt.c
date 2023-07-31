@@ -318,8 +318,8 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	zcbor_state_t *zse = ctxt->writer->zs;
 	size_t decoded;
 	enum mgmt_cb_return status;
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 
 	struct os_mgmt_reset_data reboot_data = {
 		.force = false
@@ -334,16 +334,16 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	 */
 	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
 	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, &reboot_data,
-				      sizeof(reboot_data), &ret_rc, &ret_group);
+				      sizeof(reboot_data), &err_rc, &err_group);
 
 	if (status != MGMT_CB_OK) {
 		bool ok;
 
 		if (status == MGMT_CB_ERROR_RC) {
-			return ret_rc;
+			return err_rc;
 		}
 
-		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	}
 #endif
@@ -413,8 +413,8 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
 	enum mgmt_cb_return status;
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded)) {
@@ -491,12 +491,12 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
 	/* Run callbacks to see if any additional handlers will add options */
 	(void)mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_CHECK, &check_data,
-				   sizeof(check_data), &ret_rc, &ret_group);
+				   sizeof(check_data), &err_rc, &err_group);
 #endif
 
 	if (valid_formats != format.len) {
 		/* A provided format specifier is not valid */
-		bool ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_OS, OS_MGMT_RET_RC_INVALID_FORMAT);
+		bool ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_INVALID_FORMAT);
 
 		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	} else if (format_bitmask == 0) {
@@ -657,16 +657,16 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
 	/* Call custom handler command for additional output/processing */
 	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_APPEND, &append_data,
-				      sizeof(append_data), &ret_rc, &ret_group);
+				      sizeof(append_data), &err_rc, &err_group);
 
 	if (status != MGMT_CB_OK) {
 		bool ok;
 
 		if (status == MGMT_CB_ERROR_RC) {
-			return ret_rc;
+			return err_rc;
 		}
 
-		ok = smp_add_cmd_ret(zse, ret_group, (uint16_t)ret_rc);
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	}
 #endif
@@ -685,20 +685,20 @@ fail:
 /*
  * @brief	Translate OS mgmt group error code into MCUmgr error code
  *
- * @param ret	#os_mgmt_ret_code_t error code
+ * @param ret	#os_mgmt_err_code_t error code
  *
  * @return	#mcumgr_err_t error code
  */
-static int os_mgmt_translate_error_code(uint16_t ret)
+static int os_mgmt_translate_error_code(uint16_t err)
 {
 	int rc;
 
-	switch (ret) {
-	case OS_MGMT_RET_RC_INVALID_FORMAT:
+	switch (err) {
+	case OS_MGMT_ERR_INVALID_FORMAT:
 		rc = MGMT_ERR_EINVAL;
 		break;
 
-	case OS_MGMT_RET_RC_UNKNOWN:
+	case OS_MGMT_ERR_UNKNOWN:
 	default:
 		rc = MGMT_ERR_EUNKNOWN;
 	}

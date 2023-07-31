@@ -84,8 +84,8 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 		ok = zcbor_tstr_decode(zsd, &value);
 		if (ok) {
 			if ((len + value.len) >= (ARRAY_SIZE(line) - 1)) {
-				ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_SHELL,
-						     SHELL_MGMT_RET_RC_COMMAND_TOO_LONG);
+				ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SHELL,
+						     SHELL_MGMT_ERR_COMMAND_TOO_LONG);
 				goto end;
 			}
 
@@ -104,7 +104,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	if (len == 0) {
 		/* We do not bother to close decoder */
 		LOG_ERR("Failed to compose command line");
-		ok = smp_add_cmd_ret(zse, MGMT_GROUP_ID_SHELL, SHELL_MGMT_RET_RC_EMPTY_COMMAND);
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SHELL, SHELL_MGMT_ERR_EMPTY_COMMAND);
 		goto end;
 	}
 
@@ -132,17 +132,17 @@ end:
 /*
  * @brief	Translate shell mgmt group error code into MCUmgr error code
  *
- * @param ret	#shell_mgmt_ret_code_t error code
+ * @param ret	#shell_mgmt_err_code_t error code
  *
  * @return	#mcumgr_err_t error code
  */
-static int shell_mgmt_translate_error_code(uint16_t ret)
+static int shell_mgmt_translate_error_code(uint16_t err)
 {
 	int rc;
 
-	switch (ret) {
-	case SHELL_MGMT_RET_RC_COMMAND_TOO_LONG:
-	case SHELL_MGMT_RET_RC_EMPTY_COMMAND:
+	switch (err) {
+	case SHELL_MGMT_ERR_COMMAND_TOO_LONG:
+	case SHELL_MGMT_ERR_EMPTY_COMMAND:
 		rc = MGMT_ERR_EINVAL;
 		break;
 

@@ -33,10 +33,10 @@ enum mgmt_cb_return test_function(uint32_t event, enum mgmt_cb_return prev_statu
 		if (last_run) {
 			/* Return a dummy error for a demo */
 			*group = MGMT_GROUP_ID_EXAMPLE;
-			*rc = EXAMPLE_MGMT_RET_RC_REJECTED_BY_HOOK;
+			*rc = EXAMPLE_MGMT_ERR_REJECTED_BY_HOOK;
 
 			LOG_INF("Received hook, rejecting!");
-			return MGMT_CB_ERROR_RET;
+			return MGMT_CB_ERROR_ERR;
 		}
 
 		LOG_INF("Received hook, allowing");
