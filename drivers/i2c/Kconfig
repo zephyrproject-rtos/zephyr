@@ -76,6 +76,7 @@ source "drivers/i2c/Kconfig.sc18im704"
 source "drivers/i2c/Kconfig.smartbond"
 source "drivers/i2c/Kconfig.xilinx_axi"
 source "drivers/i2c/Kconfig.mchp_mss"
+source "drivers/i2c/Kconfig.sedi"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"

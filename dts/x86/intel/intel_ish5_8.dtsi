@@ -17,3 +17,21 @@
 
 	status = "okay";
 };
+
+&i2c0 {
+	interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&i2c1 {
+	interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&i2c2 {
+	interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};
