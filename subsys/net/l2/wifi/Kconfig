@@ -95,6 +95,24 @@ config WIFI_MGMT_SCAN_MAX_BSS_CNT
 	help
 	  Maximum number of scan results to return. 0 represents unlimited number of BSSes.
 
+config WIFI_MGMT_SCAN_CHAN
+	string "Scan on specific channels"
+	default ""
+	help
+	 Formatted string which specifies channels to be scanned. The channel string has to be formatted
+	 using the colon (:), comma(,), hyphen (-) and space ( ) delimiters as follows:
+	 - A colon identifies the value preceding it as a band. A band value
+	   (2: 2.4 GHz, 5: 5 GHz 6: 6 GHz) has to precede the channels in that band (e.g. 2: etc)
+	 - Hyphens are used to identify channel ranges (e.g. 2-7, 32-48 etc)
+	 - Commas are used to separate channel values within a band. Channels can be specified
+	   as individual values (2,6,48 etc) or channel ranges using hyphens (1-14, 32-48 etc)
+	 - Spaces are used to specify multiple band-channel sets (e.g. 2:1,2 5:36,40 etc)
+	 - No spaces should be used anywhere else, i.e. before/after commas,
+	   before/after hyphens.
+	   An example channel specification specifying channels in the 2.4 GHz and 5 GHz bands is
+	   as below:
+	   2:1,5,7,9-11_5:36-48,100,163-167
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
