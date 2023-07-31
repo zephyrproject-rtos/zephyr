@@ -37,7 +37,7 @@ normally would, selecting an appropriate board:
         west build -b acrn_ehl_crb samples/hello_world
 
 In this tutorial, we will use the Intel Elkhart Lake Reference Board
-(`EHL`_ CRB) since it is one of the suggested platform for this
+(`EHL`_ CRB) since it is one of the suggested platforms for this
 type of scenario. Use ``acrn_ehl_crb`` as the target board parameter.
 
 Note the kconfig output in ``build/zephyr/.config``, you will need to
@@ -154,7 +154,7 @@ and Zephyr application will not boot successfully without this change.
 If you plan to run Zephyr with one CPU only, you can skip it.
 
 Since Zephyr is using CPU0 and CPU1, we also have to change
-VM1's configuration so it runs on CPU2 and CPU3. If your ACRN set up has
+VM1's configuration so it runs on CPU2 and CPU3. If your ACRN setup has
 additional VMs, you should change their configurations as well.
 
     .. code-block:: xml
