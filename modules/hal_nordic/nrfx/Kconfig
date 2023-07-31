@@ -7,6 +7,8 @@ config HAS_NRFX
 menu "nrfx drivers"
 	depends on HAS_NRFX
 
+rsource "Kconfig.logging"
+
 config NRFX_ADC
 	bool "ADC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ADC))
