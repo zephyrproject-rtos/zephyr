@@ -25,8 +25,7 @@ LOG_MODULE_REGISTER(max17262, CONFIG_SENSOR_LOG_LEVEL);
  * @param valp Place to put the value on success
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
-			     int16_t *valp)
+static int max17262_reg_read(const struct device *dev, uint8_t reg_addr, int16_t *valp)
 {
 	const struct max17262_config *cfg = dev->config;
 	uint8_t i2c_data[2];
@@ -52,8 +51,7 @@ static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
  * @param val Register value to write
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_reg_write(const struct device *dev, uint8_t reg_addr,
-			     int16_t val)
+static int max17262_reg_write(const struct device *dev, uint8_t reg_addr, int16_t val)
 {
 	const struct max17262_config *cfg = dev->config;
 	uint8_t i2c_data[3] = {reg_addr, val & 0xFF, (uint16_t)val >> 8};
@@ -82,8 +80,7 @@ static void convert_millis(struct sensor_value *val, int32_t val_millis)
  * @return 0 if successful
  * @return -ENOTSUP for unsupported channels
  */
-static int max17262_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int max17262_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *valp)
 {
 	const struct max17262_config *const config = dev->config;
@@ -178,10 +175,11 @@ static int max17262_channel_get(const struct device *dev,
  * @param dev MAX17262 device to access
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int max17262_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct max17262_data *data = dev->data;
+
+	/* clang-format off */
 	struct {
 		int reg_addr;
 		int16_t *dest;
@@ -199,6 +197,7 @@ static int max17262_sample_fetch(const struct device *dev,
 		{ DESIGN_CAP, &data->design_cap },
 		{ COULOMB_COUNTER, &data->coulomb_counter },
 	};
+	/* clang-format on */
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 	for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
@@ -369,26 +368,22 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 	.channel_get = max17262_channel_get,
 };
 
-#define MAX17262_INIT(n)						\
-	static struct max17262_data max17262_data_##n;			\
-									\
-	static const struct max17262_config max17262_config_##n = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(n),				\
-		.design_voltage = DT_INST_PROP(n, design_voltage),	\
-		.desired_voltage = DT_INST_PROP(n, desired_voltage),	\
-		.desired_charging_current =				\
-			DT_INST_PROP(n, desired_charging_current),	\
-		.design_cap = DT_INST_PROP(n, design_cap),		\
-		.empty_voltage = DT_INST_PROP(n, empty_voltage),	\
-		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),	\
-		.charge_voltage = DT_INST_PROP(n, charge_voltage),	\
-	};								\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,		\
-			    NULL,					\
-			    &max17262_data_##n,				\
-			    &max17262_config_##n, POST_KERNEL,		\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &max17262_battery_driver_api);
+#define MAX17262_INIT(n)                                                                           \
+	static struct max17262_data max17262_data_##n;                                             \
+                                                                                                   \
+	static const struct max17262_config max17262_config_##n = {                                \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.design_voltage = DT_INST_PROP(n, design_voltage),                                 \
+		.desired_voltage = DT_INST_PROP(n, desired_voltage),                               \
+		.desired_charging_current = DT_INST_PROP(n, desired_charging_current),             \
+		.design_cap = DT_INST_PROP(n, design_cap),                                         \
+		.empty_voltage = DT_INST_PROP(n, empty_voltage),                                   \
+		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),                             \
+		.charge_voltage = DT_INST_PROP(n, charge_voltage),                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init, NULL, &max17262_data_##n,            \
+				     &max17262_config_##n, POST_KERNEL,                            \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max17262_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17262_INIT)
