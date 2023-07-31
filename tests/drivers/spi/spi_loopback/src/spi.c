@@ -38,13 +38,20 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP, 0);
 #define BUF_SIZE 17
 #define BUF2_SIZE 36
 
-#if CONFIG_NOCACHE_MEMORY
+#ifdef CONFIG_NOCACHE_MEMORY
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#define CACHE_SECTION __attribute__((__section__("SRAM2")))
+#else
+#define CACHE_SECTION __attribute__((__section__(".nocache")))
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 static const char tx_data[BUF_SIZE] = "0123456789abcdef\0";
-static __aligned(32) char buffer_tx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
-static __aligned(32) char buffer_rx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
+static __aligned(32) char buffer_tx[BUF_SIZE] __used CACHE_SECTION;
+static __aligned(32) char buffer_rx[BUF_SIZE] __used CACHE_SECTION;
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
-static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
+static __aligned(32) char buffer2_tx[BUF2_SIZE] __used CACHE_SECTION;
+static __aligned(32) char buffer2_rx[BUF2_SIZE] __used CACHE_SECTION;
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
 static uint8_t buffer_tx[] = "0123456789abcdef\0";
@@ -598,6 +605,7 @@ static void *spi_loopback_setup(void)
 	memset(buffer2_tx, 0, sizeof(buffer2_tx));
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
 #endif
+
 	return NULL;
 }
 
