@@ -6,6 +6,7 @@
 
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <mem.h>
 
 / {
@@ -58,6 +59,42 @@
 			peripheral-id = <0>;
 			current-speed = <115200>;
 			status = "okay";
+		};
+
+		i2c0: i2c@0 {
+			compatible = "intel,sedi-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0 0x1000>;
+			peripheral-id = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <15 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			clock-frequency = <I2C_BITRATE_FAST>;
+			status = "okay";
+		};
+
+		i2c1: i2c@2000 {
+			compatible = "intel,sedi-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00002000 0x1000>;
+			peripheral-id = <1>;
+			interrupt-parent = <&intc>;
+			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			clock-frequency = <I2C_BITRATE_FAST>;
+			status = "okay";
+		};
+
+		i2c2: i2c@4000 {
+			compatible = "intel,sedi-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00004000 0x1000>;
+			peripheral-id = <2>;
+			interrupt-parent = <&intc>;
+			interrupts = <17 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			clock-frequency = <I2C_BITRATE_FAST>;
+			status = "disabled";
 		};
 	};
 };
