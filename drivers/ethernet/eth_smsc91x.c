@@ -707,16 +707,15 @@ static int eth_smsc_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_context *data = dev->data;
-	struct smsc_data *sc = &data->sc;
-	uint8_t reg_val;
 	int ret = 0;
-
-	(void) reg_val;
 
 	switch (type) {
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		struct eth_context *data = dev->data;
+		struct smsc_data *sc = &data->sc;
+		uint8_t reg_val;
+
 		SMSC_LOCK(sc);
 		smsc_select_bank(sc, 0);
 		reg_val = smsc_read_1(sc, RCR);
