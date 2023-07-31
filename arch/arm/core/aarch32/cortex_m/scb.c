@@ -39,6 +39,8 @@ void __weak sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	NVIC_SystemReset();
+
+	CODE_UNREACHABLE;
 }
 
 #if defined(CONFIG_ARM_MPU)

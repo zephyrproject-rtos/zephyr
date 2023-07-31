@@ -32,6 +32,8 @@ void sys_arch_reboot(int type)
 {
 	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
 	NVIC_SystemReset();
+
+	CODE_UNREACHABLE;
 }
 #endif
 
