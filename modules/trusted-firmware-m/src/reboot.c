@@ -30,4 +30,6 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	(void)tfm_platform_system_reset();
+
+	CODE_UNREACHABLE;
 }
