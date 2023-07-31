@@ -1011,8 +1011,8 @@ ZTEST(test_c_lib, test_tolower_toupper)
 	int i = 0;
 
 	for (; i < strlen(test); i++) {
-		up[i] = toupper(test[i]);
-		lw[i] = tolower(test[i]);
+		up[i] = toupper((int)test[i]);
+		lw[i] = tolower((int)test[i]);
 	}
 	lw[i] = up[i] = '\0';
 
