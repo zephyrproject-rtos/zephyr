@@ -83,6 +83,10 @@ static int mcp9808_channel_get(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP);
 
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		return -ENOTSUP;
+	}
+
 	val->val1 = temp / MCP9808_TEMP_SCALE_CEL;
 	temp -= val->val1 * MCP9808_TEMP_SCALE_CEL;
 	val->val2 = (temp * 1000000) / MCP9808_TEMP_SCALE_CEL;

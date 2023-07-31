@@ -342,6 +342,10 @@ static int vl53l1x_channel_get(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
 
+	if (chan != SENSOR_CHAN_DISTANCE) {
+		return -ENOTSUP;
+	}
+
 	/* Calling VL53L1_WaitMeasurementDataReady regardless of using interrupt or
 	 * polling method ensures user does not have to consider the time between
 	 * calling fetch and get.
