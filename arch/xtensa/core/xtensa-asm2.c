@@ -10,11 +10,17 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <_soc_inthandlers.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <offsets.h>
 #include <zsr.h>
+
+#ifdef CONFIG_XTENSA_GEN_HANDLERS
+#include <_soc_inthandlers.h>
+#else
+#include <xtensa_handlers.h>
+#endif
+
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
