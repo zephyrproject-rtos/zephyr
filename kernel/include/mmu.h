@@ -204,7 +204,7 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
 		 "unaligned addr %p", addr);
 	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu", size);
-	__ASSERT(addr + size > addr,
+	__ASSERT(!Z_DETECT_POINTER_OVERFLOW(addr, size),
 		 "region %p size %zu zero or wraps around", addr, size);
 	__ASSERT(addr >= Z_VIRT_RAM_START && addr + size < Z_VIRT_RAM_END,
 		 "invalid virtual address region %p (%zu)", addr, size);
