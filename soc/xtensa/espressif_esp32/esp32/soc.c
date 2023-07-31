@@ -199,7 +199,7 @@ void sys_arch_reboot(int type)
 	esp_restart_noos();
 }
 
-void IRAM_ATTR esp_restart_noos(void)
+void FUNC_NORETURN IRAM_ATTR esp_restart_noos(void)
 {
 	/* Disable interrupts */
 	z_xt_ints_off(0xFFFFFFFF);

@@ -124,7 +124,7 @@ int IRAM_ATTR arch_printk_char_out(int c)
 	return 0;
 }
 
-void IRAM_ATTR esp_restart_noos(void)
+void FUNC_NORETURN IRAM_ATTR esp_restart_noos(void)
 {
 	/* Disable interrupts */
 	csr_read_clear(mstatus, MSTATUS_MIE);
