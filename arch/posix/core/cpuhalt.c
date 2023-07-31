@@ -54,8 +54,7 @@ void arch_cpu_atomic_idle(unsigned int key)
  */
 void __weak sys_arch_reboot(int type)
 {
-	posix_print_warning("%s called with type %d. Exiting\n",
-						__func__, type);
+	posix_print_warning("System reboot (%d) requested, will now exit\n", type);
 	posix_exit(1);
 }
 #endif /* CONFIG_REBOOT */
