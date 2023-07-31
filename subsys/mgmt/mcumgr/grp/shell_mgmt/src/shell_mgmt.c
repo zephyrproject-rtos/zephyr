@@ -143,11 +143,11 @@ static int shell_mgmt_translate_error_code(uint16_t ret)
 	switch (ret) {
 	case SHELL_MGMT_RET_RC_COMMAND_TOO_LONG:
 	case SHELL_MGMT_RET_RC_EMPTY_COMMAND:
-	rc = MGMT_ERR_EINVAL;
-	break;
+		rc = MGMT_ERR_EINVAL;
+		break;
 
 	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;

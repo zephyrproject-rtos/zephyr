@@ -911,13 +911,13 @@ static int fs_mgmt_translate_error_code(uint16_t ret)
 	switch (ret) {
 	case FS_MGMT_RET_RC_FILE_INVALID_NAME:
 	case FS_MGMT_RET_RC_CHECKSUM_HASH_NOT_FOUND:
-	rc = MGMT_ERR_EINVAL;
-	break;
+		rc = MGMT_ERR_EINVAL;
+		break;
 
 	case FS_MGMT_RET_RC_FILE_NOT_FOUND:
 	case FS_MGMT_RET_RC_FILE_IS_DIRECTORY:
-	rc = MGMT_ERR_ENOENT;
-	break;
+		rc = MGMT_ERR_ENOENT;
+		break;
 
 	case FS_MGMT_RET_RC_UNKNOWN:
 	case FS_MGMT_RET_RC_FILE_OPEN_FAILED:
@@ -928,8 +928,8 @@ static int fs_mgmt_translate_error_code(uint16_t ret)
 	case FS_MGMT_RET_RC_FILE_WRITE_FAILED:
 	case FS_MGMT_RET_RC_FILE_OFFSET_NOT_VALID:
 	case FS_MGMT_RET_RC_FILE_OFFSET_LARGER_THAN_FILE:
-	default:
-	rc = MGMT_ERR_EUNKNOWN;
+		default:
+		rc = MGMT_ERR_EUNKNOWN;
 	}
 
 	return rc;
