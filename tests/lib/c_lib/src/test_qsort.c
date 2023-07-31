@@ -140,6 +140,10 @@ static int compare_ints_with_boolp_arg(const void *a, const void *b, void *argp)
 
 ZTEST(test_c_lib, test_qsort_r)
 {
+#ifdef CONFIG_NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT
+	/* Ancient newlib does not have qsort_r(). */
+	ztest_test_skip();
+#else
 	bool arg = false;
 
 	const int expect_int[] = { 1, 5, 7 };
@@ -150,4 +154,5 @@ ZTEST(test_c_lib, test_qsort_r)
 
 	zassert_mem_equal(actual_int, expect_int, sizeof(expect_int), "array not sorted");
 	zassert_true(arg, "arg not modified");
+#endif
 }

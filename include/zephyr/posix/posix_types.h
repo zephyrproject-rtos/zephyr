@@ -11,8 +11,15 @@
 #include <sys/types.h>
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT)
 #include <sys/_pthreadtypes.h>
+#else
+/* Ancient newlib does not have a separate _pthreadtypes.h.
+ * So need to include types.h instead.
+ */
+#include <sys/types.h>
+#endif
 #endif
 
 #include <zephyr/kernel.h>

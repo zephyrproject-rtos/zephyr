@@ -64,4 +64,16 @@ config NEWLIB_LIBC_HEAP_LISTENER
 	  Notify registered heap listeners upon certain events related to the newlib
 	  libc heap usage, such as the heap resize.
 
+config NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT
+	bool
+	help
+	  Signal that the newlib comes with the toolchain is very old,
+	  usually <= 2.9.0, which predates retargetable locks.
+
+	  This should be regard as a hack to enable usage of ancient
+	  newlib coming from the toolchain. Support for this is going to
+	  be minimum (or even non-existent). There will be lots of bugs
+	  and tons of workarounds needed. DO NOT USE this unless you are
+	  absolutely necessary. You have been warned.
+
 endif # NEWLIB_LIBC

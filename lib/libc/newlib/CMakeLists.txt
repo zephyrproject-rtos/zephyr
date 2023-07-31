@@ -3,6 +3,20 @@
 zephyr_library()
 zephyr_library_sources(libc-hooks.c)
 
+if(CONFIG_NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT)
+  # When using C standard without GNU extensions (e.g. -std=c99),
+  # __STRICT_ANSI__ is defined and various functions are then not
+  # declared in the corresponding header file in ancient newlib.
+  # This is due to compatibility with POSIX. Newer version of newlib
+  # uses _POSIX_SOURCES instead of __STRICT_ANSI__ to avoid
+  # re-declaring these functions.
+  #
+  # The following directory contains workarounds for various
+  # header files so those functions are declared to avoid
+  # compiler warning about implicit function declarations.
+  zephyr_include_directories(ancient/include)
+endif()
+
 # Zephyr normally uses -ffreestanding, which with current GNU toolchains
 # means that the flag macros used by newlib 3.x <inttypes.h> to signal
 # support for PRI.64 macros are not present.  To make them available we

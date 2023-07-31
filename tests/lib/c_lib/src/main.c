@@ -1070,7 +1070,13 @@ ZTEST(test_c_lib, test_time)
 {
 	time_t tests1 = 0;
 	time_t tests2 = -5;
+#ifndef CONFIG_NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT
+	/* Ancient newlib's time_t is long instead of long long.
+	 * The value is going to be truncated to 0 and complain
+	 * from compiler. So skip this.
+	 */
 	time_t tests3 = -214748364800;
+#endif
 	time_t tests4 = 951868800;
 
 	struct tm tp;
@@ -1079,7 +1085,9 @@ ZTEST(test_c_lib, test_time)
 	zassert_not_null(gmtime(&tests2), "gmtime failed");
 
 	tp.tm_wday = -5;
+#ifndef CONFIG_NEWLIB_LIBC_IN_TOOLCHAIN_IS_ANCIENT
 	zassert_not_null(gmtime_r(&tests3, &tp), "gmtime_r failed");
+#endif
 	zassert_not_null(gmtime_r(&tests4, &tp), "gmtime_r failed");
 }
 
