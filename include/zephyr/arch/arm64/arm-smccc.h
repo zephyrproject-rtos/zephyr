@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM64_SMCCC_H_
 
 /*
- * Result from SMC/HVC call
- * @a0-a7 result values from registers 0 to 7
+ * Command and Result from SMC/HVC call
+ * @a0-a7 values from registers 0 to 7
  */
 struct arm_smccc_res {
 	unsigned long a0;

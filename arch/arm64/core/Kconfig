@@ -84,6 +84,23 @@ config HAS_ARM_SMCCC
 	  Include support for the Secure Monitor Call (SMC) and Hypervisor
 	  Call (HVC) instructions on Armv7 and above architectures.
 
+config ARM64_ENABLE_EL3_SERVICE
+	bool "To enable the ARM64 EL3 service"
+	depends on HAS_ARM_SMCCC
+	help
+	  Enable Secure Monitor Call (SMC) handler in EL3 and enable
+	  SMC instructions at EL1 and above.  MMU is disabled during EL3 exception
+	  handling so ensure cache is flushed before making SMC call.
+
+config ARM64_EL3_SERVICE_STACK_SIZE
+	int "Size of the EL3 service stack"
+	default 512
+	depends on ARM64_ENABLE_EL3_SERVICE
+	help
+	  The size of the EL3 service stack. Requires enough size to
+	  backup all EL1 registers and execute Secure Monitor Call
+	  (SMC) handler.
+
 config NUM_IRQS
 	int
 

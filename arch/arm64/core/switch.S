@@ -141,6 +141,30 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 GTEXT(z_arm64_sync_exc)
 SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
+#ifdef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	mrs	x0, currentEL
+	lsr     x0, x0, #2
+	cmp	x0, #3         /* Check if in EL3 */
+	bne	1f
+	mrs	x0, esr_el3
+	lsr	x0, x0, #26
+	cmp	x0, #0x17      /* 0x17 = SMC */
+	bne	1f
+
+	/*
+	 * Copy of registers/SMC arguments already exists
+	 * on the stack.  Pass pointer to them to SMC handler.
+         *
+         * Results are returned the same way (via stack) so no copying
+         * is required when returning from exception.
+	 * z_arm64_exit_exc handles copying from the stack to registers.
+	 */
+	add	x0, sp, ___esf_t_x0_x1_OFFSET
+	bl	z_arm64_smc_handler
+	b	z_arm64_exit_exc
+1:
+#endif
+
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
 

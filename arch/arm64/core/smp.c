@@ -43,6 +43,7 @@ struct boot_params {
 /* Offsets used in reset.S */
 BUILD_ASSERT(offsetof(struct boot_params, mpid) == BOOT_PARAM_MPID_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sp) == BOOT_PARAM_SP_OFFSET);
+BUILD_ASSERT(offsetof(struct boot_params, cpu_num) == BOOT_PARAM_CPU_NUM_OFFSET);
 
 volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 	.mpid = -1,

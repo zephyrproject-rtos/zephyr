@@ -50,6 +50,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* Custom plat prep_c init */
 	bl	z_arm64_el3_plat_prep_c
 
+#ifdef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	/* Set SP_EL3 */
+	msr	SPSel, #1
+	mov	sp, x26
+#endif
+
 	/* Set SP_EL1 */
 	msr     sp_el1, x24
 
@@ -144,6 +150,15 @@ resetwait:
 	/* we can now load our stack pointer value and move on */
 	ldr	x24, [x0, #BOOT_PARAM_SP_OFFSET]
 	ldr	x25, =z_arm64_secondary_prep_c
+
+#ifdef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	ldr	x1, [x0, #BOOT_PARAM_CPU_NUM_OFFSET]
+	mov	x2, #CONFIG_ARM64_EL3_SERVICE_STACK_SIZE
+	madd	x1, x1, x2, x2
+	ldr	x2, =z_arm64_el3_service_stacks
+	add	x26, x1, x2
+#endif
+
 	b	2f
 
 primary_core:
@@ -151,6 +166,9 @@ primary_core:
 	/* load primary stack and entry point */
 	ldr	x24, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
 	ldr	x25, =z_arm64_prep_c
+#ifdef CONFIG_ARM64_ENABLE_EL3_SERVICE
+	ldr	x26, =(z_arm64_el3_service_stacks + CONFIG_ARM64_EL3_SERVICE_STACK_SIZE)
+#endif
 2:
 	/* Prepare for calling C code */
 	bl	__reset_prep_c

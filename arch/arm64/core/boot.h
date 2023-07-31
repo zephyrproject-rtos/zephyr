@@ -20,7 +20,8 @@ extern void __start(void);
 #endif /* _ASMLANGUAGE */
 
 /* Offsets into the boot_params structure */
-#define BOOT_PARAM_MPID_OFFSET	0
-#define BOOT_PARAM_SP_OFFSET	8
+#define BOOT_PARAM_MPID_OFFSET		0
+#define BOOT_PARAM_SP_OFFSET		8
+#define BOOT_PARAM_CPU_NUM_OFFSET	0x20
 
 #endif /* _BOOT_H_ */
