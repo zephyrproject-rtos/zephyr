@@ -103,3 +103,11 @@ add_custom_command(
 
 add_custom_target(xtensa_handlers_h DEPENDS ${HANDLERS}.h)
 add_dependencies(zephyr_interface xtensa_handlers_h)
+
+# Auto-generate interrupt vector entry
+set(VECS_LD ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_vectors.ld)
+add_custom_command(OUTPUT ${VECS_LD} DEPENDS ${CORE_ISA_DM}
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_vectors.py
+          ${CORE_ISA_DM} > ${VECS_LD})
+add_custom_target(xtensa_vectors_ld DEPENDS ${VECS_LD})
+add_dependencies(zephyr_interface xtensa_vectors_ld)
