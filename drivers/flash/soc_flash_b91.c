@@ -30,6 +30,7 @@
 /* driver data structure */
 struct flash_b91_data {
 	struct k_mutex flash_lock;
+	uint8_t sector[SECTOR_SIZE];
 };
 
 /* driver parameters structure */
@@ -39,19 +40,73 @@ static const struct flash_parameters flash_b91_parameters = {
 };
 
 
+/* Check if flash page area is clean */
+static bool flash_b91_is_clean(const struct flash_b91_data *dev_data, uintptr_t offset, size_t len)
+{
+	bool result = true;
+
+	for (size_t i = 0; i < len; i++) {
+		if (dev_data->sector[offset + i] != flash_b91_parameters.erase_value) {
+			result = false;
+			break;
+		}
+	}
+	return result;
+}
+
+/* Modify flash data */
+static void flash_b91_modify(struct flash_b91_data *dev_data, uintptr_t offset,
+	const void *data, size_t len)
+{
+	uintptr_t addr_flash = CONFIG_FLASH_BASE_ADDRESS + offset;
+	uintptr_t off_sector = addr_flash % SECTOR_SIZE;
+
+	while (len) {
+		size_t len_page_end =  SECTOR_SIZE - off_sector;
+		size_t len_current = len_page_end;
+
+		if (len < len_page_end) {
+			len_current = len;
+		}
+		flash_read_page(addr_flash, len_current, &dev_data->sector[off_sector]);
+		if (!flash_b91_is_clean(dev_data, off_sector, len_current)) {
+			if (off_sector) {
+				flash_read_page(addr_flash - off_sector, off_sector,
+					&dev_data->sector[0]);
+			}
+			if (len < len_page_end) {
+				flash_read_page(addr_flash + len_current,
+					len_page_end - len_current,
+					&dev_data->sector[off_sector + len_current]);
+			}
+			flash_erase_sector(addr_flash - off_sector);
+			if (off_sector) {
+				flash_write_page(addr_flash - off_sector, off_sector,
+					&dev_data->sector[0]);
+			}
+			if (len < len_page_end) {
+				flash_write_page(addr_flash + len_current,
+					len_page_end - len_current,
+					&dev_data->sector[off_sector + len_current]);
+			}
+		}
+		if (data) {
+			flash_write_page(addr_flash, len_current, (unsigned char *)data);
+			data = (uint8_t *)data + len_current;
+		}
+		len -= len_current;
+		addr_flash += len_current;
+		off_sector = 0;
+	}
+}
+
+
 /* Check for correct offset and length */
 static bool flash_b91_is_range_valid(off_t offset, size_t len)
 {
-	/* check for min value */
-	if ((offset < 0) || (len < 1)) {
+	if ((offset < 0) || (len < 1) || ((offset + len) > FLASH_SIZE)) {
 		return false;
 	}
-
-	/* check for max value */
-	if ((offset + len) > FLASH_SIZE) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -70,21 +125,10 @@ static int flash_b91_init(const struct device *dev)
 /* API implementation: erase */
 static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 {
-	int page_nums = len / PAGE_SIZE;
 	struct flash_b91_data *dev_data = dev->data;
-
-	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
-	if (!len) {
-		return 0;
-	}
 
 	/* check for valid range */
 	if (!flash_b91_is_range_valid(offset, len)) {
-		return -EINVAL;
-	}
-
-	/* erase can be done only by pages */
-	if (((offset % PAGE_SIZE) != 0) || ((len % PAGE_SIZE) != 0)) {
 		return -EINVAL;
 	}
 
@@ -99,30 +143,7 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 		wdt_been_enabled = true;
 	}
 
-	while (page_nums) {
-		/* check for 64K erase possibility, then check for 32K and so on.. */
-		if ((page_nums >= BLOCK_64K_PAGES) && ((offset % BLOCK_64K_SIZE) == 0)) {
-			/* erase 64K block */
-			flash_erase_64kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= BLOCK_64K_PAGES;
-			offset += BLOCK_64K_SIZE;
-		} else if ((page_nums >= BLOCK_32K_PAGES) && ((offset % BLOCK_32K_SIZE) == 0)) {
-			/* erase 32K block */
-			flash_erase_32kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= BLOCK_32K_PAGES;
-			offset += BLOCK_32K_SIZE;
-		} else if ((page_nums >= SECTOR_PAGES) && ((offset % SECTOR_SIZE) == 0)) {
-			/* erase sector */
-			flash_erase_sector(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= SECTOR_PAGES;
-			offset += SECTOR_SIZE;
-		} else {
-			/* erase page */
-			flash_erase_page(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums--;
-			offset += PAGE_SIZE;
-		}
-	}
+	flash_b91_modify(dev_data, offset, NULL, len);
 
 	if (wdt_been_enabled) {
 		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
@@ -139,11 +160,6 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 {
 	void *buf = NULL;
 	struct flash_b91_data *dev_data = dev->data;
-
-	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
-	if (!len) {
-		return 0;
-	}
 
 	/* check for valid range */
 	if (!flash_b91_is_range_valid(offset, len)) {
@@ -175,14 +191,13 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 		}
 
 		/* copy Flash data to RAM */
-		memcpy(buf, data, len);
+		flash_read_page((unsigned long)data, len, (unsigned char *)buf);
 
 		/* substitute data with allocated buffer */
 		data = buf;
 	}
-
 	/* write flash */
-	flash_write_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
+	flash_b91_modify(dev_data, offset, data, len);
 
 	/* if ram memory is allocated for flash writing it should be free */
 	if (buf != NULL) {
