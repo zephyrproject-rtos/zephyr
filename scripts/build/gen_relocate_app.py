@@ -456,8 +456,8 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
     parser.add_argument("-d", "--directory", required=True,
                         help="obj file's directory")
-    parser.add_argument("-i", "--input_rel_dict", required=True,
-                        help="input src:memory type(sram2 or ccm or aon etc) string")
+    parser.add_argument("-i", "--input_rel_dict", required=True, type=argparse.FileType('r'),
+                        help="input file with dict src:memory type(sram2 or ccm or aon etc)")
     parser.add_argument("-o", "--output", required=False, help="Output ld file")
     parser.add_argument("-s", "--output_sram_data", required=False,
                         help="Output sram data ld file")
@@ -490,7 +490,7 @@ def get_obj_filename(searchpath, filename):
 # Returns a 4-tuple with them: (mem_region, program_header, flag, file_name)
 # If no `program_header` is defined, returns an empty string
 def parse_input_string(line):
-    line = line.replace('\\ :', ':')
+    line = line.replace(' :', ':')
 
     flag_sep = ':NOCOPY:' if ':NOCOPY' in line else ':COPY:'
     mem_region_phdr, copy_flag, file_name = line.partition(flag_sep)
@@ -508,9 +508,10 @@ def create_dict_wrt_mem():
     rel_dict = dict()
     phdrs = dict()
 
-    if args.input_rel_dict == '':
+    input_rel_dict = args.input_rel_dict.read()
+    if input_rel_dict == '':
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
-    for line in args.input_rel_dict.split('|'):
+    for line in input_rel_dict.split('|'):
         if ':' not in line:
             continue
 
