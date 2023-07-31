@@ -361,13 +361,8 @@ bool passes_scan_filter(const struct bt_le_scan_recv_info *info, const struct ne
 
 	if (scan_filter.addr_set) {
 		char le_addr[BT_ADDR_LE_STR_LEN] = {0};
-		int err;
 
-		err = bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-		if (err != 0) {
-			shell_error(ctx_shell, "Failed to convert addr to string: %d", err);
-			return false;
-		}
+		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 		if (!is_substring(scan_filter.addr, le_addr)) {
 			return false;
