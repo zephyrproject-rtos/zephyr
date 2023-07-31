@@ -10,6 +10,7 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/__assert.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/libc-hooks.h>
@@ -39,14 +40,14 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	 */
 	if (K_MEM_PARTITION_IS_EXECUTABLE(part->attr) &&
 	    K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
-		LOG_ERR("partition is writable and executable <start %lx>",
+		LOG_ERR("partition is writable and executable <start %" PRIxPTR ">",
 			part->start);
 		return false;
 	}
 #endif
 
 	if (part->size == 0U) {
-		LOG_ERR("zero sized partition at %p with base 0x%lx",
+		LOG_ERR("zero sized partition at %p with base 0x%" PRIxPTR,
 			part, part->start);
 		return false;
 	}
@@ -55,7 +56,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	pend = part->start + part->size;
 
 	if (pend <= pstart) {
-		LOG_ERR("invalid partition %p, wraparound detected. base 0x%lx size %zu",
+		LOG_ERR("invalid partition %p, wraparound detected. base 0x%" PRIxPTR " size %zu",
 			part, part->start, part->size);
 		return false;
 	}
@@ -75,7 +76,8 @@ static bool check_add_partition(struct k_mem_domain *domain,
 		dend = dstart + dpart->size;
 
 		if (pend > dstart && dend > pstart) {
-			LOG_ERR("partition %p base %lx (size %zu) overlaps existing base %lx (size %zu)",
+			LOG_ERR("partition %p base %" PRIxPTR " (size %zu) overlaps "
+				"existing base %" PRIxPTR " (size %zu)",
 				part, part->start, part->size,
 				dpart->start, dpart->size);
 			return false;
@@ -189,7 +191,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("add partition base %lx size %zu to domain %p\n",
+	LOG_DBG("add partition base %" PRIxPTR " size %zu to domain %p\n",
 		part->start, part->size, domain);
 
 	domain->partitions[p_idx].start = part->start;
@@ -237,7 +239,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
+	LOG_DBG("remove partition base %" PRIxPTR " size %zu from domain %p\n",
 		part->start, part->size, domain);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API

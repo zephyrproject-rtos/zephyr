@@ -101,7 +101,7 @@ void z_page_frames_dump(void)
 	int column = 0;
 
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
-	printk("Physical memory from 0x%lx to 0x%lx\n",
+	printk("Physical memory from 0x%" PRIxPTR " to 0x%" PRIxPTR "\n",
 	       Z_PHYS_RAM_START, Z_PHYS_RAM_END);
 
 	for (int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
@@ -357,7 +357,7 @@ static sys_slist_t free_page_frame_list;
 size_t z_free_page_count;
 
 #define PF_ASSERT(pf, expr, fmt, ...) \
-	__ASSERT(expr, "page frame 0x%lx: " fmt, z_page_frame_to_phys(pf), \
+	__ASSERT(expr, "page frame 0x%" PRIxPTR ": " fmt, z_page_frame_to_phys(pf), \
 		 ##__VA_ARGS__)
 
 /* Get an unused page frame. don't care which one, or NULL if there are none */
@@ -490,7 +490,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 
 		pf = k_mem_paging_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
-		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+		LOG_DBG("evicting %p at 0x%" PRIxPTR, pf->addr,
 			z_page_frame_to_phys(pf));
 		ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 		if (ret != 0) {
@@ -513,7 +513,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 	frame_mapped_set(pf, addr);
 
-	LOG_DBG("memory mapping anon page %p -> 0x%lx", addr, phys);
+	LOG_DBG("memory mapping anon page %p -> 0x%" PRIxPTR, addr, phys);
 
 	if (!uninit) {
 		/* If we later implement mappings to a copy-on-write
@@ -636,7 +636,7 @@ void k_mem_unmap(void *addr, size_t size)
 		}
 
 		__ASSERT(z_is_page_frame(phys),
-			 "%s: 0x%lx is not a page frame", __func__, phys);
+			 "%s: 0x%" PRIxPTR " is not a page frame", __func__, phys);
 		if (!z_is_page_frame(phys)) {
 			/* Physical address has no corresponding page frame
 			 * description in the page frame array.
@@ -649,7 +649,7 @@ void k_mem_unmap(void *addr, size_t size)
 		pf = z_phys_to_page_frame(phys);
 
 		__ASSERT(z_page_frame_is_mapped(pf),
-			 "%s: 0x%lx is not a mapped page frame", __func__, phys);
+			 "%s: 0x%" PRIxPTR " is not a mapped page frame", __func__, phys);
 		if (!z_page_frame_is_mapped(pf)) {
 			/* Page frame is not marked mapped.
 			 * This should not happen. Do not continue.
@@ -732,9 +732,9 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
+	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%" PRIxPTR, aligned_phys);
 	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
-		 "wraparound for physical address 0x%lx (size %zu)",
+		 "wraparound for physical address 0x%" PRIxPTR " (size %zu)",
 		 aligned_phys, aligned_size);
 
 	align_boundary = arch_virt_region_align(aligned_phys, aligned_size);
@@ -765,8 +765,8 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", dest_addr,
-		aligned_phys, aligned_size, flags, addr_offset);
+	LOG_DBG("arch_mem_map(%p, 0x%" PRIxPTR ", %zu, %x) offset %" PRIuPTR,
+		dest_addr, aligned_phys, aligned_size, flags, addr_offset);
 
 	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
 	k_spin_unlock(&z_mm_lock, key);
@@ -781,7 +781,7 @@ fail:
 	 * Other problems not related to resource exhaustion we leave as
 	 * assertions since they are clearly programming mistakes.
 	 */
-	LOG_ERR("memory mapping 0x%lx (size %zu, flags 0x%x) failed",
+	LOG_ERR("memory mapping 0x%" PRIxPTR " (size %zu, flags 0x%x) failed",
 		phys, size, flags);
 	k_panic();
 }
@@ -795,14 +795,14 @@ void z_phys_unmap(uint8_t *virt, size_t size)
 	addr_offset = k_mem_region_align(&aligned_virt, &aligned_size,
 					 POINTER_TO_UINT(virt), size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
+	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%" PRIxPTR, aligned_virt);
 	__ASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
-		 "wraparound for virtual address 0x%lx (size %zu)",
+		 "wraparound for virtual address 0x%" PRIxPTR " (size %zu)",
 		 aligned_virt, aligned_size);
 
 	key = k_spin_lock(&z_mm_lock);
 
-	LOG_DBG("arch_mem_unmap(0x%lx, %zu) offset %lu",
+	LOG_DBG("arch_mem_unmap(0x%" PRIxPTR ", %zu) offset %" PRIuPTR,
 		aligned_virt, aligned_size, addr_offset);
 
 	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
@@ -1066,7 +1066,7 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 	bool dirty = *dirty_ptr;
 
 	phys = z_page_frame_to_phys(pf);
-	__ASSERT(!z_page_frame_is_pinned(pf), "page frame 0x%lx is pinned",
+	__ASSERT(!z_page_frame_is_pinned(pf), "page frame 0x%" PRIxPTR " is pinned",
 		 phys);
 
 	/* If the backing store doesn't have a copy of the page, even if it
@@ -1102,7 +1102,7 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	/* Mark as busy so that z_page_frame_is_evictable() returns false */
-	__ASSERT(!z_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
+	__ASSERT(!z_page_frame_is_busy(pf), "page frame 0x%" PRIxPTR " is already busy",
 		 phys);
 	pf->flags |= Z_PAGE_FRAME_BUSY;
 #endif
@@ -1192,7 +1192,7 @@ int z_page_frame_evict(uintptr_t phys)
 	uintptr_t flags;
 	uintptr_t location;
 
-	__ASSERT(page_frames_initialized, "%s called on 0x%lx too early",
+	__ASSERT(page_frames_initialized, "%s called on 0x%" PRIxPTR " too early",
 		 __func__, phys);
 
 	/* Implementation is similar to do_page_fault() except there is no
@@ -1418,7 +1418,7 @@ static bool do_page_fault(void *addr, bool pin)
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
-		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+		LOG_DBG("evicting %p at 0x%" PRIxPTR, pf->addr,
 			z_page_frame_to_phys(pf));
 
 		paging_stats_eviction_inc(faulting_thread, dirty);
