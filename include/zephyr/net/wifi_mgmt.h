@@ -215,6 +215,21 @@ struct wifi_scan_params {
 	 * signifies that there is no restriction on the number of scan results to be returned.
 	 */
 	uint16_t max_bss_cnt;
+	/** Channel information array indexed on Wi-Fi frequency bands and channels within that
+	 * band.
+	 * E.g. to scan channel 6 and 11 on the 2.4 GHz band, channel 36 on the 5 GHz band:
+	 * @code{.c}
+	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][0] = 6;
+	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][1] = 11;
+	 *     chan[WIFI_FREQ_BAND_5_GHZ][0] = 36;
+	 * @endcode
+	 *
+	 *  This list specifies the channels to be __considered for scan__. The underlying
+	 *  Wi-Fi chip can silently omit some channels due to various reasons such as channels
+	 *  not conforming to regulatory restrictions etc. The invoker of the API should
+	 *  ensure that the channels specified follow regulatory rules.
+	 */
+	uint16_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_CHANNEL_MAX];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
