@@ -205,6 +205,18 @@ struct pm_state_info {
 	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i), okay),    \
 		    (PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
+/**
+ * @brief Call a function for an enabled power-state phandle list item
+ *
+ * @param node_id zephyr,power-state node identifier
+ * @param prop Property holding power-state phandle(s)
+ * @param idx Index within the phandle list
+ * @param fn Function taking a power-state node_id
+ */
+#define Z_PM_STATE_DT_PHANDLE_GEN(node_id, prop, idx, fn)					 \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, idx), okay), \
+		    (fn(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, idx))), ())
+
 /** @endcond */
 
 /**
