@@ -25,6 +25,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,23 @@ extern "C" {
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
+
+/**
+ * @brief Determine if a buffer exceeds highest address
+ *
+ * This macro determines if a buffer identified by a starting address @a addr
+ * and length @a buflen spans a region of memory that goes beond the highest
+ * possible address (thereby resulting in a pointer overflow).
+ *
+ * @param addr Buffer starting address
+ * @param buflen Length of the buffer
+ *
+ * @return true if pointer overflow detected, false otherwise
+ */
+#define Z_DETECT_POINTER_OVERFLOW(addr, buflen)  \
+	(((buflen) != 0) &&                        \
+	((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
+
 
 #if defined(__cplusplus)
 
