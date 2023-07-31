@@ -53,17 +53,86 @@ extern "C" {
  */
 struct pm_notifier {
 	sys_snode_t _node;
+
 	/**
-	 * Application defined function for doing any target specific operations
-	 * for power state entry.
+	 * Bit field indicating whether the callback should trigger on power state entry, exit, or
+	 * both.
+	 *
+	 * @note See PM_STATE_ENTRY and PM_STATE_EXIT
 	 */
-	void (*state_entry)(enum pm_state state);
+	uint8_t direction;
+
 	/**
-	 * Application defined function for doing any target specific operations
-	 * for power state exit.
+	 * Application or driver defined function for doing any target specific operations during
+	 * power state transition.
+	 *
+	 * @param direction Bit field indicator specifying whether the callback was triggered during
+	 *		    state entry or exit
+	 * @param ctx Optional callback context, e.g. driver instance, application data, etc.
 	 */
-	void (*state_exit)(enum pm_state state);
+	void (*callback)(uint8_t direction, void *ctx);
+
+	/**
+	 * Optional callback context
+	 */
+	const void *ctx;
 };
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Helper macro for building a pm_notifiers list name.
+ *
+ * @param node_id zephyr,power-state node identifer
+ */
+#define Z_PM_NOTIFIERS_DT_NAME(node_id) UTIL_CAT(pm_notifiers_, DT_NODE_CHILD_IDX(node_id))
+
+/**
+ * @brief Generate a pm_notifiers list for the passed power-states child node
+ *	  identifier.
+ *
+ * @param node_id zephyr,power-state node identifier
+ */
+#define Z_PM_NOTIFIERS_CREATE_DT_STATES(node_id)			\
+	static sys_slist_t Z_PM_NOTIFIERS_DT_NAME(node_id) =		\
+		SYS_SLIST_STATIC_INIT(&Z_PM_NOTIFIERS_DT_NAME(node_id))
+
+/**
+ * @brief Provides a pm_notifiers list pointer for a power-states child node
+ *	  identifier.
+ *
+ * @param node_id zephyr,power-state node identifier
+ */
+#define Z_PM_NOTIFIERS_DT_STATES(node_id) &Z_PM_NOTIFIERS_DT_NAME(node_id)
+
+/** @endcond */
+
+#ifdef CONFIG_PM
+/**
+ * @brief Generic helper for defining a pm_notifier struct.
+ *
+ * @param id Unique alphanumeric identifier, specific to usage context
+ *	     (avoid using only numbers here to prevent collisions)
+ * @param state_direction Transition direction: state entry, exit, or both
+ * @param callback_fn callback function
+ */
+#define PM_NOTIFIER_DEFINE(id, state_direction, callback_fn, context)	\
+	static struct pm_notifier UTIL_CAT(pm_notifier_, id) = {	\
+		.direction = state_direction,				\
+		.callback = callback_fn,				\
+		.ctx = context,						\
+	}
+
+/**
+ * @brief Retrieve the name of a pm_notifier struct instance.
+ *
+ * @param id Unique alphanumeric identifier, specific to usage context
+ */
+#define PM_NOTIFIER(id) UTIL_CAT(pm_notifier_, id)
+#else
+#define PM_NOTIFIER_DEFINE(id, state_direction, callback_fn, context)
+#define PM_NOTIFIER(id) NULL
+#endif
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
@@ -87,8 +156,13 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info);
  * list.
  *
  * @param notifier pm_notifier object to be registered.
+ * @param state PM state for which the notifier should be registered
+ * @param substate_id PM substate for which the notifier should be registered.
+ *
+ * @return 0 if the notifier was successfully registered, a negative value
+ * otherwise.
  */
-void pm_notifier_register(struct pm_notifier *notifier);
+int pm_notifier_register(struct pm_notifier *notifier, enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Unregister a power management notifier
@@ -97,11 +171,13 @@ void pm_notifier_register(struct pm_notifier *notifier);
  * list. After that this object callbacks will not be called.
  *
  * @param notifier pm_notifier object to be unregistered.
+ * @param state PM state for which the notifier should be registered
+ * @param substate_id PM substate for which the notifier should be registered.
  *
  * @return 0 if the notifier was successfully removed, a negative value
  * otherwise.
  */
-int pm_notifier_unregister(struct pm_notifier *notifier);
+int pm_notifier_unregister(struct pm_notifier *notifier, enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Gets the next power state that will be used.
@@ -155,14 +231,22 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 #else  /* CONFIG_PM */
 
-static inline void pm_notifier_register(struct pm_notifier *notifier)
+static inline int pm_notifier_register(struct pm_notifier *notifier,
+				       enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(notifier);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return -ENOSYS;
 }
 
-static inline int pm_notifier_unregister(struct pm_notifier *notifier)
+static inline int pm_notifier_unregister(struct pm_notifier *notifier,
+					 enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(notifier);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 
 	return -ENOSYS;
 }
