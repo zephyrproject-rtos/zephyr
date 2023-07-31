@@ -7,7 +7,7 @@
 /*
  * This file implements the logic to check that all criteria are met
  * to enter an EL3 service handler.
- * 
+ *
  * Service available:
  * Secure Monitor Call (SMC) handler.
  *
@@ -30,7 +30,7 @@ SECTION_FUNC(TEXT, z_arm64_el3_service)
 	lsr	x0, x0, #26
 	cmp	x0, #0x17      /* 0x17 = SMC */
 	bne	1f
- 
+
 	/*
 	 * Copy of registers/SMC arguments already exists
 	 * on the stack.  Pass pointer to them to SMC handler.
@@ -41,6 +41,6 @@ SECTION_FUNC(TEXT, z_arm64_el3_service)
 	 */
 	add	x0, sp, ___esf_t_x0_x1_OFFSET
 	bl	z_arm64_smc_handler
-	b	z_arm64_exit_exc	
+	b	z_arm64_exit_exc
 1:
         ret

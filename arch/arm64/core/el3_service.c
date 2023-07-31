@@ -20,6 +20,6 @@
  * Default SMC handler executed in EL3.
  * To be overridden by user specific function.
  */ 
-__weak void z_arm64_smc_handler(arm_smccc_cmd_rsp_t * cmd_rsp)
+__weak void z_arm64_smc_handler(arm_smccc_cmd_rsp_t *cmd_rsp)
 {
 }
