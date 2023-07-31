@@ -376,15 +376,32 @@ foreach (name ${cli_config_list})
   unset(${name} CACHE)
 endforeach()
 
+# Before importing the symbol values from DOTCONFIG, process the CLI values by
+# re-importing them from EXTRA_KCONFIG_OPTIONS_FILE. Later, we want to compare
+# the values from both files, and 'import_kconfig' will make this easier.
+if(EXTRA_KCONFIG_OPTIONS_FILE)
+  import_kconfig(${KCONFIG_NAMESPACE} ${EXTRA_KCONFIG_OPTIONS_FILE})
+  foreach (name ${cache_variable_names})
+    if(DEFINED ${name})
+      set(temp_${name} "${${name}}")
+      unset(${name})
+    endif()
+  endforeach()
+endif()
+
 # Import the .config file and make all settings available in CMake processing.
 import_kconfig(${KCONFIG_NAMESPACE} ${DOTCONFIG})
 
 # Cache the CLI Kconfig symbols that survived through Kconfig, prefixed with CLI_.
 # Remove those who might have changed compared to earlier runs, if they no longer appears.
-foreach (name ${cli_config_list})
-  if(DEFINED ${name})
+foreach (name ${cache_variable_names})
+  # Note: "${CLI_${name}}" is the verbatim value of ${name} from command-line,
+  # while "${temp_${name}}" is the same value processed by 'import_kconfig'.
+  if(((NOT DEFINED ${name}) AND (NOT DEFINED temp_${name})) OR
+     ((DEFINED ${name}) AND (DEFINED temp_${name}) AND (${name} STREQUAL temp_${name})))
     set(CLI_${name} ${CLI_${name}} CACHE INTERNAL "")
   else()
     unset(CLI_${name} CACHE)
   endif()
+  unset(temp_${name})
 endforeach()
