@@ -34,7 +34,7 @@ static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
 
 	rc = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data, 2);
 	if (rc < 0) {
-		LOG_ERR("Unable to read register");
+		LOG_ERR("Unable to read register 0x%02x", reg_addr);
 		return rc;
 	}
 	*valp = ((int16_t)i2c_data[1] << 8) | i2c_data[0];
@@ -225,6 +225,7 @@ static int max17262_gauge_init(const struct device *dev)
 {
 	const struct max17262_config *const config = dev->config;
 	int16_t tmp, hibcfg;
+	int rc;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -232,7 +233,10 @@ static int max17262_gauge_init(const struct device *dev)
 	}
 
 	/* Read Status register */
-	max17262_reg_read(dev, STATUS, &tmp);
+	rc = max17262_reg_read(dev, STATUS, &tmp);
+	if (rc) {
+		return rc;
+	}
 
 	if (!(tmp & STATUS_POR)) {
 		/*
@@ -248,65 +252,114 @@ static int max17262_gauge_init(const struct device *dev)
 	LOG_DBG("POR detected, setting custom device configuration...");
 
 	/** STEP 1 */
-	max17262_reg_read(dev, FSTAT, &tmp);
+	rc = max17262_reg_read(dev, FSTAT, &tmp);
+	if (rc) {
+		return rc;
+	}
 
 	/* Do not continue until FSTAT.DNR bit is cleared */
 	while (tmp & FSTAT_DNR) {
 		k_sleep(K_MSEC(10));
-		max17262_reg_read(dev, FSTAT, &tmp);
+		rc = max17262_reg_read(dev, FSTAT, &tmp);
+		if (rc) {
+			return rc;
+		}
 	}
 
 	/** STEP 2 */
 	/* Store original HibCFG value */
-	max17262_reg_read(dev, HIBCFG, &hibcfg);
+	rc = max17262_reg_read(dev, HIBCFG, &hibcfg);
+	if (rc) {
+		return rc;
+	}
 
 	/* Exit Hibernate Mode step 1 */
-	max17262_reg_write(dev, SOFT_WAKEUP, 0x0090);
+	rc = max17262_reg_write(dev, SOFT_WAKEUP, 0x0090);
+	if (rc) {
+		return rc;
+	}
+
 	/* Exit Hibernate Mode step 2 */
-	max17262_reg_write(dev, HIBCFG, 0x0000);
+	rc = max17262_reg_write(dev, HIBCFG, 0x0000);
+	if (rc) {
+		return rc;
+	}
+
 	/* Exit Hibernate Mode step 3 */
-	max17262_reg_write(dev, SOFT_WAKEUP, 0x0000);
+	rc = max17262_reg_write(dev, SOFT_WAKEUP, 0x0000);
+	if (rc) {
+		return rc;
+	}
 
 	/** STEP 2.1 --> OPTION 1 EZ Config (No INI file is needed) */
 	/* Write DesignCap */
-	max17262_reg_write(dev, DESIGN_CAP, config->design_cap);
+	rc = max17262_reg_write(dev, DESIGN_CAP, config->design_cap);
+	if (rc) {
+		return rc;
+	}
 
 	/* Write IChgTerm */
-	max17262_reg_write(dev, ICHG_TERM, config->desired_charging_current);
+	rc = max17262_reg_write(dev, ICHG_TERM, config->desired_charging_current);
+	if (rc) {
+		return rc;
+	}
 
 	/* Write VEmpty */
-	max17262_reg_write(dev, VEMPTY, ((config->empty_voltage / 10) << 7) |
-					  ((config->recovery_voltage / 40) & 0x7F));
+	rc = max17262_reg_write(dev, VEMPTY,
+				((config->empty_voltage / 10) << 7) |
+					((config->recovery_voltage / 40) & 0x7F));
+	if (rc) {
+		return rc;
+	}
 
 	/* Write ModelCFG */
 	if (config->charge_voltage > 4275) {
-		max17262_reg_write(dev, MODELCFG, 0x8400);
+		rc = max17262_reg_write(dev, MODELCFG, 0x8400);
 	} else {
-		max17262_reg_write(dev, MODELCFG, 0x8000);
+		rc = max17262_reg_write(dev, MODELCFG, 0x8000);
+	}
+
+	if (rc) {
+		return rc;
 	}
 
 	/*
 	 * Read ModelCFG.Refresh (highest bit),
 	 * proceed to Step 3 when ModelCFG.Refresh == 0
 	 */
-	max17262_reg_read(dev, MODELCFG, &tmp);
+	rc = max17262_reg_read(dev, MODELCFG, &tmp);
+	if (rc) {
+		return rc;
+	}
 
 	/* Do not continue until ModelCFG.Refresh == 0 */
 	while (tmp & MODELCFG_REFRESH) {
 		k_sleep(K_MSEC(10));
-		max17262_reg_read(dev, MODELCFG, &tmp);
+		rc = max17262_reg_read(dev, MODELCFG, &tmp);
+		if (rc) {
+			return rc;
+		}
 	}
 
 	/* Restore Original HibCFG value */
-	max17262_reg_write(dev, HIBCFG, hibcfg);
+	rc = max17262_reg_write(dev, HIBCFG, hibcfg);
+	if (rc) {
+		return rc;
+	}
 
 	/** STEP 3 */
 	/* Read Status register */
-	max17262_reg_read(dev, STATUS, &tmp);
+	rc = max17262_reg_read(dev, STATUS, &tmp);
+	if (rc) {
+		return rc;
+	}
 
 	/* Clear PowerOnReset bit */
 	tmp &= ~STATUS_POR;
-	max17262_reg_write(dev, STATUS, tmp);
+	rc = max17262_reg_write(dev, STATUS, tmp);
+	if (rc) {
+		return rc;
+	}
 
 	return 0;
 }
