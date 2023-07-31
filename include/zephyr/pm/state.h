@@ -156,6 +156,16 @@ struct pm_state_info {
 	uint32_t exit_latency_us;
 };
 
+/**
+ * @brief PM state transition direction: state entry bit field value
+ */
+#define PM_STATE_ENTRY        BIT(0)
+
+/**
+ * @brief PM state transition direction: state exit bit field value
+ */
+#define PM_STATE_EXIT         BIT(1)
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
