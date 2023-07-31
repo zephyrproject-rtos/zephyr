@@ -871,13 +871,15 @@ static int transceive_dma(const struct device *dev,
 			break;
 		}
 
+		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 #ifdef SPI_SR_FTLVL
-		while (LL_SPI_GetTxFIFOLevel(spi) > 0) {
-		}
+			while (LL_SPI_GetTxFIFOLevel(spi) > 0) {
+			}
 #endif
 
-		/* wait until spi is no more busy (spi TX fifo is really empty) */
-		while (ll_func_spi_dma_busy(spi) == 0) {
+			/* wait until spi is no more busy (spi TX fifo is really empty) */
+			while (ll_func_spi_dma_busy(spi) == 0) {
+			}
 		}
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
