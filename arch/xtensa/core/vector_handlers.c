@@ -10,12 +10,17 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
-#include <_soc_inthandlers.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <offsets.h>
 #include <zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
+
+#ifdef CONFIG_XTENSA_GEN_HANDLERS
+#include <xtensa_handlers.h>
+#else
+#include <_soc_inthandlers.h>
+#endif
 
 #include <xtensa_internal.h>
 
