@@ -479,7 +479,7 @@ _do_call_\@:
 	 * execution) while we muck with the windows and decrement the nested
 	 * count.  The restore will unmask them correctly.
 	 */
-	rsil a0, XCHAL_NMILEVEL
+	rsil a0, XCHAL_EXCM_LEVEL
 
 	/* Decrement nest count */
 	rsr.ZSR_CPU a3
