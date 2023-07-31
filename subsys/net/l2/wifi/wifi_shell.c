@@ -473,11 +473,12 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 					       {"dwell_time_passive", required_argument, 0, 'p'},
 					       {"ssids", required_argument, 0, 's'},
 					       {"max_bss", required_argument, 0, 'm'},
+					       {"chans", required_argument, 0, 'c'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -531,6 +532,14 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			}
 
 			params->max_bss_cnt = val;
+			break;
+		case 'c':
+			if (wifi_utils_parse_scan_chan(optarg, params->chan)) {
+				shell_fprintf(sh,
+					      SHELL_ERROR,
+					      "Invalid band or channel value(s)\n");
+				return -ENOEXEC;
+			}
 			break;
 		case '?':
 			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
@@ -1269,7 +1278,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
 		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.\n"
-		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.",
+		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.\n"
+		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
