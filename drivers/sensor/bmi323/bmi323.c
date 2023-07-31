@@ -1096,7 +1096,7 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 		break;
 
 	default:
-		ret = -ENODEV;
+		ret = -ENOTSUP;
 
 		break;
 	}

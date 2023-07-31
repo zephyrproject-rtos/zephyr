@@ -371,7 +371,7 @@ static int bmm150_channel_get(const struct device *dev,
 		bmm150_convert(val + 2, drv_data->sample_z);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

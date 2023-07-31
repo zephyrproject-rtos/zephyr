@@ -128,7 +128,7 @@ static int ti_hdc20xx_channel_get(const struct device *dev,
 		val->val2 = ((tmp & 0xFFFF) * 15625U) >> 10;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

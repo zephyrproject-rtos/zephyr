@@ -86,7 +86,7 @@ static int akm09918c_channel_get(const struct device *dev, enum sensor_channel c
 		akm09918c_convert(val, data->z_sample);
 	} else {
 		LOG_WRN("Invalid channel %d", chan);
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

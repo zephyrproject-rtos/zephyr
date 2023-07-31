@@ -97,7 +97,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		break;
 
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
