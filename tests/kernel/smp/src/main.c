@@ -1148,10 +1148,8 @@ ZTEST(smp, test_smp_switch_torture)
 	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	k_thread_abort(&t2);
-	k_thread_join(&t2, K_FOREVER);
 	for (uintptr_t i = 0; i < num_threads; i++) {
 		k_thread_abort(&tthread[i]);
-		k_thread_join(&tthread[i], K_FOREVER);
 	}
 }
 
