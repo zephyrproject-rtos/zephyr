@@ -634,7 +634,7 @@ static int grow_r502a_channel_get(const struct device *dev, enum sensor_channel 
 		val->val1 = drv_data->template_count;
 	} else {
 		LOG_ERR("Invalid channel");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

@@ -102,8 +102,10 @@ static int mpu6050_channel_get(const struct device *dev,
 		mpu6050_convert_gyro(val, drv_data->gyro_z,
 				     drv_data->gyro_sensitivity_x10);
 		break;
-	default: /* chan == SENSOR_CHAN_DIE_TEMP */
+	case SENSOR_CHAN_DIE_TEMP:
 		mpu6050_convert_temp(val, drv_data->temp);
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;

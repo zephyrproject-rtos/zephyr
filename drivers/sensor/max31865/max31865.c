@@ -270,7 +270,7 @@ static int max31865_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		return sensor_value_from_double(val, data->temperature);
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 }
 

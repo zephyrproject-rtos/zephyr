@@ -184,7 +184,7 @@ static int ms5837_channel_get(const struct device *dev,
 		val->val2 = data->pressure % 1000 * 1000;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
