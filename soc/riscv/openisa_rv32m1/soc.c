@@ -64,6 +64,10 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 
 	EVENT_UNIT->SLPCTRL |= EVENT_SLPCTRL_SYSRSTREQST_MASK;
+
+	for (;;) {
+		/* wait for reset */
+	}
 }
 
 void arch_irq_enable(unsigned int irq)
