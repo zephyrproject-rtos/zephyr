@@ -7,8 +7,9 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
-#include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <mem.h>
 
 / {
 	cpus {
@@ -407,6 +408,38 @@
 		reg = <0x18800000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 120 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	spi0: spi@10DA4000 {
+		compatible = "snps,designware-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10DA4000 0x1000>;
+		clock-frequency = <100000000>;
+		cs-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>,
+				<&gpio1 19 GPIO_ACTIVE_LOW>,
+				<&gpio1 23 GPIO_ACTIVE_LOW>;
+		fifo-depth = <16>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	spi1: spi@10DA5000 {
+		compatible = "snps,designware-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10DA5000 0x1000>;
+		clock-frequency = <100000000>;
+		cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>,
+				<&gpio0 23 GPIO_ACTIVE_LOW>,
+				<&gpio1 3 GPIO_ACTIVE_LOW>;
+		fifo-depth = <16>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
 		status = "disabled";
 	};
 };
