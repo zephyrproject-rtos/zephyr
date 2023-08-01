@@ -507,7 +507,6 @@ config OUTPUT_SYMBOLS
 
 config OUTPUT_DISASSEMBLY
 	bool "Create a disassembly file"
-	default y
 	help
 	  Create an .lst file with the assembly listing of the firmware.
 
