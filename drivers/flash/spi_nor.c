@@ -702,6 +702,34 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 	return ret;
 }
 
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+static int flash_spi_nor_ex_op(const struct device *dev, uint16_t code,
+			const uintptr_t in, void *out)
+{
+	int ret;
+
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	acquire_device(dev);
+
+	switch (code) {
+	case FLASH_EX_OP_RESET:
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RESET_EN);
+		if (ret == 0) {
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RESET_MEM);
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	release_device(dev);
+	return ret;
+}
+#endif
+
 static int spi_nor_write(const struct device *dev, off_t addr,
 			 const void *src,
 			 size_t size)
@@ -1426,6 +1454,9 @@ static const struct flash_driver_api spi_nor_api = {
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = spi_nor_sfdp_read,
 	.read_jedec_id = spi_nor_read_jedec_id,
+#endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = flash_spi_nor_ex_op,
 #endif
 };
 
