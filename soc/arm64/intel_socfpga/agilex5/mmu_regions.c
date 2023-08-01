@@ -30,6 +30,16 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
 
+	MMU_REGION_FLAT_ENTRY("SPI0M",
+			      DT_REG_ADDR(DT_NODELABEL(spi0)),
+			      DT_REG_SIZE(DT_NODELABEL(spi0)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
+	MMU_REGION_FLAT_ENTRY("SPI1M",
+			      DT_REG_ADDR(DT_NODELABEL(spi1)),
+			      DT_REG_SIZE(DT_NODELABEL(spi1)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
 	MMU_REGION_FLAT_ENTRY("GIC_ITS",
 			      DT_REG_ADDR(DT_NODELABEL(its)),
 			      DT_REG_SIZE(DT_NODELABEL(its)),
