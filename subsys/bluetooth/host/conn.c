@@ -52,9 +52,6 @@ LOG_MODULE_REGISTER(bt_conn);
 
 K_FIFO_DEFINE(free_tx);
 
-void tx_processor(struct k_work *item);
-K_WORK_DELAYABLE_DEFINE(tx_work, tx_processor);
-
 static void tx_free(struct bt_conn_tx *tx);
 
 static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
@@ -796,12 +793,6 @@ static bool should_stop_tx(struct bt_conn *conn)
 	return true;
 }
 
-void bt_tx_irq_raise(void)
-{
-	LOG_DBG("");
-	k_work_reschedule(&tx_work, K_NO_WAIT);
-}
-
 void bt_conn_data_ready(struct bt_conn *conn)
 {
 	LOG_DBG("DR");
@@ -924,7 +915,20 @@ static void destroy_and_callback(struct bt_conn *conn,
 	}
 }
 
-void tx_processor(struct k_work *item)
+static volatile bool _suspend_tx;
+
+#if defined(CONFIG_BT_TESTING)
+void bt_conn_suspend_tx(bool suspend)
+{
+	_suspend_tx = suspend;
+
+	LOG_DBG("%sing all data TX", suspend ? "suspend" : "resum");
+
+	bt_tx_irq_raise();
+}
+#endif	/* CONFIG_BT_TESTING */
+
+void bt_conn_tx_processor(void)
 {
 	LOG_DBG("start");
 	struct bt_conn *conn;
@@ -934,6 +938,10 @@ void tx_processor(struct k_work *item)
 
 	if (!IS_ENABLED(CONFIG_BT_CONN_TX)) {
 		/* Mom, can we have a real compiler? */
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TESTING) && _suspend_tx) {
 		return;
 	}
 
@@ -1011,7 +1019,7 @@ void tx_processor(struct k_work *item)
 	/* Always kick the TX work. It will self-suspend if it doesn't get
 	 * resources or there is nothing left to send.
 	 */
-	k_work_reschedule(&tx_work, K_NO_WAIT);
+	bt_tx_irq_raise();
 }
 
 static void process_unack_tx(struct bt_conn *conn)

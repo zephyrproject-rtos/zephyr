@@ -71,6 +71,8 @@ LOG_MODULE_REGISTER(bt_hci_core);
 #define BT_HCI_BUS  BT_DT_HCI_BUS_GET(BT_HCI_DEV)
 #define BT_HCI_NAME BT_DT_HCI_NAME_GET(BT_HCI_DEV)
 
+void bt_tx_irq_raise(void);
+
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
 /* Stacks for the threads */
@@ -80,8 +82,6 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
-static struct k_thread tx_thread_data;
-static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
 
@@ -337,10 +337,12 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	}
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
+	bt_tx_irq_raise();
 
 	return 0;
 }
 
+static bool process_pending_cmd(k_timeout_t timeout);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
@@ -357,21 +359,47 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
+	/* This local sem is just for suspending the current thread until the
+	 * command is processed by the LL. It is given (and we are awaken) by
+	 * the cmd_complete/status handlers.
+	 */
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
 	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
+	bt_tx_irq_raise();
 
-	/* Wait for a response from the Bluetooth Controller.
-	 * The Controller may fail to respond if:
-	 *  - It was never programmed or connected.
-	 *  - There was a fatal error.
-	 *
-	 * See the `BT_HCI_OP_` macros in hci_types.h or
-	 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
-	 * to map the opcode to the HCI command documentation.
-	 * Example: 0x0c03 represents HCI_Reset command.
+	/* TODO: disallow sending sync commands from syswq altogether */
+
+	/* Since the commands are now processed in the syswq, we cannot suspend
+	 * and wait. We have to send the command from the current context.
 	 */
+	if (k_current_get() == &k_sys_work_q.thread) {
+		/* drain the command queue until we get to send the command of interest. */
+		struct net_buf *cmd = NULL;
+
+		do {
+			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
+			LOG_DBG("process cmd %p want %p", cmd, buf);
+
+			/* Wait for a response from the Bluetooth Controller.
+			 * The Controller may fail to respond if:
+			 *  - It was never programmed or connected.
+			 *  - There was a fatal error.
+			 *
+			 * See the `BT_HCI_OP_` macros in hci_types.h or
+			 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+			 * to map the opcode to the HCI command documentation.
+			 * Example: 0x0c03 represents HCI_Reset command.
+			 */
+			bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+
+			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
+			(void)success; /* cmon zephyr fix your assert macros */
+		} while (buf != cmd);
+	}
+
+	/* Now that we have sent the command, suspend until the LL replies */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0,
 		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
@@ -2440,6 +2468,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (cmd(buf)->sync) {
+		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
 		k_sem_give(cmd(buf)->sync);
 	}
@@ -2480,6 +2509,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	/* Allow next command to be sent */
 	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2500,6 +2530,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	/* Allow next command to be sent */
 	if (ncmd) {
 		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2911,19 +2942,15 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void send_cmd(void)
+static void hci_core_send_cmd(void)
 {
 	struct net_buf *buf;
 	int err;
 
 	/* Get next command */
-	LOG_DBG("calling net_buf_get");
+	LOG_DBG("fetch cmd");
 	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
 	BT_ASSERT(buf);
-
-	/* Wait until ncmd > 0 */
-	LOG_DBG("calling sem_take_wait");
-	k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
 
 	/* Clear out any existing sent command */
 	if (bt_dev.sent_cmd) {
@@ -2942,27 +2969,7 @@ static void send_cmd(void)
 		k_sem_give(&bt_dev.ncmd_sem);
 		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
 		net_buf_unref(buf);
-	}
-}
-
-static void process_events(struct k_poll_event *ev, int count)
-{
-	LOG_DBG("count %d", count);
-
-	for (; count; ev++, count--) {
-		LOG_DBG("ev->state %u", ev->state);
-
-		switch (ev->state) {
-		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
-			if (ev->tag == BT_EVENT_CMD_TX) {
-				send_cmd();
-			}
-			break;
-		default:
-			LOG_WRN("Unexpected k_poll event state %u", ev->state);
-			__ASSERT_NO_MSG(0);
-			break;
-		}
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2983,38 +2990,6 @@ static void process_events(struct k_poll_event *ev, int count)
 #define EV_COUNT 1
 #endif /* CONFIG_BT_ISO */
 #endif /* CONFIG_BT_CONN */
-
-static void hci_tx_thread(void *p1, void *p2, void *p3)
-{
-	static struct k_poll_event events[EV_COUNT] = {
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-						K_POLL_MODE_NOTIFY_ONLY,
-						&bt_dev.cmd_tx_queue,
-						BT_EVENT_CMD_TX),
-	};
-
-	LOG_DBG("Started");
-
-	while (1) {
-		int ev_count, err;
-
-		events[0].state = K_POLL_STATE_NOT_READY;
-		ev_count = 1;
-
-		LOG_DBG("Calling k_poll with %d events", ev_count);
-
-		err = k_poll(events, ev_count, K_FOREVER);
-		BT_ASSERT(err == 0);
-
-		process_events(events, ev_count);
-
-		/* Make sure we don't hog the CPU if there's all the time
-		 * some ready events.
-		 */
-		k_yield();
-	}
-}
-
 
 static void read_local_ver_complete(struct net_buf *buf)
 {
@@ -4225,7 +4200,8 @@ static void rx_work_handler(struct k_work *work)
 #if defined(CONFIG_BT_TESTING)
 k_tid_t bt_testing_tx_tid_get(void)
 {
-	return &tx_thread_data;
+	/* We now TX everything from the syswq */
+	return &k_sys_work_q.thread;
 }
 #endif
 
@@ -4277,13 +4253,6 @@ int bt_enable(bt_ready_cb_t cb)
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
-	/* TX thread */
-	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(tx_thread_stack),
-			hci_tx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
-			0, K_NO_WAIT);
-	k_thread_name_set(&tx_thread_data, "BT TX");
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* RX thread */
@@ -4355,9 +4324,6 @@ int bt_disable(void)
 	bt_conn_cleanup_all();
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
-
-	/* Abort TX thread */
-	k_thread_abort(&tx_thread_data);
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
@@ -4658,4 +4624,42 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 	net_buf_unref(rsp);
 
 	return err;
+}
+
+/* Return `true` if a command was processed/sent */
+static bool process_pending_cmd(k_timeout_t timeout)
+{
+	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
+		if (k_sem_take(&bt_dev.ncmd_sem, K_NO_WAIT) == 0) {
+			hci_core_send_cmd();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void tx_processor(struct k_work *item)
+{
+	LOG_DBG("TX process start");
+	if (process_pending_cmd(K_NO_WAIT)) {
+		/* If we processed a command, let the scheduler run before
+		 * processing another command (or data).
+		 */
+		bt_tx_irq_raise();
+		return;
+	}
+
+	/* Hand over control to conn to process pending data */
+	if (IS_ENABLED(CONFIG_BT_CONN_TX)) {
+		bt_conn_tx_processor();
+	}
+}
+
+K_WORK_DELAYABLE_DEFINE(tx_work, tx_processor);
+
+void bt_tx_irq_raise(void)
+{
+	LOG_DBG("kick TX");
+	k_work_reschedule(&tx_work, K_NO_WAIT);
 }

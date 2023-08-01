@@ -541,8 +541,7 @@ void bt_conn_cleanup_all(void);
 /* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
-/* k_poll related helpers for the TX thread */
-int bt_conn_prepare_events(struct k_poll_event events[]);
+void bt_conn_tx_processor(void);
 
 /* To be called by upper layers when they want to send something.
  * Functions just like an IRQ.
