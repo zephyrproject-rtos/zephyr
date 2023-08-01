@@ -99,8 +99,8 @@ static enum sensor_channel icm42688_get_channel_from_position(int pos)
 	}
 }
 
-int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel chan,
-				int32_t reading, q31_t *out)
+int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel chan, int32_t reading,
+				q31_t *out)
 {
 	int32_t whole;
 	int32_t fraction;
@@ -134,9 +134,11 @@ int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel ch
 	}
 	intermediate = ((int64_t)whole * INT64_C(1000000) + fraction);
 	if (shift < 0) {
-		intermediate = intermediate * INT32_MAX * (1 << -shift) /  INT64_C(1000000);
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
 	} else if (shift > 0) {
-		intermediate = intermediate * INT32_MAX / (((1 << shift) - 1) * INT64_C(1000000));
+		intermediate =
+			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
 	*out = CLAMP(intermediate, INT32_MIN, INT32_MAX);
 
