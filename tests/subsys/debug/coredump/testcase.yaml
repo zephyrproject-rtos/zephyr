@@ -1,5 +1,5 @@
 tests:
-  coredump.logging_backend:
+  debug.coredump.logging_backend:
     tags: coredump
     ignore_faults: true
     ignore_qemu_crash: true
