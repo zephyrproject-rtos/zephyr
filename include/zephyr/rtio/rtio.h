@@ -1409,7 +1409,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 		r->submit_count = wait_count;
 	}
 #else
-	uintptr_t cq_count = atomic_get(&r->cq_count) + wait_count;
+	uintptr_t cq_count = (uintptr_t)atomic_get(&r->cq_count) + wait_count;
 #endif
 
 	/* Submit the queue to the executor which consumes submissions
@@ -1429,7 +1429,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 			 "semaphore was reset or timed out while waiting on completions!");
 	}
 #else
-	while (atomic_get(&r->cq_count) < cq_count) {
+	while ((uintptr_t)atomic_get(&r->cq_count) < cq_count) {
 		Z_SPIN_DELAY(10);
 		k_yield();
 	}
