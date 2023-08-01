@@ -269,7 +269,7 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  */
 struct coap_pending {
 	struct sockaddr addr;
-	uint32_t t0;
+	int64_t t0;
 	uint32_t timeout;
 	uint16_t id;
 	uint8_t *data;
