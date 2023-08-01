@@ -32,8 +32,8 @@ static atomic_t nwrites;
 static atomic_t indications;
 static atomic_t notifications;
 
-/* Defined in hci_core.c */
-extern k_tid_t bt_testing_tx_tid_get(void);
+/* Defined in conn.c */
+extern void bt_conn_suspend_tx(bool suspend);
 
 static struct bt_conn *dconn;
 
@@ -159,7 +159,7 @@ static ssize_t written_to(struct bt_conn *conn,
 	if (atomic_get(&nwrites) == 0) {
 		/* Suspend on the first write, which is an ATT Request */
 		LOG_INF("suspending HCI TX thread");
-		k_thread_suspend(bt_testing_tx_tid_get());
+		bt_conn_suspend_tx(true);
 	}
 
 	atomic_inc(&nwrites);
@@ -311,7 +311,7 @@ void test_procedure_0(void)
 	WAIT_FOR_VAL(nwrites, 3);
 
 	/* Send RSP to LL */
-	k_thread_resume(bt_testing_tx_tid_get());
+	bt_conn_suspend_tx(false);
 
 	PASS("DUT done\n");
 }
