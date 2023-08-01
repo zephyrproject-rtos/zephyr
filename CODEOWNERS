@@ -62,7 +62,7 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/arm/xilinx_zynq7000/                 @ibirnbaum
 /soc/arm/xilinx_zynqmp/                   @stephanosio
-/soc/arm/renesas_rcar/                    @aaillet @pmarzin
+/soc/arm/renesas_rcar/                    @aaillet
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
 /soc/arm64/bcm_vk/                        @abhishek-brcm
@@ -72,6 +72,7 @@
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /soc/arm64/intel_socfpga/*                @siclim
+/soc/arm64/renesas_rcar/                  @lorc @xakep-amatop
 /soc/Kconfig                              @tejlmand @galak @nashif @nordicjm
 /submanifests/*                           @mbolivar-ampere
 /arch/x86/                                @jhedberg @nashif
@@ -168,7 +169,7 @@
 /boards/arm/stm32h735g_disco/             @benediktibk
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
-/boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
+/boards/arm/rcar_*/                       @aaillet
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/arm/nrf5340_audio_dk_nrf5340      @koffes @alexsven @erikrobstad @rick1082 @gWacey
 /boards/common/                           @mbolivar-ampere
@@ -209,6 +210,7 @@
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
 /boards/arm64/intel_socfpga_agilex5_socdk/ @chongteikheng
+/boards/arm64/rcar_*/                     @lorc @xakep-amatop
 /boards/Kconfig                           @tejlmand @galak @nashif @nordicjm
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
@@ -255,7 +257,7 @@
 /drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter @henrikbrixandersen
 /drivers/can/*mcp2515*                    @karstenkoenig
-/drivers/can/*rcar*                       @aaillet @pmarzin
+/drivers/can/*rcar*                       @aaillet
 /drivers/clock_control/*agilex*           @siclim @gdengi
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @sylvioalves
@@ -402,7 +404,7 @@
 /drivers/pwm/*gecko*                      @sun681
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
-/drivers/pwm/*rcar*                       @pmarzin
+/drivers/pwm/*rcar*                       @aaillet
 /drivers/pwm/*max31790*                   @benediktibk
 /drivers/regulator/*                      @gmarull
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
@@ -530,6 +532,7 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/intel/*intel_socfpga*          @siclim
 /dts/arm64/nxp/                           @JiafeiPan
+/dts/arm64/renesas/                       @lorc @xakep-amatop
 /dts/arm/quicklogic/                      @fkokosinski @kgugala
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
@@ -564,7 +567,7 @@
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
-/dts/arm/renesas/rcar/                    @aaillet @pmarzin
+/dts/arm/renesas/rcar/                    @aaillet
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
