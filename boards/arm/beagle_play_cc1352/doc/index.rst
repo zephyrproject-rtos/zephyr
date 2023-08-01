@@ -11,8 +11,8 @@ quad-core ARM Cortex-A53 SoC with an external TI SimpleLink multi-standard CC135
 providing long-range, low-power connectivity.
 
 
-.. figure:: img/beagleplay.png
-   :width: 400px
+.. figure:: img/beagleplay.webp
+   :width: 500px
    :align: center
    :alt: BeagleBoard.org BeaglePlay
 
