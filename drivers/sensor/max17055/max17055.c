@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
  * @param valp Place to put the value on success
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17055_reg_read(const struct device *dev, int reg_addr,
+static int max17055_reg_read(const struct device *dev, uint8_t reg_addr,
 			     int16_t *valp)
 {
 	const struct max17055_config *config = dev->config;
@@ -44,13 +44,13 @@ static int max17055_reg_read(const struct device *dev, int reg_addr,
 	return 0;
 }
 
-static int max17055_reg_write(const struct device *dev, int reg_addr,
+static int max17055_reg_write(const struct device *dev, uint8_t reg_addr,
 			      uint16_t val)
 {
 	const struct max17055_config *config = dev->config;
 	uint8_t buf[3];
 
-	buf[0] = (uint8_t)reg_addr;
+	buf[0] = reg_addr;
 	sys_put_le16(val, &buf[1]);
 
 	return i2c_write_dt(&config->i2c, buf, sizeof(buf));
