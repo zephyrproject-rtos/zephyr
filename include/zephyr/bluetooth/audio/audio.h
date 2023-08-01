@@ -173,6 +173,14 @@ enum bt_audio_metadata_type {
 	BT_AUDIO_METADATA_TYPE_VENDOR              = 0xFF,
 };
 
+/**
+ * Helper to check whether metadata type is known by the stack.
+ */
+#define BT_AUDIO_METADATA_TYPE_IS_KNOWN(_type) \
+	(IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, \
+			 BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE) || \
+	 IN_RANGE(_type, BT_AUDIO_METADATA_TYPE_EXTENDED, BT_AUDIO_METADATA_TYPE_VENDOR))
+
 /* Unicast Announcement Type, Generic Audio */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01

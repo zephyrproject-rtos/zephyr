@@ -2038,30 +2038,62 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	/* The CAP acceptor shall not accept metadata with
-	 * unsupported stream context.
-	 */
-	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
-		if (data_type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-			const uint16_t context = sys_get_le16(data_value);
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data_type)) {
+		LOG_WRN("Unknown metadata type 0x%02x", data_type);
+		return true;
+	}
 
+	switch (data_type) {
+	/* TODO: Consider rejecting BT_AUDIO_METADATA_TYPE_PREF_CONTEXT type */
+	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
+	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT: {
+		uint16_t context;
+
+		if (data_len != sizeof(context)) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EBADMSG;
+			return false;
+		}
+
+		context = sys_get_le16(data_value);
+		if (context == BT_AUDIO_CONTEXT_TYPE_PROHIBITED) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EINVAL;
+			return false;
+		}
+
+		/* The CAP acceptor shall not accept metadata with unsupported stream context. */
+		if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) &&
+		    data_type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
 			if (!bt_pacs_context_available(ep->dir, context)) {
 				LOG_WRN("Context 0x%04x is unavailable", context);
 				*result->rsp = BT_BAP_ASCS_RSP(
 					BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data_type);
 				result->err = -EACCES;
-
 				return false;
 			}
-		} else if (data_type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
-			/* Verify that the CCID is a known CCID on the
-			 * writing device
-			 */
+		}
+
+		break;
+	}
+	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
+		if (data_len != 3) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EBADMSG;
+			return false;
+		}
+
+		break;
+	case BT_AUDIO_METADATA_TYPE_CCID_LIST: {
+		/* Verify that the CCID is a known CCID on the writing device */
+		if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
 			for (uint8_t i = 0; i < data_len; i++) {
 				const uint8_t ccid = data_value[i];
 
-				if (!bt_cap_acceptor_ccid_exist(ep->stream->conn,
-								ccid)) {
+				if (!bt_cap_acceptor_ccid_exist(ep->stream->conn, ccid)) {
 					LOG_WRN("CCID %u is unknown", ccid);
 
 					/* TBD:
@@ -2076,6 +2108,42 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 				}
 			}
 		}
+
+		break;
+	}
+	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
+		if (data_len != 1) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EBADMSG;
+			return false;
+		}
+
+		break;
+	case BT_AUDIO_METADATA_TYPE_AUDIO_STATE: {
+		uint8_t state;
+
+		if (data_len != sizeof(state)) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EBADMSG;
+			return false;
+		}
+
+		break;
+	}
+	/* TODO: Consider rejecting BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE type */
+	case BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE:
+		if (data_len != 0) {
+			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
+						       data_type);
+			result->err = -EBADMSG;
+			return false;
+		}
+
+		break;
+	default:
+		break;
 	}
 
 	return true;
@@ -2097,22 +2165,6 @@ static int ascs_verify_metadata(const struct net_buf_simple *buf, struct bt_bap_
 
 	/* Parse LTV entries */
 	bt_data_parse(&meta_ltv, ascs_parse_metadata, &result);
-
-	/* Check if all entries could be parsed */
-	if (meta_ltv.len != 0) {
-		LOG_ERR("Unable to parse Metadata: len %u", meta_ltv.len);
-
-		if (meta_ltv.len > 2) {
-			/* Value of the Metadata Type field in error */
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
-					       meta_ltv.data[2]);
-			return meta_ltv.data[2];
-		}
-
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
-				       BT_BAP_ASCS_REASON_NONE);
-		return -EINVAL;
-	}
 
 	return result.err;
 }
