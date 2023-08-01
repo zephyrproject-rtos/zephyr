@@ -5,9 +5,3 @@
 compatible: "bosch,bmi270"
 
 include: [i2c-device.yaml, "bosch,bmi270.yaml"]
-
-properties:
-  irq-gpios:
-    type: phandle-array
-    description: |
-      The INT1 and (optional) INT2 signal connections.
