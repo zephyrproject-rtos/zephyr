@@ -20,10 +20,10 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/drivers/flash.h>
-#include <zephyr/storage/flash_map.h>
-#include <zephyr/stats/stats.h>
-#include <zephyr/sys/crc.h>
 #include <zephyr/fs/nvs.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/crc.h>
 #include "nvs_priv.h"
 
 #define TEST_NVS_FLASH_AREA		storage_partition
@@ -72,14 +72,6 @@ static void before(void *data)
 
 	fixture->sim_stats = stats_group_find("flash_sim_stats");
 	fixture->sim_thresholds = stats_group_find("flash_sim_thresholds");
-
-	/* Verify if NVS is initialized. */
-	if (fixture->fs.ready) {
-		int err;
-
-		err = nvs_clear(&fixture->fs);
-		zassert_true(err == 0,  "nvs_clear call failure: %d", err);
-	}
 }
 
 static void after(void *data)
@@ -91,6 +83,14 @@ static void after(void *data)
 	}
 	if (fixture->sim_thresholds) {
 		stats_reset(fixture->sim_thresholds);
+	}
+
+	/* Clear NVS */
+	if (fixture->fs.ready) {
+		int err;
+
+		err = nvs_clear(&fixture->fs);
+		zassert_true(err == 0, "nvs_clear call failure: %d", err);
 	}
 
 	fixture->fs.sector_count = TEST_SECTOR_COUNT;
@@ -744,6 +744,12 @@ static size_t num_matching_cache_entries(uint32_t addr, bool compare_sector_only
 
 	return num;
 }
+
+static size_t num_occupied_cache_entries(struct nvs_fs *fs)
+{
+	return CONFIG_NVS_LOOKUP_CACHE_SIZE -
+	       num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false, fs);
+}
 #endif
 
 /*
@@ -762,10 +768,10 @@ ZTEST_F(nvs, test_nvs_cache_init)
 
 	fixture->fs.sector_count = 3;
 	err = nvs_mount(&fixture->fs);
-	zassert_true(err == 0, "nvs_init call failure: %d", err);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
 
-	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false, &fixture->fs);
-	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE, "uninitialized cache");
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 0, "uninitialized cache");
 
 	/* Test cache update after nvs_write() */
 
@@ -773,8 +779,8 @@ ZTEST_F(nvs, test_nvs_cache_init)
 	err = nvs_write(&fixture->fs, 1, &data, sizeof(data));
 	zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
 
-	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false, &fixture->fs);
-	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE - 1, "cache not updated after write");
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "cache not updated after write");
 
 	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
 	zassert_equal(num, 1, "invalid cache entry after write");
@@ -783,10 +789,10 @@ ZTEST_F(nvs, test_nvs_cache_init)
 
 	memset(fixture->fs.lookup_cache, 0xAA, sizeof(fixture->fs.lookup_cache));
 	err = nvs_mount(&fixture->fs);
-	zassert_true(err == 0, "nvs_init call failure: %d", err);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
 
-	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false, &fixture->fs);
-	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE - 1, "uninitialized cache after restart");
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "uninitialized cache after restart");
 
 	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
 	zassert_equal(num, 1, "invalid cache entry after restart");
@@ -806,7 +812,7 @@ ZTEST_F(nvs, test_nvs_cache_collission)
 
 	fixture->fs.sector_count = 3;
 	err = nvs_mount(&fixture->fs);
-	zassert_true(err == 0, "nvs_init call failure: %d", err);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
 
 	for (id = 0; id < CONFIG_NVS_LOOKUP_CACHE_SIZE + 1; id++) {
 		data = id;
@@ -834,7 +840,7 @@ ZTEST_F(nvs, test_nvs_cache_gc)
 
 	fixture->fs.sector_count = 3;
 	err = nvs_mount(&fixture->fs);
-	zassert_true(err == 0, "nvs_init call failure: %d", err);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
 
 	/* Fill the first sector with writes of ID 1 */
 
@@ -867,5 +873,63 @@ ZTEST_F(nvs, test_nvs_cache_gc)
 
 	num = num_matching_cache_entries(2 << ADDR_SECT_SHIFT, true, &fixture->fs);
 	zassert_equal(num, 2, "invalid cache content after gc");
+#endif
+}
+
+/*
+ * Test NVS lookup cache hash quality.
+ */
+ZTEST_F(nvs, test_nvs_cache_hash_quality)
+{
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	const size_t MIN_CACHE_OCCUPANCY = CONFIG_NVS_LOOKUP_CACHE_SIZE * 6 / 10;
+	int err;
+	size_t num;
+	uint16_t id;
+	uint16_t data;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Write NVS IDs from 0 to CONFIG_NVS_LOOKUP_CACHE_SIZE - 1 */
+
+	for (uint16_t i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+		id = i;
+		data = 0;
+
+		err = nvs_write(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+	}
+
+	/* Verify that at least 60% cache entries are occupied */
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_NVS_LOOKUP_CACHE_SIZE,
+				  "too low cache occupancy - poor hash quality");
+
+	err = nvs_clear(&fixture->fs);
+	zassert_true(err == 0, "nvs_clear call failure: %d", err);
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Write CONFIG_NVS_LOOKUP_CACHE_SIZE NVS IDs that form the following series: 0, 4, 8... */
+
+	for (uint16_t i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+		id = i * 4;
+		data = 0;
+
+		err = nvs_write(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+	}
+
+	/* Verify that at least 60% cache entries are occupied */
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_NVS_LOOKUP_CACHE_SIZE,
+				  "too low cache occupancy - poor hash quality");
+
 #endif
 }
