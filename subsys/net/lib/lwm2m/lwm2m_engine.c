@@ -368,7 +368,6 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 			continue;
 		}
 
-		/* TODO: will roll over in 47 days */
 		remaining = p->t0 + p->timeout;
 		if (remaining < timestamp) {
 			msg = find_msg(p, NULL);
