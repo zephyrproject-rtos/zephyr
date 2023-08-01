@@ -25,7 +25,9 @@ ISR_FLAG_DIRECT = 1 << 0
 #              into 1 line which then goes into the 2nd level)
 FIRST_LVL_INTERRUPTS = 0x000000FF
 SECND_LVL_INTERRUPTS = 0x0000FF00
+SECND_LVL_SHIFT = 8
 THIRD_LVL_INTERRUPTS = 0x00FF0000
+THIRD_LVL_SHIFT = 16
 
 def debug(text):
     if args.debug:
@@ -231,6 +233,12 @@ def getindex(irq, irq_aggregator_pos):
               " Recheck interrupt configuration.")
 
 def main():
+    global FIRST_LVL_INTERRUPTS
+    global SECND_LVL_INTERRUPTS
+    global SECND_LVL_SHIFT
+    global THIRD_LVL_INTERRUPTS
+    global THIRD_LVL_SHIFT
+
     parse_args()
 
     with open(args.kernel, "rb") as fp:
@@ -240,12 +248,25 @@ def main():
     if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
         max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
 
+        # if more than 255 interrupts are allowed by the CPU
+        # per level then we need to recalculate the bit masks
+        bits = max_irq_per.bit_length()
+        if bits > 8:
+            FIRST_LVL_INTERRUPTS = 0
+            for i in range(0, bits):
+                FIRST_LVL_INTERRUPTS = (FIRST_LEVEL_MASK << 1) | 1
+
         if "CONFIG_2ND_LEVEL_INTERRUPTS" in syms:
             num_aggregators = syms["CONFIG_NUM_2ND_LEVEL_AGGREGATORS"]
             irq2_baseoffset = syms["CONFIG_2ND_LVL_ISR_TBL_OFFSET"]
             list_2nd_lvl_offsets = [syms['CONFIG_2ND_LVL_INTR_{}_OFFSET'.
                                          format(str(i).zfill(2))] for i in
                                     range(num_aggregators)]
+            if bits > 8 and 2 * bits < 32:
+                SECND_LVL_SHIFT += (bits - SECND_LVL_SHIFT)
+                SECND_LVL_INTERRUPTS = FIRST_LVL_INTERRUPTS << SECND_LVL_SHIFT
+            elif 2 * bits >= 32:
+                error("MAX_IRQ_PER_AGGREGATOR is too large to have second tier interrupts.")
 
             debug('2nd level offsets: {}'.format(list_2nd_lvl_offsets))
 
@@ -255,6 +276,12 @@ def main():
                 list_3rd_lvl_offsets = [syms['CONFIG_3RD_LVL_INTR_{}_OFFSET'.
                                              format(str(i).zfill(2))] for i in
                                         range(num_aggregators)]
+
+            if bits > 8 and 3 * bits < 32:
+                THIRD_LVL_SHIFT = 2 * SECND_LVL_SHIFT
+                THIRD_LVL_INTERRUPTS = FIRST_LVL_INTERRUPTS << THIRD_LVL_SHIFT
+            elif 3 * bits >= 32:
+                error("MAX_IRQ_PER_AGGREGATOR is too large to have third tier interrupts.")
 
                 debug('3rd level offsets: {}'.format(list_3rd_lvl_offsets))
 
@@ -311,8 +338,8 @@ def main():
             else:
                 # Figure out third level interrupt position
                 debug('IRQ = ' + hex(irq))
-                irq3 = (irq & THIRD_LVL_INTERRUPTS) >> 16
-                irq2 = (irq & SECND_LVL_INTERRUPTS) >> 8
+                irq3 = (irq & THIRD_LVL_INTERRUPTS) >> THIRD_LVL_SHIFT
+                irq2 = (irq & SECND_LVL_INTERRUPTS) >> SECND_LVL_SHIFT
                 irq1 = irq & FIRST_LVL_INTERRUPTS
 
                 if irq3:
