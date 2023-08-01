@@ -4,13 +4,14 @@ common:
     - native_posix_64
   integration_platforms:
     - native_posix
-  tags: ot_radio
+  tags:
+    - openthread
 tests:
-  tests.subsys.openthread.radio_test.min: {}
-  tests.subsys.openthread.radio_test.timed_tx:
+  openthread.radio_test.min: {}
+  openthread.radio_test.timed_tx:
     extra_configs:
       - CONFIG_NET_PKT_TXTIME=y
-  tests.subsys.openthread.radio_test.csl:
+  openthread.radio_test.csl:
     # Hack to enable CSL w/o having to enable CONFIG_OPENTHREAD
     extra_args:
       - EXTRA_CPPFLAGS=-DCONFIG_OPENTHREAD_CSL_RECEIVER
