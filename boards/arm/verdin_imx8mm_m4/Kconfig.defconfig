@@ -1,0 +1,11 @@
+# VERDIN_IMX8MM_M4 board defconfig
+
+# Copyright (c) 2023, Toradex
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_VERDIN_IMX8MM_M4
+
+config BOARD
+	default "verdin_imx8mm_m4"
+
+endif # VERDIN_IMX8MM_M4
