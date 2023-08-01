@@ -260,6 +260,18 @@ Drivers and Sensors
 Networking
 **********
 
+* CoAP:
+
+  * Use 64 bit timer values for calculating transmission timeouts. This fixes potential problems for
+    devices that stay on for more than 49 days when the 32 bit uptime counter might roll over and
+    cause CoAP packets to not timeout at all on this event.
+
+* LwM2M:
+
+  * Added support for tickless mode. This removes the 500 ms timeout from the socket loop
+    so the engine does not constantly wake up the CPU. This can be enabled by
+    :kconfig:option:`CONFIG_LWM2M_TICKLESS`.
+
 * Wi-Fi
   * Added Passive scan support.
   * The Wi-Fi scan API updated with Wi-Fi scan parameter to allow scan mode selection.
