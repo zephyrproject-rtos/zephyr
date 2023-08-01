@@ -528,6 +528,7 @@ test_i2c_bmi160: bmi160@52 {
 test_i2c_bmi270: bmi270@53 {
 	compatible = "bosch,bmi270";
 	reg = <0x53>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_fdc2x1x: fdc2x1x@54 {
