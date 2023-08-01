@@ -213,6 +213,7 @@ fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
 fii	Foxconn Industrial Internet
+fintek	Feature Integration Technology Inc.
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
 frida	Shenzhen Frida LCD Co., Ltd.
