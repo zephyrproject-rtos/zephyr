@@ -7,4 +7,5 @@ depends on SOC_SERIES_AGILEX5
 
 config SOC_AGILEX5
 	bool "Intel SoC FPGA Agilex5"
+	select HAS_SPI_DW if SPI
 endchoice

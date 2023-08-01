@@ -18,4 +18,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config KERNEL_VM_SIZE
 	default 0x400000
+
+if SPI_DW
+
+config SPI_DW_ACCESS_WORD_ONLY
+	default y
+
+endif # SPI_DW
+
 endif
