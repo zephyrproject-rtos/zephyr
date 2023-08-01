@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2023 Toradex
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/mimx8mm6dvtlz-pinctrl.dtsi>
+
+&pinctrl {
+	uart4_default: uart4_default {
+		group0 {
+			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
+				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
+
+	uart3_default: uart3_default {
+		group0 {
+			pinmux = <&iomuxc_uart3_rxd_uart_rx_uart3_rx>,
+				<&iomuxc_uart3_txd_uart_tx_uart3_tx>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
+
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <&iomuxc_sai3_rxd_uart_cts_b_uart2_rts_b>,
+				<&iomuxc_sai3_rxd_uart_rts_b_uart2_rts_b>,
+				<&iomuxc_sai3_txfs_uart_tx_uart2_rx>,
+				<&iomuxc_sai3_txc_uart_rx_uart2_tx>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
+
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <&iomuxc_sai2_rxfs_uart_rx_uart1_tx>,
+				<&iomuxc_sai2_rxc_uart_rx_uart1_rx>,
+				<&iomuxc_sai2_rxd0_uart_rts_b_uart1_rts_b>,
+				<&iomuxc_sai2_txfs_uart_cts_b_uart1_cts_b>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
+};
