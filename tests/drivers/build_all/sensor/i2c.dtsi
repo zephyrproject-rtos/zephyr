@@ -740,3 +740,8 @@ test_i2c_ist8310@6f {
 	reg = <0x6f>;
 	status = "okay";
 };
+
+test_i2c_f75303: f75303@70 {
+	compatible = "fintek,f75303";
+	reg = <0x70>;
+};
