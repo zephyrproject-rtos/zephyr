@@ -229,36 +229,87 @@ static int max17055_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
 	struct max17055_data *priv = dev->data;
+	int ret = -ENOTSUP;
 
-	struct {
-		int reg_addr;
-		int16_t *dest;
-	} regs[] = {
-		{ VCELL, &priv->voltage },
-		{ VFOCV, &priv->ocv },
-		{ AVG_CURRENT, &priv->avg_current },
-		{ REP_SOC, &priv->state_of_charge },
-		{ INT_TEMP, &priv->internal_temp },
-		{ REP_CAP, &priv->remaining_cap },
-		{ FULL_CAP_REP, &priv->full_cap },
-		{ TTE, &priv->time_to_empty },
-		{ TTF, &priv->time_to_full },
-		{ CYCLES, &priv->cycle_count },
-		{ DESIGN_CAP, &priv->design_cap },
-	};
-
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-	for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
-		int rc;
-
-		rc = max17055_reg_read(dev, regs[i].reg_addr, regs[i].dest);
-		if (rc != 0) {
-			LOG_ERR("Failed to read channel %d", chan);
-			return rc;
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_VOLTAGE) {
+		ret = max17055_reg_read(dev, VCELL, &priv->voltage);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
-	return 0;
+	if (chan == SENSOR_CHAN_ALL ||
+	    (enum sensor_channel_max17055)chan == SENSOR_CHAN_MAX17055_VFOCV) {
+		ret = max17055_reg_read(dev, VFOCV, &priv->ocv);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_AVG_CURRENT) {
+		ret = max17055_reg_read(dev, AVG_CURRENT, &priv->avg_current);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_STATE_OF_CHARGE) {
+		ret = max17055_reg_read(dev, REP_SOC, &priv->state_of_charge);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_TEMP) {
+		ret = max17055_reg_read(dev, INT_TEMP, &priv->internal_temp);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY) {
+		ret = max17055_reg_read(dev, REP_CAP, &priv->remaining_cap);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY) {
+		ret = max17055_reg_read(dev, FULL_CAP_REP, &priv->full_cap);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_TIME_TO_EMPTY) {
+		ret = max17055_reg_read(dev, TTE, &priv->time_to_empty);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_TIME_TO_FULL) {
+		ret = max17055_reg_read(dev, TTF, &priv->time_to_full);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_CYCLE_COUNT) {
+		ret = max17055_reg_read(dev, CYCLES, &priv->cycle_count);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY) {
+		ret = max17055_reg_read(dev, DESIGN_CAP, &priv->design_cap);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return ret;
 }
 
 static int max17055_exit_hibernate(const struct device *dev)
