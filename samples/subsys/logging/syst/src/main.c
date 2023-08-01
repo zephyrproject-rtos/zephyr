@@ -67,7 +67,18 @@ void log_msgs(void)
 	LOG_DBG("mixed str %s %s %s %s %s %s %s", vs0, "---", vs0, "---", vs1, "---", vs1);
 	LOG_DBG("mixed c/s %c %s %s %s %c", c, s, vs0, s, c);
 
+#if defined(__clang__) && defined(CONFIG_FPU)
+	/* Clang would generate floating pointer instructions
+	 * to process floats as there usually is no soft float
+	 * support from host or vendor LLVM toolchain. Without
+	 * CONFIG_FPU enabled, the platform runs assuming no
+	 * floating point instructions would be used, and
+	 * encountering such instructions would result in
+	 * exception. So only print floats if CONFIG_FPU is
+	 * enabled to avoid such exceptions.
+	 */
 	LOG_DBG("Debug message example, %f", 3.14159265359);
+#endif
 
 	/* hexdump */
 	frame.rtr = 1U;
