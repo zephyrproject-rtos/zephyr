@@ -455,6 +455,23 @@ unique identifier which is then used to fetch the appropriate handler function
 and parameter out of a table populated when the dynamic interrupt was
 connected.
 
+Going Beyond the Default Supported Number of Interrupts
+-------------------------------------------------------
+
+When generating interrupts in the multilevel configuration, 8-bits per level is the default
+mask used when determining which level a given interrupt code belongs to. This can become
+a problem when dealing with CPUs that support more than 255 interrupts per single
+aggregator. In this case it may be desirable to override these defaults and use a custom
+number of bits per level. Regardless of how many bits used for each level, the sum of
+the total bits used between all levels must sum to be less than or equal to 32-bits,
+fitting into a single 32-bit integer. To modify the bit total per level, override the
+default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
+for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second tier and
+:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third tier. These masks control the
+length of the bit masks and shift to apply when generating interrupt values, when checking the
+interrupts level and converting interrupts to a different level. The logic controlling
+this can be found in `irq.h`
+
 Suggested Uses
 **************
 
