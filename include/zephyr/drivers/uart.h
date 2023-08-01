@@ -326,6 +326,7 @@ struct uart_event {
 typedef void (*uart_callback_t)(const struct device *dev,
 				struct uart_event *evt, void *user_data);
 
+typedef void (*uart_rx_ctrl_cb_t)(const struct device *dev, void *user_data);
 /**
  * @}
  */
@@ -363,7 +364,9 @@ __subsystem struct uart_driver_api {
 			      size_t len);
 #endif
 
-#endif
+#endif /* CONFIG_UART_ASYNC_API */
+
+	int (*rx_ctrl)(const struct device *dev, bool enable, uart_rx_ctrl_cb_t cb, void *data);
 
 	/** Console I/O function */
 	int (*poll_in)(const struct device *dev, unsigned char *p_char);
@@ -480,6 +483,45 @@ static inline int z_impl_uart_err_check(const struct device *dev)
 	}
 
 	return api->err_check(dev);
+}
+
+/**
+ * @brief Control state of the receiver.
+ *
+ * Function can only be used if the asynchronous API is not used. Receiver can be
+ * disabled to reduce power consumption. If asynchronous API is not enabled for
+ * a given device then initial state of the receiver is active.
+ *
+ * @param dev UART device instance.
+ * @param enable true to enable the receiver and false otherwise.
+ * @param cb If not null then operation is asynchronous and completion is reported in
+ * 	     the callback. If null, operation is synchronous.
+ * @param user_data Data passed to the callback.
+ *
+ * @retval 0 If no error was detected.
+ * @retval -ENOSYS If not implemented.
+ * @retval -ENOTSUP If UART device is using the asynchronous API.
+ * @retval -EALREADY If receiver is in the unexpected state.
+ * @retval -EIO If state change failed.
+ */
+__syscall int uart_rx_ctrl(const struct device *dev,
+			   bool enable,
+			   uart_rx_ctrl_cb_t cb,
+			   void *user_data);
+
+static inline int z_impl_uart_rx_ctrl(const struct device *dev,
+				      bool enable,
+				      uart_rx_ctrl_cb_t cb,
+				      void *user_data)
+{
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->rx_ctrl == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->rx_ctrl(dev, enable, cb, user_data);
 }
 
 /**
