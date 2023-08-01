@@ -556,8 +556,8 @@
 			#dma-cells = <1>;
 			reg = <0x0007c000 0x1000>;
 			shim = <0x0007c800 0x1000>;
-			interrupts = <0x10 0 0>;
-			interrupt-parent = <&core_intc>;
+			interrupts = <17 0 0>;
+			interrupt-parent = <&ace_intc>;
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;
 			status = "okay";
