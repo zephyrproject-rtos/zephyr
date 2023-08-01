@@ -50,14 +50,15 @@ void sys_arch_reboot(int type)
 		mc_rgm_cfg.ResetType = MCU_DEST_RESET;
 		Power_Ip_PerformReset(&power_cfg);
 		break;
-	case SYS_REBOOT_WARM:
+	default:
 		/* Functional reset */
 		mc_rgm_cfg.ResetType = MCU_FUNC_RESET;
 		Power_Ip_PerformReset(&power_cfg);
 		break;
-	default:
-		/* Do nothing */
-		break;
+	}
+
+	for (;;) {
+		/* wait for reset */
 	}
 }
 #endif /* CONFIG_REBOOT */
