@@ -90,7 +90,7 @@ static int get_hw_block_info(TCPWM_CNT_Type *reg_addr, cyhal_resource_inst_t *hw
 
 static void ifx_cat1_counter_event_callback(void *callback_arg, cyhal_timer_event_t event)
 {
-	const struct device *dev = (const struct device *) callback_arg;
+	const struct device *dev = (const struct device *)callback_arg;
 	struct ifx_cat1_counter_data *const data = dev->data;
 	const struct ifx_cat1_counter_config *const config = dev->config;
 
@@ -99,8 +99,7 @@ static void ifx_cat1_counter_event_callback(void *callback_arg, cyhal_timer_even
 	    (((CYHAL_TIMER_IRQ_CAPTURE_COMPARE & event) == CYHAL_TIMER_IRQ_CAPTURE_COMPARE) ||
 	     data->alarm_irq_flag)) {
 		/* Alarm works as one-shot, so disable event */
-		cyhal_timer_enable_event(&data->counter_obj,
-					 CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
+		cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
 					 config->irq_priority, false);
 
 		/* Call User callback for Alarm */
@@ -130,8 +129,8 @@ static void ifx_cat1_counter_set_int_pending(const struct device *dev)
 	cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
 				 config->irq_priority, true);
 	Cy_TCPWM_SetInterrupt(data->counter_obj.tcpwm.base,
-				 _CYHAL_TCPWM_CNT_NUMBER(data->counter_obj.tcpwm.resource),
-				 CY_TCPWM_INT_ON_CC0);
+			      _CYHAL_TCPWM_CNT_NUMBER(data->counter_obj.tcpwm.resource),
+			      CY_TCPWM_INT_ON_CC0);
 }
 
 static int ifx_cat1_counter_init(const struct device *dev)
@@ -205,9 +204,8 @@ static int ifx_cat1_counter_init(const struct device *dev)
 	}
 
 	/* Register timer event callback */
-	cyhal_timer_register_callback(&data->counter_obj,
-				      ifx_cat1_counter_event_callback,
-				      (void *) dev);
+	cyhal_timer_register_callback(&data->counter_obj, ifx_cat1_counter_event_callback,
+				      (void *)dev);
 
 	return 0;
 }
@@ -292,7 +290,8 @@ static int ifx_cat1_counter_set_top_value(const struct device *dev,
 				return -EIO;
 			}
 		} else {
-			TCPWM_CNT_PERIOD(data->counter_obj.tcpwm.base, _CYHAL_TCPWM_CNT_NUMBER(
+			TCPWM_CNT_PERIOD(data->counter_obj.tcpwm.base,
+					 _CYHAL_TCPWM_CNT_NUMBER(
 						 data->counter_obj.tcpwm.resource)) = cfg->ticks;
 		}
 
@@ -306,7 +305,6 @@ static int ifx_cat1_counter_set_top_value(const struct device *dev,
 	}
 	return 0;
 }
-
 
 static uint32_t ifx_cat1_counter_get_top_value(const struct device *dev)
 {
@@ -386,8 +384,8 @@ static int ifx_cat1_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 
 		/* limit max to detect short relative being set too late. */
 		max_rel_val = irq_on_late ? (top_val / 2U) : top_val;
-		val = ifx_cat1_counter_ticks_add(cyhal_timer_read(&data->counter_obj),
-						 val, top_val);
+		val = ifx_cat1_counter_ticks_add(cyhal_timer_read(&data->counter_obj), val,
+						 top_val);
 	}
 
 	/* Decrement value to detect also case when val == counter_read(dev). Otherwise,
@@ -435,8 +433,7 @@ static int ifx_cat1_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 				data->counter_cfg.compare_value;
 		}
 
-		cyhal_timer_enable_event(&data->counter_obj,
-					 CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
+		cyhal_timer_enable_event(&data->counter_obj, CYHAL_TIMER_IRQ_CAPTURE_COMPARE,
 					 config->irq_priority, true);
 	}
 
@@ -501,35 +498,30 @@ static const struct counter_driver_api counter_api = {
 	.set_guard_period = ifx_cat1_counter_set_guard_period,
 };
 
-#define DT_INST_GET_CYHAL_GPIO_OR(inst, gpios_prop, default) \
-	COND_CODE_1(					     \
-		DT_INST_NODE_HAS_PROP(inst, gpios_prop),     \
-		(DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(	     \
-			 DT_INST(inst, DT_DRV_COMPAT), gpios_prop)), (default))
+#define DT_INST_GET_CYHAL_GPIO_OR(inst, gpios_prop, default)                                       \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, gpios_prop),                                       \
+		    (DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_INST(inst, DT_DRV_COMPAT), gpios_prop)),   \
+		    (default))
 
 /* Counter driver init macros */
-#define INFINEON_CAT1_COUNTER_INIT(n)							 \
-											 \
-	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;			 \
-											 \
-	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = {	 \
-		.counter_info = {							 \
-				.max_top_value = (DT_INST_PROP(n, resolution) == 32)	 \
-				? UINT32_MAX : UINT16_MAX,				 \
-				.freq = DT_INST_PROP_OR(n, clock_frequency, 10000),	 \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,			 \
-				.channels = 1						 \
-			},								 \
-		.reg_addr = (TCPWM_CNT_Type *)DT_INST_REG_ADDR(n),			 \
-		.irq_priority = DT_INST_IRQ(n, priority),				 \
-		.irqn = DT_INST_IRQN(n),						 \
-		.external_pin = (cyhal_gpio_t)						 \
-				DT_INST_GET_CYHAL_GPIO_OR(n, external_trigger_gpios, NC) \
-	};										 \
-	DEVICE_DT_INST_DEFINE(n,							 \
-			      ifx_cat1_counter_init,					 \
-			      NULL, &ifx_cat1_counter##n##_data,			 \
-			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,		 \
+#define INFINEON_CAT1_COUNTER_INIT(n)                                                              \
+                                                                                                   \
+	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;                            \
+                                                                                                   \
+	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = {               \
+		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)              \
+							  ? UINT32_MAX                             \
+							  : UINT16_MAX,                            \
+				 .freq = DT_INST_PROP_OR(n, clock_frequency, 10000),               \
+				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
+				 .channels = 1},                                                   \
+		.reg_addr = (TCPWM_CNT_Type *)DT_INST_REG_ADDR(n),                                 \
+		.irq_priority = DT_INST_IRQ(n, priority),                                          \
+		.irqn = DT_INST_IRQN(n),                                                           \
+		.external_pin =                                                                    \
+			(cyhal_gpio_t)DT_INST_GET_CYHAL_GPIO_OR(n, external_trigger_gpios, NC)};   \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_counter_init, NULL, &ifx_cat1_counter##n##_data,         \
+			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,                         \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_COUNTER_INIT);
