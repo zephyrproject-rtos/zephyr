@@ -138,3 +138,28 @@ static inline const char *bt_has_change_id_str(uint8_t change_id)
 		return "Unknown changeId";
 	}
 }
+
+static inline enum bt_has_hearing_aid_type has_type_get(struct bt_has *has)
+{
+	return has->features & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
+}
+
+static inline bool has_is_preset_oob_sync_supported(struct bt_has *has)
+{
+	return has->features & BT_HAS_FEAT_PRESET_SYNC_SUPP;
+}
+
+static inline bool has_is_preset_list_independent(struct bt_has *has)
+{
+	return has->features & BT_HAS_FEAT_INDEPENDENT_PRESETS;
+}
+
+static inline bool has_is_preset_list_dynamic(struct bt_has *has)
+{
+	return has->features & BT_HAS_FEAT_DYNAMIC_PRESETS;
+}
+
+static inline bool has_is_preset_write_supported(struct bt_has *has)
+{
+	return has->features & BT_HAS_OP_WRITE_PRESET_NAME;
+}
