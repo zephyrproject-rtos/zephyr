@@ -8,6 +8,12 @@
  * board.
  */
 
+/ {
+	aliases {
+		spim = &spi0;
+	};
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -74,6 +80,14 @@
 };
 
 &nand {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&spi1 {
 	status = "okay";
 };
 
