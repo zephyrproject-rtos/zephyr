@@ -73,34 +73,6 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	__stdin.flags |= _FDEV_SETUP_READ;
 }
 
-int z_impl_zephyr_read_stdin(char *buf, int nbytes)
-{
-	int i = 0;
-
-	for (i = 0; i < nbytes; i++) {
-		*(buf + i) = getchar();
-		if ((*(buf + i) == '\n') || (*(buf + i) == '\r')) {
-			i++;
-			break;
-		}
-	}
-	return i;
-}
-
-int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
-{
-	const char *buf = buffer;
-	int i;
-
-	for (i = 0; i < nbytes; i++) {
-		if (*(buf + i) == '\n') {
-			putchar('\r');
-		}
-		putchar(*(buf + i));
-	}
-	return nbytes;
-}
-
 #include <zephyr/sys/cbprintf.h>
 
 struct cb_bits {
