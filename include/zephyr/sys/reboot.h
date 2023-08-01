@@ -23,6 +23,15 @@ extern "C" {
 /** Reboot modes. */
 enum sys_reboot_mode {
 	/**
+	 * Default reboot.
+	 *
+	 * When using this mode, caller lets the system to decide the most
+	 * appropriate reboot mode (platform dependent). This option can be
+	 * used to write portable code, where there is not enough context
+	 * information to decide the most suitable reboot mode.
+	 */
+	SYS_REBOOT_DEFAULT = -1,
+	/**
 	 * Cold reboot.
 	 *
 	 * The system will be rebooted in a way comparable to a power on reset.
@@ -30,7 +39,7 @@ enum sys_reboot_mode {
 	 * the device to boot from ROM, and its peripherals to be
 	 * re-initialiazed.
 	 */
-	SYS_REBOOT_COLD,
+	SYS_REBOOT_COLD = 0,
 	/**
 	 * Warm reboot.
 	 *
@@ -48,7 +57,9 @@ enum sys_reboot_mode {
  * This function is internally called by sys_reboot(). It needs to be
  * implemented by architecture/SoC specific code. As required by sys_reboot(),
  * this function must perform a reboot and never return. On systems supporting
- * multiple reboot modes, @p mode indicates which one to perform.
+ * multiple reboot modes, @p mode indicates which one to perform. If provided
+ * with SYS_REBOOT_DEFAULT, the implementation must decide the most appropriate
+ * reboot mode.
  *
  * @param mode Reboot mode.
  */
