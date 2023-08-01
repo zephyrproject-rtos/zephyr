@@ -54,10 +54,6 @@ static bool cap_initiator_valid_metadata(const struct bt_audio_codec_data meta[]
 			bt_hex(metadata->data, metadata->data_len));
 
 		if (metadata->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-			if (metadata->data_len != 2) { /* Stream context size */
-				return false;
-			}
-
 			stream_context_found = true;
 			break;
 		}
