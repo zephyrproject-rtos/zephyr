@@ -160,7 +160,12 @@ set_compiler_property(PROPERTY coverage -fprofile-arcs -ftest-coverage -fno-inli
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
-check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
+if(CONFIG_STACK_CANARIES_TLS)
+  check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
+else()
+  check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
+endif()
+
 
 if(NOT CONFIG_NO_OPTIMIZATIONS)
   # _FORTIFY_SOURCE: Detect common-case buffer overflows for certain functions

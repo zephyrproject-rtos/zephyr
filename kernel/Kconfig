@@ -836,6 +836,24 @@ config STACK_CANARIES
 	  If stack canaries are not supported by the compiler an error
 	  will occur at build time.
 
+if STACK_CANARIES
+
+config STACK_CANARIES_TLS
+	bool "Stack canaries using thread local storage"
+	depends on THREAD_LOCAL_STORAGE
+	depends on ARCH_HAS_STACK_CANARIES_TLS
+	help
+	  This option enables compiler stack canaries on TLS.
+
+	  Stack canaries will leave in the thread local storage and
+	  each thread will have its own canary. This makes harder
+	  to predict the canary location and value.
+
+	  When enabled this causes an additional performance penalty
+	  during thread creations because it needs a new random value
+	  per thread.
+endif
+
 config EXECUTE_XOR_WRITE
 	bool "W^X for memory partitions"
 	depends on USERSPACE
