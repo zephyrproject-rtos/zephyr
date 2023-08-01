@@ -78,15 +78,24 @@ extern "C" {
 #define DT_FIXED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
 /**
- * @brief Get the node identifier of the flash device for a partition
+ * @brief Get the node identifier of the flash memory for a partition
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the node identifier of the internal memory that contains the
+ * fixed-partitions node, or @ref DT_INVALID_NODE if it doesn't exist.
+ */
+#define DT_MEM_FROM_FIXED_PARTITION(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), (DT_GPARENT(node_id)),  \
+		    (DT_INVALID_NODE))
+
+/**
+ * @brief Get the node identifier of the flash controller for a partition
  * @param node_id node identifier for a fixed-partitions child node
  * @return the node identifier of the memory technology device that
  * contains the fixed-partitions node.
  */
-#define DT_MTD_FROM_FIXED_PARTITION(node_id)				\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), \
-		    (DT_PARENT(DT_GPARENT(node_id))),			\
-		    (DT_GPARENT(node_id)))
+#define DT_MTD_FROM_FIXED_PARTITION(node_id)                                                       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(node_id)),                          \
+		    (DT_PARENT(DT_MEM_FROM_FIXED_PARTITION(node_id))), (DT_GPARENT(node_id)))
 
 /**
  * @}
