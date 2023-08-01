@@ -463,7 +463,8 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 static int wifi_scan_args_to_params(const struct shell *sh,
 				    size_t argc,
 				    char *argv[],
-				    struct wifi_scan_params *params)
+				    struct wifi_scan_params *params,
+				    bool *do_scan)
 {
 	struct getopt_state *state;
 	int opt;
@@ -474,11 +475,14 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 					       {"ssids", required_argument, 0, 's'},
 					       {"max_bss", required_argument, 0, 'm'},
 					       {"chans", required_argument, 0, 'c'},
+					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:", long_options, &opt_index)) != -1) {
+	*do_scan = true;
+
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:h", long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -541,12 +545,18 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				return -ENOEXEC;
 			}
 			break;
+		case 'h':
+			shell_help(sh);
+			*do_scan = false;
+			break;
 		case '?':
+		default:
 			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
 						  argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
+
 	return 0;
 }
 
@@ -554,17 +564,20 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_scan_params params = { 0 };
+	bool do_scan = false;
 
 	context.sh = sh;
 
-	if (wifi_scan_args_to_params(sh, argc, argv, &params)) {
+	if (wifi_scan_args_to_params(sh, argc, argv, &params, &do_scan)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
 
-	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
-		shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
-		return -ENOEXEC;
+	if (do_scan) {
+		if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
+			shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
+			return -ENOEXEC;
+		}
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Scan requested\n");
@@ -1272,14 +1285,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      0),
 	SHELL_CMD(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
-		    "OPTIONS:\n"
+		    "OPTIONAL PARAMETERS:\n"
 		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.\n"
 		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.\n"
 		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
 		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.\n"
 		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.\n"
-		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44",
+		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44\n"
+		    "[-h, --help] : Print out the help for the scan command.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
