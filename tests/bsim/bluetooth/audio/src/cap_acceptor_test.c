@@ -363,45 +363,6 @@ static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs
 	return 0;
 }
 
-static bool valid_metadata_type(uint8_t type, uint8_t len)
-{
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 2 - 255 octets */
-		/* At least Extended Metadata Type / Company_ID should be there */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
-	}
-}
-
 static int unicast_server_metadata(struct bt_bap_stream *stream,
 				   const struct bt_audio_codec_data *meta, size_t meta_count,
 				   struct bt_bap_ascs_rsp *rsp)
@@ -411,7 +372,7 @@ static int unicast_server_metadata(struct bt_bap_stream *stream,
 	for (size_t i = 0; i < meta_count; i++) {
 		const struct bt_audio_codec_data *data = &meta[i];
 
-		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
+		if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->data.type)) {
 			printk("Invalid metadata type %u or length %u\n", data->data.type,
 			       data->data.data_len);
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,

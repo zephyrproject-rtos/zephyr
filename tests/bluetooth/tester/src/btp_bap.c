@@ -374,46 +374,19 @@ static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 	/* PTS checks if we are able to reject unsupported metadata type or RFU vale.
 	 * The only RFU value PTS seems to check for now is the streaming context.
 	 */
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(type)) {
+		return false;
+	}
 
+	if (type == BT_AUDIO_METADATA_TYPE_PREF_CONTEXT ||
+	    type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
 		/* PTS wants us to reject the parameter if reserved bits are set */
 		if ((sys_get_le16(data) & ~(uint16_t)(BT_AUDIO_CONTEXT_TYPE_ANY)) > 0) {
 			return false;
 		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 2 - 255 octets */
-		/* At least Extended Metadata Type / Company_ID should be there */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
 	}
+
+	return true;
 }
 
 static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
