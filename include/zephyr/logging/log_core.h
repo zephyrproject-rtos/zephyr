@@ -142,18 +142,18 @@ extern "C" {
 	COND_CODE_1(UTIL_CAT(Z_LOG_FUNC_PREFIX_##_level), \
 		(Z_LOG_STR_WITH_PREFIX(__VA_ARGS__)), (__VA_ARGS__))
 
-#define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
-	(_level <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
+#define Z_LOG_CONST_LEVEL_MAX_CHECK(_level) \
+	COND_CODE_1(IS_EQ(__log_level, CONFIG_LOG_MAX_LEVEL), \
+		((_level <= __log_level)), \
+		(((_level <= __log_level) && (_level <= CONFIG_LOG_MAX_LEVEL))))
 
-#define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
-	(IS_ENABLED(CONFIG_LOG) &&					    \
-	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
-	||								    \
-	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
-	(_level <= __log_level) &&					    \
-	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
-	)								    \
-	))
+#define Z_LOG_CONST_LEVEL_OVERRIDE_CHECK(_level) \
+	(_level > CONFIG_LOG_OVERRIDE_LEVEL)
+
+#define Z_LOG_CONST_LEVEL_CHECK(_level) \
+	COND_CODE_1(CONFIG_LOG, \
+		(Z_LOG_CONST_LEVEL_MAX_CHECK(_level) && Z_LOG_CONST_LEVEL_OVERRIDE_CHECK(_level)), \
+		(false))
 
 /*****************************************************************************/
 /****************** Definitions used by minimal logging *********************/
