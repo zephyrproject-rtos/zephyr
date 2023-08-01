@@ -327,41 +327,36 @@ static int cmd_kernel_log_level_set(const struct shell *sh,
 #endif
 
 #if defined(CONFIG_REBOOT)
-static int cmd_kernel_reboot_warm(const struct shell *sh,
-				  size_t argc, char **argv)
+static int cmd_kernel_reboot(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	enum sys_reboot_mode mode = SYS_REBOOT_DEFAULT;
+
 #if (CONFIG_KERNEL_SHELL_REBOOT_DELAY > 0)
 	k_sleep(K_MSEC(CONFIG_KERNEL_SHELL_REBOOT_DELAY));
 #endif
-	sys_reboot(SYS_REBOOT_WARM);
+
+	if (argc == 2) {
+		if (strcmp(argv[1], "cold") == 0) {
+			mode = SYS_REBOOT_COLD;
+		} else if (strcmp(argv[1], "warm") == 0) {
+			mode = SYS_REBOOT_WARM;
+		} else {
+			shell_error(sh, "Invalid reboot mode: %s", argv[1]);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	sys_reboot(mode);
+
 	return 0;
 }
-
-static int cmd_kernel_reboot_cold(const struct shell *sh,
-				  size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-#if (CONFIG_KERNEL_SHELL_REBOOT_DELAY > 0)
-	k_sleep(K_MSEC(CONFIG_KERNEL_SHELL_REBOOT_DELAY));
-#endif
-	sys_reboot(SYS_REBOOT_COLD);
-	return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_reboot,
-	SHELL_CMD(cold, NULL, "Cold reboot.", cmd_kernel_reboot_cold),
-	SHELL_CMD(warm, NULL, "Warm reboot.", cmd_kernel_reboot_warm),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 	SHELL_CMD(cycles, NULL, "Kernel cycles.", cmd_kernel_cycles),
 #if defined(CONFIG_REBOOT)
-	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", NULL),
+	SHELL_CMD_ARG(reboot, NULL, "[cold|warm]", cmd_kernel_reboot, 1, 1),
 #endif
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
 		defined(CONFIG_THREAD_MONITOR)
