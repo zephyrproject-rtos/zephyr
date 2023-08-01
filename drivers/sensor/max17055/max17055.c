@@ -63,9 +63,9 @@ static int max17055_reg_write(const struct device *dev, uint8_t reg_addr,
  * @param val Value to convert (taken from a MAX17055 register)
  * @return corresponding value in milliamps
  */
-static int current_to_ma(unsigned int rsense_mohms, int16_t val)
+static int current_to_ma(uint16_t rsense_mohms, int16_t val)
 {
-	return (val * 1.5625) / rsense_mohms;
+	return (int32_t)val * 25 / rsense_mohms / 16; /* * 1.5625 */
 }
 
 /**
@@ -75,9 +75,9 @@ static int current_to_ma(unsigned int rsense_mohms, int16_t val)
  * @param val Value in mA to convert
  * @return corresponding value in MAX17055 units, ready to write to a register
  */
-static int current_ma_to_max17055(unsigned int rsense_mohms, uint16_t val)
+static int current_ma_to_max17055(uint16_t rsense_mohms, uint16_t val)
 {
-	return val * rsense_mohms / 1.5625;
+	return (int32_t)val * rsense_mohms * 16 / 25; /* / 1.5625 */
 }
 
 /**
@@ -119,7 +119,7 @@ static int capacity_to_max17055(unsigned int rsense_mohms, uint16_t val_mha)
  */
 static int voltage_mV_to_max17055(uint16_t val_mv)
 {
-	return val_mv * 16 / 1.25;
+	return (val_mv * 16) * 10 / 8; /* * 1.25 */
 }
 
 static void set_millis(struct sensor_value *val, int val_millis)
