@@ -58,6 +58,7 @@ struct nvs_fs {
 	/** Flash memory parameters structure */
 	const struct flash_parameters *flash_parameters;
 #if CONFIG_NVS_LOOKUP_CACHE
+	uint16_t (*lookup_cache_hash)(uint16_t);
 	uint32_t lookup_cache[CONFIG_NVS_LOOKUP_CACHE_SIZE];
 #endif
 };

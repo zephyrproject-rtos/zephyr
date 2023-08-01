@@ -13,6 +13,7 @@
 #include <zephyr/sys/crc.h>
 #include "settings_priv.h"
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
@@ -56,6 +57,43 @@ static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
 	}
 	return rc;
 }
+
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+static uint16_t settings_nvs_lookup_cache_hash(uint16_t id)
+{
+	/*
+	 * 1. The NVS settings backend uses up to (NVS_NAME_ID_OFFSET - 1) NVS IDs to store
+	 *    keys and equal number of NVS IDs to store values.
+	 * 2. For each key-value pair, the value is stored at NVS ID greater by exactly
+	 *    NVS_NAME_ID_OFFSET than NVS ID that holds the key.
+	 * 3. The backend tries to minimize the range of NVS IDs used to store keys. That is,
+	 *    NVS IDs are allocated sequentially, and freed NVS IDs are reused before
+	 *    allocating new ones.
+	 *
+	 * Therefore, to assure the smallest number of collisions in the lookup cache, the
+	 * least significant bit of the hash indicates whether the given NVS ID represents
+	 * a key or a value, and remaining bits of the hash should be set to the ordinal
+	 * number of the key-value pair. Consequently, the hash function provides the
+	 * following mapping:
+	 *
+	 * 1st settings key   => hash 0
+	 * 1st settings value => hash 1
+	 * 2nd settings key   => hash 2
+	 * 2nd settings value => hash 3
+	 * ...
+	 */
+	BUILD_ASSERT(IS_POWER_OF_TWO(NVS_NAME_ID_OFFSET), "NVS_NAME_ID_OFFSET is not power of 2");
+
+	uint16_t key_value_ord;
+	uint16_t key_value_bit;
+
+	id -= NVS_NAMECNT_ID;
+	key_value_ord = id & (NVS_NAME_ID_OFFSET - 1);
+	key_value_bit = (id >> LOG2(NVS_NAME_ID_OFFSET)) & 1;
+
+	return (key_value_ord << 1) | key_value_bit;
+}
+#endif
 
 int settings_nvs_src(struct settings_nvs *cf)
 {
@@ -320,6 +358,9 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	int rc;
 	uint16_t last_name_id;
 
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	cf->cf_nvs.lookup_cache_hash = settings_nvs_lookup_cache_hash;
+#endif
 	cf->cf_nvs.flash_device = cf->flash_dev;
 	if (cf->cf_nvs.flash_device == NULL) {
 		return -ENODEV;
