@@ -46,7 +46,9 @@ void _StackCheckHandler(void)
  * Symbol referenced by GCC compiler generated code for canary value.
  * The canary value gets initialized in z_cstart().
  */
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_STACK_CANARIES_TLS
+__thread uintptr_t __stack_chk_guard;
+#elif CONFIG_USERSPACE
 K_APP_DMEM(z_libc_partition) uintptr_t __stack_chk_guard;
 #else
 __noinit uintptr_t __stack_chk_guard;

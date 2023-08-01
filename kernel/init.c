@@ -217,7 +217,11 @@ void z_bss_zero_pinned(void)
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #ifdef CONFIG_STACK_CANARIES
+#ifdef CONFIG_STACK_CANARIES_TLS
+extern __thread volatile uintptr_t __stack_chk_guard;
+#else
 extern volatile uintptr_t __stack_chk_guard;
+#endif
 #endif /* CONFIG_STACK_CANARIES */
 
 /* LCOV_EXCL_STOP */
