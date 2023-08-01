@@ -137,7 +137,7 @@ static int test_sg(void)
 	}
 
 	if (k_sem_take(&xfer_sem, K_MSEC(1000)) != 0) {
-		TC_PRINT("timed out waiting for xfers\n");
+		TC_PRINT("Timed out waiting for xfers\n");
 		return TC_FAIL;
 	}
 
