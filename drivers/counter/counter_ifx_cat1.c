@@ -396,15 +396,16 @@ static int ifx_cat1_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t curr = cyhal_timer_read(&data->counter_obj);
 	uint32_t diff = ifx_cat1_counter_ticks_sub((val - 1), curr, top_val);
 
-	/* Interrupt is triggered always for relative alarm and for absolute depending
-	 * on the flag.
-	 */
-	if (irq_on_late) {
-		data->alarm_irq_flag = true;
-		ifx_cat1_counter_set_int_pending(dev);
-	}
-
 	if ((absolute && (val < curr)) || (diff > max_rel_val)) {
+
+		/* Interrupt is triggered always for relative alarm and for absolute depending
+		 * on the flag.
+		 */
+		if (irq_on_late) {
+			data->alarm_irq_flag = true;
+			ifx_cat1_counter_set_int_pending(dev);
+		}
+
 		if (absolute) {
 			return -ETIME;
 		}
