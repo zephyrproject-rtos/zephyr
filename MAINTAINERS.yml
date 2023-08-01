@@ -2455,34 +2455,25 @@ Renesas R-Car Platforms:
   status: maintained
   maintainers:
     - aaillet
+    - lorc
   collaborators:
-    - pmarzin
+    - xakep-amatop
   files:
     - boards/arm/rcar_*/
+    - boards/arm64/rcar_*/
     - drivers/*/*rcar*
     - drivers/clock_control/*cpg_mssr*
     - dts/arm/renesas/rcar/
+    - dts/arm64/renesas/
     - dts/bindings/*/*rcar*
     - soc/arm/renesas_rcar/
+    - soc/arm64/renesas_rcar/
   labels:
     - "platform: Renesas R-Car"
   description: >-
-    Renesas R-Car SOCs, dts files and related drivers. Renesas boards based
-    on R-Car SOCs.
-
-Renesas R-Car ARM64 Platforms:
-  status: maintained
-  maintainers:
-    - lorc
-  files:
-    - boards/arm64/rcar_*/
-    - dts/arm64/renesas/
-    - soc/arm64/renesas_rcar/
-  labels:
-    - "platform: Renesas R-Car ARM64"
-  description: >-
-    Renesas R-Car SOCs and dts files, ARMv8 side. Zephyr running on ARMv8 CPUs on Renesas
-    boards based on R-Car SOCs.
+    Renesas R-Car SOCs, dts files (Cortex-R and Cortex-A sides).
+    Renesas boards based on R-Car SOCs (Cortex-R and Cortex-A sides).
+    Renesas R-Car related drivers.
 
 STM32 Platforms:
   status: maintained
