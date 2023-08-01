@@ -252,6 +252,24 @@ static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 	return tp.tick;
 }
 
+/**
+ * @brief Compare two timepoint values.
+ *
+ * This function is used to compare two timepoint values.
+ *
+ * @param a Timepoint to compare
+ * @param b Timepoint to compare against.
+ * @return zero if both timepoints are the same. Negative value if timepoint @a a is before
+ * timepoint @a b, positive otherwise.
+ */
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
+{
+	if (a.tick == b.tick) {
+		return 0;
+	}
+	return a.tick < b.tick ? -1 : 1;
+}
+
 #else
 
 /*
@@ -274,6 +292,14 @@ static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
 	return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
 }
 
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
+{
+	if (a.wait == b.wait) {
+		return 0;
+	}
+	return b.wait ? -1 : 1;
+}
+
 #endif
 
 /**
@@ -288,6 +314,7 @@ static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
 {
 	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
 }
+
 
 #ifdef __cplusplus
 }
