@@ -1,0 +1,22 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI dual-mode Timer
+
+compatible: "ti,am654-dmtimer"
+
+include: base.yaml
+
+properties:
+  reg-shift:
+    type: int
+    required: true
+    description: quantity to shift the register offsets by
+
+  reg:
+    required: true
+
+  interrupts:
+    required: true
