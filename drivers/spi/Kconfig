@@ -1,6 +1,6 @@
 # SPI driver configuration options
 
-# Copyright (c) 2015-2016 Intel Corporation
+# Copyright (c) 2015-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -60,6 +60,26 @@ config SPI_STATS
 	depends on STATS
 	help
 	  Enable SPI device statistics.
+
+config SPI_SHELL
+	bool "SPI Shell"
+	depends on SHELL
+	help
+		Enable SHELL to invoke SPI transfer.
+
+config SPI_SHELL_MAX_FREQ
+	int "SPI Shell max freq"
+	depends on SPI_SHELL
+	default 33000000
+	help
+		Maximum frequency for SPI transfer in HZ.
+
+config SPI_SHELL_MAX_TRANSFER
+	int "SPI Shell max transfer bytes"
+	depends on SPI_SHELL
+	default 32
+	help
+		Maximum bytes of trasfer in SPI SHELL transaction.
 
 module = SPI
 module-str = spi
