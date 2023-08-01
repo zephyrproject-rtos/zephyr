@@ -39,7 +39,7 @@ static int max17055_reg_read(const struct device *dev, int reg_addr,
 		LOG_ERR("Unable to read register");
 		return rc;
 	}
-	*valp = (i2c_data[1] << 8) | i2c_data[0];
+	*valp = sys_get_le16(i2c_data);
 
 	return 0;
 }
