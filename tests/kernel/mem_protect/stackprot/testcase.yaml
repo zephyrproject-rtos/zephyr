@@ -9,3 +9,12 @@ tests:
       - kernel
       - userspace
     ignore_faults: true
+  kernel.memory_protection.stackprot_tls:
+    filter: CONFIG_ARCH_HAS_STACK_CANARIES_TLS and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE
+    tags:
+      - kernel
+      - userspace
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+      - CONFIG_STACK_CANARIES_TLS=y
