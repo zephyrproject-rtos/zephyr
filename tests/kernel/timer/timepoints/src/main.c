@@ -35,4 +35,44 @@ ZTEST(timepoints, test_timepoint_api)
 	zassert_true(K_TIMEOUT_EQ(remaining, K_NO_WAIT));
 }
 
+ZTEST(timepoints, test_comparison)
+{
+	k_timepoint_t a, b;
+
+	a = sys_timepoint_calc(K_NO_WAIT);
+	b = a;
+	zassert_true(sys_timepoint_cmp(a, b) == 0);
+	zassert_true(sys_timepoint_cmp(b, a) == 0);
+
+	a = sys_timepoint_calc(K_FOREVER);
+	b = a;
+	zassert_true(sys_timepoint_cmp(a, b) == 0);
+	zassert_true(sys_timepoint_cmp(b, a) == 0);
+
+	a = sys_timepoint_calc(K_NO_WAIT);
+	b = sys_timepoint_calc(K_MSEC(1));
+	zassert_true(sys_timepoint_cmp(a, b) < 0);
+	zassert_true(sys_timepoint_cmp(b, a) > 0);
+
+	a = sys_timepoint_calc(K_MSEC(1));
+	b = sys_timepoint_calc(K_FOREVER);
+	zassert_true(sys_timepoint_cmp(a, b) < 0);
+	zassert_true(sys_timepoint_cmp(b, a) > 0);
+
+	a = sys_timepoint_calc(K_MSEC(1));
+	b = a;
+	zassert_true(sys_timepoint_cmp(a, b) == 0);
+	zassert_true(sys_timepoint_cmp(b, a) == 0);
+
+	a = sys_timepoint_calc(K_MSEC(100));
+	b = sys_timepoint_calc(K_MSEC(200));
+	zassert_true(sys_timepoint_cmp(a, b) < 0);
+	zassert_true(sys_timepoint_cmp(b, a) > 0);
+
+	a = sys_timepoint_calc(K_NO_WAIT);
+	b = sys_timepoint_calc(K_FOREVER);
+	zassert_true(sys_timepoint_cmp(a, b) < 0);
+	zassert_true(sys_timepoint_cmp(b, a) > 0);
+}
+
 ZTEST_SUITE(timepoints, NULL, NULL, NULL, NULL, NULL);
