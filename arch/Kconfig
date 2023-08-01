@@ -92,6 +92,7 @@ config X86
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_STACK_CANARIES_TLS
 	help
 	  x86 architecture
 
@@ -599,6 +600,9 @@ config ARCH_HAS_SUSPEND_TO_RAM
 	bool
 	help
 	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
+config ARCH_HAS_STACK_CANARIES_TLS
+	bool
 
 #
 # Other architecture related options
