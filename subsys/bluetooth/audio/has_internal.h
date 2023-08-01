@@ -139,3 +139,28 @@ static inline const char *bt_has_change_id_str(uint8_t change_id)
 		return "Unknown changeId";
 	}
 }
+
+static inline enum bt_has_hearing_aid_type bt_has_feat_type_get(uint8_t features)
+{
+	return features & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
+}
+
+static inline bool bt_has_feat_is_preset_oob_sync_supported(uint8_t features)
+{
+	return (features & BT_HAS_FEAT_PRESET_SYNC_SUPP) > 0;
+}
+
+static inline bool bt_has_feat_is_preset_list_independent(uint8_t features)
+{
+	return (features & BT_HAS_FEAT_INDEPENDENT_PRESETS) > 0;
+}
+
+static inline bool bt_has_feat_is_preset_list_dynamic(uint8_t features)
+{
+	return (features & BT_HAS_FEAT_DYNAMIC_PRESETS) > 0;
+}
+
+static inline bool bt_has_feat_is_preset_write_supported(uint8_t features)
+{
+	return (features & BT_HAS_OP_WRITE_PRESET_NAME) > 0;
+}

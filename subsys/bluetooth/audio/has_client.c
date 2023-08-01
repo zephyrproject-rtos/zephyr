@@ -266,7 +266,7 @@ static void discover_complete(struct has_inst *inst)
 	atomic_clear_bit(inst->flags, HAS_DISCOVER_IN_PROGRESS);
 
 	client_cb->discover(inst->conn, 0, &inst->has,
-			    inst->has.features & BT_HAS_FEAT_HEARING_AID_TYPE_MASK,
+			    bt_has_feat_type_get(inst->has.features),
 			    get_capabilities(inst));
 
 	/* If Active Preset Index supported, notify it's value */
@@ -918,7 +918,7 @@ int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync)
 		return -EINVAL;
 	}
 
-	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+	if (sync && !bt_has_feat_is_preset_oob_sync_supported(inst->has.features)) {
 		return -EOPNOTSUPP;
 	}
 
@@ -943,7 +943,7 @@ int bt_has_client_preset_next(struct bt_has *has, bool sync)
 		return -ENOTCONN;
 	}
 
-	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+	if (sync && !bt_has_feat_is_preset_oob_sync_supported(inst->has.features)) {
 		return -EOPNOTSUPP;
 	}
 
@@ -968,7 +968,7 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 		return -ENOTCONN;
 	}
 
-	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+	if (sync && !bt_has_feat_is_preset_oob_sync_supported(inst->has.features)) {
 		return -EOPNOTSUPP;
 	}
 

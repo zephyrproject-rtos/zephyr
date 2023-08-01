@@ -32,11 +32,11 @@ LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 
 #define BITS_CHANGED(_new_value, _old_value) ((_new_value) ^ (_old_value))
 #define FEATURE_DEVICE_TYPE_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, (has.features & BT_HAS_FEAT_HEARING_AID_TYPE_MASK))
+	!BITS_CHANGED(_new_value, bt_has_feat_type_get(has.features))
 #define FEATURE_SYNC_SUPPORT_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0 ? 1 : 0))
+	!BITS_CHANGED(_new_value, (bt_has_feat_is_preset_oob_sync_supported(has.features) ? 1 : 0))
 #define FEATURE_IND_PRESETS_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, ((has.features & BT_HAS_FEAT_INDEPENDENT_PRESETS) != 0 ? 1 : 0))
+	!BITS_CHANGED(_new_value, (bt_has_feat_is_preset_list_independent(has.features) ? 1 : 0))
 #define BONDED_CLIENT_INIT_FLAGS \
 	(BIT(FLAG_ACTIVE_INDEX_CHANGED) | BIT(FLAG_NOTIFY_PRESET_LIST) | BIT(FLAG_FEATURES_CHANGED))
 
@@ -1407,19 +1407,19 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	case BT_HAS_OP_SET_PREV_PRESET:
 		return handle_set_prev_preset(false);
 	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
-		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
+		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
 			return handle_set_active_preset(buf, true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
-		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
+		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
 			return handle_set_next_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
-		if ((has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) != 0) {
+		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
 			return handle_set_prev_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
