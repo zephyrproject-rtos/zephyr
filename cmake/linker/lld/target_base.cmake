@@ -41,7 +41,13 @@ macro(toolchain_ld_base)
     )
   endif()
 
+  if(CONFIG_LIBGCC_RTLIB)
+    set(runtime_lib "libgcc")
+  elseif(CONFIG_COMPILER_RT_RTLIB)
+    set(runtime_lib "compiler_rt")
+  endif()
+
   zephyr_link_libraries(
-    --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang.cfg
+    --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg
   )
 endmacro()
