@@ -381,4 +381,97 @@ static void *gen_isr_table_setup(void)
 	return NULL;
 }
 
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+ZTEST(gen_isr_table, test_multi_level_bit_masks_sec)
+{
+#if CONFIG_1ST_LEVEL_INTERRUPT_BITS < 10 && CONFIG_2ND_LEVEL_INTERRUPT_BITS < 10
+	ztest_test_skip();
+#endif
+	/* 0x400 is an l2 interrupt */
+	unsigned int irq = 0x400;
+	unsigned int level = 0;
+	unsigned int ret_irq = 0;
+
+	level = irq_get_level(irq);
+
+	zassert_equal(2, level);
+
+	/* 0x40 is l1 interrupt since it is less than 10 bits */
+	irq = 0x40;
+	level = irq_get_level(irq);
+	zassert_equal(1, level);
+
+	/* this is an l2 interrupt since it is more than 10 bits */
+	irq = 0x800;
+	ret_irq = irq_from_level_2(irq);
+	zassert_equal(1, ret_irq);
+
+	/* convert l1 interrupt to l2 */
+	irq = 0x1;
+	ret_irq = irq_to_level_2(irq);
+	zassert_equal(0x800, ret_irq);
+
+	/* get the parent of this l2 interrupt */
+	irq = 0x401;
+	ret_irq = irq_parent_level_2(irq);
+	zassert_equal(1, ret_irq);
+}
+#endif
+
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+ZTEST(gen_isr_table, test_multi_level_bit_masks_thr)
+{
+#if CONFIG_2ND_LEVEL_INTERRUPT_BITS < 10 && CONFIG_3RD_LEVEL_INTERRUPT_BITS < 9
+	ztest_test_skip();
+# endif
+	/* 0x400 is an l2 interrupt */
+	unsigned int irq = 0x400;
+	unsigned int level = 0;
+	unsigned int ret_irq = 0;
+
+
+	/* note the first part of this test is the same as the above
+	 * test this is to ensure the values are true after enabling l3 interrupts
+	 */
+	level = irq_get_level(irq);
+
+	zassert_equal(2, level);
+
+	/* this irq is within 10 bits so it is a l1 interrupt */
+	irq = 0x40;
+	level = irq_get_level(irq);
+	zassert_equal(1, level);
+
+	/* this irq is in the second 10 bits so it is a l2 interrupt */
+	irq = 0x800;
+	ret_irq = irq_from_level_2(irq);
+	zassert_equal(1, ret_irq);
+
+	/* convert a l1 interrupt to an l2 0x1 is less than 10 bits so it is l1 */
+	irq = 0x1;
+	ret_irq = irq_to_level_2(irq);
+	zassert_equal(0x800, ret_irq);
+
+	/* get the parent of an l2 interrupt 0x401 is an l2 interrupt with parent 1 */
+	irq = 0x401;
+	ret_irq = irq_parent_level_2(irq);
+	zassert_equal(1, ret_irq);
+
+	/* get the irq from level 3 this value is an l3 interrupt */
+	irq = 0x200000;
+	ret_irq = irq_from_level_3(irq);
+	zassert_equal(1, ret_irq);
+
+	/* convert the zero interrupt to l3 */
+	irq = 0x0;
+	ret_irq = irq_to_level_3(irq);
+	zassert_equal(0x100000, ret_irq);
+
+	/* parent of the l3 interrupt */
+	irq = 0x101000;
+	ret_irq = irq_parent_level_3(irq);
+	zassert_equal(0x4, ret_irq);
+}
+#endif
+
 ZTEST_SUITE(gen_isr_table, NULL, gen_isr_table_setup, NULL, NULL, NULL);

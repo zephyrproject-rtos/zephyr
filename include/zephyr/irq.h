@@ -13,6 +13,7 @@
 
 /* Pull in the arch-specific implementations */
 #include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/toolchain.h>
@@ -20,6 +21,11 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && CONFIG_MAX_IRQ_PER_AGGREGATOR > 0
+BUILD_ASSERT((LOG2(CONFIG_MAX_IRQ_PER_AGGREGATOR) + 1) <= CONFIG_1ST_LEVEL_INTERRUPT_BITS,
+	"CONFIG_MAX_IRQ_PER_AGGREGATOR is too large");
 #endif
 
 /**
@@ -265,22 +271,25 @@ void z_smp_global_unlock(unsigned int key);
  */
 static inline unsigned int irq_get_level(unsigned int irq)
 {
-#if defined(CONFIG_3RD_LEVEL_INTERRUPTS)
-	return ((irq >> 16) & 0xFF) != 0 ? 3 :
-		(((irq >> 8) & 0xFF) == 0 ? 1 : 2);
-#elif defined(CONFIG_2ND_LEVEL_INTERRUPTS)
-	return ((irq >> 8) & 0xFF) == 0 ? 1 : 2;
-#else
-	ARG_UNUSED(irq);
+	const uint32_t mask2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) <<
+		CONFIG_1ST_LEVEL_INTERRUPT_BITS;
+	const uint32_t mask3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) <<
+		(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+
+	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq & mask3) != 0) {
+		return 3;
+	}
+
+	if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq & mask2) != 0) {
+		return 2;
+	}
 
 	return 1;
-#endif
 }
 
-#ifdef CONFIG_2ND_LEVEL_INTERRUPTS
+#if defined(CONFIG_2ND_LEVEL_INTERRUPTS)
 /**
  * @brief Return the 2nd level interrupt number
- *
  *
  * This routine returns the second level irq number of the zephyr irq
  * number passed in
@@ -291,10 +300,11 @@ static inline unsigned int irq_get_level(unsigned int irq)
  */
 static inline unsigned int irq_from_level_2(unsigned int irq)
 {
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	return ((irq >> 8) & 0xFF) - 1;
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS)
+	return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
+		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
 #else
-	return (irq >> 8) - 1;
+	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
 #endif
 }
 
@@ -312,7 +322,7 @@ static inline unsigned int irq_from_level_2(unsigned int irq)
  */
 static inline unsigned int irq_to_level_2(unsigned int irq)
 {
-	return (irq + 1) << 8;
+	return (irq + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS;
 }
 
 /**
@@ -327,7 +337,7 @@ static inline unsigned int irq_to_level_2(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_2(unsigned int irq)
 {
-	return irq & 0xFF;
+	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
 }
 #endif
 
@@ -345,7 +355,7 @@ static inline unsigned int irq_parent_level_2(unsigned int irq)
  */
 static inline unsigned int irq_from_level_3(unsigned int irq)
 {
-	return (irq >> 16) - 1;
+	return (irq >> (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
 }
 
 /**
@@ -362,7 +372,7 @@ static inline unsigned int irq_from_level_3(unsigned int irq)
  */
 static inline unsigned int irq_to_level_3(unsigned int irq)
 {
-	return (irq + 1) << 16;
+	return (irq + 1) << (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 }
 
 /**
@@ -377,7 +387,8 @@ static inline unsigned int irq_to_level_3(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_3(unsigned int irq)
 {
-	return (irq >> 8) & 0xFF;
+	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
+		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 }
 #endif
 
