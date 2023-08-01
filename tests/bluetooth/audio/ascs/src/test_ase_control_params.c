@@ -645,11 +645,11 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 		0x03,                   /* Opcode = Enable */
 		0x02,                   /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
 		0x03,                   /* Opcode = Enable */
@@ -989,11 +989,11 @@ ZTEST_F(test_ase_control_params, test_update_metadata_invalid_ase_id)
 		0x07,                   /* Opcode = Update Metadata */
 		0x02,                   /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
 		0x07,                   /* Opcode = Update Metadata */

@@ -245,8 +245,8 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 		0x07,                   /* Opcode = Update Metadata */
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
 	ssize_t ret;
 
