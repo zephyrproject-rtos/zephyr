@@ -19,7 +19,4 @@ set(BINTOOLS llvm)
 
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
 
-list(APPEND TOOLCHAIN_C_FLAGS --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang.cfg)
-list(APPEND TOOLCHAIN_LD_FLAGS --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang.cfg)
-
 message(STATUS "Found toolchain: host (clang/ld)")
