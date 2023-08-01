@@ -7,7 +7,7 @@ common:
   ignore_faults: true
   ignore_qemu_crash: true
 tests:
-  drivers.coredump.api.qemu_riscv32:
+  debug.coredump.drivers.api.qemu_riscv32:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_allow: qemu_riscv32
     harness: console
@@ -30,7 +30,7 @@ tests:
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:babababa"
         - "E: #CD:END#"
-  drivers.coredump.api:
+  debug.coredump.drivers.api:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: qemu_riscv32
     harness: console
