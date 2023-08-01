@@ -954,8 +954,8 @@ end:
 static void schedule_next_retransmission(void)
 {
 	struct coap_pending *pending;
-	int32_t remaining;
-	uint32_t now = k_uptime_get_32();
+	int64_t remaining;
+	int64_t now = k_uptime_get();
 
 	/* Get the first pending retransmission to expire after cycling. */
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
