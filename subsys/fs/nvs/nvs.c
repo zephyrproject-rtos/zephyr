@@ -23,21 +23,17 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry);
 
 static inline size_t nvs_lookup_cache_pos(uint16_t id)
 {
-	size_t pos;
+	uint16_t hash;
 
-#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= (UINT8_MAX + 1)
-	/*
-	 * CRC8-CCITT is used for ATE checksums and it also acts well as a hash
-	 * function, so it can be a good choice from the code size perspective.
-	 * However, other hash functions can be used as well if proved better
-	 * performance.
-	 */
-	pos = crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, &id, sizeof(id));
-#else
-	pos = crc16_ccitt(0xffff, (const uint8_t *)&id, sizeof(id));
-#endif
+	/* 16-bit integer hash function found by https://github.com/skeeto/hash-prospector. */
+	hash = id;
+	hash ^= hash >> 8;
+	hash *= 0x88b5U;
+	hash ^= hash >> 7;
+	hash *= 0xdb2dU;
+	hash ^= hash >> 9;
 
-	return pos % CONFIG_NVS_LOOKUP_CACHE_SIZE;
+	return hash % CONFIG_NVS_LOOKUP_CACHE_SIZE;
 }
 
 static int nvs_lookup_cache_rebuild(struct nvs_fs *fs)
