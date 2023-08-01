@@ -779,6 +779,12 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	}
 	return true;
 }
+
+/* Check if spi_buf_set structure has null elements */
+static bool is_null_buffer(const struct spi_buf_set *tx_bufs)
+{
+	return ((tx_bufs->count == 1) && (tx_bufs->buffers[0].buf == NULL));
+}
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 static int transceive_dma(const struct device *dev,
@@ -803,7 +809,8 @@ static int transceive_dma(const struct device *dev,
 	}
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
-	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
+	if ((tx_bufs != NULL && !is_null_buffer(tx_bufs) &&
+		!spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		return -EFAULT;
 	}
