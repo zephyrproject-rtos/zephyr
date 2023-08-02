@@ -13,5 +13,6 @@ config SOC_SERIES_NRF51X
 	select HAS_NRFX
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_POWEROFF
+	select REBOOT_NO_ARCH if NRF_STORE_REBOOT_TYPE_GPREGRET
 	help
 	  Enable support for NRF51 MCU series

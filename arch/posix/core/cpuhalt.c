@@ -17,7 +17,7 @@
  * An implementation of arch_cpu_atomic_idle(), which
  * atomically re-enables interrupts and enters low power mode.
  *
- * A weak stub for sys_arch_reboot(), which exits the application with code 1.
+ * A stub for sys_arch_reboot(), which exits the application with code 1.
  */
 
 #include "posix_core.h"
@@ -46,15 +46,15 @@ void arch_cpu_atomic_idle(unsigned int key)
 	posix_atomic_halt_cpu(key);
 }
 
-#if defined(CONFIG_REBOOT)
+#if defined(CONFIG_REBOOT) && !defined(CONFIG_REBOOT_NO_ARCH)
 /**
  * @brief Stub for sys_arch_reboot
  *
  * Does nothing
  */
-void __weak sys_arch_reboot(int type)
+void sys_arch_reboot(int type)
 {
 	posix_print_warning("System reboot (%d) requested, will now exit\n", type);
 	posix_exit(1);
 }
-#endif /* CONFIG_REBOOT */
+#endif /* CONFIG_REBOOT && !CONFIG_REBOOT_NO_ARCH */

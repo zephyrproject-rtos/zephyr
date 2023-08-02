@@ -159,6 +159,16 @@ config MPSC_CLEAR_ALLOCATED
 	  When enabled packet space is zeroed before returning from allocation.
 endif
 
+config REBOOT_NO_ARCH
+	bool
+	help
+	  Option to signal that reboot functionality is implemented as an
+	  alternative to architecture default code. This option only needs to
+	  be selected if architecture code provides a default reboot
+	  implementation but an alternative implementation is required in
+	  platform code. Architecture code providing a default reboot mechanism
+	  must avoid compiling in the default if this option is selected.
+
 config REBOOT
 	bool "Reboot functionality"
 	help

@@ -56,6 +56,7 @@ config TFM_PARTITION_INITIAL_ATTESTATION
 config TFM_PARTITION_PLATFORM
 	bool "Secure partition 'Platform'"
 	default y
+	select REBOOT_NO_ARCH
 	help
 	  Setting this option will cause '-DTFM_PARTITION_PLATFORM'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'

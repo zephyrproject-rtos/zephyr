@@ -13,5 +13,6 @@ config SOC_SERIES_IMX_RT6XX
 	select CODE_DATA_RELOCATION_SRAM if FLASH_MCUX_FLEXSPI_XIP
 	select PLATFORM_SPECIFIC_INIT
 	select HAS_PM
+	select REBOOT_NO_ARCH
 	help
 	  Enable support for i.MX RT6XX Series MCU series

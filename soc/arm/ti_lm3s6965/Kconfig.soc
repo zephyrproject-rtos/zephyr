@@ -5,3 +5,4 @@ config SOC_TI_LM3S6965
 	select ARM
 	select CPU_CORTEX_M3
 	select CPU_CORTEX_M_HAS_DWT
+	select REBOOT_NO_ARCH

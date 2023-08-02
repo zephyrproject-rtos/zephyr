@@ -26,7 +26,7 @@
 #include <fsl_sysmpu.h>
 #endif
 
-#if defined(CONFIG_REBOOT)
+#if defined(CONFIG_REBOOT) && !defined(CONFIG_REBOOT_NO_ARCH)
 /**
  *
  * @brief Reset the system
@@ -35,7 +35,7 @@
  *
  */
 
-void __weak sys_arch_reboot(int type)
+void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 
@@ -43,7 +43,7 @@ void __weak sys_arch_reboot(int type)
 
 	CODE_UNREACHABLE;
 }
-#endif /* CONFIG_REBOOT */
+#endif /* CONFIG_REBOOT && !CONFIG_REBOOT_NO_ARCH */
 
 #if defined(CONFIG_ARM_MPU)
 #if defined(CONFIG_CPU_HAS_ARM_MPU)

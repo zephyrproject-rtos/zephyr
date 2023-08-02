@@ -21,7 +21,7 @@
  *
  */
 
-void __weak sys_arch_reboot(int type)
+void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 }

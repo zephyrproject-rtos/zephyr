@@ -21,7 +21,7 @@
 #define X86_RST_CNT_CPU_RST 0x4
 #define X86_RST_CNT_FULL_RST 0x08
 
-void __weak sys_arch_reboot(int type)
+void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 
