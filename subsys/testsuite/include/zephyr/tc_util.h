@@ -67,6 +67,7 @@
 #define TC_PASS 0
 #define TC_FAIL 1
 #define TC_SKIP 2
+#define TC_FLAKY 3
 
 #ifndef TC_PASS_STR
 #define TC_PASS_STR "PASS"
@@ -76,6 +77,9 @@
 #endif
 #ifndef TC_SKIP_STR
 #define TC_SKIP_STR "SKIP"
+#endif
+#ifndef TC_FLAKY_STR
+#define TC_FLAKY_STR "FLAKY"
 #endif
 
 static inline const char *TC_RESULT_TO_STR(int result)
@@ -87,6 +91,8 @@ static inline const char *TC_RESULT_TO_STR(int result)
 		return TC_FAIL_STR;
 	case TC_SKIP:
 		return TC_SKIP_STR;
+	case TC_FLAKY:
+		return TC_FLAKY_STR;
 	default:
 		return "?";
 	}
