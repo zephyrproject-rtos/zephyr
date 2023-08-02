@@ -190,11 +190,17 @@ following example, ``app`` is a Zephyr freestanding application:
         └── src/
             └── main.c
 
+.. _zephyr-creating-app:
+
 Creating an Application
 ***********************
 
-example-application
-===================
+In Zephyr, you can either use a reference workspace application or create your application by hand.
+
+.. _zephyr-creating-app-from-example:
+
+Using a Reference Workspace Application
+=======================================
 
 The `example-application`_ Git repository contains a reference :ref:`workspace
 application <zephyr-workspace-app>`. It is recommended to use it as a reference
@@ -210,7 +216,7 @@ commonly-used features, such as:
 - A custom west :ref:`extension command <west-extensions>`
 
 Basic example-application Usage
-===============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The easiest way to get started with the example-application repository within
 an existing Zephyr workspace is to follow these steps:
@@ -226,7 +232,7 @@ you are using an existing Zephyr workspace, you can use ``west build`` or any
 other west commands to build, flash, and debug.
 
 Advanced example-application Usage
-==================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also use the example-application repository as a starting point for
 building your own customized Zephyr-based software distribution. This lets you
@@ -282,6 +288,8 @@ then set up a matching workspace by running:
 From now on, you can collaborate on the shared software by pushing changes to
 the repositories you are using and updating :file:`my-manifest-repo/west.yml`
 as needed to add and remove repositories, or change their contents.
+
+.. _zephyr-creating-app-by-hand:
 
 Creating an Application by Hand
 ===============================
@@ -430,6 +438,8 @@ should know about.
    You can use a :ref:`cmake_build_config_package` to share common settings for
    these variables.
 
+.. _zephyr-app-cmakelists:
+
 Application CMakeLists.txt
 **************************
 
@@ -563,6 +573,8 @@ For example:
       ${app_bootloader_hex}
       ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
       ${app_provision_hex})
+
+.. _zephyr-app-cmakecache:
 
 CMakeCache.txt
 **************
