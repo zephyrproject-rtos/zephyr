@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Nordic Semiconductor ASA
+ * Copyright 2023 Meta Platforms
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -37,6 +38,15 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 
 	if (config->initial_mode != REGULATOR_INITIAL_MODE_UNKNOWN) {
 		ret = regulator_set_mode(dev, config->initial_mode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags) !=
+	    REGULATOR_ACTIVE_DISCHARGE_DEFAULT) {
+		ret = regulator_set_active_discharge(dev,
+		    (bool)REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags));
 		if (ret < 0) {
 			return ret;
 		}
