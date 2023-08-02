@@ -147,6 +147,13 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 
 	if (ret == 0) {
 		ret = k_mutex_lock(m, timeout);
+		if (ret == -EAGAIN) {
+			/*
+			 * special quirk - k_mutex_lock() returns EAGAIN if a timeout occurs, but
+			 * for pthreads, that means something different
+			 */
+			ret = -ETIMEDOUT;
+		}
 	}
 
 	if (ret < 0) {
