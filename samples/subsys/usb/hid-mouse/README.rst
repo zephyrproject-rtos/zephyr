@@ -19,29 +19,17 @@ Zephyr project tree.
 Requirements
 ************
 
-This project requires an USB device driver, and there must has at least one
-GPIO button in your board.
+This project requires an USB device driver and uses the :ref:`input` API.
+There must be a :dtcompatible:`gpio-keys` group of buttons or keys defined at
+the board level that can generate input events, otherwise the example will build
+but not work as expected.
 
-The board hardware must have a push button connected via a GPIO pin. These are
-called "User buttons" on many of Zephyr's :ref:`boards`.
+The key mapping in the sample is as follows:
 
-The button must be configured using the ``sw0`` :ref:`devicetree <dt-guide>`
-alias, usually in the :ref:`BOARD.dts file <devicetree-in-out-files>`. You will
-see this error if you try to build this sample for an unsupported board:
-
-.. code-block:: none
-
-   Unsupported board: sw0 devicetree alias is not defined
-
-You may see additional build errors if the ``sw0`` alias exists, but is not
-properly defined.
-
-If the devicetree aliases ``sw1``, ``sw2``, and ``sw3`` are defined, they will
-also be used as follows:
-
-- ``sw1``: right button
-- ``sw2``: move the mouse along the x-axis
-- ``sw3``: move the mouse along the y-axis
+- ``INPUT_KEY_0``: left button
+- ``INPUT_KEY_1``: right button
+- ``INPUT_KEY_2``: move the mouse along the x-axis
+- ``INPUT_KEY_3``: move the mouse along the y-axis
 
 An LED must also be configured via the ``led0`` devicetree alias. You may also
 see this error if you try to build this sample for an unsupported board:
