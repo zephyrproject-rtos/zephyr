@@ -86,8 +86,9 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False, ignore_path=None, alt_tags=None):
+    def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False, ignore_path=None, alt_tags=None, testsuite_root=None):
         self.modified_files = modified_files
+        self.testsuite_root = testsuite_root
         self.twister_options = []
         self.full_twister = False
         self.all_tests = []
@@ -116,9 +117,12 @@ class Filters:
         else:
             self.find_excludes()
 
-    def get_plan(self, options, integration=False):
+    def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
         cmd = [f"{zephyr_base}/scripts/twister", "-c"] + options + ["--save-tests", fname ]
+        if self.testsuite_root and use_testsuite_root:
+            for root in self.testsuite_root:
+                cmd+=["-T", root]
         if self.no_path_name:
             cmd += ["--no-path-name"]
         if integration:
@@ -270,7 +274,7 @@ class Filters:
                     _options.extend(["-p", platform])
             else:
                 _options.append("--all")
-            self.get_plan(_options)
+            self.get_plan(_options, use_testsuite_root=False)
 
     def find_tags(self):
 
@@ -369,6 +373,12 @@ def parse_args():
             help="Path to a text file with patterns of files to be matched against changed files")
     parser.add_argument('--alt-tags', default=None,
             help="Path to a file describing relations between directories and tags")
+    parser.add_argument(
+        "-T", "--testsuite-root", action="append", default=[],
+        help="Base directory to recursively search for test cases. All "
+             "testcase.yaml files under here will be processed. May be "
+             "called multiple times. Defaults to the 'samples/' and "
+             "'tests/' directories at the base of the Zephyr tree.")
 
     return parser.parse_args()
 
@@ -394,7 +404,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.pull_request, args.platform, args.no_path_name, args.ignore_path, args.alt_tags)
+    f = Filters(files, args.pull_request, args.platform, args.no_path_name, args.ignore_path, args.alt_tags, args.testsuite_root)
     f.process()
 
     # remove dupes and filtered cases
