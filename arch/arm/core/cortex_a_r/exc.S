@@ -27,6 +27,7 @@
 #include <zephyr/linker/sections.h>
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -86,10 +87,10 @@ GTEXT(z_arm_data_abort)
 #endif
 
 	/* Increment exception nesting count */
-	ldr r2, =_kernel
-	ldr r1, [r2, #_kernel_offset_to_nested]
+	get_cpu r2
+	ldr r1, [r2, #___cpu_t_nested_OFFSET]
 	add r1, r1, #1
-	str r1, [r2, #_kernel_offset_to_nested]
+	str r1, [r2, #___cpu_t_nested_OFFSET]
 .endm
 
 .macro exception_exit
@@ -128,10 +129,10 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	sub sp, #24
 
 	/* Increment exception nesting count */
-	ldr r2, =_kernel
-	ldr r1, [r2, #_kernel_offset_to_nested]
+	get_cpu r2
+	ldr r1, [r2, #___cpu_t_nested_OFFSET]
 	add r1, r1, #1
-	str r1, [r2, #_kernel_offset_to_nested]
+	str r1, [r2, #___cpu_t_nested_OFFSET]
 
 #if defined(CONFIG_FPU_SHARING)
 	sub sp, #___fpu_t_SIZEOF
