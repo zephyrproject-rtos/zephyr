@@ -32,6 +32,38 @@ Changes in this release
   documentation. As this is largely an internal API, existing applications will
   most probably continue to work unchanged.
 
+* The system reboot functionality has been slightly reworked. Major changes
+  include:
+
+  * Reboot modes have been enumerated and documented, so that the meaning and
+    expectations around :c:enumerator:`SYS_REBOOT_COLD` and
+    :c:enumerator:`SYS_REBOOT_WARM` are more clear.
+
+  * Because the actions performed by different reboot modes are largerly
+    platform dependent, it is difficult to write portable code. For example, a
+    generic/multi-platform sample requiring a system reboot, will typically have
+    not enough information to decide which mode is better. To address this
+    problem, a new special mode value has been added:
+    :c:enumerator:`SYS_REBOOT_DEFAULT`. When given to :c:func:`sys_reboot()`,
+    this special value will let the system to reboot using the platform
+    preferred reboot mode.
+
+   * Architectures or platforms providing reboot hooks need now to select
+     :kconfig:option:`CONFIG_HAS_REBOOT`, otherwise
+     :kconfig:option:`CONFIG_REBOOT` will not be available. This has been added
+     to prevent linking errors when :kconfig:option:`CONFIG_REBOOT` is enabled
+     but no implementation exists.
+
+   * Weak architecture reboot hooks have been removed in favor of using
+     :kconfig:option:`CONFIG_REBOOT_NO_ARCH`. If platform code needs to override
+     the default reboot hook, it needs to select this option. Also, architecture
+     hooks must not be compiled in if this option is selected. This has been
+     added to avoid using non-standard C features (weaks).
+
+   * Reboot hook has been renamed to ``z_sys_reboot`` from ``sys_arch_reboot``.
+     This has been done to emphasize that the hook is an internal function, not
+     always architecture specific.
+
 Removed APIs in this release
 ============================
 
