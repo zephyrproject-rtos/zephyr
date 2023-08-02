@@ -22,6 +22,9 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
+
+#include <mgmt/mcumgr/util/zcbor_bulk.h>
+
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
 #endif
@@ -89,35 +92,24 @@ extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
 #ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 static int os_mgmt_echo(struct smp_streamer *ctxt)
 {
-	struct zcbor_string value = { 0 };
-	struct zcbor_string key;
 	bool ok;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	zcbor_state_t *zse = ctxt->writer->zs;
+	struct zcbor_string data = { 0 };
+	size_t decoded;
 
-	if (!zcbor_map_start_decode(zsd)) {
-		return MGMT_ERR_EUNKNOWN;
+	struct zcbor_map_decode_key_val echo_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &data),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, echo_decode, ARRAY_SIZE(echo_decode), &decoded) == 0;
+
+	if (!ok) {
+		return MGMT_ERR_EINVAL;
 	}
 
-	do {
-		ok = zcbor_tstr_decode(zsd, &key);
-
-		if (ok) {
-			if (key.len == 1 && *key.value == 'd') {
-				ok = zcbor_tstr_decode(zsd, &value);
-				break;
-			}
-
-			ok = zcbor_any_skip(zsd, NULL);
-		}
-	} while (ok);
-
-	if (!ok || !zcbor_map_end_decode(zsd)) {
-		return MGMT_ERR_EUNKNOWN;
-	}
-
-	ok = zcbor_tstr_put_lit(zse, "r")		&&
-	     zcbor_tstr_encode(zse, &value);
+	ok = zcbor_tstr_put_lit(zse, "r")	&&
+	     zcbor_tstr_encode(zse, &data);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
