@@ -605,3 +605,50 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
+
+ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	const struct bt_gatt_attr *ase;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		ase = fixture->ase_snk.attr;
+		ase_id = fixture->ase_snk.id;
+	} else {
+		ase = fixture->ase_src.attr;
+		ase_id = fixture->ase_src.id;
+	}
+	zexpect_not_null(ase);
+	zexpect_true(ase_id != 0x00);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	test_preamble_state_enabling(conn, ase_id, stream);
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+
+	/* Mock CIS disconnection */
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
+
+	/* Expected to not notify the upper layers */
+	expect_bt_bap_stream_ops_qos_set_not_called();
+	expect_bt_bap_stream_ops_released_not_called();
+
+	/* Client retries to establish CIS */
+	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+	if (!IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		test_ase_control_client_receiver_start_ready(conn, ase_id);
+	} else {
+		err = bt_bap_stream_start(stream);
+		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
+	}
+
+	expect_bt_bap_stream_ops_started_called_once(stream);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
