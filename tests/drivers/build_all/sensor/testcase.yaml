@@ -20,6 +20,7 @@ tests:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
   sensors.generic_test:
+    build_only: false
     extra_configs:
       - CONFIG_GENERIC_SENSOR_TEST=y
       - CONFIG_ZTEST=y
