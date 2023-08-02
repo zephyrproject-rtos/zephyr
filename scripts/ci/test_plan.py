@@ -86,7 +86,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False, ignore_path=None):
+    def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False, ignore_path=None, alt_tags=None):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -96,6 +96,9 @@ class Filters:
         self.platforms = platforms
         self.default_run = False
         self.no_path_name = no_path_name
+        self.tag_cfg_file = os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml')
+        if alt_tags:
+            self.tag_cfg_file = alt_tags
         self.ignore_path = f"{zephyr_base}/scripts/ci/twister_ignore.txt"
         if ignore_path:
             self.ignore_path = ignore_path
@@ -271,8 +274,7 @@ class Filters:
 
     def find_tags(self):
 
-        tag_cfg_file = os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml')
-        with open(tag_cfg_file, 'r') as ymlfile:
+        with open(self.tag_cfg_file, 'r') as ymlfile:
             tags_config = yaml.safe_load(ymlfile)
 
         tags = {}
@@ -365,6 +367,8 @@ def parse_args():
             help="Don't put paths into test suites' names ")
     parser.add_argument('--ignore-path', default=None,
             help="Path to a text file with patterns of files to be matched against changed files")
+    parser.add_argument('--alt-tags', default=None,
+            help="Path to a file describing relations between directories and tags")
 
     return parser.parse_args()
 
@@ -390,7 +394,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.pull_request, args.platform, args.no_path_name, args.ignore_path)
+    f = Filters(files, args.pull_request, args.platform, args.no_path_name, args.ignore_path, args.alt_tags)
     f.process()
 
     # remove dupes and filtered cases
