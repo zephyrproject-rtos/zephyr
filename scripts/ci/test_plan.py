@@ -93,8 +93,10 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, ignore_path, alt_tags, pull_request=False, platforms=[], detailed_test_id=True):
+    def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
+                 pull_request=False, platforms=[], detailed_test_id=True):
         self.modified_files = modified_files
+        self.testsuite_root = testsuite_root
         self.twister_options = []
         self.full_twister = False
         self.all_tests = []
@@ -119,11 +121,14 @@ class Filters:
         else:
             self.find_excludes()
 
-    def get_plan(self, options, integration=False):
+    def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
         cmd = [f"{zephyr_base}/scripts/twister", "-c"] + options + ["--save-tests", fname ]
         if not self.detailed_test_id:
             cmd += ["--no-detailed-test-id"]
+        if self.testsuite_root and use_testsuite_root:
+            for root in self.testsuite_root:
+                cmd+=["-T", root]
         if integration:
             cmd.append("--integration")
 
@@ -277,7 +282,7 @@ class Filters:
                     _options.extend(["-p", platform])
             else:
                 _options.append("--all")
-            self.get_plan(_options)
+            self.get_plan(_options, use_testsuite_root=False)
 
     def find_tags(self):
 
@@ -380,6 +385,12 @@ def parse_args():
     parser.add_argument('--alt-tags',
             default=os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml'),
             help="Path to a file describing relations between directories and tags")
+    parser.add_argument(
+            "-T", "--testsuite-root", action="append", default=[],
+            help="Base directory to recursively search for test cases. All "
+                "testcase.yaml files under here will be processed. May be "
+                "called multiple times. Defaults to the 'samples/' and "
+                "'tests/' directories at the base of the Zephyr tree.")
 
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
@@ -407,7 +418,8 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.ignore_path, args.alt_tags, args.pull_request, args.platform, args.detailed_test_id)
+    f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
+                args.pull_request, args.platform, args.detailed_test_id)
     f.process()
 
     # remove dupes and filtered cases
