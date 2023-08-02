@@ -59,3 +59,11 @@
 	ITERABLE_SECTION_ROM(shell_dynamic_subcmds, 4)
 
 	ITERABLE_SECTION_ROM(cfb_font, 4)
+
+#if defined(CONFIG_GNSS)
+	ITERABLE_SECTION_ROM(gnss_data_callback, 4)
+#endif
+
+#if defined(CONFIG_GNSS_SATELLITES)
+	ITERABLE_SECTION_ROM(gnss_satellites_callback, 4)
+#endif
