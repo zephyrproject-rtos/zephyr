@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <errno.h>
+#include <malloc.h>
 #include <zephyr/sys/math_extras.h>
 #include <string.h>
 #include <zephyr/app_memory/app_memdomain.h>
@@ -136,6 +137,30 @@ malloc_unlock(void)
 #define malloc_lock()
 #define malloc_unlock()
 #endif
+
+struct mallinfo mallinfo(void)
+{
+	struct mallinfo info = { 0 };
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	struct sys_memory_stats stats;
+	int ret = sys_heap_runtime_stats_get(&z_malloc_heap, &stats);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to get heap stats");
+		return info;
+	}
+
+	info.arena = stats.free_bytes + stats.allocated_bytes;
+	info.fordblks = stats.free_bytes;
+	info.uordblks = stats.allocated_bytes;
+	info.usmblks = stats.max_allocated_bytes;
+#else
+	ARG_UNUSED(info);
+	LOG_ERR("CONFIG_SYS_HEAP_RUNTIME_STATS is not enabled");
+#endif
+
+	return info;
+}
 
 void *malloc(size_t size)
 {
