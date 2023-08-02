@@ -139,7 +139,7 @@ file available in the tree to your local configuration directory to override the
 builtin table::
 
         # On Linux and MacOS
-        cp ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
+        cp $ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
 
 User-Defined Tracing
 ====================
