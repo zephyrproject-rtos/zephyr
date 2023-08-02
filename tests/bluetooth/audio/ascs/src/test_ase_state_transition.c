@@ -276,7 +276,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
 	test_ase_control_client_release(conn, ase_id);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -566,7 +566,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_releasing)
 	zassert_false(err < 0, "bt_bap_stream_release returned err %d", err);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -814,8 +814,9 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_releasing)
 	test_preamble_state_streaming(conn, ase_id, stream, &chan, true);
 
 	test_ase_control_client_release(conn, ase_id);
+
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -1125,7 +1126,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_releasing)
 	zassert_false(err < 0, "bt_bap_stream_release returned err %d", err);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);

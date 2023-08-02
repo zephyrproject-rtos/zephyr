@@ -244,10 +244,10 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_client_terminates
 				      !IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK));
 
 	/* Mock ACL disconnection */
-	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Mock CIS disconnection */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Expected to notify the upper layers */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -342,10 +342,10 @@ ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_client_te
 	test_mocks_reset();
 
 	/* Mock ACL disconnection */
-	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
+	mock_bt_conn_disconnected(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Mock CIS disconnection */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Expected to notify the upper layers */
 	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
