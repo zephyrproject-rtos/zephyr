@@ -3547,9 +3547,9 @@ void net_tcp_init(void)
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
-#define THREAD_PRIORITY K_PRIO_COOP(0)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NET_TCP_WORKER_PRIO)
 #else
-#define THREAD_PRIORITY K_PRIO_PREEMPT(0)
+#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NET_TCP_WORKER_PRIO)
 #endif
 
 	/* Use private workqueue in order not to block the system work queue.
