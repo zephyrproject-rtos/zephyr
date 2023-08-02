@@ -25,11 +25,13 @@ LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
 #if DT_NODE_HAS_COMPAT(GENERATOR_NODE, nordic_nrf_rtc)
 #define USE_RTC		1
 #define GENERATOR_ADDR	((NRF_RTC_Type *) DT_REG_ADDR(GENERATOR_NODE))
+#define GENERATOR_BITS	24
 BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 	     "Only clock-prescaler = <0> is supported when used with RTC");
 #else
 #define USE_RTC		0
 #define GENERATOR_ADDR	((NRF_TIMER_Type *) DT_REG_ADDR(GENERATOR_NODE))
+#define GENERATOR_BITS	DT_PROP(GENERATOR_NODE, max_bit_width)
 #endif
 
 #define PWM_0_MAP_SIZE DT_INST_PROP_LEN(0, channel_gpios)
@@ -145,10 +147,8 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 			return -EINVAL;
 		}
 	} else {
-		/* TODO: if the assigned NRF_TIMER supports higher bit
-		 * resolution, use that info in config struct.
-		 */
-		if (period_cycles > UINT16_MAX) {
+		if (GENERATOR_BITS < 32 &&
+		    period_cycles > BIT_MASK(GENERATOR_BITS)) {
 			LOG_ERR("Too long period (%u), adjust PWM prescaler!",
 				period_cycles);
 			return -EINVAL;
@@ -369,7 +369,9 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 		/* setup HF timer */
 		nrf_timer_mode_set(timer, NRF_TIMER_MODE_TIMER);
 		nrf_timer_prescaler_set(timer, config->prescaler);
-		nrf_timer_bit_width_set(timer, NRF_TIMER_BIT_WIDTH_16);
+		nrf_timer_bit_width_set(timer,
+			GENERATOR_BITS == 32 ? NRF_TIMER_BIT_WIDTH_32
+					     : NRF_TIMER_BIT_WIDTH_16);
 		nrf_timer_shorts_enable(timer,
 			NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK);
 	}
