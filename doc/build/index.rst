@@ -14,3 +14,4 @@ Build and Configuration Systems
    snippets/index.rst
    zephyr_cmake_package.rst
    sysbuild/index.rst
+   version/index.rst
