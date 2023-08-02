@@ -3529,6 +3529,18 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	/* Check for duplicate handles */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		for (uint8_t i = 0U; i < set_num - 1; i++) {
+			for (uint8_t j = i + 1U; j < set_num; j++) {
+				if (cmd->s[i].handle == cmd->s[j].handle) {
+					*evt = cmd_complete_status(BT_HCI_ERR_INVALID_PARAM);
+					return;
+				}
+			}
+		}
+	}
+
 	s = (void *) cmd->s;
 	do {
 		status = ll_adv_set_by_hci_handle_get(s->handle, &handle);
