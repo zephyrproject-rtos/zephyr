@@ -364,6 +364,63 @@ static int cmd_modeget(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	bool ad;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	if (strcmp(argv[2], "enable")) {
+		ad = true;
+	} else if (strcmp(argv[2], "disable")) {
+		ad = false;
+	} else {
+		shell_error(sh, "Invalid parameter");
+		return -EINVAL;
+	}
+
+	ret = regulator_set_active_discharge(dev, ad);
+	if (ret < 0) {
+		shell_error(sh, "Could not set mode (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_adget(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	bool ad;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	ret = regulator_get_active_discharge(dev, &ad);
+	if (ret < 0) {
+		shell_error(sh, "Could not get active discharge (%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Active Discharge: %s", ad ? "enabled" : "disabled");
+
+	return 0;
+}
+
 static int cmd_errors(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -503,6 +560,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get regulator mode\n"
 		      "Usage: modeget <device>",
 		      cmd_modeget, 2, 0),
+	SHELL_CMD_ARG(adset, NULL,
+		      "Set active discharge\n"
+		      "Usage: adset <device> <enable/disable>",
+		      cmd_adset, 3, 0),
+	SHELL_CMD_ARG(adget, NULL,
+		      "Get active discharge\n"
+		      "Usage: adset <device>",
+		      cmd_adget, 2, 0),
 	SHELL_CMD_ARG(errors, &dsub_device_name,
 		      "Get errors\n"
 		      "Usage: errors <device>",
