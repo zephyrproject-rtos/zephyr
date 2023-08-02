@@ -63,6 +63,7 @@ static struct bt_ascs_ase {
 	struct k_work_delayable disconnect_work;
 	struct k_work state_transition_work;
 	enum bt_bap_ep_state state_pending;
+	bool unexpected_iso_link_loss;
 } ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
 
 #define MAX_CODEC_CONFIG                                                                           \
@@ -354,6 +355,10 @@ static void ase_set_state_disabling(struct bt_ascs_ase *ase)
 	if (ops != NULL && ops->disabled != NULL) {
 		ops->disabled(stream);
 	}
+
+	if (ase->unexpected_iso_link_loss) {
+		ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
+	}
 }
 
 static void ase_set_state_releasing(struct bt_ascs_ase *ase)
@@ -399,9 +404,6 @@ static void state_transition_work_handler(struct k_work *work)
 		if (reason == BT_HCI_ERR_SUCCESS) {
 			/* Default to BT_HCI_ERR_UNSPECIFIED if no other reason is set */
 			reason = BT_HCI_ERR_UNSPECIFIED;
-		} else {
-			/* Reset reason */
-			ep->reason = BT_HCI_ERR_SUCCESS;
 		}
 
 		if (ops != NULL && ops->stopped != NULL) {
@@ -823,6 +825,7 @@ static void ascs_update_sdu_size(struct bt_bap_ep *ep)
 
 static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 {
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	struct bt_bap_stream *stream;
 
 	if (ep->status.state != BT_BAP_EP_STATE_ENABLING) {
@@ -836,6 +839,10 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 		LOG_ERR("No stream for ep %p", ep);
 		return;
 	}
+
+	/* Reset reason */
+	ep->reason = BT_HCI_ERR_SUCCESS;
+	ase->unexpected_iso_link_loss = false;
 
 	/* Some values are not provided by the HCI events when the CIS is established for the
 	 * peripheral, so we update them here based on the parameters provided by the BAP Unicast
@@ -897,18 +904,23 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
-	} else {
+	} else if (ep->status.state == BT_BAP_EP_STATE_STREAMING) {
+		/* CIS has been unexpectedly disconnected */
+		ase->unexpected_iso_link_loss = true;
+
 		/* The ASE state machine goes into different states from this operation
 		 * based on whether it is a source or a sink ASE.
 		 */
-		if (ep->status.state == BT_BAP_EP_STATE_STREAMING ||
-		    ep->status.state == BT_BAP_EP_STATE_ENABLING) {
-			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-				ascs_ep_set_state(ep, BT_BAP_EP_STATE_DISABLING);
-			} else {
-				ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-			}
+		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+			ascs_ep_set_state(ep, BT_BAP_EP_STATE_DISABLING);
+		} else {
+			ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 		}
+	} else if (ep->status.state == BT_BAP_EP_STATE_DISABLING) {
+		/* CIS has been unexpectedly disconnected */
+		ase->unexpected_iso_link_loss = true;
+
+		ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 }
 
