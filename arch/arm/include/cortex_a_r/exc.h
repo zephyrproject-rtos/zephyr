@@ -54,26 +54,6 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
 }
 #endif
 
-/**
- * @brief Setup system exceptions
- *
- * Enable fault exceptions.
- *
- */
-static ALWAYS_INLINE void z_arm_exc_setup(void)
-{
-}
-
-/**
- * @brief Clear Fault exceptions
- *
- * Clear out exceptions for Mem, Bus, Usage and Hard Faults
- *
- */
-static ALWAYS_INLINE void z_arm_clear_faults(void)
-{
-}
-
 extern void z_arm_cortex_r_svc(void);
 
 #ifdef __cplusplus

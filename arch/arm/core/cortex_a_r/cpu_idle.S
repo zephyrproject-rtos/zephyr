@@ -19,7 +19,6 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(z_arm_cpu_idle_init)
 GTEXT(arch_cpu_idle)
 GTEXT(arch_cpu_atomic_idle)
 
@@ -49,21 +48,6 @@ _skip_\@:
 	pop	{r0, lr}
 #endif /* CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK */
 .endm
-
-/**
- *
- * @brief Initialization of CPU idle
- *
- * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
- * duration.
- *
- * C function prototype:
- *
- * void z_arm_cpu_idle_init(void);
- */
-
-SECTION_FUNC(TEXT, z_arm_cpu_idle_init)
-	bx	lr
 
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
@@ -97,15 +81,9 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	 */
 	cpsid	i
 
-	/*
-	 * No need to set SEVONPEND, it's set once in z_arm_cpu_idle_init()
-	 * and never touched again.
-	 */
-
 	/* r0: interrupt mask from caller */
 
 	/* No BASEPRI, call wfe directly
-	 * (SEVONPEND is set in z_arm_cpu_idle_init())
 	 */
 	_sleep_if_allowed wfe
 
