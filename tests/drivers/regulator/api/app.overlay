@@ -24,6 +24,7 @@
 			regulator-max-microamp = <200>;
 			regulator-allowed-modes = <1 10>;
 			regulator-initial-mode = <1>;
+			regulator-active-discharge = <1>;
 		};
 	};
 };
