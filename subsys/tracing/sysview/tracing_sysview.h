@@ -606,10 +606,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_TIMER_STATUS_SYNC, (uint32_t)result)
 
 #define sys_port_trace_syscall_enter(id, name, ...)	\
-	SEGGER_SYSVIEW_RecordU32(TID_SYSCALL, (uint32_t)id)
+	SEGGER_SYSVIEW_RecordString(TID_SYSCALL, (const char *)#name)
 
 #define sys_port_trace_syscall_exit(id, name, ...)	\
-	SEGGER_SYSVIEW_RecordEndCallU32(TID_SYSCALL, (uint32_t)id)
+	SEGGER_SYSVIEW_RecordEndCall(TID_SYSCALL)
 
 void sys_trace_idle(void);
 
