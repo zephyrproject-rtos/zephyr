@@ -526,6 +526,22 @@ config NET_TCP_ISN_RFC6528
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
 	  If this is not set, then sys_rand32_get() is used for ISN value.
 
+config NET_TCP_WORKER_PRIO
+	int "Priority of the TCP work queue"
+	default 2
+	depends on NET_TCP
+	help
+	  Set the priority of the the TCP worker queue, that handles all
+	  transmission and maintenance within the TCP stack.
+	  Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
+	  Make sure the priority is lower than lower layer TX threads to
+	  avoid the TCP stack consume all net_bufs before transferring
+	  execution to the lower layer network stack, with a high risk of
+	  running out of net_bufs.
+
 config NET_TEST_PROTOCOL
 	bool "JSON based test protocol (UDP)"
 	help
