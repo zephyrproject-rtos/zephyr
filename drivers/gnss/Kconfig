@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GNSS
+	bool "GNSS drivers"
+	select EXPERIMENTAL
+	help
+	  Enable GNSS drivers and configuration.
+
+if GNSS
+
+config GNSS_SATELLITES
+	bool "GNSS satellites support"
+	help
+	  Enable GNSS sattelites callback.
+
+module = GNSS
+module-str = gnss
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
