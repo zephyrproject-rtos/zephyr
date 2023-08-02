@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator)
-
 zephyr_library()
 
 zephyr_library_compile_definitions(NO_POSIX_CHEATS)
