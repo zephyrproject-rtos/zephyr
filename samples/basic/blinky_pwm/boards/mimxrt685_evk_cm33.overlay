@@ -1,0 +1,27 @@
+/*
+ * (c) Meta Platforms, Inc. and affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+&leds {
+	status = "disabled";
+};
+
+&green_pwm_led {
+	pwms = <&ctimer2_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+	label = "Green PWM LED";
+	status = "okay";
+};
+
+ctimer2_pwm: &ctimer2 {
+	compatible = "nxp,ctimer-pwm";
+	status = "okay";
+	clk-source = <5>;
+	clocks = <&clkctl1 MCUX_CTIMER2_CLK>;
+	prescaler = <0>;
+	pinctrl-0 = <&pinmux_ctimer2_pwm>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+};
