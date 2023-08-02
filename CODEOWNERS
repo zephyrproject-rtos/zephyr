@@ -396,6 +396,7 @@
 /drivers/pwm/*rcar*                       @pmarzin
 /drivers/regulator/*                      @gmarull
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
+/drivers/regulator/regulator_rpi_pico.c   @soburi
 /drivers/regulator/regulator_shell.c      @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
 /drivers/reset/reset_intel_socfpga.c      @nbalabak
