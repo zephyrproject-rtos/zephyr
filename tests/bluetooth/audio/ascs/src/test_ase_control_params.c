@@ -830,8 +830,9 @@ static void test_receiver_stop_ready_expect_invalid_length(struct bt_conn *conn,
 		0x02,           /* Response_Code[0] = Invalid Length */
 		0x00,           /* Reason[0] */
 	};
+	struct bt_iso_chan *chan;
 
-	test_preamble_state_disabling(conn, ase_id, stream);
+	test_preamble_state_disabling(conn, ase_id, stream, &chan);
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
