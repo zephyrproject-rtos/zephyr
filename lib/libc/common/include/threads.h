@@ -40,6 +40,22 @@ _Noreturn void thrd_exit(int res);
 int thrd_detach(thrd_t thr);
 int thrd_join(thrd_t thr, int *res);
 
+enum {
+	mtx_plain,
+#define mtx_plain mtx_plain
+	mtx_timed,
+#define mtx_timed mtx_timed
+	mtx_recursive,
+#define mtx_recursive mtx_recursive
+};
+
+int mtx_init(mtx_t *mutex, int type);
+void mtx_destroy(mtx_t *mutex);
+int mtx_lock(mtx_t *mutex);
+int mtx_timedlock(mtx_t *ZRESTRICT mutex, const struct timespec *ZRESTRICT time_point);
+int mtx_trylock(mtx_t *mutex);
+int mtx_unlock(mtx_t *mutex);
+
 #ifdef __cplusplus
 }
 #endif
