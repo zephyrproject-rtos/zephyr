@@ -121,7 +121,7 @@ test_i2c_mpu9250: mpu9250@12 {
 	gyro-dlpf = <5>;
 	gyro-fs = <250>;
 	accel-fs = <2>;
-	accel-dlpf="5.05";
+	accel-dlpf = "5.05";
 };
 
 test_i2c_ina219: ina219@13 {
@@ -781,4 +781,9 @@ test_i2c_mc3419: mc3419@75 {
 	compatible = "memsic,mc3419";
 	reg = <0x75>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ltrf216a0: ltrf216a@76 {
+	compatible = "ltr,f216a";
+	reg = <0x76>;
 };
