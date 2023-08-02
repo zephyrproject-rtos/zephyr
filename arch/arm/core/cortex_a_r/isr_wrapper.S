@@ -22,6 +22,7 @@
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sw_isr_table.h>
+#include "macro_priv.inc"
 
 
 _ASM_FILE_PROLOGUE
@@ -57,8 +58,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp r0, #MODE_USR
 	bne isr_system_thread
 
-	ldr r0, =_kernel
-	ldr r0, [r0, #_kernel_offset_to_current]
+	get_cpu r0
+	ldr r0, [r0, #___cpu_t_current_OFFSET]
 
 	/* Save away user stack pointer */
 	cps #MODE_SYS
@@ -108,10 +109,10 @@ _vfp_not_enabled:
 	 * Mark where to store the floating context for the undefined
 	 * instruction handler
 	 */
-	ldr r2, =_kernel
-	ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_fp_ctx_OFFSET]
 	cmp r0, #0
-	streq sp, [r2, #_kernel_offset_to_fp_ctx]
+	streq sp, [r2, #___cpu_t_fp_ctx_OFFSET]
 #endif /* CONFIG_FPU_SHARING */
 
 	/*
@@ -139,10 +140,10 @@ _vfp_not_enabled:
 	push {r2, r3}
 
 	/* Increment interrupt nesting count */
-	ldr r2, =_kernel
-	ldr r0, [r2, #_kernel_offset_to_nested]
+	get_cpu r2
+	ldr r0, [r2, #___cpu_t_nested_OFFSET]
 	add r0, r0, #1
-	str r0, [r2, #_kernel_offset_to_nested]
+	str r0, [r2, #___cpu_t_nested_OFFSET]
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
