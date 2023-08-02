@@ -432,12 +432,13 @@ ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_disabling)
 	const struct bt_gatt_attr *ase_cp = fixture->ase_cp;
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
 	uint8_t ase_id;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
 
 	ase_id = test_ase_id_get(fixture->ase_src);
-	test_preamble_state_disabling(conn, ase_id, stream);
+	test_preamble_state_disabling(conn, ase_id, stream, &chan);
 
 	test_client_config_codec_expect_transition_error(conn, ase_id, ase_cp);
 	test_client_config_qos_expect_transition_error(conn, ase_id, ase_cp);
@@ -679,12 +680,13 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_disabling)
 {
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
 	uint8_t ase_id;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
 
 	ase_id = test_ase_id_get(fixture->ase_src);
-	test_preamble_state_disabling(conn, ase_id, stream);
+	test_preamble_state_disabling(conn, ase_id, stream, &chan);
 
 	test_server_config_codec_expect_error(stream);
 	test_server_config_qos_expect_error(stream);
