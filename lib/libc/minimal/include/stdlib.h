@@ -16,6 +16,19 @@
 extern "C" {
 #endif
 
+struct mallinfo2 {
+	size_t arena;    /* total space allocated from system */
+	size_t ordblks;  /* number of non-inuse chunks */
+	size_t smblks;   /* unused -- always zero */
+	size_t hblks;    /* number of mmapped regions */
+	size_t hblkhd;   /* total space in mmapped regions */
+	size_t usmblks;  /* unused -- always zero */
+	size_t fsmblks;  /* unused -- always zero */
+	size_t uordblks; /* total allocated space */
+	size_t fordblks; /* total non-inuse space */
+	size_t keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+
 unsigned long strtoul(const char *nptr, char **endptr, int base);
 long strtol(const char *nptr, char **endptr, int base);
 unsigned long long strtoull(const char *nptr, char **endptr, int base);
@@ -23,6 +36,7 @@ long long strtoll(const char *nptr, char **endptr, int base);
 int atoi(const char *s);
 
 void *malloc(size_t size);
+struct mallinfo2 mallinfo2(void);
 void *aligned_alloc(size_t alignment, size_t size); /* From C11 */
 
 void free(void *ptr);
