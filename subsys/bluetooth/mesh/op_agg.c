@@ -18,13 +18,13 @@ LOG_MODULE_REGISTER(bt_mesh_op_agg);
 
 NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
 
-#ifdef CONFIG_BT_MESH_OP_AGG_CLI
+#if IS_ENABLED(CONFIG_BT_MESH_OP_AGG_CLI)
 NET_BUF_SIMPLE_DEFINE_STATIC(srcs, BT_MESH_TX_SDU_MAX);
 #endif
 
 static struct op_agg_ctx agg_ctx = {
 	.sdu = &sdu,
-#ifdef CONFIG_BT_MESH_OP_AGG_CLI
+#if IS_ENABLED(CONFIG_BT_MESH_OP_AGG_CLI)
 	.srcs = &srcs,
 #endif
 };
@@ -42,11 +42,7 @@ static bool ctx_match(struct bt_mesh_msg_ctx *ctx)
 
 int bt_mesh_op_agg_accept(struct bt_mesh_msg_ctx *msg_ctx)
 {
-#ifdef CONFIG_BT_MESH_OP_AGG_CLI
 	return agg_ctx.initialized && ctx_match(msg_ctx);
-#else
-	return 0;
-#endif
 }
 
 void bt_mesh_op_agg_ctx_reinit(void)
@@ -58,22 +54,23 @@ int bt_mesh_op_agg_send(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *msg,
 			const struct bt_mesh_send_cb *cb)
 {
-	uint16_t src;
 	int err;
 
 	/* Model responded so mark this message as acknowledged */
 	agg_ctx.ack = true;
 
-	/* Store source address so that Opcodes Aggregator Client can match
-	 * response with source model
-	 */
-	src = bt_mesh_model_elem(model)->addr;
+	if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG_CLI)) {
+		/* Store source address so that Opcodes Aggregator Client can
+		 * match response with source model
+		 */
+		uint16_t src = bt_mesh_model_elem(model)->addr;
 
-	if (net_buf_simple_tailroom(&srcs) < 2) {
-		return -ENOMEM;
+		if (net_buf_simple_tailroom(&srcs) < 2) {
+			return -ENOMEM;
+		}
+
+		net_buf_simple_add_le16(&srcs, src);
 	}
-
-	net_buf_simple_add_le16(&srcs, src);
 
 	err = bt_mesh_op_agg_encode_msg(msg);
 	if (err) {
