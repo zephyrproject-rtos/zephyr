@@ -314,12 +314,27 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
 #if defined(CONFIG_MCUMGR_GRP_OS_RESET_HOOK)
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	zcbor_state_t *zse = ctxt->writer->zs;
+	size_t decoded;
+	enum mgmt_cb_return status;
 	int32_t ret_rc;
 	uint16_t ret_group;
-	enum mgmt_cb_return status;
 
-	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, NULL, 0, &ret_rc, &ret_group);
+	struct os_mgmt_reset_data reboot_data = {
+		.force = false
+	};
+
+	struct zcbor_map_decode_key_val reset_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("force", zcbor_bool_decode, &reboot_data.force),
+	};
+
+	/* Since this is a core command, if we fail to decode the data, ignore the error and
+	 * continue with the default parameter of force being false.
+	 */
+	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, &reboot_data,
+				      sizeof(reboot_data), &ret_rc, &ret_group);
 
 	if (status != MGMT_CB_OK) {
 		bool ok;
