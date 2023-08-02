@@ -192,3 +192,65 @@ ZTEST(posix_apis, test_mutex_resource_leak)
 		zassert_ok(pthread_mutex_destroy(&m), "failed to destroy mutex %zu", i);
 	}
 }
+
+#define TIMEDLOCK_TIMEOUT_MS       200
+#define TIMEDLOCK_TIMEOUT_DELAY_MS 100
+
+BUILD_ASSERT(TIMEDLOCK_TIMEOUT_DELAY_MS >= 100, "TIMEDLOCK_TIMEOUT_DELAY_MS too small");
+BUILD_ASSERT(TIMEDLOCK_TIMEOUT_MS >= 2 * TIMEDLOCK_TIMEOUT_DELAY_MS,
+	     "TIMEDLOCK_TIMEOUT_MS too small");
+
+static void timespec_add_ms(struct timespec *ts, uint32_t ms)
+{
+	bool oflow;
+
+	ts->tv_nsec += ms * NSEC_PER_MSEC;
+	oflow = ts->tv_nsec >= NSEC_PER_SEC;
+	ts->tv_sec += oflow;
+	ts->tv_nsec -= oflow * NSEC_PER_SEC;
+}
+
+static void *test_mutex_timedlock_fn(void *arg)
+{
+	struct timespec time_point;
+	pthread_mutex_t *mutex = (pthread_mutex_t *)arg;
+
+	zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
+	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
+
+	return INT_TO_POINTER(pthread_mutex_timedlock(mutex, &time_point));
+}
+
+/** @brief Test to verify @ref pthread_mutex_timedlock returns ETIMEDOUT */
+ZTEST(posix_apis, test_mutex_timedlock)
+{
+	void *ret;
+	pthread_t th;
+	pthread_t mutex;
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstack(&attr, &stack, STACK_SIZE));
+
+	zassert_ok(pthread_mutex_init(&mutex, NULL));
+
+	printk("Expecting timedlock with timeout of %d ms to fail\n", TIMEDLOCK_TIMEOUT_MS);
+	zassert_ok(pthread_mutex_lock(&mutex));
+	zassert_ok(pthread_create(&th, &attr, test_mutex_timedlock_fn, &mutex));
+	zassert_ok(pthread_join(th, &ret));
+	/* ensure timeout occurs */
+	zassert_equal(ETIMEDOUT, POINTER_TO_INT(ret));
+
+	printk("Expecting timedlock with timeout of %d ms to succeed after 100ms\n",
+	       TIMEDLOCK_TIMEOUT_MS);
+	zassert_ok(pthread_create(&th, &attr, test_mutex_timedlock_fn, &mutex));
+	/* unlock before timeout expires */
+	k_msleep(TIMEDLOCK_TIMEOUT_DELAY_MS);
+	zassert_ok(pthread_mutex_unlock(&mutex));
+	zassert_ok(pthread_join(th, &ret));
+	/* ensure lock is successful, in spite of delay  */
+	zassert_ok(POINTER_TO_INT(ret));
+
+	zassert_ok(pthread_mutex_destroy(&mutex));
+	zassert_ok(pthread_attr_destroy(&attr));
+}
