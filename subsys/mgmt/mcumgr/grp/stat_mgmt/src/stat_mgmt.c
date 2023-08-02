@@ -14,6 +14,8 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
+#include <mgmt/mcumgr/util/zcbor_bulk.h>
+
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
@@ -120,41 +122,26 @@ stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
 static int
 stat_mgmt_show(struct smp_streamer *ctxt)
 {
-	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	char stat_name[CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN];
 	bool ok;
 	size_t counter = 0;
+	size_t decoded;
+	struct zcbor_string name = { 0 };
 
-	if (!zcbor_map_start_decode(zsd)) {
-		return MGMT_ERR_EUNKNOWN;
-	}
+	struct zcbor_map_decode_key_val stat_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &name),
+	};
 
-	/* Only interested in "name" keyword */
-	do {
-		struct zcbor_string key;
-		static const char name_key[] = "name";
+	ok = zcbor_map_decode_bulk(zsd, stat_decode, ARRAY_SIZE(stat_decode), &decoded) == 0;
 
-		ok = zcbor_tstr_decode(zsd, &key);
-
-		if (ok) {
-			if (key.len == (ARRAY_SIZE(name_key) - 1) &&
-			    memcmp(key.value, name_key, ARRAY_SIZE(name_key) - 1) == 0) {
-				ok = zcbor_tstr_decode(zsd, &value);
-				break;
-			}
-
-			ok = zcbor_any_skip(zsd, NULL);
-		}
-	} while (ok);
-
-	if (!ok || value.len == 0 || value.len >= ARRAY_SIZE(stat_name)) {
+	if (!ok || name.len == 0 || name.len >= ARRAY_SIZE(stat_name)) {
 		return MGMT_ERR_EINVAL;
 	}
 
-	memcpy(stat_name, value.value, value.len);
-	stat_name[value.len] = '\0';
+	memcpy(stat_name, name.value, name.len);
+	stat_name[name.len] = '\0';
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
 		LOG_ERR("Invalid stat name: %s", stat_name);
@@ -170,7 +157,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 
 	if (ok) {
 		ok = zcbor_tstr_put_lit(zse, "name")		&&
-		     zcbor_tstr_encode(zse, &value)		&&
+		     zcbor_tstr_encode(zse, &name)		&&
 		     zcbor_tstr_put_lit(zse, "fields")		&&
 		     zcbor_map_start_encode(zse, counter);
 	}
