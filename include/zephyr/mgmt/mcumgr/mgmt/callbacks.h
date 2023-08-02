@@ -19,6 +19,10 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt_callbacks.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt_callbacks.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -176,7 +180,7 @@ enum img_mgmt_group_events {
  * MGMT event opcodes for operating system management group.
  */
 enum os_mgmt_group_events {
-	/** Callback when a reset command has been received. */
+	/** Callback when a reset command has been received, data is os_mgmt_reset_data. */
 	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
 
 	/** Callback when an info command is processed, data is os_mgmt_info_check. */
