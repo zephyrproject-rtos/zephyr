@@ -59,6 +59,12 @@
 
 #define STREAMS_PER_GROUP CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#define PHY_VALID_MASK (BT_HCI_ISO_PHY_VALID_MASK)
+#else
+#define PHY_VALID_MASK (BT_HCI_ISO_PHY_VALID_MASK & ~BIT(2))
+#endif
+
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
 static void cig_offset_get(struct ll_conn_iso_stream *cis);
 static void mfy_cig_offset_get(void *param);
@@ -267,7 +273,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			if (!cis) {
 				/* No space for new CIS */
 				ll_iso_setup.cis_idx = 0U;
-				err = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+
+				err = BT_HCI_ERR_CONN_LIMIT_EXCEEDED;
 				goto ll_cig_parameters_commit_cleanup;
 			}
 
@@ -323,7 +330,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			tx = cis->lll.tx.bn && cis->lll.tx.max_pdu;
 			rx = cis->lll.rx.bn && cis->lll.rx.max_pdu;
 		} else {
-			LL_ASSERT(iso_interval_us >= cig->c_sdu_interval);
+			LL_ASSERT(cis->framed || iso_interval_us >= cig->c_sdu_interval);
 
 			tx = cig->c_sdu_interval && cis->c_max_sdu;
 			rx = cig->p_sdu_interval && cis->p_max_sdu;
@@ -642,7 +649,13 @@ uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle)
 
 		/* Verify handle validity and association */
 		cis = ll_conn_iso_stream_get(cis_handle);
-		if (cis->lll.handle == cis_handle) {
+
+		if (cis->group && (cis->lll.handle == cis_handle)) {
+			if (cis->established) {
+				/* CIS is already created */
+				return BT_HCI_ERR_CONN_ALREADY_EXISTS;
+			}
+
 			return BT_HCI_ERR_SUCCESS;
 		}
 	}
@@ -689,7 +702,14 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	cis->lll.link_tx_free = NULL;
 
 	/* Initiate CIS Request Control Procedure */
-	(void)ull_cp_cis_create(conn, cis);
+	if (ull_cp_cis_create(conn, cis) == BT_HCI_ERR_SUCCESS) {
+		LL_ASSERT(cis->group);
+
+		if (cis->group->state == CIG_STATE_CONFIGURABLE) {
+			/* This CIG is now initiating an ISO connection */
+			cis->group->state = CIG_STATE_INITIATING;
+		}
+	}
 }
 
 /* Core 5.3 Vol 6, Part B section 7.8.100:
@@ -712,8 +732,8 @@ uint8_t ll_cig_remove(uint8_t cig_id)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (cig->state == CIG_STATE_ACTIVE) {
-		/* CIG is in active state */
+	if ((cig->state == CIG_STATE_INITIATING) || (cig->state == CIG_STATE_ACTIVE)) {
+		/* CIG is in initiating- or active state */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -1194,7 +1214,7 @@ static uint8_t ll_cig_parameters_validate(void)
 		/* Requested number of CISes not available by configuration. Check as last
 		 * to avoid interfering with qualification parameter checks.
 		 */
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		return BT_HCI_ERR_CONN_LIMIT_EXCEEDED;
 	}
 
 	return BT_HCI_ERR_SUCCESS;
@@ -1210,13 +1230,13 @@ static uint8_t ll_cis_parameters_validate(uint8_t cis_idx, uint8_t cis_id,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	if (!c_phy || ((c_phy & ~BT_HCI_ISO_PHY_VALID_MASK) != 0U) ||
-	    !p_phy || ((p_phy & ~BT_HCI_ISO_PHY_VALID_MASK) != 0U)) {
+	if (!c_phy || ((c_phy & ~PHY_VALID_MASK) != 0U) ||
+	    !p_phy || ((p_phy & ~PHY_VALID_MASK) != 0U)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	if (cis_idx >= STREAMS_PER_GROUP) {
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		return BT_HCI_ERR_CONN_LIMIT_EXCEEDED;
 	}
 
 	return BT_HCI_ERR_SUCCESS;

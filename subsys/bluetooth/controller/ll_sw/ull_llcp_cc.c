@@ -647,6 +647,8 @@ enum {
 	LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ,
 	LP_CC_STATE_WAIT_TX_CIS_REQ,
 	LP_CC_STATE_WAIT_RX_CIS_RSP,
+	LP_CC_STATE_WAIT_NOTIFY_CANCEL,
+	LP_CC_STATE_WAIT_RX_CIS_RSP_CANCEL,
 	LP_CC_STATE_WAIT_TX_CIS_IND,
 	LP_CC_STATE_WAIT_INSTANT,
 	LP_CC_STATE_WAIT_ESTABLISHED,
@@ -916,6 +918,59 @@ static void lp_cc_st_wait_rx_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 	}
 }
 
+static void lp_cc_st_wait_notify_cancel(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		if (llcp_ntf_alloc_is_available()) {
+			ctx->node_ref.rx = llcp_ntf_alloc();
+
+			/* Mark node as RETAIN to trigger put/sched */
+			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+			ctx->state = LP_CC_STATE_WAIT_ESTABLISHED;
+
+			llcp_lp_cc_established(conn, ctx);
+		}
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_cc_st_wait_rx_cis_rsp_cancel(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
+{
+	struct pdu_data *pdu;
+	struct node_tx *tx;
+
+	switch (evt) {
+	case LP_CC_EVT_CIS_RSP:
+		/* Allocate tx node */
+		tx = llcp_tx_alloc(conn, ctx);
+		LL_ASSERT(tx);
+
+		pdu = (struct pdu_data *)tx->pdu;
+
+		/* Encode LL Control PDU */
+		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CIS_RSP,
+			ctx->data.cis_create.error);
+
+		/* Enqueue LL Control PDU towards LLL */
+		llcp_tx_enqueue(conn, tx);
+		lp_cc_complete(conn, ctx, evt, param);
+		break;
+	case LP_CC_EVT_UNKNOWN:
+	case LP_CC_EVT_REJECT:
+		lp_cc_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_cc_st_wait_tx_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 				     uint8_t evt, void *param)
 {
@@ -997,6 +1052,12 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case LP_CC_STATE_WAIT_RX_CIS_RSP:
 		lp_cc_st_wait_rx_cis_rsp(conn, ctx, evt, param);
 		break;
+	case LP_CC_STATE_WAIT_NOTIFY_CANCEL:
+		lp_cc_st_wait_notify_cancel(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_RX_CIS_RSP_CANCEL:
+		lp_cc_st_wait_rx_cis_rsp_cancel(conn, ctx, evt, param);
+		break;
 	case LP_CC_STATE_WAIT_TX_CIS_IND:
 		lp_cc_st_wait_tx_cis_ind(conn, ctx, evt, param);
 		break;
@@ -1031,5 +1092,26 @@ bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx)
 void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	lp_cc_execute_fsm(conn, ctx, LP_CC_EVT_ESTABLISHED, NULL);
+}
+
+bool llcp_lp_cc_cancel(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	ctx->data.cis_create.error = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+
+	switch (ctx->state) {
+	case LP_CC_STATE_IDLE:
+	case LP_CC_STATE_WAIT_OFFSET_CALC:
+	case LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ:
+	case LP_CC_STATE_WAIT_TX_CIS_REQ:
+		ctx->state = LP_CC_STATE_WAIT_NOTIFY_CANCEL;
+		return true;
+	case LP_CC_STATE_WAIT_RX_CIS_RSP:
+		ctx->state = LP_CC_STATE_WAIT_RX_CIS_RSP_CANCEL;
+		return true;
+	default:
+		break;
+	}
+
+	return false;
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
