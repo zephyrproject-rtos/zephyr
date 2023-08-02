@@ -22,6 +22,8 @@
 		pwm-led0 = &pwm_led_blue;
 		pwm-0 = &pwm0;
 		watchdog0 = &wdt;
+		mcuboot-button0 = &key_dfu;
+		mcuboot-led0 = &led_blue;
 	};
 
 	leds {
@@ -67,6 +69,10 @@
 			label = "User KEY3";
 			gpios = <&gpioc 0 GPIO_PULL_DOWN>;
 		};
+		key_dfu: button_dfu {
+			label = "USB DFU";
+			gpios = <&gpiob 0 GPIO_PULL_DOWN>;
+		};
 	};
 
 	chosen {
@@ -103,15 +109,15 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x18000>;
+			reg = <0x00000000 0x20000>;
 		};
-		slot0_partition: partition@18000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x18000 0x6C000>;
+			reg = <0x20000 0x68000>;
 		};
-		slot1_partition: partition@84000 {
+		slot1_partition: partition@88000 {
 			label = "image-1";
-			reg = <0x84000 0x6C000>;
+			reg = <0x88000 0x68000>;
 		};
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";

@@ -82,7 +82,7 @@ jobs:
     - name: Build bootloader/mcuboot/boot
       run: |
         cd ..
-        west build -b tlsr9518adk80d             -d build_mcuboot                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=4
+        west build -b tlsr9518adk80d             -d build_mcuboot                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3
 
     - name: Build subsys/mgmt/mcumgr/smp_svr for Bluetooth
       run: |
@@ -109,6 +109,16 @@ jobs:
         cd ..
         west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B91_2_WIRE_SPI_ENABLE=y
 
+    - name: Build bootloader/mcuboot/boot for USB DFU
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_mcuboot_usb_dfu           bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_USB_DFU_WILL_DETACH=n -DCONFIG_BOOT_USB_DFU_GPIO=y -DCONFIG_MCUBOOT_INDICATION_LED=y
+
+    - name: Build basic/blinky for USB DFU
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_blinky_usb_dfu            zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -126,6 +136,8 @@ jobs:
         cp ../build_ot_coprocessor_rcp_usb/zephyr/zephyr.bin    telink_build_artifacts/ot_coprocessor_rcp_usb.bin
         cp ../build_retention_basic/zephyr/zephyr.bin           telink_build_artifacts/retention_basic.bin
         cp ../build_ot_echo_client_pm_deep/zephyr/zephyr.bin    telink_build_artifacts/ot_echo_client_pm_retention.bin
+        cp ../build_mcuboot_usb_dfu/zephyr/zephyr.bin           telink_build_artifacts/mcuboot_usb_dfu.bin
+        cp ../build_blinky_usb_dfu/zephyr/zephyr.signed.bin     telink_build_artifacts/blinky_usb_dfu.signed.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
