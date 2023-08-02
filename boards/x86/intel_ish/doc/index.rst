@@ -12,10 +12,12 @@ the core processor for better power saving.
 Hardware
 ********
 
-- LMT MinuteIA Core, with
-  . 16KB instruction cache and 16KB data cache.
-  . 640KB SRAM space for code and data - implemented as L2 SRAM.
-  . 8KB AON RF space for code resident during deep D0i2/3 PG states.
+- LMT MinuteIA Core:
+
+  - 16KB instruction cache and 16KB data cache.
+  - 640KB SRAM space for code and data - implemented as L2 SRAM.
+  - 8KB AON RF space for code resident during deep D0i2/3 PG states.
+
 - Interface-to-Sensor peripherals (I2C, SPI, UART, I3C, GPIO, DMA).
 - Inter Process Communications (IPC) to core processor and other IP processors.
 
@@ -50,29 +52,28 @@ Build Zephyr application
 Run ish_fw.bin on ADL RVP board for Chrome
 ==========================================
 
-# Power on the ADL RVP board.
+- Power on the ADL RVP board.
+- Log in Chrome OS. (Note: the user must have root access right, see `Developer Mode`_)
+- Re-mount the root filesystem as read-write:
 
-# Log in Chrome OS. (Note: the user must have root access right.)
-
-# Re-mount the root filesystem as read-write:
-
-   .. code-block:: console
+.. code-block:: console
 
    $ mount -o remount,rw /
 
-  If re-mount fails, execute below commands to Remove rootfs verification:
+- If re-mount fails, execute below commands to Remove rootfs verification:
 
-   .. code-block:: console
+.. code-block:: console
 
    $ /usr/share/vboot/bin/make_dev_ssd.sh --remove_rootfs_verification --partitions
    $ reboot
 
-# Go to the ISH firmware direcoty:
+- Go to the ISH firmware direcoty:
 
-   .. code-block:: console
+.. code-block:: console
 
    $ cd /lib/firmware/intel
 
-  Relace the file adlrvp_ish.bin with zephyr image built out, ish_fw.bin.
+- Relace the file adlrvp_ish.bin with zephyr image built out, ish_fw.bin.
+- Reboot, then observe Zephyr log output via ISH UART0.
 
-# Reboot, then observe zephyr log output via ISH UART0.
+.. _Developer Mode: https://chromium.googlesource.com/chromiumos/docs/+/HEAD/developer_mode.md
