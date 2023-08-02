@@ -14,7 +14,7 @@ void mock_bt_iso_init(void);
 void mock_bt_iso_cleanup(void);
 int mock_bt_iso_accept(struct bt_conn *conn, uint8_t cig_id, uint8_t cis_id,
 		       struct bt_iso_chan **chan);
-int mock_bt_iso_disconnect(struct bt_iso_chan *chan);
+int mock_bt_iso_disconnected(struct bt_iso_chan *chan, uint8_t err);
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_iso_chan_send, struct bt_iso_chan *, struct net_buf *, uint16_t,
 			uint32_t);
