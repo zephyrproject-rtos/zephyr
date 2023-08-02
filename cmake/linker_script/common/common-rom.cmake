@@ -218,3 +218,11 @@ if(CONFIG_ZBUS)
   zephyr_iterable_section(NAME zbus_channel KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
   zephyr_iterable_section(NAME zbus_channel_observation KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
+
+if(CONFIG_GNSS)
+  zephyr_iterable_section(NAME gnss_data_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
+
+if(CONFIG_GNSS_SATELLITES)
+  zephyr_iterable_section(NAME gnss_satellites_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()
