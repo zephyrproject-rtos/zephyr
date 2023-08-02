@@ -147,6 +147,9 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_arm_prep_c(void)
 {
+	/* Initialize tpidruro with our struct _cpu instance address */
+	write_tpidruro((uintptr_t)&_kernel.cpus[0]);
+
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();

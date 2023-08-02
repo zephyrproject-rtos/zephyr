@@ -72,6 +72,7 @@ MAKE_REG_HELPER(mair0,       0, 10, 2, 0);
 MAKE_REG_HELPER(vbar,        0, 12, 0, 0);
 MAKE_REG_HELPER(cntv_ctl,    0, 14,  3, 1);
 MAKE_REG_HELPER(ctr,         0, 0, 0, 1);
+MAKE_REG_HELPER(tpidruro,    0, 13, 0, 3);
 MAKE_REG64_HELPER(ICC_SGI1R, 0, 12);
 MAKE_REG64_HELPER(cntvct,    1, 14);
 MAKE_REG64_HELPER(cntv_cval, 3, 14);
