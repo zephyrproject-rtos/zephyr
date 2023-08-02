@@ -1222,11 +1222,9 @@ static int i2c_enhance_target_register(const struct device *dev,
 	/* Software reset */
 	IT8XXX2_I2C_DHTR(base) |= IT8XXX2_I2C_SOFT_RST;
 	IT8XXX2_I2C_DHTR(base) &= ~IT8XXX2_I2C_SOFT_RST;
-	/*
-	 * Set time out register.
-	 * I2C D/E/F clock/data low timeout.
-	 */
-	IT8XXX2_I2C_TOR(base) = I2C_CLK_LOW_TIMEOUT;
+	/* Disable the timeout setting when clock/data are in a low state */
+	IT8XXX2_I2C_TO_ARB_ST(base) &= ~(IT8XXX2_I2C_SCL_TIMEOUT_EN |
+					 IT8XXX2_I2C_SDA_TIMEOUT_EN);
 	/* Bit stretching */
 	IT8XXX2_I2C_TOS(base) |= IT8XXX2_I2C_CLK_STRETCH;
 	/* Peripheral address(8-bit) */
