@@ -93,26 +93,17 @@ static int flash_cdns_nand_erase(const struct device *nand_dev, off_t offset, si
 		return -EINVAL;
 	}
 
-	ret = k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex lock Failed");
-		return ret;
-	}
+	k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
 
 	ret = cdns_nand_erase(nand_param, offset, len);
 
 	if (ret != 0) {
+		k_mutex_unlock(&nand_data->nand_mutex);
 		LOG_ERR("Cadence Nand Flash Erase Failed!");
 		return ret;
 	}
 
-	ret = k_mutex_unlock(&nand_data->nand_mutex);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex unlock Failed");
-		return ret;
-	}
+	k_mutex_unlock(&nand_data->nand_mutex);
 
 	return 0;
 }
@@ -129,26 +120,17 @@ static int flash_cdns_nand_write(const struct device *nand_dev, off_t offset, co
 		return -EINVAL;
 	}
 
-	ret = k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex lock Failed");
-		return ret;
-	}
+	k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
 
 	ret = cdns_nand_write(nand_param, data, offset, len);
 
 	if (ret != 0) {
+		k_mutex_unlock(&nand_data->nand_mutex);
 		LOG_ERR("Cadence Nand Flash Write Failed!");
 		return ret;
 	}
 
-	ret = k_mutex_unlock(&nand_data->nand_mutex);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex unlock Failed");
-		return ret;
-	}
+	k_mutex_unlock(&nand_data->nand_mutex);
 
 	return 0;
 }
@@ -164,26 +146,17 @@ static int flash_cdns_nand_read(const struct device *nand_dev, off_t offset, voi
 		return -EINVAL;
 	}
 
-	ret = k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex lock Failed!");
-		return ret;
-	}
+	k_mutex_lock(&nand_data->nand_mutex, K_FOREVER);
 
 	ret = cdns_nand_read(nand_param, data, offset, len);
 
 	if (ret != 0) {
+		k_mutex_unlock(&nand_data->nand_mutex);
 		LOG_ERR("Cadence Nand Flash Read Failed!");
 		return ret;
 	}
 
-	ret = k_mutex_unlock(&nand_data->nand_mutex);
-
-	if (ret != 0) {
-		LOG_ERR("Mutex unlock Failed!");
-		return ret;
-	}
+	k_mutex_unlock(&nand_data->nand_mutex);
 
 	return 0;
 }
