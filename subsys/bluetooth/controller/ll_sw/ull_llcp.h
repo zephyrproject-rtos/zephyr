@@ -200,6 +200,11 @@ bool ull_cp_cc_awaiting_reply(struct ll_conn *conn);
 bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 
 /**
+ * @brief Cancel ongoing create cis procedure
+ */
+bool ull_cp_cc_cancel(struct ll_conn *conn);
+
+/**
  * @brief Get handle of ongoing create cis procedure.
  * @return 0xFFFF if none
  */
