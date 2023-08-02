@@ -12,7 +12,8 @@
 #include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>
 #include <hal/nrf_gpio.h>
-#include <nrf_peripherals.h>
+#include <hal/nrf_rtc.h>
+#include <hal/nrf_timer.h>
 
 #include <zephyr/logging/log.h>
 
@@ -162,12 +163,12 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 		channel, period_cycles, pulse_cycles);
 
 	/* clear GPIOTE config */
-	NRF_GPIOTE->CONFIG[gpiote_ch] = 0;
+	nrf_gpiote_te_default(NRF_GPIOTE, gpiote_ch);
 
 	/* clear PPI used */
 	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
 		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
-	NRF_PPI->CHENCLR = ppi_mask;
+	nrf_ppi_channels_disable(NRF_PPI, ppi_mask);
 
 	active_level = (flags & PWM_POLARITY_INVERTED) ? 0 : 1;
 
@@ -193,9 +194,9 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 
 		/* No PWM generation needed, stop the timer. */
 		if (USE_RTC) {
-			rtc->TASKS_STOP = 1;
+			nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_STOP);
 		} else {
-			timer->TASKS_STOP = 1;
+			nrf_timer_task_trigger(timer, NRF_TIMER_TASK_STOP);
 		}
 
 		return 0;
@@ -203,24 +204,28 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* configure RTC / TIMER */
 	if (USE_RTC) {
-		rtc->EVENTS_COMPARE[1 + channel] = 0;
-		rtc->EVENTS_COMPARE[0] = 0;
+		nrf_rtc_event_clear(rtc,
+			nrf_rtc_compare_event_get(1 + channel));
+		nrf_rtc_event_clear(rtc,
+			nrf_rtc_compare_event_get(0));
 
 		/*
 		 * '- 1' adjusts pulse and period cycles to the fact that CLEAR
 		 * task event is generated always one LFCLK cycle after period
 		 * COMPARE value is reached.
 		 */
-		rtc->CC[1 + channel] = pulse_cycles - 1;
-		rtc->CC[0] = period_cycles - 1;
-		rtc->TASKS_CLEAR = 1;
+		nrf_rtc_cc_set(rtc, 1 + channel, pulse_cycles - 1);
+		nrf_rtc_cc_set(rtc, 0, period_cycles - 1);
+		nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_CLEAR);
 	} else {
-		timer->EVENTS_COMPARE[1 + channel] = 0;
-		timer->EVENTS_COMPARE[0] = 0;
+		nrf_timer_event_clear(timer,
+			nrf_timer_compare_event_get(1 + channel));
+		nrf_timer_event_clear(timer,
+			nrf_timer_compare_event_get(0));
 
-		timer->CC[1 + channel] = pulse_cycles;
-		timer->CC[0] = period_cycles;
-		timer->TASKS_CLEAR = 1;
+		nrf_timer_cc_set(timer, 1 + channel, pulse_cycles);
+		nrf_timer_cc_set(timer, 0, period_cycles);
+		nrf_timer_task_trigger(timer, NRF_TIMER_TASK_CLEAR);
 	}
 
 	/* Configure GPIOTE - toggle task with proper initial output value. */
@@ -231,41 +236,55 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 		((uint32_t)active_level << GPIOTE_CONFIG_OUTINIT_Pos);
 
 	/* setup PPI */
+	uint32_t pulse_end_event_address, period_end_event_address;
+	uint32_t gpiote_out_task_address =
+		nrf_gpiote_task_address_get(NRF_GPIOTE,
+			nrf_gpiote_out_task_get(gpiote_ch));
 	if (USE_RTC) {
-		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &rtc->EVENTS_COMPARE[1 + channel];
-		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
-		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &rtc->EVENTS_COMPARE[0];
-		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
+		uint32_t clear_task_address =
+			nrf_rtc_event_address_get(rtc, NRF_RTC_TASK_CLEAR);
+
+		pulse_end_event_address =
+			nrf_rtc_event_address_get(rtc,
+				nrf_rtc_compare_event_get(1 + channel));
+		period_end_event_address =
+			nrf_rtc_event_address_get(rtc,
+				nrf_rtc_compare_event_get(0));
+
 #if defined(PPI_FEATURE_FORKS_PRESENT)
-		NRF_PPI->FORK[ppi_chs[1]].TEP =
-			(uint32_t) &rtc->TASKS_CLEAR;
+		nrf_ppi_fork_endpoint_setup(NRF_PPI,
+					    ppi_chs[1],
+					    clear_task_address);
 #else
-		NRF_PPI->CH[ppi_chs[2]].EEP =
-			(uint32_t) &rtc->EVENTS_COMPARE[0];
-		NRF_PPI->CH[ppi_chs[2]].TEP =
-			(uint32_t) &rtc->TASKS_CLEAR;
+		nrf_ppi_channel_endpoint_setup(NRF_PPI,
+					       ppi_chs[2],
+					       period_end_event_address,
+					       clear_task_address);
 #endif
 	} else {
-		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &timer->EVENTS_COMPARE[1 + channel];
-		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
-		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &timer->EVENTS_COMPARE[0];
-		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
+		pulse_end_event_address =
+			nrf_timer_event_address_get(timer,
+				nrf_timer_compare_event_get(1 + channel));
+		period_end_event_address =
+			nrf_timer_event_address_get(timer,
+				nrf_timer_compare_event_get(0));
 	}
-	NRF_PPI->CHENSET = ppi_mask;
+
+	nrf_ppi_channel_endpoint_setup(NRF_PPI,
+				       ppi_chs[0],
+				       pulse_end_event_address,
+				       gpiote_out_task_address);
+	nrf_ppi_channel_endpoint_setup(NRF_PPI,
+				       ppi_chs[1],
+				       period_end_event_address,
+				       gpiote_out_task_address);
+	nrf_ppi_channels_enable(NRF_PPI, ppi_mask);
 
 	/* start timer, hence PWM */
 	if (USE_RTC) {
-		rtc->TASKS_START = 1;
+		nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_START);
 	} else {
-		timer->TASKS_START = 1;
+		nrf_timer_task_trigger(timer, NRF_TIMER_TASK_START);
 	}
 
 	/* store the period and pulse cycles */
@@ -341,19 +360,18 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 
 	if (USE_RTC) {
 		/* setup RTC */
-		rtc->PRESCALER = 0;
-
-		rtc->EVTENSET = (RTC_EVTENSET_COMPARE0_Msk |
-				 RTC_EVTENSET_COMPARE1_Msk |
-				 RTC_EVTENSET_COMPARE2_Msk |
-				 RTC_EVTENSET_COMPARE3_Msk);
+		nrf_rtc_prescaler_set(rtc, 0);
+		nrf_rtc_event_enable(rtc, NRF_RTC_INT_COMPARE0_MASK |
+					  NRF_RTC_INT_COMPARE1_MASK |
+					  NRF_RTC_INT_COMPARE2_MASK |
+					  NRF_RTC_INT_COMPARE3_MASK);
 	} else {
 		/* setup HF timer */
-		timer->MODE = TIMER_MODE_MODE_Timer;
-		timer->PRESCALER = config->prescaler;
-		timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
-
-		timer->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Msk;
+		nrf_timer_mode_set(timer, NRF_TIMER_MODE_TIMER);
+		nrf_timer_prescaler_set(timer, config->prescaler);
+		nrf_timer_bit_width_set(timer, NRF_TIMER_BIT_WIDTH_16);
+		nrf_timer_shorts_enable(timer,
+			NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK);
 	}
 
 	return 0;
