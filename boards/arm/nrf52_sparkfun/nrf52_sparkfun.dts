@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "nrf52_sparkfun-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Sparkfun nRF52832 Breakout";
@@ -44,6 +45,7 @@
 			/* gpio flags need validation */
 			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

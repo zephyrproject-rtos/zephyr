@@ -8,6 +8,7 @@
 #include <st/f4/stm32f401Xe.dtsi>
 #include <st/f4/stm32f401r(d-e)tx-pinctrl.dtsi>
 #include "96b_lscon.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Seeed Studio Carbon 96boards";
@@ -42,6 +43,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

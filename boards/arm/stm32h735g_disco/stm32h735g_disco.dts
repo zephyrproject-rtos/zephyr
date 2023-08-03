@@ -8,6 +8,7 @@
 #include <st/h7/stm32h735Xg.dtsi>
 #include <st/h7/stm32h735igkx-pinctrl.dtsi>
 #include "pmod_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32H735G DISCOVERY board";
@@ -37,6 +38,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

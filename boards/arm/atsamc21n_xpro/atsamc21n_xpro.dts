@@ -8,6 +8,7 @@
 
 #include <atmel/samc21x18.dtsi>
 #include "atsamc21n_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM C21N Xplained Pro";
@@ -49,6 +50,7 @@
 		user_button: button_0 {
 			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

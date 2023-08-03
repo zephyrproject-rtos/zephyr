@@ -6,6 +6,7 @@
 /dts-v1/;
 #include <st/f1/stm32f103Xb.dtsi>
 #include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Olimex STM32-H103 board";
@@ -31,6 +32,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

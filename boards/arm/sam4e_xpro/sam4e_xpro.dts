@@ -8,6 +8,7 @@
 
 #include <atmel/sam4e16e.dtsi>
 #include "sam4e_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
@@ -41,8 +42,8 @@
 		compatible = "gpio-keys";
 		user_button: button_1 {
 			label = "User Button";
-			gpios = <&pioa 2 (GPIO_PULL_UP |
-					   GPIO_ACTIVE_LOW)>;
+			gpios = <&pioa 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

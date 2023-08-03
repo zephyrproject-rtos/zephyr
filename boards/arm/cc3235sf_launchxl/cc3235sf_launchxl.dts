@@ -8,6 +8,7 @@
 
 #include <ti/cc3235sf.dtsi>
 #include "cc3235sf_launchxl-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "TI CC3235SF LaunchXL";
@@ -55,11 +56,13 @@
 		sw2: button_0 {
 			gpios = <&gpioa2 6 GPIO_ACTIVE_HIGH>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		/* Push button 3 */
 		sw3: button_1 {
 			gpios = <&gpioa1 5 GPIO_ACTIVE_HIGH>;
 			label = "Push button switch 3";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };

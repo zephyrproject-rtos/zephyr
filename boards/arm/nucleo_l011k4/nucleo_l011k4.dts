@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/l0/stm32l011X4.dtsi>
 #include <st/l0/stm32l011k(3-4)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L011K4-NUCLEO board";
@@ -32,6 +33,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 12 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

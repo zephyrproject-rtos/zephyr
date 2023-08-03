@@ -7,6 +7,7 @@
 #include <st/u5/stm32u585Xi.dtsi>
 #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	leds {
@@ -26,6 +27,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

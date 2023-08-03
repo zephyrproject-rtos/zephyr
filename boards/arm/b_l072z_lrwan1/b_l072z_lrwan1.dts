@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/l0/stm32l072Xz.dtsi>
 #include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics B-L072Z-LRWAN1 Discovery kit";
@@ -44,6 +45,7 @@
 		user_button: button_0 {
 			label = "Push button switch";
 			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g081Xb.dtsi>
 #include <st/g0/stm32g081rbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STM32G081B EVAL board";
@@ -44,22 +45,27 @@
 		joy_sel: button0 {
 			label = "JOY_SEL";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_left: button1 {
 			label = "JOY_LEFT";
 			gpios = <&gpioc 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_down: button2 {
 			label = "JOY_DOWN";
 			gpios = <&gpioc 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_right: button3 {
 			label = "JOY_RIGHT";
 			gpios = <&gpioc 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 		joy_up: button4 {
 			label = "JOY_UP";
 			gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 

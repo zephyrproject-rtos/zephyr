@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
@@ -26,6 +28,7 @@
 		button0: button_0 {
 			gpios = <&gpiob GECKO_PIN(1) GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

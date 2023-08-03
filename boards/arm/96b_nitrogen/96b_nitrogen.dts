@@ -8,6 +8,7 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "96b_lscon.dtsi"
 #include "96b_nitrogen-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Seeed Studio Nitrogen 96board";
@@ -52,6 +53,7 @@
 			/* gpio flags need validation */
 			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "User Push Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

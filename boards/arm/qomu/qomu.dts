@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <quicklogic/quicklogic_eos_s3.dtsi>
 #include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "QuickLogic Qomu board";
@@ -49,6 +50,7 @@
 		button0: button_0 {
 			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

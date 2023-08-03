@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <andes/andes_v5_ae350.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Andes ADP-XC7K AE350";
@@ -106,30 +107,37 @@
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button2: button_2 {
 			label = "User SW2";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button3: button_3 {
 			label = "User SW3";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		user_button4: button_4 {
 			label = "User SW4";
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
 		};
 		user_button5: button_5 {
 			label = "User SW5";
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_4>;
 		};
 		user_button6: button_6 {
 			label = "User SW6";
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_5>;
 		};
 		user_button7: button_7 {
 			label = "User SW7";
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_6>;
 		};
 	};
 };

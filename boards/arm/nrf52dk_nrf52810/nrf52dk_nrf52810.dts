@@ -9,6 +9,7 @@
 /dts-v1/;
 #include <nordic/nrf52810_qfaa.dtsi>
 #include "nrf52dk_nrf52810-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Nordic nRF52 DK NRF52810";
@@ -50,18 +51,22 @@
 		button0: button_0 {
 			label = "Push button switch 0";
 			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			label = "Push button switch 1";
 			gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			label = "Push button switch 2";
 			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		button3: button_3 {
 			label = "Push button switch 3";
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 

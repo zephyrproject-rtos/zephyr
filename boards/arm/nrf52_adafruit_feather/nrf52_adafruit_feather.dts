@@ -9,6 +9,7 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "feather_connector.dtsi"
 #include "nrf52_adafruit_feather-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "nRF52 Adafruit Feather";
@@ -64,6 +65,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

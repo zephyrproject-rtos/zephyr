@@ -7,6 +7,7 @@
 
 #include <espressif/esp32s3/esp32s3_mini_n8.dtsi>
 #include "esp32s3_devkitm-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "esp32s3_devkitm";
@@ -34,6 +35,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

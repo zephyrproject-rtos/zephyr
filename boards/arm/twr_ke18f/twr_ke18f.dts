@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/kinetis_scg.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "twr_ke18f-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP Kinetis KE18 MCU Tower System Module";
@@ -123,10 +124,12 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

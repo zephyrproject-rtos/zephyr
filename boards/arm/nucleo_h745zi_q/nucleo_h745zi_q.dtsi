@@ -6,6 +6,7 @@
 
 #include <st/h7/stm32h745zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	leds {
@@ -25,6 +26,7 @@
 		user_button: button_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User SB1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

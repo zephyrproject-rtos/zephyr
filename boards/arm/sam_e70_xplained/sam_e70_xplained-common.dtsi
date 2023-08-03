@@ -8,6 +8,7 @@
  */
 
 #include "sam_e70_xplained-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -44,6 +45,7 @@
 		sw0_user_button: button_1 {
 			label = "User Button";
 			gpios = <&pioa 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

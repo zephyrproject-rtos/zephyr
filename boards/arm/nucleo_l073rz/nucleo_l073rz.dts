@@ -9,6 +9,7 @@
 #include <st/l0/stm32l073r(b-z)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L073RZ-NUCLEO board";
@@ -34,6 +35,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
