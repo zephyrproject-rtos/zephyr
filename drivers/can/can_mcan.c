@@ -829,7 +829,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 	uint32_t reg;
 	int err;
 
-	LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s", data_length, frame->id,
+	LOG_DBG("Sending %zu bytes. Id: 0x%x, ID type: %s %s %s %s", data_length, frame->id,
 		(frame->flags & CAN_FRAME_IDE) != 0U ? "extended" : "standard",
 		(frame->flags & CAN_FRAME_RTR) != 0U ? "RTR" : "",
 		(frame->flags & CAN_FRAME_FDF) != 0U ? "FD frame" : "",
