@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_hvc_xen, CONFIG_UART_LOG_LEVEL);
 
-static struct hvc_xen_data hvc_data = {0};
+static struct hvc_xen_data xen_hvc_data = {0};
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void hvc_uart_evtchn_cb(void *priv);
@@ -262,7 +262,7 @@ int xen_console_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &hvc_data,
+DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data,
 		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
 		&xen_hvc_api);
 
