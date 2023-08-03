@@ -3151,12 +3151,12 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	case F_SETFL: {
 		const struct fd_op_vtable *vtable;
 		struct k_mutex *lock;
-		void *obj;
+		void *fd_obj;
 		int ret;
 
-		obj = z_get_fd_obj_and_vtable(ctx->sock,
+		fd_obj = z_get_fd_obj_and_vtable(ctx->sock,
 				(const struct fd_op_vtable **)&vtable, &lock);
-		if (obj == NULL) {
+		if (fd_obj == NULL) {
 			errno = EBADF;
 			return -1;
 		}
@@ -3164,7 +3164,7 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		(void)k_mutex_lock(lock, K_FOREVER);
 
 		/* Pass the call to the core socket implementation. */
-		ret = vtable->ioctl(obj, request, args);
+		ret = vtable->ioctl(fd_obj, request, args);
 
 		k_mutex_unlock(lock);
 
