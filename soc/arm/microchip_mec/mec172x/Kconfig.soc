@@ -72,3 +72,13 @@ choice
 		  JTAG port in SWD mode and SWV as tracing method.
 		  I2C09 cannot be used. ADC00-03 can be used.
 endchoice
+
+# GPIO initialization depends on ECIA initialization, which happen at
+# CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, so GPIO_INIT_PRIORITY needs to be
+# higher than that.
+if GPIO
+
+config GPIO_INIT_PRIORITY
+	default 41
+
+endif # GPIO
