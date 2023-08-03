@@ -639,5 +639,12 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
+#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wshadow\"")
+
+#define TOOLCHAIN_IGNORE_WSHADOW_END \
+	_Pragma("GCC diagnostic pop")
+
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */
