@@ -510,9 +510,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 			/* Reduce the AD data in the previous PDU */
 			err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
-						(ULL_ADV_PDU_HDR_FIELD_AD_DATA |
-						 ULL_ADV_PDU_HDR_FIELD_AUX_PTR),
-						0, hdr_data);
+							(ULL_ADV_PDU_HDR_FIELD_AD_DATA |
+							 ULL_ADV_PDU_HDR_FIELD_AUX_PTR),
+							0U, hdr_data);
 			if (err) {
 				/* NOTE: latest PDU was not consumed by LLL and
 				 * as ull_adv_sync_pdu_alloc() has reverted back
@@ -833,7 +833,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 					  ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND;
 			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
 							hdr_add_fields,
-							0,
+							0U,
 							hdr_data);
 		} else {
 			/* Add AD Data and remove any prior presence of Aux Ptr */
