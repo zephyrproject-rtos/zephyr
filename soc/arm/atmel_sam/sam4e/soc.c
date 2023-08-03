@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
- * Copyright (c) 2017 Justin Watson
- * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2019 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */

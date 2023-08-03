@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 Justin Watson
- * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2017 Justin Watson
  *
  * SPDX-License-Identifier: Apache-2.0
  */
