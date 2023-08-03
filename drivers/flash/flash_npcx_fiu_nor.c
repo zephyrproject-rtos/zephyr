@@ -258,8 +258,6 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 {
 	const struct flash_npcx_nor_config *config = dev->config;
 	int ret = 0;
-	bool offset_4k_aligned = SPI_NOR_IS_SECTOR_ALIGNED(addr);
-	bool offset_64k_aligned = SPI_NOR_IS_64K_ALIGNED(addr);
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
@@ -268,7 +266,7 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 	}
 
 	/* address must be sector-aligned */
-	if (!offset_4k_aligned) {
+	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
 		LOG_ERR("Addr %ld is not sector-aligned", addr);
 		return -EINVAL;
 	}
@@ -290,16 +288,14 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 	while (size > 0) {
 		flash_npcx_uma_cmd_only(dev, SPI_NOR_CMD_WREN);
 		/* Send page/block erase command with addr */
-		if ((size >= BLOCK_64K_SIZE) && offset_64k_aligned) {
+		if ((size >= BLOCK_64K_SIZE) && SPI_NOR_IS_64K_ALIGNED(addr)) {
 			flash_npcx_uma_cmd_by_addr(dev, SPI_NOR_CMD_BE, addr);
 			addr += BLOCK_64K_SIZE;
 			size -= BLOCK_64K_SIZE;
-		} else if ((size >= BLOCK_4K_SIZE) && offset_4k_aligned) {
+		} else {
 			flash_npcx_uma_cmd_by_addr(dev, SPI_NOR_CMD_SE, addr);
 			addr += BLOCK_4K_SIZE;
 			size -= BLOCK_4K_SIZE;
-		} else {
-			return -EINVAL;
 		}
 		ret = flash_npcx_nor_wait_until_ready(dev);
 		if (ret != 0) {
