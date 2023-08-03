@@ -56,6 +56,7 @@
 /soc/arm/st_stm32/*/power.c               @FRASTM
 /soc/arm/st_stm32/stm32mp1/               @arnopo
 /soc/arm/st_stm32/stm32h7/*stm32h735*     @benediktibk
+/soc/arm/st_stm32/stm32l4/*stm32l451*     @benediktibk
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
@@ -532,6 +533,7 @@
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/st/h7/*stm32h735*                @benediktibk
+/dts/arm/st/l4/*stm32l451*                @benediktibk
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
