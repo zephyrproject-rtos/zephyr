@@ -930,12 +930,14 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBAR, BIT(put_idx));
 	if (err != 0) {
-		goto err_unlock;
+		goto err_free_tx_cb;
 	}
 
 	k_mutex_unlock(&data->tx_mtx);
 	return 0;
 
+err_free_tx_cb:
+	cbs->tx[put_idx].function = NULL;
 err_unlock:
 	k_mutex_unlock(&data->tx_mtx);
 	k_sem_give(&data->tx_sem);
