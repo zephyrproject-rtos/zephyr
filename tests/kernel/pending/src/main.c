@@ -87,14 +87,14 @@ static int __noinit task_low_state;
 
 static int __noinit counter;
 
-static inline void *my_fifo_get(struct k_fifo *fifo, int32_t timeout)
+static inline void *my_fifo_get(struct k_fifo *my_fifo, int32_t timeout)
 {
-	return k_fifo_get(fifo, K_MSEC(timeout));
+	return k_fifo_get(my_fifo, K_MSEC(timeout));
 }
 
-static inline void *my_lifo_get(struct k_lifo *lifo, int32_t timeout)
+static inline void *my_lifo_get(struct k_lifo *my_lifo, int32_t timeout)
 {
-	return k_lifo_get(lifo, K_MSEC(timeout));
+	return k_lifo_get(my_lifo, K_MSEC(timeout));
 }
 
 static int increment_counter(void)

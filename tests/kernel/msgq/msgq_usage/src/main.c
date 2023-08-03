@@ -28,7 +28,7 @@ K_SEM_DEFINE(test_continue, 0, 1);
 struct k_thread service_manager;
 struct k_thread service1;
 struct k_thread service2;
-struct k_thread client;
+struct k_thread client_thread;
 static ZTEST_DMEM unsigned long __aligned(4) service1_buf[MSGQ_LEN];
 static ZTEST_DMEM unsigned long __aligned(4) service2_buf[MSGQ_LEN];
 static ZTEST_DMEM unsigned long __aligned(4) client_buf[MSGQ_LEN * 2];
@@ -254,7 +254,7 @@ static void start_client(void)
 
 	int pri = k_thread_priority_get(k_current_get());
 
-	tclient = k_thread_create(&client, client_stack, STACK_SIZE,
+	tclient = k_thread_create(&client_thread, client_stack, STACK_SIZE,
 				  client_entry, NULL, NULL, NULL, pri,
 				  0, K_NO_WAIT);
 }
