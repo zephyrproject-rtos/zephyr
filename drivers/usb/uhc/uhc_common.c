@@ -32,10 +32,6 @@ int uhc_submit_event(const struct device *dev,
 		.dev = dev,
 	};
 
-	if (!uhc_is_initialized(dev)) {
-		return -EPERM;
-	}
-
 	/* update status of device connection */
 	if (type == UHC_EVT_DEV_CONNECTED_HS) {
 		atomic_set_bit(&data->status, UHC_STATUS_DEV_CONN);
