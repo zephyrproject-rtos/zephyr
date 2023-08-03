@@ -229,6 +229,23 @@ void free(void *ptr)
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+int malloc_runtime_stats_get(struct sys_memory_stats *stats)
+{
+	int lock_ret;
+	int ret;
+
+	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(lock_ret == 0);
+
+	ret = sys_heap_runtime_stats_get(&z_malloc_heap, stats);
+
+	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+
+	return ret;
+}
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS*/
+
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else /* No malloc arena */
 void *malloc(size_t size)
@@ -251,6 +268,19 @@ void *realloc(void *ptr, size_t size)
 	ARG_UNUSED(ptr);
 	return malloc(size);
 }
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+int malloc_runtime_stats_get(struct sys_memory_stats *stats)
+{
+	if (stats) {
+		stats->free_bytes = 0;
+		stats->allocated_bytes = 0;
+		stats->max_allocated_bytes = 0;
+	}
+	return 0;
+}
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS*/
+
 #endif /* else no malloc arena */
 
 #endif /* CONFIG_COMMON_LIBC_MALLOC */

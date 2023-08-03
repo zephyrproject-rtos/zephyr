@@ -30,6 +30,12 @@ void *calloc(size_t nmemb, size_t size);
 void *realloc(void *ptr, size_t size);
 void *reallocarray(void *ptr, size_t nmemb, size_t size);
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+struct sys_memory_stats;
+/* Get runtime statistics on dynamically allocated memory usage */
+extern int malloc_runtime_stats_get(struct sys_memory_stats *stats);
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS*/
+
 void *bsearch(const void *key, const void *array,
 	      size_t count, size_t size,
 	      int (*cmp)(const void *key, const void *element));
