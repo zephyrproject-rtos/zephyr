@@ -403,6 +403,7 @@
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
 /drivers/pwm/*rcar*                       @pmarzin
+/drivers/pwm/*max31790*                   @benediktibk
 /drivers/regulator/*                      @gmarull
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
 /drivers/regulator/regulator_rpi_pico.c   @soburi
@@ -614,6 +615,7 @@
 /dts/bindings/gpio/*pcal64*               @benediktibk
 /dts/bindings/gpio/*bd8lb600fs*           @benediktibk
 /dts/bindings/gpio/*ads114s0x*            @benediktibk
+/dts/bindings/pwm/*max31790*              @benediktibk
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
@@ -647,6 +649,7 @@
 /include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
 /include/zephyr/drivers/pm_cpu_ops/              @carlocaione
 /include/zephyr/drivers/w1.h                     @str4t0m
+/include/zephyr/drivers/pwm/max31790.h           @benediktibk
 /include/zephyr/app_memory/                      @dcpleung
 /include/zephyr/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/zephyr/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
