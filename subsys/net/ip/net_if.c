@@ -3256,8 +3256,8 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 		goto out;
 	}
 
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		ret = ipv4_is_broadcast_address(iface, addr);
+	STRUCT_SECTION_FOREACH(net_if, one_iface) {
+		ret = ipv4_is_broadcast_address(one_iface, addr);
 		if (ret) {
 			goto out;
 		}

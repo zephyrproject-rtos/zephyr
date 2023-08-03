@@ -284,16 +284,16 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 static void reass_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct frag_cache *cache = CONTAINER_OF(dwork, struct frag_cache, timer);
+	struct frag_cache *fcache = CONTAINER_OF(dwork, struct frag_cache, timer);
 
-	if (cache->pkt) {
-		net_pkt_unref(cache->pkt);
+	if (fcache->pkt) {
+		net_pkt_unref(fcache->pkt);
 	}
 
-	cache->pkt = NULL;
-	cache->size = 0U;
-	cache->tag = 0U;
-	cache->used = false;
+	fcache->pkt = NULL;
+	fcache->size = 0U;
+	fcache->tag = 0U;
+	fcache->used = false;
 }
 
 /**
@@ -481,7 +481,7 @@ static inline bool fragment_packet_valid(struct net_pkt *pkt)
 static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 {
 	bool first_frag = false;
-	struct frag_cache *cache;
+	struct frag_cache *fcache;
 	struct net_buf *frag;
 	uint16_t size;
 	uint16_t tag;
@@ -506,10 +506,10 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	 */
 	pkt->buffer = NULL;
 
-	cache = get_reass_cache(size, tag);
-	if (!cache) {
-		cache = set_reass_cache(pkt, size, tag);
-		if (!cache) {
+	fcache = get_reass_cache(size, tag);
+	if (!fcache) {
+		fcache = set_reass_cache(pkt, size, tag);
+		if (!fcache) {
 			NET_ERR("Could not get a cache entry");
 			pkt->buffer = frag;
 			return NET_DROP;
@@ -518,18 +518,18 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 		first_frag = true;
 	}
 
-	fragment_append(cache->pkt, frag);
+	fragment_append(fcache->pkt, frag);
 
-	if (fragment_cached_pkt_len(cache->pkt) == cache->size) {
+	if (fragment_cached_pkt_len(fcache->pkt) == fcache->size) {
 		if (!first_frag) {
 			/* Assign buffer back to input packet. */
-			pkt->buffer = cache->pkt->buffer;
-			cache->pkt->buffer = NULL;
+			pkt->buffer = fcache->pkt->buffer;
+			fcache->pkt->buffer = NULL;
 		} else {
-			/* in case pkt == cache->pkt, we don't want
+			/* in case pkt == fcache->pkt, we don't want
 			 * to unref it while clearing the cach.
 			 */
-			cache->pkt = NULL;
+			fcache->pkt = NULL;
 		}
 
 		clear_reass_cache(size, tag);

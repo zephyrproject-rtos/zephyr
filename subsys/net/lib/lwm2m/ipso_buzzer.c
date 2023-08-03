@@ -58,7 +58,7 @@ struct ipso_buzzer_data {
 
 static struct ipso_buzzer_data buzzer_data[MAX_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj buzzer;
+static struct lwm2m_engine_obj ipso_buzzer;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(ON_OFF_RID, RW, BOOL),
 	OBJ_FIELD_DATA(LEVEL_RID, RW_OPT, FLOAT),
@@ -169,8 +169,8 @@ static void buzzer_work_cb(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ipso_buzzer_data *buzzer = CONTAINER_OF(dwork,
-						      struct ipso_buzzer_data,
-						      buzzer_work);
+						       struct ipso_buzzer_data,
+						       buzzer_work);
 	stop_buzzer(buzzer, false);
 }
 
@@ -245,15 +245,15 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 
 static int ipso_buzzer_init(void)
 {
-	buzzer.obj_id = IPSO_OBJECT_BUZZER_ID;
-	buzzer.version_major = BUZZER_VERSION_MAJOR;
-	buzzer.version_minor = BUZZER_VERSION_MINOR;
-	buzzer.is_core = false;
-	buzzer.fields = fields;
-	buzzer.field_count = ARRAY_SIZE(fields);
-	buzzer.max_instance_count = ARRAY_SIZE(inst);
-	buzzer.create_cb = buzzer_create;
-	lwm2m_register_obj(&buzzer);
+	ipso_buzzer.obj_id = IPSO_OBJECT_BUZZER_ID;
+	ipso_buzzer.version_major = BUZZER_VERSION_MAJOR;
+	ipso_buzzer.version_minor = BUZZER_VERSION_MINOR;
+	ipso_buzzer.is_core = false;
+	ipso_buzzer.fields = fields;
+	ipso_buzzer.field_count = ARRAY_SIZE(fields);
+	ipso_buzzer.max_instance_count = ARRAY_SIZE(inst);
+	ipso_buzzer.create_cb = buzzer_create;
+	lwm2m_register_obj(&ipso_buzzer);
 
 	return 0;
 }

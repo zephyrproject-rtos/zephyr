@@ -322,7 +322,6 @@ static void send_sd_response(struct net_context *ctx,
 			     struct net_buf *result)
 {
 	int ret;
-	const struct dns_sd_rec *record;
 	/* filter must be zero-initialized for "wildcard" port */
 	struct dns_sd_rec filter = {0};
 	struct sockaddr dst;
@@ -353,9 +352,6 @@ static void send_sd_response(struct net_context *ctx,
 	label[1] = service_buf;
 	label[2] = proto_buf;
 	label[3] = domain_buf;
-
-	/* This actually is used but the compiler doesn't see that */
-	ARG_UNUSED(record);
 
 	ret = setup_dst_addr(ctx, family, &dst, &dst_len);
 	if (ret < 0) {
