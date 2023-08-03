@@ -31,3 +31,15 @@
 	status = "okay";
 	zephyr,num-clients = <2>;
 };
+
+&xgmac0 {
+	status = "okay";
+};
+
+&mdio0  {
+	status = "okay";
+
+	phy0: phy@0 {
+		status = "okay";
+	};
+};
