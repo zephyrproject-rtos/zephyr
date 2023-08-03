@@ -72,15 +72,45 @@ For more information, see :ref:`pm-device-runtime`.
 System-Managed Device Power Management
 ======================================
 
+The system managed device power management (PM) framework is a method where
+devices are suspended along with the system entering a CPU (or SoC) power state.
+It can be enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
 When using this method, device power management is mostly done inside
-:c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
+:c:func:`pm_system_suspend()`.
 
 If a decision to enter a CPU lower power state is made, the power management
-subsystem will suspend devices before changing state. The subsystem takes care
-of suspending devices following their initialization order, ensuring that
+subsystem will check if the selected low power state triggers device power
+management and then suspend devices before changing state. The subsystem takes
+care of suspending devices following their initialization order, ensuring that
 possible dependencies between them are satisfied. As soon as the CPU wakes up
 from a sleep state, devices are resumed in the opposite order that they were
 suspended.
+
+The decision about suspending devices when entering a low power state is done based on the
+state and if it has set the property ``zephyr,pm-device-disabled``. Here is
+an example of a target with two low power states with only one triggering device power
+management:
+
+.. code-block:: devicetree
+
+   /* Node in a DTS file */
+   cpus {
+        power-states {
+                state0: state0 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "standby";
+                        min-residency-us = <5000>;
+                        exit-latency-us = <240>;
+                        zephyr,pm-device-disabled;
+                };
+                state1: state1 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "suspend-to-ram";
+                        min-residency-us = <8000>;
+                        exit-latency-us = <360>;
+                };
+        };
+   };
 
 .. note::
 
