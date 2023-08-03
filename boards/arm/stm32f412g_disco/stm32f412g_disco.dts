@@ -8,6 +8,7 @@
 #include <st/f4/stm32f412Xg.dtsi>
 #include <st/f4/stm32f412z(e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F412G-DISCO board";
@@ -45,22 +46,27 @@
 		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiog 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiog 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiof 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiof 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 

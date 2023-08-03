@@ -8,6 +8,7 @@
 #include <st/l4/stm32l433Xc.dtsi>
 #include <st/l4/stm32l433rctxp-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L433RC-P-NUCLEO board";
@@ -34,6 +35,7 @@
 		user_button: button {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

@@ -8,6 +8,7 @@
 #include <st/l4/stm32l4s5Xi.dtsi>
 #include <st/l4/stm32l4s5vitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics B-L4S5I-IOT01A discovery kit";
@@ -39,6 +40,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

@@ -8,6 +8,7 @@
 #include <st/f7/stm32f746Xg.dtsi>
 #include <st/f7/stm32f746nghx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F746G DISCOVERY board";
@@ -37,6 +38,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

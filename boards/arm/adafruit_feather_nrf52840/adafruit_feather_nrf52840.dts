@@ -8,6 +8,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "feather_connector.dtsi"
 #include "adafruit_feather_nrf52840-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Adafruit Feather nRF52840 Express";
@@ -42,6 +43,7 @@
 		button0: button_0 {
 			gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

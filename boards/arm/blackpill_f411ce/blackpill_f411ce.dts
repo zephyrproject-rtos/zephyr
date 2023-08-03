@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <st/f4/stm32f411Xe.dtsi>
 #include <st/f4/stm32f411c(c-e)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "WeAct Studio Black Pill V2.0 Board";
@@ -33,6 +34,7 @@
 		user_button: button {
 			label = "KEY";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

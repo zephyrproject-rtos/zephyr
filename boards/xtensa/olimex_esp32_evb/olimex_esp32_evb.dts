@@ -8,6 +8,7 @@
 
 #include <espressif/esp32/esp32_wrover_e_n4r2.dtsi>
 #include "olimex_esp32_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Olimex ESP32-EVB";
@@ -30,6 +31,7 @@
 		button1: button1 {
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			label = "BUT1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

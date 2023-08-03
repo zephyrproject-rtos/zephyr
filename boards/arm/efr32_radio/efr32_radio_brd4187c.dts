@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/efr32mg24b220f1536im48.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Silicon Labs BRD4187C (Mighty Gecko Radio Board)";
@@ -45,10 +46,12 @@
 		button0: button_0 {
 			gpios = <&gpiob GECKO_PIN(1) GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpiob GECKO_PIN(3) GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

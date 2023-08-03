@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/efm32gg12b810f1024gm64.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Silicon Labs EFM32GG SLTB009A board";
@@ -44,10 +45,12 @@
 		button0: button_0 {
 			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
 			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };

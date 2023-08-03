@@ -8,6 +8,7 @@
 #include <st/l4/stm32l4a6Xg.dtsi>
 #include <st/l4/stm32l4a6zgtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L4A6ZG-NUCLEO board";
@@ -49,6 +50,7 @@
 		user_button: button {
 			label = "User Button";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

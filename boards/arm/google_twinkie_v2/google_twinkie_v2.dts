@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g0b1Xe.dtsi>
 #include <st/g0/stm32g0b1r(b-c-e)ixn-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Google Twinkie V2";
@@ -38,6 +39,7 @@
 		 */
 		dfu_detect: dfudetect {
 			gpios = <&gpioa 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

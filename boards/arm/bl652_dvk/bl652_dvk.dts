@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "bl652_dvk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Laird BL652 DVK";
@@ -41,10 +42,12 @@
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 15 GPIO_PULL_UP>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

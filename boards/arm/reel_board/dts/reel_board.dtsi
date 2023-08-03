@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "reel_board-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	chosen {
@@ -45,6 +46,7 @@
 		user_button: button_0 {
 			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

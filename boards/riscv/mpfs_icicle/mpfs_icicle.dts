@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <microchip/mpfs-icicle.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
 / {
@@ -38,6 +39,7 @@
 		sw0: sw0 {
 			gpios = <&gpio2 30 GPIO_ACTIVE_LOW>;
 			label = "SW_0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

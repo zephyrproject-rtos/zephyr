@@ -9,6 +9,7 @@
 #include <ti/cc1352r.dtsi>
 #include "../cc1352r1_launchxl/boosterpack_connector.dtsi"
 #include "cc1352p1_launchxl-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "TI CC1352P1 LaunchXL";
@@ -73,10 +74,12 @@
 		btn0: btn_0 {
 			gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		btn1: btn_1 {
 			gpios = <&gpio0 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };

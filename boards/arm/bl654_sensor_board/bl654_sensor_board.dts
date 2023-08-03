@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "bl654_sensor_board-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Laird BL654 Sensor Board";
@@ -37,6 +38,7 @@
 		button1: button_1 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 			label = "Push button switch 1 (SW1)";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

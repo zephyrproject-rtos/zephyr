@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
 #include "nrf5340dk_nrf5340_cpunet-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Nordic NRF5340 DK NRF5340 Network";
@@ -51,18 +52,22 @@
 		button0: button_0 {
 			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 3";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		button3: button_3 {
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 4";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 

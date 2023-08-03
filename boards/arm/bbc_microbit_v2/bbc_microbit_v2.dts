@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52833_qiaa.dtsi>
 #include "bbc_microbit_v2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "BBC Micro:bit V2";
@@ -37,11 +38,13 @@
 		buttonA: button_0 {
 			label = "BTN_A";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_A>;
 		};
 
 		buttonB: button_1 {
 			label = "BTN_B";
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_B>;
 		};
 	};
 

@@ -11,6 +11,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "pinetime_devkit0-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Pine64 PineTime DevKit0";
@@ -63,6 +64,7 @@
 		key_in: button_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Key in";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

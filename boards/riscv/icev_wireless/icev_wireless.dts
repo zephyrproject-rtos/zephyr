@@ -8,6 +8,7 @@
 
 #include <espressif/esp32c3/esp32c3_fx4.dtsi>
 #include "icev_wireless-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "icev_wireless";
@@ -40,6 +41,7 @@
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

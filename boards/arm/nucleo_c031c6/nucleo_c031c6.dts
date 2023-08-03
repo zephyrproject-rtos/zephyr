@@ -8,6 +8,7 @@
 #include <st/c0/stm32c031X6.dtsi>
 #include <st/c0/stm32c031c(4-6)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32C031C6-NUCLEO board";
@@ -42,6 +43,7 @@
 			label = "user button";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			status = "okay";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
