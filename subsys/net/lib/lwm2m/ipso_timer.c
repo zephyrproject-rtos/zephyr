@@ -65,7 +65,7 @@ struct ipso_timer_data {
 
 static struct ipso_timer_data timer_data[MAX_INSTANCE_COUNT];
 
-static struct lwm2m_engine_obj timer;
+static struct lwm2m_engine_obj ipso_timer;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT),
 	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT),
@@ -353,15 +353,15 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 
 static int ipso_timer_init(void)
 {
-	timer.obj_id = IPSO_OBJECT_TIMER_ID;
-	timer.version_major = TIMER_VERSION_MAJOR;
-	timer.version_minor = TIMER_VERSION_MINOR;
-	timer.is_core = false;
-	timer.fields = fields;
-	timer.field_count = ARRAY_SIZE(fields);
-	timer.max_instance_count = MAX_INSTANCE_COUNT;
-	timer.create_cb = timer_inst_create;
-	lwm2m_register_obj(&timer);
+	ipso_timer.obj_id = IPSO_OBJECT_TIMER_ID;
+	ipso_timer.version_major = TIMER_VERSION_MAJOR;
+	ipso_timer.version_minor = TIMER_VERSION_MINOR;
+	ipso_timer.is_core = false;
+	ipso_timer.fields = fields;
+	ipso_timer.field_count = ARRAY_SIZE(fields);
+	ipso_timer.max_instance_count = MAX_INSTANCE_COUNT;
+	ipso_timer.create_cb = timer_inst_create;
+	lwm2m_register_obj(&ipso_timer);
 
 	return 0;
 }

@@ -411,18 +411,18 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				     node);
 
 		if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			struct in6_addr *tmp;
+			struct in6_addr *in6_addr_tmp;
 			struct net_linkaddr_storage *llstorage;
 
-			tmp = net_route_get_nexthop(route);
-			nbr = net_ipv6_nbr_lookup(iface, tmp);
+			in6_addr_tmp = net_route_get_nexthop(route);
+			nbr = net_ipv6_nbr_lookup(iface, in6_addr_tmp);
 			if (nbr) {
 				llstorage = net_nbr_get_lladdr(nbr->idx);
 
 				NET_DBG("Removing the oldest route %s "
 					"via %s [%s]",
 					net_sprint_ipv6_addr(&route->addr),
-					net_sprint_ipv6_addr(tmp),
+					net_sprint_ipv6_addr(in6_addr_tmp),
 					net_sprint_ll_addr(llstorage->addr,
 							   llstorage->len));
 			}

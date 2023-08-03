@@ -37,7 +37,7 @@ struct mqtt_sn_publish {
 	bool retain;
 };
 
-static struct mqtt_sn_publish pubs[CONFIG_MQTT_SN_LIB_MAX_PUBLISH];
+static struct mqtt_sn_publish mqtt_sn_pubs[CONFIG_MQTT_SN_LIB_MAX_PUBLISH];
 
 enum mqtt_sn_topic_state {
 	MQTT_SN_TOPIC_STATE_REGISTERING,
@@ -150,9 +150,9 @@ static struct mqtt_sn_publish *mqtt_sn_publish_find_empty(void)
 {
 	size_t i;
 
-	for (i = 0; i < ARRAY_SIZE(pubs); i++) {
-		if (!pubs[i].con.in_use) {
-			return &pubs[i];
+	for (i = 0; i < ARRAY_SIZE(mqtt_sn_pubs); i++) {
+		if (!mqtt_sn_pubs[i].con.in_use) {
+			return &mqtt_sn_pubs[i];
 		}
 	}
 

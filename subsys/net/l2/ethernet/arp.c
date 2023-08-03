@@ -478,28 +478,28 @@ static void arp_update(struct net_if *iface,
 
 		if (force) {
 			sys_snode_t *prev = NULL;
-			struct arp_entry *entry;
+			struct arp_entry *arp_ent;
 
-			entry = arp_entry_find(&arp_table, iface, src, &prev);
-			if (entry) {
-				memcpy(&entry->eth, hwaddr,
+			arp_ent = arp_entry_find(&arp_table, iface, src, &prev);
+			if (arp_ent) {
+				memcpy(&arp_ent->eth, hwaddr,
 				       sizeof(struct net_eth_addr));
 			} else {
 				/* Add new entry as it was not found and force
 				 * was set.
 				 */
-				entry = arp_entry_get_free();
-				if (!entry) {
+				arp_ent = arp_entry_get_free();
+				if (!arp_ent) {
 					/* Then let's take one from table? */
-					entry = arp_entry_get_last_from_table();
+					arp_ent = arp_entry_get_last_from_table();
 				}
 
-				if (entry) {
-					entry->req_start = k_uptime_get_32();
-					entry->iface = iface;
-					net_ipaddr_copy(&entry->ip, src);
-					memcpy(&entry->eth, hwaddr, sizeof(entry->eth));
-					sys_slist_prepend(&arp_table, &entry->node);
+				if (arp_ent) {
+					arp_ent->req_start = k_uptime_get_32();
+					arp_ent->iface = iface;
+					net_ipaddr_copy(&arp_ent->ip, src);
+					memcpy(&arp_ent->eth, hwaddr, sizeof(arp_ent->eth));
+					sys_slist_prepend(&arp_table, &arp_ent->node);
 				}
 			}
 		}

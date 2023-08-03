@@ -314,20 +314,20 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		if (slip_input_byte(slip, buf[i])) {
 
 			if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-				struct net_buf *buf = slip->rx->buffer;
-				int bytes = net_buf_frags_len(buf);
+				struct net_buf *rx_buf = slip->rx->buffer;
+				int bytes = net_buf_frags_len(rx_buf);
 				int count = 0;
 
-				while (bytes && buf) {
+				while (bytes && rx_buf) {
 					char msg[6 + 10 + 1];
 
 					snprintk(msg, sizeof(msg),
 						 ">slip %2d", count);
 
-					LOG_HEXDUMP_DBG(buf->data, buf->len,
+					LOG_HEXDUMP_DBG(rx_buf->data, rx_buf->len,
 							msg);
 
-					buf = buf->frags;
+					rx_buf = rx_buf->frags;
 					count++;
 				}
 
