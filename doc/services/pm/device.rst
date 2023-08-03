@@ -13,7 +13,7 @@ advantage of the device power management subsystem.
 Zephyr supports two types of device power management:
 
  - :ref:`Device Runtime Power Management <pm-device-runtime-pm>`
- - :ref:`System Power Management <pm-device-system-pm>`
+ - :ref:`System Managed Device Power Management <pm-device-system-pm>`
 
 .. _pm-device-runtime-pm:
 
@@ -37,18 +37,48 @@ For more information, see :ref:`pm-device-runtime`.
 
 .. _pm-device-system-pm:
 
-System Power Management
-***********************
+System Managed Device Power Management
+**************************************
 
-When using this type, device power management is mostly done inside
-:c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
+The system managed device power management (PM) framework is a method where
+devices are suspended along with the system entering a CPU (or SoC) power state.
+It can be enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
+When using this method, device power management is mostly done inside
+:c:func:`pm_system_suspend()`.
 
 If a decision to enter a CPU lower power state is made, the power management
-subsystem will suspend devices before changing state. The subsystem takes care
-of suspending devices following their initialization order, ensuring that
+subsystem will check if the selected low power state triggers device power
+management and then suspend devices before changing state. The subsystem takes
+care of suspending devices following their initialization order, ensuring that
 possible dependencies between them are satisfied. As soon as the CPU wakes up
 from a sleep state, devices are resumed in the opposite order that they were
 suspended.
+
+The decision about suspending devices in a low power state is done checking
+if the power state has the property ``zephyr,pm-device-enabled``. Here is an
+example of a target with two low power states with only triggering device
+power management:
+
+.. code-block:: devicetree
+
+   /* Node in a DTS file */
+   cpus {
+        power-states {
+                state0: state0 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "standby";
+                        min-residency-us = <5000>;
+                        exit-latency-us = <240>;
+                };
+                state1: state1 {
+                        compatible = "zephyr,power-state";
+                        power-state-name = "suspend-to-ram";
+                        zephyr,pm-device-enabled;
+                        min-residency-us = <8000>;
+                        exit-latency-us = <360>;
+                };
+        };
+   };
 
 .. note::
 
@@ -56,10 +86,18 @@ suspended.
    As functions in this context cannot block, transitions that intend to use blocking
    APIs **must** check whether they can do so with :c:func:`k_can_yield`.
 
-This type of device power management can be useful when the application is not
-power aware and does not implement runtime device power management. Though,
-:ref:`Device Runtime Power Management <pm-device-runtime-pm>` is the **preferred**
-option for device power management.
+This type of device power management can be useful in certain scenarios:
+
+ - Simple devices that do not require any blocking operation when suspending and resuming.
+   This implementation is reasonably simpler than device runtime power management.
+ - For devices that can not any make power management decision and have to be always active. For
+   example a firmware using Zephyr that is controlled by an external entity (e.g Host CPU).
+   In this scenario, some devices have to be always active and should be suspended together with
+   the SoC when requested by this external entity.
+
+It is important to emphasize that this method has, as already mentioned,
+drawbacks and :ref:`Device Runtime Power Management
+<pm-device-runtime-pm>` is the **preferred** option for device power
 
 .. note::
 
