@@ -435,7 +435,7 @@ track" command:
 
 
 Some server commands are available. These commands force
-notifications of the various characterstics, for testing that the
+notifications of the various characteristics, for testing that the
 client receives notifications. The values sent in the notifications
 caused by these testing commands are independent of the media player,
 so they do not correspond the actual values of the characteristics nor

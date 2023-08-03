@@ -308,7 +308,7 @@ requires the following hardware peripherals.
 .. [i] General Purpose Input Output (GPIO)
 .. [j] GPIO tasks and events (GPIOTE)
 .. [k] Temperature sensor (TEMP)
-.. [l] Universal Asynchronous Receiver Transmiter (UART)
+.. [l] Universal Asynchronous Receiver Transmitter (UART)
 .. [m] Interprocess Communication peripheral (IPC)
 
 

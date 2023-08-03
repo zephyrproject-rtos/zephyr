@@ -561,7 +561,7 @@ filter: <expression>
     Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
     can be done. Existence of "dt_*" entries indicates devicetree is needed.
     Existence of "CONFIG*" entries indicates kconfig is needed.
-    If there are no other types of entries in the expression a filtration can be done wihout creating a complete build system.
+    If there are no other types of entries in the expression a filtration can be done without creating a complete build system.
     If there are entries of other types a full cmake is required.
 
     The grammar for the expression language is as follows:
@@ -1080,9 +1080,9 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_onl_all` options used in some testscases.
+- Ability to override `build_onl_all` options used in some testcases.
   This will treat tests or sample as any other just build for default
-  platforms you specify in the configuation file or on the command line.
+  platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
   default platforms are not in scope.
 
@@ -1139,7 +1139,7 @@ And example test level configuration::
 Combined configuration
 ======================
 
-To mix the Platform and level confgiuration, you can take an example as below:
+To mix the Platform and level configuration, you can take an example as below:
 
 And example platforms plus level configuration::
 

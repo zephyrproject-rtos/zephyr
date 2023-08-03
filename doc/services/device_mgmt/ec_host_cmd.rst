@@ -29,7 +29,7 @@ called.
 .. image:: ec_host_cmd.png
    :align: center
 
-SHI (Serial Host Interface) is different to this because it is used olny for communication with a
+SHI (Serial Host Interface) is different to this because it is used only for communication with a
 host. SHI does not have API itself, thus the backend and peripheral driver layers are combined into
 one backend layer.
 

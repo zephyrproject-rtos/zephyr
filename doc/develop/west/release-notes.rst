@@ -361,7 +361,7 @@ New features:
 Bug fixes:
 
 - West now checks that the manifest schema version is one of the explicitly
-  allowed vlaues documented in :ref:`west-manifest-schema-version`. The old
+  allowed values documented in :ref:`west-manifest-schema-version`. The old
   behavior was just to check that the schema version was newer than the west
   version where the ``manifest: version:`` key was introduced. This incorrectly
   allowed invalid schema versions, like ``0.8.2``.

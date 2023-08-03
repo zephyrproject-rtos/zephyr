@@ -473,7 +473,7 @@ The Configuration Client uses general message parameters set by ``mesh target ds
 
 	Get or set the default TTL value.
 
-	* ``TTL``: If present, sets the new default TTL value. Leagal TTL values are 0x00 and 0x02-0x7f. If omitted, the current default TTL value is printed.
+	* ``TTL``: If present, sets the new default TTL value. Legal TTL values are 0x00 and 0x02-0x7f. If omitted, the current default TTL value is printed.
 
 
 ``mesh models cfg friend [Val(off, on)]``
@@ -1229,7 +1229,7 @@ To use these commands, a Firmware Distribution Server must be instantiated by th
 	Get a list of info about firmware receivers.
 
 	* ``First``: Index of the first receiver to get from the receiver list.
-	* ``Count``: The number of recievers for which to get info.
+	* ``Count``: The number of receivers for which to get info.
 
 ``mesh models dfd capabilities-get``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
