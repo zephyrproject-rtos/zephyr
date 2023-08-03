@@ -12,6 +12,10 @@ LOG_MODULE_REGISTER(ot_main, LOG_LEVEL_DBG);
 #include <zephyr/net/openthread.h>
 #include <openthread/thread.h>
 
+#ifdef CONFIG_USB_DEVICE_STACK
+#include <zephyr/usb/usb_device.h>
+#endif /* CONFIG_USB_DEVICE_STACK */
+
 static void ot_satate_changed(otChangedFlags flags,
 	struct openthread_context *ot_context, void *user_data)
 {
@@ -53,6 +57,9 @@ static void ot_satate_changed(otChangedFlags flags,
 
 void main(void)
 {
+#ifdef CONFIG_USB_DEVICE_STACK
+	usb_enable(NULL);
+#endif /* CONFIG_USB_DEVICE_STACK */
 	LOG_INF("***** OpenThread CLI on Zephyr *****");
 #ifndef CONFIG_OPENTHREAD_MANUAL_START
 	LOG_INF("OT channel     %u",     CONFIG_OPENTHREAD_CHANNEL);

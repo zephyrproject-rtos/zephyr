@@ -119,6 +119,11 @@ jobs:
         cd ..
         west build -b tlsr9518adk80d             -d build_blinky_usb_dfu            zephyr/samples/basic/blinky                              -- -DCONFIG_BOOTLOADER_MCUBOOT=y
 
+    - name: net/openthread/cli
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_cli                    zephyr/samples/net/openthread/cli                        -- -DOVERLAY_CONFIG=overlay-telink-features.conf
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
@@ -138,6 +143,7 @@ jobs:
         cp ../build_ot_echo_client_pm_deep/zephyr/zephyr.bin    telink_build_artifacts/ot_echo_client_pm_retention.bin
         cp ../build_mcuboot_usb_dfu/zephyr/zephyr.bin           telink_build_artifacts/mcuboot_usb_dfu.bin
         cp ../build_blinky_usb_dfu/zephyr/zephyr.signed.bin     telink_build_artifacts/blinky_usb_dfu.signed.bin
+        cp ../build_ot_cli/zephyr/zephyr.bin                    telink_build_artifacts/ot_cli.bin
 
     - name: Publish artifacts
       uses: actions/upload-artifact@v3
