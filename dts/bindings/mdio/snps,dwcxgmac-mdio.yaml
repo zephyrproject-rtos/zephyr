@@ -1,0 +1,31 @@
+# Copyright(c) 2024 Intel Corporation.
+# SPDX - License - Identifier : Apache - 2.0
+
+description: Synopsys DWC XGMAC MDIO SMA Driver node
+
+compatible: "snps,dwcxgmac-mdio"
+
+include:
+  - name: mdio-controller.yaml
+
+properties:
+  csr-clock-indx:
+    type: int
+    default: 1
+    description: |
+      MDIO csr reference clock speed
+      - 0: "100_150MHZ"
+      - 1: "150_250MHZ"
+      - 2: "250_300MHZ"
+      - 3: "300_350MHZ"
+      - 4: "350_400MHZ"
+      - 5: "450_500MHZ"
+  clock-range-sel:
+    type: boolean
+    description: |
+      When this field is true, it overrides the default
+      MDIO clock generation based on CSR clock.
+
+  resets:
+    type: phandle-array
+    description: get reset line value
