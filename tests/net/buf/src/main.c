@@ -270,10 +270,10 @@ ZTEST(net_buf_tests, test_net_buf_4)
 	removed = 0;
 
 	while (buf->frags) {
-		struct net_buf *frag = buf->frags;
+		struct net_buf *frag2 = buf->frags;
 
-		net_buf_frag_del(buf, frag);
-		net_buf_unref(frag);
+		net_buf_frag_del(buf, frag2);
+		net_buf_unref(frag2);
 		removed++;
 	}
 

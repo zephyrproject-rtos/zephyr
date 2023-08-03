@@ -93,7 +93,7 @@ static struct sockaddr_in6 peer_addr_v6_s = {
 			   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 };
 
-static struct net_if *iface;
+static struct net_if *net_iface;
 static uint8_t test_case_no;
 static uint32_t seq;
 static uint32_t ack;
@@ -231,7 +231,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
 	}
 
 	/* Allocate buffer */
-	pkt = net_pkt_alloc_with_buffer(iface,
+	pkt = net_pkt_alloc_with_buffer(net_iface,
 					sizeof(struct tcphdr) + len + opts_len,
 					af, IPPROTO_TCP, K_NO_WAIT);
 	if (!pkt) {
@@ -438,17 +438,17 @@ static void *presetup(void)
 {
 	struct net_if_addr *ifaddr;
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	if (!iface) {
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	if (!net_iface) {
 		zassert_true(false, "Interface not available");
 	}
 
-	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	ifaddr = net_if_ipv4_addr_add(net_iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		zassert_true(false, "Failed to add IPv4 address");
 	}
 
-	ifaddr = net_if_ipv6_addr_add(iface, &my_addr_v6, NET_ADDR_MANUAL, 0);
+	ifaddr = net_if_ipv6_addr_add(net_iface, &my_addr_v6, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		zassert_true(false, "Failed to add IPv6 address");
 	}
@@ -501,7 +501,7 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		return;
 	}
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -681,7 +681,7 @@ static void handle_server_test(sa_family_t af, struct tcphdr *th)
 		return;
 	}
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -1041,7 +1041,7 @@ send_next:
 		return;
 	}
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -1163,7 +1163,7 @@ static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
 		return;
 	}
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	if (ret < 0) {
 		goto fail;
 	}
@@ -1291,20 +1291,20 @@ static void check_rst_fail(uint32_t seq_value)
 	int rsterr_before, rsterr_after;
 	int ret;
 
-	rsterr_before = GET_STAT(iface, tcp.rsterr);
+	rsterr_before = GET_STAT(net_iface, tcp.rsterr);
 
 	/* Invalid seq in the RST packet */
 	seq = seq_value;
 
 	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
 	/* Let the receiving thread run */
 	k_msleep(50);
 
-	rsterr_after = GET_STAT(iface, tcp.rsterr);
+	rsterr_after = GET_STAT(net_iface, tcp.rsterr);
 
 	zassert_equal(rsterr_before + 1, rsterr_after,
 		      "RST packet not skipped (before %d, after %d)",
@@ -1328,15 +1328,15 @@ static void check_rst_succeed(struct net_context *ctx,
 
 	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
 
-	rsterr_before = GET_STAT(iface, tcp.rsterr);
+	rsterr_before = GET_STAT(net_iface, tcp.rsterr);
 
-	ret = net_recv_data(iface, reply);
+	ret = net_recv_data(net_iface, reply);
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
 	/* Let the receiving thread run */
 	k_msleep(50);
 
-	rsterr_after = GET_STAT(iface, tcp.rsterr);
+	rsterr_after = GET_STAT(net_iface, tcp.rsterr);
 
 	zassert_equal(rsterr_before, rsterr_after,
 		      "RST packet skipped (before %d, after %d)",
@@ -1447,7 +1447,7 @@ static void checklist_based_out_of_order_test(struct out_of_order_check_struct *
 		/* Initial ack for the last correctly received byte = SYN flag */
 		expected_ack = sequence_base + check_ptr->ack_offset;
 
-		ret = net_recv_data(iface, pkt);
+		ret = net_recv_data(net_iface, pkt);
 		zassert_true(ret == 0, "recv data failed (%d)", ret);
 
 		/* Let the IP stack to process the packet properly */
@@ -1523,7 +1523,7 @@ static void test_server_timeout_out_of_order_data(void)
 	seq = expected_ack + 1;
 	rst = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
 
-	ret = net_recv_data(iface, rst);
+	ret = net_recv_data(net_iface, rst);
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
 	/* Let the receiving thread run */
