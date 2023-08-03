@@ -210,7 +210,7 @@ Many requests to the same SPI peripheral for example might be translated to hard
 descriptors entirely. Meaning the hardware can potentially do more than ever.
 
 There is a small cost to each RTIO context and iodev. This cost could be weighed
-against using a thread for each concurent I/O operation or custom queues and
+against using a thread for each concurrent I/O operation or custom queues and
 threads per peripheral. RTIO is much lower cost than that.
 
 Examples
