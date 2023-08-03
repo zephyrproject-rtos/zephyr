@@ -16,7 +16,7 @@ config CBPRINTF_COMPLETE
 config CBPRINTF_NANO
 	bool "Space-optimized but feature-limited"
 	# nano needs to count characters if it's the formatter for libc
-	select CBPRINTF_LIBC_SUBSTS if MINIMAL_LIBC
+	imply CBPRINTF_LIBC_SUBSTS if MINIMAL_LIBC
 	help
 	  If selected a completely different implementation of the core
 	  formatting capability is substituted.  This has a much smaller code
