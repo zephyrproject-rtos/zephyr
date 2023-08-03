@@ -147,7 +147,7 @@ static uint8_t upper_layer_packet_count;
 static uint16_t lower_layer_total_size;
 static uint16_t upper_layer_total_size;
 
-static uint8_t tmp_buf[256];
+static uint8_t test_tmp_buf[256];
 static uint8_t net_iface_dummy_data;
 
 static void net_iface_init(struct net_if *iface);
@@ -590,7 +590,7 @@ static void *test_setup(void)
 	setup_tcp_handler(&my_addr1, &my_addr2, 4092, 19551);
 
 	/* Generate test data */
-	generate_dummy_data(tmp_buf, sizeof(tmp_buf));
+	generate_dummy_data(test_tmp_buf, sizeof(test_tmp_buf));
 
 	return NULL;
 }
@@ -618,9 +618,9 @@ ZTEST(net_ipv4_fragment, test_udp)
 	/* Add enough data until we have 4 packets */
 	i = 0;
 	while (i < IPV4_TEST_PACKET_SIZE) {
-		ret = net_pkt_write(pkt, tmp_buf, sizeof(tmp_buf));
+		ret = net_pkt_write(pkt, test_tmp_buf, sizeof(test_tmp_buf));
 		zassert_equal(ret, 0, "IPv4 data append failed");
-		i += sizeof(tmp_buf);
+		i += sizeof(test_tmp_buf);
 	}
 
 	/* Setup packet for insertion */
