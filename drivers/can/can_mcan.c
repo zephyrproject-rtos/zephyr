@@ -477,6 +477,7 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_tx_event_fifo tx_event;
 	can_tx_callback_t tx_cb;
+	void *user_data;
 	uint32_t event_idx;
 	uint32_t tx_idx;
 	uint32_t txefs;
@@ -507,12 +508,14 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 			return;
 		}
 
-		k_sem_give(&data->tx_sem);
-
 		__ASSERT_NO_MSG(tx_idx <= cbs->num_tx);
 		tx_cb = cbs->tx[tx_idx].function;
+		user_data = cbs->tx[tx_idx].user_data;
 		cbs->tx[tx_idx].function = NULL;
-		tx_cb(dev, 0, cbs->tx[tx_idx].user_data);
+
+		k_sem_give(&data->tx_sem);
+
+		tx_cb(dev, 0, user_data);
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_TXEFS, &txefs);
 		if (err != 0) {
