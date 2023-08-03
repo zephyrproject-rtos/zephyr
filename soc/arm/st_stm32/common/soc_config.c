@@ -27,9 +27,10 @@ static int st_stm32_common_config(void)
 {
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Enable SWO trace asynchronous mode */
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_DBGMCU_EnableTraceClock();
-#else
+#endif
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_DBGMCU_SetTracePinAssignment(LL_DBGMCU_TRACE_ASYNCH);
 #endif
 #endif /* CONFIG_LOG_BACKEND_SWO */
