@@ -431,7 +431,7 @@ should know about.
 
 * :makevar:`SHIELD`: see :ref:`shields`
 
-* :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
+* :makevar:`ZEPHYR_MODULES`: A `CMake list`_ containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
   the application build. See :ref:`modules` for details. If you set this
   variable, it must be a complete list of all modules to use, as the build
@@ -1579,6 +1579,4 @@ CONFIG_DEBUG_THREAD_INFO=y in your application.
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
 .. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
-.. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
-.. _using Chocolatey: https://chocolatey.org/packages/RapidEE
 .. _example-application: https://github.com/zephyrproject-rtos/example-application
