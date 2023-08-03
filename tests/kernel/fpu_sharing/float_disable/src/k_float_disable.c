@@ -26,7 +26,7 @@
 struct k_thread usr_fp_thread;
 K_THREAD_STACK_DEFINE(usr_fp_thread_stack, STACKSIZE);
 
-ZTEST_BMEM static volatile int ret = TC_PASS;
+ZTEST_BMEM static volatile int test_ret = TC_PASS;
 
 static void usr_fp_thread_entry_1(void)
 {
@@ -48,13 +48,13 @@ static void usr_fp_thread_entry_2(void)
 
 		TC_ERROR("k_float_disable() fail - should never see this\n");
 
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
 ZTEST(k_float_disable, test_k_float_disable_common)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	/* Set thread priority level to the one used
 	 * in this test suite for cooperative threads.
@@ -105,7 +105,7 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 
 ZTEST(k_float_disable, test_k_float_disable_syscall)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	k_thread_priority_set(k_current_get(), PRIORITY);
 
@@ -138,8 +138,8 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-	/* ret is volatile, static analysis says we can't use in assert */
-	bool ok = ret == TC_PASS;
+	/* test_ret is volatile, static analysis says we can't use in assert */
+	bool ok = test_ret == TC_PASS;
 
 	zassert_true(ok, "");
 #else
@@ -167,7 +167,7 @@ void arm_test_isr_handler(const void *args)
 
 		TC_ERROR("k_float_disable() successful in ISR\n");
 
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
@@ -177,7 +177,7 @@ static void sup_fp_thread_entry(void)
 	if ((sup_fp_thread.base.user_options & K_FP_REGS) == 0) {
 
 		TC_ERROR("sup_fp_thread FP options cleared\n");
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
@@ -234,13 +234,13 @@ static void sup_fp_thread_entry(void)
 	if ((sup_fp_thread.base.user_options & K_FP_REGS) == 0) {
 
 		TC_ERROR("sup_fp_thread FP options cleared\n");
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
 ZTEST(k_float_disable, test_k_float_disable_irq)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	k_thread_priority_set(k_current_get(), PRIORITY);
 
@@ -256,8 +256,8 @@ ZTEST(k_float_disable, test_k_float_disable_irq)
 	/* Yield will swap-in sup_fp_thread */
 	k_yield();
 
-	/* ret is volatile, static analysis says we can't use in assert */
-	bool ok = ret == TC_PASS;
+	/* test_ret is volatile, static analysis says we can't use in assert */
+	bool ok = test_ret == TC_PASS;
 
 	zassert_true(ok, "");
 }

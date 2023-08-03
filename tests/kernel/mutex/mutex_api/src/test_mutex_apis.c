@@ -17,7 +17,7 @@ static ZTEST_DMEM int thread_ret = TC_FAIL;
 
 /**TESTPOINT: init via K_MUTEX_DEFINE*/
 K_MUTEX_DEFINE(kmutex);
-static struct k_mutex mutex;
+static struct k_mutex tmutex;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
@@ -191,8 +191,8 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
-	k_mutex_init(&mutex);
-	tmutex_test_lock(&mutex, tThread_entry_lock_forever);
+	k_mutex_init(&tmutex);
+	tmutex_test_lock(&tmutex, tThread_entry_lock_forever);
 	k_thread_abort(&tdata);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
@@ -203,7 +203,7 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
-	tmutex_test_lock(&mutex, tThread_entry_lock_no_wait);
+	tmutex_test_lock(&tmutex, tThread_entry_lock_no_wait);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
@@ -212,7 +212,7 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
-	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_fail);
+	tmutex_test_lock_timeout(&tmutex, tThread_entry_lock_timeout_fail);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
@@ -221,7 +221,7 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
-	tmutex_test_lock_timeout(&mutex, tThread_entry_lock_timeout_pass);
+	tmutex_test_lock_timeout(&tmutex, tThread_entry_lock_timeout_pass);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
@@ -230,7 +230,7 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
-	tmutex_test_lock_unlock(&mutex);
+	tmutex_test_lock_unlock(&tmutex);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock_unlock(&kmutex);
@@ -245,36 +245,36 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
  */
 ZTEST_USER(mutex_api, test_mutex_recursive)
 {
-	k_mutex_init(&mutex);
+	k_mutex_init(&tmutex);
 
 	/**TESTPOINT: when mutex has no owner, we cannot unlock it */
-	zassert_true(k_mutex_unlock(&mutex) == -EINVAL,
+	zassert_true(k_mutex_unlock(&tmutex) == -EINVAL,
 			"fail: mutex has no owner");
 
-	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
+	zassert_true(k_mutex_lock(&tmutex, K_NO_WAIT) == 0,
 			"Failed to lock mutex");
 
 	/**TESTPOINT: lock the mutex recursively */
-	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
+	zassert_true(k_mutex_lock(&tmutex, K_NO_WAIT) == 0,
 		"Failed to recursively lock mutex");
 
 	thread_ret = TC_FAIL;
 	/* Spawn a waiter thread */
 	k_thread_create(&tdata3, tstack3, STACK_SIZE,
-			(k_thread_entry_t)tThread_waiter, &mutex, NULL, NULL,
+			(k_thread_entry_t)tThread_waiter, &tmutex, NULL, NULL,
 			K_PRIO_PREEMPT(12),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	zassert_true(thread_ret == TC_FAIL,
 		"waiter thread should block on the recursively locked mutex");
 
-	zassert_true(k_mutex_unlock(&mutex) == 0, "fail to unlock");
+	zassert_true(k_mutex_unlock(&tmutex) == 0, "fail to unlock");
 
 	/**TESTPOINT: unlock the mutex recursively */
 	zassert_true(thread_ret == TC_FAIL,
 		"waiter thread should still block on the locked mutex");
 
-	zassert_true(k_mutex_unlock(&mutex) == 0, "fail to unlock");
+	zassert_true(k_mutex_unlock(&tmutex) == 0, "fail to unlock");
 
 	/* Give thread_waiter a chance to get the mutex */
 	k_sleep(K_MSEC(1));
@@ -298,7 +298,7 @@ ZTEST_USER(mutex_api, test_mutex_recursive)
 ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 {
 	/**TESTPOINT: run test case 1, given priority T1 < T2 */
-	k_mutex_init(&mutex);
+	k_mutex_init(&tmutex);
 
 	/* we told thread which case runs now */
 	case_type = 1;
@@ -306,7 +306,7 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/* spawn a lower priority thread t1 for holding the mutex */
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 		(k_thread_entry_t)tThread_T1_priority_inheritance,
-			&mutex, &tdata, NULL,
+			&tmutex, &tdata, NULL,
 			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -314,13 +314,13 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	k_msleep(TIMEOUT);
 
 	/**TESTPOINT: The current thread does not own the mutex.*/
-	zassert_true(k_mutex_unlock(&mutex) == -EPERM,
+	zassert_true(k_mutex_unlock(&tmutex) == -EPERM,
 			"fail: current thread does not own the mutex");
 
 	/* spawn a higher priority thread t2 for holding the mutex */
 	k_thread_create(&tdata2, tstack2, STACK_SIZE,
 		(k_thread_entry_t)tThread_T2_priority_inheritance,
-			&mutex, &tdata2, NULL,
+			&tmutex, &tdata2, NULL,
 			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -330,13 +330,13 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/**TESTPOINT: run test case 2, given priority T1 > T2, this means
 	 * priority inheritance won't happen.
 	 */
-	k_mutex_init(&mutex);
+	k_mutex_init(&tmutex);
 	case_type = 2;
 
 	/* spawn a lower priority thread t1 for holding the mutex */
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 		(k_thread_entry_t)tThread_T1_priority_inheritance,
-			&mutex, &tdata, NULL,
+			&tmutex, &tdata, NULL,
 			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -346,7 +346,7 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/* spawn a higher priority thread t2 for holding the mutex */
 	k_thread_create(&tdata2, tstack2, STACK_SIZE,
 		(k_thread_entry_t)tThread_T2_priority_inheritance,
-			&mutex, &tdata2, NULL,
+			&tmutex, &tdata2, NULL,
 			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -356,13 +356,13 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/**TESTPOINT: run test case 3, given priority T1 < T3 < T2, but t2 do
 	 * not get mutex due to timeout.
 	 */
-	k_mutex_init(&mutex);
+	k_mutex_init(&tmutex);
 	case_type = 3;
 
 	/* spawn a lower priority thread t1 for holding the mutex */
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 		(k_thread_entry_t)tThread_T1_priority_inheritance,
-			&mutex, &tdata, NULL,
+			&tmutex, &tdata, NULL,
 			K_PRIO_PREEMPT(THREAD_LOW_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -372,14 +372,14 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/* spawn a higher priority thread t2 for holding the mutex */
 	k_thread_create(&tdata2, tstack2, STACK_SIZE,
 		(k_thread_entry_t)tThread_T2_priority_inheritance,
-			&mutex, &tdata2, NULL,
+			&tmutex, &tdata2, NULL,
 			K_PRIO_PREEMPT(THREAD_HIGH_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	/* spawn a higher priority thread t3 for holding the mutex */
 	k_thread_create(&tdata3, tstack3, STACK_SIZE,
 		(k_thread_entry_t)tThread_lock_with_time_period,
-			&mutex, &tdata3, NULL,
+			&tmutex, &tdata3, NULL,
 			K_PRIO_PREEMPT(THREAD_MID_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -425,7 +425,7 @@ ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 	uintptr_t timeout_lower;
 	int helper_prio = k_thread_priority_get(k_current_get()) + 1;
 
-	k_mutex_init(&mutex);
+	k_mutex_init(&tmutex);
 
 	/* align to tick boundary */
 	k_sleep(K_TICKS(1));
@@ -436,9 +436,9 @@ ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 	timeout_upper = timeout.ticks >> 32;
 	timeout_lower = timeout.ticks & BIT64_MASK(32);
 
-	k_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&tmutex, K_FOREVER);
 	k_thread_create(&tdata, tstack, K_THREAD_STACK_SIZEOF(tstack),
-			tThread_mutex_lock_should_fail, &mutex, (void *)timeout_upper,
+			tThread_mutex_lock_should_fail, &tmutex, (void *)timeout_upper,
 			(void *)timeout_lower, helper_prio,
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
@@ -446,7 +446,7 @@ ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 
 	k_sleep(timeout);
 
-	k_mutex_unlock(&mutex);
+	k_mutex_unlock(&tmutex);
 }
 
 static void *mutex_api_tests_setup(void)
@@ -454,7 +454,7 @@ static void *mutex_api_tests_setup(void)
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &tdata2,
 				&tstack2, &tdata3, &tstack3, &kmutex,
-				&mutex);
+				&tmutex);
 #endif
 	return NULL;
 }
