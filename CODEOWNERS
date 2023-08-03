@@ -271,6 +271,7 @@
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/display/display_ili9342c.*       @extremegtx
 /drivers/dac/                             @martinjaeger
+/drivers/dac/*ad56xx*                     @benediktibk
 /drivers/dai/                             @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/                       @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
@@ -615,6 +616,7 @@
 /dts/bindings/gpio/*bd8lb600fs*           @benediktibk
 /dts/bindings/gpio/*ads114s0x*            @benediktibk
 /dts/bindings/pwm/*max31790*              @benediktibk
+/dts/bindings/dac/*ad56*                  @benediktibk
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
