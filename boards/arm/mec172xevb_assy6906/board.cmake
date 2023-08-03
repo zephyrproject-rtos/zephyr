@@ -11,4 +11,4 @@ board_finalize_runner_args(dediprog
 )
 
 # This allows a custom script to be used for flashing the SPI chip.
-include(${ZEPHYR_BASE}/boards/common/misc.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/misc-flasher.board.cmake)

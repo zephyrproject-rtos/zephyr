@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if($ENV{CAVS_OLD_FLASHER})
-  board_set_flasher_ifnset(misc-flasher)
-  board_finalize_runner_args(misc-flasher)
+  include(${ZEPHYR_BASE}/boards/common/misc-flasher.board.cmake)
 endif()
 
 board_set_flasher_ifnset(intel_adsp)
