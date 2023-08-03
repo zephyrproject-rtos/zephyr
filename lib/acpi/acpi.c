@@ -26,7 +26,7 @@ static struct acpi bus_ctx = {
 	.status = AE_NOT_CONFIGURED,
 };
 
-static ACPI_TABLE_DESC acpi_table[CONFIG_ACPI_MAX_INIT_TABLES];
+static ACPI_TABLE_DESC acpi_tables[CONFIG_ACPI_MAX_INIT_TABLES];
 
 static int acpi_init(void);
 
@@ -380,7 +380,7 @@ static int acpi_early_init(void)
 		return 0;
 	}
 
-	status = AcpiInitializeTables(acpi_table, CONFIG_ACPI_MAX_INIT_TABLES, TRUE);
+	status = AcpiInitializeTables(acpi_tables, CONFIG_ACPI_MAX_INIT_TABLES, TRUE);
 	if (ACPI_FAILURE(status)) {
 		LOG_ERR("Error in acpi table init:%d", status);
 		return -EIO;
