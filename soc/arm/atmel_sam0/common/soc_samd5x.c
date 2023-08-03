@@ -117,8 +117,14 @@ void z_arm_platform_init(void)
 		dfll_div = 1;
 	}
 
-	/* enable the Cortex M Cache Controller */
-	CMCC->CTRL.bit.CEN = 1;
+	/*
+	 * Force Cortex M Cache Controller disabled
+	 *
+	 * It is not clear if regular Cortex-M instructions can be used to
+	 * perform cache maintenance or this is a proprietary cache controller
+	 * that require special SoC support.
+	 */
+	CMCC->CTRL.bit.CEN = 0;
 
 	gclk_reset();
 	osc32k_init();
