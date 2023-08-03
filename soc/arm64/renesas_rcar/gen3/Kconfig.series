@@ -6,7 +6,7 @@ config SOC_SERIES_RCAR_GEN3
 	select ARM64
 	select CPU_CORTEX_A57
 	select SOC_FAMILY_RCAR
-	select ARM_ARCH_TIMER
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
 	help
 	  Enable support for Renesas RCar Gen3 SoC series
