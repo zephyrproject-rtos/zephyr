@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2019 Gerson Fernando Budke
  * SPDX-License-Identifier: Apache-2.0
  */
 
