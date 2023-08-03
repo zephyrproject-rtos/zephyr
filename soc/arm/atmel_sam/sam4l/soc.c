@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -253,15 +253,7 @@ static ALWAYS_INLINE void clock_init(void)
 	PM->MCCTRL = OSC_SRC_PLL0;
 }
 
-/**
- * @brief Perform basic hardware initialization at boot.
- *
- * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
- */
-static int atmel_sam4l_init(void)
+void z_arm_platform_init(void)
 {
 #if defined(CONFIG_WDT_DISABLE_AT_BOOT)
 	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);
@@ -272,8 +264,4 @@ static int atmel_sam4l_init(void)
 
 	/* Setup system clocks. */
 	clock_init();
-
-	return 0;
 }
-
-SYS_INIT(atmel_sam4l_init, PRE_KERNEL_1, 0);

@@ -12,6 +12,7 @@ config SOC_SERIES_SAMD51
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select SOC_FAMILY_SAM0
+	select PLATFORM_SPECIFIC_INIT
 	select ASF
 	help
 	  Enable support for Atmel SAMD51 Cortex-M4F microcontrollers.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,7 +105,7 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samd_init(void)
+void z_arm_platform_init(void)
 {
 	uint8_t dfll_div;
 
@@ -129,8 +130,4 @@ static int atmel_samd_init(void)
 
 	/* connect GCLK2 to 48 MHz DFLL for USB */
 	gclk_connect(2, GCLK_SOURCE_DFLL48M, 0);
-
-	return 0;
 }
-
-SYS_INIT(atmel_samd_init, PRE_KERNEL_1, 0);

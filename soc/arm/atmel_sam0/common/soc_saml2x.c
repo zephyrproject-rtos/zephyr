@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -242,7 +243,7 @@ static inline void pause_for_debug(void)
 static inline void pause_for_debug(void) {}
 #endif
 
-static int atmel_saml_init(void)
+void z_arm_platform_init(void)
 {
 	pause_for_debug();
 
@@ -255,8 +256,4 @@ static int atmel_saml_init(void)
 	pm_init();
 	gclk_main_configure();
 	gclk_adc_configure();
-
-	return 0;
 }
-
-SYS_INIT(atmel_saml_init, PRE_KERNEL_1, 0);

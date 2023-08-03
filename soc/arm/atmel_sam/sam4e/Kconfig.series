@@ -2,7 +2,7 @@
 
 # Copyright (c) 2017 Justin Watson
 # Copyright (c) 2018 Vincent van der Locht
-# Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_SAM4E
@@ -13,6 +13,7 @@ config SOC_SERIES_SAM4E
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select SOC_FAMILY_SAM
+	select PLATFORM_SPECIFIC_INIT
 	select ASF
 	help
 	  Enable support for Atmel SAM4E Cortex-M4 microcontrollers.
