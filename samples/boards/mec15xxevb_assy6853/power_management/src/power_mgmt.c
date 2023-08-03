@@ -90,44 +90,43 @@ static void pm_latency_check(void)
 }
 
 /* Hooks to count entry/exit */
-static void notify_pm_state_entry(enum pm_state state)
+static void notify_pm_state(uint8_t direction, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
+	const struct pm_state_info *pm_state = pm_state_next_get(0u);
+
 	if (!checks_enabled) {
 		return;
 	}
 
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-		GPIO_CTRL_REGS->CTRL_0012 = 0x240ul;
-		pm_counters[0].entry_cnt++;
-		break;
-	case PM_STATE_SUSPEND_TO_RAM:
-		GPIO_CTRL_REGS->CTRL_0013 = 0x240ul;
-		pm_counters[1].entry_cnt++;
-		pm_latency_check();
-		break;
-	default:
-		break;
-	}
-}
+	if (direction & PM_STATE_ENTRY) {
+		pm_counters[pm_state->state].entry_cnt++;
 
-static void notify_pm_state_exit(enum pm_state state)
-{
-	if (!checks_enabled) {
-		return;
-	}
+		switch (pm_state->state) {
+		case PM_STATE_SUSPEND_TO_IDLE:
+			GPIO_CTRL_REGS->CTRL_0012 = 0x240ul;
+			break;
+		case PM_STATE_SUSPEND_TO_RAM:
+			GPIO_CTRL_REGS->CTRL_0013 = 0x240ul;
+			pm_latency_check();
+			break;
+		default:
+			break;
+		}
+	} else {
+		pm_counters[pm_state->state].exit_cnt++;
 
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_IDLE:
-		GPIO_CTRL_REGS->CTRL_0012 = 0x10240ul;
-		pm_counters[0].exit_cnt++;
-		break;
-	case PM_STATE_SUSPEND_TO_RAM:
-		GPIO_CTRL_REGS->CTRL_0013 = 0x10240ul;
-		pm_counters[1].exit_cnt++;
-		break;
-	default:
-		break;
+		switch (pm_state->state) {
+		case PM_STATE_SUSPEND_TO_IDLE:
+			GPIO_CTRL_REGS->CTRL_0012 = 0x10240ul;
+			break;
+		case PM_STATE_SUSPEND_TO_RAM:
+			GPIO_CTRL_REGS->CTRL_0013 = 0x10240ul;
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -256,21 +255,24 @@ static void resume_all_tasks(void)
 	k_thread_resume(&thread_b_id);
 }
 
-static struct pm_notifier notifier = {
-	.state_entry = notify_pm_state_entry,
-	.state_exit = notify_pm_state_exit,
-};
+PM_NOTIFIER_DEFINE(test_light_sleep, (PM_STATE_ENTRY|PM_STATE_EXIT), notify_pm_state, NULL);
+PM_NOTIFIER_DEFINE(test_deep_sleep, (PM_STATE_ENTRY|PM_STATE_EXIT), notify_pm_state, NULL);
 
 int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 {
 	uint8_t iterations = cycles;
+	const struct pm_state_info *light_sleep = &residency_info[0];
+	const struct pm_state_info *deep_sleep = &residency_info[residency_info_len - 1];
 	/* Ensure we can enter deep sleep when stopping threads
 	 * No UART output should occur when threads are suspended
 	 * Test to verify Zephyr RTOS issue #20033
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/20033
 	 */
 
-	pm_notifier_register(&notifier);
+	pm_notifier_register(&PM_NOTIFIER(test_light_sleep), light_sleep->state,
+			     light_sleep->substate_id);
+	pm_notifier_register(&PM_NOTIFIER(test_deep_sleep), deep_sleep->state,
+			     deep_sleep->substate_id);
 	create_tasks();
 
 	LOG_WRN("PM multi-thread test started for cycles: %d, logging: %d",
@@ -283,7 +285,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 		LOG_INF("Suspend...");
 		suspend_all_tasks();
 		LOG_INF("About to enter light sleep");
-		k_msleep((residency_info[0].min_residency_us / 1000U) +
+		k_msleep((light_sleep->min_residency_us / 1000U) +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -304,7 +306,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 		/* GPIO toggle to measure latency for deep sleep */
 		pm_trigger_marker();
 		k_msleep(
-		   (residency_info[residency_info_len - 1].min_residency_us /
+		   (deep_sleep->min_residency_us /
 		    1000U) + DP_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -324,7 +326,10 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 	LOG_INF("PM multi-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();
-	pm_notifier_unregister(&notifier);
+	pm_notifier_unregister(&PM_NOTIFIER(test_light_sleep), light_sleep->state,
+			       light_sleep->substate_id);
+	pm_notifier_unregister(&PM_NOTIFIER(test_deep_sleep), deep_sleep->state,
+			       deep_sleep->substate_id);
 
 	return 0;
 }
@@ -332,17 +337,22 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 {
 	uint8_t iterations = cycles;
+	const struct pm_state_info *light_sleep = &residency_info[0];
+	const struct pm_state_info *deep_sleep = &residency_info[residency_info_len - 1];
 
 	LOG_WRN("PM single-thread test started for cycles: %d, logging: %d",
 		cycles, use_logging);
 
-	pm_notifier_register(&notifier);
+	pm_notifier_register(&PM_NOTIFIER(test_light_sleep), light_sleep->state,
+			     light_sleep->substate_id);
+	pm_notifier_register(&PM_NOTIFIER(test_deep_sleep), deep_sleep->state,
+			     deep_sleep->substate_id);
 	checks_enabled = true;
 	while (iterations-- > 0) {
 
 		/* Trigger Light Sleep 1 state. 48MHz PLL stays on */
 		LOG_INF("About to enter light sleep");
-		k_msleep((residency_info[0].min_residency_us / 1000U) +
+		k_msleep((light_sleep->min_residency_us / 1000U) +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -358,7 +368,7 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 		/* GPIO toggle to measure latency */
 		pm_trigger_marker();
 		k_msleep(
-		   (residency_info[residency_info_len - 1].min_residency_us /
+		   (deep_sleep->min_residency_us /
 		    1000U) + DP_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -374,7 +384,10 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 	LOG_INF("PM single-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();
-	pm_notifier_unregister(&notifier);
+	pm_notifier_unregister(&PM_NOTIFIER(test_light_sleep), light_sleep->state,
+			       light_sleep->substate_id);
+	pm_notifier_unregister(&PM_NOTIFIER(test_deep_sleep), deep_sleep->state,
+			       deep_sleep->substate_id);
 
 	return 0;
 }
