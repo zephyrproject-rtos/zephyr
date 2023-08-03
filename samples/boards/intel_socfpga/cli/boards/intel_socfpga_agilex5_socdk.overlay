@@ -102,3 +102,15 @@
 &io96b1 {
 	status = "okay";
 };
+
+&xgmac0 {
+	status = "okay";
+
+	phy0: phy {
+		status = "okay";
+	};
+};
+
+&mdio0  {
+	status = "okay";
+};
