@@ -975,8 +975,6 @@ static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
 	   *low_time = &lcko->div.low_time;
 
 	if (lcko->frac.frac == 0) {
-		int ret;
-
 		lcko->ts_config.duty = *duty;
 		LOG_DBG("CLKOUT%d: setting duty: %u/%u",
 			lcko->id, duty->num, duty->den);
