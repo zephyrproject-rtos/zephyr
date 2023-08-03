@@ -445,13 +445,13 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 	return false;
 }
 
-static bool ad_parse(struct net_buf_simple *ad,
+static bool ad_parse(struct net_buf_simple *ad_buf,
 		     bool (*func)(uint8_t type, const uint8_t *data,
 				  uint8_t data_len, void *user_data),
 		     void *user_data)
 {
-	while (ad->len > 1) {
-		uint8_t len = net_buf_simple_pull_u8(ad);
+	while (ad_buf->len > 1) {
+		uint8_t len = net_buf_simple_pull_u8(ad_buf);
 		uint8_t type;
 
 		/* Check for early termination */
@@ -459,30 +459,30 @@ static bool ad_parse(struct net_buf_simple *ad,
 			return false;
 		}
 
-		if (len > ad->len) {
+		if (len > ad_buf->len) {
 			NET_ERR("AD malformed\n");
 			return false;
 		}
 
-		type = net_buf_simple_pull_u8(ad);
+		type = net_buf_simple_pull_u8(ad_buf);
 
-		if (func(type, ad->data, len - 1, user_data)) {
+		if (func(type, ad_buf->data, len - 1, user_data)) {
 			return true;
 		}
 
-		net_buf_simple_pull(ad, len - 1);
+		net_buf_simple_pull(ad_buf, len - 1);
 	}
 
 	return false;
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 struct net_buf_simple *ad)
+			 struct net_buf_simple *ad_buf)
 {
 	/* We're only interested in connectable events */
 	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
 	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
-		ad_parse(ad, eir_found, (void *)addr);
+		ad_parse(ad_buf, eir_found, (void *)addr);
 	}
 }
 

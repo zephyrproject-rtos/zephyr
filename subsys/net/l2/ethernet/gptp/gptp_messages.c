@@ -26,9 +26,9 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 
 #define NET_GPTP_INFO(msg, pkt)						\
 	if (CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
-		struct gptp_hdr *hdr = GPTP_HDR(pkt);			\
+		struct gptp_hdr *one_hdr = GPTP_HDR(pkt);		\
 									\
-		if (hdr->message_type == GPTP_ANNOUNCE_MESSAGE) {	\
+		if (one_hdr->message_type == GPTP_ANNOUNCE_MESSAGE) {	\
 			struct gptp_announce *ann = GPTP_ANNOUNCE(pkt);	\
 			char output[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];	\
 									\
@@ -39,7 +39,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 									\
 			NET_DBG("Sending %s seq %d pkt %p",		\
 				msg,					\
-				ntohs(hdr->sequence_id), pkt);		\
+				ntohs(one_hdr->sequence_id), pkt);	\
 									\
 			NET_DBG("  GM %d/%d/0x%x/%d/%s",\
 				ann->root_system_id.grand_master_prio1, \
@@ -50,7 +50,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 		} else {						\
 			NET_DBG("Sending %s seq %d pkt %p",		\
 				msg,					\
-				ntohs(hdr->sequence_id), pkt);		\
+				ntohs(one_hdr->sequence_id), pkt);	\
 		}							\
 	}
 

@@ -2974,14 +2974,14 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 	struct gptp_port_bmca_data *port_bmca_data;
 	struct gptp_port_param_ds *port_param_ds;
 	struct gptp_port_states *port_state;
-	struct gptp_domain *gptp_domain;
+	struct gptp_domain *domain;
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	int ret, i;
 
-	gptp_domain = gptp_get_domain();
+	domain = gptp_get_domain();
 
-	ret = gptp_get_port_data(gptp_domain,
+	ret = gptp_get_port_data(domain,
 				 port,
 				 &port_ds,
 				 &port_param_ds,
@@ -3080,10 +3080,10 @@ static void gptp_print_port_info(const struct shell *sh, int port)
 					(NSEC_PER_USEC * USEC_PER_MSEC));
 	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 1,
 	   "                                        ",
-	   gptp_domain->default_ds.priority1);
+	   domain->default_ds.priority1);
 	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 2,
 	   "                                        ",
-	   gptp_domain->default_ds.priority2);
+	   domain->default_ds.priority2);
 
 	PR("\nRuntime status:\n");
 	PR("Current global port state                          "
