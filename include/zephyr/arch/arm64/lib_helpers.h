@@ -16,10 +16,10 @@
 
 #define read_sysreg(reg)						\
 ({									\
-	uint64_t val;							\
+	uint64_t reg_val;						\
 	__asm__ volatile ("mrs %0, " STRINGIFY(reg)			\
-			  : "=r" (val) :: "memory");			\
-	val;								\
+			  : "=r" (reg_val) :: "memory");		\
+	reg_val;							\
 })
 
 #define write_sysreg(val, reg)						\
