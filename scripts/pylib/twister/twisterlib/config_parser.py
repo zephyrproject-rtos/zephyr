@@ -48,6 +48,7 @@ class TwisterConfigParser:
                        "extra_conf_files": {"type": "list", "default": []},
                        "extra_overlay_confs" : {"type": "list", "default": []},
                        "extra_dtc_overlay_files": {"type": "list", "default": []},
+                       "required_snippets": {"type": "list"},
                        "build_only": {"type": "bool", "default": False},
                        "build_on_all": {"type": "bool", "default": False},
                        "skip": {"type": "bool", "default": False},
