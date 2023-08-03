@@ -44,6 +44,9 @@ pairs:
     Extra configuration options to be merged with a master prj.conf
     when building or running the test case.
 
+  required_snippets: <list of snippets>
+    Snippets that must be applied for the test case to run.
+
   sysbuild: <True|False> (default False)
     If true, build the sample using the sysbuild infrastructure. Filtering
     will only be enabled for the main project, and is not supported for
