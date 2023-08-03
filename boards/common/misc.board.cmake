@@ -5,4 +5,4 @@
 # core on a special-purpose SoC which requires a complicated script to
 # network boot.
 
-board_finalize_runner_args(misc-flasher)
+board_finalize_runner_args(misc)

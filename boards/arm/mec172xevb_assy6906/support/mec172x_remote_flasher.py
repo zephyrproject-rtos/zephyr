@@ -9,7 +9,7 @@ This script allows flashing a mec172xevb_assy6906 board
 attached to a remote system.
 
 Usage:
-  west flash -r misc-flasher -- mec172x_remote_flasher.py <remote host>
+  west flash -r misc -- mec172x_remote_flasher.py <remote host>
 
 Note:
 1. SSH access to remote host with write access to remote /tmp.
@@ -29,7 +29,7 @@ Here is a sample map file:
     id: mec172xevb_assy6906
     platform: mec172xevb_assy6906
     product: mec172xevb_assy6906
-    runner: misc-flasher
+    runner: misc
     runner_params:
       - <ZEPHYR_BASE>/boards/arm/mec172xevb_assy6906/support/mec172x_remote_flasher.py
       - <remote host>

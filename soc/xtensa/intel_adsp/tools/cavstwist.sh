@@ -18,7 +18,7 @@ set -e
 #
 # The CAVS_OLD_FLASHER is necessary because now the client-server-based
 # cavstool works by default. This is to tell the build system to use
-# the misc-flasher as the runner. Please remember to do the command
+# the misc runner. Please remember to do the command
 # "unset CAVS_OLD_FLASHER" when you are going to switch to the
 # client-server-based intel_adsp runner.
 #
