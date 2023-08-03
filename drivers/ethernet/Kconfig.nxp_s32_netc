@@ -92,18 +92,12 @@ config ETH_NXP_S32_MAC_FILTER_TABLE_SIZE
 	help
 	  Maximum number of entries supported in the MAC filter hash table.
 
-config ETH_NXP_S32_PSI_INIT_PRIORITY
-	int
-	default 60
-	help
-	  PSI initialization priority. It must be lower than VSI priority.
-
 config ETH_NXP_S32_VSI_INIT_PRIORITY
 	int
-	default 61
+	default 81
 	help
-	  VSI initialization priority. It must be bigger than PSI priority
-	  and lower than CONFIG_NET_INIT_PRIO, so that it can start after the PSI
-	  but before the networking sub-system.
+	  VSI initialization priority. It must be bigger than PSI init priority
+	  (CONFIG_ETH_INIT_PRIORITY) and lower than CONFIG_NET_INIT_PRIO, so
+	  that it can start after the PSI but before the networking sub-system.
 
 endif # ETH_NXP_S32_NETC
