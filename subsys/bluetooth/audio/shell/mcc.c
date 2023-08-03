@@ -1794,7 +1794,7 @@ static int cmd_mcc_otc_read_track_segments_object(const struct shell *sh,
 static int cmd_mcc_otc_read_current_track_object(const struct shell *sh,
 						 size_t argc, char *argv[])
 {
-	/* Assumes the Curent Track Object has already been selected by ID */
+	/* Assumes the Current Track Object has already been selected by ID */
 
 	int result;
 
