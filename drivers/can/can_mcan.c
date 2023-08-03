@@ -822,7 +822,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 #endif /* !CONFIG_CAN_FD_MODE */
 		.efc = 1U,
 	};
-	uint32_t put_idx;
+	uint32_t put_idx = -1;
 	uint32_t reg;
 	int err;
 
@@ -888,16 +888,16 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		return -EAGAIN;
 	}
 
-	err = can_mcan_read_reg(dev, CAN_MCAN_TXFQS, &reg);
-	if (err != 0) {
-		return err;
-	}
-
-	__ASSERT_NO_MSG((reg & CAN_MCAN_TXFQS_TFQF) != CAN_MCAN_TXFQS_TFQF);
-
 	k_mutex_lock(&data->tx_mtx, K_FOREVER);
 
-	put_idx = FIELD_GET(CAN_MCAN_TXFQS_TFQPI, reg);
+	/* Acquire a free TX buffer */
+	for (int i = 0; i < cbs->num_tx; i++) {
+		if (cbs->tx[i].function == NULL) {
+			put_idx = i;
+			break;
+		}
+	}
+
 	tx_hdr.mm = put_idx;
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
@@ -930,14 +930,13 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBAR, BIT(put_idx));
 	if (err != 0) {
-		goto err_free_tx_cb;
+		cbs->tx[put_idx].function = NULL;
+		goto err_unlock;
 	}
 
 	k_mutex_unlock(&data->tx_mtx);
 	return 0;
 
-err_free_tx_cb:
-	cbs->tx[put_idx].function = NULL;
 err_unlock:
 	k_mutex_unlock(&data->tx_mtx);
 	k_sem_give(&data->tx_sem);
