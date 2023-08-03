@@ -235,7 +235,9 @@ do { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
 	} \
+	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
 	struct log_msg *_msg; \
+	TOOLCHAIN_IGNORE_WSHADOW_END \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen != 0) { \
