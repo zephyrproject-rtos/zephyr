@@ -5,5 +5,6 @@ config INPUT_GPIO_KEYS
 	bool "Zephyr GPIO Keys"
 	default y
 	depends on DT_HAS_ZEPHYR_GPIO_KEYS_ENABLED
+	depends on GPIO
 	help
 	  Enable support for Zephyr GPIO Keys.
