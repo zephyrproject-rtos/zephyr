@@ -91,6 +91,15 @@
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
 #define TEST_RANGES_EMPTY DT_NODELABEL(test_ranges_empty)
 
+#define TEST_MTD_0 DT_PATH(test, test_mtd_ffeeddcc)
+#define TEST_MTD_1 DT_PATH(test, test_mtd_33221100)
+
+#define TEST_MEM_0 DT_CHILD(TEST_MTD_0, flash_20000000)
+
+#define TEST_PARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_0)
+#define TEST_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_c0)
+#define TEST_PARTITION_2 DT_PATH(test, test_mtd_33221100, partitions, partition_6ff80)
+
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
@@ -2770,6 +2779,78 @@ ZTEST(devicetree_api, test_memory_attr)
 	zassert_equal(val_filt[0], 0x44332211, "");
 
 	#undef TEST_FUNC
+}
+
+ZTEST(devicetree_api, test_fixed_partitions)
+{
+	/* Test finding fixed partitions by the 'label' property. */
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_0));
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_1));
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_2));
+
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_0,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_0)));
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_1,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_1)));
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_2,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_2)));
+
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_0));
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_1));
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_2));
+
+	/* There should not be a node with `label = "test_partition_3"`. */
+	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(test_partition_3));
+	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_3)));
+
+	/* There is a node with `label = "TEST_GPIO_0"`, but it is not a fixed partition. */
+	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(TEST_GPIO_0));
+	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_GPIO_0)));
+
+	/* Test DT_MTD_FROM_FIXED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_1)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_2)));
+
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_0)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_1)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_1, DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_2)));
+
+	/* Test DT_MEM_FROM_FIXED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_0)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_1)));
+	zassert_false(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_2)));
+
+	zassert_true(DT_SAME_NODE(TEST_MEM_0, DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_0)));
+	zassert_true(DT_SAME_NODE(TEST_MEM_0, DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_1)));
+
+	/* Test DT_FIXED_PARTITION_ADDR. */
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0), 0x20000000);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1), 0x200000c0);
+
+	/* DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2) expands to an invalid expression.
+	 * Test this by way of string comparison.
+	 */
+	zassert_true(!strcmp(TO_STRING(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2)),
+			     "(__REG_IDX_0_VAL_ADDRESS + 458624)"));
+	zassert_equal(DT_REG_ADDR(TEST_PARTITION_2), 458624);
+
+	/* Test that all DT_FIXED_PARTITION_ID are defined and unique. */
+#define FIXED_PARTITION_ID_COMMA(node_id) DT_FIXED_PARTITION_ID(node_id),
+
+	static const int ids[] = {
+		DT_FOREACH_STATUS_OKAY_VARGS(fixed_partitions, DT_FOREACH_CHILD,
+					     FIXED_PARTITION_ID_COMMA)
+	};
+	bool found[ARRAY_SIZE(ids)] = { false };
+
+	for (int i = 0; i < ARRAY_SIZE(ids); i++) {
+		zassert_between_inclusive(ids[i], 0, ARRAY_SIZE(ids) - 1, "");
+		zassert_false(found[ids[i]]);
+		found[ids[i]] = true;
+	}
+
+#undef FIXED_PARTITION_ID_COMMA
 }
 
 ZTEST(devicetree_api, test_string_token)
