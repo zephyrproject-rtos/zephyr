@@ -10,9 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(zephyr_gpio_keys, CONFIG_INPUT_LOG_LEVEL);
-
-#define DT_DRV_COMPAT zephyr_gpio_keys
+LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
 struct gpio_keys_callback {
 	struct gpio_callback gpio_cb;
@@ -154,6 +152,10 @@ static int gpio_keys_init(const struct device *dev)
 	return 0;
 }
 
+#define GPIO_KEYS_CFG_CHECK(node_id)                                                               \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, zephyr_code),                                       \
+		     "zephyr-code must be specified to use the input-gpio-keys driver");
+
 #define GPIO_KEYS_CFG_DEF(node_id)                                                                 \
 	{                                                                                          \
 		.spec = GPIO_DT_SPEC_GET(node_id, gpios),                                          \
@@ -161,6 +163,7 @@ static int gpio_keys_init(const struct device *dev)
 	}
 
 #define GPIO_KEYS_INIT(i)                                                                          \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
 	static struct gpio_keys_config gpio_keys_config_##i = {                                    \
@@ -177,4 +180,9 @@ static int gpio_keys_init(const struct device *dev)
 			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,      \
 			      NULL);
 
+#define DT_DRV_COMPAT gpio_keys
+DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT zephyr_gpio_keys
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
