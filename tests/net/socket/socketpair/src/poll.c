@@ -80,9 +80,9 @@ ZTEST_USER(net_socketpair, test_poll_timeout_nonblocking)
 	test_socketpair_poll_timeout_common(sv);
 }
 
-static void close_fun(struct k_work *work)
+static void close_fun(struct k_work *w)
 {
-	(void)work;
+	(void)w;
 
 	if (!(K_TIMEOUT_EQ(ctx.delay, K_NO_WAIT)
 		|| K_TIMEOUT_EQ(ctx.delay, K_FOREVER))) {
@@ -233,9 +233,9 @@ ZTEST_USER(net_socketpair, test_poll_immediate_data)
 	close(sv[1]);
 }
 
-static void rw_fun(struct k_work *work)
+static void rw_fun(struct k_work *w)
 {
-	(void)work;
+	(void)w;
 
 	int res;
 	char c;

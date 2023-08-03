@@ -42,7 +42,7 @@ static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-static struct in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct in6_addr multicast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* ICMPv6 NS frame (74 bytes) */
@@ -501,11 +501,11 @@ static void *ipv6_setup(void)
 	ifaddr2 = net_if_ipv6_addr_lookup(&my_addr, &iface2);
 	zassert_true(ifaddr2 == ifaddr, "Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+	net_ipv6_addr_create(&multicast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
-	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
+	maddr = net_if_ipv6_maddr_add(iface, &multicast_addr);
 	zassert_not_null(maddr, "Cannot add multicast IPv6 address %s\n",
-			 net_sprint_ipv6_addr(&mcast_addr));
+			 net_sprint_ipv6_addr(&multicast_addr));
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -528,8 +528,8 @@ static void ipv6_teardown(void *dummy)
 	rm_max_neighbors();
 	rm_neighbor();
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
-	net_if_ipv6_maddr_rm(iface, &mcast_addr);
+	net_ipv6_addr_create(&multicast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+	net_if_ipv6_maddr_rm(iface, &multicast_addr);
 	ifaddr_record->is_used = false;
 }
 

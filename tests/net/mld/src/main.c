@@ -50,7 +50,7 @@ static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static struct in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static struct net_if *iface;
+static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
 static bool is_join_msg_ok;
@@ -206,11 +206,11 @@ static void *test_mld_setup(void)
 
 	setup_mgmt_events();
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	zassert_not_null(iface, "Interface is NULL");
+	zassert_not_null(net_iface, "Interface is NULL");
 
-	ifaddr = net_if_ipv6_addr_add(iface, &my_addr,
+	ifaddr = net_if_ipv6_addr_add(net_iface, &my_addr,
 				      NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv6 address");
@@ -225,7 +225,7 @@ static void test_join_group(void)
 	/* Using adhoc multicast group outside standard range */
 	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
-	ret = net_ipv6_mld_join(iface, &mcast_addr);
+	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
 
 	if (ignore_already) {
 		zassert_true(ret == 0 || ret == -EALREADY,
@@ -244,7 +244,7 @@ static void test_leave_group(void)
 
 	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
-	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+	ret = net_ipv6_mld_leave(net_iface, &mcast_addr);
 
 	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
 
@@ -557,12 +557,12 @@ ZTEST(net_mld_test_suite, test_no_mld_flag)
 	is_join_msg_ok = false;
 	is_leave_msg_ok = false;
 
-	net_if_flag_set(iface, NET_IF_IPV6_NO_MLD);
+	net_if_flag_set(net_iface, NET_IF_IPV6_NO_MLD);
 
 	/* Using adhoc multicast group outside standard range */
 	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
-	ret = net_ipv6_mld_join(iface, &mcast_addr);
+	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
 	zassert_equal(ret, 0, "Cannot add multicast address");
 
 	/* Let the network stack to proceed */
@@ -570,7 +570,7 @@ ZTEST(net_mld_test_suite, test_no_mld_flag)
 
 	zassert_false(is_join_msg_ok, "Received join message when not expected");
 
-	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+	ret = net_ipv6_mld_leave(net_iface, &mcast_addr);
 	zassert_equal(ret, 0, "Cannot remove multicast address");
 
 	/* Let the network stack to proceed */
@@ -578,7 +578,7 @@ ZTEST(net_mld_test_suite, test_no_mld_flag)
 
 	zassert_false(is_leave_msg_ok, "Received leave message when not expected");
 
-	net_if_flag_clear(iface, NET_IF_IPV6_NO_MLD);
+	net_if_flag_clear(net_iface, NET_IF_IPV6_NO_MLD);
 }
 
 ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, NULL, NULL, NULL);

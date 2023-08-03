@@ -64,22 +64,22 @@ static int test_fd_alloc(void *obj)
 	return fd;
 }
 
-static int test_recv_buf(uint8_t *feed_buf, size_t feed_len,
+static int test_recv_buf(uint8_t *input_buf, size_t input_len,
 			 struct websocket_context *ctx,
 			 uint32_t *msg_type, uint64_t *remaining,
-			 uint8_t *recv_buf, size_t recv_len)
+			 uint8_t *recv_buffer, size_t recv_len)
 {
 	static struct test_data test_data;
 	int fd, ret;
 
 	test_data.ctx = ctx;
-	test_data.input_buf = feed_buf;
-	test_data.input_len = feed_len;
+	test_data.input_buf = input_buf;
+	test_data.input_len = input_len;
 	test_data.input_pos = 0;
 
 	fd = test_fd_alloc(&test_data);
 
-	ret = websocket_recv_msg(fd, recv_buf, recv_len,
+	ret = websocket_recv_msg(fd, recv_buffer, recv_len,
 				 msg_type, remaining, 0);
 
 	z_free_fd(fd);

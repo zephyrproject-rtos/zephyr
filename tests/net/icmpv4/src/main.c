@@ -112,7 +112,7 @@ static const unsigned char icmpv4_echo_req_opt_bad[] = {
 
 static uint8_t current = TEST_ICMPV4_UNKNOWN;
 static struct in_addr my_addr  = { { { 192, 0, 2, 1 } } };
-static struct net_if *iface;
+static struct net_if *net_iface;
 
 static enum net_verdict handle_reply_msg(struct net_pkt *pkt,
 					 struct net_ipv4_hdr *ip_hdr,
@@ -418,12 +418,12 @@ static void *icmpv4_setup(void)
 {
 	struct net_if_addr *ifaddr;
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	if (!iface) {
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	if (!net_iface) {
 		zassert_true(false, "Interface not available");
 	}
 
-	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	ifaddr = net_if_ipv4_addr_add(net_iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		zassert_true(false, "Failed to add address");
 	}
@@ -434,9 +434,9 @@ static void icmpv4_teardown(void *dummy)
 {
 	ARG_UNUSED(dummy);
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	net_if_ipv4_addr_rm(iface, &my_addr);
+	net_if_ipv4_addr_rm(net_iface, &my_addr);
 }
 
 static void icmpv4_send_echo_req(void)
@@ -445,7 +445,7 @@ static void icmpv4_send_echo_req(void)
 
 	current = TEST_ICMPV4_ECHO_REQ;
 
-	pkt = prepare_echo_request(iface);
+	pkt = prepare_echo_request(net_iface);
 	if (!pkt) {
 		zassert_true(false, "EchoRequest packet prep failed");
 	}
@@ -462,7 +462,7 @@ static void icmpv4_send_echo_rep(void)
 
 	net_icmpv4_register_handler(&echo_rep_handler);
 
-	pkt = prepare_echo_reply(iface);
+	pkt = prepare_echo_reply(net_iface);
 	if (!pkt) {
 		zassert_true(false, "EchoReply packet prep failed");
 	}
@@ -480,7 +480,7 @@ ZTEST(net_icmpv4, test_icmpv4_send_echo_req_opt)
 
 	current = TEST_ICMPV4_ECHO_REQ_OPTS;
 
-	pkt = prepare_echo_request_with_options(iface);
+	pkt = prepare_echo_request_with_options(net_iface);
 	if (!pkt) {
 		zassert_true(false, "EchoRequest with opts packet prep failed");
 	}
@@ -495,7 +495,7 @@ ZTEST(net_icmpv4, test_send_echo_req_bad_opt)
 {
 	struct net_pkt *pkt;
 
-	pkt = prepare_echo_request_with_bad_options(iface);
+	pkt = prepare_echo_request_with_bad_options(net_iface);
 	if (!pkt) {
 		zassert_true(false,
 			     "EchoRequest with bad opts packet prep failed");
