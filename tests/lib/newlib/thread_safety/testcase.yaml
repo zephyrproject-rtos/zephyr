@@ -63,3 +63,4 @@ tests:
       - userspace
     min_ram: 192
     timeout: 120
+    platform_exclude: acrn_ehl_crb  # See #61129
