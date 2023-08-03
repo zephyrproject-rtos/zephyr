@@ -20,6 +20,7 @@ common:
     - wio_terminal
     - xiao_esp32c3
     - atsamd20_xpro
+    - ev11l78a
   tags:
     - drivers
     - uart
