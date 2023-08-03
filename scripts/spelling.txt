@@ -274,6 +274,7 @@ compresion||compression
 comression||compression
 comunication||communication
 conbination||combination
+concurent||concurrent
 conditionaly||conditionally
 conected||connected
 connecetd||connected
@@ -319,6 +320,7 @@ couter||counter
 coutner||counter
 cryptocraphic||cryptographic
 cunter||counter
+curent||current
 curently||currently
 cylic||cyclic
 dafault||default
