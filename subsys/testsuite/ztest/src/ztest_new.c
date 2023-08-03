@@ -44,7 +44,7 @@ enum ztest_status {
 /**
  * @brief Tracks the current phase that ztest is operating in.
  */
-ZTEST_DMEM enum ztest_phase phase = TEST_PHASE_FRAMEWORK;
+ZTEST_DMEM enum ztest_phase cur_phase = TEST_PHASE_FRAMEWORK;
 
 static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
@@ -303,43 +303,43 @@ static jmp_buf test_suite_fail;
 
 void ztest_test_fail(void)
 {
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
-		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
 		longjmp(test_suite_fail, 1);
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
-		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
 		longjmp(test_fail, 1);
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
 		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
 
 void ztest_test_pass(void)
 {
-	if (phase == TEST_PHASE_TEST) {
+	if (cur_phase == TEST_PHASE_TEST) {
 		longjmp(test_pass, 1);
 	}
 	PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
-	      get_friendly_phase_name(phase));
+	      get_friendly_phase_name(cur_phase));
 	longjmp(stack_fail, 1);
 }
 
 void ztest_test_skip(void)
 {
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
 		longjmp(test_skip, 1);
 	default:
 		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
@@ -348,19 +348,19 @@ void ztest_test_expect_fail(void)
 {
 	failed_expectation = true;
 
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
-		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
 		break;
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
-		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
 		break;
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
 		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
@@ -445,7 +445,7 @@ static void test_finalize(void)
 
 void ztest_test_fail(void)
 {
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
 		__ztest_set_test_result(ZTEST_RESULT_SUITE_FAIL);
 		break;
@@ -456,7 +456,7 @@ void ztest_test_fail(void)
 		break;
 	default:
 		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
 	}
@@ -464,16 +464,16 @@ void ztest_test_fail(void)
 
 void ztest_test_pass(void)
 {
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_TEST:
 		__ztest_set_test_result(ZTEST_RESULT_PASS);
 		test_finalize();
 		break;
 	default:
 		PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
-		if (phase == TEST_PHASE_BEFORE) {
+		if (cur_phase == TEST_PHASE_BEFORE) {
 			test_finalize();
 		}
 	}
@@ -481,7 +481,7 @@ void ztest_test_pass(void)
 
 void ztest_test_skip(void)
 {
-	switch (phase) {
+	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
 		__ztest_set_test_result(ZTEST_RESULT_SUITE_SKIP);
 		break;
@@ -492,7 +492,7 @@ void ztest_test_skip(void)
 		break;
 	default:
 		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(phase));
+		      get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
 	}
@@ -717,8 +717,8 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 		memset(tests_to_run, 0, ZTEST_TEST_COUNT * sizeof(struct ztest_unit_test *));
 		z_ztest_shuffle((void **)tests_to_run, (intptr_t)_ztest_unit_test_list_start,
 				ZTEST_TEST_COUNT, sizeof(struct ztest_unit_test));
-		for (size_t i = 0; i < ZTEST_TEST_COUNT; ++i) {
-			test = tests_to_run[i];
+		for (size_t j = 0; j < ZTEST_TEST_COUNT; ++j) {
+			test = tests_to_run[j];
 			/* Make sure that the test belongs to this suite */
 			if (strcmp(suite->name, test->test_suite_name) != 0) {
 				continue;
@@ -1008,7 +1008,7 @@ void z_impl___ztest_set_test_result(enum ztest_result new_result)
 
 void z_impl___ztest_set_test_phase(enum ztest_phase new_phase)
 {
-	phase = new_phase;
+	cur_phase = new_phase;
 }
 
 #ifdef CONFIG_USERSPACE
