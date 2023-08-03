@@ -2,7 +2,7 @@
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2017 Justin Watson
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,15 +180,7 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 }
 
-/**
- * @brief Perform basic hardware initialization at boot.
- *
- * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
- */
-static int atmel_sam4e_init(void)
+void z_arm_platform_init(void)
 {
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
@@ -202,8 +194,4 @@ static int atmel_sam4e_init(void)
 
 	/* Setup system clocks. */
 	clock_init();
-
-	return 0;
 }
-
-SYS_INIT(atmel_sam4e_init, PRE_KERNEL_1, 0);
