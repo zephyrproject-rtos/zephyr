@@ -393,10 +393,10 @@ void ztest_skip_failed_assumption(void);
 		.thread_options = t_options,                                                       \
 		.stats = &z_ztest_unit_test_stats_##suite##_##fn                                   \
 	};                                                                                         \
-	static void _##suite##_##fn##_wrapper(void *data)                                          \
+	static void _##suite##_##fn##_wrapper(void *wrapper_data)                                  \
 	{                                                                                          \
-		COND_CODE_1(use_fixture, (suite##_##fn((struct suite##_fixture *)data);),          \
-			    (ARG_UNUSED(data); suite##_##fn();))                                   \
+		COND_CODE_1(use_fixture, (suite##_##fn((struct suite##_fixture *)wrapper_data);),  \
+			    (ARG_UNUSED(wrapper_data); suite##_##fn();))                           \
 	}                                                                                          \
 	static inline void suite##_##fn(                                                           \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)))
