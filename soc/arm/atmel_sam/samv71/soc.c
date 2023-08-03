@@ -226,10 +226,15 @@ static ALWAYS_INLINE void clock_init(void)
 
 void z_arm_platform_init(void)
 {
-	SCB_EnableICache();
-
-	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_ICACHE)) {
+		SCB_EnableICache();
+	} else {
+		SCB_DisableICache();
+	}
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_DCACHE)) {
 		SCB_EnableDCache();
+	} else {
+		SCB_DisableDCache();
 	}
 
 	/*
