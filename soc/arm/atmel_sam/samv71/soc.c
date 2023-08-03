@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -224,15 +224,7 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 }
 
-/**
- * @brief Perform basic hardware initialization at boot.
- *
- * This needs to be run at the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
- */
-static int atmel_samv71_init(void)
+void z_arm_platform_init(void)
 {
 	SCB_EnableICache();
 
@@ -250,7 +242,18 @@ static int atmel_samv71_init(void)
 
 	/* Setup system clocks */
 	clock_init();
+}
 
+/**
+ * @brief Perform basic hardware initialization at boot.
+ *
+ * This needs to be run at the very beginning.
+ * So the init priority has to be 0 (zero).
+ *
+ * @return 0
+ */
+static int atmel_samv71_init(void)
+{
 	/* Check that the CHIP CIDR matches the HAL one */
 	if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
 		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
