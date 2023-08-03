@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
 			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;

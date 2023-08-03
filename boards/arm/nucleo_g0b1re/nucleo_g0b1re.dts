@@ -24,7 +24,7 @@
 		zephyr,canbus = &fdcan1;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;

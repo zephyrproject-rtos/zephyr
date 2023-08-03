@@ -21,7 +21,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
