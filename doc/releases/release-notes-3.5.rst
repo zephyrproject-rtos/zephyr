@@ -50,6 +50,8 @@ Stable API changes in this release
 New APIs in this release
 ========================
 
+* Introduced MCUmgr client support with handlers for img_mgmt and os_mgmt.
+
 Kernel
 ******
 
@@ -302,6 +304,23 @@ Libraries / Subsystems
     supported in function handlers by setting ``mg_translate_error`` of
     :c:struct:`mgmt_group` when registering a transport. See
     :c:type:`smp_translate_error_fn` for function details.
+
+  * Fixed an issue with MCUmgr img_mgmt group whereby the size of the upload in
+    the initial packet was not checked.
+
+  * Fixed an issue with MCUmgr fs_mgmt group whereby some status codes were not
+    checked properly, this meant that the error returned might not be the
+    correct error, but would only occur in situations where an error was
+    already present.
+
+  * Fixed an issue whereby the SMP response function did not check to see if
+    the initial zcbor map was created successfully.
+
+  * Fixes an issue with MCUmgr shell_mgmt group whereby the length of a
+    received command was not properly checked.
+
+  * Added optional mutex locking support to MCUmgr img_mgmt group, which can
+    be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_MUTEX`.
 
 * File systems
 
