@@ -276,7 +276,7 @@ The merging of pull requests in the main branch of a module
 repository must be coupled with the corresponding manifest
 file update in the zephyr main tree.
 
-**Issue Reporting:** GitHub issues are intentionally disabled in module
+**Issue Reporting:** `GitHub issues`_ are intentionally disabled in module
 repositories, in
 favor of a centralized policy for issue reporting. Tickets concerning, for
 example, bugs or enhancements in modules shall be opened in the main
@@ -625,7 +625,7 @@ variables. For example:
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
-It is possible to append values to a Zephyr CMake list variable from the module's first
+It is possible to append values to a Zephyr `CMake list`_ variable from the module's first
 CMakeLists.txt file.
 To do so, append the value to the list and then set the list in the PARENT_SCOPE
 of the CMakeLists.txt file. For example, to append ``bar`` to the ``FOO_LIST`` variable in the
@@ -671,7 +671,7 @@ example:
 
   include(${SYSBUILD_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
-It is possible to append values to a Zephyr CMake list variable from the
+It is possible to append values to a Zephyr `CMake list`_ variable from the
 module's first CMakeLists.txt file.
 To do so, append the value to the list and then set the list in the
 PARENT_SCOPE of the CMakeLists.txt file. For example, to append ``bar`` to the
@@ -794,7 +794,7 @@ Create a ``MODULE_EXT_ROOT`` with the following structure
            └── Kconfig
 
 and then build your application by specifying ``-DMODULE_EXT_ROOT`` parameter to
-the CMake build system. The ``MODULE_EXT_ROOT`` accepts a CMake list of roots as
+the CMake build system. The ``MODULE_EXT_ROOT`` accepts a `CMake list`_ of roots as
 argument.
 
 A Zephyr module can automatically be added to the ``MODULE_EXT_ROOT``
@@ -1151,5 +1151,4 @@ revision needs to be changed to the commit hash from the module repository.
 
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
-
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
