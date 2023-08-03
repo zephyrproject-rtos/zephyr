@@ -349,7 +349,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	spi_hal_setup_device(hal, hal_dev);
 
 	/* Workaround to handle default state of MISO and MOSI lines */
-#ifndef CONFIG_SOC_ESP32
+#ifndef CONFIG_SOC_SERIES_ESP32
 	if (cfg->line_idle_low) {
 		hw->ctrl.d_pol = 0;
 		hw->ctrl.q_pol = 0;
