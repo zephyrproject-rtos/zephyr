@@ -2291,6 +2291,22 @@ Intel Platforms (Xtensa):
   labels:
     - "platform: Intel ADSP"
 
+Intel Platforms (ISH):
+  status: maintained
+  maintainers:
+    - kwd-doodling
+  collaborators:
+    - teburd
+    - likongintel
+  files:
+    - boards/x86/intel_ish/
+    - soc/x86/intel_ish/
+    - dts/x86/intel/intel_ish*
+    - dts/bindings/*/intel,sedi*
+    - drivers/*/*sedi*
+  labels:
+    - "platform: Intel ISH"
+
 Intel Platforms (Agilex):
   status: maintained
   maintainers:
@@ -3055,6 +3071,18 @@ West:
     - modules/Kconfig.xtensa
   labels:
     - manifest-hal_xtensa
+
+"West project: hal_intel":
+  status: maintained
+  maintainers:
+    - kwd-doodling
+  collaborators:
+    - teburd
+    - likongintel
+  files:
+    - modules/Kconfig.intel
+  labels:
+    - manifest-hal_intel
 
 "West project: libmetal":
   status: odd fixes
