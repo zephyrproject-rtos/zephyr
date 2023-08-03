@@ -22,7 +22,7 @@ struct busy_sim_data {
 	busy_sim_cb_t cb;
 };
 
-static struct k_work work;
+static struct k_work sim_work;
 static struct ring_buf rnd_rbuf;
 static uint8_t rnd_buf[BUFFER_SIZE];
 
@@ -84,7 +84,7 @@ static uint32_t get_timeout(bool idle)
 				   (uint8_t *)&rand_val,
 				   sizeof(rand_val));
 		if (len < sizeof(rand_val)) {
-			k_work_submit(&work);
+			k_work_submit(&sim_work);
 			rand_val = 0;
 		}
 	}
@@ -141,7 +141,7 @@ void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
 	data->idle_delta = idle_delta;
 
 	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
-		err = k_work_submit(&work);
+		err = k_work_submit(&sim_work);
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
@@ -159,7 +159,7 @@ void busy_sim_stop(void)
 	const struct busy_sim_config *config = busy_sim_dev->config;
 
 	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
-		k_work_cancel(&work);
+		k_work_cancel(&sim_work);
 	}
 
 	err = counter_stop(config->counter);
@@ -191,7 +191,7 @@ static int busy_sim_init(const struct device *dev)
 	}
 
 	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
-		k_work_init(&work, rng_pool_work_handler);
+		k_work_init(&sim_work, rng_pool_work_handler);
 		ring_buf_init(&rnd_rbuf, BUFFER_SIZE, rnd_buf);
 	}
 
