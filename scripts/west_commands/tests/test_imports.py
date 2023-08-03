@@ -30,7 +30,7 @@ def test_runner_imports():
                     'linkserver',
                     'mdb-nsim',
                     'mdb-hw',
-                    'misc-flasher',
+                    'misc',
                     'native_gdb',
                     'nios2',
                     'nrfjprog',

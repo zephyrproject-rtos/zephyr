@@ -27,7 +27,11 @@ class MiscFlasher(ZephyrBinaryRunner):
 
     @classmethod
     def name(cls):
-        return 'misc-flasher'
+        return 'misc'
+
+    @classmethod
+    def deprecated_names(cls):
+        return ['misc-flasher']
 
     @classmethod
     def capabilities(cls):
