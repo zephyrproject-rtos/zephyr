@@ -243,6 +243,7 @@
 /drivers/adc/adc_ads1x1x.c                @XenuIsWatching
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/adc/adc_rpi_pico.c               @soburi
+/drivers/adc/*ads114s0x*                  @benediktibk
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
 /drivers/auxdisplay/*                      @thedjnK
@@ -322,6 +323,7 @@
 /drivers/gpio/*esp32*                     @sylvioalves
 /drivers/gpio/*rpi_pico*                  @yonsch
 /drivers/gpio/*xlnx_ps*                   @ibirnbaum
+/drivers/gpio/*ads114s0x*                 @benediktibk
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
@@ -568,6 +570,7 @@
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
+/dts/bindings/adc/*ads114s08.yaml         @benediktibk
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/counter/snps,dw-timers.yaml @pbalsundar
@@ -604,10 +607,12 @@
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/bindings/reset/intel,socfpga-reset.yaml    @nbalabak
+/dts/bindings/gpio/*ads114s0x*            @benediktibk
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/zephyr/drivers/adc.h                    @anangl
+/include/zephyr/drivers/adc/ads114s0x.h   @benediktibk
 /include/zephyr/drivers/auxdisplay.h       @thedjnK
 /include/zephyr/drivers/can.h                    @alexanderwachter @henrikbrixandersen
 /include/zephyr/drivers/can/                     @alexanderwachter @henrikbrixandersen
@@ -673,6 +678,7 @@
 /include/zephyr/dt-bindings/pinctrl/esp*         @sylvioalves
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/zephyr/dt-bindings/usb/usb.h            @galak
+/include/zephyr/dt-bindings/adc/ads114s0x_adc.h  @benediktibk
 /include/zephyr/drivers/emul.h                   @sjg20
 /include/zephyr/fs/                              @nashif @de-nordic
 /include/zephyr/init.h                           @nashif @andyross
