@@ -147,6 +147,13 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
+    # Set up runner logging to delegate to west.log commands.
+    logger = logging.getLogger('runners')
+    logger.setLevel(LOG_LEVEL)
+    if not logger.hasHandlers():
+        # Only add a runners log handler if none has been added already.
+        logger.addHandler(WestLogHandler())
+
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
         return
@@ -190,12 +197,6 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
                                 cache)
     runner_name = runner_cls.name()
 
-    # Set up runner logging to delegate to west.log commands.
-    logger = logging.getLogger('runners')
-    logger.setLevel(LOG_LEVEL)
-    if not logger.hasHandlers():
-        # Only add a runners log handler if none has been added already.
-        logger.addHandler(WestLogHandler())
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
