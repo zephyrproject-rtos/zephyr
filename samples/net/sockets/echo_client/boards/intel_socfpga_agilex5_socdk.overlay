@@ -1,0 +1,22 @@
+/*
+ * Copyright (C) 2024 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The overlay file should be used to enable any
+ * dts nodes required by this application for this
+ * board.
+ */
+
+&xgmac0 {
+	status = "okay";
+	local-mac-address = [06 00 00 00 00 01];
+};
+
+&mdio0  {
+	status = "okay";
+
+	phy0: phy@0 {
+		status = "okay";
+	};
+};
