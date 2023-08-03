@@ -13,6 +13,7 @@ config SOC_SERIES_SAM3X
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_SAM
+	select PLATFORM_SPECIFIC_INIT
 	select ASF
 	help
 	  Enable support for Atmel SAM3X Cortex-M3 microcontrollers.

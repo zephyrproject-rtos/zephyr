@@ -12,6 +12,7 @@ config SOC_SERIES_SAME70
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select SOC_FAMILY_SAM
+	select PLATFORM_SPECIFIC_INIT
 	select ASF
 	select HAS_SWO
 	select XIP

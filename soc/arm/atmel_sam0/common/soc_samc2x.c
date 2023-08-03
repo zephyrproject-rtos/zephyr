@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,14 +43,10 @@ static void gclks_init(void)
 			     | GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samc_init(void)
+void z_arm_platform_init(void)
 {
 	flash_waitstates_init();
 	osc48m_init();
 	mclk_init();
 	gclks_init();
-
-	return 0;
 }
-
-SYS_INIT(atmel_samc_init, PRE_KERNEL_1, 0);

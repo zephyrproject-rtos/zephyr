@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2023 Ionut Catalin Pavel <iocapa@iocapa.com>
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -254,7 +255,7 @@ static inline void osc8m_disable(void)
 }
 #endif
 
-static int atmel_samd_init(void)
+void z_arm_platform_init(void)
 {
 	osc8m_init();
 	osc32k_init();
@@ -265,8 +266,4 @@ static int atmel_samd_init(void)
 	gclk_main_configure();
 	gclk_adc_configure();
 	osc8m_disable();
-
-	return 0;
 }
-
-SYS_INIT(atmel_samd_init, PRE_KERNEL_1, 0);
