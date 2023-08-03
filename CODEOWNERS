@@ -243,6 +243,7 @@
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/adc/adc_rpi_pico.c               @soburi
 /drivers/adc/*ads114s0x*                  @benediktibk
+/drivers/adc/*max11102_17*                @benediktibk
 /drivers/audio/*nrfx*                     @anangl
 /drivers/auxdisplay/*pt6314*              @xingrz
 /drivers/auxdisplay/*                      @thedjnK
@@ -576,6 +577,7 @@
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/adc/*ads114s08.yaml         @benediktibk
+/dts/bindings/adc/*max111*                @benediktibk
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/counter/snps,dw-timers.yaml @pbalsundar
