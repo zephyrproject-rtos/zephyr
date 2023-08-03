@@ -30,6 +30,7 @@ available configurations are listed below:
 * ``nsim_sem`` - ARC EM core v4.0 with secure features (thus "SEM", i.e. Secure EM) and MPUv4
 * ``nsim_hs`` - ARCv2 HS core v2.1 with two register banks, FastIRQ's and MPUv3
 * ``nsim_hs_smp`` - Dual-core ARCv2 HS core v2.1 with two register banks, FastIRQ's and MPUv3
+* ``nsim_vpx5`` - ARCv2 VPX5 core, close to vpx5_integer_full template
 * ``nsim_hs5x`` - 32-bit ARCv3 HS core with rich set of options
 * ``nsim_hs6x`` - 64-bit ARCv3 HS core with rich set of options
 
