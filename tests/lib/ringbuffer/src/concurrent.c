@@ -26,7 +26,7 @@
 
 static ZTEST_BMEM SYS_MUTEX_DEFINE(mutex);
 RING_BUF_ITEM_DECLARE(ringbuf, RINGBUFFER);
-static uint32_t output[LENGTH];
+static uint32_t data_output[LENGTH];
 static uint32_t databuffer1[LENGTH];
 static uint32_t databuffer2[LENGTH];
 
@@ -74,7 +74,7 @@ static bool user_handler(void *user_data, uint32_t iter_cnt, bool last, int prio
 	/* Try to write data into the ringbuffer */
 	data_write(buffer);
 	/* Try to get data from the ringbuffer and check */
-	data_read(output);
+	data_read(data_output);
 
 	return true;
 }
