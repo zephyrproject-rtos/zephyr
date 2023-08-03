@@ -1,17 +1,11 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/nxp/nxp_s32z27x_r52.dtsi>
-#include "s32z270dc2_r52-pinctrl.dtsi"
-
-&uart0 {
-	pinctrl-0 = <&uart0_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
+#include "s32z270dc2_r52-pinctrl-common.dtsi"
 
 &spi0 {
 	clock-frequency = <100000000>;

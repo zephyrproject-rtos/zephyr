@@ -111,9 +111,8 @@ The Cortex-R52 cores are configured to run at 800 MHz.
 Serial Port
 ===========
 
-The SoC has 12 LINFlexD instances that can be used in UART mode. Instance 0
-(defined as ``uart0`` in devicetree) is configured for the console and the
-remaining are disabled and not configured.
+The SoC has 12 LINFlexD instances that can be used in UART mode. The console can
+be accessed by default on the USB micro-B connector `J119`.
 
 Watchdog
 ========
@@ -188,6 +187,14 @@ For example, you can build and run the :ref:`hello_world` sample for the board
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z270dc2_rtu0_r52
+   :goals: build flash
+
+In case you are using a newer PCB revision, you have to use an adapted board
+definition as the default PCB revision is B. For example, if using revision D:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: s32z270dc2_rtu0_r52@D
    :goals: build flash
 
 You should see the following message in the terminal:

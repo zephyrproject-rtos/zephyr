@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,17 @@
 		};
 		group2 {
 			pinmux = <PB11_LIN_0_RX>;
+			input-enable;
+		};
+	};
+
+	uart9_default: uart9_default {
+		group1 {
+			pinmux = <PM6_LIN_9_TX>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PM7_LIN_9_RX>;
 			input-enable;
 		};
 	};
