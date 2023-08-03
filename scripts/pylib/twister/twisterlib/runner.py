@@ -359,6 +359,10 @@ class CMake:
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
+        if self.instance.testsuite.required_snippets:
+            cmake_opts = ['-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))]
+            cmake_args.extend(cmake_opts)
+
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
 

@@ -16,6 +16,8 @@ import logging
 import copy
 import shutil
 import random
+import snippets
+from pathlib import Path
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -818,6 +820,46 @@ class TestPlan:
 
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
+
+                if ts.required_snippets:
+                    missing_snippet = False
+                    snippet_args = {"snippets": ts.required_snippets}
+                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)])
+
+                    # Search and check that all required snippet files are found
+                    for this_snippet in snippet_args['snippets']:
+                        if this_snippet not in found_snippets:
+                            logger.error(f"Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
+                            instance.status = "error"
+                            instance.reason = f"Snippet {this_snippet} not found"
+                            missing_snippet = True
+                            break
+
+                    if not missing_snippet:
+                        # Look for required snippets and check that they are applicable for these
+                        # platforms/boards
+                        for this_snippet in found_snippets:
+                            matched_snippet_board = False
+
+                            # If the "appends" key is present with at least one entry then this
+                            # snippet applies to all boards and further platform-specific checks
+                            # are not required
+                            if found_snippets[this_snippet].appends:
+                                continue
+
+                            for this_board in found_snippets[this_snippet].board2appends:
+                                if this_board.startswith('/'):
+                                    match = re.search(this_board[1:-1], plat.name)
+                                    if match is not None:
+                                        matched_snippet_board = True
+                                        break
+                                elif this_board == plat.name:
+                                    matched_snippet_board = True
+                                    break
+
+                            if matched_snippet_board is False:
+                                instance.add_filter("Snippet not supported", Filters.PLATFORM)
+                                break
 
                 # platform_key is a list of unique platform attributes that form a unique key a test
                 # will match against to determine if it should be scheduled to run. A key containing a
