@@ -9,7 +9,7 @@ config SOC_SERIES_M46X
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
-	select CORTEX_M_SYSTICK
+	select CORTEX_M_SYSTICK if SYS_CLOCK_EXISTS
 	select SOC_FAMILY_NUMAKER
 	help
 	  Enable support for Nuvoton M46X MCU series
