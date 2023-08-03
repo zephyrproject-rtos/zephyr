@@ -924,7 +924,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		goto err_unlock;
 	}
 
-	__ASSERT_NO_MSG(put_idx <= cbs->num_tx);
+	__ASSERT_NO_MSG(put_idx < cbs->num_tx);
 	cbs->tx[put_idx].function = callback;
 	cbs->tx[put_idx].user_data = user_data;
 
