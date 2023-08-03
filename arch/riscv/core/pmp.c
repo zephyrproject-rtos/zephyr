@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
-static void print_pmp_entries(unsigned int start, unsigned int end,
+static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
 {
@@ -64,7 +64,7 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 	unsigned int index;
 
 	LOG_DBG("PMP %s:", banner);
-	for (index = start; index < end; index++) {
+	for (index = pmp_start; index < pmp_end; index++) {
 		unsigned long start, end, tmp;
 
 		switch (pmp_n_cfg[index] & PMP_A) {
