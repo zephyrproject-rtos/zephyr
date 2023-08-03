@@ -493,11 +493,11 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 }
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
+void k_thread_time_slice_set(struct k_thread *th, int32_t thread_slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data)
 {
 	K_SPINLOCK(&sched_spinlock) {
-		th->base.slice_ticks = slice_ticks;
+		th->base.slice_ticks = thread_slice_ticks;
 		th->base.slice_expired = expired;
 		th->base.slice_data = data;
 	}
