@@ -2954,6 +2954,7 @@ sub process {
 
 # Check for various typo / spelling mistakes
 		if (defined($misspellings) &&
+		    ($spelling_file !~ /$realfile/) &&
 		    ($in_commit_log || $line =~ /^(?:\+|Subject:)/i)) {
 			while ($rawline =~ /(?:^|[^a-z@])($misspellings)(?:\b|$|[^a-z@])/gi) {
 				my $typo = $1;
