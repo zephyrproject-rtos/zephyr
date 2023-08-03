@@ -1046,7 +1046,6 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
  */
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
-	struct nrf_usbd_ep_ctx *ep_ctx;
 	struct usbd_event evt = {0};
 	bool put_evt = false;
 
@@ -1080,7 +1079,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		}
 		break;
 
-	case NRFX_USBD_EVT_EPTRANSFER:
+	case NRFX_USBD_EVT_EPTRANSFER: {
+		struct nrf_usbd_ep_ctx *ep_ctx;
+
 		ep_ctx = endpoint_ctx(p_event->data.eptransfer.ep);
 		switch (ep_ctx->cfg.type) {
 		case USB_DC_EP_CONTROL:
@@ -1097,6 +1098,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 			break;
 		}
 		break;
+	}
 
 	case NRFX_USBD_EVT_SETUP: {
 		nrfx_usbd_setup_t drv_setup;
