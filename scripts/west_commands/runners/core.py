@@ -448,6 +448,14 @@ class ZephyrBinaryRunner(abc.ABC):
         the target architecture/board (like xtensa etc.).'''
 
     @classmethod
+    def deprecated_names(cls) -> List[str]:
+        '''Any deprecated names that the runner should be known by.
+
+        Attempts to use the runner by one of these names will work,
+        but will log a warning.'''
+        return []
+
+    @classmethod
     def capabilities(cls) -> RunnerCaps:
         '''Returns a RunnerCaps representing this runner's capabilities.
 

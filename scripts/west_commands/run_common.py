@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
+# Copyright (c) 2023 Ampere Computing
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -190,21 +191,21 @@ def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
     runners_yaml = load_runners_yaml(yaml_path)
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
-    # runners.yaml and command line arguments.
-    runner_cls = use_runner_cls(command, board, user_args, runners_yaml,
-                                cache)
+    # runners.yaml, and its command line arguments from yaml.
+    runner_cls, runners_yaml_args = get_runner_and_yaml_args(
+        command, board, user_args, yaml_path, runners_yaml, cache)
     runner_name = runner_cls.name()
-
-
-    # If the user passed -- to force the parent argument parser to stop
-    # parsing, it will show up here, and needs to be filtered out.
-    runner_args = [arg for arg in user_runner_args if arg != '--']
 
     # Arguments in this order to allow specific to override general:
     #
     # - runner-specific runners.yaml arguments
     # - user-provided command line arguments
-    final_argv = runners_yaml['args'][runner_name] + runner_args
+    #
+    # Note that if the user passed -- to force the parent argument
+    # parser to stop parsing, it will show up here, and needs to be
+    # filtered out.
+    final_argv = (runners_yaml_args +
+                  [arg for arg in user_runner_args if arg != '--'])
 
     # 'user_args' contains parsed arguments which are:
     #
@@ -324,36 +325,58 @@ def load_runners_yaml(path):
 
     return content
 
-def use_runner_cls(command, board, args, runners_yaml, cache):
-    # Get the ZephyrBinaryRunner class from its name, and make sure it
-    # supports the command. Print a message about the choice, and
-    # return the class.
+def get_runner_and_yaml_args(command, board, args, yaml_path, runners_yaml,
+                             cache):
+    # Return a tuple containing:
+    #
+    #    (ZephyrBinaryRunner class,
+    #     argument info from runners_yaml)
+    #
+    # Errors are fatal. This function handles conversion from
+    # deprecated runner names.
 
-    runner = args.runner or runners_yaml.get(command.runner_key)
-    if runner is None:
+    # This board.cmake variable is just for informational messages.
+    if 'BOARD_DIR' in cache:
+        board_cmake = Path(cache['BOARD_DIR']) / 'board.cmake'
+    else:
+        board_cmake = 'board.cmake'
+
+    # Resolve the runner by name, handling deprecation.
+    if args.runner is not None:
+        requested_name = args.runner
+        requested_name_source = 'on the command line'
+    elif command.runner_key in runners_yaml:
+        requested_name = runners_yaml[command.runner_key]
+        requested_name_source = f'in {yaml_path}'
+    else:
         log.die(f'no {command.name} runner available for board {board}. '
                 "Check the board's documentation for instructions.")
+    try:
+        runner_cls = get_runner_cls(requested_name)
+    except ValueError:
+        log.die(f'west {command.name}: unknown runner name "{requested_name}" '
+                f'given {requested_name_source}')
+    _banner(f'west {command.name}: using runner {runner_cls.name()}')
 
-    _banner(f'west {command.name}: using runner {runner}')
-
-    available = runners_yaml.get('runners', [])
-    if runner not in available:
-        if 'BOARD_DIR' in cache:
-            board_cmake = Path(cache['BOARD_DIR']) / 'board.cmake'
-        else:
-            board_cmake = 'board.cmake'
-        log.err(f'board {board} does not support runner {runner}',
+    # Get the runner configuration info from runners.yaml.
+    # We use the runner names from runners.yaml here, assuming
+    # they are consistent.
+    for available_name in runners_yaml.get('runners', []):
+        if available_name == runner_cls.name() or \
+           available_name in runner_cls.deprecated_names():
+            yaml_args = runners_yaml['args'][available_name]
+            break
+    else:
+        log.err(f'board {board} does not support runner {requested_name}',
                 fatal=True)
         log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
         sys.exit(1)
-    try:
-        runner_cls = get_runner_cls(runner)
-    except ValueError as e:
-        log.die(e)
-    if command.name not in runner_cls.capabilities().commands:
-        log.die(f'runner {runner} does not support command {command.name}')
 
-    return runner_cls
+    if command.name not in runner_cls.capabilities().commands:
+        log.die(f'runner {runner_cls.name()} does not support command '
+                f'{command.name}')
+
+    return runner_cls, yaml_args
 
 def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
     # Get a RunnerConfig object for the current run. yaml_config is
@@ -524,25 +547,47 @@ def dump_runner_args(group, runners_yaml, indent=''):
 
 def dump_all_runner_context(command, yaml_path, runners_yaml,
                             board, build_dir):
-    all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners() if
-               command.name in cls.capabilities().commands}
-    available = runners_yaml['runners']
-    available_cls = {r: all_cls[r] for r in available if r in all_cls}
-    default_runner = runners_yaml[command.runner_key]
+    gotten = {}                 # runner name -> class
+    def get_runner(name):
+        # Helper function for getting a runner by name that
+        # caches values so we only warn once on deprecated
+        # runner names.
+        if name not in gotten:
+            gotten[name] = get_runner_cls(name)
+        return gotten[name]
 
     log.inf(f'zephyr runners which support "west {command.name}":',
             colorize=True)
+    all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners() if
+               command.name in cls.capabilities().commands}
     dump_wrapped_lines(', '.join(all_cls.keys()), INDENT)
     log.inf()
     dump_wrapped_lines('Note: not all may work with this board and build '
                        'directory. Available runners are listed below.',
                        INDENT)
 
-    log.inf(f'available runners in runners.yaml:',
-            colorize=True)
-    dump_wrapped_lines(', '.join(available), INDENT)
+    log.inf('available runners in runners.yaml:', colorize=True)
+    available_yaml = runners_yaml['runners']
+    available_cls = {}
+    for name in available_yaml:
+        try:
+            cls = get_runner(name)
+        except ValueError:
+            log.err(f'runners.yaml contains unknown runner: {name}')
+            continue
+        # Use the non-deprecated name, if applicable.
+        available_cls[cls.name()] = cls
+    dump_wrapped_lines(', '.join(available_cls), INDENT)
+
     log.inf(f'default runner in runners.yaml:', colorize=True)
-    log.inf(INDENT + default_runner)
+    default_name_yaml = runners_yaml[command.runner_key]
+    try:
+        default_runner = get_runner(default_name_yaml).name()
+    except ValueError:
+        log.err(f'runners.yaml contains unknown default runner: {default_name_yaml}')
+    else:
+        log.inf(INDENT + default_runner)
+
     log.inf('common runner configuration:', colorize=True)
     runner_config = get_runner_config(build_dir, yaml_path, runners_yaml)
     for field, value in zip(runner_config._fields, runner_config):
@@ -551,7 +596,7 @@ def dump_all_runner_context(command, yaml_path, runners_yaml,
     for cls in available_cls.values():
         dump_runner_context(command, cls, runners_yaml, INDENT)
 
-    if len(available) > 1:
+    if len(available_cls) > 1:
         log.inf()
         log.inf('Note: use -r RUNNER to limit information to one runner.')
 

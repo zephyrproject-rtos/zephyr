@@ -61,11 +61,17 @@ _names = [
 for _name in _names:
     _import_runner_module(_name)
 
-def get_runner_cls(runner):
+def get_runner_cls(runner_name):
     '''Get a runner's class object, given its name.'''
-    for cls in ZephyrBinaryRunner.get_runners():
-        if cls.name() == runner:
+    all_runners = ZephyrBinaryRunner.get_runners()
+    for cls in all_runners:
+        if cls.name() == runner_name:
             return cls
-    raise ValueError('unknown runner "{}"'.format(runner))
+    for cls in all_runners:
+        if runner_name in cls.deprecated_names():
+            _logger.warning(f'runner name "{runner_name}" is deprecated, '
+                            f'use "{cls.name()}" instead')
+            return cls
+    raise ValueError('unknown runner "{}"'.format(runner_name))
 
 __all__ = ['ZephyrBinaryRunner', 'get_runner_cls']
