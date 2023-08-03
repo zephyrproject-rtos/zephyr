@@ -325,6 +325,7 @@
 /drivers/gpio/*xlnx_ps*                   @ibirnbaum
 /drivers/gpio/*ads114s0x*                 @benediktibk
 /drivers/gpio/*bd8lb600fs*                @benediktibk
+/drivers/gpio/*pcal64xxa*                 @benediktibk
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
@@ -608,6 +609,7 @@
 /dts/bindings/sip_svc/                    @maheshraotm
 /dts/bindings/cpu/intel,niosv.yaml        @sweeaun
 /dts/bindings/reset/intel,socfpga-reset.yaml    @nbalabak
+/dts/bindings/gpio/*pcal64*               @benediktibk
 /dts/bindings/gpio/*bd8lb600fs*           @benediktibk
 /dts/bindings/gpio/*ads114s0x*            @benediktibk
 /dts/common/                              @galak
