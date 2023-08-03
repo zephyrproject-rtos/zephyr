@@ -133,35 +133,35 @@ static int bazfoo_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static int bazfoo_connected(struct usbh_contex *const uhs_ctx)
+static int bazfoo_connected(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: USB device connected");
 
 	return 0;
 }
 
-static int bazfoo_removed(struct usbh_contex *const uhs_ctx)
+static int bazfoo_removed(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: USB device removed");
 
 	return 0;
 }
 
-static int bazfoo_rwup(struct usbh_contex *const uhs_ctx)
+static int bazfoo_rwup(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus remote wakeup event");
 
 	return 0;
 }
 
-static int bazfoo_suspended(struct usbh_contex *const uhs_ctx)
+static int bazfoo_suspended(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus suspended");
 
 	return 0;
 }
 
-static int bazfoo_resumed(struct usbh_contex *const uhs_ctx)
+static int bazfoo_resumed(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus resumed");
 
