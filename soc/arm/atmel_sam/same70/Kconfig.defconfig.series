@@ -38,7 +38,4 @@ config NUM_IRQS
 	default 74 if SOC_ATMEL_SAME70_REVB
 	default 71
 
-config CACHE_MANAGEMENT
-	default y
-
 endif # SOC_SERIES_SAME70
