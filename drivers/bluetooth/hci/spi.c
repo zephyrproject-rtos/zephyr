@@ -500,15 +500,24 @@ out:
 
 static int bt_spi_open(void)
 {
+	int err;
+
 	/* Configure RST pin and hold BLE in Reset */
-	gpio_pin_configure_dt(&rst_gpio, GPIO_OUTPUT_ACTIVE);
+	err = gpio_pin_configure_dt(&rst_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
-	gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
+	if (err) {
+		return err;
+	}
 
 	gpio_init_callback(&gpio_cb, bt_to_active_isr, BIT(irq_gpio.pin));
-	if (gpio_add_callback(irq_gpio.port, &gpio_cb)) {
-		return -EINVAL;
+	err = gpio_add_callback(irq_gpio.port, &gpio_cb);
+	if (err) {
+		return err;
 	}
 
 	/* Take BLE out of reset */
