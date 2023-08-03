@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "bl5340_dvk_cpuapp_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	chosen {
@@ -25,26 +26,31 @@
 		boot_button0: boot_button {
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			label = "Bootloader button (S4)";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		button1: button_1 {
 			gpios = <&gpio_exp0 0 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 1 (S1)";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 
 		button2: button_2 {
 			gpios = <&gpio_exp0 1 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 2 (S2)";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 
 		button3: button_3 {
 			gpios = <&gpio_exp0 2 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 3 (S9)";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 
 		button4: button_4 {
 			gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 4 (S10)";
+			zephyr,code = <INPUT_KEY_4>;
 		};
 	};
 

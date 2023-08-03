@@ -9,6 +9,7 @@
 #include <nxp/nxp_rt1064.dtsi>
 #include "mimxrt1064_evk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP MIMXRT1064-EVK board";
@@ -64,6 +65,7 @@
 		user_button: button-1 {
 			label = "User SW8";
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

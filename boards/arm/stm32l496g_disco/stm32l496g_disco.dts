@@ -8,6 +8,7 @@
 #include <st/l4/stm32l496Xg.dtsi>
 #include <st/l4/stm32l496a(e-g)ix-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L496G-DISCO board";
@@ -34,22 +35,27 @@
 		joy_sel: joystick_select {
 			label = "joystick select";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpioi 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioi 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpioi 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 

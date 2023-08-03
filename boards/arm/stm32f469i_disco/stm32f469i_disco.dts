@@ -8,6 +8,7 @@
 #include <st/f4/stm32f469Xi.dtsi>
 #include <st/f4/stm32f469nihx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F469I-DISCO board";
@@ -46,6 +47,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

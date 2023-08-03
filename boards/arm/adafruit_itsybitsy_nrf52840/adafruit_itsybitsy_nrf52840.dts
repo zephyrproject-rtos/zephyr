@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "adafruit_itsybitsy_nrf52840-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Adafruit ItsyBitsy nRF52840 Express";
@@ -37,6 +38,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

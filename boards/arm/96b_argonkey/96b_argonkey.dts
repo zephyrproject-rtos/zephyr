@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f412Xg.dtsi>
 #include <st/f4/stm32f412c(e-g)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Tocoding Argonkey 96boards";
@@ -36,6 +37,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

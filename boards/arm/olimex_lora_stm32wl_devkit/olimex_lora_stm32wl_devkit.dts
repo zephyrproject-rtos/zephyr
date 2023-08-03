@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <olimex/bb-stm32wl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Olimex LoRa STM32WL DevKit";
@@ -32,6 +33,7 @@
 		user_button: button_0 {
 			label = "SW2";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

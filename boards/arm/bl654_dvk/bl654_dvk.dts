@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "bl654_dvk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Laird BL654 Dev Kit";
@@ -50,18 +51,22 @@
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1 (SW1)";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 12 GPIO_PULL_UP>;
 			label = "Push button switch 2 (SW2)";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button3: button_3 {
 			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Push button switch 3 (SW9)";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		button4: button_4 {
 			gpios = <&gpio0 25 GPIO_PULL_UP>;
 			label = "Push button switch 4 (SW10)";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 

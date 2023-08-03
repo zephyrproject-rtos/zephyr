@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "decawave_dwm1001_dev-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Decawave DWM1001-DEV";
@@ -57,6 +58,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

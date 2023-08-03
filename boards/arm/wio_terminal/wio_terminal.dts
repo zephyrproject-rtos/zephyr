@@ -9,6 +9,7 @@
 #include "grove_connectors.dtsi"
 #include "raspberrypi_40pins_connector.dtsi"
 #include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Wio Terminal";
@@ -52,34 +53,42 @@
 		user_button_0: button_0 {
 			label = "User Button 0";
 			gpios = <&portc 26 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_1: button_1 {
 			label = "User Button 1";
 			gpios = <&portc 27 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_button_2: button_2 {
 			label = "User Button 2";
 			gpios = <&portc 28 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&portd 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&portd 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&portd 20 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&portd 12 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&portd 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 

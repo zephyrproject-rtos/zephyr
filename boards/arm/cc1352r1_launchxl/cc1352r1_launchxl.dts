@@ -9,6 +9,7 @@
 #include <ti/cc1352r.dtsi>
 #include "boosterpack_connector.dtsi"
 #include "cc1352r1_launchxl-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
@@ -49,10 +50,12 @@
 		btn0: btn_0 {
 			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
 			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		btn1: btn_1 {
 			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
 			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };

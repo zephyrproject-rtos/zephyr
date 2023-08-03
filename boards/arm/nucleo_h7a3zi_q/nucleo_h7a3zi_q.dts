@@ -8,6 +8,7 @@
 #include <st/h7/stm32h7a3Xi.dtsi>
 #include <st/h7/stm32h7a3z(g-i)txq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32H7A3ZI-Q-NUCLEO board";
@@ -47,6 +48,7 @@
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

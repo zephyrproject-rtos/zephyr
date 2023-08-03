@@ -11,6 +11,7 @@
 /dts-v1/;
 #include <st/l4/stm32l476Xg.dtsi>
 #include <st/l4/stm32l476v(c-e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L476G-DISCO board";
@@ -40,22 +41,27 @@
 		joy_center: joystick_center {
 			label = "joystick center";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpioa 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioa 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpioa 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 

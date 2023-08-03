@@ -7,6 +7,7 @@
 
 #include <arm/gigadevice/gd32f4xx/gd32f450xk.dtsi>
 #include "gd32f450v_start-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "GigaDevice GD32F450V-START";
@@ -31,6 +32,7 @@
 		user_key: user_key {
 			label = "USER_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_lpc55S36_ns.dtsi>
 #include "lpcxpresso55s36-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP LPCXpresso55S36 board";
@@ -54,10 +55,12 @@
 		btn_wk: button_0 {
 			label = "Wakeup button";
 			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
 		btn_usr: button_1 {
 			label = "USR button";
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

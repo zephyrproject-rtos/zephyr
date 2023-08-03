@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "degu_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Degu Evaluation Kit";
@@ -46,14 +47,17 @@
 		button0: button_0 {
 			gpios = <&gpio1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW4";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 

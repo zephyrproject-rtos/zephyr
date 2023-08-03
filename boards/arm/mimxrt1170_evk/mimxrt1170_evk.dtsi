@@ -5,6 +5,7 @@
  */
 
 #include "mimxrt1170_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -35,6 +36,7 @@
 		user_button: button-1 {
 			label = "User SW7";
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

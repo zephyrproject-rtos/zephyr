@@ -8,6 +8,7 @@
 #include <st/f4/stm32f446Xe.dtsi>
 #include <st/f4/stm32f446z(c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F446ZE-NUCLEO board";
@@ -42,6 +43,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

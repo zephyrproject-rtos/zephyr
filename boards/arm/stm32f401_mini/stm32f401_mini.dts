@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f401Xc.dtsi>
 #include <st/f4/stm32f401c(b-c)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STM32 Mini F401";
@@ -32,6 +33,7 @@
 		boot1: button {
 			label = "BOOT1";
 			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

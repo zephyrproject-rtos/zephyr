@@ -8,6 +8,7 @@
 
 #include <espressif/esp32s2/esp32s2_wrover_n4r2.dtsi>
 #include "esp32s2_saola-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "esp32s2_saola";
@@ -31,6 +32,7 @@
 		user_button: user_button {
 			label = "BOOT";
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

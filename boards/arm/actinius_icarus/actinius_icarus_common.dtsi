@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "actinius_icarus_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Actinius Icarus IoT Dev Board";
@@ -59,6 +60,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push Button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

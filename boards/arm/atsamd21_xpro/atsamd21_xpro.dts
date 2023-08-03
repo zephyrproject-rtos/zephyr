@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 #include "atsamd21_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM D21 Xplained Pro";
@@ -47,6 +48,7 @@
 		user_button: button_0 {
 			gpios = <&porta 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

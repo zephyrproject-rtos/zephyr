@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52833_qiaa.dtsi>
 #include "pan1782_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "pan1782-evb";
@@ -49,10 +50,12 @@
 		evb_sw1: evb_sw1 {
 			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW1 on EVB";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		evb_sw2: evb_sw2 {
 			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2 on EVB";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

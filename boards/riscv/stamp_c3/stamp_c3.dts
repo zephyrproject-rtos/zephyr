@@ -8,6 +8,7 @@
 
 #include <espressif/esp32c3/esp32c3_fx4.dtsi>
 #include "stamp_c3-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "M5Stack STAMP-C3";
@@ -31,6 +32,7 @@
 		button0: button0 {
 			label = "BTN";
 			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

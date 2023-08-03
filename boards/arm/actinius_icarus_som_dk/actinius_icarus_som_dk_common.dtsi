@@ -5,6 +5,7 @@
  */
 #include "actinius_icarus_som_dk_common-pinctrl.dtsi"
 #include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Actinius Icarus SoM DK";
@@ -40,6 +41,7 @@
 		button0: button_0 {
 			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push Button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

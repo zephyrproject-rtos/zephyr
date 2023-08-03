@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g4/stm32g474Xe.dtsi>
 #include <st/g4/stm32g474r(b-c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "B-G474E-DPOW1 Discovery board";
@@ -44,22 +45,27 @@
 		joystick_sel: button0 {
 			label = "JOYSTICK_SEL";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joystick_left: button1 {
 			label = "JOYSTICK_LEFT";
 			gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joystick_down: button2 {
 			label = "JOYSTICK_DOWN";
 			gpios = <&gpioc 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joystick_right: button3 {
 			label = "JOYSTICK_RIGHT";
 			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 		joystick_up: button4 {
 			label = "JOYSTICK_UP";
 			gpios = <&gpiob 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 

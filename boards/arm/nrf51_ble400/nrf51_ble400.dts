@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
 #include "nrf51_ble400-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Waveshare BLE400";
@@ -63,11 +64,13 @@
 		button0: button_0 {
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		/* Push button switch 1 KEY2 */
 		button1: button_1 {
 			gpios = <&gpio0 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 

@@ -11,6 +11,7 @@
 /dts-v1/;
 #include <st/l4/stm32l475Xe.dtsi>
 #include <st/l4/stm32l475v(c-e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STM32L475 Pandora Development Board";
@@ -51,18 +52,22 @@
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiod 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiod 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiod 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
 };

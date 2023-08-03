@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f412Xg.dtsi>
 #include <st/f4/stm32f412r(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "MXChip AZ3166 IoT Developer Kit";
@@ -80,11 +81,13 @@
 		button_a: button_a {
 			gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 			label = "Button A";
+			zephyr,code = <INPUT_KEY_A>;
 		};
 
 		button_b: button_b {
 			gpios = <&gpioa 10 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 			label = "Button B";
+			zephyr,code = <INPUT_KEY_B>;
 		};
 	};
 

@@ -4,6 +4,7 @@
 
 #include <nxp/nxp_k6x.dtsi>
 #include "frdm_k64f-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP Freedom MK64F board";
@@ -50,10 +51,12 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
