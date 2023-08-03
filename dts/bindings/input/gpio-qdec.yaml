@@ -12,7 +12,7 @@ description: |
 
   Example configuration:
 
-  #include <dt-bindings/input/input-event-codes.h>
+  #include <zephyr/dt-bindings/input/input-event-codes.h>
 
   qdec {
           compatible = "gpio-qdec";
