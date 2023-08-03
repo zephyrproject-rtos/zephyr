@@ -912,7 +912,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 				  &tx_hdr, sizeof(struct can_mcan_tx_buffer_hdr));
 	if (err != 0) {
 		LOG_ERR("failed to write Tx Buffer header (err %d)", err);
-		return err;
+		goto unlock;
 	}
 
 	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] + put_idx *
@@ -921,7 +921,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 				  &frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
 	if (err != 0) {
 		LOG_ERR("failed to write Tx Buffer data (err %d)", err);
-		return err;
+		goto unlock;
 	}
 
 	__ASSERT_NO_MSG(put_idx <= cbs->num_tx);
