@@ -55,6 +55,7 @@
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/*/power.c               @FRASTM
 /soc/arm/st_stm32/stm32mp1/               @arnopo
+/soc/arm/st_stm32/stm32h7/*stm32h735*     @benediktibk
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
@@ -163,6 +164,7 @@
 /boards/arm/steval_fcu001v1/              @Navin-Sankar
 /boards/arm/stm32l1_disco/                @karlp
 /boards/arm/stm32*_disco/                 @erwango @ABOSTM @FRASTM
+/boards/arm/stm32h735g_disco/             @benediktibk
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
 /boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
@@ -525,6 +527,7 @@
 /dts/arm/quicklogic/                      @fkokosinski @kgugala
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
+/dts/arm/st/h7/*stm32h735*                @benediktibk
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
