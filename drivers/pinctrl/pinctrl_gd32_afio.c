@@ -144,17 +144,17 @@ static void configure_pin(pinctrl_soc_pin_t pin)
 	reg_val &= ~GPIO_MODE_MASK(pin_num);
 
 	if (mode == GD32_MODE_ALTERNATE) {
-		uint8_t mode;
+		uint8_t new_mode;
 
-		mode = configure_spd(port, pin_bit, GD32_OSPEED_GET(pin));
+		new_mode = configure_spd(port, pin_bit, GD32_OSPEED_GET(pin));
 
 		if (GD32_OTYPE_GET(pin) == GD32_OTYPE_PP) {
-			mode |= GPIO_MODE_ALT_PP;
+			new_mode |= GPIO_MODE_ALT_PP;
 		} else {
-			mode |= GPIO_MODE_ALT_OD;
+			new_mode |= GPIO_MODE_ALT_OD;
 		}
 
-		reg_val |= GPIO_MODE_SET(pin_num, mode);
+		reg_val |= GPIO_MODE_SET(pin_num, new_mode);
 	} else if (mode == GD32_MODE_GPIO_IN) {
 		uint8_t pupd = GD32_PUPD_GET(pin);
 
