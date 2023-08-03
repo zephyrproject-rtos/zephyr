@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		die-temp0 = &tempmon;
 	};
 
 	cpus {
@@ -1072,6 +1073,12 @@
 			reg = <0x402fc000 0x4000>;
 			interrupts = <50 0>, <51 0>;
 			status = "okay";
+		};
+
+		tempmon: tempmon@400d8000 {
+			compatible = "nxp,tempmon";
+			reg = <0x400d8000 0x2a0>;
+			status = "disabled";
 		};
 	};
 };
