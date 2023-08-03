@@ -159,14 +159,16 @@ void tm_update_last_phy_sync_time(bs_time_t abs_time)
 
 /**
  * Advance the internal time values of this device
- * until the HW time reaches hw_time
+ * until the HW time reaches time @a t.
+ *
+ * @param t Time to advance to.
  */
-static void tm_sleep_until_hw_time(bs_time_t hw_time)
+static void tm_sleep_until_hw_time(bs_time_t t)
 {
 	bs_time_t next_time = TIME_NEVER;
 
-	if (hw_time != TIME_NEVER) {
-		next_time = hw_time + hw_time_delta;
+	if (t != TIME_NEVER) {
+		next_time = t + hw_time_delta;
 	}
 	tm_sleep_until_abs_time(next_time);
 }
