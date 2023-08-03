@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 static struct in_addr my_addr = { { { 192, 0, 2, 1 } } };
 static struct in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
 
-static struct net_if *iface;
+static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
 static bool is_join_msg_ok;
@@ -206,11 +206,11 @@ static void *igmp_setup(void)
 
 	setup_mgmt_events();
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	zassert_not_null(iface, "Interface is NULL");
+	zassert_not_null(net_iface, "Interface is NULL");
 
-	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	ifaddr = net_if_ipv4_addr_add(net_iface, &my_addr, NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
@@ -227,16 +227,16 @@ static void igmp_teardown(void *dummy)
 		net_mgmt_del_event_callback(&mgmt_events[i].cb);
 	}
 
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	net_if_ipv4_addr_rm(iface, &my_addr);
+	net_if_ipv4_addr_rm(net_iface, &my_addr);
 }
 
 static void join_group(void)
 {
 	int ret;
 
-	ret = net_ipv4_igmp_join(iface, &mcast_addr);
+	ret = net_ipv4_igmp_join(net_iface, &mcast_addr);
 
 	if (ignore_already) {
 		zassert_true(ret == 0 || ret == -EALREADY,
@@ -253,7 +253,7 @@ static void leave_group(void)
 {
 	int ret;
 
-	ret = net_ipv4_igmp_leave(iface, &mcast_addr);
+	ret = net_ipv4_igmp_leave(net_iface, &mcast_addr);
 
 	zassert_equal(ret, 0, "Cannot leave IPv4 multicast group");
 

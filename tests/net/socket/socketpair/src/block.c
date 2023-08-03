@@ -17,10 +17,12 @@ struct ctx {
 static ZTEST_BMEM struct ctx ctx;
 static ZTEST_BMEM struct k_work work;
 
-static void work_handler(struct k_work *work)
+static void work_handler(struct k_work *w)
 {
 	int res;
 	char c = '\0';
+
+	(void)w;
 
 	LOG_DBG("doing work");
 

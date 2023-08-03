@@ -147,7 +147,7 @@ static void *test_setup(void)
 	struct net_if_addr *ifaddr;
 
 	struct sockaddr_in6 any_addr6;
-	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+	const struct in6_addr in6addr_anyaddr = IN6ADDR_ANY_INIT;
 
 	struct sockaddr_in6 my_addr6;
 	struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
@@ -169,7 +169,7 @@ static void *test_setup(void)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	test_failed = false;
 
-	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
+	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_anyaddr);
 	any_addr6.sin6_family = AF_INET6;
 
 	net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
