@@ -42,3 +42,36 @@
 		status = "okay";
 	};
 };
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&xgmac0 {
+	phy-connection-type = "rgmii";
+	full-duplex-mode-en;
+	num-dma-ch   = <1>;
+	num-tx-queues = <1>;
+	num-rx-queues = <1>;
+	num-tc = <1>;
+	dma-ch-rdrl = <128>;
+	dma-ch-tdrl = <128>;
+	max-speed = <1000>;
+	max-frame-size = <9018>;
+	jumbo-pkt-en;
+	phy0: phy {
+		compatible = "ethernet-phy";
+		address = <0>;
+		fixed-link = "100BASE-T Full-Duplex";
+		mdio = <&mdio0>;
+	};
+};
+
+&mdio0  {
+		csr-clock-indx = <1>;
+		clock-range-sel;
+};

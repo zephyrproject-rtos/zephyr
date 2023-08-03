@@ -4,3 +4,22 @@
 config BOARD
 	default "intel_socfpga_agilex5_socdk"
 	depends on BOARD_INTEL_SOCFPGA_AGILEX5_SOCDK
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_DWC_XGMAC
+	default y if NET_L2_ETHERNET
+
+config PHY_GENERIC_MII
+	default y if NET_L2_ETHERNET
+
+config MDIO
+	default y if NET_L2_ETHERNET
+
+config MDIO_DWCXGMAC
+	default y if NET_L2_ETHERNET
+
+endif # NETWORKING
