@@ -184,8 +184,8 @@ As a quick reference, see these three board documentation pages:
 Enabling BOSSAC on Windows Native [Experimental]
 ------------------------------------------------
 
-Zephyr SDK´s bossac is only currenty support on Linux and macOS. Windows support
-can be achieved by using the bossac version from `BOSSA oficial releases`_.
+Zephyr SDK´s bossac is currently supported on Linux and macOS only. Windows support
+can be achieved by using the bossac version from `BOSSA official releases`_.
 After installing using default options, the :file:`bossac.exe` must be added to
 Windows PATH. A specific bossac executable can be used by passing the
 ``--bossac`` option, as follows:
@@ -403,5 +403,5 @@ To enable Zephyr RTOS awareness follow the steps described in
 .. _Lauterbach TRACE32 Zephyr OS Awareness Manual:
 	https://www2.lauterbach.com/pdf/rtos_zephyr.pdf
 
-.. _BOSSA oficial releases:
+.. _BOSSA official releases:
 	https://github.com/shumatech/BOSSA/releases

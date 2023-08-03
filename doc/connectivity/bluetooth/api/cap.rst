@@ -1,7 +1,7 @@
 .. _bluetooth_cap:
 
-Commmon Audio Profile
-#####################
+Common Audio Profile
+####################
 
 
 API Reference
