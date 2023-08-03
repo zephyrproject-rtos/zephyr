@@ -10,6 +10,7 @@ Developing with Zephyr
    beyond-GSG.rst
    env_vars.rst
    application/index.rst
+   debug/index.rst
    api/index.rst
    languages/index.rst
    optimizations/index
