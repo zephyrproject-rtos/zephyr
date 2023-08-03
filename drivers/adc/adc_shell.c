@@ -90,6 +90,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ti_cc32xx_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(raspberrypi_pico_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_s32_adc_sar, ADC_HDL_LIST_ENTRY)
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
