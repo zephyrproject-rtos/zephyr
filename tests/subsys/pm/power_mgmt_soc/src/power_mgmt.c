@@ -71,13 +71,21 @@ static void pm_latency_check(void)
 			secs, msecs);
 }
 
-static void notify_pm_state_entry(enum pm_state state)
+static void notify_pm_state(uint8_t direction, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
+	const struct pm_state_info *pm_state = pm_state_next_get(0u);
+
 	if (!checks_enabled) {
 		return;
 	}
 
-	pm_counters[(int)state].entry_cnt++;
+	if (direction & PM_STATE_ENTRY) {
+		pm_counters[pm_state->state].entry_cnt++;
+	} else {
+		pm_counters[pm_state->state].exit_cnt++;
+	}
 
 	if (measure_entry_latency) {
 		pm_latency_check();
@@ -89,19 +97,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	}
 }
 
-static void notify_pm_state_exit(enum pm_state state)
-{
-	if (!checks_enabled) {
-		return;
-	}
-
-	pm_counters[(int)state].exit_cnt++;
-}
-
-static struct pm_notifier notifier = {
-	.state_entry = notify_pm_state_entry,
-	.state_exit = notify_pm_state_exit,
-};
+PM_NOTIFIER_DEFINE(test, (PM_STATE_ENTRY|PM_STATE_EXIT), notify_pm_state, NULL);
 
 static void pm_check_counters(uint8_t cycles)
 {
@@ -224,8 +220,10 @@ static void resume_all_tasks(void)
 int test_pwr_mgmt_multithread(uint8_t cycles)
 {
 	uint8_t iterations = cycles;
+	const struct pm_state_info *sleep_light = &residency_info[0];
+	const struct pm_state_info *sleep_deep = &residency_info[residency_info_len - 1];
 
-	pm_notifier_register(&notifier);
+	pm_notifier_register(&PM_NOTIFIER(test), sleep_light->state, sleep_light->substate_id);
 	create_tasks();
 
 	LOG_INF("PM multi-thread test started for cycles: %d", cycles);
@@ -239,8 +237,7 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 		LOG_INF("About to enter light sleep");
 		measure_entry_latency = true;
 		pm_trigger_marker();
-		k_usleep(residency_info[0].min_residency_us +
-				LT_EXTRA_SLP_TIME_US);
+		k_usleep(sleep_light->min_residency_us + LT_EXTRA_SLP_TIME_US);
 
 		LOG_INF("Wake from Light Sleep");
 		pm_exit_marker();
@@ -257,9 +254,7 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 
 		measure_entry_latency = true;
 		pm_trigger_marker();
-		k_usleep(
-			residency_info[residency_info_len - 1].min_residency_us +
-			DP_EXTRA_SLP_TIME_US);
+		k_usleep(sleep_deep->min_residency_us + DP_EXTRA_SLP_TIME_US);
 
 		LOG_INF("Wake from Deep Sleep");
 		pm_exit_marker();
@@ -268,7 +263,7 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 	}
 
 	destroy_tasks();
-	pm_notifier_unregister(&notifier);
+	pm_notifier_unregister(&PM_NOTIFIER(test), sleep_light->state, sleep_light->substate_id);
 
 	LOG_INF("PM multi-thread completed");
 	pm_check_counters(cycles);
@@ -280,10 +275,12 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 int test_pwr_mgmt_singlethread(uint8_t cycles)
 {
 	uint8_t iterations = cycles;
+	const struct pm_state_info *sleep_light = &residency_info[0];
+	const struct pm_state_info *sleep_deep = &residency_info[residency_info_len - 1];
 
 	LOG_INF("PM single-thread test started for cycles: %d", cycles);
 
-	pm_notifier_register(&notifier);
+	pm_notifier_register(&PM_NOTIFIER(test), sleep_light->state, sleep_light->substate_id);
 	checks_enabled = true;
 	while (iterations-- > 0) {
 
@@ -291,8 +288,7 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		LOG_INF("About to enter light sleep");
 		measure_entry_latency = true;
 		pm_trigger_marker();
-		k_usleep(residency_info[0].min_residency_us +
-				LT_EXTRA_SLP_TIME_US);
+		k_usleep(sleep_light->min_residency_us + LT_EXTRA_SLP_TIME_US);
 		LOG_INF("Wake from Light Sleep");
 		pm_exit_marker();
 
@@ -303,14 +299,12 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		LOG_INF("About to enter deep Sleep");
 		measure_entry_latency = true;
 		pm_trigger_marker();
-		k_usleep(
-			residency_info[residency_info_len - 1].min_residency_us +
-			DP_EXTRA_SLP_TIME_US);
+		k_usleep(sleep_deep->min_residency_us + DP_EXTRA_SLP_TIME_US);
 		LOG_INF("Wake from Deep Sleep");
 		pm_exit_marker();
 	}
 
-	pm_notifier_unregister(&notifier);
+	pm_notifier_unregister(&PM_NOTIFIER(test), sleep_light->state, sleep_light->substate_id);
 	LOG_INF("PM single-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();

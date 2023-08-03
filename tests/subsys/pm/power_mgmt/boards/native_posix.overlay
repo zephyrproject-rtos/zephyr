@@ -5,6 +5,15 @@
  */
 
 / {
+	cpus {
+		power-states {
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+		};
+	};
+
 	device_a: device_a {
 		compatible = "test-device-pm";
 	};
@@ -20,4 +29,8 @@
 	device_d: device_d {
 		compatible = "test-device-pm";
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&suspend>;
 };
