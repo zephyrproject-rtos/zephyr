@@ -495,10 +495,10 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_PM
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
-		struct uart_cc13xx_cc26xx_data *data = dev->data;	\
+		struct uart_cc13xx_cc26xx_data *dev_data = dev->data;	\
 									\
-		data->rx_constrained = false;				\
-		data->tx_constrained = false;				\
+		dev_data->rx_constrained = false;			\
+		dev_data->tx_constrained = false;			\
 									\
 		/* Set Power dependencies */				\
 		if (DT_INST_REG_ADDR(n) == 0x40001000) {		\
@@ -508,7 +508,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		}							\
 									\
 		/* Register notification function */			\
-		Power_registerNotify(&data->postNotify,			\
+		Power_registerNotify(&dev_data->postNotify,		\
 			PowerCC26XX_AWAKE_STANDBY,			\
 			postNotifyFxn, (uintptr_t)dev);			\
 	} while (false)
