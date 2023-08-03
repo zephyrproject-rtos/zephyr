@@ -25,29 +25,9 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-#ifdef CONFIG_ARM_MPU
-extern void z_arm_configure_static_mpu_regions(void);
-extern int z_arm_mpu_init(void);
-#endif /* CONFIG_ARM_MPU */
-#ifdef CONFIG_ARM_AARCH32_MMU
-extern int z_arm_mmu_init(void);
-#endif /* CONFIG_ARM_AARCH32_MMU */
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-#if defined(CONFIG_ARM_MPU)
-	z_arm_mpu_init();
-	/* Configure static memory map. This will program MPU regions,
-	 * to set up access permissions for fixed memory sections, such
-	 * as Application Memory or No-Cacheable SRAM area.
-	 *
-	 * This function is invoked once, upon system initialization.
-	 */
-	z_arm_configure_static_mpu_regions();
-#endif /* CONFIG_ARM_MPU */
-#if defined(CONFIG_ARM_AARCH32_MMU)
-	z_arm_mmu_init();
-#endif /* CONFIG_ARM_AARCH32_MMU */
 }
 
 static ALWAYS_INLINE void
