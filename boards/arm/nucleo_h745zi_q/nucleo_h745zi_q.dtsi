@@ -8,7 +8,7 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_1 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
