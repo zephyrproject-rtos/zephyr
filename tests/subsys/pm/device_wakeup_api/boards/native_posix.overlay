@@ -9,3 +9,18 @@
 	gpio-controller;
 	wakeup-source;
 };
+
+/ {
+	cpus {
+		power-states {
+			s2ram: s2ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+			};
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&s2ram>;
+};

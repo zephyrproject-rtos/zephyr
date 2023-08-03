@@ -1,0 +1,30 @@
+/*
+ * Copyright 2023 Kenneth J. Miller <ken@miller.ec>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&idle &s2idle &stdby>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			s2idle: s2idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+
+			stdby: stdby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+			};
+		};
+	};
+};
