@@ -15,7 +15,7 @@ from typing import Generator
 
 import serial
 
-from twister_harness.device.device_abstract import DeviceAbstract
+from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.helper import log_command
 from twister_harness.log_files.log_file import DeviceLogFile, HandlerLogFile
@@ -24,7 +24,7 @@ from twister_harness.twister_harness_config import DeviceConfig
 logger = logging.getLogger(__name__)
 
 
-class HardwareAdapter(DeviceAbstract):
+class HardwareAdapter(DeviceAdapter):
     """Adapter class for real device."""
 
     def __init__(self, device_config: DeviceConfig, **kwargs) -> None:

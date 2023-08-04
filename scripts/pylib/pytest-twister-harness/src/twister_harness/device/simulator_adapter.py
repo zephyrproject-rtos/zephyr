@@ -24,7 +24,7 @@ from typing import Generator
 import psutil
 
 from twister_harness.constants import END_OF_DATA
-from twister_harness.device.device_abstract import DeviceAbstract
+from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.helper import log_command
 from twister_harness.log_files.log_file import HandlerLogFile
@@ -50,7 +50,7 @@ BaseSubprocessTransport.__del__ = silence_event_loop_closed(BaseSubprocessTransp
 logger = logging.getLogger(__name__)
 
 
-class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
+class SimulatorAdapterBase(DeviceAdapter, abc.ABC):
 
     def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
         """

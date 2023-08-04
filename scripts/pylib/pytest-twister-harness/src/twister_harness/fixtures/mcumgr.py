@@ -13,7 +13,7 @@ from subprocess import check_output, getstatusoutput
 from pathlib import Path
 from dataclasses import dataclass
 
-from twister_harness.device.device_abstract import DeviceAbstract
+from twister_harness.device.device_adapter import DeviceAdapter
 
 
 logger = logging.getLogger(__name__)
@@ -117,5 +117,5 @@ def is_mcumgr_available() -> None:
 
 
 @pytest.fixture()
-def mcumgr(is_mcumgr_available: None, dut: DeviceAbstract) -> Generator[MCUmgr, None, None]:
+def mcumgr(is_mcumgr_available: None, dut: DeviceAdapter) -> Generator[MCUmgr, None, None]:
     yield MCUmgr.create_for_serial(dut.device_config.serial)

@@ -5,12 +5,12 @@
 import time
 import logging
 
-from twister_harness import Device
+from twister_harness import DeviceAdapter
 
 logger = logging.getLogger(__name__)
 
 
-def wait_for_message(dut: Device, message, timeout=20):
+def wait_for_message(dut: DeviceAdapter, message, timeout=20):
     time_started = time.time()
     for line in dut.iter_stdout:
         if line:
@@ -21,7 +21,7 @@ def wait_for_message(dut: Device, message, timeout=20):
             return False
 
 
-def wait_for_prompt(dut: Device, prompt='uart:~$', timeout=20):
+def wait_for_prompt(dut: DeviceAdapter, prompt='uart:~$', timeout=20):
     time_started = time.time()
     while True:
         dut.write(b'\n')
@@ -33,13 +33,13 @@ def wait_for_prompt(dut: Device, prompt='uart:~$', timeout=20):
             return False
 
 
-def test_shell_print_help(dut: Device):
+def test_shell_print_help(dut: DeviceAdapter):
     wait_for_prompt(dut)
     dut.write(b'help\n')
     assert wait_for_message(dut, "Available commands")
 
 
-def test_shell_print_version(dut: Device):
+def test_shell_print_version(dut: DeviceAdapter):
     wait_for_prompt(dut)
     dut.write(b'kernel version\n')
     assert wait_for_message(dut, "Zephyr version")
