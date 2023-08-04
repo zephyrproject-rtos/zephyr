@@ -238,27 +238,33 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 	return return_to(interrupted_stack);		\
 }
 
-#if XCHAL_NMILEVEL >= 2
+#ifdef XCHAL_NMILEVEL
+#define MAXLEVEL XCHAL_NMILEVEL
+#else
+#define MAXLEVEL XCHAL_NUM_INTLEVELS
+#endif
+
+#if MAXLEVEL >= 2
 DEF_INT_C_HANDLER(2)
 #endif
 
-#if XCHAL_NMILEVEL >= 3
+#if MAXLEVEL >= 3
 DEF_INT_C_HANDLER(3)
 #endif
 
-#if XCHAL_NMILEVEL >= 4
+#if MAXLEVEL >= 4
 DEF_INT_C_HANDLER(4)
 #endif
 
-#if XCHAL_NMILEVEL >= 5
+#if MAXLEVEL >= 5
 DEF_INT_C_HANDLER(5)
 #endif
 
-#if XCHAL_NMILEVEL >= 6
+#if MAXLEVEL >= 6
 DEF_INT_C_HANDLER(6)
 #endif
 
-#if XCHAL_NMILEVEL >= 7
+#if MAXLEVEL >= 7
 DEF_INT_C_HANDLER(7)
 #endif
 

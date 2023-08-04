@@ -287,40 +287,31 @@ _handle_excint:
 
 DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
 
-#if XCHAL_NMILEVEL >= 2
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 2))
+
+#define GENLVL(n) (n <= XCHAL_NUM_INTLEVELS) && (!defined(CONFIG_GDBSTUB) || n != XCHAL_DEBUGLEVEL)
+
+#if GENLVL(2)
 DEF_EXCINT 2, _handle_excint, xtensa_int2_c
 #endif
-#endif
 
-#if XCHAL_NMILEVEL >= 3
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 3))
+#if GENLVL(3)
 DEF_EXCINT 3, _handle_excint, xtensa_int3_c
 #endif
-#endif
 
-#if XCHAL_NMILEVEL >= 4
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 4))
+#if GENLVL(4)
 DEF_EXCINT 4, _handle_excint, xtensa_int4_c
 #endif
-#endif
 
-#if XCHAL_NMILEVEL >= 5
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 5))
+#if GENLVL(5)
 DEF_EXCINT 5, _handle_excint, xtensa_int5_c
 #endif
-#endif
 
-#if XCHAL_NMILEVEL >= 6
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 6))
+#if GENLVL(6)
 DEF_EXCINT 6, _handle_excint, xtensa_int6_c
 #endif
-#endif
 
-#if XCHAL_NMILEVEL >= 7
-#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 7))
+#if GENLVL(7)
 DEF_EXCINT 7, _handle_excint, xtensa_int7_c
-#endif
 #endif
 
 #if defined(CONFIG_GDBSTUB)
