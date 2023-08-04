@@ -1302,7 +1302,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	}
 
 	for (int i = 0; i < data->xfer.num_cmds; i++) {
-		switch (data->xfer.cmds->error) {
+		switch (data->xfer.cmds[i].error) {
 		case CMDR_NO_ERROR:
 			break;
 
