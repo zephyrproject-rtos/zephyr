@@ -51,3 +51,12 @@ test_epcos_b57861s0103a039: epcos-b57861s0103a039 {
 	pulldown-ohm = <10000>;
 	connected-positive;
 };
+
+test_murata_ncp15wb473: murata-ncp15wb473 {
+	compatible = "murata,ncp15wb473";
+	io-channels = <&adc0 0>;
+	pullup-uv = <3300000>;
+	pullup-ohm = <0>;
+	pulldown-ohm = <10000>;
+	connected-positive;
+};
