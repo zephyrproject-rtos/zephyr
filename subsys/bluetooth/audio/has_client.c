@@ -223,9 +223,9 @@ static uint8_t control_point_notify_cb(struct bt_conn *conn,
 				       struct bt_gatt_subscribe_params *params, const void *data,
 				       uint16_t len)
 {
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, control_point_subscription);
 	const struct bt_has_cp_hdr *hdr;
 	struct net_buf_simple buf;
-	struct has_inst *inst;
 
 	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
 
@@ -236,12 +236,6 @@ static uint8_t control_point_notify_cb(struct bt_conn *conn,
 	if (!data) { /* Unsubscribed */
 		params->value_handle = 0u;
 
-		return BT_GATT_ITER_STOP;
-	}
-
-	inst = inst_by_conn(conn);
-	if (!inst) {
-		/* Ignore notification from unknown instance */
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -309,9 +303,7 @@ static int cp_write(struct has_inst *inst, struct net_buf_simple *buf, bt_gatt_w
 static void read_presets_req_cb(struct bt_conn *conn, uint8_t err,
 				struct bt_gatt_write_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.write);
 
 	LOG_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
 
@@ -344,9 +336,7 @@ static int read_presets_req(struct has_inst *inst, uint8_t start_index, uint8_t 
 static void set_active_preset_cb(struct bt_conn *conn, uint8_t err,
 				 struct bt_gatt_write_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.write);
 
 	LOG_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
 
@@ -406,7 +396,7 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 				       struct bt_gatt_subscribe_params *params, const void *data,
 				       uint16_t len)
 {
-	struct has_inst *inst;
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, active_index_subscription);
 	uint8_t prev;
 
 	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
@@ -420,12 +410,6 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 		/* Unsubscribed */
 		params->value_handle = 0u;
 
-		return BT_GATT_ITER_STOP;
-	}
-
-	inst = inst_by_conn(conn);
-	if (!inst) {
-		/* Ignore notification from unknown instance */
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -453,9 +437,7 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 				      struct bt_gatt_subscribe_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, active_index_subscription);
 
 	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
 
@@ -489,10 +471,8 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 				    struct bt_gatt_read_params *params, const void *data,
 				    uint16_t len)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.read);
 	int err = att_err;
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
 	LOG_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
 		data, len);
@@ -538,12 +518,10 @@ static int active_index_read(struct has_inst *inst)
 }
 
 static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
-				       struct bt_gatt_subscribe_params *subscribe)
+				       struct bt_gatt_subscribe_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, control_point_subscription);
 	int err = att_err;
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
 	LOG_DBG("conn %p att_err 0x%02x", (void *)inst->conn, att_err);
 
@@ -591,13 +569,11 @@ static int control_point_subscribe(struct has_inst *inst, uint16_t value_handle,
 static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					 struct bt_gatt_discover_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.discover);
 	const struct bt_gatt_chrc *chrc;
 	int err;
 
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
-
-	LOG_DBG("conn %p attr %p params %p", (void *)inst->conn, attr, params);
+	LOG_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
 
 	if (!attr) {
 		LOG_INF("Control Point not found");
@@ -651,10 +627,8 @@ static void features_update(struct has_inst *inst, const void *data, uint16_t le
 static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 				struct bt_gatt_read_params *params, const void *data, uint16_t len)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.read);
 	int err = att_err;
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
 	LOG_DBG("conn %p att_err 0x%02x params %p data %p len %u", (void *)conn, att_err, params,
 		data, len);
@@ -705,12 +679,10 @@ static int features_read(struct has_inst *inst, uint16_t value_handle)
 static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 				  struct bt_gatt_subscribe_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, features_subscription);
 	int err = att_err;
 
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
-
-	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
+	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)conn, att_err, params);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
 		goto fail;
@@ -734,7 +706,7 @@ fail:
 static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				  const void *data, uint16_t len)
 {
-	struct has_inst *inst;
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, features_subscription);
 
 	LOG_DBG("conn %p params %p data %p len %u", (void *)conn, params, data, len);
 
@@ -747,12 +719,6 @@ static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe
 		/* Unsubscribed */
 		params->value_handle = 0u;
 
-		return BT_GATT_ITER_STOP;
-	}
-
-	inst = inst_by_conn(conn);
-	if (!inst) {
-		/* Ignore notification from unknown instance */
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -785,11 +751,9 @@ static int features_subscribe(struct has_inst *inst, uint16_t value_handle)
 static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				    struct bt_gatt_discover_params *params)
 {
-	struct has_inst *inst = inst_by_conn(conn);
+	struct has_inst *inst = CONTAINER_OF(params, struct has_inst, params.discover);
 	const struct bt_gatt_chrc *chrc;
 	int err;
-
-	__ASSERT(inst, "no instance for conn %p", (void *)conn);
 
 	LOG_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
 
