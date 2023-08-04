@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_TIME source/time/time.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_MALLOC source/stdlib/malloc.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_STRNLEN source/string/strnlen.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
+    source/thrd/cnd.c
     source/thrd/mtx.c
     source/thrd/thrd.c
     )
