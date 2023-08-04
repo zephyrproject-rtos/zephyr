@@ -596,7 +596,6 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 {
 	const struct flash_flexspi_hyperflash_config *config = dev->config;
 	struct flash_flexspi_hyperflash_data *data = dev->data;
-	uint32_t temp_lut[sizeof(flash_flexspi_hyperflash_lut) / sizeof(uint32_t)];
 
 	/* Since the controller variable may be used in critical sections,
 	 * copy the device pointer into a variable stored in RAM
@@ -610,27 +609,15 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 
 	memc_flexspi_wait_bus_idle(&data->controller);
 
-	if (!memc_flexspi_is_running_xip(&data->controller) &&
-	    memc_flexspi_set_device_config(&data->controller, &data->config,
-				data->port)) {
-		LOG_ERR("Could not set device configuration");
-		return -EINVAL;
+	if (memc_flexspi_is_running_xip(&data->controller)) {
+		/* Wait for bus idle before configuring */
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
-
-	/*
-	 * Using the LUT stored in the FlexSPI directly when updating
-	 * the FlexSPI can result in an invalid LUT entry being stored,
-	 * as the LUT itself describes how the FlexSPI should access the flash.
-	 * To resolve this, copy the LUT to a array placed in RAM before
-	 * updating the FlexSPI.
-	 */
-	memcpy(temp_lut, flash_flexspi_hyperflash_lut,
-		sizeof(flash_flexspi_hyperflash_lut));
-
-	if (memc_flexspi_update_lut(&data->controller, 0,
-				(const uint32_t *) temp_lut,
-				sizeof(temp_lut) / sizeof(uint32_t))) {
-		LOG_ERR("Could not update lut");
+	if (memc_flexspi_set_device_config(&data->controller, &data->config,
+	    (const uint32_t *)flash_flexspi_hyperflash_lut,
+	    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE,
+	    data->port)) {
+		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
 
