@@ -786,13 +786,13 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 	if (cfg->dma_enabled) {
 #if defined(CONFIG_SPI_PL022_DMA)
 		for (size_t i = 0; i < ARRAY_SIZE(data->dma); i++) {
-			const struct spi_pl022_cfg *cfg = dev->config;
 			struct dma_status stat = {.busy = true};
 
 			dma_stop(cfg->dma[i].dev, cfg->dma[i].channel);
 
 			while (stat.busy) {
-				dma_get_status(cfg->dma[i].dev, cfg->dma[i].channel, &stat);
+				dma_get_status(cfg->dma[i].dev,
+					       cfg->dma[i].channel, &stat);
 			}
 
 			data->dma[i].count = 0;
