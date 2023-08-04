@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 
-from twister_harness.device.simulator_adapter import (
+from twister_harness.device.binary_adapter import (
     CustomSimulatorAdapter,
     NativeSimulatorAdapter,
     UnitSimulatorAdapter,
