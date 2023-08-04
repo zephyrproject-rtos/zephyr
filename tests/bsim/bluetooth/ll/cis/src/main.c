@@ -53,6 +53,7 @@ static bt_addr_le_t peer_addr;
 
 #define ISO_INTERVAL_US      10000U
 #define ISO_LATENCY_MS       DIV_ROUND_UP(ISO_INTERVAL_US, USEC_PER_MSEC)
+#define ISO_LATENCY_FT_MS    20U
 
 #define BT_CONN_US_TO_INTERVAL(t) ((uint16_t)((t) * 4U / 5U / USEC_PER_MSEC))
 
@@ -103,7 +104,7 @@ static bt_addr_le_t peer_addr;
 
 #define NAME_LEN 30
 
-#define BUF_ALLOC_TIMEOUT   (30) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT   (40) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
@@ -300,8 +301,11 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 			expected_seq_num[index] = seq_num;
 		}
 
-		expected_seq_num[index]++;
+		expected_seq_num[index] += 1U;
 
+#if defined(CONFIG_TEST_FT_SKIP_SUBEVENTS)
+		expected_seq_num[index] += ((CONFIG_TEST_FT_PER_SKIP_EVENTS_COUNT - 1U) * 2U);
+#endif
 	} else if (expected_seq_num[index] &&
 		   expected_seq_num[index] < SEQ_NUM_MAX) {
 		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
@@ -361,7 +365,11 @@ static void test_cis_central(void)
 	for (int i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
 		iso_tx[i].sdu = CONFIG_BT_ISO_TX_MTU;
 		iso_tx[i].phy = BT_GAP_LE_PHY_2M;
-		iso_tx[i].rtn = 0U;
+		if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
+			iso_tx[i].rtn = 2U;
+		} else {
+			iso_tx[i].rtn = 0U;
+		}
 		iso_tx[i].path = NULL;
 
 		iso_qos[i].tx = &iso_tx[i];
@@ -381,7 +389,11 @@ static void test_cis_central(void)
 	cig_param.sca = BT_GAP_SCA_UNKNOWN;
 	cig_param.packing = 0U;
 	cig_param.framing = 0U;
-	cig_param.latency = ISO_LATENCY_MS;
+	if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
+		cig_param.latency = ISO_LATENCY_FT_MS;
+	} else {
+		cig_param.latency = ISO_LATENCY_MS;
+	}
 	cig_param.interval = ISO_INTERVAL_US;
 
 	printk("Create CIG...");
@@ -404,7 +416,7 @@ static void test_cis_central(void)
 		uint8_t conn_index;
 		uint8_t chan;
 
-		printk("Start scanning...");
+		printk("Start scanning (%d)...", i);
 		err = bt_le_scan_start(BT_LE_SCAN_CUSTOM, NULL);
 		if (err) {
 			FAIL("Could not start scan: %d\n", err);
@@ -510,7 +522,7 @@ static void test_cis_central(void)
 			ret = bt_iso_chan_send(&iso_chan[chan], buf,
 					       seq_num, BT_ISO_TIMESTAMP_NONE);
 			if (ret < 0) {
-				FAIL("Unable to broadcast data on channel %u"
+				FAIL("Unable to send data on channel %u"
 				     " : %d\n", chan, ret);
 				net_buf_unref(buf);
 				return;
@@ -522,7 +534,7 @@ static void test_cis_central(void)
 		}
 	}
 
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(1000));
 
 	for (uint8_t chan = 0U; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
 		printk("ISO disconnect channel %u...", chan);
@@ -586,6 +598,8 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 
 	*chan = &iso_chan_p[chan_count];
 	chan_count++;
+
+	printk("Accepted on channel %p\n", *chan);
 
 	return 0;
 }
