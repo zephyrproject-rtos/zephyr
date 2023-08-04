@@ -49,7 +49,7 @@ static void init_adc(void)
 
 	zassert_true(adc_is_ready_dt(&adc_channels[0]), "ADC device is not ready");
 
-	for (int i = 0; i < adc_channels_count; i++) {
+	for (i = 0; i < adc_channels_count; i++) {
 		ret = adc_channel_setup_dt(&adc_channels[i]);
 		zassert_equal(ret, 0, "Setting up of channel %d failed with code %d", i, ret);
 	}
