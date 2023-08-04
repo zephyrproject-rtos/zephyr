@@ -260,7 +260,7 @@ ZTEST_BMEM uint8_t rx_buf_idx;
 
 ZTEST_BMEM uint8_t *read_ptr;
 
-static void test_chained_read_callback(const struct device *uart_dev,
+static void test_chained_read_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
 {
 	int err;
@@ -277,7 +277,7 @@ static void test_chained_read_callback(const struct device *uart_dev,
 		rx_data_idx += evt->data.rx.len;
 		break;
 	case UART_RX_BUF_REQUEST:
-		err = uart_rx_buf_rsp(uart_dev,
+		err = uart_rx_buf_rsp(dev,
 				      chained_read_buf[rx_buf_idx],
 				      sizeof(chained_read_buf[0]));
 		zassert_equal(err, 0);
@@ -338,7 +338,7 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 ZTEST_BMEM uint8_t double_buffer[2][12];
 ZTEST_DMEM uint8_t *next_buf = double_buffer[1];
 
-static void test_double_buffer_callback(const struct device *uart_dev,
+static void test_double_buffer_callback(const struct device *dev,
 				 struct uart_event *evt, void *user_data)
 {
 	switch (evt->type) {
@@ -350,7 +350,7 @@ static void test_double_buffer_callback(const struct device *uart_dev,
 		k_sem_give(&rx_rdy);
 		break;
 	case UART_RX_BUF_REQUEST:
-		uart_rx_buf_rsp(uart_dev, next_buf, sizeof(double_buffer[0]));
+		uart_rx_buf_rsp(dev, next_buf, sizeof(double_buffer[0]));
 		break;
 	case UART_RX_BUF_RELEASED:
 		next_buf = evt->data.rx_buf.buf;
@@ -513,7 +513,7 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 
 ZTEST_BMEM volatile size_t sent;
 ZTEST_BMEM volatile size_t received;
-ZTEST_BMEM uint8_t rx_buf[2][100];
+ZTEST_BMEM uint8_t test_rx_buf[2][100];
 
 static void test_write_abort_callback(const struct device *dev,
 			       struct uart_event *evt, void *user_data)
@@ -533,7 +533,7 @@ static void test_write_abort_callback(const struct device *dev,
 		k_sem_give(&rx_rdy);
 		break;
 	case UART_RX_BUF_REQUEST:
-		uart_rx_buf_rsp(dev, rx_buf[1], sizeof(rx_buf[1]));
+		uart_rx_buf_rsp(dev, test_rx_buf[1], sizeof(test_rx_buf[1]));
 		break;
 	case UART_RX_BUF_RELEASED:
 		k_sem_give(&rx_buf_released);
@@ -559,15 +559,15 @@ ZTEST_USER(uart_async_write_abort, test_write_abort)
 {
 	uint8_t tx_buf[100];
 
-	memset(rx_buf, 0, sizeof(rx_buf));
+	memset(test_rx_buf, 0, sizeof(test_rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
 
-	uart_rx_enable(uart_dev, rx_buf[0], sizeof(rx_buf[0]), 50 * USEC_PER_MSEC);
+	uart_rx_enable(uart_dev, test_rx_buf[0], sizeof(test_rx_buf[0]), 50 * USEC_PER_MSEC);
 
 	uart_tx(uart_dev, tx_buf, 5, 100 * USEC_PER_MSEC);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
-	zassert_equal(memcmp(tx_buf, rx_buf, 5), 0, "Buffers not equal");
+	zassert_equal(memcmp(tx_buf, test_rx_buf, 5), 0, "Buffers not equal");
 
 	uart_tx(uart_dev, tx_buf, 95, 100 * USEC_PER_MSEC);
 	uart_tx_abort(uart_dev);
@@ -664,13 +664,13 @@ ZTEST_DMEM uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 ZTEST_DMEM bool chained_write_next_buf = true;
 ZTEST_BMEM volatile uint8_t tx_sent;
 
-static void test_chained_write_callback(const struct device *uart_dev,
+static void test_chained_write_callback(const struct device *dev,
 				 struct uart_event *evt, void *user_data)
 {
 	switch (evt->type) {
 	case UART_TX_DONE:
 		if (chained_write_next_buf) {
-			uart_tx(uart_dev, chained_write_tx_bufs[1], 10, 100 * USEC_PER_MSEC);
+			uart_tx(dev, chained_write_tx_bufs[1], 10, 100 * USEC_PER_MSEC);
 			chained_write_next_buf = false;
 		}
 		tx_sent = 1;
@@ -738,10 +738,10 @@ ZTEST_BMEM uint8_t long_tx_buf[1000];
 ZTEST_BMEM volatile uint8_t evt_num;
 ZTEST_BMEM size_t long_received[2];
 
-static void test_long_buffers_callback(const struct device *uart_dev,
+static void test_long_buffers_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
 {
-	static uint8_t *next_buf = long_rx_buf2;
+	static uint8_t *next_buffer = long_rx_buf2;
 
 	switch (evt->type) {
 	case UART_TX_DONE:
@@ -763,8 +763,8 @@ static void test_long_buffers_callback(const struct device *uart_dev,
 		k_sem_give(&rx_disabled);
 		break;
 	case UART_RX_BUF_REQUEST:
-		uart_rx_buf_rsp(uart_dev, next_buf, 1024);
-		next_buf = (next_buf == long_rx_buf2) ? long_rx_buf : long_rx_buf2;
+		uart_rx_buf_rsp(dev, next_buffer, 1024);
+		next_buffer = (next_buffer == long_rx_buf2) ? long_rx_buf : long_rx_buf2;
 		break;
 	default:
 		break;
