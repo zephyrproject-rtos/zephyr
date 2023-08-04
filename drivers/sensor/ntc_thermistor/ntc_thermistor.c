@@ -95,9 +95,7 @@ static int ntc_thermistor_init(const struct device *dev)
 	return 0;
 }
 
-#define NTC_THERMISTOR_DEFINE(inst, id, comp_table)                                                \
-	BUILD_ASSERT(ARRAY_SIZE(comp_table) % 2 == 0, "Compensation table needs to be even size"); \
-                                                                                                   \
+#define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                           \
 	static int compare_ohm_##id##inst(const void *key, const void *element);                   \
                                                                                                    \
 	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                        \
@@ -112,8 +110,8 @@ static int ntc_thermistor_init(const struct device *dev)
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
 				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
 				.type = {                                                          \
-					.comp = (const struct ntc_compensation *)comp_table,       \
-					.n_comp = ARRAY_SIZE(comp_table),                          \
+					.comp = _comp,                                             \
+					.n_comp = _n_comp,                                         \
 					.ohm_cmp = compare_ohm_##id##inst,                         \
 				},                                                                 \
 			},                                                                         \
@@ -130,12 +128,16 @@ static int ntc_thermistor_init(const struct device *dev)
 		&ntc_thermistor_cfg_##id##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,          \
 		&ntc_thermistor_driver_api);
 
+#define NTC_THERMISTOR_DEFINE(inst, id, comp) \
+	NTC_THERMISTOR_DEFINE0(inst, id, comp, ARRAY_SIZE(comp))
+
 /* ntc-thermistor-generic */
 #define DT_DRV_COMPAT ntc_thermistor_generic
 
 #define NTC_THERMISTOR_GENERIC_DEFINE(inst)                                                        \
 	static const uint32_t comp_##inst[] = DT_INST_PROP(inst, zephyr_compensation_table);       \
-	NTC_THERMISTOR_DEFINE(inst, DT_DRV_COMPAT, comp_##inst)
+	NTC_THERMISTOR_DEFINE0(inst, DT_DRV_COMPAT, (struct ntc_compensation *)comp_##inst,        \
+		ARRAY_SIZE(comp_##inst) / 2)
 
 DT_INST_FOREACH_STATUS_OKAY(NTC_THERMISTOR_GENERIC_DEFINE)
 
