@@ -1165,7 +1165,7 @@ static void read_codecs_v2(struct net_buf *buf, struct net_buf **evt)
 	/* copy vendor specific codec information  */
 	vs_codecs = (struct bt_hci_vs_codecs_v2 *)&rp->codecs[std_codecs_bytes];
 	vs_codecs->num_codecs = num_vs_codecs;
-	for (i = 0; i < num_std_codecs; i++) {
+	for (i = 0; i < num_vs_codecs; i++) {
 		struct bt_hci_vs_codec_info_v2 *codec;
 
 		codec = &vs_codecs->codec_info[i];
