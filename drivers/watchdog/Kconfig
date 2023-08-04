@@ -118,4 +118,6 @@ source "drivers/watchdog/Kconfig.nxp_fs26"
 
 source "drivers/watchdog/Kconfig.ambiq"
 
+source "drivers/watchdog/Kconfig.shell"
+
 endif # WATCHDOG
