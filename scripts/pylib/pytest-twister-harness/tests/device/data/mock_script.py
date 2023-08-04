@@ -61,6 +61,7 @@ def main() -> int:
 
     print('End of script', flush=True)
     print('Returns with code', args.return_code, flush=True)
+    time.sleep(1)  # give a moment for external programs to collect all outputs
     return args.return_code
 
 

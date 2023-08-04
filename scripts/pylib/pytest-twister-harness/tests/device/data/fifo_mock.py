@@ -92,7 +92,7 @@ def main():
     with FifoFile(read_path, 'rb'), FifoFile(write_path, 'wb') as wf:
         for line in content.split('\n'):
             wf.write(f'{line}\n'.encode('utf-8'))
-            time.sleep(0.1)
+    time.sleep(1)  # give a moment for external programs to collect all outputs
     return 0
 
 
