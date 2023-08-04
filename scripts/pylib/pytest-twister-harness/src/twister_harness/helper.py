@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 import logging
-import os.path
+import os
 import platform
 import shlex
+import signal
+import subprocess
+import time
+
+import psutil
 
 _WINDOWS = platform.system() == 'Windows'
 
@@ -38,3 +43,18 @@ def normalize_filename(filename: str) -> str:
     filename = os.path.expanduser(os.path.expandvars(filename))
     filename = os.path.normpath(os.path.abspath(filename))
     return filename
+
+
+def terminate_process(proc: subprocess.Popen) -> None:
+    """
+    Try to terminate provided process and all its subprocesses recursively.
+    """
+    for child in psutil.Process(proc.pid).children(recursive=True):
+        try:
+            os.kill(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    proc.terminate()
+    # sleep for a while before attempting to kill
+    time.sleep(0.5)
+    proc.kill()

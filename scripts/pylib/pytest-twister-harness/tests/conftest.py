@@ -21,3 +21,12 @@ def copy_example(pytester) -> Path:
     resources_dir = Path(__file__).parent / 'data'
     pytester.copy_example(str(resources_dir))
     return pytester.path
+
+
+def readlines_until(device, line_pattern: str):
+    lines = []
+    while True:
+        line = device.readline()
+        lines.append(line)
+        if line_pattern in line:
+            return lines

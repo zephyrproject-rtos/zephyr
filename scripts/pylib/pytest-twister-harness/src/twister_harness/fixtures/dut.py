@@ -26,14 +26,9 @@ def dut(request: pytest.FixtureRequest) -> Generator[DeviceAdapter, None, None]:
     device = device_class(device_config)
 
     try:
-        device.connect()
-        device.generate_command()
-        device.initialize_log_files()
-        device.flash_and_run()
-        device.connect()
+        device.launch()
         yield device
     except KeyboardInterrupt:
         pass
     finally:  # to make sure we close all running processes after user broke execution
-        device.disconnect()
-        device.stop()
+        device.close()

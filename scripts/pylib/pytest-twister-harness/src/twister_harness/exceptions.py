@@ -4,3 +4,7 @@
 
 class TwisterHarnessException(Exception):
     """General Twister harness exception."""
+
+
+class TwisterHarnessTimeoutException(TwisterHarnessException):
+    """Twister harness timeout exception"""
