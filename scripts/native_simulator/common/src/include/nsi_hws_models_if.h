@@ -15,26 +15,32 @@
 extern "C" {
 #endif
 
+/* Internal structure used to link HW events */
+struct nsi_hw_event_st {
+	void (*const callback)(void);
+	uint64_t *timer;
+};
+
 /**
  * Register an event timer and event callback
  *
  * The HW scheduler will keep track of this event, and call its callback whenever its
  * timer is reached.
- * The ordering of events in the same microsecond is given by prio (lowest first),
- * and if also in the same priority by alphabetical order of the callback.
+ * The ordering of events in the same microsecond is given by prio (lowest first).
  * (Normally HW models will not care about the event ordering, and will simply set a prio like 100)
  *
  * Only very particular models will need to execute before or after others.
+ *
+ * Priority can be a number between 0 and 999.
  */
-#define NSI_HW_EVENT(timer, fn, prio)	\
-	static void (* const NSI_CONCAT(__nsi_hw_event_cb_, fn))(void) \
-		__attribute__((__used__)) \
-		__attribute__((__section__(".nsi_hw_event" NSI_STRINGIFY(prio) "_callback")))\
-		= fn; \
-	static uint64_t * const NSI_CONCAT(__nsi_hw_event_ti_, fn) \
-		__attribute__((__used__)) \
-		__attribute__((__section__(".nsi_hw_event" NSI_STRINGIFY(prio) "_timer")))\
-		= &timer
+#define NSI_HW_EVENT(t, fn, prio)					\
+	static const struct nsi_hw_event_st NSI_CONCAT(NSI_CONCAT(__nsi_hw_event_, fn), t) \
+		__attribute__((__used__))						\
+		__attribute__((__section__(".nsi_hw_event_" NSI_STRINGIFY(prio))))	\
+		= {			\
+			.callback = fn,	\
+			.timer = &t,	\
+		}
 
 #ifdef __cplusplus
 }

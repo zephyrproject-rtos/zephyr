@@ -13,6 +13,14 @@
 extern "C" {
 #endif
 
+#define NSITASK_PRE_BOOT_1_LEVEL	0
+#define NSITASK_PRE_BOOT_2_LEVEL	1
+#define NSITASK_HW_INIT_LEVEL		2
+#define NSITASK_PRE_BOOT_3_LEVEL	3
+#define NSITASK_FIRST_SLEEP_LEVEL	4
+#define NSITASK_ON_EXIT_PRE_LEVEL	5
+#define NSITASK_ON_EXIT_POST_LEVEL	6
+
 /**
  * NSI_TASK
  *
@@ -45,15 +53,10 @@ extern "C" {
 	static void (* const NSI_CONCAT(__nsi_task_, fn))(void) \
 	__attribute__((__used__)) \
 	__attribute__((__section__(".nsi_" #level NSI_STRINGIFY(prio) "_task")))\
-	= fn
-
-#define NSITASK_PRE_BOOT_1_LEVEL	0
-#define NSITASK_PRE_BOOT_2_LEVEL	1
-#define NSITASK_HW_INIT_LEVEL		2
-#define NSITASK_PRE_BOOT_3_LEVEL	3
-#define NSITASK_FIRST_SLEEP_LEVEL	4
-#define NSITASK_ON_EXIT_PRE_LEVEL	5
-#define NSITASK_ON_EXIT_POST_LEVEL	6
+	= fn; \
+	/* Let's cross-check the macro level is a valid one, so we don't silently drop it */ \
+	_Static_assert(NSITASK_##level##_LEVEL >= 0, \
+			"Using a non pre-defined level, it will be dropped")
 
 /**
  * @brief Run the set of special native tasks corresponding to the given level
