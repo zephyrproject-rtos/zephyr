@@ -111,6 +111,10 @@ static int gpio_altera_port_get_raw(const struct device *dev, uint32_t *value)
 
 	addr = reg_base + ALTERA_AVALON_PIO_DATA_OFFSET;
 
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
 	*value = sys_read32((addr));
 
 	return 0;
@@ -119,10 +123,12 @@ static int gpio_altera_port_get_raw(const struct device *dev, uint32_t *value)
 static int gpio_altera_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	const struct gpio_altera_config *cfg = dev->config;
-	const int outset = cfg->outset;
+	struct gpio_altera_data * const data = dev->data;
+	const uint8_t outset = cfg->outset;
 	const int port_pin_mask = cfg->common.port_pin_mask;
 	uintptr_t reg_base = cfg->reg_base;
 	uint32_t addr;
+	k_spinlock_key_t key;
 
 	if ((port_pin_mask & mask) == 0) {
 		return -EINVAL;
@@ -132,6 +138,8 @@ static int gpio_altera_port_set_bits_raw(const struct device *dev, gpio_port_pin
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
+
 	if (outset) {
 		addr = reg_base + ALTERA_AVALON_PIO_SET_BITS;
 		sys_write32(mask, addr);
@@ -140,16 +148,20 @@ static int gpio_altera_port_set_bits_raw(const struct device *dev, gpio_port_pin
 		sys_set_bits(addr, mask);
 	}
 
+	k_spin_unlock(&data->lock, key);
+
 	return 0;
 }
 
 static int gpio_altera_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	const struct gpio_altera_config *cfg = dev->config;
-	const int outclear = cfg->outclear;
+	struct gpio_altera_data * const data = dev->data;
+	const uint8_t outclear = cfg->outclear;
 	const int port_pin_mask = cfg->common.port_pin_mask;
 	uintptr_t reg_base = cfg->reg_base;
 	uint32_t addr;
+	k_spinlock_key_t key;
 
 	/* Check if mask range within 32 */
 	if ((port_pin_mask & mask) == 0) {
@@ -160,6 +172,8 @@ static int gpio_altera_port_clear_bits_raw(const struct device *dev, gpio_port_p
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
+
 	if (outclear) {
 		addr = reg_base + ALTERA_AVALON_PIO_CLEAR_BITS;
 		sys_write32(mask, addr);
@@ -167,6 +181,8 @@ static int gpio_altera_port_clear_bits_raw(const struct device *dev, gpio_port_p
 		addr = reg_base + ALTERA_AVALON_PIO_DATA_OFFSET;
 		sys_clear_bits(addr, mask);
 	}
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -189,9 +205,11 @@ static int gpio_altera_pin_interrupt_configure(const struct device *dev,
 	ARG_UNUSED(trig);
 
 	const struct gpio_altera_config *cfg = dev->config;
+	struct gpio_altera_data * const data = dev->data;
 	uintptr_t reg_base = cfg->reg_base;
 	const int port_pin_mask = cfg->common.port_pin_mask;
 	uint32_t addr;
+	k_spinlock_key_t key;
 
 	/* Check if pin number is within range */
 	if ((port_pin_mask & BIT(pin)) == 0) {
@@ -203,6 +221,8 @@ static int gpio_altera_pin_interrupt_configure(const struct device *dev,
 	}
 
 	addr = reg_base + ALTERA_AVALON_PIO_IRQ_OFFSET;
+
+	key = k_spin_lock(&data->lock);
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -219,6 +239,8 @@ static int gpio_altera_pin_interrupt_configure(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -240,12 +262,17 @@ static void gpio_altera_irq_handler(const struct device *dev)
 	uintptr_t reg_base = cfg->reg_base;
 	uint32_t port_value;
 	uint32_t addr;
+	k_spinlock_key_t key;
 
 	addr = reg_base + ALTERA_AVALON_PIO_IRQ_OFFSET;
+
+	key = k_spin_lock(&data->lock);
 
 	port_value = sys_read32(addr);
 
 	sys_clear_bits(addr, port_value);
+
+	k_spin_unlock(&data->lock, key);
 
 	/* Call the corresponding callback registered for the pin */
 	gpio_fire_callbacks(&data->cb, dev, port_value);
