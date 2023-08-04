@@ -20,7 +20,7 @@ class QemuAdapter(BinaryAdapterBase):
     def __init__(self, device_config: DeviceConfig) -> None:
         super().__init__(device_config)
         qemu_fifo_file_path = Path(self.device_config.build_dir) / 'qemu-fifo'
-        self._fifo_connection: FifoHandler = FifoHandler(qemu_fifo_file_path)
+        self._fifo_connection: FifoHandler = FifoHandler(qemu_fifo_file_path, self.base_timeout)
 
     def generate_command(self) -> None:
         """Set command to run."""
@@ -33,20 +33,15 @@ class QemuAdapter(BinaryAdapterBase):
         self._create_fifo_connection()
 
     def _create_fifo_connection(self) -> None:
-        self._fifo_connection.connect()
-        booting_timeout_in_ms: int = 10_000  #: wait time for booting Qemu in milliseconds
-        for _ in range(int(booting_timeout_in_ms / 10) or 1):
+        self._fifo_connection.initiate_connection()
+        timeout_time: float = time.time() + self.base_timeout
+        while time.time() < timeout_time and self._is_binary_running():
             if self._fifo_connection.is_open:
-                break
-            elif not self._is_binary_running():
-                msg = 'Problem with starting QEMU'
-                logger.error(msg)
-                raise TwisterHarnessException(msg)
+                return
             time.sleep(0.1)
-        else:
-            msg = 'Problem with starting QEMU - fifo file was not created yet'
-            logger.error(msg)
-            raise TwisterHarnessException(msg)
+        msg = 'Cannot establish communication with QEMU device.'
+        logger.error(msg)
+        raise TwisterHarnessException(msg)
 
     def _stop_subprocess(self) -> None:
         super()._stop_subprocess()
@@ -62,10 +57,11 @@ class QemuAdapter(BinaryAdapterBase):
 
     def _write_to_device(self, data: bytes) -> None:
         self._fifo_connection.write(data)
+        self._fifo_connection.flush_write()
 
     def _flush_device_output(self) -> None:
         if self.is_device_running():
-            self._fifo_connection.flush()
+            self._fifo_connection.flush_read()
 
     def is_device_connected(self) -> bool:
         """Return true if device is connected."""
