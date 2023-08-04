@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/renesas/rzt2m.dtsi>
+
+/ {
+	model = "RZT/2M Starter Kit";
+	compatible = "renesas,rzt2m_starter_kit";
+
+	chosen {
+		zephyr,sram = &cpu0_atcm;
+	};
+};
