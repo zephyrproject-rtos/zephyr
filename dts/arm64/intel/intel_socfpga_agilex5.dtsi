@@ -392,6 +392,21 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		resets = <&reset RSTMGR_USB0_RSTLINE>;
+	};
+
+	io96b0: io96b@18400000 {
+		compatible = "intel,io96b";
+		reg = <0x18400000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 95 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	io96b1: io96b@18800000 {
+		compatible = "intel,io96b";
+		reg = <0x18800000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 120 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 		status = "disabled";
 	};
 };
