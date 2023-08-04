@@ -21,7 +21,6 @@ struct ntc_type {
 
 struct ntc_config {
 	bool connected_positive;
-	uint32_t r25_ohm;
 	uint32_t pullup_uv;
 	uint32_t pullup_ohm;
 	uint32_t pulldown_ohm;

@@ -102,7 +102,6 @@ static int ntc_thermistor_init(const struct device *dev)
 		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
 		.ntc_cfg =                                                                         \
 			{                                                                          \
-				.r25_ohm = DT_INST_PROP(inst, r25_ohm),                            \
 				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
