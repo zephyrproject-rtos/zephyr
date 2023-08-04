@@ -50,7 +50,7 @@ BaseSubprocessTransport.__del__ = silence_event_loop_closed(BaseSubprocessTransp
 logger = logging.getLogger(__name__)
 
 
-class SimulatorAdapterBase(DeviceAdapter, abc.ABC):
+class BinaryAdapterBase(DeviceAdapter, abc.ABC):
 
     def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
         """
@@ -191,7 +191,7 @@ class SimulatorAdapterBase(DeviceAdapter, abc.ABC):
         self.handler_log_file.handle(start_msg)
 
 
-class NativeSimulatorAdapter(SimulatorAdapterBase):
+class NativeSimulatorAdapter(BinaryAdapterBase):
     """Simulator adapter to run `zephyr.exe` simulation"""
 
     def generate_command(self) -> None:
@@ -201,7 +201,7 @@ class NativeSimulatorAdapter(SimulatorAdapterBase):
         ]
 
 
-class UnitSimulatorAdapter(SimulatorAdapterBase):
+class UnitSimulatorAdapter(BinaryAdapterBase):
     """Simulator adapter to run unit tests"""
 
     def generate_command(self) -> None:
@@ -209,7 +209,7 @@ class UnitSimulatorAdapter(SimulatorAdapterBase):
         self.command = [str((Path(self.device_config.build_dir) / 'testbinary').resolve())]
 
 
-class CustomSimulatorAdapter(SimulatorAdapterBase):
+class CustomSimulatorAdapter(BinaryAdapterBase):
 
     def generate_command(self) -> None:
         """Return command to run."""
