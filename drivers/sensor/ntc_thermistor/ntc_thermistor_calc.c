@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <zephyr/devicetree.h>
 #include "ntc_thermistor.h"
@@ -97,17 +98,25 @@ static void ntc_lookup_comp(const struct ntc_type *type, unsigned int ohm, int *
  * ntc_get_ohm_of_thermistor() - Calculate the resistance read from NTC Thermistor
  *
  * @cfg: NTC Thermistor configuration
- * @max_adc: Max ADC value
- * @raw_adc: Raw ADC value read
+ * @sample_mv: Measured voltage in mV
  */
-uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, uint32_t max_adc, int16_t raw_adc)
+uint32_t ntc_get_ohm_of_thermistor(const struct ntc_config *cfg, int sample_mv)
 {
+	int pullup_mv = cfg->pullup_uv / 1000;
 	uint32_t ohm;
 
+	if (sample_mv <= 0) {
+		return cfg->connected_positive ? INT_MAX : 0;
+	}
+
+	if (sample_mv >= pullup_mv) {
+		return cfg->connected_positive ? 0 : INT_MAX;
+	}
+
 	if (cfg->connected_positive) {
-		ohm = cfg->pulldown_ohm * max_adc / (raw_adc - 1);
+		ohm = cfg->pulldown_ohm * (pullup_mv - sample_mv) / sample_mv;
 	} else {
-		ohm = cfg->pullup_ohm * (raw_adc - 1) / max_adc;
+		ohm = cfg->pullup_ohm * sample_mv / (pullup_mv - sample_mv);
 	}
 
 	return ohm;
