@@ -27,15 +27,15 @@ logger = logging.getLogger(__name__)
 class HardwareAdapter(DeviceAdapter):
     """Adapter class for real device."""
 
-    def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
-        super().__init__(device_config, **kwargs)
+    def __init__(self, device_config: DeviceConfig) -> None:
+        super().__init__(device_config)
         self._flashing_timeout: float = self.base_timeout
         self._serial_connection: serial.Serial | None = None
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
 
         self.device_log_path: Path = Path(device_config.build_dir) / 'device.log'
-        self._initialize_log_file(self.device_log_path)
+        self._log_files.append(self.device_log_path)
 
     def generate_command(self) -> None:
         """Return command to flash."""
