@@ -1748,48 +1748,70 @@ void z_thread_abort(struct k_thread *thread)
 	}
 
 #ifdef CONFIG_SMP
-	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
-		/* Another CPU is spinning for us, don't deadlock */
-		end_thread(thread);
-	}
+	bool active_elsewhere = thread_active_elsewhere(thread);
 
-	bool active = thread_active_elsewhere(thread);
+	if (active_elsewhere) {
 
-	if (active) {
-		/* It's running somewhere else, flag and poke */
+		/*
+		 * The thread is running on another CPU. Flag it as needing
+		 * to abort. If the platform supports IPIs, send one to
+		 * force a schedule point.
+		 */
+
 		thread->base.thread_state |= _THREAD_ABORTING;
 
-		/* We're going to spin, so need a true synchronous IPI
-		 * here, not deferred!
-		 */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 		arch_sched_ipi();
 #endif
-	}
 
-	if (is_aborting(thread) && thread != _current) {
 		if (arch_is_in_isr()) {
-			/* ISRs can only spin waiting another CPU */
+
+			/*
+			 * This routine was called within an ISR. Release
+			 * sched_spinlock to allow the CPU executing the target
+			 * thread to reach a schedule point (during which the
+			 * target thread will move from the aborting state to
+			 * the dead state. Busy wait until that happens.
+			 */
+
 			k_spin_unlock(&sched_spinlock, key);
 			while (is_aborting(thread)) {
 			}
 
-			/* Now we know it's dying, but not necessarily
-			 * dead.  Wait for the switch to happen!
+			/*
+			 * Although the thread has been marked as dead, its
+			 * death is only considered finalized once it has been
+			 * switched out. Wait for that switch to happen.
 			 */
+
 			key = k_spin_lock(&sched_spinlock);
 			z_sched_switch_spin(thread);
 			k_spin_unlock(&sched_spinlock, key);
-		} else if (active) {
-			/* Threads can join */
+		} else {
+
+			/*
+			 * The target thread is currently running on another
+			 * CPU and the abort was issued at thread level. Add
+			 * the current thread to the target thread's join queue
+			 * so that the current thread will wake once the
+			 * target thread has died.
+			 */
+
 			add_to_waitq_locked(_current, &thread->join_queue);
 			z_swap(&sched_spinlock, key);
 		}
-		return; /* lock has been released */
+
+		return;
 	}
 #endif
+
+	/*
+	 * The target thread is either the current thread or is known to not
+	 * be running on any CPU. End it.
+	 */
+
 	end_thread(thread);
-	if (thread == _current && !arch_is_in_isr()) {
+	if ((thread == _current) && !arch_is_in_isr()) {
 		z_swap(&sched_spinlock, key);
 		__ASSERT(false, "aborted _current back from dead");
 	}
