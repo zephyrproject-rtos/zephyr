@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pytest
 
-from conftest import readlines_until
 from twister_harness.device.qemu_adapter import QemuAdapter
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.twister_harness_config import DeviceConfig
@@ -38,7 +37,7 @@ def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> 
     script_path = resources.joinpath('fifo_mock.py')
     device.command = ['python', str(script_path), fifo_file_path]
     device.launch()
-    lines = readlines_until(device=device, line_pattern='Namespaces are one honking great idea')
+    lines = device.readlines_until(regex='Namespaces are one honking great idea')
     device.close()
     assert 'Readability counts.' in lines
     assert os.path.isfile(device.handler_log_path)

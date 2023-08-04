@@ -9,7 +9,6 @@ from unittest import mock
 
 import pytest
 
-from conftest import readlines_until
 from twister_harness.device.binary_adapter import (
     CustomSimulatorAdapter,
     NativeSimulatorAdapter,
@@ -35,7 +34,7 @@ def test_if_simulator_adapter_runs_without_errors(
     # patching original command by mock_script.py to simulate same behaviour as zephyr.exe
     device.command = ['python3', str(script_path)]
     device.launch()
-    lines = readlines_until(device=device, line_pattern='Returns with code')
+    lines = device.readlines_until(regex='Returns with code')
     device.close()
     assert 'Readability counts.' in lines
     assert os.path.isfile(device.handler_log_path)
@@ -53,7 +52,7 @@ def test_if_simulator_adapter_finishes_after_timeout_while_there_is_no_data_from
     device.command = ['python3', str(script_path), '--long-sleep', '--sleep=5']
     device.launch()
     with pytest.raises(TwisterHarnessTimeoutException, match='Read from device timeout occurred'):
-        readlines_until(device=device, line_pattern='Returns with code')
+        device.readlines_until(regex='Returns with code')
     device.close()
     assert device._process is None
     with open(device.handler_log_path, 'r') as file:
