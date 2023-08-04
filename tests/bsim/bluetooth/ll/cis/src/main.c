@@ -104,7 +104,7 @@ static bt_addr_le_t peer_addr;
 
 #define NAME_LEN 30
 
-#define BUF_ALLOC_TIMEOUT   (40) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT   (50) /* milliseconds */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
