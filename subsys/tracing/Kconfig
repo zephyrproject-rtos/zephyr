@@ -308,6 +308,18 @@ config TRACING_EVENT
 	help
 	  Enable tracing Events.
 
+config TRACING_POLLING
+	bool "Tracing Polling"
+	default y
+	help
+	  Enable tracing Work Polling and Polling API.
+
+config TRACING_PM
+	bool "Tracing Power Management"
+	default y
+	help
+	  Enable tracing Power Management.
+
 endmenu  # Tracing Configuration
 
 endif
