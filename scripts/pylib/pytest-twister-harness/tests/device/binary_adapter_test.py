@@ -20,7 +20,7 @@ from twister_harness.twister_harness_config import DeviceConfig
 
 @pytest.fixture(name='device')
 def fixture_adapter(tmp_path) -> NativeSimulatorAdapter:
-    return NativeSimulatorAdapter(DeviceConfig(build_dir=tmp_path))
+    return NativeSimulatorAdapter(DeviceConfig(build_dir=tmp_path, type='native'))
 
 
 def test_if_simulator_adapter_runs_without_errors(
@@ -106,7 +106,7 @@ def test_if_native_simulator_adapter_get_command_returns_proper_string(
 
 @mock.patch('shutil.which', return_value='west')
 def test_if_custom_simulator_adapter_get_command_returns_proper_string(patched_which, tmp_path: Path) -> None:
-    device = CustomSimulatorAdapter(DeviceConfig(build_dir=tmp_path))
+    device = CustomSimulatorAdapter(DeviceConfig(build_dir=tmp_path, type='custom'))
     device.generate_command()
     assert isinstance(device.command, list)
     assert device.command == ['west', 'build', '-d', str(tmp_path), '-t', 'run']
@@ -114,13 +114,13 @@ def test_if_custom_simulator_adapter_get_command_returns_proper_string(patched_w
 
 @mock.patch('shutil.which', return_value=None)
 def test_if_custom_simulator_adapter_raise_exception_when_west_not_found(patched_which, tmp_path: Path) -> None:
-    device = CustomSimulatorAdapter(DeviceConfig(build_dir=tmp_path))
+    device = CustomSimulatorAdapter(DeviceConfig(build_dir=tmp_path, type='custom'))
     with pytest.raises(TwisterHarnessException, match='west not found'):
         device.generate_command()
 
 
 def test_if_unit_simulator_adapter_get_command_returns_proper_string(tmp_path: Path) -> None:
-    device = UnitSimulatorAdapter(DeviceConfig(build_dir=tmp_path))
+    device = UnitSimulatorAdapter(DeviceConfig(build_dir=tmp_path, type='unit'))
     device.generate_command()
     assert isinstance(device.command, list)
     assert device.command == [str(tmp_path / 'testbinary')]

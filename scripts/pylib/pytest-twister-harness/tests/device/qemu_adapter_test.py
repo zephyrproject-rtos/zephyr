@@ -18,7 +18,7 @@ from twister_harness.twister_harness_config import DeviceConfig
 def fixture_device_adapter(tmp_path) -> Generator[QemuAdapter, None, None]:
     build_dir = tmp_path / 'build_dir'
     os.mkdir(build_dir)
-    device = QemuAdapter(DeviceConfig(build_dir=build_dir))
+    device = QemuAdapter(DeviceConfig(build_dir=build_dir, type='qemu'))
     try:
         yield device
     finally:
