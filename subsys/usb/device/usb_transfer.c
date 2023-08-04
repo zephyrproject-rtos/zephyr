@@ -131,7 +131,7 @@ static void usb_transfer_work(struct k_work *item)
 	}
 
 done:
-	if (trans->status != -EBUSY && trans->cb) { /* Transfer complete */
+	if (trans->status != -EBUSY) { /* Transfer complete */
 		usb_transfer_callback cb = trans->cb;
 		int tsize = trans->tsize;
 		void *priv = trans->priv;
@@ -149,7 +149,9 @@ done:
 		k_sem_give(&trans->sem);
 
 		/* Transfer completion callback */
-		cb(ep, tsize, priv);
+		if (cb) {
+			cb(ep, tsize, priv);
+		}
 	}
 }
 
