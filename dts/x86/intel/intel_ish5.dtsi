@@ -95,6 +95,16 @@
 			status = "okay";
 		};
 
+		ipmhost: ipm@4100000 {
+			compatible = "intel,sedi-ipm";
+			reg = <0x4100000 0x1000>;
+			peripheral-id = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
+
 		uart0: uart@8100000 {
 			compatible = "intel,sedi-uart";
 			reg = <0x08100000 0x1000>;
