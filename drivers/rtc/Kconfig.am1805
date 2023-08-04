@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Linumiz
+# Author: Sri Surya  <srisurya@linumiz.com>
+
+config RTC_AM1805
+	bool "AMBIQ AM1805 RTC driver"
+	default y
+	depends on DT_HAS_AMBIQ_AM1805_ENABLED
+	select I2C
+	help
+	  Enable the AMBIQ AM1805 RTC driver.
+
+if RTC_AM1805
+
+config RTC_AM1805_THREAD_STACK_SIZE
+	int "Stack size for the am1805 interrupt thread"
+	default 512
+	help
+	  Size of the stack used for the thread handling interrupts and dispatching callbacks.
+
+config RTC_AM1805_THREAD_PRIO
+	int "Priority for the am1805 interrupt thread"
+	default 0
+	help
+	  Priority level for the thread handling interrupts and dispatching callbacks.
+
+endif
