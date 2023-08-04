@@ -40,7 +40,7 @@ class DeviceAdapter(abc.ABC):
         self.command: list[str] = []
         self._west: str | None = None
 
-        self.handler_log_path: Path = Path(device_config.build_dir) / 'handler.log'
+        self.handler_log_path: Path = device_config.build_dir / 'handler.log'
         self._log_files: list[Path] = [self.handler_log_path]
 
     def __repr__(self) -> str:

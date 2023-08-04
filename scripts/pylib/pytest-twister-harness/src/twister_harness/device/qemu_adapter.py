@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 import time
-from pathlib import Path
 
 from twister_harness.device.fifo_handler import FifoHandler
 from twister_harness.device.binary_adapter import BinaryAdapterBase
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class QemuAdapter(BinaryAdapterBase):
     def __init__(self, device_config: DeviceConfig) -> None:
         super().__init__(device_config)
-        qemu_fifo_file_path = Path(self.device_config.build_dir) / 'qemu-fifo'
+        qemu_fifo_file_path = self.device_config.build_dir / 'qemu-fifo'
         self._fifo_connection: FifoHandler = FifoHandler(qemu_fifo_file_path, self.base_timeout)
 
     def generate_command(self) -> None:

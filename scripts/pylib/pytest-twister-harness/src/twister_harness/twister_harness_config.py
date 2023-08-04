@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DeviceConfig:
+    type: str
+    build_dir: Path
+    base_timeout: float = 60.0  # [s]
     platform: str = ''
-    type: str = ''
     serial: str = ''
     baud: int = 115200
     runner: str = ''
@@ -24,25 +26,20 @@ class DeviceConfig:
     product: str = ''
     serial_pty: str = ''
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
-    base_timeout: float = 60.0  # [s]
-    build_dir: Path | str = ''
-    binary_file: Path | str = ''
     name: str = ''
-    pre_script: str = ''
-    post_script: str = ''
-    post_flash_script: str = ''
+    pre_script: Path | None = None
+    post_script: Path | None = None
+    post_flash_script: Path | None = None
 
 
 @dataclass
 class TwisterHarnessConfig:
     """Store Twister harness configuration to have easy access in test."""
-    output_dir: Path = Path('twister_harness_out')
     devices: list[DeviceConfig] = field(default_factory=list, repr=False)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterHarnessConfig:
         """Create new instance from pytest.Config."""
-        output_dir: Path = config.option.output_dir
 
         devices = []
 
@@ -50,8 +47,10 @@ class TwisterHarnessConfig:
         if config.option.west_flash_extra_args:
             west_flash_extra_args = [w.strip() for w in config.option.west_flash_extra_args.split(',')]
         device_from_cli = DeviceConfig(
-            platform=config.option.platform,
             type=config.option.device_type,
+            build_dir=_cast_to_path(config.option.build_dir),
+            base_timeout=config.option.base_timeout,
+            platform=config.option.platform,
             serial=config.option.device_serial,
             baud=config.option.device_serial_baud,
             runner=config.option.runner,
@@ -59,17 +58,19 @@ class TwisterHarnessConfig:
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
             west_flash_extra_args=west_flash_extra_args,
-            base_timeout=config.option.base_timeout,
-            build_dir=config.option.build_dir,
-            binary_file=config.option.binary_file,
-            pre_script=config.option.pre_script,
-            post_script=config.option.post_script,
-            post_flash_script=config.option.post_flash_script,
+            pre_script=_cast_to_path(config.option.pre_script),
+            post_script=_cast_to_path(config.option.post_script),
+            post_flash_script=_cast_to_path(config.option.post_flash_script),
         )
 
         devices.append(device_from_cli)
 
         return cls(
-            output_dir=output_dir,
             devices=devices
         )
+
+
+def _cast_to_path(path: str | None) -> Path | None:
+    if path is None:
+        return None
+    return Path(path)
