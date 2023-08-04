@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <dmic_regs.h>
 
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
-static const uint32_t base[4] = {PDM0, PDM1, PDM2, PDM3};
+static const uint32_t dmic_base[4] = {PDM0, PDM1, PDM2, PDM3};
 
 /* global data shared between all dmic instances */
 struct dai_dmic_global_shared dai_dmic_global;
@@ -513,17 +513,17 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 			continue;
 
 		if (dmic->startcount == DMIC_UNMUTE_CIC)
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE, 0);
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
 			case 0:
-				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
+				dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
 						     FIR_CONTROL_MUTE, 0);
 				break;
 			case 1:
-				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
+				dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
 						     FIR_CONTROL_MUTE, 0);
 				break;
 			}
@@ -531,13 +531,13 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
 			val = FIELD_PREP(OUT_GAIN, gval);
-			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_A, val);
-			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_A, val);
+			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_LEFT_A, val);
+			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_RIGHT_A, val);
 			break;
 		case 1:
 			val = FIELD_PREP(OUT_GAIN, gval);
-			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_B, val);
-			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_B, val);
+			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_LEFT_B, val);
+			dai_dmic_write(dmic, dmic_base[i] + OUT_GAIN_RIGHT_B, val);
 			break;
 		}
 	}
@@ -591,11 +591,11 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 				     CIC_CONTROL_SOFT_RESET, 0);
 
 		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
+			dai_dmic_read(dmic, dmic_base[i] + CIC_CONTROL));
 #endif
 
 		mic_a = dmic->enable[i] & 1;
@@ -610,40 +610,40 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 		 * This makes sure we do not clear start/en for another DAI.
 		 */
 		if (mic_a && mic_b) {
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_CIC_START_A |
 					     CIC_CONTROL_CIC_START_B,
 					     FIELD_PREP(CIC_CONTROL_CIC_START_A, 1) |
 					     FIELD_PREP(CIC_CONTROL_CIC_START_B, 1));
-			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + MIC_CONTROL,
 					     MIC_CONTROL_PDM_EN_A |
 					     MIC_CONTROL_PDM_EN_B,
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_A, 1) |
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		} else if (mic_a) {
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_CIC_START_A,
 					     FIELD_PREP(CIC_CONTROL_CIC_START_A, 1));
-			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + MIC_CONTROL,
 					     MIC_CONTROL_PDM_EN_A,
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_A, 1));
 		} else if (mic_b) {
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_CIC_START_B,
 					     FIELD_PREP(CIC_CONTROL_CIC_START_B, 1));
-			dai_dmic_update_bits(dmic, base[i] + MIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + MIC_CONTROL,
 					     MIC_CONTROL_PDM_EN_B,
 					     FIELD_PREP(MIC_CONTROL_PDM_EN_B, 1));
 		}
 
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
-			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
+			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
 					     FIR_CONTROL_START,
 					     FIELD_PREP(FIR_CONTROL_START, fir_a));
 			break;
 		case 1:
-			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
+			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
 					     FIR_CONTROL_START,
 					     FIELD_PREP(FIR_CONTROL_START, fir_b));
 			break;
@@ -655,11 +655,11 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	 * start capture in sync.
 	 */
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 				     CIC_CONTROL_SOFT_RESET, 0);
 
 		LOG_INF("dmic_start(), cic 0x%08x",
-			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
+			dai_dmic_read(dmic, dmic_base[i] + CIC_CONTROL));
 	}
 #endif
 
@@ -703,7 +703,7 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		/* Don't stop CIC yet if one FIFO remains active */
 		if (dai_dmic_global.active_fifos_mask == 0) {
-			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_SOFT_RESET |
 					     CIC_CONTROL_MIC_MUTE,
 					     CIC_CONTROL_SOFT_RESET |
@@ -711,12 +711,12 @@ static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
 		}
 		switch (dmic->dai_config_params.dai_index) {
 		case 0:
-			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
+			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_A,
 					     FIR_CONTROL_MUTE,
 					     FIR_CONTROL_MUTE);
 			break;
 		case 1:
-			dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
+			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CONTROL_B,
 					     FIR_CONTROL_MUTE,
 					     FIR_CONTROL_MUTE);
 			break;
