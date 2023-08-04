@@ -48,20 +48,12 @@ extern "C" {
  * @defgroup rtio RTIO
  * @ingroup os_services
  * @{
- * @}
- */
-
-/**
- * @brief RTIO API
- * @defgroup rtio_api RTIO API
- * @ingroup rtio
- * @{
  */
 
 /**
  * @brief RTIO Predefined Priorties
  * @defgroup rtio_sqe_prio RTIO Priorities
- * @ingroup rtio_api
+ * @ingroup rtio
  * @{
  */
 
@@ -88,7 +80,7 @@ extern "C" {
 /**
  * @brief RTIO SQE Flags
  * @defgroup rtio_sqe_flags RTIO SQE Flags
- * @ingroup rtio_api
+ * @ingroup rtio
  * @{
  */
 
@@ -153,7 +145,7 @@ extern "C" {
 /**
  * @brief RTIO CQE Flags
  * @defgroup rtio_cqe_flags RTIO CQE Flags
- * @ingroup rtio_api
+ * @ingroup rtio
  * @{
  */
 
@@ -428,9 +420,6 @@ struct rtio_iodev_api {
 	 *
 	 * This call should be short in duration and most likely
 	 * either enqueue or kick off an entry with the hardware.
-	 *
-	 * If polling is required the iodev should add itself to the execution
-	 * context (@see rtio_add_pollable())
 	 *
 	 * @param iodev_sqe Submission queue entry
 	 */
