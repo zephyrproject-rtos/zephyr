@@ -16,10 +16,8 @@ import psutil
 
 _WINDOWS = platform.system() == 'Windows'
 
-logger = logging.getLogger(__name__)
 
-
-def log_command(logger: logging.Logger, msg: str, args: list, level: int = logging.DEBUG):
+def log_command(logger: logging.Logger, msg: str, args: list, level: int = logging.DEBUG) -> None:
     """
     Platform-independent helper for logging subprocess invocations.
 
@@ -37,12 +35,6 @@ def log_command(logger: logging.Logger, msg: str, args: list, level: int = loggi
         logger.log(level, msg, str(args))
     else:
         logger.log(level, msg, shlex.join(args))
-
-
-def normalize_filename(filename: str) -> str:
-    filename = os.path.expanduser(os.path.expandvars(filename))
-    filename = os.path.normpath(os.path.abspath(filename))
-    return filename
 
 
 def terminate_process(proc: subprocess.Popen) -> None:
