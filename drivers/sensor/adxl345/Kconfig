@@ -11,3 +11,146 @@ config ADXL345
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL345),spi)
 	help
 	  Enable driver for ADXL345 Three-Axis Digital Accelerometer.
+
+if ADXL345
+
+choice
+	prompt "Trigger mode"
+	default ADXL345_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL345_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL345_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL345_TRIGGER
+
+config ADXL345_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL345_TRIGGER
+
+endchoice
+
+config ADXL345_TRIGGER
+	bool
+
+config ADXL345_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL345_TRIGGER_OWN_THREAD && ADXL345_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL345_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL345_TRIGGER_OWN_THREAD && ADXL345_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config ADXL345_ACTIVITY_THRESHOLD
+	int "Upper threshold value"
+	default 2000
+	help
+	  Unsigned value that the adxl345 samples are
+	  compared to in activity trigger mode in mg.
+
+config ADXL345_INACTIVITY_THRESHOLD
+	int "Lower threshold value"
+	default 1000
+	help
+	  Unsigned value that the adxl345 samples are
+	  compared to in inactivity trigger mode in mg.
+
+config ADXL345_INACTIVITY_TIME
+	int "Lower threshold time"
+	default 1
+	help
+	  8 bit value written to the activity timer register
+	  0 to 255 in seconds.
+
+config ADXL345_AUTO_SLEEP
+	int "Put device into sleep mode when inactivity is detected."
+	default 0
+
+config ADXL345_LINK_MODE
+	int "Link activity and inactivity functions."
+	default 1
+
+config ADXL345_SLEEP
+	int "Put device into sleep mode."
+	default 0
+
+config ADXL345_WAKEUP_POLL_FREQ
+	int "Control how often activity is being polled in sleep mode."
+	default 0
+	help
+		0 - 8 Hz
+		1 - 4 Hz
+		2 - 2 Hz
+		3 - 1 Hz
+
+config ADXL345_ODR
+	int "Output data rate of the device."
+	default 8
+	help
+	  0 - 0.1 Hz
+	  1 - 0.2 Hz
+	  2 - 0.39 Hz
+	  3 - 0.78 Hz
+	  4 - 1.56 Hz
+	  5 - 3.13 Hz
+	  6 - 6.25 Hz
+	  7 - 12.5 Hz
+	  8 - 25 Hz
+	  9 - 50 Hz
+	  10 - 100 Hz
+	  11 - 200 Hz
+	  12 - 400 Hz
+	  13 - 800 Hz
+	  14 - 1600 Hz
+	  15 - 3200 Hz
+
+config ADXL345_ABS_REF_ACTIVITY
+	int "Absolute or referenced activity detection"
+	default 0
+	help
+	  Unsigned value that sets the ADXL345 activity
+	  detection in either absolute or referenced mode.
+	  0 - Absolute mode
+	  1 - Referenced mode
+
+config ADXL345_ABS_REF_INACTIVITY
+	int "Absolute or referenced inactivity detection"
+	default 0
+	help
+	  Unsigned value that sets the ADXL345 inactivity
+	  detection in either absolute or referenced mode.
+	  0 - Absolute mode
+	  1 - Referenced mode
+
+config ADXL345_INACTIVITY_AXES
+	string "Axes included in inactivity detection"
+	default ""
+	help
+	  "" - No axis is selected
+	  "z" - Z axis
+	  "y" - Y axis
+	  "x" - X axis
+	  To choose multiple axes concatenate desired axes.
+
+config ADXL345_ACTIVITY_AXES
+	string "Axes included in activity detection"
+	default ""
+	help
+	  "" - No axis is selected
+	  "z" - Z axis
+	  "y" - Y axis
+	  "x" - X axis
+	  To choose multiple axes concatenate desired axes.
+
+endif # ADXL345

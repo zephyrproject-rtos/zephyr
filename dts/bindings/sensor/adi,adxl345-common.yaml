@@ -1,0 +1,12 @@
+# Copyright (c) 2023 KindHome.io
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  int2-gpios:
+    type: phandle-array
+    description: |
+      The INT2 signal defaults to active high as produced by the
+      sensor.  The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
