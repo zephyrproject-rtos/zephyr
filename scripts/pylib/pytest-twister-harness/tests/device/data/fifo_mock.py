@@ -89,7 +89,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('Start')
 
-    with FifoFile(read_path, 'rb'), FifoFile(write_path, 'wb') as wf:
+    with FifoFile(write_path, 'wb') as wf, FifoFile(read_path, 'rb'):
         for line in content.split('\n'):
             wf.write(f'{line}\n'.encode('utf-8'))
     time.sleep(1)  # give a moment for external programs to collect all outputs

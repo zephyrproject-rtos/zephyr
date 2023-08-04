@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from pathlib import Path
 from typing import Generator
 from unittest.mock import patch
 
@@ -27,7 +28,7 @@ def fixture_device_adapter(tmp_path) -> Generator[QemuAdapter, None, None]:
 
 @patch('shutil.which', return_value='west')
 def test_if_generate_command_creates_proper_command(patched_which, device: QemuAdapter):
-    device.device_config.build_dir = 'build_dir'
+    device.device_config.build_dir = Path('build_dir')
     device.generate_command()
     assert device.command == ['west', 'build', '-d', 'build_dir', '-t', 'run']
 
@@ -35,8 +36,6 @@ def test_if_generate_command_creates_proper_command(patched_which, device: QemuA
 def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> None:
     fifo_file_path = str(device.device_config.build_dir / 'qemu-fifo')
     script_path = resources.joinpath('fifo_mock.py')
-    # device.base_timeout = 1
-    # device.booting_timeout_in_ms = 1000
     device.command = ['python', str(script_path), fifo_file_path]
     device.launch()
     lines = readlines_until(device=device, line_pattern='Namespaces are one honking great idea')
@@ -51,8 +50,8 @@ def test_if_qemu_adapter_runs_without_errors(resources, device: QemuAdapter) -> 
 def test_if_qemu_adapter_raise_exception_due_to_no_fifo_connection(device: QemuAdapter) -> None:
     device.base_timeout = 0.3
     device.command = ['sleep', '1']
-    with pytest.raises(TwisterHarnessException, match='Problem with starting QEMU'):
+    with pytest.raises(TwisterHarnessException, match='Cannot establish communication with QEMU device.'):
         device._flash_and_run()
     device._close_device()
-    assert not os.path.exists(device._fifo_connection._fifo_in)
-    assert not os.path.exists(device._fifo_connection._fifo_out)
+    assert not os.path.exists(device._fifo_connection._fifo_out_path)
+    assert not os.path.exists(device._fifo_connection._fifo_in_path)
