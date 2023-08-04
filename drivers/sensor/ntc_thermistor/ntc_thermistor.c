@@ -156,3 +156,29 @@ static __unused const struct ntc_compensation comp_epcos_b57861s0103a039[] = {
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
 				  comp_epcos_b57861s0103a039)
+
+/* murata,ncp15wb473 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT murata_ncp15wb473
+
+static __unused const struct ntc_compensation comp_murata_ncp15wb473[] = {
+	{ -25, 655802 },
+	{ -15, 360850 },
+	{ -5,  206463 },
+	{ 5,   122259 },
+	{ 15,  74730 },
+	{ 25,  47000 },
+	{ 35,  30334 },
+	{ 45,  20048 },
+	{ 55,  13539 },
+	{ 65,  9328 },
+	{ 75,  6544 },
+	{ 85,  4674 },
+	{ 95,  3388 },
+	{ 105, 2494 },
+	{ 115, 1860 },
+	{ 125, 1406 },
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
+				  comp_murata_ncp15wb473)
