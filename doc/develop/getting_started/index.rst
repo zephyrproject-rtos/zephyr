@@ -652,7 +652,7 @@ Build the Blinky Sample
 
    Blinky is compatible with most, but not all, :ref:`boards`. If your board
    does not meet Blinky's :ref:`blinky-sample-requirements`, then
-   :ref:`hello_world` is a good alternative.
+   :ref:`greetings` is a good alternative.
 
    If you are unsure what name west uses for your board, ``west boards``
    can be used to obtain a list of all boards Zephyr supports.
