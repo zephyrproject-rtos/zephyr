@@ -433,7 +433,7 @@ static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
-static void spi_async_call_cb(struct k_poll_event *async_evt,
+static void spi_async_call_cb(struct k_poll_event *evt,
 			      struct k_sem *caller_sem,
 			      void *unused)
 {
@@ -442,15 +442,15 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 	LOG_DBG("Polling...");
 
 	while (1) {
-		ret = k_poll(async_evt, 1, K_MSEC(200));
+		ret = k_poll(evt, 1, K_MSEC(200));
 		zassert_false(ret, "one or more events are not ready");
 
-		result = async_evt->signal->result;
+		result = evt->signal->result;
 		k_sem_give(caller_sem);
 
 		/* Reinitializing for next call */
-		async_evt->signal->signaled = 0U;
-		async_evt->state = K_POLL_STATE_NOT_READY;
+		evt->signal->signaled = 0U;
+		evt->state = K_POLL_STATE_NOT_READY;
 	}
 }
 

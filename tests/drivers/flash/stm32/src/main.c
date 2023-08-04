@@ -25,7 +25,7 @@ static uint32_t sector_mask;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
 static int sector_mask_from_offset(const struct device *dev, off_t offset,
-				   size_t size, uint32_t *sector_mask)
+				   size_t size, uint32_t *mask)
 {
 	struct flash_pages_info start_page, end_page;
 
@@ -34,8 +34,8 @@ static int sector_mask_from_offset(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
-	*sector_mask = ((1UL << (end_page.index + 1)) - 1) &
-		       ~((1UL << start_page.index) - 1);
+	*mask = ((1UL << (end_page.index + 1)) - 1) &
+		~((1UL << start_page.index) - 1);
 
 	return 0;
 }

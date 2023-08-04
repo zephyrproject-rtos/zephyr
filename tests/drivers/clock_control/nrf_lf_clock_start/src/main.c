@@ -7,8 +7,8 @@
 #include <hal/nrf_clock.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
-static nrf_clock_lfclk_t type;
-static bool on;
+static nrf_clock_lfclk_t clk_type;
+static bool clk_on;
 static uint32_t rtc_cnt;
 
 static void xtal_check(bool on, nrf_clock_lfclk_t type)
@@ -58,11 +58,11 @@ ZTEST(nrf_lf_clock_start, test_clock_check)
 		IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING);
 
 	if (xtal) {
-		xtal_check(on, type);
+		xtal_check(clk_on, clk_type);
 	} else if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)) {
-		rc_check(on, type);
+		rc_check(clk_on, clk_type);
 	} else {
-		synth_check(on, type);
+		synth_check(clk_on, clk_type);
 	}
 }
 
@@ -121,7 +121,7 @@ static int get_lfclk_state(void)
 	 * not valid, in that case read system clock to check if it has
 	 * progressed.
 	 */
-	on = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &type);
+	clk_on = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &clk_type);
 	k_busy_wait(100);
 	rtc_cnt = k_cycle_get_32();
 
