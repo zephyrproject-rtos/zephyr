@@ -149,7 +149,7 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	depends on NET_SOCKETS_SOCKOPT_TLS && MBEDTLS_SSL_ALPN
 	help
 	  This variable sets maximum number of supported application layer
-	  protocols over TLS/DTL that can be set explicitly by a socket option.
+	  protocols over TLS/DTLS that can be set explicitly by a socket option.
 	  By default, no supported application layer protocol is set.
 
 config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
