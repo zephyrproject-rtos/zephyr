@@ -21,3 +21,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&counter0 {
+	status = "okay";
+};
