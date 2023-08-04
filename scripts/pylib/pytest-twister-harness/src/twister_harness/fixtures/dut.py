@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope='function')
 def dut(request: pytest.FixtureRequest) -> Generator[DeviceAdapter, None, None]:
     """Return device instance."""
+    test_name = request.node.name
     twister_harness_config: TwisterHarnessConfig = request.config.twister_harness_config  # type: ignore
     device_config: DeviceConfig = twister_harness_config.devices[0]
     device_type = device_config.type
 
     device_class: Type[DeviceAdapter] = DeviceFactory.get_device(device_type)
 
-    device = device_class(device_config)
+    device = device_class(device_config, test_name=test_name)
 
     try:
         device.launch()
