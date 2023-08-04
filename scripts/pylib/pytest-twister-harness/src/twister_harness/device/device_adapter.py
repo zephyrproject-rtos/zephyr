@@ -15,7 +15,7 @@ from twister_harness.twister_harness_config import DeviceConfig
 logger = logging.getLogger(__name__)
 
 
-class DeviceAbstract(abc.ABC):
+class DeviceAdapter(abc.ABC):
     """Class defines an interface for all devices."""
 
     def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
