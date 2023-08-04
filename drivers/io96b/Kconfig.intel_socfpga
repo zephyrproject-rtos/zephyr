@@ -1,0 +1,9 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config IO96B_INTEL_SOCFPGA
+	bool "Intel SoC FPGA IO96B Controller driver"
+	default y
+	depends on DT_HAS_INTEL_IO96B_ENABLED
+	help
+	 Enable the IO96B driver for Intel SoC FPGA device
