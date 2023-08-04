@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT gpio_keys
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/input/input.h>
@@ -180,9 +182,4 @@ static int gpio_keys_init(const struct device *dev)
 			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,      \
 			      NULL);
 
-#define DT_DRV_COMPAT gpio_keys
-DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT zephyr_gpio_keys
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
