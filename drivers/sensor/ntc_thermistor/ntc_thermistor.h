@@ -17,7 +17,6 @@ struct ntc_compensation {
 struct ntc_type {
 	const struct ntc_compensation *comp;
 	int n_comp;
-	int (*ohm_cmp)(const void *key, const void *element);
 };
 
 struct ntc_config {
@@ -28,19 +27,6 @@ struct ntc_config {
 	uint32_t pulldown_ohm;
 	struct ntc_type type;
 };
-
-/**
- * @brief Helper comparison function for bsearch for specific
- * ntc_type
- *
- * Ohms are sorted in descending order, perform comparison to find
- * interval indexes where key falls between
- *
- * @param type: Pointer to ntc_type table info
- * @param key: Key value bsearch is looking for
- * @param element: Array element bsearch is searching
- */
-int ntc_compensation_compare_ohm(const struct ntc_type *type, const void *key, const void *element);
 
 /**
  * @brief Converts ohm to temperature in milli centigrade
