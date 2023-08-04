@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class DeviceAdapter(abc.ABC):
     """Class defines an interface for all devices."""
 
-    def __init__(self, device_config: DeviceConfig, test_name: str = '') -> None:
+    def __init__(self, device_config: DeviceConfig) -> None:
         """
         :param device_config: device configuration
         """
@@ -39,10 +39,9 @@ class DeviceAdapter(abc.ABC):
         self._device_connected: threading.Event = threading.Event()
         self.command: list[str] = []
         self._west: str | None = None
-        self._test_name: str = test_name
 
         self.handler_log_path: Path = Path(device_config.build_dir) / 'handler.log'
-        self._initialize_log_file(self.handler_log_path)
+        self._log_files: list[Path] = [self.handler_log_path]
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -183,9 +182,14 @@ class DeviceAdapter(abc.ABC):
             raise TwisterHarnessException(msg)
         self._write_to_device(data)
 
-    def _initialize_log_file(self, log_file_path: Path) -> None:
-        with open(log_file_path, 'a+') as log_file:
-            log_file.write(f'\n==== Test {self._test_name} started at {datetime.now()} ====\n')
+    def initialize_log_files(self, test_name: str = '') -> None:
+        """
+        Initialize log files (e.g. handler.log) by adding header with
+        information about performed test and current time.
+        """
+        for log_file_path in self._log_files:
+            with open(log_file_path, 'a+') as log_file:
+                log_file.write(f'\n==== Test {test_name} started at {datetime.now()} ====\n')
 
     def _start_reader_thread(self) -> None:
         self._reader_thread = threading.Thread(target=self._handle_device_output, daemon=True)

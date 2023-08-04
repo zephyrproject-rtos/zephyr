@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryAdapterBase(DeviceAdapter, abc.ABC):
-    def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
+    def __init__(self, device_config: DeviceConfig) -> None:
         """
         :param twister_config: twister configuration
         """
-        super().__init__(device_config, **kwargs)
+        super().__init__(device_config)
         self._process: subprocess.Popen | None = None
         self.process_kwargs: dict = {
             'stdout': subprocess.PIPE,

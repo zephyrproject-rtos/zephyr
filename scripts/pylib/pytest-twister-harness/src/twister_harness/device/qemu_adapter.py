@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class QemuAdapter(BinaryAdapterBase):
-    def __init__(self, device_config: DeviceConfig, **kwargs) -> None:
-        super().__init__(device_config, **kwargs)
+    def __init__(self, device_config: DeviceConfig) -> None:
+        super().__init__(device_config)
         qemu_fifo_file_path = Path(self.device_config.build_dir) / 'qemu-fifo'
         self._fifo_connection: FifoHandler = FifoHandler(qemu_fifo_file_path, self.base_timeout)
 
