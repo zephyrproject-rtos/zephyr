@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-from twister_harness.log import configure_logging
 from twister_harness.twister_harness_config import TwisterHarnessConfig
 
 logger = logging.getLogger(__name__)
@@ -134,8 +133,6 @@ def pytest_configure(config: pytest.Config):
 
     # create output directory if not exists
     os.makedirs(config.option.output_dir, exist_ok=True)
-
-    configure_logging(config)
 
     config.twister_harness_config = TwisterHarnessConfig.create(config)  # type: ignore
 
