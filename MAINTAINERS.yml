@@ -1316,6 +1316,7 @@ Release Notes:
     - avisconti
     - teburd
     - yperess
+    - tristan-google
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
@@ -3478,6 +3479,7 @@ Emulation:
     - jeremybettis
     - alevkoy
     - asemjonovs
+    - tristan-google
   files:
     - subsys/emul/
     - include/zephyr/drivers/emul.h
