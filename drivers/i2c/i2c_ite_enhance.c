@@ -966,10 +966,11 @@ static void target_i2c_isr(const struct device *dev)
 
 	/* Any error */
 	if (target_status & E_TARGET_ANY_ERROR) {
-		/* Hardware reset */
-		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
+		goto end;
+	}
+
 	/* Interrupt pending */
-	} else if (target_status & IT8XXX2_I2C_INT_PEND) {
+	if (target_status & IT8XXX2_I2C_INT_PEND) {
 		uint8_t interrupt_status = IT8XXX2_I2C_IRQ_ST(base);
 
 		/* Byte counter enable */
@@ -1021,14 +1022,13 @@ static void target_i2c_isr(const struct device *dev)
 		if (interrupt_status & IT8XXX2_I2C_P_CLR) {
 			/* Transfer done callback function */
 			target_cb->stop(data->target_cfg);
-			/* Hardware reset */
-			IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 		}
 		/* Write clear the peripheral status */
 		IT8XXX2_I2C_IRQ_ST(base) = interrupt_status;
 	}
-	/* Write clear the target status */
-	IT8XXX2_I2C_STR(base) = target_status;
+end:
+	/* Hardware reset */
+	IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 }
 #endif
 
