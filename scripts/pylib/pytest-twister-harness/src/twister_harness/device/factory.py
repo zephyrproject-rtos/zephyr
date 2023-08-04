@@ -37,9 +37,9 @@ class DeviceFactory:
         logger.debug('Get device type "%s"', name)
         try:
             return cls._devices[name]
-        except KeyError as e:
+        except KeyError as exc:
             logger.error('There is no device with name "%s"', name)
-            raise TwisterHarnessException(f'There is no device with name "{name}"') from e
+            raise TwisterHarnessException(f'There is no device with name "{name}"') from exc
 
 
 DeviceFactory.register_device_class('custom', CustomSimulatorAdapter)

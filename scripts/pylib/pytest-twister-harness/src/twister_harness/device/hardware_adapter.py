@@ -34,7 +34,7 @@ class HardwareAdapter(DeviceAdapter):
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
 
-        self.device_log_path: Path = Path(device_config.build_dir) / 'device.log'
+        self.device_log_path: Path = device_config.build_dir / 'device.log'
         self._log_files.append(self.device_log_path)
 
     def generate_command(self) -> None:

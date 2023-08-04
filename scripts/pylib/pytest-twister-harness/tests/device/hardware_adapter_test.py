@@ -18,6 +18,7 @@ def fixture_adapter(tmp_path) -> HardwareAdapter:
     build_dir = tmp_path / 'build_dir'
     os.mkdir(build_dir)
     device_config = DeviceConfig(
+        type='hardware',
         runner='runner',
         build_dir=build_dir,
         platform='platform',
