@@ -10,7 +10,7 @@ from typing import Type
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.hardware_adapter import HardwareAdapter
 from twister_harness.device.qemu_adapter import QemuAdapter
-from twister_harness.device.simulator_adapter import (
+from twister_harness.device.binary_adapter import (
     CustomSimulatorAdapter,
     NativeSimulatorAdapter,
     UnitSimulatorAdapter,
