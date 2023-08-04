@@ -960,7 +960,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "{<SigMID>|<VndCID> <VndMID>}...",
 		      cmd_dfu_comp_elem_add, 5, 10),
 	SHELL_CMD_ARG(comp-hash-get, NULL, "[<Key>]", cmd_dfu_comp_hash_get, 1, 1),
-	SHELL_CMD_ARG(metadata-encode, NULL, "<Major> <Minor> <Rev> <BuildNum> <Size> "
+	SHELL_CMD_ARG(encode, NULL, "<Major> <Minor> <Rev> <BuildNum> <Size> "
 		      "<CoreType> <Hash> <Elems> [<UserData>]",
 		      cmd_dfu_metadata_encode, 9, 1),
 	SHELL_SUBCMD_SET_END);
