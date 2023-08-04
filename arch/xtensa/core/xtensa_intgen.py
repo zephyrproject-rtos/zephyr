@@ -105,13 +105,11 @@ for l in ints_by_lvl:
         cprint("#endif")
 cprint("")
 
-# Populate empty levels just for sanity.  The second-to-last interrupt
-# level (usually "debug") typically doesn't have any associated
-# vectors, but we don't have any way to know that a-prioi.
-max = 0
-for lvl in ints_by_lvl:
-    if lvl > max:
-        max = lvl
+# Populate all theoretical levels just in case.  Odd cores have been
+# seen in the wild with "empty" interrupt levels that exist in the
+# hardware but without any interrupts associated with them.  The
+# unused handlers will be ignored if uncalled.
+max = 15
 
 for lvl in range(0, max+1):
     if not lvl in ints_by_lvl:
