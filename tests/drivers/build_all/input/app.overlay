@@ -18,7 +18,7 @@
 		};
 
 		gpio-keys {
-			compatible = "zephyr,gpio-keys";
+			compatible = "gpio-keys";
 			debounce-interval-ms = <30>;
 			button_0 {
 				gpios = <&test_gpio 0 0>;
