@@ -3209,6 +3209,9 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 			msg->send_status_cb(LWM2M_SEND_STATUS_SUCCESS);
 		}
 		return 0;
+	} else if (code == COAP_RESPONSE_CODE_CONTINUE) {
+		/* Continue sending */
+		return 0;
 	}
 
 	LOG_ERR("Failed with code %u.%u. Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
