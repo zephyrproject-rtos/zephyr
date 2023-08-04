@@ -11,6 +11,7 @@
 extern "C" {
 #endif
 
+typedef int cnd_t;
 typedef int mtx_t;
 typedef int thrd_t;
 

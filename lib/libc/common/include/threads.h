@@ -56,6 +56,13 @@ int mtx_timedlock(mtx_t *ZRESTRICT mutex, const struct timespec *ZRESTRICT time_
 int mtx_trylock(mtx_t *mutex);
 int mtx_unlock(mtx_t *mutex);
 
+int cnd_init(cnd_t *cond);
+int cnd_wait(cnd_t *cond, mtx_t *mtx);
+int cnd_timedwait(cnd_t *ZRESTRICT cond, mtx_t *ZRESTRICT mtx, const struct timespec *ZRESTRICT ts);
+int cnd_signal(cnd_t *cond);
+int cnd_broadcast(cnd_t *cond);
+void cnd_destroy(cnd_t *cond);
+
 #ifdef __cplusplus
 }
 #endif
