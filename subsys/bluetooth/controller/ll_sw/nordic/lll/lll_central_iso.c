@@ -674,7 +674,14 @@ static void isr_rx(void *param)
 	cis_lll = param;
 
 	/* No Rx */
-	if (!trx_done) {
+	if (!trx_done ||
+#if defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
+	    ((((cis_lll->event_count % 3U) < CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT) &&
+	      ((se_curr > cis_lll->nse) || (se_curr <= 2U))) ||
+	     (((cis_lll->event_count % 3U) < (CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT + 1U)) &&
+	      ((se_curr > cis_lll->nse) || (se_curr <= 1U)))) ||
+#endif
+	    false) {
 		payload_count_flush(cis_lll);
 
 		goto isr_rx_next_subevent;
