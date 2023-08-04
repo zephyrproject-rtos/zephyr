@@ -19,18 +19,15 @@
 #include "nsi_main.h"
 #include "nsi_safe_call.h"
 #include "nsi_hw_scheduler.h"
+#include "nsi_hws_models_if.h"
 
 static uint64_t simu_time; /* The actual time as known by the HW models */
 static uint64_t end_of_time = NSI_NEVER; /* When will this device stop */
 
-extern uint64_t *__nsi_hw_events_timers_start[];
-extern uint64_t *__nsi_hw_events_timers_end[];
+extern struct nsi_hw_event_st __nsi_hw_events_start[];
+extern struct nsi_hw_event_st __nsi_hw_events_end[];
 
-extern void (*__nsi_hw_events_callbacks_start[])(void);
-extern void (*__nsi_hw_events_callbacks_end[])(void);
-
-static unsigned int number_of_timers;
-static unsigned int number_of_callbacks;
+static unsigned int number_of_events;
 
 static unsigned int next_timer_index;
 static uint64_t next_timer_time;
@@ -104,14 +101,19 @@ static void nsi_hws_sleep_until_next_event(void)
 void nsi_hws_find_next_event(void)
 {
 	next_timer_index = 0;
-	next_timer_time  = *__nsi_hw_events_timers_start[0];
+	next_timer_time  = *__nsi_hw_events_start[0].timer;
 
-	for (unsigned int i = 1; i < number_of_timers ; i++) {
-		if (next_timer_time > *__nsi_hw_events_timers_start[i]) {
+	for (unsigned int i = 1; i < number_of_events ; i++) {
+		if (next_timer_time > *__nsi_hw_events_start[i].timer) {
 			next_timer_index = i;
-			next_timer_time = *__nsi_hw_events_timers_start[i];
+			next_timer_time = *__nsi_hw_events_start[i].timer;
 		}
 	}
+}
+
+uint64_t nsi_hws_get_next_event_time(void)
+{
+	return next_timer_time;
 }
 
 /**
@@ -122,8 +124,8 @@ void nsi_hws_one_event(void)
 {
 	nsi_hws_sleep_until_next_event();
 
-	if (next_timer_index < number_of_timers) { /* LCOV_EXCL_BR_LINE */
-		__nsi_hw_events_callbacks_start[next_timer_index]();
+	if (next_timer_index < number_of_events) { /* LCOV_EXCL_BR_LINE */
+		__nsi_hw_events_start[next_timer_index].callback();
 	} else {
 		nsi_print_error_and_exit("next_timer_index corrupted\n"); /* LCOV_EXCL_LINE */
 	}
@@ -155,16 +157,7 @@ uint64_t nsi_hws_get_time(void)
  */
 void nsi_hws_init(void)
 {
-	number_of_timers =
-		(__nsi_hw_events_timers_end - __nsi_hw_events_timers_start);
-	number_of_callbacks =
-		(__nsi_hw_events_callbacks_end - __nsi_hw_events_callbacks_start);
-
-	/* LCOV_EXCL_START */
-	if (number_of_timers != number_of_callbacks || number_of_timers == 0) {
-		nsi_print_error_and_exit("number_of_timers corrupted\n");
-	}
-	/* LCOV_EXCL_STOP */
+	number_of_events = __nsi_hw_events_end - __nsi_hw_events_start;
 
 	nsi_hws_set_sig_handler();
 	nsi_hws_find_next_event();
