@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: c8203b6fc752e51fb3cb1e98441f392cc4493623
+      revision: 5079b0096479a5630b91d38a891c2db1693faa2a
       path: modules/hal/ambiq
       groups:
         - hal

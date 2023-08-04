@@ -20,4 +20,9 @@ config AMBIQ_HAL_USE_STIMER
 	help
 	  Use the STIMER driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_TIMER
+	bool
+	help
+	  Use the TIMER driver from Ambiq HAL
+
 endif # AMBIQ_HAL
