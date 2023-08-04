@@ -1311,11 +1311,11 @@ static int flash_stm32_qspi_init(const struct device *dev)
 			union {
 				uint32_t dw[MIN(php->len_dw, 20)];
 				struct jesd216_bfp bfp;
-			} u;
-			const struct jesd216_bfp *bfp = &u.bfp;
+			} u2;
+			const struct jesd216_bfp *bfp = &u2.bfp;
 
 			ret = qspi_read_sfdp(dev, jesd216_param_addr(php),
-					     (uint8_t *)u.dw, sizeof(u.dw));
+					     (uint8_t *)u2.dw, sizeof(u2.dw));
 			if (ret == 0) {
 				ret = spi_nor_process_bfp(dev, php, bfp);
 			}
