@@ -371,12 +371,13 @@
 #define I3C_CONTROLLER_ADDR 0x08
 
 /* Maximum i3c devices that the IP can be built with */
-#define I3C_MAX_DEVS		  11
-#define I3C_MAX_MSGS		  10
-#define I3C_SIR_DEFAULT_DA	  0x7F
-#define I3C_MAX_IDLE_WAIT_RETRIES 50
-#define I3C_PRESCL_REG_SCALE	  (4)
-#define I2C_PRESCL_REG_SCALE	  (5)
+#define I3C_MAX_DEVS				11
+#define I3C_MAX_MSGS				10
+#define I3C_SIR_DEFAULT_DA			0x7F
+#define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES	50
+#define I3C_MAX_IDLE_WAIT_RETRIES		5000
+#define I3C_PRESCL_REG_SCALE			(4)
+#define I2C_PRESCL_REG_SCALE			(5)
 
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
@@ -888,7 +889,7 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
 	while (retry_count--) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
@@ -1017,6 +1018,22 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	dcmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
 	dcmd->cmd0 = CMD0_FIFO_IS_CCC;
 	dcmd->len = 0;
@@ -1070,7 +1087,6 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	data->xfer.num_cmds = num_cmds;
 
 	cdns_i3c_start_transfer(dev);
-
 	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
 		cdns_i3c_cancel_transfer(dev);
 	}
@@ -1080,6 +1096,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1389,6 +1406,22 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		struct cdns_i3c_cmd *cmd = &data->xfer.cmds[i];
 
@@ -1422,6 +1455,7 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1664,6 +1698,22 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	/*
 	 * Prepare transfer commands. Currently there is only a single transfer
 	 * in-flight but it would be possible to keep a queue of transfers. If so,
@@ -1716,6 +1766,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
