@@ -11,16 +11,6 @@ from twister_harness.exceptions import TwisterHarnessTimeoutException
 logger = logging.getLogger(__name__)
 
 
-def wait_for_message(dut: DeviceAdapter, message, timeout=20):
-    time_started = time.time()
-    while True:
-        line = dut.readline(timeout=timeout)
-        if message in line:
-            return True
-        if time.time() > time_started + timeout:
-            return False
-
-
 def wait_for_prompt(dut: DeviceAdapter, prompt='uart:~$', timeout=20):
     time_started = time.time()
     while True:
@@ -40,10 +30,10 @@ def wait_for_prompt(dut: DeviceAdapter, prompt='uart:~$', timeout=20):
 def test_shell_print_help(dut: DeviceAdapter):
     wait_for_prompt(dut)
     dut.write(b'help\n')
-    assert wait_for_message(dut, "Available commands")
+    dut.readlines_until(regex="Available commands", timeout=5)
 
 
 def test_shell_print_version(dut: DeviceAdapter):
     wait_for_prompt(dut)
     dut.write(b'kernel version\n')
-    assert wait_for_message(dut, "Zephyr version")
+    dut.readlines_until(regex="Zephyr version", timeout=5)
