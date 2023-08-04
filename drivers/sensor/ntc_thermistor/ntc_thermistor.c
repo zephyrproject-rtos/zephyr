@@ -96,8 +96,6 @@ static int ntc_thermistor_init(const struct device *dev)
 }
 
 #define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                           \
-	static int compare_ohm_##id##inst(const void *key, const void *element);                   \
-                                                                                                   \
 	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                        \
                                                                                                    \
 	static const struct ntc_thermistor_config ntc_thermistor_cfg_##id##inst = {                \
@@ -112,16 +110,9 @@ static int ntc_thermistor_init(const struct device *dev)
 				.type = {                                                          \
 					.comp = _comp,                                             \
 					.n_comp = _n_comp,                                         \
-					.ohm_cmp = compare_ohm_##id##inst,                         \
 				},                                                                 \
 			},                                                                         \
 	};                                                                                         \
-                                                                                                   \
-	static int compare_ohm_##id##inst(const void *key, const void *element)                    \
-	{                                                                                          \
-		return ntc_compensation_compare_ohm(                                               \
-			&ntc_thermistor_cfg_##id##inst.ntc_cfg.type, key, element);                \
-	}                                                                                          \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
 		inst, ntc_thermistor_init, NULL, &ntc_thermistor_driver_##id##inst,                \
