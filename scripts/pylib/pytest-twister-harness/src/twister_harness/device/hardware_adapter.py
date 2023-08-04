@@ -18,7 +18,7 @@ from twister_harness.exceptions import (
     TwisterHarnessException,
     TwisterHarnessTimeoutException,
 )
-from twister_harness.helper import log_command, terminate_process
+from twister_harness.device.utils import log_command, terminate_process
 from twister_harness.twister_harness_config import DeviceConfig
 
 logger = logging.getLogger(__name__)
