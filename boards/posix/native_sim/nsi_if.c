@@ -25,9 +25,14 @@ void nsif_cpu0_boot(void)
 	run_native_tasks(_NATIVE_FIRST_SLEEP_LEVEL);
 }
 
-void nsif_cpu0_cleanup(void)
+int nsif_cpu0_cleanup(void)
 {
+	/*
+	 * Note posix_soc_clean_up() may not return, but in that case,
+	 * nsif_cpu0_cleanup() will be called again
+	 */
 	posix_soc_clean_up();
+	return 0;
 }
 
 void nsif_cpu0_irq_raised(void)

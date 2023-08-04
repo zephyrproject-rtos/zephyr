@@ -40,6 +40,7 @@ set(nsi_config_content
   "NSI_EXTRA_SRCS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_SOURCES>,\ >"
   "NSI_LINK_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_LINK_OPTIONS>,\ >"
   "NSI_PATH:=${NSI_DIR}/"
+  "NSI_NATIVE=1"
 )
 
 string(REPLACE ";" "\n" nsi_config_content "${nsi_config_content}")

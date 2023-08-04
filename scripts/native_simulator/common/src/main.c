@@ -13,14 +13,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <stdbool.h>
 #include "nsi_cpu_if.h"
 #include "nsi_tasks.h"
-#include "nsi_cmdline.h"
+#include "nsi_cmdline_main_if.h"
 #include "nsi_utils.h"
 #include "nsi_hw_scheduler.h"
 
-void nsi_exit(int exit_code)
+int nsi_exit_inner(int exit_code)
 {
 	static int max_exit_code;
 
@@ -30,12 +30,19 @@ void nsi_exit(int exit_code)
 	 * but instead it would get nsi_exit() recalled again
 	 * ASAP from the HW thread
 	 */
-	nsif_cpu0_cleanup();
+	int cpu_0_ret = nsif_cpu0_cleanup();
+
+	max_exit_code = NSI_MAX(cpu_0_ret, max_exit_code);
+
 	nsi_run_tasks(NSITASK_ON_EXIT_PRE_LEVEL);
 	nsi_hws_cleanup();
-	nsi_cleanup_cmd_line();
 	nsi_run_tasks(NSITASK_ON_EXIT_POST_LEVEL);
-	exit(max_exit_code);
+	return max_exit_code;
+}
+
+void nsi_exit(int exit_code)
+{
+	exit(nsi_exit_inner(exit_code));
 }
 
 /**

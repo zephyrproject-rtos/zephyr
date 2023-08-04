@@ -74,7 +74,7 @@ NATIVE_SIMULATOR_IF void nsif_cpu0_boot(void);
  * The embedded SW library may provide this function.
  * to do any cleanup it needs.
  */
-NATIVE_SIMULATOR_IF void nsif_cpu0_cleanup(void);
+NATIVE_SIMULATOR_IF int nsif_cpu0_cleanup(void);
 
 /*
  * Called by the runner each time an interrupt is raised by the HW

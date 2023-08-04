@@ -13,6 +13,7 @@
 #include "nsi_tracing.h"
 #include "nsi_timer_model.h"
 #include "nsi_hw_scheduler.h"
+#include "nsi_tasks.h"
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;
@@ -22,13 +23,15 @@ static int used_args;
 static int args_aval;
 #define ARGS_ALLOC_CHUNK_SIZE 20
 
-void nsi_cleanup_cmd_line(void)
+static void nsi_cleanup_cmd_line(void)
 {
 	if (args_struct != NULL) { /* LCOV_EXCL_BR_LINE */
 		free(args_struct);
 		args_struct = NULL;
 	}
 }
+
+NSI_TASK(nsi_cleanup_cmd_line, ON_EXIT_POST, 0);
 
 /**
  * Add a set of command line options to the program.

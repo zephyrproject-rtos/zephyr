@@ -113,6 +113,11 @@ uint32_t hw_irq_ctrl_get_current_lock(void)
 	return irqs_locked;
 }
 
+/*
+ * Change the overall interrupt controller "interrupt lock"
+ * The interrupt lock is a flag that provisionally disables all interrupts
+ * without affecting their status or their ability to be pended in the meanwhile
+ */
 uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock)
 {
 	uint32_t previous_lock = irqs_locked;
@@ -154,11 +159,20 @@ int hw_irq_ctrl_is_irq_enabled(unsigned int irq)
 	return (irq_mask & ((uint64_t)1 << irq))?1:0;
 }
 
+/**
+ * Get the current interrupt enable mask
+ */
 uint64_t hw_irq_ctrl_get_irq_mask(void)
 {
 	return irq_mask;
 }
 
+/*
+ * Un-pend an interrupt from the interrupt controller.
+ *
+ * This is an API between the MCU model/IRQ handling side and the IRQ controller
+ * model
+ */
 void hw_irq_ctrl_clear_irq(unsigned int irq)
 {
 	irq_status  &= ~((uint64_t)1<<irq);
@@ -177,18 +191,17 @@ void hw_irq_ctrl_clear_irq(unsigned int irq)
 void hw_irq_ctrl_enable_irq(unsigned int irq)
 {
 	irq_mask |= ((uint64_t)1<<irq);
-	if (irq_premask & ((uint64_t)1<<irq)) { /* if IRQ is pending */
+	if (irq_premask & ((uint64_t)1<<irq)) { /* if the interrupt is pending */
 		hw_irq_ctrl_raise_im_from_sw(irq);
 	}
 }
-
 
 static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 {
 	if (irq < N_IRQS) {
 		irq_premask |= ((uint64_t)1<<irq);
 
-		if (irq_mask & (1 << irq)) {
+		if (irq_mask & ((uint64_t)1 << irq)) {
 			irq_status |= ((uint64_t)1<<irq);
 		}
 	} else if (irq == PHONY_HARD_IRQ) {
@@ -197,7 +210,7 @@ static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 }
 
 /**
- * Set/Raise an interrupt
+ * Set/Raise/Pend an interrupt
  *
  * This function is meant to be used by either the SW manual IRQ raising
  * or by HW which wants the IRQ to be raised in one delta cycle from now
@@ -233,11 +246,11 @@ static void irq_raising_from_hw_now(void)
 }
 
 /**
- * Set/Raise an interrupt immediately.
+ * Set/Raise/Pend an interrupt immediately.
  * Like hw_irq_ctrl_set_irq() but awake immediately the CPU instead of in
  * 1 delta cycle
  *
- * Call only from HW threads
+ * Call only from HW threads; Should be used with care
  */
 void hw_irq_ctrl_raise_im(unsigned int irq)
 {
@@ -248,7 +261,7 @@ void hw_irq_ctrl_raise_im(unsigned int irq)
 /**
  * Like hw_irq_ctrl_raise_im() but for SW threads
  *
- * Call only from SW threads
+ * Call only from SW threads; Should be used with care
  */
 void hw_irq_ctrl_raise_im_from_sw(unsigned int irq)
 {
@@ -263,6 +276,7 @@ static void hw_irq_ctrl_timer_triggered(void)
 {
 	irq_ctrl_timer = NSI_NEVER;
 	irq_raising_from_hw_now();
+	nsi_hws_find_next_event();
 }
 
 NSI_HW_EVENT(irq_ctrl_timer, hw_irq_ctrl_timer_triggered, 900);

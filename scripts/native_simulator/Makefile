@@ -7,52 +7,84 @@
 
 # By default all the build output is placed under the _build folder, but the user can override it
 # setting the NSI_BUILD_PATH
+#
+# The caller can provide an optional configuration file and point to it with NSI_CONFIG_FILE
+# See "Configurable/user overridible variables" below.
+#
+# By default only the core of the runner will be built, but the caller can set NSI_NATIVE
+# to also build the components in native/src/
 
 NSI_CONFIG_FILE?=nsi_config
 -include ${NSI_CONFIG_FILE}
 #If the file does not exist, we don't use it as a build dependency
 NSI_CONFIG_FILE:=$(wildcard ${NSI_CONFIG_FILE})
 
+# Configurable/user overridible variables:
+#  Path to the native_simulator (this folder):
 NSI_PATH?=./
+#  Folder where the build output will be placed
 NSI_BUILD_PATH?=$(abspath _build/)
 EXE_NAME?=native_simulator.exe
+#  Final executable path/file_name which will be produced
 NSI_EXE?=${NSI_BUILD_PATH}/${EXE_NAME}
+#  Path to the embedded SW which will be linked with the final executable
 NSI_EMBEDDED_CPU_SW?=
+#  Host architecture configuration switch
 NSI_ARCH?=-m32
+#  Coverage switch (GCOV coverage is enabled by default)
 NSI_COVERAGE?=--coverage
 NSI_BUILD_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
 NSI_LINK_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
+#  Extra source files to be built in the runner context
 NSI_EXTRA_SRCS?=
+#  Extra include directories to be used while building in the runner context
+NSI_EXTRA_INCLUDES?=
+#  Extra libraries to be linked to the final executable
 NSI_EXTRA_LIBS?=
 
 SHELL?=bash
+#  Compiler
 NSI_CC?=gcc
+#  Archive program (it is unlikely you'll need to change this)
 NSI_AR?=ar
+#  Objcopy program (it is unlikely you'll need to change this)
 NSI_OBJCOPY?=objcopy
 
-no_default:
-	@echo "There is no default rule, please specify what you want to build,\
- or run make help for more info"
-
+#  Build debug switch (by default enabled)
 NSI_DEBUG?=-g
+#  Build optimization level (by default disabled to ease debugging)
 NSI_OPT?=-O0
+#  Warnings swtiches (for the runner itself)
 NSI_WARNINGS?=-Wall -Wpedantic
+#  Preprocessor flags
 NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
+
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP
 CFLAGS:=${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} \
   -ffunction-sections -fdata-sections ${DEPENDFLAGS} -std=c11 ${NSI_BUILD_OPTIONS}
 FINALLINK_FLAGS:=${NO_PIE_CO} -no-pie  ${NSI_WARNINGS} \
-  -Wl,--gc-sections -lm -ldl -pthread \
-  ${NSI_LINK_OPTIONS}
+  -Wl,--gc-sections -ldl -pthread \
+  ${NSI_LINK_OPTIONS} -lm
+
+no_default:
+	@echo "There is no default rule, please specify what you want to build,\
+ or run make help for more info"
 
 RUNNER_LIB:=runner.a
 
-SRCS:=$(shell ls ${NSI_PATH}common/src/*.c ${NSI_PATH}native/src/*.c )
+SRCS:=$(shell ls ${NSI_PATH}common/src/*.c)
+ifdef NSI_NATIVE
+  SRCS+=$(shell ls ${NSI_PATH}native/src/*.c)
+endif
 
 INCLUDES:=-I${NSI_PATH}common/src/include/ \
- -I${NSI_PATH}native/src/include/ \
- -I${NSI_PATH}common/src
+ -I${NSI_PATH}common/src \
+ ${NSI_EXTRA_INCLUDES}
+
+ifdef NSI_NATIVE
+  INCLUDES+=-I${NSI_PATH}native/src/include/
+endif
 
 EXTRA_OBJS:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,$(sort ${NSI_EXTRA_SRCS:%.c=%.o})))
 OBJS:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,${SRCS:${NSI_PATH}%.c=%.o})) ${EXTRA_OBJS}

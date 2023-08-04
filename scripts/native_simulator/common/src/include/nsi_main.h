@@ -12,9 +12,22 @@ extern "C" {
 #endif
 
 /**
+ * @brief Like nsi_exit(), do all cleanup required to terminate the
+ *        execution of the native_simulator, but instead of exiting,
+ *        return to the caller what would have been passed to exit()
+ *
+ * @param[in] exit_code: Requested exit code to the shell
+ *            Note that other components may have requested a different
+ *            exit code which may have precedence if it was !=0
+ *
+ * @returns Code which would have been passed to exit()
+ */
+int nsi_exit_inner(int exit_code);
+
+/**
  * @brief Terminate the execution of the native simulator
  *
- * exit_code: Requested exit code to the shell
+ * @param[in] exit_code: Requested exit code to the shell
  *            Note that other components may have requested a different
  *            exit code which may have precedence if it was !=0
  */
