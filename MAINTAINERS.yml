@@ -2586,7 +2586,7 @@ TI K3 Platforms:
     - gramsay0
   files:
     - boards/*/*phycore_am6*/
-    - boards/*/*ti_am6*/
+    - boards/*/am6*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
     - soc/*/ti_k3/
