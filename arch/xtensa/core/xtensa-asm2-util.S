@@ -348,9 +348,6 @@ _not_alloca:
 #error More interrupts than expected.
 #endif
 
-/* We don't actually use "kernel mode" currently.  Populate the vector
- * out of simple caution in case app code clears the UM bit by mistake.
- */
 .pushsection .KernelExceptionVector.text, "ax"
 .global _KernelExceptionVector
 _KernelExceptionVector:
