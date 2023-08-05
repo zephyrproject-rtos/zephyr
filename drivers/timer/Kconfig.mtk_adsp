@@ -1,0 +1,11 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config MTK_ADSP_TIMER
+	bool "MediaTek Audio DSP timer"
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  MediaTek MT81xx Audio DSPs have a 13 Mhz wall clock timer
+	  for system time that is independent of CPU speed.
