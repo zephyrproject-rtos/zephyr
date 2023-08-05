@@ -1,0 +1,9 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_MTK_ADSP
+	bool "MediaTek Audio DSP Interrupt Controller"
+	help
+	  Very simple cascaded interrupt controller consisting of two
+	  bitfield registers (status and enable) and one mask value
+	  defining valid interrupts.
