@@ -1,0 +1,6 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MT8195_ADSP
+	bool "Mediatek 8195 Audio DSP"
+	select SOC_FAMILY_MTK_ADSP
