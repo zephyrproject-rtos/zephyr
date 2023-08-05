@@ -45,8 +45,9 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
 __pinned_bss
 struct z_kernel _kernel;
 
-__pinned_bss
-atomic_t _cpus_active;
+#ifdef CONFIG_PM
+__pinned_bss atomic_t _cpus_active;
+#endif
 
 /* init/main and idle threads */
 K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
@@ -403,7 +404,9 @@ void z_init_cpu(int id)
 	 * Increment number of CPUs active. The pm subsystem
 	 * will keep track of this from here.
 	 */
+#ifdef CONFIG_PM
 	atomic_inc(&_cpus_active);
+#endif
 }
 
 /**
