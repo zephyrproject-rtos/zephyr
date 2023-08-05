@@ -2531,7 +2531,7 @@ next_state:
 				if (len > 0) {
 					tcp_send_timer_cancel(conn);
 					/* Send out a duplicate ACK, with the pending FIN flag */
-					tcp_out(conn, FIN | ACK);
+					tcp_out_ext(conn, (FIN | ACK), NULL, conn->seq - 1);
 				}
 				verdict = NET_OK;
 			}
