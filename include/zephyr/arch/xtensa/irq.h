@@ -10,6 +10,7 @@
 
 #include <zephyr/toolchain.h>
 #include <xtensa/config/core-isa.h>
+#include <zephyr/sys/util_macro.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
 
@@ -117,7 +118,7 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  */
 static ALWAYS_INLINE void xtensa_irq_enable(uint32_t irq)
 {
-	z_xt_ints_on(1 << irq);
+	z_xt_ints_on(BIT(irq));
 }
 
 /**
@@ -127,7 +128,7 @@ static ALWAYS_INLINE void xtensa_irq_enable(uint32_t irq)
  */
 static ALWAYS_INLINE void xtensa_irq_disable(uint32_t irq)
 {
-	z_xt_ints_off(1 << irq);
+	z_xt_ints_off(BIT(irq));
 }
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
