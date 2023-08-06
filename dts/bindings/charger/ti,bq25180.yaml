@@ -1,0 +1,30 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ25180 I2C Controlled, 1-Cell, 1-A Linear Battery Charger with Power Path
+  and Ship Mode.
+
+  The device has a single child node for the charger. For example:
+
+  bq25180@6a {
+    compatible = "ti,bq25180";
+    reg = <0x6a>;
+
+    constant-charge-current-max-microamp = <500000>;
+  };
+
+compatible: "ti,bq25180"
+
+include: [battery.yaml, i2c-device.yaml]
+
+
+properties:
+  constant-charge-current-max-microamp:
+    type: int
+    default: 0
+    description: |
+      Charge current set at init time in uA, available range is 5 mA to 800 mA.
+      The value specified will be rounded down to the closest implemented
+      value. If set to 0 (default) skip setting the charge current value at
+      driver initialization.
