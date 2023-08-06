@@ -18,5 +18,6 @@ config SOC_SERIES_EFR32BG13P
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select HAS_PM
+	select SOC_GECKO_SERIES1
 	help
 	  Enable support for EFR32BG13P Blue Gecko MCU series
