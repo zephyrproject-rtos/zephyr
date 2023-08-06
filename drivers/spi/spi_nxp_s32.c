@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -325,7 +325,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (cs_active_high && (spi_cfg->cs == NULL)) {
+	if (cs_active_high && !spi_cs_is_gpio(spi_cfg)) {
 		LOG_ERR("For CS has active state is high, a GPIO pin must be used to"
 			" control CS line instead");
 		return -ENOTSUP;
@@ -348,7 +348,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 
 		data->transfer_cfg.PushrCmd &= ~((SPI_PUSHR_CONT_MASK | SPI_PUSHR_PCS_MASK) >> 16U);
 
-		if (spi_cfg->cs == NULL) {
+		if (!spi_cs_is_gpio(spi_cfg)) {
 			/* Use inner CS signal from SPI module */
 			data->transfer_cfg.PushrCmd |= hold_cs << 15U;
 			data->transfer_cfg.PushrCmd |= (1U << spi_cfg->slave);
