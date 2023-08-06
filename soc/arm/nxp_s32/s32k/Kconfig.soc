@@ -9,7 +9,7 @@ choice
 
 config SOC_S32K344_M7
 	bool "SOC_S32K_M7"
-	select HAS_S32_HAL
+	select HAS_NXP_S32_HAL
 
 endchoice
 
