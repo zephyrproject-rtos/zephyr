@@ -2991,7 +2991,7 @@ West:
     - modules/hal_nxp/
     - modules/Kconfig.imx
     - modules/Kconfig.mcux
-    - modules/Kconfig.s32
+    - modules/Kconfig.nxp_s32
   labels:
     - manifest-hal_nxp
 
