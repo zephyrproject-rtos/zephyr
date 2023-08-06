@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -372,7 +372,7 @@ static const struct uart_driver_api uart_nxp_s32_driver_api = {
 			&uart_nxp_s32_data_##n,					\
 			&uart_nxp_s32_config_##n,				\
 			PRE_KERNEL_1,						\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			CONFIG_SERIAL_INIT_PRIORITY,				\
 			&uart_nxp_s32_driver_api);
 
 #if DT_NODE_HAS_STATUS(UART_NXP_S32_NODE(0), okay)
