@@ -2,6 +2,17 @@
  * Copyright (c) 2020 Linumiz
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Relevant documents:
+ * - BQ27441
+ *   Datasheet: https://www.ti.com/lit/gpn/bq27441-g1
+ *   Technical reference manual: https://www.ti.com/lit/pdf/sluuac9
+ * - BQ27421
+ *   Datasheet: https://www.ti.com/lit/gpn/bq27421-g1
+ *   Technical reference manual: https://www.ti.com/lit/pdf/sluuac5
+ * - BQ27427
+ *   Datasheet: https://www.ti.com/lit/gpn/bq27427
+ *   Technical reference manual: https://www.ti.com/lit/pdf/sluucd5
  */
 
 #define DT_DRV_COMPAT ti_bq274xx
