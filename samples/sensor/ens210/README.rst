@@ -13,7 +13,7 @@ Building and Running
 ********************
 
 This sample application uses the sensor connected to the i2c stated in the
-ens210.overlay file.
+app.overlay file.
 Flash the binary to a board of choice with a sensor connected.
 For example build for a nucleo_f446re board:
 
