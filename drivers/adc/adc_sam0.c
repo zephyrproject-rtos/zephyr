@@ -404,13 +404,20 @@ static int start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	error = check_buffer_size(sequence, 1);
-	if (error) {
-		return error;
-	}
+	const struct device* adc_dev = DEVICE_DT_GET(DT_NODELABEL(adc1));
 
-	data->buffer = sequence->buffer;
-	data->repeat_buffer = sequence->buffer;
+	if (dev == adc_dev) {
+		// ADC1 is setup using DMA instead of buffer
+		;
+	}
+	else {
+		error = check_buffer_size(sequence, 1);
+		if (error) {
+			return error;
+		}
+		data->buffer = sequence->buffer;
+		data->repeat_buffer = sequence->buffer;
+	}
 
 	/* At this point we allow the scheduler to do other things while
 	 * we wait for the conversions to complete. This is provided by the
