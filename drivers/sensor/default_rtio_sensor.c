@@ -183,6 +183,8 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 			header->shift = new_shift;
 		}
 
+		__ASSERT_NO_MSG(header->shift <= 31);
+
 		/*
 		 * Spread the q31 values. This is needed because some channels are 3D. If
 		 * the user specified one of those then num_samples will be 3; and we need to
@@ -192,6 +194,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 			/* Check if the channel is already in the buffer */
 			int prev_computed_value_idx = check_header_contains_channel(
 				header, header->channels[sample_idx + sample], sample_idx + sample);
+			int float_bits = 31 - header->shift;
 
 			if (prev_computed_value_idx >= 0 &&
 			    prev_computed_value_idx != sample_idx + sample) {
@@ -202,17 +205,17 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 				continue;
 			}
 
-			/* Convert the value to micro-units */
-			int64_t value_u = sensor_value_to_micro(&value[sample]);
-
 			/* Convert to q31 using the shift */
 			q[sample_idx + sample] =
-				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
+				((int64_t)value[sample].val1 << float_bits) |
+				((value[sample].val2 * BIT64(float_bits) / 1000000) &
+				 GENMASK(float_bits - 1, 0));
 
-			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d", sample, value_u < 0 ? "-" : "",
+			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift=%d", sample,
+				sensor_value_to_micro(&value[sample]) < 0 ? "-" : "",
 				abs((int)value[sample].val1), abs((int)value[sample].val2),
 				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
-				q[sample_idx + sample]);
+				q[sample_idx + sample], header->shift);
 		}
 		sample_idx += num_samples;
 	}
@@ -314,9 +317,8 @@ static int decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
-	const q31_t *q =
-		(const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
-				header->num_channels * sizeof(enum sensor_channel));
+	const q31_t *q = (const q31_t *)(buffer + sizeof(struct sensor_data_generic_header) +
+					 header->num_channels * sizeof(enum sensor_channel));
 	int count = 0;
 
 	if (*fit != 0 || *cit >= header->num_channels) {
