@@ -28,3 +28,9 @@ max20335@1 {
 		constant-charge-voltage-max-microvolt = <4050000>;
 	};
 };
+
+bq25180@2 {
+	compatible = "ti,bq25180";
+	reg = <0x2>;
+	constant-charge-current-max-microamp = <500000>;
+};
