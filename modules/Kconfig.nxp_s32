@@ -6,4 +6,4 @@
 config HAS_NXP_S32_HAL
 	bool
 	select HAS_CMSIS_CORE
-	depends on SOC_FAMILY_S32
+	depends on SOC_FAMILY_NXP_S32
