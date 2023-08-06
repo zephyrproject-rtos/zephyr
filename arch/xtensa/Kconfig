@@ -173,3 +173,7 @@ endif # XTENSA_MMU
 endif # CPU_HAS_MMU
 
 endmenu
+
+# Xtensa puts thread context on the stack, default of 512 is not enough
+config MAIN_STACK_SIZE
+	default 2048
