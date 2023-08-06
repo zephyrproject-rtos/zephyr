@@ -144,7 +144,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 				.imr_restore_vector = rom_entry,
 			};
 			struct imr_layout *imr_layout =
-				z_soc_uncached_ptr((__sparse_force void __sparse_cache *)
+				arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)
 						   L3_MEM_BASE_ADDR);
 
 			imr_layout->imr_state.header = hdr;

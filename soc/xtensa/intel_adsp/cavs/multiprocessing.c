@@ -62,7 +62,8 @@ void soc_start_core(int cpu_num)
 	 * such that the standard system bootstrap out of IMR can
 	 * place it there.  But this is fine for now.
 	 */
-	void **lpsram = z_soc_uncached_ptr((__sparse_force void __sparse_cache *)LP_SRAM_BASE);
+	void **lpsram =
+		arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)LP_SRAM_BASE);
 	uint8_t tramp[] = {
 		0x06, 0x01, 0x00, /* J <PC+8>  (jump to L32R) */
 		0,                /* (padding to align entry_addr) */

@@ -22,7 +22,7 @@ int boot_complete(void)
 	}
 	config = dev->config;
 
-	win = z_soc_uncached_ptr((__sparse_force void __sparse_cache *)config->mem_base);
+	win = arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *)config->mem_base);
 	/* Software protocol: "firmware entered" has the value 5 */
 	win[0] = 5;
 

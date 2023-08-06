@@ -67,7 +67,7 @@ struct adsp_debug_window {
 #define WIN2_MBASE DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(mem_window2), memory))
 
 #define ADSP_DW ((volatile struct adsp_debug_window *) \
-		 (z_soc_uncached_ptr((__sparse_force void __sparse_cache *) \
+		 (arch_xtensa_uncached_ptr((__sparse_force void __sparse_cache *) \
 				     (WIN2_MBASE + WIN2_OFFSET))))
 
 #endif

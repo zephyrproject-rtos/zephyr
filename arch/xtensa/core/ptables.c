@@ -256,12 +256,12 @@ static void map_memory(const uint32_t start, const uint32_t end,
 
 #ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
 	if (arch_xtensa_is_ptr_uncached((void *)start)) {
-		map_memory_range(POINTER_TO_UINT(z_soc_cached_ptr((void *)start)),
-			POINTER_TO_UINT(z_soc_cached_ptr((void *)end)),
+		map_memory_range(POINTER_TO_UINT(arch_xtensa_cached_ptr((void *)start)),
+			POINTER_TO_UINT(arch_xtensa_cached_ptr((void *)end)),
 			attrs | XTENSA_MMU_CACHED_WB, shared);
 	} else if (arch_xtensa_is_ptr_cached((void *)start)) {
-		map_memory_range(POINTER_TO_UINT(z_soc_uncached_ptr((void *)start)),
-			POINTER_TO_UINT(z_soc_uncached_ptr((void *)end)), attrs, shared);
+		map_memory_range(POINTER_TO_UINT(arch_xtensa_uncached_ptr((void *)start)),
+			POINTER_TO_UINT(arch_xtensa_uncached_ptr((void *)end)), attrs, shared);
 	}
 #endif
 }
