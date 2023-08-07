@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -198,3 +199,21 @@ def test_if_hardware_adapter_uses_serial_pty(
 
     device.disconnect()
     assert not device._serial_pty_proc
+
+
+def test_if_hardware_adapter_properly_send_data_to_subprocess(
+    device: HardwareAdapter, shell_simulator_path: str
+) -> None:
+    """
+    Run shell_simulator.py under serial_pty, send "zen" command and verify
+    output. Flashing command is mocked by "dummy" echo command.
+    """
+    device.command = ['echo', 'TEST']  # only to mock flashing command
+    device.device_config.serial_pty = f'python3 {shell_simulator_path}'
+    device.launch()
+    time.sleep(0.1)
+    device.write(b'zen\n')
+    time.sleep(1)
+    lines = device.readlines_until(regex='Namespaces are one honking great idea')
+    assert 'The Zen of Python, by Tim Peters' in lines
+    device.write(b'quit\n')
