@@ -27,7 +27,7 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_MAGN_X && chan != SENSOR_CHAN_MAGN_Y &&
 	    chan != SENSOR_CHAN_MAGN_Z && chan != SENSOR_CHAN_MAGN_XYZ) {
-		LOG_WRN("Invalid channel %d", chan);
+		LOG_DBG("Invalid channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -85,7 +85,7 @@ static int akm09918c_channel_get(const struct device *dev, enum sensor_channel c
 	} else if (chan == SENSOR_CHAN_MAGN_Z) {
 		akm09918c_convert(val, data->z_sample);
 	} else {
-		LOG_WRN("Invalid channel %d", chan);
+		LOG_DBG("Invalid channel %d", chan);
 		return -ENOTSUP;
 	}
 

@@ -251,66 +251,205 @@ void sensor_processing_with_callback(struct rtio *ctx, sensor_processing_callbac
  * Default reader can only ever service a single frame at a time.
  *
  * @param[in]  buffer The data buffer to parse
+ * @param[in]  channel The channel to get the count for
+ * @param[in]  channel_idx The index of the channel
  * @param[out] frame_count The number of frames in the buffer (always 1)
  * @return 0 in all cases
  */
-static int get_frame_count(const uint8_t *buffer, uint16_t *frame_count)
-{
-	ARG_UNUSED(buffer);
-	*frame_count = 1;
-	return 0;
-}
-
-/**
- * @brief Default decoder get the timestamp of the first frame
- *
- * @param[in]  buffer The data buffer to parse
- * @param[out] timestamp_ns The timestamp of the first frame
- * @return 0 in all cases
- */
-static int get_timestamp(const uint8_t *buffer, uint64_t *timestamp_ns)
-{
-	*timestamp_ns = ((struct sensor_data_generic_header *)buffer)->timestamp_ns;
-	return 0;
-}
-
-/**
- * @brief Default decoder get the bitshift of the given channel (if possible)
- *
- * @param[in]  buffer The data buffer to parse
- * @param[in]  channel_type The channel to query
- * @param[out] shift The bitshift for the q31 value
- * @return 0 on success
- * @return -EINVAL if the @p channel_type couldn't be found
- */
-static int get_shift(const uint8_t *buffer, enum sensor_channel channel_type, int8_t *shift)
+static int get_frame_count(const uint8_t *buffer, enum sensor_channel channel, size_t channel_idx,
+			   uint16_t *frame_count)
 {
 	struct sensor_data_generic_header *header = (struct sensor_data_generic_header *)buffer;
+	size_t count = 0;
 
-	ARG_UNUSED(channel_type);
-	*shift = header->shift;
-	return 0;
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		channel = SENSOR_CHAN_ACCEL_X;
+		break;
+	case SENSOR_CHAN_GYRO_XYZ:
+		channel = SENSOR_CHAN_GYRO_X;
+		break;
+	case SENSOR_CHAN_MAGN_XYZ:
+		channel = SENSOR_CHAN_MAGN_X;
+		break;
+	default:
+		break;
+	}
+	for (size_t i = 0; i < header->num_channels; ++i) {
+		if (header->channels[i] == channel) {
+			if (channel_idx == count) {
+				*frame_count = 1;
+				return 0;
+			}
+			++count;
+		}
+	}
+
+	return -ENOTSUP;
+}
+
+int sensor_natively_supported_channel_size_info(enum sensor_channel channel, size_t *base_size,
+						size_t *frame_size)
+{
+	__ASSERT_NO_MSG(base_size != NULL);
+	__ASSERT_NO_MSG(frame_size != NULL);
+
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_MAGN_X:
+	case SENSOR_CHAN_MAGN_Y:
+	case SENSOR_CHAN_MAGN_Z:
+	case SENSOR_CHAN_MAGN_XYZ:
+	case SENSOR_CHAN_POS_DX:
+	case SENSOR_CHAN_POS_DY:
+	case SENSOR_CHAN_POS_DZ:
+		*base_size = sizeof(struct sensor_three_axis_data);
+		*frame_size = sizeof(struct sensor_three_axis_sample_data);
+		return 0;
+	case SENSOR_CHAN_DIE_TEMP:
+	case SENSOR_CHAN_AMBIENT_TEMP:
+	case SENSOR_CHAN_PRESS:
+	case SENSOR_CHAN_HUMIDITY:
+	case SENSOR_CHAN_LIGHT:
+	case SENSOR_CHAN_IR:
+	case SENSOR_CHAN_RED:
+	case SENSOR_CHAN_GREEN:
+	case SENSOR_CHAN_BLUE:
+	case SENSOR_CHAN_ALTITUDE:
+	case SENSOR_CHAN_PM_1_0:
+	case SENSOR_CHAN_PM_2_5:
+	case SENSOR_CHAN_PM_10:
+	case SENSOR_CHAN_DISTANCE:
+	case SENSOR_CHAN_CO2:
+	case SENSOR_CHAN_VOC:
+	case SENSOR_CHAN_GAS_RES:
+	case SENSOR_CHAN_VOLTAGE:
+	case SENSOR_CHAN_CURRENT:
+	case SENSOR_CHAN_POWER:
+	case SENSOR_CHAN_RESISTANCE:
+	case SENSOR_CHAN_ROTATION:
+	case SENSOR_CHAN_RPM:
+	case SENSOR_CHAN_GAUGE_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
+	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
+	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
+	case SENSOR_CHAN_GAUGE_TEMP:
+	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
+	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
+	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
+	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
+	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
+	case SENSOR_CHAN_GAUGE_AVG_POWER:
+	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
+	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
+	case SENSOR_CHAN_GAUGE_TIME_TO_FULL:
+	case SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
+		*base_size = sizeof(struct sensor_q31_data);
+		*frame_size = sizeof(struct sensor_q31_sample_data);
+		return 0;
+	case SENSOR_CHAN_PROX:
+		*base_size = sizeof(struct sensor_byte_data);
+		*frame_size = sizeof(struct sensor_byte_sample_data);
+		return 0;
+	case SENSOR_CHAN_GAUGE_CYCLE_COUNT:
+		*base_size = sizeof(struct sensor_uint64_data);
+		*frame_size = sizeof(struct sensor_uint64_sample_data);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int get_q31_value(const struct sensor_data_generic_header *header, const q31_t *values,
+			 enum sensor_channel channel, size_t channel_idx, q31_t *out)
+{
+	size_t count = 0;
+
+	for (size_t i = 0; i < header->num_channels; ++i) {
+		if (channel != header->channels[i]) {
+			continue;
+		}
+		if (count == channel_idx) {
+			*out = values[i];
+			return 0;
+		}
+		++count;
+	}
+	return -EINVAL;
+}
+
+static int decode_three_axis(const struct sensor_data_generic_header *header, const q31_t *values,
+			     struct sensor_three_axis_data *data_out, enum sensor_channel x,
+			     enum sensor_channel y, enum sensor_channel z, size_t channel_idx)
+{
+	int rc;
+
+	data_out->header.base_timestamp_ns = header->timestamp_ns;
+	data_out->header.reading_count = 1;
+	data_out->shift = header->shift;
+	data_out->readings[0].timestamp_delta = 0;
+
+	rc = get_q31_value(header, values, x, channel_idx, &data_out->readings[0].values[0]);
+	if (rc < 0) {
+		return rc;
+	}
+	rc = get_q31_value(header, values, y, channel_idx, &data_out->readings[0].values[1]);
+	if (rc < 0) {
+		return rc;
+	}
+	rc = get_q31_value(header, values, z, channel_idx, &data_out->readings[0].values[2]);
+	if (rc < 0) {
+		return rc;
+	}
+	return 1;
+}
+
+static int decode_q31(const struct sensor_data_generic_header *header, const q31_t *values,
+		      struct sensor_q31_data *data_out, enum sensor_channel channel,
+		      size_t channel_idx)
+{
+	int rc;
+
+	data_out->header.base_timestamp_ns = header->timestamp_ns;
+	data_out->header.reading_count = 1;
+	data_out->shift = header->shift;
+	data_out->readings[0].timestamp_delta = 0;
+
+	rc = get_q31_value(header, values, channel, channel_idx, &data_out->readings[0].value);
+	if (rc < 0) {
+		return rc;
+	}
+	return 1;
 }
 
 /**
- * @brief Default decoder decode N samples
+ * @brief Decode up to N samples from the buffer
  *
- * Decode up to N samples starting at the provided @p fit and @p cit. The appropriate channel types
- * and q31 values will be placed in @p values and @p channels respectively.
+ * This function will never wrap frames. If 1 channel is available in the current frame and
+ * @p max_count is 2, only 1 channel will be decoded and the frame iterator will be modified
+ * so that the next call to decode will begin at the next frame.
  *
- * @param[in]     buffer The data buffer to decode
- * @param[in,out] fit The starting frame iterator
- * @param[in,out] cit The starting channel iterator
- * @param[out]    channels The decoded channel types
- * @param[out]    values The decoded q31 values
- * @param[in]     max_count The maximum number of values to decode
- * @return > 0 The number of decoded values
- * @return 0 Nothing else to decode on this @p buffer
- * @return < 0 Error
+ * @param[in]     buffer The buffer provided on the :c:struct:`rtio` context
+ * @param[in]     channel The channel to decode
+ * @param[in]     channel_idx The index of the channel
+ * @param[in,out] fit The current frame iterator
+ * @param[in]     max_count The maximum number of channels to decode.
+ * @param[out]    data_out The decoded data
+ * @return 0 no more samples to decode
+ * @return >0 the number of decoded frames
+ * @return <0 on error
  */
-static int decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-		  sensor_channel_iterator_t *cit, enum sensor_channel *channels, q31_t *values,
-		  uint8_t max_count)
+static int decode(const uint8_t *buffer, enum sensor_channel channel, size_t channel_idx,
+		  uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
@@ -319,32 +458,92 @@ static int decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
 				header->num_channels * sizeof(enum sensor_channel));
 	int count = 0;
 
-	if (*fit != 0 || *cit >= header->num_channels) {
+	if (*fit != 0 || max_count < 1) {
 		return -EINVAL;
 	}
 
-	/* Skip invalid channels */
-	while (*cit < header->num_channels && header->channels[*cit] == SENSOR_CHAN_MAX) {
-		*cit += 1;
+	/* Check for 3d channel mappings */
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_ACCEL_X,
+					  SENSOR_CHAN_ACCEL_Y, SENSOR_CHAN_ACCEL_Z, channel_idx);
+		break;
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_GYRO_X,
+					  SENSOR_CHAN_GYRO_Y, SENSOR_CHAN_GYRO_Z, channel_idx);
+		break;
+	case SENSOR_CHAN_MAGN_X:
+	case SENSOR_CHAN_MAGN_Y:
+	case SENSOR_CHAN_MAGN_Z:
+	case SENSOR_CHAN_MAGN_XYZ:
+		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_MAGN_X,
+					  SENSOR_CHAN_MAGN_Y, SENSOR_CHAN_MAGN_Z, channel_idx);
+		break;
+	case SENSOR_CHAN_POS_DX:
+	case SENSOR_CHAN_POS_DY:
+	case SENSOR_CHAN_POS_DZ:
+		count = decode_three_axis(header, q, data_out, SENSOR_CHAN_POS_DX,
+					  SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DZ, channel_idx);
+		break;
+	case SENSOR_CHAN_DIE_TEMP:
+	case SENSOR_CHAN_AMBIENT_TEMP:
+	case SENSOR_CHAN_PRESS:
+	case SENSOR_CHAN_HUMIDITY:
+	case SENSOR_CHAN_LIGHT:
+	case SENSOR_CHAN_IR:
+	case SENSOR_CHAN_RED:
+	case SENSOR_CHAN_GREEN:
+	case SENSOR_CHAN_BLUE:
+	case SENSOR_CHAN_ALTITUDE:
+	case SENSOR_CHAN_PM_1_0:
+	case SENSOR_CHAN_PM_2_5:
+	case SENSOR_CHAN_PM_10:
+	case SENSOR_CHAN_DISTANCE:
+	case SENSOR_CHAN_CO2:
+	case SENSOR_CHAN_VOC:
+	case SENSOR_CHAN_GAS_RES:
+	case SENSOR_CHAN_VOLTAGE:
+	case SENSOR_CHAN_CURRENT:
+	case SENSOR_CHAN_POWER:
+	case SENSOR_CHAN_RESISTANCE:
+	case SENSOR_CHAN_ROTATION:
+	case SENSOR_CHAN_RPM:
+	case SENSOR_CHAN_GAUGE_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
+	case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
+	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
+	case SENSOR_CHAN_GAUGE_TEMP:
+	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
+	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
+	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
+	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
+	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
+	case SENSOR_CHAN_GAUGE_AVG_POWER:
+	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
+	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
+	case SENSOR_CHAN_GAUGE_TIME_TO_FULL:
+	case SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE:
+	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
+		count = decode_q31(header, q, data_out, channel, channel_idx);
+		break;
+	default:
+		break;
 	}
-
-	for (; *cit < header->num_channels && count < max_count; ++count) {
-		channels[count] = header->channels[*cit];
-		values[count] = q[*cit];
-		LOG_DBG("Decoding q[%u]@%p=%d", *cit, (void *)&q[*cit], q[*cit]);
-		*cit += 1;
-	}
-
-	if (*cit >= header->num_channels) {
+	if (count > 0) {
 		*fit = 1;
-		*cit = 0;
 	}
 	return count;
 }
 
 const struct sensor_decoder_api __sensor_default_decoder = {
 	.get_frame_count = get_frame_count,
-	.get_timestamp = get_timestamp,
-	.get_shift = get_shift,
+	.get_size_info = sensor_natively_supported_channel_size_info,
 	.decode = decode,
 };

@@ -244,11 +244,7 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 {
 	struct sensor_shell_processing_context *ctx = userdata;
 	const struct sensor_decoder_api *decoder;
-	sensor_frame_iterator_t fit = {0};
-	sensor_channel_iterator_t cit = {0};
-	uint64_t timestamp;
-	enum sensor_channel channel;
-	q31_t q;
+	uint8_t decoded_buffer[128];
 	int rc;
 
 	ARG_UNUSED(buf_len);
@@ -264,45 +260,85 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 		return;
 	}
 
-	rc = decoder->get_timestamp(buf, &timestamp);
-	if (rc != 0) {
-		shell_error(ctx->sh, "Failed to get fetch timestamp for '%s'", ctx->dev->name);
-		return;
-	}
-	shell_print(ctx->sh, "Got samples at %" PRIu64 " ns", timestamp);
+	for (int channel = 0; channel < SENSOR_CHAN_ALL; ++channel) {
+		uint32_t fit = 0;
+		size_t base_size;
+		size_t frame_size;
+		size_t channel_idx = 0;
+		uint16_t frame_count;
 
-	while (decoder->decode(buf, &fit, &cit, &channel, &q, 1) > 0) {
-		int8_t shift;
-
-		rc = decoder->get_shift(buf, channel, &shift);
-		if (rc != 0) {
-			shell_error(ctx->sh, "Failed to get bitshift for channel %d", channel);
+		if (channel == SENSOR_CHAN_ACCEL_X || channel == SENSOR_CHAN_ACCEL_Y ||
+		    channel == SENSOR_CHAN_ACCEL_Z || channel == SENSOR_CHAN_GYRO_X ||
+		    channel == SENSOR_CHAN_GYRO_Y || channel == SENSOR_CHAN_GYRO_Z ||
+		    channel == SENSOR_CHAN_MAGN_X || channel == SENSOR_CHAN_MAGN_Y ||
+		    channel == SENSOR_CHAN_MAGN_Z || channel == SENSOR_CHAN_POS_DY ||
+		    channel == SENSOR_CHAN_POS_DZ) {
 			continue;
 		}
 
-		int64_t scaled_value = (int64_t)q << shift;
-		bool is_negative = scaled_value < 0;
-		int numerator;
-		int denominator;
-
-		scaled_value = llabs(scaled_value);
-		numerator = (int)FIELD_GET(GENMASK64(31 + shift, 31), scaled_value);
-		denominator = (int)DIV_ROUND_CLOSEST(
-				FIELD_GET(GENMASK64(30, 0), scaled_value) * 1000000,
-				INT32_MAX);
-
-		if (denominator == 1000000) {
-			numerator++;
-			denominator = 0;
+		rc = decoder->get_size_info(channel, &base_size, &frame_size);
+		if (rc != 0) {
+			/* Channel not supported, skipping */
+			continue;
 		}
 
-		if (channel >= ARRAY_SIZE(sensor_channel_name)) {
-			shell_print(ctx->sh, "channel idx=%d value=%s%d.%06d", channel,
-				    is_negative ? "-" : "", numerator, denominator);
-		} else {
-			shell_print(ctx->sh, "channel idx=%d %s value=%s%d.%06d", channel,
-				    sensor_channel_name[channel], is_negative ? "-" : "", numerator,
-				    denominator);
+		if (base_size > ARRAY_SIZE(decoded_buffer)) {
+			shell_error(ctx->sh,
+				    "Channel (%d) requires %zu bytes to decode, but only %zu are "
+				    "available",
+				    channel, base_size, ARRAY_SIZE(decoded_buffer));
+			continue;
+		}
+
+		while (decoder->get_frame_count(buf, channel, channel_idx, &frame_count) == 0) {
+			fit = 0;
+			while (decoder->decode(buf, channel, channel_idx, &fit, 1, decoded_buffer) >
+			       0) {
+
+				switch (channel) {
+				case SENSOR_CHAN_ACCEL_XYZ:
+				case SENSOR_CHAN_GYRO_XYZ:
+				case SENSOR_CHAN_MAGN_XYZ:
+				case SENSOR_CHAN_POS_DX: {
+					struct sensor_three_axis_data *data =
+						(struct sensor_three_axis_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s shift=%d "
+						   "value=%" PRIsensor_three_axis_data,
+						   channel, sensor_channel_name[channel],
+						   data->shift,
+						   PRIsensor_three_axis_data_arg(*data, 0));
+					break;
+				}
+				case SENSOR_CHAN_PROX: {
+					struct sensor_byte_data *data =
+						(struct sensor_byte_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s value=%" PRIsensor_byte_data(
+							   is_near),
+						   channel, sensor_channel_name[channel],
+						   PRIsensor_byte_data_arg(*data, 0, is_near));
+					break;
+				}
+				default: {
+					struct sensor_q31_data *data =
+						(struct sensor_q31_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s shift=%d "
+						   "value=%" PRIsensor_q31_data,
+						   channel,
+						   (channel >= ARRAY_SIZE(sensor_channel_name))
+							   ? ""
+							   : sensor_channel_name[channel],
+						   data->shift, PRIsensor_q31_data_arg(*data, 0));
+					break;
+				}
+				}
+			}
+			++channel_idx;
 		}
 	}
 }
@@ -621,8 +657,7 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_SENSOR_INFO
 	const char *null_str = "(null)";
 
-	STRUCT_SECTION_FOREACH(sensor_info, sensor)
-	{
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
 		shell_print(sh,
 			    "device name: %s, vendor: %s, model: %s, "
 			    "friendly name: %s",
