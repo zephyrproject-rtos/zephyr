@@ -27,7 +27,7 @@ struct fs_mount_t testfs_small_mnt = {
 };
 
 #if CONFIG_APP_TEST_CUSTOM
-FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
+FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, 4, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
 				  MEDIUM_CACHE_SIZE, MEDIUM_LOOKAHEAD_SIZE);
 struct fs_mount_t testfs_medium_mnt = {
 	.type = FS_LITTLEFS,
