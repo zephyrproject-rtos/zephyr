@@ -18,7 +18,7 @@
 #include <zephyr/arch/riscv/thread.h>
 #include <zephyr/arch/riscv/exception.h>
 #include <zephyr/arch/riscv/irq.h>
-#include <zephyr/arch/riscv/sys_io.h>
+#include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/ffs.h>
 #if defined(CONFIG_USERSPACE)

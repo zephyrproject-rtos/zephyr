@@ -825,6 +825,16 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
+config PLATFORM_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
+	  platform-specific versions named z_soc_sys_read*() and z_soc_sys_write*().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the platform needs to do something different and more than reading and
+	  writing the registers.
+
 menu "DSP Options"
 
 config DSP_SHARING
