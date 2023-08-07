@@ -271,46 +271,6 @@ pyOCD as root (e.g. sudo).
 To fix the above error, add the udev rule shown in the previous section
 and install a more recent version of pyOCD.
 
-Flashing an Application to 96Boards Nitrogen
-============================================
-
-Here is an example for the :ref:`hello_world` application. This
-requires installing the :ref:`pyocd-debug-host-tools`.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_nitrogen
-   :goals: build flash
-
-Run your favorite terminal program to listen for output.
-
-.. code-block:: console
-
-   $ minicom -D <tty_device> -b 115200
-
-Replace :code:`<tty_device>` with the port where the board 96Boards Nitrogen
-can be found. For example, under Linux, :code:`/dev/ttyACM0`.
-The ``-b`` option sets baud rate ignoring the value from config.
-
-Press the Reset button and you should see the the following message in your
-terminal:
-
-.. code-block:: console
-
-   Hello World! arm
-
-Debugging with GDB
-==================
-
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application. This also requires pyOCD.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_nitrogen
-   :maybe-skip-config:
-   :goals: debug
-
 .. _pyOCD:
     https://github.com/mbedmicro/pyOCD
 

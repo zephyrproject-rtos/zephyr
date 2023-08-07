@@ -171,36 +171,9 @@ To build the bossa tool, follow these steps:
 Flashing an Application to Arduino Due
 --------------------------------------
 
-Applications for the ``arduino_due`` board configuration can be built
-and flashed in the usual way (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
-Here is an example for the :ref:`hello_world` application. After
-building the application, press the Reset button before running the
+After building the application, press the Reset button before running the
 flash command, so the board will boot into the SAM-BA bootloader and
 be prepared to receive the new program.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arduino_due
-   :goals: build flash
-
-After flashing the application, run your favorite terminal program to
-listen for output. For example, under Linux, the terminal should be
-:code:`/dev/ttyACM0`. For example:
-
-.. code-block:: console
-
-   $ sudo minicom -D /dev/ttyACM0 -o
-
-The -o option tells minicom not to send the modem initialization
-string.
-
-Now press the Reset button and you should see "Hello World! arduino_due" in your terminal.
-
-.. note::
-   Make sure your terminal program is closed before flashing the binary image,
-   or it will interfere with the flashing process.
 
 References
 **********

@@ -99,35 +99,6 @@ First, connect the Arduino Portenta H7 board to your host computer using
 the USB port to prepare it for flashing. Double tap the button to put the board
 into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arduino_portenta_h7_m7
-   :goals: build flash
-
-Run a serial host program to connect with your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
-
-You should see the following message on the console:
-
-.. code-block:: console
-
-   Hello World! arduino_portenta_m7
-
-Similarly, you can build and flash samples on the M4 target. For this, please
-take care of the resource sharing (UART port used for console for instance).
-
-Here is an example for the :ref:`blinky-sample` application on M4 core.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: arduino_portenta_h7_m4
-   :goals: build flash
-
 .. _ARDUINO_PORTENTA_H7 website:
    https://docs.arduino.cc/hardware/portenta-h7
 

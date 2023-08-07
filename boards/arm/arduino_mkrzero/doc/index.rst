@@ -127,50 +127,6 @@ Programming and Debugging
 The Arduino MKR Zero ships the BOSSA compatible bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
-Flashing
-========
-
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: arduino_mkrzero
-      :goals: build
-      :compact:
-
-#. Connect the MKR Zero to your host computer using USB
-
-#. Connect a 3.3 V USB to serial adapter to the board and to the
-   host.  See the `Serial Port`_ section above for the board's pin
-   connections.
-
-#. Run your favorite terminal program to listen for output. Under Linux the
-   terminal should be :code:`/dev/ttyACM0`. For example:
-
-   .. code-block:: console
-
-      $ minicom -D /dev/ttyACM0 -o
-
-   The -o option tells minicom not to send the modem initialization
-   string. Connection should be configured as follows:
-
-   - Speed: 115200
-   - Data: 8 bits
-   - Parity: None
-   - Stop bits: 1
-
-#. Tap the reset button twice quickly to enter bootloader mode
-
-#. Flash the image:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: arduino_mkrzero
-      :goals: flash
-      :compact:
-
-   You should see "Hello World! arduino_mkrzero" in your terminal.
-
 References
 **********
 

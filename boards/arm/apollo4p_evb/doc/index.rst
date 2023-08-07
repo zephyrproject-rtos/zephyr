@@ -50,39 +50,6 @@ The Apollo4P EVB board configuration supports the following hardware features:
 The default configuration can be found in the defconfig file:
 ``boards/arm/apollo4p_evb/apollo4p_evb_defconfig``.
 
-Programming and Debugging
-=========================
-
-Flashing an application
------------------------
-
-Connect your device to your host computer using the JLINK USB port.
-The sample application :ref:`hello_world` is used for this example.
-Build the Zephyr kernel and application, then flash it to the device:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: apollo4p_evb
-   :goals: flash
-
-.. note::
-   `west flash` requires `SEGGER J-Link software`_ and `pylink`_ Python module
-   to be installed on you host computer.
-
-Open a serial terminal (minicom, putty, etc.) with the following settings:
-
-- Speed: 115200
-- Data: 8 bits
-- Parity: None
-- Stop bits: 1
-
-Reset the board and you should be able to see on the corresponding Serial Port
-the following message:
-
-.. code-block:: console
-
-   Hello World! apollo4p_evb
-
 .. _Apollo4 Plus Website:
    https://ambiq.com/apollo4-plus/
 

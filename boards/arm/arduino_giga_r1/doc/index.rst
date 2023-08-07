@@ -130,42 +130,12 @@ First, connect the Arduino GIGA R1 board to your host computer using the USB
 port to prepare it for flashing. Double click the ``RST`` button to put the
 board into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arduino_giga_r1_m7
-   :goals: build flash
-
-Run a serial host program to connect with your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
-
-You should see the following message on the console:
-
-.. code-block:: console
-
-   Hello World! arduino_giga_r1_m7
-
-Similarly, you can build and flash samples on the M4 target.
-
-Here is an example for the :ref:`blinky-sample` application on M4 core.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: arduino_giga_r1_m4
-   :goals: build flash
-
 Debugging
 =========
 
 Debugging is supported by using ``west debug`` with an external probe such as a
 J-Link or Black Magic Probe, connected to the on board MIPI-10 SWD port marked
-as "JTAG". For example::
-
-  west debug -r jlink
+as "JTAG".
 
 .. _Arduino GIGA website:
    https://docs.arduino.cc/hardware/giga-r1-wifi

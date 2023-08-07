@@ -82,49 +82,6 @@ Available pins:
 
 For more details please refer to the `datasheet`_, `full pinout`_ and the `schematics`_.
 
-Programming and Debugging
-*************************
-
-Applications for the ``arduino_nicla_sense_me`` board configuration can be built and
-flashed in the usual way (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
-
-Flashing
-========
-
-First, connect the Arduino Nicla Sense ME board to your host computer using
-the USB port to prepare it for flashing. Then build and flash your application.
-
-Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arduino_nicla_sense_me
-   :goals: build flash
-
-Run a serial host program to connect with your board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
-
-You should see the following message on the console:
-
-.. code-block:: console
-
-   Hello World! arduino_nicla_sense_me
-
-Debugging
-=========
-
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arduino_nicla_sense_me
-   :goals: debug
-
 References
 **********
 

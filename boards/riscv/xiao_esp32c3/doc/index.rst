@@ -161,27 +161,12 @@ The only difference is the structure of the build directory.
 
    Remember that bootloader (MCUboot) needs to be flash at least once.
 
-For the :code:`Hello, world!` application, follow the instructions below.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xiao_esp32c3
-   :goals: build flash
-
-Since the Zephyr console is by default on the `usb_serial` device, we use
-the espressif monitor to view.
+You can try the :ref:`hello_world` application. Since the Zephyr console is by
+default on the `usb_serial` device, we use the espressif monitor to view.
 
 .. code-block:: console
 
    $ west espressif monitor
-
-After the board has automatically reset and booted, you should see the following
-message in the monitor:
-
-.. code-block:: console
-
-   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! xiao_esp32c3
 
 Debugging
 *********

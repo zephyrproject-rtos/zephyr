@@ -311,31 +311,8 @@ You should see following confirmation on your Linux host:
    usb 1-2.1: Manufacturer: STMicroelectronics
    usb 1-2.1: SerialNumber: 3574364C3034
 
-Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_aerocore2
-   :goals: build flash
-
 Connect a USB-TTL dongle to the UART_7 header port and to your computer.
 Run your favorite terminal program to listen for output.
-
-.. code-block:: console
-
-   $ minicom -D <tty_device> -b 115200
-
-Replace :code:`<tty_device>` with the port where the board 96Boards Aerocore2
-can be found. For example, under Linux, :code:`/dev/ttyUSB0`.
-The ``-b`` option sets baud rate ignoring the value from config.
-
-Press the Reset button and you should see the the following message in your
-terminal:
-
-.. code-block:: console
-
-   Hello World! arm
 
 .. _96Boards website:
    https://www.96boards.org/product/aerocore2/

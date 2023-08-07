@@ -147,42 +147,6 @@ The SAM L21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAML21 chip and is supported by
 OpenOCD.
 
-Flashing
-========
-
-#. Build the Zephyr kernel and the ``hello_world`` sample application:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: atsaml21_xpro
-      :goals: build
-      :compact:
-
-#. Connect the SAM L21 Xplained Pro to your host computer using the USB debug
-   port.
-
-#. Run your favorite terminal program to listen for output. Under Linux the
-   terminal should be :code:`/dev/ttyACM0`. For example:
-
-   .. code-block:: console
-
-      $ picocom -b 115200 /dev/ttyACM0
-
-   - Speed: 115200
-   - Data: 8 bits
-   - Parity: None
-   - Stop bits: 1
-
-#. To flash an image:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: atsaml21_xpro
-      :goals: flash
-      :compact:
-
-   You should see "Hello World! atsaml21_xpro" in your terminal.
-
 References
 **********
 

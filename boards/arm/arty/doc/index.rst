@@ -148,38 +148,12 @@ The UART console is available via the on-board JTAG on USB connector
 ``J10``. The on-board JTAG will enumerate as two USB serial ports. The UART is
 typically available on the second serial port.
 
-Use the following settings with your serial terminal of choice (minicom, putty,
-etc.):
-
-- Speed: 115200
-- Data: 8 bits
-- Parity: None
-- Stop bits: 1
-
 Flashing
 ========
 
-Here is an example for building and flashing the :ref:`hello_world` application
-for the Cortex-M1 reference design:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arty_a7_arm_designstart_m1
-   :goals: flash
-
-After flashing, you should see message similar to the following in the terminal:
-
-.. code-block:: console
-
-   *** Booting Zephyr OS build zephyr-v2.3.99  ***
-   Hello World! arty_a7_arm_designstart_m1
-
-The same procedure can be used for the Cortex-M3 reference design.
-
-Note, however, that the application was not persisted in flash memory by the
-above steps. It was merely written to internal block RAM in the FPGA. It will
-revert to the application stored in the block RAM within the FPGA bitstream
-the next time the FPGA is configured.
+The application is not persisted in flash memory. It is merely written to
+internal block RAM in the FPGA. It will revert to the application stored in the
+block RAM within the FPGA bitstream the next time the FPGA is configured.
 
 The steps to persist the application within the FPGA bitstream are covered by
 the ARM Cortex-M1/M3 DesignStart FPGA Xilinx edition user guide. If the
@@ -187,24 +161,6 @@ the ARM Cortex-M1/M3 DesignStart FPGA Xilinx edition user guide. If the
 is available, the build system will automatically generate a Verilog memory hex
 dump :file:`zephyr.mem` file suitable for initialising the block RAM using
 `Xilinx Vivado`_.
-
-Debugging
-=========
-
-Here is an example for the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: arty_a7_arm_designstart_m1
-   :goals: debug
-
-Step through the application in your debugger, and you should see a message
-similar to the following in the terminal:
-
-.. code-block:: console
-
-   *** Booting Zephyr OS build zephyr-v2.3.99  ***
-   Hello World! arty_a7_arm_designstart_m1
 
 .. _Digilent Arty:
    https://store.digilentinc.com/arty

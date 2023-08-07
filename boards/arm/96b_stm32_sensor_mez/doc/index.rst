@@ -179,59 +179,12 @@ to the on-board ST MP34DT01 DMIC. The default I2S mapping is:
 Programming and Debugging
 *************************
 
-Building
-========
-
-Here is an example for building the :ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
-   :goals: build
-
 Flashing
 ========
 
 96Boards STM32 Sensor Mezzanine board includes an ST-LINK/V2-1 embedded
 debug tool interface. This interface is supported by the openocd version
 included in the Zephyr SDK.
-
-Flashing an application to 96Boards STM32 Sensor Mezzanine
-----------------------------------------------------------
-
-Here is an example for the :ref:`hello_world` application.
-
-Run a serial host program to connect with your 96Boards STM32 Sensor Mezzanine
-board.
-
-.. code-block:: console
-
-   $ minicom -b 115200 -D /dev/ttyACM0
-
-Build and flash the application:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
-   :goals: build flash
-
-You should see the following message on the console:
-
-.. code-block:: console
-
-   $ Hello World! 96b_stm32_sensor_mez
-
-Debugging
-=========
-
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: 96b_stm32_sensor_mez
-   :maybe-skip-config:
-   :goals: debug
 
 References
 **********
