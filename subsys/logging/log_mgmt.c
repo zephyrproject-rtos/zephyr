@@ -417,7 +417,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			       uint32_t level)
 {
 	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		return level;
+		return log_compiled_level_get(domain_id, source_id);
 	}
 
 	__ASSERT_NO_MSG(source_id < log_src_cnt_get(domain_id));
