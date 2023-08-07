@@ -10,7 +10,8 @@
  * The whole nRF pin configuration information is encoded in a 32-bit bitfield
  * organized as follows:
  *
- * - 31..16: Pin function.
+ * - 31      Pin initial state.
+ * - 30..16: Pin function.
  * - 15:     Reserved.
  * - 14:     Pin inversion mode.
  * - 13:     Pin low power mode.
@@ -24,10 +25,14 @@
  * @{
  */
 
+/** Position of the output initial state. */
+#define NRF_INIT_POS 31U
+/** Mask for the output initial state. */
+#define NRF_INIT_MSK 0x1U
 /** Position of the function field. */
 #define NRF_FUN_POS 16U
 /** Mask for the function field. */
-#define NRF_FUN_MSK 0xFFFFU
+#define NRF_FUN_MSK 0x7FFFU
 /** Position of the invert field. */
 #define NRF_INVERT_POS 14U
 /** Mask for the invert field. */
@@ -190,6 +195,18 @@
 
 /** Indicates that a pin is disconnected */
 #define NRF_PIN_DISCONNECTED NRF_PIN_MSK
+
+/** @} */
+
+/**
+ * @name nRF pinctrl init state.
+ * @{
+ */
+
+/** High initial pin state. */
+#define NRF_INIT_HIGH 1U
+/** Low initial pin state. */
+#define NRF_INIT_LOW 0U
 
 /** @} */
 

@@ -124,7 +124,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(NRF_PSEL_SPIM)
 		case NRF_FUN_SPIM_SCK:
 			NRF_PSEL_SPIM(reg, SCK) = psel;
-			write = 0U;
+			write = NRF_GET_INIT(pins[i]);
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;

@@ -92,6 +92,8 @@ child-binding:
           - bias-pull-down
           - bias-pull-up
           - low-power-enable
+          - output-high
+          - output-low
 
     properties:
       psels:

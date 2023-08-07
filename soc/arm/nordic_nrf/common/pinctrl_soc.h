@@ -38,7 +38,9 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 ((NRF_PULL_UP * DT_PROP(node_id, bias_pull_up)) << NRF_PULL_POS) |    \
 	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
 	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
-	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS)		       \
+	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS) |		       \
+	 ((NRF_INIT_LOW * DT_PROP(node_id, output_low)) << NRF_INIT_POS) |     \
+	 ((NRF_INIT_HIGH * DT_PROP(node_id, output_high)) << NRF_INIT_POS)     \
 	),
 
 /**
@@ -51,6 +53,13 @@ typedef uint32_t pinctrl_soc_pin_t;
 	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),		       \
 				DT_FOREACH_PROP_ELEM, psels,		       \
 				Z_PINCTRL_STATE_PIN_INIT)}
+
+/**
+ * @brief Utility macro to obtain pin initial state.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_INIT(pincfg) (((pincfg) >> NRF_INIT_POS) & NRF_INIT_MSK)
 
 /**
  * @brief Utility macro to obtain pin function.
