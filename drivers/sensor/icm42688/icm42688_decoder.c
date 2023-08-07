@@ -220,91 +220,183 @@ int icm42688_encode(const struct device *dev, const enum sensor_channel *const c
 	return 0;
 }
 
-static int icm42688_one_shot_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-				    sensor_channel_iterator_t *cit, enum sensor_channel *channels,
-				    q31_t *values, uint8_t max_count)
+static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel channel,
+				   size_t channel_idx, sensor_frame_iterator_t *fit,
+				   uint16_t max_count, void *data_out)
 {
 	const struct icm42688_encoded_data *edata = (const struct icm42688_encoded_data *)buffer;
-	uint8_t channel_pos_read = edata->channels;
+	const struct icm42688_decoder_header *header = &edata->header;
 	struct icm42688_cfg cfg = {
 		.accel_fs = edata->header.accel_fs,
 		.gyro_fs = edata->header.gyro_fs,
 	};
-	enum sensor_channel chan;
-	int pos;
-	int count = 0;
-	int num_samples = __builtin_popcount(channel_pos_read);
-
-	channel_pos_read = edata->channels;
+	uint8_t channel_request;
+	int rc;
 
 	if (*fit != 0) {
 		return 0;
 	}
-
-	/* Skip channels already decoded */
-	for (int i = 0; i < *cit && channel_pos_read; i++) {
-		pos = __builtin_ctz(channel_pos_read);
-		channel_pos_read &= ~BIT(pos);
+	if (max_count == 0 || channel_idx != 0) {
+		return -EINVAL;
 	}
 
-	/* Decode remaining channels */
-	while (channel_pos_read && *cit < num_samples && count < max_count) {
-		pos = __builtin_ctz(channel_pos_read);
-		chan = icm42688_get_channel_from_position(pos);
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ: {
+		channel_request = icm42688_encode_channel(SENSOR_CHAN_ACCEL_XYZ);
+		if ((channel_request & edata->channels) != channel_request) {
+			return -ENODATA;
+		}
 
-		channels[count] = chan;
+		struct sensor_three_axis_data *out = data_out;
 
-		icm42688_convert_raw_to_q31(&cfg, chan, edata->readings[pos], &values[count]);
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+		rc = icm42688_get_shift(SENSOR_CHAN_ACCEL_XYZ, header->accel_fs, header->gyro_fs,
+					&out->shift);
+		if (rc != 0) {
+			return -EINVAL;
+		}
 
-		count++;
-		channel_pos_read &= ~BIT(pos);
-		*cit += 1;
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_ACCEL_X,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_ACCEL_X)],
+			&out->readings[0].x);
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_ACCEL_Y,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_ACCEL_Y)],
+			&out->readings[0].y);
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_ACCEL_Z,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_ACCEL_Z)],
+			&out->readings[0].z);
+		*fit = 1;
+		return 1;
 	}
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ: {
+		channel_request = icm42688_encode_channel(SENSOR_CHAN_GYRO_XYZ);
+		if ((channel_request & edata->channels) != channel_request) {
+			return -ENODATA;
+		}
 
-	if (*cit >= __builtin_popcount(edata->channels)) {
-		*fit += 1;
-		*cit = 0;
+		struct sensor_three_axis_data *out = data_out;
+
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+		rc = icm42688_get_shift(SENSOR_CHAN_GYRO_XYZ, header->accel_fs, header->gyro_fs,
+					&out->shift);
+		if (rc != 0) {
+			return -EINVAL;
+		}
+
+		out->readings[0].timestamp_delta = 0;
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_GYRO_X,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_GYRO_X)],
+			&out->readings[0].x);
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_GYRO_Y,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_GYRO_Y)],
+			&out->readings[0].y);
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_GYRO_Z,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_GYRO_Z)],
+			&out->readings[0].z);
+		*fit = 1;
+		return 1;
 	}
+	case SENSOR_CHAN_DIE_TEMP: {
+		channel_request = icm42688_encode_channel(SENSOR_CHAN_DIE_TEMP);
+		if ((channel_request & edata->channels) != channel_request) {
+			return -ENODATA;
+		}
 
-	return count;
+		struct sensor_q31_data *out = data_out;
+
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+
+		rc = icm42688_get_shift(SENSOR_CHAN_DIE_TEMP, header->accel_fs, header->gyro_fs,
+					&out->shift);
+		if (rc != 0) {
+			return -EINVAL;
+		}
+		out->readings[0].timestamp_delta = 0;
+		icm42688_convert_raw_to_q31(
+			&cfg, SENSOR_CHAN_DIE_TEMP,
+			edata->readings[icm42688_get_channel_position(SENSOR_CHAN_DIE_TEMP)],
+			&out->readings[0].temperature);
+		*fit = 1;
+		return 1;
+	}
+	default:
+		return -EINVAL;
+	}
 }
 
-static int icm42688_decoder_decode(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-				   sensor_channel_iterator_t *cit, enum sensor_channel *channels,
-				   q31_t *values, uint8_t max_count)
+static int icm42688_decoder_decode(const uint8_t *buffer, enum sensor_channel channel,
+				   size_t channel_idx, sensor_frame_iterator_t *fit,
+				   uint16_t max_count, void *data_out)
 {
-	return icm42688_one_shot_decode(buffer, fit, cit, channels, values, max_count);
+	return icm42688_one_shot_decode(buffer, channel, channel_idx, fit, max_count, data_out);
 }
 
-static int icm42688_decoder_get_frame_count(const uint8_t *buffer, uint16_t *frame_count)
+static int icm42688_decoder_get_frame_count(const uint8_t *buffer, enum sensor_channel channel,
+					    size_t channel_idx, uint16_t *frame_count)
 {
 	ARG_UNUSED(buffer);
-	*frame_count = 1;
-	return 0;
+	if (channel_idx != 0) {
+		return -ENOTSUP;
+	}
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_DIE_TEMP:
+		*frame_count = 1;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
-static int icm42688_decoder_get_timestamp(const uint8_t *buffer, uint64_t *timestamp_ns)
+static int icm42688_decoder_get_size_info(enum sensor_channel channel, size_t *base_size,
+					  size_t *frame_size)
 {
-	const struct icm42688_decoder_header *header =
-		(const struct icm42688_decoder_header *)buffer;
-
-	*timestamp_ns = header->timestamp;
-	return 0;
-}
-
-static int icm42688_decoder_get_shift(const uint8_t *buffer, enum sensor_channel channel_type,
-				      int8_t *shift)
-{
-	const struct icm42688_decoder_header *header =
-		(const struct icm42688_decoder_header *)buffer;
-
-	return icm42688_get_shift(channel_type, header->accel_fs, header->gyro_fs, shift);
+	switch (channel) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		*base_size = sizeof(struct sensor_three_axis_data);
+		*frame_size = sizeof(struct sensor_three_axis_sample_data);
+		return 0;
+	case SENSOR_CHAN_DIE_TEMP:
+		*base_size = sizeof(struct sensor_q31_data);
+		*frame_size = sizeof(struct sensor_q31_sample_data);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = icm42688_decoder_get_frame_count,
-	.get_timestamp = icm42688_decoder_get_timestamp,
-	.get_shift = icm42688_decoder_get_shift,
+	.get_size_info = icm42688_decoder_get_size_info,
 	.decode = icm42688_decoder_decode,
 };
 
