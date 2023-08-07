@@ -16,7 +16,7 @@ OS management group defines following commands:
     | ``1``             | Console/Terminal echo control;                |
     |                   | unimplemented by Zephyr                       |
     +-------------------+-----------------------------------------------+
-    | ``2``             | Statistics                                    |
+    | ``2``             | Task Statistics                               |
     +-------------------+-----------------------------------------------+
     | ``3``             | Memory pool statistics                        |
     +-------------------+-----------------------------------------------+
@@ -410,7 +410,7 @@ Date-time set response header fields:
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``1``  | ``0``        |  ``4``         |
+    | ``3``  | ``0``        |  ``4``         |
     +--------+--------------+----------------+
 
 The command sends an empty CBOR map as data if successful. In case of error the
@@ -543,7 +543,7 @@ MCUmgr parameters response header fields
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``2``  | ``0``        |  ``6``         |
+    | ``1``  | ``0``        |  ``6``         |
     +--------+--------------+----------------+
 
 CBOR data of successful response:
@@ -646,7 +646,7 @@ OS/Application info response header fields
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``2``  | ``0``        |  ``7``         |
+    | ``1``  | ``0``        |  ``7``         |
     +--------+--------------+----------------+
 
 CBOR data of response:
