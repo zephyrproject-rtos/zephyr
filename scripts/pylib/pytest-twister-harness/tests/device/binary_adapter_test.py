@@ -183,6 +183,18 @@ def test_if_binary_adapter_is_able_to_read_leftovers_after_disconnect_or_close(
     assert len(device.readlines()) > 0
 
 
+def test_if_binary_adapter_properly_send_data_to_subprocess(
+    shell_simulator_adapter: NativeSimulatorAdapter
+) -> None:
+    """Run shell_simulator.py program, send "zen" command and verify output."""
+    device = shell_simulator_adapter
+    time.sleep(0.1)
+    device.write(b'zen\n')
+    time.sleep(1)
+    lines = device.readlines_until(regex='Namespaces are one honking great idea')
+    assert 'The Zen of Python, by Tim Peters' in lines
+
+
 def test_if_native_binary_adapter_get_command_returns_proper_string(device: NativeSimulatorAdapter) -> None:
     device.generate_command()
     assert isinstance(device.command, list)
