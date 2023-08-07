@@ -183,11 +183,10 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO
 	${HOSTAP_SRC_BASE}/rsn_supp/wpa.c
 	${HOSTAP_SRC_BASE}/rsn_supp/preauth.c
 	${HOSTAP_SRC_BASE}/rsn_supp/wpa_ie.c
-
-#	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-bignum.c
-#	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-ec.c
-#	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls.c
-#	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
+	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-bignum.c
+	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-ec.c
+	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls.c
+	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
 	${HOSTAP_SRC_BASE}/crypto/aes-unwrap.c
 	${HOSTAP_SRC_BASE}/crypto/rc4.c
@@ -197,6 +196,9 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO
 	${HOSTAP_SRC_BASE}/crypto/sha384-prf.c
 )
 
+zephyr_library_sources_ifndef(CONFIG_WPA_SUPP_CRYPTO_ENTERPRISE
+	${COMMON_SRC_BASE}/crypto/tls_none.c
+)
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3
 	${HOSTAP_SRC_BASE}/common/sae.c
@@ -281,9 +283,9 @@ zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 	${HOSTAP_SRC_BASE}/eap_peer/eap_tls.c
 	${HOSTAP_SRC_BASE}/eap_peer/eap_tls_common.c
-
 
 	${HOSTAP_SRC_BASE}/eap_peer/eap_peap.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_peap_common.c
