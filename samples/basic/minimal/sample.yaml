@@ -3,6 +3,11 @@ sample:
   name: minimal
 common:
   tags: footprint
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World from minimal!"
 tests:
   sample.minimal.mt.arm:
     extra_args: CONF_FILE='common.conf;mt.conf;arm.conf'
@@ -76,17 +81,19 @@ tests:
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;x86.conf'
     build_only: true
     platform_allow: qemu_x86
-  sample.minimal.no-timers.runtime:
+  sample.minimal.arc.runtime:
     extra_args:
       - CONF_FILE='common-runtime.conf;no-timers.conf'
-      - CONFIG_SAMPLE_DO_OUTPUT=y
     arch_allow: arc
     tags:
       - kernel
     integration_platforms:
       - qemu_arc_em
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Hello World from minimal!"
+  sample.minimal.riscv.runtime:
+    extra_args:
+      - CONF_FILE='common-runtime.conf;no-timers.conf;no-mt.conf;riscv.conf'
+    platform_allow: qemu_riscv32
+    tags:
+      - kernel
+    integration_platforms:
+      - qemu_riscv32
