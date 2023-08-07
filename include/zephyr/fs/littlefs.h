@@ -61,15 +61,17 @@ struct fs_littlefs {
  *
  * @param name the name for the structure.  The defined object has
  * file scope.
+ * @param alignment needed alignment for read/prog buffer for specific device
  * @param read_sz see @kconfig{CONFIG_FS_LITTLEFS_READ_SIZE}
  * @param prog_sz see @kconfig{CONFIG_FS_LITTLEFS_PROG_SIZE}
  * @param cache_sz see @kconfig{CONFIG_FS_LITTLEFS_CACHE_SIZE}
  * @param lookahead_sz see @kconfig{CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE}
  */
-#define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, read_sz, prog_sz, cache_sz, lookahead_sz) \
-	static uint8_t __aligned(4) name ## _read_buffer[cache_sz];			  \
-	static uint8_t __aligned(4) name ## _prog_buffer[cache_sz];			  \
-	static uint32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(uint32_t)];		  \
+#define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, alignment, read_sz, prog_sz, cache_sz,	  \
+					  lookahead_sz)					  \
+	static uint8_t __aligned(alignment) name ## _read_buffer[cache_sz];		  \
+	static uint8_t __aligned(alignment) name ## _prog_buffer[cache_sz];		  \
+	static uint32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(uint32_t)];	  \
 	static struct fs_littlefs name = {						  \
 		.cfg = {								  \
 			.read_size = (read_sz),						  \
@@ -93,6 +95,7 @@ struct fs_littlefs {
  */
 #define FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(name)			 \
 	FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name,				 \
+					  4,				 \
 					  CONFIG_FS_LITTLEFS_READ_SIZE,	 \
 					  CONFIG_FS_LITTLEFS_PROG_SIZE,	 \
 					  CONFIG_FS_LITTLEFS_CACHE_SIZE, \
