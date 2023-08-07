@@ -84,7 +84,6 @@ static inline void z_xt_set_intset(unsigned int arg)
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
 #endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 
-void z_soc_irq_init(void);
 void platform_irq_enable(unsigned int irq);
 void platform_irq_disable(unsigned int irq);
 int platform_irq_is_enabled(unsigned int irq);
