@@ -125,10 +125,13 @@ endfunction()
 #                             For example, -DCONF_FILES=<files> will be passed on to the
 #                             MAIN_APP unmodified.
 #                             BOOTLOADER indicates this app is a bootloader
+# BUILD_ONLY <bool>:          Mark the application as build-only. If <bool> evaluates to
+#                             true, then this application will be excluded from flashing
+#                             and debugging.
 #
 function(ExternalZephyrProject_Add)
   set(app_types MAIN BOOTLOADER)
-  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE" "" ${ARGN})
+  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -278,6 +281,10 @@ function(ExternalZephyrProject_Add)
       "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
       " requires BOARD."
     )
+  endif()
+
+  if(DEFINED ZBUILD_BUILD_ONLY)
+    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BUILD_ONLY ${ZBUILD_BUILD_ONLY})
   endif()
 endfunction()
 
