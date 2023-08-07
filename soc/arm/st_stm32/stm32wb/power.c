@@ -58,15 +58,7 @@ static void lpm_hsem_lock(void)
 /* Invoke Low Power/System Off specific Tasks */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	if (state == PM_STATE_SOFT_OFF) {
-		lpm_hsem_lock();
-
-		/* Clear all Wake-Up flags */
-		LL_PWR_ClearFlag_WU();
-
-		LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
-
-	} else if (state == PM_STATE_SUSPEND_TO_IDLE) {
+	if (state == PM_STATE_SUSPEND_TO_IDLE) {
 
 		lpm_hsem_lock();
 
@@ -93,18 +85,17 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			return;
 		}
 
+		/* Release RCC semaphore */
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+
+		LL_LPM_EnableDeepSleep();
+
+		/* enter SLEEP mode : WFE or WFI */
+		k_cpu_idle();
 	} else {
 		LOG_DBG("Unsupported power state %u", state);
 		return;
 	}
-
-	/* Release RCC semaphore */
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
-	LL_LPM_EnableDeepSleep();
-
-	/* enter SLEEP mode : WFE or WFI */
-	k_cpu_idle();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
