@@ -117,4 +117,11 @@ config PM_DEVICE_RUNTIME_EXCLUSIVE
 
 endif # PM_DEVICE
 
+
+config PM_SHELL
+	bool "Power Management Shell"
+	depends on SHELL && (PM || PM_DEVICE)
+	help
+	  Enable Power Management Shell for testing.
+
 endmenu
