@@ -756,10 +756,8 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
 #if defined(CONFIG_NET_OFFLOAD)
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
-
-	return (iface->if_dev->offload != NULL);
+	return (iface != NULL && iface->if_dev != NULL &&
+		iface->if_dev->offload != NULL);
 #else
 	ARG_UNUSED(iface);
 
