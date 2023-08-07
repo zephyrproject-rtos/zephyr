@@ -10,6 +10,7 @@
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_pbuf.h>
+#include <zephyr/init.h>
 
 #define BOND_NOTIFY_REPEAT_TO	K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
 #define SHMEM_ACCESS_TO		K_MSEC(CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS)
@@ -27,6 +28,14 @@ enum tx_buffer_state {
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
+
+#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
+static K_THREAD_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
+static struct k_work_q icmsg_workq;
+static struct k_work_q *const workq = &icmsg_workq;
+#else
+static struct k_work_q *const workq = &k_sys_work_q;
+#endif
 
 static int mbox_deinit(const struct icmsg_config_t *conf,
 		       struct icmsg_data_t *dev_data)
@@ -62,7 +71,7 @@ static void notify_process(struct k_work *item)
 	if (state != ICMSG_STATE_READY) {
 		int ret;
 
-		ret = k_work_reschedule(dwork, BOND_NOTIFY_REPEAT_TO);
+		ret = k_work_reschedule_for_queue(workq, dwork, BOND_NOTIFY_REPEAT_TO);
 		__ASSERT_NO_MSG(ret >= 0);
 		(void)ret;
 	}
@@ -138,7 +147,7 @@ static bool is_rx_data_available(struct icmsg_data_t *dev_data)
 
 static void submit_mbox_work(struct icmsg_data_t *dev_data)
 {
-	if (k_work_submit(&dev_data->mbox_work) < 0) {
+	if (k_work_submit_to_queue(workq, &dev_data->mbox_work) < 0) {
 		/* The mbox processing work is never canceled.
 		 * The negative error code should never be seen.
 		 */
@@ -290,7 +299,7 @@ int icmsg_open(const struct icmsg_config_t *conf,
 		return ret;
 	}
 
-	ret = k_work_schedule(&dev_data->notify_work, K_NO_WAIT);
+	ret = k_work_schedule_for_queue(workq, &dev_data->notify_work, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -519,3 +528,22 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 	return 0;
 }
 #endif /* CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX */
+
+#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
+
+static int work_q_init(void)
+{
+	struct k_work_queue_config cfg = {
+		.name = "icmsg_workq",
+	};
+
+	k_work_queue_start(&icmsg_workq,
+			    icmsg_stack,
+			    K_KERNEL_STACK_SIZEOF(icmsg_stack),
+			    CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY, &cfg);
+	return 0;
+}
+
+SYS_INIT(work_q_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif
