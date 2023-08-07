@@ -64,7 +64,7 @@ static const struct mpsc_pbuf_buffer_config config = {
 	.get_wlen = get_wlen,
 	.flags = 0
 };
-static const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+static const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static struct mpsc_pbuf_buffer buf;
 static atomic_t active_cnt; /* Counts number of buffered messages. */
@@ -97,7 +97,7 @@ static void tx(void)
 	struct log_frontend_uart_generic_pkt *pkt;
 
 	if (!IS_ENABLED(CONFIG_UART_ASYNC_API) && !in_panic) {
-		uart_irq_tx_enable(dev);
+		uart_irq_tx_enable(uart_dev);
 		return;
 	}
 
@@ -110,11 +110,11 @@ static void tx(void)
 
 	if (in_panic) {
 		for (int i = 0; i < len; i++) {
-			uart_poll_out(dev, pkt->data[i]);
+			uart_poll_out(uart_dev, pkt->data[i]);
 		}
 		atomic_dec(&active_cnt);
 	} else {
-		int err = uart_tx(dev, pkt->data, len, SYS_FOREVER_US);
+		int err = uart_tx(uart_dev, pkt->data, len, SYS_FOREVER_US);
 
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
@@ -251,7 +251,7 @@ static void sync_msg(const void *source,
 
 	for (int i = 0; i < ARRAY_SIZE(datas); i++) {
 		for (int j = 0; j < len[i]; j++) {
-			uart_poll_out(dev, datas[i][j]);
+			uart_poll_out(uart_dev, datas[i][j]);
 		}
 	}
 }
@@ -266,7 +266,7 @@ void log_frontend_msg(const void *source,
 					 CBPRINTF_PACKAGE_CONVERT_RW_STR,
 					 strl, ARRAY_SIZE(strl));
 	size_t dlen = desc.data_len;
-	bool dev_ready = device_is_ready(dev);
+	bool dev_ready = device_is_ready(uart_dev);
 	size_t total_len = plen + dlen + sizeof(struct log_frontend_uart_pkt);
 	size_t total_wlen = DIV_ROUND_UP(total_len, sizeof(uint32_t));
 
@@ -326,9 +326,9 @@ void log_frontend_init(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_UART_ASYNC_API)) {
-		err = uart_callback_set(dev, uart_callback, NULL);
+		err = uart_callback_set(uart_dev, uart_callback, NULL);
 	} else if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		uart_irq_callback_user_data_set(dev, uart_isr_callback, NULL);
+		uart_irq_callback_user_data_set(uart_dev, uart_isr_callback, NULL);
 		err = 0;
 	}
 
