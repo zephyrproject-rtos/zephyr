@@ -843,8 +843,8 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	int ret;
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp) {
-		gpio_pin_set_dt(DEV_CFG(dev)->wp, write_protect);
+	if (DEV_CFG(dev)->wp && write_protect == false) {
+		gpio_pin_set_dt(DEV_CFG(dev)->wp, 0);
 	}
 #endif
 
@@ -856,6 +856,12 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (DEV_CFG(dev)->wp && write_protect == true) {
+		gpio_pin_set_dt(DEV_CFG(dev)->wp, 1);
+	}
+#endif
 
 	return ret;
 }
