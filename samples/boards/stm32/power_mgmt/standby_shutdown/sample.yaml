@@ -15,7 +15,7 @@ tests:
         - "Reset cause: Reset pin"
         - "Device ready: .*"
         - "Press and hold the user button:"
-        - "when LED2 is OFF to enter to Shutdown Mode"
+        - "when LED2 is OFF to power off"
         - "when LED2 is ON to enter to Standby Mode"
     filter: dt_compat_enabled("zephyr,power-state") and dt_enabled_alias_with_parent_compat("led0",
       "gpio-leds") and dt_compat_enabled("st,stm32-lptim")
