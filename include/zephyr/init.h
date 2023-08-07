@@ -178,6 +178,9 @@ struct init_entry {
  *
  * @note This macro can be used for cases where the multiple init calls use the
  * same init function.
+ * The sub-priority must be kept of same length as _ORD_STR_SORTABLE so that
+ * it takes precedence over other devices with same level and priority when
+ * sorted by the linker.
  *
  * @param name Unique name for SYS_INIT entry.
  * @param init_fn_ See SYS_INIT().
@@ -188,7 +191,7 @@ struct init_entry {
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                            \
 	static const Z_DECL_ALIGN(struct init_entry)                           \
-		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan           \
+		Z_INIT_ENTRY_SECTION(level, prio, 00000) __used __noasan       \
 		Z_INIT_ENTRY_NAME(name) = {                                    \
 			.init_fn = {.sys = (init_fn_)},                        \
 			.dev = NULL,                                           \
