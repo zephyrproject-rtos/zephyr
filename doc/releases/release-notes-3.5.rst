@@ -328,6 +328,9 @@ Libraries / Subsystems
   * Added :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING` that allows
     to erase slots pending for next boot, that are not revert slots.
 
+  * Added ``user_data`` as an optional field to :c:struct:`mgmt_handler` when
+    :kconfig:option:`CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA` is enabled.
+
 * File systems
 
   * Added support for ext2 file system.

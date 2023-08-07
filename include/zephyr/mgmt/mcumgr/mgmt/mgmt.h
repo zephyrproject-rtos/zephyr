@@ -71,6 +71,9 @@ typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
 struct mgmt_handler {
 	mgmt_handler_fn mh_read;
 	mgmt_handler_fn mh_write;
+#if IS_ENABLED(CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA)
+	void *user_data;
+#endif
 };
 
 /**
