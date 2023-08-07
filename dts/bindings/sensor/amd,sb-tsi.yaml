@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD SB Temperature Sensor Interface.
+
+compatible: "amd,sb-tsi"
+
+include: [sensor-device.yaml, i2c-device.yaml]

@@ -771,3 +771,8 @@ test_i2c_hm330x@73 {
 	reg = <0x73>;
 	status = "okay";
 };
+
+test_i2c_amd_sb_tsi: amd_sb_tsi@74 {
+	compatible = "amd,sb-tsi";
+	reg = <0x74>;
+};
