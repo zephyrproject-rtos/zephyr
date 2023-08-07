@@ -85,17 +85,17 @@ static inline void z_xt_set_intset(unsigned int arg)
 #endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 
 void z_soc_irq_init(void);
-void z_soc_irq_enable(unsigned int irq);
-void z_soc_irq_disable(unsigned int irq);
-int z_soc_irq_is_enabled(unsigned int irq);
+void platform_irq_enable(unsigned int irq);
+void platform_irq_disable(unsigned int irq);
+int platform_irq_is_enabled(unsigned int irq);
 
-#define arch_irq_enable(irq)	z_soc_irq_enable(irq)
-#define arch_irq_disable(irq)	z_soc_irq_disable(irq)
+#define arch_irq_enable(irq)	platform_irq_enable(irq)
+#define arch_irq_disable(irq)	platform_irq_disable(irq)
 
-#define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+#define arch_irq_is_enabled(irq)	platform_irq_is_enabled(irq)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+extern int platform_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 				     void (*routine)(const void *parameter),
 				     const void *parameter, uint32_t flags);
 #endif

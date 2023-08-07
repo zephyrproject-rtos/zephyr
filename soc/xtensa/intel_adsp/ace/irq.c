@@ -9,7 +9,7 @@
 
 LOG_MODULE_REGISTER(ace_v1x_soc, CONFIG_SOC_LOG_LEVEL);
 
-void z_soc_irq_enable(uint32_t irq)
+void platform_irq_enable(uint32_t irq)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(ace_intc));
 	const struct dw_ace_v1_ictl_driver_api *api;
@@ -23,7 +23,7 @@ void z_soc_irq_enable(uint32_t irq)
 	api->intr_enable(dev, irq);
 }
 
-void z_soc_irq_disable(uint32_t irq)
+void platform_irq_disable(uint32_t irq)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(ace_intc));
 	const struct dw_ace_v1_ictl_driver_api *api;
@@ -37,7 +37,7 @@ void z_soc_irq_disable(uint32_t irq)
 	api->intr_disable(dev, irq);
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int platform_irq_is_enabled(unsigned int irq)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(ace_intc));
 	const struct dw_ace_v1_ictl_driver_api *api;

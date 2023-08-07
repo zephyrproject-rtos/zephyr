@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
 
-void z_soc_irq_enable(uint32_t irq)
+void platform_irq_enable(uint32_t irq)
 {
 	const struct device *dev_cavs;
 
@@ -61,7 +61,7 @@ void z_soc_irq_enable(uint32_t irq)
 	irq_enable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
 }
 
-void z_soc_irq_disable(uint32_t irq)
+void platform_irq_disable(uint32_t irq)
 {
 	const struct device *dev_cavs;
 
@@ -101,7 +101,7 @@ void z_soc_irq_disable(uint32_t irq)
 	}
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int platform_irq_is_enabled(unsigned int irq)
 {
 	const struct device *dev_cavs;
 	int ret = 0;
@@ -139,7 +139,7 @@ out:
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int platform_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(const void *parameter),
 			      const void *parameter, uint32_t flags)
 {

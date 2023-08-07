@@ -58,7 +58,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			       void (*routine)(const void *parameter),
 			       const void *parameter, uint32_t flags)
 {
-	return z_soc_irq_connect_dynamic(irq, priority, routine, parameter,
+	return platform_irq_connect_dynamic(irq, priority, routine, parameter,
 					 flags);
 }
 #endif /* !CONFIG_MULTI_LEVEL_INTERRUPTS */

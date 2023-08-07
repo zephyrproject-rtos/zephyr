@@ -52,9 +52,9 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
  */
 
 void z_soc_irq_init(void);
-void z_soc_irq_enable(unsigned int irq);
-void z_soc_irq_disable(unsigned int irq);
-int z_soc_irq_is_enabled(unsigned int irq);
+void platform_irq_enable(unsigned int irq);
+void platform_irq_disable(unsigned int irq);
+int platform_irq_is_enabled(unsigned int irq);
 
 void z_soc_irq_priority_set(
 	unsigned int irq, unsigned int prio, unsigned int flags);
@@ -62,9 +62,9 @@ void z_soc_irq_priority_set(
 unsigned int z_soc_irq_get_active(void);
 void z_soc_irq_eoi(unsigned int irq);
 
-#define arch_irq_enable(irq)		z_soc_irq_enable(irq)
-#define arch_irq_disable(irq)		z_soc_irq_disable(irq)
-#define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+#define arch_irq_enable(irq)		platform_irq_enable(irq)
+#define arch_irq_disable(irq)		platform_irq_disable(irq)
+#define arch_irq_is_enabled(irq)	platform_irq_is_enabled(irq)
 
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)

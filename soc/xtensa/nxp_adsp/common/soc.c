@@ -20,7 +20,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
-void z_soc_irq_enable(uint32_t irq)
+void platform_irq_enable(uint32_t irq)
 {
 	/*
 	 * enable core interrupt
@@ -28,7 +28,7 @@ void z_soc_irq_enable(uint32_t irq)
 	xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 }
 
-void z_soc_irq_disable(uint32_t irq)
+void platform_irq_disable(uint32_t irq)
 {
 	/*
 	 * disable the interrupt in interrupt controller
@@ -36,7 +36,7 @@ void z_soc_irq_disable(uint32_t irq)
 	xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 }
 
-int z_soc_irq_is_enabled(unsigned int irq)
+int platform_irq_is_enabled(unsigned int irq)
 {
 	int ret = 0;
 
