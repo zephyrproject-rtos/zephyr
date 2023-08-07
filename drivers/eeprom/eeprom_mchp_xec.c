@@ -14,6 +14,9 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+
 LOG_MODULE_REGISTER(eeprom_xec, CONFIG_EEPROM_LOG_LEVEL);
 
 /* EEPROM Mode Register */
@@ -238,7 +241,9 @@ static int eeprom_xec_read(const struct device *dev, off_t offset,
 	}
 
 	k_mutex_lock(&data->lock_mtx, K_FOREVER);
-
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	/* EEPROM HW READ */
 	for (chunk_idx = 0; chunk_idx < len; chunk_idx += XEC_EEPROM_TRANSFER_SIZE_READ) {
 		if ((len-chunk_idx) < XEC_EEPROM_TRANSFER_SIZE_READ) {
@@ -247,7 +252,9 @@ static int eeprom_xec_read(const struct device *dev, off_t offset,
 		eeprom_xec_data_read_32_bytes(regs, &data_buf[chunk_idx],
 						chunk_size, (offset+chunk_idx));
 	}
-
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	k_mutex_unlock(&data->lock_mtx);
 
 	return 0;
@@ -273,7 +280,9 @@ static int eeprom_xec_write(const struct device *dev, off_t offset,
 	}
 
 	k_mutex_lock(&data->lock_mtx, K_FOREVER);
-
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	/* EEPROM HW WRITE */
 	for (chunk_idx = 0; chunk_idx < len; chunk_idx += XEC_EEPROM_TRANSFER_SIZE_WRITE) {
 		if ((len-chunk_idx) < XEC_EEPROM_TRANSFER_SIZE_WRITE) {
@@ -282,7 +291,9 @@ static int eeprom_xec_write(const struct device *dev, off_t offset,
 		eeprom_xec_data_write_32_bytes(regs, &data_buf[chunk_idx],
 							chunk_size, (offset+chunk_idx));
 	}
-
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	k_mutex_unlock(&data->lock_mtx);
 
 	return 0;
@@ -294,6 +305,39 @@ static size_t eeprom_xec_size(const struct device *dev)
 
 	return config->size;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int eeprom_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct eeprom_xec_config *const devcfg = dev->config;
+	struct eeprom_xec_regs * const regs = devcfg->regs;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret != 0) {
+			LOG_ERR("XEC EEPROM pinctrl setup failed (%d)", ret);
+			return ret;
+		}
+		regs->mode |= XEC_EEPROM_MODE_ACTIVATE;
+	break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Disable EEPROM Controller */
+		regs->mode &= (~XEC_EEPROM_MODE_ACTIVATE);
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+		/* pinctrl-1 does not exist. */
+		if (ret == -ENOENT) {
+			ret = 0;
+		}
+	break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static int eeprom_xec_init(const struct device *dev)
 {
@@ -331,6 +375,8 @@ static const struct eeprom_xec_config eeprom_config = {
 
 static struct eeprom_xec_data eeprom_data;
 
-DEVICE_DT_INST_DEFINE(0, &eeprom_xec_init, NULL, &eeprom_data,
+PM_DEVICE_DT_INST_DEFINE(0, eeprom_xec_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &eeprom_xec_init, PM_DEVICE_DT_INST_GET(0), &eeprom_data,
 		    &eeprom_config, POST_KERNEL,
 		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_xec_api);
