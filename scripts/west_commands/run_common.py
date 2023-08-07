@@ -150,9 +150,7 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
     # Set up runner logging to delegate to west.log commands.
     logger = logging.getLogger('runners')
     logger.setLevel(LOG_LEVEL)
-    if not logger.hasHandlers():
-        # Only add a runners log handler if none has been added already.
-        logger.addHandler(WestLogHandler())
+    logger.addHandler(WestLogHandler())
 
     if user_args.context:
         dump_context(command, user_args, user_runner_args)
