@@ -1544,6 +1544,7 @@ Google Platforms:
     - keith-zephyr
   files:
     - boards/*/google_*/
+    - samples/boards/google_*/
 
 Hash Utilities:
   status: maintained
