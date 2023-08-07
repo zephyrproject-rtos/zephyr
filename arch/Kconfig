@@ -845,6 +845,17 @@ config DSP_SHARING
 	  across context switches to allow multiple threads to perform concurrent
 	  DSP operations.
 endmenu
+config PLATFORM_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow platforms to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named platform_irq_lock(), platform_irq_unlock()
+	  and platform_irq_unlocked().
+
+	  Enable this hidden option and specialize the platform_* functions when
+	  the platform needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
 
 menu "Floating Point Options"
 
