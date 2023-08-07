@@ -10,7 +10,7 @@ common:
   harness_config:
     type: one_line
     regex:
-      - "Hello World! (.*)"
+      - "hello, world"
 tests:
   sample.basic.helloworld:
     tags: introduction
