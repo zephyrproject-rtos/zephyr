@@ -33,7 +33,7 @@ static void set_led(const struct device *const led, enum led_color_t led_color)
 #define CHARGING_VOLTAGE 5000
 #define CHARGING_CURRENT 1000
 
-void main(void)
+int main(void)
 {
 	meas_init();
 
@@ -42,7 +42,7 @@ void main(void)
 	int32_t vbus_c = 0;
 
 	if (!device_is_ready(led)) {
-		return;
+		return 0;
 	}
 
 	while (1) {
