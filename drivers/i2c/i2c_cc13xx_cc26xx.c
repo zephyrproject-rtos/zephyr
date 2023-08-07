@@ -29,7 +29,7 @@ struct i2c_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem complete;
 	volatile uint32_t error;
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_DEVICE
 	Power_NotifyObj postNotify;
 	uint32_t dev_config;
 #endif
@@ -260,7 +260,7 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 	/* Enables and configures I2C master */
 	I2CMasterInitExpClk(config->base, CPU_FREQ, fast);
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_DEVICE
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 
 	data->dev_config = dev_config;
@@ -284,7 +284,7 @@ static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
 	}
 }
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_DEVICE
 /*
  *  ======== postNotifyFxn ========
  *  Called by Power module when waking up the CPU from Standby. The i2c needs
@@ -363,7 +363,7 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	uint32_t cfg;
 	int err;
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_DEVICE
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 
 	/* Set Power dependencies & constraints */
