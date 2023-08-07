@@ -3,7 +3,7 @@
 
 zephyr_library()
 
-set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx)
+set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx CACHE PATH "nrfx Directory")
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(MDK_DIR ${NRFX_DIR}/mdk)
