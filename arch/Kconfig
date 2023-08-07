@@ -829,9 +829,9 @@ config PLATFORM_HAS_CUSTOM_SYS_IO
 	bool
 	help
 	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
-	  platform-specific versions named z_soc_sys_read*() and z_soc_sys_write*().
+	  platform-specific versions named platform_sysio_read*() and platform_sysio_write*().
 
-	  Enable this hidden option and specialize the z_soc_* functions when
+	  Enable this hidden option and specialize the platform_sysio_* functions when
 	  the platform needs to do something different and more than reading and
 	  writing the registers.
 
