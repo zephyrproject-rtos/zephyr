@@ -219,7 +219,6 @@ Set state of image request header fields:
 
 CBOR data of request:
 
-
 .. code-block:: none
 
     {
