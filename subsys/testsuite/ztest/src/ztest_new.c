@@ -675,7 +675,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	int fail = 0;
 	int tc_result = TC_PASS;
 
-	if (test_status != ZTEST_STATUS_OK) {
+	if (test_status < 0) {
 		return test_status;
 	}
 
@@ -766,7 +766,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 		}
 #endif
 
-		if (test_status == ZTEST_STATUS_OK && fail != 0 && FAIL_FAST) {
+		if (test_status == ZTEST_STATUS_OK && fail != 0) {
 			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
 	}
@@ -882,28 +882,15 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 			tc_result = TC_SKIP;
 		} else if (test->stats->pass_count == test->stats->run_count) {
 			tc_result = TC_PASS;
-		} else if (test->stats->pass_count == 0) {
-			tc_result = TC_FAIL;
 		} else {
-			tc_result = TC_FLAKY;
+			tc_result = TC_FAIL;
 		}
 
-		if (tc_result == TC_FLAKY) {
-			TC_SUMMARY_PRINT(" - %s - [%s.%s] - (Failed %d of %d attempts)"
-					 " - duration = %u.%03u seconds\n",
-					TC_RESULT_TO_STR(tc_result),
-					test->test_suite_name, test->name,
-					test->stats->run_count - test->stats->pass_count,
-					test->stats->run_count,
-					test->stats->duration_worst_ms / 1000,
-					test->stats->duration_worst_ms % 1000);
-		} else {
-			TC_SUMMARY_PRINT(" - %s - [%s.%s] duration = %u.%03u seconds\n",
-					TC_RESULT_TO_STR(tc_result),
-					test->test_suite_name, test->name,
-					test->stats->duration_worst_ms / 1000,
-					test->stats->duration_worst_ms % 1000);
-		}
+		TC_SUMMARY_PRINT(" - %s - [%s.%s] duration = %u.%03u seconds\n",
+				TC_RESULT_TO_STR(tc_result),
+				test->test_suite_name, test->name,
+				test->stats->duration_worst_ms / 1000,
+				test->stats->duration_worst_ms % 1000);
 
 		if (flush_frequency % 3 == 0) {
 			/** Reduce the flush frequencey a bit to speed up the output */
@@ -943,6 +930,7 @@ static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *stat
 
 	for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
 		if (ztest_api.should_suite_run(state, ptr)) {
+			__ztest_init_unit_test_result_for_suite(ptr);
 			int fail = z_ztest_run_test_suite_ptr(ptr);
 
 			count++;
@@ -971,9 +959,6 @@ int z_impl_ztest_run_test_suites(const void *state)
 	z_ztest_shuffle((void **)suites_to_run, (intptr_t)_ztest_suite_node_list_start,
 			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
-		__ztest_init_unit_test_result_for_suite(suites_to_run[i]);
-	}
-	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
@@ -986,7 +971,6 @@ int z_impl_ztest_run_test_suites(const void *state)
 #else
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
-		__ztest_init_unit_test_result_for_suite(ptr);
 		count += __ztest_run_test_suite(ptr, state);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
