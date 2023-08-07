@@ -500,30 +500,16 @@ def dump_runner_caps(cls, indent=''):
     log.inf(f'{indent}{cls.name()} capabilities:', colorize=True)
     log.inf(f'{indent}{INDENT}{cls.capabilities()}')
 
-def dump_runner_option_help(cls, indent=''):
+def dump_runner_option_help(cls, indent):
     # Print help text for class-specific command line options for the
     # given runner class.
-
+    sub_indent = indent + INDENT
     dummy_parser = argparse.ArgumentParser(prog='', add_help=False, allow_abbrev=False)
     cls.add_parser(dummy_parser)
-    formatter = dummy_parser._get_formatter()
-    for group in dummy_parser._action_groups:
-        # Break the abstraction to filter out the 'flash', 'debug', etc.
-        # TODO: come up with something cleaner (may require changes
-        # in the runner core).
-        actions = group._group_actions
-        if len(actions) == 1 and actions[0].dest == 'command':
-            # This is the lone positional argument. Skip it.
-            continue
-        formatter.start_section('REMOVE ME')
-        formatter.add_text(group.description)
-        formatter.add_arguments(actions)
-        formatter.end_section()
-    # Get the runner help, with the "REMOVE ME" string gone
-    runner_help = f'\n{indent}'.join(formatter.format_help().splitlines()[1:])
+    runner_help = f'\n{sub_indent}'.join(dummy_parser.format_help().splitlines())
 
     log.inf(f'{indent}{cls.name()} options:', colorize=True)
-    log.inf(indent + runner_help)
+    log.inf(sub_indent + runner_help)
 
 def dump_runner_args(group, runners_yaml, indent=''):
     msg = f'{indent}{group} arguments from runners.yaml:'
