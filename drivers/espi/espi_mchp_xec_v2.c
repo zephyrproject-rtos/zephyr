@@ -524,6 +524,11 @@ static int espi_xec_flash_write(const struct device *dev,
 
 	LOG_DBG("%s", __func__);
 
+	if (sizeof(target_mem) < pckt->len) {
+		LOG_ERR("Packet length is too big");
+		return -ENOMEM;
+	}
+
 	if (!(regs->FCSTS & MCHP_ESPI_FC_STS_CHAN_EN)) {
 		LOG_ERR("Flash channel is disabled");
 		return -EIO;
