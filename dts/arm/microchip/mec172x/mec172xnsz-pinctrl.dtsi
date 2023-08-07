@@ -1183,4 +1183,25 @@
 		low-power-enable;
 	};
 
+	/* EEPROM */
+	eeprom_cs_gpio116_sleep: eeprom_cs_gpio116_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_clk_gpio117_sleep: eeprom_clk_gpio117_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_mosi_gpio074_sleep: eeprom_mosi_gpio074_sleep {
+		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	eeprom_miso_gpio075_sleep: eeprom_miso_gpio075_sleep {
+		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF2) >;
+		low-power-enable;
+	};
+
 };

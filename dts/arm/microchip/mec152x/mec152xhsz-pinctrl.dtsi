@@ -1152,4 +1152,26 @@
 	pwm8_alt_gpio175_sleep: pwm8_alt_gpio175_sleep {
 		pinmux = < MCHP_XEC_PINMUX(0175, MCHP_AF3) >;
 	};
+
+	/* EEPROM */
+	pspi_cs_n_gpio116_sleep: pspi_cs_n_gpio116_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pspi_clk_gpio117_sleep: pspi_clk_gpio117_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pspi_mosi_gpio074_sleep: pspi_mosi_gpio074_sleep {
+		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF2) >;
+		low-power-enable;
+	};
+
+	pspi_miso_gpio075_sleep: pspi_miso_gpio075_sleep {
+		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF2) >;
+		low-power-enable;
+	};
+
 };
