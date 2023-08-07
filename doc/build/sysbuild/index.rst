@@ -556,6 +556,27 @@ disable it using the Kconfig option ``SECOND_SAMPLE``.
 For more information on setting sysbuild Kconfig options,
 see :ref:`sysbuild_kconfig_namespacing`.
 
+Building without flashing
+=========================
+
+You can mark ``my_sample`` as a build-only application in this manner:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Add(
+     APPLICATION my_sample
+     SOURCE_DIR <path-to>/my_sample
+     BUILD_ONLY TRUE
+   )
+
+As a result, ``my_sample`` will be built as part of the sysbuild build invocation,
+but neither ``west flash`` nor ``west debug`` will be aware of this application.
+Instead, you may use the outputs of this domain for other purposes - for example,
+to produce a secondary image for DFU, or to merge multiple images together.
+
+You can also replace ``TRUE`` with another boolean constant in CMake, such as
+a Kconfig option, which would make ``my_sample`` conditionally build-only.
+
 Zephyr application configuration
 ================================
 
