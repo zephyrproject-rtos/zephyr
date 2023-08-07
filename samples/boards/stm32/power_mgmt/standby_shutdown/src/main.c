@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/sys/poweroff.h>
 #include <stm32_ll_pwr.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -59,7 +60,7 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 	k_sem_give(&button_sem);
 }
 
-void thread_shutdown_standby_mode(void)
+void thread_poweroff_standby_mode(void)
 {
 	k_sem_init(&button_sem, 0, 1);
 	k_sem_take(&button_sem, K_FOREVER);
@@ -67,13 +68,13 @@ void thread_shutdown_standby_mode(void)
 	printk("User button pressed\n");
 	config_wakeup_features();
 	if (led_is_on == false) {
-		printk("Shutdown Mode requested\n");
-		printk("Release the user button to exit from Shutdown Mode\n\n");
+		printk("Powering off\n");
+		printk("Release the user button to wake-up\n\n");
 #ifdef CONFIG_LOG
 		k_msleep(2000);
 #endif /* CONFIG_LOG */
-		pm_state_force(0u, &(struct pm_state_info) {PM_STATE_SOFT_OFF, 0, 0});
-		/* stay in Shutdown mode until wakeup line activated */
+		sys_poweroff();
+		/* powered off until wakeup line activated */
 	} else {
 		printk("Standby Mode requested\n");
 		printk("Release the user button to exit from Standby Mode\n\n");
@@ -85,7 +86,7 @@ void thread_shutdown_standby_mode(void)
 	}
 }
 
-K_THREAD_DEFINE(thread_shutdown_standby_mode_id, STACKSIZE, thread_shutdown_standby_mode,
+K_THREAD_DEFINE(thread_poweroff_standby_mode_id, STACKSIZE, thread_poweroff_standby_mode,
 	NULL, NULL, NULL, PRIORITY, 0, 0);
 
 int main(void)
@@ -138,7 +139,7 @@ int main(void)
 	printk("Device ready: %s\n\n\n", CONFIG_BOARD);
 
 	printk("Press and hold the user button:\n");
-	printk("  when LED2 is OFF to enter to Shutdown Mode\n");
+	printk("  when LED2 is OFF to power off\n");
 	printk("  when LED2 is ON to enter to Standby Mode\n\n");
 
 	led_is_on = true;
