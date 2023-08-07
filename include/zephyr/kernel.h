@@ -1463,6 +1463,8 @@ struct k_timer {
 	/* wait queue for the (single) thread waiting on this timer */
 	_wait_q_t wait_q;
 
+	struct k_timeout_api *timeout_api;
+
 	/* runs in ISR context */
 	void (*expiry_fn)(struct k_timer *timer);
 
@@ -1492,6 +1494,7 @@ struct k_timer {
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
 	}, \
+	.timeout_api = &Z_SYS_CLOCK_TIMEOUT_API, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
@@ -1633,7 +1636,7 @@ __syscall uint32_t k_timer_status_get(struct k_timer *timer);
  */
 __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
+#ifdef CONFIG_TIMEOUT_QUEUE
 
 /**
  * @brief Get next expiration time of a timer, in system ticks
@@ -1683,7 +1686,7 @@ static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
 }
 
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif /* CONFIG_TIMEOUT_QUEUE */
 
 /**
  * @brief Associate user-specific data with a timer.

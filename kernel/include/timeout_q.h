@@ -29,7 +29,8 @@ struct k_timeout_api {
 	uint64_t curr_tick;
 	sys_dlist_t list;
 
-	struct k_spinlock lock;
+	struct k_spinlock timeout_lock;
+	struct k_spinlock timer_lock;
 
 	/* Ticks left to process in the currently-executing
 	 * z_timeout_q_timeout_announce()
@@ -42,7 +43,7 @@ struct k_timeout_api {
 #define Z_TIMEOUT_API_LIST_PTR(_name) &Z_TIMEOUT_API(_name).list
 
 #define Z_DEFINE_TIMEOUT_API(_name, _elapsed, _set_timeout)                                        \
-	static struct k_timeout_api Z_TIMEOUT_API(_name) = {                                       \
+	struct k_timeout_api Z_TIMEOUT_API(_name) = {                                              \
 		.elapsed = _elapsed,                                                               \
 		.set_timeout = _set_timeout,                                                       \
 		.list = SYS_DLIST_STATIC_INIT(Z_TIMEOUT_API_LIST_PTR(_name)),                      \
@@ -74,6 +75,9 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
 #endif /* CONFIG_TIMEOUT_QUEUE */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
+#define Z_SYS_CLOCK_TIMEOUT_API Z_TIMEOUT_API(sys_clock)
+extern struct k_timeout_api Z_SYS_CLOCK_TIMEOUT_API;
 
 void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		   k_timeout_t timeout);

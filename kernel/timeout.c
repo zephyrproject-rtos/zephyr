@@ -18,8 +18,6 @@
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 Z_DEFINE_TIMEOUT_API(sys_clock, sys_clock_elapsed, sys_clock_set_timeout);
 
-#define Z_SYS_CLOCK_TIMEOUT_API Z_TIMEOUT_API(sys_clock)
-
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
@@ -107,7 +105,7 @@ void z_timeout_q_add_timeout(struct k_timeout_api *api, struct _timeout *to,
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
 
-	K_SPINLOCK(&api->lock)
+	K_SPINLOCK(&api->timeout_lock)
 	{
 		struct _timeout *t;
 
@@ -150,7 +148,7 @@ int z_timeout_q_abort_timeout(struct k_timeout_api *api, struct _timeout *to)
 {
 	int ret = -EINVAL;
 
-	K_SPINLOCK(&api->lock)
+	K_SPINLOCK(&api->timeout_lock)
 	{
 		if (sys_dnode_is_linked(&to->node)) {
 			z_timeout_q_remove_timeout(api, to);
@@ -193,7 +191,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	K_SPINLOCK(&Z_SYS_CLOCK_TIMEOUT_API.lock)
+	K_SPINLOCK(&Z_SYS_CLOCK_TIMEOUT_API.timeout_lock)
 	{
 		ticks = z_timeout_q_timeout_remaining(&Z_SYS_CLOCK_TIMEOUT_API, timeout);
 	}
@@ -205,7 +203,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
-	K_SPINLOCK(&Z_SYS_CLOCK_TIMEOUT_API.lock)
+	K_SPINLOCK(&Z_SYS_CLOCK_TIMEOUT_API.timeout_lock)
 	{
 		ticks = Z_SYS_CLOCK_TIMEOUT_API.curr_tick +
 			z_timeout_q_timeout_remaining(&Z_SYS_CLOCK_TIMEOUT_API, timeout);
@@ -219,7 +217,7 @@ static int32_t z_timeout_q_get_next_timeout_expiry(struct k_timeout_api *api)
 {
 	int32_t ret = (int32_t)K_TICKS_FOREVER;
 
-	K_SPINLOCK(&api->lock)
+	K_SPINLOCK(&api->timeout_lock)
 	{
 		ret = z_timeout_q_next_timeout(api);
 	}
@@ -236,7 +234,7 @@ int32_t z_get_next_timeout_expiry(void)
 
 void z_timeout_q_timeout_announce(struct k_timeout_api *api, int32_t ticks)
 {
-	k_spinlock_key_t key = k_spin_lock(&api->lock);
+	k_spinlock_key_t key = k_spin_lock(&api->timeout_lock);
 
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
@@ -246,7 +244,7 @@ void z_timeout_q_timeout_announce(struct k_timeout_api *api, int32_t ticks)
 	 */
 	if (IS_ENABLED(CONFIG_SMP) && (api->announce_remaining != 0)) {
 		api->announce_remaining += ticks;
-		k_spin_unlock(&api->lock, key);
+		k_spin_unlock(&api->timeout_lock, key);
 		return;
 	}
 
@@ -262,9 +260,9 @@ void z_timeout_q_timeout_announce(struct k_timeout_api *api, int32_t ticks)
 		t->dticks = 0;
 		z_timeout_q_remove_timeout(api, t);
 
-		k_spin_unlock(&api->lock, key);
+		k_spin_unlock(&api->timeout_lock, key);
 		t->fn(t);
-		key = k_spin_lock(&api->lock);
+		key = k_spin_lock(&api->timeout_lock);
 		api->announce_remaining -= dt;
 	}
 
@@ -277,7 +275,7 @@ void z_timeout_q_timeout_announce(struct k_timeout_api *api, int32_t ticks)
 
 	api->set_timeout(z_timeout_q_next_timeout(api), false);
 
-	k_spin_unlock(&api->lock, key);
+	k_spin_unlock(&api->timeout_lock, key);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -296,7 +294,7 @@ int64_t z_timeout_q_tick_get(struct k_timeout_api *api)
 {
 	uint64_t t = 0U;
 
-	K_SPINLOCK(&api->lock)
+	K_SPINLOCK(&api->timeout_lock)
 	{
 		t = api->curr_tick + z_timeout_q_elapsed(api);
 	}

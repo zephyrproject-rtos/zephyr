@@ -13,8 +13,6 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-static struct k_spinlock lock;
-
 #ifdef CONFIG_OBJ_CORE_TIMER
 static struct k_obj_type obj_type_timer;
 #endif
@@ -27,13 +25,18 @@ static struct k_obj_type obj_type_timer;
 void z_timer_expiration_handler(struct _timeout *t)
 {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
+	struct k_timeout_api *timeout_api = timer->timeout_api;
+	k_spinlock_key_t t_key, to_key;
 	struct k_thread *thread;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* In sys_clock_announce(), when a timeout expires, it is first removed
-	 * from the timeout list, then its expiration handler is called (with
-	 * unlocked interrupts). For kernel timers, the expiration handler is
-	 * this function. Usually, the timeout structure related to the timer
+	t_key = k_spin_lock(&timeout_api->timer_lock);
+	/* Only lock the timeout lock under the timer lock to avoid deadlock. */
+	to_key = k_spin_lock(&timeout_api->timeout_lock);
+
+	/* In z_timeout_q_timeout_announce(), when a timeout expires, it is first
+	 * removed from the timeout list, then its expiration handler is called
+	 * (with unlocked interrupts). For kernel timers, the expiration handler
+	 * is this function. Usually, the timeout structure related to the timer
 	 * that is handled here will not be linked to the timeout list at this
 	 * point. But it may happen that before this function is executed and
 	 * interrupts are locked again, a given timer gets restarted from an
@@ -44,9 +47,12 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 * so the function exits immediately.
 	 */
 	if (sys_dnode_is_linked(&t->node)) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timeout_api->timeout_lock, to_key);
+		k_spin_unlock(&timeout_api->timer_lock, t_key);
 		return;
 	}
+
+	k_spin_unlock(&timeout_api->timeout_lock, to_key);
 
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
@@ -71,10 +77,10 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * beginning of a tick, so need to defeat the "round
 		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
+		next = K_TIMEOUT_ABS_TICKS(z_timeout_q_tick_get(timeout_api) + 1 + next.ticks);
 #endif
-		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			      next);
+		z_timeout_q_add_timeout(timeout_api, &timer->timeout, z_timer_expiration_handler,
+					next);
 	}
 
 	/* update timer's status */
@@ -83,20 +89,20 @@ void z_timer_expiration_handler(struct _timeout *t)
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
 		/* Unlock for user handler. */
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timeout_api->timer_lock, t_key);
 		timer->expiry_fn(timer);
-		key = k_spin_lock(&lock);
+		t_key = k_spin_lock(&timeout_api->timer_lock);
 	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timeout_api->timer_lock, t_key);
 		return;
 	}
 
 	thread = z_waitq_head(&timer->wait_q);
 
 	if (thread == NULL) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timeout_api->timer_lock, t_key);
 		return;
 	}
 
@@ -104,11 +110,10 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	arch_thread_return_value_set(thread, 0);
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timeout_api->timer_lock, t_key);
 
 	z_ready_thread(thread);
 }
-
 
 void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
@@ -117,6 +122,8 @@ void k_timer_init(struct k_timer *timer,
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
+	timer->timeout_api =
+		IS_ENABLED(CONFIG_SYS_CLOCK_EXISTS) ? &Z_SYS_CLOCK_TIMEOUT_API : NULL;
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		z_waitq_init(&timer->wait_q);
@@ -139,6 +146,8 @@ void k_timer_init(struct k_timer *timer,
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
 {
+	struct k_timeout_api *timeout_api = timer->timeout_api;
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
@@ -162,12 +171,11 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		duration.ticks = MAX(duration.ticks - 1, 0);
 	}
 
-	(void)z_abort_timeout(&timer->timeout);
+	(void)z_timeout_q_abort_timeout(timeout_api, &timer->timeout);
 	timer->period = period;
 	timer->status = 0U;
 
-	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+	z_timeout_q_add_timeout(timeout_api, &timer->timeout, z_timer_expiration_handler, duration);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -185,7 +193,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
-	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
+	bool inactive = (z_timeout_q_abort_timeout(timer->timeout_api, &timer->timeout) != 0);
 
 	if (inactive) {
 		return;
@@ -216,11 +224,12 @@ static inline void z_vrfy_k_timer_stop(struct k_timer *timer)
 
 uint32_t z_impl_k_timer_status_get(struct k_timer *timer)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	struct k_timeout_api * const timeout_api = timer->timeout_api;
+	k_spinlock_key_t key = k_spin_lock(&timeout_api->timer_lock);
 	uint32_t result = timer->status;
 
 	timer->status = 0U;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timeout_api->timer_lock, key);
 
 	return result;
 }
@@ -236,6 +245,8 @@ static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 
 uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
+	struct k_timeout_api * const timeout_api = timer->timeout_api;
+
 	__ASSERT(!arch_is_in_isr(), "");
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, status_sync, timer);
 
@@ -243,18 +254,22 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		uint32_t result;
 
 		do {
-			k_spinlock_key_t key = k_spin_lock(&lock);
+			k_spinlock_key_t t_key = k_spin_lock(&timeout_api->timer_lock);
+			/* Only lock the timeout lock under the timer lock to avoid deadlock. */
+			k_spinlock_key_t to_key = k_spin_lock(&timeout_api->timeout_lock);
 
 			if (!z_is_inactive_timeout(&timer->timeout)) {
+				k_spin_unlock(&timeout_api->timeout_lock, to_key);
 				result = *(volatile uint32_t *)&timer->status;
 				timer->status = 0U;
-				k_spin_unlock(&lock, key);
+				k_spin_unlock(&timeout_api->timer_lock, t_key);
 				if (result > 0) {
 					break;
 				}
 			} else {
+				k_spin_unlock(&timeout_api->timeout_lock, to_key);
 				result = timer->status;
-				k_spin_unlock(&lock, key);
+				k_spin_unlock(&timeout_api->timer_lock, t_key);
 				break;
 			}
 		} while (true);
@@ -262,20 +277,25 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		return result;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t t_key = k_spin_lock(&timeout_api->timer_lock);
 	uint32_t result = timer->status;
 
 	if (result == 0U) {
+		/* Only lock the timeout lock under the timer lock to avoid deadlock. */
+		k_spinlock_key_t to_key = k_spin_lock(&timeout_api->timeout_lock);
 		if (!z_is_inactive_timeout(&timer->timeout)) {
+			k_spin_unlock(&timeout_api->timeout_lock, to_key);
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_timer, status_sync, timer, K_FOREVER);
 
 			/* wait for timer to expire or stop */
-			(void)z_pend_curr(&lock, key, &timer->wait_q, K_FOREVER);
+			(void)z_pend_curr(&timeout_api->timer_lock, t_key, &timer->wait_q,
+					  K_FOREVER);
 
 			/* get updated timer status */
-			key = k_spin_lock(&lock);
+			t_key = k_spin_lock(&timeout_api->timer_lock);
 			result = timer->status;
 		} else {
+			k_spin_unlock(&timeout_api->timeout_lock, to_key);
 			/* timer is already stopped */
 		}
 	} else {
@@ -283,7 +303,7 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 	}
 
 	timer->status = 0U;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timeout_api->timer_lock, t_key);
 
 	/**
 	 * @note	New tracing hook

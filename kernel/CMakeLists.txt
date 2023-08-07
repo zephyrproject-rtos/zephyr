@@ -100,8 +100,7 @@ set_target_properties(
   )
 
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
-target_sources_ifdef(CONFIG_TIMEOUT_QUEUE         kernel PRIVATE timeout.c)
-target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timer.c)
+target_sources_ifdef(CONFIG_TIMEOUT_QUEUE         kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
