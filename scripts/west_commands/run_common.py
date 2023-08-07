@@ -466,7 +466,8 @@ def dump_context(command, args, unknown_args):
         if cls:
             dump_runner_context(command, cls, runners_yaml)
         else:
-            dump_all_runner_context(command, runners_yaml, board, build_dir)
+            dump_all_runner_context(command, yaml_path, runners_yaml,
+                                    board, build_dir)
 
 def dump_context_no_config(command, cls):
     if not cls:
@@ -521,14 +522,13 @@ def dump_runner_args(group, runners_yaml, indent=''):
     else:
         log.inf(f'{msg} (none)', colorize=True)
 
-def dump_all_runner_context(command, runners_yaml, board, build_dir):
+def dump_all_runner_context(command, yaml_path, runners_yaml,
+                            board, build_dir):
     all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners() if
                command.name in cls.capabilities().commands}
     available = runners_yaml['runners']
     available_cls = {r: all_cls[r] for r in available if r in all_cls}
     default_runner = runners_yaml[command.runner_key]
-    yaml_path = runners_yaml_path(build_dir, board)
-    runners_yaml = load_runners_yaml(yaml_path)
 
     log.inf(f'zephyr runners which support "west {command.name}":',
             colorize=True)
