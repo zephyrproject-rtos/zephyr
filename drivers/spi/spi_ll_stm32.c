@@ -26,6 +26,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #include "spi_ll_stm32.h"
 
 #define WAIT_1US	1U
@@ -756,16 +760,31 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 	for (size_t i = 0; i < ARRAY_SIZE(nocache_mem_regions); i++) {
 		const struct mem_region *mem_reg = &nocache_mem_regions[i];
 
-		const bool buf_within_bounds =
+		buf_within_nocache =
 			(buf >= mem_reg->start) && ((buf + len_bytes - 1) <= mem_reg->end);
-		if (buf_within_bounds) {
+		if (buf_within_nocache) {
 			return true;
 		}
 	}
 	return false;
+}
+
+static bool is_dummy_buffer(const struct spi_buf *buf)
+{
+	return buf->buf == NULL;
 }
 
 static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
@@ -773,7 +792,8 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	for (size_t i = 0; i < bufs->count; i++) {
 		const struct spi_buf *buf = &bufs->buffers[i];
 
-		if (!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+		if (!is_dummy_buffer(buf) &&
+				!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
 			return false;
 		}
 	}
