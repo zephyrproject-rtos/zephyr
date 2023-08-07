@@ -847,9 +847,9 @@ void log_output_msg_syst_process(const struct log_output *output,
 #endif
 		{
 #ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
-			struct cbprintf_package_desc *pkg_hdr = (void *)data;
+			struct cbprintf_package_desc *pkg_desc = (void *)data;
 
-			CHECKIF((pkg_hdr->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
+			CHECKIF((pkg_desc->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
 				CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
 				/*
 				 * Tagged arguments are to be used with catalog messages,
