@@ -189,7 +189,7 @@ void z_prep_c(void)
 	z_data_copy();
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	/* Invoke SoC-specific interrupt controller initialization */
-	z_soc_irq_init();
+	platform_irq_init();
 #else
 	z_arm_interrupt_init();
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */

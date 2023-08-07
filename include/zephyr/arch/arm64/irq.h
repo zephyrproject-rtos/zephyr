@@ -28,8 +28,8 @@ GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-GTEXT(z_soc_irq_get_active)
-GTEXT(z_soc_irq_eoi)
+GTEXT(platform_irq_get_active)
+GTEXT(platform_irq_eoi)
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
@@ -50,23 +50,23 @@ extern void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio,
  * interrupt control functions to the SoC layer interrupt control functions.
  */
 
-void z_soc_irq_init(void);
+void platform_irq_init(void);
 void platform_irq_enable(unsigned int irq);
 void platform_irq_disable(unsigned int irq);
 int platform_irq_is_enabled(unsigned int irq);
 
-void z_soc_irq_priority_set(
+void platform_irq_priority_set(
 	unsigned int irq, unsigned int prio, unsigned int flags);
 
-unsigned int z_soc_irq_get_active(void);
-void z_soc_irq_eoi(unsigned int irq);
+unsigned int platform_irq_get_active(void);
+void platform_irq_eoi(unsigned int irq);
 
 #define arch_irq_enable(irq)		platform_irq_enable(irq)
 #define arch_irq_disable(irq)		platform_irq_disable(irq)
 #define arch_irq_is_enabled(irq)	platform_irq_is_enabled(irq)
 
 #define z_arm64_irq_priority_set(irq, prio, flags)	\
-	z_soc_irq_priority_set(irq, prio, flags)
+	platform_irq_priority_set(irq, prio, flags)
 
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 

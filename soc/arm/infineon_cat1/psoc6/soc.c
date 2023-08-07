@@ -36,7 +36,7 @@ cy_en_sysint_status_t Cy_SysInt_Init(const cy_stc_sysint_t *config, cy_israddres
 		 * PendSV IRQ (which is used in Cortex-M variants to implement thread
 		 * context-switching) is assigned the lowest IRQ priority level.
 		 * If priority is same as PendSV, we will catch assertion in
-		 * z_arm_irq_priority_set function. To avoid this, change priority
+		 * arch_irq_priority_set function. To avoid this, change priority
 		 * to IRQ_PRIO_LOWEST, if it > IRQ_PRIO_LOWEST. Macro IRQ_PRIO_LOWEST
 		 * takes in to account PendSV specific.
 		 */

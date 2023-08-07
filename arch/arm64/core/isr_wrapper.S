@@ -61,7 +61,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	arm_gic_get_active
 #else
-	bl	z_soc_irq_get_active
+	bl	platform_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #if CONFIG_GIC_VER >= 3
@@ -104,7 +104,7 @@ spurious_continue:
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	arm_gic_eoi
 #else
-	bl	z_soc_irq_eoi
+	bl	platform_irq_eoi
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING

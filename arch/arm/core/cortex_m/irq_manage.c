@@ -58,7 +58,7 @@ int arch_irq_is_enabled(unsigned int irq)
  * of priority levels is a little complex, as there are some hardware
  * priority levels which are reserved.
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -245,7 +245,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	z_arm_irq_priority_set(irq, priority, flags);
+	arch_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_GEN_ISR_TABLES */

@@ -98,7 +98,7 @@ _idle_state_cleared:
 #endif /* CONFIG_PM */
 
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl z_soc_irq_get_active
+	bl platform_irq_get_active
 #else
 	mrs r0, IPSR	/* get exception number */
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
@@ -129,7 +129,7 @@ _idle_state_cleared:
 
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	pop {r0}
-	bl z_soc_irq_eoi
+	bl platform_irq_eoi
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
