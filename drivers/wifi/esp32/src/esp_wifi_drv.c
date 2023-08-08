@@ -109,6 +109,8 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	const int pkt_len = net_pkt_get_len(pkt);
+	esp_interface_t ifx =
+		esp32_data.state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
@@ -116,8 +118,7 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Enqueue packet for transmission */
-	if (esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf,
-			pkt_len) != ESP_OK) {
+	if (esp_wifi_internal_tx(ifx, (void *)data->frame_buf, pkt_len) != ESP_OK) {
 		goto out;
 	}
 
