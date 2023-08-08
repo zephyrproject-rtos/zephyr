@@ -517,6 +517,9 @@ config LWM2M_CONNMON_OBJECT_VERSION_1_0
 config LWM2M_CONNMON_OBJECT_VERSION_1_2
 	bool "Connectivity monitor object version 1.2"
 
+config LWM2M_CONNMON_OBJECT_VERSION_1_3
+	bool "Connectivity monitor object version 1.3"
+
 endchoice
 
 config LWM2M_CONN_MON_BEARER_MAX

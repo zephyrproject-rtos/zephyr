@@ -19,13 +19,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 
 #define CONNMON_VERSION_MAJOR 1
-#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
+#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_3)
+#define CONNMON_VERSION_MINOR 3
+#define CONNMON_MAX_ID 14
+#elif defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
 #define CONNMON_VERSION_MINOR 2
 #define CONNMON_MAX_ID 13
 #else
 #define CONNMON_VERSION_MINOR 0
 #define CONNMON_MAX_ID 11
-#endif /* CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2 */
+#endif
 
 /* Connectivity Monitoring resource IDs */
 #define CONNMON_NETWORK_BEARER_ID		0
@@ -39,9 +42,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CONNMON_CELLID				8
 #define CONNMON_SMNC				9
 #define CONNMON_SMCC				10
-#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
+#if CONNMON_VERSION_MINOR > 0
 #define CONNMON_SIGNAL_SNR			11
+#endif
+#if CONNMON_VERSION_MINOR > 1
 #define CONNMON_LAC				12
+#endif
+#if CONNMON_VERSION_MINOR > 2
+#define CONNMON_COVERAGE_ENHANCEMENT_LEVEL	13
 #endif
 
 #define CONNMON_STRING_SHORT			8
@@ -89,9 +97,14 @@ static uint8_t link_quality;
 static uint32_t cellid;
 static uint16_t mnc;
 static uint16_t mcc;
-#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
+#if CONNMON_VERSION_MINOR > 0
 static int32_t snr;
+#endif
+#if CONNMON_VERSION_MINOR > 1
 static uint16_t lac;
+#endif
+#if CONNMON_VERSION_MINOR > 2
+static uint8_t cel;
 #endif
 
 /* only 1 instance of Connection Monitoring object exists */
@@ -108,9 +121,14 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(CONNMON_CELLID, R_OPT, U32),
 	OBJ_FIELD_DATA(CONNMON_SMNC, R_OPT, U16),
 	OBJ_FIELD_DATA(CONNMON_SMCC, R_OPT, U16),
-#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
+#if CONNMON_VERSION_MINOR > 0
 	OBJ_FIELD_DATA(CONNMON_SIGNAL_SNR, R_OPT, S32),
+#endif
+#if CONNMON_VERSION_MINOR > 1
 	OBJ_FIELD_DATA(CONNMON_LAC, R_OPT, U16),
+#endif
+#if CONNMON_VERSION_MINOR > 2
+	OBJ_FIELD_DATA(CONNMON_COVERAGE_ENHANCEMENT_LEVEL, R_OPT, U8),
 #endif
 };
 
@@ -128,6 +146,15 @@ static struct lwm2m_engine_obj_inst *connmon_create(uint16_t obj_inst_id)
 	link_quality = 0U;
 	mnc = 0U;
 	mcc = 0U;
+#if CONNMON_VERSION_MINOR > 0
+	snr = 0U;
+#endif
+#if CONNMON_VERSION_MINOR > 1
+	lac = 0U;
+#endif
+#if CONNMON_VERSION_MINOR > 2
+	cel = 0U;
+#endif
 
 	init_res_instance(res_inst, ARRAY_SIZE(res_inst));
 
@@ -152,11 +179,16 @@ static struct lwm2m_engine_obj_inst *connmon_create(uint16_t obj_inst_id)
 			  sizeof(cellid));
 	INIT_OBJ_RES_DATA(CONNMON_SMNC, res, i, res_inst, j, &mnc, sizeof(mnc));
 	INIT_OBJ_RES_DATA(CONNMON_SMCC, res, i, res_inst, j, &mcc, sizeof(mcc));
-#if defined(CONFIG_LWM2M_CONNMON_OBJECT_VERSION_1_2)
+#if CONNMON_VERSION_MINOR > 0
 	INIT_OBJ_RES_DATA(CONNMON_SIGNAL_SNR, res, i, res_inst, j, &snr, sizeof(snr));
+#endif
+#if CONNMON_VERSION_MINOR > 1
 	INIT_OBJ_RES_DATA(CONNMON_LAC, res, i, res_inst, j, &lac, sizeof(lac));
 #endif
-
+#if CONNMON_VERSION_MINOR > 2
+	INIT_OBJ_RES_DATA(CONNMON_COVERAGE_ENHANCEMENT_LEVEL, res, i, res_inst, j, &cel,
+			  sizeof(cel));
+#endif
 	inst.resources = res;
 	inst.resource_count = i;
 	LOG_DBG("Create LWM2M connectivity monitoring instance: %d",
