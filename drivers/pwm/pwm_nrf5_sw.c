@@ -10,7 +10,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <nrfx_gpiote.h>
-#include <nrfx_ppi.h>
+#include <helpers/nrfx_gppi.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
@@ -41,11 +41,17 @@ BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 #error "Invalid number of PWM channels configured."
 #endif
 
+#if defined(PPI_FEATURE_FORKS_PRESENT) || defined(DPPI_PRESENT)
+#define PPI_FORK_AVAILABLE 1
+#else
+#define PPI_FORK_AVAILABLE 0
+#endif
+
 /* When RTC is used, one more PPI task endpoint is required for clearing
  * the counter, so when FORK feature is not available, one more PPI channel
  * needs to be used.
  */
-#if USE_RTC && !defined(PPI_FEATURE_FORKS_PRESENT)
+#if USE_RTC && !PPI_FORK_AVAILABLE
 #define PPI_PER_CH 3
 #else
 #define PPI_PER_CH 2
@@ -165,7 +171,7 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 	/* clear PPI used */
 	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
 		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
-	nrf_ppi_channels_disable(NRF_PPI, ppi_mask);
+	nrfx_gppi_channels_disable(ppi_mask);
 
 	active_level = (flags & PWM_POLARITY_INVERTED) ? 0 : 1;
 
@@ -265,15 +271,13 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 			nrf_rtc_event_address_get(rtc,
 				nrf_rtc_compare_event_get(0));
 
-#if defined(PPI_FEATURE_FORKS_PRESENT)
-		nrf_ppi_fork_endpoint_setup(NRF_PPI,
-					    ppi_chs[1],
-					    clear_task_address);
+#if PPI_FORK_AVAILABLE
+		nrfx_gppi_fork_endpoint_setup(ppi_chs[1],
+					      clear_task_addr);
 #else
-		nrf_ppi_channel_endpoint_setup(NRF_PPI,
-					       ppi_chs[2],
-					       period_end_event_address,
-					       clear_task_address);
+		nrfx_gppi_channel_endpoints_setup(ppi_chs[2],
+						  period_end_event_address,
+						  clear_task_address);
 #endif
 	} else {
 		pulse_end_event_address =
@@ -284,15 +288,13 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 				nrf_timer_compare_event_get(0));
 	}
 
-	nrf_ppi_channel_endpoint_setup(NRF_PPI,
-				       ppi_chs[0],
-				       pulse_end_event_address,
-				       pulse_end_task_address);
-	nrf_ppi_channel_endpoint_setup(NRF_PPI,
-				       ppi_chs[1],
-				       period_end_event_address,
-				       period_end_task_address);
-	nrf_ppi_channels_enable(NRF_PPI, ppi_mask);
+	nrfx_gppi_channel_endpoints_setup(ppi_chs[0],
+					  pulse_end_event_address,
+					  pulse_end_task_address);
+	nrfx_gppi_channel_endpoints_setup(ppi_chs[1],
+					  period_end_event_address,
+					  period_end_task_address);
+	nrfx_gppi_channels_enable(ppi_mask);
 
 	/* start timer, hence PWM */
 	if (USE_RTC) {
@@ -347,7 +349,7 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 
 		/* Allocate resources. */
 		for (uint32_t j = 0; j < PPI_PER_CH; j++) {
-			err = nrfx_ppi_channel_alloc(&data->ppi_ch[i][j]);
+			err = nrfx_gppi_channel_alloc(&data->ppi_ch[i][j]);
 			if (err != NRFX_SUCCESS) {
 				/* Do not free allocated resource. It is a fatal condition,
 				 * system requires reconfiguration.
