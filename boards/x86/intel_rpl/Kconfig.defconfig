@@ -29,6 +29,15 @@ endif
 config ACPI
 	default y
 
+if DMA
+config DMA_64BIT
+	default y
+config DMA_DW_HW_LLI
+	default n
+config DMA_DW_CHANNEL_COUNT
+	default 2
+endif
+
 if SHELL
 config SHELL_STACK_SIZE
 	default 320000
