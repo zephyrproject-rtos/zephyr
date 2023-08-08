@@ -351,6 +351,11 @@ struct k_thread {
 	struct k_obj_core  obj_core;
 #endif
 
+#ifdef CONFIG_SMP
+	/** threads waiting in k_thread_suspend() */
+	_wait_q_t  halt_queue;
+#endif
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
