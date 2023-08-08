@@ -15,13 +15,13 @@ tests:
     slow: true
     min_ram: 192
   libraries.libc.newlib.thread_safety.userspace:
-    extra_args: CONF_FILE=prj_userspace.conf
+    extra_args: EXTRA_CONF_FILE=userspace.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags:
       - userspace
     min_ram: 64
   libraries.libc.newlib.thread_safety.userspace.stress:
-    extra_args: CONF_FILE=prj_userspace.conf
+    extra_args: EXTRA_CONF_FILE=userspace.conf
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
       - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=8192
@@ -44,7 +44,7 @@ tests:
     slow: true
     min_ram: 192
   libraries.libc.newlib_nano.thread_safety.userspace:
-    extra_args: CONF_FILE=prj_userspace.conf
+    extra_args: EXTRA_CONF_FILE=userspace.conf
     extra_configs:
       - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
@@ -52,7 +52,7 @@ tests:
       - userspace
     min_ram: 64
   libraries.libc.newlib_nano.thread_safety.userspace.stress:
-    extra_args: CONF_FILE=prj_userspace.conf
+    extra_args: EXTRA_CONF_FILE=userspace.conf
     extra_configs:
       - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
       - CONFIG_NEWLIB_LIBC_NANO=y
@@ -63,4 +63,3 @@ tests:
       - userspace
     min_ram: 192
     timeout: 120
-    platform_exclude: acrn_ehl_crb  # See #61129
