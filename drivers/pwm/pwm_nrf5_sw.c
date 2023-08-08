@@ -237,9 +237,23 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* setup PPI */
 	uint32_t pulse_end_event_address, period_end_event_address;
-	uint32_t gpiote_out_task_address =
-		nrf_gpiote_task_address_get(NRF_GPIOTE,
-			nrf_gpiote_out_task_get(gpiote_ch));
+	nrf_gpiote_task_t pulse_end_task, period_end_task;
+#if defined(GPIOTE_FEATURE_SET_PRESENT) && defined(GPIOTE_FEATURE_CLR_PRESENT)
+	if (active_level == 0) {
+		pulse_end_task  = nrf_gpiote_set_task_get(gpiote_ch);
+		period_end_task = nrf_gpiote_clr_task_get(gpiote_ch);
+	} else {
+		pulse_end_task  = nrf_gpiote_clr_task_get(gpiote_ch);
+		period_end_task = nrf_gpiote_set_task_get(gpiote_ch);
+	}
+#else
+	pulse_end_task = period_end_task = nrf_gpiote_out_task_get(gpiote_ch);
+#endif
+	uint32_t pulse_end_task_address =
+		nrf_gpiote_task_address_get(NRF_GPIOTE, pulse_end_task);
+	uint32_t period_end_task_address =
+		nrf_gpiote_task_address_get(NRF_GPIOTE, period_end_task);
+
 	if (USE_RTC) {
 		uint32_t clear_task_address =
 			nrf_rtc_event_address_get(rtc, NRF_RTC_TASK_CLEAR);
@@ -273,11 +287,11 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 	nrf_ppi_channel_endpoint_setup(NRF_PPI,
 				       ppi_chs[0],
 				       pulse_end_event_address,
-				       gpiote_out_task_address);
+				       pulse_end_task_address);
 	nrf_ppi_channel_endpoint_setup(NRF_PPI,
 				       ppi_chs[1],
 				       period_end_event_address,
-				       gpiote_out_task_address);
+				       period_end_task_address);
 	nrf_ppi_channels_enable(NRF_PPI, ppi_mask);
 
 	/* start timer, hence PWM */
