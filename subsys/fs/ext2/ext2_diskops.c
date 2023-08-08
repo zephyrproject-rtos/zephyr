@@ -539,12 +539,12 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 			start_blk = offsets[0];
 
 		} else {
-			uint32_t block_num = sys_le32_to_cpu(list[offsets[0]]);
+			uint32_t block_num2 = sys_le32_to_cpu(list[offsets[0]]);
 
 			/* We don't remove all blocks referenced by current block. We have to use
 			 * offsets to decide which part of next block we want to remove.
 			 */
-			if (block_num == 0) {
+			if (block_num2 == 0) {
 				LOG_ERR("Inode block that references other blocks must be nonzero");
 				fs->flags |= EXT2_DATA_FLAGS_ERR;
 				removed = -EINVAL;
@@ -555,7 +555,7 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 			start_blk = offsets[0] + 1;
 
 			/* Remove desired part of lower level block. */
-			rem = delete_blocks(fs, block_num, lvl - 1, &offsets[1]);
+			rem = delete_blocks(fs, block_num2, lvl - 1, &offsets[1]);
 			if (rem < 0) {
 				removed = rem;
 				goto out;
@@ -565,12 +565,12 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 
 		/* Iterate over blocks that will be entirely deleted */
 		for (uint32_t i = start_blk; i < fs->block_size / EXT2_BLOCK_NUM_SIZE; ++i) {
-			uint32_t block_num = sys_le32_to_cpu(list[i]);
+			uint32_t block_num2 = sys_le32_to_cpu(list[i]);
 
-			if (block_num == 0) {
+			if (block_num2 == 0) {
 				continue;
 			}
-			rem = delete_blocks(fs, block_num, lvl - 1, zero_offsets);
+			rem = delete_blocks(fs, block_num2, lvl - 1, zero_offsets);
 			if (rem < 0) {
 				removed = rem;
 				goto out;
