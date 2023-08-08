@@ -43,9 +43,28 @@ struct z_spinlock_key {
  * application code.
  */
 struct k_spinlock {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #ifdef CONFIG_SMP
+#ifdef CONFIG_TICKET_SPINLOCKS
+	/*
+	 * Ticket spinlocks are conceptually two atomic variables,
+	 * one indicating the current FIFO head (spinlock owner),
+	 * and the other indicating the current FIFO tail.
+	 * Spinlock is acquired in the following manner:
+	 * - current FIFO tail value is atomically incremented while it's
+	 *   original value is saved as a "ticket"
+	 * - we spin until the FIFO head becomes equal to the ticket value
+	 *
+	 * Spinlock is released by atomic increment of the FIFO head
+	 */
+	atomic_t owner;
+	atomic_t tail;
+#else
 	atomic_t locked;
-#endif
+#endif /* CONFIG_TICKET_SPINLOCKS */
+#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_SPIN_VALIDATE
 	/* Stores the thread that holds the lock with the locking CPU
@@ -76,6 +95,9 @@ struct k_spinlock {
 	 */
 	char dummy;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /* There's a spinlock validation framework available when asserts are
@@ -170,10 +192,22 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 	z_spinlock_validate_pre(l);
 #ifdef CONFIG_SMP
+#ifdef CONFIG_TICKET_SPINLOCKS
+	/*
+	 * Enqueue ourselves to the end of a spinlock waiters queue
+	 * receiving a ticket
+	 */
+	atomic_val_t ticket = atomic_inc(&l->tail);
+	/* Spin until our ticket is served */
+	while (atomic_get(&l->owner) != ticket) {
+		arch_spin_relax();
+	}
+#else
 	while (!atomic_cas(&l->locked, 0, 1)) {
 		arch_spin_relax();
 	}
-#endif
+#endif /* CONFIG_TICKET_SPINLOCKS */
+#endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
 
 	return k;
@@ -199,16 +233,47 @@ static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *
 
 	z_spinlock_validate_pre(l);
 #ifdef CONFIG_SMP
-	if (!atomic_cas(&l->locked, 0, 1)) {
-		arch_irq_unlock(key);
-		return -EBUSY;
+#ifdef CONFIG_TICKET_SPINLOCKS
+	/*
+	 * atomic_get and atomic_cas operations below are not executed
+	 * simultaneously.
+	 * So in theory k_spin_trylock can lock an already locked spinlock.
+	 * To reproduce this the following conditions should be met after we
+	 * executed atomic_get and before we executed atomic_cas:
+	 *
+	 * - spinlock needs to be taken 0xffff_..._ffff + 1 times
+	 * (which requires 0xffff_..._ffff number of CPUs, as k_spin_lock call
+	 * is blocking) or
+	 * - spinlock needs to be taken and released 0xffff_..._ffff times and
+	 * then taken again
+	 *
+	 * In real-life systems this is considered non-reproducible given that
+	 * required actions need to be done during this tiny window of several
+	 * CPU instructions (which execute with interrupt locked,
+	 * so no preemption can happen here)
+	 */
+	atomic_val_t ticket_val = atomic_get(&l->owner);
+
+	if (!atomic_cas(&l->tail, ticket_val, ticket_val + 1)) {
+		goto busy;
 	}
-#endif
+#else
+	if (!atomic_cas(&l->locked, 0, 1)) {
+		goto busy;
+	}
+#endif /* CONFIG_TICKET_SPINLOCKS */
+#endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
 
 	k->key = key;
 
 	return 0;
+
+#ifdef CONFIG_SMP
+busy:
+	arch_irq_unlock(key);
+	return -EBUSY;
+#endif /* CONFIG_SMP */
 }
 
 /**
@@ -249,6 +314,10 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 #endif /* CONFIG_SPIN_VALIDATE */
 
 #ifdef CONFIG_SMP
+#ifdef CONFIG_TICKET_SPINLOCKS
+	/* Give the spinlock to the next CPU in a FIFO */
+	atomic_inc(&l->owner);
+#else
 	/* Strictly we don't need atomic_clear() here (which is an
 	 * exchange operation that returns the old value).  We are always
 	 * setting a zero and (because we hold the lock) know the existing
@@ -257,7 +326,8 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 * Zephyr framework for that.
 	 */
 	atomic_clear(&l->locked);
-#endif
+#endif /* CONFIG_TICKET_SPINLOCKS */
+#endif /* CONFIG_SMP */
 	arch_irq_unlock(key.key);
 }
 
@@ -275,9 +345,15 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
  */
 static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 {
+#ifdef CONFIG_TICKET_SPINLOCKS
+	atomic_val_t ticket_val = atomic_get(&l->owner);
+
+	return !atomic_cas(&l->tail, ticket_val, ticket_val);
+#else
 	return l->locked;
+#endif /* CONFIG_TICKET_SPINLOCKS */
 }
-#endif
+#endif /* defined(CONFIG_SMP) && defined(CONFIG_TEST) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
@@ -287,8 +363,12 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
 #ifdef CONFIG_SMP
+#ifdef CONFIG_TICKET_SPINLOCKS
+	atomic_inc(&l->owner);
+#else
 	atomic_clear(&l->locked);
-#endif
+#endif /* CONFIG_TICKET_SPINLOCKS */
+#endif /* CONFIG_SMP */
 }
 
 #if defined(CONFIG_SPIN_VALIDATE) && defined(__GNUC__)
