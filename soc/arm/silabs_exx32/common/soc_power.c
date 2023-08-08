@@ -16,7 +16,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  * PM_STATE_RUNTIME_IDLE: EM1 Sleep
  * PM_STATE_SUSPEND_TO_IDLE: EM2 Deep Sleep
  * PM_STATE_STANDBY: EM3 Stop
- * PM_STATE_SOFT_OFF: EM4
  */
 
 /* Invoke Low Power/System Off specific Tasks */
@@ -47,9 +46,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 	case PM_STATE_STANDBY:
 		EMU_EnterEM3(true);
-		break;
-	case PM_STATE_SOFT_OFF:
-		EMU_EnterEM4();
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);

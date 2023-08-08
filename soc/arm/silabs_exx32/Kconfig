@@ -6,6 +6,7 @@ config SOC_FAMILY_EXX32
 	bool
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select BUILD_OUTPUT_HEX
+	select HAS_POWEROFF
 
 if SOC_FAMILY_EXX32
 config SOC_FAMILY
@@ -138,7 +139,7 @@ config SOC_GECKO_TRNG
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
-if PM
+if PM || POWEROFF
 
 config SOC_GECKO_PM_BACKEND_PMGR
 	bool
