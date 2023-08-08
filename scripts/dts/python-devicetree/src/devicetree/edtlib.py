@@ -865,7 +865,9 @@ class Node:
     unit_addr:
       An integer with the ...@<unit-address> portion of the node name,
       translated through any 'ranges' properties on parent nodes, or None if
-      the node name has no unit-address portion
+      the node name has no unit-address portion. PCI devices use a different
+      node name format ...@<dev>,<func> or ...@<dev> (e.g. "pcie@1,0"), in
+      this case None is returned.
 
     description:
       The description string from the binding for the node, or None if the node
@@ -982,6 +984,9 @@ class Node:
       A list of ControllerAndData objects for the GPIOs hogged by the node. The
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
+
+    is_pci_device:
+      True if the node is a PCI device.
     """
 
     def __init__(self,
@@ -1019,7 +1024,8 @@ class Node:
 
         # TODO: Return a plain string here later, like dtlib.Node.unit_addr?
 
-        if "@" not in self.name:
+        # PCI devices use a different node name format (e.g. "pcie@1,0")
+        if "@" not in self.name or self.is_pci_device:
             return None
 
         try:
@@ -1210,6 +1216,11 @@ class Node:
                 name=None, basename="gpio"))
 
         return res
+
+    @property
+    def is_pci_device(self) -> bool:
+        "See the class docstring"
+        return 'pcie' in self.on_buses
 
     def __repr__(self) -> str:
         if self.binding_path:
@@ -1640,7 +1651,8 @@ class Node:
                 size = None
             else:
                 size = to_num(raw_reg[4*address_cells:])
-            if size_cells != 0 and size == 0:
+            # Size zero is ok for PCI devices
+            if size_cells != 0 and size == 0 and not self.is_pci_device:
                 _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
                      "(maybe you want a size of one or #size-cells = 0 "
                      "instead)")
@@ -2211,7 +2223,9 @@ class EDT:
         if self._warn_reg_unit_address_mismatch:
             # This warning matches the simple_bus_reg warning in dtc
             for node in self.nodes:
-                if node.regs and node.regs[0].addr != node.unit_addr:
+                # Address mismatch is ok for PCI devices
+                if (node.regs and node.regs[0].addr != node.unit_addr and
+                        not node.is_pci_device):
                     _LOG.warning("unit address and first address in 'reg' "
                                  f"(0x{node.regs[0].addr:x}) don't match for "
                                  f"{node.path}")
