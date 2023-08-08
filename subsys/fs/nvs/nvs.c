@@ -870,7 +870,7 @@ static int nvs_startup(struct nvs_fs *fs)
 		 * So, temporarily, we set the lookup cache to the end of the fs.
 		 * The cache will be rebuilt afterwards
 		 **/
-		for (int i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+		for (i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
 			fs->lookup_cache[i] = fs->ate_wra;
 		}
 #endif
