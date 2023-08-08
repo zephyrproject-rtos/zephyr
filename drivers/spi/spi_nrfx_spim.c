@@ -181,6 +181,9 @@ static int configure(const struct device *dev,
 	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
 	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
 
+	nrfy_gpio_pin_write(nrfy_spim_sck_pin_get(dev_config->spim.p_reg),
+			    spi_cfg->operation & SPI_MODE_CPOL ? 1 : 0);
+
 	if (dev_data->initialized) {
 		nrfx_spim_uninit(&dev_config->spim);
 		dev_data->initialized = false;
