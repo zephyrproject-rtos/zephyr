@@ -1463,11 +1463,11 @@ int ext2_inode_get(struct ext2_data *fs, uint32_t ino, struct ext2_inode **ret)
 	memset(inode, 0, sizeof(struct ext2_inode));
 
 	if (ino != 0) {
-		int rc = ext2_fetch_inode(fs, ino, inode);
+		int rc2 = ext2_fetch_inode(fs, ino, inode);
 
-		if (rc < 0) {
+		if (rc2 < 0) {
 			k_mem_slab_free(&inode_struct_slab, (void **)&inode);
-			return rc;
+			return rc2;
 		}
 	}
 
