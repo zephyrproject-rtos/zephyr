@@ -13,5 +13,6 @@ config SOC_SERIES_STM32WLX
 	select CPU_HAS_ARM_MPU
 	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
 	select HAS_PM
+	select HAS_POWEROFF
 	help
 	  Enable support for STM32WL MCU series
