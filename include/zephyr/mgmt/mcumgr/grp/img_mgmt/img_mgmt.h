@@ -322,7 +322,7 @@ int img_mgmt_state_set_pending(int slot, int permanent);
  *
  * @return 0 on success, non-zero on failure
  */
-int img_mgmt_state_confirm(void);
+__deprecated int img_mgmt_state_confirm(void);
 
 /**
  * Compares two image version numbers in a semver-compatible way.
