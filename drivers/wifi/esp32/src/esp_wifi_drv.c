@@ -289,6 +289,7 @@ static void esp_wifi_event_task(void)
 			break;
 		case ESP32_WIFI_EVENT_AP_STOP:
 			esp32_data.state = ESP32_AP_STOPPED;
+			net_eth_carrier_off(esp32_wifi_iface);
 			break;
 		case ESP32_WIFI_EVENT_AP_STACONNECTED:
 			esp32_data.state = ESP32_AP_CONNECTED;
@@ -458,6 +459,8 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
 	}
+
+	net_eth_carrier_on(esp32_wifi_iface);
 
 	return 0;
 };
