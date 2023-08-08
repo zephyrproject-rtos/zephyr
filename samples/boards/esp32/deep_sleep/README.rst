@@ -71,4 +71,4 @@ sample below is for GPIO2.
    Wake up from GPIO 2
    Enabling timer wakeup, 20s
    Enabling EXT1 wakeup on pins GPIO2, GPIO4
-   Entering deep sleep
+   Powering off
