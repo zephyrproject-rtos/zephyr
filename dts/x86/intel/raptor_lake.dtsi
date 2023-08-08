@@ -75,6 +75,13 @@
 			status = "okay";
 		};
 
+		i2c0_dma: i2c0_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c0>;
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
 		i2c1: i2c1 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -85,7 +92,14 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
+		};
+
+		i2c1_dma: i2c1_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c1>;
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		i2c2: i2c2 {
@@ -93,12 +107,21 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x7ace>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
+		};
+
+		i2c2_dma: i2c2_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c2>;
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		i2c3: i2c3 {
@@ -111,6 +134,13 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c3_dma: i2c3_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c3>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -127,6 +157,13 @@
 			status = "disabled";
 		};
 
+		i2c4_dma: i2c4_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c4>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		i2c5: i2c5 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -137,6 +174,13 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c5_dma: i2c5_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c5>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -153,6 +197,13 @@
 			status = "disabled";
 		};
 
+		i2c6_dma: i2c6_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c6>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		i2c7: i2c7 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -163,6 +214,13 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c7_dma: i2c7_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c7>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
