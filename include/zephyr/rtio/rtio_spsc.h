@@ -171,11 +171,11 @@ struct rtio_spsc {
 #define rtio_spsc_acquire(spsc)                                                                    \
 	({                                                                                         \
 		unsigned long idx = z_rtio_spsc_in(spsc) + (spsc)->_spsc.acquire;                  \
-		bool acq = (idx - z_rtio_spsc_out(spsc)) < rtio_spsc_size(spsc);                   \
-		if (acq) {                                                                         \
+		bool spsc_acq = (idx - z_rtio_spsc_out(spsc)) < rtio_spsc_size(spsc);              \
+		if (spsc_acq) {                                                                    \
 			(spsc)->_spsc.acquire += 1;                                                \
 		}                                                                                  \
-		acq ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;                       \
+		spsc_acq ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;                  \
 	})
 
 /**
