@@ -313,14 +313,15 @@ static bool le_sc_supported(void)
 
 static const struct bt_conn_auth_cb *latch_auth_cb(struct bt_smp *smp)
 {
-	atomic_ptr_cas(&smp->auth_cb, BT_SMP_AUTH_CB_UNINITIALIZED, (atomic_ptr_val_t)bt_auth);
+	(void)atomic_ptr_cas(&smp->auth_cb, BT_SMP_AUTH_CB_UNINITIALIZED,
+			     (atomic_ptr_val_t)bt_auth);
 
 	return atomic_ptr_get(&smp->auth_cb);
 }
 
 static bool latch_bondable(struct bt_smp *smp)
 {
-	atomic_cas(&smp->bondable, BT_SMP_BONDABLE_UNINITIALIZED, (atomic_val_t)bondable);
+	(void)atomic_cas(&smp->bondable, BT_SMP_BONDABLE_UNINITIALIZED, (atomic_val_t)bondable);
 
 	return atomic_get(&smp->bondable);
 }
