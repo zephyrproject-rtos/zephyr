@@ -316,14 +316,6 @@
 			port = <0>;
 		};
 	};
-
-	sw_pwm: sw-pwm {
-		compatible = "nordic,nrf-sw-pwm";
-		status = "disabled";
-		generator = <&timer1>;
-		clock-prescaler = <0>;
-		#pwm-cells = <3>;
-	};
 };
 
 &nvic {
