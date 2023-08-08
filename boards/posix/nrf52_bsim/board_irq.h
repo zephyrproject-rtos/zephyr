@@ -10,7 +10,6 @@
 #include "zephyr/types.h"
 #include "../common/irq/board_irq.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

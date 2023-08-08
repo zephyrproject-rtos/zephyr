@@ -1,16 +1,17 @@
 /*
  * Copyright (c) 2017 Oticon A/S
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdbool.h>
-#include "zephyr/types.h"
+#include <stdint.h>
 #include "fake_timer.h"
-#include "time_machine.h"
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include <posix_board_if.h>
 #include <posix_soc.h>
+#include "nsi_hw_scheduler.h"
 
 /**
  * Replacement to the kernel k_busy_wait()
@@ -24,9 +25,9 @@
  */
 void arch_busy_wait(uint32_t usec_to_wait)
 {
-	bs_time_t time_end = tm_get_hw_time() + usec_to_wait;
+	bs_time_t time_end = nsi_hws_get_time() + usec_to_wait;
 
-	while (tm_get_hw_time() < time_end) {
+	while (nsi_hws_get_time() < time_end) {
 		/*
 		 * There may be wakes due to other interrupts or nested calls to
 		 * k_busy_wait in interrupt handlers
@@ -56,10 +57,10 @@ void posix_cpu_hold(uint32_t usec_to_waste)
 		 * There may be wakes due to other interrupts or nested calls to
 		 * cpu_hold in interrupt handlers
 		 */
-		time_start = tm_get_hw_time();
+		time_start = nsi_hws_get_time();
 		fake_timer_wake_in_time(time_start + to_wait);
 		posix_change_cpu_state_and_wait(true);
-		to_wait -= tm_get_hw_time() - time_start;
+		to_wait -= nsi_hws_get_time() - time_start;
 
 		posix_irq_handler();
 	}
