@@ -312,7 +312,7 @@ uint8_t img_mgmt_state_flags(int query_slot);
  *
  * @return 0 on success, non-zero on failure
  */
-int img_mgmt_state_set_pending(int slot, int permanent);
+__deprecated int img_mgmt_state_set_pending(int slot, int permanent);
 
 /**
  * @brief Confirms the current image state.
