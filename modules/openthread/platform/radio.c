@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio_openthread.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_time.h>
 #include <zephyr/sys/__assert.h>
@@ -434,8 +435,24 @@ void transmit_message(struct k_work *tx_job)
 #else
 		radio_set_channel(sTransmitFrame.mChannel);
 #endif
-		tx_err =
-			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
+		enum ieee802154_tx_mode mode = IEEE802154_TX_MODE_TXTIME_CCA;
+
+		if (radio_api->get_capabilities(radio_dev) &
+		    IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA) {
+			if (sTransmitFrame.mInfo.mTxInfo.mExtraCcaAttempts > 0) {
+				struct ieee802154_openthread_config config = {
+					.max_extra_cca_attempts =
+						sTransmitFrame.mInfo.mTxInfo.mExtraCcaAttempts,
+				};
+				(void)radio_api->configure(
+					radio_dev,
+					IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS,
+					(struct ieee802154_config *)&config);
+				mode = IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA;
+			}
+		}
+
+		tx_err = radio_api->tx(radio_dev, mode, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		radio_set_channel(sTransmitFrame.mChannel);
 		if (radio_caps & IEEE802154_HW_CSMA) {
