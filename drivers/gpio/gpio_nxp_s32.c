@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -405,7 +405,7 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 			&gpio_nxp_s32_data_##n,					\
 			&gpio_nxp_s32_config_##n,				\
 			POST_KERNEL,						\
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
+			CONFIG_GPIO_INIT_PRIORITY,				\
 			&gpio_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NXP_S32_DEVICE_INIT)
