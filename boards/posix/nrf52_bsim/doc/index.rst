@@ -32,7 +32,7 @@ This board models some of the NRF52 SOC peripherals:
 * FICR (Factory Information Configuration Registers)
 * NVMC (Non-Volatile Memory Controller)
 
-The nrf52_bsim board definition uses the POSIX architecture to
+The nrf52_bsim board definition uses the POSIX architecture and the native simulator to
 run applications natively on the development system, this has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
