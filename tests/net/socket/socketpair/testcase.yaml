@@ -6,12 +6,15 @@ common:
   depends_on: netif
   min_ram: 21
 tests:
-  net.socket.socketpair: {}
+  net.socket.socketpair:
+    platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
   net.socket.socketpair.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
+    platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
   net.socket.socketpair.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+    platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
