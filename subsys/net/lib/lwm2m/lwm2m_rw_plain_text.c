@@ -341,49 +341,6 @@ static int get_bool(struct lwm2m_input_context *in, bool *value)
 	return sizeof(uint8_t);
 }
 
-static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
-		      size_t buflen, struct lwm2m_opaque_context *opaque,
-		      bool *last_block)
-{
-	uint16_t in_len;
-
-	if (opaque->remaining == 0) {
-		coap_packet_get_payload(in->in_cpkt, &in_len);
-
-		if (in_len == 0) {
-			return -ENODATA;
-		}
-
-		if (in->block_ctx != NULL) {
-			uint32_t block_num =
-				in->block_ctx->ctx.current /
-				coap_block_size_to_bytes(
-					in->block_ctx->ctx.block_size);
-
-			if (block_num == 0) {
-				opaque->len = in->block_ctx->ctx.total_size;
-			}
-
-			if (opaque->len == 0) {
-				/* No size1 option provided, use current
-				 * payload size. This will reset on next packet
-				 * received.
-				 */
-				opaque->remaining = in_len;
-			} else {
-				opaque->remaining = opaque->len;
-			}
-
-		} else {
-			opaque->len = in_len;
-			opaque->remaining = in_len;
-		}
-	}
-
-	return lwm2m_engine_get_opaque_more(in, value, buflen,
-					    opaque, last_block);
-}
-
 static int get_objlnk(struct lwm2m_input_context *in,
 		      struct lwm2m_objlnk *value)
 {
@@ -432,7 +389,6 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_time = get_time,
 	.get_float = get_float,
 	.get_bool = get_bool,
-	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,
 };
 
