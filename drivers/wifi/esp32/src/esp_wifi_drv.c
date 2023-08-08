@@ -430,7 +430,8 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	wifi_config_t wifi_config = {
 		.ap = {
 			.max_connection = 5,
-			.channel = params->channel
+			.channel = params->channel == WIFI_CHANNEL_ANY ?
+				0 : params->channel,
 		},
 	};
 
