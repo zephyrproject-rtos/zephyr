@@ -123,6 +123,13 @@ struct i2c_dw_dev_config {
 	uint8_t			request_bytes;
 	uint8_t			xfr_flags;
 	bool			support_hs_mode;
+#ifdef CONFIG_I2C_DW_LPSS_DMA
+	const struct device *dma_dev;
+	uintptr_t phy_addr;
+	uintptr_t base_addr;
+	/* For dma transfer */
+	bool xfr_status;
+#endif
 
 	struct i2c_target_config *slave_cfg;
 };
