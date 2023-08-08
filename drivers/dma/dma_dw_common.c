@@ -809,7 +809,7 @@ int dw_dma_get_status(const struct device *dev, uint32_t channel,
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_chan_data *chan_data;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		return -EINVAL;
 	}
 
