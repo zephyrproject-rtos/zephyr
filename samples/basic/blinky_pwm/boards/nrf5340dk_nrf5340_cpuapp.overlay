@@ -1,0 +1,12 @@
+&pwm0 {
+	status = "disabled";
+};
+
+&sw_pwm {
+	status = "okay";
+	channel-gpios = <&gpio0 28 PWM_POLARITY_INVERTED>;
+};
+
+&pwm_led0 {
+	pwms = <&sw_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+};
