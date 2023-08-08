@@ -162,9 +162,6 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 	LOG_DBG("channel %u, period %u, pulse %u",
 		channel, period_cycles, pulse_cycles);
 
-	/* clear GPIOTE config */
-	nrf_gpiote_te_default(NRF_GPIOTE, gpiote_ch);
-
 	/* clear PPI used */
 	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
 		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
@@ -181,6 +178,9 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 		nrf_gpio_pin_write(psel_ch,
 			pulse_cycles == 0 ? !active_level
 					  :  active_level);
+
+		/* clear GPIOTE config */
+		nrf_gpiote_te_default(NRF_GPIOTE, gpiote_ch);
 
 		/* No PWM generation for this channel. */
 		data->pulse_cycles[channel] = 0U;
