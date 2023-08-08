@@ -8,6 +8,7 @@ config PWM_LED_ESP32
 	bool "ESP32 PWM LED driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_LEDC_ENABLED
+	select ESP32_HAL_USE_LED_PWM
 	help
 	  This option enables the PWM LED driver for ESP32 family of
 	  processors.
@@ -16,6 +17,7 @@ config MCPWM_ESP32
 	bool "ESP32 MCPWM driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_MCPWM_ENABLED
+	select ESP32_HAL_USE_MCPWM
 	help
 	  This option enables the MCPWM driver for ESP32 family of
 	  processors.

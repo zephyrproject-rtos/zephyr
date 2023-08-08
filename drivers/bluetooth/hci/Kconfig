@@ -82,6 +82,7 @@ config BT_USERCHAN
 
 config BT_ESP32
 	bool "ESP32 HCI driver"
+	select ESP32_HAL_USE_BT
 	help
 	  Espressif HCI bluetooth interface
 

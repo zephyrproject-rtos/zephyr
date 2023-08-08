@@ -9,5 +9,6 @@ config I2C_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
 	select GPIO_ESP32
+	select ESP32_HAL_USE_I2C
 	help
 	  Enables the ESP32 I2C driver

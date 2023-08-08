@@ -14,6 +14,7 @@ config FLASH_BASE_ADDRESS
 
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
+	select ESP32_HAL_USE_SPIRAM
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.

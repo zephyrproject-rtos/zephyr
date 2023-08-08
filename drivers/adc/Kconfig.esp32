@@ -5,6 +5,7 @@
 config ADC_ESP32
 	bool "ESP32 ADC driver"
 	default y
+	select ESP32_HAL_USE_ADC
 	depends on DT_HAS_ESPRESSIF_ESP32_ADC_ENABLED
 	help
 	  Enable the driver implementation for the ESP32 ADC

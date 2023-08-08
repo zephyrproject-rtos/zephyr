@@ -4,3 +4,94 @@
 config HAS_ESPRESSIF_HAL
 	bool
 	depends on SOC_FAMILY_ESP32
+
+if HAS_ESPRESSIF_HAL
+
+config ESP32_HAL_USE_ADC
+	bool
+	help
+	  Enable ESP32 Analog-to-Digital Converter (ADC) HAL module driver
+
+config ESP32_HAL_USE_BT
+	bool
+	help
+	  Enable ESP32 Bluetooth (BT) HAL module driver
+
+config ESP32_HAL_USE_DAC
+	bool
+	help
+	  Enable ESP32 Digital-to-analog converter (DAC) HAL module driver
+
+config ESP32_HAL_USE_DMA
+	bool
+	help
+	  Enable ESP32 DMA HAL module driver
+
+config ESP32_HAL_USE_EMAC
+	bool
+	help
+	  Enable ESP32 Ethernet MAC controller (EMAC) HAL module driver
+
+config ESP32_HAL_USE_FLASH
+	bool
+	help
+	  Enable ESP32 FLASH HAL module driver
+
+config ESP32_HAL_USE_I2C
+	bool
+	help
+	  Enable ESP32 I2C functions HAL module driver
+
+config ESP32_HAL_USE_LED_PWM
+	bool
+	help
+	  Enable ESP32 LED PWM HAL module driver
+
+config ESP32_HAL_USE_MCPWM
+	bool
+	help
+	  Enable ESP32 MCPWM HAL module driver
+
+config ESP32_HAL_USE_MCUBOOT
+	bool
+	help
+	  Enable ESP32 Bootloader HAL module driver
+
+config ESP32_HAL_USE_PCNT
+	bool
+	help
+	  Enable ESP32 PCNT HAL module driver
+
+config ESP32_HAL_USE_PM
+	bool
+	default y
+	depends on PM
+	help
+	  Enable ESP32 Power management (PM) HAL module driver
+
+config ESP32_HAL_USE_SPI
+	bool
+	help
+	  Enable ESP32 SPI HAL module driver
+
+config ESP32_HAL_USE_SPIRAM
+	bool
+	help
+	  Enable ESP32 External SPI RAM HAL module driver
+
+config ESP32_HAL_USE_TEMP_SENSOR
+	bool
+	help
+	  Enable ESP32 Temperature Sensor HAL module driver
+
+config ESP32_HAL_USE_UART
+	bool
+	help
+	  Enable ESP32 UART HAL module driver
+
+config ESP32_HAL_USE_WIFI
+	bool
+	help
+	  Enable ESP32 Wi-Fi and WPA Supplicant HAL module driver
+
+endif # HAS_ESPRESSIF_HAL

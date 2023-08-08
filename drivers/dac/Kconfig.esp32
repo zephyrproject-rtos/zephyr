@@ -7,5 +7,6 @@ config DAC_ESP32
 	bool "ESP32 DAC driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_DAC_ENABLED
+	select ESP32_HAL_USE_DAC
 	help
 	  Enable the ESP32 DAC driver

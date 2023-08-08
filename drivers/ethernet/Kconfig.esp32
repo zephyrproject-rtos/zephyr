@@ -7,6 +7,7 @@ menuconfig ETH_ESP32
 	bool "ESP32 Ethernet driver"
 	depends on SOC_SERIES_ESP32
 	select MDIO
+	select ESP32_HAL_USE_EMAC
 	help
 	  Enable ESP32 Ethernet driver.
 

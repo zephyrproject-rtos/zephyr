@@ -7,6 +7,7 @@ config PCNT_ESP32
 	bool "ESP32 Pulse Counter driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_PCNT_ENABLED
+	select ESP32_HAL_USE_PCNT
 	help
 	  This option enables the PCNT driver for ESP32 family of
 	  processors.

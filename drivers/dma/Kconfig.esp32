@@ -4,6 +4,7 @@
 config DMA_ESP32
 	bool "ESP32 General Purpose DMA driver"
 	depends on DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	select ESP32_HAL_USE_DMA
 	default y
 	help
 	  General Purpose DMA for ESP32 series.

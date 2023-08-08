@@ -7,6 +7,7 @@ menuconfig ESP32_SPIM
 	bool "ESP32 SPI Master driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_SPI_ENABLED
+	select ESP32_HAL_USE_SPI
 	help
 	  Enables support for ESP32 SPI Master driver.
 
