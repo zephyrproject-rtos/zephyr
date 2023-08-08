@@ -94,6 +94,11 @@ static int gpio_xec_validate_flags(gpio_flags_t flags)
 		return -ENOTSUP;
 	}
 
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT))
+	    == (GPIO_INPUT | GPIO_OUTPUT)) {
+		return -ENOTSUP;
+	}
+
 	if ((flags & GPIO_OUTPUT_INIT_LOW) && (flags & GPIO_OUTPUT_INIT_HIGH)) {
 		return -EINVAL;
 	}
