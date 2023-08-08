@@ -325,6 +325,27 @@ __deprecated int img_mgmt_state_set_pending(int slot, int permanent);
 __deprecated int img_mgmt_state_confirm(void);
 
 /**
+ * @brief Sets next boot slot
+ *
+ * Sets next boot slot and marks it for test for confirmed permanent,
+ * depending on the value of @p confirm.
+ * The slot is always selected in a context of an image it is part of,
+ * where each image consists of two slots. This means that it is allowed
+ * to set several slots, or change boot slots, as long as they belong
+ * to different images, in which case, on the next boot, these slots
+ * will be used as boot slots for the images they belong to.
+ *
+ * @param slot		slot number, 0 based in MCUboot notion of slot numbering.
+ * @param confirm	if flase then slot is set for test, unless application
+ *			is already running from that slot in which case
+ *			nothing changes; if true then slot is confirmed
+ *			to be used for each next boot.
+ *
+ * @return #img_mgmt_ret_code_t error code.
+ */
+int img_mgmt_set_next_boot_slot(int slot, bool confirm);
+
+/**
  * Compares two image version numbers in a semver-compatible way.
  *
  * @param a	The first version to compare
