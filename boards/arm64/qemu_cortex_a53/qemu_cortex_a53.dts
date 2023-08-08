@@ -40,14 +40,13 @@
 };
 
 &pcie {
-	eth0: eth@0 {
+	eth0: pcie@1,0 {
 		compatible = "intel,e1000";
 		vendor-id = <0x8086>;
 		device-id = <0x100e>;
-		interrupts = <2>;
+		interrupts = <1>;
 		interrupt-parent = <&pcie>;
-		/* Prevent device tree error "lacks 'reg' property" */
-		reg = <0x00 0x00 0x00 0x00 0x01>;
+		reg = <0x0800 0 0 0 0>;
 		status = "okay";
 	};
 };
