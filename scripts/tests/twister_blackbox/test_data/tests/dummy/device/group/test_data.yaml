@@ -1,0 +1,6 @@
+tests:
+  dummy.device.group:
+    platform_allow: frdm_k64f
+    integration_platforms:
+      - frdm_k64f
+    tags: device
