@@ -1142,7 +1142,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD(disable, NULL,
 		  "Disable Access Point mode",
 		  cmd_wifi_ap_disable),
-	SHELL_CMD(enable, NULL, "<SSID> <SSID length> [channel] [PSK]",
+	SHELL_CMD(enable, NULL, "<SSID> [channel] [PSK]",
 		  cmd_wifi_ap_enable),
 	SHELL_SUBCMD_SET_END
 );
