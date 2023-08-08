@@ -681,6 +681,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 
+#ifdef CONFIG_SMP
+	z_waitq_init(&new_thread->halt_queue);
+#endif
+
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	new_thread->base.usage = (struct k_cycle_stats) {};
 	new_thread->base.usage.track_usage =
