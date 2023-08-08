@@ -14,5 +14,6 @@ config SOC_SERIES_ESP32
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
 	select HAS_PM
+	select HAS_POWEROFF
 	help
 	  Enable support for Espressif ESP32

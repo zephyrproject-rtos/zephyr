@@ -16,5 +16,6 @@ config SOC_SERIES_ESP32C3
 	select SOC_FAMILY_ESP32
 	select XIP if !MCUBOOT
 	select HAS_PM
+	select HAS_POWEROFF
 	help
 	  Enable support for Espressif ESP32-C3
