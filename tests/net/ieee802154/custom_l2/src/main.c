@@ -14,6 +14,8 @@
 #define TEST_FLAG_SET (NET_L2_MULTICAST | NET_L2_PROMISC_MODE)
 #define TEST_PAYLOAD "TEST PAYLOAD"
 
+static K_SEM_DEFINE(txrx_sem, 0, 1);
+
 static struct test_data {
 	bool state;
 	struct net_pkt *tx_pkt;
@@ -25,12 +27,16 @@ static inline enum net_verdict custom_l2_recv(struct net_if *iface,
 {
 	test_data.rx_pkt = pkt;
 
+	k_sem_give(&txrx_sem);
+
 	return NET_OK;
 }
 
 static inline int custom_l2_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	test_data.tx_pkt = pkt;
+
+	k_sem_give(&txrx_sem);
 
 	return net_pkt_get_len(pkt);
 }
@@ -86,6 +92,9 @@ ZTEST(ieee802154_custom_l2, test_send)
 	zassert_equal(0, ret, "Failed to write payload");
 
 	ret = net_send_data(tx_pkt);
+
+	k_sem_take(&txrx_sem, K_SECONDS(1));
+
 	zassert_equal(0, ret, "Failed to process TX packet");
 	zassert_equal(tx_pkt, test_data.tx_pkt, "TX packet did not reach L2");
 
@@ -110,6 +119,9 @@ ZTEST(ieee802154_custom_l2, test_recv)
 	zassert_equal(0, ret, "Failed to write payload");
 
 	ret = net_recv_data(iface, rx_pkt);
+
+	k_sem_take(&txrx_sem, K_SECONDS(1));
+
 	zassert_equal(0, ret, "Failed to process RX packet");
 	zassert_equal(rx_pkt, test_data.rx_pkt, "RX packet did not reach L2");
 

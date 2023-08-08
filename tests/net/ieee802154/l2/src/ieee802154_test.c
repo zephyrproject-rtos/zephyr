@@ -485,10 +485,10 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 		goto out;
 	}
 
-	tear_down_short_addr(iface, ctx);
-
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
+
+	tear_down_short_addr(iface, ctx);
 
 	if (!current_pkt->frags) {
 		NET_ERR("*** Could not send IPv6 NS packet\n");
