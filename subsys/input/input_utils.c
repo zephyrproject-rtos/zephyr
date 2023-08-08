@@ -60,7 +60,7 @@ static void input_cb(struct input_event *evt)
 		evt->code,
 		evt->value);
 }
-INPUT_LISTENER_CB_DEFINE(NULL, input_cb);
+INPUT_CALLBACK_DEFINE(NULL, input_cb);
 #endif /* CONFIG_INPUT_EVENT_DUMP */
 
 #ifdef CONFIG_INPUT_SHELL

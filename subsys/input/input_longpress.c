@@ -116,8 +116,8 @@ static int longpress_init(const struct device *dev)
 	{                                                                                          \
 		longpress_cb(DEVICE_DT_INST_GET(inst), evt);                                       \
 	}                                                                                          \
-	INPUT_LISTENER_CB_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),              \
-				 longpress_cb_##inst);                                             \
+	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                 \
+			      longpress_cb_##inst);                                                \
 	static const uint16_t longpress_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);    \
 	static const uint16_t longpress_short_codes_##inst[] = DT_INST_PROP(inst, short_codes);    \
 	static const uint16_t longpress_long_codes_##inst[] = DT_INST_PROP(inst, long_codes);      \
