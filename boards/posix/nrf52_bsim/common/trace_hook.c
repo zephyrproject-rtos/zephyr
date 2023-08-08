@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "bs_tracing.h"
-#include "posix_board_if.h"
 
 /*
  * Provide the posix_print_* functions required from all POSIX arch boards
@@ -17,9 +16,8 @@
 
 void posix_vprint_error_and_exit(const char *format, va_list vargs)
 {
-	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+	bs_trace_vprint(BS_TRACE_ERROR, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
 			format, vargs);
-	posix_exit(1);
 }
 
 void posix_vprint_warning(const char *format, va_list vargs)
@@ -66,4 +64,22 @@ void posix_print_trace(const char *format, ...)
 int posix_trace_over_tty(int file_number)
 {
 	return bs_trace_is_tty(file_number);
+}
+
+void nsi_vprint_error_and_exit(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_ERROR, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+			format, vargs);
+}
+
+void nsi_vprint_warning(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_WARNING, NULL, 0, 0, BS_TRACE_AUTOTIME, 0,
+				format, vargs);
+}
+
+void nsi_vprint_trace(const char *format, va_list vargs)
+{
+	bs_trace_vprint(BS_TRACE_RAW, NULL, 0, 2, BS_TRACE_AUTOTIME, 0,
+				format, vargs);
 }
