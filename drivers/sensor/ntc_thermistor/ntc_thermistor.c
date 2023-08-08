@@ -6,6 +6,8 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 #include "ntc_thermistor.h"
 
@@ -26,6 +28,7 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 {
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
+	enum pm_device_state pm_state;
 	int32_t val_mv;
 	int res;
 	struct adc_sequence sequence = {
@@ -34,6 +37,11 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 		.buffer_size = sizeof(data->raw),
 		.calibrate = false,
 	};
+
+	(void)pm_device_state_get(dev, &pm_state);
+	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
+		return -EIO;
+	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
@@ -92,8 +100,33 @@ static int ntc_thermistor_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+
+	err = pm_device_runtime_enable(dev);
+	if (err) {
+		LOG_ERR("Failed to enable runtime power management");
+		return err;
+	}
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
 
 #define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                           \
 	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                        \
@@ -113,10 +146,12 @@ static int ntc_thermistor_init(const struct device *dev)
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_pm_action);                                  \
+                                                                                                   \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
-		inst, ntc_thermistor_init, NULL, &ntc_thermistor_driver_##id##inst,                \
-		&ntc_thermistor_cfg_##id##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,          \
-		&ntc_thermistor_driver_api);
+		inst, ntc_thermistor_init, PM_DEVICE_DT_INST_GET(inst),                            \
+		&ntc_thermistor_driver_##id##inst, &ntc_thermistor_cfg_##id##inst, POST_KERNEL,    \
+		CONFIG_SENSOR_INIT_PRIORITY, &ntc_thermistor_driver_api);
 
 #define NTC_THERMISTOR_DEFINE(inst, id, comp) \
 	NTC_THERMISTOR_DEFINE0(inst, id, comp, ARRAY_SIZE(comp))
