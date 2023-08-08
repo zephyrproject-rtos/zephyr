@@ -489,6 +489,9 @@ struct ppp_context {
 	/** Is PPP ready to receive packets */
 	uint16_t is_ready_to_serve : 1;
 
+	/** Is PPP L2 enabled or not */
+	uint16_t is_enabled : 1;
+
 	/** PPP enable pending */
 	uint16_t is_enable_done : 1;
 
