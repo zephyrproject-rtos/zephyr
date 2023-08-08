@@ -43,7 +43,7 @@ static void test_gpio_keys_cb_handler(struct input_event *evt)
 	last_code = evt->code;
 	last_val = evt->value;
 }
-INPUT_LISTENER_CB_DEFINE(test_gpio_keys_dev, test_gpio_keys_cb_handler);
+INPUT_CALLBACK_DEFINE(test_gpio_keys_dev, test_gpio_keys_cb_handler);
 
 /**
  * @brief TestPurpose: Verify gpio_keys_config pressed raw.

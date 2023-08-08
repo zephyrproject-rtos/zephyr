@@ -105,8 +105,8 @@ static const struct kscan_driver_api kscan_input_driver_api = {
 		kscan_input_cb(DEVICE_DT_GET(DT_INST(index, DT_DRV_COMPAT)),   \
 			       evt);                                           \
 	}                                                                      \
-	INPUT_LISTENER_CB_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(index)),         \
-				 kscan_input_cb_##index);                      \
+	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_INST_PARENT(index)),            \
+			      kscan_input_cb_##index);                         \
 	static const struct kscan_input_config kscan_input_config_##index = {  \
 		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),             \
 	};                                                                     \
