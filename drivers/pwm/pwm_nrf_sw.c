@@ -17,7 +17,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_nrf_sw, CONFIG_PWM_LOG_LEVEL);
 
 #define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)
 #define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
@@ -116,9 +116,9 @@ static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
 	return 0;
 }
 
-static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
-				  uint32_t period_cycles, uint32_t pulse_cycles,
-				  pwm_flags_t flags)
+static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles,
+				 pwm_flags_t flags)
 {
 	const struct pwm_config *config = dev->config;
 	NRF_TIMER_Type *timer = pwm_config_timer(config);
@@ -273,7 +273,7 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 
 #if PPI_FORK_AVAILABLE
 		nrfx_gppi_fork_endpoint_setup(ppi_chs[1],
-					      clear_task_addr);
+					      clear_task_address);
 #else
 		nrfx_gppi_channel_endpoints_setup(ppi_chs[2],
 						  period_end_event_address,
@@ -310,8 +310,8 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_nrf5_sw_get_cycles_per_sec(const struct device *dev,
-					  uint32_t channel, uint64_t *cycles)
+static int pwm_nrf_sw_get_cycles_per_sec(const struct device *dev,
+					 uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_config *config = dev->config;
 
@@ -332,12 +332,12 @@ static int pwm_nrf5_sw_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
-	.set_cycles = pwm_nrf5_sw_set_cycles,
-	.get_cycles_per_sec = pwm_nrf5_sw_get_cycles_per_sec,
+static const struct pwm_driver_api pwm_nrf_sw_drv_api_funcs = {
+	.set_cycles = pwm_nrf_sw_set_cycles,
+	.get_cycles_per_sec = pwm_nrf_sw_get_cycles_per_sec,
 };
 
-static int pwm_nrf5_sw_init(const struct device *dev)
+static int pwm_nrf_sw_init(const struct device *dev)
 {
 	const struct pwm_config *config = dev->config;
 	struct pwm_data *data = dev->data;
@@ -402,7 +402,7 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 	((DT_GPIO_FLAGS_BY_IDX(_node_id, _prop, _idx) & GPIO_ACTIVE_LOW) \
 	 ? BIT(_idx) : 0) |
 
-static const struct pwm_config pwm_nrf5_sw_0_config = {
+static const struct pwm_config pwm_nrf_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,
 	.psel_ch = {
 		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, PSEL_AND_COMMA)
@@ -413,13 +413,13 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 	.prescaler = DT_INST_PROP(0, clock_prescaler),
 };
 
-static struct pwm_data pwm_nrf5_sw_0_data;
+static struct pwm_data pwm_nrf_sw_0_data;
 
 DEVICE_DT_INST_DEFINE(0,
-		    pwm_nrf5_sw_init,
+		    pwm_nrf_sw_init,
 		    NULL,
-		    &pwm_nrf5_sw_0_data,
-		    &pwm_nrf5_sw_0_config,
+		    &pwm_nrf_sw_0_data,
+		    &pwm_nrf_sw_0_config,
 		    POST_KERNEL,
 		    CONFIG_PWM_INIT_PRIORITY,
-		    &pwm_nrf5_sw_drv_api_funcs);
+		    &pwm_nrf_sw_drv_api_funcs);
