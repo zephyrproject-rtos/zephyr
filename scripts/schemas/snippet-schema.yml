@@ -27,7 +27,7 @@ mapping:
 
         name: foo
         append:
-          DTC_OVERLAY_FILE: m3.overlay
+          EXTRA_DTC_OVERLAY_FILE: m3.overlay
     include: append-schema
   boards:
     example: |
@@ -37,7 +37,7 @@ mapping:
         boards:
           qemu_cortex_m3:
             append:
-              DTC_OVERLAY_FILE: m3.overlay
+              EXTRA_DTC_OVERLAY_FILE: m3.overlay
     type: map
     mapping:
       regex;(.*):
