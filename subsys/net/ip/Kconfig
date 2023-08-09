@@ -72,7 +72,7 @@ config NET_RAW_MODE
 
 if !NET_RAW_MODE
 
-choice
+choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
 	default NET_QEMU_PPP if NET_PPP
 	default NET_QEMU_SLIP
