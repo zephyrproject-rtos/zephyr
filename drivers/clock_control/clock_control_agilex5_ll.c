@@ -179,3 +179,18 @@ uint32_t get_timer_clk(void)
 
 	return l4_sys_clk;
 }
+
+/* Calculate clock frequency to be used for QSPI driver */
+uint32_t get_qspi_clk(void)
+{
+	uint32_t scr_reg, ref_clk;
+
+	scr_reg = SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_0);
+	ref_clk = sys_read32(scr_reg);
+
+	/*
+	 * In ATF, the qspi clock is divided by 1000 and loaded in scratch cold register 0
+	 * So in Zephyr, reverting back the clock frequency by multiplying by 1000.
+	 */
+	return (ref_clk * 1000);
+}

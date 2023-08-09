@@ -157,4 +157,13 @@ uint32_t get_mmc_clk(void);
  */
 uint32_t get_timer_clk(void);
 
+/**
+ *  @brief  Get QSPI peripheral clock value
+ *
+ *  @param  void
+ *
+ *  @return returns QSPI clock value
+ */
+uint32_t get_qspi_clk(void);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_AGILEX5_LL_H_ */
