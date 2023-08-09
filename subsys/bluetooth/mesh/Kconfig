@@ -1235,6 +1235,14 @@ config BT_MESH_DFD_SRV_TARGETS_MAX
 	  This value defines the maximum number of Target nodes the Firmware
 	  Distribution Server can target simultaneously.
 
+config BT_MESH_DFD_SRV_OOB_UPLOAD
+	bool "Support for DFU image OOB upload"
+	help
+	  This enables support for OOB upload of firmware images for
+	  distribution. This makes several callbacks and use of the init
+	  macro BT_MESH_DFD_SRV_INIT_OOB mandatory. See the API documentation
+	  for bt_mesh_dfd_srv_cb for details about the mandatory callbacks.
+
 endif
 
 config BT_MESH_RPR_SRV
