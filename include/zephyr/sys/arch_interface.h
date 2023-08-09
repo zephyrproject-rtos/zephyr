@@ -323,6 +323,25 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags);
 
+#ifdef CONFIG_SHARED_INTERRUPTS
+
+/**
+ * Arch-specific hook to uninstall a dynamic interrupt.
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return 0 in case of success, negative value otherwise.
+ */
+int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags);
+
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
 /**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
  *

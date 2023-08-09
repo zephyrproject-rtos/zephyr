@@ -70,6 +70,32 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 					flags);
 }
 
+#ifdef CONFIG_SHARED_INTERRUPTS
+
+/**
+ * Unregister a dynamic interrupt.
+ *
+ * Use this in conjunction with the shared interrupts feature to
+ * unregister an ISR/arg pair.
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return 0 in case of success, a negative value otherwise.
+ */
+static inline int
+irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+		    void (*routine)(const void *parameter),
+		    const void *parameter, uint32_t flags)
+{
+	return arch_irq_disconnect_dynamic(irq, priority, routine, parameter, flags);
+}
+
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
 /**
  * @brief Initialize a 'direct' interrupt handler.
  *
