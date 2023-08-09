@@ -99,8 +99,6 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
-		uint8_t err;
-
 		err = adv_type_check(adv);
 		if (err) {
 			return err;
@@ -112,7 +110,6 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		struct pdu_adv *ter_pdu;
 		struct lll_adv *lll;
 		uint8_t chm_last;
-		int err;
 
 		sync = sync_acquire();
 		if (!sync) {
@@ -268,8 +265,6 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 	/* Check for advertising set type */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
-		uint8_t err;
-
 		err = adv_type_check(adv);
 		if (err) {
 			return err;
@@ -757,8 +752,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 	/* Check for advertising set type */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
-		uint8_t err;
-
 		err = adv_type_check(adv);
 		if (err) {
 			return BT_HCI_ERR_CMD_DISALLOWED;

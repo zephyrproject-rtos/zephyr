@@ -249,7 +249,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 	/* Notify all receive states after a bonded device reconnects */
 	for (int i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
-		int err;
+		int gatt_err;
 
 		if (!internal_state->active) {
 			continue;
@@ -257,12 +257,12 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 
 		net_buf_put_recv_state(internal_state);
 
-		err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
-					  internal_state->attr, read_buf.data,
-					  read_buf.len);
-		if (err != 0) {
+		gatt_err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
+					       internal_state->attr, read_buf.data,
+					       read_buf.len);
+		if (gatt_err != 0) {
 			LOG_WRN("Could not notify receive state[%d] to reconnecting assistant: %d",
-				i, err);
+				i, gatt_err);
 		}
 	}
 }

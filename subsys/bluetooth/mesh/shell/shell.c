@@ -877,16 +877,16 @@ static int cmd_auth_method_set_output(const struct shell *sh, size_t argc, char 
 static int cmd_auth_method_set_static(const struct shell *sh, size_t argc, char *argv[])
 {
 	size_t len;
-	uint8_t static_val[16];
+	uint8_t static_oob_auth[16];
 	int err = 0;
 
-	len = hex2bin(argv[1], strlen(argv[1]), static_val, sizeof(static_val));
+	len = hex2bin(argv[1], strlen(argv[1]), static_oob_auth, sizeof(static_oob_auth));
 	if (len < 1) {
 		shell_warn(sh, "Unable to parse input string argument");
 		return -EINVAL;
 	}
 
-	err = bt_mesh_auth_method_set_static(static_val, len);
+	err = bt_mesh_auth_method_set_static(static_oob_auth, len);
 	if (err) {
 		shell_error(sh, "Setting static OOB authentication failed (err %d)", err);
 	}

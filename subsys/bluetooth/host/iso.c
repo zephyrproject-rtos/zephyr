@@ -378,7 +378,6 @@ void bt_iso_connected(struct bt_conn *iso)
 		} else if (iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
 			   iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 			struct bt_iso_big *big;
-			int err;
 
 			big = lookup_big_by_handle(iso->iso.big_handle);
 
@@ -2031,13 +2030,13 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 		return -EINVAL;
 	}
 
-	for (uint8_t i = 0; i < param->num_cis; i++) {
-		struct bt_iso_chan *cis = param->cis_channels[i];
+	for (uint8_t j = 0; j < param->num_cis; j++) {
+		struct bt_iso_chan *param_cis = param->cis_channels[j];
 
-		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
+		if (param_cis->iso != NULL && !cis_is_in_cig(cig, param_cis)) {
 			LOG_DBG("Cannot reconfigure other CIG's (id 0x%02X) CIS "
 			       "with this CIG (id 0x%02X)",
-			       cis->iso->iso.cig_id, cig->id);
+			       param_cis->iso->iso.cig_id, cig->id);
 			return -EINVAL;
 		}
 	}
@@ -3175,24 +3174,24 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	}
 
 	for (uint8_t i = 0; i < param->num_bis; i++) {
-		struct bt_iso_chan *bis = param->bis_channels[i];
+		struct bt_iso_chan *param_bis = param->bis_channels[i];
 
-		CHECKIF(bis == NULL) {
+		CHECKIF(param_bis == NULL) {
 			LOG_DBG("bis_channels[%u]: NULL channel", i);
 			return -EINVAL;
 		}
 
-		if (bis->iso) {
+		if (param_bis->iso) {
 			LOG_DBG("bis_channels[%u]: already allocated", i);
 			return -EALREADY;
 		}
 
-		CHECKIF(bis->qos == NULL) {
+		CHECKIF(param_bis->qos == NULL) {
 			LOG_DBG("bis_channels[%u]: qos is NULL", i);
 			return -EINVAL;
 		}
 
-		CHECKIF(bis->qos->rx == NULL) {
+		CHECKIF(param_bis->qos->rx == NULL) {
 			LOG_DBG("bis_channels[%u]: qos->rx is NULL", i);
 			return -EINVAL;
 		}

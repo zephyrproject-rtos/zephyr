@@ -970,7 +970,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!cbs_registered) {
-		int err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
+		err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 
 		if (err != 0) {
 			shell_error(sh, "Failed to register unicast client callbacks: %d", err);
@@ -1981,12 +1981,13 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 		bool group_can_be_deleted = true;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-			const struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
+			const struct bt_bap_stream *bap_stream =
+				&unicast_streams[i].stream.bap_stream;
 
-			if (stream->ep != NULL) {
+			if (bap_stream->ep != NULL) {
 				struct bt_bap_ep_info ep_info;
 
-				bt_bap_ep_get_info(stream->ep, &ep_info);
+				bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 
 				if (ep_info.state != BT_BAP_EP_STATE_CODEC_CONFIGURED &&
 				    ep_info.state != BT_BAP_EP_STATE_IDLE) {
@@ -2285,7 +2286,6 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	stream_cnt = 0U;
 	for (int i = 1; i < argc; i++) {
 		unsigned long val;
-		int err = 0;
 
 		val = shell_strtoul(argv[i], 0, &err);
 		if (err != 0) {

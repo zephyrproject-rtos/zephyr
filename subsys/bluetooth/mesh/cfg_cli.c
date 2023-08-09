@@ -670,8 +670,7 @@ static int mod_app_list_handle(struct bt_mesh_msg_ctx *ctx, struct net_buf_simpl
 
 		if (param->member_cnt && param->members) {
 
-			int err =
-				bt_mesh_key_idx_unpack_list(buf, param->members, param->member_cnt);
+			err = bt_mesh_key_idx_unpack_list(buf, param->members, param->member_cnt);
 
 			if (err) {
 				LOG_ERR("The message size for the application opcode is "

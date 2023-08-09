@@ -152,14 +152,14 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 	return spi_transceive_dt(&bus, &spi_tx, &spi_rx);
 }
 
-static inline uint16_t bt_spi_get_cmd(uint8_t *txmsg)
+static inline uint16_t bt_spi_get_cmd(uint8_t *msg)
 {
-	return (txmsg[CMD_OCF] << 8) | txmsg[CMD_OGF];
+	return (msg[CMD_OCF] << 8) | msg[CMD_OGF];
 }
 
-static inline uint16_t bt_spi_get_evt(uint8_t *rxmsg)
+static inline uint16_t bt_spi_get_evt(uint8_t *msg)
 {
-	return (rxmsg[EVT_VENDOR_CODE_MSB] << 8) | rxmsg[EVT_VENDOR_CODE_LSB];
+	return (msg[EVT_VENDOR_CODE_MSB] << 8) | msg[EVT_VENDOR_CODE_LSB];
 }
 
 static void bt_to_inactive_isr(const struct device *unused1,
@@ -187,11 +187,11 @@ static void bt_to_active_isr(const struct device *unused1,
 	k_sem_give(&sem_request);
 }
 
-static bool bt_spi_handle_vendor_evt(uint8_t *rxmsg)
+static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 {
 	bool handled = false;
 
-	switch (bt_spi_get_evt(rxmsg)) {
+	switch (bt_spi_get_evt(msg)) {
 	case EVT_BLUE_INITIALIZED:
 		k_sem_give(&sem_initialised);
 #if defined(CONFIG_BT_BLUENRG_ACI)

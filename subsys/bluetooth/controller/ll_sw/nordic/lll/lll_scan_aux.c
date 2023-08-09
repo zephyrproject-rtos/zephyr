@@ -846,12 +846,12 @@ isr_rx_do_close:
 	} else {
 		/* Send message to flush Auxiliary PDU list */
 		if (lll->is_aux_sched && err != -ECANCELED) {
-			struct node_rx_pdu *node_rx;
+			struct node_rx_pdu *node_rx2;
 
-			node_rx = ull_pdu_rx_alloc();
-			LL_ASSERT(node_rx);
+			node_rx2 = ull_pdu_rx_alloc();
+			LL_ASSERT(node_rx2);
 
-			node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+			node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
 			/* Use LLL scan context pointer which will be resolved
 			 * to LLL aux context in the `ull_scan_aux_release`
@@ -862,9 +862,9 @@ isr_rx_do_close:
 			 * under race, if ULL execution did assign one, it will
 			 * free it.
 			 */
-			node_rx->hdr.rx_ftr.param = lll;
+			node_rx2->hdr.rx_ftr.param = lll;
 
-			ull_rx_put_sched(node_rx->hdr.link, node_rx);
+			ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 		}
 
 		/* Check if LLL scheduled auxiliary PDU reception by scan
@@ -902,7 +902,6 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx, NULL)) {
 		struct lll_scan_aux *lll_aux_to_use;
-		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
 		uint32_t conn_space_us;

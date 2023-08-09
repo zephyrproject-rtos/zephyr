@@ -234,17 +234,17 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		conn_snk_cnt = sink_cnt;
-		for (size_t i = 0U; i < sink_cnt; i++) {
+		for (size_t j = 0U; j < sink_cnt; j++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
-			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][i];
+			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][j];
 
 			if (snk_ep == NULL) {
 				shell_info(sh, "Could only setup %zu/%zu sink endpoints",
-					   i, sink_cnt);
-				conn_snk_cnt = i;
+					   j, sink_cnt);
+				conn_snk_cnt = j;
 				break;
 			}
 
@@ -259,7 +259,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 				stream_param[start_param.count].qos;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
-			pair_params[pair_cnt + i].tx_param =
+			pair_params[pair_cnt + j].tx_param =
 				&group_stream_params[start_param.count];
 
 			start_param.count++;
@@ -268,17 +268,17 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		conn_src_cnt = source_cnt;
-		for (size_t i = 0U; i < source_cnt; i++) {
+		for (size_t j = 0U; j < source_cnt; j++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
-			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][i];
+			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][j];
 
 			if (src_ep == NULL) {
 				shell_info(sh, "Could only setup %zu/%zu source endpoints",
-					   i, source_cnt);
-				conn_src_cnt = i;
+					   j, source_cnt);
+				conn_src_cnt = j;
 				break;
 			}
 
@@ -293,7 +293,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 				stream_param[start_param.count].qos;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
-			pair_params[pair_cnt + i].rx_param =
+			pair_params[pair_cnt + j].rx_param =
 				&group_stream_params[start_param.count];
 
 			start_param.count++;
