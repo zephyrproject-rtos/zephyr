@@ -238,13 +238,15 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 static int img_mgmt_get_unused_slot_area_id(int image)
 {
 	int area_id = -1;
+	int slot = 0;
 
-	if (image == 0 || image == -1) {
-		if (img_mgmt_slot_in_use(1) == 0) {
-			area_id = img_mgmt_flash_area_id(1);
-		}
-	} else if (image == 1) {
-		area_id = img_mgmt_flash_area_id(3);
+	if (image == -1) {
+		image = 0;
+	}
+	slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(image));
+
+	if (!img_mgmt_slot_in_use(slot)) {
+		area_id = img_mgmt_flash_area_id(slot);
 	}
 
 	return area_id;
