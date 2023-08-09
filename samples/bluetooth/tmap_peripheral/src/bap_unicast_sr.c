@@ -235,8 +235,8 @@ static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_code
 		}
 
 		if (data->data.type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
-			for (uint8_t i = 0; i < data->data.data_len; i++) {
-				const uint8_t ccid = data->data.data[i];
+			for (uint8_t j = 0; j < data->data.data_len; j++) {
+				const uint8_t ccid = data->data.data[j];
 
 				if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
 					bt_tbs_client_get_by_ccid(default_conn, ccid) != NULL)) {
