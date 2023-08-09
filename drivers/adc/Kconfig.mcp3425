@@ -8,7 +8,6 @@ config ADC_MCP3425
 	default y
 	depends on DT_HAS_MICROCHIP_MCP3425_ENABLED
 	select I2C
-	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable MCP3425 ADC driver.
 

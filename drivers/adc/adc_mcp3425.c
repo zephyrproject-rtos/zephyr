@@ -22,10 +22,10 @@
 
 LOG_MODULE_REGISTER(MCP3425, CONFIG_ADC_LOG_LEVEL);
 
-#define MCP3425_CONFIG_GAIN(x) ((x)&BIT_MASK(2))
-#define MCP3425_CONFIG_DR(x)   (((x)&BIT_MASK(2)) << 2)
-#define MCP3425_CONFIG_CM(x)   (((x)&BIT_MASK(1)) << 4)
-
+#define MCP3425_CONFIG_GAIN(x) ((x)&BIT_MASK(2) << 0) // Shift to bits 0 and 1
+#define MCP3425_CONFIG_DR(x)   (((x)&BIT_MASK(2)) << 2) // Shift to bits 2 and 3
+#define MCP3425_CONFIG_CM(x)   (((x)&BIT_MASK(1)) << 4) // Shift to bits 4 
+// Shift to bits 5-6 are not used according to the datasheet
 #define MCP3425_READY_BIT BIT(7)
 
 #define MCP3425_VREF_INTERNAL 2048
@@ -40,6 +40,14 @@ enum {
 	MCP3425_CONFIG_CM_SINGLE = 0,
 	MCP3425_CONFIG_CM_CONTINUOUS = 1,
 };
+
+enum {
+	MCP3425_CONFIG_GAIN_1   = 0,
+	MCP3425_CONFIG_GAIN_2   = 1,
+	MCP3425_CONFIG_GAIN_4   = 2,
+	MCP3425_CONFIG_GAIN_8   = 3,
+};
+
 
 struct mcp3425_config {
 	const struct i2c_dt_spec i2c_spec;
@@ -92,18 +100,24 @@ static int mcp3425_channel_setup(const struct device *dev, const struct adc_chan
 
 	if (cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		LOG_ERR("Unsupported acquistion_time '%d'", cfg->acquisition_time);
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	if (!cfg->differential) {
 		LOG_ERR("Missing the input-negative property, please make sure you add a "
-			"\"zephyr,input-negative\" property in the binding\n");
-		return -ENOTSUP;
+			"\"zephyr,input-negative\" property in the binding");
+		return -EINVAL;
 	}
 
 	if ((cfg->gain != ADC_GAIN_1) && (cfg->gain != ADC_GAIN_2) && (cfg->gain != ADC_GAIN_4) &&
 	    (cfg->gain != ADC_GAIN_8)) {
-		LOG_ERR("Unsupported gain selected '%d'\n", cfg->gain);
+		LOG_ERR("Unsupported gain selected '%d'", cfg->gain);
+		return -EINVAL;
+	}
+
+	if(cfg->channel_id != 0)
+	{
+		LOG_ERR("Unsupported channel selected '%d'", cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -179,7 +193,25 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	uint8_t setup_config_reg = 0;
 
-	setup_config_reg |= (MCP3425_CONFIG_GAIN(data->gain));
+	switch(data->gain)
+	{
+		case ADC_GAIN_1:
+			setup_config_reg |= (MCP3425_CONFIG_GAIN(MCP3425_CONFIG_GAIN_1));
+			break;
+		case ADC_GAIN_2:
+			setup_config_reg |= (MCP3425_CONFIG_GAIN(MCP3425_CONFIG_GAIN_2));
+			break;
+		case ADC_GAIN_4:
+			setup_config_reg |= (MCP3425_CONFIG_GAIN(MCP3425_CONFIG_GAIN_4));
+			break;
+		case ADC_GAIN_8:
+			setup_config_reg |= (MCP3425_CONFIG_GAIN(MCP3425_CONFIG_GAIN_8));
+			break;
+		default:
+			LOG_ERR("Unsupported gain: '%d'", data->gain);
+			return;
+	}
+	
 	if (data->ctx.sequence.resolution) {
 		switch (data->ctx.sequence.resolution) {
 		case 12U:
@@ -260,7 +292,7 @@ static int mcp3425_init(const struct device *dev)
 	k_sem_init(&data->acq_lock, 0, 1);
 
 	if (!i2c_is_ready_dt(&config->i2c_spec)) {
-		LOG_ERR("Bus not ready\n");
+		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
