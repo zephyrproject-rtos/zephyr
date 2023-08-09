@@ -16,7 +16,7 @@
 static struct bt_csip_set_member_svc_inst *svc_inst;
 
 static void csip_lock_changed_cb(struct bt_conn *conn,
-				 struct bt_csip_set_member_svc_inst *svc_inst,
+				 struct bt_csip_set_member_svc_inst *inst,
 				 bool locked)
 {
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");

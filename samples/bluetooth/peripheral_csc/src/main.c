@@ -77,7 +77,7 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static uint32_t cwr; /* Cumulative Wheel Revolutions */
+static uint32_t c_wheel_revs; /* Cumulative Wheel Revolutions */
 static uint8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static uint8_t sensor_location; /* Current Sensor Location */
 static bool csc_simulate;
@@ -150,7 +150,7 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 			break;
 		}
 
-		cwr = sys_le32_to_cpu(req->cwr);
+		c_wheel_revs = sys_le32_to_cpu(req->cwr);
 		status = SC_CP_RSP_SUCCESS;
 		break;
 	case SC_CP_OP_UPDATE_LOC:
@@ -310,7 +310,7 @@ static void csc_simulation(void)
 	/* Measurements don't have to be updated every second */
 	if (!(i % 2)) {
 		lwet += 1050 + rand % 50;
-		cwr += 2U;
+		c_wheel_revs += 2U;
 		nfy_wheel = true;
 	}
 
@@ -326,7 +326,7 @@ static void csc_simulation(void)
 	 * and is determined by the Server and not required to be configurable
 	 * by the Client.
 	 */
-	measurement_nfy(NULL, nfy_wheel ? cwr : 0, nfy_wheel ? lwet : 0,
+	measurement_nfy(NULL, nfy_wheel ? c_wheel_revs : 0, nfy_wheel ? lwet : 0,
 			nfy_crank ? ccr : 0, nfy_crank ? lcet : 0);
 
 	/*

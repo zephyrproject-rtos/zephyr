@@ -47,7 +47,7 @@ struct bt_cap_initiator_broadcast_stream_param stream_params;
 struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
 struct bt_cap_initiator_broadcast_create_param create_param;
 struct bt_cap_broadcast_source *broadcast_source;
-struct bt_le_ext_adv *adv;
+struct bt_le_ext_adv *ext_adv;
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */
@@ -273,7 +273,7 @@ void cap_initiator_setup(void)
 		}
 		printk("Creating broadcast source\n");
 
-		err = setup_extended_adv(&adv);
+		err = setup_extended_adv(&ext_adv);
 		if (err != 0) {
 			printk("Unable to setup extended advertiser: %d\n", err);
 			return;
@@ -285,19 +285,19 @@ void cap_initiator_setup(void)
 			return;
 		}
 
-		err = bt_cap_initiator_broadcast_audio_start(broadcast_source, adv);
+		err = bt_cap_initiator_broadcast_audio_start(broadcast_source, ext_adv);
 		if (err != 0) {
 			printk("Unable to start broadcast source: %d\n", err);
 			return;
 		}
 
-		err = setup_extended_adv_data(broadcast_source, adv);
+		err = setup_extended_adv_data(broadcast_source, ext_adv);
 		if (err != 0) {
 			printk("Unable to setup extended advertising data: %d\n", err);
 			return;
 		}
 
-		err = start_extended_adv(adv);
+		err = start_extended_adv(ext_adv);
 		if (err != 0) {
 			printk("Unable to start extended advertiser: %d\n", err);
 			return;
@@ -337,7 +337,7 @@ void cap_initiator_setup(void)
 		}
 		broadcast_source = NULL;
 
-		err = stop_and_delete_extended_adv(adv);
+		err = stop_and_delete_extended_adv(ext_adv);
 		if (err != 0) {
 			printk("Failed to stop and delete extended advertising: %d\n", err);
 			return;
