@@ -289,7 +289,7 @@ static const uint8_t *decode_time(struct tm *tp,
 	uint8_t reg;
 
 	if (with_sec) {
-		uint8_t reg = *rp++;
+		reg = *rp++;
 
 		tp->tm_sec = bcd2bin(reg & 0x7F);
 	}
