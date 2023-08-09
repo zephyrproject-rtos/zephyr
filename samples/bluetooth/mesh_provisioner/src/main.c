@@ -63,7 +63,7 @@ static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
 };
 
-static const struct bt_mesh_comp comp = {
+static const struct bt_mesh_comp mesh_comp = {
 	.cid = BT_COMP_ID_LF,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
@@ -243,7 +243,7 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 	k_sem_give(&sem_unprov_beacon);
 }
 
-static void node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
+static void node_added(uint16_t idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
 {
 	node_addr = addr;
 	k_sem_give(&sem_node_added);
@@ -260,7 +260,7 @@ static int bt_ready(void)
 	uint8_t net_key[16], dev_key[16];
 	int err;
 
-	err = bt_mesh_init(&prov, &comp);
+	err = bt_mesh_init(&prov, &mesh_comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
 		return err;

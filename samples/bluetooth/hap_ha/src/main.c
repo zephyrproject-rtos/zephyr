@@ -51,7 +51,7 @@ static const struct bt_data ad[] = {
 };
 
 static struct k_work_delayable adv_work;
-static struct bt_le_ext_adv *adv;
+static struct bt_le_ext_adv *ext_adv;
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
@@ -101,14 +101,14 @@ static void adv_work_handler(struct k_work *work)
 {
 	int err;
 
-	if (adv == NULL) {
+	if (ext_adv == NULL) {
 		/* Create a non-connectable non-scannable advertising set */
-		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_cb, &adv);
+		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_cb, &ext_adv);
 		if (err) {
 			printk("Failed to create advertising set (err %d)\n", err);
 		}
 
-		err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+		err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
 		if (err) {
 			printk("Failed to set advertising data (err %d)\n", err);
 		}
@@ -116,7 +116,7 @@ static void adv_work_handler(struct k_work *work)
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start advertising set (err %d)\n", err);
 	} else {
