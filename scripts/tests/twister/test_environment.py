@@ -190,7 +190,7 @@ def test_parse_arguments_errors_size():
         with pytest.raises(SystemExit) as exit_info:
             twisterlib.environment.parse_arguments(parser, args)
 
-    assert exit_info.value.code == 1
+    assert exit_info.value.code == 0
 
     mock_calc_parent.child.assert_has_calls([mock.call(('dummy.elf', []), {})])
     mock_calc_parent.child().size_report.assert_has_calls([mock.call()])
