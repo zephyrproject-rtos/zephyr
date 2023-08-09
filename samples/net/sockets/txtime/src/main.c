@@ -47,7 +47,7 @@ struct app_data {
 	int sock;
 };
 
-static struct app_data data = {
+static struct app_data peer_data = {
 	.sock = -1,
 };
 
@@ -347,35 +347,35 @@ static int get_peer_address(struct net_if **iface, char *addr_str,
 
 	ret = net_ipaddr_parse(CONFIG_NET_SAMPLE_PEER,
 			       strlen(CONFIG_NET_SAMPLE_PEER),
-			       &data.peer);
+			       &peer_data.peer);
 	if (!ret) {
 		LOG_ERR("Cannot parse '%s'", CONFIG_NET_SAMPLE_PEER);
 		return -EINVAL;
 	}
 
-	if (net_sin(&data.peer)->sin_port == 0) {
-		net_sin(&data.peer)->sin_port = htons(4242);
+	if (net_sin(&peer_data.peer)->sin_port == 0) {
+		net_sin(&peer_data.peer)->sin_port = htons(4242);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-					data.peer.sa_family == AF_INET6) {
+					peer_data.peer.sa_family == AF_INET6) {
 		*iface = net_if_ipv6_select_src_iface(
-					&net_sin6(&data.peer)->sin6_addr);
+					&net_sin6(&peer_data.peer)->sin6_addr);
 
-		net_addr_ntop(data.peer.sa_family,
-			      &net_sin6(&data.peer)->sin6_addr, addr_str,
+		net_addr_ntop(peer_data.peer.sa_family,
+			      &net_sin6(&peer_data.peer)->sin6_addr, addr_str,
 			      addr_str_len);
-		data.peer_addr_len = sizeof(struct sockaddr_in6);
+		peer_data.peer_addr_len = sizeof(struct sockaddr_in6);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-					data.peer.sa_family == AF_INET) {
+					peer_data.peer.sa_family == AF_INET) {
 		*iface = net_if_ipv4_select_src_iface(
-					&net_sin(&data.peer)->sin_addr);
+					&net_sin(&peer_data.peer)->sin_addr);
 
-		net_addr_ntop(data.peer.sa_family,
-			      &net_sin(&data.peer)->sin_addr, addr_str,
+		net_addr_ntop(peer_data.peer.sa_family,
+			      &net_sin(&peer_data.peer)->sin_addr, addr_str,
 			      addr_str_len);
-		data.peer_addr_len = sizeof(struct sockaddr_in);
+		peer_data.peer_addr_len = sizeof(struct sockaddr_in);
 	}
 
 	return 0;
@@ -555,11 +555,11 @@ int main(void)
 			return 0;
 		}
 	} else {
-		struct sockaddr_ll *addr = (struct sockaddr_ll *)&data.peer;
+		struct sockaddr_ll *addr = (struct sockaddr_ll *)&peer_data.peer;
 
 		addr->sll_ifindex = net_if_get_by_iface(net_if_get_default());
 		addr->sll_family = AF_PACKET;
-		data.peer_addr_len = sizeof(struct sockaddr_ll);
+		peer_data.peer_addr_len = sizeof(struct sockaddr_ll);
 		iface = net_if_get_by_index(addr->sll_ifindex);
 	}
 
@@ -581,8 +581,8 @@ int main(void)
 		return 0;
 	}
 
-	data.clk = net_eth_get_ptp_clock_by_index(if_index);
-	if (!data.clk) {
+	peer_data.clk = net_eth_get_ptp_clock_by_index(if_index);
+	if (!peer_data.clk) {
 		LOG_ERR("Interface %p does not support %s", iface,
 			"PTP clock");
 		return 0;
@@ -602,25 +602,25 @@ int main(void)
 		LOG_INF("Socket SO_TXTIME sample to %s port %d using "
 			"interface %d (%p) and PTP clock %p",
 			addr_str,
-			ntohs(net_sin(&data.peer)->sin_port),
-			if_index, iface, data.clk);
+			ntohs(net_sin(&peer_data.peer)->sin_port),
+			if_index, iface, peer_data.clk);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_SAMPLE_PACKET_SOCKET)) {
 		LOG_INF("Socket SO_TXTIME sample using AF_PACKET and "
 			"interface %d (%p) and PTP clock %p",
-			if_index, iface, data.clk);
+			if_index, iface, peer_data.clk);
 	}
 
-	data.sock = create_socket(iface, &data.peer);
-	if (data.sock < 0) {
-		LOG_ERR("Cannot create socket (%d)", data.sock);
+	peer_data.sock = create_socket(iface, &peer_data.peer);
+	if (peer_data.sock < 0) {
+		LOG_ERR("Cannot create socket (%d)", peer_data.sock);
 		return 0;
 	}
 
 	tx_tid = k_thread_create(&tx_thread, tx_stack,
 				 K_THREAD_STACK_SIZEOF(tx_stack),
-				 (k_thread_entry_t)tx, &data,
+				 (k_thread_entry_t)tx, &peer_data,
 				 NULL, NULL, THREAD_PRIORITY, 0,
 				 K_FOREVER);
 	if (!tx_tid) {
@@ -632,7 +632,7 @@ int main(void)
 
 	rx_tid = k_thread_create(&rx_thread, rx_stack,
 				 K_THREAD_STACK_SIZEOF(rx_stack),
-				 (k_thread_entry_t)rx, &data,
+				 (k_thread_entry_t)rx, &peer_data,
 				 NULL, NULL, THREAD_PRIORITY, 0,
 				 K_FOREVER);
 	if (!rx_tid) {
@@ -652,8 +652,8 @@ int main(void)
 	k_thread_abort(tx_tid);
 	k_thread_abort(rx_tid);
 
-	if (data.sock >= 0) {
-		(void)close(data.sock);
+	if (peer_data.sock >= 0) {
+		(void)close(peer_data.sock);
 	}
 	return 0;
 }
