@@ -10,7 +10,7 @@ setting :kconfig:option:`CONFIG_PM_DEVICE` to ``y``. When this option is
 selected, device drivers implementing power management will be able to take
 advantage of the device power management subsystem.
 
-Zephyr supports two types of device power management:
+Zephyr supports two methods of device power management:
 
  - :ref:`Device Runtime Power Management <pm-device-runtime-pm>`
  - :ref:`System Managed Device Power Management <pm-device-system-pm>`
@@ -20,18 +20,14 @@ Zephyr supports two types of device power management:
 Device Runtime Power Management
 *******************************
 
-In this method, the application or any component that deals with devices directly
-and has the best knowledge of their use, performs the device power management. This
-saves power if some devices that are not in use can be turned off or put
-in power saving mode. This method allows saving power even when the CPU is
-active. The components that use the devices need to be power aware and should
-be able to make decisions related to managing device power.
+Using this method, device drivers are responsible for device power management.
+The power state of a device is managed in the device driver based on usage
+which reduces the overall system power consumption by suspending the devices
+which are idle or not used independently of the system state.
 
-When using this type of device power management, the kernel can change CPU
-power states quickly when :c:func:`pm_system_suspend()` gets called. This is
-because it does not need to spend time doing device power management if the
-devices are already put in the appropriate power state by the application or
-component managing the devices.
+Using this method, the CPU is able to change power states quickly when
+:c:func:`pm_system_suspend()` is called because it does not need to spend time
+suspending and resuming devices that are runtime enabled.
 
 For more information, see :ref:`pm-device-runtime`.
 
@@ -40,7 +36,7 @@ For more information, see :ref:`pm-device-runtime`.
 System Managed Device Power Management
 **************************************
 
-When using this type, device power management is mostly done inside
+When using this method, device power management is mostly done inside
 :c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
 
 If a decision to enter a CPU lower power state is made, the power management
@@ -56,20 +52,30 @@ suspended.
    As functions in this context cannot block, transitions that intend to use blocking
    APIs **must** check whether they can do so with :c:func:`k_can_yield`.
 
-This type of device power management can be useful when the application is not
-power aware and does not implement runtime device power management. Though,
-:ref:`Device Runtime Power Management <pm-device-runtime-pm>` is the **preferred**
-option for device power management.
+This method of device power management can be useful in the following scenarios:
+
+ - Systems with no device requiring any blocking operations when suspending and
+   resuming. This implementation is reasonably simpler than device runtime
+   power management.
+ - For devices that can not make any power management decision and have to be
+   always active. For example a firmware using Zephyr that is controlled by an
+   external entity (e.g Host CPU). In this scenario, some devices have to be
+   always active and should be suspended together with the SoC when requested by
+   this external entity.
+
+It is important to emphasize that this method has drawbacks (see above) and
+:ref:`Device Runtime Power Management <pm-device-runtime-pm>` is the
+**preferred** method for implementing device power management.
 
 .. note::
 
-    When using this type of device power management, the CPU will only enter
-    a low power state only if no device is in the middle of a hardware
+    When using this method of device power management, the CPU will enter
+    a low power state only if no devices are in the middle of a hardware
     transaction that cannot be interrupted.
 
 .. note::
 
-    This type of device power management is disabled when
+    This method of device power management is disabled when
     :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` is set to ``y`` (that is
     the default value when :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled)
 
@@ -82,7 +88,7 @@ Device Power Management States
 ******************************
 
 The power management subsystem defines device states in
-:c:enum:`pm_device_state`. This type is used to track power states of
+:c:enum:`pm_device_state`. This method is used to track power states of
 a particular device. It is important to emphasize that, although the
 state is tracked by the subsystem, it is the responsibility of each device driver
 to handle device actions(:c:enum:`pm_device_action`) which change device state.
