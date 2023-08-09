@@ -18,6 +18,10 @@ config BT_EXT_ADV
 
 if BT_EXT_ADV
 
+config BT_EXT_ADV_SET_ADVA
+	bool "Enable access to bt_le_ext_adv_set_adva"
+	select EXPERIMENTAL
+
 config BT_EXT_ADV_LEGACY_SUPPORT
 	bool "Support starting advertising through legacy commands"
 	help

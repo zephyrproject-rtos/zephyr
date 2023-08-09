@@ -329,6 +329,13 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 		return -EINVAL;
 	}
 
+	/* This function should never run when using manual address. */
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV_SET_ADVA) &&
+	    (adv->options & BT_LE_ADV_OPT_MANUAL_ADDRESS)) {
+		LOG_INF("Manual address mode enabled, exiting private address update");
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    (adv->options & BT_LE_ADV_OPT_USE_NRPA)) {
 		/* The host doesn't support setting NRPAs when BT_PRIVACY=y.
@@ -1764,14 +1771,8 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	/* Set which local identity address we're advertising with */
 	id_addr = &bt_dev.id_addr[adv->id];
 
-	/* Short-circuit to force NRPA usage */
-	if (options & BT_LE_ADV_OPT_USE_NRPA) {
-		if (options & BT_LE_ADV_OPT_USE_IDENTITY) {
-			LOG_ERR("Can't set both IDENTITY & NRPA");
-
-			return -EINVAL;
-		}
-
+	/* Short-circuit to force random address usage */
+	if (options & (BT_LE_ADV_OPT_MANUAL_ADDRESS | BT_LE_ADV_OPT_USE_NRPA)) {
 		err = bt_id_set_adv_private_addr(adv);
 		if (err) {
 			return err;

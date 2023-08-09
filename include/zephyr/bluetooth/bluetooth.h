@@ -699,6 +699,23 @@ enum {
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),
+
+	/**
+	 * @brief Advertise using an application-provided address.
+	 *
+	 * Disables all automatic address generation and use the address
+	 * provided trough @ref bt_le_ext_adv_set_adva.
+	 *
+	 * A newly created advertiser with this option cannot be started
+	 * until an address is provided.
+	 *
+	 * @warning Experimental feature.
+	 *
+	 * Requires configs:
+	 *  - @kconfig{CONFIG_BT_EXT_ADV}.
+	 *  - @kconfig{CONFIG_BT_EXT_ADV_SET_ADVA}.
+	 */
+	BT_LE_ADV_OPT_MANUAL_ADDRESS = BIT(20),
 };
 
 /** LE Advertising Parameters. */
@@ -1150,6 +1167,25 @@ struct bt_le_ext_adv_start_param {
  */
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_start_param *param);
+
+/**
+ * @brief Set the advertiser address
+ *
+ * Requires @ref BT_LE_ADV_OPT_MANUAL_ADDRESS in @p adv->options.
+ *
+ * This operation can performed only while the advertiser is not
+ * enabled.
+ *
+ * @warning Experimental feature.
+ *
+ * Requires configs:
+ *  - @kconfig{CONFIG_BT_EXT_ADV}.
+ *  - @kconfig{CONFIG_BT_EXT_ADV_SET_ADVA}.
+ *
+ * @param adv   Advertising set.
+ * @param adva  New advertiser address.
+ */
+int bt_le_ext_adv_set_adva(struct bt_le_ext_adv *adv, const bt_addr_le_t *adva);
 
 /**
  * @brief Stop advertising with the given advertising set

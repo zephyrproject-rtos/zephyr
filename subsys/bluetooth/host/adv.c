@@ -386,8 +386,18 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 	return bt_le_adv_set_enable_legacy(adv, enable);
 }
 
+#define MULTIPLE_BITS_SET(x) (!((x) == 0U || IS_POWER_OF_TWO(x)))
+
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
+	/* Advertiser address source. */
+	if (MULTIPLE_BITS_SET(param->options &
+			      (BT_LE_ADV_OPT_ANONYMOUS | BT_LE_ADV_OPT_MANUAL_ADDRESS |
+			       BT_LE_ADV_OPT_USE_IDENTITY | BT_LE_ADV_OPT_USE_NRPA))) {
+		LOG_ERR("More than one address source selected.");
+		return false;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		if (param->peer &&
@@ -1606,6 +1616,26 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 	return le_ext_adv_param_set(adv, param, false);
 }
 
+#if defined(CONFIG_BT_EXT_ADV_SET_ADVA)
+int bt_le_ext_adv_set_adva(struct bt_le_ext_adv *adv, const bt_addr_le_t *adva)
+{
+	int err;
+
+	if (!(adv->options & BT_LE_ADV_OPT_MANUAL_ADDRESS)) {
+		LOG_ERR("Manual address opt not set");
+		return -EINVAL;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		LOG_ERR("Refusing to change manual address while advertiser is enabled");
+		return -EBUSY;
+	}
+
+	err = bt_id_set_adv_random_addr(adv, &adva->a);
+	return err;
+}
+#endif
+
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_start_param *param)
 {
@@ -2204,9 +2234,9 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 					bt_addr_copy(&conn->le.resp_addr.a,
 						     &adv->random_addr.a);
 				}
-			} else if (adv->options & BT_LE_ADV_OPT_USE_NRPA) {
-				bt_addr_le_copy(&conn->le.resp_addr,
-						&adv->random_addr);
+			} else if (adv->options &
+				   (BT_LE_ADV_OPT_USE_NRPA | BT_LE_ADV_OPT_MANUAL_ADDRESS)) {
+				bt_addr_le_copy(&conn->le.resp_addr, &adv->random_addr);
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
 					&bt_dev.id_addr[conn->id]);
