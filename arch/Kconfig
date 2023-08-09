@@ -403,6 +403,22 @@ config DYNAMIC_INTERRUPTS
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
 
+config SHARED_INTERRUPTS
+	bool "Select this to enable support for shared interrupts"
+	default n
+	depends on DYNAMIC_INTERRUPTS
+	depends on ARM64
+	help
+	  This enables support for shared interrupts. This is still a WIP so use
+	  with caution.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients able to use the same INTID"
+	default 16
+	depends on SHARED_INTERRUPTS
+	help
+	  Maximum number of clients able to use the same INTID
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help

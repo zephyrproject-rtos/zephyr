@@ -7,6 +7,10 @@ if(CONFIG_GEN_ISR_TABLES)
     CONFIG_GEN_ISR_TABLES
     sw_isr_common.c
     )
+  zephyr_library_sources_ifdef(
+    CONFIG_SHARED_INTERRUPTS
+    shared_irq.c
+    )
 endif()
 
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
