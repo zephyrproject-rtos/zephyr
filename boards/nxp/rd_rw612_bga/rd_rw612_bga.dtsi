@@ -90,6 +90,14 @@ arduino_spi: &flexcomm0 {
 	#size-cells = <0>;
 };
 
+&flexcomm1 {
+	compatible = "nxp,lpc-i2s";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+};
 arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
 	status = "okay";
