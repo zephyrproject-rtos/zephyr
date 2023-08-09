@@ -11,3 +11,4 @@ API reference
 
 .. doxygengroup:: bt_mesh_dfu_cli
    :project: Zephyr
+   :members:
