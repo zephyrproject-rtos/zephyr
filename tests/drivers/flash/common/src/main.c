@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (C) 2023, Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,9 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
+#elif defined(CONFIG_FLASH_CAD_QSPI_NOR)
+#define TEST_DEV_NODE	DEVICE_DT_GET(DT_INST(0, cdns_qspi_nor))
+#define TEST_AREA_DEV_NODE	DT_INST(0, micron_mt25qu02g)
 #elif defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 /* SoC embedded NVM */
 #define TEST_AREA	slot1_ns_partition
@@ -48,7 +52,11 @@
 #define EXPECTED_SIZE	512
 #define CANARY		0xff
 
+#if defined(CONFIG_FLASH_CAD_QSPI_NOR)
+static const struct device *const flash_dev = TEST_DEV_NODE;
+#else
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
+#endif
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
@@ -124,6 +132,8 @@ ZTEST(flash_driver, test_read_unaligned_address)
 				buf[buf_o - 1] = CANARY;
 				buf[buf_o + len] = CANARY;
 				memset(buf + buf_o, 0, len);
+				if (len == 0)
+					break;
 				rc = flash_read(flash_dev,
 						page_info.start_offset + ad_o,
 						buf + buf_o, len);
