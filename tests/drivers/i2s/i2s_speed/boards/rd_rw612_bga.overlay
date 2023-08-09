@@ -1,0 +1,29 @@
+/* Overlay for RDRW61X I2S tests */
+
+/ {
+	aliases {
+		i2s-node0 = &flexcomm0;
+		i2s-node1 = &flexcomm1;
+	};
+};
+
+/* Redefine as i2s node */
+&flexcomm0 {
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm0_i2s>;
+	pinctrl-names = "default";
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+/* Redefine pinctrl for flexcomm0 */
+&pinctrl {
+	pinmux_flexcomm0_i2s: pinmux_flexcomm0_i2s {
+		group0 {
+			pinmux = <IO_MUX_FC0_I2S>;
+			slew-rate = "normal";
+		};
+	};
+};
