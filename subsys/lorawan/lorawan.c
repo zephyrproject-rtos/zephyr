@@ -418,11 +418,11 @@ out:
 		 * responsibility to increase datarates when ADR is enabled.
 		 */
 		if (!lorawan_adr_enable) {
-			MibRequestConfirm_t mib_req;
+			MibRequestConfirm_t mib_req2;
 
-			mib_req.Type = MIB_CHANNELS_DATARATE;
-			mib_req.Param.ChannelsDatarate = default_datarate;
-			LoRaMacMibSetRequestConfirm(&mib_req);
+			mib_req2.Type = MIB_CHANNELS_DATARATE;
+			mib_req2.Param.ChannelsDatarate = default_datarate;
+			LoRaMacMibSetRequestConfirm(&mib_req2);
 		}
 
 		/*
