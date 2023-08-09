@@ -45,6 +45,8 @@ driver for QEMU connectivity:
   Ethernet driver. Driver is called ``stellaris`` in Zephyr source tree.
 * For ``mps2_an385``, select ``SMSC911x/9220 Ethernet driver`` Ethernet driver.
   Driver is called ``smsc911x`` in Zephyr source tree.
+* For ``qemu_cortex_a53``, ``Intel(R) PRO/1000 Gigabit Ethernet driver``
+  Ethernet driver is selected by default.
 
 Step 1 - Create Ethernet interface
 ==================================
