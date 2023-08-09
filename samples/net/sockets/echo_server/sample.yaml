@@ -17,6 +17,7 @@ tests:
       - frdm_k64f
       - qemu_cortex_m3
       - frdm_kw41z
+      - qemu_cortex_a53
     integration_platforms:
       - qemu_x86
   sample.net.sockets.echo_server.802154:
