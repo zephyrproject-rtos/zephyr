@@ -36,3 +36,4 @@ API reference
 
 .. doxygengroup:: bt_mesh_priv_beacon_srv
    :project: Zephyr
+   :members:
