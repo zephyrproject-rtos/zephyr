@@ -96,6 +96,7 @@ static struct sockaddr_in6 peer_addr_v6_s = {
 static struct net_if *net_iface;
 static uint8_t test_case_no;
 static uint32_t seq;
+static uint32_t device_initial_seq;
 static uint32_t ack;
 
 static K_SEM_DEFINE(test_sem, 0, 1);
@@ -108,6 +109,7 @@ enum test_state {
 	T_DATA_ACK,
 	T_FIN,
 	T_FIN_ACK,
+	T_FIN_1,
 	T_FIN_2,
 	T_CLOSING
 };
@@ -124,6 +126,7 @@ static void handle_server_test(sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th);
 static void handle_client_closing_test(sa_family_t af, struct tcphdr *th);
+static void handle_data_during_fin1_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_recv_out_of_order(struct net_pkt *pkt);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
@@ -419,6 +422,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case 9:
 		handle_server_recv_out_of_order(pkt);
+		break;
+	case 11:
+		handle_data_during_fin1_test(net_pkt_family(pkt), &th);
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -1100,6 +1106,126 @@ ZTEST(net_tcp, test_client_fin_wait_2_ipv4)
 	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to send data to peer");
+	}
+
+	/* Peer will release the semaphore after it sends ACK for data */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_context_put(ctx);
+
+	/* Peer will release the semaphore after it receives
+	 * proper ACK to FIN | ACK
+	 */
+	test_sem_take(K_MSEC(300), __LINE__);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+static uint32_t get_rel_seq(struct tcphdr *th)
+{
+	return ntohl(th->th_seq) - device_initial_seq;
+}
+
+
+static void handle_data_during_fin1_test(sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	int ret;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		device_initial_seq = ntohl(th->th_seq);
+		seq = 0U;
+		ack = ntohl(th->th_seq) + 1U;
+		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		seq++;
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		test_sem_give();
+		t_state = T_FIN;
+		return;
+	case T_FIN:
+		test_verify_flags(th, FIN | ACK);
+		zassert_true(get_rel_seq(th) == 1,
+			     "%s:%d unexpected sequence number in original FIN, got %d",
+			     __func__, __LINE__, get_rel_seq(th));
+		zassert_true(ntohl(th->th_ack) == 1,
+			     "%s:%d unexpected acknowlegdement in original FIN, got %d",
+			     __func__, __LINE__, ntohl(th->th_ack));
+
+		ack = ack + 1U;
+
+		/* retransmit the data that we already send / missed */
+		reply = prepare_data_packet(af, htons(MY_PORT),
+					    th->th_sport, "A", 1U);
+
+		t_state = T_FIN_1;
+		break;
+	case T_FIN_1:
+		test_verify_flags(th, RST);
+		zassert_true(get_rel_seq(th) == 2,
+			     "%s:%d unexpected sequence number in original FIN, got %d",
+			     __func__, __LINE__, get_rel_seq(th));
+		test_sem_give();
+		return;
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	ret = net_recv_data(iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+/* Test case scenario IPv4
+ *   expect SYN,
+ *   send SYN ACK,
+ *   expect ACK,
+ *   expect Data,
+ *   send ACK,
+ *   expect FIN,
+ *   resend Data,
+ *   expect FIN,
+ *   send ACK,
+ *   send FIN,
+ *   expect ACK
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_client_data_during_fin_1_ipv4)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 11;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				  sizeof(struct sockaddr_in),
+				  NULL,
+				  K_MSEC(100), NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to connect to peer");
 	}
 
 	/* Peer will release the semaphore after it sends ACK for data */
