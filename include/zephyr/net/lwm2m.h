@@ -31,68 +31,80 @@
 #include <zephyr/net/lwm2m_path.h>
 
 /**
- * @brief LwM2M Objects managed by OMA for LwM2M tech specification. Objects in this range have IDs
- * from 0 to 1023.
+ * @name LwM2M Objects managed by OMA for LwM2M tech specification.
+ * Objects in this range have IDs from 0 to 1023.
+ * @{
  */
 
 /* clang-format off */
-#define LWM2M_OBJECT_SECURITY_ID                0
-#define LWM2M_OBJECT_SERVER_ID                  1
-#define LWM2M_OBJECT_ACCESS_CONTROL_ID          2
-#define LWM2M_OBJECT_DEVICE_ID                  3
-#define LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID 4
-#define LWM2M_OBJECT_FIRMWARE_ID                5
-#define LWM2M_OBJECT_LOCATION_ID                6
-#define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
-#define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
-#define LWM2M_OBJECT_PORTFOLIO_ID               16
-#define LWM2M_OBJECT_BINARYAPPDATACONTAINER_ID	19
-#define LWM2M_OBJECT_EVENT_LOG_ID               20
-#define LWM2M_OBJECT_GATEWAY_ID                 25
+#define LWM2M_OBJECT_SECURITY_ID                0  /**< Security object */
+#define LWM2M_OBJECT_SERVER_ID                  1  /**< Server object */
+#define LWM2M_OBJECT_ACCESS_CONTROL_ID          2  /**< Access Control object */
+#define LWM2M_OBJECT_DEVICE_ID                  3  /**< Device object */
+#define LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID 4  /**< Connectivity Monitoring object */
+#define LWM2M_OBJECT_FIRMWARE_ID                5  /**< Firmware object */
+#define LWM2M_OBJECT_LOCATION_ID                6  /**< Location object */
+#define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7  /**< Connectivity Statistics object */
+#define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9  /**< Software Management object */
+#define LWM2M_OBJECT_PORTFOLIO_ID               16 /**< Portfolio object */
+#define LWM2M_OBJECT_BINARYAPPDATACONTAINER_ID  19 /**< Binary App Data Container object */
+#define LWM2M_OBJECT_EVENT_LOG_ID               20 /**< Event Log object */
+#define LWM2M_OBJECT_GATEWAY_ID                 25 /**< Gateway object */
 /* clang-format on */
+
+/** @} */
 
 /**
- * @brief LwM2M Objects produced by 3rd party Standards Development
- * Organizations.  Objects in this range have IDs from 2048 to 10240
+ * @name LwM2M Objects produced by 3rd party Standards Development
+ * Organizations.
  * Refer to the OMA LightweightM2M (LwM2M) Object and Resource Registry:
  * http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+ * @{
  */
 
 /* clang-format off */
-#define IPSO_OBJECT_GENERIC_SENSOR_ID       3300
-#define IPSO_OBJECT_TEMP_SENSOR_ID          3303
-#define IPSO_OBJECT_HUMIDITY_SENSOR_ID      3304
-#define IPSO_OBJECT_LIGHT_CONTROL_ID        3311
-#define IPSO_OBJECT_ACCELEROMETER_ID        3313
-#define IPSO_OBJECT_VOLTAGE_SENSOR_ID       3316
-#define IPSO_OBJECT_CURRENT_SENSOR_ID       3317
-#define IPSO_OBJECT_PRESSURE_ID             3323
-#define IPSO_OBJECT_BUZZER_ID               3338
-#define IPSO_OBJECT_TIMER_ID                3340
-#define IPSO_OBJECT_ONOFF_SWITCH_ID         3342
-#define IPSO_OBJECT_PUSH_BUTTON_ID          3347
-#define UCIFI_OBJECT_BATTERY_ID             3411
-#define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435
+#define IPSO_OBJECT_GENERIC_SENSOR_ID       3300 /**< IPSO Generic Sensor object */
+#define IPSO_OBJECT_TEMP_SENSOR_ID          3303 /**< IPSO Temperature Sensor object */
+#define IPSO_OBJECT_HUMIDITY_SENSOR_ID      3304 /**< IPSO Humidity Sensor object */
+#define IPSO_OBJECT_LIGHT_CONTROL_ID        3311 /**< IPSO Light Control object */
+#define IPSO_OBJECT_ACCELEROMETER_ID        3313 /**< IPSO Accelerometer object */
+#define IPSO_OBJECT_VOLTAGE_SENSOR_ID       3316 /**< IPSO Voltage Sensor object */
+#define IPSO_OBJECT_CURRENT_SENSOR_ID       3317 /**< IPSO Current Sensor object */
+#define IPSO_OBJECT_PRESSURE_ID             3323 /**< IPSO Pressure Sensor object */
+#define IPSO_OBJECT_BUZZER_ID               3338 /**< IPSO Buzzer object */
+#define IPSO_OBJECT_TIMER_ID                3340 /**< IPSO Timer object */
+#define IPSO_OBJECT_ONOFF_SWITCH_ID         3342 /**< IPSO On/Off Switch object */
+#define IPSO_OBJECT_PUSH_BUTTON_ID          3347 /**< IPSO Push Button object */
+#define UCIFI_OBJECT_BATTERY_ID             3411 /**< uCIFI Battery object */
+#define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435 /**< IPSO Filling Level Sensor object */
 /* clang-format on */
 
+/** @} */
+
+/**
+ * @brief Callback function called when a socket error is encountered
+ *
+ * @param error Error code
+ */
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
 
+/** @brief LwM2M object path structure */
 struct lwm2m_obj_path {
-	uint16_t obj_id;
-	uint16_t obj_inst_id;
-	uint16_t res_id;
-	uint16_t res_inst_id;
-	uint8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
+	uint16_t obj_id;         /**< Object ID */
+	uint16_t obj_inst_id;    /**< Object instance ID */
+	uint16_t res_id;         /**< Resource ID */
+	uint16_t res_inst_id;    /**< Resource instance ID */
+	uint8_t  level;          /**< Path level (0-4). Ex. 4 = resource instance. */
 };
 
 /**
  * @brief Observe callback events
  */
 enum lwm2m_observe_event {
-	LWM2M_OBSERVE_EVENT_OBSERVER_ADDED,
-	LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED,
-	LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
-	LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+	LWM2M_OBSERVE_EVENT_OBSERVER_ADDED,    /**< Observer added */
+	LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED,  /**< Observer removed */
+	LWM2M_OBSERVE_EVENT_NOTIFY_ACK,        /**< Notification ACKed */
+	LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,    /**< Notification timed out */
 };
 
 /**
@@ -129,7 +141,9 @@ struct lwm2m_ctx {
 	/** Destination address storage */
 	struct sockaddr remote_addr;
 
-	/** Private CoAP and networking structures + 1 is for RD Client own message */
+	/** @cond INTERNAL_HIDDEN
+	 * Private CoAP and networking structures + 1 is for RD Client own message
+	 */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING + 1];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES + 1];
 	sys_slist_t pending_sends;
@@ -137,6 +151,7 @@ struct lwm2m_ctx {
 	sys_slist_t queued_messages;
 #endif
 	sys_slist_t observer;
+	/** @endcond */
 
 	/** A pointer to currently processed request, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
@@ -146,24 +161,36 @@ struct lwm2m_ctx {
 	void *processed_req;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT) || defined(__DOXYGEN__)
+	/**
+	 * @name DTLS related information
+	 * Available only when @kconfig{CONFIG_LWM2M_DTLS_SUPPORT} is enabled and
+	 * @ref lwm2m_ctx.use_dtls is set to true.
+	 * @{
+	 */
 	/** TLS tag is set by client as a reference used when the
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
 	int tls_tag;
 
-	/** When MBEDTLS SNI is enabled socket must be set with destination
-	 *  hostname server.
+	/** Destination hostname.
+	 *  When MBEDTLS SNI is enabled socket must be set with destination
+	 *  server hostname.
 	 */
 	char *desthostname;
+	/** Destination hostname length */
 	uint16_t desthostnamelen;
+	/** Flag to indicate if hostname verification is enabled */
 	bool hostname_verify;
 
-	/** Client can set load_credentials function as a way of overriding
+	/** Custom load_credentials function.
+	 *  Client can set load_credentials function as a way of overriding
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
 	 */
 	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
+	/** @} */
 #endif
-	/** Client can override default socket options by providing
+	/** Custom socket options.
+	 * Client can override default socket options by providing
 	 * a callback that is called afer a socket is created and before
 	 * connect.
 	 */
@@ -172,7 +199,7 @@ struct lwm2m_ctx {
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection
 	 *  information.
-	 *  NOTE: requires CONFIG_LWM2M_DTLS_SUPPORT=y
+	 *  NOTE: requires @kconfig{CONFIG_LWM2M_DTLS_SUPPORT}
 	 */
 	bool use_dtls;
 
@@ -213,6 +240,7 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_observe_cb_t observe_cb;
 
+	/** Callback for client events */
 	lwm2m_ctx_event_cb_t event_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
@@ -226,7 +254,7 @@ struct lwm2m_ctx {
  * LwM2M Time series data structure
  */
 struct lwm2m_time_series_elem {
-	/* Cached data Unix timestamp */
+	/** Cached data Unix timestamp */
 	time_t t;
 	union {
 		uint8_t u8;
@@ -336,47 +364,60 @@ typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
 					 uint8_t *args, uint16_t args_len);
 
 /**
- * @brief Power source types used for the "Available Power Sources" resource of
- * the LwM2M Device object.
+ * @name Power source types used for the "Available Power Sources" resource of
+ * the LwM2M Device object (3/0/6).
+ * @{
  */
-#define LWM2M_DEVICE_PWR_SRC_TYPE_DC_POWER	0
-#define LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT	1
-#define LWM2M_DEVICE_PWR_SRC_TYPE_BAT_EXT	2
-#define LWM2M_DEVICE_PWR_SRC_TYPE_FUEL_CELL	3
-#define LWM2M_DEVICE_PWR_SRC_TYPE_PWR_OVER_ETH	4
-#define LWM2M_DEVICE_PWR_SRC_TYPE_USB		5
-#define LWM2M_DEVICE_PWR_SRC_TYPE_AC_POWER	6
-#define LWM2M_DEVICE_PWR_SRC_TYPE_SOLAR		7
-#define LWM2M_DEVICE_PWR_SRC_TYPE_MAX		8
+#define LWM2M_DEVICE_PWR_SRC_TYPE_DC_POWER	0 /**< DC power */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT	1 /**< Internal battery */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_BAT_EXT	2 /**< External battery */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_FUEL_CELL	3 /**< Fuel cell */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_PWR_OVER_ETH	4 /**< Power over Ethernet */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_USB		5 /**< USB */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_AC_POWER	6 /**< AC (mains) power */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_SOLAR		7 /**< Solar */
+#define LWM2M_DEVICE_PWR_SRC_TYPE_MAX		8 /**< Max value for Available Power Source type */
+/** @} */
 
 /**
- * @brief Error codes used for the "Error Code" resource of the LwM2M Device
- * object.  An LwM2M client can register one of the following error codes via
+ * @name Error codes used for the "Error Code" resource of the LwM2M Device
+ * object.
+ * An LwM2M client can register one of the following error codes via
  * the lwm2m_device_add_err() function.
+ * @{
  */
-#define LWM2M_DEVICE_ERROR_NONE			0
-#define LWM2M_DEVICE_ERROR_LOW_POWER		1
-#define LWM2M_DEVICE_ERROR_EXT_POWER_SUPPLY_OFF	2
-#define LWM2M_DEVICE_ERROR_GPS_FAILURE		3
-#define LWM2M_DEVICE_ERROR_LOW_SIGNAL_STRENGTH	4
-#define LWM2M_DEVICE_ERROR_OUT_OF_MEMORY	5
-#define LWM2M_DEVICE_ERROR_SMS_FAILURE		6
-#define LWM2M_DEVICE_ERROR_NETWORK_FAILURE	7
-#define LWM2M_DEVICE_ERROR_PERIPHERAL_FAILURE	8
+#define LWM2M_DEVICE_ERROR_NONE			0 /**< No error */
+#define LWM2M_DEVICE_ERROR_LOW_POWER		1 /**< Low battery power */
+#define LWM2M_DEVICE_ERROR_EXT_POWER_SUPPLY_OFF	2 /**< External power supply off */
+#define LWM2M_DEVICE_ERROR_GPS_FAILURE		3 /**< GPS module failure */
+#define LWM2M_DEVICE_ERROR_LOW_SIGNAL_STRENGTH	4 /**< Low received signal strength */
+#define LWM2M_DEVICE_ERROR_OUT_OF_MEMORY	5 /**< Out of memory */
+#define LWM2M_DEVICE_ERROR_SMS_FAILURE		6 /**< SMS failure */
+#define LWM2M_DEVICE_ERROR_NETWORK_FAILURE	7 /**< IP Connectivity failure */
+#define LWM2M_DEVICE_ERROR_PERIPHERAL_FAILURE	8 /**< Peripheral malfunction */
+
+/** @} */
 
 /**
- * @brief Battery status codes used for the "Battery Status" resource (3/0/20)
+ * @name Battery status codes used for the "Battery Status" resource (3/0/20)
  *        of the LwM2M Device object.  As the battery status changes, an LwM2M
  *        client can set one of the following codes via:
  *        lwm2m_engine_set_u8("3/0/20", [battery status])
+ * @{
  */
-#define LWM2M_DEVICE_BATTERY_STATUS_NORMAL	0
-#define LWM2M_DEVICE_BATTERY_STATUS_CHARGING	1
-#define LWM2M_DEVICE_BATTERY_STATUS_CHARGE_COMP	2
-#define LWM2M_DEVICE_BATTERY_STATUS_DAMAGED	3
-#define LWM2M_DEVICE_BATTERY_STATUS_LOW		4
-#define LWM2M_DEVICE_BATTERY_STATUS_NOT_INST	5
-#define LWM2M_DEVICE_BATTERY_STATUS_UNKNOWN	6
+#define LWM2M_DEVICE_BATTERY_STATUS_NORMAL	0 /**< The battery is operating normally and not on
+						    *   power
+						    */
+#define LWM2M_DEVICE_BATTERY_STATUS_CHARGING	1 /**< The battery is currently charging */
+#define LWM2M_DEVICE_BATTERY_STATUS_CHARGE_COMP	2 /**< The battery is fully charged and the charger
+						    *   is still connected
+						    */
+#define LWM2M_DEVICE_BATTERY_STATUS_DAMAGED	3 /**< The battery has some problem */
+#define LWM2M_DEVICE_BATTERY_STATUS_LOW		4 /**< The battery is low on charge */
+#define LWM2M_DEVICE_BATTERY_STATUS_NOT_INST	5 /**< The battery is not installed */
+#define LWM2M_DEVICE_BATTERY_STATUS_UNKNOWN	6 /**< The battery information is not available */
+
+/** @} */
 
 /**
  * @brief Register a new error code with LwM2M Device object.
@@ -389,32 +430,52 @@ int lwm2m_device_add_err(uint8_t error_code);
 
 
 /**
- * @brief LWM2M Firmware Update object states
+ * @name LWM2M Firmware Update object states
  *
  * An LwM2M client or the LwM2M Firmware Update object use the following codes
  * to represent the LwM2M Firmware Update state (5/0/3).
+ * @{
  */
-#define STATE_IDLE		0
-#define STATE_DOWNLOADING	1
-#define STATE_DOWNLOADED	2
-#define STATE_UPDATING		3
 
 /**
- * @brief LWM2M Firmware Update object result codes
+ * Idle. Before downloading or after successful updating.
+ */
+#define STATE_IDLE		0
+/**
+ * Downloading. The data sequence is being downloaded.
+ */
+#define STATE_DOWNLOADING	1
+/**
+ * Downloaded. The whole data sequence has been downloaded.
+ */
+#define STATE_DOWNLOADED	2
+/**
+ * Updating. The device is being updated.
+ */
+#define STATE_UPDATING		3
+
+/** @} */
+
+/**
+ * @name LWM2M Firmware Update object result codes
  *
  * After processing a firmware update, the client sets the result via one of
  * the following codes via lwm2m_engine_set_u8("5/0/5", [result code])
+ * @{
  */
-#define RESULT_DEFAULT		0
-#define RESULT_SUCCESS		1
-#define RESULT_NO_STORAGE	2
-#define RESULT_OUT_OF_MEM	3
-#define RESULT_CONNECTION_LOST	4
-#define RESULT_INTEGRITY_FAILED	5
-#define RESULT_UNSUP_FW		6
-#define RESULT_INVALID_URI	7
-#define RESULT_UPDATE_FAILED	8
-#define RESULT_UNSUP_PROTO	9
+
+#define RESULT_DEFAULT		0	/**< Initial value */
+#define RESULT_SUCCESS		1	/**< Firmware updated successfully */
+#define RESULT_NO_STORAGE	2	/**< Not enough flash memory for the new firmware package */
+#define RESULT_OUT_OF_MEM	3	/**< Out of RAM during downloading process */
+#define RESULT_CONNECTION_LOST	4	/**< Connection lost during downloading process */
+#define RESULT_INTEGRITY_FAILED	5	/**< Integrity check failure for new downloaded package */
+#define RESULT_UNSUP_FW		6	/**< Unsupported package type */
+#define RESULT_INVALID_URI	7	/**< Invalid URI */
+#define RESULT_UPDATE_FAILED	8	/**< Firmware update failed */
+#define RESULT_UNSUP_PROTO	9	/**< Unsupported protocol */
+
+/** @} */
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT) || defined(__DOXYGEN__)
 /**
@@ -638,16 +699,16 @@ void lwm2m_event_log_set_read_log_data_cb(lwm2m_engine_get_data_cb_t cb);
 #endif
 
 /**
- * @brief Maximum value for ObjLnk resource fields
+ * @brief Maximum value for Objlnk resource fields
  */
 #define LWM2M_OBJLNK_MAX_ID USHRT_MAX
 
 /**
- * @brief LWM2M ObjLnk resource type structure
+ * @brief LWM2M Objlnk resource type structure
  */
 struct lwm2m_objlnk {
-	uint16_t obj_id;
-	uint16_t obj_inst;
+	uint16_t obj_id;     /**< Object ID */
+	uint16_t obj_inst;   /**< Object instance ID */
 };
 
 /**
@@ -1072,7 +1133,7 @@ int lwm2m_engine_set_float(const char *pathstr, const double *value);
 int lwm2m_set_f64(const struct lwm2m_obj_path *path, const double value);
 
 /**
- * @brief Set resource (instance) value (ObjLnk)
+ * @brief Set resource (instance) value (Objlnk)
  *
  * @deprecated Use lwm2m_set_objlnk() instead.
  *
@@ -1085,7 +1146,7 @@ __deprecated
 int lwm2m_engine_set_objlnk(const char *pathstr, const struct lwm2m_objlnk *value);
 
 /**
- * @brief Set resource (instance) value (ObjLnk)
+ * @brief Set resource (instance) value (Objlnk)
  *
  * @param[in] path LwM2M path as a struct
  * @param[in] value pointer to the lwm2m_objlnk structure
@@ -1398,7 +1459,7 @@ int lwm2m_engine_get_float(const char *pathstr, double *buf);
 int lwm2m_get_f64(const struct lwm2m_obj_path *path, double *value);
 
 /**
- * @brief Get resource (instance) value (ObjLnk)
+ * @brief Get resource (instance) value (Objlnk)
  *
  * @deprecated Use lwm2m_get_objlnk() instead.
  *
@@ -1411,7 +1472,7 @@ __deprecated
 int lwm2m_engine_get_objlnk(const char *pathstr, struct lwm2m_objlnk *buf);
 
 /**
- * @brief Get resource (instance) value (ObjLnk)
+ * @brief Get resource (instance) value (Objlnk)
  *
  * @param[in] path LwM2M path as a struct
  * @param[out] buf lwm2m_objlnk buffer to copy data into
@@ -2088,7 +2149,7 @@ int lwm2m_engine_pause(void);
  *
  * Resume suspended LwM2M engine. After successful resume call engine will do
  * full registration or registration update based on suspended time.
- * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or WM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
+ * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
  * indicate that client is connected to server.
  *
  * @return 0 for success or negative in case of error.
