@@ -9,7 +9,9 @@ Networking with QEMU
 
 This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in a QEMU virtual machine (built for Zephyr
-targets such as qemu_x86 and qemu_cortex_m3).
+targets such as qemu_x86 and qemu_cortex_m3). Some virtual ARM boards (such as
+qemu_cortex_a53) only support a single UART, in this case QEMU Ethernet is
+preferred, see :ref:`networking_with_eth_qemu` for details.
 
 In this example, the :ref:`sockets-echo-server-sample` sample application from
 the Zephyr source distribution is run in QEMU. The QEMU instance is
