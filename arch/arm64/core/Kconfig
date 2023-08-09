@@ -255,7 +255,7 @@ if ARM_MMU
 config MMU_PAGE_SIZE
 	default 0x1000
 
-choice
+choice ARM64_VA_BITS
 	prompt "Virtual address space size"
 	default ARM64_VA_BITS_32
 	help
@@ -287,7 +287,7 @@ config ARM64_VA_BITS
 	default 42 if ARM64_VA_BITS_42
 	default 48 if ARM64_VA_BITS_48
 
-choice
+choice ARM64_PA_BITS
 	prompt "Physical address space size"
 	default ARM64_PA_BITS_32
 	help
