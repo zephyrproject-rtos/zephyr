@@ -110,28 +110,28 @@ static int led_on_off(const struct device *led)
 
 const struct device *led_dev = DEVICE_DT_GET_ONE(issi_is31fl3733);
 
-void main(void)
+int main(void)
 {
 	int ret;
 	int current_limit = 0xFF;
 
 	if (!device_is_ready(led_dev)) {
 		printk("Error- LED device is not ready\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
 		ret = led_channel_write(led_dev);
 		if (ret < 0) {
-			return;
+			return 0;
 		}
 		ret = led_brightness(led_dev);
 		if (ret < 0) {
-			return;
+			return 0;
 		}
 		ret = led_on_off(led_dev);
 		if (ret < 0) {
-			return;
+			return 0;
 		}
 		if (current_limit == 0xFF) {
 			/* Select lower current limt */
@@ -140,7 +140,7 @@ void main(void)
 			ret = is31fl3733_current_limit(led_dev, current_limit);
 			if (ret) {
 				printk("Could not set LED current limit (%d)\n", ret);
-				return;
+				return 0;
 			}
 		} else {
 			/* Select higher current limt */
@@ -149,7 +149,7 @@ void main(void)
 			ret = is31fl3733_current_limit(led_dev, current_limit);
 			if (ret) {
 				printk("Could not set LED current limit (%d)\n", ret);
-				return;
+				return 0;
 			}
 		}
 	}
