@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2022 - 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 
 #include <zephyr/kernel.h>
 
-#define SET_L(x) ((uint64_t)(x) & BIT64_MASK(32))
+#define SET_L(x) ((uint64_t)(x)&BIT64_MASK(32))
 #define SET_H(x) ((((uint64_t)x) & BIT64_MASK(32)) << 32)
 
 LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
@@ -136,8 +136,9 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 	do {
 		uint32_t reg = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD);
 
-		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT))
+		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT)) {
 			break;
+		}
 		count++;
 	} while (count < CAD_QSPI_COMMAND_TIMEOUT);
 
@@ -175,8 +176,9 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -211,8 +213,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -228,8 +231,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 
 	sys_write32(input[0], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA0);
 
-	if (num_bytes > 4)
+	if (num_bytes > 4) {
 		sys_write32(input[1], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA1);
+	}
 
 	return cad_qspi_stig_cmd_helper(cad_params, cad_params->cad_qspi_cs, cmd);
 }
@@ -239,8 +243,9 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 {
 	uint32_t cmd;
 
-	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1))
+	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -306,8 +311,9 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 			LOG_ERR("Error getting device status\n");
 			return -1;
 		}
-		if (!CAD_QSPI_STIG_SR_BUSY(status))
+		if (!CAD_QSPI_STIG_SR_BUSY(status)) {
 			break;
+		}
 		count++;
 	}
 
@@ -320,19 +326,21 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
 		ret = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
-						&flag_sr);
+					     &flag_sr);
 		if (ret != 0) {
 			LOG_ERR("Error waiting program and erase.\n");
 			return ret;
 		}
 
 		if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(flag_sr)) ||
-		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr)))
+		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr))) {
 			break;
+		}
 	}
 
-	if (count >= CAD_QSPI_COMMAND_TIMEOUT)
+	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
 		LOG_ERR("Timed out waiting for program and erase\n");
+	}
 
 	if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMERROR(flag_sr)) ||
 	    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEERROR(flag_sr))) {
@@ -543,10 +551,11 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 		}
 
 		if (rdid == sample_rdid) {
-			if (first_pass == -1)
+			if (first_pass == -1) {
 				first_pass = data_cap_delay;
-			else
+			} else {
 				last_pass = data_cap_delay;
+			}
 		}
 
 		data_cap_delay++;
@@ -578,11 +587,13 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 		return -EINVAL;
 	}
 
-	if (cad_qspi_idle(cad_params) == 0)
+	if (cad_qspi_idle(cad_params) == 0) {
 		return -1;
+	}
 
-	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0)
+	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0) {
 		return -1;
+	}
 
 	sys_write32(mask, cad_params->reg_base + CAD_QSPI_IRQMSK);
 	return 0;
@@ -684,8 +695,9 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 		return -1;
 	}
 
-	cad_qspi_configure_dev_size(cad_params, QSPI_ADDR_BYTES, QSPI_BYTES_PER_DEV,
-				    QSPI_BYTES_PER_BLOCK);
+	cad_qspi_configure_dev_size(cad_params, cad_params->qspi_device_address_byte,
+				    cad_params->qspi_device_page_size,
+				    cad_params->qspi_device_bytes_per_block);
 
 	LOG_INF("Flash size: %d Bytes", cad_params->qspi_device_size);
 
@@ -697,6 +709,7 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 {
 	int status = 0, i;
 	uint32_t write_count, write_capacity, *write_data, space, write_fill_level, sram_partition;
+	uint8_t *write_byte_data;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -720,10 +733,18 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 		space = MIN(write_capacity - write_fill_level,
 			    (len - write_count) / sizeof(uint32_t));
 		write_data = (uint32_t *)(buffer + write_count);
-		for (i = 0; i < space; ++i)
+		for (i = 0; i < space; ++i) {
 			sys_write32(*write_data++, cad_params->data_base);
-
+		}
 		write_count += space * sizeof(uint32_t);
+
+		if ((len - write_count) < 4) {
+			write_byte_data = (uint8_t *)write_data;
+			while (len - write_count) {
+				sys_write8(*write_byte_data++, cad_params->data_base);
+				write_count++;
+			}
+		}
 	}
 	return cad_qspi_indirect_write_finish(cad_params);
 }
@@ -732,7 +753,8 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 		       uint32_t size)
 {
 	int status;
-	uint32_t read_count = 0, *read_data;
+	uint32_t read_count = 0;
+	uint8_t *read_data;
 	int level = 1, count = 0, i;
 
 	if (cad_params == NULL) {
@@ -750,11 +772,13 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 		do {
 			level = CAD_QSPI_SRAMFILL_INDRDPART(
 				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
-			read_data = (uint32_t *)(buffer + read_count);
-			for (i = 0; i < level; ++i)
-				*read_data++ = sys_read32(cad_params->data_base);
+			read_data = buffer + read_count;
 
-			read_count += level * sizeof(uint32_t);
+			for (i = 0; i < level; ++i) {
+				*read_data++ = sys_read8(cad_params->data_base);
+			}
+
+			read_count += level;
 			count++;
 		} while (level > 0);
 	}
@@ -798,6 +822,12 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return -EINVAL;
+	}
+
+	if ((offset >= cad_params->qspi_device_size) ||
+	    (offset + size - 1 >= cad_params->qspi_device_size) || (size == 0)) {
+		LOG_ERR("Invalid read parameter\n");
 		return -EINVAL;
 	}
 
@@ -852,8 +882,8 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t size)
 {
 	int status = 0;
-	uint32_t subsector_offset = offset & (CAD_QSPI_SUBSECTOR_SIZE - 1);
-	uint32_t erase_size = MIN(size, CAD_QSPI_SUBSECTOR_SIZE - subsector_offset);
+	uint32_t subsector_offset = offset & (cad_params->qspi_device_subsector_size - 1);
+	uint32_t erase_size = MIN(size, cad_params->qspi_device_subsector_size - subsector_offset);
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -869,7 +899,7 @@ int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t
 
 		offset += erase_size;
 		size -= erase_size;
-		erase_size = MIN(size, CAD_QSPI_SUBSECTOR_SIZE);
+		erase_size = MIN(size, cad_params->qspi_device_subsector_size);
 	}
 	return status;
 }
