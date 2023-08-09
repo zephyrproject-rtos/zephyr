@@ -17,12 +17,7 @@
 #include <zephyr/kernel.h>
 
 /* driver definitions */
-#define BLOCK_64K_SIZE         (0x10000u)
-#define BLOCK_64K_PAGES        (BLOCK_64K_SIZE / PAGE_SIZE)
-#define BLOCK_32K_SIZE         (0x8000u)
-#define BLOCK_32K_PAGES        (BLOCK_32K_SIZE / PAGE_SIZE)
 #define SECTOR_SIZE            (0x1000u)
-#define SECTOR_PAGES           (SECTOR_SIZE / PAGE_SIZE)
 
 #define FLASH_B91_ACCESS_TIMEOUT_MS  30
 
@@ -264,8 +259,8 @@ flash_b91_get_parameters(const struct device *dev)
 /* API implementation: page_layout */
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = FLASH_SIZE / PAGE_SIZE,
-	.pages_size = PAGE_SIZE,
+	.pages_count = FLASH_SIZE / SECTOR_SIZE,
+	.pages_size = SECTOR_SIZE,
 };
 
 static void flash_b91_pages_layout(const struct device *dev,
