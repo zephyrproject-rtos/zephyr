@@ -2354,6 +2354,8 @@ NXP Platforms:
     - EmilioCBen
     - decsny
     - manuargue
+    - PetervdPerk-NXP
+    - bperseghetti
     - dbaluta
     - iuliana-prodan
   files:
@@ -2363,6 +2365,7 @@ NXP Platforms:
     - boards/arm/twr_*/
     - boards/arm/s32*/
     - boards/arm/mr_canhubk3/
+    - boards/arm/vmu_rt*/
     - soc/arm/nxp_*/
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
@@ -2982,6 +2985,8 @@ West:
     - mmahadevan108
     - danieldegrasse
     - manuargue
+    - PetervdPerk-NXP
+    - bperseghetti
   files:
     - modules/hal_nxp/
     - modules/Kconfig.imx
