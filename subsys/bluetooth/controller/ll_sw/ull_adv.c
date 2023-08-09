@@ -1392,7 +1392,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * started.
 			 */
 			if (sync) {
-				uint32_t ticks_slot_overhead;
+				uint32_t ticks_slot_overhead2;
 				uint32_t ticks_slot_aux;
 
 #if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
@@ -1436,10 +1436,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
 
-				ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync, NULL);
+				ticks_slot_overhead2 = ull_adv_sync_evt_init(adv, sync, NULL);
 				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync,
-							 ticks_slot_overhead);
+							 ticks_slot_overhead2);
 				if (ret) {
 					goto failure_cleanup;
 				}

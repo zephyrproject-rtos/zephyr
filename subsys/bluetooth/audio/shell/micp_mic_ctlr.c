@@ -16,7 +16,7 @@
 
 #include "shell/bt.h"
 
-static struct bt_micp_mic_ctlr *mic_ctlr;
+static struct bt_micp_mic_ctlr *micp_mic_ctlr;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
@@ -233,7 +233,7 @@ static int cmd_micp_mic_ctlr_discover(const struct shell *sh, size_t argc,
 		return -ENOTCONN;
 	}
 
-	result = bt_micp_mic_ctlr_discover(default_conn, &mic_ctlr);
+	result = bt_micp_mic_ctlr_discover(default_conn, &micp_mic_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -246,11 +246,11 @@ static int cmd_micp_mic_ctlr_mute_get(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_mute_get(mic_ctlr);
+	result = bt_micp_mic_ctlr_mute_get(micp_mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -264,11 +264,11 @@ static int cmd_micp_mic_ctlr_mute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_mute(mic_ctlr);
+	result = bt_micp_mic_ctlr_mute(micp_mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -282,11 +282,11 @@ static int cmd_micp_mic_ctlr_unmute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_unmute(mic_ctlr);
+	result = bt_micp_mic_ctlr_unmute(micp_mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -316,7 +316,7 @@ static int cmd_micp_mic_ctlr_aics_input_state_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -348,7 +348,7 @@ static int cmd_micp_mic_ctlr_aics_gain_setting_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -380,7 +380,7 @@ static int cmd_micp_mic_ctlr_aics_input_type_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -412,7 +412,7 @@ static int cmd_micp_mic_ctlr_aics_input_status_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -472,7 +472,7 @@ static int cmd_micp_mic_ctlr_aics_input_mute(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -504,7 +504,7 @@ static int cmd_micp_mic_ctlr_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -537,7 +537,7 @@ static int cmd_micp_mic_ctlr_aics_automatic_input_gain_set(const struct shell *s
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -584,7 +584,7 @@ static int cmd_micp_mic_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -616,7 +616,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -648,7 +648,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (mic_ctlr == NULL) {
+	if (micp_mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 

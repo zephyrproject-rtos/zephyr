@@ -582,7 +582,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 	if (adv->is_enabled) {
 		struct ll_adv_aux_set *aux;
-		struct pdu_adv *pdu;
+		struct pdu_adv *chan_res_pdu;
 		uint8_t tmp_idx;
 
 		aux = HDR_LLL2ULL(adv->lll.aux);
@@ -634,8 +634,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		}
 
 		/* Update primary channel reservation */
-		pdu = lll_adv_data_alloc(&adv->lll, &tmp_idx);
-		err = ull_adv_time_update(adv, pdu, NULL);
+		chan_res_pdu = lll_adv_data_alloc(&adv->lll, &tmp_idx);
+		err = ull_adv_time_update(adv, chan_res_pdu, NULL);
 		if (err) {
 			return err;
 		}
@@ -3053,7 +3053,6 @@ void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
 		    lll_aux->us_pri_pdu_offset;
 	if ((offset_us/OFFS_UNIT_30_US)*OFFS_UNIT_30_US < EVENT_MAFS_US + pdu_us) {
-		struct ll_adv_aux_set *aux = HDR_LLL2ULL(lll_aux);
 		uint32_t interval_us;
 
 		/* Offset too small, point to next aux packet instead */

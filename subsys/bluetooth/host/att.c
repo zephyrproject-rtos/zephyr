@@ -303,8 +303,6 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
-		int err;
-
 		err = bt_smp_sign(chan->att->conn, buf);
 		if (err) {
 			LOG_ERR("Error signing data");

@@ -467,8 +467,6 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			int err;
-
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->ccc_handle = 0;

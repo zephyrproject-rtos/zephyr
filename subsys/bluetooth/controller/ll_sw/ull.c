@@ -1100,11 +1100,11 @@ void ll_rx_dequeue(void)
 
 		LL_ASSERT(!lll_conn->link_tx_free);
 
-		memq_link_t *link = memq_deinit(&lll_conn->memq_tx.head,
-						&lll_conn->memq_tx.tail);
-		LL_ASSERT(link);
+		memq_link_t *memq_link = memq_deinit(&lll_conn->memq_tx.head,
+						     &lll_conn->memq_tx.tail);
+		LL_ASSERT(memq_link);
 
-		lll_conn->link_tx_free = link;
+		lll_conn->link_tx_free = memq_link;
 
 		struct ll_conn *conn = HDR_LLL2ULL(lll_conn);
 
@@ -1144,17 +1144,17 @@ void ll_rx_dequeue(void)
 			if (cc->status == BT_HCI_ERR_ADV_TIMEOUT) {
 				struct lll_conn *conn_lll;
 				struct ll_conn *conn;
-				memq_link_t *link;
+				memq_link_t *memq_link;
 
 				conn_lll = lll->conn;
 				LL_ASSERT(conn_lll);
 				lll->conn = NULL;
 
 				LL_ASSERT(!conn_lll->link_tx_free);
-				link = memq_deinit(&conn_lll->memq_tx.head,
-						   &conn_lll->memq_tx.tail);
-				LL_ASSERT(link);
-				conn_lll->link_tx_free = link;
+				memq_link = memq_deinit(&conn_lll->memq_tx.head,
+							&conn_lll->memq_tx.tail);
+				LL_ASSERT(memq_link);
+				conn_lll->link_tx_free = memq_link;
 
 				conn = HDR_LLL2ULL(conn_lll);
 				ll_conn_release(conn);

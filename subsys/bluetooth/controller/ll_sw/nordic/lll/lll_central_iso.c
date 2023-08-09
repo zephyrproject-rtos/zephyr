@@ -577,7 +577,7 @@ static void isr_tx(void *param)
 
 	/* Schedule next subevent */
 	if (se_curr < cis_lll->nse) {
-		const struct lll_conn *conn_lll;
+		const struct lll_conn *evt_conn_lll;
 		uint16_t data_chan_id;
 		uint32_t subevent_us;
 		uint32_t start_us;
@@ -590,13 +590,13 @@ static void isr_tx(void *param)
 		LL_ASSERT(start_us == (subevent_us + 1U));
 
 		/* Get reference to ACL context */
-		conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+		evt_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
 		/* Calculate the radio channel to use for next subevent */
 		data_chan_id = lll_chan_id(cis_lll->access_addr);
 		next_chan_use = lll_chan_iso_subevent(data_chan_id,
-						      conn_lll->data_chan_map,
-						      conn_lll->data_chan_count,
+						      evt_conn_lll->data_chan_map,
+						      evt_conn_lll->data_chan_count,
 						      &data_chan_prn_s,
 						      &data_chan_remap_idx);
 	} else {
@@ -938,21 +938,21 @@ isr_rx_next_subevent:
 		bn = cis_lll->rx.bn_curr;
 		while (bn <= cis_lll->rx.bn) {
 			struct node_rx_iso_meta *iso_meta;
-			struct node_rx_pdu *node_rx;
+			struct node_rx_pdu *status_node_rx;
 
 			/* Ensure there is always one free for reception
 			 * of ISO PDU by the radio h/w DMA, hence peek
 			 * for two available ISO PDU when using one for
 			 * generating invalid ISO data.
 			 */
-			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
-			if (!node_rx) {
+			status_node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+			if (!status_node_rx) {
 				break;
 			}
 
-			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
-			node_rx->hdr.handle = cis_lll->handle;
-			iso_meta = &node_rx->hdr.rx_iso_meta;
+			status_node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+			status_node_rx->hdr.handle = cis_lll->handle;
+			iso_meta = &status_node_rx->hdr.rx_iso_meta;
 			iso_meta->payload_number = (cis_lll->event_count *
 						    cis_lll->rx.bn) + (bn - 1U);
 			iso_meta->timestamp =
@@ -963,7 +963,7 @@ isr_rx_next_subevent:
 			iso_meta->status = 1U;
 
 			ull_iso_pdu_rx_alloc();
-			iso_rx_put(node_rx->hdr.link, node_rx);
+			iso_rx_put(status_node_rx->hdr.link, status_node_rx);
 
 			bn++;
 		}

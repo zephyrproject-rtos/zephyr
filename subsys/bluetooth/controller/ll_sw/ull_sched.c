@@ -68,7 +68,7 @@ typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id,
 					    uint32_t *ticks_slot);
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
 				    uint32_t *remainder_match,
@@ -413,7 +413,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
 				    uint32_t *remainder_match,
@@ -518,7 +518,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		}
 #endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 
-		hdr = ull_hdr_get_cb(ticker_id, &ticks_slot);
+		hdr = ull_hdr_get_cb_fn(ticker_id, &ticks_slot);
 		if (!hdr) {
 			continue;
 		}
