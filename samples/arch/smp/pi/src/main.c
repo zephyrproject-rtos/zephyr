@@ -27,8 +27,8 @@
 
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 static struct k_thread tthread[THREADS_NUM];
-static char buffer[THREADS_NUM][DIGITS_NUM + 1];
-static atomic_t counter = THREADS_NUM;
+static char th_buffer[THREADS_NUM][DIGITS_NUM + 1];
+static atomic_t th_counter = THREADS_NUM;
 
 void test_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -91,12 +91,12 @@ int main(void)
 	for (i = 0; i < THREADS_NUM; i++) {
 		k_thread_create(&tthread[i], tstack[i], STACK_SIZE,
 			       (k_thread_entry_t)test_thread,
-			       (void *)&counter, (void *)buffer[i], NULL,
+			       (void *)&th_counter, (void *)th_buffer[i], NULL,
 			       K_PRIO_COOP(10), 0, K_NO_WAIT);
 	}
 
 	/* Wait for all workers to finish their calculations */
-	while (counter) {
+	while (th_counter) {
 		k_sleep(K_MSEC(1));
 	}
 
@@ -107,7 +107,7 @@ int main(void)
 	nanoseconds_spent = (uint32_t)k_cyc_to_ns_floor64(cycles_spent);
 
 	for (i = 0; i < THREADS_NUM; i++) {
-		printk("Pi value calculated by thread #%d: %s\n", i, buffer[i]);
+		printk("Pi value calculated by thread #%d: %s\n", i, th_buffer[i]);
 	}
 
 	printk("All %d threads executed by %d cores in %d msec\n", THREADS_NUM,
