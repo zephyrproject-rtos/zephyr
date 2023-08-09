@@ -1,0 +1,213 @@
+# Copyright (c) 2023 Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TMAG5170 high-precision, linear 3D Hall-effect sensor.
+
+compatible: "ti,tmag5170"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection to ALERT sensor pin.
+      It will be used by the driver to notify the application about
+      data ready event. For this property to take effect, the
+      TMAG5170_TRIGGER must be set in project configuration
+  operating-mode:
+    type: int
+    required: true
+    description: |
+      Operating mode of the device.
+      1 - stand-by mode - in this mode the device waits for application to trigger
+      the measurement.
+      2 - active measure mode - continuous sampling on all enabled channels
+      as fast as possible. Recommended for devices that haven't got
+      strict power requirements and need frequent sampling.
+      3 - active trigger mode - in this mode, similar to stand-by mode, the device
+      wait for application to trigger the measurement, but the time needed to finish
+      the conversion is shorter than in stand-by mode, on the cost of increased power
+      consumption.
+      4 - duty-cycled - after each sample the device goes to sleep and then
+      automatically wakes up to take another sample. The sleep time is determined
+      by `sleep-time` property. Recommended for low-power devices that don't need
+      high frequency sampling.
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+  magnetic-channels:
+    type: string
+    default: "XYZ"
+    description: |
+      Enables data acquisition of the magnetic axis channel(s)
+      If axis is enabled more than once, sensor will do pseudo-simultaneous
+      sampling. Refer to datasheet for more information, By default all axes
+      are enabled (XYZ) to allow the user to check if the sensor work as expected.
+      Following options are allowed:
+      None (chip reset value)
+      X
+      Y
+      XY
+      Z
+      ZX
+      YZ
+      XYZ (default)
+      XYX
+      YXY
+      YZY
+      ZYZ
+      ZXZ
+      XZX
+      XYZYX
+      XYZZYX
+    enum:
+      - "None"
+      - "X"
+      - "Y"
+      - "XY"
+      - "Z"
+      - "ZX"
+      - "YZ"
+      - "XYZ"
+      - "XYX"
+      - "YXY"
+      - "YZY"
+      - "ZYZ"
+      - "ZXZ"
+      - "XZX"
+      - "XYZYX"
+      - "XYZZYX"
+  x-range:
+    type: int
+    default: 0
+    description: |
+      The maximum and minimum values that can be measured on X axis.
+      The wider the range, the worse the resolution.
+      0 = ±50mT (TMAG5170A1)/ ±150mT(TMAG5170A2) - (default; chip reset value)
+      1 = ±25mT (TMAG5170A1)/ ±75mT(TMAG5170A2)
+      2 = ±100mT (TMAG5170A1)/ ±300mT(TMAG5170A2)
+    enum:
+      - 0
+      - 1
+      - 2
+  y-range:
+    type: int
+    default: 0
+    description: |
+      The maximum and minimum values that can be measured on Y axis.
+      The wider the range, the worse the resolution.
+      0 = ±50mT (TMAG5170A1)/ ±150mT(TMAG5170A2) - (default; chip reset value)
+      1 = ±25mT (TMAG5170A1)/ ±75mT(TMAG5170A2)
+      2 = ±100mT (TMAG5170A1)/ ±300mT(TMAG5170A2)
+    enum:
+      - 0
+      - 1
+      - 2
+  z-range:
+    type: int
+    default: 0
+    description: |
+      The maximum and minimum values that can be measured on Z axis.
+      The wider the range, the worse the resolution.
+      0 = ±50mT (TMAG5170A1)/ ±150mT(TMAG5170A2) - (default; chip reset value)
+      1 = ±25mT (TMAG5170A1)/ ±75mT(TMAG5170A2)
+      2 = ±100mT (TMAG5170A1)/ ±300mT(TMAG5170A2)
+    enum:
+      - 0
+      - 1
+      - 2
+  oversampling:
+    type: int
+    default: 1
+    description: |
+      Enables additional sampling of the sensor data to reduce the noise
+      effect. If temperature channel is enabled, temperature will be oversampled
+      too, unless `disable-temperature-oversampling` property is present.
+      Following options are allowed:
+      1 (default; chip reset value)
+      2
+      4
+      8
+      16
+      32
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+  enable-temperature-channel:
+    type: boolean
+    description: |
+      Enables temperature measurement
+  magnet-type:
+    type: string
+    default: "None"
+    description: |
+      Enables temperature compensation basing on the type of magnet.
+      Following options are allowed:
+      None (default; chip reset value)
+      NdBFe = 0.12%/deg C
+      SmCo = 0.03%/deg C
+      Ceramic = 0.2%/deg C
+    enum:
+      - "None"
+      - "NdBFe"
+      - "SmCo"
+      - "Ceramic"
+  angle-measurement:
+    type: string
+    default: "None"
+    description: |
+      Enable angle calculation using two axis data:
+      None (default; chip reset value)
+      XY
+      YZ
+      XZ
+    enum:
+      - "None"
+      - "XY"
+      - "YZ"
+      - "XZ"
+  disable-temperature-oversampling:
+    type: boolean
+    description: |
+      If true, temperature is always sampled once per conversion set
+      If false, temperature is oversampled according to `oversampling`
+      property.
+  sleep-time:
+    type: int
+    default: 1
+    description: |
+      The time in miliseconds the sensor will be in sleep during conversions.
+      For this property to take effect sensor must be in `duty-cycled` mode.
+      Note that to calculate total time between conversions, the conversion time
+      itself must be taken into account. The conversion time is dependent
+      on the values of `oversampling`, `magnetic-channels`, `temperature-channel-enabled`
+      and `disable-temperature-oversampling` properties.
+      Following value are allowed:
+      1 (default; chip reset value)
+      5
+      10
+      15
+      20
+      30
+      50
+      100
+      500
+      1000
+    enum:
+      - 1
+      - 5
+      - 10
+      - 15
+      - 20
+      - 30
+      - 50
+      - 100
+      - 500
+      - 1000

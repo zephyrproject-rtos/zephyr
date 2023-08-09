@@ -1,0 +1,69 @@
+# Texas Instruments TMAG5170 high-precision, linear 3D Hall-effect sensor with SPI bus interface
+
+# Copyright (c) 2023 Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMAG5170
+	bool "TMAG5170 SPI Hall-effect sensor driver"
+	default y
+	depends on DT_HAS_TI_TMAG5170_ENABLED
+	select SPI
+	help
+	  Enable driver for TMAG5170 Hall-effect sensor driver
+
+if TMAG5170
+
+choice TMAG5170_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TMAG5170_TRIGGER_NONE
+	bool "No trigger"
+
+config TMAG5170_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select TMAG5170_TRIGGER
+
+config TMAG5170_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select TMAG5170_TRIGGER
+
+config TMAG5170_TRIGGER_DIRECT
+	bool "Process trigger within interrupt context"
+	depends on GPIO
+	select TMAG5170_TRIGGER
+
+endchoice
+
+config TMAG5170_CRC
+	bool "Use CRC error detection"
+	default y
+	select CRC
+	help
+	  Verify CRC of RX data and append CRC to TX data
+
+config TMAG5170_TRIGGER
+	bool
+
+if TMAG5170_TRIGGER
+
+config TMAG5170_THREAD_PRIORITY
+	int "Thread priority"
+	depends on TMAG5170_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config TMAG5170_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on TMAG5170_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # TMAG5170_TRIGGER
+
+endif # TMAG5170
