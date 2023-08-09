@@ -45,6 +45,7 @@ Here are the files in a simple Zephyr application:
    ├── CMakeLists.txt
    ├── app.overlay
    ├── prj.conf
+   ├── VERSION
    └── src
        └── main.c
 
@@ -76,6 +77,12 @@ These contents are:
   Kconfig fragments, and other default files are also searched for.
 
   See :ref:`application-kconfig` below for more information.
+
+* **VERSION**: A text file that contains several version information fields.
+  These fields let you manage the lifecycle of the application and automate
+  providing the application version when signing application images.
+
+  See :ref:`app-version-details` for more information about this file and how to use it.
 
 * **main.c**: A source code file. Applications typically contain source files
   written in C, C++, or assembly language. The Zephyr convention is to place
