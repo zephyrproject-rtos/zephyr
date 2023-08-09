@@ -250,6 +250,7 @@ zephyr_udc0: &usbotg_hs {
     pinctrl-names = "default";
     // cts - pa11, rts - pa12
 	current-speed = <115200>;
+    hw-flow-control;
 	status = "okay";
     quectel_bg95: quectel_bg95 {
         compatible = "quectel,bg95";

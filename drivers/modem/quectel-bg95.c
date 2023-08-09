@@ -101,7 +101,7 @@ static struct modem_pin modem_pins[] = {
 
 #define RSSI_TIMEOUT_SECS 30
 
-#define HTTP_TIMEOUT_SECS 10 /* FIXME Check this timeout */
+#define HTTP_TIMEOUT_SECS 60 /* FIXME Check this timeout */
 
 static struct mdm_ctx q_ctx;
 
@@ -949,6 +949,8 @@ MODEM_CMD_DEFINE(on_cmd_qfread)
         return -EAGAIN;
     }
 
+    LOG_INF("mdata.fops.act_rd_sz: %d", mdata.fops.act_rd_sz);
+
 	ret = net_buf_linearize(mdata.fops.rw_buf, mdata.fops.rd_buf_sz,
 				data->rx_buf, len + i + 2, mdata.fops.act_rd_sz);
     if (ret < MIN(mdata.fops.rd_buf_sz, ret < mdata.fops.act_rd_sz))
@@ -1429,6 +1431,7 @@ static void modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 		/* UNC messages for registration. Enable loc info as well */
 		SETUP_CMD_NOHANDLE("AT+CREG=2"),
+		SETUP_CMD_NOHANDLE("AT+IFC=2,2"),
 		/* HEX receive data mode */
 		//SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
 		/* query modem info */
@@ -2526,13 +2529,15 @@ int quectel_bg95_http_execute(struct device *dev, struct usr_http_cfg *cfg)
 
     /* wait for +QHTTPREAD / +QHTTPREADFILE */
     if (k_sem_take(&mdata.sem_reply, K_SECONDS(cfg->timeout)) != 0) {
-        LOG_ERR("No http read resp in %d ms", cfg->timeout);
+        LOG_ERR("No http read resp in %d s", cfg->timeout);
         ret = -EIO;
         goto ret;
     }
 
     if (mdata.recv_cfg.http_cfg.http_rd_err != 0) {
         LOG_ERR("HTTP read err: %d", mdata.recv_cfg.http_cfg.http_rd_err);
+        ret = -EIO;
+        goto ret;
     }
 
     /* set http config data */
