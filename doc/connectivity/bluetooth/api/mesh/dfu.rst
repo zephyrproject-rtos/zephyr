@@ -221,6 +221,8 @@ This section lists the types common to the Device Firmware Update mesh models.
 
 .. doxygengroup:: bt_mesh_dfu
    :project: Zephyr
+   :members:
 
 .. doxygengroup:: bt_mesh_dfu_metadata
    :project: Zephyr
+   :members:
