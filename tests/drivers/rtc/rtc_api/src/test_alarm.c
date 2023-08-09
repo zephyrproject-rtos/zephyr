@@ -96,7 +96,7 @@ ZTEST(rtc_api, test_alarm)
 	time_set.tm_isdst = -1;
 	time_set.tm_nsec = 0;
 
-	for (uint8_t i = 0; i < 2; i++) {
+	for (uint8_t k = 0; k < 2; k++) {
 		/* Set RTC time */
 		ret = rtc_set_time(rtc, &time_set);
 

@@ -137,10 +137,10 @@ ZTEST(rtc_api, test_alarm_callback)
 		k_sleep(K_SECONDS(RTC_TEST_ALARM_TEST_CALLED_DELAY));
 
 		/* Validate alarm callback called */
-		for (uint16_t i = 0; i < alarms_count; i++) {
+		for (uint16_t j = 0; j < alarms_count; j++) {
 			callback_called_status =
-				(i % 2) ? atomic_test_bit(&callback_called_mask_odd, i)
-					: atomic_test_bit(&callback_called_mask_even, i);
+				(j % 2) ? atomic_test_bit(&callback_called_mask_odd, j)
+					: atomic_test_bit(&callback_called_mask_even, j);
 
 			zassert_equal(callback_called_status, true,
 				      "Alarm callback should have been called");
