@@ -207,7 +207,6 @@ strtod64
 strtod128
 strtof
 strtok
-strtok_r
 strtol
 strtold
 strtoul
