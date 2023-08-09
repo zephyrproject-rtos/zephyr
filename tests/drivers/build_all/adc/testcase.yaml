@@ -9,6 +9,7 @@ tests:
     platform_allow: native_posix
     tags:
       - adc_mcp302x
+      - adc_mcp3425
       - adc_lmp90xxx
       - adc_ads1x1x
       - adc_ads1119

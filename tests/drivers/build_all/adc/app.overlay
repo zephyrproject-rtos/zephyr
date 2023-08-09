@@ -87,6 +87,12 @@
 				reg = <0x7>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_mcp3425: mcp3425@8 {
+				compatible = "microchip,mcp3425";
+				reg = <0x8>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
