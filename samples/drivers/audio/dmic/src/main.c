@@ -52,7 +52,6 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 	for (int i = 0; i < block_count; ++i) {
 		void *buffer;
 		uint32_t size;
-		int ret;
 
 		ret = dmic_read(dmic_dev, 0, &buffer, &size, READ_TIMEOUT);
 		if (ret < 0) {
