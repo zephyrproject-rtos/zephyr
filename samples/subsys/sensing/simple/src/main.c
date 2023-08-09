@@ -24,7 +24,7 @@ static void acc_data_event_callback(sensing_sensor_handle_t handle, const void *
 		sample->readings[0].z);
 }
 
-void main(void)
+int main(void)
 {
 	const struct sensing_callback_list base_acc_cb_list = {
 		.on_data_event = &acc_data_event_callback,
@@ -40,7 +40,7 @@ void main(void)
 	ret = sensing_get_sensors(&num, &info);
 	if (ret) {
 		LOG_ERR("sensing_get_sensors error");
-		return;
+		return 0;
 	}
 
 	for (i = 0; i < num; ++i) {
@@ -76,4 +76,5 @@ void main(void)
 	if (ret) {
 		LOG_ERR("sensing_close_sensor:%p error:%d", lid_acc, ret);
 	}
+	return 0;
 }
