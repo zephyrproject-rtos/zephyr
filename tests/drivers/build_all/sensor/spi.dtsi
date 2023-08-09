@@ -287,3 +287,11 @@ test_spi_bmi08x_gyro: bmi08x@24 {
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
 };
+
+test_spi_tmag5170: tmag5170@25 {
+	compatible = "ti,tmag5170";
+	reg = <0x25>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	operating-mode = <1>;
+};
