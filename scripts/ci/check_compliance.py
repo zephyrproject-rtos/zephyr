@@ -265,7 +265,7 @@ class KconfigCheck(ComplianceTest):
     for example using undefined Kconfig variables.
     """
     name = "Kconfig"
-    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
 
     def run(self, full=True, no_modules=False):
@@ -717,7 +717,7 @@ class KconfigBasicCheck(KconfigCheck):
     references inside the Kconfig tree.
     """
     name = "KconfigBasic"
-    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
 
     def run(self):
@@ -730,7 +730,7 @@ class KconfigBasicNoModulesCheck(KconfigCheck):
     defined only in a module.
     """
     name = "KconfigBasicNoModules"
-    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
     path_hint = "<zephyr-base>"
     def run(self):
         super().run(full=False, no_modules=True)
@@ -775,7 +775,7 @@ class Nits(ComplianceTest):
         if re.match(r"\s*#\s*(K|k)config[\w.-]*\s*-", contents):
             self.failure(f"""
 Please use this format for the header in '{fname}' (see
-https://docs.zephyrproject.org/latest/guides/kconfig/index.html#header-comments-and-other-nits):
+https://docs.zephyrproject.org/latest/build/kconfig/tips.html#header-comments-and-other-nits):
 
     # <Overview of symbols defined in the file, preferably in plain English>
     (Blank line)
