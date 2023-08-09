@@ -1,0 +1,5 @@
+tests:
+  ipc.icmsg_pbuf:
+    integration_platforms:
+      - native_posix
+    timeout: 120
