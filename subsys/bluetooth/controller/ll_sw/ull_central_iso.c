@@ -136,7 +136,9 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 	ll_iso_setup.stream[cis_idx].c_max_sdu = c_sdu;
 	ll_iso_setup.stream[cis_idx].p_max_sdu = p_sdu;
 	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
+	ll_iso_setup.stream[cis_idx].lll.tx.phy_flags = PHY_FLAGS_S8;
 	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
+	ll_iso_setup.stream[cis_idx].lll.rx.phy_flags = PHY_FLAGS_S8;
 	ll_iso_setup.stream[cis_idx].central.c_rtn = c_rtn;
 	ll_iso_setup.stream[cis_idx].central.p_rtn = p_rtn;
 	ll_iso_setup.cis_idx++;
@@ -635,7 +637,9 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 	ll_iso_setup.stream[cis_idx].lll.tx.max_pdu = c_bn ? c_pdu : 0U;
 	ll_iso_setup.stream[cis_idx].lll.rx.max_pdu = p_bn ? p_pdu : 0U;
 	ll_iso_setup.stream[cis_idx].lll.tx.phy = c_phy;
+	ll_iso_setup.stream[cis_idx].lll.tx.phy_flags = PHY_FLAGS_S8;
 	ll_iso_setup.stream[cis_idx].lll.rx.phy = p_phy;
+	ll_iso_setup.stream[cis_idx].lll.rx.phy_flags = PHY_FLAGS_S8;
 	ll_iso_setup.stream[cis_idx].lll.tx.bn = c_bn;
 	ll_iso_setup.stream[cis_idx].lll.rx.bn = p_bn;
 	ll_iso_setup.cis_idx++;

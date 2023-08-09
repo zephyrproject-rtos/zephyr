@@ -244,7 +244,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* !CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	phy = cis_lll->rx.phy;
-	radio_phy_set(phy, cis_lll->rx.phy_flags);
+	radio_phy_set(phy, PHY_FLAGS_S8);
 	radio_aa_set(cis_lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(conn_lll->crc_init));
 	lll_chan_set(data_chan_use);
@@ -738,6 +738,9 @@ static void isr_rx(void *param)
 	pdu_tx->rfu0 = 0U;
 	pdu_tx->rfu1 = 0U;
 
+	/* PHY */
+	radio_phy_set(cis_lll->tx.phy, cis_lll->tx.phy_flags);
+
 	/* Encryption */
 	if (false) {
 
@@ -879,6 +882,9 @@ static void isr_tx(void *param)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	/* PHY */
+	radio_phy_set(cis_lll->rx.phy, PHY_FLAGS_S8);
 
 	/* Encryption */
 	if (false) {
@@ -1093,6 +1099,9 @@ static void isr_prepare_subevent_common(void *param)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	/* PHY */
+	radio_phy_set(cis_lll->rx.phy, PHY_FLAGS_S8);
 
 	/* Encryption */
 	if (false) {

@@ -488,14 +488,17 @@ static void isr_tx(void *param)
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
 
+	/* Acquire rx node for reception */
+	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+	LL_ASSERT(node_rx);
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Acquire rx node for reception */
-	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-	LL_ASSERT(node_rx);
+	/* PHY */
+	radio_phy_set(cis_lll->rx.phy, PHY_FLAGS_S8);
 
 	/* Encryption */
 	if (false) {
@@ -1086,6 +1089,9 @@ static void isr_prepare_subevent(void *param)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	/* PHY */
+	radio_phy_set(cis_lll->tx.phy, cis_lll->tx.phy_flags);
 
 	/* Encryption */
 	if (false) {
