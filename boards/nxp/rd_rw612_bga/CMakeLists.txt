@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+zephyr_library()
+zephyr_library_sources(init.c)
+
 if(CONFIG_NXP_RW6XX_BOOT_HEADER)
   if(NOT DEFINED CONFIG_BOARD_RD_RW612_BGA)
     message(WARNING "It appears you are using the board definition for "
