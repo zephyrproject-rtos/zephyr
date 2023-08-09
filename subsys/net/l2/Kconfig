@@ -108,7 +108,7 @@ config NET_L2_WIFI_MGMT
 	select NET_MGMT_EVENT_INFO
 	select NET_L2_WIFI_UTILS
 	help
-	  Add support for Wi-Fi Management interface.
+	  Enable support for Wi-Fi Management interface.
 
 if NET_L2_WIFI_MGMT
 module = NET_L2_WIFI_MGMT
