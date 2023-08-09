@@ -36,7 +36,7 @@ static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 static uint32_t def_val[4];
 static volatile uint8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
-static struct gpio_callback callback[4];
+static struct gpio_callback gpio_callbacks[4];
 
 #define MOUSE_BTN_REPORT_POS	0
 #define MOUSE_X_REPORT_POS	1
@@ -185,13 +185,13 @@ int main(void)
 
 	gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT);
 
-	if (callbacks_configure(&sw0_gpio, &left_button, &callback[0], &def_val[0])) {
+	if (callbacks_configure(&sw0_gpio, &left_button, &gpio_callbacks[0], &def_val[0])) {
 		LOG_ERR("Failed configuring left button callback.");
 		return 0;
 	}
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-	if (callbacks_configure(&sw1_gpio, &right_button, &callback[1], &def_val[1])) {
+	if (callbacks_configure(&sw1_gpio, &right_button, &gpio_callbacks[1], &def_val[1])) {
 		LOG_ERR("Failed configuring right button callback.");
 		return 0;
 	}
