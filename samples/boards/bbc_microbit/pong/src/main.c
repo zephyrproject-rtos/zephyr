@@ -64,7 +64,7 @@ enum pong_state {
 	CONNECTED,
 };
 
-static enum pong_state state = INIT;
+static enum pong_state pg_state = INIT;
 
 struct pong_choice {
 	int val;
@@ -202,9 +202,9 @@ static void mode_selected(int val)
 {
 	struct mb_display *disp = mb_display_get();
 
-	state = val;
+	pg_state = val;
 
-	switch (state) {
+	switch (pg_state) {
 	case SINGLE:
 		game_init(true);
 		k_sem_give(&disp_update);
@@ -216,7 +216,7 @@ static void mode_selected(int val)
 				 SCROLL_SPEED, "Connecting...");
 		break;
 	default:
-		printk("Unknown state %d\n", state);
+		printk("Unknown state %d\n", pg_state);
 		return;
 	}
 }
@@ -318,13 +318,13 @@ static void game_refresh(struct k_work *work)
 		k_thread_foreach(game_stack_dump, NULL);
 	}
 
-	if (state == INIT) {
+	if (pg_state == INIT) {
 		pong_select(&mode_selection);
 		return;
 	}
 
 	if (ended) {
-		game_init(state == SINGLE || remote_lost);
+		game_init(pg_state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
 		return;
 	}
@@ -334,7 +334,7 @@ static void game_refresh(struct k_work *work)
 
 	/* Ball went over to the other side */
 	if (ball_vel.y < 0 && ball_pos.y < BALL_POS_Y_MIN) {
-		if (state == SINGLE) {
+		if (pg_state == SINGLE) {
 			ball_pos.y = -ball_pos.y;
 			ball_vel.y = -ball_vel.y;
 			sound_set(SOUND_WALL);
@@ -362,7 +362,7 @@ static void game_refresh(struct k_work *work)
 		if (ball_pos.x < REAL_TO_VIRT(paddle_x) ||
 		    ball_pos.x >= REAL_TO_VIRT(paddle_x + 2)) {
 			game_ended(false);
-			if (state == CONNECTED) {
+			if (pg_state == CONNECTED) {
 				ble_send_lost();
 			}
 			return;
@@ -421,14 +421,14 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			printk("WARNING: Data-race (work and event)\n");
 		}
 
-		game_init(state == SINGLE || remote_lost);
+		game_init(pg_state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
 		return;
 	}
 
-	if (state == MULTI) {
+	if (pg_state == MULTI) {
 		ble_cancel_connect();
-		state = INIT;
+		pg_state = INIT;
 		pong_select(&mode_selection);
 		return;
 	}
@@ -474,14 +474,14 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 
 void pong_conn_ready(bool initiator)
 {
-	state = CONNECTED;
+	pg_state = CONNECTED;
 	game_init(initiator);
 	k_sem_give(&disp_update);
 }
 
 void pong_remote_disconnected(void)
 {
-	state = INIT;
+	pg_state = INIT;
 	k_work_reschedule(&refresh, K_SECONDS(1));
 }
 
