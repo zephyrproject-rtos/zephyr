@@ -1,0 +1,34 @@
+# Copyright (c) 2023 Kindhome Sp. z o.o <kindhome.io>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Allegro Microsystems a4988 Microstepping Driver
+
+compatible: "allegromicro,a4988"
+
+include: base.yaml
+
+properties:
+  ms1-gpios:
+    type: phandle-array
+    required: true
+  ms2-gpios:
+    type: phandle-array
+    required: true
+  ms3-gpios:
+    type: phandle-array
+    required: true
+  direction-gpios:
+    type: phandle-array
+    required: true
+  enable-gpios:
+    type: phandle-array
+    required: true
+  reset-gpios:
+    type: phandle-array
+    required: true
+  sleep-gpios:
+    type: phandle-array
+    required: true
+  step-gpios:
+    type: phandle-array
+    required: true

@@ -1,0 +1,11 @@
+# A4988
+
+# Copyright (c) 2023 Kindhome Sp z o.o
+# SPDX-License-Identifier: Apache-2.0
+
+config A4988
+	bool "A4988"
+	default y
+	depends on DT_HAS_ALLEGROMICRO_A4988_ENABLED
+	help
+	  Enable driver for A4988.
