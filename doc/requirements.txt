@@ -1,6 +1,6 @@
 # DOC: used to generate docs
 
-docleaf==0.8.1
+breathe>=4.34
 sphinx~=6.2
 sphinx_rtd_theme~=1.2
 sphinx-tabs
