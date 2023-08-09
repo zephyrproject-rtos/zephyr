@@ -71,7 +71,7 @@ unsigned int get_parent_offset(unsigned int parent_irq,
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
+void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
 		   const void *param)
 {
 	unsigned int table_idx;
