@@ -61,24 +61,24 @@ static struct virtio_vring_info rvrings[2] = {
 static struct virtio_device vdev;
 static struct rpmsg_virtio_device rvdev;
 static struct metal_io_region *io;
-static struct virtqueue *vq[2];
+static struct virtqueue *vqueue[2];
 
-static unsigned char ipc_virtio_get_status(struct virtio_device *vdev)
+static unsigned char ipc_virtio_get_status(struct virtio_device *dev)
 {
 	return VIRTIO_CONFIG_STATUS_DRIVER_OK;
 }
 
-static void ipc_virtio_set_status(struct virtio_device *vdev, unsigned char status)
+static void ipc_virtio_set_status(struct virtio_device *dev, unsigned char status)
 {
 	sys_write8(status, VDEV_STATUS_ADDR);
 }
 
-static uint32_t ipc_virtio_get_features(struct virtio_device *vdev)
+static uint32_t ipc_virtio_get_features(struct virtio_device *dev)
 {
 	return 1 << VIRTIO_RPMSG_F_NS;
 }
 
-static void ipc_virtio_set_features(struct virtio_device *vdev, uint32_t features)
+static void ipc_virtio_set_features(struct virtio_device *dev, uint32_t features)
 {
 }
 
@@ -150,7 +150,7 @@ static unsigned int receive_message(void)
 		int status = k_sem_take(&data_sem, K_FOREVER);
 
 		if (status == 0) {
-			virtqueue_notification(vq[0]);
+			virtqueue_notification(vqueue[0]);
 		}
 	}
 	return received_data;
@@ -214,14 +214,14 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup vdev */
-	vq[0] = virtqueue_allocate(VRING_SIZE);
-	if (vq[0] == NULL) {
-		printk("virtqueue_allocate failed to alloc vq[0]\n");
+	vqueue[0] = virtqueue_allocate(VRING_SIZE);
+	if (vqueue[0] == NULL) {
+		printk("virtqueue_allocate failed to alloc vqueue[0]\n");
 		return;
 	}
-	vq[1] = virtqueue_allocate(VRING_SIZE);
-	if (vq[1] == NULL) {
-		printk("virtqueue_allocate failed to alloc vq[1]\n");
+	vqueue[1] = virtqueue_allocate(VRING_SIZE);
+	if (vqueue[1] == NULL) {
+		printk("virtqueue_allocate failed to alloc vqueue[1]\n");
 		return;
 	}
 
@@ -232,13 +232,13 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	rvrings[0].info.vaddr = (void *)VRING_TX_ADDRESS;
 	rvrings[0].info.num_descs = VRING_SIZE;
 	rvrings[0].info.align = VRING_ALIGNMENT;
-	rvrings[0].vq = vq[0];
+	rvrings[0].vq = vqueue[0];
 
 	rvrings[1].io = io;
 	rvrings[1].info.vaddr = (void *)VRING_RX_ADDRESS;
 	rvrings[1].info.num_descs = VRING_SIZE;
 	rvrings[1].info.align = VRING_ALIGNMENT;
-	rvrings[1].vq = vq[1];
+	rvrings[1].vq = vqueue[1];
 
 	vdev.vrings_info = &rvrings[0];
 
@@ -254,7 +254,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	 * from NS setup and than we need to process it
 	 */
 	k_sem_take(&data_sem, K_FOREVER);
-	virtqueue_notification(vq[0]);
+	virtqueue_notification(vqueue[0]);
 
 	/* Wait til nameservice ep is setup */
 	k_sem_take(&ept_sem, K_FOREVER);
