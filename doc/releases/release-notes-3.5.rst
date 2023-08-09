@@ -351,6 +351,14 @@ Libraries / Subsystems
     zephyr settings from a remote device, see :ref:`mcumgr_smp_group_3` for
     details.
 
+  * Added :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY`
+    and :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY`
+    that allow to control whether MCUmgr client will be allowed to confirm
+    non-active images.
+
+  * Added :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING` that allows
+    to erase slots pending for next boot, that are not revert slots.
+
 * File systems
 
   * Added support for ext2 file system.
