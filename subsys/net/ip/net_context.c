@@ -2170,8 +2170,6 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		int ret;
-
 		/* Make sure we have the lock, then the
 		 * net_context_packet_received() callback will release the
 		 * semaphore when data has been received.
@@ -2180,14 +2178,11 @@ int net_context_recv(struct net_context *context,
 
 		k_mutex_unlock(&context->lock);
 
-		ret = k_sem_take(&context->recv_data_wait, timeout);
+		if (k_sem_take(&context->recv_data_wait, timeout) == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 
 		k_mutex_lock(&context->lock, K_FOREVER);
-
-		if (ret == -EAGAIN) {
-			ret = -ETIMEDOUT;
-			goto unlock;
-		}
 	}
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
