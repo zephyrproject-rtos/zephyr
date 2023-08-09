@@ -1034,15 +1034,14 @@ Firmware Update Client model
 The Firmware Update Client model can be added to the mesh shell by enabling configuration options :kconfig:option:`CONFIG_BT_MESH_BLOB_CLI` and :kconfig:option:`CONFIG_BT_MESH_DFU_CLI`. The Firmware Update Client demonstrates the firmware update Distributor role by transferring a dummy firmware update to a set of Target nodes.
 
 
-``mesh models dfu slot add <Size> [<FwID> [<Metadata> [<URI>]]]``
+``mesh models dfu slot add <Size> <FwID> [<Metadata>]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Add a virtual DFU image slot that can be transferred as a DFU image. The image slot will be assigned an image slot index, which is printed as a response, and can be used to reference the slot in other commands. To update the image slot, remove it using the ``mesh models dfu slot del`` shell command and then add it again.
 
 	* ``Size``: DFU image slot size in bytes.
-	* ``FwID``: Optional firmware ID, formatted as a hexstring.
+	* ``FwID``: Firmware ID, formatted as a hexstring.
 	* ``Metadata``: Optional firmware metadata, formatted as a hexstring.
-	* ``URI``: Optional URI for the firmware.
 
 
 ``mesh models dfu slot del <SlotIdx>``
