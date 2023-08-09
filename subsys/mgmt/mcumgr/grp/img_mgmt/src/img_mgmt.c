@@ -322,24 +322,6 @@ static void img_mgmt_reset_upload(void)
 	img_mgmt_release_lock();
 }
 
-static int
-img_mgmt_get_other_slot(void)
-{
-	int slot = img_mgmt_active_slot(img_mgmt_active_image());
-
-	switch (slot) {
-	case 1:
-		return 0;
-#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 2
-	case 2:
-		return 3;
-	case 3:
-		return 2;
-#endif
-	}
-	return 1;
-}
-
 /**
  * Command handler: image erase
  */
@@ -351,7 +333,7 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok;
-	uint32_t slot = img_mgmt_get_other_slot();
+	uint32_t slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(img_mgmt_active_image()));
 	size_t decoded = 0;
 
 	struct zcbor_map_decode_key_val image_erase_decode[] = {

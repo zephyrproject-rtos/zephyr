@@ -82,6 +82,15 @@ config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
 	  broken and may not boot in other slot; instead application should
 	  have means to test and confirm the image.
 
+if !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
+	bool "Allow to erase pending slot"
+	help
+	  Allows erasing secondary slot which is marked for test or confirmed; this allows
+	  erasing slots that have been set for next boot but the device has not
+	  reset yet, so has not yet been swapped.
+endif
+
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"
 	help
