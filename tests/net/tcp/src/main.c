@@ -794,7 +794,7 @@ ZTEST(net_tcp, test_server_ipv4)
 	/* Trigger the peer to send DATA  */
 	k_work_reschedule(&test_server, K_NO_WAIT);
 
-	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
+	ret = net_context_recv(accepted_ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to recv data from peer");
 	}
@@ -863,7 +863,7 @@ ZTEST(net_tcp, test_server_with_options_ipv4)
 	/* Trigger the peer to send DATA  */
 	k_work_reschedule(&test_server, K_NO_WAIT);
 
-	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
+	ret = net_context_recv(accepted_ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to recv data from peer");
 	}
@@ -932,7 +932,7 @@ ZTEST(net_tcp, test_server_ipv6)
 	/* Trigger the peer to send DATA  */
 	k_work_reschedule(&test_server, K_NO_WAIT);
 
-	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
+	ret = net_context_recv(accepted_ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to recv data from peer");
 	}
