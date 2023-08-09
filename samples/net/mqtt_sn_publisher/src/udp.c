@@ -22,7 +22,7 @@ static void process_thread(void);
 K_THREAD_DEFINE(udp_thread_id, STACK_SIZE, process_thread, NULL, NULL, NULL, THREAD_PRIORITY,
 		IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0, -1);
 
-static APP_BMEM struct mqtt_sn_client client;
+static APP_BMEM struct mqtt_sn_client mqtt_client;
 static APP_BMEM struct mqtt_sn_transport_udp tp;
 static APP_DMEM struct mqtt_sn_data client_id = MQTT_SN_DATA_STRING_LITERAL("ZEPHYR");
 
@@ -70,14 +70,14 @@ static int do_work(void)
 	const int64_t now = k_uptime_get();
 	int err;
 
-	err = mqtt_sn_input(&client);
+	err = mqtt_sn_input(&mqtt_client);
 	if (err < 0) {
 		LOG_ERR("failed: input: %d", err);
 		return err;
 	}
 
 	if (mqtt_sn_connected && !subscribed) {
-		err = mqtt_sn_subscribe(&client, MQTT_SN_QOS_0, &topic_s);
+		err = mqtt_sn_subscribe(&mqtt_client, MQTT_SN_QOS_0, &topic_s);
 		if (err < 0) {
 			return err;
 		}
@@ -97,7 +97,7 @@ static int do_work(void)
 
 		pubdata.size = MIN(sizeof(out), err);
 
-		err = mqtt_sn_publish(&client, MQTT_SN_QOS_0, &topic_p, false, &pubdata);
+		err = mqtt_sn_publish(&mqtt_client, MQTT_SN_QOS_0, &topic_p, false, &pubdata);
 		if (err < 0) {
 			LOG_ERR("failed: publish: %d", err);
 			return err;
@@ -126,11 +126,11 @@ static void process_thread(void)
 	err = mqtt_sn_transport_udp_init(&tp, (struct sockaddr *)&gateway, sizeof((gateway)));
 	__ASSERT(err == 0, "mqtt_sn_transport_udp_init() failed %d", err);
 
-	err = mqtt_sn_client_init(&client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf),
+	err = mqtt_sn_client_init(&mqtt_client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf),
 				  rx_buf, sizeof(rx_buf));
 	__ASSERT(err == 0, "mqtt_sn_client_init() failed %d", err);
 
-	err = mqtt_sn_connect(&client, false, true);
+	err = mqtt_sn_connect(&mqtt_client, false, true);
 	__ASSERT(err == 0, "mqtt_sn_connect() failed %d", err);
 
 	while (err == 0) {

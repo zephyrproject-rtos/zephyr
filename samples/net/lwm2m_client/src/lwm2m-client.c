@@ -40,7 +40,7 @@ static uint8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
 static int mem_free = 15;
 static int mem_total = 25;
 
-static struct lwm2m_ctx client;
+static struct lwm2m_ctx client_ctx;
 
 static const char *endpoint =
 	(sizeof(CONFIG_LWM2M_APP_ID) > 1 ? CONFIG_LWM2M_APP_ID : CONFIG_BOARD);
@@ -278,13 +278,13 @@ int main(void)
 		return 0;
 	}
 
-	(void)memset(&client, 0x0, sizeof(client));
+	(void)memset(&client_ctx, 0x0, sizeof(client_ctx));
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	client.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
+	client_ctx.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
 #endif
 
-	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, endpoint, flags, rd_client_event, observe_cb);
+	/* client_ctx.sec_obj_inst is 0 as a starting point */
+	lwm2m_rd_client_start(&client_ctx, endpoint, flags, rd_client_event, observe_cb);
 
 	k_sem_take(&quit_lock, K_FOREVER);
 	return 0;

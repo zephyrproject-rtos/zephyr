@@ -64,7 +64,7 @@ static sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
 
-static uint8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
+static uint8_t devbound_topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
 static struct mqtt_topic subs_topic;
 static struct mqtt_subscription_list subs_list;
 
@@ -274,27 +274,27 @@ static void subscribe(struct mqtt_client *client)
 	int err;
 
 	/* subscribe */
-	subs_topic.topic.utf8 = topic;
-	subs_topic.topic.size = strlen(topic);
+	subs_topic.topic.utf8 = devbound_topic;
+	subs_topic.topic.size = strlen(devbound_topic);
 	subs_list.list = &subs_topic;
 	subs_list.list_count = 1U;
 	subs_list.message_id = 1U;
 
 	err = mqtt_subscribe(client, &subs_list);
 	if (err) {
-		LOG_ERR("Failed on topic %s", topic);
+		LOG_ERR("Failed on topic %s", devbound_topic);
 	}
 }
 
 static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 {
 	char payload[] = "{id=123}";
-	char topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
-	uint8_t len = strlen(topic);
+	char evt_topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
+	uint8_t len = strlen(evt_topic);
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (uint8_t *)topic;
+	param.message.topic.topic.utf8 = (uint8_t *)evt_topic;
 	param.message.topic.topic.size = len;
 	param.message.payload.data = payload;
 	param.message.payload.len = strlen(payload);
