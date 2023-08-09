@@ -330,7 +330,7 @@ static int run_test(const struct device *const lp50xx_dev,
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *lp50xx_dev;
 	bool found = false;
@@ -434,4 +434,5 @@ void main(void)
 	if (!found) {
 		LOG_ERR("No LP50XX LED controller found");
 	}
+	return 0;
 }
