@@ -205,6 +205,7 @@ evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
+facebook	Facebook
 fairphone	Fairphone B.V.
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
@@ -374,7 +375,6 @@ menlo	Menlo Systems GmbH
 mentor	Mentor Graphics
 meraki	Cisco Meraki, LLC
 merrii	Merrii Technology Co., Ltd.
-meta	Meta Platforms, Inc.
 micrel	Micrel Inc.
 microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
