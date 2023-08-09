@@ -615,21 +615,11 @@ static struct net_if *ppp_net_if(void)
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
 	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	const struct ppp_api *api;
 	struct net_if *iface = gsm->iface;
-	int ret;
 
 	if (ppp_dev == NULL) {
 		LOG_ERR("Cannot find PPP %s!", CONFIG_NET_PPP_DRV_NAME);
 		return;
-	}
-
-	api = (const struct ppp_api *)ppp_dev->api;
-
-	ret = api->start(ppp_dev);
-
-	if (ret < 0) {
-		LOG_ERR("ppp start returned %d", ret);
 	}
 
 	net_if_up(iface);
@@ -1171,8 +1161,6 @@ unlock:
 
 void gsm_ppp_stop(const struct device *dev)
 {
-	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	const struct ppp_api *api = (const struct ppp_api *)ppp_dev->api;
 	struct gsm_modem *gsm = dev->data;
 	struct net_if *iface = gsm->iface;
 	struct k_work_sync work_sync;
@@ -1186,8 +1174,6 @@ void gsm_ppp_stop(const struct device *dev)
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
 	}
-
-	api->stop(ppp_dev);
 
 	gsm_ppp_lock(gsm);
 
