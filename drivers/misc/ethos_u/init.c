@@ -102,6 +102,14 @@ struct ethosu_data {
 	struct ethosu_driver drv;
 };
 
+void ethosu_zephyr_irq_handler(const struct device *dev)
+{
+	struct ethosu_data *data = dev->data;
+	struct ethosu_driver *drv = &data->drv;
+
+	ethosu_irq_handler(drv);
+}
+
 static int ethosu_zephyr_init(const struct device *dev)
 {
 	const struct ethosu_dts_info *config = dev->config;
@@ -131,17 +139,12 @@ static int ethosu_zephyr_init(const struct device *dev)
 #define ETHOSU_DEVICE_INIT(n)									   \
 	static struct ethosu_data ethosu_data_##n;						   \
 												   \
-	static void ethosu_zephyr_irq_handler_##n(void)						   \
-	{											   \
-		struct ethosu_driver *drv = &ethosu_data_##n.drv;				   \
-		ethosu_irq_handler(drv);							   \
-	}											   \
-												   \
 	static void ethosu_zephyr_irq_config_##n(void)						   \
 	{											   \
-		IRQ_DIRECT_CONNECT(DT_INST_IRQN(n),						   \
+		IRQ_CONNECT(DT_INST_IRQN(n),							   \
 				   DT_INST_IRQ(n, priority),					   \
-				   ethosu_zephyr_irq_handler_##n, 0);				   \
+				   ethosu_zephyr_irq_handler,					   \
+				   DEVICE_DT_INST_GET(n), 0);					   \
 		irq_enable(DT_INST_IRQN(n));							   \
 	}											   \
 												   \
