@@ -1515,11 +1515,11 @@ static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 
 #if defined(CONFIG_BT_BROADCASTER)
 static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
-		       const atomic_t *adv_opt)
+		       const atomic_t *adv_options)
 {
-	const bool discoverable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_DISCOVERABLE);
-	const bool appearance = atomic_test_bit(adv_opt, SHELL_ADV_OPT_APPEARANCE);
-	const bool adv_ext = atomic_test_bit(adv_opt, SHELL_ADV_OPT_EXT_ADV);
+	const bool discoverable = atomic_test_bit(adv_options, SHELL_ADV_OPT_DISCOVERABLE);
+	const bool appearance = atomic_test_bit(adv_options, SHELL_ADV_OPT_APPEARANCE);
+	const bool adv_ext = atomic_test_bit(adv_options, SHELL_ADV_OPT_EXT_ADV);
 	static uint8_t ad_flags;
 	size_t ad_len = 0;
 
@@ -1548,11 +1548,11 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	}
 
 	if (appearance) {
-		const uint16_t appearance = bt_get_appearance();
-		static uint8_t appearance_data[sizeof(appearance)];
+		const uint16_t appearance2 = bt_get_appearance();
+		static uint8_t appearance_data[sizeof(appearance2)];
 
 		__ASSERT(data_array_size > ad_len, "No space for appearance");
-		sys_put_le16(appearance, appearance_data);
+		sys_put_le16(appearance2, appearance_data);
 		data_array[ad_len].type = BT_DATA_GAP_APPEARANCE;
 		data_array[ad_len].data_len = sizeof(appearance_data);
 		data_array[ad_len].data = appearance_data;
@@ -1573,7 +1573,7 @@ static ssize_t ad_init(struct bt_data *data_array, const size_t data_array_size,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO) && IS_ENABLED(CONFIG_BT_EXT_ADV) && adv_ext) {
-		const bool connectable = atomic_test_bit(adv_opt, SHELL_ADV_OPT_CONNECTABLE);
+		const bool connectable = atomic_test_bit(adv_options, SHELL_ADV_OPT_CONNECTABLE);
 		ssize_t audio_ad_len;
 
 		audio_ad_len = audio_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
@@ -2332,30 +2332,30 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 
 	create_params.sid = strtol(argv[3], NULL, 16);
 
-	for (int i = 4; i < argc; i++) {
-		if (!strcmp(argv[i], "aoa")) {
+	for (int j = 4; j < argc; j++) {
+		if (!strcmp(argv[j], "aoa")) {
 			options |= BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA;
-		} else if (!strcmp(argv[i], "aod_1us")) {
+		} else if (!strcmp(argv[j], "aod_1us")) {
 			options |= BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US;
-		} else if (!strcmp(argv[i], "aod_2us")) {
+		} else if (!strcmp(argv[j], "aod_2us")) {
 			options |= BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US;
-		} else if (!strcmp(argv[i], "only_cte")) {
+		} else if (!strcmp(argv[j], "only_cte")) {
 			options |=
 				BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
-		} else if (!strcmp(argv[i], "timeout")) {
-			if (++i == argc) {
+		} else if (!strcmp(argv[j], "timeout")) {
+			if (++j == argc) {
 				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			create_params.timeout = strtoul(argv[i], NULL, 16);
-		} else if (!strcmp(argv[i], "skip")) {
-			if (++i == argc) {
+			create_params.timeout = strtoul(argv[j], NULL, 16);
+		} else if (!strcmp(argv[j], "skip")) {
+			if (++j == argc) {
 				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			create_params.skip = strtoul(argv[i], NULL, 16);
+			create_params.skip = strtoul(argv[j], NULL, 16);
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2448,34 +2448,34 @@ static int cmd_past_subscribe(const struct shell *sh, size_t argc,
 	param.timeout = 1000; /* 10 seconds */
 	param.skip = 10;
 
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "aoa")) {
+	for (int j = 1; j < argc; j++) {
+		if (!strcmp(argv[j], "aoa")) {
 			param.options |=
 				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOA;
-		} else if (!strcmp(argv[i], "aod_1us")) {
+		} else if (!strcmp(argv[j], "aod_1us")) {
 			param.options |=
 				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_1US;
-		} else if (!strcmp(argv[i], "aod_2us")) {
+		} else if (!strcmp(argv[j], "aod_2us")) {
 			param.options |=
 				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_2US;
-		} else if (!strcmp(argv[i], "only_cte")) {
+		} else if (!strcmp(argv[j], "only_cte")) {
 			param.options |=
 				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE;
-		} else if (!strcmp(argv[i], "timeout")) {
-			if (++i == argc) {
+		} else if (!strcmp(argv[j], "timeout")) {
+			if (++j == argc) {
 				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			param.timeout = strtoul(argv[i], NULL, 16);
-		} else if (!strcmp(argv[i], "skip")) {
-			if (++i == argc) {
+			param.timeout = strtoul(argv[j], NULL, 16);
+		} else if (!strcmp(argv[j], "skip")) {
+			if (++j == argc) {
 				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			param.skip = strtoul(argv[i], NULL, 16);
-		} else if (!strcmp(argv[i], "conn")) {
+			param.skip = strtoul(argv[j], NULL, 16);
+		} else if (!strcmp(argv[j], "conn")) {
 			if (!default_conn) {
 				shell_print(sh, "Not connected");
 				return -EINVAL;

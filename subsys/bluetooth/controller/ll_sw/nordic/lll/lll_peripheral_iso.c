@@ -257,12 +257,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	} else if (conn_lll->enc_rx) {
-		uint64_t payload_count;
+		uint64_t payload_cnt;
 		uint8_t pkt_flags;
 
-		payload_count = (cis_lll->event_count * cis_lll->rx.bn) +
-				(cis_lll->rx.bn_curr - 1U);
-		cis_lll->rx.ccm.counter = payload_count;
+		payload_cnt = (cis_lll->event_count * cis_lll->rx.bn) +
+			      (cis_lll->rx.bn_curr - 1U);
+		cis_lll->rx.ccm.counter = payload_cnt;
 
 		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
 						 phy,

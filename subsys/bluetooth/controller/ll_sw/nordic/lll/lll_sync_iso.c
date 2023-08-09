@@ -529,14 +529,14 @@ static void isr_rx(void *param)
 
 	/* Save the AA captured for the first anchor point sync */
 	if (!radio_tmr_aa_restore()) {
-		const struct lll_sync_iso_stream *stream;
+		const struct lll_sync_iso_stream *sync_stream;
 		uint32_t se_offset_us;
 		uint8_t se;
 
 		crc_ok_anchor = crc_ok;
 
-		stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
-		se = ((lll->bis_curr - stream->bis_index) *
+		sync_stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+		se = ((lll->bis_curr - sync_stream->bis_index) *
 		      ((lll->bn * lll->irc) + lll->ptc)) +
 		     ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
 		     lll->ptc_curr + lll->ctrl;
@@ -553,7 +553,7 @@ static void isr_rx(void *param)
 
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
-		struct lll_sync_iso_stream *stream;
+		struct lll_sync_iso_stream *sync_stream;
 		uint16_t stream_handle;
 		struct pdu_bis *pdu;
 
@@ -600,10 +600,10 @@ static void isr_rx(void *param)
 		}
 
 		stream_handle = lll->stream_handle[lll->stream_curr];
-		stream = ull_sync_iso_lll_stream_get(stream_handle);
+		sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
 
 		/* store the received PDU */
-		if ((lll->bis_curr == stream->bis_index) && pdu->len &&
+		if ((lll->bis_curr == sync_stream->bis_index) && pdu->len &&
 		    !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
@@ -723,18 +723,18 @@ isr_rx_find_subevent:
 	/* Next BIS */
 	if (lll->bis_curr < lll->num_bis) {
 		const uint8_t stream_curr = lll->stream_curr + 1U;
-		struct lll_sync_iso_stream *stream;
+		struct lll_sync_iso_stream *sync_stream;
 		uint16_t stream_handle;
 
 		/* Next selected stream */
 		if (stream_curr < lll->stream_count) {
 			lll->stream_curr = stream_curr;
 			stream_handle = lll->stream_handle[lll->stream_curr];
-			stream = ull_sync_iso_lll_stream_get(stream_handle);
-			if (stream->bis_index <= lll->num_bis) {
+			sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
+			if (sync_stream->bis_index <= lll->num_bis) {
 				uint8_t bis_idx_new;
 
-				lll->bis_curr = stream->bis_index;
+				lll->bis_curr = sync_stream->bis_index;
 				lll->ptc_curr = 0U;
 				lll->irc_curr = 1U;
 				lll->bn_curr = 1U;

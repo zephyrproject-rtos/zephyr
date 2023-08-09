@@ -1237,7 +1237,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	    ticks_slot_plus || ticks_slot_minus ||
 	    lazy || force) {
 		uint8_t ticker_id = TICKER_ID_CONN_BASE + lll->handle;
-		struct ll_conn *conn = lll->hdr.parent;
+		struct ll_conn *conn_ll = lll->hdr.parent;
 		uint32_t ticker_status;
 
 		/* Call to ticker_update can fail under the race
@@ -1253,10 +1253,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 					      ticks_slot_plus, ticks_slot_minus,
 					      lazy, force,
 					      ticker_update_conn_op_cb,
-					      conn);
+					      conn_ll);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY) ||
-			  ((void *)conn == ull_disable_mark_get()));
+			  ((void *)conn_ll == ull_disable_mark_get()));
 	}
 }
 

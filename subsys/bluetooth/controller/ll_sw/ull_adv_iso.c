@@ -1383,20 +1383,20 @@ static void tx_lll_flush(void *param)
 		struct lll_adv_iso_stream *stream;
 		struct node_tx_iso *tx;
 		uint16_t stream_handle;
-		memq_link_t *link;
+		memq_link_t *link2;
 		uint16_t handle;
 
 		stream_handle = lll->stream_handle[num_bis];
 		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
 		stream = ull_adv_iso_stream_get(stream_handle);
 
-		link = memq_dequeue(stream->memq_tx.tail, &stream->memq_tx.head,
-				    (void **)&tx);
-		while (link) {
-			tx->next = link;
+		link2 = memq_dequeue(stream->memq_tx.tail, &stream->memq_tx.head,
+				     (void **)&tx);
+		while (link2) {
+			tx->next = link2;
 			ull_iso_lll_ack_enqueue(handle, tx);
 
-			link = memq_dequeue(stream->memq_tx.tail,
+			link2 = memq_dequeue(stream->memq_tx.tail,
 					    &stream->memq_tx.head,
 					    (void **)&tx);
 		}

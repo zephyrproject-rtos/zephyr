@@ -341,11 +341,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
-			struct ll_sync_set *sync;
+			struct ll_sync_set *sync_set;
 
-			sync = HDR_LLL2ULL(sync_lll);
-			ftr->aux_data_len = sync->data_len + data_len;
-			sync->data_len = 0U;
+			sync_set = HDR_LLL2ULL(sync_lll);
+			ftr->aux_data_len = sync_set->data_len + data_len;
+			sync_set->data_len = 0U;
 		} else if (aux) {
 			aux->data_len += data_len;
 			ftr->aux_data_len = aux->data_len;
@@ -469,11 +469,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
 		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
-			struct ll_sync_set *sync;
+			struct ll_sync_set *sync_set;
 
-			sync = HDR_LLL2ULL(sync_lll);
-			ftr->aux_data_len = sync->data_len + data_len;
-			sync->data_len = 0U;
+			sync_set = HDR_LLL2ULL(sync_lll);
+			ftr->aux_data_len = sync_set->data_len + data_len;
+			sync_set->data_len = 0U;
 		} else if (aux) {
 			aux->data_len += data_len;
 			ftr->aux_data_len = aux->data_len;
@@ -509,11 +509,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 			if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
 			    sync_lll) {
-				struct ll_sync_set *sync;
+				struct ll_sync_set *sync_set;
 
-				sync = HDR_LLL2ULL(sync_lll);
-				ftr->aux_data_len = sync->data_len + data_len;
-				sync->data_len = 0U;
+				sync_set = HDR_LLL2ULL(sync_lll);
+				ftr->aux_data_len = sync_set->data_len + data_len;
+				sync_set->data_len = 0U;
 
 			}
 
@@ -547,11 +547,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 * enqueue rx in aux context and will flush them after scan is complete.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
-		struct ll_sync_set *sync;
+		struct ll_sync_set *sync_set;
 
-		sync = HDR_LLL2ULL(sync_lll);
-		sync->data_len += data_len;
-		ftr->aux_data_len = sync->data_len;
+		sync_set = HDR_LLL2ULL(sync_lll);
+		sync_set->data_len += data_len;
+		ftr->aux_data_len = sync_set->data_len;
 	} else {
 		if (aux->rx_last) {
 			aux->rx_last->rx_ftr.extra = rx;
@@ -607,14 +607,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		 */
 		lll->lll_aux = NULL;
 	} else {
-		struct ll_sync_set *sync;
+		struct ll_sync_set *sync_set;
 
 		LL_ASSERT(sync_lll &&
 			  (!sync_lll->lll_aux || sync_lll->lll_aux == lll_aux));
 
 		/* Do not ULL schedule if sync terminate requested */
-		sync = HDR_LLL2ULL(sync_lll);
-		if (unlikely(sync->is_stop)) {
+		sync_set = HDR_LLL2ULL(sync_lll);
+		if (unlikely(sync_set->is_stop)) {
 			goto ull_scan_aux_rx_flush;
 		}
 
@@ -758,14 +758,14 @@ ull_scan_aux_rx_flush:
 			aux->rx_last->rx_ftr.extra = rx;
 			aux->rx_last = rx;
 		} else {
-			const struct ll_sync_set *sync;
+			const struct ll_sync_set *sync_set;
 
 			LL_ASSERT(sync_lll);
 
 			ll_rx_put_sched(link, rx);
 
-			sync = HDR_LLL2ULL(sync_lll);
-			if (unlikely(sync->is_stop && sync_lll->lll_aux)) {
+			sync_set = HDR_LLL2ULL(sync_lll);
+			if (unlikely(sync_set->is_stop && sync_lll->lll_aux)) {
 				return;
 			}
 		}
@@ -853,12 +853,12 @@ void *ull_scan_aux_lll_parent_get(struct lll_scan_aux *lll,
 
 	if (is_lll_scan) {
 		struct ll_scan_set *scan;
-		struct lll_scan *lll;
+		struct lll_scan *lllscan;
 
-		lll = aux->parent;
-		LL_ASSERT(lll);
+		lllscan = aux->parent;
+		LL_ASSERT(lllscan);
 
-		scan = HDR_LLL2ULL(lll);
+		scan = HDR_LLL2ULL(lllscan);
 		*is_lll_scan = !!ull_scan_is_valid_get(scan);
 	}
 
