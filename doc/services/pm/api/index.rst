@@ -28,6 +28,8 @@ Device PM APIs
 
 .. doxygengroup:: subsys_pm_device
 
+.. _device_runtime_apis:
+
 Device Runtime PM APIs
 **********************
 
