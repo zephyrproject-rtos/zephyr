@@ -1960,6 +1960,38 @@ static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr)
 		(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0);
 }
 
+static int32_t tcp_compute_new_length(struct tcp *conn, struct tcphdr *hdr, size_t len,
+				      bool fin_received)
+{
+	int32_t new_len = 0;
+
+	if (len > 0) {
+		/* Cases:
+		 * - Data already received earlier: new_len <= 0
+		 * - Partially new data new_len > 0
+		 * - Out of order data new_len > 0,
+		 *   should be checked by sequence number
+		 */
+		new_len = (int32_t)(len) - net_tcp_seq_cmp(conn->ack, th_seq(hdr));
+		if (fin_received) {
+			/* Add with one additional byte as the FIN flag has to be subtracted */
+			new_len++;
+		}
+	}
+	return new_len;
+}
+
+static enum tcp_state tcp_enter_time_wait(struct tcp *conn)
+{
+	tcp_send_timer_cancel(conn);
+	/* Entering TIME-WAIT, so cancel the timer and start the TIME-WAIT timer */
+	k_work_cancel_delayable(&conn->fin_timer);
+	k_work_reschedule_for_queue(
+		&tcp_work_q, &conn->timewait_timer,
+		K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+	return TCP_TIME_WAIT;
+}
+
 static bool check_seq_list(struct net_buf *buf)
 {
 	struct net_buf *last = NULL;
@@ -2639,124 +2671,221 @@ next_state:
 	case TCP_CLOSED:
 		break;
 	case TCP_FIN_WAIT_1:
+		/*
+		 * FIN1:
+		 * Acknowledge path and sequence path are independent, treat them that way
+		 * The table of incoming messages and their destination states:
+		 * -   & -   -> TCP_FIN_WAIT_1
+		 * FIN & -   -> TCP_CLOSING
+		 * -   & ACK -> TCP_FIN_WAIT_2
+		 * FIN & ACK -> TCP_TIME_WAIT
+		 */
 		if (th) {
-			/* Acknowledge but drop any new data */
-			if (len > 0) {
-				int32_t new_len = len - net_tcp_seq_cmp(conn->ack, th_seq(th));
-				/* Cases:
-				 * - Data already received earlier: len > 0 , new_len <= 0
-				 * - Partially new data len > 0, new_len > 0
-				 * - Out of order data len > 0, new_len > 0, ignore the data in
-				 *   between
+			bool fin_acked = false;
+
+			if (tcp_compute_new_length(conn, th, len, false) > 0) {
+				/* We do not implement half closed sockets, therefore
+				 * cannot accept new data in after sending our FIN, as
+				 * we are in sequence can send a reset now.
 				 */
-				if (new_len > 0) {
-					conn_ack(conn, + new_len);
-				}
+				net_stats_update_tcp_seg_drop(conn->iface);
+
+				next = tcp_enter_time_wait(conn);
+
+				tcp_out(conn, RST);
+				break;
+			}
+			if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+				NET_DBG("conn %p: FIN acknowledged, going to FIN_WAIT_2 "
+					"state seq %u, ack %u"
+					, conn, conn->seq, conn->ack);
+				tcp_send_timer_cancel(conn);
+				fin_acked = true;
+				next = TCP_FIN_WAIT_2;
+				verdict = NET_OK;
 			}
 
 			/*
-			 * Only if our FIN flag has been acknowledged and all the data has been
-			 * received, it can go to the TIME_WAIT state
+			 * There can also be data in the message, so compute with the length
+			 * of the packet to check the sequence number of the FIN flag with the ACK
 			 */
-			if (FL(&fl, ==, (FIN | ACK),
-			    (th_ack(th) == conn->seq) && (th_seq(th) == conn->ack))) {
-				tcp_send_timer_cancel(conn);
+			if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
 				conn_ack(conn, + 1);
-				tcp_out(conn, ACK);
-				next = TCP_TIME_WAIT;
-				NET_DBG("FIN acknowledged, going to TIME_WAIT_STATE");
-				verdict = NET_OK;
-			} else if (th &&
-				   (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
-				    FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack))) {
-				tcp_send_timer_cancel(conn);
-				conn_ack(conn, + 1);
-				NET_DBG("FIN not yet acknowleged, going to CLOSING state");
-				if (th_ack(th) != conn->seq) {
-					/* Not acknowledged the FIN flag yet, so resend */
-					tcp_out_ext(conn, (FIN | ACK), NULL, conn->seq - 1);
-				} else {
-					tcp_out(conn, ACK);
-				}
-				next = TCP_CLOSING;
-				verdict = NET_OK;
-			} else if (th && FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
-				tcp_send_timer_cancel(conn);
-				next = TCP_FIN_WAIT_2;
-				verdict = NET_OK;
-				NET_DBG("FIN acknowledged, going to FIN_WAIT_2 state seq %u, ack %u"
-					, conn->seq, conn->ack);
 
-				/* Acknowledge any received data */
-				if (len > 0) {
+				/* State path is dependent on if the acknowledge is in */
+				if (fin_acked) {
+					/* Already acknowledged, we can go further */
+					NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
+
+					next = tcp_enter_time_wait(conn);
+
 					tcp_out(conn, ACK);
-				}
-			} else if (th) {
-				NET_DBG("Staying in FIN_WAIT_1 flags 0x%x state seq %u, ack %u",
-					fl, conn->seq, conn->ack);
-				if (len > 0) {
+				} else {
+					/* Fin not yet acknowledged, waiting for the ack in CLOSING
+					 */
+					NET_DBG("conn %p: FIN received, going to CLOSING as no "
+						"ACK has been received", conn);
 					tcp_send_timer_cancel(conn);
-					/* Send out a duplicate ACK, with the pending FIN flag */
-					tcp_out(conn, FIN | ACK);
+					tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
+					next = TCP_CLOSING;
 				}
 				verdict = NET_OK;
+			} else {
+				if (len > 0) {
+					if (fin_acked) {
+						/* Send out a duplicate ACK */
+						tcp_send_timer_cancel(conn);
+						tcp_out(conn, ACK);
+					} else {
+						/* In FIN1 state
+						 * Send out a duplicate ACK, with the pending FIN
+						 * flag
+						 */
+						tcp_send_timer_cancel(conn);
+						tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
+					}
+					verdict = NET_OK;
+				}
 			}
 		}
 		break;
 	case TCP_FIN_WAIT_2:
-		/* Acknowledge but drop any data, but subtract any duplicate data */
+		/*
+		 * FIN2:
+		 * Only FIN is relevant in this state, as our FIN was already acknowledged
+		 * -   -> TCP_FIN_WAIT_2
+		 * FIN -> TCP_TIME_WAIT
+		 */
 		if (th) {
-			if (len > 0) {
-				int32_t new_len = len - net_tcp_seq_cmp(conn->ack, th_seq(th));
-				/* Cases:
-				 * - Data already received earlier: len > 0 , new_len <= 0
-				 * - Partially new data len > 0, new_len > 0
-				 * - Out of order data len > 0, new_len > 0, ignore the data in
-				 *   between
+			/* No tcp_send_timer_cancel call required here, as is has been called
+			 * before entering this state, only allowed through the
+			 * tcp_enter_time_wait function.
+			 */
+
+			/* Compute if there is new data after our close */
+			if (tcp_compute_new_length(conn, th, len, false) > 0) {
+				/* We do not implement half closed sockets, therefore
+				 * cannot accept new data in after sending our FIN, as
+				 * we are in sequence can send a reset now.
 				 */
-				if (new_len > 0) {
-					conn_ack(conn, + new_len);
-				}
+				net_stats_update_tcp_seg_drop(conn->iface);
+
+				next = tcp_enter_time_wait(conn);
+
+				tcp_out(conn, RST);
+				break;
 			}
-
-			if (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
-				   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack) ||
-				   FL(&fl, ==, FIN | PSH | ACK,
-				      th_seq(th) == conn->ack)) {
-				/* Received FIN on FIN_WAIT_2, so cancel the timer */
-				k_work_cancel_delayable(&conn->fin_timer);
-
+			/*
+			 * There can also be data in the message, so compute with the length
+			 * of the packet to check the sequence number of the FIN flag with the ACK
+			 */
+			if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
 				conn_ack(conn, + 1);
+				NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
+
+				next = tcp_enter_time_wait(conn);
+
+				verdict = NET_OK;
 				tcp_out(conn, ACK);
-				next = TCP_TIME_WAIT;
-				verdict = NET_OK;
-			} else if (len > 0) {
-				/* Send out a duplicate ACK */
-				tcp_out(conn,  ACK);
-				verdict = NET_OK;
+			} else {
+				if (len > 0) {
+					/* Send out a duplicate ACK */
+					tcp_out(conn, ACK);
+					verdict = NET_OK;
+				}
 			}
 		}
 		break;
 	case TCP_CLOSING:
-		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
-			tcp_send_timer_cancel(conn);
-			next = TCP_TIME_WAIT;
-			verdict = NET_OK;
+		if (th) {
+			bool fin_acked = false;
+
+			/*
+			 * Closing:
+			 * Our FIN has to be acknowledged
+			 * -   -> TCP_CLOSING
+			 * ACK -> TCP_TIME_WAIT
+			 */
+			int32_t new_len = tcp_compute_new_length(conn, th, len, true);
+
+			if (new_len > 0) {
+				/* This should not happen here, as no data can be send after
+				 * the FIN flag has been send.
+				 */
+				NET_ERR("conn: %p, new bytes %u during CLOSING state "
+					"sending reset", conn, new_len);
+				net_stats_update_tcp_seg_drop(conn->iface);
+
+				next = tcp_enter_time_wait(conn);
+
+				tcp_out(conn, RST);
+				break;
+			}
+
+			if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+				NET_DBG("conn %p: FIN acknowledged, going to TIME WAIT "
+					"state seq %u, ack %u"
+					, conn, conn->seq, conn->ack);
+
+				next = tcp_enter_time_wait(conn);
+				fin_acked = true;
+
+				verdict = NET_OK;
+			}
+
+			/*
+			 * There can also be data in the message, so compute with the length
+			 * of the packet to check with the ack
+			 * Since the conn->ack was already incremented in TCP_FIN_WAIT_1
+			 * add 1 in the comparison sequence
+			 */
+			if ((FL(&fl, &, FIN,
+				net_tcp_seq_cmp(th_seq(th) + len + 1, conn->ack) == 0)) ||
+			    (len > 0)) {
+				tcp_send_timer_cancel(conn);
+				if (fin_acked) {
+					/* Send out a duplicate ACK */
+					tcp_out(conn, ACK);
+				} else {
+					/* Send out a duplicate ACK, with the pending FIN
+					 * flag
+					 */
+					tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
+				}
+				verdict = NET_OK;
+			}
 		}
 		break;
 	case TCP_TIME_WAIT:
-		/* Acknowledge any FIN attempts, in case retransmission took
-		 * place.
-		 */
-		if (th && (FL(&fl, ==, (FIN | ACK), th_seq(th) + 1 == conn->ack) ||
-			   FL(&fl, ==, FIN, th_seq(th) + 1 == conn->ack))) {
-			tcp_out(conn, ACK);
-			verdict = NET_OK;
-		}
+		if (th) {
+			int32_t new_len = tcp_compute_new_length(conn, th, len, true);
 
-		k_work_reschedule_for_queue(
-			&tcp_work_q, &conn->timewait_timer,
-			K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+			/* No tcp_send_timer_cancel call required here, as is has been called
+			 * before entering this state, only allowed through the
+			 * tcp_enter_time_wait function.
+			 */
+
+			if (new_len > 0) {
+				/* This should not happen here, as no data can be send after
+				 * the FIN flag has been send.
+				 */
+				NET_ERR("conn: %p, new bytes %u during TIME-WAIT state "
+					"sending reset", conn, new_len);
+				net_stats_update_tcp_seg_drop(conn->iface);
+
+				tcp_out(conn, RST);
+			} else {
+				/* Acknowledge any FIN attempts, in case retransmission took
+				 * place.
+				 */
+				if ((FL(&fl, &, FIN,
+					net_tcp_seq_cmp(th_seq(th) + 1, conn->ack) == 0)) ||
+				    (len > 0)) {
+					tcp_out(conn, ACK);
+					verdict = NET_OK;
+				}
+			}
+		}
 		break;
 	default:
 		NET_ASSERT(false, "%s is unimplemented",
