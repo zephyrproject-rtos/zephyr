@@ -299,7 +299,7 @@
 /drivers/flash/                           @nashif @de-nordic
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b91*                      @andy-liu-telink
-/drivers/flash/*cadence*                  @ngboonkhai
+/drivers/flash/*cadence_nor*              @ngboonkhai @skhadgi
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
@@ -744,6 +744,7 @@
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/drivers/smbus/                   @finikorg
 /samples/drivers/soc_flash_nand/          @nbalabak
+/samples/drivers/soc_flash_qspi/          @skhadgi
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
 /samples/modules/canopennode/             @henrikbrixandersen
 /samples/net/                             @rlubos @tbursztyka
