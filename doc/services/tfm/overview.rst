@@ -196,13 +196,12 @@ within a default Zephyr west workspace.)
 Secure Services
 ---------------
 
-As of TF-M 1.4.1, the following secure services are generally available (although vendor support may vary):
+As of TF-M 1.8.0, the following secure services are generally available (although vendor support may vary):
 
-* Audit Logging (Audit)
-* Crypto (Crypto)
+* Crypto
 * Firmware Update (FWU)
-* Initial Attestation (IAS)
-* Platform (Platform)
+* Initial Attestation
+* Platform
 * Secure Storage, which has two parts:
 
   * Internal Trusted Storage (ITS)
