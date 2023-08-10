@@ -4,11 +4,13 @@
 board_set_flasher_ifnset(trace32)
 board_set_debugger_ifnset(trace32)
 
-board_runner_args(trace32
-  "--startup-args"
-    "elfFile=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
-    "thumb=no"
-)
+board_runner_args(trace32 "--startup-args" "elfFile=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}")
+
+if(CONFIG_ISA_THUMB2)
+board_runner_args(trace32 "thumb=yes")
+else()
+board_runner_args(trace32 "thumb=no")
+endif()
 
 if(CONFIG_BOARD_S32Z270DC2_RTU0_R52)
 board_runner_args(trace32 "rtu=0")
