@@ -6,3 +6,14 @@ tests:
     platform_allow: intel_adsp_cavs25
     integration_platforms:
       - intel_adsp_cavs25
+  kernel.multiprocessing.smp_boot_delay.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - smp
+      - libc
+    platform_allow: intel_adsp_cavs25
+    integration_platforms:
+      - intel_adsp_cavs25
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
