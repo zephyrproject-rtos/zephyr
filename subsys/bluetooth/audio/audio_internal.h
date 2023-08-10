@@ -9,6 +9,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+#define BT_AUDIO_NOTIFY_RETRY_DELAY_US ((CONFIG_BT_AUDIO_NOTIFY_RETRY_DELAY) * 1250U)
+
 /** @brief LE Audio Attribute User Data. */
 struct bt_audio_attr_user_data {
 	/** Attribute read callback */
