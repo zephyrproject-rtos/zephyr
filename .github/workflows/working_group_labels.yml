@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Automate adding github issues with with specific labels to the corresponding
+# GitHub project's "To do" list.
+
+name: Zephyr working group label handlers
+
+on:
+  issues:
+    types: [opened, transferred, labeled]
+
+jobs:
+  add-to-process-project:
+    name: Add issue to Process Project
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/zephyrproject-rtos/zephyr/projects/33
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: Process
+          label-operator: OR
