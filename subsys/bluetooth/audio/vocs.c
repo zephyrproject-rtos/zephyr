@@ -25,6 +25,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_vocs);
 
+#define NOTIFY_RETRY_DELAY_MS(_retry_count)  (100 * (_retry_count))
+#define NOTIFY_RETRY_COUNT_MAX 3
+
 #define VALID_VOCS_OPCODE(opcode)	((opcode) == BT_VOCS_OPCODE_SET_OFFSET)
 
 #define BT_AUDIO_LOCATION_RFU (~BT_AUDIO_LOCATION_ANY)
@@ -50,6 +53,32 @@ static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 	LOG_DBG("value 0x%04x", value);
 }
 
+static void location_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vocs *inst = CONTAINER_OF(d_work, struct bt_vocs, srv.location_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION, inst->srv.service_p->attrs,
+				  &inst->srv.location, sizeof(inst->srv.location));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.location_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.location_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify location err %d. Will retry %d/%d in %dms",
+					err, inst->srv.location_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify location err %d", err);
+	}
+}
 #endif /* CONFIG_BT_VOCS */
 
 static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -75,11 +104,15 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	}
 
 	if (new_location != inst->srv.location) {
+		int err;
+
 		inst->srv.location = new_location;
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION,
-					  inst->srv.service_p->attrs,
-					  &inst->srv.location,
-					  sizeof(inst->srv.location));
+		inst->srv.location_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.location_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule location notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->location) {
 			inst->srv.cb->location(inst, 0, inst->srv.location);
@@ -98,6 +131,33 @@ static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *at
 	LOG_DBG("0x%08x", inst->srv.location);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.location,
 				 sizeof(inst->srv.location));
+}
+
+static void state_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vocs *inst = CONTAINER_OF(d_work, struct bt_vocs, srv.state_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE, inst->srv.service_p->attrs,
+				  &inst->srv.state, sizeof(inst->srv.state));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.state_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.state_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify state err %d. Will retry %d/%d in %dms",
+					err, inst->srv.state_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify state err %d", err);
+	}
 }
 #endif /* CONFIG_BT_VOCS */
 
@@ -150,12 +210,18 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 	}
 
 	if (notify) {
+		int err;
+
 		inst->srv.state.change_counter++;
 		LOG_DBG("New state: offset %d, counter %u", inst->srv.state.offset,
 			inst->srv.state.change_counter);
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE,
-					  inst->srv.service_p->attrs,
-					  &inst->srv.state, sizeof(inst->srv.state));
+
+		inst->srv.state_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.state_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule state notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->state) {
 			inst->srv.cb->state(inst, 0, inst->srv.state.offset);
@@ -170,6 +236,33 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 static void output_desc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("value 0x%04x", value);
+}
+
+static void output_desc_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vocs *inst = CONTAINER_OF(d_work, struct bt_vocs, srv.output_desc_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_DESCRIPTION, inst->srv.service_p->attrs,
+				  &inst->srv.output_desc, strlen(inst->srv.output_desc));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.output_desc_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.output_desc_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify output desc err %d. Will retry %d/%d in %dms",
+					err, inst->srv.output_desc_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify output desc err %d", err);
+	}
 }
 #endif /* CONFIG_BT_VOCS */
 
@@ -190,13 +283,17 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 	}
 
 	if (len != strlen(inst->srv.output_desc) || memcmp(buf, inst->srv.output_desc, len)) {
+		int err;
+
 		memcpy(inst->srv.output_desc, buf, len);
 		inst->srv.output_desc[len] = '\0';
 
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_DESCRIPTION,
-					  inst->srv.service_p->attrs,
-					  &inst->srv.output_desc,
-					  strlen(inst->srv.output_desc));
+		inst->srv.output_desc_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.output_desc_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule output desc notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->description) {
 			inst->srv.cb->description(inst, 0, inst->srv.output_desc);
@@ -373,6 +470,10 @@ int bt_vocs_register(struct bt_vocs *vocs,
 		LOG_DBG("Could not register VOCS service");
 		return err;
 	}
+
+	k_work_init_delayable(&vocs->srv.state_notify_work, state_notify_work_handler);
+	k_work_init_delayable(&vocs->srv.location_notify_work, location_notify_work_handler);
+	k_work_init_delayable(&vocs->srv.output_desc_notify_work, output_desc_notify_work_handler);
 
 	vocs->srv.initialized = true;
 	return 0;

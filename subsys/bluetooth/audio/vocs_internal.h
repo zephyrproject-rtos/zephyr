@@ -65,6 +65,13 @@ struct bt_vocs_server {
 	struct bt_vocs_cb *cb;
 
 	struct bt_gatt_service *service_p;
+
+	struct k_work_delayable state_notify_work;
+	uint8_t state_notify_retry_count;
+	struct k_work_delayable location_notify_work;
+	uint8_t location_notify_retry_count;
+	struct k_work_delayable output_desc_notify_work;
+	uint8_t output_desc_notify_retry_count;
 };
 
 struct bt_vocs {
