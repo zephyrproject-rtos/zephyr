@@ -707,6 +707,7 @@
 /include/zephyr/net/                             @rlubos @tbursztyka
 /include/zephyr/net/buf.h                        @jhedberg @tbursztyka @rlubos
 /include/zephyr/net/coap*.h                      @rlubos
+/include/zephyr/net/conn_mgr*.h			 @rlubos @glarsennordic
 /include/zephyr/net/lwm2m*.h                     @rlubos
 /include/zephyr/net/mqtt.h                       @rlubos
 /include/zephyr/net/mqtt_sn.h                    @rlubos @BeckmaR
@@ -868,6 +869,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no
 /subsys/net/buf.c                         @jhedberg @tbursztyka @rlubos
+/subsys/net/conn_mgr/			  @rlubos @glarsennordic
 /subsys/net/ip/                           @rlubos @tbursztyka
 /subsys/net/lib/                          @rlubos @tbursztyka
 /subsys/net/lib/dns/                      @rlubos @tbursztyka @cfriedt
@@ -924,6 +926,8 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/lib/cmsis_dsp/                     @stephanosio
 /tests/net/                               @rlubos @tbursztyka
 /tests/net/buf/                           @jhedberg @tbursztyka
+/tests/net/conn_mgr/			  @rlubos @glarsennordic
+/tests/net/conn_mgr_conn/		  @rlubos @glarsennordic
 /tests/net/lib/                           @rlubos @tbursztyka
 /tests/net/lib/http_header_fields/        @rlubos @tbursztyka
 /tests/net/lib/mqtt_packet/               @rlubos
