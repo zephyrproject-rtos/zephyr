@@ -1,7 +1,11 @@
-# NXP i.MX8 SoC family CMake file
+# NXP i.MX8/RT SoC family CMake file
 #
 # Copyright (c) 2021 NXP
 # SPDX-License-Identifier: Apache-2.0
+
+if(CONFIG_SOC_NXP_RT595)
+  zephyr_compile_definitions(CPU_MIMXRT595SFFOC_dsp)
+endif()
 
 add_subdirectory(common)
 
