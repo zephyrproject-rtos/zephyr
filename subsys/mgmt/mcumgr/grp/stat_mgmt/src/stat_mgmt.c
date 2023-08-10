@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(mcumgr_stat_grp, CONFIG_MCUMGR_GRP_STAT_LOG_LEVEL);
 
-static struct mgmt_handler stat_mgmt_handlers[];
+static const struct mgmt_handler stat_mgmt_handlers[];
 
 typedef int stat_mgmt_foreach_entry_fn(zcbor_state_t *zse, struct stat_mgmt_entry *entry);
 
@@ -257,7 +257,7 @@ static int stat_mgmt_translate_error_code(uint16_t err)
 }
 #endif
 
-static struct mgmt_handler stat_mgmt_handlers[] = {
+static const struct mgmt_handler stat_mgmt_handlers[] = {
 	[STAT_MGMT_ID_SHOW] = { stat_mgmt_show, NULL },
 	[STAT_MGMT_ID_LIST] = { stat_mgmt_list, NULL },
 };
