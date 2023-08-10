@@ -738,7 +738,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	/* If status is not ISOAL_PDU_STATUS_VALID, length and LLID cannot be trusted */
 	llid = pdu->ll_id;
 	pdu_err = (pdu_meta->meta->status != ISOAL_PDU_STATUS_VALID);
-	length = pdu->len;
+	length = pdu_err ? 0U : pdu->len;
 	/* A zero length PDU with LLID 0b01 (PDU_BIS_LLID_START_CONTINUE) would be a padding PDU.
 	 * However if there are errors in the PDU, it could be an incorrectly receive non-padding
 	 * PDU. Therefore only consider a PDU with errors as padding if received after the end
