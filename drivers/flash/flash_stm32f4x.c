@@ -292,8 +292,7 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 	switch (current_level) {
 	case FLASH_STM32_RDP2:
 		if (!enable || !permanent) {
-			__ASSERT(false, "RDP level 2 is permanent and can't be "
-					"changed!");
+			LOG_ERR("RDP level 2 is permanent and can't be changed!");
 			return -ENOTSUP;
 		}
 		break;
@@ -304,9 +303,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
 				target_level = FLASH_STM32_RDP2;
 #else
-				__ASSERT(false,
-					 "Permanent readout protection (RDP "
-					 "level 0 -> 2) not allowed");
+				LOG_ERR("Permanent readout protection (RDP "
+					"level 0 -> 2) not allowed");
 				return -ENOTSUP;
 #endif
 			}
@@ -317,8 +315,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
 			target_level = FLASH_STM32_RDP2;
 #else
-			__ASSERT(false, "Permanent readout protection (RDP "
-					"level 1 -> 2) not allowed");
+			LOG_ERR("Permanent readout protection (RDP "
+				"level 1 -> 2) not allowed");
 			return -ENOTSUP;
 #endif
 		}
@@ -326,8 +324,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW)
 			target_level = FLASH_STM32_RDP0;
 #else
-			__ASSERT(false, "Disabling readout protection (RDP "
-					"level 1 -> 0) not allowed");
+			LOG_ERR("Disabling readout protection (RDP "
+				"level 1 -> 0) not allowed");
 			return -EACCES;
 #endif
 		}
