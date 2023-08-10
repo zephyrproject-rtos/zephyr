@@ -15,3 +15,24 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
+  arch.interrupt.minimallibc:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
+    # nios2 excluded, see #22956
+    arch_exclude: nios2
+    platform_exclude: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+      - libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  arch.interrupt.qemu_cortex_m0.minimallibc:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
+    platform_allow: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+      - libc
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=y
+      - CONFIG_MINIMAL_LIBC=y
