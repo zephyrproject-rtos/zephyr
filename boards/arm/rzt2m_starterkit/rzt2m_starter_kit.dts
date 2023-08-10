@@ -13,5 +13,15 @@
 
 	chosen {
 		zephyr,sram = &cpu0_atcm;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
 };
