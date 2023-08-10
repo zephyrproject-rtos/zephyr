@@ -320,7 +320,7 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 				rd_idx, idx, wr_idx);
 			return -ETIMEDOUT;
 		}
-		k_usleep(1);
+		k_busy_wait(1);
 	}
 
 	return 0;
