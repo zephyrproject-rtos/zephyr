@@ -1303,6 +1303,19 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8
 	return ret;
 }
 
+int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number)
+{
+	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*block_number = GET_NUM(ret);
+	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
+	return ret;
+}
+
 int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value, uint16_t len)
 {
 	uint16_t offset = cpkt->hdr_len;
