@@ -230,7 +230,7 @@ function(test_merge)
     IMAGE no_sysbuild    ""
     # This image's LOCAL and GLOBAL are identical; duplicates are removed.
     IMAGE zephyr_get     "sysbuild.main"
-    IMAGE zephyr_get_2nd "sysbuild.2nd" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main"
     IMAGE zephyr_get_3rd "sysbuild.main"
   )
 
@@ -243,7 +243,7 @@ function(test_merge)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "cmake cache;environment;local"
     IMAGE zephyr_get     "cmake cache;sysbuild.main;environment;local" # BUG
-    IMAGE zephyr_get_2nd "cmake cache;sysbuild.2nd;environment;local" # BUG
+    IMAGE zephyr_get_2nd "cmake cache;sysbuild.2nd;sysbuild.main;environment;local" # BUG
     IMAGE zephyr_get_3rd "cmake cache;sysbuild.main;environment;local" # BUG
   )
 
@@ -264,7 +264,7 @@ function(test_merge)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "environment"
     IMAGE zephyr_get     "sysbuild.main;environment"
-    IMAGE zephyr_get_2nd "sysbuild.2nd;environment" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;environment"
     IMAGE zephyr_get_3rd "sysbuild.main;environment"
   )
   assert_equal(CACHE{TESTCASE_VARIABLE} "")
@@ -377,7 +377,7 @@ function(test_multivar)
   assert_equal(RESULT
     IMAGE no_sysbuild    "cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get     "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
-    IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get_3rd "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
   )
   unset(RESULT)
@@ -393,7 +393,7 @@ function(test_multivar)
   assert_equal(RESULT
     IMAGE no_sysbuild    "cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get     "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
-    IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get_3rd "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
   )
   unset(RESULT)
@@ -449,7 +449,7 @@ function(test_merge_reverse)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    ""
     IMAGE zephyr_get     "sysbuild.main"
-    IMAGE zephyr_get_2nd "sysbuild.2nd" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "sysbuild.main"
   )
 
@@ -462,7 +462,7 @@ function(test_merge_reverse)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "local s;environment s;cmake cache s"
     IMAGE zephyr_get     "local s;environment s;cmake cache s;sysbuild.main"
-    IMAGE zephyr_get_2nd "local s;environment s;cmake cache s;sysbuild.2nd" # BUG
+    IMAGE zephyr_get_2nd "local s;environment s;cmake cache s;sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "local s;environment s;cmake cache s;sysbuild.main"
   )
 
@@ -483,7 +483,7 @@ function(test_merge_reverse)
   assert_equal(RESULT
     IMAGE no_sysbuild    "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2"
     IMAGE zephyr_get     "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main"
-    IMAGE zephyr_get_2nd "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.2nd" # BUG
+    IMAGE zephyr_get_2nd "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main"
   )
 endfunction()
@@ -556,7 +556,7 @@ function(test_snippets_scope)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "snippet s"
     IMAGE zephyr_get     "sysbuild.main;snippet s"
-    IMAGE zephyr_get_2nd "sysbuild.2nd;snippet s" # BUG
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;snippet s"
     IMAGE zephyr_get_3rd "sysbuild.main;snippet s"
   )
 
