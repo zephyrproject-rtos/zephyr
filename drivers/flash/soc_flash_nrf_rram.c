@@ -15,6 +15,8 @@
 #include <zephyr/sys/barrier.h>
 #include <hal/nrf_rramc.h>
 
+#include <zephyr/../../drivers/flash/soc_flash_nrf.h>
+
 LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 
 #define RRAM DT_INST(0, soc_nv_flash)
@@ -29,6 +31,11 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 
 #define ERASE_VALUE 0xFF
 
+static struct k_sem sem_lock;
+#define SYNC_INIT()   k_sem_init(&sem_lock, 1, 1)
+#define SYNC_LOCK()   k_sem_take(&sem_lock, K_FOREVER)
+#define SYNC_UNLOCK() k_sem_give(&sem_lock)
+
 #if CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE > 0
 #define WRITE_BUFFER_ENABLE 1
 #define WRITE_BUFFER_SIZE   CONFIG_NRF_RRAM_WRITE_BUFFER_SIZE
@@ -38,6 +45,20 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #define WRITE_BUFFER_SIZE   0
 #define WRITE_LINE_SIZE     RRAM_WORD_SIZE
 #endif
+
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
+#define FLASH_SLOT_WRITE 5000
+
+#if WRITE_BUFFER_ENABLE
+#define RRAM_MAX_WRITE_BUFFER (WRITE_BUFFER_SIZE * WRITE_LINE_SIZE)
+#else
+#define RRAM_MAX_WRITE_BUFFER (WRITE_LINE_SIZE * 32)
+#endif
+
+static int write_op(void *context); /* instance of flash_op_handler_t */
+static int write_synchronously(off_t addr, const void *data, size_t len);
+
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
 static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start,
 				    size_t boundary_size)
@@ -65,17 +86,8 @@ static void commit_changes(size_t len)
 }
 #endif
 
-static int rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
+static void rram_write(off_t addr, const void *data, size_t len)
 {
-	ARG_UNUSED(dev);
-
-	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
-		return -EINVAL;
-	}
-	addr += RRAM_START;
-
-	LOG_DBG("Write: %p:%zu", (void *)addr, len);
-
 	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
 
 	nrf_rramc_config_set(NRF_RRAMC, &config);
@@ -94,8 +106,102 @@ static int rram_write(const struct device *dev, off_t addr, const void *data, si
 
 	config.mode_write = false;
 	nrf_rramc_config_set(NRF_RRAMC, &config);
+}
 
-	return 0;
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
+static void shift_write_context(uint32_t shift, struct flash_context *w_ctx)
+{
+	w_ctx->flash_addr += shift;
+
+	/* NULL data_addr => erase emulation request*/
+	if (w_ctx->data_addr) {
+		w_ctx->data_addr += shift;
+	}
+
+	w_ctx->len -= shift;
+}
+
+static int write_op(void *context)
+{
+	struct flash_context *w_ctx = context;
+	size_t len;
+
+	uint32_t i = 0U;
+
+	if (w_ctx->enable_time_limit) {
+		nrf_flash_sync_get_timestamp_begin();
+	}
+
+	while (w_ctx->len > 0) {
+		if (RRAM_MAX_WRITE_BUFFER < w_ctx->len) {
+			len = (RRAM_MAX_WRITE_BUFFER < w_ctx->len) ? RRAM_MAX_WRITE_BUFFER
+								   : w_ctx->len;
+		}
+
+		rram_write(w_ctx->flash_addr, (const void *)w_ctx->data_addr, len);
+
+		shift_write_context(sizeof(uint32_t), w_ctx);
+
+		if (w_ctx->len > 0) {
+			i++;
+
+			if (w_ctx->enable_time_limit) {
+				if (nrf_flash_sync_check_time_limit(i)) {
+					return FLASH_OP_ONGOING;
+				}
+			}
+		}
+	}
+
+	return FLASH_OP_DONE;
+}
+
+static int write_synchronously(off_t addr, const void *data, size_t len)
+{
+	struct flash_context context = {
+		.data_addr = (uint32_t)data,
+		.flash_addr = addr,
+		.len = len,
+		.enable_time_limit = 1 /* enable time limit */
+	};
+
+	struct flash_op_desc flash_op_desc = {.handler = write_op, .context = &context};
+
+	nrf_flash_sync_set_context(FLASH_SLOT_WRITE);
+	return nrf_flash_sync_exe(&flash_op_desc);
+}
+
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
+
+static int flash_nrf_write(off_t addr, const void *data, size_t len)
+{
+	int ret = 0;
+
+	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
+		return -EINVAL;
+	}
+	addr += RRAM_START;
+
+	if (!len) {
+		return 0;
+	}
+
+	LOG_DBG("Write: %p:%zu", (void *)addr, len);
+
+	SYNC_LOCK();
+
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
+	if (nrf_flash_sync_is_required()) {
+		ret = write_synchronously(addr, data, len);
+	} else
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
+	{
+		rram_write(addr, data, len);
+	}
+
+	SYNC_UNLOCK();
+
+	return ret;
 }
 
 static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
@@ -114,12 +220,16 @@ static int flash_nrf_rram_read(const struct device *dev, off_t addr, void *data,
 
 static int flash_nrf_rram_write(const struct device *dev, off_t addr, const void *data, size_t len)
 {
-	return rram_write(dev, addr, data, len);
+	ARG_UNUSED(dev);
+
+	return flash_nrf_write(addr, data, len);
 }
 
 static int flash_nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
-	return rram_write(dev, addr, NULL, len);
+	ARG_UNUSED(dev);
+
+	return flash_nrf_write(addr, NULL, len);
 }
 
 static const struct flash_parameters *flash_nrf_rram_get_parameters(const struct device *dev)
@@ -164,6 +274,12 @@ static const struct flash_driver_api flash_nrf_rram_api = {
 static int flash_nrf_rram_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	SYNC_INIT();
+
+#ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
+	nrf_flash_sync_init();
+#endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
 #if CONFIG_NRF_RRAM_READYNEXT_TIMEOUT_VALUE > 0
 	nrf_rramc_ready_next_timeout_t params = {

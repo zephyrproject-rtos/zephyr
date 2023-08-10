@@ -35,4 +35,29 @@ config NRF_RRAM_READYNEXT_TIMEOUT_VALUE
 	help
 	  Set 0 to disable ready next timeout counter.
 
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
+	help
+	  synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
+
+config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
+	int
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 1
+
 endif # SOC_FLASH_NRF_RRAM
