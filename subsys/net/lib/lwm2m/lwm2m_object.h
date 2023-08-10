@@ -521,8 +521,11 @@ struct lwm2m_message {
 	/** Incoming message action */
 	uint8_t operation;
 
-	/* Information whether the message was acknowledged. */
+	/** Information whether the message was acknowledged. */
 	bool acknowledged : 1;
+
+	/** Indicate that this is part of outgoing block transfer. */
+	bool block_send : 1;
 };
 
 /* LWM2M format writer for the various formats supported */

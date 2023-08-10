@@ -75,5 +75,6 @@ enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
 void lwm2m_clear_block_contexts(void);
+bool lwm2m_outgoing_is_part_of_blockwise(struct lwm2m_message *msg);
 
 #endif /* LWM2M_MESSAGE_HANDLING_H */

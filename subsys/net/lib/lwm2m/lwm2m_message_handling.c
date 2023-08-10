@@ -81,6 +81,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
+static struct lwm2m_message *ongoing_block2_tx;
 
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 /* we need 1 more buffer as the payload is encoded in that buffer first even if
@@ -99,6 +100,7 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
 static int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num);
 struct coap_block_context *lwm2m_output_block_context(void);
 #endif
 
@@ -301,10 +303,16 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 		}
 		msg->cpkt.hdr_len = msg->body_encode_buffer.hdr_len;
 	} else {
-		/* reuse message for next block */
-		tkl = coap_header_get_token(&msg->cpkt, token);
+		/* reuse message for next block. Copy token from the new query to allow
+		 * CoAP clients to use new token for every query of ongoing transaction
+		 */
+		tkl = coap_header_get_token(msg->in.in_cpkt, token);
 		lwm2m_reset_message(msg, false);
-		msg->mid = coap_next_id();
+		if (msg->type == COAP_TYPE_ACK) {
+			msg->mid = coap_header_get_id(msg->in.in_cpkt);
+		} else {
+			msg->mid = coap_next_id();
+		}
 		msg->token = token;
 		msg->tkl = tkl;
 		ret = lwm2m_init_message(msg);
@@ -333,10 +341,14 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 			return ret;
 		}
 		ret = coap_block_transfer_init(msg->out.block_ctx, lwm2m_default_block_size(),
-					       msg->body_encode_buffer.offset);
+					       complete_payload_len);
 		if (ret < 0) {
 			return ret;
 		}
+		if (msg->type == COAP_TYPE_ACK) {
+			ongoing_block2_tx = msg;
+		}
+		msg->block_send = true;
 	} else {
 		/*  update block context */
 		msg->out.block_ctx->current = block_num * block_size_bytes;
@@ -402,7 +414,14 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 	return 0;
 }
+
 #endif
+
+bool lwm2m_outgoing_is_part_of_blockwise(struct lwm2m_message *msg)
+{
+	return msg->block_send;
+}
+
 
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
@@ -2557,6 +2576,56 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	return ret;
 }
 
+static struct lwm2m_message *find_ongoing_block2_tx(void)
+{
+	/* TODO: I could try to check if there is Request-Tags attached, and then match queries
+	 * for those, but currently popular LwM2M servers don't attach those tags, so in reality
+	 * I have no way of properly matching query with BLOCK2 option to a previous query.
+	 * Therefore we can only support one ongoing BLOCK2 transfer and assume all BLOCK2 requests
+	 * are part of currently ongoing one.
+	 */
+	return ongoing_block2_tx;
+}
+
+static void clear_ongoing_block2_tx(void)
+{
+	if (ongoing_block2_tx) {
+		LOG_DBG("clear");
+		lwm2m_reset_message(ongoing_block2_tx, true);
+		ongoing_block2_tx = NULL;
+	}
+}
+
+static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_packet *cpkt)
+{
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	int r;
+	uint8_t block;
+
+	r = coap_get_block2_option(cpkt, &block);
+	if (r < 0) {
+		LOG_ERR("Failed to parse BLOCK2");
+		return;
+	}
+
+	msg->in.in_cpkt = cpkt;
+
+	r = build_msg_block_for_send(msg, block);
+	if (r < 0) {
+		clear_ongoing_block2_tx();
+		LOG_ERR("Unable to build next block of lwm2m message! r=%d", r);
+		return;
+	}
+
+	r = lwm2m_send_message_async(msg);
+	if (r < 0) {
+		clear_ongoing_block2_tx();
+		LOG_ERR("Unable to send next block of lwm2m message!");
+		return;
+	}
+#endif
+}
+
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_len,
 		       struct sockaddr *from_addr)
 {
@@ -2565,12 +2634,12 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	struct coap_reply *reply;
 	struct coap_packet response;
 	int r;
-	uint8_t token[8];
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	bool more_blocks = false;
 	uint8_t block_num;
 	uint8_t last_block_num;
 #endif
+	bool has_block2;
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
@@ -2578,7 +2647,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		return;
 	}
 
-	(void)coap_header_get_token(&response, token);
+	has_block2 = coap_get_option_int(&response, COAP_OPTION_BLOCK2) > 0 ? true : false;
 	pending = coap_pending_received(&response, client_ctx->pendings,
 					ARRAY_SIZE(client_ctx->pendings));
 	if (pending && coap_header_get_type(&response) == COAP_TYPE_ACK) {
@@ -2686,6 +2755,17 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	}
 
 	if (coap_header_get_type(&response) == COAP_TYPE_CON) {
+		if (has_block2 && IS_ENABLED(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)) {
+			msg = find_ongoing_block2_tx();
+			if (msg) {
+				return handle_ongoing_block2_tx(msg, &response);
+			}
+			return;
+		}
+
+		/* Clear out existing Block2 transfers when new requests come */
+		clear_ongoing_block2_tx();
+
 		msg = lwm2m_get_message(client_ctx);
 		if (!msg) {
 			LOG_ERR("Unable to get a lwm2m message!");
