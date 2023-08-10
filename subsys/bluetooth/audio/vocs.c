@@ -50,6 +50,73 @@ static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 	LOG_DBG("value 0x%04x", value);
 }
 
+static const char *vocs_notify_str(enum bt_vocs_notify notify)
+{
+	switch (notify) {
+	case NOTIFY_STATE:
+		return "state";
+	case NOTIFY_LOCATION:
+		return "location";
+	case NOTIFY_OUTPUT_DESC:
+		return "output desc";
+	default:
+		return "unknown";
+	}
+}
+
+static void notify_work_reschedule(struct bt_vocs_server *inst, enum bt_vocs_notify notify,
+				   k_timeout_t delay)
+{
+	int err;
+
+	atomic_set_bit(inst->notify, notify);
+
+	err = k_work_reschedule(&inst->notify_work, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to reschedule %s notification err %d",
+			vocs_notify_str(notify), err);
+	}
+}
+
+static void notify(struct bt_vocs_server *inst, enum bt_vocs_notify notify,
+		   const struct bt_uuid *uuid, const void *data, uint16_t len)
+{
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, uuid, inst->service_p->attrs, data, len);
+	if (err == -ENOMEM) {
+		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+	} else if (err < 0 && err != -ENOTCONN) {
+		LOG_ERR("Notify %s err %d", vocs_notify_str(notify), err);
+	}
+}
+
+static void notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vocs_server *inst = CONTAINER_OF(d_work, struct bt_vocs_server, notify_work);
+
+	if (atomic_test_and_clear_bit(inst->notify, NOTIFY_STATE)) {
+		notify(inst, NOTIFY_STATE, BT_UUID_VOCS_STATE, &inst->state, sizeof(inst->state));
+	}
+
+	if (atomic_test_and_clear_bit(inst->notify, NOTIFY_LOCATION)) {
+		notify(inst, NOTIFY_LOCATION, BT_UUID_VOCS_LOCATION, &inst->location,
+		       sizeof(inst->location));
+	}
+
+	if (atomic_test_and_clear_bit(inst->notify, NOTIFY_OUTPUT_DESC)) {
+		notify(inst, NOTIFY_OUTPUT_DESC, BT_UUID_VOCS_DESCRIPTION, &inst->output_desc,
+		       strlen(inst->output_desc));
+	}
+}
+
+static void value_changed(struct bt_vocs_server *inst, enum bt_vocs_notify notify)
+{
+	notify_work_reschedule(inst, notify, K_NO_WAIT);
+}
+#else
+#define value_changed(...)
 #endif /* CONFIG_BT_VOCS */
 
 static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -76,10 +143,8 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 
 	if (new_location != inst->location) {
 		inst->location = new_location;
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION,
-					  inst->service_p->attrs,
-					  &inst->location,
-					  sizeof(inst->location));
+
+		value_changed(inst, NOTIFY_LOCATION);
 
 		if (inst->cb && inst->cb->location) {
 			inst->cb->location(&inst->vocs, 0, inst->location);
@@ -153,9 +218,8 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 		inst->state.change_counter++;
 		LOG_DBG("New state: offset %d, counter %u", inst->state.offset,
 			inst->state.change_counter);
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE,
-					  inst->service_p->attrs,
-					  &inst->state, sizeof(inst->state));
+
+		value_changed(inst, NOTIFY_STATE);
 
 		if (inst->cb && inst->cb->state) {
 			inst->cb->state(&inst->vocs, 0, inst->state.offset);
@@ -193,10 +257,7 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 		memcpy(inst->output_desc, buf, len);
 		inst->output_desc[len] = '\0';
 
-		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_DESCRIPTION,
-					  inst->service_p->attrs,
-					  &inst->output_desc,
-					  strlen(inst->output_desc));
+		value_changed(inst, NOTIFY_OUTPUT_DESC);
 
 		if (inst->cb && inst->cb->description) {
 			inst->cb->description(&inst->vocs, 0, inst->output_desc);
@@ -390,6 +451,9 @@ int bt_vocs_register(struct bt_vocs *vocs,
 		LOG_DBG("Could not register VOCS service");
 		return err;
 	}
+
+	atomic_clear(inst->notify);
+	k_work_init_delayable(&inst->notify_work, notify_work_handler);
 
 	inst->initialized = true;
 	return 0;
