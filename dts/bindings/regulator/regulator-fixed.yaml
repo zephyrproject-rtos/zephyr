@@ -11,6 +11,8 @@ include:
       - regulator-name
       - regulator-boot-on
       - regulator-always-on
+      - regulator-min-microvolt
+      - regulator-max-microvolt
 
 compatible: "regulator-fixed"
 
