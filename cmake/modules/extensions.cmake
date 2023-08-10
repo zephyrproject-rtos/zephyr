@@ -2659,6 +2659,7 @@ function(zephyr_get variable)
     endif()
   endforeach()
 
+  set(${variable} "")
   set(scopes "sysbuild_local;sysbuild_global;CACHE;snippets;ENV;current")
   if(GET_VAR_REVERSE)
     list(REVERSE scopes)
