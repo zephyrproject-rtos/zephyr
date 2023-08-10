@@ -242,17 +242,17 @@ function(test_merge)
   zephyr_get(TESTCASE_VARIABLE MERGE SYSBUILD GLOBAL)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "cmake cache;environment;local"
-    IMAGE zephyr_get     "cmake cache;sysbuild.main;environment;local" # BUG
-    IMAGE zephyr_get_2nd "cmake cache;sysbuild.2nd;sysbuild.main;environment;local" # BUG
-    IMAGE zephyr_get_3rd "cmake cache;sysbuild.main;environment;local" # BUG
+    IMAGE zephyr_get     "sysbuild.main;cmake cache;environment;local"
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache;environment;local"
+    IMAGE zephyr_get_3rd "sysbuild.main;cmake cache;environment;local"
   )
 
   unset(TESTCASE_VARIABLE)
   zephyr_get(TESTCASE_VARIABLE MERGE SYSBUILD LOCAL)
   assert_equal(TESTCASE_VARIABLE
     IMAGE no_sysbuild    "cmake cache;environment"
-    IMAGE zephyr_get     "cmake cache;sysbuild.main;environment" # BUG
-    IMAGE zephyr_get_2nd "cmake cache;sysbuild.2nd;environment" # BUG
+    IMAGE zephyr_get     "sysbuild.main;cmake cache;environment"
+    IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache;environment"
     IMAGE zephyr_get_3rd "cmake cache;environment"
   )
 
@@ -312,7 +312,7 @@ function(test_multivar)
 
   # Unless RESULT is included in VAR, it does not affect the output.
   zephyr_get(RESULT MERGE VAR VARIABLE_3 VARIABLE_2 VARIABLE_1)
-  assert_equal(RESULT "local r;cmake cache 2;cmake cache 1;environment 3;environment 1;local 3;local 2") # BUG
+  assert_equal(RESULT "cmake cache 2;cmake cache 1;environment 3;environment 1;local 3;local 2")
 
   set(RESULT "local r")
   zephyr_get(RESULT MERGE VAR RESULT VARIABLE_3 VARIABLE_2 VARIABLE_1)
@@ -320,7 +320,7 @@ function(test_multivar)
 
   set(RESULT "local r")
   zephyr_get(RESULT MERGE VAR VARIABLE_2 VARIABLE_3 VARIABLE_1 RESULT)
-  assert_equal(RESULT "cmake cache r;cmake cache 2;cmake cache 1;environment 3;environment 1;environment r;local 2;local 3;local r") # BUG
+  assert_equal(RESULT "cmake cache 2;cmake cache 1;cmake cache r;environment 3;environment 1;environment r;local 2;local 3;local r")
 
   unset(ENV{RESULT})
   unset(RESULT CACHE)
