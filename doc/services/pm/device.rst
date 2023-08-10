@@ -13,7 +13,7 @@ advantage of the device power management subsystem.
 Zephyr supports two types of device power management:
 
  - :ref:`Device Runtime Power Management <pm-device-runtime-pm>`
- - :ref:`System Power Management <pm-device-system-pm>`
+ - :ref:`System-Managed Device Power Management <pm-device-system-pm>`
 
 .. _pm-device-runtime-pm:
 
@@ -37,8 +37,8 @@ For more information, see :ref:`pm-device-runtime`.
 
 .. _pm-device-system-pm:
 
-System Power Management
-***********************
+System-Managed Device Power Management
+**************************************
 
 When using this type, device power management is mostly done inside
 :c:func:`pm_system_suspend()` along with entering a CPU or SOC power state.
