@@ -39,18 +39,25 @@ extern "C" {
 						 NET_MGMT_EVENT_BIT)
 #define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
 
+/** @endcond */
+
 enum net_event_conn_cmd {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR,
 };
 
+/**
+ * @brief net_mgmt event raised when a connection attempt times out
+ */
 #define NET_EVENT_CONN_IF_TIMEOUT					\
 	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
 
+/**
+ * @brief net_mgmt event raised when a non-recoverable connectivity error occurs on an iface
+ */
 #define NET_EVENT_CONN_IF_FATAL_ERROR					\
 	(_NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
 
-/** @endcond */
 
 /**
  * @brief Per-iface connectivity flags
@@ -76,7 +83,7 @@ enum conn_mgr_if_flag {
 	 * No auto-down
 	 *
 	 * When set, conn_mgr will not automatically take the iface admin-down when it stops
-	 * trying to connect, even if NET_CONNECTION_MANAGER_AUTO_IF_DOWN is enabled.
+	 * trying to connect, even if CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN is enabled.
 	 */
 	CONN_MGR_IF_NO_AUTO_DOWN,
 
@@ -86,7 +93,9 @@ enum conn_mgr_if_flag {
 /** @endcond */
 };
 
-/** Value to use with @ref conn_mgr_conn_binding.timeout to indicate no timeout */
+/** Value to use with @ref conn_mgr_if_set_timeout and @ref conn_mgr_conn_binding.timeout to
+ * indicate no timeout
+ */
 #define CONN_MGR_IF_NO_TIMEOUT 0
 
 /**
@@ -95,7 +104,7 @@ enum conn_mgr_if_flag {
  * If the provided iface has been bound to a connectivity implementation, initiate
  * network connect/association.
  *
- * Automatically takes the iface admin-up (by calling net_if_up) if it isn't already.
+ * Automatically takes the iface admin-up (by calling @ref net_if_up) if it isn't already.
  *
  * Non-Blocking.
  *
@@ -231,23 +240,27 @@ int conn_mgr_if_get_timeout(struct net_if *iface);
  *
  * @param iface - Pointer to the network interface to modify.
  * @param timeout - The timeout value to set (in seconds).
- *		    Pass CONN_MGR_IF_NO_TIMEOUT to disable the timeout.
+ *		    Pass @ref CONN_MGR_IF_NO_TIMEOUT to disable the timeout.
  * @retval 0 on success.
  * @retval -ENOTSUP if the provided iface is not bound to a connectivity implementation.
  */
 int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
 
 /**
- * @brief  Initialize all connectivity implementation bindings
- *
- *
+ * @}
  */
-void conn_mgr_conn_init(void);
+
+/**
+ * @brief Connection Manager Bulk API
+ * @defgroup conn_mgr_connectivity_bulk Connection Manager Connectivity Bulk API
+ * @ingroup networking
+ * @{
+ */
 
 /**
  * @brief Convenience function that takes all available ifaces into the admin-up state.
  *
- * Essentially a wrapper for net_if_up.
+ * Essentially a wrapper for @ref net_if_up.
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
@@ -260,7 +273,7 @@ int conn_mgr_all_if_up(bool skip_ignored);
 /**
  * @brief Convenience function that takes all available ifaces into the admin-down state.
  *
- * Essentially a wrapper for net_if_down.
+ * Essentially a wrapper for @ref net_if_down.
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
@@ -273,7 +286,7 @@ int conn_mgr_all_if_down(bool skip_ignored);
  * @brief Convenience function that takes all available ifaces into the admin-up state, and
  * connects those that support connectivity.
  *
- * Essentially a wrapper for net_if_up and conn_mgr_if_connect.
+ * Essentially a wrapper for @ref net_if_up and @ref conn_mgr_if_connect.
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
@@ -286,7 +299,7 @@ int conn_mgr_all_if_connect(bool skip_ignored);
  * @brief Convenience function that disconnects all available ifaces that support connectivity
  *        without putting them into admin-down state (unless auto-down is enabled for the iface).
  *
- * Essentially a wrapper for net_if_down.
+ * Essentially a wrapper for @ref net_if_down.
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
