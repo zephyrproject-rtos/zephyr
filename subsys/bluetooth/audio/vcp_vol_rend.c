@@ -27,6 +27,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 
+#define NOTIFY_RETRY_DELAY_MS(_retry_count)  (100 * (_retry_count))
+#define NOTIFY_RETRY_COUNT_MAX 3
+
 #define VOLUME_DOWN(current_vol) \
 	((uint8_t)MAX(0, (int)current_vol - vol_rend.volume_step))
 #define VOLUME_UP(current_vol) \
@@ -43,6 +46,13 @@ struct bt_vcp_vol_rend {
 	struct bt_gatt_service *service_p;
 	struct bt_vocs *vocs_insts[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT];
 	struct bt_aics *aics_insts[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT];
+
+	struct k_work_delayable state_notify_work;
+	uint8_t state_notify_retry_count;
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+	struct k_work_delayable flags_notify_work;
+	uint8_t flags_notify_retry_count;
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 };
 
 static struct bt_vcp_vol_rend vol_rend;
@@ -65,6 +75,60 @@ static ssize_t read_vol_state(struct bt_conn *conn,
 				 &vol_rend.state, sizeof(vol_rend.state));
 }
 
+static void state_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vcp_vol_rend *rend = CONTAINER_OF(d_work, struct bt_vcp_vol_rend,
+						    state_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_VCS_STATE, rend->service_p->attrs, &rend->state,
+				  sizeof(rend->state));
+	if (err < 0 && err != -ENOTCONN) {
+		if (rend->state_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms = NOTIFY_RETRY_DELAY_MS(rend->state_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify state err %d. Will retry %d/%d in %dms",
+					err, rend->state_notify_retry_count, NOTIFY_RETRY_COUNT_MAX,
+					delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify state err %d", err);
+	}
+}
+
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+static void flags_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_vcp_vol_rend *rend = CONTAINER_OF(d_work, struct bt_vcp_vol_rend,
+						    flags_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS, rend->service_p->attrs, &rend->flags,
+				  sizeof(rend->flags));
+	if (err < 0 && err != -ENOTCONN) {
+		if (rend->flags_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms = NOTIFY_RETRY_DELAY_MS(rend->flags_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify flags err %d. Will retry %d/%d in %dms",
+					err, rend->flags_notify_retry_count, NOTIFY_RETRY_COUNT_MAX,
+					delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify flags err %d", err);
+	}
+}
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
+
 static ssize_t write_vcs_control(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset,
@@ -74,6 +138,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	bool notify = false;
 	bool volume_change = false;
 	uint8_t opcode;
+	int err;
 
 	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -179,9 +244,12 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			vol_rend.state.volume, vol_rend.state.mute,
 			vol_rend.state.change_counter);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_STATE,
-				    vol_rend.service_p->attrs,
-				    &vol_rend.state, sizeof(vol_rend.state));
+		vol_rend.state_notify_retry_count = 0;
+
+		err = k_work_reschedule(&vol_rend.state_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule volume state notification err %d", err);
+		}
 
 		if (vol_rend.cb && vol_rend.cb->state) {
 			vol_rend.cb->state(0, vol_rend.state.volume,
@@ -192,11 +260,14 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	if (volume_change && !vol_rend.flags) {
 		vol_rend.flags = 1;
 
-		if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)) {
-			bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS,
-					    vol_rend.service_p->attrs,
-					    &vol_rend.flags, sizeof(vol_rend.flags));
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+		vol_rend.flags_notify_retry_count = 0;
+
+		err = k_work_reschedule(&vol_rend.flags_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule flags notification err %d", err);
 		}
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 
 		if (vol_rend.cb && vol_rend.cb->flags) {
 			vol_rend.cb->flags(0, vol_rend.flags);
@@ -404,6 +475,11 @@ int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param)
 	}
 
 	vol_rend.cb = param->cb;
+
+	k_work_init_delayable(&vol_rend.state_notify_work, state_notify_work_handler);
+#if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
+	k_work_init_delayable(&vol_rend.flags_notify_work, flags_notify_work_handler);
+#endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
 
 	registered = true;
 
