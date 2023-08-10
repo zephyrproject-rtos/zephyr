@@ -1,0 +1,9 @@
+identifier: nxp_adsp_rt595
+name: i.MXRT595 DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel

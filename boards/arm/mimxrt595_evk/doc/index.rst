@@ -174,6 +174,20 @@ Serial Port
 The MIMXRT595 SoC has 13 FLEXCOMM interfaces for serial communication. One is
 configured as USART for the console and the remaining are not used.
 
+Fusion F1 DSP Core
+==================
+
+You can build a Zephyr application for the RT500 DSP core using nxp_adsp_rt595
+board. Xtensa toolchain supporting RT500 DSP core is included in Zephyr SDK.
+To build the hello_world sample for the RT500 DSP core:
+
+.. code-block:: shell
+
+   $ west build -b nxp_adsp_rt595 samples/hello_world
+
+For detailed instructions on how to debug DSP firmware, please refer to
+this document: `Getting Started with Xplorer for EVK-MIMXRT595`_
+
 Programming and Debugging
 *************************
 
@@ -313,3 +327,6 @@ steps:
 
 .. _i.MX RT595 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT500RM
+
+.. _Getting Started with Xplorer for EVK-MIMXRT595:
+   https://www.nxp.com/docs/en/supporting-information/GSXEVKMIMXRT595.pdf
