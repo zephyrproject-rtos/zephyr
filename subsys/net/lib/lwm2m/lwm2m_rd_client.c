@@ -74,6 +74,8 @@ static int sm_send_registration_msg(void);
 static bool sm_is_suspended(void);
 static void lwm2m_rd_client_service(struct k_work *work);
 static int64_t calc_next_event(void);
+static void set_sm_state_delayed(uint8_t sm_state, int64_t delay_ms);
+static void set_sm_state(uint8_t sm_state);
 
 /* The states for the RD client state machine */
 /*
@@ -171,7 +173,7 @@ static void next_event_at(int64_t timestamp)
 	(void)lwm2m_engine_call_at(lwm2m_rd_client_service, timestamp);
 }
 
-static void set_sm_state(uint8_t sm_state)
+static void set_sm_state_delayed(uint8_t sm_state, int64_t delay_ms)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
@@ -232,8 +234,13 @@ static void set_sm_state(uint8_t sm_state)
 			lwm2m_close_socket(client.ctx);
 		}
 	}
-	next_event_at(0);
+	next_event_at(k_uptime_get() + delay_ms);
 	k_mutex_unlock(&client.mutex);
+}
+
+static void set_sm_state(uint8_t sm_state)
+{
+	set_sm_state_delayed(sm_state, 0);
 }
 
 static bool sm_is_bootstrap(void)
@@ -837,7 +844,10 @@ static int sm_do_bootstrap_reg(void)
 void engine_bootstrap_finish(void)
 {
 	LOG_INF("Bootstrap data transfer done!");
-	set_sm_state(ENGINE_BOOTSTRAP_TRANS_DONE);
+	/* Delay the state transition, so engine have some time to send ACK
+	 * before we close the socket
+	 */
+	set_sm_state_delayed(ENGINE_BOOTSTRAP_TRANS_DONE, 1000);
 }
 
 static int sm_bootstrap_trans_done(void)
