@@ -154,7 +154,7 @@ static int shell_mgmt_translate_error_code(uint16_t err)
 }
 #endif
 
-static struct mgmt_handler shell_mgmt_handlers[] = {
+static const struct mgmt_handler shell_mgmt_handlers[] = {
 	[SHELL_MGMT_ID_EXEC] = { NULL, shell_mgmt_exec },
 };
 
