@@ -8,7 +8,7 @@ It defines and implements an architecture and a set of software components
 that aim to address some of the main security concerns in IoT products.
 
 Zephyr RTOS has been PSA Certified since Zephyr 2.0.0 with TF-M 1.0, and
-is currently integrated with TF-M 1.4.1.
+is currently integrated with TF-M 1.8.
 
 What Does TF-M Offer?
 *********************
@@ -196,9 +196,8 @@ within a default Zephyr west workspace.)
 Secure Services
 ---------------
 
-As of TF-M 1.4.1, the following secure services are generally available (although vendor support may vary):
+As of TF-M 1.8, the following secure services are generally available (although vendor support may vary):
 
-* Audit Logging (Audit)
 * Crypto (Crypto)
 * Firmware Update (FWU)
 * Initial Attestation (IAS)
