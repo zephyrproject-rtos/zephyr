@@ -1,0 +1,7 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fvp_baser_aemv8r_aarch32.dts"
