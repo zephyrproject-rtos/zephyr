@@ -86,7 +86,16 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* Calculate VREF+ using VREFINT bandgap voltage and calibration data */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * The VREF CALIBRATION value is acquired on 14 bits
+	 * and the data acquired is on 12 bits
+	 * since the adc_sequence.resolution is 12
+	 */
+	vref = (cfg->cal_mv * (*cfg->cal_addr) >> 2) / data->raw;
+#else
 	vref = cfg->cal_mv * (*cfg->cal_addr) / data->raw;
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 	/* millivolt to volt */
 	vref /= 1000;
 
