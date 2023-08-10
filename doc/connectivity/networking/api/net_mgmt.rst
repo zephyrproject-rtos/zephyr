@@ -42,6 +42,8 @@ To avoid extra cost, all :c:func:`net_mgmt` calls are direct. Though this
 may change in a future release, it will not affect the users of this
 function.
 
+.. _net_mgmt_listening:
+
 Listening to network events
 ***************************
 

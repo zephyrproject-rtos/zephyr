@@ -41,12 +41,12 @@ struct conn_mgr_conn_binding;
 struct conn_mgr_conn_api {
 	/**
 	 * @brief When called, the connectivity implementation should start attempting to
-	 * establish connectivity for (associate with a network) the bound iface pointed
+	 * establish connectivity (association with a network) for the bound iface pointed
 	 * to by if_conn->iface.
 	 *
 	 * Must be non-blocking.
 	 *
-	 * Called by conn_mgr_if_connect.
+	 * Called by @ref conn_mgr_if_connect.
 	 */
 	int (*connect)(struct conn_mgr_conn_binding *const binding);
 
@@ -57,7 +57,7 @@ struct conn_mgr_conn_api {
 	 *
 	 * Must be non-blocking.
 	 *
-	 * Called by conn_mgr_if_disconnect.
+	 * Called by @ref conn_mgr_if_disconnect.
 	 */
 	int (*disconnect)(struct conn_mgr_conn_binding *const binding);
 
@@ -189,7 +189,7 @@ struct conn_mgr_conn_binding {
 	 * The connectivity implementation should give up on establishing connectivity after this
 	 * timeout, even if persistence is enabled.
 	 *
-	 * Set to CONN_MGR_IF_NO_TIMEOUT to indicate that no timeout should be used.
+	 * Set to @ref CONN_MGR_IF_NO_TIMEOUT to indicate that no timeout should be used.
 	 */
 	int timeout;
 
@@ -273,7 +273,7 @@ static inline void conn_mgr_binding_lock(struct conn_mgr_conn_binding *binding)
 /**
  * @brief Unlocks the passed-in binding.
  *
- * Call this after any call to conn_mgr_binding_lock once done accessing binding data.
+ * Call this after any call to @ref conn_mgr_binding_lock once done accessing binding data.
  *
  * Reentrant.
  *
@@ -289,13 +289,13 @@ static inline void conn_mgr_binding_unlock(struct conn_mgr_conn_binding *binding
 /**
  * @brief Set the value of the specified connectivity flag for the provided binding
  *
- * Can be used from any thread or callback without calling conn_mgr_binding_lock.
+ * Can be used from any thread or callback without calling @ref conn_mgr_binding_lock.
  *
  * For use only by connectivity implementations
  *
- * @param binding - The binding to check
- * @param flag - The flag to check
- * @param value - New value for the specified flag
+ * @param binding The binding to check
+ * @param flag The flag to check
+ * @param value New value for the specified flag
  */
 static inline void conn_mgr_binding_set_flag(struct conn_mgr_conn_binding *binding,
 					     enum conn_mgr_if_flag flag, bool value)
@@ -313,13 +313,13 @@ static inline void conn_mgr_binding_set_flag(struct conn_mgr_conn_binding *bindi
 /**
  * @brief Check the value of the specified connectivity flag for the provided binding
  *
- * Can be used from any thread or callback without calling conn_mgr_binding_lock.
+ * Can be used from any thread or callback without calling @ref conn_mgr_binding_lock.
  *
  * For use only by connectivity implementations
  *
- * @param binding - The binding to check
- * @param flag - The flag to check
- * @return bool - The value of the specified flag
+ * @param binding The binding to check
+ * @param flag The flag to check
+ * @return bool The value of the specified flag
  */
 static inline bool conn_mgr_binding_get_flag(struct conn_mgr_conn_binding *binding,
 					     enum conn_mgr_if_flag flag)
