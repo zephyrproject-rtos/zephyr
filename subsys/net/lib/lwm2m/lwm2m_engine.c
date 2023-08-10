@@ -675,7 +675,9 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	if (msg->type != COAP_TYPE_CON) {
-		lwm2m_reset_message(msg, true);
+		if (!lwm2m_outgoing_is_part_of_blockwise(msg)) {
+			lwm2m_reset_message(msg, true);
+		}
 	}
 
 	return rc;
