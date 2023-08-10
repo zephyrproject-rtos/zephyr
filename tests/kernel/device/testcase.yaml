@@ -9,6 +9,14 @@ tests:
     tags:
       - kernel
       - device
+  kernel.device.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - device
+      - libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
   kernel.device.pm:
     tags:
       - kernel
