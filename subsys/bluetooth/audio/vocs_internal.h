@@ -62,6 +62,13 @@ struct bt_vocs_client {
 	struct bt_conn *conn;
 };
 
+enum bt_vocs_notify {
+	NOTIFY_STATE,
+	NOTIFY_LOCATION,
+	NOTIFY_OUTPUT_DESC,
+	NOTIFY_NUM,
+};
+
 struct bt_vocs_server {
 	struct bt_vocs vocs;
 	struct bt_vocs_state state;
@@ -71,6 +78,9 @@ struct bt_vocs_server {
 	struct bt_vocs_cb *cb;
 
 	struct bt_gatt_service *service_p;
+
+	ATOMIC_DEFINE(notify, NOTIFY_NUM);
+	struct k_work_delayable notify_work;
 };
 
 int bt_vocs_client_state_get(struct bt_vocs_client *inst);
