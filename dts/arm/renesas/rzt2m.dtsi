@@ -88,5 +88,30 @@
 			reg = <0x81281a00 0x10>;
 			reg-io-width = <4>;
 		};
+
+		uart0: serial@80001000 {
+			compatible = "renesas,rzt2m-uart";
+			reg = <0x80001000 0x1000>;
+			current-speed = <115200>;
+			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rx_err", "rx", "tx", "tx_end";
+			status = "disabled";
+		};
+
+		uart3: serial@80001c00 {
+			compatible = "renesas,rzt2m-uart";
+			reg = <0x80001c00 0x1000>;
+			current-speed = <115200>;
+			interrupts = <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rx_err", "rx", "tx", "tx_end";
+			status = "disabled";
+		};
+
 	};
 };

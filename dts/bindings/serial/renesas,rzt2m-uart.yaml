@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ/T2M UART
+
+compatible: "renesas,rzt2m-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  current-speed:
+    required: true
+    description: |
+      Initial baud rate setting for UART. Only a fixed set of baud
+      rates is currently supported.
+    enum:
+      - 9600
+      - 115200
+
+  interrupts:
+    required: true
