@@ -24,6 +24,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_aics);
 
+#define NOTIFY_RETRY_DELAY_MS(_retry_count)  (100 * (_retry_count))
+#define NOTIFY_RETRY_COUNT_MAX 3
+
 #define VALID_AICS_OPCODE(opcode)                                              \
 	((opcode) >= BT_AICS_OPCODE_SET_GAIN && (opcode) <= BT_AICS_OPCODE_SET_AUTO)
 
@@ -164,7 +167,45 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 sizeof(inst->srv.status));
 }
 
+static void state_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_aics *inst = CONTAINER_OF(d_work, struct bt_aics, srv.state_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
+				  &inst->srv.state, sizeof(inst->srv.state));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.state_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.state_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify state err %d. Will retry %d/%d in %dms",
+					err, inst->srv.state_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify state err %d", err);
+	}
+}
 #endif /* CONFIG_BT_AICS */
+
+static void notify_state(struct bt_aics *inst)
+{
+	int err;
+
+	inst->srv.state_notify_retry_count = 0;
+
+	err = k_work_reschedule(&inst->srv.state_notify_work, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to schedule state notification err %d", err);
+	}
+}
 
 static ssize_t write_aics_control(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
@@ -264,9 +305,7 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 			inst->srv.state.gain, inst->srv.state.mute, inst->srv.state.gain_mode,
 			inst->srv.state.change_counter);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE,
-				    inst->srv.service_p->attrs, &inst->srv.state,
-				    sizeof(inst->srv.state));
+		notify_state(inst);
 
 		if (inst->srv.cb && inst->srv.cb->state) {
 			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
@@ -286,6 +325,33 @@ static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	LOG_DBG("value 0x%04x", value);
 }
+
+static void description_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_aics *inst = CONTAINER_OF(d_work, struct bt_aics, srv.description_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_AICS_DESCRIPTION, inst->srv.service_p->attrs,
+				  &inst->srv.description, strlen(inst->srv.description));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.description_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.description_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify description err %d. Will retry %d/%d in %dms",
+					err, inst->srv.description_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify description err %d", err);
+	}
+}
 #endif /* CONFIG_BT_AICS */
 
 static ssize_t write_description(struct bt_conn *conn,
@@ -303,12 +369,17 @@ static ssize_t write_description(struct bt_conn *conn,
 	}
 
 	if (memcmp(buf, inst->srv.description, len)) {
+		int err;
+
 		memcpy(inst->srv.description, buf, len);
 		inst->srv.description[len] = '\0';
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_DESCRIPTION,
-				    inst->srv.service_p->attrs, &inst->srv.description,
-				    strlen(inst->srv.description));
+		inst->srv.description_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.description_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule description notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->description) {
 			inst->srv.cb->description(inst, 0,
@@ -357,6 +428,33 @@ static ssize_t read_description(struct bt_conn *conn,
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &inst->srv.description, strlen(inst->srv.description));
+}
+
+static void status_notify_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_aics *inst = CONTAINER_OF(d_work, struct bt_aics, srv.status_notify_work);
+	int err;
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_AICS_INPUT_STATUS, inst->srv.service_p->attrs,
+				  &inst->srv.status, sizeof(inst->srv.status));
+	if (err < 0 && err != -ENOTCONN) {
+		if (inst->srv.status_notify_retry_count++ < NOTIFY_RETRY_COUNT_MAX) {
+			uint16_t delay_ms;
+
+			delay_ms = NOTIFY_RETRY_DELAY_MS(inst->srv.status_notify_retry_count);
+
+			err = k_work_reschedule(d_work, K_MSEC(delay_ms));
+			if (err >= 0) {
+				LOG_WRN("Notify status err %d. Will retry %d/%d in %dms",
+					err, inst->srv.status_notify_retry_count,
+					NOTIFY_RETRY_COUNT_MAX, delay_ms);
+				return;
+			}
+		}
+
+		LOG_ERR("Notify status err %d", err);
+	}
 }
 
 /************************ PUBLIC API ************************/
@@ -443,6 +541,9 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	aics->srv.type = param->type;
 	aics->srv.status = param->status ? BT_AICS_STATUS_ACTIVE : BT_AICS_STATUS_INACTIVE;
 	aics->srv.cb = param->cb;
+	k_work_init_delayable(&aics->srv.state_notify_work, state_notify_work_handler);
+	k_work_init_delayable(&aics->srv.description_notify_work, description_notify_work_handler);
+	k_work_init_delayable(&aics->srv.status_notify_work, status_notify_work_handler);
 
 	if (param->description) {
 		strncpy(aics->srv.description, param->description,
@@ -514,13 +615,17 @@ int bt_aics_deactivate(struct bt_aics *inst)
 	}
 
 	if (inst->srv.status == BT_AICS_STATUS_ACTIVE) {
+		int err;
+
 		inst->srv.status = BT_AICS_STATUS_INACTIVE;
 		LOG_DBG("Instance %p: Status was set to inactive", inst);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_INPUT_STATUS,
-				    inst->srv.service_p->attrs,
-				    &inst->srv.status,
-				    sizeof(inst->srv.status));
+		inst->srv.status_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.status_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule status notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->status) {
 			inst->srv.cb->status(inst, 0, inst->srv.status);
@@ -544,13 +649,17 @@ int bt_aics_activate(struct bt_aics *inst)
 	}
 
 	if (inst->srv.status == BT_AICS_STATUS_INACTIVE) {
+		int err;
+
 		inst->srv.status = BT_AICS_STATUS_ACTIVE;
 		LOG_DBG("Instance %p: Status was set to active", inst);
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_INPUT_STATUS,
-				    inst->srv.service_p->attrs,
-				    &inst->srv.status,
-				    sizeof(inst->srv.status));
+		inst->srv.status_notify_retry_count = 0;
+
+		err = k_work_reschedule(&inst->srv.status_notify_work, K_NO_WAIT);
+		if (err < 0) {
+			LOG_ERR("Failed to schedule status notification err %d", err);
+		}
 
 		if (inst->srv.cb && inst->srv.cb->status) {
 			inst->srv.cb->status(inst, 0, inst->srv.status);
@@ -572,8 +681,7 @@ int bt_aics_gain_set_manual_only(struct bt_aics *inst)
 
 	inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL_ONLY;
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
-			    &inst->srv.state, sizeof(inst->srv.state));
+	notify_state(inst);
 
 	return 0;
 }
@@ -587,8 +695,7 @@ int bt_aics_gain_set_auto_only(struct bt_aics *inst)
 
 	inst->srv.state.gain_mode = BT_AICS_MODE_AUTO_ONLY;
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
-			    &inst->srv.state, sizeof(inst->srv.state));
+	notify_state(inst);
 
 	return 0;
 }
@@ -691,8 +798,7 @@ int bt_aics_disable_mute(struct bt_aics *inst)
 
 	inst->srv.state.mute = BT_AICS_STATE_MUTE_DISABLED;
 
-	bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE, inst->srv.service_p->attrs,
-			    &inst->srv.state, sizeof(inst->srv.state));
+	notify_state(inst);
 
 	return 0;
 }

@@ -99,6 +99,13 @@ struct bt_aics_server {
 	struct bt_aics_cb *cb;
 
 	struct bt_gatt_service *service_p;
+
+	struct k_work_delayable state_notify_work;
+	uint8_t state_notify_retry_count;
+	struct k_work_delayable description_notify_work;
+	uint8_t description_notify_retry_count;
+	struct k_work_delayable status_notify_work;
+	uint8_t status_notify_retry_count;
 };
 
 /* Struct used as a common type for the api */
