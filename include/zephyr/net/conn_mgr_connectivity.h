@@ -52,12 +52,14 @@ enum net_event_ethernet_cmd {
 
 /** @endcond */
 
+/* Forward declaration */
+struct conn_mgr_conn_binding;
+
 /**
  * @brief Connectivity Manager Connectivity API structure
  *
  * Used to provide generic access to network association parameters and procedures
  */
-struct conn_mgr_conn_binding;
 struct conn_mgr_conn_api {
 	/**
 	 * @brief When called, the connectivity implementation should start attempting to
@@ -139,11 +141,12 @@ struct conn_mgr_conn_api {
 /** @endcond */
 
 /**
- * @brief conn_mgr Connectivity Implementation struct
- *	  Declares a conn_mgr connectivity layer implementation with the provided API
+ * @brief Connectivity Implementation struct
+ *
+ * Declares a conn_mgr connectivity layer implementation with the provided API
  */
 struct conn_mgr_conn_impl {
-	/* The connectivity API used by the implementation */
+	/** The connectivity API used by the implementation */
 	struct conn_mgr_conn_api *api;
 };
 
@@ -174,19 +177,25 @@ struct conn_mgr_conn_impl {
  * @brief Per-iface connectivity flags
  */
 enum conn_mgr_if_flag {
-	/* Persistent
+	/**
+	 * Persistent
+	 *
 	 * When set, indicates that the connectivity implementation bound to this iface should
 	 * attempt to persist connectivity by automatically reconnecting after connection loss.
 	 */
 	CONN_MGR_IF_PERSISTENT,
 
-	/* No auto-connect
+	/**
+	 * No auto-connect
+	 *
 	 * When set, conn_mgr will not automatically attempt to connect this iface when it reaches
 	 * admin-up.
 	 */
 	CONN_MGR_IF_NO_AUTO_CONNECT,
 
-	/* No auto-down
+	/**
+	 * No auto-down
+	 *
 	 * When set, conn_mgr will not automatically take the iface admin-down when it stops
 	 * trying to connect, even if NET_CONNECTION_MANAGER_AUTO_IF_DOWN is enabled.
 	 */
@@ -198,7 +207,7 @@ enum conn_mgr_if_flag {
 /** @endcond */
 };
 
-/* Value to use with conn_mgr_conn_binding->timeout to indicate no timeout */
+/** Value to use with @ref conn_mgr_conn_binding.timeout to indicate no timeout */
 #define CONN_MGR_IF_NO_TIMEOUT 0
 
 /**
@@ -208,22 +217,31 @@ enum conn_mgr_if_flag {
  * Stores per-iface state for the connectivity implementation.
  */
 struct conn_mgr_conn_binding {
-	/* The network interface the connectivity implementation is bound to */
+	/** The network interface the connectivity implementation is bound to */
 	struct net_if *iface;
 
-	/* The connectivity implementation the network device is bound to */
+	/** The connectivity implementation the network device is bound to */
 	const struct conn_mgr_conn_impl *impl;
 
-	/* Pointer to private, per-iface connectivity context */
+	/** Pointer to private, per-iface connectivity context */
 	void *ctx;
 
-	/* Generic connectivity state - Flags
+	/**
+	 * @name Generic connectivity state
+	 * @{
+	 */
+
+	/**
+	 * Connectivity flags
+	 *
 	 * Public boolean state and configuration values supported by all bindings.
 	 * See conn_mgr_if_flag for options.
 	 */
 	uint32_t flags;
 
-	/* Generic connectivity state - Timeout (seconds)
+	/**
+	 * Timeout (seconds)
+	 *
 	 * Indicates to the connectivity implementation how long it should attempt to
 	 * establish connectivity for during a connection attempt before giving up.
 	 *
@@ -233,6 +251,8 @@ struct conn_mgr_conn_binding {
 	 * Set to CONN_MGR_IF_NO_TIMEOUT to indicate that no timeout should be used.
 	 */
 	int timeout;
+
+	/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 	/* Internal-use mutex for protecting access to the binding and API functions. */
