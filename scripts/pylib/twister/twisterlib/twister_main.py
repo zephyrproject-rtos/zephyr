@@ -19,6 +19,7 @@ from twisterlib.coverage import run_coverage
 from twisterlib.runner import TwisterRunner
 from twisterlib.environment import TwisterEnv
 from twisterlib.package import Artifacts
+from twisterlib.testsuite import Status
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
@@ -142,7 +143,7 @@ def main(options):
         # command line
 
         for i in tplan.instances.values():
-            if i.status == "filtered":
+            if i.status == Status.FILTER:
                 if options.platform and i.platform.name not in options.platform:
                     continue
                 logger.debug(

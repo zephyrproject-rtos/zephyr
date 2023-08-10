@@ -7,6 +7,18 @@ import tarfile
 import json
 import os
 
+
+class Status:
+    PASS = 'passed'
+    FAIL = 'failed'
+    ERROR = 'error'
+    SKIP = 'skipped'
+    RERUN = 'rerun'
+    NOTRUN = 'notrun'
+    BLOCK = 'blocked'
+    INPROGRESS = 'inprogress'
+    FILTER = 'filtered'
+
 class Artifacts:
 
     def __init__(self, env):
@@ -25,7 +37,7 @@ class Artifacts:
         with open(os.path.join(self.options.outdir, "twister.json"), "r") as json_test_plan:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
-                if t['status'] != "filtered":
+                if t['status'] != Status.FILTER:
                     dirs.append(os.path.join(self.options.outdir, t['platform'], t['name']))
 
         dirs.extend(

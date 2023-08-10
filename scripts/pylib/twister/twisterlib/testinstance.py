@@ -24,6 +24,7 @@ from twisterlib.handlers import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
 )
+from twisterlib.testsuite import Status
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -44,7 +45,7 @@ class TestInstance:
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
 
-        self.status = None
+        self.status = Status.NOTRUN
         self.reason = "Unknown"
         self.metrics = dict()
         self.handler = None
@@ -66,7 +67,7 @@ class TestInstance:
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
-        self.status = "filtered"
+        self.status = Status.FILTER
         self.reason = reason
         self.filter_type = filter_type
 
@@ -86,8 +87,8 @@ class TestInstance:
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
-            if case.status == 'started':
-                case.status = "failed"
+            if case.status == Status.INPROGRESS:
+                case.status = Status.FAIL
             elif not case.status:
                 case.status = status
                 if reason:

@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twisterlib.harness import Gtest
 from twisterlib.testinstance import TestInstance
+from twisterlib.testsuite import Status
 
 GTEST_START_STATE = " RUN      "
 GTEST_PASS_STATE = "       OK "
@@ -70,7 +71,7 @@ def test_gtest_start_test(gtest):
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
     assert (
-        gtest.instance.get_case_by_name("id.suite_name.test_name").status == "started"
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status == Status.INPROGRESS
     )
 
 
@@ -111,7 +112,7 @@ def test_gtest_failed(gtest):
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "failed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == Status.FAIL
 
 
 def test_gtest_all_pass(gtest):
@@ -161,7 +162,7 @@ def test_gtest_one_fail(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
     assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
     assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == Status.FAIL
 
 
 def test_gtest_missing_result(gtest):

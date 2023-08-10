@@ -31,6 +31,7 @@ from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
 from twisterlib.quarantine import Quarantine
+from twisterlib.testsuite import Status
 
 
 from zephyr_module import parse_modules
@@ -269,7 +270,7 @@ class TestPlan:
         # at runtime, ignore the cases we already know going to be skipped.
         # This fixes an issue where some sets would get majority of skips and
         # basically run nothing beside filtering.
-        to_run = {k : v for k,v in self.instances.items() if v.status is None}
+        to_run = {k : v for k,v in self.instances.items() if v.status == Status.NOTRUN}
         total = len(to_run)
         per_set = int(total / sets)
         num_extra_sets = total - (per_set * sets)
@@ -286,8 +287,8 @@ class TestPlan:
             end = start + per_set
 
         sliced_instances = islice(to_run.items(), start, end)
-        skipped = {k : v for k,v in self.instances.items() if v.status == 'skipped'}
-        errors = {k : v for k,v in self.instances.items() if v.status == 'error'}
+        skipped = {k : v for k,v in self.instances.items() if v.status == Status.SKIP}
+        errors = {k : v for k,v in self.instances.items() if v.status == Status.ERROR}
         self.instances = OrderedDict(sliced_instances)
         if subset == 1:
             # add all pre-filtered tests that are skipped or got error status
@@ -579,23 +580,23 @@ class TestPlan:
 
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")
-                if status in ["error", "failed"]:
+                if status in [Status.ERROR, Status.FAIL]:
                     instance.status = None
                     instance.reason = None
                     instance.retries += 1
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
-                elif status == 'passed' and instance.run and self.options.test_only:
-                    instance.status = None
-                    instance.reason = None
+                elif status == Status.PASS and instance.run and self.options.test_only:
+                    instance.status = Status.NOTRUN
+                    instance.reason = ""
                 else:
                     instance.status = status
                     instance.reason = reason
 
                 for tc in ts.get('testcases', []):
                     identifier = tc['identifier']
-                    tc_status = tc.get('status', None)
-                    tc_reason = None
+                    tc_status = tc.get('status', Status.NOTRUN)
+                    tc_reason = ""
                     # we set reason only if status is valid, it might have been
                     # reset above...
                     if instance.status:
@@ -895,14 +896,14 @@ class TestPlan:
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
-        filtered_instances = list(filter(lambda item:  item.status == "filtered", self.instances.values()))
+        filtered_instances = list(filter(lambda item:  item.status == Status.FILTER, self.instances.values()))
         for filtered_instance in filtered_instances:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
-                                      if p.status != "skipped" )
+                                      if p.status != Status.SKIP )
 
     def add_instances(self, instance_list):
         for instance in instance_list:
@@ -943,7 +944,7 @@ class TestPlan:
             os.mkdir(links_dir_path)
 
         for instance in self.instances.values():
-            if instance.status != "skipped":
+            if instance.status != Status.SKIP:
                 self._create_build_dir_link(links_dir_path, instance)
 
     def _create_build_dir_link(self, links_dir_path, instance):
@@ -981,5 +982,5 @@ def change_skip_to_error_if_integration(options, instance):
         filters = {t['type'] for t in instance.filters}
         if Filters.CMD_LINE in filters or Filters.SKIP in filters:
             return
-        instance.status = "error"
+        instance.status = Status.ERROR
         instance.reason += " but is one of the integration platforms"

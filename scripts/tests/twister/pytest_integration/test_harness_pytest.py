@@ -12,6 +12,7 @@ from twisterlib.harness import Pytest
 from twisterlib.testsuite import TestSuite
 from twisterlib.testinstance import TestInstance
 from twisterlib.platform import Platform
+from twisterlib.testsuite import Status
 
 
 @pytest.fixture
@@ -102,10 +103,10 @@ def test_if_report_with_error(pytester, testinstance: TestInstance):
     pytest_harness._update_test_status()
 
     assert pytest_harness.state == "failed"
-    assert testinstance.status == "failed"
+    assert testinstance.status == Status.FAIL
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
-        assert tc.status == "failed"
+        assert tc.status == Status.FAIL
         assert tc.output
         assert tc.reason
 
@@ -136,7 +137,7 @@ def test_if_report_with_skip(pytester, testinstance: TestInstance):
     pytest_harness._update_test_status()
 
     assert pytest_harness.state == "skipped"
-    assert testinstance.status == "skipped"
+    assert testinstance.status == Status.SKIP
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
-        assert tc.status == "skipped"
+        assert tc.status == Status.SKIP
