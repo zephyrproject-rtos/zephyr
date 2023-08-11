@@ -1,10 +1,10 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_RPL_CRB
+if BOARD_INTEL_RPL_S_CRB
 
 config BOARD
-	default "rpl_crb"
+	default "intel_rpl_s_crb"
 
 config BUILD_OUTPUT_STRIPPED
 	default y
@@ -34,4 +34,4 @@ config SHELL_STACK_SIZE
 	default 320000
 endif
 
-endif # BOARD_RPL_CRB
+endif # BOARD_INTEL_RPL_S_CRB

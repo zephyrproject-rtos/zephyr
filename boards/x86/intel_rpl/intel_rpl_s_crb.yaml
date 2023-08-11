@@ -1,5 +1,5 @@
-identifier: rpl_crb
-name: Raptor Lake CRB
+identifier: intel_rpl_s_crb
+name: Raptor Lake S CRB
 type: mcu
 arch: x86
 toolchain:
