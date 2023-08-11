@@ -10,6 +10,8 @@ zephyr_library_sources_ifdef(
   sw_isr_common.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
+
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
