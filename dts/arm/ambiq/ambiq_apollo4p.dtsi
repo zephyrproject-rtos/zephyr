@@ -98,6 +98,14 @@
 			compatible = "ambiq,apollo4-pinctrl";
 			reg = <0x40010000 0x800>;
 		};
+
+		wdt0: watchdog@40024000 {
+			compatible = "ambiq,watchdog";
+			reg = <0x40024000 0x400>;
+			interrupts = <1 0>;
+			clock-frequency = <16>;
+			status = "disabled";
+		};
 	};
 };
 
