@@ -70,3 +70,11 @@ endif
 # at a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY
 	range -256 -1 if !IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
+
+config PBUF
+	bool "Packed buffer support library"
+	help
+	  The packet buffer implements lightweight unidirectional packet buffer
+	  with read/write semantics on top of a memory region shared by the
+	  reader and writer. It optionally embeds cache and memory barrier
+	  management to ensure correct data access.
