@@ -116,4 +116,4 @@ Boot the Alder Lake CRB board to the EFI shell with USB flash drive connected.
 
       Shell> fs0:zephyr.efi
 
-.. _INTEL_ADL: https://ark.intel.com/content/www/us/en/ark/products/codename/232598/products-formerly-alder-laken.html
+.. _INTEL_ADL: https://edc.intel.com/content/www/us/en/design/products/platforms/processor-and-core-i3-n-series-datasheet-volume-1-of-2/
