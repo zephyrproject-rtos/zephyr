@@ -108,8 +108,8 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 	return table_idx;
 }
 
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
-		   const void *param)
+void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
+			  const void *param)
 {
 	unsigned int table_idx;
 
