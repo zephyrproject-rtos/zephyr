@@ -3,7 +3,6 @@
 zephyr_sources(
   soc.c
   soc_cache.c
-  loader.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
