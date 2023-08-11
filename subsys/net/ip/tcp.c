@@ -3065,10 +3065,16 @@ int net_tcp_connect(struct net_context *context,
 		 * net_context_create_ipv4_new() is not called in the packet
 		 * output chain
 		 */
-		ip4 = net_if_ipv4_select_src_addr(
-			net_context_get_iface(context),
-			&net_sin(remote_addr)->sin_addr);
-		conn->src.sin.sin_addr = *ip4;
+		if (net_ipv4_is_addr_unspecified(
+			&net_sin(local_addr)->sin_addr)) {
+			ip4 = net_if_ipv4_select_src_addr(
+				net_context_get_iface(context),
+				&net_sin(remote_addr)->sin_addr);
+			net_ipaddr_copy(&conn->src.sin.sin_addr, ip4);
+		} else {
+			net_ipaddr_copy(&conn->src.sin.sin_addr,
+					&net_sin(local_addr)->sin_addr);
+		}
 		net_ipaddr_copy(&conn->dst.sin.sin_addr,
 				&net_sin(remote_addr)->sin_addr);
 		break;
@@ -3088,10 +3094,16 @@ int net_tcp_connect(struct net_context *context,
 		conn->dst.sin6.sin6_port = remote_port;
 		conn->src.sin6.sin6_port = local_port;
 
-		ip6 = net_if_ipv6_select_src_addr(
-					net_context_get_iface(context),
-					&net_sin6(remote_addr)->sin6_addr);
-		conn->src.sin6.sin6_addr = *ip6;
+		if (net_ipv6_is_addr_unspecified(
+			&net_sin6(local_addr)->sin6_addr)) {
+			ip6 = net_if_ipv6_select_src_addr(
+				net_context_get_iface(context),
+				&net_sin6(remote_addr)->sin6_addr);
+			net_ipaddr_copy(&conn->src.sin6.sin6_addr, ip6);
+		} else {
+			net_ipaddr_copy(&conn->src.sin6.sin6_addr,
+					&net_sin6(local_addr)->sin6_addr);
+		}
 		net_ipaddr_copy(&conn->dst.sin6.sin6_addr,
 				&net_sin6(remote_addr)->sin6_addr);
 		break;
