@@ -30,6 +30,7 @@ config SPI_NRFX_SPIM
 config SPI_NRFX_SPIS
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPIS_ENABLED
+	select SPI_SLAVE
 	select NRFX_SPIS0 if HAS_HW_NRF_SPIS0
 	select NRFX_SPIS1 if HAS_HW_NRF_SPIS1
 	select NRFX_SPIS2 if HAS_HW_NRF_SPIS2
