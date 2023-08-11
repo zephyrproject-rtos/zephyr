@@ -1962,6 +1962,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	ad_len += *data_len;
+
 	err = bt_le_ext_adv_set_data(adv, ad_len > 0 ? ad : NULL, ad_len,
 					  sd_len > 0 ? sd : NULL, sd_len);
 	if (err) {
