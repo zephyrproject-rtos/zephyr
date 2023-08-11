@@ -275,11 +275,11 @@ where:
     | <pool_name>           | string representing the pool name, used as a key |
     |                       | for dictionary with pool statistics data         |
     +-----------------------+--------------------------------------------------+
-    | "blksiz"              | size of the memory block in the pool             |
+    | "blksiz"              | size of the memory blocks in the pool            |
     +-----------------------+--------------------------------------------------+
     | "nblks"               | number of blocks in the pool                     |
     +-----------------------+--------------------------------------------------+
-    | "nrfree"              | number of free blocks                            |
+    | "nfree"               | number of free blocks                            |
     +-----------------------+--------------------------------------------------+
     | "min"                 | lowest number of free blocks the pool reached    |
     |                       | during run-time                                  |
