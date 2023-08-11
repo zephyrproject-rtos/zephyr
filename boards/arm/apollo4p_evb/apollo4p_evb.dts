@@ -13,6 +13,9 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &uart0 {
@@ -23,5 +26,9 @@
 };
 
 &counter0 {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
