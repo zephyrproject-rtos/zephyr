@@ -403,6 +403,23 @@ config DYNAMIC_INTERRUPTS
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
 
+config SHARED_INTERRUPTS
+	bool "Set this to enable support for shared interrupts"
+	depends on GEN_SW_ISR_TABLE
+	select EXPERIMENTAL
+	help
+	  Set this to enable support for shared interrupts. Use this with
+	  caution as enabling this will increase the image size by a
+	  non-negligible amount.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients allowed per shared interrupt"
+	default 2
+	depends on SHARED_INTERRUPTS
+	help
+	  This option controls the maximum number of clients allowed
+	  per shared interrupt. Set this according to your needs.
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help
