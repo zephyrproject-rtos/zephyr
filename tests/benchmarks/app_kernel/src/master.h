@@ -50,7 +50,6 @@
 extern char msg[MAX_MSG];
 extern char data_bench[MESSAGE_SIZE];
 extern struct k_pipe *test_pipes[];
-extern FILE *output_file;
 extern const char newline[];
 extern char sline[];
 
@@ -150,25 +149,24 @@ extern struct k_mem_slab MAP1;
 
 
 /* PRINT_STRING
- * Macro to print an ASCII NULL terminated string. fprintf is used
- * so output can go to console.
+ * Macro to print an ASCII NULL terminated string.
  */
-#define PRINT_STRING(string, stream)  fputs(string, stream)
+#define PRINT_STRING(string)  printk("%s", string)
 
 /* PRINT_F
- * Macro to print a formatted output string. fprintf is used when
+ * Macro to print a formatted output string.
  * Assumed that sline character array of SLINE_LEN + 1 characters
  * is defined in the main file
  */
 
-#define PRINT_F(stream, fmt, ...)					\
+#define PRINT_F(fmt, ...)					        \
 {									\
-	snprintf(sline, SLINE_LEN, fmt, ##__VA_ARGS__);	\
-	PRINT_STRING(sline, stream);					\
+	snprintf(sline, SLINE_LEN, fmt, ##__VA_ARGS__);                 \
+	PRINT_STRING(sline);					        \
 }
 
 #define PRINT_OVERFLOW_ERROR()						\
-	PRINT_F(output_file, __FILE__":%d Error: tick occurred\n", __LINE__)
+	PRINT_F(__FILE__":%d Error: tick occurred\n", __LINE__)
 
 static inline uint32_t BENCH_START(void)
 {
@@ -186,6 +184,5 @@ static inline void check_result(void)
 		return; /* error */
 	}
 }
-
 
 #endif /* _MASTER_H */
