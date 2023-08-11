@@ -6,7 +6,6 @@ else()
   zephyr_sources(
     soc.c
     soc_cache.c
-    loader.c
     esp32s3-mp.c
     )
 endif()

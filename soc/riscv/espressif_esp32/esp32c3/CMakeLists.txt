@@ -5,7 +5,6 @@ zephyr_sources(
   soc_irq.S
   soc_irq.c
   soc.c
-  loader.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_PM power.c)
