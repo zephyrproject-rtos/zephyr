@@ -78,6 +78,16 @@
 				int-gpios = <&gpio0 0 0>;
 				input-codes = <0 1 2>;
 			};
+
+			stmpe811@4 {
+				compatible = "st,stmpe811";
+				reg = <0x4>;
+				int-gpios = <&gpio0 0 0>;
+				panel-driver-settling-time-us = <10>;
+				touch-detect-delay-us = <10>;
+				touch-average-control = <1>;
+				tracking-index = <0>;
+			};
 		};
 
 		spi@2 {
