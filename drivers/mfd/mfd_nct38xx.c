@@ -37,43 +37,11 @@ struct k_sem *mfd_nct38xx_get_lock_reference(const struct device *dev)
 	return &data->lock;
 }
 
-int nct38xx_reg_read_byte(const struct device *dev, uint8_t reg_addr, uint8_t *val)
+const struct i2c_dt_spec *mfd_nct38xx_get_i2c_dt_spec(const struct device *dev)
 {
-	const struct mfd_nct38xx_config *const config = dev->config;
+	const struct mfd_nct38xx_config *config = dev->config;
 
-	return i2c_reg_read_byte_dt(&config->i2c_dev, reg_addr, val);
-}
-
-int nct38xx_reg_burst_read(const struct device *dev, uint8_t start_addr, uint8_t *buf,
-			   uint32_t num_bytes)
-{
-	const struct mfd_nct38xx_config *const config = dev->config;
-
-	return i2c_burst_read_dt(&config->i2c_dev, start_addr, buf, num_bytes);
-}
-
-int nct38xx_reg_write_byte(const struct device *dev, uint8_t reg_addr, uint8_t val)
-{
-	const struct mfd_nct38xx_config *const config = dev->config;
-
-	return i2c_reg_write_byte_dt(&config->i2c_dev, reg_addr, val);
-}
-
-int nct38xx_reg_burst_write(const struct device *dev, uint8_t start_addr, uint8_t *buf,
-			    uint32_t num_bytes)
-{
-	const struct mfd_nct38xx_config *const config = dev->config;
-
-	return i2c_burst_write_dt(&config->i2c_dev, start_addr, buf, num_bytes);
-}
-
-int nct38xx_reg_update(const struct device *dev, uint8_t reg_addr, uint8_t reg_val, uint8_t new_val)
-{
-	if (reg_val == new_val) {
-		return 0;
-	}
-
-	return nct38xx_reg_write_byte(dev, reg_addr, new_val);
+	return &config->i2c_dev;
 }
 
 #define MFD_NCT38XX_DEFINE(inst)                                                                   \

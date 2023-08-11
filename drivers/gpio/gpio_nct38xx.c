@@ -35,6 +35,8 @@ struct gpio_nct38xx_data {
 	const struct device *dev;
 	/* lock NCT38xx register access */
 	struct k_sem *lock;
+	/* I2C device for the MFD parent */
+	const struct i2c_dt_spec *i2c_dev;
 };
 
 void nct38xx_gpio_alert_handler(const struct device *dev)
@@ -55,8 +57,8 @@ static int nct38xx_init_interrupt(const struct device *dev)
 	k_sem_take(data->lock, K_FOREVER);
 
 	/* Disable all interrupt */
-	if (nct38xx_reg_burst_write(dev, NCT38XX_REG_ALERT_MASK, (uint8_t *)&alert_mask,
-				    sizeof(alert_mask))) {
+	if (i2c_burst_write_dt(data->i2c_dev, NCT38XX_REG_ALERT_MASK, (uint8_t *)&alert_mask,
+			       sizeof(alert_mask))) {
 		ret = -EIO;
 		goto unlock;
 	}
@@ -65,21 +67,21 @@ static int nct38xx_init_interrupt(const struct device *dev)
 	alert_mask |= BIT(NCT38XX_REG_ALERT_MASK_VENDOR_DEFINDED_ALERT);
 
 	/* Clear alert */
-	if (nct38xx_reg_burst_read(dev, NCT38XX_REG_ALERT, (uint8_t *)&alert, sizeof(alert))) {
+	if (i2c_burst_read_dt(data->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert, sizeof(alert))) {
 		ret = -EIO;
 		goto unlock;
 	}
 	alert &= alert_mask;
 	if (alert) {
-		if (nct38xx_reg_burst_write(dev, NCT38XX_REG_ALERT, (uint8_t *)&alert,
-					    sizeof(alert))) {
+		if (i2c_burst_write_dt(data->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert,
+				       sizeof(alert))) {
 			ret = -EIO;
 			goto unlock;
 		}
 	}
 
-	if (nct38xx_reg_burst_write(dev, NCT38XX_REG_ALERT_MASK, (uint8_t *)&alert_mask,
-				    sizeof(alert_mask))) {
+	if (i2c_burst_write_dt(data->i2c_dev, NCT38XX_REG_ALERT_MASK, (uint8_t *)&alert_mask,
+			       sizeof(alert_mask))) {
 		ret = -EIO;
 		goto unlock;
 	}
@@ -101,6 +103,7 @@ static int nct38xx_gpio_init(const struct device *dev)
 	}
 
 	data->lock = mfd_nct38xx_get_lock_reference(config->mfd);
+	data->i2c_dev = mfd_nct38xx_get_i2c_dt_spec(config->mfd);
 
 	if (IS_ENABLED(CONFIG_GPIO_NCT38XX_ALERT)) {
 		nct38xx_init_interrupt(dev);
