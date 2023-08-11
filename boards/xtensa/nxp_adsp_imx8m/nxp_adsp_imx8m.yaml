@@ -8,5 +8,6 @@ testing:
   only_tags:
     - kernel
     - sof
+    - ipm
 supported:
   - uart
