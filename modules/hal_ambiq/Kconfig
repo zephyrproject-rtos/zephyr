@@ -25,4 +25,9 @@ config AMBIQ_HAL_USE_TIMER
 	help
 	  Use the TIMER driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_WDT
+	bool
+	help
+	  Use the WDT driver from Ambiq HAL
+
 endif # AMBIQ_HAL
