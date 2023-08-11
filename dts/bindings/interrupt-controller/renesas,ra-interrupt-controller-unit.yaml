@@ -1,0 +1,20 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA series interrupt controller unit
+
+compatible: "renesas,ra-interrupt-controller-unit"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+
+interrupt-cells:
+  - irq
+  - priority
+  - flags

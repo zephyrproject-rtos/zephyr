@@ -13,9 +13,6 @@ child-binding:
     Definitions for a pinctrl state.
   child-binding:
 
-    include:
-      - name: pincfg-node.yaml
-
     properties:
       pinmux:
         required: true
