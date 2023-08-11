@@ -12,7 +12,7 @@
 #include <intel/raptor_lake.dtsi>
 
 / {
-	model = "rpl_crb";
+	model = "intel_rpl_s_crb";
 	compatible = "intel,raptor-lake-crb";
 
 	chosen {

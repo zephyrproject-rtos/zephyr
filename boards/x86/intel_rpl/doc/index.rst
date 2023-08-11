@@ -1,7 +1,7 @@
-.. _rpl_crb:
+.. _intel_rpl_s_crb:
 
-Raptor Lake CRB
-################
+Raptor Lake S CRB
+#################
 
 Overview
 ********
@@ -40,11 +40,11 @@ Build Zephyr application
 ========================
 
 #. Build a Zephyr application; for instance, to build the ``hello_world``
-   application on Raptor Lake CRB:
+   application on Raptor Lake S CRB:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: rpl_crb
+      :board: intel_rpl_s_crb
       :goals: build
 
    .. note::
@@ -52,8 +52,8 @@ Build Zephyr application
       A Zephyr EFI image file named :file:`zephyr.efi` is automatically
       created in the build directory after the application is built.
 
-Booting the Raptor Lake CRB Board using UEFI
-============================================
+Booting the Raptor Lake S CRB Board using UEFI
+==============================================
 
 .. include:: ../../common/efi_boot.rst
 
