@@ -21,7 +21,7 @@
   - "subsys/testsuite/ztest/**/*"
 
 "CI-lwm2m-test":
-  - "**/*"
+# Not necessary to run tests on changes to this repo.
 
 "CI-boot-dfu-test":
   - "subsys/mgmt/mcumgr/**/*"
