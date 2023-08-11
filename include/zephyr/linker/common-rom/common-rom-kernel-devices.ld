@@ -33,6 +33,15 @@
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_SHARED_INTERRUPTS)
+	SECTION_PROLOGUE(shared_sw_isr_table,,)
+	{
+		/* TODO: does this section require alignment? */
+		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #endif
 
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
