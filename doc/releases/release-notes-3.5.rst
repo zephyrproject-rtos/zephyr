@@ -44,6 +44,10 @@ Deprecated in this release
   The GIC version should now be specified by adding the appropriate compatible, for
   example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
 
+* MCUmgr image management functions :c:func:`img_mgmt_state_set_pending` and
+  :c:func:`img_mgmt_state_set_confirm` have been deprecated and are being replaced
+  by :c:func:`img_mgmt_set_next_boot_slot`.
+
 Stable API changes in this release
 ==================================
 
