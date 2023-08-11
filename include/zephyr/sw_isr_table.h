@@ -107,6 +107,11 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq);
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 void z_isr_install(unsigned int irq, void (*routine)(const void *),
 		   const void *param);
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+		    const void *param);
+#endif /* CONFIG_SHARED_INTERRUPTS */
 #endif
 
 #ifdef __cplusplus

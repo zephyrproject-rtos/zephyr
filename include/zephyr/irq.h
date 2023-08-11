@@ -71,6 +71,31 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 /**
+ * Disconnect a dynamic interrupt.
+ *
+ * Use this in conjunction with shared interrupts to remove a routine/parameter
+ * pair from the list of clients using the same interrupt line. If the interrupt
+ * is not being shared then the associated _sw_isr_table entry will be replaced
+ * by (NULL, z_irq_spurious) (default entry).
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return 0 in case of success, negative value otherwise
+ */
+static inline int
+irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+		       void (*routine)(const void *parameter),
+		       const void *parameter, uint32_t flags)
+{
+	return arch_irq_disconnect_dynamic(irq, priority, routine,
+					   parameter, flags);
+}
+
+/**
  * @brief Initialize a 'direct' interrupt handler.
  *
  * This routine initializes an interrupt handler for an IRQ. The IRQ must be
