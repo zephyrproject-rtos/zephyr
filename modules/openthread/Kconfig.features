@@ -92,6 +92,16 @@ config OPENTHREAD_CSL_RECEIVER
 	help
 	  Enable CSL Receiver support for Thread 1.2
 
+config OPENTHREAD_DEVICE_PROP_LEADER_WEIGHT
+	bool "Device props for leader weight"
+	default n if (OPENTHREAD_THREAD_VERSION_1_1 || \
+		      OPENTHREAD_THREAD_VERSION_1_2 || \
+		      OPENTHREAD_THREAD_VERSION_1_3)
+	default y
+	help
+	  Enable the device properties which are then used to determine and set
+	  the Leader Weight.
+
 config OPENTHREAD_DATASET_UPDATER
 	bool "Dataset updater"
 
@@ -164,6 +174,9 @@ config OPENTHREAD_LEGACY
 
 config OPENTHREAD_LINK_METRICS_INITIATOR
 	bool "Link Metrics initiator"
+
+config OPENTHREAD_LINK_METRICS_MANAGER
+	bool "Link Metrics manager"
 
 config OPENTHREAD_LINK_METRICS_SUBJECT
 	bool "Link Metrics subject"
