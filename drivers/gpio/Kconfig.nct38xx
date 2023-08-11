@@ -27,15 +27,17 @@ config GPIO_NCT38XX_PORT_INIT_PRIORITY
 	  Device driver initialization priority. The priority should be lower
 	  than I2C & GPIO_NCT38XX_INIT_PRIORITY device.
 
-config GPIO_NCT38XX_INTERRUPT
+config GPIO_NCT38XX_ALERT
 	bool "NCT38XX GPIO interrupt"
+	default y
+	depends on DT_HAS_NUVOTON_NCT38XX_GPIO_ALERT_ENABLED
 	help
 	  Enable interrupt support in NCT38XX driver.
 
 config GPIO_NCT38XX_ALERT_INIT_PRIORITY
 	int "NCT38XX GPIO alert handler init priority"
 	default 40
-	depends on GPIO_NCT38XX_INTERRUPT
+	depends on GPIO_NCT38XX_ALERT
 	help
 	  NCT38XX alert handler initialization priority. This initialization
 	  must take place after the alert GPIO device is initialized.
