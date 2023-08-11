@@ -1296,7 +1296,7 @@ static void features_work_process(struct k_work *work)
 			/* mark to notify on reconnect */
 			atomic_set_bit(client->flags, FLAG_FEATURES_CHANGED);
 			continue;
-		} else if (atomic_test_and_clear_bit(client->flags, FLAG_CONTROL_POINT_NOTIFY)) {
+		} else if (atomic_test_and_clear_bit(client->flags, FLAG_FEATURES_CHANGED)) {
 			err = bt_gatt_notify(client->conn, FEATURES_ATTR, &has.features,
 					     sizeof(has.features));
 			if (err != 0) {
