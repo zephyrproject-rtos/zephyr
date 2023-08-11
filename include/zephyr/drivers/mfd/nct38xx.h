@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MFD_NCT38XX_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -24,65 +25,13 @@ extern "C" {
 struct k_sem *mfd_nct38xx_get_lock_reference(const struct device *dev);
 
 /**
- * @brief Read a NCT38XX register
+ * @brief Get the I2C DT spec reference for a NCT38xx instance.
  *
- * @param dev NCT38XX multi-function device
- * @param reg_addr Register address
- * @param val A pointer to a buffer for the data to return
+ * @param[in] dev     Pointer to device struct of the driver instance
  *
- * @return 0 if successful, otherwise failed.
+ * @return Address of the I2C DT spec
  */
-int nct38xx_reg_read_byte(const struct device *dev, uint8_t reg_addr, uint8_t *val);
-
-/**
- * @brief Read a sequence of NCT38XX registers
- *
- * @param dev NCT38XX multi-function device
- * @param start_addr The register start address
- * @param buf A pointer to a buffer for the data to return
- * @param num_bytes Number of data to read
- *
- * @return 0 if successful, otherwise failed.
- */
-int nct38xx_reg_burst_read(const struct device *dev, uint8_t start_addr, uint8_t *buf,
-			   uint32_t num_bytes);
-
-/**
- * @brief Write a NCT38XX register
- *
- * @param dev NCT38XX device
- * @param reg_addr Register address
- * @param val Data to write
- *
- * @return 0 if successful, otherwise failed.
- */
-int nct38xx_reg_write_byte(const struct device *dev, uint8_t reg_addr, uint8_t val);
-
-/**
- * @brief Write a sequence of NCT38XX registers
- *
- * @param dev NCT38XX device
- * @param start_addr The register start address
- * @param buf A pointer to a buffer for the data to write
- * @param num_bytes Number of data to write
- *
- * @return 0 if successful, otherwise failed.
- */
-int nct38xx_reg_burst_write(const struct device *dev, uint8_t start_addr, uint8_t *buf,
-			    uint32_t num_bytes);
-
-/**
- * @brief Compare data & write a NCT38XX register
- *
- * @param dev NCT38XX device
- * @param reg_addr Register address
- * @param reg_val Old register data
- * @param new_val New register data
- *
- * @return 0 if successful, otherwise failed.
- */
-int nct38xx_reg_update(const struct device *dev, uint8_t reg_addr, uint8_t reg_val,
-		       uint8_t new_val);
+const struct i2c_dt_spec *mfd_nct38xx_get_i2c_dt_spec(const struct device *dev);
 
 #ifdef __cplusplus
 }
