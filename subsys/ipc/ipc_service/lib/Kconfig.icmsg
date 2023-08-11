@@ -39,3 +39,8 @@ config IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
 	help
 	  Time to wait for remote bonding notification before the
 	  notification is repeated.
+
+config IPC_SERVICE_ICMSG_PBUF
+	bool "Inter core messaging buffer support library"
+	help
+	  Inter core messaging buffer library
