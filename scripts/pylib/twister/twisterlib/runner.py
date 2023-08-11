@@ -112,7 +112,6 @@ class ExecutionCounter(object):
         print("--------------------------------")
         print(f"Total test suites: {self.total}") # actually test instances
         print(f"Total test cases: {self.cases}")
-        print(f"Executed test cases: {self.cases - self.cases_filtered}")
         print(f"Skipped test cases: {self.cases_filtered}")
         print(f"Completed test suites: {self.done}")
         print(f"Passing test suites: {self.passed}")
