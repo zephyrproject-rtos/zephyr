@@ -28,10 +28,17 @@
 		reg = <0x00018000 0x1e8000>;
 	};
 
-	/* TCM + SRAM region */
-	sram0: memory@10000000 {
+	/* TCM */
+	tcm: tcm@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 0x10000>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	/* SRAM */
+	sram0: memory@10010000 {
 		compatible = "mmio-sram";
-		reg = <0x10000000 0x2C0000>;
+		reg = <0x10010000 0x2B0000>;
 	};
 
 	soc {
