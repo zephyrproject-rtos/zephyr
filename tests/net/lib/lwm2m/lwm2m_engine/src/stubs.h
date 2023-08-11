@@ -39,7 +39,7 @@ DECLARE_FAKE_VALUE_FUNC(int64_t, engine_observe_shedule_next_event, struct obser
 			const int64_t);
 DECLARE_FAKE_VALUE_FUNC(int, handle_request, struct coap_packet *, struct lwm2m_message *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_udp_receive, struct lwm2m_ctx *, uint8_t *, uint16_t,
-		       struct sockaddr *, udp_request_handler_cb_t);
+		       struct sockaddr *);
 DECLARE_FAKE_VALUE_FUNC(bool, lwm2m_rd_client_is_registred, struct lwm2m_ctx *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_res_buf, const struct lwm2m_obj_path *, void **, uint16_t *,
