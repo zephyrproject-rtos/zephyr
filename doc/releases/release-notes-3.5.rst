@@ -32,6 +32,9 @@ Changes in this release
   documentation. As this is largely an internal API, existing applications will
   most probably continue to work unchanged.
 
+* The Kconfig option CONFIG_GPIO_NCT38XX_INTERRUPT has been renamed to
+  :kconfig:option:`CONFIG_GPIO_NCT38XX_ALERT`.
+
 Removed APIs in this release
 ============================
 
