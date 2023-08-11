@@ -1,14 +1,25 @@
-.. _intel_adl_crb:
+.. _intel_adl_n:
 
-Alder Lake CRB
-##############
+Alder Lake N
+############
 
 Overview
 ********
-Alder Lake Reference Board (INTEL_ADL CRB) is an example implementation of a
-compact single board computer with high performance for IoT edge devices.
+Alder Lake processor is a 64-bit multi-core processor built on 10-nanometer
+technology process.
 
-This board configuration enables kernel support for the `INTEL_ADL`_ board.
+Currently supported is N-processor line, Single Chip Platform that consists of
+the Processor Die and Alder Lake N Platform Controller Hub (ADL-N PCH) Die on
+the same package as Multi-Chip Package (MCP).
+
+Proposed branding for Adler Lake N is Intel Processor (N100,N200) and
+Intel Core i3 (N300, N305).
+
+Alder Lake N Customer Reference Board (ADL-N CRB) and Alder Lake Reference
+Validation Platform (ADL-N RVP) are example implementations of compact single
+board computer with high performance for IoT edge devices.
+
+This board configuration enables kernel support for the Alder Lake N boards.
 
 Hardware
 ********
@@ -22,7 +33,7 @@ Refer to the `INTEL_ADL`_ website for more information.
 
 Programming and Debugging
 *************************
-Use the following procedures for booting an image on a RPL CRB board.
+Use the following procedures for booting an image for an Alder Lake N CRB board.
 
 .. contents::
    :depth: 1
@@ -33,7 +44,7 @@ Build Zephyr application
 ========================
 
 #. Build a Zephyr application; for instance, to build the ``hello_world``
-   application on Alder Lake CRB:
+   application for Alder Lake N CRB:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
