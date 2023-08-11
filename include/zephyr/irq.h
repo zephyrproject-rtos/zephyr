@@ -13,7 +13,6 @@
 
 /* Pull in the arch-specific implementations */
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/toolchain.h>
@@ -21,11 +20,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && CONFIG_MAX_IRQ_PER_AGGREGATOR > 0
-BUILD_ASSERT((LOG2(CONFIG_MAX_IRQ_PER_AGGREGATOR) + 1) <= CONFIG_1ST_LEVEL_INTERRUPT_BITS,
-	"CONFIG_MAX_IRQ_PER_AGGREGATOR is too large");
 #endif
 
 /**
