@@ -982,15 +982,6 @@ struct bt_iso_info {
 int bt_iso_chan_get_info(const struct bt_iso_chan *chan,
 			 struct bt_iso_info *info);
 
-/** @brief Get the type of an ISO channel
- *
- * @param chan Channel object.
- *
- * @return enum bt_iso_chan_type The type of the channel. If @p is NULL this
- *                               will be BT_ISO_CHAN_TYPE_NONE.
- */
-enum bt_iso_chan_type bt_iso_chan_get_type(const struct bt_iso_chan *chan);
-
 /** @brief Get ISO transmission timing info
  *
  *  @details Reads timing information for transmitted ISO packet on an ISO channel.
