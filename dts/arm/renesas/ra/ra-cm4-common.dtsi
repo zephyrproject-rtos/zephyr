@@ -72,6 +72,15 @@
 	};
 
 	soc {
+		interrupt-parent = <&icu>;
+		icu: interrupt-controller@40006000 {
+			compatible = "renesas,ra-interrupt-controller-unit";
+			reg = <0x40006000 0x40>;
+			reg-names = "icu";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
 		cgc: cgc@4001e000 {
 			compatible = "renesas,ra-clock-generation-circuit";
 			reg = <0x4001e000 0x40 0x40047000 0x10>;
