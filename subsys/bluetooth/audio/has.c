@@ -829,11 +829,11 @@ static void preset_active_set(uint8_t index)
 	if (index != has.active_index) {
 		has.active_index = index;
 
-	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
-		struct has_client *client = &has_client_list[i];
+		for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
+			struct has_client *client = &has_client_list[i];
 			/* mark to notify */
-		atomic_set_bit(client->flags, FLAG_ACTIVE_INDEX_CHANGED);
-	}
+			atomic_set_bit(client->flags, FLAG_ACTIVE_INDEX_CHANGED);
+		}
 
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
