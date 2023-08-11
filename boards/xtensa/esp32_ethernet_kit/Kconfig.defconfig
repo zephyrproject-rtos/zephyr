@@ -8,7 +8,7 @@ config BOARD
 	depends on BOARD_ESP32_ETHERNET_KIT
 
 config ESP_SPIRAM
-	default y
+	default y if !MCUBOOT
 
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64
