@@ -914,12 +914,13 @@ config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365
 	help
-	  Value is used in the time conversion static inline function to determine
-	  at compile time which algorithm to use. One algorithm is faster, takes
-	  less code but may overflow if multiplication of source and target
-	  frequency exceeds 64 bits. Second algorithm prevents that. Faster
-	  algorithm is selected for conversion if maximum timeout represented in
-	  source frequency domain multiplied by target frequency fits in 64 bits.
+	  This value determines the longest timeout that can be used for kernel
+	  and network time timeouts. Depending on the kernel tick frequency and
+	  this number an algorithm is selected for time conversion. One
+	  algorithm is faster but may overflow. The second algorithm prevents
+	  overflow but is slower. The faster algorithm is selected if the
+	  maximum timeout configured here represented in the source frequency
+	  domain multiplied by the target frequency fits into 64 bits.
 
 config BUSYWAIT_CPU_LOOPS_PER_USEC
 	int "Number of CPU loops per microsecond for crude busy looping"

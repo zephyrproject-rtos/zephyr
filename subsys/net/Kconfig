@@ -70,6 +70,21 @@ config NET_POWER_MANAGEMENT
 	bool
 	depends on PM_DEVICE
 
+config NET_TIME_REFERENCE_CLOCK
+	bool
+	select TIMEOUT_QUEUE
+	select TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  May be selected by time sensitive protocols (e.g. PTP, TSCH, TSN,
+	  etc.) that require a precision local network reference clock
+	  syntonized (i.e. frequency and phase locked) across local network
+	  interfaces and/or network nodes. The network time reference does not
+	  guarantee a common timescale (epoch, leap seconds, etc.). Support for
+	  system-wide timescales requires higher level clock APIs. Time
+	  syntonization requires dedicated hardware and driver support by
+	  participating network interface drivers.
+
 source "subsys/net/Kconfig.hostname"
 
 source "subsys/net/l2/Kconfig"
