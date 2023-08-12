@@ -470,7 +470,7 @@ int bt_vocs_client_location_set(struct bt_vocs_client *inst, uint32_t location)
 		return -EINVAL;
 	}
 
-	CHECKIF(location == BT_AUDIO_LOCATION_PROHIBITED || location > BT_AUDIO_LOCATION_ANY) {
+	CHECKIF(location > BT_AUDIO_LOCATION_ANY) {
 		LOG_DBG("Invalid location 0x%08X", location);
 		return -EINVAL;
 	}

@@ -621,14 +621,6 @@ static void test_vocs_location_set(void)
 		return;
 	}
 
-	invalid_location = BT_AUDIO_LOCATION_PROHIBITED;
-
-	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
-	if (err == 0) {
-		FAIL("bt_vocs_location_set with location 0x%08X did not fail", invalid_location);
-		return;
-	}
-
 	invalid_location = BT_AUDIO_LOCATION_ANY + 1;
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);

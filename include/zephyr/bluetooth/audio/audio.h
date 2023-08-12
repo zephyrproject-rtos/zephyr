@@ -245,7 +245,7 @@ enum bt_audio_metadata_type {
  * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_location {
-	BT_AUDIO_LOCATION_PROHIBITED = 0,
+	BT_AUDIO_LOCATION_MONO_AUDIO = 0,
 	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
 	BT_AUDIO_LOCATION_FRONT_RIGHT = BIT(1),
 	BT_AUDIO_LOCATION_FRONT_CENTER = BIT(2),
