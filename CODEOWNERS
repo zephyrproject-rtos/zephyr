@@ -263,6 +263,8 @@
 /drivers/counter/counter_cmos.c           @dcpleung
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
 /drivers/counter/*esp32*                  @sylvioalves
+/drivers/counter/dw_timer.c               @pbalsundar
+/drivers/counter/counter_timer_shell.c    @pbalsundar
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/display/display_ili9342c.*       @extremegtx
@@ -565,6 +567,7 @@
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
+/dts/bindings/counter/snps,dw-timers.yaml @pbalsundar
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @ChiHuaL
