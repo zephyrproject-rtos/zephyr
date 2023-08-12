@@ -592,7 +592,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 	BT_ISO_DATA_DBG("handle %u len %u flags 0x%02x pb 0x%02x ts 0x%02x",
 			iso->handle, buf->len, flags, pb, ts);
 
-	/* When the PB_Flag does not equal 0b00, the fields Time_Stamp,
+	/* When the PB_Flag does not equal 0b00 and 0b10, the fields Time_Stamp,
 	 * Packet_Sequence_Number, Packet_Status_Flag and ISO_SDU_Length
 	 * are omitted from the HCI ISO Data packet.
 	 */
