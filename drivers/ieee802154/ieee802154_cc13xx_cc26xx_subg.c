@@ -10,16 +10,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx_subg);
 
-#include <zephyr/device.h>
 #include <errno.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/net/ieee802154_radio.h>
+#include <string.h>
+
+#include <zephyr/device.h>
 #include <zephyr/net/ieee802154.h>
+#include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/random/rand32.h>
-#include <string.h>
-#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <driverlib/rf_mailbox.h>
 #include <driverlib/rf_prop_mailbox.h>
@@ -348,7 +349,7 @@ static void client_error_callback(RF_Handle h, RF_CmdHandle ch,
 {
 	ARG_UNUSED(h);
 	ARG_UNUSED(ch);
-	LOG_DBG("e: 0x%" PRIx64, e);
+	LOG_ERR("client error: 0x%" PRIx64, e);
 }
 
 static void client_event_callback(RF_Handle h, RF_ClientEvent event,
@@ -821,8 +822,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/*
-	 * Run CMD_FS with frequency 0 to ensure RF_currClient is not NULL.
+	/* Run CMD_FS with frequency 0 to ensure RF_currClient is not NULL.
 	 * RF_currClient is a static variable in the TI RF Driver library.
 	 * If this is not done, then even CMD_ABORT fails.
 	 */
