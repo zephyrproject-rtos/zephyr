@@ -1069,10 +1069,10 @@ static const struct can_driver_api can_api_funcs = {
 		.prescaler = 0x01
 	},
 	.timing_max = {
-		.sjw = 0x07,
+		.sjw = 0x04,
 		.prop_seg = 0x00,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x07,
+		.phase_seg1 = 0x10,
+		.phase_seg2 = 0x08,
 		.prescaler = 0x400
 	}
 };
