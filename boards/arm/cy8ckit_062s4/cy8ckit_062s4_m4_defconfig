@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023 David Ullmann
+# SPDX-License-Identifier: Apache-2.0
 
 CONFIG_SOC_SERIES_PSOC_62=y
 CONFIG_BOARD_CY8CKIT_062S4_M4=y
