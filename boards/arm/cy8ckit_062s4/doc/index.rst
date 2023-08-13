@@ -5,7 +5,7 @@
 
 Overview
 ********
-The PSOC 62S$ Pioneer kit has a CY8C62x4 MCU, which is an ultra-low-power PSoC device specifically designed for battery-operated analog
+The PSOC 62S4 Pioneer kit has a CY8C62x4 MCU, which is an ultra-low-power PSoC device specifically designed for battery-operated analog
 sensing applications. It includes a 150-MHz Arm® Cortex®-M4 CPU as the primary application processor, a 100-MHz Arm® Cortex®-M0+ CPU that
 supports low-power operations, up to 256 KB Flash and 128 KB SRAM, programmable analog sensing,
 CapSense™ touch-sensing, and programmable digital peripherals.
