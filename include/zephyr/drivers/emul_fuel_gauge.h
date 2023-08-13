@@ -54,8 +54,9 @@ __subsystem struct fuel_gauge_emul_driver_api {
  * @retval 0 If successful.
  * @retval -EINVAL if mV or mA are 0.
  */
-static inline int emul_fuel_gauge_set_battery_charging(const struct emul *target, uint32_t uV,
-						       int uA)
+__syscall int emul_fuel_gauge_set_battery_charging(const struct emul *target, uint32_t uV, int uA);
+static inline int z_impl_emul_fuel_gauge_set_battery_charging(const struct emul *target,
+							      uint32_t uV, int uA)
 {
 	const struct fuel_gauge_emul_driver_api *backend_api =
 		(const struct fuel_gauge_emul_driver_api *)target->backend_api;
@@ -76,7 +77,8 @@ static inline int emul_fuel_gauge_set_battery_charging(const struct emul *target
  * @retval 0 If successful.
  * @retval -ENOTSUP if not supported by emulator.
  */
-static inline int emul_fuel_gauge_is_battery_cutoff(const struct emul *target, bool *cutoff)
+__syscall int emul_fuel_gauge_is_battery_cutoff(const struct emul *target, bool *cutoff);
+static inline int z_impl_emul_fuel_gauge_is_battery_cutoff(const struct emul *target, bool *cutoff)
 {
 	const struct fuel_gauge_emul_driver_api *backend_api =
 		(const struct fuel_gauge_emul_driver_api *)target->backend_api;
@@ -90,6 +92,8 @@ static inline int emul_fuel_gauge_is_battery_cutoff(const struct emul *target, b
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/emul_fuel_gauge.h>
 
 /**
  * @}
