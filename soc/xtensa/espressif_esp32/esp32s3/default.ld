@@ -17,6 +17,8 @@
 
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DIRAM_I_START  0x40378000
+/* SRAM_IRAM_END is equivalent 2nd stage bootloader iram_loader_seg
+   start address (that should not be overlapped) */
 #define SRAM_IRAM_END       0x403BA000
 #define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
