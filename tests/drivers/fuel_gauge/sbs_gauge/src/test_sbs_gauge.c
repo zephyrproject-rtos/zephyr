@@ -344,7 +344,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 	zassert_ok(ret);
 }
 
-ZTEST_F(sbs_gauge_new_api, test_charging_5v_3a)
+ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 {
 	/* Validate what props are supported by the driver */
 	uint32_t expected_uV = 5000 * 1000;

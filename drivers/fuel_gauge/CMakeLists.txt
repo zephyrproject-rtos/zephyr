@@ -6,3 +6,8 @@ add_subdirectory_ifdef(CONFIG_SBS_GAUGE_NEW_API		sbs_gauge)
 add_subdirectory_ifdef(CONFIG_MAX17048		max17048)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE fuel_gauge_syscall_handlers.c)
+
+if (CONFIG_EMUL AND CONFIG_USERSPACE)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/emul_fuel_gauge.h)
+  zephyr_library_sources(emul_fuel_gauge_syscall_handlers.c)
+endif()
