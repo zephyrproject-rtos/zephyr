@@ -1714,6 +1714,10 @@ static void end_thread(struct k_thread *thread)
 		unpend_all(&thread->join_queue);
 		update_cache(1);
 
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+		arch_float_disable(thread);
+#endif
+
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
