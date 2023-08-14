@@ -44,10 +44,10 @@
 #define MS5837_ADC_READ_DELAY_4086 10
 #define MS5837_ADC_READ_DELAY_8129 20
 
-enum ms5837_type {
-	MS5837_02BA01 = 0x00,
-	MS5837_02BA21 = 0x15,
-	MS5837_30BA26 = 0x1A
+enum ms5837_submodel_index {
+	/* Match the order of the subtype enum in meas,ms5837.yaml */
+	MS5837_02BA_SUBMODEL_INDEX = 0,
+	MS5837_30BA_SUBMODEL_INDEX = 1
 };
 
 typedef void (*ms5837_compensate_func)(const struct device *dev,
@@ -81,6 +81,7 @@ struct ms5837_data {
 
 struct ms5837_config {
 	struct i2c_dt_spec i2c;
+	int submodel_index;
 };
 
 #endif /* __SENSOR_MS5837_H__ */

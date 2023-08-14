@@ -348,18 +348,15 @@ static int ms5837_init(const struct device *dev)
 		return err;
 	}
 
-	const int type_id = (data->factory >> 5) & 0x7f;
-
-	switch (type_id) {
-	case  MS5837_02BA01:
-	case MS5837_02BA21:
+	switch (cfg->submodel_index) {
+	case MS5837_02BA_SUBMODEL_INDEX:
 		data->comp_func = ms5837_compensate_02;
 		break;
-	case MS5837_30BA26:
+	case MS5837_30BA_SUBMODEL_INDEX:
 		data->comp_func = ms5837_compensate_30;
 		break;
 	default:
-		LOG_WRN(" unrecognized type: '%2x', defaulting to MS5837-30", type_id);
+		LOG_WRN(" unsupported submodel index: '%i', defaulting to MS5837-30BA", cfg->submodel_index);
 		data->comp_func = ms5837_compensate_30;
 		break;
 	}
@@ -372,6 +369,7 @@ static int ms5837_init(const struct device *dev)
 											\
 	static const struct ms5837_config ms5837_config_##inst = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		.submodel_index = DT_ENUM_IDX(DT_DRV_INST(inst), submodel),					\
 	};										\
 											\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL,				\
