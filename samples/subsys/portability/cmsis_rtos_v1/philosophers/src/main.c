@@ -73,7 +73,7 @@ osSemaphoreId forks[NUM_PHIL];
 
 /*
  * CMSIS limits the stack size, but qemu_x86_64, qemu_xtensa,
- * qemu_leon3 and the boards such as up_squared, ehl_crb,
+ * qemu_leon3 and the boards such as up_squared, intel_ehl_crb,
  * acrn_ehl_crb need 1024 to run this.
  * For other arch and boards suggested stack size is 512.
  */

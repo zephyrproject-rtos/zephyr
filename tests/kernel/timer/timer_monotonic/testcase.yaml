@@ -11,7 +11,7 @@ tests:
       - kernel
       - timer
       - apic_tsc
-    platform_allow: ehl_crb
+    platform_allow: intel_ehl_crb
     extra_configs:
       - CONFIG_APIC_TSC_DEADLINE_TIMER=y
       - CONFIG_HPET_TIMER=n

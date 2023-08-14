@@ -1,4 +1,4 @@
-identifier: ehl_crb
+identifier: intel_ehl_crb
 name: Elkhart Lake CRB
 type: mcu
 arch: x86

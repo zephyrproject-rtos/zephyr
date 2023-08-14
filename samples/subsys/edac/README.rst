@@ -12,12 +12,12 @@ Building and Running
 ********************
 
 This project can be built and executed on as following example for the
-:ref:`ehl_crb` board:
+:ref:`intel_ehl_crb` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/edac
    :host-os: unix
-   :board: ehl_crb
+   :board: intel_ehl_crb
    :goals: run
    :compact:
 

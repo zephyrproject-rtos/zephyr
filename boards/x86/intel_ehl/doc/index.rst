@@ -1,4 +1,4 @@
-.. _ehl_crb:
+.. _intel_ehl_crb:
 
 Elkhart Lake CRB
 ################
@@ -44,7 +44,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: ehl_crb
+      :board: intel_ehl_crb
       :goals: build
 
    .. note::
