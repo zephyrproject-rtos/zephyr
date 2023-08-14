@@ -94,8 +94,10 @@ static void ms5837_compensate_30(const struct device *dev,
 	SENS -= SENSi;
 
 	data->temperature -= Ti;
-	data->pressure =
-	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
+	int32_t pressure = (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
+
+	// Convert to internal pressure (mbar * 100)
+	data->pressure = pressure * 10;
 }
 
 /*
