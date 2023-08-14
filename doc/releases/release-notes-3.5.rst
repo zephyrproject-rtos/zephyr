@@ -50,6 +50,14 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+* MCUmgr SMP version 2 error codes entry has changed due to a collision with an
+  existing response in shell_mgmt. Previously, these errors had the entry ``ret``
+  but now have the entry ``err``. ``smp_add_cmd_ret()`` is now deprecated and
+  :c:func:`smp_add_cmd_err` should be used instead, ``MGMT_CB_ERROR_RET`` is
+  now deprecated and :c:enumerator:`MGMT_CB_ERROR_ERR` should be used instead.
+  SMP version 2 error code defines for in-tree modules have been updated to
+  replace the ``*_RET_RC_*`` parts with ``*_ERR_*``.
+
 New APIs in this release
 ========================
 
