@@ -1,0 +1,30 @@
+sample:
+  description: Cadence QSPI Driver sample application.
+  name: cdns_qspi_nor
+tests:
+  sample.drivers.flash.soc_flash_qspi:
+    platform_allow:
+      - intel_socfpga_agilex5_socdk
+    integration_platforms:
+      - intel_socfpga_agilex5_socdk
+    tags:
+      - flash
+      - cdns
+    harness: console
+    harness_config:
+      fixture: external_flash
+      type: multi_line
+      ordered: true
+      regex:
+        - "QSPI flash driver test sample"
+        - "QSPI flash device block size = 100"
+        - "QSPI flash number of pages = 100000"
+        - "QSPI flash driver block size 100"
+        - "The Page size of 100"
+        - "QSPI flash driver data erase sucessful...."
+        - "QSPI flash driver write completed...."
+        - "QSPI flash driver read completed...."
+        - "QSPI flash driver read verified"
+        - "QSPI flash driver data erase sucessful...."
+        - "QSPI flash driver read verfied after erase...."
+        - "QSPI flash driver test sample completed...."
