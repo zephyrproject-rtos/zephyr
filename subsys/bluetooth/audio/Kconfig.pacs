@@ -34,8 +34,8 @@ config BT_PACS_SNK_CONTEXT
 config BT_PAC_SNK_NOTIFIABLE
 	bool "Sink PAC Notifiable Support"
 	help
-	  This option enables support for clients to be notified of the Sink
-	  PAC Characteristic.
+	  This option enables support for clients to be notified on the Sink
+	  PAC Characteristic changes.
 
 config BT_PAC_SNK_LOC
 	bool "Sink PAC Location Support"
@@ -55,7 +55,7 @@ config BT_PAC_SNK_LOC_NOTIFIABLE
 	depends on BT_PAC_SNK_LOC
 	help
 	  This option enables support for clients to be notified on the Sink
-	  Audio Location Characteristic.
+	  Audio Location Characteristic changes.
 
 endif # BT_PACS_SNK
 
@@ -87,7 +87,7 @@ config BT_PAC_SRC_NOTIFIABLE
 	bool "Source PAC Notifiable Support"
 	help
 	  This option enables support for clients to be notified on the Source
-	  PAC Characteristic.
+	  PAC Characteristic changes.
 
 config BT_PAC_SRC_LOC
 	bool "Source PAC Location Support"
@@ -107,7 +107,7 @@ config BT_PAC_SRC_LOC_NOTIFIABLE
 	depends on BT_PAC_SRC_LOC
 	help
 	  This option enables support for clients to be notified on the Source
-	  Audio Location Characteristic.
+	  Audio Location Characteristic changes.
 
 endif # BT_PAC_SRC
 
@@ -119,6 +119,6 @@ config BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE
 	depends on BT_PACS
 	help
 	  This option enables support for clients to be notified on the
-	  Supported Audio Contexts Characteristic.
+	  Supported Audio Contexts Characteristic changes.
 
 endmenu
