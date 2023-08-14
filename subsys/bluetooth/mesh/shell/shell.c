@@ -492,32 +492,41 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 }
 
 #if defined(CONFIG_BT_MESH_PROVISIONER)
-static enum {
-	AUTH_NO_OOB,
-	AUTH_STATIC_OOB,
-	AUTH_OUTPUT_OOB,
-	AUTH_INPUT_OOB
-} auth_type;
+static const char * const output_meth_string[] = {
+	"Blink",
+	"Beep",
+	"Vibrate",
+	"Display Number",
+	"Display String",
+};
+
+static const char *const input_meth_string[] = {
+	"Push",
+	"Twist",
+	"Enter Number",
+	"Enter String",
+};
 
 static void capabilities(const struct bt_mesh_dev_capabilities *cap)
 {
-	if (cap->oob_type && auth_type == AUTH_STATIC_OOB) {
-		bt_mesh_auth_method_set_static(bt_mesh_shell_prov.static_val,
-					       bt_mesh_shell_prov.static_val_len);
-		return;
+	shell_print_ctx("Provisionee capabilities:");
+	shell_print_ctx("\tStatic OOB is %ssupported", cap->oob_type & 1 ? "" : "not ");
+
+	shell_print_ctx("\tAvailable output actions (%d bytes max):%s", cap->output_size,
+			cap->output_actions ? "" : "\n\t\tNone");
+	for (int i = 0; i < ARRAY_SIZE(output_meth_string); i++) {
+		if (cap->output_actions & BIT(i)) {
+			shell_print_ctx("\t\t%s", output_meth_string[i]);
+		}
 	}
 
-	if (cap->output_actions && auth_type == AUTH_OUTPUT_OOB) {
-		bt_mesh_auth_method_set_output(BT_MESH_DISPLAY_NUMBER, 6);
-		return;
+	shell_print_ctx("\tAvailable input actions (%d bytes max):%s", cap->input_size,
+			cap->input_actions ? "" : "\n\t\tNone");
+	for (int i = 0; i < ARRAY_SIZE(input_meth_string); i++) {
+		if (cap->input_actions & BIT(i)) {
+			shell_print_ctx("\t\t%s", input_meth_string[i]);
+		}
 	}
-
-	if (cap->input_actions && auth_type == AUTH_INPUT_OOB) {
-		bt_mesh_auth_method_set_input(BT_MESH_ENTER_NUMBER, 6);
-		return;
-	}
-
-	bt_mesh_auth_method_set_none();
 }
 #endif
 
@@ -1653,7 +1662,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(auth_cmds,
 		      cmd_auth_method_set_output, 3, 0),
 	SHELL_CMD_ARG(static, NULL, "<Val(1-16 hex)>", cmd_auth_method_set_static, 2,
 		      0),
-	SHELL_CMD_ARG(none, NULL, NULL, cmd_auth_method_set_none, 2, 0),
+	SHELL_CMD_ARG(none, NULL, NULL, cmd_auth_method_set_none, 1, 0),
 	SHELL_SUBCMD_SET_END);
 #endif
 
