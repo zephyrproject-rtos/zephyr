@@ -4,6 +4,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/dac.h)
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_DAC_MCUX_LPDAC	dac_mcux_lpdac.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_MCUX_DAC	dac_mcux_dac.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_MCUX_DAC32	dac_mcux_dac32.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_STM32		dac_stm32.c)
