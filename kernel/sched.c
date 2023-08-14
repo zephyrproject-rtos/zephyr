@@ -58,6 +58,7 @@ struct k_spinlock sched_spinlock;
 
 static void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
+static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 
 static inline int is_preempt(struct k_thread *thread)
@@ -663,6 +664,72 @@ void z_sched_start(struct k_thread *thread)
 	z_mark_thread_as_started(thread);
 	ready_thread(thread);
 	z_reschedule(&sched_spinlock, key);
+}
+
+/**
+ * @brief Halt a thread
+ *
+ * If the target thread is running on another CPU, flag it as needing to
+ * abort and send an IPI (if supported) to force a schedule point and wait
+ * until the target thread is switched out (ISRs will spin to wait and threads
+ * will block to wait). If the target thread is not running on another CPU,
+ * then it is safe to act immediately.
+ *
+ * Upon entry to this routine, the scheduler lock is already held. It is
+ * released before this routine returns.
+ *
+ * @param thread Thread to suspend or abort
+ * @param key Current key for sched_spinlock
+ */
+static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key)
+{
+#ifdef CONFIG_SMP
+	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
+		/* Another CPU is spinning for us, don't deadlock */
+		halt_thread(thread, _THREAD_DEAD);
+	}
+
+	bool active = thread_active_elsewhere(thread);
+
+	if (active) {
+		/* It's running somewhere else, flag and poke */
+		thread->base.thread_state |= _THREAD_ABORTING;
+
+		/* We're going to spin, so need a true synchronous IPI
+		 * here, not deferred!
+		 */
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+		arch_sched_ipi();
+#endif
+	}
+
+	if (is_aborting(thread) && thread != _current) {
+		if (arch_is_in_isr()) {
+			/* ISRs can only spin waiting another CPU */
+			k_spin_unlock(&sched_spinlock, key);
+			while (is_aborting(thread)) {
+			}
+
+			/* Now we know it's dying, but not necessarily
+			 * dead.  Wait for the switch to happen!
+			 */
+			key = k_spin_lock(&sched_spinlock);
+			z_sched_switch_spin(thread);
+			k_spin_unlock(&sched_spinlock, key);
+		} else if (active) {
+			/* Threads can join */
+			add_to_waitq_locked(_current, &thread->join_queue);
+			z_swap(&sched_spinlock, key);
+		}
+		return; /* lock has been released */
+	}
+#endif
+	halt_thread(thread, _THREAD_DEAD);
+	if ((thread == _current) && !arch_is_in_isr()) {
+		z_swap(&sched_spinlock, key);
+		__ASSERT(false, "aborted _current back from dead");
+	}
+	k_spin_unlock(&sched_spinlock, key);
 }
 
 void z_impl_k_thread_suspend(struct k_thread *thread)
@@ -1782,53 +1849,7 @@ void z_thread_abort(struct k_thread *thread)
 		return;
 	}
 
-#ifdef CONFIG_SMP
-	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
-		/* Another CPU is spinning for us, don't deadlock */
-		halt_thread(thread, _THREAD_DEAD);
-	}
-
-	bool active = thread_active_elsewhere(thread);
-
-	if (active) {
-		/* It's running somewhere else, flag and poke */
-		thread->base.thread_state |= _THREAD_ABORTING;
-
-		/* We're going to spin, so need a true synchronous IPI
-		 * here, not deferred!
-		 */
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
-		arch_sched_ipi();
-#endif
-	}
-
-	if (is_aborting(thread) && thread != _current) {
-		if (arch_is_in_isr()) {
-			/* ISRs can only spin waiting another CPU */
-			k_spin_unlock(&sched_spinlock, key);
-			while (is_aborting(thread)) {
-			}
-
-			/* Now we know it's dying, but not necessarily
-			 * dead.  Wait for the switch to happen!
-			 */
-			key = k_spin_lock(&sched_spinlock);
-			z_sched_switch_spin(thread);
-			k_spin_unlock(&sched_spinlock, key);
-		} else if (active) {
-			/* Threads can join */
-			add_to_waitq_locked(_current, &thread->join_queue);
-			z_swap(&sched_spinlock, key);
-		}
-		return; /* lock has been released */
-	}
-#endif
-	halt_thread(thread, _THREAD_DEAD);
-	if ((thread == _current) && !arch_is_in_isr()) {
-		z_swap(&sched_spinlock, key);
-		__ASSERT(false, "aborted _current back from dead");
-	}
-	k_spin_unlock(&sched_spinlock, key);
+	z_thread_halt(thread, key);
 }
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
