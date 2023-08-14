@@ -46,6 +46,7 @@
 				compatible = "fujitsu,mb85rcxx";
 				reg = <0x1>;
 				size = <131072>;
+				pagesize = <131072>;
 				address-width = <16>;
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */

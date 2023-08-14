@@ -12,6 +12,12 @@ properties:
     required: true
     description: Total FRAM size in bytes.
 
+  pagesize:
+    type: int
+    description: |
+      Size of the single FRAM module in bytes.
+      If not provided it is assumed to be the same as total size.
+
   address-width:
     type: int
     required: true
