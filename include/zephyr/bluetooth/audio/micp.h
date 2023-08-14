@@ -35,7 +35,6 @@ extern "C" {
 
 /** Application error codes */
 #define BT_MICP_ERR_MUTE_DISABLED                  0x80
-#define BT_MICP_ERR_VAL_OUT_OF_RANGE               0x81
 
 /** Microphone Control Profile mute states */
 #define BT_MICP_MUTE_UNMUTED                       0x00
