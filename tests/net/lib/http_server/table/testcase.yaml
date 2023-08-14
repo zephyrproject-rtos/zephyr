@@ -1,0 +1,14 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  harness: net
+  min_ram: 16
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  integration_platforms:
+    - native_posix_64
+    - qemu_x86
+tests:
+  net.http.server.table: {}
