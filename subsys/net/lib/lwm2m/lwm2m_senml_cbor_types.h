@@ -57,6 +57,13 @@ struct record_t {
 	int64_t _record_t;
 };
 
+/* The union members and enum members have the same names.
+ * This is intentional so we need to ignore -Wshadow to avoid
+ * compiler complaining about them.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
 struct record_union_ {
 	union {
 		struct {
@@ -104,6 +111,8 @@ struct value_ {
 		_value_bool,
 	} _value_choice;
 };
+
+#pragma GCC diagnostic pop
 
 struct key_value_pair {
 	int32_t _key_value_pair_key;
