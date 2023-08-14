@@ -216,7 +216,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 	k_mutex_unlock(&test_mutex);
 }
 
-ZTEST(obj_core_stats_api, test_obj_core_stats_deregister)
+ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 {
 	int  status;
 	char buffer[sizeof(struct k_cycle_stats)];
