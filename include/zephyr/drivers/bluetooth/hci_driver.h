@@ -61,7 +61,8 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 {
 	switch (evt) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
-		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
+		/* return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO; */
+		return BT_HCI_EVT_FLAG_RECV;
 		/* fallthrough */
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
