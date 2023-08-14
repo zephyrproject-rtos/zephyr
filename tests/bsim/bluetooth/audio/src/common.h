@@ -41,6 +41,11 @@
 	while (!(bool)atomic_get(&flag)) { \
 		(void)k_sleep(K_MSEC(1)); \
 	}
+#define WAIT_FOR_UNSET_FLAG(flag) \
+	while (atomic_get(&flag) != (atomic_t)false) { \
+		(void)k_sleep(K_MSEC(1)); \
+	}
+
 
 #define FAIL(...) \
 	do { \
