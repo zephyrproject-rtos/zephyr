@@ -26,6 +26,7 @@ app=tests/bsim/bluetooth/host/adv/periodic compile
 app=tests/bsim/bluetooth/host/adv/periodic conf_file=prj_long_data.conf compile
 app=tests/bsim/bluetooth/host/adv/encrypted/css_sample_data compile
 app=tests/bsim/bluetooth/host/adv/encrypted/ead_sample compile
+app=tests/bsim/bluetooth/host/adv/set_adva compile
 
 app=tests/bsim/bluetooth/host/att/eatt conf_file=prj_lowres.conf compile
 app=tests/bsim/bluetooth/host/att/eatt conf_file=prj_collision.conf compile
