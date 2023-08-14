@@ -104,9 +104,21 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 
 static void rtc0_nrf5_isr(const void *arg)
 {
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK)
+	extern void rtc_pretick_rtc0_isr_hook(void);
+#endif
+
 	DEBUG_TICKER_ISR(1);
 
 	lll_prof_enter_ull_high();
+
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK)
+	rtc_pretick_rtc0_isr_hook();
+
+	if (NRF_RTC0->EVENTS_COMPARE[1]) {
+		NRF_RTC0->EVENTS_COMPARE[1] = 0;
+	}
+#endif
 
 	/* On compare0 run ticker worker instance0 */
 	if (NRF_RTC0->EVENTS_COMPARE[0]) {

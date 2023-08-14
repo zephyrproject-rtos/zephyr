@@ -19,6 +19,7 @@
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
+#include "hal/cntr.h"
 #include "hal/radio.h"
 #include "hal/radio_df.h"
 #include "hal/ticker.h"
@@ -1241,7 +1242,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder);
 
-	nrf_rtc_cc_set(NRF_RTC0, 2, ticks_start);
+	cntr_cmp_set(2U, ticks_start);
 	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
 
 	hal_event_timer_start_ppi_config();
@@ -1292,7 +1293,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 	remainder_us = 1;
 	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
 
-	nrf_rtc_cc_set(NRF_RTC0, 2, tick);
+	cntr_cmp_set(2U, tick);
 	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
 
 	hal_event_timer_start_ppi_config();

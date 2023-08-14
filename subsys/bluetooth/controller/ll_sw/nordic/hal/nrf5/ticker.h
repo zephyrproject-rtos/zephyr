@@ -12,7 +12,11 @@
 #define HAL_TICKER_FSEC_PER_PSEC      1000UL
 
 /* Macro defining the minimum counter compare offset */
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK)
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 4
+#else /* !CONFIG_SOC_NRF53_RTC_PRETICK */
 #define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+#endif /* !CONFIG_SOC_NRF53_RTC_PRETICK */
 
 /* Macro defining the max. counter update latency in ticks */
 #define HAL_TICKER_CNTR_SET_LATENCY 0

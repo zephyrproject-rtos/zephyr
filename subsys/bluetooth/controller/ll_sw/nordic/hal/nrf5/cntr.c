@@ -20,7 +20,13 @@ static uint8_t _refcount;
 void cntr_init(void)
 {
 	NRF_RTC->PRESCALER = 0;
+
 	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE0_Msk);
+
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK)
+	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE1_Msk);
+#endif
+
 	nrf_rtc_int_enable(NRF_RTC, RTC_INTENSET_COMPARE0_Msk);
 }
 
@@ -56,4 +62,8 @@ uint32_t cntr_cnt_get(void)
 void cntr_cmp_set(uint8_t cmp, uint32_t value)
 {
 	nrf_rtc_cc_set(NRF_RTC, cmp, value);
+
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK)
+	nrf_rtc_cc_set(NRF_RTC, (cmp + 1U), (value - 1U));
+#endif
 }
