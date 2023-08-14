@@ -57,7 +57,7 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 struct k_spinlock sched_spinlock;
 
 static void update_cache(int preempt_ok);
-static void end_thread(struct k_thread *thread);
+static void halt_thread(struct k_thread *thread, uint8_t new_state);
 
 
 static inline int is_preempt(struct k_thread *thread)
@@ -323,7 +323,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
 	if (is_aborting(_current)) {
-		end_thread(_current);
+		halt_thread(_current, _THREAD_DEAD);
 	}
 #endif
 
@@ -1712,13 +1712,21 @@ static inline void unpend_all(_wait_q_t *wait_q)
 extern void z_thread_cmsis_status_mask_clear(struct k_thread *thread);
 #endif
 
-static void end_thread(struct k_thread *thread)
+/**
+ * @brief Dequeues the specified thread
+ *
+ * Dequeues the specified thread and move it into the specified new state.
+ *
+ * @param thread Identify the thread to halt
+ * @param new_state New thread state (_THREAD_DEAD)
+ */
+static void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
 	/* We hold the lock, and the thread is known not to be running
 	 * anywhere.
 	 */
-	if ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
-		thread->base.thread_state |= _THREAD_DEAD;
+	if ((thread->base.thread_state & new_state) == 0U) {
+		thread->base.thread_state |= new_state;
 		thread->base.thread_state &= ~_THREAD_ABORTING;
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
@@ -1777,7 +1785,7 @@ void z_thread_abort(struct k_thread *thread)
 #ifdef CONFIG_SMP
 	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
 		/* Another CPU is spinning for us, don't deadlock */
-		end_thread(thread);
+		halt_thread(thread, _THREAD_DEAD);
 	}
 
 	bool active = thread_active_elsewhere(thread);
@@ -1815,8 +1823,8 @@ void z_thread_abort(struct k_thread *thread)
 		return; /* lock has been released */
 	}
 #endif
-	end_thread(thread);
-	if (thread == _current && !arch_is_in_isr()) {
+	halt_thread(thread, _THREAD_DEAD);
+	if ((thread == _current) && !arch_is_in_isr()) {
 		z_swap(&sched_spinlock, key);
 		__ASSERT(false, "aborted _current back from dead");
 	}
