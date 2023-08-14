@@ -4,18 +4,15 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(prototype)
 
-set(BASE_PATH "../../../../../samples/net/sockets/http_server/src/")
+set(BASE_PATH "../../../../../subsys/net/lib/http/")
 include_directories(${BASE_PATH}/headers)
 
-FILE(GLOB app_sources ${BASE_PATH}/server.c src/main.c)
+FILE(GLOB app_sources src/main.c)
 target_sources(app PRIVATE ${app_sources})
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
-message(STATUS "gen_dir is set to ${gen_dir}")
-
-set(source_file src/index.html)
-
-generate_inc_file_for_target(app ${source_file} ${gen_dir}/index.html.inc)
-generate_inc_file_for_target(app ${source_file} ${gen_dir}/index.html.gz.inc --gzip)
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
+
+zephyr_linker_sources(SECTIONS sections-rom.ld)
+zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)

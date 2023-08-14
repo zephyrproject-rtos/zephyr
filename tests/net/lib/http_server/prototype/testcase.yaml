@@ -1,9 +1,13 @@
+common:
+  harness: net
+  min_ram: 16
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  integration_platforms:
+    - native_posix_64
+    - qemu_x86
 tests:
-  # section.subsection
-  http_server_prototype.ztest:
-    build_only: true
-    platform_allow: native_posix_64
-    arch_allow: posix
-    integration_platforms:
-      - native_posix_64
-    tags: http_server
+  net.http.server.prototype: {}

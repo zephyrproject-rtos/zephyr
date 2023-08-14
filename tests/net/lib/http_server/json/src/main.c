@@ -11,4 +11,5 @@ ZTEST_SUITE(framework_tests_json, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(framework_tests_json, test_assert)
 {
+	ztest_test_skip();
 }
