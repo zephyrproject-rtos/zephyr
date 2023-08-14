@@ -9,6 +9,9 @@ Overview
 This sample application retrieves the pressure and temperature from a MS5837
 sensor every 10 seconds, and prints this information to the UART console.
 
+The driver supports MS5837-02BA and MS5827-30BA sensors. If you are using the
+MS5837-30BA sensor, add the devicetree property `submodel: "30ba";`.
+
 Requirements
 ************
 
