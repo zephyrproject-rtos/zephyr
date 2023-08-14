@@ -621,11 +621,7 @@ static inline k_tid_t k_current_get(void)
  * this is done via blocking the caller (in the same manner as
  * k_thread_join()), but in interrupt context on SMP systems the
  * implementation is required to spin for threads that are running on
- * other CPUs.  Note that as specified, this means that on SMP
- * platforms it is possible for application code to create a deadlock
- * condition by simultaneously aborting a cycle of threads using at
- * least one termination from interrupt context.  Zephyr cannot detect
- * all such conditions.
+ * other CPUs.
  *
  * @param thread ID of thread to abort.
  */
@@ -977,6 +973,11 @@ int k_thread_cpu_pin(k_tid_t thread, int cpu);
  * (e.g. k_sleep(), or a timeout argument to k_sem_take() et. al.)
  * will be canceled.  On resume, the thread will begin running
  * immediately and return from the blocked call.
+ *
+ * When the target thread is active on another CPU, the caller will block until
+ * the target thread is halted (suspended or aborted).  But if the caller is in
+ * an interrupt context, it will spin waiting for that target thread active on
+ * another CPU to halt.
  *
  * If @a thread is already suspended, the routine has no effect.
  *
