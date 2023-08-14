@@ -65,7 +65,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if ((conn != NULL && *val == BT_MICP_MUTE_DISABLED) ||
 	    *val > BT_MICP_MUTE_DISABLED) {
-		return BT_GATT_ERR(BT_MICP_ERR_VAL_OUT_OF_RANGE);
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	if (conn != NULL && micp_inst.mute == BT_MICP_MUTE_DISABLED) {
