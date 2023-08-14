@@ -251,7 +251,7 @@ To allow a device to broadcast unprovisioned beacons, the :kconfig:option:`CONFI
 
 To allow a device to provision devices, the :kconfig:option:`CONFIG_BT_MESH_PROVISIONER` and :kconfig:option:`CONFIG_BT_MESH_PB_ADV` configuration options must be enabled.
 
-``mesh prov remote-adv <UUID(1-16 hex)> <NetKeyIdx> <Addr> <AttDur(s)> [AuthType]``
+``mesh prov remote-adv <UUID(1-16 hex)> <NetKeyIdx> <Addr> <AttDur(s)>``
 -----------------------------------------------------------------------------------
 
 	Provision a nearby device into the mesh. The mesh node starts scanning for unprovisioned beacons with the given UUID. Once found, the unprovisioned device will be added to the mesh network with the given unicast address, and given the network key indicated by ``NetKeyIdx``.
@@ -260,12 +260,6 @@ To allow a device to provision devices, the :kconfig:option:`CONFIG_BT_MESH_PROV
 	* ``NetKeyIdx``: Index of the network key to pass to the device.
 	* ``Addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
 	* ``AttDur``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
-	* ``AuthType``: If present, the OOB authentication type used for provisioning.
-
-		* ``no``: No OOB (default).
-		* ``static``: Static OOB.
-		* ``output``: Output OOB.
-		* ``input``: Input OOB.
 
 To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT_MESH_PROVISIONER` and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must be enabled.
 
