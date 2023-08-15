@@ -24,7 +24,7 @@ manifest:
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
-  group-filter: [-babblesim]
+  group-filter: [-babblesim, -optional]
 
   #
   # Please add items below based on alphabetical order
@@ -118,9 +118,6 @@ manifest:
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
       path: modules/lib/canopennode
-    - name: chre
-      revision: b7955c27e50485b7dafdc3888d7d6afdc2ac6d96
-      path: modules/lib/chre
     - name: cmsis
       revision: 5a00331455dd74e31e80efa383a489faea0590e3
       path: modules/hal/cmsis
@@ -278,9 +275,6 @@ manifest:
     - name: lvgl
       revision: 8a6a2d1d29d17d1e4bdc94c243c146a39d635fdd
       path: modules/lib/gui/lvgl
-    - name: lz4
-      revision: 8e303c264fc21c2116dc612658003a22e933124d
-      path: modules/lib/lz4
     - name: mbedtls
       revision: c38dc78d9a8dcbe43b898cc1171ab33ba3e6fc26
       path: modules/crypto/mbedtls
@@ -294,9 +288,6 @@ manifest:
       groups:
         - debug
       revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
-    - name: nanopb
-      revision: 42fa8b211e946b90b9d968523fce7b1cfe27617e
-      path: modules/lib/nanopb
     - name: net-tools
       revision: e0828aa9629b533644dc96ff6d1295c939bd713c
       path: tools/net-tools
@@ -324,12 +315,6 @@ manifest:
       path: modules/debug/segger
       groups:
         - debug
-    - name: sof
-      revision: c0f20b69daa44e3563f970b366e49ccfcfa1b71c
-      path: modules/audio/sof
-    - name: tflite-micro
-      revision: 1a34dcab41e7e0e667db72d6a40999c1ec9c510c
-      path: modules/lib/tflite-micro
     - name: tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
       path: modules/crypto/tinycrypt
@@ -345,28 +330,12 @@ manifest:
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
-    - name: tf-m-tests
-      revision: a878426da78fbd1486dfc29d6c6b82be4ee79e72
-      path: modules/tee/tf-m/tf-m-tests
-      groups:
-        - tee
-    - name: psa-arch-tests
-      revision: 6a17330e0dfb5f319730f974d5b05f7b7f04757b
-      path: modules/tee/tf-m/psa-arch-tests
-      groups:
-        - tee
     - name: uoscore-uedhoc
       revision: 5fe2cb613bd7e4590bd1b00c2adf181ac0229379
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 67fd8bb88d3136738661fa8bb5f9989103f4599e
       path: modules/lib/zcbor
-    - name: zscilib
-      path: modules/lib/zscilib
-      revision: 34c3432e81085bb717e4871d21ca419ae0058ec5
-    - name: thrift
-      path: modules/lib/thrift
-      revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
 
   self:
     path: zephyr
