@@ -1,6 +1,6 @@
 description: STM32 CAN controller
 
-compatible: "st,stm32-can"
+compatible: "st,stm32-bxcan"
 
 include: [can-controller.yaml, pinctrl-device.yaml]
 

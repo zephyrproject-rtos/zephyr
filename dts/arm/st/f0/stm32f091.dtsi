@@ -53,7 +53,7 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <30 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
