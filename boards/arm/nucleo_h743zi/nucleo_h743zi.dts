@@ -21,7 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,canbus = &can1;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds {
@@ -163,7 +163,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;

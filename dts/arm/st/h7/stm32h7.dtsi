@@ -465,7 +465,7 @@
 			status = "disabled";
 		};
 
-		can1: can@4000a000 {
+		fdcan1: can@4000a000 {
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x4000a000 0x400>, <0x4000ac00 0x350>;
 			reg-names = "m_can", "message_ram";
@@ -480,7 +480,7 @@
 			status = "disabled";
 		};
 
-		can2: can@4000a400 {
+		fdcan2: can@4000a400 {
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x4000a400 0x400>, <0x4000ac00 0x6a0>;
 			reg-names = "m_can", "message_ram";
