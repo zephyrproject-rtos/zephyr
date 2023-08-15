@@ -74,7 +74,7 @@ config CAN_MAX_EXT_ID_FILTER
 
 endif # CAN_STM32_FDCAN
 
-config CAN_STM32H7
+config CAN_STM32H7_FDCAN
 	bool "STM32H7 FDCAN driver"
 	default y
 	depends on DT_HAS_ST_STM32H7_FDCAN_ENABLED
