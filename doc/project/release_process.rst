@@ -45,6 +45,12 @@ The Zephyr release model was loosely based on the Linux kernel model:
 
     Release Cycle
 
+.. note::
+
+    The milestones for the current major version can be found on the
+    `Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
+    Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
+
 Development Phase
 *****************
 
