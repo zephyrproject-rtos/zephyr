@@ -49,7 +49,7 @@
 		};
 
 		can2: can@40006800 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006800 0x400>;
 			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
