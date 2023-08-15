@@ -881,7 +881,11 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 
 	frame.data[index++] = ISOTP_PCI_TYPE_SF | len;
 
-	__ASSERT_NO_MSG(len <= ISOTP_CAN_DL - index);
+	if (len > ISOTP_CAN_DL - index) {
+		LOG_ERR("SF len does not fit DL");
+		return -ENOSPC;
+	}
+
 	memcpy(&frame.data[index], data, len);
 
 #ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
