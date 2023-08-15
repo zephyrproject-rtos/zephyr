@@ -293,7 +293,7 @@
 			status = "disabled";
 		};
 
-		can2: can@4000a800 {
+		fdcan2: can@4000a800 {
 			compatible = "st,stm32-fdcan";
 			reg = <0x4000a800 0x400>, <0x4000ac00 0x6a0>;
 			reg-names = "m_can", "message_ram";
