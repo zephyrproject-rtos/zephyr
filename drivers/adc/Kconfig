@@ -112,4 +112,6 @@ source "drivers/adc/Kconfig.tla2021"
 
 source "drivers/adc/Kconfig.nxp_s32"
 
+source "drivers/adc/Kconfig.max1125x"
+
 endif # ADC
