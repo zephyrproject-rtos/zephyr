@@ -2902,6 +2902,15 @@ West:
   labels:
     - "area: West"
 
+"West project: acpica":
+  status: maintained
+  maintainers:
+    - najumon1980
+  files:
+    - modules/acpica/
+  labels:
+    - manifest-acpica
+
 "West project: canopennode":
   status: maintained
   maintainers:
@@ -3008,6 +3017,15 @@ West:
   files: []
   labels:
     - "platform: ESP32"
+
+"West project: hal_ethos_u":
+  status: maintained
+  maintainers:
+    - kristofer-jonsson-arm
+  files:
+    - modules/hal_ethos_u/
+  labels:
+    - manifest-hal_ethos_u
 
 "West project: hal_gigadevice":
   status: maintained
