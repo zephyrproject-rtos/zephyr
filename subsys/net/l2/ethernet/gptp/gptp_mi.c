@@ -734,16 +734,22 @@ static void gptp_update_local_port_clock(void)
 {
 	struct gptp_clk_slave_sync_state *state;
 	struct gptp_global_ds *global_ds;
+	struct gptp_servo_ds *servo_ds;
 	struct gptp_port_ds *port_ds;
 	int port;
-	int64_t nanosecond_diff;
-	int64_t second_diff;
+	uint64_t sync_receipt_ts;
+	uint64_t sync_receipt_local_ts;
+	int64_t sync_offset_ts;
 	const struct device *clk;
 	struct net_ptp_time tm;
 	unsigned int key;
+	/* servo controllor variable */
+	double ki_err = 0;
+	double time_adjust_ns = 0;
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();
+	servo_ds = GPTP_SERVO_DS();
 	port = state->pss_rcv_ptr->local_port_number;
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 
@@ -756,85 +762,60 @@ static void gptp_update_local_port_clock(void)
 
 	port_ds->neighbor_rate_ratio_valid = false;
 
-	second_diff = global_ds->sync_receipt_time.second -
-		(global_ds->sync_receipt_local_time / NSEC_PER_SEC);
-	nanosecond_diff =
-		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2_16) -
-		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
+	sync_receipt_ts = global_ds->sync_receipt_time.second * NSEC_PER_SEC +
+			  (global_ds->sync_receipt_time.fract_nsecond >> 16);
+	sync_receipt_local_ts = global_ds->sync_receipt_local_time;
+	sync_offset_ts = sync_receipt_ts - sync_receipt_local_ts;
+	servo_ds->master_offset_ns = sync_offset_ts;
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
 	if (!clk) {
 		return;
 	}
 
-	if (second_diff > 0 && nanosecond_diff < 0) {
-		second_diff--;
-		nanosecond_diff = NSEC_PER_SEC + nanosecond_diff;
-	}
-
-	if (second_diff < 0 && nanosecond_diff > 0) {
-		second_diff++;
-		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
-	}
-
-	ptp_clock_rate_adjust(clk, port_ds->neighbor_rate_ratio);
-
 	/* If time difference is too high, set the clock value.
 	 * Otherwise, adjust it.
 	 */
-	if (second_diff || (second_diff == 0 &&
-			    (nanosecond_diff < -5000 ||
-			     nanosecond_diff > 5000))) {
-		bool underflow = false;
+	if (sync_offset_ts < -servo_ds->step_threshold_ns ||
+	    sync_offset_ts > servo_ds->step_threshold_ns) {
+		uint64_t current_ts;
 
 		key = irq_lock();
+		ptp_clock_adjust(clk, 0);
 		ptp_clock_get(clk, &tm);
 
-		if (second_diff < 0 && tm.second < -second_diff) {
-			NET_DBG("Do not set local clock because %lu < %ld",
-				(unsigned long int)tm.second,
-				(long int)-second_diff);
-			goto skip_clock_set;
-		}
+		current_ts = tm.second * NSEC_PER_SEC + tm.nanosecond;
+		current_ts += sync_offset_ts;
 
-		tm.second += second_diff;
+		tm.second = current_ts / NSEC_PER_SEC;
+		tm.nanosecond = current_ts % NSEC_PER_SEC;
 
-		if (nanosecond_diff < 0 &&
-		    tm.nanosecond < -nanosecond_diff) {
-			underflow = true;
-		}
-
-		tm.nanosecond += nanosecond_diff;
-
-		if (underflow) {
-			tm.second--;
-			tm.nanosecond += NSEC_PER_SEC;
-		} else if (tm.nanosecond >= NSEC_PER_SEC) {
-			tm.second++;
-			tm.nanosecond -= NSEC_PER_SEC;
-		}
-
-		/* This prints too much data normally but can be enabled to see
-		 * what time we are setting to the local clock.
-		 */
-		if (0) {
-			NET_INFO("Set local clock %lu.%lu",
-				 (unsigned long int)tm.second,
-				 (unsigned long int)tm.nanosecond);
+		/* Must tell user master clock is unstable. */
+		if (sync_offset_ts < 0) {
+			NET_ERR("Clock jump forward to %llu.%09u, offset is %lldns", tm.second,
+				tm.nanosecond, sync_offset_ts);
+		} else {
+			NET_WARN("Clock jump to %llu.%09u", tm.second, tm.nanosecond);
 		}
 
 		ptp_clock_set(clk, &tm);
-
-	skip_clock_set:
 		irq_unlock(key);
 	} else {
-		if (nanosecond_diff < -200) {
-			nanosecond_diff = -200;
-		} else if (nanosecond_diff > 200) {
-			nanosecond_diff = 200;
+		ki_err = sync_offset_ts * servo_ds->ki;
+		time_adjust_ns = sync_offset_ts * servo_ds->kp + servo_ds->observed_drift + ki_err;
+
+		if (time_adjust_ns > servo_ds->max_time_adjust) {
+			time_adjust_ns = servo_ds->max_time_adjust;
+		} else if (time_adjust_ns < -servo_ds->max_time_adjust) {
+			time_adjust_ns = -servo_ds->max_time_adjust;
+		} else {
+			servo_ds->observed_drift += ki_err;
 		}
 
-		ptp_clock_adjust(clk, nanosecond_diff);
+		NET_DBG("offset from master: %lldns, time adjust: %dns",
+			servo_ds->master_offset_ns, (int)time_adjust_ns);
+
+		ptp_clock_adjust(clk, (int)time_adjust_ns);
 	}
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */

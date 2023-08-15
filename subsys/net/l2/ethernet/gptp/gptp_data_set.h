@@ -47,6 +47,7 @@ extern "C" {
 #define GPTP_CURRENT_DS() (&gptp_domain.current_ds)
 #define GPTP_PARENT_DS() (&gptp_domain.parent_ds)
 #define GPTP_PROPERTIES_DS() (&gptp_domain.properties_ds)
+#define GPTP_SERVO_DS() (&gptp_domain.servo_ds)
 #define GPTP_STATE() (&gptp_domain.state)
 
 #define GPTP_PORT_DS(port) \
@@ -377,6 +378,26 @@ struct gptp_time_prop_ds {
 };
 
 /**
+ * @brief Servo Controllor Data Set.
+ *
+ * Data Set representing time sync servo controllor.
+ */
+struct gptp_servo_ds {
+	/* Time difference between master clock and slave clock. */
+	int64_t master_offset_ns;
+	/* The value of slave clock jump threshold. */
+	int64_t step_threshold_ns;
+	/* The value of slave clock maximum adjust time. */
+	int32_t max_time_adjust;
+	/* The proportional value of PI controllor. */
+	double kp;
+	/* The integral value of PI controllor. */
+	double ki;
+	/* The observed drift value of PI controllor. */
+	double observed_drift;
+};
+
+/**
  * @brief Port Parameter Data Set.
  *
  * Data Set representing port capabilities.
@@ -549,6 +570,9 @@ struct gptp_domain {
 
 	/** Time Properties Data Set for this gPTP domain. */
 	struct gptp_time_prop_ds properties_ds;
+
+	/** Servo Controllor Data Set for this gPTP domain. */
+	struct gptp_servo_ds servo_ds;
 
 	/** Current State of the MI State Machines for this gPTP domain. */
 	struct gptp_states state;

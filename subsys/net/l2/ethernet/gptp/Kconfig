@@ -226,4 +226,41 @@ config NET_GPTP_STATISTICS
 	  Enable this if you need to collect gPTP statistics. The statistics
 	  can be seen in net-shell if needed.
 
+config NET_GPTP_SERVO_STEP_THRESHOLD
+	int "Set slave clock jump threshold (ns)"
+	default 1000000000
+	help
+	  In slave port mode, if the error with the master clock is greater
+	  than the value, time jump is required to prevent the clock from
+	  converging too slowly.
+
+config NET_GPTP_SERVO_MAX_ADJTIME
+	int "Set servo maximum adjust time (ns)"
+	default 25000000
+	help
+	  The maximum offset the servo will correct by adjust the clock
+	  speed, If your device supports higher frequencies, set higher
+	  values to speed up convergence.
+
+config NET_GPTP_SERVO_KP
+	int "Set servo controller proportional value"
+	default 700
+	help
+	  The proportional constant of the PI controller. It is error of
+	  the master and slave clocks is multiplied by the proportionality
+	  constant, If controller converges slowly or oscillates,
+	  recalibration both ki and kp.
+	  The value is the converted in float as follow:
+	  servo_kp = NET_GPTP_SERVO_KP / 1000
+
+config NET_GPTP_SERVO_KI
+	int "Set servo controller integral value"
+	default 300
+	help
+	  The integral constant of the PI controller. It is the integral
+	  of the phase error between master and slave clock, If controller
+	  converges slowly or oscillates, recalibration both ki and kp.
+	  The value is the converted in float as follow:
+	  servo_ki = NET_GPTP_SERVO_KI / 1000
+
 endif # NET_GPTP

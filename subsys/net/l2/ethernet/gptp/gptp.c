@@ -355,12 +355,14 @@ static void gptp_init_clock_ds(void)
 	struct gptp_current_ds *current_ds;
 	struct gptp_parent_ds *parent_ds;
 	struct gptp_time_prop_ds *prop_ds;
+	struct gptp_servo_ds *servo_ds;
 
 	global_ds = GPTP_GLOBAL_DS();
 	default_ds = GPTP_DEFAULT_DS();
 	current_ds = GPTP_CURRENT_DS();
 	parent_ds = GPTP_PARENT_DS();
 	prop_ds = GPTP_PROPERTIES_DS();
+	servo_ds = GPTP_SERVO_DS();
 
 	/* Initialize global data set. */
 	(void)memset(global_ds, 0, sizeof(struct gptp_global_ds));
@@ -438,6 +440,13 @@ static void gptp_init_clock_ds(void)
 	global_ds->sys_time_source = default_ds->time_source;
 	global_ds->clk_master_sync_itv =
 		NSEC_PER_SEC * GPTP_POW2(CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV);
+
+	/* Initialize servo data set. */
+	(void)memset(servo_ds, 0, sizeof(struct gptp_servo_ds));
+	servo_ds->step_threshold_ns = CONFIG_NET_GPTP_SERVO_STEP_THRESHOLD;
+	servo_ds->max_time_adjust = CONFIG_NET_GPTP_SERVO_MAX_ADJTIME;
+	servo_ds->kp = CONFIG_NET_GPTP_SERVO_KP / 1000.0;
+	servo_ds->ki = CONFIG_NET_GPTP_SERVO_KI / 1000.0;
 }
 
 static void gptp_init_port_ds(int port)
