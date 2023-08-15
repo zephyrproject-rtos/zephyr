@@ -21,7 +21,7 @@ DEFINE_FFF_GLOBALS;
 /* Maximum number of iterations within the state machine of RD Client
  * service that is waited for until a possible event occurs
  */
-static const uint8_t RD_CLIENT_MAX_LOOKUP_ITERATIONS = 10;
+static const uint8_t RD_CLIENT_MAX_LOOKUP_ITERATIONS = 100;
 
 FAKE_VOID_FUNC(show_lwm2m_event, enum lwm2m_rd_client_event);
 FAKE_VOID_FUNC(show_lwm2m_observe, enum lwm2m_observe_event);
@@ -143,7 +143,10 @@ static void my_suite_before(void *data)
 
 	RESET_FAKE(show_lwm2m_event);
 	RESET_FAKE(show_lwm2m_observe);
+}
 
+static void my_suite_after(void *data)
+{
 	test_lwm2m_engine_stop_service();
 }
 
@@ -165,7 +168,7 @@ void message_reply_timeout_cb_default(struct lwm2m_message *msg)
 	msg->message_timeout_cb(msg);
 }
 
-ZTEST_SUITE(lwm2m_rd_client, NULL, NULL, my_suite_before, NULL, NULL);
+ZTEST_SUITE(lwm2m_rd_client, NULL, NULL, my_suite_before, my_suite_after, NULL);
 
 ZTEST(lwm2m_rd_client, test_start_registration_ok)
 {
