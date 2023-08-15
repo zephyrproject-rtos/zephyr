@@ -43,10 +43,17 @@ static void data_received(const struct device *dev,
 static void feature_update(const struct device *dev,
 			   const struct usb_audio_fu_evt *evt)
 {
+	int16_t volume = 0;
+
 	LOG_DBG("Control selector %d for channel %d updated",
 		evt->cs, evt->channel);
 	switch (evt->cs) {
 	case USB_AUDIO_FU_MUTE_CONTROL:
+		break;
+	case USB_AUDIO_FU_VOLUME_CONTROL:
+		volume = *((int16_t *)(evt->val));
+		LOG_INF("set volume: %d", volume);
+		break;
 	default:
 		break;
 	}
