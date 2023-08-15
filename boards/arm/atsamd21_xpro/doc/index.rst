@@ -8,13 +8,16 @@ Overview
 
 The SAM D21 Xplained Pro evaluation kit is ideal for evaluation and
 prototyping with the SAM D21 Cortex®-M0+ processor-based
-microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
+microcontrollers. The kit includes Atmel's Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
-.. image:: img/atsamd21_xpro.jpg
-     :align: center
-     :alt: ATSAMD21-XPRO
+.. figure:: img/atsamd21_xpro.jpg
+    :width: 500px
+    :align: center
+    :alt: ATSAMD21-XPRO
+
+    ATSAMD21-XPRO (Credit: `Microchip Technology`_)
 
 Hardware
 ********
@@ -43,6 +46,8 @@ features:
 | SYSTICK   | on-chip    | systick                                  |
 +-----------+------------+------------------------------------------+
 | WDT       | on-chip    | Watchdog                                 |
++-----------+------------+------------------------------------------+
+| ADC       | on-chip    | Analog to Digital Converter              |
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
@@ -173,7 +178,7 @@ References
 
 .. target-notes::
 
-.. _Microchip website:
+.. _Microchip Technology:
     http://www.microchip.com/DevelopmentTools/ProductDetails.aspx?PartNO=ATSAMD21-XPRO
 
 .. _SAM D21 Family Datasheet:
