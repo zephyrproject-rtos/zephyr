@@ -12,6 +12,7 @@ tests:
       - bl5340_dvk_cpuapp
       - disco_l475_iot1
       - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
       - esp32s2_saola
       - frdm_k22f
       - frdm_k64f
