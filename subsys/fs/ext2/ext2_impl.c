@@ -823,12 +823,12 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 		EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir->f_inode), block_off);
 	struct ext2_direntry *de = ext2_fetch_direntry(disk_de);
 
-	LOG_DBG("inode=%d name_len=%d rec_len=%d", de->de_inode, de->de_name_len, de->de_rec_len);
-
 	if (de == NULL) {
 		LOG_ERR("Read directory entry name too long");
 		return -EINVAL;
 	}
+
+	LOG_DBG("inode=%d name_len=%d rec_len=%d", de->de_inode, de->de_name_len, de->de_rec_len);
 
 	len = de->de_name_len;
 	if (de->de_name_len > MAX_FILE_NAME) {
