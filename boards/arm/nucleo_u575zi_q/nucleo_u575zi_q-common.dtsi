@@ -167,7 +167,7 @@
 	status = "okay";
 };
 
-&can1 {
+&fdcan1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
