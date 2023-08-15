@@ -5,5 +5,6 @@ tests:
   sample.board.esp32:
     platform_allow:
       - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
       - yd_esp32
     tags: esp32
