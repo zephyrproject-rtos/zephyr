@@ -71,6 +71,8 @@ enum usbd_endpoint_index_e endpoint_in_idx[] = {USBD_IN_EP1_IDX, USBD_IN_EP2_IDX
 
 enum usbd_endpoint_index_e endpoint_out_idx[] = {USBD_OUT_EP5_IDX, USBD_OUT_EP6_IDX};
 
+#define USBD_EPIN_BUSY_RETRY_TIMEOUT_US        10000
+
 #define USBD_EPIN_CNT	   (sizeof(endpoint_in_idx) / sizeof(enum usbd_endpoint_index_e))
 #define USBD_EPOUT_CNT	   (sizeof(endpoint_out_idx) / sizeof(enum usbd_endpoint_index_e))
 #define USBD_EP_IN_OUT_CNT (USBD_EPIN_CNT + USBD_EPOUT_CNT)
@@ -179,6 +181,7 @@ struct b91_usbd_ep_ctx {
 	struct b91_usbd_ep_buf buf;
 	bool reading;
 	uint8_t writing_len;
+	struct k_timer retry_timer;
 };
 
 /**
@@ -320,6 +323,7 @@ enum usbd_event_type {
 	USBD_EVT_RESET,
 	USBD_EVT_SUSPEND,
 	USBD_EVT_SLEEP,
+	USBD_EVT_EP_RETRY,
 };
 
 struct usbd_mem_block {
@@ -436,6 +440,8 @@ static void submit_usbd_event(enum usbd_event_type evt_type, uint8_t value)
 	} else if (ev->evt_type == USBD_EVT_EP_COMPLETE) {
 		ev->ep_idx = value;
 	} else if (ev->evt_type == USBD_EVT_EP_BUSY) {
+		ev->ep_idx = value;
+	} else if (ev->evt_type == USBD_EVT_EP_RETRY) {
 		ev->ep_idx = value;
 	}
 	usbd_evt_put(ev);
@@ -1670,7 +1676,8 @@ static void usbd_work_handler(struct k_work *item)
 			LOG_DBG("USBD_EVT_EP_BUSY");
 			ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
 			if (ep_ctx->cfg.cb) {
-				ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
+				k_timer_start(&ep_ctx->retry_timer,
+					K_USEC(USBD_EPIN_BUSY_RETRY_TIMEOUT_US), K_NO_WAIT);
 			}
 			if (ev->ep_idx == USBD_EP0_IDX) {
 				if (ep_ctx->cfg.stall) {
@@ -1685,6 +1692,14 @@ static void usbd_work_handler(struct k_work *item)
 				} else {
 					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
 				}
+			}
+			break;
+
+		case USBD_EVT_EP_RETRY:
+			LOG_DBG("USBD_EVT_EP_RETRY");
+			ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
+			if (ep_ctx->cfg.cb) {
+				ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
 			}
 			break;
 
@@ -1726,11 +1741,24 @@ static void usbd_work_handler(struct k_work *item)
 	}
 }
 
+static void usbd_retry_timer_expire(struct k_timer *timer)
+{
+	struct b91_usbd_ep_ctx *ep_ctx = k_timer_user_data_get(timer);
+
+	submit_usbd_event(USBD_EVT_EP_RETRY, ep_ctx - usbd_ctx.ep_ctx);
+}
+
 static int usb_init(void)
 {
 	int ret;
 
 	reg_wakeup_en = 0;
+
+	for (size_t i = 0; i <  USBD_EP_TOTAL_CNT; i++) {
+		k_timer_init(&usbd_ctx.ep_ctx[i].retry_timer, usbd_retry_timer_expire, NULL);
+		k_timer_user_data_set(&usbd_ctx.ep_ctx[i].retry_timer, &usbd_ctx.ep_ctx[i]);
+	}
+
 	usb_set_pin_en();
 	ret = usb_irq_init();
 	k_work_queue_start(&usbd_work_queue, usbd_work_queue_stack,
