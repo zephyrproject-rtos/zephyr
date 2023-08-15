@@ -103,19 +103,17 @@ static int gptp_set_md_sync_receive(int port,
 	sync_rcv->precise_orig_ts.nanosecond = ntohl(fup->prec_orig_ts_nsecs);
 
 	/* Compute time when sync was sent by the remote. */
-	sync_rcv->upstream_tx_time = sync_ts->second;
-	sync_rcv->upstream_tx_time *= NSEC_PER_SEC;
-	sync_rcv->upstream_tx_time += sync_ts->nanosecond;
-
 	prop_delay_rated = port_ds->neighbor_prop_delay;
 	prop_delay_rated /= port_ds->neighbor_rate_ratio;
-
-	sync_rcv->upstream_tx_time -= prop_delay_rated;
 
 	delay_asymmetry_rated = port_ds->delay_asymmetry;
 	delay_asymmetry_rated /= port_ds->neighbor_rate_ratio;
 
-	sync_rcv->upstream_tx_time -= delay_asymmetry_rated;
+	sync_rcv->upstream_tx_time = sync_ts->second;
+	sync_rcv->upstream_tx_time *= NSEC_PER_SEC;
+	sync_rcv->upstream_tx_time += sync_ts->nanosecond;
+	sync_rcv->upstream_tx_time -= (int64_t)prop_delay_rated;
+	sync_rcv->upstream_tx_time -= (int64_t)delay_asymmetry_rated;
 
 	sync_rcv->rate_ratio = ntohl(fup->tlv.cumulative_scaled_rate_offset);
 	sync_rcv->rate_ratio /= GPTP_POW2_41;

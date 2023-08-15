@@ -694,32 +694,41 @@ static void gptp_mi_clk_slave_sync_compute(void)
 	struct gptp_md_sync_info *pss;
 	struct gptp_port_ds *port_ds;
 	uint64_t sync_receipt_time;
+	double prop_delay_rated;
+	double delay_asymmetry_rated;
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	offset_state = &GPTP_STATE()->clk_master_sync_offset;
 	global_ds = GPTP_GLOBAL_DS();
 	port_ds = GPTP_PORT_DS(state->pss_rcv_ptr->local_port_number);
-
 	pss = &state->pss_rcv_ptr->sync_info;
 
-	sync_receipt_time = port_ds->neighbor_prop_delay;
-	sync_receipt_time *= pss->rate_ratio;
-	sync_receipt_time /= port_ds->neighbor_rate_ratio;
+	/* Compute syncReceiptTime */
+	prop_delay_rated = port_ds->neighbor_prop_delay;
+	prop_delay_rated *= pss->rate_ratio;
+	prop_delay_rated /= port_ds->neighbor_rate_ratio;
+
+	sync_receipt_time = pss->precise_orig_ts.second;
+	sync_receipt_time *= NSEC_PER_SEC;
+	sync_receipt_time += pss->precise_orig_ts.nanosecond;
 	sync_receipt_time += pss->follow_up_correction_field;
+	sync_receipt_time += (int64_t)prop_delay_rated;
 	sync_receipt_time += port_ds->delay_asymmetry;
 
 	global_ds->sync_receipt_time.second = sync_receipt_time / NSEC_PER_SEC;
-	global_ds->sync_receipt_time.fract_nsecond =
-		(sync_receipt_time % NSEC_PER_SEC) * GPTP_POW2_16;
-	global_ds->sync_receipt_time.second += pss->precise_orig_ts.second;
-	global_ds->sync_receipt_time.fract_nsecond +=
-		pss->precise_orig_ts.nanosecond * GPTP_POW2_16;
+	global_ds->sync_receipt_time.fract_nsecond = sync_receipt_time % NSEC_PER_SEC;
+	global_ds->sync_receipt_time.fract_nsecond <<= 16;
 
-	global_ds->sync_receipt_local_time = port_ds->delay_asymmetry;
-	global_ds->sync_receipt_local_time /= pss->rate_ratio;
-	global_ds->sync_receipt_local_time +=
-		(port_ds->neighbor_prop_delay / port_ds->neighbor_rate_ratio);
-	global_ds->sync_receipt_local_time += pss->upstream_tx_time;
+	/* Compute syncReceiptLocalTime */
+	prop_delay_rated = port_ds->neighbor_prop_delay;
+	prop_delay_rated /= port_ds->neighbor_rate_ratio;
+
+	delay_asymmetry_rated = port_ds->delay_asymmetry;
+	delay_asymmetry_rated /= pss->rate_ratio;
+
+	global_ds->sync_receipt_local_time = pss->upstream_tx_time;
+	global_ds->sync_receipt_local_time += (int64_t)prop_delay_rated;
+	global_ds->sync_receipt_local_time += (int64_t)delay_asymmetry_rated;
 
 	global_ds->gm_time_base_indicator = pss->gm_time_base_indicator;
 	global_ds->last_gm_phase_change.high = pss->last_gm_phase_change.high;
