@@ -615,10 +615,6 @@ static int get_level_offsets(struct ext2_data *fs, uint32_t block, uint32_t offs
 	const uint32_t lvl2_blks = B * B;
 	const uint32_t lvl3_blks = B * B * B;
 
-	if (block < 0) {
-		return -EINVAL;
-	}
-
 	/* Level 0 */
 	if (block < lvl0_blks) {
 		offsets[0] = block;
