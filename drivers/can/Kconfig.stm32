@@ -1,5 +1,6 @@
 # STM32 CAN configuration options
 
+# Copyright (c) 2022 Blue Clover
 # Copyright (c) 2018-2020 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
@@ -72,3 +73,10 @@ config CAN_MAX_EXT_ID_FILTER
 	  that can be added by the application.
 
 endif # CAN_STM32_FDCAN
+
+config CAN_STM32H7
+	bool "STM32H7 FDCAN driver"
+	default y
+	depends on DT_HAS_ST_STM32H7_FDCAN_ENABLED
+	select CAN_MCAN
+	select USE_STM32_LL_RCC
