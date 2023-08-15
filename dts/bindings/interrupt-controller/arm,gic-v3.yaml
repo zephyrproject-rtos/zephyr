@@ -1,7 +1,24 @@
+#
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
 description: ARM Generic Interrupt Controller v3
 
 compatible: arm,gic-v3
 
 include: arm,gic.yaml
+
+properties:
+  redistributor-stride:
+    type: int
+    description:
+      If using padding pages, specifies the stride of consecutive
+      redistributors. Must be a multiple of 64kB.
+
+  redistributor-regions:
+    type: int
+    description: 
+      The number of independent contiguous regions occupied by the
+      redistributors. Required if more than one such region is present.
