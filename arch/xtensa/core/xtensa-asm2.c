@@ -163,17 +163,6 @@ void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 #endif
 
 	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
-
-#ifdef CONFIG_XTENSA_MMU
-	uint32_t vaddrstatus, vaddr0, vaddr1;
-
-	__asm__ volatile("rsr.vaddrstatus %0" : "=r"(vaddrstatus));
-	__asm__ volatile("rsr.vaddr0 %0" : "=r"(vaddr0));
-	__asm__ volatile("rsr.vaddr1 %0" : "=r"(vaddr1));
-
-	LOG_ERR(" ** VADDRSTATUS %p VADDR0 %p VADDR1 %p",
-		(void *)vaddrstatus, (void *)vaddr0, (void *)vaddr1);
-#endif /* CONFIG_XTENSA_MMU */
 }
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
