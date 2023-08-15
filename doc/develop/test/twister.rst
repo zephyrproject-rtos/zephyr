@@ -632,6 +632,26 @@ line break instead of white spaces.
 
 Most everyday users will run with no arguments.
 
+Test Statuses
+*************
+
+The following statuses are reported per testcase:
+
+- `passed`: A test is deemed to pass if its actual result matches its expected
+  result.
+- `failed`: A test is deemed to fail if its actual result does not match its
+  expected result.
+- `error`: A test produces the Error result when there is a problem in running
+  the test itself.
+- `skipped`: A test case that was skipped during a test script execution.
+- `blocked`: A test case that is scheduled to run but cannot run because of an
+  error or a crash in the suite or environment.
+- `notrun`: A test case or test suite that is not yet run.
+- `inprogress`: A test case was started and it is currently executing. This is
+  an intermediate and internal status that will ultimately transition to one of
+  the above statuses.
+
+
 Running in Integration Mode
 ***************************
 
