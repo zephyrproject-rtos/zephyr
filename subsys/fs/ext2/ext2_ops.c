@@ -245,9 +245,9 @@ static int ext2_mkdir(struct fs_mount_t *mountp, const char *name)
 
 	const char *path = fs_impl_strip_prefix(name, mountp);
 	struct ext2_lookup_args args = {
-		args.path = path,
-		args.inode = NULL,
-		args.parent = NULL,
+		.path = path,
+		.inode = NULL,
+		.parent = NULL,
 	};
 
 	args.flags = LOOKUP_ARG_CREATE;
@@ -503,9 +503,9 @@ static int ext2_unlink(struct fs_mount_t *mountp, const char *name)
 
 	const char *path = fs_impl_strip_prefix(name, mountp);
 	struct ext2_lookup_args args = {
-		args.path = path,
-		args.inode = NULL,
-		args.parent = NULL,
+		.path = path,
+		.inode = NULL,
+		.parent = NULL,
 	};
 
 	args.flags = LOOKUP_ARG_UNLINK;
