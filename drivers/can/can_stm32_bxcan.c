@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
-#define DT_DRV_COMPAT st_stm32_can
+#define DT_DRV_COMPAT st_stm32_bxcan
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
