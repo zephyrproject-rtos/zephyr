@@ -954,8 +954,6 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		break;
 	case kENET_TimeStampEvent:
 		/* Time stamp event.  */
-		/* Reset periodic timer to default value. */
-		context->base->ATPER = NSEC_PER_SEC;
 		break;
 	case kENET_TimeStampAvailEvent:
 		/* Time stamp available event.  */
@@ -1701,28 +1699,37 @@ static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 {
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_context *context = ptp_context->eth_context;
-	int key, ret;
+	bool neg_adj = false;
+	uint32_t corr_inc = (NSEC_PER_SEC / CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ);
+	uint32_t corr_period;
 
-	ARG_UNUSED(dev);
-
-	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
-			(increment >= (int32_t)NSEC_PER_SEC)) {
-		ret = -EINVAL;
-	} else {
-		key = irq_lock();
-		if (context->base->ATPER != NSEC_PER_SEC) {
-			ret = -EBUSY;
-		} else {
-			/* Seconds counter is handled by software. Change the
-			 * period of one software second to adjust the clock.
-			 */
-			context->base->ATPER = NSEC_PER_SEC - increment;
-			ret = 0;
-		}
-		irq_unlock(key);
+	/*
+	 * The increment rate (nanseconds per second) by which to
+	 * slow down or speed up the slave timer.
+	 * Positive need to speed up and negative value need to slow down.
+	 */
+	if (increment == 0) {
+		/* Reset PTP frequency */
+		context->base->ATCOR &= ~ENET_ATCOR_COR_MASK;
+		return -EINVAL;
 	}
 
-	return ret;
+	if (increment < 0) {
+		increment = -increment;
+		neg_adj = true;
+	}
+
+	/* Every corr_period speed up or slow down 1 clock make time smooth */
+	corr_period = (uint32_t)CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ / increment;
+
+	/* neg_adj = 1, slow down timer. neg_adj = 0, speed up timer */
+	corr_inc = (neg_adj) ? (corr_inc - 1) : (corr_inc + 1);
+
+	k_mutex_lock(&context->ptp_mutex, K_FOREVER);
+	ENET_Ptp1588AdjustTimer(context->base, corr_inc, corr_period);
+	k_mutex_unlock(&context->ptp_mutex);
+
+	return 0;
 }
 
 static int ptp_clock_mcux_rate_adjust(const struct device *dev, double ratio)
