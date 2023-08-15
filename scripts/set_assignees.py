@@ -11,6 +11,8 @@ import datetime
 from github import Github, GithubException
 from github.GithubException import UnknownObjectException
 from collections import defaultdict
+from west.manifest import Manifest
+from west.manifest import ManifestProject
 
 TOP_DIR = os.path.join(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(TOP_DIR, "scripts"))
@@ -28,10 +30,14 @@ def parse_args():
 
     parser.add_argument("-M", "--maintainer-file", required=False, default="MAINTAINERS.yml",
                         help="Maintainer file to be used.")
-    parser.add_argument("-P", "--pull_request", required=False, default=None, type=int,
-                        help="Operate on one pull-request only.")
-    parser.add_argument("-s", "--since", required=False,
-                        help="Process pull-requests since date.")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-P", "--pull_request", required=False, default=None, type=int,
+                       help="Operate on one pull-request only.")
+    group.add_argument("-s", "--since", required=False,
+                       help="Process pull-requests since date.")
+    group.add_argument("-m", "--modules", action="store_true",
+                       help="Process pull-requests from modules.")
 
     parser.add_argument("-y", "--dry-run", action="store_true", default=False,
                         help="Dry run only.")
@@ -205,6 +211,56 @@ def process_pr(gh, maintainer_file, number):
 
     time.sleep(1)
 
+
+def process_modules(gh, maintainers_file):
+    manifest = Manifest.from_file()
+
+    repos = {}
+    for project in manifest.get_projects([]):
+        if not manifest.is_active(project):
+            continue
+
+        if isinstance(project, ManifestProject):
+            continue
+
+        area = f"West project: {project.name}"
+        if area not in maintainers_file.areas:
+            log(f"No area for: {area}")
+            continue
+
+        maintainers = maintainers_file.areas[area].maintainers
+        if not maintainers:
+            log(f"No maintainers for: {area}")
+            continue
+
+        log(f"Found {area}, maintainers={maintainers}")
+        repo_name = f"{args.org}/{project.name}"
+        repos[repo_name] = maintainers_file.areas[area]
+
+    query = f"is:open is:pr no:assignee"
+    for repo in repos:
+        query += f" repo:{repo}"
+
+    issues = gh.search_issues(query=query)
+    for issue in issues:
+        pull = issue.as_pull_request()
+
+        if pull.draft:
+            continue
+
+        if pull.assignees:
+            log(f"ERROR: {pull.html_url} should have no assignees, found {pull.assignees}")
+            continue
+
+        repo_name = f"{args.org}/{issue.repository.name}"
+        area = repos[repo_name]
+
+        for maintainer in area.maintainers:
+            log(f"Adding {maintainer} to {pull.html_url}")
+            if not args.dry_run:
+                pull.add_to_assignees(maintainer)
+
+
 def main():
     parse_args()
 
@@ -218,6 +274,8 @@ def main():
 
     if args.pull_request:
         process_pr(gh, maintainer_file, args.pull_request)
+    elif args.modules:
+        process_modules(gh, maintainer_file)
     else:
         if args.since:
             since = args.since
