@@ -15,7 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_CAN_SAM          can_sam.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SAM0         can_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32_BXCAN  can_stm32_bxcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_STM32_FDCAN  can_stm32_fdcan.c)
-zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7      can_stm32h7.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7_FDCAN can_stm32h7_fdcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_RCAR         can_rcar.c)
 
 if(CONFIG_CAN_NATIVE_POSIX_LINUX)
