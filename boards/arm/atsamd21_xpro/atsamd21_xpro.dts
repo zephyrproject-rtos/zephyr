@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <atmel/samd21.dtsi>
 #include "atsamd21_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -54,7 +55,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &tcc0 {

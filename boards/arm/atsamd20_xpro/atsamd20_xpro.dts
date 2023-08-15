@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <freq.h>
 #include <atmel/samd20.dtsi>
 #include "atsamd20_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -13,17 +14,18 @@
 	model = "SAM D20 Xplained Pro";
 	compatible = "atsamd20,xpro", "atmel,samd20j18", "atmel,samd20";
 
-	aliases {
-		led0 = &yellow_led;
-		sw0 = &user_button;
-		i2c-0 = &sercom2;
-	};
-
 	chosen {
 		zephyr,console = &sercom3;
 		zephyr,shell-uart = &sercom3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &yellow_led;
+		sw0 = &user_button;
+		i2c-0 = &sercom2;
 	};
 
 	leds {
@@ -45,7 +47,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &sercom0 {
