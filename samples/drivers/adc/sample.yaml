@@ -19,6 +19,7 @@ tests:
       - gd32vf103v_eval
       - gd32f403z_eval
       - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
       - esp32s2_saola
       - esp32c3_devkitm
       - gd32l233r_eval
