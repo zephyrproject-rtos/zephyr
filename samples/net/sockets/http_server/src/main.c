@@ -20,20 +20,19 @@
 
 int main(void)
 {
-	struct http2_server_config config;
-	struct http2_server_ctx ctx;
+	struct http_server_ctx ctx;
 
-	config.port = 8080;
-	config.address_family = AF_INET;
+	ctx.config.port = 8080;
+	ctx.config.address_family = AF_INET;
 
-	int server_fd = http2_server_init(&ctx, &config);
+	int server_fd = http_server_init(&ctx);
 
 	if (server_fd < 0) {
 		printf("Failed to initialize HTTP2 server\n");
 		return -1;
 	}
 
-	http2_server_start(&ctx);
+	http_server_start(&ctx);
 
 	return 0;
 }

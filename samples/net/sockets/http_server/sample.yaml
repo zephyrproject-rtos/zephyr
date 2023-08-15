@@ -1,0 +1,15 @@
+sample:
+  description: HTTP Server Sample
+  name: http_server_sample
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  harness: net
+  min_ram: 32
+  tags:
+    - http
+    - net
+    - server
+    - socket
+  platform_exclude: native_posix_64
+tests:
+  sample.net.sockets.http.server: {}
