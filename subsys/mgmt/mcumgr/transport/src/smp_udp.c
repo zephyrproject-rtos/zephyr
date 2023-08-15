@@ -93,9 +93,7 @@ static struct configs configs = {
 #endif
 };
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 static struct net_mgmt_event_callback smp_udp_mgmt_cb;
-#endif
 
 static const char *smp_udp_proto_to_name(enum proto_type proto)
 {
