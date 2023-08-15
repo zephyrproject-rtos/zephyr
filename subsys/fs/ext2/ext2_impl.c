@@ -1501,7 +1501,7 @@ int ext2_inode_drop(struct ext2_inode *inode)
 		/* find entry */
 		uint32_t offset = 0;
 
-		while (fs->inode_pool[offset] != inode && offset < MAX_INODES) {
+		while (offset < MAX_INODES && fs->inode_pool[offset] != inode) {
 			offset++;
 		}
 
