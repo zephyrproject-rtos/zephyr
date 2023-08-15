@@ -689,7 +689,7 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 
 #define WAIT_BUFS_INITIAL_MS 10
 #define WAIT_BUFS_MAX_MS 100
-#define MAX_WAIT_BUFS K_SECONDS(10)
+#define MAX_WAIT_BUFS K_MSEC(CONFIG_NET_SOCKET_MAX_SEND_WAIT)
 
 static int send_check_and_wait(struct net_context *ctx, int status,
 			       k_timepoint_t buf_timeout, k_timeout_t timeout,

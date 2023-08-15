@@ -64,6 +64,13 @@ config NET_SOCKETS_DNS_TIMEOUT
 	  query is considered timeout. Minimum timeout is 1 second and
 	  maximum timeout is 5 min.
 
+config NET_SOCKET_MAX_SEND_WAIT
+	int "Max time in milliseconds waiting for a send command"
+	default 10000
+	help
+	  The maximum time a socket is waiting for a blocked connection before
+	  returning an ENOBUFS error.
+
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "TCP TLS socket option support [EXPERIMENTAL]"
 	imply TLS_CREDENTIALS
