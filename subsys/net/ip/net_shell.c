@@ -3316,6 +3316,8 @@ static int cmd_net_gptp(const struct shell *sh, size_t argc, char *argv[])
 		PR("\tThe local clock has expired    : %s\n",
 		   domain->state.clk_slave_sync.rcvd_local_clk_tick ?
 							   "yes" : "no");
+		PR("\tTime offset from master        : %lld ns\n",
+		   domain->servo_ds.master_offset_ns);
 
 		PR("PortRoleSelection state machine variables:\n");
 		PR("\tCurrent state                  : %s\n",
