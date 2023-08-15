@@ -77,6 +77,7 @@ Kconfig.txt
 KconfigBasic.txt
 KconfigBasicNoModules.txt
 MaintainersFormat.txt
+ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
 YAMLLint.txt
