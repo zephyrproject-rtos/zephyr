@@ -1,7 +1,53 @@
+#
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
-description: ARM Generic Interrupt Controller v3
+description: |
+  ARM Generic Interrupt Controller v3
+
+  Examples for GICv3 devicetree nodes:
+
+    gic: interrupt-controller@2cf00000 {
+      compatible = "arm,gic-v3", "arm,gic";
+      reg = <0x2f000000 0x10000>,  /* GICD */
+            <0x2f100000 0x200000>;  /* GICR */
+      interrupt-controller;
+      #interrupt-cells = <3>;
+      status = "okay";
+    };
+
+    gic: interrupt-controller@2c010000 {
+      compatible = "arm,gic-v3", "arm,gic";
+      redistributor-stride = <0x40000>;  /* 256kB stride */
+      redistributor-regions = <2>;
+      reg = <0x2c010000 0x10000>,  /* GICD */
+            <0x2d000000 0x800000>,  /* GICR 1: CPUs 0-31 */
+            <0x2e000000 0x800000>;  /* GICR 2: CPUs 32-63 */
+      interrupt-controller;
+      #interrupt-cells = <4>;
+      status = "okay";
+    };
 
 compatible: arm,gic-v3
 
 include: arm,gic.yaml
+
+properties:
+  redistributor-stride:
+    type: int
+    description:
+      If using padding pages, specifies the stride of consecutive
+      redistributors which is the distance between consecutive redistributors in
+      memory. Must be a multiple of 64kB. Required if the distance between
+      redistributors is not the default 128kB.
+
+  redistributor-regions:
+    type: int
+    description:
+      The number of independent contiguous regions occupied by the redistributors.
+      The term "regions" refers to distinct memory segments or areas allocated
+      for redistributors within the system memory. The number of redistributor
+      regions and their sizes are hardware-specific. Required if more than one
+      such region is present.
