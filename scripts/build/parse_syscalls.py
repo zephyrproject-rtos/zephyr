@@ -90,6 +90,8 @@ def analyze_headers(include_dir, scan_dir, file_list):
     # header files (e.g. for function stubs).
     for base_path in multiple_directories:
         for root, dirs, files in os.walk(base_path, topdown=True):
+            # ignore '.' prefixed directories
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
             dirs.sort()
             files.sort()
             for fn in files:
