@@ -533,7 +533,7 @@ int cfb_get_numof_fonts(const struct device *dev)
 	return fb->numof_fonts;
 }
 
-int cfb_framebuffer_init(const struct device *dev)
+static int cfb_init(const struct device *dev)
 {
 	const struct display_driver_api *api = dev->api;
 	struct char_framebuffer *fb = &char_fb;
@@ -542,8 +542,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	api->get_capabilities(dev, &cfg);
 
 	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
-
-	LOG_DBG("number of fonts %d", fb->numof_fonts);
 
 	fb->x_res = cfg.x_resolution;
 	fb->y_res = cfg.y_resolution;
@@ -558,6 +556,38 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->font_idx = 0U;
 
 	fb->size = fb->x_res * fb->y_res / fb->ppt;
+
+	return fb->size;
+}
+
+int cfb_framebuffer_init_with_buf(const struct device *dev, uint8_t *buf, size_t size)
+{
+	struct char_framebuffer *fb = &char_fb;
+	int ret = cfb_init(dev);
+
+	if (!ret) {
+		return ret;
+	}
+
+	if (ret > size) {
+		LOG_ERR("Buffer size not sufficient");
+		return -ENOMEM;
+	}
+
+	fb->buf = buf;
+
+	return 0;
+}
+
+int cfb_framebuffer_init(const struct device *dev)
+{
+	struct char_framebuffer *fb = &char_fb;
+	int ret = cfb_init(dev);
+
+	if (!ret) {
+		return ret;
+	}
+
 	fb->buf = k_malloc(fb->size);
 	if (!fb->buf) {
 		return -ENOMEM;
