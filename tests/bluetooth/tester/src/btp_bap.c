@@ -177,6 +177,11 @@ static struct audio_stream *stream_alloc(struct audio_connection *conn)
 	return NULL;
 }
 
+static void stream_free(struct audio_stream *stream)
+{
+	(void)memset(stream, 0, sizeof(*stream));
+}
+
 static struct audio_stream *stream_find(struct audio_connection *conn, uint8_t ase_id)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(conn->streams); i++) {
@@ -598,7 +603,13 @@ static void stream_released(struct bt_bap_stream *stream)
 		cigs[stream->ep->cig_id] = NULL;
 	}
 
-	a_stream->ase_id = 0;
+	if (stream->ep->dir == BT_AUDIO_DIR_SINK) {
+		audio_conn->configured_sink_stream_count--;
+	} else {
+		audio_conn->configured_source_stream_count--;
+	}
+
+	stream_free(a_stream);
 }
 
 static void stream_started(struct bt_bap_stream *stream)
@@ -1100,15 +1111,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct audio_connection *audio_conn;
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
-
-	audio_conn = &connections[bt_conn_index(conn)];
-	memset(audio_conn, 0, sizeof(*audio_conn));
 }
 
 static struct bt_conn_cb conn_callbacks = {
