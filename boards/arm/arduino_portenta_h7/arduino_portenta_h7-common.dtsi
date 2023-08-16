@@ -102,7 +102,7 @@
 	pinctrl-names = "default";
 };
 
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_ph13>;
 	pinctrl-names = "default";
 };

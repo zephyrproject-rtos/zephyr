@@ -20,7 +20,7 @@
 		zephyr,bt-uart = &uart7;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,canbus = &can2;
+		zephyr,canbus = &fdcan2;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -134,7 +134,7 @@
 	pinctrl-names = "default";
 };
 
-&can2 {
+&fdcan2 {
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
