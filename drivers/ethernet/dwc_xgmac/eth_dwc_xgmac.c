@@ -602,6 +602,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 	struct xgmac_dma_rx_desc *rx_desc, rx_desc_data;
 	struct net_buf *frag1 = NULL, *frag2 = NULL;
 	int desc_data_len;
+	int err;
 
 	mem_addr_t *rx_frags = (mem_addr_t *)(data->rx_frags + (((dma_chnl * dma_chnl_cfg->rdrl)) *
 								RX_FRAGS_PER_DESC));
@@ -651,19 +652,20 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 					/* Full packet received, submit to net sub system for
 					 * further processing
 					 */
-					if (net_recv_data(data->iface, rx_desc_meta->rx_pkt) < 0) {
-						LOG_DBG("received a packet");
+					err = net_recv_data(data->iface, rx_desc_meta->rx_pkt);
+					if (err) {
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 						data->stats.errors.rx++;
 #endif
 						net_pkt_unref(rx_desc_meta->rx_pkt);
+						LOG_DBG("received packet dropped %d", err);
 					} else {
+						LOG_DBG("received a packet");
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
-						data->stats.bytes.sent +=
+						data->stats.bytes.received +=
 							net_pkt_get_len(rx_desc_meta->rx_pkt);
 #endif
 					}
-
 				} else {
 					LOG_ERR("rx packet error");
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
@@ -806,10 +808,6 @@ static void eth_dwc_xgmac_irq_work(struct k_work *item)
 	const struct eth_dwc_xgmac_config *const config =
 		(struct eth_dwc_xgmac_config *)dev->config;
 	uint32_t dma_chnl_interrupt_sts = 0u;
-	/* This binary variable cleared to indicate previous Interrupts work is initiated
-	 * Any new interrupt arrival should again submit a new work item to queue
-	 */
-	cntxt_data->work_item_sts = false;
 
 	for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 		if (cntxt_data->dma_interrupt_sts & BIT(x)) {
@@ -913,10 +911,7 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 	 * flags
 	 */
 #ifdef CONFIG_ETH_DWC_XGMAC_BOTTOM_HALF_WORK_QUEUE
-	if (!cntxt_data->work_item_sts) {
-		k_work_submit(&data->isr_work);
-		cntxt_data->work_item_sts = true;
-	}
+	k_work_submit(&data->isr_work);
 #endif
 }
 /**

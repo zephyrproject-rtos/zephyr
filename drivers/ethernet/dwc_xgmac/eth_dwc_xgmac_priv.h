@@ -138,7 +138,7 @@
 
 #define DMA_CHx_RX_CONTROL_RXPBL_SET(value) (((value) << 16) & 0x003f0000)
 
-#define DMA_CHx_RX_CONTROL_RBSZ_SET(value)  (value & 0x00007ff0)
+#define DMA_CHx_RX_CONTROL_RBSZ_SET(value)  ((value << 1) & 0x00007ff0)
 
 #define DMA_CHx_RX_CONTROL_SR_CLR_MSK	 0xfffffffe
 
@@ -822,10 +822,6 @@ struct xgmac_irq_cntxt_data {
 	 * MAC interrupt status register value
 	 */
 	volatile uint32_t mac_interrupt_sts;
-	/*
-	 * Interrupt bottom half work item start status
-	 */
-	bool work_item_sts;
 };
 
 /**
