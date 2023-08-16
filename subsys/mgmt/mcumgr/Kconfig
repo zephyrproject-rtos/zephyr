@@ -6,7 +6,7 @@ menuconfig MCUMGR
 	bool "mcumgr Support"
 	depends on NET_BUF
 	depends on ZCBOR
-	depends on CRC
+	imply CRC
 	help
 	  This option enables the mcumgr management library.
 
