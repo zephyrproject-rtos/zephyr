@@ -600,17 +600,15 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn,
 					       svc_insts[i].uri_scheme_list,
 					       uri_len);
 		}
-		/* Add null terminator for printing */
-		read_buf.data[read_buf.len] = '\0';
-		LOG_DBG("GTBS: URI scheme %s", read_buf.data);
+
+		LOG_DBG("GTBS: URI scheme %.*s", read_buf.len, read_buf.data);
 	} else {
 		const struct tbs_service_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 		net_buf_simple_add_mem(&read_buf, inst->uri_scheme_list,
 				       strlen(inst->uri_scheme_list));
-		/* Add null terminator for printing */
-		read_buf.data[read_buf.len] = '\0';
-		LOG_DBG("Index %u: URI scheme %s", inst->index, read_buf.data);
+
+		LOG_DBG("Index %u: URI scheme %.*s", inst->index, read_buf.len, read_buf.data);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -2386,9 +2384,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 					       uri_len);
 		}
 
-		/* Add null terminator for printing */
-		uri_scheme_buf.data[uri_scheme_buf.len] = '\0';
-		LOG_DBG("GTBS: URI scheme %s", uri_scheme_buf.data);
+		LOG_DBG("GTBS: URI scheme %.*s", uri_scheme_buf.len, uri_scheme_buf.data);
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_URI_LIST,
 				    gtbs_inst.service_p->attrs,

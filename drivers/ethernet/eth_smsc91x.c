@@ -707,16 +707,15 @@ static int eth_smsc_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_context *data = dev->data;
-	struct smsc_data *sc = &data->sc;
-	uint8_t reg_val;
 	int ret = 0;
-
-	(void) reg_val;
 
 	switch (type) {
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		struct eth_context *data = dev->data;
+		struct smsc_data *sc = &data->sc;
+		uint8_t reg_val;
+
 		SMSC_LOCK(sc);
 		smsc_select_bank(sc, 0);
 		reg_val = smsc_read_1(sc, RCR);
@@ -822,8 +821,8 @@ int eth_init(const struct device *dev)
 static struct eth_context eth_0_context;
 
 static struct eth_config eth_0_config = {
-	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
-	.phy_dev = DEVICE_DT_GET(DT_INST_CHILD(0, phy)),
+	DEVICE_MMIO_ROM_INIT(DT_PARENT(DT_DRV_INST(0))),
+	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
@@ -880,7 +879,7 @@ static const struct mdio_driver_api mdio_smsc_api = {
 };
 
 const struct mdio_smsc_config mdio_smsc_config_0 = {
-	.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
+	.eth_dev = DEVICE_DT_GET(DT_CHILD(DT_INST_PARENT(0), ethernet)),
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,

@@ -254,38 +254,48 @@ enum bt_audio_codec_config_type {
  * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
  * entry for the max_frames_per_sdu value.
  */
-#define BT_AUDIO_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max,                 \
-				_max_frames_per_sdu)                                               \
+
+#define BT_AUDIO_CODEC_CAP_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max,             \
+				    _max_frames_per_sdu)                                           \
 	{                                                                                          \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FREQ, BT_BYTES_LIST_LE16(_freq)),           \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_DURATION, _duration),                       \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_CHAN_COUNT, _chan_count),                   \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_LEN,                                  \
-				    BT_BYTES_LIST_LE16(_len_min),                                  \
-				    BT_BYTES_LIST_LE16(_len_max))                                  \
+		BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_CODEC_LC3_FREQ, BT_BYTES_LIST_LE16(_freq)),       \
+		BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_CODEC_LC3_DURATION, (_duration)),                 \
+		BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_CODEC_LC3_CHAN_COUNT, (_chan_count)),             \
+		BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_CODEC_LC3_FRAME_LEN,                              \
+					BT_BYTES_LIST_LE16(_len_min),                              \
+					BT_BYTES_LIST_LE16(_len_max)),                             \
 		COND_CODE_1(_max_frames_per_sdu, (),                                               \
-			    (, BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_COUNT,                 \
-								   _max_frames_per_sdu)))          \
+			    (BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_CODEC_LC3_FRAME_COUNT,               \
+						     (_max_frames_per_sdu)))),                     \
 	}
 
 /**
  *  @brief Helper to declare LC3 codec metadata
  */
-#define BT_AUDIO_CODEC_LC3_META(_prefer_context)                                                   \
+#define BT_AUDIO_CODEC_CAP_LC3_META(_prefer_context)                                               \
 	{                                                                                          \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,                           \
-				    BT_BYTES_LIST_LE16(_prefer_context))                           \
+		BT_AUDIO_CODEC_CAP_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,                       \
+					BT_BYTES_LIST_LE16(_prefer_context))                       \
 	}
 
 /**
- *  @brief Helper to declare LC3 codec
+ * @brief Helper to declare LC3 codec
+ *
+ * @param _freq Supported Sampling Frequencies bitfield (see BT_AUDIO_CODEC_LC3_FREQ_*)
+ * @param _duration Supported Frame Durations bitfield (see BT_AUDIO_CODEC_LC3_DURATION_*)
+ * @param _chan_count Supported channels (see @ref BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT)
+ * @param _len_min Minimum number of octets supported per codec frame
+ * @param _len_max Maximum number of octets supported per codec frame
+ * @param _max_frames_per_sdu Supported maximum codec frames per SDU
+ * @param _prefer_context Preferred contexts (@ref bt_audio_context)
+ *
  */
-#define BT_AUDIO_CODEC_LC3(_freq, _duration, _chan_count, _len_min, _len_max, _max_frames_per_sdu, \
-			   _prefer_context)                                                        \
-	BT_AUDIO_CODEC(BT_AUDIO_CODEC_LC3_ID, 0x0000, 0x0000,                                      \
-		       BT_AUDIO_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max,  \
-					       _max_frames_per_sdu),                               \
-		       BT_AUDIO_CODEC_LC3_META(_prefer_context))
+#define BT_AUDIO_CODEC_CAP_LC3(_freq, _duration, _chan_count, _len_min, _len_max,                  \
+			       _max_frames_per_sdu, _prefer_context)                               \
+	BT_AUDIO_CODEC_CAP(BT_AUDIO_CODEC_LC3_ID, 0x0000, 0x0000,                                  \
+			   BT_AUDIO_CODEC_CAP_LC3_DATA(_freq, _duration, _chan_count, _len_min,    \
+						       _len_max, _max_frames_per_sdu),             \
+			   BT_AUDIO_CODEC_CAP_LC3_META(_prefer_context))
 
 /**
  *  @brief Helper to declare LC3 codec data configuration
@@ -332,7 +342,7 @@ enum bt_audio_codec_config_type {
  *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG(_freq, _duration, _loc, _len, _frames_per_sdu, _stream_context)  \
-	BT_AUDIO_CODEC(                                                                            \
+	BT_AUDIO_CODEC_CFG(                                                                        \
 		BT_AUDIO_CODEC_LC3_ID, 0x0000, 0x0000,                                             \
 		BT_AUDIO_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frames_per_sdu),     \
 		BT_AUDIO_CODEC_LC3_CONFIG_META(_stream_context))

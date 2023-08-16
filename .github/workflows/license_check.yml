@@ -8,7 +8,7 @@ jobs:
     name: Scan code for licenses
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
     - name: Scan the code
       id: scancode
       uses: zephyrproject-rtos/action_scancode@v4

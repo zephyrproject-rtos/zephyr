@@ -19,7 +19,7 @@ extern "C" {
 /** @brief Published Audio Capability structure. */
 struct bt_pacs_cap {
 	/** Codec capability reference */
-	struct bt_audio_codec_cap *codec_cap;
+	const struct bt_audio_codec_cap *codec_cap;
 
 	/* Internally used list node */
 	sys_snode_t _node;

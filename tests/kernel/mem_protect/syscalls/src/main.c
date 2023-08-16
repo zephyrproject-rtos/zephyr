@@ -25,6 +25,8 @@
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif defined(CONFIG_BOARD_QEMU_CORTEX_R5)
 #define FAULTY_ADDRESS 0xBFFFFFFF
+#elif defined(CONFIG_SOC_SERIES_S32ZE_R52)
+#define FAULTY_ADDRESS ((uintptr_t)(&_image_ram_end))
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
 #define FAULTY_ADDRESS Z_FREE_VM_START

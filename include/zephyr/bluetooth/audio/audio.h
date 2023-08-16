@@ -199,7 +199,18 @@ struct bt_audio_codec_data {
 	}
 
 /**
- *  @brief Helper to declare @ref bt_audio_codec_cfg or @ref bt_audio_codec_cap structure
+ * @brief Helper to declare elements of bt_audio_codec_cap arrays
+ *
+ * This macro is mainly for creating an array of struct bt_audio_codec_cap data arrays.
+ *
+ * @param _type Type of advertising data field
+ * @param _bytes Variable number of single-byte parameters
+ */
+#define BT_AUDIO_CODEC_CAP_DATA(_type, _bytes...)                                                  \
+	(sizeof((uint8_t)_type) + sizeof((uint8_t[]){_bytes})), (_type), _bytes
+
+/**
+ *  @brief Helper to declare @ref bt_audio_codec_cfg
  *
  *  @param _id Codec ID
  *  @param _cid Company ID
@@ -207,18 +218,40 @@ struct bt_audio_codec_data {
  *  @param _data Codec Specific Data in LVT format
  *  @param _meta Codec Specific Metadata in LVT format
  */
-#define BT_AUDIO_CODEC(_id, _cid, _vid, _data, _meta) \
-	{ \
-		/* Use HCI data path as default, can be overwritten by application */ \
-		.path_id = BT_ISO_DATA_PATH_HCI, \
-		.id = _id, \
-		.cid = _cid, \
-		.vid = _vid, \
-		.data_count = ARRAY_SIZE(((struct bt_audio_codec_data[])_data)), \
-		.data = _data, \
-		.meta_count = ARRAY_SIZE(((struct bt_audio_codec_data[])_meta)), \
-		.meta = _meta, \
-	}
+#define BT_AUDIO_CODEC_CFG(_id, _cid, _vid, _data, _meta)                                          \
+	((struct bt_audio_codec_cfg){                                                              \
+		/* Use HCI data path as default, can be overwritten by application */              \
+		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.id = _id,                                                                         \
+		.cid = _cid,                                                                       \
+		.vid = _vid,                                                                       \
+		.data_count = ARRAY_SIZE(((struct bt_audio_codec_data[])_data)),                   \
+		.data = _data,                                                                     \
+		.meta_count = ARRAY_SIZE(((struct bt_audio_codec_data[])_meta)),                   \
+		.meta = _meta,                                                                     \
+	})
+
+/**
+ *  @brief Helper to declare @ref bt_audio_codec_cap structure
+ *
+ *  @param _id Codec ID
+ *  @param _cid Company ID
+ *  @param _vid Vendor ID
+ *  @param _data Codec Specific Data in LVT format
+ *  @param _meta Codec Specific Metadata in LVT format
+ */
+#define BT_AUDIO_CODEC_CAP(_id, _cid, _vid, _data, _meta)                                          \
+	((struct bt_audio_codec_cap){                                                              \
+		/* Use HCI data path as default, can be overwritten by application */              \
+		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.id = (_id),                                                                       \
+		.cid = (_cid),                                                                     \
+		.vid = (_vid),                                                                     \
+		.data_len = sizeof((uint8_t[])_data),                                              \
+		.data = _data,                                                                     \
+		.meta_len = sizeof((uint8_t[])_meta),                                              \
+		.meta = _meta,                                                                     \
+	})
 
 /** @brief Location values for BT Audio.
  *
@@ -302,18 +335,18 @@ struct bt_audio_codec_cap {
 	uint16_t cid;
 	/** Codec Company Vendor ID */
 	uint16_t vid;
-#if defined(CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT)
+#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
 	/** Codec Specific Capabilities Data count */
-	size_t data_count;
+	size_t data_len;
 	/** Codec Specific Capabilities Data */
-	struct bt_audio_codec_data data[CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT];
-#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT */
-#if defined(CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT)
+	uint8_t data[CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE];
+#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 */
+#if defined(CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE)
 	/** Codec Specific Capabilities Metadata count */
-	size_t meta_count;
+	size_t meta_len;
 	/** Codec Specific Capabilities Metadata */
-	struct bt_audio_codec_data meta[CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT];
-#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT */
+	uint8_t meta[CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE];
+#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE */
 };
 
 /** @brief Codec specific configuration structure. */

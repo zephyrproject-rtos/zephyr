@@ -121,6 +121,13 @@ child-binding:
         hardware (e.g. when the hardware does not allow to configure the
         acquisition time).
 
+    zephyr,differential:
+      type: boolean
+      description: |
+        When set, selects differential input mode for the channel. Otherwise,
+        single-ended mode is used unless the zephyr,input-negative property is
+        specified, in which case the differential mode is selected implicitly.
+
     zephyr,input-positive:
       type: int
       description: |
@@ -132,8 +139,7 @@ child-binding:
       description: |
         Negative ADC input. Used only for drivers that select
         the ADC_CONFIGURABLE_INPUTS Kconfig option.
-        When specified, the channel is to be used in differential input mode,
-        otherwise, single-ended mode is used.
+        When specified, implies the differential input mode for the channel.
 
     zephyr,resolution:
       type: int

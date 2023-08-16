@@ -534,7 +534,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40020000 0x2000>;
-			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
 		};
 
 		peci0: peci@400d4000 {

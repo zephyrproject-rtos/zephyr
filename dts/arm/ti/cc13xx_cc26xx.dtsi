@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -92,6 +93,62 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(8)>;
 				write-block-size = <1>;
+			};
+		};
+
+		gpt0: timer@40010000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40010000 0x1000>;
+			interrupts = <15 0 16 0>;
+			interrupt-names = "gpt0a", "gpt0b";
+			status = "disabled";
+
+			pwm0: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <1>;
+				status = "disabled";
+			};
+		};
+
+		gpt1: timer@40011000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40011000 0x1000>;
+			interrupts = <17 0 18 0>;
+			interrupt-names = "gpt1a", "gpt1b";
+			status = "disabled";
+
+			pwm1: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <1>;
+				status = "disabled";
+			};
+		};
+
+		gpt2: timer@40012000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40012000 0x1000>;
+			interrupts = <19 0 20 0>;
+			interrupt-names = "gpt2a", "gpt2b";
+			status = "disabled";
+
+			pwm2: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <1>;
+				status = "disabled";
+			};
+		};
+
+		gpt3: timer@40013000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40013000 0x1000>;
+			interrupts = <21 0 22 0>;
+			interrupt-names = "gpt3a", "gpt3b";
+			status = "disabled";
+
+			pwm3: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <1>;
+				status = "disabled";
 			};
 		};
 

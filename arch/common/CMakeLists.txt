@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_GEN_ISR_TABLES)
-  zephyr_library()
+zephyr_library()
 
-  zephyr_library_sources_ifdef(
-    CONFIG_GEN_ISR_TABLES
-    sw_isr_common.c
-    )
-endif()
+# Library may be empty due to kconfigs
+zephyr_library_property(ALLOW_EMPTY TRUE)
+
+zephyr_library_sources_ifdef(
+  CONFIG_GEN_ISR_TABLES
+  sw_isr_common.c
+  )
 
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
@@ -77,4 +78,4 @@ if(CONFIG_COVERAGE)
   zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
-zephyr_sources_ifdef(CONFIG_SEMIHOST semihost.c)
+zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)

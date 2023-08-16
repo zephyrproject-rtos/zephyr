@@ -13,11 +13,15 @@
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \
 	FAKE(bt_iso_chan_send)                                                                     \
+	FAKE(bt_iso_chan_get_tx_sync)
 
 static struct bt_iso_server *iso_server;
 
 DEFINE_FAKE_VALUE_FUNC(int, bt_iso_chan_send, struct bt_iso_chan *, struct net_buf *, uint16_t,
 		       uint32_t);
+
+DEFINE_FAKE_VALUE_FUNC(int, bt_iso_chan_get_tx_sync, const struct bt_iso_chan *,
+		       struct bt_iso_tx_info *);
 
 int bt_iso_server_register(struct bt_iso_server *server)
 {

@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/sys/check.h>
 
 #include "cap_internal.h"
 
@@ -220,3 +221,28 @@ void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
 
 	bt_cap_stream_ops_register_bap(stream);
 }
+
+#if defined(CONFIG_BT_AUDIO_TX)
+int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+		       uint32_t ts)
+{
+	CHECKIF(stream == NULL) {
+		LOG_DBG("stream is NULL");
+
+		return -EINVAL;
+	}
+
+	return bt_bap_stream_send(&stream->bap_stream, buf, seq_num, ts);
+}
+
+int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info)
+{
+	CHECKIF(stream == NULL) {
+		LOG_DBG("stream is NULL");
+
+		return -EINVAL;
+	}
+
+	return bt_bap_stream_get_tx_sync(&stream->bap_stream, info);
+}
+#endif /* CONFIG_BT_AUDIO_TX */

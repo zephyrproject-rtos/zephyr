@@ -1,6 +1,6 @@
 common:
   arch_allow: x86
-  platform_allow: ehl_crb
+  platform_allow: intel_ehl_crb
   tags:
     - ibecc
     - ibecc_cov

@@ -206,8 +206,21 @@ SECTIONS
 
 #include <zephyr/linker/cplusplus-rom.ld>
 
+#if defined(CONFIG_BUILD_ALIGN_LMA)
+    /*
+     * Include a padding section here to make sure that the LMA address
+     * of the sections in the RAMABLE_REGION are aligned with those
+     * section's VMA alignment requirements.
+     */
+    SECTION_PROLOGUE(padding_section,,)
+	{
 	__rodata_region_end = .;
 	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#else
+	__rodata_region_end = .;
+	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
+#endif
 	__rom_region_end = __rom_region_start + . - ADDR(rom_start);
 
     GROUP_END(ROMABLE_REGION)

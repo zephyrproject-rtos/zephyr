@@ -949,6 +949,12 @@ void bt_mesh_comp_unprovision(void)
 	LOG_DBG("");
 
 	dev_primary_addr = BT_MESH_ADDR_UNASSIGNED;
+
+	for (int i = 0; i < dev_comp->elem_count; i++) {
+		struct bt_mesh_elem *elem = &dev_comp->elem[i];
+
+		elem->addr = BT_MESH_ADDR_UNASSIGNED;
+	}
 }
 
 uint16_t bt_mesh_primary_addr(void)

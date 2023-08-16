@@ -20,7 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
-		zephyr,canbus = &can1;
+		zephyr,canbus = &fdcan1;
 		zephyr,keyboard-scan = &kscan_input;
 	};
 
@@ -149,7 +149,7 @@
 };
 
 /* Connect solder bridges SB3, SB4 and SB5 to use CAN connector (CN21) */
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;

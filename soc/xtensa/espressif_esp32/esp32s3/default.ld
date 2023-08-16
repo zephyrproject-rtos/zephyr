@@ -468,7 +468,6 @@ SECTIONS
 
     . = ALIGN(4);
     _end = ABSOLUTE(.);
-    _heap_sentry = .;
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -634,6 +633,8 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
+
+_heap_sentry = 0x3fceb910;
 
 #include <zephyr/linker/debug-sections.ld>
 

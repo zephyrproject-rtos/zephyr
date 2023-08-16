@@ -47,7 +47,7 @@ This project can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: tests/subsys/edac/ibecc
-   :board: ehl_crb
+   :board: intel_ehl_crb
    :goals: build
    :compact:
 

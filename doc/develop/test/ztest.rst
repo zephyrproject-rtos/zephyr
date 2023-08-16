@@ -111,6 +111,11 @@ This is achieved via fixtures in the following way:
    	zassert_equal(256, fixture->max_size);
    }
 
+Using memory allocated by a test fixture in a userspace thread, such as during execution of
+:c:macro:`ZTEST_USER` or :c:macro:`ZTEST_USER_F`, requires that memory to be declared userspace
+accessible. This is because the fixture memory is owned and initialized by kernel space. The Ztest
+framework provides the :c:macro:`ZTEST_DMEM` and :c:macro:`ZTEST_BMEM` macros for use of such
+user/kernel space shared memory.
 
 Advanced features
 *****************

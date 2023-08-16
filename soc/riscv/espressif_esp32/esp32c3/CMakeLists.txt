@@ -10,6 +10,7 @@ zephyr_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_PM power.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 # get code-partition slot0 address
 dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")

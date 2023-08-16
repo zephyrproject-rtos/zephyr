@@ -166,6 +166,43 @@ struct bt_cap_stream {
  */
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
+/**
+ * @brief Send data to Common Audio Profile stream
+ *
+ * See bt_bap_stream_send() for more information
+ *
+ * @note Support for sending must be supported, determined by @kconfig{CONFIG_BT_AUDIO_TX}.
+ *
+ * @param stream   Stream object.
+ * @param buf      Buffer containing data to be sent.
+ * @param seq_num  Packet Sequence number. This value shall be incremented for each call to this
+ *                 function and at least once per SDU interval for a specific channel.
+ * @param ts       Timestamp of the SDU in microseconds (us). This value can be used to transmit
+ *                 multiple SDUs in the same SDU interval in a CIG or BIG. Can be omitted by using
+ *                 @ref BT_ISO_TIMESTAMP_NONE which will simply enqueue the ISO SDU in a FIFO
+ *                 manner.
+ *
+ * @retval -EINVAL if stream object is NULL
+ * @retval Any return value from bt_bap_stream_send()
+ */
+int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+		       uint32_t ts);
+
+/**
+ * @brief Get ISO transmission timing info for a Common Audio Profile stream
+ *
+ * See bt_bap_stream_get_tx_sync() for more information
+ *
+ * @note Support for sending must be supported, determined by @kconfig{CONFIG_BT_AUDIO_TX}.
+ *
+ * @param[in]  stream Stream object.
+ * @param[out] info   Transmit info object.
+ *
+ * @retval -EINVAL if stream object is NULL
+ * @retval Any return value from bt_bap_stream_get_tx_sync()
+ */
+int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
+
 struct bt_cap_unicast_audio_start_stream_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;

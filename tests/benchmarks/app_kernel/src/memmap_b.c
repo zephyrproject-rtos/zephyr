@@ -24,12 +24,12 @@ void memorymap_test(void)
 	void *p;
 	int alloc_status;
 
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MAP_RUNS; i++) {
 		alloc_status = k_mem_slab_alloc(&MAP1, &p, K_FOREVER);
 		if (alloc_status != 0) {
-			PRINT_F(output_file, FORMAT,
+			PRINT_F(FORMAT,
 				"Error: Slab allocation failed.", alloc_status);
 			break;
 		}
@@ -38,7 +38,7 @@ void memorymap_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F(output_file, FORMAT, "average alloc and dealloc memory page",
+	PRINT_F(FORMAT, "average alloc and dealloc memory page",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
 }
 

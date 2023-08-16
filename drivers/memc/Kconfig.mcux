@@ -1,8 +1,16 @@
 # Copyright (c) 2020-2022 NXP
 # Copyright (c) 2021 Basalte bv
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+config MEMC_MCUX_FLEXSPI_W956A8MBYA
+	bool "MCUX FlexSPI Winbond W956A8MBYA HyperRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_W956A8MBYA_ENABLED
+	select MEMC_MCUX_FLEXSPI
 
 config MEMC_MCUX_FLEXSPI_S27KS0641
 	bool "MCUX FlexSPI Cypress S27KS0641 HyperRAM driver"

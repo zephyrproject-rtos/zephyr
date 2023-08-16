@@ -25,7 +25,7 @@ static const struct itds_odr itds_odr_map[ITDS_ODR_MAX] = {
 	{400}, {800}, {1600}
 };
 
-static const unsigned int itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
+static const int16_t itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
 	{976, 1952, 3904, 7808},
 
 	/* high performance mode */

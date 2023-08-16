@@ -391,6 +391,28 @@ static int cmd_dvsset(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_shipmode(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	ret = regulator_parent_ship_mode(dev);
+	if (ret < 0) {
+		shell_error(sh, "Could not enable ship mode (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
 	SHELL_CMD_ARG(enable, NULL,
@@ -441,6 +463,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Set regulator dynamic voltage scaling state\n"
 		      "Usage: dvsset <device> <state identifier>",
 		      cmd_dvsset, 3, 0),
+	SHELL_CMD_ARG(shipmode, NULL,
+		      "Enable regulator ship mode\n"
+		      "Usage: shipmode <device>",
+		      cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",

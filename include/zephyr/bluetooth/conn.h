@@ -98,9 +98,9 @@ enum {
 
 /** Preferred PHY parameters for LE connections */
 struct bt_conn_le_phy_param {
-	uint16_t options;     /** Connection PHY options. */
-	uint8_t  pref_tx_phy; /** Bitmask of preferred transmit PHYs */
-	uint8_t  pref_rx_phy; /** Bitmask of preferred receive PHYs */
+	uint16_t options; /**< Connection PHY options. */
+	uint8_t  pref_tx_phy; /**< Bitmask of preferred transmit PHYs */
+	uint8_t  pref_rx_phy; /**< Bitmask of preferred receive PHYs */
 };
 
 /** Initialize PHY parameters
@@ -298,9 +298,9 @@ struct bt_conn_le_info {
 	const bt_addr_le_t *local;
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
-	uint16_t interval; /** Connection interval */
-	uint16_t latency; /** Connection peripheral latency */
-	uint16_t timeout; /** Connection supervision timeout */
+	uint16_t interval; /**< Connection interval */
+	uint16_t latency; /**< Connection peripheral latency */
+	uint16_t timeout; /**< Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	const struct bt_conn_le_phy_info      *phy;
@@ -329,7 +329,7 @@ struct bt_conn_le_info {
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
-	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
+	const bt_addr_t *dst; /**< Destination (Remote) BR/EDR address */
 };
 
 enum {

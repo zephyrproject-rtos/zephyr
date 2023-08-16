@@ -96,6 +96,15 @@ struct broadcast_source {
 	struct bt_audio_codec_qos qos;
 };
 
+struct broadcast_sink {
+	struct bt_bap_broadcast_sink *bap_sink;
+	struct bt_le_per_adv_sync *pa_sync;
+	struct bt_bap_base received_base;
+	uint32_t broadcast_id;
+	size_t stream_cnt;
+	bool syncable;
+};
+
 extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * (UNICAST_SERVER_STREAM_COUNT +
 								 UNICAST_CLIENT_STREAM_COUNT)];
 
@@ -138,33 +147,49 @@ static inline void print_qos(const struct shell *sh, const struct bt_audio_codec
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 }
 
+static void print_ltv_elem(const struct shell *sh, const char *str, uint8_t type, uint8_t value_len,
+			   const uint8_t *value, size_t cnt)
+{
+	shell_print(sh, "%s #%zu: type 0x%02x value_len %u", str, cnt, type, value_len);
+	shell_hexdump(sh, value, value_len);
+}
+
+static void print_ltv_array(const struct shell *sh, const char *str, const uint8_t *ltv_data,
+			    size_t ltv_data_len)
+{
+	size_t cnt = 0U;
+
+	for (size_t i = 0U; i < ltv_data_len;) {
+		const uint8_t len = ltv_data[i++];
+		const uint8_t type = ltv_data[i++];
+		const uint8_t *value = &ltv_data[i];
+		const uint8_t value_len = len - sizeof(type);
+
+		print_ltv_elem(sh, str, type, value_len, value, cnt++);
+		/* Since we are incrementing i by the value_len, we don't need to increment it
+		 * further in the `for` statement
+		 */
+		i += value_len;
+	}
+}
+
 static inline void print_codec_cap(const struct shell *sh,
 				   const struct bt_audio_codec_cap *codec_cap)
 {
-	shell_print(sh, "codec cap id 0x%02x cid 0x%04x vid 0x%04x", codec_cap->id, codec_cap->cid,
-		    codec_cap->vid);
+	shell_print(sh, "codec id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id,
+		    codec_cap->cid, codec_cap->vid, codec_cap->data_len);
 
-#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT > 0
-	shell_print(sh, "data_count %u", codec_cap->data_count);
-	for (size_t i = 0U; i < codec_cap->data_count; i++) {
-		shell_print(sh, "data #%u: type 0x%02x len %u", i, codec_cap->data[i].data.type,
-			    codec_cap->data[i].data.data_len);
-		shell_hexdump(sh, codec_cap->data[i].data.data,
-			      codec_cap->data[i].data.data_len -
-				      sizeof(codec_cap->data[i].data.type));
+#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
+	if (codec_cap->id == BT_AUDIO_CODEC_LC3_ID) {
+		print_ltv_array(sh, "data", codec_cap->data, codec_cap->data_len);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		shell_hexdump(sh, codec_cap->data, codec_cap->data_len);
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_COUNT > 0 */
+#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 */
 
-#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT > 0
-	shell_print(sh, "meta_count %u", codec_cap->data_count);
-	for (size_t i = 0U; i < codec_cap->meta_count; i++) {
-		shell_print(sh, "meta #%u: type 0x%02x len %u", i, codec_cap->meta[i].data.type,
-			    codec_cap->meta[i].data.data_len);
-		shell_hexdump(sh, codec_cap->meta[i].data.data,
-			      codec_cap->meta[i].data.data_len -
-				      sizeof(codec_cap->meta[i].data.type));
-	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_COUNT > 0 */
+#if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
+	print_ltv_array(sh, "meta", codec_cap->meta, codec_cap->meta_len);
+#endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0 */
 }
 
 static inline void print_codec_cfg(const struct shell *sh,
@@ -178,9 +203,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 	for (size_t i = 0U; i < codec_cfg->data_count; i++) {
 		shell_print(sh, "data #%u: type 0x%02x len %u", i, codec_cfg->data[i].data.type,
 			    codec_cfg->data[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->data[i].data.data,
-			      codec_cfg->data[i].data.data_len -
-				      sizeof(codec_cfg->data[i].data.type));
+		shell_hexdump(sh, codec_cfg->data[i].data.data, codec_cfg->data[i].data.data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_COUNT > 0 */
 
@@ -189,9 +212,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 	for (size_t i = 0U; i < codec_cfg->meta_count; i++) {
 		shell_print(sh, "meta #%u: type 0x%02x len %u", i, codec_cfg->meta[i].data.type,
 			    codec_cfg->meta[i].data.data_len);
-		shell_hexdump(sh, codec_cfg->meta[i].data.data,
-			      codec_cfg->meta[i].data.data_len -
-				      sizeof(codec_cfg->meta[i].data.type));
+		shell_hexdump(sh, codec_cfg->meta[i].data.data, codec_cfg->meta[i].data.data_len);
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT > 0 */
 }

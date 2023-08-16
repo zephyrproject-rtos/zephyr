@@ -168,6 +168,27 @@ static void test_tx_group(void)
 	PASS();
 }
 
+/** Test sending to a fixed group address. */
+static void test_tx_fixed(void)
+{
+	bt_mesh_test_setup();
+
+	ASSERT_OK(bt_mesh_test_send(BT_MESH_ADDR_RELAYS, NULL, test_vector[0].len,
+				    test_vector[0].flags, K_SECONDS(2)));
+
+	k_sleep(K_SECONDS(2));
+
+	ASSERT_OK(bt_mesh_test_send(BT_MESH_ADDR_RELAYS, NULL, test_vector[0].len,
+				    test_vector[0].flags, K_SECONDS(2)));
+
+	k_sleep(K_SECONDS(2));
+
+	ASSERT_OK(bt_mesh_test_send(BT_MESH_ADDR_RELAYS, NULL, test_vector[0].len,
+				    test_vector[0].flags, K_SECONDS(2)));
+
+	PASS();
+}
+
 /** Test sending of virtual address messages using the test vector.
  */
 static void test_tx_va(void)
@@ -478,6 +499,57 @@ static void test_rx_group(void)
 	PASS();
 }
 
+/** Test that a node delivers a message to a model subscribed to a fixed group address even if the
+ *  corresponding feature is disabled.
+ */
+static void test_rx_fixed(void)
+{
+	uint8_t status;
+	int err;
+
+	bt_mesh_test_setup();
+
+	/* Step 1.
+	 *
+	 * The model is on primary element, so it should receive the message if the Relay feature
+	 * is enabled.
+	 */
+	err = bt_mesh_relay_set(BT_MESH_RELAY_ENABLED,
+				BT_MESH_TRANSMIT(CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT,
+						 CONFIG_BT_MESH_RELAY_RETRANSMIT_INTERVAL));
+	ASSERT_EQUAL(err, -EALREADY);
+
+	ASSERT_OK(bt_mesh_test_recv(test_vector[0].len, BT_MESH_ADDR_RELAYS, NULL, K_SECONDS(4)));
+
+	/* Step 2.
+	 *
+	 * Disabling the Relay feature, but subscribing the model to the all-relays address. The
+	 * model should receive the message.
+	 */
+	ASSERT_OK(bt_mesh_relay_set(BT_MESH_RELAY_DISABLED,
+				    BT_MESH_TRANSMIT(CONFIG_BT_MESH_RELAY_RETRANSMIT_COUNT,
+						     CONFIG_BT_MESH_RELAY_RETRANSMIT_INTERVAL)));
+
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, BT_MESH_ADDR_RELAYS,
+					  TEST_MOD_ID, &status);
+	ASSERT_OK_MSG(err || status, "Mod sub add failed (err %d, status %u)", err, status);
+
+	ASSERT_OK(bt_mesh_test_recv(test_vector[0].len, BT_MESH_ADDR_RELAYS, NULL, K_SECONDS(4)));
+
+	/* Step 3.
+	 *
+	 * Unsubscribing the model so that it doesn't receive the message.
+	 */
+	err = bt_mesh_cfg_cli_mod_sub_del(0, cfg->addr, cfg->addr, BT_MESH_ADDR_RELAYS,
+					  TEST_MOD_ID, &status);
+	ASSERT_OK_MSG(err || status, "Mod sub del failed (err %d, status %u)", err, status);
+
+	err = bt_mesh_test_recv(test_vector[0].len, BT_MESH_ADDR_RELAYS, NULL, K_SECONDS(4));
+	ASSERT_EQUAL(err, -ETIMEDOUT);
+
+	PASS();
+}
+
 /** @brief Receive virtual address messages using the test vector.
  */
 static void test_rx_va(void)
@@ -610,6 +682,7 @@ static void test_rx_seg_ivu(void)
 static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(tx, unicast,        "Transport: send to unicast addr"),
 	TEST_CASE(tx, group,          "Transport: send to group addr"),
+	TEST_CASE(tx, fixed,          "Transport: send to fixed group addr"),
 	TEST_CASE(tx, va,             "Transport: send to virtual addr"),
 	TEST_CASE(tx, va_collision,   "Transport: send to virtual addr"),
 	TEST_CASE(tx, loopback,       "Transport: send loopback"),
@@ -622,6 +695,7 @@ static const struct bst_test_instance test_connect[] = {
 
 	TEST_CASE(rx, unicast,        "Transport: receive on unicast addr"),
 	TEST_CASE(rx, group,          "Transport: receive on group addr"),
+	TEST_CASE(rx, fixed,          "Transport: receive on fixed group addr"),
 	TEST_CASE(rx, va,             "Transport: receive on virtual addr"),
 	TEST_CASE(rx, va_collision,   "Transport: receive on virtual addr"),
 	TEST_CASE(rx, none,           "Transport: receive no messages"),

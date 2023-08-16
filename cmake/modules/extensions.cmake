@@ -1300,6 +1300,14 @@ function(zephyr_linker_sources location)
   endforeach()
 endfunction(zephyr_linker_sources)
 
+# Helper macro for conditionally calling zephyr_code_relocate() when a
+# specific Kconfig symbol is enabled. See zephyr_code_relocate() description
+# for supported arguments.
+macro(zephyr_code_relocate_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_code_relocate(${ARGN})
+  endif()
+endmacro()
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # This function may either be invoked with a list of files, or a library
@@ -2633,14 +2641,17 @@ function(zephyr_get variable)
     if(SYSBUILD)
       get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
       get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
-      get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
-      if(NOT DEFINED sysbuild_${var} AND
-         ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR sysbuild_main_app)
-      )
-        get_property(sysbuild_${var} TARGET sysbuild_cache PROPERTY ${var})
+      get_property(sysbuild_local_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
+      get_property(sysbuild_global_${var} TARGET sysbuild_cache PROPERTY ${var})
+      if(NOT DEFINED sysbuild_local_${var} AND sysbuild_main_app)
+        set(sysbuild_local_${var} ${sysbuild_global_${var}})
+      endif()
+      if(NOT "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
+        set(sysbuild_global_${var})
       endif()
     else()
-      set(sysbuild_${var})
+      set(sysbuild_local_${var})
+      set(sysbuild_global_${var})
     endif()
 
     if(TARGET snippets_scope)
@@ -2648,7 +2659,8 @@ function(zephyr_get variable)
     endif()
   endforeach()
 
-  set(scopes "sysbuild;CACHE;snippets;ENV;current")
+  set(${variable} "")
+  set(scopes "sysbuild_local;sysbuild_global;CACHE;snippets;ENV;current")
   if(GET_VAR_REVERSE)
     list(REVERSE scopes)
   endif()

@@ -69,7 +69,7 @@ static int nct38xx_gpio_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_GPIO_NCT38XX_INTERRUPT)) {
+	if (IS_ENABLED(CONFIG_GPIO_NCT38XX_ALERT)) {
 		nct38xx_init_interrupt(dev);
 	}
 

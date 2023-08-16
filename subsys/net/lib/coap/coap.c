@@ -335,7 +335,7 @@ int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
 		code = (code == cpkt->delta) ? 0 : code - cpkt->delta;
 	}
 
-	r = encode_option(cpkt, code, value, len, cpkt->offset);
+	r = encode_option(cpkt, code, value, len, cpkt->hdr_len + cpkt->opt_len);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -603,6 +603,111 @@ static int parse_option(uint8_t *data, uint16_t offset, uint16_t *pos,
 	}
 
 	return r;
+}
+
+/* Remove the raw data of an option. Also adjusting offsets.
+ * But not adjusting code delta of the option after the removed one.
+ */
+static void remove_option_data(struct coap_packet *cpkt,
+			       const uint16_t to_offset,
+			       const uint16_t from_offset)
+{
+	const uint16_t move_size = from_offset - to_offset;
+
+	memmove(cpkt->data + to_offset, cpkt->data + from_offset, cpkt->offset - from_offset);
+	cpkt->opt_len -= move_size;
+	cpkt->offset -= move_size;
+}
+
+/* Remove an option (that is not the last one).
+ * Also adjusting the code delta of the option following the removed one.
+ */
+static int remove_middle_option(struct coap_packet *cpkt,
+				uint16_t offset,
+				uint16_t opt_delta,
+				const uint16_t previous_offset,
+				const uint16_t previous_code)
+{
+	int r;
+	struct coap_option option;
+	uint16_t opt_len = 0;
+
+	/* get the option after the removed one */
+	r = parse_option(cpkt->data, offset, &offset, cpkt->hdr_len + cpkt->opt_len,
+			 &opt_delta, &opt_len, &option);
+	if (r < 0) {
+		return -EILSEQ;
+	}
+
+	/* clear requested option and the one after (delta changed) */
+	remove_option_data(cpkt, previous_offset, offset);
+
+	/* reinsert option that comes after the removed option (with adjusted delta) */
+	r = encode_option(cpkt, option.delta - previous_code, option.value, option.len,
+			  previous_offset);
+	if (r < 0) {
+		return -EINVAL;
+	}
+	cpkt->opt_len += r;
+
+	return 0;
+}
+int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code)
+{
+	uint16_t offset = cpkt->hdr_len;
+	uint16_t opt_delta = 0;
+	uint16_t opt_len = 0;
+	uint16_t previous_offset = cpkt->hdr_len;
+	uint16_t previous_code = 0;
+	struct coap_option option;
+	int r;
+
+	if (!cpkt) {
+		return -EINVAL;
+	}
+
+	if (cpkt->opt_len == 0) {
+		return 0;
+	}
+
+	if (code > cpkt->delta) {
+		return 0;
+	}
+
+	/* Find the requested option */
+	while (offset < cpkt->hdr_len + cpkt->opt_len) {
+		r = parse_option(cpkt->data, offset, &offset, cpkt->hdr_len + cpkt->opt_len,
+				 &opt_delta, &opt_len, &option);
+		if (r < 0) {
+			return -EILSEQ;
+		}
+
+		if (opt_delta == code) {
+			break;
+		}
+
+		if (opt_delta > code) {
+			return 0;
+		}
+
+		previous_code = opt_delta;
+		previous_offset = offset;
+	}
+
+	/* Check if the found option is the last option */
+	if (cpkt->opt_len > opt_len) {
+		/* not last option */
+		r = remove_middle_option(cpkt, offset, opt_delta, previous_offset, previous_code);
+		if (r < 0) {
+			return r;
+		}
+	} else {
+		/* last option */
+		remove_option_data(cpkt, previous_offset, cpkt->hdr_len + cpkt->opt_len);
+		cpkt->delta = previous_code;
+	}
+
+	return 0;
 }
 
 int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
@@ -988,6 +1093,24 @@ int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_b
 		return coap_append_block1_option(cpkt, ctx);
 	} else {
 		return coap_append_block2_option(cpkt, ctx);
+	}
+}
+
+bool coap_has_descriptive_block_option(struct coap_packet *cpkt)
+{
+	if (is_request(cpkt)) {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK1) >= 0;
+	} else {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK2) >= 0;
+	}
+}
+
+int coap_remove_descriptive_block_option(struct coap_packet *cpkt)
+{
+	if (is_request(cpkt)) {
+		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK1);
+	} else {
+		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK2);
 	}
 }
 
@@ -1499,7 +1622,9 @@ struct coap_reply *coap_response_received(
 		/* handle observed requests only if received in order */
 		if (age == -ENOENT || is_newer(r->age, age)) {
 			r->age = age;
-			r->reply(response, r, from);
+			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
+				r->reply(response, r, from);
+			}
 		}
 
 		return r;

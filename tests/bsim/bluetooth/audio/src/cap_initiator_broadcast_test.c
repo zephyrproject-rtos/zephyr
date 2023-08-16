@@ -48,8 +48,10 @@ static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 	k_sem_give(&sem_broadcast_stopped);
 }
 
-static void broadcast_sent_cb(struct bt_bap_stream *stream)
+static void broadcast_sent_cb(struct bt_bap_stream *bap_stream)
 {
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
 	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
 	static bool mock_data_initialized;
 	static uint32_t seq_num;
@@ -76,16 +78,16 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", stream);
+		printk("Could not allocate buffer when sending on %p\n", bap_stream);
 		return;
 	}
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, broadcast_preset_16_2_1.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_cap_stream_send(cap_stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
-		printk("Unable to broadcast data on %p: %d\n", stream, ret);
+		printk("Unable to broadcast data on %p: %d\n", bap_stream, ret);
 		net_buf_unref(buf);
 		return;
 	}
@@ -441,6 +443,28 @@ static void test_broadcast_audio_stop_inval(void)
 	}
 }
 
+static void test_broadcast_audio_tx_sync(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		struct bt_cap_stream *cap_stream = broadcast_streams[i];
+		struct bt_iso_tx_info info;
+		int err;
+
+		err = bt_cap_stream_get_tx_sync(cap_stream, &info);
+		if (err != 0) {
+			FAIL("Failed to get TX sync for stream[%zu]: %p: %d\n", i, cap_stream, err);
+			return;
+		}
+
+		if (info.seq_num != 0) {
+			printk("stream[%zu]: %p seq_num: %u\n", i, cap_stream, info.seq_num);
+		} else {
+			FAIL("stream[%zu]: %p seq_num was 0\n", i, cap_stream);
+			return;
+		}
+	}
+}
+
 static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
 	int err;
@@ -548,6 +572,8 @@ static void test_main_cap_initiator_broadcast(void)
 
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
+
+	test_broadcast_audio_tx_sync();
 
 	test_broadcast_audio_stop_inval();
 	test_broadcast_audio_stop(broadcast_source);

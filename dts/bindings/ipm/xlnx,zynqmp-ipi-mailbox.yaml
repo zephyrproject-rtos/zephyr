@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Xilinx IPI(Inter Processor Interrupt) mailbox controller is to manage
+  messaging between two Xilinx Zynq UltraScale+ MPSoC IPI agents. Each IPI
+  agent owns registers used for notification and buffers for message.
+
+compatible: "xlnx,zynqmp-ipi-mailbox"
+
+include: base.yaml
+
+properties:
+
+  reg:
+    type: array
+    description: IPI control and status register space
+
+  reg-names:
+    type: string-array
+    description: host_ipi_reg
+
+  local-ipi-id:
+    type: int
+    description: Host Xilinx IPI agent ID of which the mailbox is connected to.
+    required: true
+
+child-binding:
+  description: Xilinx IPI agent child node
+
+  properties:
+    reg:
+      type: array
+      description: register space for IPI message buffers
+      required: true
+
+    reg-names:
+      type: string-array
+      description: name of each register space
+      required: true
+
+    remote-ipi-id:
+      type: int
+      description:
+        Remote Xilinx IPI agent ID of which the mailbox is connected to.
+      required: true

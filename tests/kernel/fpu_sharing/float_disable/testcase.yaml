@@ -19,7 +19,7 @@ tests:
     platform_allow:
       - qemu_x86
       - qemu_x86_lakemont
-      - ehl_crb
+      - intel_ehl_crb
       - acrn_ehl_crb
     integration_platforms:
       - qemu_x86
@@ -30,7 +30,7 @@ tests:
     platform_allow:
       - qemu_x86
       - qemu_x86_lakemont
-      - ehl_crb
+      - intel_ehl_crb
       - acrn_ehl_crb
     integration_platforms:
       - qemu_x86
@@ -44,7 +44,7 @@ tests:
     platform_allow:
       - qemu_x86
       - qemu_x86_lakemont
-      - ehl_crb
+      - intel_ehl_crb
       - acrn_ehl_crb
     integration_platforms:
       - qemu_x86

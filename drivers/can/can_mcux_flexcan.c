@@ -431,7 +431,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 
 static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 {
-	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES;
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	uint32_t ctrl1;

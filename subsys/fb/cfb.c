@@ -407,16 +407,11 @@ static int cfb_invert(const struct char_framebuffer *fb)
 int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
-	struct display_buffer_descriptor desc;
 
 	if (!fb || !fb->buf) {
 		return -ENODEV;
 	}
 
-	desc.buf_size = fb->size;
-	desc.width = fb->x_res;
-	desc.height = fb->y_res;
-	desc.pitch = fb->x_res;
 	memset(fb->buf, 0, fb->size);
 
 	if (clear_display) {
@@ -426,12 +421,11 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 	return 0;
 }
 
-
 int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
-	if (!fb || !fb->buf) {
+	if (!fb) {
 		return -ENODEV;
 	}
 
@@ -550,9 +544,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	STRUCT_SECTION_COUNT(cfb_font, &fb->numof_fonts);
 
 	LOG_DBG("number of fonts %d", fb->numof_fonts);
-	if (!fb->numof_fonts) {
-		return -ENODEV;
-	}
 
 	fb->x_res = cfg.x_resolution;
 	fb->y_res = cfg.y_resolution;

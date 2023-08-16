@@ -32,16 +32,11 @@ SECTIONS
 
 	nsi_hw_events :
 	{
-		__nsi_hw_events_callbacks_start = .;
-		KEEP(*(SORT(.nsi_hw_event[0-9]_callback)));		\
-		KEEP(*(SORT(.nsi_hw_event[1-9][0-9]_callback)));	\
-		KEEP(*(SORT(.nsi_hw_event[1-9][0-9][0-9]_callback)));
-		__nsi_hw_events_callbacks_end = .;
-		__nsi_hw_events_timers_start = .;
-		KEEP(*(SORT(.nsi_hw_event[0-9]_timer)));		\
-		KEEP(*(SORT(.nsi_hw_event[1-9][0-9]_timer)));		\
-		KEEP(*(SORT(.nsi_hw_event[1-9][0-9][0-9]_timer)));
-		__nsi_hw_events_timers_end = .;
+		__nsi_hw_events_start = .;
+		KEEP(*(SORT(.nsi_hw_event_[0-9])));		\
+		KEEP(*(SORT(.nsi_hw_event_[1-9][0-9])));	\
+		KEEP(*(SORT(.nsi_hw_event_[1-9][0-9][0-9])));
+		__nsi_hw_events_end = .;
 	}
  } INSERT AFTER .data;
 

@@ -129,7 +129,7 @@ jobs:
         if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_bluetooth tests/bsim/bluetooth/compile.sh
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bluetooth nice tests/bsim/bluetooth/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bluetooth_test_results_file} \
           SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
 
@@ -137,7 +137,7 @@ jobs:
         if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_net tests/bsim/net/compile.sh
+          WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_networking_test_results_file} \
           SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
 

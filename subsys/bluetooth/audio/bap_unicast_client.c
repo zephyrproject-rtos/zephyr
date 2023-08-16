@@ -1208,27 +1208,10 @@ static bool unicast_client_codec_config_cfg_store(struct bt_data *data, void *us
 	return false;
 }
 
-static bool unicast_client_codec_config_cap_store(struct bt_data *data, void *user_data)
+static bool valid_ltv_cb(struct bt_data *data, void *user_data)
 {
-	struct bt_audio_codec_cap *codec_cap = user_data;
-	struct bt_audio_codec_data *cdata;
-
-	if (codec_cap->data_count >= ARRAY_SIZE(codec_cap->data)) {
-		LOG_ERR("No slot available for Codec Config");
-		return false;
-	}
-
-	cdata = &codec_cap->data[codec_cap->data_count];
-
-	LOG_DBG("#%u type 0x%02x len %u", codec_cap->data_count, data->type, data->data_len);
-
-	if (unicast_client_codec_data_store(data, cdata)) {
-		codec_cap->data_count++;
-
-		return true;
-	}
-
-	return false;
+	/* just return true to continue parsing as bt_data_parse will validate for us */
+	return true;
 }
 
 static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
@@ -1278,44 +1261,68 @@ fail:
 }
 
 static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, void *data,
-					uint8_t len, struct bt_audio_codec_cap *codec_cap)
+					uint8_t data_len, void *meta, uint8_t meta_len,
+					struct bt_audio_codec_cap *codec_cap)
 {
-	struct net_buf_simple ad;
+	struct net_buf_simple buf;
 
 	if (!codec_cap) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("codec id 0x%02x cid 0x%04x vid 0x%04x len %u", id, cid, vid, len);
+	LOG_DBG("codec id 0x%02x cid 0x%04x vid 0x%04x data_len %u meta_len %u", id, cid, vid,
+		data_len, meta_len);
+
+	/* Reset current data */
+	(void)memset(codec_cap, 0, sizeof(*codec_cap));
 
 	codec_cap->id = id;
 	codec_cap->cid = cid;
 	codec_cap->vid = vid;
 
-	/* Reset current metadata */
-	codec_cap->data_count = 0;
-	(void)memset(codec_cap->data, 0, sizeof(codec_cap->data));
+	if (data_len > 0U) {
+		if (data_len > sizeof(codec_cap->data)) {
+			return -ENOMEM;
+		}
 
-	if (!len) {
-		return 0;
+		net_buf_simple_init_with_data(&buf, data, data_len);
+
+		/* If codec is LC3, then it shall be LTV encoded - We verify this before storing the
+		 * data For any non-LC3 codecs, we cannot verify anything
+		 */
+		if (id == BT_AUDIO_CODEC_LC3_ID) {
+			bt_data_parse(&buf, valid_ltv_cb, codec_cap);
+
+			/* Check if all entries could be parsed */
+			if (buf.len) {
+				LOG_ERR("Unable to parse Codec capabilities: len %u", buf.len);
+				return -EINVAL;
+			}
+		}
+		memcpy(codec_cap->data, data, data_len);
+		codec_cap->data_len = data_len;
 	}
 
-	net_buf_simple_init_with_data(&ad, data, len);
+	if (meta_len > 0U) {
+		if (meta_len > sizeof(codec_cap->meta)) {
+			return -ENOMEM;
+		}
 
-	/* Parse LTV entries */
-	bt_data_parse(&ad, unicast_client_codec_config_cap_store, codec_cap);
+		net_buf_simple_init_with_data(&buf, meta, meta_len);
 
-	/* Check if all entries could be parsed */
-	if (ad.len) {
-		LOG_ERR("Unable to parse Codec Config: len %u", ad.len);
-		goto fail;
+		bt_data_parse(&buf, valid_ltv_cb, codec_cap);
+
+		/* Check if all entries could be parsed */
+		if (buf.len) {
+			LOG_ERR("Unable to parse Codec metadata: len %u", buf.len);
+			return -EINVAL;
+		}
+
+		memcpy(codec_cap->meta, meta, meta_len);
+		codec_cap->meta_len = meta_len;
 	}
 
 	return 0;
-
-fail:
-	(void)memset(codec_cap, 0, sizeof(*codec_cap));
-	return -EINVAL;
 }
 
 static bool unicast_client_codec_cfg_metadata_store(struct bt_data *data, void *user_data)
@@ -1388,75 +1395,6 @@ static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint
 fail:
 	codec_cfg->meta_count = 0;
 	(void)memset(codec_cfg->meta, 0, sizeof(codec_cfg->meta));
-	return err;
-}
-
-static bool unicast_client_codec_cap_metadata_store(struct bt_data *data, void *user_data)
-{
-	struct bt_audio_codec_cap *codec_cap = user_data;
-	struct bt_audio_codec_data *meta;
-
-	if (codec_cap->meta_count >= ARRAY_SIZE(codec_cap->meta)) {
-		LOG_ERR("No slot available for Codec Config");
-		return false;
-	}
-
-	meta = &codec_cap->meta[codec_cap->meta_count];
-
-	LOG_DBG("#%u type 0x%02x len %u", codec_cap->meta_count, data->type, data->data_len);
-
-	if (unicast_client_codec_data_store(data, meta)) {
-		codec_cap->meta_count++;
-
-		return true;
-	}
-
-	return false;
-}
-
-static int unicast_client_set_codec_cap_metadata(void *data, uint8_t len,
-						 struct bt_audio_codec_cap *codec_cap)
-{
-	struct net_buf_simple meta;
-	int err;
-
-	if (!codec_cap) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("len %u codec_cap %p", len, codec_cap);
-
-	/* Reset current metadata */
-	codec_cap->meta_count = 0;
-	(void)memset(codec_cap->meta, 0, sizeof(codec_cap->meta));
-
-	if (!len) {
-		return 0;
-	}
-
-	net_buf_simple_init_with_data(&meta, data, len);
-
-	/* Parse LTV entries */
-	bt_data_parse(&meta, unicast_client_codec_cap_metadata_store, codec_cap);
-
-	/* Check if all entries could be parsed */
-	if (meta.len) {
-		LOG_ERR("Unable to parse Metadata: len %u", meta.len);
-		err = -EINVAL;
-
-		if (meta.len > 2) {
-			/* Value of the Metadata Type field in error */
-			err = meta.data[2];
-		}
-
-		goto fail;
-	}
-
-	return 0;
-
-fail:
-	codec_cap->meta_count = 0;
-	(void)memset(codec_cap->meta, 0, sizeof(codec_cap->meta));
 	return err;
 }
 
@@ -4075,18 +4013,13 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 
 		if (unicast_client_set_codec_cap(pac_codec->id, sys_le16_to_cpu(pac_codec->cid),
 						 sys_le16_to_cpu(pac_codec->vid), cc_ltv, cc->len,
-						 &codec_cap)) {
+						 meta_ltv, meta->len, &codec_cap)) {
 			LOG_ERR("Unable to parse Codec");
 			break;
 		}
 
-		if (unicast_client_set_codec_cap_metadata(meta_ltv, meta->len, &codec_cap)) {
-			LOG_ERR("Unable to parse Codec Metadata");
-			break;
-		}
-
-		LOG_DBG("codec 0x%02x config count %u meta count %u ", codec_cap.id,
-			codec_cap.data_count, codec_cap.meta_count);
+		LOG_DBG("codec 0x%02x capabilities len %u meta len %u ", codec_cap.id,
+			codec_cap.data_len, codec_cap.meta_len);
 
 		pac_record_cb(conn, &codec_cap);
 	}

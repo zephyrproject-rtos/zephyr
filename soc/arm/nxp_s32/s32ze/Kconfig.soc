@@ -9,7 +9,7 @@ choice
 
 config SOC_S32Z27_R52
 	bool "SOC_S32Z27_R52"
-	select HAS_S32_HAL
+	select HAS_NXP_S32_HAL
 
 endchoice
 

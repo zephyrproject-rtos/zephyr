@@ -2247,8 +2247,7 @@ class EDT:
 
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
-                    elif node.path != '/' and \
-                       vendor not in _VENDOR_PREFIX_ALLOWED:
+                    elif node.path != '/':
                         if self._werror:
                             handler_fn: Any = _err
                         else:
@@ -3214,14 +3213,3 @@ _DEFAULT_PROP_SPECS: Dict[str, PropertySpec] = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
-
-# A set of vendor prefixes which are grandfathered in by Linux,
-# and therefore by us as well.
-_VENDOR_PREFIX_ALLOWED: Set[str] = set([
-    "at25", "bm", "devbus", "dmacap", "dsa",
-    "exynos", "fsia", "fsib", "gpio-fan", "gpio-key", "gpio", "gpmc",
-    "hdmi", "i2c-gpio", "keypad", "m25p", "max8952", "max8997",
-    "max8998", "mpmc", "pinctrl-single", "#pinctrl-single", "PowerPC",
-    "pl022", "pxa-mmc", "rcar_sound", "rotary-encoder", "s5m8767",
-    "sdhci", "simple-audio-card", "st-plgpio", "st-spics", "ts",
-])

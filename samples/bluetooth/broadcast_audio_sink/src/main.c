@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/sys/byteorder.h>
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
@@ -21,6 +22,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define ADV_TIMEOUT K_FOREVER
 #endif /* CONFIG_SCAN_SELF */
 
+#define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define PA_SYNC_SKIP              5
 
@@ -40,13 +42,19 @@ static K_SEM_DEFINE(sem_bis_synced, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT
 /* Sample assumes that we only have a single Scan Delegator receive state */
 static const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
 static struct bt_bap_broadcast_sink *broadcast_sink;
+static struct bt_le_scan_recv_info broadcaster_info;
+static bt_addr_le_t broadcaster_addr;
+static struct bt_le_per_adv_sync *pa_sync;
+static uint32_t broadcaster_broadcast_id;
 static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
 
-static struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
-	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_24KHZ,
+	BT_AUDIO_CODEC_LC3_DURATION_10, BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -94,51 +102,6 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv_cb
 };
 
-static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
-			 struct net_buf_simple *ad,
-			 uint32_t broadcast_id)
-{
-	if (broadcast_assistant_conn == NULL) {
-		/* Not requested by Broadcast Assistant */
-		k_sem_give(&sem_broadcaster_found);
-
-		return true;
-	} else if (sink_recv_state != NULL &&
-		   bt_addr_le_eq(info->addr, &sink_recv_state->addr) &&
-		   info->sid == sink_recv_state->adv_sid &&
-		   broadcast_id == sink_recv_state->broadcast_id) {
-		k_sem_give(&sem_broadcaster_found);
-
-		return true;
-	}
-
-	return false;
-}
-
-static void scan_term_cb(int err)
-{
-	if (err != 0) {
-		printk("Scan terminated with error: %d\n", err);
-	}
-}
-
-static void pa_synced_cb(struct bt_bap_broadcast_sink *sink,
-			 struct bt_le_per_adv_sync *sync,
-			 uint32_t broadcast_id)
-{
-	if (broadcast_sink != NULL) {
-		printk("Unexpected PA sync\n");
-		return;
-	}
-
-	printk("PA synced for broadcast sink %p with broadcast ID 0x%06X\n",
-	       sink, broadcast_id);
-
-	broadcast_sink = sink;
-
-	k_sem_give(&sem_pa_synced);
-}
-
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint32_t base_bis_index_bitfield = 0U;
@@ -180,27 +143,9 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 	}
 }
 
-static void pa_sync_lost_cb(struct bt_bap_broadcast_sink *sink)
-{
-	if (broadcast_sink == NULL) {
-		printk("Unexpected PA sync lost\n");
-		return;
-	}
-
-	printk("Sink %p disconnected\n", sink);
-
-	broadcast_sink = NULL;
-
-	k_sem_give(&sem_pa_sync_lost);
-}
-
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
-	.scan_recv = scan_recv_cb,
-	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
 	.syncable = syncable_cb,
-	.pa_synced = pa_synced_cb,
-	.pa_sync_lost = pa_sync_lost_cb
 };
 
 const struct bt_bap_scan_delegator_recv_state *broadcast_recv_state;
@@ -359,6 +304,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	}
 
 	requested_bis_sync = bis_sync_req[0];
+	broadcaster_broadcast_id = recv_state->broadcast_id;
 	if (bis_sync_req[0] != 0) {
 		k_sem_give(&sem_bis_sync_requested);
 	}
@@ -419,6 +365,92 @@ static struct bt_pacs_cap cap = {
 	.codec_cap = &codec_cap,
 };
 
+static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
+{
+	const struct bt_le_scan_recv_info *info = user_data;
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct bt_uuid_16 adv_uuid;
+	uint32_t broadcast_id;
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
+		return true;
+	}
+
+	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
+		return true;
+	}
+
+	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
+	       le_addr, info->sid);
+
+	if (broadcast_assistant_conn == NULL) {
+		/* Not requested by Broadcast Assistant */
+		k_sem_give(&sem_broadcaster_found);
+	} else if (sink_recv_state != NULL && bt_addr_le_eq(info->addr, &sink_recv_state->addr) &&
+		   info->sid == sink_recv_state->adv_sid &&
+		   broadcast_id == sink_recv_state->broadcast_id) {
+		k_sem_give(&sem_broadcaster_found);
+	}
+
+	/* Store info for PA sync parameters */
+	memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
+	bt_addr_le_copy(&broadcaster_addr, info->addr);
+	broadcaster_broadcast_id = broadcast_id;
+
+	/* Stop parsing */
+	return false;
+}
+
+static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
+{
+	if (info->interval != 0U) {
+		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
+	}
+}
+
+static struct bt_le_scan_cb bap_scan_cb = {
+	.recv = broadcast_scan_recv,
+};
+
+static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
+				  struct bt_le_per_adv_sync_synced_info *info)
+{
+	if (sync == pa_sync) {
+		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
+		       broadcaster_broadcast_id);
+
+		k_sem_give(&sem_pa_synced);
+	}
+}
+
+static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
+				      const struct bt_le_per_adv_sync_term_info *info)
+{
+	if (sync == pa_sync) {
+		printk("PA sync %p lost with reason %u\n", sync, info->reason);
+		pa_sync = NULL;
+
+		k_sem_give(&sem_pa_sync_lost);
+	}
+}
+
+static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
+	.synced = bap_pa_sync_synced_cb,
+	.term = bap_pa_sync_terminated_cb,
+};
+
 static int init(void)
 {
 	int err;
@@ -439,6 +471,8 @@ static int init(void)
 
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
+	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
+	bt_le_scan_cb_register(&bap_scan_cb);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
@@ -455,6 +489,9 @@ static int reset(void)
 	requested_bis_sync = 0U;
 	sink_recv_state = NULL;
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
+	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
+	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
+	broadcaster_broadcast_id = INVALID_BROADCAST_ID;
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
@@ -465,6 +502,17 @@ static int reset(void)
 		}
 
 		broadcast_sink = NULL;
+	}
+
+	if (pa_sync != NULL) {
+		bt_le_per_adv_sync_delete(pa_sync);
+		if (err) {
+			printk("Deleting PA sync failed (err %d)\n", err);
+
+			return err;
+		}
+
+		pa_sync = NULL;
 	}
 
 	if (IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
@@ -580,6 +628,19 @@ static int stop_adv(void)
 	return 0;
 }
 
+static int pa_sync_create(void)
+{
+	struct bt_le_per_adv_sync_param create_params = {0};
+
+	bt_addr_le_copy(&create_params.addr, &broadcaster_addr);
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.sid = broadcaster_info.sid;
+	create_params.skip = PA_SYNC_SKIP;
+	create_params.timeout = interval_to_sync_timeout(broadcaster_info.interval);
+
+	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
+}
+
 int main(void)
 {
 	int err;
@@ -642,7 +703,7 @@ int main(void)
 		}
 
 		printk("Scanning for broadcast sources\n");
-		err = bt_bap_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
+		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 		if (err != 0 && err != -EALREADY) {
 			printk("Unable to start scan for broadcast sources: %d\n",
 			       err);
@@ -656,14 +717,37 @@ int main(void)
 		}
 		printk("Broadcast source found, waiting for PA sync\n");
 
+		err = bt_le_scan_stop();
+		if (err != 0) {
+			printk("bt_le_scan_stop failed with %d, resetting\n", err);
+			continue;
+		}
+
+		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
+		       broadcaster_broadcast_id);
+		err = pa_sync_create();
+		if (err != 0) {
+			printk("Could not create Broadcast PA sync: %d, resetting\n", err);
+			continue;
+		}
+
 wait_for_pa_sync:
+		printk("Waiting for PA synced\n");
 		err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_pa_synced timed out, resetting\n");
 			continue;
 		}
-		printk("Broadcast source PA synced, waiting for BASE\n");
 
+		printk("Broadcast source PA synced, creating Broadcast Sink\n");
+		err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id,
+						   &broadcast_sink);
+		if (err != 0) {
+			printk("Failed to create broadcast sink: %d\n", err);
+			continue;
+		}
+
+		printk("Broadcast Sink created, waiting for BASE\n");
 		err = k_sem_take(&sem_base_received, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_base_received timed out, resetting\n");
@@ -701,6 +785,13 @@ wait_for_pa_sync:
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);
 			return 0;
+		}
+
+		printk("Waiting for BIG sync\n");
+		err = k_sem_take(&sem_bis_synced, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("sem_bis_synced timed out, resetting\n");
+			continue;
 		}
 
 		printk("Waiting for PA disconnected\n");

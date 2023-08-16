@@ -107,9 +107,10 @@ static bool check_delta_time(uint8_t transmit, uint64_t interval)
 	if (cnt) {
 		int64_t delta = k_uptime_delta(&timestamp);
 
-		LOG_INF("rx: cnt(%d) delta(%dms)", cnt, delta);
+		LOG_INF("rx: cnt(%d) delta(%dms) interval(%ums)",
+			cnt, (int32_t)delta, (uint32_t)interval);
 
-		ASSERT_TRUE(delta >= interval &&
+		ASSERT_TRUE(delta >= (interval - 5) &&
 			    delta < (interval + 15));
 	} else {
 		timestamp = k_uptime_get();

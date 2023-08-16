@@ -51,8 +51,11 @@ struct ticker_node {
 					     * between req and ack indicates
 					     * ongoing operation
 					     */
-	uint8_t  force;			    /* If non-zero, node timeout should
+	uint8_t  force:1;		    /* If non-zero, node timeout should
 					     * be forced at next expiration
+					     */
+	uint8_t  start_pending:1;	    /* If non-zero, start is pending for
+					     * bottom half of ticker_job.
 					     */
 	uint32_t ticks_periodic;	    /* If non-zero, interval
 					     * between expirations
@@ -1903,6 +1906,12 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 
 			/* if op is start, then skip update and stop ops */
 			if (user_op->op < TICKER_USER_OP_TYPE_UPDATE) {
+				if (user_op->op == TICKER_USER_OP_TYPE_START) {
+					/* Set start pending to validate a
+					 * successive, inline stop operation.
+					 */
+					ticker->start_pending = 1U;
+				}
 				continue;
 			}
 
@@ -1913,7 +1922,7 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 			 * set status and continue.
 			 */
 			if ((user_op->op > TICKER_USER_OP_TYPE_STOP_ABS) ||
-			    ((state == 0U) &&
+			    (((state == 0U) && !ticker->start_pending) &&
 			     (user_op->op != TICKER_USER_OP_TYPE_YIELD_ABS)) ||
 			    ((user_op->op == TICKER_USER_OP_TYPE_UPDATE) &&
 			     (user_op->params.update.ticks_drift_plus == 0U) &&
@@ -2720,6 +2729,8 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 					 */
 					continue;
 				}
+
+				ticker->start_pending = 0U;
 
 				if (((ticker->req -
 				      ticker->ack) & 0xff) != 0U) {

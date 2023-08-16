@@ -1365,7 +1365,7 @@ static void test_provisioner_pb_remote_client_ncrp(void)
 	ASSERT_OK(bt_mesh_reprovision_remote(&rpr_cli, &srv, pb_remote_server_addr, true));
 	ASSERT_OK(k_sem_take(&reprov_sem, K_SECONDS(20)));
 
-	/* Check that Composition Data Page 128 is now Page 0. */
+	/* Check that Composition Data Page 128 still exists and is now equal to Page 0. */
 	net_buf_simple_reset(&dev_comp_p0);
 	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 0, &page, &dev_comp_p0));
 	ASSERT_EQUAL(0, page);
@@ -1377,7 +1377,7 @@ static void test_provisioner_pb_remote_client_ncrp(void)
 	net_buf_simple_reset(&dev_comp_p128);
 	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 128, &page,
 						&dev_comp_p128));
-	ASSERT_EQUAL(0, page);
+	ASSERT_EQUAL(128, page);
 	ASSERT_EQUAL(dev_comp_p0.len, dev_comp_p128.len);
 	if (memcmp(dev_comp_p0.data, dev_comp_p128.data, dev_comp_p0.len)) {
 		FAIL("Wrong composition data page 128");
@@ -1387,7 +1387,7 @@ static void test_provisioner_pb_remote_client_ncrp(void)
 }
 
 /** @brief Test Node Composition Refresh procedure on Remote Provisioning client:
- * - verify that Composition Data Page 0 is updated after reboot.
+ * - verify that Composition Data Page 0 is now equal to Page 128 after reboot.
  */
 static void test_provisioner_pb_remote_client_ncrp_second_time(void)
 {
@@ -1407,7 +1407,7 @@ static void test_provisioner_pb_remote_client_ncrp_second_time(void)
 	ASSERT_EQUAL(0, page);
 	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, pb_remote_server_addr, 128, &page,
 						&dev_comp_p128));
-	ASSERT_EQUAL(0, page);
+	ASSERT_EQUAL(128, page);
 	ASSERT_TRUE(dev_comp_p0.len == dev_comp_p128.len);
 
 	LOG_INF("Start Node Composition Refresh procedure...\n");
@@ -1457,7 +1457,8 @@ static void test_device_pb_remote_server_ncrp(void)
 }
 
 /** @brief Test Node Composition Refresh procedure on Remote Provisioning server:
- * - verify that Composition Data Page 128 is erased after being re-provisioned and rebooted.
+ * - verify that Composition Data Page 0 is replaced by Page 128 after being re-provisioned and
+ *   rebooted.
  */
 static void test_device_pb_remote_server_ncrp_second_time(void)
 {

@@ -61,7 +61,8 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 
 	page = net_buf_simple_pull_u8(buf);
 
-	if (page >= 128U && atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY)) {
+	if (page >= 128U && (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
+			     IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
 		page = 128U;
 	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
 		page = 1U;
@@ -80,7 +81,7 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 			LOG_ERR("Unable to get composition page 1");
 			return err;
 		}
-	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) == (page == 0U)) {
+	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) && (page == 0U)) {
 		sdu.size -= BT_MESH_MIC_SHORT;
 		err = bt_mesh_comp_read(&sdu);
 		if (err) {

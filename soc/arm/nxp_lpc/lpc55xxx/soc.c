@@ -66,8 +66,8 @@ const pll_setup_t pll1Setup = {
 		SYSCON_PLL1CTRL_SELP(31U),
 	.pllndec = SYSCON_PLL1NDEC_NDIV(8U),
 	.pllpdec = SYSCON_PLL1PDEC_PDIV(1U),
-	.pllmdec = SYSCON_PLL1MDEC_MDIV(150U),
-	.pllRate = 150000000U,
+	.pllmdec = SYSCON_PLL1MDEC_MDIV(144U),
+	.pllRate = 144000000U,
 	.flags = PLL_SETUPFLAG_WAITLOCK
 };
 #endif
@@ -103,11 +103,11 @@ static ALWAYS_INLINE void clock_init(void)
 	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_CLKIN_ENA_MASK;
 	ANACTRL->XO32M_CTRL |= ANACTRL_XO32M_CTRL_ENABLE_SYSTEM_CLK_OUT_MASK;
 
-	/* Setting the Core Clock to either 96MHz or in the case of using PLL, 150MHz */
+	/* Setting the Core Clock to either 96MHz or in the case of using PLL, 144MHz */
 #if defined(CONFIG_SOC_LPC55S06) || !defined(CONFIG_INIT_PLL1)
 	SystemCoreClock = 96000000U;
 #else
-	SystemCoreClock = 150000000U;
+	SystemCoreClock = 144000000U;
 #endif
 
 

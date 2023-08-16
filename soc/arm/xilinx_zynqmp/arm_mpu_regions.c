@@ -44,7 +44,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	MPU_REGION_ENTRY("SRAM_PRIV",
 			0x00000000,
-			REGION_64M,
+			REGION_2G,
 			MPUTYPE_PRIV_WBWACACHE),
 
 	MPU_REGION_ENTRY("SRAM",

@@ -66,31 +66,6 @@ static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 static K_SEM_DEFINE(read_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
-static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
-			    struct bt_audio_codec_data *data)
-{
-	size_t len = 0;
-
-	for (size_t i = 0; i < count; i++) {
-		struct bt_pac_ltv *ltv;
-		struct bt_data *d = &data[i].data;
-		const size_t ltv_len = sizeof(*ltv) + d->data_len;
-
-		if (net_buf_simple_tailroom(buf) < ltv_len) {
-			return -ENOMEM;
-		}
-
-		ltv = net_buf_simple_add(buf, sizeof(*ltv));
-		ltv->len = d->data_len + sizeof(ltv->type);
-		ltv->type = d->type;
-		net_buf_simple_add_mem(buf, d->data, d->data_len);
-
-		len += ltv_len;
-	}
-
-	return len;
-}
-
 struct pac_records_build_data {
 	struct bt_pacs_read_rsp *rsp;
 	struct net_buf_simple *buf;
@@ -99,12 +74,10 @@ struct pac_records_build_data {
 static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
-	struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
+	const struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
-	struct bt_pac_ltv_data *cc, *meta;
 	struct bt_pac_codec *pac_codec;
-	ssize_t len;
 
 	net_buf_simple_save(buf, &state);
 
@@ -117,31 +90,19 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 	pac_codec->cid = sys_cpu_to_le16(codec_cap->cid);
 	pac_codec->vid = sys_cpu_to_le16(codec_cap->vid);
 
-	if (net_buf_simple_tailroom(buf) < sizeof(*cc)) {
+	if (net_buf_simple_tailroom(buf) < (sizeof(struct bt_pac_ltv_data) + codec_cap->data_len)) {
 		goto fail;
 	}
 
-	cc = net_buf_simple_add(buf, sizeof(*cc));
+	net_buf_simple_add_u8(buf, codec_cap->data_len);
+	net_buf_simple_add_mem(buf, codec_cap->data, codec_cap->data_len);
 
-	len = pac_data_add(buf, codec_cap->data_count, codec_cap->data);
-	if (len < 0 || len > UINT8_MAX) {
+	if (net_buf_simple_tailroom(buf) < (sizeof(struct bt_pac_ltv_data) + codec_cap->meta_len)) {
 		goto fail;
 	}
 
-	cc->len = len;
-
-	if (net_buf_simple_tailroom(buf) < sizeof(*meta)) {
-		goto fail;
-	}
-
-	meta = net_buf_simple_add(buf, sizeof(*meta));
-
-	len = pac_data_add(buf, codec_cap->meta_count, codec_cap->meta);
-	if (len < 0 || len > UINT8_MAX) {
-		goto fail;
-	}
-
-	meta->len = len;
+	net_buf_simple_add_u8(buf, codec_cap->meta_len);
+	net_buf_simple_add_mem(buf, codec_cap->meta, codec_cap->meta_len);
 
 	data->rsp->num_pac++;
 

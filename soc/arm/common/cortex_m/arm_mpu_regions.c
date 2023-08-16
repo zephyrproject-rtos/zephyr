@@ -8,7 +8,7 @@
 #include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
 #include <zephyr/devicetree/memory-attr.h>
 
-#include "arm_mpu_mem_cfg.h"
+#include <zephyr/arch/arm/aarch32/cortex_m/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */

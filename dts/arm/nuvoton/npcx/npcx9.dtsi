@@ -252,6 +252,11 @@
 			threshold-count = <6>;
 		};
 
+		/* FIU0 configuration in npcx9 series */
+		qspi_fiu0: quadspi@40020000 {
+			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+		};
+
 		sha0: sha@13c {
 			compatible = "nuvoton,npcx-sha";
 			reg = <0x13c 0x3c>;

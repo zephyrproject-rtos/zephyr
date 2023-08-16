@@ -12,69 +12,68 @@
 
 #ifdef FLOAT
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
-	PRINT_STRING("|   size(B) |       time/packet (usec)       |         "\
-		  " MB/sec                |\n", output_file)
+	PRINT_STRING("|   size(B) |       time/packet (usec)       |     " \
+		     "     MB/sec                |\n")
 
 #define PRINT_ALL_TO_N() \
-	PRINT_F(output_file,						\
-	     "|%5u|%5u|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n",     \
-	     putsize, putsize, puttime[0] / 1000.0, puttime[1] / 1000.0,  \
-	     puttime[2] / 1000.0,                                         \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[0]),               \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[1]),               \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[2]))
+	PRINT_F("|%5u|%5u|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n",     \
+		putsize, putsize, puttime[0] / 1000.0, puttime[1] / 1000.0,  \
+		puttime[2] / 1000.0,                                         \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[0]),               \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[1]),               \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[2]))
 
-#define PRINT_1_TO_N_HEADER()                                             \
-	do { \
-	PRINT_STRING("|   size(B) |       time/packet (usec)       |        "\
-		  "  MB/sec                |\n", output_file);            \
-	PRINT_STRING(dashline, output_file);\
+#define PRINT_1_TO_N_HEADER()                                                 \
+	do {                                                                  \
+		PRINT_STRING("|   size(B) |       time/packet (usec)       |" \
+			     "          MB/sec                |\n");          \
+		PRINT_STRING(dashline);                                       \
 	} while (0)
 
-#define  PRINT_1_TO_N()                                               \
-	PRINT_F(output_file,						\
-	     "|%5u|%5d|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n", \
-	     putsize,                                                 \
-	     getsize,                                                 \
-	     puttime[0] / 1000.0,                                     \
-	     puttime[1] / 1000.0,                                     \
-	     puttime[2] / 1000.0,                                     \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[0]),           \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[1]),           \
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime[2]))
+#define  PRINT_1_TO_N()                                                  \
+	PRINT_F("|%5u|%5d|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|%10.3f|\n", \
+		putsize,                                                 \
+		getsize,                                                 \
+		puttime[0] / 1000.0,                                     \
+		puttime[1] / 1000.0,                                     \
+		puttime[2] / 1000.0,                                     \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[0]),           \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[1]),           \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime[2]))
 
 #else
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
-	PRINT_STRING("|   size(B) |       time/packet (nsec)       |         "\
-		  " KB/sec                |\n", output_file)
+	PRINT_STRING("|   size(B) |       time/packet (nsec)       |     " \
+		     "     KB/sec                |\n")
 
 #define PRINT_ALL_TO_N() \
-	PRINT_F(output_file,                                                 \
-	     "|%5u|%5u|%10u|%10u|%10u|%10u|%10u|%10u|\n",                 \
-	     putsize, putsize, puttime[0], puttime[1],                    \
-	     puttime[2],                                                  \
-	     (1000000 * putsize) / SAFE_DIVISOR(puttime[0]),              \
-	     (1000000 * putsize) / SAFE_DIVISOR(puttime[1]),              \
-	     (1000000 * putsize) / SAFE_DIVISOR(puttime[2]))
+	PRINT_F("|%5u|%5u|%10u|%10u|%10u|%10u|%10u|%10u|\n",                 \
+		putsize, putsize, puttime[0], puttime[1],                    \
+		puttime[2],                                                  \
+		(1000000 * putsize) / SAFE_DIVISOR(puttime[0]),              \
+		(1000000 * putsize) / SAFE_DIVISOR(puttime[1]),              \
+		(1000000 * putsize) / SAFE_DIVISOR(puttime[2]))
 
-#define PRINT_1_TO_N_HEADER()                                             \
-	do { \
-	PRINT_STRING("|   size(B) |       time/packet (nsec)       |        "\
-		  "  KB/sec                |\n", output_file);            \
-	PRINT_STRING(dashline, output_file); \
+#define PRINT_1_TO_N_HEADER()                                                 \
+	do {                                                                  \
+		PRINT_STRING("|   size(B) |       time/packet (nsec)       |" \
+			     "          KB/sec                |\n");          \
+		PRINT_STRING(dashline);                                       \
 	} while (0)
 
-#define  PRINT_1_TO_N()                                              \
-	PRINT_F(output_file,                                            \
-	     "|%5u|%5d|%10u|%10u|%10u|%10u|%10u|%10u|\n",	     \
-	     putsize,                                                \
-	     getsize,                                                \
-	     puttime[0],                                             \
-	     puttime[1],                                             \
-	     puttime[2],                                             \
-	     (uint32_t)(((uint64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[0])), \
-	     (uint32_t)(((uint64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[1])), \
-	     (uint32_t)(((uint64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime[2])))
+#define  PRINT_1_TO_N()                                                 \
+	PRINT_F("|%5u|%5d|%10u|%10u|%10u|%10u|%10u|%10u|\n",	        \
+		putsize,                                                \
+		getsize,                                                \
+		puttime[0],                                             \
+		puttime[1],                                             \
+		puttime[2],                                             \
+		(uint32_t)(((uint64_t)putsize * 1000000U) /             \
+			   SAFE_DIVISOR(puttime[0])),                   \
+		(uint32_t)(((uint64_t)putsize * 1000000U) /             \
+			   SAFE_DIVISOR(puttime[1])),                   \
+		(uint32_t)(((uint64_t)putsize * 1000000U) /             \
+			   SAFE_DIVISOR(puttime[2])))
 #endif /* FLOAT */
 
 /*
@@ -109,24 +108,23 @@ void pipe_test(void)
 	/* action: */
 
 	/* non-buffered operation, matching (ALL_N) */
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	PRINT_STRING("|                   "
-				 "P I P E   M E A S U R E M E N T S"
-				 "                         |\n", output_file);
-	PRINT_STRING(dashline, output_file);
+		     "P I P E   M E A S U R E M E N T S"
+		     "                         |\n");
+	PRINT_STRING(dashline);
 	PRINT_STRING("| Send data into a pipe towards a "
-			 "receiving high priority task and wait       |\n",
-				 output_file);
-	PRINT_STRING(dashline, output_file);
+		     "receiving high priority task and wait       |\n");
+	PRINT_STRING(dashline);
 	PRINT_STRING("|                          "
-				 "matching sizes (_ALL_N)"
-			 "                            |\n", output_file);
-	PRINT_STRING(dashline, output_file);
+		     "matching sizes (_ALL_N)"
+		     "                            |\n");
+	PRINT_STRING(dashline);
 	PRINT_ALL_TO_N_HEADER_UNIT();
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	PRINT_STRING("| put | get |  no buf  | small buf| big buf  |"
-			 "  no buf  | small buf| big buf  |\n", output_file);
-	PRINT_STRING(dashline, output_file);
+		     "  no buf  | small buf| big buf  |\n");
+	PRINT_STRING(dashline);
 
 	for (putsize = 8U; putsize <= MESSAGE_SIZE_PIPE; putsize <<= 1) {
 		for (pipe = 0; pipe < 3; pipe++) {
@@ -139,7 +137,7 @@ void pipe_test(void)
 		}
 		PRINT_ALL_TO_N();
 	}
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 
 	/* Test with two different sender priorities */
 	for (prio = 0; prio < 2; prio++) {
@@ -147,20 +145,20 @@ void pipe_test(void)
 		if (prio == 0) {
 			PRINT_STRING("|                      "
 			 "non-matching sizes (1_TO_N) to higher priority"
-						 "         |\n", output_file);
+						 "         |\n");
 			TaskPrio = k_thread_priority_get(k_current_get());
 		}
 		if (prio == 1) {
 			PRINT_STRING("|                      "
 				 "non-matching sizes (1_TO_N) to lower priority"
-						 "          |\n", output_file);
+						 "          |\n");
 			k_thread_priority_set(k_current_get(), TaskPrio - 2);
 		}
-		PRINT_STRING(dashline, output_file);
+		PRINT_STRING(dashline);
 		PRINT_1_TO_N_HEADER();
 		PRINT_STRING("| put | get |  no buf  | small buf| big buf  |  "
-			 "no buf  | small buf| big buf  |\n", output_file);
-		PRINT_STRING(dashline, output_file);
+			     "no buf  | small buf| big buf  |\n");
+		PRINT_STRING(dashline);
 
 	for (putsize = 8U; putsize <= (MESSAGE_SIZE_PIPE); putsize <<= 1) {
 		putcount = MESSAGE_SIZE_PIPE / putsize;
@@ -174,7 +172,7 @@ void pipe_test(void)
 		}
 		PRINT_1_TO_N();
 	}
-		PRINT_STRING(dashline, output_file);
+		PRINT_STRING(dashline);
 		k_thread_priority_set(k_current_get(), TaskPrio);
 	}
 }
@@ -239,14 +237,11 @@ int pipeput(struct k_pipe *pipe,
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	if (bench_test_end() < 0) {
 		if (high_timer_overflow()) {
-			PRINT_STRING("| Timer overflow."
-					"Results are invalid            ",
-						 output_file);
+			PRINT_STRING("| Timer overflow. Results are invalid            ");
 		} else {
-	PRINT_STRING("| Tick occurred. Results may be inaccurate       ",
-						 output_file);
+			PRINT_STRING("| Tick occurred. Results may be inaccurate       ");
 		}
-		PRINT_STRING("                             |\n", output_file);
+		PRINT_STRING("                             |\n");
 	}
 	return 0;
 }

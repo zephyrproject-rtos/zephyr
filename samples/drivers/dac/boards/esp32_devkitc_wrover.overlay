@@ -1,0 +1,17 @@
+/*
+ * Copyright 2022 Espressif (Shanghai)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <8>;
+	};
+};
+
+&dac {
+	status = "okay";
+};

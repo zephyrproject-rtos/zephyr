@@ -18,5 +18,7 @@ int mock_bt_iso_disconnect(struct bt_iso_chan *chan);
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_iso_chan_send, struct bt_iso_chan *, struct net_buf *, uint16_t,
 			uint32_t);
+DECLARE_FAKE_VALUE_FUNC(int, bt_iso_chan_get_tx_sync, const struct bt_iso_chan *,
+			struct bt_iso_tx_info *);
 
 #endif /* MOCKS_ISO_H_ */

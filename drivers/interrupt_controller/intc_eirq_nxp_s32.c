@@ -216,7 +216,7 @@ static int eirq_nxp_s32_init(const struct device *dev)
 		NULL,										\
 		&eirq_nxp_s32_data_##n,								\
 		&eirq_nxp_s32_conf_##n,								\
-		PRE_KERNEL_1,									\
+		PRE_KERNEL_2,									\
 		CONFIG_INTC_INIT_PRIORITY,							\
 		NULL);										\
 	static int eirq_nxp_s32_init##n(const struct device *dev)				\

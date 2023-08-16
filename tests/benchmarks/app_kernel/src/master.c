@@ -26,8 +26,6 @@ struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
 char sline[SLINE_LEN + 1];
 const char newline[] = "\n";
 
-FILE *output_file;
-
 /*
  * Time in timer cycles necessary to read time.
  * Used for correction in time measurements.
@@ -72,26 +70,6 @@ int kbhit(void)
 	return 0;
 }
 
-
-/**
- *
- * @brief Prepares the test output
- *
- * @param continuously   Run test till the user presses the key.
- * @param autorun        Expect user input.
- *
- */
-void init_output(int *continuously, int *autorun)
-{
-	ARG_UNUSED(continuously);
-	ARG_UNUSED(autorun);
-
-	/*
-	 * send all printf and fprintf to console
-	 */
-	output_file = stdout;
-}
-
 /**
  *
  * @brief Close output for the test
@@ -113,18 +91,16 @@ void output_close(void)
  */
 int main(void)
 {
-	int autorun = 0, continuously = 0;
+	int continuously = 0;
 
-	init_output(&continuously, &autorun);
 	bench_test_init();
 
-	PRINT_STRING(newline, output_file);
+	PRINT_STRING(newline);
 	do {
-		PRINT_STRING(dashline, output_file);
+		PRINT_STRING(dashline);
 		PRINT_STRING("|          S I M P L E   S E R V I C E    "
-					 "M E A S U R E M E N T S  |  nsec    |\n",
-					 output_file);
-		PRINT_STRING(dashline, output_file);
+			     "M E A S U R E M E N T S  |  nsec    |\n");
+		PRINT_STRING(dashline);
 		queue_test();
 		sema_test();
 		mutex_test();
@@ -132,10 +108,9 @@ int main(void)
 		mailbox_test();
 		pipe_test();
 		PRINT_STRING("|         END OF TESTS                     "
-					 "                                   |\n",
-					 output_file);
-		PRINT_STRING(dashline, output_file);
-		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n", output_file);
+			     "                                   |\n");
+		PRINT_STRING(dashline);
+		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n");
 		TC_PRINT_RUNID;
 	} while (continuously && !kbhit());
 
