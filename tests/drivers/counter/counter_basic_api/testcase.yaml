@@ -18,3 +18,12 @@ tests:
       - CONFIG_ZERO_LATENCY_IRQS=y
     extra_args:
       DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf52840dk_nrf52840_zli.overlay"
+  drivers.counter.basic_api.stm32_subsec:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: nucleo_f429zi
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y
