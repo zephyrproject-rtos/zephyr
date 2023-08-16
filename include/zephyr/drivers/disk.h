@@ -47,6 +47,9 @@ extern "C" {
 #define DISK_IOCTL_GET_ERASE_BLOCK_SZ		4
 /** Commit any cached read/writes to disk */
 #define DISK_IOCTL_CTRL_SYNC			5
+/** User allocation of Ram buffer */
+#define DISK_IOCTL_SET_RAMBUF_ADDR		6
+
 
 /**
  * @brief Possible return bitmasks for disk_status()

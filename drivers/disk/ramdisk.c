@@ -19,7 +19,12 @@ LOG_MODULE_REGISTER(ramdisk, CONFIG_RAMDISK_LOG_LEVEL);
 #define RAMDISK_VOLUME_SIZE (CONFIG_DISK_RAM_VOLUME_SIZE * 1024)
 #define RAMDISK_SECTOR_COUNT (RAMDISK_VOLUME_SIZE / RAMDISK_SECTOR_SIZE)
 
+#ifdef CONFIG_DISK_RAM_USER_ALLOCATION
+static uint8_t *init_buf = "";
+static uint8_t *ramdisk_buf = (uint8_t *)&init_buf;
+#else
 static uint8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
+#endif
 
 static void *lba_to_address(uint32_t lba)
 {
@@ -82,6 +87,12 @@ static int disk_ram_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		*(uint32_t *)buff  = 1U;
 		break;
+#ifdef CONFIG_DISK_RAM_USER_ALLOCATION
+	case DISK_IOCTL_SET_RAMBUF_ADDR:
+		ramdisk_buf = (uint8_t *)(*(uint32_t *)buff);
+		LOG_DBG("ramdisk_buf = %p", (void *)ramdisk_buf);
+		break;
+#endif
 	default:
 		return -EINVAL;
 	}

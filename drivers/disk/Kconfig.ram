@@ -10,6 +10,13 @@ config DISK_DRIVER_RAM
 
 if DISK_DRIVER_RAM
 
+config DISK_RAM_USER_ALLOCATION
+	bool "RAM buffer is allocated by User"
+	help
+	  RAM buffer is allocated in user space.
+	  Address of RAM buffer is set by ioctl command DISK_IOCTL_SET_RAMBUF_ADDR
+
+
 config DISK_RAM_VOLUME_SIZE
 	int "RAM Disk size in kilobytes"
 	default 96
