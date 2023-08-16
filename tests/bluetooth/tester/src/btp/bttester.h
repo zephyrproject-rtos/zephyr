@@ -31,6 +31,10 @@ void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status);
 void tester_rsp_full(uint8_t service, uint8_t opcode, const void *rsp, size_t len);
 void tester_event(uint8_t service, uint8_t opcode, const void *data, size_t len);
+int tester_rsp_buffer_lock(void);
+void tester_rsp_buffer_unlock(void);
+void tester_rsp_buffer_free(void);
+void tester_rsp_buffer_allocate(size_t len, uint8_t **data);
 
 /* Used to indicate that command length is variable and that validation will
  * be done in handler.
