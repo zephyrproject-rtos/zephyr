@@ -22,6 +22,8 @@
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/services/hrs.h>
 
+static bool hrf_ntf_enabled;
+
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
@@ -48,6 +50,25 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
+
+static void hrs_ntf_changed(bool enabled)
+{
+	hrf_ntf_enabled = enabled;
+
+	printk("HRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
+}
+
+static struct bt_hrs_cb hrs_cb = {
+	.ntf_changed = hrs_ntf_changed,
+};
+
+/** @brief Heart rate service callback register
+ *
+ * This function will register callbacks that will be called in
+ * certain events related to Heart rate service.
+ *
+ * @param cb Pointer to callbacks structure
+ */
 
 static void bt_ready(void)
 {
@@ -100,7 +121,9 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_hrs_notify(heartrate);
+	if (hrf_ntf_enabled) {
+		bt_hrs_notify(heartrate);
+	}
 }
 
 int main(void)
@@ -117,6 +140,7 @@ int main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
+	bt_hrs_cb_register(&hrs_cb);
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
