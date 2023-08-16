@@ -24,14 +24,6 @@ zephyr_sources(
 
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
 zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
-zephyr_sources_ifdef(CONFIG_CRC
-  crc32c_sw.c
-  crc32_sw.c
-  crc16_sw.c
-  crc8_sw.c
-  crc7_sw.c
-  )
-zephyr_sources_ifdef(CONFIG_CRC_SHELL crc_shell.c)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
