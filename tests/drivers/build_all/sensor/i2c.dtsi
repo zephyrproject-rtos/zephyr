@@ -560,7 +560,6 @@ test_i2c_lm75: lm75@56 {
 test_i2c_ina230: ina230@57 {
 	compatible = "ti,ina230";
 	reg = <0x57>;
-	config = <0>;
 	current-lsb-microamps = <1000>;
 	rshunt-micro-ohms = <1000>;
 	mask = <0>;
@@ -577,7 +576,6 @@ test_i2c_lm77: lm77@58 {
 test_i2c_ina231: ina231@59 {
 	compatible = "ti,ina230";
 	reg = <0x59>;
-	config = <0>;
 	current-lsb-microamps = <1000>;
 	rshunt-micro-ohms = <1000>;
 	mask = <0>;
