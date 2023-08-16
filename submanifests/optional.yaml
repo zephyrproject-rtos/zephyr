@@ -2,6 +2,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: soburi
+      url-base: https://github.com/soburi
   projects:
     - name: chre
       revision: b7955c27e50485b7dafdc3888d7d6afdc2ac6d96
@@ -50,6 +52,12 @@ manifest:
       path: optional/modules/lib/thrift
       revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
       remote: upstream
+      groups:
+        - optional
+    - name: u8g2
+      remote: soburi
+      revision: 7851fd39858551dfa9c4af4a597e0ad85a180807
+      path: modules/lib/gui/u8g2
       groups:
         - optional
     - name: zscilib

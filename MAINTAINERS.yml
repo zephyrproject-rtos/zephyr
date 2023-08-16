@@ -3560,6 +3560,15 @@ West:
   labels:
     - "area: TF-M"
 
+"West project: u8g2":
+  status: maintained
+  maintainers:
+    - soburi
+  files:
+    - modules/u8g2/
+  labels:
+    - "area: U8g2"
+
 "West project: uoscore-uedhoc":
   status: maintained
   maintainers:
