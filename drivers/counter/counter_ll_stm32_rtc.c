@@ -61,6 +61,23 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define COUNTER_NO_DATE
 #endif
 
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
+/* LSI */
+#define RTCCLK_FREQ STM32_LSI_FREQ
+#else
+/* LSE */
+#define RTCCLK_FREQ STM32_LSE_FREQ
+#endif /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI */
+
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#define RTC_ASYNCPRE BIT_MASK(7)
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+#define RTC_ASYNCPRE (RTCCLK_FREQ - 1)
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
+/* Adjust the second sync prescaler to get 1Hz on ck_spre */
+#define RTC_SYNCPRE ((RTCCLK_FREQ / (1 + RTC_ASYNCPRE)) - 1)
+
 struct rtc_stm32_config {
 	struct counter_config_info counter_info;
 	LL_RTC_InitTypeDef ll_rtc_config;
@@ -477,30 +494,16 @@ static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
 		.max_top_value = UINT32_MAX,
-		.freq = 1,
+		.freq = RTCCLK_FREQ / ((RTC_ASYNCPRE + 1) * (RTC_SYNCPRE + 1)),
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
 	.ll_rtc_config = {
+		.AsynchPrescaler = RTC_ASYNCPRE,
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
-		/* prescaler values for LSI @ 32 KHz */
-		.AsynchPrescaler = 0x7F,
-		.SynchPrescaler = 0x00F9,
-#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
-		/* prescaler values for LSE @ 32768 Hz */
-		.AsynchPrescaler = 0x7F,
-		.SynchPrescaler = 0x00FF,
-#endif
+		.SynchPrescaler = RTC_SYNCPRE,
 #else /* CONFIG_SOC_SERIES_STM32F1X */
-#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
-		/* prescaler values for LSI @ 40 KHz */
-		.AsynchPrescaler = 0x9C3F,
-#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
-		/* prescaler values for LSE @ 32768 Hz */
-		.AsynchPrescaler = 0x7FFF,
-#endif
 		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 	},
