@@ -1,0 +1,8 @@
+sample:
+  description: U8G2 Logo
+  name: u8g2 logo
+tests:
+  sample.modules.u8g2.u8x2_logo.sdl:
+    platform_allow: native_posix native_posix_64
+    build_only: true
+    tags: display
