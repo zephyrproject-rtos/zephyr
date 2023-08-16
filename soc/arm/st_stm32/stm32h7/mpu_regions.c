@@ -38,9 +38,6 @@ static const struct arm_mpu_region mpu_regions[] = {
 					 REGION_PPB_ATTR(REGION_256B)),
 #endif
 #endif
-
-	/* DT-defined regions */
-	DT_MEMORY_ATTR_APPLY(ARM_MPU_REGION_INIT)
 };
 
 const struct arm_mpu_config mpu_config = {

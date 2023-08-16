@@ -457,10 +457,6 @@ region will be allocated and programmed during system boot. When used with the
 :dtcompatible:`zephyr,memory-region` devicetree compatible, it will result in a
 linker section being generated associated to that MPU region.
 
-The property ``zephyr,memory-attr`` is a string carrying the attributes
-for the MPU region. It is converted to a C token for use defining the attributes
-of the MPU region.
-
 For example, to define a new non-cacheable memory region in devicetree:
 
 .. code-block:: devicetree
@@ -469,13 +465,11 @@ For example, to define a new non-cacheable memory region in devicetree:
         compatible = "zephyr,memory-region", "mmio-sram";
         reg = <0x20300000 0x100000>;
         zephyr,memory-region = "SRAM_NO_CACHE";
-        zephyr,memory-attr = "RAM_NOCACHE";
+        zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
    };
 
-This will automatically create a new MPU entry in
-:zephyr_file:`soc/arm/common/cortex_m/arm_mpu_regions.c` with the correct name, base,
-size and attributes gathered directly from the devicetree. See
-:zephyr_file:`include/zephyr/linker/devicetree_regions.h` for more details.
+This will automatically create a new MPU entry in with the correct name, base,
+size and attributes gathered directly from the devicetree.
 
 Static MPU regions
 ------------------

@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
 &dma1 {
 	status = "okay";
 };
@@ -18,7 +20,7 @@ test_dma0: &dmamux1 {
  * to be non-cachable.
  */
 &sram4 {
-	zephyr,memory-attr = "RAM_NOCACHE";
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 };
 
 &bdma1 {

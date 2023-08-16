@@ -188,6 +188,13 @@
  * that they do not overlap with other MPU regions).
  */
 #if defined(CONFIG_AARCH32_ARMV8_R)
+
+#define ARM_MPU_REGION_INIT(p_name, p_base, p_size, p_attr)	\
+	{ .name = p_name,					\
+	  .base = p_base,					\
+	  .attr = p_attr(p_base + p_size),			\
+	}
+
 #define REGION_RAM_ATTR(limit)						    \
 	{								    \
 		.rbar = NOT_EXEC |					    \
@@ -245,6 +252,12 @@
 		.r_limit = limit - 1,				      \
 	}
 #else
+
+#define ARM_MPU_REGION_INIT(p_name, p_base, p_size, p_attr)	\
+	{ .name = p_name,					\
+	  .base = p_base,					\
+	  .attr = p_attr(p_base, p_size),			\
+	}
 
 /* On Cortex-M, we can only set the XN bit when CONFIG_XIP=y. When
  * CONFIG_XIP=n, the entire image will be linked to SRAM, so we need to keep

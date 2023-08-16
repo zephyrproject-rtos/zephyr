@@ -645,18 +645,6 @@
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
 		};
 
-		test_mem_ram: memory@aabbccdd {
-			compatible = "vnd,memory-attr";
-			reg = < 0xaabbccdd 0x4000 >;
-			zephyr,memory-attr = "RAM";
-		};
-
-		test_mem_ram_nocache: memory@44332211 {
-			compatible = "vnd,memory-attr";
-			reg = < 0x44332211 0x2000 >;
-			zephyr,memory-attr = "RAM_NOCACHE";
-		};
-
 		test-mtd@ffeeddcc {
 			reg = < 0x0 0x1000 >;
 			#address-cells = < 1 >;

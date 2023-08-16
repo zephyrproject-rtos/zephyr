@@ -4,17 +4,19 @@
 include: [base.yaml]
 
 properties:
-  zephyr,memory-attr:
+  zephyr,memory-region-mpu:
     type: string
-    enum:
-      - "RAM"
-      - "RAM_NOCACHE"
-      - "FLASH"
-      - "PPB"
-      - "IO"
-      - "EXTMEM"
+    deprecated: true
     description: |
-      Attribute for the memory region.
+      Signify that this node should result in a dedicated MPU region.
+      Deprecated in favor of 'zephyr,memory-attr'.
+
+  zephyr,memory-attr:
+    type: int
+    description: |
+      Attribute or set of attributes (bitmask) for the memory region. See
+      'include/zephyr/dt-bindings/memory-attr/memory-attr.h' for a
+      comprehensive list with description of possible values.
 
   reg:
     required: true
