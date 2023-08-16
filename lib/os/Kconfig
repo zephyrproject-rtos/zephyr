@@ -28,7 +28,6 @@ config BASE64
 
 config CRC
 	bool "Cyclic redundancy check (CRC) Support"
-	default y
 	help
 	  Enable use of CRC.
 
