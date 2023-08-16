@@ -1,0 +1,14 @@
+description: Interrupt Latency Counter
+
+compatible: "intel,ilc"
+
+include: base.yaml
+
+properties:
+  shared-irqs:
+    required: true
+
+  shared-irq-count:
+    type: int
+    required: true
+    description: Number of shared interrupt specifier

@@ -95,5 +95,8 @@ properties:
 
   resets:
     type: phandle-array
-    required: false
     description: get reset line value
+
+  shared-irqs:
+    type: phandles
+    description: phandle to interrupt controller node
