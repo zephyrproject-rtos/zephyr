@@ -114,11 +114,11 @@
 			};
 		};
 
-		psram0: psram@3c000000 {
+		psram0: psram@3c000040 {
 			device_type = "memory";
 			compatible = "mmio-sram";
 			/* PSRAM size is specified in SOC/SIP dtsi */
-			reg = <0x3c000000 DT_SIZE_M(2)>;
+			reg = <0x3c000040 DT_SIZE_M(2)>;
 			status = "disabled";
 		};
 
