@@ -47,8 +47,33 @@
 
 #define SBS_GAUGE_DELAY                     1000
 
+/*
+ * Nearly all cutoff payloads are actually a singular value that must be written twice to the fuel
+ * gauge. For the case where it's a singular value that must only be written to the fuel gauge only
+ * once, retransmitting the duplicate write has no significant negative consequences.
+ *
+ * Why not devicetree: Finding the maximum length of all the battery cutoff payloads in a devicetree
+ * at compile-time would require labyrinthine amount of macro-batics.
+ *
+ * Why not compute at runtime: It's not worth the memory given having more than a single fuel gauge
+ * is rare, and most will have a payload size of 2.
+ *
+ * This is validated as a BUILD_ASSERT in the driver.
+ */
+#define SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE 2
+
+struct sbs_gauge_battery_cutoff_config {
+	/* Size of the payload array */
+	size_t payload_size;
+	/* Array SMBus word values to write to cut off the battery */
+	uint32_t payload[SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE];
+	/* Register to write cutoff payload */
+	uint8_t reg;
+};
+
 struct sbs_gauge_config {
 	struct i2c_dt_spec i2c;
+	const struct sbs_gauge_battery_cutoff_config *cutoff_cfg;
 };
 
 #endif

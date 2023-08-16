@@ -40,3 +40,17 @@ tests:
     extra_args:
       - CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
       - DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
+  drivers.sbs_gauge_new_api.emulated.cutoff:
+    tags:
+      - drivers
+      - fuel_gauge
+    filter: dt_compat_enabled("sbs,sbs-gauge-new-api")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/emulated_board_cutoff.overlay"
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_TEST_SBS_CUTOFF_EXTENSION=y
+      - CONFIG_USERSPACE=y
+    platform_allow:
+      - native_posix
+      - qemu_x86
