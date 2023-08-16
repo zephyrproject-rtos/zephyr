@@ -46,6 +46,7 @@ add_subdirectory_ifdef(CONFIG_I2C i2c)
 add_subdirectory_ifdef(CONFIG_I2S i2s)
 add_subdirectory_ifdef(CONFIG_I3C i3c)
 add_subdirectory_ifdef(CONFIG_IEEE802154 ieee802154)
+add_subdirectory_ifdef(CONFIG_ILC ilc)
 add_subdirectory_ifdef(CONFIG_INPUT input)
 add_subdirectory_ifdef(CONFIG_IPM ipm)
 add_subdirectory_ifdef(CONFIG_KSCAN kscan)
@@ -86,4 +87,4 @@ add_subdirectory_ifdef(CONFIG_W1 w1)
 add_subdirectory_ifdef(CONFIG_WATCHDOG watchdog)
 add_subdirectory_ifdef(CONFIG_WIFI wifi)
 add_subdirectory_ifdef(CONFIG_XEN xen)
-# zephyr-keep-sorted-stop
+# zephyr-keep-sorted-stopclear

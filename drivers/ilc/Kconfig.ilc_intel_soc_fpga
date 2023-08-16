@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ILC_INTEL_SOC_FPGA
+	bool "Intel SoC FPGA Interrupt Latency Counter driver"
+	depends on DT_HAS_SHARED_IRQ_ENABLED
+	depends on DT_HAS_INTEL_ILC_ENABLED
+	help
+	 Enable the interrupt latency counter driver for Intel SoC FPGA device.
