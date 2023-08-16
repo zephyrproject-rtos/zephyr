@@ -48,14 +48,6 @@
 	};
 };
 
-&dma0 {
-	status = "okay";
-};
-
-&dma1 {
-	status = "okay";
-};
-
 &xgmac0 {
 	phy-connection-type = "rgmii";
 	full-duplex-mode-en;
