@@ -4,6 +4,7 @@
 config ICE40_FPGA
 	bool "Lattice iCE40 fpga driver [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	imply CRC
 	depends on SPI
 	help
 	  Enable support for the Lattice iCE40 fpga driver.
