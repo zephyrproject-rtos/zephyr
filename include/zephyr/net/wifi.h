@@ -10,7 +10,9 @@
  */
 
 /**
- * @addtogroup wifi_mgmt
+ * @defgroup wifi_mgmt Wi-Fi Management
+ * Wi-Fi Management API.
+ * @ingroup networking
  * @{
  */
 
@@ -327,10 +329,12 @@ enum wifi_ps {
 	WIFI_PS_ENABLED,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_ps2str[] = {
 	[WIFI_PS_DISABLED] = "Power save disabled",
 	[WIFI_PS_ENABLED] = "Power save enabled",
 };
+/** @endcond */
 
 /** Wi-Fi power save modes. */
 enum wifi_ps_mode {
@@ -343,10 +347,12 @@ enum wifi_ps_mode {
 	WIFI_PS_MODE_WMM,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_ps_mode2str[] = {
 	[WIFI_PS_MODE_LEGACY] = "Legacy power save",
 	[WIFI_PS_MODE_WMM] = "WMM power save",
 };
+/** @endcond */
 
 /** Wi-Fi Target Wake Time (TWT) operations. */
 enum wifi_twt_operation {
@@ -356,10 +362,12 @@ enum wifi_twt_operation {
 	WIFI_TWT_TEARDOWN,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_twt_operation2str[] = {
 	[WIFI_TWT_SETUP] = "TWT setup",
 	[WIFI_TWT_TEARDOWN] = "TWT teardown",
 };
+/** @endcond */
 
 /** Wi-Fi Target Wake Time (TWT) negotiation types. */
 enum wifi_twt_negotiation_type {
@@ -371,11 +379,13 @@ enum wifi_twt_negotiation_type {
 	WIFI_TWT_WAKE_TBTT
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_twt_negotiation_type2str[] = {
 	[WIFI_TWT_INDIVIDUAL] = "TWT individual negotiation",
 	[WIFI_TWT_BROADCAST] = "TWT broadcast negotiation",
 	[WIFI_TWT_WAKE_TBTT] = "TWT wake TBTT negotiation",
 };
+/** @endcond */
 
 /** Wi-Fi Target Wake Time (TWT) setup commands. */
 enum wifi_twt_setup_cmd {
@@ -397,6 +407,7 @@ enum wifi_twt_setup_cmd {
 	WIFI_TWT_SETUP_CMD_REJECT,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_twt_setup_cmd2str[] = {
 	[WIFI_TWT_SETUP_CMD_REQUEST] = "TWT request",
 	[WIFI_TWT_SETUP_CMD_SUGGEST] = "TWT suggest",
@@ -407,6 +418,7 @@ static const char * const wifi_twt_setup_cmd2str[] = {
 	[WIFI_TWT_SETUP_CMD_DICTATE] = "TWT dictate",
 	[WIFI_TWT_SETUP_CMD_REJECT] = "TWT reject",
 };
+/** @endcond */
 
 /** Wi-Fi Target Wake Time (TWT) negotiation status. */
 enum wifi_twt_setup_resp_status {
@@ -442,6 +454,7 @@ enum wifi_twt_fail_reason {
 	WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const twt_err_code_tbl[] = {
 	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
@@ -462,6 +475,7 @@ static const char * const twt_err_code_tbl[] = {
 	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] =
 		"Flow already exists",
 };
+/** @endcond */
 
 /** Helper function to get user-friendly TWT error code name. */
 static inline const char *get_twt_err_code_str(int16_t err_no)
@@ -495,10 +509,12 @@ enum wifi_ps_wakeup_mode {
 	WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const wifi_ps_wakeup_mode2str[] = {
 	[WIFI_PS_WAKEUP_MODE_DTIM] = "PS wakeup mode DTIM",
 	[WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL] = "PS wakeup mode listen interval",
 };
+/** @endcond */
 
 /** Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
@@ -518,6 +534,7 @@ enum wifi_config_ps_param_fail_reason {
 	WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID,
 };
 
+/** @cond INTERNAL_HIDDEN */
 static const char * const ps_param_config_err_code_tbl[] = {
 	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
@@ -532,6 +549,7 @@ static const char * const ps_param_config_err_code_tbl[] = {
 	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] =
 		"Parameter out of range",
 };
+/** @endcond */
 
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *get_ps_config_err_code_str(int16_t err_no)
