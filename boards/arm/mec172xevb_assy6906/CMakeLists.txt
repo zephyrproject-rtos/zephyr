@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+add_subdirectory(debug)
+
 if(DEFINED ENV{MEC172X_SPI_GEN})
   # Grab it from environment variable if defined
   set(MEC172X_SPI_GEN $ENV{MEC172X_SPI_GEN})

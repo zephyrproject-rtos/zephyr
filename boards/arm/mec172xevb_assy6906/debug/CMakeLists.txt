@@ -1,0 +1,3 @@
+zephyr_include_directories(${ZEPHYR_BASE})
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_SOC_SLEEP_STATE_DEBUG_FUNCTION power_debug.c)

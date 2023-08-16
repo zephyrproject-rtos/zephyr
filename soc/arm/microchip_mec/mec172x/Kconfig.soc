@@ -82,3 +82,10 @@ config GPIO_INIT_PRIORITY
 	default 41
 
 endif # GPIO
+
+config SOC_SLEEP_STATE_DEBUG_FUNCTION
+	bool "Platform provides a debug indicator for sleep modes"
+	depends on PM
+	help
+	  Platform may provide an indication of entering/exiting sleep modes by
+	  defining board-specific void function pm_debug_function(uint32_t).
