@@ -83,3 +83,8 @@ tests:
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay
+  drivers.flash.common.sam0:
+    platform_allow:
+      - atsamd20_xpro
+      - atsamr21_xpro
+      - atsame54_xpro
