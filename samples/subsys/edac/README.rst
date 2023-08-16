@@ -11,15 +11,20 @@ This sample demonstrates the EDAC driver API in a simple EDAC shell sample.
 Building and Running
 ********************
 
-This project can be built and executed on as following example for the
-:ref:`intel_ehl_crb` board:
+This sample can be found under :zephyr_file:`samples/subsys/edac` in the
+Zephyr tree.
+The sample can be built as follows for the :ref:`intel_ehl_crb` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/edac
    :host-os: unix
    :board: intel_ehl_crb
-   :goals: run
+   :goals: build
    :compact:
+
+The Zephyr image that's created can be run on the :ref:`intel_ehl_crb` board
+as per the instructions in the board documentation. Check out the
+:ref:`intel_ehl_crb` for details.
 
 Sample output
 *************
