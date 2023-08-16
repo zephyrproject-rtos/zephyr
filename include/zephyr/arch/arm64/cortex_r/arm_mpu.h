@@ -227,14 +227,6 @@ struct arm_mpu_config {
 		.attr = _attr,			      \
 	}
 
-#define MPU_REGION_ENTRY_FROM_DTS(_name, _base, _size, _attr) \
-	{						      \
-		.name = _name,				      \
-		.base = _base,				      \
-		.limit = _base + _size,			      \
-		.attr = _attr,				      \
-	}
-
 #define K_MEM_PARTITION_P_RW_U_RW ((k_mem_partition_attr_t) \
 	{(P_RW_U_RW_Msk), MPU_MAIR_INDEX_SRAM})
 #define K_MEM_PARTITION_P_RW_U_NA ((k_mem_partition_attr_t) \

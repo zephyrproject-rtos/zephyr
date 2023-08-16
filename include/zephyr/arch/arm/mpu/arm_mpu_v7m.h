@@ -109,6 +109,12 @@
 #define REGION_2G       REGION_SIZE(2GB)
 #define REGION_4G       REGION_SIZE(4GB)
 
+#define ARM_MPU_REGION_INIT(p_name, p_base, p_size, p_attr)	\
+	{ .name = p_name,					\
+	  .base = p_base,					\
+	  .attr = p_attr(size_to_mpu_rasr_size(p_size)),	\
+	}
+
 /* Some helper defines for common regions */
 
 /* On Cortex-M, we can only set the XN bit when CONFIG_XIP=y. When

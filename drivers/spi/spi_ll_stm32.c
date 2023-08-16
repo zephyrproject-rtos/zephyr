@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
@@ -81,7 +82,7 @@ struct mem_region {
 };
 
 static const struct mem_region nocache_mem_regions[] = {
-	DT_MEMORY_ATTR_FOREACH_NODE(GET_MEM_REGION_IF_NOCACHE)
+	DT_MEMORY_ATTR_FOREACH_STATUS_OKAY_NODE(GET_MEM_REGION_IF_NOCACHE)
 };
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 

@@ -18,6 +18,7 @@ OS Services
    logging/index.rst
    tracing/index.rst
    resource_management/index.rst
+   mem_mgmt/index.rst
    modbus/index.rst
    notify.rst
    pm/index.rst

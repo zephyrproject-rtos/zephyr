@@ -34,6 +34,19 @@ Required changes
   SMP version 2 error code defines for in-tree modules have been updated to
   replace the ``*_RET_RC_*`` parts with ``*_ERR_*``.
 
+* ``zephyr,memory-region-mpu`` was renamed ``zephyr,memory-attr`` and its type
+  moved from 'enum' to 'int'. To have a seamless conversion this is the
+  required change in the DT:
+
+  .. code-block:: none
+
+     - "RAM"         -> <( DT_MEM_ARM(ATTR_MPU_RAM) )>
+     - "RAM_NOCACHE" -> <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>
+     - "FLASH"       -> <( DT_MEM_ARM(ATTR_MPU_FLASH) )>
+     - "PPB"         -> <( DT_MEM_ARM(ATTR_MPU_PPB) )>
+     - "IO"          -> <( DT_MEM_ARM(ATTR_MPU_IO) )>
+     - "EXTMEM"      -> <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>
+
 Recommended Changes
 *******************
 

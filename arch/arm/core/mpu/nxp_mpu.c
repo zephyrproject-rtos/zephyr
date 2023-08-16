@@ -13,10 +13,19 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mpu);
+
+#define NODE_HAS_PROP_AND_OR(node_id, prop) \
+	DT_NODE_HAS_PROP(node_id, prop) ||
+
+BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
+	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
+	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
 
 /*
  * Global status variable holding the number of HW MPU region indices, which
@@ -132,6 +141,60 @@ static int region_allocate_and_init(const uint8_t index,
 	region_init(index, region_conf);
 
 	return index;
+}
+
+#define _BUILD_REGION_CONF(reg, _ATTR)						\
+	(struct nxp_mpu_region) { .name = (reg).dt_name,			\
+				  .base = (reg).dt_addr,			\
+				  .end  = (reg).dt_addr + (reg).dt_size,	\
+				  .attr = _ATTR,				\
+				}
+
+/* This internal function programs the MPU regions defined in the DT when using
+ * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
+ */
+static int mpu_configure_regions_from_dt(uint8_t *reg_index)
+{
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; idx++) {
+		struct nxp_mpu_region region_conf;
+
+		switch (DT_MEM_ARM_MASK(region[idx].dt_attr)) {
+		case DT_MEM_ARM_MPU_RAM:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
+			break;
+#ifdef REGION_FLASH_ATTR
+		case DT_MEM_ARM_MPU_FLASH:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
+			break;
+#endif
+#ifdef REGION_IO_ATTR
+		case DT_MEM_ARM_MPU_IO:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_IO_ATTR);
+			break;
+#endif
+		default:
+			/* Either the specified `ATTR_MPU_*` attribute does not
+			 * exists or the `REGION_*_ATTR` macro is not defined
+			 * for that attribute.
+			 */
+			LOG_ERR("Invalid attribute for the region\n");
+			return -EINVAL;
+		}
+
+		if (region_allocate_and_init((*reg_index),
+					     (const struct nxp_mpu_region *) &region_conf) < 0) {
+			return -EINVAL;
+		}
+
+		(*reg_index)++;
+	}
+
+	return 0;
 }
 
 /**
@@ -636,6 +699,11 @@ int z_arm_mpu_init(void)
 	/* Update the number of programmed MPU regions. */
 	static_regions_num = mpu_config.num_regions;
 
+	/* DT-defined MPU regions. */
+	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {
+		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
+		return -EINVAL;
+	}
 
 	arm_core_mpu_enable();
 

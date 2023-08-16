@@ -6,7 +6,6 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
-#include <zephyr/devicetree/memory-attr.h>
 
 #include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 
@@ -29,9 +28,6 @@ static const struct arm_mpu_region mpu_regions[] = {
 #else
 			 REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 #endif
-
-	/* DT-defined regions */
-	DT_MEMORY_ATTR_APPLY(ARM_MPU_REGION_INIT)
 };
 
 const struct arm_mpu_config mpu_config = {

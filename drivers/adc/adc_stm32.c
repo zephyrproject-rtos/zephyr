@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -253,27 +255,16 @@ static int adc_stm32_dma_start(const struct device *dev,
  * The entire buffer must be in a single region.
  * An example of how the SRAM region can be defined in the DTS:
  *	&sram4 {
- *		zephyr,memory-attr = "RAM_NOCACHE";
+ *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
  *	};
  */
 static bool address_in_non_cacheable_sram(const uint16_t *buffer, const uint16_t size)
 {
-	/* Default if no valid SRAM region found or buffer+size not located in a single region */
-	bool cachable = false;
-#define IS_NON_CACHEABLE_REGION_FN(node_id)                                                    \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr), ({                          \
-			const uint32_t region_start = DT_REG_ADDR(node_id);                    \
-			const uint32_t region_end = region_start + DT_REG_SIZE(node_id);       \
-			if (((uint32_t)buffer >= region_start) &&                              \
-				(((uint32_t)buffer + size) < region_end)) {                    \
-				cachable = strcmp(DT_PROP(node_id, zephyr_memory_attr),        \
-						"RAM_NOCACHE") == 0;                           \
-			}                                                                      \
-		}),                                                                            \
-		(EMPTY))
-	DT_FOREACH_STATUS_OKAY(mmio_sram, IS_NON_CACHEABLE_REGION_FN);
+	if (mem_attr_check_buf((void *) buffer, (size_t) size, DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
+		return true;
+	}
 
-	return cachable;
+	return false;
 }
 #endif /* defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X) */
 
