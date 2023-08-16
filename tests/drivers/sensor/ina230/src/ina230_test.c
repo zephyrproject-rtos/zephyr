@@ -89,6 +89,39 @@ static void test_shunt_cal(struct ina230_fixture *fixture)
 		"Expected %d, got %d", shunt_register_expected, shunt_register_actual);
 }
 
+static void test_current(struct ina230_fixture *fixture)
+{
+	/* 16-bit signed value for current register */
+	const int16_t current_reg_vectors[] = {
+		32767,
+		1000,
+		100,
+		1,
+		0,
+		-1,
+		-100,
+		-1000,
+		-32768,
+	};
+
+	for (int idx = 0; idx < ARRAY_SIZE(current_reg_vectors); idx++) {
+		struct sensor_value sensor_val;
+		int16_t current_register = current_reg_vectors[idx];
+		double current_expected_A = fixture->current_lsb_uA * 1e-6 * current_register;
+
+		/* set current reading */
+		ina230_mock_set_register(fixture->mock->data, INA230_REG_CURRENT, current_register);
+
+		/* Verify sensor value is correct */
+		zassert_ok(sensor_sample_fetch(fixture->dev));
+		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, &sensor_val));
+		double current_actual_A = sensor_value_to_double(&sensor_val);
+
+		zexpect_within(current_expected_A, current_actual_A, fixture->current_lsb_uA*1e-6,
+			"Expected %.6f A, got %.6f A", current_expected_A, current_actual_A);
+	}
+}
+
 static void test_bus_voltage(struct ina230_fixture *fixture)
 {
 	zassert_not_null(fixture->mock);
@@ -174,6 +207,7 @@ static struct ina230_fixture fixtures[] = {
 #define INA230_TESTS(inst) \
 	ZTEST(ina230_##inst, test_datasheet_example) { test_datasheet_example(&fixtures[inst]); } \
 	ZTEST(ina230_##inst, test_shunt_cal) { test_shunt_cal(&fixtures[inst]); } \
+	ZTEST(ina230_##inst, test_current) { test_current(&fixtures[inst]); } \
 	ZTEST(ina230_##inst, test_bus_voltage) { test_bus_voltage(&fixtures[inst]); } \
 	ZTEST(ina230_##inst, test_power) { test_power(&fixtures[inst]); } \
 	ZTEST_SUITE(ina230_##inst, NULL, NULL, NULL, NULL, NULL);
