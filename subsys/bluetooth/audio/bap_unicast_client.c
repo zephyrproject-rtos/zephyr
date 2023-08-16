@@ -1300,6 +1300,7 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 			}
 		}
 		memcpy(codec_cap->data, data, data_len);
+		codec_cap->data_len = data_len;
 	}
 
 	if (meta_len > 0U) {
@@ -1318,6 +1319,7 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 		}
 
 		memcpy(codec_cap->meta, meta, meta_len);
+		codec_cap->meta_len = meta_len;
 	}
 
 	return 0;
