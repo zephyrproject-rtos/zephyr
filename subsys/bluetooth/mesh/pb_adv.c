@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(bt_mesh_pb_adv);
 
 #define RETRANSMIT_TIMEOUT  K_MSEC(CONFIG_BT_MESH_PB_ADV_RETRANS_TIMEOUT)
 #define BUF_TIMEOUT         K_MSEC(400)
-#define CLOSING_TIMEOUT     3
+#define CLOSING_TIMEOUT     2
 #define TRANSACTION_TIMEOUT 30
 
 /* Acked messages, will do retransmissions manually, taking acks into account:
@@ -112,6 +112,15 @@ struct pb_adv {
 		struct k_work_delayable retransmit;
 	} tx;
 
+	struct {
+		/* Start timestamp of link close */
+		int64_t start;
+
+		/* Close reason */
+		enum prov_bearer_link_status reason;
+	} close_link;
+
+
 	/* Protocol timeout */
 	struct k_work_delayable prot_timer;
 };
@@ -133,11 +142,18 @@ static void link_close(struct prov_rx *rx, struct net_buf_simple *buf);
 static void prov_link_close(enum prov_bearer_link_status status);
 static void close_link(enum prov_bearer_link_status status);
 
+static inline bool close_timer_elapsed(void)
+{
+	return k_uptime_get() - link.close_link.start > CLOSING_TIMEOUT * MSEC_PER_SEC;
+}
+
 static void buf_sent(int err, void *user_data)
 {
 	enum prov_bearer_link_status reason = (enum prov_bearer_link_status)(int)user_data;
 
-	if (atomic_test_and_clear_bit(link.flags, ADV_LINK_CLOSING)) {
+	if (atomic_test_bit(link.flags, ADV_LINK_CLOSING) && close_timer_elapsed()) {
+		LOG_DBG("Close link timer elapsed - Closing link.");
+		atomic_clear_bit(link.flags, ADV_LINK_CLOSING);
 		close_link(reason);
 		return;
 	}
@@ -608,24 +624,6 @@ static void send_reliable(void)
 	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
 
-static void prov_retransmit(struct k_work *work)
-{
-	LOG_DBG("");
-
-	if (!atomic_test_bit(link.flags, ADV_LINK_ACTIVE)) {
-		LOG_WRN("Link not active");
-		return;
-	}
-
-	if (k_uptime_get() - link.tx.start > link.tx.timeout * MSEC_PER_SEC) {
-		LOG_WRN("Giving up transaction");
-		prov_link_close(PROV_BEARER_LINK_STATUS_TIMEOUT);
-		return;
-	}
-
-	send_reliable();
-}
-
 static struct net_buf *ctl_buf_create(uint8_t op, const void *data, uint8_t data_len,
 				      uint8_t retransmits)
 {
@@ -663,7 +661,7 @@ static int bearer_ctl_send(struct net_buf *buf)
 	return 0;
 }
 
-static int bearer_ctl_send_unacked(struct net_buf *buf, void *user_data)
+static int bearer_ctl_send_unacked(struct net_buf *buf)
 {
 	if (!buf) {
 		return -ENOMEM;
@@ -672,10 +670,55 @@ static int bearer_ctl_send_unacked(struct net_buf *buf, void *user_data)
 	prov_clear_tx();
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	bt_mesh_adv_send(buf, &buf_sent_cb, user_data);
+	bt_mesh_adv_send(buf, NULL, NULL);
 	net_buf_unref(buf);
 
 	return 0;
+}
+
+static void bearer_ctl_send_link_close(void)
+{	/*
+	 * According to mesh profile spec (5.3.1.4.3), the close message should
+	 * be restransmitted at least three times.
+	 */
+	struct net_buf *buf =
+		ctl_buf_create(LINK_CLOSE, &link.close_link.reason, 1, RETRANSMITS_LINK_CLOSE);
+
+	if (!buf) {
+		LOG_ERR("Failed to create link close buffer");
+		return;
+	}
+
+	prov_clear_tx();
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
+
+	bt_mesh_adv_send(buf, &buf_sent_cb, (void *)link.close_link.reason);
+	net_buf_unref(buf);
+}
+
+static void prov_retransmit(struct k_work *work)
+{
+	LOG_DBG("");
+
+	if (atomic_test_bit(link.flags, ADV_LINK_CLOSING)) {
+		if (close_timer_elapsed()) {
+			LOG_DBG("Close link timer elapsed - Closing link.");
+			atomic_clear_bit(link.flags, ADV_LINK_CLOSING);
+			close_link(link.close_link.reason);
+			return;
+		}
+
+		bearer_ctl_send_link_close();
+		k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
+	} else if (atomic_test_bit(link.flags, ADV_LINK_ACTIVE)) {
+		if (k_uptime_get() - link.tx.start > link.tx.timeout * MSEC_PER_SEC) {
+			LOG_WRN("Giving up transaction");
+			prov_link_close(PROV_BEARER_LINK_STATUS_TIMEOUT);
+			return;
+		}
+
+		send_reliable();
+	}
 }
 
 static int prov_send_adv(struct net_buf_simple *msg,
@@ -769,8 +812,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 		LOG_DBG("Resending link ack");
 		/* Ignore errors, message will be attempted again if we keep receiving link open: */
 		(void)bearer_ctl_send_unacked(
-			ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-			(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
+			ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK));
 		return;
 	}
 
@@ -784,8 +826,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 	net_buf_simple_reset(link.rx.buf);
 
 	err = bearer_ctl_send_unacked(
-		ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK),
-		(void *)PROV_BEARER_LINK_STATUS_SUCCESS);
+		ctl_buf_create(LINK_ACK, NULL, 0, RETRANSMITS_ACK));
 	if (err) {
 		reset_adv_link();
 		return;
@@ -926,11 +967,11 @@ static void prov_link_close(enum prov_bearer_link_status status)
 	 * be restransmitted at least three times. Retransmit the LINK_CLOSE
 	 * message until CLOSING_TIMEOUT has elapsed.
 	 */
-	link.tx.timeout = CLOSING_TIMEOUT;
-	/* Ignore errors, the link will time out eventually if this doesn't get sent */
-	bearer_ctl_send_unacked(
-		ctl_buf_create(LINK_CLOSE, &status, 1, RETRANSMITS_LINK_CLOSE),
-		(void *)status);
+	link.close_link.reason = status;
+	link.close_link.start = k_uptime_get();
+
+	bearer_ctl_send_link_close();
+	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
 
 void bt_mesh_pb_adv_init(void)
