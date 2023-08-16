@@ -328,6 +328,7 @@ Build system:
     - jeremybettis
     - nashif
     - nordicjm
+    - "57300"
   files:
     - cmake/
     - CMakeLists.txt
@@ -348,6 +349,7 @@ Board/SoC configuration:
     - galak
     - nashif
     - nordicjm
+    - "57300"
   files:
     - soc/Kconfig
     - boards/Kconfig
@@ -2662,6 +2664,7 @@ Sysbuild:
     - tejlmand
   collaborators:
     - nordicjm
+    - "57300"
   files:
     - share/sysbuild/
     - samples/application_development/sysbuild/
