@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2023, Arm Limited and Contributors. All rights reserved
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -523,6 +524,31 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		if (sock_is_nonblock(ctx)) {
 			timeout = K_NO_WAIT;
 			cb = zsock_connected_cb;
+		}
+
+		/* The binding must be performed after we have set the remote
+		 * address. Otherwise, address might not be properly set, which
+		 * could lead to problems when the UDP bind operation is subsequently
+		 * executed.
+		 *
+		 * For TCP, this scenario is managed within the net_context_connect()
+		 * function.
+		 */
+		if (IS_ENABLED(CONFIG_NET_UDP) &&
+				net_context_get_proto(ctx) == IPPROTO_UDP) {
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+					net_context_get_family(ctx) == AF_INET6) {
+				struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)
+								&ctx->remote;
+				memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
+					sizeof(struct in6_addr));
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+					net_context_get_family(ctx) == AF_INET) {
+				struct sockaddr_in *addr4 = (struct sockaddr_in *)
+								&ctx->remote;
+				memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
+					sizeof(struct in_addr));
+			}
 		}
 
 		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
