@@ -32,10 +32,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
 #define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * 31)
 
-#if defined(CONFIG_BT_EXT_ADV)
-static struct bt_le_ext_adv *ext_adv;
-#endif
-
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
@@ -476,6 +472,47 @@ static struct bt_data ad[10] = {
 };
 static struct bt_data sd[10];
 
+#if defined(CONFIG_BT_EXT_ADV)
+static struct bt_le_ext_adv *ext_adv;
+
+struct bt_le_ext_adv *tester_gap_ext_adv_get(void)
+{
+	return ext_adv;
+}
+
+int tester_gap_start_ext_adv(void)
+{
+	int err;
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		LOG_ERR("Failed to start advertising");
+
+		return -EINVAL;
+	}
+
+	atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
+
+	return 0;
+}
+
+int tester_gap_stop_ext_adv(void)
+{
+	int err;
+
+	err = bt_le_ext_adv_stop(ext_adv);
+	if (err != 0) {
+		LOG_ERR("Failed to stop advertising");
+
+		return -EINVAL;
+	}
+
+	atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
+
+	return 0;
+}
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
 static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -526,6 +563,66 @@ static uint8_t set_bondable(const void *cmd, uint16_t cmd_len,
 	rp->current_settings = sys_cpu_to_le32(current_settings);
 	*rsp_len = sizeof(*rp);
 	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_addr_type,
+				   const struct bt_data *ad, size_t ad_len,
+				   const struct bt_data *sd, size_t sd_len,
+				   uint32_t *settings)
+{
+	int err = 0;
+
+	if (settings != NULL) {
+		atomic_set(&current_settings, *settings);
+	}
+
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
+		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
+	}
+
+	switch (own_addr_type) {
+	case BTP_GAP_ADDR_TYPE_IDENTITY:
+		param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
+		break;
+#if defined(CONFIG_BT_PRIVACY)
+	case BTP_GAP_ADDR_TYPE_RESOLVABLE_PRIVATE:
+		/* RPA usage is is controlled via privacy settings */
+		if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY)) {
+			return -EINVAL;
+		}
+		break;
+	case BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE:
+		/* NRPA is used only for non-connectable advertising */
+		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
+			return -EINVAL;
+		}
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && atomic_test_bit(&current_settings,
+	    BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+		param->options |= BT_LE_ADV_OPT_EXT_ADV;
+		if (ext_adv != NULL) {
+			err = bt_le_ext_adv_delete(ext_adv);
+			if (err != 0) {
+				return err;
+			}
+
+			ext_adv = NULL;
+		}
+
+		err = bt_le_ext_adv_create(param, NULL, &ext_adv);
+		if (err != 0) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_le_ext_adv_set_data(ext_adv, ad, ad_len, sd_len ? sd : NULL, sd_len);
+	}
+
+	return err;
 }
 
 static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
@@ -583,57 +680,16 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		i += sd[sd_len].data_len;
 	}
 
-	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-		param.options |= BT_LE_ADV_OPT_CONNECTABLE;
-	}
-
-	switch (own_addr_type) {
-	case 0x00:
-		param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
-		break;
-#if defined(CONFIG_BT_PRIVACY)
-	case 0x01:
-		/* RPA usage is is controlled via privacy settings */
-		if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY)) {
-			return BTP_STATUS_FAILED;
-		}
-		break;
-	case 0x02:
-		/* NRPA is used only for non-connectable advertising */
-		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-			return BTP_STATUS_FAILED;
-		}
-		break;
-#endif
-	default:
+	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd, sd_len, NULL);
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
-	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 #if defined(CONFIG_BT_EXT_ADV)
-		param.options |= BT_LE_ADV_OPT_EXT_ADV;
-		if (ext_adv != NULL) {
-			err = bt_le_ext_adv_delete(ext_adv);
-			if (err) {
-				return BTP_STATUS_FAILED;
-			}
-
-			ext_adv = NULL;
-		}
-
-		err = bt_le_ext_adv_create(&param, NULL, &ext_adv);
-		if (err) {
-			return BTP_STATUS_FAILED;
-		}
-
-		err = bt_le_ext_adv_set_data(ext_adv, ad, adv_len, sd_len ? sd : NULL, sd_len);
-		if (err) {
-			return BTP_STATUS_FAILED;
-		}
-
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 #else
-		return BTP_STATUS_FAILED;
+	if (0) {
 #endif
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
@@ -642,6 +698,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 	/* BTP API don't allow to set empty scan response data. */
 	if (err < 0) {
 		LOG_ERR("Failed to start advertising");
+
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1273,6 +1330,287 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_PER_ADV)
+static struct bt_data padv[10];
+static struct bt_le_per_adv_sync *pa_sync;
+
+struct bt_le_per_adv_sync *tester_gap_padv_get(void)
+{
+	return pa_sync;
+}
+
+static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
+			      struct bt_le_per_adv_sync_synced_info *info)
+{
+	LOG_DBG("");
+}
+
+static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
+				  const struct bt_le_per_adv_sync_term_info *info)
+{
+	LOG_DBG("");
+
+	if (sync == pa_sync) {
+		LOG_DBG("PA sync lost with reason %u", info->reason);
+		pa_sync = NULL;
+	}
+}
+
+static struct bt_le_per_adv_sync_cb pa_sync_cb = {
+	.synced = pa_sync_synced_cb,
+	.term = pa_sync_terminated_cb,
+};
+
+int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
+{
+	int err;
+	struct bt_le_adv_param ext_adv_param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_ONE_TIME,
+								    param->interval_min,
+								    param->interval_max,
+								    NULL);
+
+	if (ext_adv == NULL) {
+		current_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
+				   BIT(BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
+		err = tester_gap_create_adv_instance(&ext_adv_param, BTP_GAP_ADDR_TYPE_IDENTITY, ad,
+						     1, NULL, 0, NULL);
+		if (err != 0) {
+			return -EINVAL;
+		}
+	}
+
+	/* Set periodic advertising parameters and the required
+	 * bit in AD Flags of extended advertising.
+	 */
+	err = bt_le_per_adv_set_param(ext_adv, param);
+	if (err != 0) {
+		LOG_DBG("Failed to set periodic advertising parameters (err %d)\n", err);
+	}
+
+	return err;
+}
+
+static uint8_t padv_configure(const void *cmd, uint16_t cmd_len,
+			      void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	uint32_t options = BT_LE_PER_ADV_OPT_NONE;
+	const struct btp_gap_padv_configure_cmd *cp = cmd;
+	struct btp_gap_padv_configure_rp *rp = rsp;
+
+	if (cp->flags & BTP_GAP_PADV_INCLUDE_TX_POWER) {
+		options |= BT_LE_PER_ADV_OPT_USE_TX_POWER;
+	}
+
+	err = tester_gap_padv_configure(BT_LE_PER_ADV_PARAM(sys_le16_to_cpu(cp->interval_min),
+							    sys_le16_to_cpu(cp->interval_max),
+							    options));
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_padv_start(void)
+{
+	int err;
+
+	if (ext_adv == NULL) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING)) {
+		err = tester_gap_start_ext_adv();
+		if (err != 0) {
+			return -EINVAL;
+		}
+	}
+
+	/* Enable Periodic Advertising */
+	err = bt_le_per_adv_start(ext_adv);
+	if (err != 0) {
+		LOG_DBG("Failed to start periodic advertising data: %d", err);
+	}
+
+	return err;
+}
+
+static uint8_t padv_start(const void *cmd, uint16_t cmd_len,
+			  void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct btp_gap_padv_start_rp *rp = rsp;
+
+	err = tester_gap_padv_start();
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_padv_stop(void)
+{
+	int err;
+
+	if (ext_adv == NULL) {
+		return -EINVAL;
+	}
+
+	/* Enable Periodic Advertising */
+	err = bt_le_per_adv_stop(ext_adv);
+	if (err != 0) {
+		LOG_DBG("Failed to stop periodic advertising data: %d", err);
+	}
+
+	return err;
+}
+
+static uint8_t padv_stop(const void *cmd, uint16_t cmd_len,
+			 void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct btp_gap_padv_stop_rp *rp = rsp;
+
+	err = tester_gap_padv_stop();
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len)
+{
+	int err;
+
+	if (ext_adv == NULL) {
+		return -EINVAL;
+	}
+
+	/* Set Periodic Advertising data */
+	err = bt_le_per_adv_set_data(ext_adv, per_ad, ad_len);
+	if (err != 0) {
+		LOG_DBG("Failed to set periodic advertising data: %d", err);
+	}
+
+	return err;
+}
+
+static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	uint8_t padv_len = 0U;
+	const struct btp_gap_padv_set_data_cmd *cp = cmd;
+
+	for (uint8_t i = 0; i < cp->data_len; padv_len++) {
+		if (padv_len >= ARRAY_SIZE(padv)) {
+			LOG_ERR("padv[] Out of memory");
+			return BTP_STATUS_FAILED;
+		}
+
+		padv[padv_len].data_len = cp->data[i++] - 1;
+		padv[padv_len].type = cp->data[i++];
+		padv[padv_len].data = &cp->data[i];
+		i += padv[padv_len].data_len;
+	}
+
+	err = tester_gap_padv_set_data(padv, padv_len);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
+{
+	int err;
+
+	if (pa_sync != NULL) {
+		return -EBUSY;
+	}
+
+	err = bt_le_per_adv_sync_create(create_params, &pa_sync);
+
+	if (err != 0) {
+		LOG_DBG("Unable to sync to PA: %d", err);
+	}
+
+	return err;
+}
+
+static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const struct btp_gap_padv_create_sync_cmd *cp = cmd;
+	struct bt_le_per_adv_sync_param create_params = {0};
+
+	bt_addr_le_copy(&create_params.addr, &cp->address);
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.sid = cp->advertiser_sid;
+	create_params.skip = cp->skip;
+	create_params.timeout = cp->sync_timeout;
+
+	err = tester_padv_create_sync(&create_params);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t padv_sync_transfer_set_info(const void *cmd, uint16_t cmd_len,
+					   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_padv_sync_transfer_set_info_cmd *cp = cmd;
+	(void)cp;
+
+	/* TODO */
+
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t padv_sync_transfer_start(const void *cmd, uint16_t cmd_len,
+					void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_padv_sync_transfer_start_cmd *cp = cmd;
+	(void)cp;
+
+	/* TODO */
+
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t padv_sync_transfer_recv(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_padv_sync_transfer_recv_cmd *cp = cmd;
+	(void)cp;
+
+	/* TODO */
+
+	return BTP_STATUS_FAILED;
+}
+#endif /* defined(CONFIG_BT_PER_ADV) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -1404,7 +1742,49 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_gap_set_extended_advertising_cmd),
 		.func = set_extended_advertising,
 	},
-#endif
+#if defined(CONFIG_BT_PER_ADV)
+	{
+		.opcode = BTP_GAP_PADV_CONFIGURE,
+		.expect_len = sizeof(struct btp_gap_padv_configure_cmd),
+		.func = padv_configure,
+	},
+	{
+		.opcode = BTP_GAP_PADV_START,
+		.expect_len = sizeof(struct btp_gap_padv_start_cmd),
+		.func = padv_start,
+	},
+	{
+		.opcode = BTP_GAP_PADV_STOP,
+		.expect_len = sizeof(struct btp_gap_padv_stop_cmd),
+		.func = padv_stop,
+	},
+	{
+		.opcode = BTP_GAP_PADV_SET_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = padv_set_data,
+	},
+	{
+		.opcode = BTP_GAP_PADV_CREATE_SYNC,
+		.expect_len = sizeof(struct btp_gap_padv_create_sync_cmd),
+		.func = padv_create_sync,
+	},
+	{
+		.opcode = BTP_GAP_PADV_SYNC_TRANSFER_SET_INFO,
+		.expect_len = sizeof(struct btp_gap_padv_sync_transfer_set_info_cmd),
+		.func = padv_sync_transfer_set_info,
+	},
+	{
+		.opcode = BTP_GAP_PADV_SYNC_TRANSFER_START,
+		.expect_len = sizeof(struct btp_gap_padv_sync_transfer_start_cmd),
+		.func = padv_sync_transfer_start,
+	},
+	{
+		.opcode = BTP_GAP_PADV_SYNC_TRANSFER_RECV,
+		.expect_len = sizeof(struct btp_gap_padv_sync_transfer_recv_cmd),
+		.func = padv_sync_transfer_recv,
+	},
+#endif /* defined(CONFIG_BT_PER_ADV) */
+#endif /* defined(CONFIG_BT_EXT_ADV) */
 };
 
 uint8_t tester_init_gap(void)
@@ -1435,6 +1815,10 @@ uint8_t tester_init_gap(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_info_cb_register(&auth_info_cb);
+
+#if defined(CONFIG_BT_PER_ADV)
+	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+#endif /* defined(CONFIG_BT_PER_ADV) */
 
 	tester_register_command_handlers(BTP_SERVICE_ID_GAP, handlers,
 					 ARRAY_SIZE(handlers));
