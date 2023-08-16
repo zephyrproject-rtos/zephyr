@@ -430,6 +430,22 @@ _xstack_returned_\@:
 	wur.THREADPTR a0
 #endif /* XCHAL_HAVE_THREADPTR && CONFIG_USERSPACE */
 
+#ifdef CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE
+
+	/* Setting the interrupt mask to the max non-debug level
+	 * to prevent lower priority interrupts being preempted by
+	 * high level interrupts until processing of that lower level
+	 * interrupt has completed.
+	 */
+	rsr.ps a0
+	movi a3, ~(PS_INTLEVEL_MASK)
+	and a0, a0, a3
+	movi a3, PS_INTLEVEL(ZSR_RFI_LEVEL)
+	or a0, a0, a3
+	wsr.ps a0
+
+#else
+
 	/* There's a gotcha with level 1 handlers: the INTLEVEL field
 	 * gets left at zero and not set like high priority interrupts
 	 * do.  That works fine for exceptions, but for L1 interrupts,
@@ -450,7 +466,9 @@ _xstack_returned_\@:
 	movi a3, PS_INTLEVEL(1)
 	or a0, a0, a3
 	wsr.ps a0
+
 _not_l1:
+#endif /* CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE */
 
 	/* Setting up the cross stack call below has states where the
 	 * resulting frames are invalid/non-reentrant, so we can't
