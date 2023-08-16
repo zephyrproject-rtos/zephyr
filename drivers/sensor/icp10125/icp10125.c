@@ -178,6 +178,7 @@ static int icp10125_read_otp(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_ICP10125_CHECK_CRC
 static int icp10125_check_crc(const uint8_t *data, const size_t len)
 {
 	/* Details of CRC are described in Chapter 5 Section 8 of the product
@@ -185,6 +186,7 @@ static int icp10125_check_crc(const uint8_t *data, const size_t len)
 	 */
 	return crc8(data, len, CRC_POLY, 0xFF, false);
 }
+#endif
 
 static int icp10125_measure(const struct i2c_dt_spec *i2c, const struct icp10125_cmd *cmds,
 			    const uint8_t mode, struct icp10125_sensor_data *sensor_data,
