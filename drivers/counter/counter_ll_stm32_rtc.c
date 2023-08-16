@@ -192,10 +192,17 @@ static uint32_t rtc_stm32_read(const struct device *dev)
 #endif
 	ARG_UNUSED(dev);
 
-	/* Read time and date registers */
-	rtc_time = LL_RTC_TIME_Get(RTC);
+	/* Read time and date registers. Make sure value of the previous register
+	 * hasn't been changed while reading the next one.
+	 */
 #if !defined(COUNTER_NO_DATE)
-	rtc_date = LL_RTC_DATE_Get(RTC);
+	do {
+		rtc_date = LL_RTC_DATE_Get(RTC);
+		rtc_time = LL_RTC_TIME_Get(RTC);
+
+	} while (rtc_date != LL_RTC_DATE_Get(RTC));
+#else
+	rtc_time = LL_RTC_TIME_Get(RTC);
 #endif
 
 #if !defined(COUNTER_NO_DATE)
