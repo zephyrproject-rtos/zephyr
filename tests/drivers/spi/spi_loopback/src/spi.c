@@ -58,6 +58,7 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define STACK_SIZE 512
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
+#define BUF3_SIZE 8192
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -73,6 +74,21 @@ static __aligned(32) char buffer_rx[BUF_SIZE] __used __NOCACHE;
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __NOCACHE;
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __NOCACHE;
+static const char tx3_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static __aligned(32) char buffer3_tx[BUF3_SIZE] __used __NOCACHE;
+static __aligned(32) char buffer3_rx[BUF3_SIZE] __used __NOCACHE;
+#else
+/* this src memory shall be in RAM to support using as a DMA source pointer.*/
+static uint8_t buffer_tx[] = "0123456789abcdef-\0";
+static uint8_t buffer_rx[BUF_SIZE] = {};
+
+static uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static uint8_t buffer2_rx[BUF2_SIZE] = {};
+
+static char buffer3_tx[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static char buffer3_rx[BUF3_SIZE] = {};
+
+#endif
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -96,11 +112,12 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 /* test transferring different buffers on the same dma channels */
 static int spi_complete_multiple(struct spi_dt_spec *spec)
 {
-	struct spi_buf tx_bufs[2];
+	struct spi_buf tx_bufs[3];
 	const struct spi_buf_set tx = {
 		.buffers = tx_bufs,
 		.count = ARRAY_SIZE(tx_bufs)
 	};
+
 
 	tx_bufs[0].buf = buffer_tx;
 	tx_bufs[0].len = BUF_SIZE;
@@ -108,8 +125,11 @@ static int spi_complete_multiple(struct spi_dt_spec *spec)
 	tx_bufs[1].buf = buffer2_tx;
 	tx_bufs[1].len = BUF2_SIZE;
 
+	tx_bufs[2].buf = buffer3_tx;
+	tx_bufs[2].len = BUF3_SIZE;
 
-	struct spi_buf rx_bufs[2];
+
+	struct spi_buf rx_bufs[3];
 	const struct spi_buf_set rx = {
 		.buffers = rx_bufs,
 		.count = ARRAY_SIZE(rx_bufs)
@@ -120,6 +140,9 @@ static int spi_complete_multiple(struct spi_dt_spec *spec)
 
 	rx_bufs[1].buf = buffer2_rx;
 	rx_bufs[1].len = BUF2_SIZE;
+
+	rx_bufs[2].buf = buffer3_rx;
+	rx_bufs[2].len = BUF3_SIZE;
 
 	int ret;
 
@@ -147,6 +170,11 @@ static int spi_complete_multiple(struct spi_dt_spec *spec)
 		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
 		LOG_ERR("                             vs: %s", buffer_print_rx2);
 		zassert_false(1, "Buffer 2 contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer3_tx, buffer3_tx, BUF3_SIZE)) {
+		zassert_false(1, "Buffer 3 contents are different");
 		return -1;
 	}
 
@@ -695,6 +723,8 @@ static void *spi_loopback_setup(void)
 	memcpy(buffer_tx, tx_data, sizeof(tx_data));
 	memset(buffer2_tx, 0, sizeof(buffer2_tx));
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
+	memset(buffer3_tx, 0, sizeof(buffer3_tx));
+	memcpy(buffer3_tx, tx3_data, sizeof(tx3_data));
 	return NULL;
 }
 
