@@ -245,9 +245,14 @@
 		.r_limit = limit - 1,				      \
 	}
 #else
+
+/* On Cortex-M, we can only set the XN bit when CONFIG_XIP=y. When
+ * CONFIG_XIP=n, the entire image will be linked to SRAM, so we need to keep
+ * the SRAM region XN bit clear or the application code will not be executable.
+ */
 #define REGION_RAM_ATTR(base, size) \
 	{\
-		.rbar = NOT_EXEC | \
+		.rbar = IF_ENABLED(CONFIG_XIP, (NOT_EXEC |)) \
 			P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
 		/* Cache-ability */ \
 		.mair_idx = MPU_MAIR_INDEX_SRAM, \
