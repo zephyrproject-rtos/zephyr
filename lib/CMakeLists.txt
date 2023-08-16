@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory(crc)
 if(NOT CONFIG_EXTERNAL_LIBC)
 add_subdirectory(libc)
 add_subdirectory(posix)
