@@ -1,0 +1,8 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_U8G2_MODULE
+	bool
+
+config U8G2
+	bool "U8G2 library support"
