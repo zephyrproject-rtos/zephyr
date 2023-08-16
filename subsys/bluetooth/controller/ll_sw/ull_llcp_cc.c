@@ -921,14 +921,14 @@ static void lp_cc_st_wait_rx_cis_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		break;
 	case LP_CC_EVT_UNKNOWN:
 		/* Unsupported in peer, so disable locally for this connection */
-		feature_unmask_features(conn, LL_FEAT_BIT_CIS_PERIPHERAL);
+		feature_unmask_peer_features(conn, LL_FEAT_BIT_CIS_PERIPHERAL);
 		ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		lp_cc_complete(conn, ctx, evt, param);
 		break;
 	case LP_CC_EVT_REJECT:
 		if (pdu->llctrl.reject_ext_ind.error_code == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) {
 			/* Unsupported in peer, so disable locally for this connection */
-			feature_unmask_features(conn, LL_FEAT_BIT_CIS_PERIPHERAL);
+			feature_unmask_peer_features(conn, LL_FEAT_BIT_CIS_PERIPHERAL);
 		}
 		ctx->data.cis_create.error = pdu->llctrl.reject_ext_ind.error_code;
 		lp_cc_complete(conn, ctx, evt, param);
