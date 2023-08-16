@@ -34,6 +34,7 @@ extern "C" {
  */
 __subsystem struct fuel_gauge_emul_driver_api {
 	int (*set_battery_charging)(const struct emul *emul, uint32_t uV, int uA);
+	int (*is_battery_cutoff)(const struct emul *emul, bool *cutoff);
 };
 /**
  * @endcond
@@ -64,6 +65,26 @@ static inline int emul_fuel_gauge_set_battery_charging(const struct emul *target
 	}
 
 	return backend_api->set_battery_charging(target, uV, uA);
+}
+
+/**
+ * @brief Check if the battery has been cut off.
+ *
+ * @param target Pointer to the emulator structure for the fuel gauge emulator instance.
+ * @param cutoff Pointer to bool storing variable.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP if not supported by emulator.
+ */
+static inline int emul_fuel_gauge_is_battery_cutoff(const struct emul *target, bool *cutoff)
+{
+	const struct fuel_gauge_emul_driver_api *backend_api =
+		(const struct fuel_gauge_emul_driver_api *)target->backend_api;
+
+	if (backend_api->is_battery_cutoff == 0) {
+		return -ENOTSUP;
+	}
+	return backend_api->is_battery_cutoff(target, cutoff);
 }
 
 #ifdef __cplusplus

@@ -38,6 +38,8 @@ enum fuel_gauge_property {
 	 */
 	FUEL_GAUGE_AVG_CURRENT = 0,
 
+	/** Used to cutoff the battery from the system - useful for storage/shipping of devices */
+	FUEL_GAUGE_BATTERY_CUTOFF,
 	/** Battery current (uA); negative=discharging */
 	FUEL_GAUGE_CURRENT,
 	/** Whether the battery underlying the fuel-gauge is cut off from charge */
@@ -268,6 +270,13 @@ typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
 					       struct fuel_gauge_get_buffer_property *prop,
 					       void *dst, size_t dst_len);
 
+/**
+ * @typedef fuel_gauge_battery_cutoff_t
+ * @brief Callback API for doing a battery cutoff.
+ *
+ * See fuel_gauge_battery_cutoff() for argument description
+ */
+typedef int (*fuel_gauge_battery_cutoff_t)(const struct device *dev);
 
 /* Caching is entirely on the onus of the client */
 
@@ -275,6 +284,7 @@ __subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_get_property_t get_property;
 	fuel_gauge_set_property_t set_property;
 	fuel_gauge_get_buffer_property_t get_buffer_property;
+	fuel_gauge_battery_cutoff_t battery_cutoff;
 };
 
 /**
@@ -361,6 +371,27 @@ static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
 	}
 
 	return api->get_buffer_property(dev, prop, dst, dst_len);
+}
+
+/**
+ * @brief Have fuel gauge cutoff its associated battery.
+ *
+ * @param dev Pointer to the battery fuel-gauge device
+ *
+ * @return return=0 if successful and battery cutoff is now in process, return < 0 if failed to do
+ * battery cutoff.
+ */
+__syscall int fuel_gauge_battery_cutoff(const struct device *dev);
+
+static inline int z_impl_fuel_gauge_battery_cutoff(const struct device *dev)
+{
+	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
+
+	if (api->battery_cutoff == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->battery_cutoff(dev);
 }
 
 /**

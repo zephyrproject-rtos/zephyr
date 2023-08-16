@@ -11,10 +11,14 @@
 
 #include "sbs_gauge.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/fuel_gauge.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(sbs_gauge);
 
@@ -173,6 +177,25 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 	return rc;
 }
 
+static int sbs_gauge_do_battery_cutoff(const struct device *dev)
+{
+	int rc;
+	const struct sbs_gauge_config *cfg = dev->config;
+
+	if (cfg->cutoff_cfg == NULL) {
+		return -ENOTSUP;
+	}
+
+	for (int i = 0; i < cfg->cutoff_cfg->payload_size; i++) {
+		rc = sbs_cmd_reg_write(dev, cfg->cutoff_cfg->reg, cfg->cutoff_cfg->payload[i]);
+		if (rc != 0) {
+			return rc;
+		}
+	}
+
+	return rc;
+}
+
 static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *prop)
 {
 	int rc = 0;
@@ -203,7 +226,6 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, prop->value.sbs_at_rate);
 		prop->value.sbs_at_rate = val;
 		break;
-
 	default:
 		rc = -ENOTSUP;
 	}
@@ -307,17 +329,44 @@ static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_props,
 	.set_property = &sbs_gauge_set_props,
 	.get_buffer_property = &sbs_gauge_get_buffer_prop,
+	.battery_cutoff = &sbs_gauge_do_battery_cutoff,
 };
 
-/* FIXME: fix init priority */
+/* Concatenates index to battery config to create unique cfg variable name per instance. */
+#define _SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(index) sbs_gauge_batt_cutoff_cfg_##index
+
+/* Declare and define the battery config struct */
+#define _SBS_GAUGE_CONFIG_DEFINE(index)                                                            \
+	static const struct sbs_gauge_battery_cutoff_config _SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(   \
+		index) = {                                                                         \
+		.reg = DT_INST_PROP(index, battery_cutoff_reg_addr),                               \
+		.payload = DT_INST_PROP(index, battery_cutoff_payload),                            \
+		.payload_size = DT_INST_PROP_LEN(index, battery_cutoff_payload),                   \
+	};
+
+/* Conditionally defined battery config based on battery cutoff support */
+#define SBS_GAUGE_CONFIG_DEFINE(index)                                                             \
+	COND_CODE_1(DT_INST_PROP_OR(index, battery_cutoff_support, false),                         \
+		    (_SBS_GAUGE_CONFIG_DEFINE(index)), (;))
+
+/* Conditionally get the battery config variable name or NULL based on battery cutoff support */
+#define SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)                                                   \
+	COND_CODE_1(DT_INST_PROP_OR(index, battery_cutoff_support, false),                         \
+		    (&_SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(index)), (NULL))
+
 #define SBS_GAUGE_INIT(index)                                                                      \
-                                                                                                   \
+	SBS_GAUGE_CONFIG_DEFINE(index);                                                            \
 	static const struct sbs_gauge_config sbs_gauge_config_##index = {                          \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-	};                                                                                         \
+		.cutoff_cfg = SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)};                           \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index,       \
 			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY,                        \
 			      &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)
+
+#define CUTOFF_PAYLOAD_SIZE_ASSERT(inst)                                                           \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, battery_cutoff_payload, 0) <=                       \
+		     SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE);
+DT_INST_FOREACH_STATUS_OKAY(CUTOFF_PAYLOAD_SIZE_ASSERT)

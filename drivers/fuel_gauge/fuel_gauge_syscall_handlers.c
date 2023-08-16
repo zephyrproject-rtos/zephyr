@@ -70,3 +70,12 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 }
 
 #include <syscalls/fuel_gauge_get_buffer_prop_mrsh.c>
+
+static inline int z_vrfy_fuel_gauge_battery_cutoff(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, battery_cutoff));
+
+	return z_impl_fuel_gauge_battery_cutoff(dev);
+}
+
+#include <syscalls/fuel_gauge_battery_cutoff_mrsh.c>
