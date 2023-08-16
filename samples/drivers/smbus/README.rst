@@ -12,7 +12,9 @@ driver supported exploring the SMBus communication with peripheral devices.
 Building and Running
 ********************
 
-This project can be built and executed on as follows:
+This sample can be found under :zephyr_file:`samples/drivers/smbus` in the
+Zephyr tree.
+The sample can be built and run as follows for the ``qemu_x86_64`` board:
 
 .. zephyr-app-commands::
    :zephyr-app: zephyr/samples/drivers/smbus
@@ -22,7 +24,7 @@ This project can be built and executed on as follows:
    :compact:
 
 Sample Output
-=============
+*************
 
 Output from console when application started::
 
