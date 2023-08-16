@@ -643,6 +643,7 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 /* LLCP Local Procedure FSM states */
 enum {
 	LP_CC_STATE_IDLE,
+	LP_CC_STATE_WAIT_NTF_AVAIL,
 	LP_CC_STATE_WAIT_OFFSET_CALC,
 	LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ,
 	LP_CC_STATE_WAIT_TX_CIS_REQ,
@@ -839,13 +840,33 @@ static void lp_cc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 			} else {
 				/* Peer doesn't support CIS Peripheral so report unsupported */
 				ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-				lp_cc_complete(conn, ctx, evt, param);
+				ctx->state = LP_CC_STATE_WAIT_NTF_AVAIL;
 			}
 			break;
 		default:
 			/* Unknown procedure */
 			LL_ASSERT(0);
 			break;
+		}
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_cc_state_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				 void *param)
+{
+	switch (evt) {
+	case LP_CC_EVT_RUN:
+		if (llcp_ntf_alloc_is_available()) {
+			ctx->node_ref.rx = llcp_ntf_alloc();
+			/* Mark node as RETAIN to trigger put/sched */
+			ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+
+			/* Now we're good to complete procedure*/
+			lp_cc_complete(conn, ctx, evt, param);
 		}
 		break;
 	default:
@@ -1039,6 +1060,9 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	switch (ctx->state) {
 	case LP_CC_STATE_IDLE:
 		lp_cc_st_idle(conn, ctx, evt, param);
+		break;
+	case LP_CC_STATE_WAIT_NTF_AVAIL:
+		lp_cc_state_wait_ntf_avail(conn, ctx, evt, param);
 		break;
 	case LP_CC_STATE_WAIT_OFFSET_CALC_TX_REQ:
 		lp_cc_st_wait_offset_calc_tx_req(conn, ctx, evt, param);
