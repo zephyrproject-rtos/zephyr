@@ -10,6 +10,7 @@ toolchain:
   - xtools
 supported:
   - adc
+  - flash
   - gpio
   - i2c
   - spi
