@@ -272,13 +272,10 @@ static void xtensa_mmu_init(bool is_core0)
 			:: "a"(Z_XTENSA_PTEVADDR + MB(4)));
 
 
-	/* Finally, lets invalidate entries in the way 6 that are no longer
-	 * needed. We keep 0x00000000 to 0x200000000 since
-	 * this region is directly accessed elsewhere
-	 * and remove them now is not gonna work. TODO: Map whathever is necessary
-	 * into the kernel virtual space and unmap these regions.
+	/* Finally, lets invalidate all entries in way 6 as the page tables
+	 * should have already mapped the regions we care about for boot.
 	 */
-	for (entry = 1; entry < 8; entry++) {
+	for (entry = 0; entry < 8; entry++) {
 		__asm__ volatile("idtlb %[idx]\n\t"
 				"iitlb %[idx]\n\t"
 				"dsync\n\t"
