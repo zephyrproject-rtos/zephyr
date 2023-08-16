@@ -892,12 +892,6 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
 
-	if (ep->status.state == BT_BAP_EP_STATE_ENABLING &&
-	    reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB) {
-		LOG_DBG("Waiting for retry");
-		return;
-	}
-
 	/* Cancel ASE disconnect work if pending */
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	ep->reason = reason;
