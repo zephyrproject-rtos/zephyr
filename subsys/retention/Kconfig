@@ -3,7 +3,7 @@
 
 menuconfig RETENTION
 	bool "Retention support"
-	depends on CRC
+	imply CRC
 	depends on RETAINED_MEM
 	depends on DT_HAS_ZEPHYR_RETENTION_ENABLED
 	help
