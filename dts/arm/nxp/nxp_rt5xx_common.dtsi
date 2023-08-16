@@ -70,6 +70,20 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/* RT5XX SRAM partitions are shared
+	 * between code and data. Boards can
+	 * override the reg properties of either sram0 or sram_code nodes to
+	 * change the balance of SRAM allocation.
+	 *
+	 * Note that the sram code region starts at an offset of 0x1B000,
+	 * as the boot ROM will not load code before 0x1C000. The first
+	 * 0x1000 of the image will contain the boot header.
+	 */
+	sram_code: memory@1b000 {
+		compatible = "mmio-sram";
+		reg = <0x1b000 DT_SIZE_K(1428)>;
+	};
+
 	sram0: memory@20180000 {
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
