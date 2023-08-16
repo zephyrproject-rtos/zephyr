@@ -35,9 +35,6 @@ static struct arm_mpu_region mpu_regions[] = {
 		.attr = {(uint32_t)_rom_attr},
 	},
 #endif
-
-	/* DT-defined regions */
-	DT_MEMORY_ATTR_APPLY(ARM_MPU_REGION_INIT)
 };
 
 const struct arm_mpu_config mpu_config = {

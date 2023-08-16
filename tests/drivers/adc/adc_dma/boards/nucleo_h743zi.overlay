@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
 &adc1 {
 	dmas = < &dmamux1 0 9 (STM32_DMA_PERIPH_TO_MEMORY |
 		STM32_DMA_MEM_INC |  STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS) >;
@@ -22,7 +25,7 @@
 
 /* ADC driver expects a buffer in a non-cachable memory region */
 &sram4 {
-	zephyr,memory-attr = "RAM_NOCACHE";
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 };
 
 &dma1 {
