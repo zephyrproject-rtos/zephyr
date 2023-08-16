@@ -76,6 +76,10 @@ kernel:
     - kernel/
     - arch/
 
+mcuboot:
+  files:
+    - cmake/mcuboot.cmake
+
 posix:
   files:
     - lib/posix/

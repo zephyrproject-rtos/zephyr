@@ -25,6 +25,7 @@ tests:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200
+    tags: mcuboot
 
   sample.tfm.regression_ipc_lvl2:
     timeout: 200
@@ -34,3 +35,4 @@ tests:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200
+    tags: mcuboot
