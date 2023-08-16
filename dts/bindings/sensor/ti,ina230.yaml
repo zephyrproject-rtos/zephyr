@@ -24,6 +24,7 @@ properties:
       Value of the configuration register
       e.g shunt voltage and bus voltage ADC conversion
       times, ADC and averaging, and ADC operating mode.
+
   alert-config:
     type: int
     description: Diag alert register, default matches the power-on reset value
