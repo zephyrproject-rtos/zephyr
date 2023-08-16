@@ -13,13 +13,18 @@
 #include <soc/soc_memory_layout.h>
 
 /* definitions used in Flash & RAM operations */
-#define SPIRAM_ALLOC_SIZE               (24 * 1024)
 #define FLASH_PAGE_TESTED               (1023)
 #define FLASH_PAGE_OFFSET               (0)
 #define FLASH_BYTE_PATTERN              (0x38)
 #define FLASH_READBACK_LEN              (1024)
 #define FLASH_ITERATIONS                (10)
+#if defined(CONFIG_SOC_SERIES_ESP32)
+#define PSRAM_ITERATIONS                (1)
+#define SPIRAM_ALLOC_SIZE               (2 * CONFIG_ESP_HEAP_MIN_EXTRAM_THRESHOLD)
+#else
+#define SPIRAM_ALLOC_SIZE               (10 * CONFIG_ESP_HEAP_MIN_EXTRAM_THRESHOLD)
 #define PSRAM_ITERATIONS                (10)
+#endif
 
 /* common thread definitions */
 #define STACKSIZE 1024
@@ -188,11 +193,12 @@ static void psram_test(void)
 		rand_val = (int)sys_rand32_get();
 		fill_value(rand_val);
 		k_msleep(sleep_ms);
-	}
-	if (check_psram(rand_val)) {
-		coex_result.psram_ok = true;
-	} else {
-		coex_result.psram_ok = false;
+		if (check_psram(rand_val)) {
+			coex_result.psram_ok = true;
+		} else {
+			coex_result.psram_ok = false;
+			break;
+		}
 	}
 	while (true) {
 		k_usleep(1);
