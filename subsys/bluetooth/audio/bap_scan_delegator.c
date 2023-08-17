@@ -867,9 +867,12 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		internal_state->index, src_id);
 
 	internal_state->active = false;
+	internal_state->pa_sync = NULL;
 	(void)memset(&internal_state->state, 0, sizeof(internal_state->state));
 	(void)memset(internal_state->broadcast_code, 0,
 		     sizeof(internal_state->broadcast_code));
+	(void)memset(internal_state->requested_bis_sync, 0,
+		     sizeof(internal_state->requested_bis_sync));
 
 	receive_state_updated(conn, internal_state);
 
