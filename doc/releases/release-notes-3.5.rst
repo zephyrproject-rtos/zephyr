@@ -61,32 +61,9 @@ Kernel
 Architectures
 *************
 
-* ARC
-
 * ARM
 
-  * Fixed the Cortex-A/-R linker command file:
-
-    * The sections for zero-initialized (.bss) and uninitialized (.noinit) data
-      are now the last sections within the binary. This allows the linker to just
-      account for the required memory, but not having to actually include large
-      empty spaces within the binary. With the .bss and .noinit sections placed
-      somewhere in the middle of the resulting binary, as was the case with
-      previous releases, the linker had to pad the space for zero-/uninitialized
-      data due to subsequent sections containing initialized data. The inclusion
-      of large zero-initialized arrays or statically defined heaps reflected
-      directly in the size of the resulting binary, resulting in unnecessarily
-      large binaries, even when stripped.
-    * Fixed the location of the z_mapped_start address marker to point to the
-      base of RAM instead of to the start of the .text section. Therefore, the
-      single 4k page .vectors section, which is located right at the base of RAM
-      before the .text section and which was previously not included in the
-      mapped memory range, is now considered mapped and unavailable for dynamic
-      memory mapping via the MMU at run-time. This prevents the 4k page containing
-      the exception vectors data being mapped as regular memory at run-time, with
-      any subsequently mapped pages being located beyond the permanently mapped
-      memory regions (beyond z_mapped_end), resulting in non-contiguous memory
-      allocation for any first memory request greater than 4k.
+* ARM
 
 * ARM64
 
