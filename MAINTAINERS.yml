@@ -206,14 +206,11 @@ Bluetooth:
     - sjanc
   files:
     - doc/connectivity/bluetooth/
-    - drivers/bluetooth/
     - include/zephyr/bluetooth/
     - include/zephyr/drivers/bluetooth/
     - samples/bluetooth/
     - subsys/bluetooth/
     - subsys/bluetooth/common/
-    - subsys/bluetooth/services/
-    - subsys/bluetooth/shell/
     - tests/bluetooth/
     - tests/bsim/bluetooth/
   files-exclude:
@@ -271,7 +268,10 @@ Bluetooth Host:
     - theob-pro
     - kruithofa
   files:
+    - drivers/bluetooth/
     - subsys/bluetooth/host/
+    - subsys/bluetooth/services/
+    - subsys/bluetooth/shell/
     - tests/bluetooth/host*/
     - tests/bsim/bluetooth/host/
   labels:
