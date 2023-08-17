@@ -932,6 +932,8 @@ class ProjectBuilder(FilterBuilder):
                 if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
+                    if instance.dut:
+                        more_info += f": {instance.dut},"
                     if htime:
                         more_info += " {:.3f}s".format(htime)
                 else:
