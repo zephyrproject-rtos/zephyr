@@ -171,7 +171,7 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 	  1 authentication only with a 4 bytes length tag
 	  2 authentication only with a 8 bytes length tag
 	  3 authentication only with a 16 bytes length tag
-	  4 encryption only
+	  4 deprecated since IEEE 802.15.4-2015
 	  5 encryption/authentication with a 4 bytes length tag
 	  6 encryption/authentication with a 8 bytes length tag
 	  7 encryption/authentication with a 16 bytes length tag
