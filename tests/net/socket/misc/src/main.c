@@ -408,6 +408,8 @@ void test_getpeername(int family)
 	zassert_equal(ret, 0, "close failed, %d", errno);
 	ret = close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 
@@ -421,12 +423,164 @@ void test_ipv6_getpeername(void)
 	test_getpeername(AF_INET6);
 }
 
+void test_getsockname_tcp(int family)
+{
+	int ret;
+	int sock_c;
+	int sock_s;
+	struct sockaddr local_addr = { 0 };
+	socklen_t local_addr_len = ADDR_SIZE(family);
+	struct sockaddr srv_addr = { 0 };
+
+	srv_addr.sa_family = family;
+	if (family == AF_INET) {
+		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
+		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+				&net_sin(&srv_addr)->sin_addr);
+	} else {
+		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
+		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+				&net_sin6(&srv_addr)->sin6_addr);
+	}
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	sock_c = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_c >= 0, "socket open failed");
+	sock_s = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s >= 0, "socket open failed");
+
+	/* Verify that unbound/unconnected socket has no local address set */
+	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	zassert_equal(ret, -1, "getsockname shouldn've failed");
+	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
+	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	zassert_equal(ret, -1, "getsockname shouldn've failed");
+	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
+
+	/* Verify that getsockname() can read local address of a bound socket */
+	ret = bind(sock_s, &srv_addr, ADDR_SIZE(family));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr_len = ADDR_SIZE(family);
+	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	zassert_equal(ret, 0, "getsockname failed");
+	zassert_mem_equal(&local_addr, &srv_addr, ADDR_SIZE(family),
+			 "obtained wrong address");
+
+	ret = listen(sock_s, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+
+	/* Verify that getsockname() can read local address of a connected socket */
+	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	zassert_equal(ret, 0, "connect failed");
+
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr_len = ADDR_SIZE(family);
+	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	zassert_equal(ret, 0, "getsockname failed");
+	zassert_equal(local_addr.sa_family, family, "wrong family");
+	/* Can't verify address/port of client socket here reliably as they're
+	 * chosen by net stack
+	 */
+
+	ret = close(sock_c);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = close(sock_s);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+void test_getsockname_udp(int family)
+{
+	int ret;
+	int sock_c;
+	int sock_s;
+	struct sockaddr local_addr = { 0 };
+	socklen_t local_addr_len = ADDR_SIZE(family);
+	struct sockaddr srv_addr = { 0 };
+
+	srv_addr.sa_family = family;
+	if (family == AF_INET) {
+		net_sin(&srv_addr)->sin_port = htons(DST_PORT);
+		ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+				&net_sin(&srv_addr)->sin_addr);
+	} else {
+		net_sin6(&srv_addr)->sin6_port = htons(DST_PORT);
+		ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+				&net_sin6(&srv_addr)->sin6_addr);
+	}
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	sock_c = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock_c >= 0, "socket open failed");
+	sock_s = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock_s >= 0, "socket open failed");
+
+	/* Verify that unbound/unconnected socket has no local address set */
+	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	zassert_equal(ret, -1, "getsockname shouldn've failed");
+	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
+	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	zassert_equal(ret, -1, "getsockname shouldn've failed");
+	zassert_equal(errno, EINVAL, "getsockname returned invalid error");
+
+	/* Verify that getsockname() can read local address of a bound socket */
+	ret = bind(sock_s, &srv_addr, ADDR_SIZE(family));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr_len = ADDR_SIZE(family);
+	ret = getsockname(sock_s, &local_addr, &local_addr_len);
+	zassert_equal(ret, 0, "getsockname failed");
+	zassert_mem_equal(&local_addr, &srv_addr, ADDR_SIZE(family),
+			 "obtained wrong address");
+
+	/* Verify that getsockname() can read local address of a connected socket */
+	ret = connect(sock_c, &srv_addr, ADDR_SIZE(family));
+	zassert_equal(ret, 0, "connect failed");
+
+	memset(&local_addr, 0, sizeof(local_addr));
+	local_addr_len = ADDR_SIZE(family);
+	ret = getsockname(sock_c, &local_addr, &local_addr_len);
+	zassert_equal(ret, 0, "getsockname failed");
+	zassert_equal(local_addr.sa_family, family, "wrong family");
+	/* Can't verify address/port of client socket here reliably as they're
+	 * chosen by net stack
+	 */
+
+	ret = close(sock_c);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = close(sock_s);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv4_getsockname_tcp)
+{
+	test_getsockname_tcp(AF_INET);
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv4_getsockname_udp)
+{
+	test_getsockname_udp(AF_INET);
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv6_getsockname_tcp)
+{
+	test_getsockname_tcp(AF_INET6);
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv6_getsockname_udp)
+{
+	test_getsockname_udp(AF_INET6);
+}
+
 static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 	return NULL;
 }
-
 
 ZTEST_USER(socket_misc_test_suite, test_ipv4)
 {
