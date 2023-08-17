@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,17 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_EXT_H_
 
 /* FSR Register Definitions */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+#define FSR_FS_TRANSLATION_FAULT			(4)
+#define FSR_FS_PERMISSION_FAULT				(12)
+#define FSR_FS_SYNC_EXTERNAL_ABORT			(16)
+#define FSR_FS_ASYNC_EXTERNAL_ABORT			(17)
+#define FSR_FS_SYNC_PARITY_ERROR			(24)
+#define FSR_FS_ASYNC_PARITY_ERROR			(25)
+#define FSR_FS_ALIGNMENT_FAULT				(33)
+#define FSR_FS_DEBUG_EVENT				(34)
+#define FSR_FS_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT	(53)
+#else
 #define FSR_FS_BACKGROUND_FAULT		(0)
 #define FSR_FS_ALIGNMENT_FAULT		(1)
 #define FSR_FS_DEBUG_EVENT		(2)
@@ -26,6 +38,7 @@
 #define FSR_FS_ASYNC_EXTERNAL_ABORT	(22)
 #define FSR_FS_ASYNC_PARITY_ERROR	(24)
 #define FSR_FS_SYNC_PARITY_ERROR	(25)
+#endif
 
 /* DBGDSCR Register Definitions */
 #define DBGDSCR_MOE_Pos			(2U)
