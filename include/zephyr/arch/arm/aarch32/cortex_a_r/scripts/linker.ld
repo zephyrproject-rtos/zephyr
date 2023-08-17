@@ -133,6 +133,9 @@ SECTIONS
     {
         . = ALIGN(_region_min_align);
         __text_region_start = .;
+#ifndef CONFIG_XIP
+        z_mapped_start = .;
+#endif
 
 #include <zephyr/linker/kobject-text.ld>
 
@@ -244,7 +247,9 @@ SECTIONS
      */
     . = ALIGN(_region_min_align);
     _image_ram_start = .;
+#ifdef CONFIG_XIP
     z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
