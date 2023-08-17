@@ -38,7 +38,7 @@ BUILD_ASSERT(sizeof(bt_mesh_prov_link.conf_inputs) == 145,
 int bt_mesh_prov_reset_state(void)
 {
 	int err;
-	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
+	const size_t offset = offsetof(struct bt_mesh_prov_link, addr);
 
 	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
