@@ -107,10 +107,14 @@ struct dai_intel_alh_pdata {
 
 struct dai_intel_alh {
 	uint32_t index;		/**< index */
-	struct k_spinlock lock;	/**< locking mechanism */
-	int sref;		/**< simple ref counter, guarded by lock */
 	struct dai_intel_alh_plat_data plat_data;
 	struct dai_intel_alh_pdata priv_data;
+};
+
+/* Common data for all ALH DAI instances */
+struct dai_alh_global_shared {
+	struct k_spinlock lock;	/**< locking mechanism */
+	int sref;		/**< simple ref counter, guarded by lock */
 };
 
 #endif
