@@ -2490,13 +2490,12 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 {
 	socklen_t newlen = 0;
 
-	/* If we don't have a connection handler, the socket is not bound */
-	if (!ctx->conn_handler) {
-		SET_ERRNO(-EINVAL);
-	}
-
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
 		struct sockaddr_in addr4 = { 0 };
+
+		if (net_sin_ptr(&ctx->local)->sin_addr == NULL) {
+			SET_ERRNO(-EINVAL);
+		}
 
 		addr4.sin_family = AF_INET;
 		addr4.sin_port = net_sin_ptr(&ctx->local)->sin_port;
@@ -2508,6 +2507,10 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   ctx->local.family == AF_INET6) {
 		struct sockaddr_in6 addr6 = { 0 };
+
+		if (net_sin6_ptr(&ctx->local)->sin6_addr == NULL) {
+			SET_ERRNO(-EINVAL);
+		}
 
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
