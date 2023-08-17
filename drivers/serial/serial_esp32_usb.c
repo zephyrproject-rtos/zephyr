@@ -68,10 +68,14 @@ static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 	ARG_UNUSED(dev);
 
 	/* Wait for space in FIFO */
+	const int64_t timeout =
+	k_uptime_ticks() +
+	(int64_t)k_us_to_ticks_ceil64(USBSERIAL_TIMEOUT_MAX_US);
 	while (!usb_serial_jtag_ll_txfifo_writable() &&
-		s_usbserial_timeout < (USBSERIAL_TIMEOUT_MAX_US / 100)) {
-		k_usleep(100);
-		s_usbserial_timeout++;
+		k_uptime_ticks() < timeout) {
+		if (!k_is_in_isr()) {
+			k_usleep(100);
+		}
 	}
 
 	if (usb_serial_jtag_ll_txfifo_writable()) {
