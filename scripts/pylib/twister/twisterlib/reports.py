@@ -273,6 +273,8 @@ class Reporting:
 
             suite['retries'] = instance.retries
 
+            if instance.dut:
+                suite["dut"] = instance.dut
             if available_ram:
                 suite["available_ram"] = available_ram
             if available_rom:
