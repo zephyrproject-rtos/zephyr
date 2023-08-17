@@ -1,10 +1,11 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_INTEL_RPL_S_CRB
+if BOARD_INTEL_RPL_S_CRB || BOARD_INTEL_RPL_P_CRB
 
 config BOARD
-	default "intel_rpl_s_crb"
+	default "intel_rpl_p_crb" if BOARD_INTEL_RPL_P_CRB
+	default "intel_rpl_s_crb" if BOARD_INTEL_RPL_S_CRB
 
 config BUILD_OUTPUT_STRIPPED
 	default y
@@ -54,6 +55,11 @@ config DMA_DW_CHANNEL_COUNT
 endif
 
 config UART_NS16550_INTEL_LPSS_DMA
-	default y
+	default y if BOARD_INTEL_RPL_S_CRB
 
-endif # BOARD_INTEL_RPL_S_CRB
+if SHELL
+config SHELL_STACK_SIZE
+	default 320000
+endif
+
+endif # BOARD_INTEL_RPL_S_CRB || BOARD_INTEL_RPL_P_CRB
