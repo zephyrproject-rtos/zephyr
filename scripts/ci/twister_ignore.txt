@@ -17,25 +17,6 @@ CODEOWNERS
 MAINTAINERS.yml
 LICENSE
 Makefile
-tests/*
-samples/*
-boards/*/*/*
-arch/xtensa/*
-arch/x86/*
-arch/posix/*
-arch/arc/*
-arch/sparc/*
-arch/arm/*
-arch/nios2/*
-arch/riscv/*
-include/arch/xtensa/*
-include/arch/x86/*
-include/arch/posix/*
-include/arch/arc/*
-include/arch/sparc/*
-include/arch/arm/*
-include/arch/nios2/*
-include/arch/riscv/*
 doc/*
 # GH action have no impact on code
 .github/*

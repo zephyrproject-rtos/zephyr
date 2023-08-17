@@ -88,6 +88,7 @@ class Tag:
 class Filters:
     def __init__(self, modified_files, pull_request=False, platforms=[], no_path_name = False, ignore_path=None, alt_tags=None, testsuite_root=None):
         self.modified_files = modified_files
+        self.resolved_files = []
         self.testsuite_root = testsuite_root
         self.twister_options = []
         self.full_twister = False
@@ -95,7 +96,6 @@ class Filters:
         self.tag_options = []
         self.pull_request = pull_request
         self.platforms = platforms
-        self.default_run = False
         self.no_path_name = no_path_name
         self.tag_cfg_file = os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml')
         if alt_tags:
@@ -111,11 +111,7 @@ class Filters:
         if not self.platforms:
             self.find_archs()
             self.find_boards()
-
-        if self.default_run:
-            self.find_excludes(skip=["tests/*", "boards/*/*/*"])
-        else:
-            self.find_excludes()
+        self.find_excludes()
 
     def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
@@ -192,6 +188,8 @@ class Filters:
                         archs.add('riscv64')
                     else:
                         archs.add(p.group(1))
+                    # Modified file is treated as resolved, since a matching scope was found
+                    self.resolved_files.append(f)
 
         _options = []
         for arch in archs:
@@ -210,6 +208,7 @@ class Filters:
     def find_boards(self):
         boards = set()
         all_boards = set()
+        resolved = []
 
         for f in self.modified_files:
             if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
@@ -217,6 +216,7 @@ class Filters:
             p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
             if p and p.groups():
                 boards.add(p.group(1))
+                resolved.append(f)
 
         roots = [zephyr_base]
         if repository_path != zephyr_base:
@@ -231,10 +231,16 @@ class Filters:
                 if name_re.search(kb.name):
                     all_boards.add(kb.name)
 
+        # If modified file is catched by "find_boards" workflow (change in "boards" dir AND board recognized)
+        # it means a proper testing scope for this file was found and this file can be removed
+        # from further consideration
+        for board in all_boards:
+            self.resolved_files.extend(list(filter(lambda f: board in f, resolved)))
+
         _options = []
         if len(all_boards) > 20:
             logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
-            self.default_run = True
+            self.full_twister = True
             return
 
         for board in all_boards:
@@ -254,6 +260,8 @@ class Filters:
                 if os.path.exists(os.path.join(d, "testcase.yaml")) or \
                     os.path.exists(os.path.join(d, "sample.yaml")):
                     tests.add(d)
+                    # Modified file is treated as resolved, since a matching scope was found
+                    self.resolved_files.append(f)
                     break
                 else:
                     d = os.path.dirname(d)
@@ -264,7 +272,7 @@ class Filters:
 
         if len(tests) > 20:
             logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
-            self.default_run = True
+            self.full_twister = True
             return
 
         if _options:
@@ -320,21 +328,22 @@ class Filters:
             ignores = filter(lambda x: not x.startswith("#"), ignores)
 
         found = set()
-        files = list(filter(lambda x: x, self.modified_files))
+        files_not_resolved = list(filter(lambda x: x not in self.resolved_files, self.modified_files))
 
         for pattern in ignores:
-            if pattern in skip:
-                continue
             if pattern:
-                found.update(fnmatch.filter(files, pattern))
+                found.update(fnmatch.filter(files_not_resolved, pattern))
 
         logging.debug(found)
-        logging.debug(files)
+        logging.debug(files_not_resolved)
 
-        if sorted(files) != sorted(found):
+        # Full twister run can be ordered by detecting great number of tests/boards changed
+        # or if not all modified files were resolved (corresponding scope found)
+        self.full_twister = self.full_twister or sorted(files_not_resolved) != sorted(found)
+
+        if self.full_twister:
             _options = []
             logging.info(f'Need to run full or partial twister...')
-            self.full_twister = True
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
