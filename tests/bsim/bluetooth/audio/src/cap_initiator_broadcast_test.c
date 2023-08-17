@@ -157,7 +157,7 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, broadcast_id);
 	ext_ad.type = BT_DATA_SVC_DATA16;
-	ext_ad.data_len = ad_buf.len + sizeof(ext_ad.type);
+	ext_ad.data_len = ad_buf.len;
 	ext_ad.data = ad_buf.data;
 	err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
 	if (err != 0) {
