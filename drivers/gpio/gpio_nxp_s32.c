@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_s32_gpio
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -307,6 +308,91 @@ static uint32_t nxp_s32_gpio_get_pending_int(const struct device *dev)
 #endif
 }
 
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int nxp_s32_gpio_pin_get_config(const struct device *dev,
+				       gpio_pin_t pin,
+				       gpio_flags_t *out_flags)
+{
+	const struct gpio_nxp_s32_config *config = dev->config;
+	Siul2_Dio_Ip_GpioType *gpio_base = config->gpio_base;
+	Siul2_Port_Ip_PortType *port_base = config->port_base;
+	Siul2_Dio_Ip_PinsChannelType pins_output;
+	gpio_flags_t flags = 0;
+
+	if ((port_base->MSCR[pin] & SIUL2_MSCR_IBE_MASK) != 0) {
+		flags |= GPIO_INPUT;
+	}
+
+	if ((port_base->MSCR[pin] & SIUL2_MSCR_OBE_MASK) != 0) {
+		flags |= GPIO_OUTPUT;
+
+		pins_output = Siul2_Dio_Ip_GetPinsOutput(gpio_base);
+		if ((pins_output & BIT(pin)) != 0) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+
+#ifdef FEATURE_SIUL2_PORT_IP_HAS_OPEN_DRAIN
+		if ((port_base->MSCR[pin] & SIUL2_MSCR_ODE_MASK) != 0) {
+			flags |= GPIO_OPEN_DRAIN;
+		}
+#endif /* FEATURE_SIUL2_PORT_IP_HAS_OPEN_DRAIN */
+	}
+
+	if ((port_base->MSCR[pin] & SIUL2_MSCR_PUE_MASK) != 0) {
+		if ((port_base->MSCR[pin] & SIUL2_MSCR_PUS_MASK) != 0) {
+			flags |= GPIO_PULL_UP;
+		} else {
+			flags |= GPIO_PULL_DOWN;
+		}
+	}
+
+	*out_flags = flags;
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int nxp_s32_gpio_port_get_direction(const struct device *dev,
+					   gpio_port_pins_t map,
+					   gpio_port_pins_t *inputs,
+					   gpio_port_pins_t *outputs)
+{
+	const struct gpio_nxp_s32_config *config = dev->config;
+	Siul2_Port_Ip_PortType *port_base = config->port_base;
+	gpio_port_pins_t ip = 0;
+	gpio_port_pins_t op = 0;
+	uint32_t pin;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		while (map) {
+			pin = find_lsb_set(map) - 1;
+			ip |= (!!(port_base->MSCR[pin] & SIUL2_MSCR_IBE_MASK)) * BIT(pin);
+			map &= ~BIT(pin);
+		}
+
+		*inputs = ip;
+	}
+
+	if (outputs != NULL) {
+		while (map) {
+			pin = find_lsb_set(map) - 1;
+			op |= (!!(port_base->MSCR[pin] & SIUL2_MSCR_OBE_MASK)) * BIT(pin);
+			map &= ~BIT(pin);
+		}
+
+		*outputs = op;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	.pin_configure = nxp_s32_gpio_configure,
 	.port_get_raw = nxp_s32_gpio_port_get_raw,
@@ -316,7 +402,13 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	.port_toggle_bits = nxp_s32_gpio_port_toggle_bits,
 	.pin_interrupt_configure = nxp_s32_gpio_pin_interrupt_configure,
 	.manage_callback = nxp_s32_gpio_manage_callback,
-	.get_pending_int = nxp_s32_gpio_get_pending_int
+	.get_pending_int = nxp_s32_gpio_get_pending_int,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = nxp_s32_gpio_pin_get_config,
+#endif
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = nxp_s32_gpio_port_get_direction,
+#endif
 };
 
 /* Calculate the port pin mask based on ngpios and gpio-reserved-ranges node
