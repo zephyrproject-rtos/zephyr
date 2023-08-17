@@ -354,21 +354,6 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
-{
-	LOG_DBG("Enable: stream %p meta_count %zu", stream, meta_count);
-
-	return 0;
-}
-
-static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
-{
-	LOG_DBG("Start: stream %p", stream);
-
-	return 0;
-}
-
 static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 {
 	/* PTS checks if we are able to reject unsupported metadata type or RFU vale.
@@ -389,11 +374,9 @@ static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 	return true;
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int check_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
+			  size_t meta_count, struct bt_bap_ascs_rsp *rsp, uint8_t opcode)
 {
-	LOG_DBG("Metadata: stream %p meta_count %zu", stream, meta_count);
-
 	for (size_t i = 0; i < meta_count; i++) {
 		const struct bt_audio_codec_data *data = data = &meta[i];
 
@@ -405,14 +388,36 @@ static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_code
 					       data->data.type);
 
 			btp_send_ascs_operation_completed_ev(stream->conn, stream->ep->status.id,
-							     BT_ASCS_METADATA_OP,
-							     BTP_ASCS_STATUS_FAILED);
+							     opcode, BTP_ASCS_STATUS_FAILED);
 
 			return -EINVAL;
 		}
 	}
 
 	return 0;
+}
+
+static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
+		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+{
+	LOG_DBG("Enable: stream %p meta_count %zu", stream, meta_count);
+
+	return check_metadata(stream, meta, meta_count, rsp, BT_ASCS_ENABLE_OP);
+}
+
+static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	LOG_DBG("Start: stream %p", stream);
+
+	return 0;
+}
+
+static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
+			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+{
+	LOG_DBG("Metadata: stream %p meta_count %zu", stream, meta_count);
+
+	return check_metadata(stream, meta, meta_count, rsp, BT_ASCS_METADATA_OP);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
