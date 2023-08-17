@@ -267,8 +267,7 @@ static inline void adin2111_port_on_phyint(const struct device *dev)
 static void adin2111_offload_thread(const struct device *dev)
 {
 	struct adin2111_data *ctx = dev->data;
-	const struct adin2111_port_config *pcfg = dev->config;
-	const struct adin2111_config *adin_cfg = pcfg->adin->config;
+	const struct adin2111_config *adin_cfg = dev->config;
 	bool is_adin2111 = (adin_cfg->id == ADIN2111_MAC);
 	uint32_t status0;
 	uint32_t status1;
