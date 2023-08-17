@@ -1498,15 +1498,24 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		}
 		return 0;
 	case BT_CONN_CONNECTING:
+		if (conn->type == BT_CONN_TYPE_LE) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+				k_work_cancel_delayable(&conn->deferred_work);
+				return bt_le_create_conn_cancel();
+			}
+		}
+#if defined(CONFIG_BT_ISO)
+		else if (conn->type == BT_CONN_TYPE_ISO) {
+			return conn_disconnect(conn, reason);
+		}
+#endif /* CONFIG_BT_ISO */
 #if defined(CONFIG_BT_BREDR)
-		if (conn->type == BT_CONN_TYPE_BR) {
+		else if (conn->type == BT_CONN_TYPE_BR) {
 			return bt_hci_connect_br_cancel(conn);
 		}
 #endif /* CONFIG_BT_BREDR */
-
-		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			k_work_cancel_delayable(&conn->deferred_work);
-			return bt_le_create_conn_cancel();
+		else {
+			__ASSERT(false, "Invalid conn type %u", conn->type);
 		}
 
 		return 0;
