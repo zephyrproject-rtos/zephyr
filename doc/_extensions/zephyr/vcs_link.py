@@ -91,12 +91,15 @@ def vcs_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Option
     if not os.path.isfile(app.env.project.doc2path(pagename)):
         return None
 
-    title = quote(f"[doc] Issue with {pagename}")
+    title = quote(f"[doc] Documentation issue in '{pagename}'")
     labels = quote("area: Documentation")
     body = quote(
         dedent(
             f"""\
+    **Describe the bug**
+
     << Please describe the issue here >>
+    << You may also want to update the automatically generated issue title above. >>
 
     **Environment**
 
