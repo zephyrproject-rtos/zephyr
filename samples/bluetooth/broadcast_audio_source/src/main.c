@@ -93,7 +93,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_subgroup_param
 		subgroup_param[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
-	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_param create_param;
 	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
 	int err;
 

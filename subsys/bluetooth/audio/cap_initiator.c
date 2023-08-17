@@ -114,7 +114,7 @@ static bool cap_initiator_broadcast_audio_start_valid_param(
 
 static void cap_initiator_broadcast_to_bap_broadcast_param(
 	const struct bt_cap_initiator_broadcast_create_param *cap_param,
-	struct bt_bap_broadcast_source_create_param *bap_param,
+	struct bt_bap_broadcast_source_param *bap_param,
 	struct bt_bap_broadcast_source_subgroup_param
 		bap_subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT],
 	struct bt_bap_broadcast_source_stream_param
@@ -170,7 +170,7 @@ int bt_cap_initiator_broadcast_audio_create(
 		bap_subgroup_params[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	struct bt_bap_broadcast_source_stream_param
 		bap_stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-	struct bt_bap_broadcast_source_create_param bap_create_param;
+	struct bt_bap_broadcast_source_param bap_create_param;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
