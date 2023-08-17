@@ -266,6 +266,8 @@ def scan_testsuite_path(testsuite_path):
 
     src_dir_path = _find_src_dir_path(testsuite_path)
     for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
+        if os.stat(filename).st_size == 0:
+            continue
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
@@ -284,7 +286,7 @@ def scan_testsuite_path(testsuite_path):
                 ztest_suite_names += result.ztest_suite_names
 
         except ValueError as e:
-            logger.error("%s: can't find: %s" % (filename, e))
+            logger.error("%s: error parsing source file: %s" % (filename, e))
 
     for filename in glob.glob(os.path.join(testsuite_path, "*.c*")):
         try:
