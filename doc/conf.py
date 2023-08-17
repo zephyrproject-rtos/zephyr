@@ -84,6 +84,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
     "zephyr.manifest_projects_table",
+    "zephyr.git_info",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
