@@ -221,9 +221,6 @@ struct bt_cap_unicast_audio_start_stream_param {
 	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
 	 */
 	struct bt_audio_codec_cfg *codec_cfg;
-
-	/** Quality of Service configuration. */
-	struct bt_audio_codec_qos *qos;
 };
 
 struct bt_cap_unicast_audio_start_param {

@@ -344,7 +344,6 @@ static int unicast_audio_start(struct bt_conn *conn, struct bt_bap_unicast_group
 	stream_param.stream = &unicast_streams[0];
 	stream_param.ep = unicast_sink_eps[0];
 	stream_param.codec_cfg = &unicast_preset_48_2_1.codec_cfg;
-	stream_param.qos = &unicast_preset_48_2_1.qos;
 
 	err = bt_cap_initiator_unicast_audio_start(&param, unicast_group);
 	if (err != 0) {
