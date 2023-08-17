@@ -467,6 +467,8 @@ class DeviceHandler(Handler):
     def handle(self, harness):
         runner = None
         hardware = self.get_hardware()
+        if hardware:
+            self.instance.dut = hardware.id
         if not hardware:
             return
 
