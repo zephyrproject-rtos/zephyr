@@ -1400,7 +1400,7 @@ struct bt_bap_broadcast_source_subgroup_param {
 };
 
 /** Broadcast Source create parameters */
-struct bt_bap_broadcast_source_create_param {
+struct bt_bap_broadcast_source_param {
 	/** The number of parameters in @p subgroup_params */
 	size_t params_count;
 
@@ -1451,7 +1451,7 @@ struct bt_bap_broadcast_source_create_param {
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
+int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **source);
 
 /**
@@ -1460,15 +1460,21 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
  * Reconfigure an audio broadcast source with a new codec and codec quality of
  * service parameters. This can only be done when the source is stopped.
  *
+ * Since this may modify the Broadcast Audio Source Endpoint (BASE),
+ * bt_bap_broadcast_source_get_base() should be called after this to get the new BASE information.
+ *
+ * If the @p param.params_count is smaller than the number of subgroups that have been created in
+ * the Broadcast Source, only the first @p param.params_count subgroups are updated. If a stream
+ * exist in a subgroup not part of @p param, then that stream is left as is (i.e. it is not removed;
+ * the only way to remove a stream from a Broadcast Source is to recreate the Broadcast Source).
+ *
  * @param source      Pointer to the broadcast source
- * @param codec_cfg   Codec configuration.
- * @param qos         Quality of Service configuration
+ * @param param       Pointer to parameters used to reconfigure the broadcast source.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
-				     struct bt_audio_codec_cfg *codec_cfg,
-				     struct bt_audio_codec_qos *qos);
+				     struct bt_bap_broadcast_source_param *param);
 
 /**
  * @brief Modify the metadata of an audio broadcast source.

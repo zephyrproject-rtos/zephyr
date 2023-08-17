@@ -476,7 +476,8 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 	(void)memset(source, 0, sizeof(*source));
 }
 
-static bool valid_create_param(const struct bt_bap_broadcast_source_create_param *param)
+static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
+					 const struct bt_bap_broadcast_source *source)
 {
 	const struct bt_audio_codec_qos *qos;
 
@@ -555,7 +556,8 @@ static bool valid_create_param(const struct bt_bap_broadcast_source_create_param
 				return false;
 			}
 
-			CHECKIF(stream_param->stream->group != NULL) {
+			CHECKIF(stream_param->stream->group != NULL &&
+				stream_param->stream->group != source) {
 				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->stream is "
 					"already part of group %p",
 					i, j, stream_param->stream->group);
@@ -618,7 +620,7 @@ static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_s
 	return stream->ep->status.state;
 }
 
-int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
+int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
@@ -635,7 +637,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 	/* Set out_source to NULL until the source has actually been created */
 	*out_source = NULL;
 
-	if (!valid_create_param(param)) {
+	if (!valid_broadcast_source_param(param, NULL)) {
 		LOG_DBG("Invalid parameters");
 		return -EINVAL;
 	}
@@ -738,35 +740,20 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
 }
 
 int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
-				     struct bt_audio_codec_cfg *codec_cfg,
-				     struct bt_audio_codec_qos *qos)
+				     struct bt_bap_broadcast_source_param *param)
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_bap_stream *stream;
+	struct bt_audio_codec_qos *qos;
+	size_t subgroup_cnt;
 
 	CHECKIF(source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(!bt_audio_valid_codec_cfg(codec_cfg)) {
-		LOG_DBG("codec_cfg is invalid");
-		return -EINVAL;
-	}
-
-	CHECKIF(qos == NULL) {
-		LOG_DBG("qos is NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(bt_audio_verify_qos(qos) != BT_BAP_ASCS_REASON_NONE) {
-		LOG_DBG("qos is invalid");
-		return -EINVAL;
-	}
-
-	CHECKIF(qos->rtn > BT_ISO_BROADCAST_RTN_MAX) {
-		LOG_DBG("qos->rtn %u invalid", qos->rtn);
+	if (!valid_broadcast_source_param(param, source)) {
+		LOG_DBG("Invalid parameters");
 		return -EINVAL;
 	}
 
@@ -776,9 +763,97 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		return -EBADMSG;
 	}
 
+	/* Verify that the parameter counts do not exceed existing number of subgroups and streams*/
+	subgroup_cnt = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param =
+			&param->params[subgroup_cnt];
+		const size_t subgroup_stream_param_cnt = subgroup_param->params_count;
+		struct bt_bap_stream *stream;
+		size_t stream_cnt = 0U;
+
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			stream_cnt++;
+		}
+
+		/* Verify that the param stream is in the subgroup */
+		for (size_t i = 0U; i < subgroup_param->params_count; i++) {
+			struct bt_bap_stream *subgroup_stream;
+			struct bt_bap_stream *param_stream;
+			bool stream_in_subgroup;
+
+			param_stream = subgroup_param->params[i].stream;
+
+			SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, subgroup_stream, _node) {
+				if (subgroup_stream == param_stream) {
+					stream_in_subgroup = true;
+					break;
+				}
+			}
+
+			if (!stream_in_subgroup) {
+				LOG_DBG("Invalid param->params[%zu]->param[%zu].stream "
+					"not in subgroup",
+					subgroup_cnt, i);
+				return -EINVAL;
+			}
+		}
+
+		if (subgroup_stream_param_cnt < stream_cnt) {
+			LOG_DBG("Invalid param->params[%zu]->params_count: %zu "
+				"(only %zu streams in subgroup)",
+				subgroup_cnt, subgroup_stream_param_cnt, stream_cnt);
+			return -EINVAL;
+		}
+
+		subgroup_cnt++;
+	}
+
+	if (subgroup_cnt < param->params_count) {
+		LOG_DBG("Invalid param->params_count: %zu (only %zu subgroups in source)",
+			param->params_count, subgroup_cnt);
+		return -EINVAL;
+	}
+
+	qos = param->qos;
+
+	/* We update up to the first param->params_count subgroups */
+	for (size_t i = 0U; i < param->params_count; i++) {
+		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
+		struct bt_audio_codec_cfg *codec_cfg;
+
+		if (i == 0) {
+			subgroup =
+				SYS_SLIST_PEEK_HEAD_CONTAINER(&source->subgroups, subgroup, _node);
+		} else {
+			subgroup = SYS_SLIST_PEEK_NEXT_CONTAINER(subgroup, _node);
+		}
+
+		subgroup_param = &param->params[i];
+		codec_cfg = subgroup_param->codec_cfg;
+		subgroup->codec_cfg = codec_cfg;
+
+		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
+			const struct bt_bap_broadcast_source_stream_param *stream_param;
+			struct bt_audio_broadcast_stream_data *stream_data;
+			struct bt_bap_stream *subgroup_stream;
 			struct bt_iso_chan_io_qos *iso_qos;
+			struct bt_bap_stream *stream;
+			bool stream_in_subgroup;
+			size_t stream_idx;
+
+			stream_param = &subgroup_param->params[j];
+			stream = stream_param->stream;
+
+			stream_idx = 0U;
+			SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, subgroup_stream, _node) {
+				if (subgroup_stream == stream) {
+					stream_in_subgroup = true;
+					break;
+				}
+
+				stream_idx++;
+			}
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
 
@@ -787,6 +862,15 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
 			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
 			stream->qos = qos;
+
+			/* Store the BIS specific codec configuration data in the broadcast source.
+			 * It is stored in the broadcast* source, instead of the stream object,
+			 * as this is only relevant for the broadcast source, and not used
+			 * for unicast or broadcast sink.
+			 */
+			stream_data = &source->stream_data[stream_idx];
+			(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
+			stream_data->data_len = stream_param->data_len;
 		}
 	}
 

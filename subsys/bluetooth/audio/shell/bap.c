@@ -2052,7 +2052,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
-	struct bt_bap_broadcast_source_create_param create_param = {0};
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	int err;
 
