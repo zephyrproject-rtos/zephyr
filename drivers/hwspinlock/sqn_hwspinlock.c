@@ -136,7 +136,7 @@ static int sqn_hwspinlock_init(const struct device *dev)
 
 #define SQN_HWSPINLOCK_INIT(idx)                                                \
 	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data;           \
-	static struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {    \
+	static const struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {    \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                         \
 		.num_locks = DT_INST_PROP(idx, num_locks),                      \
 	};                                                                      \
