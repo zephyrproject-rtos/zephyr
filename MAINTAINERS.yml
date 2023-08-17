@@ -564,6 +564,7 @@ Disk:
     - danieldegrasse
   collaborators:
     - jfischer-no
+    - decsny
   files:
     - include/zephyr/storage/disk_access.h
     - include/zephyr/drivers/disk.h
