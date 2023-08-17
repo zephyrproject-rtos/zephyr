@@ -252,11 +252,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = snk_ep;
 			copy_unicast_stream_preset(uni_stream, default_sink_preset);
-			stream_param[start_param.count].codec_cfg  = &uni_stream->codec_cfg;
-			stream_param[start_param.count].qos = &uni_stream->qos;
+			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 
-			group_stream_params[start_param.count].qos =
-				stream_param[start_param.count].qos;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
 			pair_params[pair_cnt + j].tx_param =
@@ -286,11 +283,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = src_ep;
 			copy_unicast_stream_preset(uni_stream, default_source_preset);
-			stream_param[start_param.count].codec_cfg  = &uni_stream->codec_cfg;
-			stream_param[start_param.count].qos = &uni_stream->qos;
-
-			group_stream_params[start_param.count].qos =
-				stream_param[start_param.count].qos;
+			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
 			pair_params[pair_cnt + j].rx_param =
@@ -501,8 +494,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	struct bt_audio_codec_cfg *src_codec_cfgs[BAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_stream *snk_cap_streams[BAP_UNICAST_AC_MAX_SNK] = {0};
 	struct bt_cap_stream *src_cap_streams[BAP_UNICAST_AC_MAX_SRC] = {0};
-	struct bt_audio_codec_qos *snk_qos[BAP_UNICAST_AC_MAX_SNK] = {0};
-	struct bt_audio_codec_qos *src_qos[BAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_unicast_audio_start_param start_param = {0};
 	struct bt_bap_ep *snk_eps[BAP_UNICAST_AC_MAX_SNK] = {0};
 	struct bt_bap_ep *src_eps[BAP_UNICAST_AC_MAX_SRC] = {0};
@@ -559,13 +550,11 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	 */
 	for (size_t i = 0U; i < snk_cnt; i++) {
 		snk_cap_streams[i] = &snk_uni_streams[i]->stream;
-		snk_qos[i] = &snk_uni_streams[i]->qos;
 		snk_codec_cfgs[i] = &snk_uni_streams[i]->codec_cfg;
 	}
 
 	for (size_t i = 0U; i < src_cnt; i++) {
 		src_cap_streams[i] = &src_uni_streams[i]->stream;
-		src_qos[i] = &src_uni_streams[i]->qos;
 		src_codec_cfgs[i] = &src_uni_streams[i]->codec_cfg;
 	}
 
@@ -578,7 +567,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_param->member.member = connected_conns[i];
 			stream_param->codec_cfg = snk_codec_cfgs[snk_stream_cnt];
 			stream_param->ep = snk_eps[snk_stream_cnt];
-			stream_param->qos = snk_qos[snk_stream_cnt];
 			stream_param->stream = snk_cap_streams[snk_stream_cnt];
 
 			snk_stream_cnt++;
@@ -606,7 +594,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_param->member.member = connected_conns[i];
 			stream_param->codec_cfg = src_codec_cfgs[src_stream_cnt];
 			stream_param->ep = src_eps[src_stream_cnt];
-			stream_param->qos = src_qos[src_stream_cnt];
 			stream_param->stream = src_cap_streams[src_stream_cnt];
 
 			src_stream_cnt++;
