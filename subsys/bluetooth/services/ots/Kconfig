@@ -42,6 +42,7 @@ config BT_OTS_OACP_CREATE_SUPPORT
 	depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
 
 config BT_OTS_OACP_CHECKSUM_SUPPORT
+	imply CRC
 	bool "Support OACP Calculate Checksum operation"
 
 config BT_OTS_OACP_DELETE_SUPPORT
