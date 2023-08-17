@@ -124,6 +124,19 @@ static int mimxrt595_evk_init(void)
 #endif
 
 #endif
+
+
+#ifdef CONFIG_REBOOT
+	/*
+	 * The sys_reboot API calls NVIC_SystemReset. On the RT595, the warm
+	 * reset will not complete correctly unless the ROM toggles the
+	 * flash reset pin. We can control this behavior using the OTP shadow
+	 * register for OPT word BOOT_CFG1
+	 *
+	 * Set FLEXSPI_RESET_PIN_ENABLE=1, FLEXSPI_RESET_PIN= PIO4_5
+	 */
+	 OCOTP0->OTP_SHADOW[97] = 0x164000;
+#endif /* CONFIG_REBOOT */
 	return 0;
 }
 
