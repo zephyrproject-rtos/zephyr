@@ -676,11 +676,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 			return false;
 		}
 
-		CHECKIF(stream_param->qos == NULL) {
-			LOG_DBG("param->stream_params[%zu].qos is NULL", i);
-			return false;
-		}
-
 		CHECKIF(member == NULL) {
 			LOG_DBG("param->stream_params[%zu].member is NULL", i);
 			return false;
