@@ -82,3 +82,35 @@ properties:
     type: boolean
     description: |
       Enable charging.
+
+  trickle-microvolt:
+    type: int
+    enum:
+      - 2900000
+      - 2500000
+    default: 2900000
+    description: |
+      Trickle voltage threshold in uV.
+      Trickle charging is enabled below this value.
+      If omitted the device default of 2.9V is used.
+
+  term-current-percent:
+    type: int
+    enum:
+      - 10
+      - 20
+    default: 10
+    description: |
+      Termination current, as a percentage of current-microamp.
+      Charge completes when the charge current falls below this value.
+      If omitted the device default of 10% is used.
+
+  vbatlow-charge-enable:
+    type: boolean
+    description: |
+      Allow charging when below the vbatlow threshold.
+
+  disable-recharge:
+    type: boolean
+    description: |
+      Disable automatic recharge.
