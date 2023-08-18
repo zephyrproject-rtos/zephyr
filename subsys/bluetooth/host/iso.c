@@ -970,6 +970,14 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 		return -EALREADY;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_ISO_PERIPHERAL) && chan->iso->role == BT_HCI_ROLE_PERIPHERAL &&
+	    chan->state == BT_ISO_STATE_CONNECTING) {
+		/* A CIS peripheral is not allowed to disconnect a CIS in the connecting state - It
+		 * has to wait for a CIS Established event
+		 */
+		return -EAGAIN;
+	}
+
 	err = bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err == 0) {
 		bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
