@@ -15,6 +15,8 @@
 #include "zephyr/bluetooth/audio/vocs.h"
 #include "zephyr/sys/util.h"
 
+#include <../../subsys/bluetooth/audio/micp_internal.h>
+#include <../../subsys/bluetooth/audio/aics_internal.h>
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_vcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
@@ -26,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct bt_vcp_vol_rend_register_param vcp_register_param;
 static struct bt_vcp_included included;
+extern struct btp_aics_instance aics_server_instance;
 
 /* Volume Control Service */
 static uint8_t vcs_supported_commands(const void *cmd, uint16_t cmd_len,
@@ -157,265 +160,6 @@ static const struct btp_handler vcs_handlers[] = {
 	},
 };
 
-/* Audio Input Control Service */
-static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len,
-				       void *rsp, uint16_t *rsp_len)
-{
-	struct btp_aics_read_supported_commands_rp *rp = rsp;
-
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_AICS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_AICS_SET_GAIN);
-	tester_set_bit(rp->data, BTP_AICS_MUTE);
-	tester_set_bit(rp->data, BTP_AICS_UNMUTE);
-	tester_set_bit(rp->data, BTP_AICS_MUTE_DISABLE);
-	tester_set_bit(rp->data, BTP_AICS_MAN_GAIN);
-	tester_set_bit(rp->data, BTP_AICS_AUTO_GAIN);
-	tester_set_bit(rp->data, BTP_AICS_MAN_GAIN_ONLY);
-	tester_set_bit(rp->data, BTP_AICS_AUTO_GAIN_ONLY);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_AICS_DESCRIPTION);
-
-	*rsp_len = sizeof(*rp) + 2;
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
-			  uint8_t mute, uint8_t mode)
-{
-	LOG_DBG("AICS state callback (%d)", err);
-}
-
-static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
-				 int8_t minimum, int8_t maximum)
-{
-	LOG_DBG("AICS gain setting callback (%d)", err);
-}
-
-static void aics_input_type_cb(struct bt_aics *inst, int err,
-			       uint8_t input_type)
-{
-	LOG_DBG("AICS input type callback (%d)", err);
-}
-
-static void aics_status_cb(struct bt_aics *inst, int err, bool active)
-{
-	LOG_DBG("AICS status callback (%d)", err);
-}
-
-static void aics_description_cb(struct bt_aics *inst, int err,
-				char *description)
-{
-	LOG_DBG("AICS description callback (%d)", err);
-}
-
-static struct bt_aics_cb aics_cb = {
-	.state = aics_state_cb,
-	.gain_setting = aics_gain_setting_cb,
-	.type = aics_input_type_cb,
-	.status = aics_status_cb,
-	.description = aics_description_cb
-};
-
-static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len,
-			     void *rsp, uint16_t *rsp_len)
-{
-	const struct btp_aics_set_gain_cmd *cp = cmd;
-
-	LOG_DBG("AICS set gain %d", cp->gain);
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_gain_set(included.aics[0], cp->gain) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_mute(const void *cmd, uint16_t cmd_len,
-			     void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS mute");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_mute(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_mute_disable(const void *cmd, uint16_t cmd_len,
-				 void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS mute disable");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_disable_mute(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len,
-			   void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS unmute");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_unmute(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_man_gain(const void *cmd, uint16_t cmd_len,
-			     void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS manual gain set");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_manual_gain_set(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_auto_gain(const void *cmd, uint16_t cmd_len,
-			      void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS auto gain set");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_automatic_gain_set(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_auto_gain_only(const void *cmd, uint16_t cmd_len,
-				   void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS auto gain only set");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_gain_set_auto_only(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_man_gain_only(const void *cmd, uint16_t cmd_len,
-				  void *rsp, uint16_t *rsp_len)
-{
-	LOG_DBG("AICS manual gain only set");
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_gain_set_manual_only(included.aics[i]) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static uint8_t aics_desc(const void *cmd, uint16_t cmd_len,
-			 void *rsp, uint16_t *rsp_len)
-{
-	const struct btp_aics_audio_desc_cmd *cp = cmd;
-	char description[BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
-
-	LOG_DBG("AICS description");
-
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + cp->desc_len) {
-		return BTP_STATUS_FAILED;
-	}
-
-	if (cp->desc_len >= sizeof(description)) {
-		return BTP_STATUS_FAILED;
-	}
-
-	memcpy(description, cp->desc, cp->desc_len);
-	description[cp->desc_len] = '\0';
-
-	for (int i = 0; i < CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT; i++) {
-		if (bt_aics_description_set(included.aics[i], description) != 0) {
-			return BTP_STATUS_FAILED;
-		}
-	}
-
-	return BTP_STATUS_SUCCESS;
-}
-
-static const struct btp_handler aics_handlers[] = {
-	{
-		.opcode = BTP_AICS_READ_SUPPORTED_COMMANDS,
-		.index = BTP_INDEX_NONE,
-		.expect_len = 0,
-		.func = aics_supported_commands,
-	},
-	{
-		.opcode = BTP_AICS_SET_GAIN,
-		.expect_len = sizeof(struct btp_aics_set_gain_cmd),
-		.func = aics_set_gain,
-	},
-	{
-		.opcode = BTP_AICS_MUTE,
-		.expect_len = 0,
-		.func = aics_mute,
-	},
-	{
-		.opcode = BTP_AICS_UNMUTE,
-		.expect_len = 0,
-		.func = aics_unmute,
-	},
-	{
-		.opcode = BTP_AICS_MUTE_DISABLE,
-		.expect_len = 0,
-		.func = aics_mute_disable,
-	},
-	{
-		.opcode = BTP_AICS_MAN_GAIN,
-		.expect_len = 0,
-		.func = aics_man_gain,
-	},
-	{
-		.opcode = BTP_AICS_AUTO_GAIN,
-		.expect_len = 0,
-		.func = aics_auto_gain,
-	},
-	{
-		.opcode = BTP_AICS_AUTO_GAIN_ONLY,
-		.expect_len = 0,
-		.func = aics_auto_gain_only,
-	},
-	{
-		.opcode = BTP_AICS_MAN_GAIN_ONLY,
-		.expect_len = 0,
-		.func = aics_man_gain_only,
-	},
-	{
-		.opcode = BTP_AICS_DESCRIPTION,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = aics_desc,
-	},
-};
-
 /* Volume Offset Control Service */
 static uint8_t vocs_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
@@ -515,6 +259,44 @@ static const struct btp_handler vocs_handlers[] = {
 	},
 };
 
+/* AICS Callbacks */
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
+{
+	LOG_DBG("AICS state callback (%d)", err);
+}
+
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
+{
+	LOG_DBG("AICS gain setting callback (%d)", err);
+}
+
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
+{
+	LOG_DBG("AICS input type callback (%d)", err);
+}
+
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
+{
+	LOG_DBG("AICS status callback (%d)", err);
+}
+
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
+{
+	LOG_DBG("AICS description callback (%d)", err);
+}
+
+struct bt_aics_cb aics_server_cb = {
+	.state = aics_state_cb,
+	.gain_setting = aics_gain_setting_cb,
+	.type = aics_input_type_cb,
+	.status = aics_status_cb,
+	.description = aics_description_cb,
+};
+
 /* General profile handling */
 static void set_register_params(uint8_t gain_mode)
 {
@@ -545,7 +327,7 @@ static void set_register_params(uint8_t gain_mode)
 		vcp_register_param.aics_param[i].units = 1;
 		vcp_register_param.aics_param[i].min_gain = 0;
 		vcp_register_param.aics_param[i].max_gain = 100;
-		vcp_register_param.aics_param[i].cb = &aics_cb;
+		vcp_register_param.aics_param[i].cb = &aics_server_cb;
 	}
 
 	vcp_register_param.step = 1;
@@ -570,6 +352,9 @@ uint8_t tester_init_vcs(void)
 		return BTP_STATUS_FAILED;
 	}
 
+	aics_server_instance.aics_cnt = included.aics_cnt;
+	aics_server_instance.aics = included.aics;
+
 	tester_register_command_handlers(BTP_SERVICE_ID_VCS, vcs_handlers,
 					 ARRAY_SIZE(vcs_handlers));
 
@@ -577,19 +362,6 @@ uint8_t tester_init_vcs(void)
 }
 
 uint8_t tester_unregister_vcs(void)
-{
-	return BTP_STATUS_SUCCESS;
-}
-
-uint8_t tester_init_aics(void)
-{
-	tester_register_command_handlers(BTP_SERVICE_ID_AICS, aics_handlers,
-					 ARRAY_SIZE(aics_handlers));
-
-	return tester_init_vcs();
-}
-
-uint8_t tester_unregister_aics(void)
 {
 	return BTP_STATUS_SUCCESS;
 }
