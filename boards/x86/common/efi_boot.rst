@@ -1,3 +1,5 @@
+:orphan:
+
 Preparing the Boot Device
 -------------------------
 
