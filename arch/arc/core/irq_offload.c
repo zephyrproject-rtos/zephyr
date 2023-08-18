@@ -25,7 +25,6 @@
 
 #define IRQ_OFFLOAD_PRIO	0
 
-#define CURR_CPU (IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0)
 
 static struct {
 	volatile irq_offload_routine_t fn;
@@ -36,13 +35,17 @@ static void arc_irq_offload_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	offload_params[CURR_CPU].fn(offload_params[CURR_CPU].arg);
+	offload_params[_current_cpu->id].fn(offload_params[_current_cpu->id].arg);
 }
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
-	offload_params[CURR_CPU].fn = routine;
-	offload_params[CURR_CPU].arg = parameter;
+	unsigned int key;
+
+	key = arch_irq_lock();
+	offload_params[_current_cpu->id].fn = routine;
+	offload_params[_current_cpu->id].arg = parameter;
+	arch_irq_unlock(key);
 	compiler_barrier();
 
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, IRQ_OFFLOAD_LINE);
