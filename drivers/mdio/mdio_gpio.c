@@ -180,12 +180,7 @@ static const struct mdio_driver_api mdio_gpio_driver_api = {
 		.mdio_gpio = GPIO_DT_SPEC_INST_GET(inst, mdio_gpios),                              \
 	};
 
-#define MDIO_GPIO_PROTOCOL_ASSERT(inst)                                                            \
-	BUILD_ASSERT(DT_INST_ENUM_IDX(inst, protocol) == CLAUSE_22,                                \
-		     "MDIO GPIO only supports CLAUSE_22 protocol")
-
 #define MDIO_GPIO_DEVICE(inst)                                                                     \
-	MDIO_GPIO_PROTOCOL_ASSERT(inst);                                                           \
 	MDIO_GPIO_CONFIG(inst);                                                                    \
 	static struct mdio_gpio_data mdio_gpio_dev_data_##inst;                                    \
 	DEVICE_DT_INST_DEFINE(inst, &mdio_gpio_initialize, NULL, &mdio_gpio_dev_data_##inst,       \

@@ -69,7 +69,6 @@
 
 	mdio: mdio {
 		compatible = "espressif,esp32-mdio";
-		protocol = "clause 22";
 		clocks = <&rtc ESP32_EMAC_MODULE>;
 		status = "disabled";
 	};
