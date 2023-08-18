@@ -27,6 +27,7 @@
 #include "btp_csis.h"
 #include "btp_micp.h"
 #include "btp_mics.h"
+#include "btp_ccp.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -53,13 +54,16 @@
 #define BTP_SERVICE_ID_MICP	16
 #define BTP_SERVICE_ID_CSIS	17
 #define BTP_SERVICE_ID_MICS	18
+#define BTP_SERVICE_ID_CCP	19
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_MICS
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_CCP
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
 #define BTP_STATUS_UNKNOWN_CMD	0x02
 #define BTP_STATUS_NOT_READY	0x03
+
+#define BTP_STATUS_VAL(err) (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS
 
 /* TODO indicate delay response, should be removed when all commands are
  * converted to cmd+status+ev pattern
