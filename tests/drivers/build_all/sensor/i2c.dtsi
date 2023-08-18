@@ -753,3 +753,15 @@ test_i2c_tsl2540: tsl2540@71 {
 	reg = <0x71>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_adltc2990@72 {
+	compatible = "adi,adltc2990";
+	reg = <0x72>;
+	status = "okay";
+	measurement-mode = <7 3>;
+	pins-v1-v2-current-resistor = <1>;
+	pin-v1-voltage-divider-resistors = <100 10>;
+	pin-v2-voltage-divider-resistors = <100 10>;
+	pin-v3-voltage-divider-resistors = <100 100>;
+	pin-v4-voltage-divider-resistors = <0 1>;
+};
