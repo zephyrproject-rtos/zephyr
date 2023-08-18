@@ -42,6 +42,7 @@ struct npm1300_charger_data {
 #define VBUS_BASE 0x02U
 
 /* nPM1300 charger register offsets */
+#define CHGR_OFFSET_ERR_CLR     0x00U
 #define CHGR_OFFSET_EN_SET      0x04U
 #define CHGR_OFFSET_EN_CLR      0x05U
 #define CHGR_OFFSET_ISET        0x08U
@@ -284,6 +285,60 @@ static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
 	return 0;
 }
 
+static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channel chan,
+				    enum sensor_attribute attr, struct sensor_value *val)
+{
+	const struct npm1300_charger_config *const config = dev->config;
+	uint8_t data;
+	int ret;
+
+	switch ((uint32_t)chan) {
+	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
+		if (attr != SENSOR_ATTR_CONFIGURATION) {
+			return -ENOTSUP;
+		}
+
+		ret = mfd_npm1300_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, &data);
+		if (ret == 0) {
+			val->val1 = data;
+			val->val2 = 0U;
+		}
+		return ret;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channel chan,
+				    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	const struct npm1300_charger_config *const config = dev->config;
+	int ret;
+
+	switch ((uint32_t)chan) {
+	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
+		if (attr != SENSOR_ATTR_CONFIGURATION) {
+			return -ENOTSUP;
+		}
+
+		if (val->val1 == 0) {
+			/* Disable charging */
+			return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_CLR,
+						     1U);
+		}
+
+		/* Clear any errors and enable charging */
+		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ERR_CLR, 1U);
+		if (ret != 0) {
+			return ret;
+		}
+		return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 int npm1300_charger_init(const struct device *dev)
 {
 	const struct npm1300_charger_config *const config = dev->config;
@@ -407,6 +462,8 @@ int npm1300_charger_init(const struct device *dev)
 static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 	.sample_fetch = npm1300_charger_sample_fetch,
 	.channel_get = npm1300_charger_channel_get,
+	.attr_set = npm1300_charger_attr_set,
+	.attr_get = npm1300_charger_attr_get,
 };
 
 #define NPM1300_CHARGER_INIT(n)                                                                    \
