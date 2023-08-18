@@ -12,6 +12,7 @@ import subprocess
 import json
 import logging
 import sys
+import glob
 from pathlib import Path
 from git import Repo
 from west.manifest import Manifest
@@ -264,13 +265,25 @@ class Filters:
             if f.endswith(".rst"):
                 continue
             d = os.path.dirname(f)
-            while d:
+            scope_found = False
+            while not scope_found and d:
+                head, tail = os.path.split(d)
                 if os.path.exists(os.path.join(d, "testcase.yaml")) or \
                     os.path.exists(os.path.join(d, "sample.yaml")):
                     tests.add(d)
                     # Modified file is treated as resolved, since a matching scope was found
                     self.resolved_files.append(f)
-                    break
+                    scope_found = True
+                elif tail == "common":
+                    # Look for yamls in directories collocated with common
+
+                    yamls_found = [yaml for yaml in glob.iglob(head + '/**/testcase.yaml', recursive=True)]
+                    yamls_found.extend([yaml for yaml in glob.iglob(head + '/**/sample.yaml', recursive=True)])
+                    if yamls_found:
+                        for yaml in yamls_found:
+                            tests.add(os.path.dirname(yaml))
+                        self.resolved_files.append(f)
+                        scope_found = True
                 else:
                     d = os.path.dirname(d)
 
