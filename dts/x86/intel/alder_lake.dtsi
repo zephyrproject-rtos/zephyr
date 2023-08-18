@@ -228,6 +228,28 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
+
+		emmc: emmc0 {
+			compatible = "intel,emmc-host";
+			vendor-id = <0x8086>;
+			device-id = <0x54C4>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			max-bus-freq = <200000000>;
+			min-bus-freq = <400000>;
+			power-delay-ms = <500>;
+			mmc-hs400-1_8v;
+			mmc-hs200-1_8v;
+
+			mmc {
+				compatible = "zephyr,mmc-disk";
+				bus-width = <8>;
+				status = "okay";
+			};
+
+			status = "okay";
+		};
 	};
 
 	soc {
