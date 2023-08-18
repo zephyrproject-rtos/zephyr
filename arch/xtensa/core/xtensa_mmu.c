@@ -76,16 +76,11 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	 * cacheable, read / write and non-executable
 	 */
 	{
-		.start = (uint32_t)__data_start,
-		.end   = (uint32_t)__data_end,
+		/* This includes .data, .bss and various kobject sections. */
+		.start = (uint32_t)_image_ram_start,
+		.end   = (uint32_t)_image_ram_end,
 		.attrs = Z_XTENSA_MMU_W,
 		.name = "data",
-	},
-	{
-		.start = (uint32_t)_bss_start,
-		.end   = (uint32_t)_bss_end,
-		.attrs = Z_XTENSA_MMU_W,
-		.name = "bss",
 	},
 	/* System heap memory */
 	{
