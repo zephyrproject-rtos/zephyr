@@ -81,9 +81,10 @@ int sdmmc_wait_ready(struct sd_card *card)
 }
 
 static inline void sdmmc_decode_csd(struct sd_csd *csd, uint32_t *raw_csd, uint32_t *blk_count,
-				    uint32_t *blk_size)
+				    uint16_t *blk_size)
 {
-	uint32_t tmp_blk_count, tmp_blk_size;
+	uint32_t tmp_blk_count;
+	uint16_t tmp_blk_size;
 
 	csd->csd_structure = (uint8_t)((raw_csd[3U] & 0xC0000000U) >> 30U);
 	csd->read_time1 = (uint8_t)((raw_csd[3U] & 0xFF0000U) >> 16U);
