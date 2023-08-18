@@ -173,14 +173,12 @@ int uhc_xfer_append(const struct device *dev,
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] type   Event type
  * @param[in] status Event status
- * @param[in] xfer   Pointer to UHC transfer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
-		     const int status,
-		     struct uhc_transfer *const xfer);
+		     const int status);
 
 #endif /* ZEPHYR_INCLUDE_UHC_COMMON_H */

@@ -374,7 +374,7 @@ static void xfer_work_handler(struct k_work *work)
 		if (schedule && !priv->busy) {
 			err = vrt_schedule_xfer(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
@@ -411,7 +411,7 @@ static void vrt_device_act(const struct device *dev,
 		type = UHC_EVT_ERROR;
 	}
 
-	uhc_submit_event(dev, type, 0, NULL);
+	uhc_submit_event(dev, type, 0);
 }
 
 static void uhc_vrt_uvb_cb(const void *const vrt_priv,
