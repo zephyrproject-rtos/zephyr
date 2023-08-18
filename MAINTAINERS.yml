@@ -1776,6 +1776,15 @@ Modbus:
   labels:
     - "area: modbus"
 
+Modem Modules:
+  status: maintained
+  maintainers:
+    - bjarki-trackunit
+  files:
+    - subsys/modem/
+    - include/zephyr/modem/
+    - tests/subsys/modem/
+
 OSDP:
   status: maintained
   maintainers:
