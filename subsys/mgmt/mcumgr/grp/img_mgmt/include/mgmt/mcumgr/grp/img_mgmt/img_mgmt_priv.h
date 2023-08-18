@@ -93,7 +93,13 @@ int img_mgmt_swap_type(int slot);
  *
  * @return 0 based image number.
  */
-int img_mgmt_slot_to_image(int slot);
+static inline int img_mgmt_slot_to_image(int slot)
+{
+	__ASSERT(slot >= 0 && slot < (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER << 1),
+		 "Impossible slot number");
+
+	return (slot >> 1);
+}
 
 /**
  * @brief Get slot number of alternate (inactive) image pair
