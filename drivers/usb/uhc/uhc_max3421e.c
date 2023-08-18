@@ -607,7 +607,7 @@ static void max3421e_handle_condet(const struct device *dev)
 		type = UHC_EVT_DEV_CONNECTED_LS;
 	}
 
-	uhc_submit_event(dev, type, 0, NULL);
+	uhc_submit_event(dev, type, 0);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -617,13 +617,13 @@ static void max3421e_bus_event(const struct device *dev)
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESUME)) {
 		/* Resume operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESUMED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
 	}
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESET)) {
 		/* Reset operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESETED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
 }
 
@@ -654,7 +654,7 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	/* Suspend operation Done Interrupt (bus suspended) */
 	if (hirq & MAX3421E_SUSDN) {
 		ret = max3421e_hien_disable(dev, MAX3421E_SUSDN);
-		uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
 	}
 
 	/* Peripheral Connect/Disconnect Interrupt */
@@ -664,7 +664,7 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 
 	/* Remote Wakeup Interrupt */
 	if (hirq & MAX3421E_RWU) {
-		uhc_submit_event(dev, UHC_EVT_RWUP, 0, NULL);
+		uhc_submit_event(dev, UHC_EVT_RWUP, 0);
 	}
 
 	/* Bus Reset or Bus Resume event */
@@ -695,7 +695,7 @@ static void uhc_max3421e_thread(const struct device *dev)
 		 */
 		err = max3421e_update_hrsl_hirq(dev);
 		if (unlikely(err)) {
-			uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+			uhc_submit_event(dev, UHC_EVT_ERROR, err);
 		}
 
 		/* Host Transfer Done Interrupt */
@@ -713,20 +713,20 @@ static void uhc_max3421e_thread(const struct device *dev)
 		if (priv->hirq & ~(MAX3421E_FRAME | MAX3421E_HXFRDN)) {
 			err = max3421e_handle_bus_irq(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
 		/* Clear interrupts and schedule new bus transfer */
 		err = max3421e_clear_hirq(dev, priv->hirq);
 		if (unlikely(err)) {
-			uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+			uhc_submit_event(dev, UHC_EVT_ERROR, err);
 		}
 
 		if (schedule) {
 			err = max3421e_schedule_xfer(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
