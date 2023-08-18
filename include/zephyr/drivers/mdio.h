@@ -32,14 +32,6 @@ extern "C" {
  * These are for internal use only, so skip these in
  * public documentation.
  */
-
-/** Order of items in this enum must match the `protocol` dts binding */
-enum MDIO_PROTOCOL {
-	CLAUSE_22	= 0,
-	CLAUSE_45	= 1,
-	MICREL_SMI	= 2,
-};
-
 __subsystem struct mdio_driver_api {
 	/** Enable the MDIO bus device */
 	void (*bus_enable)(const struct device *dev);
@@ -54,6 +46,14 @@ __subsystem struct mdio_driver_api {
 	/** Write data to MDIO bus */
 	int (*write)(const struct device *dev, uint8_t prtad, uint8_t regad,
 		     uint16_t data);
+
+	/** Read data from MDIO bus using Clause 45 access */
+	int (*read_c45)(const struct device *dev, uint8_t prtad, uint8_t devad,
+			uint16_t regad, uint16_t *data);
+
+	/** Write data to MDIO bus using Clause 45 access */
+	int (*write_c45)(const struct device *dev, uint8_t prtad, uint8_t devad,
+			 uint16_t regad, uint16_t data);
 };
 /**
  * @endcond
@@ -105,6 +105,7 @@ static inline void z_impl_mdio_bus_disable(const struct device *dev)
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -ETIMEDOUT If transaction timedout on the bus
+ * @retval -ENOSYS if read is not supported
  */
 __syscall int mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			uint16_t *data);
@@ -114,6 +115,10 @@ static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
 {
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
+
+	if (api->read == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->read(dev, prtad, regad, data);
 }
@@ -133,6 +138,7 @@ static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -ETIMEDOUT If transaction timedout on the bus
+ * @retval -ENOSYS if write is not supported
  */
 __syscall int mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t data);
@@ -143,7 +149,79 @@ static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
 	const struct mdio_driver_api *api =
 		(const struct mdio_driver_api *)dev->api;
 
+	if (api->write == NULL) {
+		return -ENOSYS;
+	}
+
 	return api->write(dev, prtad, regad, data);
+}
+
+/**
+ * @brief      Read from MDIO Bus using Clause 45 access
+ *
+ * This routine provides an interface to perform a read on the MDIO bus using
+ * IEEE 802.3 Clause 45 access.
+ *
+ * @param[in]  dev         Pointer to the device structure for the controller
+ * @param[in]  prtad       Port address
+ * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
+ * @param      data        Pointer to receive read data
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -ETIMEDOUT If transaction timedout on the bus
+ * @retval -ENOSYS if write using Clause 45 access is not supported
+ */
+__syscall int mdio_read_c45(const struct device *dev, uint8_t prtad,
+			    uint8_t devad, uint16_t regad, uint16_t *data);
+
+static inline int z_impl_mdio_read_c45(const struct device *dev, uint8_t prtad,
+				       uint8_t devad, uint16_t regad,
+				       uint16_t *data)
+{
+	const struct mdio_driver_api *api =
+		(const struct mdio_driver_api *)dev->api;
+
+	if (api->read_c45 == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->read_c45(dev, prtad, devad, regad, data);
+}
+
+/**
+ * @brief      Write to MDIO bus using Clause 45 access
+ *
+ * This routine provides an interface to perform a write on the MDIO bus using
+ * IEEE 802.3 Clause 45 access.
+ *
+ * @param[in]  dev         Pointer to the device structure for the controller
+ * @param[in]  prtad       Port address
+ * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
+ * @param[in]  data        Data to write
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -ETIMEDOUT If transaction timedout on the bus
+ * @retval -ENOSYS if write using Clause 45 access is not supported
+ */
+__syscall int mdio_write_c45(const struct device *dev, uint8_t prtad,
+			     uint8_t devad, uint16_t regad, uint16_t data);
+
+static inline int z_impl_mdio_write_c45(const struct device *dev, uint8_t prtad,
+					uint8_t devad, uint16_t regad,
+					uint16_t data)
+{
+	const struct mdio_driver_api *api =
+		(const struct mdio_driver_api *)dev->api;
+
+	if (api->write_c45 == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->write_c45(dev, prtad, devad, regad, data);
 }
 
 #ifdef __cplusplus

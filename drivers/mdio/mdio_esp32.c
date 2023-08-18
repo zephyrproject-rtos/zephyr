@@ -143,12 +143,7 @@ static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 };
 
-#define MDIO_ESP32_PROTOCOL_ASSERT(n)					\
-	BUILD_ASSERT(DT_INST_ENUM_IDX(n, protocol) == CLAUSE_22,	\
-		     "ESP32 MDIO only supports CLAUSE_22 protocol")
-
 #define MDIO_ESP32_DEVICE(n)						\
-	MDIO_ESP32_PROTOCOL_ASSERT(n);					\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	MDIO_ESP32_CONFIG(n);						\
 	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;	\

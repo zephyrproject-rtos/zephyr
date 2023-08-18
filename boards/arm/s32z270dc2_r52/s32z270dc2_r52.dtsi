@@ -29,7 +29,6 @@
 &emdio {
 	pinctrl-0 = <&emdio_default>;
 	pinctrl-names = "default";
-	protocol = "clause 22";
 	status = "okay";
 
 	phy0: ethernet-phy {
