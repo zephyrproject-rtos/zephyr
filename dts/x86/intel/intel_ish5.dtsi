@@ -10,9 +10,6 @@
 #include <mem.h>
 
 / {
-	chosen {
-	};
-
 	power-states {
 		d0i0: d0i0 {
 			compatible = "zephyr,power-state";
