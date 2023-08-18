@@ -31,6 +31,18 @@ endif
 config ACPI
 	default y
 
+if ACPI
+config HEAP_MEM_POOL_SIZE
+	default 64000000
+config MAIN_STACK_SIZE
+	default 320000
+
+if SHELL
+config SHELL_STACK_SIZE
+	default 320000
+endif # SHELL
+endif # ACPI
+
 endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP
 
 if BOARD_INTEL_ADL_RVP
