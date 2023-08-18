@@ -59,7 +59,7 @@
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x100000>;
+		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 	};
 
