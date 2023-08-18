@@ -23,7 +23,11 @@ struct npm1300_charger_config {
 	uint32_t thermistor_ohms;
 	uint16_t thermistor_beta;
 	uint8_t thermistor_idx;
+	uint8_t trickle_sel;
+	uint8_t iterm_sel;
 	bool charging_enable;
+	bool vbatlow_charge_enable;
+	bool disable_recharge;
 };
 
 struct npm1300_charger_data {
@@ -45,13 +49,17 @@ struct npm1300_charger_data {
 #define CHGR_OFFSET_ERR_CLR     0x00U
 #define CHGR_OFFSET_EN_SET      0x04U
 #define CHGR_OFFSET_EN_CLR      0x05U
+#define CHGR_OFFSET_DIS_SET     0x06U
 #define CHGR_OFFSET_ISET        0x08U
 #define CHGR_OFFSET_ISET_DISCHG 0x0AU
 #define CHGR_OFFSET_VTERM       0x0CU
 #define CHGR_OFFSET_VTERM_R     0x0DU
+#define CHGR_OFFSET_TRICKLE_SEL 0x0EU
+#define CHGR_OFFSET_ITERM_SEL   0x0FU
 #define CHGR_OFFSET_NTC_TEMPS   0x10U
 #define CHGR_OFFSET_CHG_STAT    0x34U
 #define CHGR_OFFSET_ERR_REASON  0x36U
+#define CHGR_OFFSET_VBATLOW_EN  0x50U
 
 /* nPM1300 ADC register offsets */
 #define ADC_OFFSET_TASK_VBAT 0x00U
@@ -424,6 +432,20 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure trickle voltage threshold */
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_TRICKLE_SEL,
+				    config->trickle_sel);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Configure termination current */
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ITERM_SEL,
+				    config->iterm_sel);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* Enable current measurement */
 	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
 	if (ret != 0) {
@@ -446,6 +468,22 @@ int npm1300_charger_init(const struct device *dev)
 	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_AUTO, 1U);
 	if (ret != 0) {
 		return ret;
+	}
+
+	/* Enable charging at low battery if configured */
+	if (config->vbatlow_charge_enable) {
+		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_VBATLOW_EN, 1U);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	/* Disable automatic recharging if configured */
+	if (config->disable_recharge) {
+		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_DIS_SET, 1U);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* Enable charging if configured */
@@ -481,6 +519,10 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
 		.thermistor_beta = DT_INST_PROP(n, thermistor_beta),                               \
 		.charging_enable = DT_INST_PROP(n, charging_enable),                               \
+		.trickle_sel = DT_INST_ENUM_IDX(n, trickle_microvolt),                             \
+		.iterm_sel = DT_INST_ENUM_IDX(n, term_current_percent),                            \
+		.vbatlow_charge_enable = DT_INST_PROP(n, vbatlow_charge_enable),                   \
+		.disable_recharge = DT_INST_PROP(n, disable_recharge),                             \
 		.temp_thresholds = {DT_INST_PROP_OR(n, thermistor_cold_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_cool_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
