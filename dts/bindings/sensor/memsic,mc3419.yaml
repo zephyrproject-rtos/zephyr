@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Linumiz
+
+description: MC3419 3-axis accel sensor
+
+compatible: "memsic,mc3419"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      This property specifies the connection for INT0, the driver maps
+      all interrupts to INT0 as default. The signal to output high when
+      data produced by the sensor.
+
+  op-mode:
+    type: string
+    required: true
+    description: Operating mode of sensor
+    enum:
+      - "STANDBY"
+      - "WAKE"
