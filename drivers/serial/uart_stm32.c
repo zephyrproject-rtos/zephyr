@@ -1955,6 +1955,29 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+/**
+ * @brief Reinitialization of UART context
+ *
+ * This function reenables clocks, and reconfigures the peripheral registers,
+ * which is required upon exiting certain low-power modes on select SoCs.
+ *
+ * @param direction PM state transition direction
+ * @param ctx UART device struct
+ */
+static void uart_stm32_reinit(uint8_t direction, void *ctx)
+{
+	ARG_UNUSED(direction);
+	const struct device *dev = ctx;
+
+	if (uart_stm32_clocks_enable(dev)) {
+		return;
+	}
+
+	uart_stm32_registers_configure(dev);
+}
+#endif /* CONFIG_PM */
+
 /**
  * @brief Initialize UART channel
  *
@@ -2003,6 +2026,15 @@ static int uart_stm32_init(const struct device *dev)
 		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
 			/* Prepare the WAKEUP with the expected EXTI line */
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
+		}
+	}
+#endif /* CONFIG_PM */
+
+#ifdef CONFIG_PM
+	if (config->reinit_states_size > 0) {
+		for (uint8_t i = 0; i < config->reinit_states_size; i++) {
+			pm_notifier_register(config->notifier, config->reinit_states[i].state,
+					     config->reinit_states[i].substate_id);
 		}
 	}
 #endif /* CONFIG_PM */
@@ -2162,9 +2194,20 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
 			(DT_INST_PROP(index, wakeup_line)),			\
 			(STM32_EXTI_LINE_NONE)),
+
+#define STM32_UART_REINIT_STATES_INIT(index)				\
+	static const struct pm_state_info reinit_states_##index[]	\
+		= PM_STATE_INFO_LIST_FROM_DT_REINIT(DT_DRV_INST(index))
+
+#define STM32_UART_REINIT_CFG_INIT(index)				\
+	.notifier = &PM_NOTIFIER(DT_INST_DEP_ORD(index)),		\
+	.reinit_states = reinit_states_##index,				\
+	.reinit_states_size = ARRAY_SIZE(reinit_states_##index),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
-#endif
+#define STM32_UART_REINIT_STATES_INIT(index)
+#define STM32_UART_REINIT_CFG_INIT(index)
+#endif /* CONFIG_PM */
 
 /* Ensure DTS doesn't present an incompatible parity configuration.
  * Mark/space parity isn't supported on the STM32 family.
@@ -2273,9 +2316,15 @@ BUILD_ASSERT(								\
 #endif
 
 #define STM32_UART_INIT(index)						\
+									\
 STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
+									\
+STM32_UART_REINIT_STATES_INIT(index);					\
+									\
+PM_NOTIFIER_DEFINE(DT_INST_DEP_ORD(index), PM_STATE_EXIT,		\
+		   uart_stm32_reinit, DEVICE_DT_INST_GET(index));	\
 									\
 static const struct stm32_pclken pclken_##index[] =			\
 					    STM32_DT_INST_CLOCKS(index);\
@@ -2309,6 +2358,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
 	.de_invert = DT_INST_PROP(index, de_invert),			\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
+	STM32_UART_REINIT_CFG_INIT(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\
 									\

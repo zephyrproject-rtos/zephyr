@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/pm/pm.h>
 
 #include <stm32_ll_usart.h>
 
@@ -59,6 +60,9 @@ struct uart_stm32_config {
 	/* Device defined as wake-up source */
 	bool wakeup_source;
 	uint32_t wakeup_line;
+	struct pm_notifier *notifier;
+	const struct pm_state_info *reinit_states;
+	size_t reinit_states_size;
 #endif /* CONFIG_PM */
 };
 
