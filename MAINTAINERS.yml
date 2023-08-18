@@ -3154,7 +3154,9 @@ West:
     - manifest-loramac-node
 
 "West project: lvgl":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - faxe1008
   collaborators:
     - brgl
     - pdgendt
