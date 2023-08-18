@@ -19,5 +19,6 @@
 
 	aliases {
 		watchdog0 = &tco_wdt;
+		sdhc0 = &emmc;
 	};
 };
