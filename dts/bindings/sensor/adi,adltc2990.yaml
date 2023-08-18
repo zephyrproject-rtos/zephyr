@@ -1,0 +1,86 @@
+# Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: ADLTC2990 Quad I2C Voltage, Current and Temperature Monitor
+
+compatible: "adi,adltc2990"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  temperature-format:
+    type: int
+    description: |
+      Define the temperature format. As per the datasheet,
+      b7 Temperature Format Temperature Reported In; Celsius = 0 (Default), Kelvin = 1
+    default: 0
+    enum:
+      - 0
+      - 1
+
+  acquistion-format:
+    type: int
+    description: |
+      Define the acquisition format. As per the datasheet,
+      b6 Repeat/Single Repeated Acquisition = 0 (Default), Single Acquisition = 1
+    default: 0
+    enum:
+      - 0
+      - 1
+
+  measurement-mode:
+    type: array
+    description: |
+      An array of two integers for configuring the chip measurement mode.
+
+      The first integer defines the bits 2..0 in the control register. In all
+      cases the internal temperature and supply voltage are measured. In
+      addition the following input measurements are enabled per mode:
+      As per the datasheet,
+      -------------------------------------------
+      b[2:0] | Mode [2:0] | Mode Description
+         0   |  0 0 0     | V1, V2, TR2 (Default)
+         1   |  0 0 1     | V1 – V2, TR2
+         2   |  0 1 0     | V1 – V2, V3, V4
+         3   |  0 1 1     | TR1, V3, V4
+         4   |  1 0 0     | TR1, V3 – V4
+         5   |  1 0 1     | TR1, TR2
+         6   |  1 1 0     | V1 – V2, V3 – V4
+         7   |  1 1 1     | V1, V2, V3, V4
+      -------------------------------------------
+      The second integer defines the bits 4..3 in the control register. This
+      allows a subset of the measurements to be enabled:
+      As Per the Datasheet,
+      ------------------------------------------------------------
+      b[4:3] | Mode [4:3] | Mode Description
+         0   |  0 0       | Internal Temperature Only (Default)
+         1   |  0 1       | TR1, V1 or V1 – V2 Only per Mode [2:0]
+         2   |  1 0       | TR2, V3 or V3 – V4 Only per Mode [2:0]
+         3   |  1 1       | All Measurements per Mode [2:0]
+      ------------------------------------------------------------
+    default: [0, 0]
+
+  pins-v1-v2-current-resistor:
+    type: int
+    description: Define the resistor to be used for measuring current in microohms
+
+  pin-v1-voltage-divider-resistors:
+    type: array
+    description: Define the resistor to be used for measuring Vout in milliohms
+
+  pin-v2-voltage-divider-resistors:
+    type: array
+    description: Define the resistor to be used for measuring Vout in milliohms
+
+  pins-v3-v4-current-resistor:
+    type: int
+    description: Define the resistor to be used for measuring current in microohms
+
+  pin-v3-voltage-divider-resistors:
+    type: array
+    description: Define the resistor to be used for measuring Vout in milliohms
+
+  pin-v4-voltage-divider-resistors:
+    type: array
+    description: Define the resistor to be used for measuring Vout in milliohms
