@@ -60,6 +60,8 @@ struct uhc_transfer {
 	unsigned int setup : 1;
 	/** Transfer owner */
 	void *owner;
+	/** Transfer result, 0 on success, other values on error */
+	int err;
 };
 
 /**
@@ -105,13 +107,11 @@ struct uhc_event {
 	/** Event type */
 	enum uhc_event_type type;
 	union {
-		/** Event value */
-		uint32_t value;
+		/** Event status value, if any */
+		int status;
 		/** Pointer to request used only for UHC_EVT_EP_REQUEST */
 		struct uhc_transfer *xfer;
 	};
-	/** Event status, 0 on success, other (transfer) values on error */
-	int status;
 	/** Pointer to controller's device struct */
 	const struct device *dev;
 };
