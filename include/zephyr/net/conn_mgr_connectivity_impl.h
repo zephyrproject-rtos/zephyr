@@ -17,6 +17,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -283,6 +284,55 @@ static inline void conn_mgr_binding_lock(struct conn_mgr_conn_binding *binding)
 static inline void conn_mgr_binding_unlock(struct conn_mgr_conn_binding *binding)
 {
 	(void)k_mutex_unlock(binding->mutex);
+}
+
+/**
+ * @brief Set the value of the specified connectivity flag for the provided binding
+ *
+ * Can be used from any thread or callback without calling conn_mgr_binding_lock.
+ *
+ * For use only by connectivity implementations
+ *
+ * @param binding - The binding to check
+ * @param flag - The flag to check
+ * @param value - New value for the specified flag
+ */
+static inline void conn_mgr_binding_set_flag(struct conn_mgr_conn_binding *binding,
+					     enum conn_mgr_if_flag flag, bool value)
+{
+	conn_mgr_binding_lock(binding);
+
+	binding->flags &= ~BIT(flag);
+	if (value) {
+		binding->flags |= BIT(flag);
+	}
+
+	conn_mgr_binding_unlock(binding);
+}
+
+/**
+ * @brief Check the value of the specified connectivity flag for the provided binding
+ *
+ * Can be used from any thread or callback without calling conn_mgr_binding_lock.
+ *
+ * For use only by connectivity implementations
+ *
+ * @param binding - The binding to check
+ * @param flag - The flag to check
+ * @return bool - The value of the specified flag
+ */
+static inline bool conn_mgr_binding_get_flag(struct conn_mgr_conn_binding *binding,
+					     enum conn_mgr_if_flag flag)
+{
+	bool value = false;
+
+	conn_mgr_binding_lock(binding);
+
+	value = !!(binding->flags & BIT(flag));
+
+	conn_mgr_binding_unlock(binding);
+
+	return value;
 }
 
 /**

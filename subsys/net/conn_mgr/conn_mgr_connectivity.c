@@ -178,14 +178,7 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
 		return -ENOTSUP;
 	}
 
-	conn_mgr_binding_lock(binding);
-
-	binding->flags &= ~BIT(flag);
-	if (value) {
-		binding->flags |= BIT(flag);
-	}
-
-	conn_mgr_binding_unlock(binding);
+	conn_mgr_binding_set_flag(binding, flag, value);
 
 	return 0;
 }
@@ -193,7 +186,6 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
 bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag)
 {
 	struct conn_mgr_conn_binding *binding;
-	bool value;
 
 	if (flag >= CONN_MGR_NUM_IF_FLAGS) {
 		return false;
@@ -204,13 +196,7 @@ bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag)
 		return false;
 	}
 
-	conn_mgr_binding_lock(binding);
-
-	value = !!(binding->flags & BIT(flag));
-
-	conn_mgr_binding_unlock(binding);
-
-	return value;
+	return conn_mgr_binding_get_flag(binding, flag);
 }
 
 int conn_mgr_if_get_timeout(struct net_if *iface)
