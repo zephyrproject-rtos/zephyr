@@ -8,8 +8,6 @@
 #include <zsr.h>
 #include <zephyr/irq.h>
 
-#define CURR_CPU (IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0)
-
 static struct {
 	irq_offload_routine_t fn;
 	const void *arg;
@@ -18,7 +16,7 @@ static struct {
 static void irq_offload_isr(const void *param)
 {
 	ARG_UNUSED(param);
-	offload_params[CURR_CPU].fn(offload_params[CURR_CPU].arg);
+	offload_params[_current_cpu->id].fn(offload_params[_current_cpu->id].arg);
 }
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
@@ -27,8 +25,8 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 
 	unsigned int intenable, key = arch_irq_lock();
 
-	offload_params[CURR_CPU].fn = routine;
-	offload_params[CURR_CPU].arg = parameter;
+	offload_params[_current_cpu->id].fn = routine;
+	offload_params[_current_cpu->id].arg = parameter;
 
 	__asm__ volatile("rsr %0, INTENABLE" : "=r"(intenable));
 	intenable |= BIT(ZSR_IRQ_OFFLOAD_INT);
