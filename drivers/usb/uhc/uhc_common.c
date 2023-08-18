@@ -21,13 +21,11 @@ NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
-		     const int status,
-		     struct uhc_transfer *const xfer)
+		     const int status)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
 		.type = type,
-		.xfer = xfer,
 		.status = status,
 		.dev = dev,
 	};
@@ -43,10 +41,19 @@ void uhc_xfer_return(const struct device *dev,
 		     struct uhc_transfer *const xfer,
 		     const int err)
 {
+	struct uhc_data *data = dev->data;
+	struct uhc_event drv_evt = {
+		.type = UHC_EVT_EP_REQUEST,
+		.xfer = xfer,
+		.dev = dev,
+	};
+
 	sys_dlist_remove(&xfer->node);
 	xfer->queued = 0;
 	xfer->claimed = 0;
-	uhc_submit_event(dev, UHC_EVT_EP_REQUEST, err, xfer);
+	xfer->err = err;
+
+	data->event_cb(dev, &drv_evt);
 }
 
 struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
