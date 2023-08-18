@@ -32,46 +32,6 @@ BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
 	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
 	     "Missing partitions?");
 
-#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD) &&		\
-	!(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
-/* In case when direct upload is enabled, slot2 and slot3 are optional
- * as long as there is support for one application image only.
- */
-#define ADD_SLOT_2_CONDITION FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
-#define ADD_SLOT_3_CONDITION FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
-#elif (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
-/* For more than one application image slot2 and slot3 are required. */
-#define ADD_SLOT_2_CONDITION 1
-#define ADD_SLOT_3_CONDITION 1
-#else
-/* If neither in direct upload mode nor more than one application image
- * is supported, then slot2 and slot3 support is useless.
- */
-#define ADD_SLOT_2_CONDITION 0
-#define ADD_SLOT_3_CONDITION 0
-#endif
-
-int
-img_mgmt_slot_to_image(int slot)
-{
-	switch (slot) {
-	case 0:
-	case 1:
-		return 0;
-#if ADD_SLOT_2_CONDITION
-	case 2:
-		return 1;
-#endif
-#if ADD_SLOT_3_CONDITION
-	case 3:
-		return 1;
-#endif
-	default:
-		assert(0);
-	}
-	return 0;
-}
-
 /**
  * Determines if the specified area of flash is completely unwritten.
  *
@@ -165,13 +125,13 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
-#if ADD_SLOT_2_CONDITION
+#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
 		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
 		break;
 #endif
 
-#if ADD_SLOT_3_CONDITION
+#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
 	case 3:
 		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
 		break;
