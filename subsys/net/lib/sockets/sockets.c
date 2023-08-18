@@ -1279,17 +1279,124 @@ fail:
 	return -1;
 }
 
-static inline ssize_t zsock_recv_stream(struct net_context *ctx,
-					void *buf,
-					size_t max_len,
-					int flags)
+static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf, size_t *max_len,
+					  int flags)
 {
-	k_timeout_t timeout = K_FOREVER;
+	size_t len;
+	size_t pkt_len;
 	size_t recv_len = 0;
+	struct net_pkt *pkt;
 	struct net_pkt_cursor backup;
+	struct net_pkt *origin = NULL;
+	const bool do_recv = !(buf == NULL || max_len == NULL);
+	size_t _max_len = (max_len == NULL) ? SIZE_MAX : *max_len;
+	const bool peek = (flags & ZSOCK_MSG_PEEK) == ZSOCK_MSG_PEEK;
+
+	while (_max_len > 0) {
+		/* only peek until we know we can dequeue and / or requeue buffer */
+		pkt = k_fifo_peek_head(&ctx->recv_q);
+		if (pkt == NULL || pkt == origin) {
+			break;
+		}
+
+		if (origin == NULL) {
+			/* mark first pkt to avoid cycles when observing */
+			origin = pkt;
+		}
+
+		pkt_len = net_pkt_remaining_data(pkt);
+		len = MIN(_max_len, pkt_len);
+		recv_len += len;
+		_max_len -= len;
+
+		if (do_recv && len > 0) {
+			if (peek) {
+				net_pkt_cursor_backup(pkt, &backup);
+			}
+
+			net_pkt_read(pkt, *buf, len);
+			/* update buffer position for caller */
+			*buf += len;
+
+			if (peek) {
+				net_pkt_cursor_restore(pkt, &backup);
+			}
+		}
+
+		if (do_recv && !peek) {
+			if (len == pkt_len) {
+				/* dequeue empty packets when not observing */
+				pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+				if (net_pkt_eof(pkt)) {
+					sock_set_eof(ctx);
+				}
+
+				if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS)) {
+					net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
+				}
+
+				net_pkt_unref(pkt);
+			}
+		} else if (!do_recv || peek) {
+			/* requeue packets when observing */
+			k_fifo_put(&ctx->recv_q, k_fifo_get(&ctx->recv_q, K_NO_WAIT));
+		}
+	}
+
+	if (do_recv) {
+		/* convey remaining buffer size back to caller */
+		*max_len = _max_len;
+	}
+
+	return recv_len;
+}
+
+static ssize_t zsock_recv_stream_timed(struct net_context *ctx, uint8_t *buf, size_t max_len,
+				       int flags, k_timeout_t timeout)
+{
 	int res;
 	k_timepoint_t end;
-	const bool waitall = flags & ZSOCK_MSG_WAITALL;
+	size_t recv_len = 0;
+	const bool waitall = (flags & ZSOCK_MSG_WAITALL) == ZSOCK_MSG_WAITALL;
+
+	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
+
+		if (sock_is_error(ctx)) {
+			return -POINTER_TO_INT(ctx->user_data);
+		}
+
+		if (sock_is_eof(ctx)) {
+			return 0;
+		}
+
+		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			res = zsock_wait_data(ctx, &timeout);
+			if (res < 0) {
+				return res;
+			}
+		}
+
+		res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
+		recv_len += res;
+		if (res == 0) {
+			if (recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				return -EAGAIN;
+			}
+		}
+
+		if (!waitall) {
+			break;
+		}
+	}
+
+	return recv_len;
+}
+
+static ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size_t max_len, int flags)
+{
+	ssize_t res;
+	size_t recv_len = 0;
+	k_timeout_t timeout = K_FOREVER;
 
 	if (!net_context_is_used(ctx)) {
 		errno = EBADF;
@@ -1307,91 +1414,18 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
-	end = sys_timepoint_calc(timeout);
+	if (max_len == 0) {
+		/* no bytes requested - done! */
+		return 0;
+	}
 
-	do {
-		struct net_pkt *pkt;
-		size_t data_len, read_len;
-		bool release_pkt = true;
+	res = zsock_recv_stream_timed(ctx, buf, max_len, flags, timeout);
+	recv_len += MAX(0, res);
 
-		if (sock_is_error(ctx)) {
-			errno = POINTER_TO_INT(ctx->user_data);
-			return -1;
-		}
-
-		if (sock_is_eof(ctx)) {
-			return 0;
-		}
-
-		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			res = zsock_wait_data(ctx, &timeout);
-			if (res < 0) {
-				errno = -res;
-				return -1;
-			}
-		}
-
-		pkt = k_fifo_peek_head(&ctx->recv_q);
-		if (!pkt) {
-			/* Either timeout expired, or wait was cancelled
-			 * due to connection closure by peer.
-			 */
-			NET_DBG("NULL return from fifo");
-
-			if (waitall && (recv_len > 0)) {
-				return recv_len;
-			} else if (sock_is_error(ctx)) {
-				errno = POINTER_TO_INT(ctx->user_data);
-				return -1;
-			} else if (sock_is_eof(ctx)) {
-				return 0;
-			} else {
-				errno = EAGAIN;
-				return -1;
-			}
-		}
-
-		net_pkt_cursor_backup(pkt, &backup);
-
-		data_len = net_pkt_remaining_data(pkt);
-		read_len = data_len;
-		if (recv_len + read_len > max_len) {
-			read_len = max_len - recv_len;
-			release_pkt = false;
-		}
-
-		/* Actually copy data to application buffer */
-		if (net_pkt_read(pkt, (uint8_t *)buf + recv_len, read_len)) {
-			errno = ENOBUFS;
-			return -1;
-		}
-
-		recv_len += read_len;
-
-		if (!(flags & ZSOCK_MSG_PEEK)) {
-			if (release_pkt) {
-				/* Finished processing head pkt in
-				 * the fifo. Drop it from there.
-				 */
-				k_fifo_get(&ctx->recv_q, K_NO_WAIT);
-				if (net_pkt_eof(pkt)) {
-					sock_set_eof(ctx);
-				}
-
-				if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS)) {
-					net_socket_update_tc_rx_time(
-						pkt, k_cycle_get_32());
-				}
-
-				net_pkt_unref(pkt);
-			}
-		} else {
-			net_pkt_cursor_restore(pkt, &backup);
-		}
-
-		/* Update the timeout value in case loop is repeated. */
-		timeout = sys_timepoint_timeout(end);
-	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_context_update_recv_wnd(ctx, recv_len);
@@ -2380,7 +2414,6 @@ static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
 }
 #include <syscalls/zsock_getpeername_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
 
 int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 			  socklen_t *addrlen)
