@@ -126,7 +126,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 	thread->arch.mode = 0;
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
-	thread->arch.mode_exc_return = DEFAULT_EXC_RETURN;
+	thread->arch.s.mode_exc_return = DEFAULT_EXC_RETURN;
 #endif
 #if FP_GUARD_EXTRA_SIZE > 0
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
@@ -202,7 +202,7 @@ static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
 uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread)
 {
 	if (((thread->base.user_options & K_FP_REGS) != 0) ||
-		((thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0)) {
+		((thread->arch.s.mode_exc_return & EXC_RETURN_FTYPE) == 0)) {
 		/* The thread has been pre-tagged (at creation or later) with
 		 * K_FP_REGS, i.e. it is expected to be using the FPU registers
 		 * (if not already). Activate lazy stacking and program a large

@@ -36,7 +36,7 @@ GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 GEN_OFFSET_SYM(_thread_arch_t, mode);
 #endif
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
-GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
+GEN_NAMED_OFFSET_SYM(_thread_arch_t, s.mode_exc_return, mode_exc_return);
 #endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);

@@ -38,13 +38,13 @@ static void work_func(struct k_work *work)
 {
 #ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	/* Check that the main thread was executing in secure mode. */
-	zassert_true(main_thread->arch.mode_exc_return & EXC_RETURN_S,
-		"EXC_RETURN not secure: 0x%x\n", main_thread->arch.mode_exc_return);
+	zassert_true(main_thread->arch.s.mode_exc_return & EXC_RETURN_S,
+		"EXC_RETURN not secure: 0x%x\n", main_thread->arch.s.mode_exc_return);
 
 #else
 	/* Check that the main thread was executing in nonsecure mode. */
-	zassert_false(main_thread->arch.mode_exc_return & EXC_RETURN_S,
-		"EXC_RETURN not nonsecure: 0x%x\n", main_thread->arch.mode_exc_return);
+	zassert_false(main_thread->arch.s.mode_exc_return & EXC_RETURN_S,
+		"EXC_RETURN not nonsecure: 0x%x\n", main_thread->arch.s.mode_exc_return);
 #endif
 
 	work_done = true;

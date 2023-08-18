@@ -115,7 +115,7 @@ struct _thread_arch {
 			uint8_t mode_bits;
 			uint8_t mode_exc_return;
 			uint16_t mode_reserved2;
-		};
+		} s;
 #endif
 	};
 

@@ -134,7 +134,7 @@ size_t _kernel_thread_info_offsets[] = {
 	 * then the LSB needs to be restored from mode_exc_return.
 	 */
 	[THREAD_INFO_OFFSET_T_ARM_EXC_RETURN] = offsetof(struct _thread_arch,
-							 mode_exc_return),
+							 s.mode_exc_return),
 #else
 	[THREAD_INFO_OFFSET_T_ARM_EXC_RETURN] = THREAD_INFO_UNIMPLEMENTED,
 #endif /* CONFIG_ARM_STORE_EXC_RETURN */
