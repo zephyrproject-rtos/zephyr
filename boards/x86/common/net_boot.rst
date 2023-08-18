@@ -1,3 +1,5 @@
+:orphan:
+
 Prepare Linux host
 ------------------
 
