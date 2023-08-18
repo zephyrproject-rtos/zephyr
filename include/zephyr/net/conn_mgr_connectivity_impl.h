@@ -253,6 +253,39 @@ static inline struct conn_mgr_conn_binding *conn_mgr_if_get_binding(struct net_i
 }
 
 /**
+ * @brief Lock the passed-in binding, making it safe to access.
+ *
+ * Call this whenever accessing binding data, unless inside a conn_mgr_conn_api callback, where it
+ * is called automatically by conn_mgr.
+ *
+ * Reentrant.
+ *
+ * For use only by connectivity implementations.
+ *
+ * @param binding - Binding to lock
+ */
+static inline void conn_mgr_binding_lock(struct conn_mgr_conn_binding *binding)
+{
+	(void)k_mutex_lock(binding->mutex, K_FOREVER);
+}
+
+/**
+ * @brief Unlocks the passed-in binding.
+ *
+ * Call this after any call to conn_mgr_binding_lock once done accessing binding data.
+ *
+ * Reentrant.
+ *
+ * For use only by connectivity implementations.
+ *
+ * @param binding - Binding to unlock
+ */
+static inline void conn_mgr_binding_unlock(struct conn_mgr_conn_binding *binding)
+{
+	(void)k_mutex_unlock(binding->mutex);
+}
+
+/**
  * @}
  */
 
