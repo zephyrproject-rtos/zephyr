@@ -32,7 +32,7 @@ int conn_mgr_if_connect(struct net_if *iface)
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	if (!net_if_is_admin_up(iface)) {
 		status = net_if_up(iface);
@@ -44,7 +44,7 @@ int conn_mgr_if_connect(struct net_if *iface)
 	status = api->connect(binding);
 
 out:
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return status;
 }
@@ -69,7 +69,7 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	if (!net_if_is_admin_up(iface)) {
 		goto out;
@@ -78,7 +78,7 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 	status = api->disconnect(binding);
 
 out:
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	/* Since the connectivity implementation will not automatically attempt to reconnect after
 	 * a call to conn_mgr_if_disconnect, conn_mgr_conn_if_auto_admin_down should be called.
@@ -127,11 +127,11 @@ int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t 
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	status = api->get_opt(binding, optname, optval, optlen);
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return status;
 }
@@ -156,11 +156,11 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	status = api->set_opt(binding, optname, optval, optlen);
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return status;
 }
@@ -178,14 +178,14 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	binding->flags &= ~BIT(flag);
 	if (value) {
 		binding->flags |= BIT(flag);
 	}
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return 0;
 }
@@ -204,11 +204,11 @@ bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag)
 		return false;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	value = !!(binding->flags & BIT(flag));
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return value;
 }
@@ -222,11 +222,11 @@ int conn_mgr_if_get_timeout(struct net_if *iface)
 		return false;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	value = binding->timeout;
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return value;
 }
@@ -239,11 +239,11 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 		return -ENOTSUP;
 	}
 
-	k_mutex_lock(binding->mutex, K_FOREVER);
+	conn_mgr_binding_lock(binding);
 
 	binding->timeout = timeout;
 
-	k_mutex_unlock(binding->mutex);
+	conn_mgr_binding_unlock(binding);
 
 	return 0;
 }
@@ -387,7 +387,7 @@ void conn_mgr_conn_init(void)
 			LOG_ERR("Connectivity implementation has NULL API, and will be treated as "
 				"non-existent.");
 		} else if (binding->impl->api->init) {
-			k_mutex_lock(binding->mutex, K_FOREVER);
+			conn_mgr_binding_lock(binding);
 
 			/* Set initial default values for binding state */
 
@@ -397,7 +397,7 @@ void conn_mgr_conn_init(void)
 
 			binding->impl->api->init(binding);
 
-			k_mutex_unlock(binding->mutex);
+			conn_mgr_binding_unlock(binding);
 		}
 	}
 
