@@ -83,6 +83,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_MICP);
 #endif /* CONFIG_BT_MICP_MIC_DEV */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CCP);
+#endif /* CONFIG_BT_TBS_CLIENT */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -167,6 +170,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_init_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -253,6 +261,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_unregister_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
