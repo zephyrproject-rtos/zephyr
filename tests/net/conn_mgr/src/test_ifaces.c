@@ -5,7 +5,7 @@
  */
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_connectivity_impl.h>
 #include <zephyr/net/ethernet.h>
 #include "test_ifaces.h"
 

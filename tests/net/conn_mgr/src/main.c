@@ -15,8 +15,8 @@
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dummy.h>
-#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include "conn_mgr_private.h"
 #include "test_ifaces.h"
 #include <zephyr/net/net_ip.h>
