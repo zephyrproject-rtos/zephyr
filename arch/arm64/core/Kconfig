@@ -159,6 +159,15 @@ config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	  The stack size of the safe exception stack. The safe exception stack
 	  requires to be enough to do the stack overflow check.
 
+config ARM64_FALLBACK_ON_RESERVED_CORES
+	bool "To enable fallback on reserved cores"
+	help
+	  Give the ability to define more cores in the device tree than required
+	  via CONFIG_MP_MAX_NUM_CPUS.  The extra cores in the device tree
+	  become reserved.  If there is an issue powering on a core during boot
+	  then that core will be skipped and the next core in the device tree
+	  will be used.
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS

@@ -63,7 +63,8 @@ extern void z_arm64_mm_init(bool is_primary_core);
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	int cpu_count, i, j;
+	int cpu_count;
+	static int i;
 	uint64_t cpu_mpid = 0;
 	uint64_t master_core_mpid;
 
@@ -72,41 +73,51 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
+
+#ifdef CONFIG_ARM64_FALLBACK_ON_RESERVED_CORES
+	__ASSERT(cpu_count >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Core nodes in dts is not greater or equal to CONFIG_MP_MAX_NUM_CPUS\n");
+#else
 	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
-
-	for (i = 0, j = 0; i < cpu_count; i++) {
-		if (cpu_node_list[i] == master_core_mpid) {
-			continue;
-		}
-		if (j == cpu_num - 1) {
-			cpu_mpid = cpu_node_list[i];
-			break;
-		}
-		j++;
-	}
-	if (i == cpu_count) {
-		printk("Can't find CPU Core %d from dts and failed to boot it\n", cpu_num);
-		return;
-	}
+#endif
 
 	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
 
-	barrier_dsync_fence_full();
+	for (; i < cpu_count; i++) {
+		if (cpu_node_list[i] == master_core_mpid) {
+			continue;
+		}
 
-	/* store mpid last as this is our synchronization point */
-	arm64_cpu_boot_params.mpid = cpu_mpid;
+		cpu_mpid = cpu_node_list[i];
 
-	sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
-				  sizeof(arm64_cpu_boot_params));
+		barrier_dsync_fence_full();
 
-	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
-		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
-		       cpu_num, cpu_mpid);
-		return;
+		/* store mpid last as this is our synchronization point */
+		arm64_cpu_boot_params.mpid = cpu_mpid;
+
+		sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
+					  sizeof(arm64_cpu_boot_params));
+
+		if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
+			printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
+			       cpu_num, cpu_mpid);
+#ifdef CONFIG_ARM64_FALLBACK_ON_RESERVED_CORES
+			printk("Falling back on reserved cores\n");
+			continue;
+#else
+			k_panic();
+#endif
+		}
+
+		break;
+	}
+	if (i++ == cpu_count) {
+		printk("Can't find CPU Core %d from dts and failed to boot it\n", cpu_num);
+		k_panic();
 	}
 
 	/* Wait secondary cores up, see z_arm64_secondary_start */
