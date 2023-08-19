@@ -122,20 +122,16 @@
 /boards/arm/efm32pg_stk3401a/             @rdmeneze
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @mmahadevan108 @dleach02
-/boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
 /boards/arm/gd32*/                        @nandojve
 /boards/arm/google_*/                     @jackrosenthal
 /boards/arm/hexiwear*/                    @mmahadevan108 @dleach02
-/boards/arm/hexiwear*/doc/                @dleach02 @MeganHansen
 /boards/arm/ip_k66f/                      @parthitce @lmajewski
 /boards/arm/legend/                       @mbittan @simonguinot
 /boards/arm/lpcxpresso*/                  @mmahadevan108 @dleach02
-/boards/arm/lpcxpresso*/doc/              @dleach02 @MeganHansen
 /boards/arm/mg100/                        @rerickson1
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
 /boards/arm/mimx8mm_phyboard_polis        @pefech
 /boards/arm/mimxrt*/                      @mmahadevan108 @dleach02
-/boards/arm/mimxrt*/doc/                  @dleach02 @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 /boards/arm/npcx7m6fb_evb/                @MulinChao @ChiHuaL
