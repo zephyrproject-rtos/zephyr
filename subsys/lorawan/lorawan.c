@@ -59,6 +59,7 @@ K_MUTEX_DEFINE(lorawan_send_mutex);
 static enum lorawan_datarate default_datarate;
 static enum lorawan_datarate current_datarate;
 static bool lorawan_adr_enable;
+static bool lorawan_device_time_updated_once;
 
 static sys_slist_t dl_callbacks;
 
@@ -150,9 +151,14 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 	if (lorawan_adr_enable) {
 		datarate_observe(false);
 	}
+	/* Save time has been updated at least once */
+	if (!lorawan_device_time_updated_once && mcps_indication->DeviceTimeAnsReceived) {
+		lorawan_device_time_updated_once = true;
+	}
 
 	/* IsUplinkTxPending also indicates pending downlinks */
 	flags |= (mcps_indication->IsUplinkTxPending == 1 ? LORAWAN_DATA_PENDING : 0);
+	flags |= (mcps_indication->DeviceTimeAnsReceived ? LORAWAN_TIME_UPDATED : 0);
 
 	/* Iterate over all registered downlink callbacks */
 	SYS_SLIST_FOR_EACH_CONTAINER(&dl_callbacks, cb, node) {
@@ -192,6 +198,9 @@ static void mlme_confirm_handler(MlmeConfirm_t *mlme_confirm)
 		/* Not implemented */
 		LOG_INF("Link check not implemented yet!");
 		break;
+	case MLME_DEVICE_TIME:
+		LOG_INF("DevTimeReq done");
+		break;
 	default:
 		break;
 	}
@@ -205,6 +214,14 @@ static void mlme_indication_handler(MlmeIndication_t *mlme_indication)
 {
 	LOG_DBG("Received MlmeIndication %d", mlme_indication->MlmeIndication);
 	last_mlme_indication_status = mlme_indication->Status;
+}
+
+static LoRaMacStatus_t lorawan_req_time(void)
+{
+	MlmeReq_t mlme_req;
+
+	mlme_req.Type = MLME_DEVICE_TIME;
+	return LoRaMacMlmeRequest(&mlme_req);
 }
 
 static LoRaMacStatus_t lorawan_join_otaa(
@@ -360,6 +377,43 @@ int lorawan_set_region(enum lorawan_region region)
 	LOG_DBG("Selected region %d", region);
 
 	return 0;
+}
+
+int lorawan_request_device_time(bool force_request)
+{
+	int ret = 0;
+	LoRaMacStatus_t status;
+	MlmeReq_t mlme_req;
+
+	mlme_req.Type = MLME_DEVICE_TIME;
+	status = LoRaMacMlmeRequest(&mlme_req);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("DeviceTime Req. failed: %s",
+				lorawan_status2str(status));
+		ret = lorawan_status2errno(status);
+		return ret;
+	}
+
+	if (force_request) {
+		ret = lorawan_send(0U, "", 0U, LORAWAN_MSG_UNCONFIRMED);
+	}
+
+	return ret;
+}
+
+int lorawan_device_time_get(uint32_t *epoch_time)
+{
+	SysTime_t local_time;
+
+	__ASSERT(epoch_time != NULL, "epoch_time parameter is required");
+
+	if (lorawan_device_time_updated_once) {
+		local_time = SysTimeGet();
+		*epoch_time = local_time.Seconds;
+		return 0;
+	} else {
+		return -EAGAIN;
+	}
 }
 
 int lorawan_join(const struct lorawan_join_config *join_cfg)
