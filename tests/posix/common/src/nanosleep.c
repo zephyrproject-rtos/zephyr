@@ -96,7 +96,7 @@ static void common(const uint32_t s, uint32_t ns)
 	r = nanosleep(&req, &rem);
 	now = k_cycle_get_32();
 
-	zassert_equal(r, 0, "actual: %d expected: %d", r, -1);
+	zassert_equal(r, 0, "actual: %d expected: %d", r, 0);
 	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
 	zassert_equal(req.tv_sec, s, "actual: %d expected: %d", req.tv_sec, s);
 	zassert_equal(req.tv_nsec, ns, "actual: %d expected: %d", req.tv_nsec, ns);
