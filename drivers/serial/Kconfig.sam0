@@ -9,8 +9,12 @@ config UART_SAM0
 	depends on DT_HAS_ATMEL_SAM0_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	# the ASYNC implementation requires a DMA controller
 	select SERIAL_SUPPORT_ASYNC if DT_HAS_ATMEL_SAM0_DMAC_ENABLED
-	select DMA if UART_ASYNC_API
 	help
 	  This option enables the SERCOMx USART driver for Atmel SAM0 MCUs.
+
+config UART_SAM0_ASYNC
+	bool "Async UART support for Atmel SAM0 series."
+	depends on DMA_SAM0
+	depends on UART_SAM0
+	depends on UART_ASYNC_API
