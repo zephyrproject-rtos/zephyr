@@ -18,7 +18,6 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/sys/crc.h>
 
 /*
