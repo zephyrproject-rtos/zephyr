@@ -40,3 +40,16 @@ tests:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
     harness: ztest
     depends_on: dma
+  drivers.uart.async_api.sam0:
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_SAM0
+    platform_allow:
+      - atsamc21n_xpro
+      - atsamd21_xpro
+      - atsaml21_xpro
+      - atsamr21_xpro
+      - atsamr34_xpro
+      - atsame54_xpro
+    extra_configs:
+      - CONFIG_UART_SAM0_ASYNC=y
+      - CONFIG_DMA=y
+    build_only: true

@@ -18,4 +18,4 @@ supported:
   - i2c
   - pwm
   - spi
-  - can
+  - uart
