@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Linumiz
+
+description: MC3419 3-axis accel sensor
+
+compatible: "memsic,mc3419"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property specifies the connection for INT, this pin
+      defaults to active low when sample produce interrupt.
+
+  int-pin2:
+    type: boolean
+    description: |
+      This property is used for interrupt routing.The sensor
+      has two interrupt pins.By default the interrupt are routed
+      to interrupt pin 1, by enabled this property interrupt are
+      routed to interrupt pin 2.
