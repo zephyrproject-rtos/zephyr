@@ -96,6 +96,8 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
 int timer_getoverrun(timer_t timerid);
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
+int clock_nanosleep(clockid_t clock_id, int flags,
+		    const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef __cplusplus
 }
