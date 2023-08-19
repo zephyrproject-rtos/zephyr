@@ -350,6 +350,16 @@ struct pm_state_info {
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 
 /**
+ * Retrieve the index of a DT power-states array element.
+ *
+ * @param state pm_state state.
+ * @param substate_id pm_state substate ID.
+ *
+ * @return Index of the PM state, or -1.
+ */
+int8_t pm_state_get_index(enum pm_state state, uint8_t substate_id);
+
+/**
  * @}
  */
 
