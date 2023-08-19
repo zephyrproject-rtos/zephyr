@@ -46,4 +46,14 @@ config WS2812_STRIP_GPIO
 	  Note that this driver is not compatible with the Everlight B1414
 	  controller.
 
+config WS2812_STRIP_PIO
+	bool "PIO driver"
+	depends on SOC_SERIES_RP2XXX
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	help
+	  The PIO driver uses one PIO State Machine to implement the protocol.
+
+	  Note: only available in the Raspberry Pi Pico RP2040.
+
 endchoice

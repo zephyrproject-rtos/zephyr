@@ -1,0 +1,16 @@
+# Copyright (c) 2023, Christian Bach
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, PIO binding
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with a PIO Interface in the RP2040 processor.
+
+  The PIO driver should be usable as long as a zephyr PIO API driver
+  is available for your board.
+
+compatible: "worldsemi,ws2812-pio"
+
+include: [ws2812.yaml, "raspberrypi,pico-pio-device.yaml"]
+
