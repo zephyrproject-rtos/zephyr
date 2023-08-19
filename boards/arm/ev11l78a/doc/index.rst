@@ -33,27 +33,40 @@ Supported Features
 The ev11l78a board configuration supports the following hardware
 features:
 
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | I²C ports                                |
-+-----------+------------+------------------------------------------+
-| ADC       | on-chip    | Analog-to-Digital Converter              |
-+-----------+------------+------------------------------------------+
+
+.. list-table::
+    :header-rows: 1
+
+    * - Interface
+      - Controller
+      - Driver / Component
+    * - NVIC
+      - on-chip
+      - nested vector interrupt controller
+    * - Flash
+      - on-chip
+      - Can be used with LittleFS to store files
+    * - SYSTICK
+      - on-chip
+      - systick
+    * - WDT
+      - on-chip
+      - Watchdog
+    * - ADC
+      - on-chip
+      - Analog to Digital Converter
+    * - GPIO
+      - on-chip
+      - I/O ports
+    * - USART
+      - on-chip
+      - Serial ports
+    * - I2C
+      - on-chip
+      - I2C ports
+    * - SPI
+      - on-chip
+      - Serial Peripheral Interface ports
 
 Other hardware features are not currently supported by Zephyr.
 
