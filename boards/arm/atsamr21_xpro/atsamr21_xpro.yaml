@@ -18,6 +18,7 @@ supported:
   - netif
   - pwm
   - spi
+  - uart
   - usb_device
   - xpro_gpio
   - xpro_i2c
