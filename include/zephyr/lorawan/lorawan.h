@@ -108,6 +108,7 @@ enum lorawan_message_type {
  */
 enum lorawan_dl_flags {
 	LORAWAN_DATA_PENDING = BIT(0),
+	LORAWAN_TIME_UPDATED = BIT(1),
 };
 
 /**
@@ -377,6 +378,32 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
  * @return 0 if successful, negative errno otherwise
  */
 int lorawan_set_region(enum lorawan_region region);
+
+/**
+ * @brief Request for time according to DeviceTimeReq MAC cmd
+ *
+ * Append MAC DevTimeReq command. It will be processed on next send
+ * message or force sending empty message to request time immediately.
+ *
+ * @param force_request Immediately send an empty message to execute the request
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_request_device_time(bool force_request);
+
+/**
+ * @brief Retrieve the current time from LoRaWAN stack updated by
+ * DeviceTimeAns on MAC layer.
+ *
+ * This function uses the GPS epoch format, as used in all LoRaWAN services.
+ *
+ * The GPS epoch started on 1980-01-06T00:00:00Z, but has since diverged
+ * from UTC, as it does not consider corrections like leap seconds.
+ *
+ * @param gps_time Synchronized time in GPS epoch format truncated to 32-bit.
+ *
+ * @return 0 if successful, -EAGAIN if the clock is not yet synchronized.
+ */
+int lorawan_device_time_get(uint32_t *gps_time);
 
 #ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
 
