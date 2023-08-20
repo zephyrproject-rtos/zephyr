@@ -2710,12 +2710,13 @@ static bool on_cmd_atcmdinfo_pdp_context(struct net_buf **buf, uint16_t len)
 				iface_ctx.mdm_pdp_addr_fam[i++] = *p++;
 			}
 
-			if (strcmp(ictx.mdm_pdp_addr_fam, ADDRESS_FAMILY_IP) == 0) {
-				snprintk(ictx.mdm_pdp_addr_fam, sizeof(ictx.mdm_pdp_addr_fam), "%s",
+			if (strcmp(iface_ctx.mdm_pdp_addr_fam, ADDRESS_FAMILY_IP) == 0) {
+				snprintk(iface_ctx.mdm_pdp_addr_fam,
+					 sizeof(iface_ctx.mdm_pdp_addr_fam), "%s",
 					 ADDRESS_FAMILY_IPV4);
 			}
 
-			LOG_DBG("PDP address family: %s", ictx.mdm_pdp_addr_fam);
+			LOG_DBG("PDP address family: %s", iface_ctx.mdm_pdp_addr_fam);
 
 			/* APN after second , " */
 			p = strchr(p, ',');
@@ -5337,7 +5338,7 @@ reboot:
 	 */
 	SEND_AT_CMD_EXPECT_OK("AT+CFUN=4,0");
 
-	ictx.low_power_mode = HL7800_LPM_NONE;
+	iface_ctx.low_power_mode = HL7800_LPM_NONE;
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 	/* enable GPIO6 low power monitoring */
 	SEND_AT_CMD_EXPECT_OK("AT+KHWIOCFG=3,1,6");
@@ -5404,8 +5405,8 @@ reboot:
 
 	/* Query PDP context to get APN */
 	SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
-	apn = ictx.mdm_apn.value;
-	if (strcmp(ictx.mdm_pdp_addr_fam, MODEM_HL7800_ADDRESS_FAMILY)) {
+	apn = iface_ctx.mdm_apn.value;
+	if (strcmp(iface_ctx.mdm_pdp_addr_fam, MODEM_HL7800_ADDRESS_FAMILY)) {
 		config_apn = true;
 	}
 
@@ -5434,7 +5435,7 @@ reboot:
 		SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
 	}
 
-	ret = setup_gprs_connection(ictx.mdm_apn.value);
+	ret = setup_gprs_connection(iface_ctx.mdm_apn.value);
 	if (ret < 0) {
 		goto error;
 	}
