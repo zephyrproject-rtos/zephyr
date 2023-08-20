@@ -26,6 +26,10 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 #define CURRENT_CPU \
 	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
 
+#define PM_WORKQ_STACK_SIZE 512
+K_THREAD_STACK_DEFINE(pm_workq_stack, PM_WORKQ_STACK_SIZE);
+struct k_work_q pm_workq;
+
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_MAX_NUM_CPUS);
 
 /* Active state notifiers list */
@@ -342,3 +346,14 @@ const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
 	return &z_cpus_pm_state[cpu];
 }
+
+static int pm_system_init(void)
+{
+	k_work_queue_init(&pm_workq);
+	k_work_queue_start(&pm_workq, pm_workq_stack, PM_WORKQ_STACK_SIZE, K_HIGHEST_THREAD_PRIO,
+			   NULL);
+
+	return 0;
+}
+
+SYS_INIT(pm_system_init, POST_KERNEL, 0);
