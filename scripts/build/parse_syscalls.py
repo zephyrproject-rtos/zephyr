@@ -100,6 +100,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
                 # don't want to trip over
                 path = os.path.join(root, fn)
                 if (not (path.endswith(".h") or path.endswith(".c")) or
+                        fn.startswith(".") or
                         path.endswith(os.path.join(os.sep, 'toolchain',
                                                    'common.h'))):
                     continue
