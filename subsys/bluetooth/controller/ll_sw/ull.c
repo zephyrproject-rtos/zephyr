@@ -44,6 +44,7 @@
 #include "lll_sync_iso.h"
 #include "lll_iso_tx.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 #include "lll_df.h"
 
 #include "ull_adv_types.h"
@@ -60,6 +61,7 @@
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "isoal.h"
+#include "ll_feat_internal.h"
 #include "ull_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_adv_internal.h"
@@ -69,7 +71,6 @@
 #include "ull_central_internal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_internal.h"
-#include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
 #include "ull_central_iso_internal.h"
 #include "ull_llcp.h"
@@ -898,6 +899,10 @@ void ll_reset(void)
 	err = ull_df_reset();
 	LL_ASSERT(!err);
 #endif
+
+#if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
+	ll_feat_reset();
+#endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
 	/* clear static random address */
 	(void)ll_addr_set(1U, NULL);
