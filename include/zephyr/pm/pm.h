@@ -72,6 +72,16 @@ struct pm_notifier {
 	 */
 	void (*callback)(uint8_t direction, void *ctx);
 
+#ifdef CONFIG_PM
+	/**
+	 * Workqueue item to be called in place of above callback. Runs via dedicated PM workqueue.
+	 * Used for logic that needs to block.
+	 *
+	 * @note State direction comparison is not supported in PM workqueue handler.
+	 */
+	struct k_work work;
+#endif
+
 	/**
 	 * Optional callback context
 	 */

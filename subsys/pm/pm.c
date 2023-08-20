@@ -155,8 +155,12 @@ static void pm_state_notify(uint8_t direction)
 
 	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
 	SYS_SLIST_FOR_EACH_CONTAINER(notifiers, notifier, _node) {
-		if ((direction & notifier->direction) && notifier->callback) {
-			notifier->callback(direction, (void *)notifier->ctx);
+		if (direction & notifier->direction) {
+			if (notifier->work.handler != NULL) {
+				k_work_submit_to_queue(&pm_workq, &notifier->work);
+			} else if (notifier->callback) {
+				notifier->callback(direction, (void *)notifier->ctx);
+			}
 		}
 	}
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
