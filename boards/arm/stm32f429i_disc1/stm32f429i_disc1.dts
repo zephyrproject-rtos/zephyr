@@ -32,11 +32,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		orange_led_3: led_3 {
+		green_led_3: led_3 {
 			gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		green_led_4: led_4 {
+		red_led_4: led_4 {
 			gpios = <&gpiog 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
@@ -52,7 +52,7 @@
 	};
 
 	aliases {
-		led0 = &green_led_4;
+		led0 = &green_led_3;
 		sw0 = &user_button;
 	};
 };
