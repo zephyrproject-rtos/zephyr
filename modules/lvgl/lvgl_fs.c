@@ -7,8 +7,9 @@
 #include <lvgl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
-#include <stdlib.h>
 #include "lvgl_fs.h"
+#include "lv_conf.h"
+#include LV_MEM_CUSTOM_INCLUDE
 
 static bool lvgl_fs_ready(struct _lv_fs_drv_t *drv)
 {
@@ -63,7 +64,7 @@ static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path, lv_fs_mode
 	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
 	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
 
-	file = malloc(sizeof(struct fs_file_t));
+	file = LV_MEM_CUSTOM_ALLOC(sizeof(struct fs_file_t));
 	if (!file) {
 		return NULL;
 	}
@@ -72,6 +73,7 @@ static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path, lv_fs_mode
 
 	err = fs_open((struct fs_file_t *)file, path, zmode);
 	if (err) {
+		LV_MEM_CUSTOM_FREE(file);
 		return NULL;
 	}
 
@@ -165,7 +167,7 @@ static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
 	 */
 	path--;
 
-	dir = malloc(sizeof(struct fs_dir_t));
+	dir = LV_MEM_CUSTOM_ALLOC(sizeof(struct fs_dir_t));
 	if (!dir) {
 		return NULL;
 	}
@@ -173,6 +175,7 @@ static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
 	fs_dir_t_init((struct fs_dir_t *)dir);
 	err = fs_opendir((struct fs_dir_t *)dir, path);
 	if (err) {
+		LV_MEM_CUSTOM_FREE(dir);
 		return NULL;
 	}
 
@@ -192,7 +195,7 @@ static lv_fs_res_t lvgl_fs_dir_close(struct _lv_fs_drv_t *drv, void *dir)
 	int err;
 
 	err = fs_closedir((struct fs_dir_t *)dir);
-	free(dir);
+	LV_MEM_CUSTOM_FREE(dir);
 	return errno_to_lv_fs_res(err);
 }
 
