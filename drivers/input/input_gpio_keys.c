@@ -40,10 +40,6 @@ struct gpio_keys_pin_data {
 	int8_t pin_state;
 };
 
-struct gpio_keys_data {
-	struct gpio_keys_pin_data *pin_data;
-};
-
 /**
  * Handle debounced gpio pin state.
  */
@@ -51,8 +47,7 @@ static void gpio_keys_change_deferred(struct k_work *work)
 {
 	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(work, struct gpio_keys_pin_data, work);
 	const struct device *dev = pin_data->dev;
-	struct gpio_keys_data *data = dev->data;
-	int key_index = pin_data - &data->pin_data[0];
+	int key_index = pin_data - (struct gpio_keys_pin_data *)dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
 	const struct gpio_keys_pin_config *pin_cfg = &cfg->pin_cfg[key_index];
 
@@ -121,7 +116,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 
 static int gpio_keys_init(const struct device *dev)
 {
-	struct gpio_keys_data *data = dev->data;
+	struct gpio_keys_pin_data *pin_data = dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
 	int ret;
 
@@ -139,11 +134,11 @@ static int gpio_keys_init(const struct device *dev)
 			return ret;
 		}
 
-		data->pin_data[i].dev = dev;
-		k_work_init_delayable(&data->pin_data[i].work, gpio_keys_change_deferred);
+		pin_data[i].dev = dev;
+		k_work_init_delayable(&pin_data[i].work, gpio_keys_change_deferred);
 
 		ret = gpio_keys_interrupt_configure(&cfg->pin_cfg[i].spec,
-						    &data->pin_data[i].cb_data,
+						    &pin_data[i].cb_data,
 						    cfg->pin_cfg[i].zephyr_code);
 		if (ret != 0) {
 			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
@@ -168,17 +163,14 @@ static int gpio_keys_init(const struct device *dev)
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
-	static struct gpio_keys_config gpio_keys_config_##i = {                                    \
+	static const struct gpio_keys_config gpio_keys_config_##i = {                              \
 		.debounce_interval_ms = DT_INST_PROP(i, debounce_interval_ms),                     \
 		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_cfg = gpio_keys_pin_config_##i,                                               \
 	};                                                                                         \
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
-	static struct gpio_keys_data gpio_keys_data_##i = {                                        \
-		.pin_data = gpio_keys_pin_data_##i,                                                \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, &gpio_keys_data_##i,                       \
+	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, gpio_keys_pin_data_##i,                    \
 			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,      \
 			      NULL);
 
