@@ -27,9 +27,10 @@ extern "C" {
 
 /**
  * @brief boot_info: subsystem to share information between a bootloader and
- * and application started from the bootloader. The boot_info subsystem uses
- * stores it information in a area of RAM (a zephyr, memory-region) or a bbram
- * device. To save valuable rom space this subsystem does not create devices.
+ * and application started from the bootloader. The boot_info subsystem stores
+ * its information in a backend that can be a fixed-partition in flash, a bbram
+ * device or a eeprom device. It can also be a memory-region (RAM) by using the
+ * flash simulator device.
  *
  * The usage pattern of the boot_info system is:
  * a. Create a array for the boot_info data:
@@ -40,20 +41,34 @@ extern "C" {
  * d. Write back the data (optional):
  *    int rc = boot_info_set(DT_NODELABEL(boot_info), data);
  *
- * For bbram storage the boot_info is defined in the dts as:
+ * The boot_info is defined in the dts as:
  * / {
  *      boot_info: boot_info {
- *              compatible = "zephyr, boot-info-bbram";
- *              backend = <&bbram>; # bbram node: bbram
+ *              compatible = "zephyr,boot-info-flash";
+ *              backend = <&backend-node>; # phandle to fixed partition on flash
+ *		size = <...>; # optional
+ *		offset = <...>; # optional
  *      };
  * }
  *
- * For ram storage the boot_info is defined in the dts as:
  * / {
  *      boot_info: boot_info {
- *              compatible = "zephyr, boot-info-ram";
- *              backend = <&mem-region>; # mem-region: mem-region node
- * };
+ *              compatible = "zephyr,boot-info-bbram";
+ *              backend = <&backend-node>; # phandle to bbram device
+ *		size = <...>; # optional
+ *		offset = <...>; # optional
+ *      };
+ * }
+ *
+ * / {
+ *      boot_info: boot_info {
+ *              compatible = "zephyr,boot-info-eeprom";
+ *              backend = <&backend-node>; # phandle to eeprom device
+ *		size = <...>; # optional
+ *		offset = <...>; # optional
+ *      };
+ * }
+ *
  */
 
 /**
@@ -90,8 +105,6 @@ extern "C" {
 	size_t bi_get_size_##inst(void);                                        \
 	int bi_get_##inst(void *data);                                          \
 	int bi_set_##inst(const void *data);
-
-DT_FOREACH_STATUS_OKAY(zephyr_boot_info_ram, DEFINE_BOOT_INFO_PROTO)
 
 DT_FOREACH_STATUS_OKAY(zephyr_boot_info_bbram, DEFINE_BOOT_INFO_PROTO)
 

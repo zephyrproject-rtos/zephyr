@@ -8,7 +8,7 @@
                 compatible = "zephyr,boot-info-eeprom";
                 backend = <&eeprom0>;
                 size = <256>;
-                eeprom-offset = <256>;
+                offset = <256>;
         };
 
         aliases {

@@ -1,29 +1,10 @@
 # Copyright (c) 2023 Laczen
 # SPDX-License-Identifier: Apache-2.0
 
-description: Boot information area stored on eeprom
+description: |
+  Boot information area stored on eeprom, the backend property should be a
+  phandle to a eeprom device
 
 compatible: "zephyr,boot-info-eeprom"
 
-include: base.yaml
-
-properties:
-  backend:
-    type: phandle
-    required: true
-    description: |
-      EEPROM device used to store the bootinfo.
-  size:
-    type: int
-    description: |
-      When only a part of the eeprom is to be used to store the boot
-      information the size can be set using this parameter. When unset the
-      size is calculated from the eeprom size taking into account the offset
-      parameter.
-
-  eeprom-offset:
-    type: int
-    description: |
-      When only a part of the eeprom is to be used to store the boot
-      information the offset in the eeprom can be set using this parameter.
-      When unset the offset in the eeprom is 0.
+include: zephyr,boot-info-base.yaml

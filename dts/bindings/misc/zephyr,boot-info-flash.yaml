@@ -1,22 +1,10 @@
 # Copyright (c) 2023 Laczen
 # SPDX-License-Identifier: Apache-2.0
 
-description: Boot information area stored on flash
+description: |
+  Boot information area stored on flash, the backend property should be a
+  phandle to a fixed-partition on flash.
 
 compatible: "zephyr,boot-info-flash"
 
-include: base.yaml
-
-properties:
-  backend:
-    type: phandle
-    required: true
-    description: |
-      Flash partition used to store the bootinfo.
-  size:
-    type: int
-    description: |
-      When only a part of the flash partition is to be used to store the boot
-      information the size can be set using this parameter. Ensure that this
-      size is aligned to the write-block-size of the flash partition (use
-      a multiple of 256 if you are unsure about the write-block-size).
+include: zephyr,boot-info-base.yaml

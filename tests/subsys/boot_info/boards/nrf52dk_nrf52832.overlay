@@ -6,9 +6,9 @@
 #include <common/mem.h>
 
 / {
-	sram_2000FC00: sram@2000FC00 {
+	sram_2000FFE0: sram@2000FFE0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000FC00 0x400>;
+		reg = <0x2000FFE0 0x20>;
                 zephyr,memory-region = "FlashSim";
                 status = "okay";
         };
@@ -21,14 +21,14 @@
 			#address-cells = <1>;
 		        #size-cells = <1>;
 		        erase-value = <0xff>;
-                        memory-region = <&sram_2000FC00>;
+                        memory-region = <&sram_2000FFE0>;
 
 			flash_sim0: flash_sim@0 {
 			        status = "okay";
 			        compatible = "soc-nv-flash";
-			        erase-block-size = <0x400>;
+			        erase-block-size = <0x20>;
 			        write-block-size = <1>;
-			        reg = <0x00000000 0x400>;
+			        reg = <0x00000000 0x20>;
 
                                 partitions {
 		                        compatible = "fixed-partitions";
@@ -37,7 +37,7 @@
 
 		                        bi_partition: partition@0 {
 			                        label = "bootinfo";
-			                        reg = <0x00000000 0x400>;
+			                        reg = <0x00000000 0x20>;
 		                        };
 	                        };
                         };
@@ -47,15 +47,14 @@
         boot_info: boot_info {
                 compatible = "zephyr,boot-info-flash";
                 backend = <&bi_partition>;
-                size = <0x400>;
+                size = <0x32>;
         };
 
         aliases {
                 bi = &boot_info;
         };
-
 };
 
 &sram0 {
-	reg = <0x20000000 0xFC00>;
+	reg = <0x20000000 0xFFE0>;
 };
