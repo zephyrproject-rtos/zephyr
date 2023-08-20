@@ -45,6 +45,9 @@ static lv_fs_res_t errno_to_lv_fs_res(int err)
 	case -EINVAL:
 		/*Invalid parameter among arguments*/
 		return LV_FS_RES_INV_PARAM;
+	case -ENOTSUP:
+		/*Not supported by the filesystem*/
+		return LV_FS_RES_NOT_IMP;
 	default:
 		return LV_FS_RES_UNKNOWN;
 	}
@@ -153,7 +156,14 @@ static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t p
 
 static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file, uint32_t *pos_p)
 {
-	*pos_p = fs_tell((struct fs_file_t *)file);
+	off_t pos;
+
+	pos = fs_tell((struct fs_file_t *)file);
+	if (pos < 0) {
+		return errno_to_lv_fs_res(pos);
+	}
+
+	*pos_p = pos;
 	return LV_FS_RES_OK;
 }
 
