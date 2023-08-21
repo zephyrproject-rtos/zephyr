@@ -77,6 +77,7 @@ static inline int is_metairq(struct k_thread *thread)
 	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
 		< CONFIG_NUM_METAIRQ_PRIORITIES;
 #else
+	ARG_UNUSED(thread);
 	return 0;
 #endif
 }
@@ -219,6 +220,7 @@ static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 
 	return &_kernel.cpus[cpu].ready_q.runq;
 #else
+	ARG_UNUSED(thread);
 	return &_kernel.ready_q.runq;
 #endif
 }
@@ -443,6 +445,8 @@ static inline int slice_time(struct k_thread *thread)
 	if (thread->base.slice_ticks != 0) {
 		ret = thread->base.slice_ticks;
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 	return ret;
 }
@@ -558,6 +562,8 @@ static void update_metairq_preempt(struct k_thread *thread)
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 }
 
@@ -607,6 +613,7 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 		}
 	}
 #endif
+	ARG_UNUSED(thread);
 	return false;
 }
 
@@ -1153,6 +1160,8 @@ void *z_get_next_switch_handle(void *interrupted)
 
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
+	ARG_UNUSED(pq);
+
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
