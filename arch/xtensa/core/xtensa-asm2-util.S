@@ -342,7 +342,7 @@ DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
-	wsr a0, ZSR_ALLOCA
+	wsr a0, ZSR_A0SAVE
 	rsync
 	rsr.exccause a0
 #ifdef CONFIG_XTENSA_MMU
@@ -355,7 +355,7 @@ _Level1RealVector:
 
 	j _xt_alloca_exc
 _not_alloca:
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 	j _Level1Vector
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_user:
@@ -374,7 +374,7 @@ _handle_tlb_miss_user:
 	 */
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 	rfe
 #endif /* CONFIG_XTENSA_MMU */
 .popsection
@@ -391,12 +391,12 @@ _handle_tlb_miss_user:
 .global _KernelExceptionVector
 _KernelExceptionVector:
 #ifdef CONFIG_XTENSA_MMU
-	wsr a0, ZSR_ALLOCA
+	wsr a0, ZSR_A0SAVE
 	rsr.exccause a0
 	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_kernel
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_kernel
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 #endif
 	j _Level1Vector
 #ifdef CONFIG_XTENSA_MMU
@@ -410,7 +410,7 @@ _handle_tlb_miss_kernel:
 	 */
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 	rfe
 #endif
 .popsection
@@ -420,14 +420,14 @@ _handle_tlb_miss_kernel:
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
 #ifdef CONFIG_XTENSA_MMU
-	wsr a0, ZSR_ALLOCA
+	wsr a0, ZSR_A0SAVE
 	rsync
 
 	rsr.exccause a0
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_dblexc
 
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 #endif
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
 1:
@@ -459,7 +459,7 @@ _handle_tlb_miss_dblexc:
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
 
-	rsr a0, ZSR_ALLOCA
+	rsr a0, ZSR_A0SAVE
 	rfde
 #endif
 .popsection
