@@ -8,10 +8,12 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <xtensa/corebits.h>
 #include <xtensa_mmu_priv.h>
 
 #include <kernel_arch_func.h>
+#include <mmu.h>
 
 /* Kernel specific ASID. Ring field in the PTE */
 #define MMU_KERNEL_RING 0
@@ -332,6 +334,29 @@ void z_xtensa_mmu_smp_init(void)
 {
 	xtensa_mmu_init(false);
 }
+
+#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+/* Zephyr's linker scripts for Xtensa usually puts
+ * something before z_mapped_start (aka .text),
+ * i.e. vecbase, so that we need to reserve those
+ * space or else k_mem_map() would be mapping those,
+ * resulting in faults.
+ */
+__weak void arch_reserved_pages_update(void)
+{
+	uintptr_t page;
+	struct z_page_frame *pf;
+	int idx;
+
+	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
+	     page < (uintptr_t)z_mapped_start;
+	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
+		pf = &z_page_frames[idx];
+
+		pf->flags |= Z_PAGE_FRAME_RESERVED;
+	}
+}
+#endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
 static bool l2_page_table_map(void *vaddr, uintptr_t phys, uint32_t flags)
 {
