@@ -16,8 +16,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-#define DISK_DRIVE_NAME "SD"
-#define DISK_MOUNT_PT "/"DISK_DRIVE_NAME":"
+#define DISK_MOUNT_PT "/"CONFIG_DISK_DRIVE_NAME":"
 #define MAX_PATH 128
 #define SOME_FILE_NAME "some.dat"
 #define SOME_DIR_NAME "some"
@@ -79,12 +78,14 @@ static const char *disk_mount_pt = DISK_MOUNT_PT;
 
 int main(void)
 {
+	k_sleep(K_SECONDS(CONFIG_DEV_CONNECTION_WAIT));
+
 	/* raw disk i/o */
 	do {
-		static const char *disk_pdrv = DISK_DRIVE_NAME;
+		static const char *disk_pdrv = CONFIG_DISK_DRIVE_NAME;
 		uint64_t memory_size_mb;
 		uint32_t block_count;
-		uint32_t block_size;
+		uint16_t block_size;
 
 		if (disk_access_init(disk_pdrv) != 0) {
 			LOG_ERR("Storage init ERROR!");
