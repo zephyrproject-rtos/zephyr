@@ -22,7 +22,6 @@ from typing import List
 from packaging import version
 
 from colorama import Fore
-from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import BuildError
@@ -421,12 +420,7 @@ class FilterBuilder(CMake):
             return {}
 
         if self.testsuite.sysbuild and not filter_stages:
-            # Load domain yaml to get default domain build directory
-            domain_path = os.path.join(self.build_dir, "domains.yaml")
-            domains = Domains.from_file(domain_path)
-            logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
-            self.instance.domains = domains
-            domain_build = domains.get_default_domain().build_dir
+            domain_build = self.instance.domains.get_default_domain().build_dir
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")

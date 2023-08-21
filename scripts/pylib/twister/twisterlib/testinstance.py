@@ -4,6 +4,7 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
+from functools import cached_property
 import os
 import hashlib
 import random
@@ -24,6 +25,7 @@ from twisterlib.handlers import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
 )
+from domains import Domains
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -57,13 +59,22 @@ class TestInstance:
         self.dut = None
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
 
-        self.domains = None
-
         self.run = False
         self.testcases: list[TestCase] = []
         self.init_cases()
         self.filters = []
         self.filter_type = None
+
+    @cached_property
+    def domains(self):
+        if not self.testsuite.sysbuild:
+            return None
+
+        # Load domain yaml to get default domain build directory
+        domain_path = os.path.join(self.build_dir, "domains.yaml")
+        domains = Domains.from_file(domain_path)
+        logger.debug("Loaded sysbuild domain data from %s" % (domain_path))
+        return domains
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
