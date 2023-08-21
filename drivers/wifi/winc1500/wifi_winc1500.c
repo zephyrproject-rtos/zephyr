@@ -639,6 +639,7 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 		LOG_DBG("Connected (%u)", pstrWifiState->u8ErrCode);
 
 		w1500_data.connected = true;
+		w1500_data.connecting = false;
 		wifi_mgmt_raise_connect_result_event(w1500_data.iface, 0);
 
 		break;
