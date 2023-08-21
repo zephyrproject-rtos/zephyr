@@ -16,7 +16,6 @@
 	model = "telink,b92";
 	compatible = "telink,tlsr9528a";
 
-/*
 	aliases {
 		led0 = &led_blue;
 		led1 = &led_green;
@@ -24,34 +23,35 @@
 		led3 = &led_red;
 		sw0 = &key_1;
 		sw2 = &key_3;
-		pwm-led0 = &pwm_led_blue;
-		pwm-0 = &pwm0;
+		// pwm-led0 = &pwm_led_blue;
+		// pwm-0 = &pwm0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led_blue: led_0 {
-			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
 			label = "LED Blue";
 		};
 
 		led_green: led_1 {
-			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
 			label = "LED Green";
 		};
 
 		led_white: led_2 {
-			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
 			label = "LED White";
 		};
 
 		led_red: led_3 {
-			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
 			label = "LED Red";
 		};
 	};
 
+/*
 	pwm_leds {
 		compatible = "pwm-leds";
 
@@ -60,19 +60,19 @@
 			label = "PWM LED Blue";
 		};
 	};
+*/
 
 	keys {
 		compatible = "gpio-keys";
 		key_1: button_1 {
 			label = "User KEY1";
-			gpios = <&gpioc 2 GPIO_PULL_DOWN>;
+			gpios = <&gpiod 2 GPIO_PULL_DOWN>;
 		};
 		key_3: button_3 {
 			label = "User KEY3";
-			gpios = <&gpioc 0 GPIO_PULL_DOWN>;
+			gpios = <&gpiod 6 GPIO_PULL_DOWN>;
 		};
 	};
-*/
 
 	chosen {
 /*

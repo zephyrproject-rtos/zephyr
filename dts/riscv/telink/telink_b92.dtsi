@@ -6,13 +6,11 @@
 
 /dts-v1/;
 
-/*
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/adc/b91-adc.h>
+// #include <zephyr/dt-bindings/adc/adc.h>
+// #include <zephyr/dt-bindings/adc/b91-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/i2c/i2c.h>
-#include <zephyr/dt-bindings/pwm/pwm.h>
-*/
+// #include <zephyr/dt-bindings/i2c/i2c.h>
+// #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	#address-cells = <1>;
@@ -80,7 +78,6 @@
 			status = "okay";
 		};
 
-/*
 		gpioa: gpio@80140300 {
 			compatible = "telink,b91-gpio";
 			gpio-controller;
@@ -130,7 +127,6 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
-*/
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
