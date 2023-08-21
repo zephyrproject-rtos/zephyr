@@ -69,6 +69,9 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach);
 
 	k_spin_unlock(&z_thread_monitor_lock, key);
+#else
+	ARG_UNUSED(user_cb);
+	ARG_UNUSED(user_data);
 #endif
 }
 
@@ -93,6 +96,9 @@ void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach_unlocked);
 
 	k_spin_unlock(&z_thread_monitor_lock, key);
+#else
+	ARG_UNUSED(user_cb);
+	ARG_UNUSED(user_data);
 #endif
 }
 
@@ -895,6 +901,7 @@ int z_impl_k_float_disable(struct k_thread *thread)
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	return arch_float_disable(thread);
 #else
+	ARG_UNUSED(thread);
 	return -ENOTSUP;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 }
@@ -904,6 +911,8 @@ int z_impl_k_float_enable(struct k_thread *thread, unsigned int options)
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	return arch_float_enable(thread, options);
 #else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	return -ENOTSUP;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 }
