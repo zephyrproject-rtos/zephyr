@@ -127,7 +127,7 @@ static bool spi_b9x_config_cs(const struct device *dev,
 		}
 
 		/* enable cs pin if it is defined and is requested */
-        if ((cs_pin != 0) && (cs_id == config->slave)) {
+		if ((cs_pin != 0) && (cs_id == config->slave)) {
 #if CONFIG_SOC_RISCV_TELINK_B91
 			if (b9x_config->peripheral_id == PSPI_MODULE) {
 				pspi_cs_pin_en(cs_pin);
@@ -137,7 +137,8 @@ static bool spi_b9x_config_cs(const struct device *dev,
 #elif CONFIG_SOC_RISCV_TELINK_B92
 			if (b9x_config->peripheral_id == LSPI_MODULE) {
 				/* Note: lspi_cs_pin_en has not added to SPI driver for B92,
-				         lspi_cs_pin_en must call lspi_set_pin_mux */
+				 * lspi_cs_pin_en must call lspi_set_pin_mux
+				 */
 				lspi_set_pin_mux(cs_pin);
 			} else {
 				gspi_cs_pin_en(cs_pin);
@@ -159,6 +160,7 @@ static uint32_t spi_b9x_get_txrx_len(const struct spi_buf_set *tx_bufs,
 	/* calculate tx len */
 	if (tx_bufs) {
 		const struct spi_buf *tx_buf = tx_bufs->buffers;
+
 		for (int i = 0; i < tx_bufs->count; i++) {
 			len_tx += tx_buf->len;
 			tx_buf++;
@@ -168,6 +170,7 @@ static uint32_t spi_b9x_get_txrx_len(const struct spi_buf_set *tx_bufs,
 	/* calculate rx len */
 	if (rx_bufs) {
 		const struct spi_buf *rx_buf = rx_bufs->buffers;
+
 		for (int i = 0; i < rx_bufs->count; i++) {
 			len_rx += rx_buf->len;
 			rx_buf++;
@@ -305,7 +308,7 @@ static bool spi_b9x_is_config_supported(const struct spi_config *config,
 			LOG_ERR("SPI lines Octal is not supported");
 			return false;
 		}
-#if CONFIG_SOC_RISCV_TELINK_B91 
+#if CONFIG_SOC_RISCV_TELINK_B91
 		else if (((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD)
 				&& (b9x_config->peripheral_id == PSPI_MODULE)) {
 			LOG_ERR("SPI lines Quad is not supported by PSPI");

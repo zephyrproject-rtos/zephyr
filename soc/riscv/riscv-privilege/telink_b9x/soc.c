@@ -71,7 +71,7 @@
  *
  * @return 0
  */
-int soc_b9x_init(void)
+static int soc_b9x_init(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
@@ -148,7 +148,11 @@ void soc_b9x_restore(void)
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 	/* system init */
+#if CONFIG_SOC_RISCV_TELINK_B91
 	sys_init(POWER_MODE, VBAT_TYPE);
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	sys_init(POWER_MODE, VBAT_TYPE, GPIO_VOLTAGE_3V3);
+#endif
 
 #if CONFIG_PM
 	gpio_shutdown(GPIO_ALL);

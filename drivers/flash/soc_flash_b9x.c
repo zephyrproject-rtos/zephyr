@@ -8,24 +8,24 @@
 #define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 #define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
-#include "flash.h"
+#include <clock.h>
+#include <watchdog.h>
+#include <flash.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/kernel.h>
 
 /* driver definitions */
-#define BLOCK_64K_SIZE         (0x10000u)
-#define BLOCK_64K_PAGES        (BLOCK_64K_SIZE / PAGE_SIZE)
-#define BLOCK_32K_SIZE         (0x8000u)
-#define BLOCK_32K_PAGES        (BLOCK_32K_SIZE / PAGE_SIZE)
 #define SECTOR_SIZE            (0x1000u)
-#define SECTOR_PAGES           (SECTOR_SIZE / PAGE_SIZE)
+
+#define FLASH_B9X_ACCESS_TIMEOUT_MS  30
 
 
 /* driver data structure */
 struct flash_b9x_data {
-	struct k_sem write_lock;
+	struct k_mutex flash_lock;
+	uint8_t sector[SECTOR_SIZE];
 };
 
 /* driver parameters structure */
@@ -35,19 +35,73 @@ static const struct flash_parameters flash_b9x_parameters = {
 };
 
 
+/* Check if flash page area is clean */
+static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data, uintptr_t offset, size_t len)
+{
+	bool result = true;
+
+	for (size_t i = 0; i < len; i++) {
+		if (dev_data->sector[offset + i] != flash_b9x_parameters.erase_value) {
+			result = false;
+			break;
+		}
+	}
+	return result;
+}
+
+/* Modify flash data */
+static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
+	const void *data, size_t len)
+{
+	uintptr_t addr_flash = CONFIG_FLASH_BASE_ADDRESS + offset;
+	uintptr_t off_sector = addr_flash % SECTOR_SIZE;
+
+	while (len) {
+		size_t len_page_end =  SECTOR_SIZE - off_sector;
+		size_t len_current = len_page_end;
+
+		if (len < len_page_end) {
+			len_current = len;
+		}
+		flash_read_page(addr_flash, len_current, &dev_data->sector[off_sector]);
+		if (!flash_b9x_is_clean(dev_data, off_sector, len_current)) {
+			if (off_sector) {
+				flash_read_page(addr_flash - off_sector, off_sector,
+					&dev_data->sector[0]);
+			}
+			if (len < len_page_end) {
+				flash_read_page(addr_flash + len_current,
+					len_page_end - len_current,
+					&dev_data->sector[off_sector + len_current]);
+			}
+			flash_erase_sector(addr_flash - off_sector);
+			if (off_sector) {
+				flash_write_page(addr_flash - off_sector, off_sector,
+					&dev_data->sector[0]);
+			}
+			if (len < len_page_end) {
+				flash_write_page(addr_flash + len_current,
+					len_page_end - len_current,
+					&dev_data->sector[off_sector + len_current]);
+			}
+		}
+		if (data) {
+			flash_write_page(addr_flash, len_current, (unsigned char *)data);
+			data = (uint8_t *)data + len_current;
+		}
+		len -= len_current;
+		addr_flash += len_current;
+		off_sector = 0;
+	}
+}
+
+
 /* Check for correct offset and length */
 static bool flash_b9x_is_range_valid(off_t offset, size_t len)
 {
-	/* check for min value */
-	if ((offset < 0) || (len < 1)) {
+	if ((offset < 0) || (len < 1) || ((offset + len) > FLASH_SIZE)) {
 		return false;
 	}
-
-	/* check for max value */
-	if ((offset + len) > FLASH_SIZE) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -56,7 +110,9 @@ static int flash_b9x_init(const struct device *dev)
 {
 	struct flash_b9x_data *dev_data = dev->data;
 
-	k_sem_init(&dev_data->write_lock, 1, 1);
+	k_mutex_init(&dev_data->flash_lock);
+
+	flash_change_rw_func(flash_4read, flash_quad_page_program);
 
 	return 0;
 }
@@ -64,56 +120,31 @@ static int flash_b9x_init(const struct device *dev)
 /* API implementation: erase */
 static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 {
-	int page_nums = len / PAGE_SIZE;
 	struct flash_b9x_data *dev_data = dev->data;
-
-	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
-	if (!len) {
-		return 0;
-	}
 
 	/* check for valid range */
 	if (!flash_b9x_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
 
-	/* erase can be done only by pages */
-	if (((offset % PAGE_SIZE) != 0) || ((len % PAGE_SIZE) != 0)) {
-		return -EINVAL;
-	}
-
-	/* take semaphore */
-	if (k_sem_take(&dev_data->write_lock, K_NO_WAIT)) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
 	}
 
-	while (page_nums) {
-		/* check for 64K erase possibility, then check for 32K and so on.. */
-		if ((page_nums >= BLOCK_64K_PAGES) && ((offset % BLOCK_64K_SIZE) == 0)) {
-			/* erase 64K block */
-			flash_erase_64kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= BLOCK_64K_PAGES;
-			offset += BLOCK_64K_SIZE;
-		} else if ((page_nums >= BLOCK_32K_PAGES) && ((offset % BLOCK_32K_SIZE) == 0)) {
-			/* erase 32K block */
-			flash_erase_32kblock(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= BLOCK_32K_PAGES;
-			offset += BLOCK_32K_SIZE;
-		} else if ((page_nums >= SECTOR_PAGES) && ((offset % SECTOR_SIZE) == 0)) {
-			/* erase sector */
-			flash_erase_sector(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums -= SECTOR_PAGES;
-			offset += SECTOR_SIZE;
-		} else {
-			/* erase page */
-			flash_erase_page(CONFIG_FLASH_BASE_ADDRESS + offset);
-			page_nums--;
-			offset += PAGE_SIZE;
-		}
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
 	}
 
-	/* release semaphore */
-	k_sem_give(&dev_data->write_lock);
+	flash_b9x_modify(dev_data, offset, NULL, len);
+
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -125,19 +156,20 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 	void *buf = NULL;
 	struct flash_b9x_data *dev_data = dev->data;
 
-	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
-	if (!len) {
-		return 0;
-	}
-
 	/* check for valid range */
 	if (!flash_b9x_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
 
-	/* take semaphore */
-	if (k_sem_take(&dev_data->write_lock, K_NO_WAIT)) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
+	}
+
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
 	}
 
 	/* need to store data in intermediate RAM buffer in case from flash to flash write */
@@ -146,27 +178,32 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 
 		buf = k_malloc(len);
 		if (buf == NULL) {
-			k_sem_give(&dev_data->write_lock);
+			if (wdt_been_enabled) {
+				BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+			}
+			k_mutex_unlock(&dev_data->flash_lock);
 			return -ENOMEM;
 		}
 
 		/* copy Flash data to RAM */
-		memcpy(buf, data, len);
+		flash_read_page((unsigned long)data, len, (unsigned char *)buf);
 
 		/* substitute data with allocated buffer */
 		data = buf;
 	}
-
 	/* write flash */
-	flash_write_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
+	flash_b9x_modify(dev_data, offset, data, len);
 
 	/* if ram memory is allocated for flash writing it should be free */
 	if (buf != NULL) {
 		k_free(buf);
 	}
 
-	/* release semaphore */
-	k_sem_give(&dev_data->write_lock);
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -175,7 +212,7 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 static int flash_b9x_read(const struct device *dev, off_t offset,
 			  void *data, size_t len)
 {
-	ARG_UNUSED(dev);
+	struct flash_b9x_data *dev_data = dev->data;
 
 	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
 	if (!len) {
@@ -187,8 +224,25 @@ static int flash_b9x_read(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
+		return -EACCES;
+	}
+
+	bool wdt_been_enabled = false;
+
+	if (BM_IS_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN)) {
+		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+		wdt_been_enabled = true;
+	}
+
 	/* read flash */
 	flash_read_page(CONFIG_FLASH_BASE_ADDRESS + offset, len, (unsigned char *)data);
+
+	if (wdt_been_enabled) {
+		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
+	}
+
+	k_mutex_unlock(&dev_data->flash_lock);
 
 	return 0;
 }
@@ -205,8 +259,8 @@ flash_b9x_get_parameters(const struct device *dev)
 /* API implementation: page_layout */
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = FLASH_SIZE / PAGE_SIZE,
-	.pages_size = PAGE_SIZE,
+	.pages_count = FLASH_SIZE / SECTOR_SIZE,
+	.pages_size = SECTOR_SIZE,
 };
 
 static void flash_b9x_pages_layout(const struct device *dev,

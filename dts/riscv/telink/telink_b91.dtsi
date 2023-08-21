@@ -242,7 +242,7 @@
 		};
 
 		wdt: watchdog@140140 {
-			compatible = "telink,b91-watchdog";
+			compatible = "telink,b9x-watchdog";
 			reg = <0x140140 0x10>;
 			status = "disabled";
 		};

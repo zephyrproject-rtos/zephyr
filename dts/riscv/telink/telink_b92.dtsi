@@ -31,8 +31,8 @@
 		state0: state0 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			min-residency-us = <3000>;
-			exit-latency-us = <1000>;
+			min-residency-us = <500>;
+			exit-latency-us = <10>;
 		};
 	};
 

@@ -108,12 +108,12 @@ jobs:
     - name: Build bootloader/mcuboot/boot for B91
       run: |
         cd ..
-        west build -b tlsr9518adk80d             -d build_mcuboot_b91                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=4
+        west build -b tlsr9518adk80d             -d build_mcuboot_b91                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3
 
     - name: Build bootloader/mcuboot/boot for B92
       run: |
         cd ..
-        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=4 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
+        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
 
 
     - name: Build subsys/mgmt/mcumgr/smp_svr for Bluetooth
@@ -139,7 +139,7 @@ jobs:
     - name: Build net/sockets/echo_client for OpenThread with PM deep-sleep
       run: |
         cd ..
-        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B91_2_WIRE_SPI_ENABLE=y
+        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE=y
 
     - name: Build bootloader/mcuboot/boot for USB DFU
       run: |

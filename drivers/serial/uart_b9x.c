@@ -191,7 +191,8 @@ static void uart_b9x_init(volatile struct uart_b9x_t *uart, uint16_t divider,
 	divider = divider | FLD_UART_CLK_DIV_EN;
 	uart->ctrl0 = bwpc;
 #if CONFIG_SOC_RISCV_TELINK_B92
-	uart->ctrl0 &= ~(FLD_UART_RX_CLR_EN | FLD_UART_NDMA_RXDONE_EN | FLD_UART_RXTIMEOUT_RTS_EN | FLD_UART_S7816_EN);
+	uart->ctrl0 &= ~(FLD_UART_RX_CLR_EN | FLD_UART_NDMA_RXDONE_EN |
+		FLD_UART_RXTIMEOUT_RTS_EN | FLD_UART_S7816_EN);
 	uart->ctrl4 &= ~FLD_UART_RXDONE_RTS_EN;
 #endif
 	uart->clk_div = divider;

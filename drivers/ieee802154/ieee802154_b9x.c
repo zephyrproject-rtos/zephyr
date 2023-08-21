@@ -681,11 +681,13 @@ static void ALWAYS_INLINE b9x_rf_rx_isr(const struct device *dev)
 		}
 		if (frame.general.type == IEEE802154_FRAME_FCF_TYPE_ACK) {
 			if (b9x->ack_handler_en) {
+				if (b9x->ack_sn == *frame.sn) {
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_PKT_TXTIME)
-				b9x_handle_ack(dev, payload, length, rx_time);
+					b9x_handle_ack(dev, payload, length, rx_time);
 #else
-				b9x_handle_ack(dev, payload, length, 0);
+					b9x_handle_ack(dev, payload, length, 0);
 #endif /* CONFIG_NET_PKT_TIMESTAMP && CONFIG_NET_PKT_TXTIME */
+				}
 			}
 			break;
 		}
@@ -1257,6 +1259,7 @@ static int b9x_tx(const struct device *dev,
 	/* wait for ACK if requested */
 	if (!status && (frag->data[0] & IEEE802154_FRAME_FCF_ACK_REQ_MASK) ==
 		IEEE802154_FRAME_FCF_ACK_REQ_ON) {
+		b9x->ack_sn = frag->data[IEEE802154_FRAME_LENGTH_FCF];
 		b9x->ack_handler_en = true;
 		if (k_sem_take(&b9x->ack_wait, K_MSEC(B9X_ACK_WAIT_TIME_MS)) != 0) {
 			status = -ENOMSG;
