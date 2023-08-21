@@ -275,11 +275,6 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 		}
 	}
 
-	/* Make sure there is no address field (UMA_ADDR_SIZE is zero) in UMA mode */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX4)) {
-		SET_FIELD(inst->UMA_ECTS, NPCX_UMA_ECTS_UMA_ADDR_SIZE, 0);
-	}
-
 	return 0;
 }
 
