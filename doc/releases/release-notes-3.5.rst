@@ -156,6 +156,10 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+* SCA (Static Code Analysis)
+
+  * Added support for CodeChecker
+
 Drivers and Sensors
 *******************
 
