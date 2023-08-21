@@ -18,7 +18,7 @@ set(APP_DIR ${APP_DIR} CACHE PATH "Main Application Source Directory")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # List of Zephyr and sysbuild CMake modules we need for sysbuild.
 # Note: sysbuild_kconfig will internally load kconfig CMake module.
-set(zephyr_modules extensions sysbuild_extensions python west root zephyr_module boards shields sysbuild_kconfig)
+set(zephyr_modules extensions sysbuild_extensions python west unittest_root root zephyr_module boards shields sysbuild_kconfig)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules})
 

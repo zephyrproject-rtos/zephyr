@@ -34,10 +34,3 @@ zephyr_file(APPLICATION_ROOT BOARD_ROOT)
 zephyr_file(APPLICATION_ROOT SOC_ROOT)
 zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 zephyr_file(APPLICATION_ROOT SCA_ROOT)
-
-if(unittest IN_LIST Zephyr_FIND_COMPONENTS)
-  # Zephyr used in unittest mode, use dedicated unittest root.
-  set(BOARD_ROOT ${ZEPHYR_BASE}/subsys/testsuite)
-  set(ARCH_ROOT  ${ZEPHYR_BASE}/subsys/testsuite)
-  set(SOC_ROOT   ${ZEPHYR_BASE}/subsys/testsuite)
-endif()

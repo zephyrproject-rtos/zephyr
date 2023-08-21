@@ -2,7 +2,10 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+include(extensions)
+include(basic_settings)
 include(root)
+include(unittest_root)
 include(boards)
 include(arch)
 include(configuration_files)
