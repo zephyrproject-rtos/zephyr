@@ -1,9 +1,9 @@
-# Copyright (c) 2021, Telink Semiconductor
+# Copyright (c) 2021-2023, Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-description: Telink B91 UART
+description: Telink B9x UART
 
-compatible: "telink,b91-uart"
+compatible: "telink,b9x-uart"
 
 include: uart-controller.yaml
 

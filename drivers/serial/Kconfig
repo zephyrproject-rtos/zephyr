@@ -112,7 +112,7 @@ config UART_PIPE
 
 comment "Serial Drivers"
 
-source "drivers/serial/Kconfig.b91"
+source "drivers/serial/Kconfig.b9x"
 
 source "drivers/serial/Kconfig.ns16550"
 
