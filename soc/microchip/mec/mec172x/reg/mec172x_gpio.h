@@ -92,6 +92,9 @@
 #define MCHP_GPIO_CTRL_MUX_F7		SHLU32(7, MCHP_GPIO_CTRL_MUX_POS)
 #define MCHP_GPIO_CTRL_MUX(n) SHLU32(((n) & 0x7u), MCHP_GPIO_CTRL_MUX_POS)
 
+#define MCHP_GPIO_CTRL_MUX_GET(x) (((uint32_t)(x) >> MCHP_GPIO_CTRL_MUX_POS)\
+				& MCHP_GPIO_CTRL_MUX_MASK0)
+
 /*
  * bit[15] Disables input pad leaving output pad enabled
  * Useful for reducing power consumption of output only pins.
