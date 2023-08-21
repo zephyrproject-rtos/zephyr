@@ -1,18 +1,22 @@
 /*
- * Copyright (c) 2022 Telink Semiconductor
+ * Copyright (c) 2022-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SOC_RISCV_TELINK_B91_PINCTRL_SOC_H
-#define SOC_RISCV_TELINK_B91_PINCTRL_SOC_H
+#ifndef SOC_RISCV_TELINK_B9x_PINCTRL_SOC_H
+#define SOC_RISCV_TELINK_B9x_PINCTRL_SOC_H
 
 #include <stdint.h>
 #include <zephyr/devicetree.h>
+#if CONFIG_SOC_RISCV_TELINK_B91
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
+#elif CONFIG_SOC_RISCV_TELINK_B92
+#include <zephyr/dt-bindings/pinctrl/b92-pinctrl.h>
+#endif
 
 /**
- * @brief Telink B91 pin type.
+ * @brief Telink B9X-series pin type.
  */
 typedef uint32_t pinctrl_soc_pin_t;
 
@@ -25,10 +29,10 @@ typedef uint32_t pinctrl_soc_pin_t;
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)					\
 	(DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), pinmux) |				\
-	 ((B91_PULL_DOWN * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_down))	\
-		<< B91_PULL_POS) |							\
-	 ((B91_PULL_UP * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_up))	\
-		<< B91_PULL_POS)							\
+	 ((B9x_PULL_DOWN * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_down))	\
+		<< B9x_PULL_POS) |							\
+	 ((B9x_PULL_UP * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_up))	\
+		<< B9x_PULL_POS)							\
 	),
 
 /**
@@ -40,4 +44,4 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop) \
 	{ DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT) }
 
-#endif  /* SOC_RISCV_TELINK_B91_PINCTRL_SOC_H */
+#endif  /* SOC_RISCV_TELINK_B9x_PINCTRL_SOC_H */

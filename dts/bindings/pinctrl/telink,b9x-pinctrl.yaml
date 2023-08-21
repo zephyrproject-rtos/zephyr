@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    The Telink B91 pin controller is a singleton node responsible for
+    The Telink B9x-series pin controller is a singleton node responsible for
     controlling pin function selection and pin properties. For example, you can
     use this node to route UART0 TX to pin PB2 and enable the pull-up resistor
     on the pin.
@@ -28,12 +28,12 @@ description: |
         /* configuration for UART0 TX default state */
         uart0_tx_pb2_default: uart0_tx_pb2_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_C)>;
+          pinmux = <B9X_PINMUX_SET(B9X_PORT_B, B9X_PIN_2, B91_FUNC_C)>;
         };
         /* configuration for UART0 RX default state */
         uart0_rx_pb3_default: uart0_rx_pb3_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_C)>;
+          pinmux = <B9X_PINMUX_SET(B9X_PORT_B, B9X_PIN_3, B91_FUNC_C)>;
         };
       };
 
@@ -61,7 +61,7 @@ description: |
         pinctrl-names = "default", "sleep";
       };
 
-compatible: "telink,b91-pinctrl"
+compatible: "telink,b9x-pinctrl"
 
 include: base.yaml
 

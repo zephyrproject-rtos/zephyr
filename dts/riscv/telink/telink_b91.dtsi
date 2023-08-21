@@ -231,7 +231,7 @@
 		};
 
 		pinctrl: pinctrl@80140330 {
-			compatible = "telink,b91-pinctrl";
+			compatible = "telink,b9x-pinctrl";
 			reg = <0x80140330 0x28
 				   0x80140306 0x28
 				   0x0000000e 0x0C>;
