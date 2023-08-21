@@ -1,0 +1,66 @@
+# Copyright (c) 2023 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HEATSHRINK_MODULE
+	bool
+
+config HEATSHRINK
+	bool "Heatshrink data compression"
+	help
+	  This option enables heatshrink compression library
+	  support.
+
+config HEATSHRINK_DYNAMIC_ALLOC
+	bool "Dynamic allocation support"
+	default n
+	help
+	  Use memory dynamic allocation.
+
+if !HEATSHRINK_DYNAMIC_ALLOC
+
+config HEATSHRINK_STATIC_INPUT_BUFFER_SIZE
+	int "Input buffer length"
+	default 32
+	help
+	  Determine input buffer to use for the decoder.
+
+config HEATSHRINK_STATIC_WINDOW_BITS
+	int "Window size"
+	default 8
+	range 4 15
+	help
+	  Determine how far back in the input can be searched for
+	  repeated pattern. Memory footprint is 2^(Window size).
+	  Ex.: Window size of 8 takes 2^8 (256) bytes.
+	  Compromise between resource usage vs compression efficiency.
+
+config HEATSHRINK_STATIC_LOOKAHEAD_BITS
+	int "Lookahead size"
+	default 4
+	range 3 14
+	help
+	  Determine the max length for repeated patterns that are found.
+	  Memory footprint is 2^(Lookahead size).
+	  Larger size means more complex pattern could be largely reduced.
+	  Compromise between resource usage vs compression efficiency.
+
+endif # !HEATSHRINK_DYNAMIC_ALLOC
+
+config HEATSHRINK_USE_INDEX
+	bool "Build index"
+	default n
+	help
+	  This option makes compression faster. It adds
+	  2^(Window size+1) + 512 bytes of RAM usage.
+
+config HEATSHRINK_DECODER
+	bool "Include decoder functions"
+	default y
+	help
+	  Enable decoder (decompression).
+
+config HEATSHRINK_ENCODER
+	bool "Include encoder functions"
+	default y
+	help
+	  Enable encoder (compression).

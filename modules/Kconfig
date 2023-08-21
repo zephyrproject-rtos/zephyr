@@ -108,6 +108,9 @@ comment "Segger module not available."
 comment "LVGL module not available."
 	depends on !ZEPHYR_LVGL_MODULE
 
+comment "heatshrink module not available."
+	depends on !ZEPHYR_HEATSHRINK_MODULE
+
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
 # modules are not present in the workspace
