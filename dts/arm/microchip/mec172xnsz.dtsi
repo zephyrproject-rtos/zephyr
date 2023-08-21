@@ -1043,9 +1043,9 @@
 			};
 		};
 
-		symcr: symcr@40100000 {
+		symcr: symcr@40108000 {
 			compatible = "microchip,xec-symcr";
-			reg = <0x40100000 0x1000>;
+			reg = <0x40108000 0x2000>;
 			interrupts = <68 1>;
 			clocks = <&pcr 3 26 MCHP_XEC_PCR_CLK_PERIPH>;
 			girqs = <16 3>;
