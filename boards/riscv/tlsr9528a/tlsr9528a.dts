@@ -50,12 +50,12 @@
 	};
 
 	pwm_leds {
-		    compatible = "pwm-leds";
+		compatible = "pwm-leds";
 
-		    pwm_led_blue: pwm_led_0 {
-			        pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
-			        label = "PWM LED Blue";
-		    };
+		pwm_led_blue: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED Blue";
+		};
 	};
 
 	keys {

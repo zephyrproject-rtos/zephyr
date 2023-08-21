@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2021-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #define GPIO_IRQ_REG reg_gpio_irq_ctrl
 #include "gpio.h"
 #else
-#error "GPIO driver is unsupported for choosen SoC!"
+#error "GPIO driver is unsupported for chosen SoC!"
 #endif
 
 /* Driver dts compatibility: telink,b9x_gpio */
