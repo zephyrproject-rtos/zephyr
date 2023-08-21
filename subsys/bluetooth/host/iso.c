@@ -1720,7 +1720,7 @@ static bool is_advanced_cig_param(const struct bt_iso_cig_param *param)
 
 static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
 {
-	if (iso_chan->iso == NULL) {
+	if (iso_chan == NULL || iso_chan->iso == NULL) {
 		return NULL;
 	}
 
@@ -1751,6 +1751,10 @@ static struct bt_iso_cig *get_free_cig(void)
 static bool cis_is_in_cig(const struct bt_iso_cig *cig,
 			  const struct bt_iso_chan *cis)
 {
+	if (cig == NULL || cis == NULL || cis->iso == NULL) {
+		return false;
+	}
+
 	return cig->id == cis->iso->iso.cig_id;
 }
 
@@ -1799,7 +1803,8 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	memset(cig, 0, sizeof(*cig));
 }
 
-static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
+static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
+			    const struct bt_iso_cig *cig)
 {
 	if (param == NULL) {
 		return false;
@@ -1813,8 +1818,8 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
 			return false;
 		}
 
-		if (cis->iso != NULL) {
-			LOG_DBG("cis_channels[%d]: already allocated", i);
+		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
+			LOG_DBG("cis_channels[%d]: already allocated to CIG %p", i, get_cig(cis));
 			return false;
 		}
 
@@ -1930,7 +1935,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 	advanced = is_advanced_cig_param(param);
 #endif /* CONFIG_BT_ISO_ADVANCED */
 
-	CHECKIF(!valid_cig_param(param, advanced)) {
+	CHECKIF(!valid_cig_param(param, advanced, NULL)) {
 		LOG_DBG("Invalid CIG params");
 		return -EINVAL;
 	}
@@ -2015,11 +2020,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 {
 	struct bt_hci_rp_le_set_cig_params *cig_rsp;
 	uint8_t existing_num_cis;
-	struct bt_iso_chan *cis;
 	bool advanced = false;
 	struct net_buf *rsp;
 	int err;
-	int i;
 
 	CHECKIF(cig == NULL) {
 		LOG_DBG("cig is NULL");
@@ -2035,20 +2038,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 	advanced = is_advanced_cig_param(param);
 #endif /* CONFIG_BT_ISO_ADVANCED */
 
-	CHECKIF(!valid_cig_param(param, advanced)) {
+	CHECKIF(!valid_cig_param(param, advanced, cig)) {
 		LOG_DBG("Invalid CIG params");
 		return -EINVAL;
-	}
-
-	for (uint8_t j = 0; j < param->num_cis; j++) {
-		struct bt_iso_chan *param_cis = param->cis_channels[j];
-
-		if (param_cis->iso != NULL && !cis_is_in_cig(cig, param_cis)) {
-			LOG_DBG("Cannot reconfigure other CIG's (id 0x%02X) CIS "
-			       "with this CIG (id 0x%02X)",
-			       param_cis->iso->iso.cig_id, cig->id);
-			return -EINVAL;
-		}
 	}
 
 	/* Used to restore CIG in case of error */
@@ -2078,18 +2070,27 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 
 	cig_rsp = (void *)rsp->data;
 
-	if (rsp->len < sizeof(cig_rsp) ||
-	    cig_rsp->num_handles != param->num_cis) {
-		LOG_WRN("Unexpected response to hci_le_set_cig_params");
+	if (rsp->len < sizeof(*cig_rsp)) {
+		LOG_WRN("Unexpected response len to hci_le_set_cig_params %u != %zu", rsp->len,
+			sizeof(*cig_rsp));
 		err = -EIO;
 		net_buf_unref(rsp);
 		restore_cig(cig, existing_num_cis);
 		return err;
 	}
 
-	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
-		const uint16_t handle = cig_rsp->handle[i++];
+	if (cig_rsp->num_handles != param->num_cis) {
+		LOG_WRN("Unexpected response num_handles to hci_le_set_cig_params %u != %u",
+			cig_rsp->num_handles, param->num_cis);
+		err = -EIO;
+		net_buf_unref(rsp);
+		restore_cig(cig, existing_num_cis);
+		return err;
+	}
+
+	for (uint8_t i = 0u; i < param->num_cis; i++) {
+		const uint16_t handle = cig_rsp->handle[i];
+		struct bt_iso_chan *cis = param->cis_channels[i];
 
 		/* Assign the connection handle */
 		cis->iso->handle = sys_le16_to_cpu(handle);
