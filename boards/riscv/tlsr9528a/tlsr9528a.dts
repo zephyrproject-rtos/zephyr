@@ -8,9 +8,7 @@
 
 #include <freq.h>
 #include <telink/telink_b92.dtsi>
-/*
 #include "tlsr9528a-pinctrl.dtsi"
-*/
 
 / {
 	model = "telink,b92";
@@ -23,8 +21,8 @@
 		led3 = &led_red;
 		sw0 = &key_1;
 		sw2 = &key_3;
-		// pwm-led0 = &pwm_led_blue;
-		// pwm-0 = &pwm0;
+		pwm-led0 = &pwm_led_blue;
+		pwm-0 = &pwm0;
 	};
 
 	leds {
@@ -51,16 +49,14 @@
 		};
 	};
 
-/*
 	pwm_leds {
-		compatible = "pwm-leds";
+		    compatible = "pwm-leds";
 
-		pwm_led_blue: pwm_led_0 {
-			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
-			label = "PWM LED Blue";
-		};
+		    pwm_led_blue: pwm_led_0 {
+			        pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			        label = "PWM LED Blue";
+		    };
 	};
-*/
 
 	keys {
 		compatible = "gpio-keys";
@@ -75,20 +71,20 @@
 	};
 
 	chosen {
-/*
+		/*
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-*/
+		 */
 		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
-/*
+		/*
 		zephyr,entropy = &trng0;
-*/
+		 */
 		zephyr,code-partition = &slot0_partition;
-/*
+		/*
 		zephyr,ieee802154 = &ieee802154;
-*/
+		 */
 	};
 };
 
@@ -131,12 +127,11 @@
 		storage_partition: partition@f4000 {
 			label = "storage";
 			reg = <0xf4000 0x0000b000>;
-		/* region <0xff000 0x1000> is reserved for Telink B92 SDK's data */
+			/* region <0xff000 0x1000> is reserved for Telink B92 SDK's data */
 		};
 	};
 };
 
-/*
 &gpiob {
 	status = "okay";
 };
@@ -146,6 +141,12 @@
 	status = "okay";
 };
 
+// PAY ATTENTION HERE !
+&gpiod {
+	status = "okay";
+};
+
+/*
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -160,14 +161,16 @@
 &ieee802154 {
 	status = "okay";
 };
+*/
 
 &pwm0 {
 	status = "okay";
 	clock-frequency = <93750>;
-	pinctrl-0 = <&pwm_ch0_pb4_default>;
+	pinctrl-0 = <&pwm_ch0_pd1_default>;
 	pinctrl-names = "default";
 };
 
+/*
 &pspi {
 	status = "okay";
 	cs0-pin = "PSPI_CSN_PC4";
@@ -201,4 +204,4 @@ zephyr_udc0: &usbd {
 	compatible = "telink,b91-usbd";
 	status = "okay";
 };
-*/
+ */

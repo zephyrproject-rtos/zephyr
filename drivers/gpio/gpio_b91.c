@@ -8,6 +8,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#if CONFIG_SOC_RISCV_TELINK_B92
+#include "gpio.h"
+#endif
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -243,12 +246,22 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	switch (trigger_type) {
 	case INTR_RISING_EDGE:
 		BM_CLR(gpio->polarity, BIT(pin));
+#if CONFIG_SOC_RISCV_TELINK_B91
 		BM_CLR(reg_gpio_irq_risc_mask, irq_lvl);
+#endif
+#if CONFIG_SOC_RISCV_TELINK_B92
+		BM_CLR(reg_gpio_irq_ctrl, irq_lvl);
+#endif
 		break;
 
 	case INTR_FALLING_EDGE:
 		BM_SET(gpio->polarity, BIT(pin));
+#if CONFIG_SOC_RISCV_TELINK_B91
 		BM_CLR(reg_gpio_irq_risc_mask, irq_lvl);
+#endif
+#if CONFIG_SOC_RISCV_TELINK_B92
+		BM_CLR(reg_gpio_irq_ctrl, irq_lvl);
+#endif
 		break;
 	}
 
@@ -256,7 +269,12 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 		reg_gpio_irq_ctrl |= FLD_GPIO_CORE_INTERRUPT_EN;
 	}
 	gpio_b91_irq_status_clr(irq_num);
+#if CONFIG_SOC_RISCV_TELINK_B91
 	BM_SET(reg_gpio_irq_risc_mask, irq_mask);
+#endif
+#if CONFIG_SOC_RISCV_TELINK_B92
+	BM_SET(reg_gpio_irq_ctrl, irq_mask);
+#endif
 
 	/* Enable peripheral interrupt */
 	gpio_b91_irq_en_set(dev, pin);

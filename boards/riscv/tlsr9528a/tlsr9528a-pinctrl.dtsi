@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
+
+&pinctrl {
+	/* Set pad-mul-sel register value.
+	 * Note: Pins functions below (pinmux = <...>) depend on this value.
+	 */
+	pad-mul-sel = <1>;
+
+	pwm_ch0_pd1_default: pwm_ch0_pd1_default {
+		pinmux = <B91_PINMUX_SET(B91_PORT_D, B91_PIN_1, B91_FUNC_B)>;
+	};
+
+};
