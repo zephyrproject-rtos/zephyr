@@ -113,7 +113,7 @@ jobs:
     - name: Build bootloader/mcuboot/boot for B92
       run: |
         cd ..
-        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=4
+        west build -b tlsr9528a                  -d build_mcuboot_b92                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=4 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
 
 
     - name: Build subsys/mgmt/mcumgr/smp_svr for Bluetooth
