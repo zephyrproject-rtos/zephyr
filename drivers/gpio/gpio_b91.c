@@ -8,54 +8,60 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#if CONFIG_SOC_RISCV_TELINK_B92
-#include "gpio.h"
-#endif
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#if CONFIG_SOC_RISCV_TELINK_B91
+#define GPIO_IRQ_REG reg_gpio_irq_risc_mask
+#elif CONFIG_SOC_RISCV_TELINK_B92
+#define GPIO_IRQ_REG reg_gpio_irq_ctrl
+#include "gpio.h"
+#else
+#error "GPIO driver is unsupported for choosen chip!"
+#endif
 
 /* Driver dts compatibility: telink,b91_gpio */
 #define DT_DRV_COMPAT telink_b91_gpio
 
 /* Get GPIO instance */
-#define GET_GPIO(dev)           ((volatile struct gpio_b91_t *)	\
-				 ((const struct gpio_b91_config *)dev->config)->gpio_base)
+#define GET_GPIO(dev)                                                                              \
+	((volatile struct gpio_b91_t *)((const struct gpio_b91_config *)dev->config)->gpio_base)
 
 /* Get GPIO IRQ number defined in dts */
-#define GET_IRQ_NUM(dev)        (((const struct gpio_b91_config *)dev->config)->irq_num)
+#define GET_IRQ_NUM(dev) (((const struct gpio_b91_config *)dev->config)->irq_num)
 
 /* Get GPIO IRQ priority defined in dts */
-#define GET_IRQ_PRIORITY(dev)   (((const struct gpio_b91_config *)dev->config)->irq_priority)
+#define GET_IRQ_PRIORITY(dev) (((const struct gpio_b91_config *)dev->config)->irq_priority)
 
 /* Get GPIO port number: port A - 0, port B - 1, ..., port F - 5  */
-#define GET_PORT_NUM(gpio)      ((uint8_t)(((uint32_t)gpio - DT_REG_ADDR(DT_NODELABEL(gpioa))) / \
-					   DT_REG_SIZE(DT_NODELABEL(gpioa))))
+#define GET_PORT_NUM(gpio)                                                                         \
+	((uint8_t)(((uint32_t)gpio - DT_REG_ADDR(DT_NODELABEL(gpioa))) /                           \
+		   DT_REG_SIZE(DT_NODELABEL(gpioa))))
 
 /* Check that gpio is port C */
-#define IS_PORT_C(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpioc)))
+#define IS_PORT_C(gpio) ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpioc)))
 
 /* Check that gpio is port D */
-#define IS_PORT_D(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiod)))
+#define IS_PORT_D(gpio) ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiod)))
 
 /* Check that 'inst' has only 1 interrupt selected in dts */
-#define IS_INST_IRQ_EN(inst)    (DT_NUM_IRQS(DT_DRV_INST(inst)) == 1)
+#define IS_INST_IRQ_EN(inst) (DT_NUM_IRQS(DT_DRV_INST(inst)) == 1)
 
 /* Max pin number per port (pin 0..7) */
 #define PIN_NUM_MAX ((uint8_t)7u)
 
 /* IRQ Enable registers */
-#define reg_irq_risc0_en(i)      REG_ADDR8(0x140338 + i)
-#define reg_irq_risc1_en(i)      REG_ADDR8(0x140340 + i)
+#define reg_irq_risc0_en(i) REG_ADDR8(0x140338 + i)
+#define reg_irq_risc1_en(i) REG_ADDR8(0x140340 + i)
 
 /* GPIO Wakeup Enable registers */
 #define reg_wakeup_trig_pol_base 0x41
-#define reg_wakeup_trig_en_base  0x46
+#define reg_wakeup_trig_en_base	 0x46
 
 /* Pull-up/down resistors */
-#define GPIO_PIN_UP_DOWN_FLOAT   ((uint8_t)0u)
-#define GPIO_PIN_PULLDOWN_100K   ((uint8_t)2u)
-#define GPIO_PIN_PULLUP_10K      ((uint8_t)3u)
+#define GPIO_PIN_UP_DOWN_FLOAT ((uint8_t)0u)
+#define GPIO_PIN_PULLDOWN_100K ((uint8_t)2u)
+#define GPIO_PIN_PULLUP_10K    ((uint8_t)3u)
 
 /* GPIO interrupt types */
 #define INTR_RISING_EDGE         ((uint8_t)0u)
@@ -68,14 +74,14 @@
 
 /* B91 GPIO registers structure */
 struct gpio_b91_t {
-	uint8_t input;                  /* Input: read GPI input */
-	uint8_t ie;                     /* IE: input enable, high active. 1: enable, 0: disable */
-	uint8_t oen;                    /* OEN: output enable, low active. 0: enable, 1: disable */
-	uint8_t output;                 /* Output: configure GPIO output */
-	uint8_t polarity;               /* Polarity: interrupt polarity: rising, falling */
-	uint8_t ds;                     /* DS: drive strength. 1: maximum (default), 0: minimal */
-	uint8_t actas_gpio;             /* Act as GPIO: enable (1) or disable (0) GPIO function */
-	uint8_t irq_en;                 /* Act as GPIO: enable (1) or disable (0) GPIO function */
+	uint8_t input;	    /* Input: read GPI input */
+	uint8_t ie;	    /* IE: input enable, high active. 1: enable, 0: disable */
+	uint8_t oen;	    /* OEN: output enable, low active. 0: enable, 1: disable */
+	uint8_t output;	    /* Output: configure GPIO output */
+	uint8_t polarity;   /* Polarity: interrupt polarity: rising, falling */
+	uint8_t ds;	    /* DS: drive strength. 1: maximum (default), 0: minimal */
+	uint8_t actas_gpio; /* Act as GPIO: enable (1) or disable (0) GPIO function */
+	uint8_t irq_en;	    /* Act as GPIO: enable (1) or disable (0) GPIO function */
 };
 
 /* GPIO IRQ configuration structure */
@@ -99,45 +105,42 @@ struct gpio_b91_config {
 /* GPIO driver data structure */
 struct gpio_b91_data {
 	struct gpio_driver_data common; /* driver data */
-	sys_slist_t callbacks;          /* list of callbacks */
+	sys_slist_t callbacks;		/* list of callbacks */
 };
 
 #ifdef CONFIG_PM_DEVICE
 /* Set Wake-up Enable bit based on GPIO pin number */
 static inline void gpio_b91_irq_pin_wakeup_set(const struct device *dev, gpio_pin_t pin,
-	uint8_t trigger_type)
+					       uint8_t trigger_type)
 {
-	const uint8_t wakeup_trigger_pol_reg = reg_wakeup_trig_pol_base +
-		GET_PORT_NUM(GET_GPIO(dev));
-	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base +
-		GET_PORT_NUM(GET_GPIO(dev));
+	const uint8_t wakeup_trigger_pol_reg =
+		reg_wakeup_trig_pol_base + GET_PORT_NUM(GET_GPIO(dev));
+	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base + GET_PORT_NUM(GET_GPIO(dev));
 
 	switch (trigger_type) {
 	case INTR_RISING_EDGE:
 		analog_write_reg8(wakeup_trigger_pol_reg,
-			analog_read_reg8(wakeup_trigger_pol_reg) & ~BIT(pin));
+				  analog_read_reg8(wakeup_trigger_pol_reg) & ~BIT(pin));
 		break;
 	case INTR_FALLING_EDGE:
 		analog_write_reg8(wakeup_trigger_pol_reg,
-			analog_read_reg8(wakeup_trigger_pol_reg) | BIT(pin));
+				  analog_read_reg8(wakeup_trigger_pol_reg) | BIT(pin));
 		break;
 	}
 	analog_write_reg8(wakeup_trigger_en_reg,
-		analog_read_reg8(wakeup_trigger_en_reg) | BIT(pin));
+			  analog_read_reg8(wakeup_trigger_en_reg) | BIT(pin));
 }
 
 /* Clear Wake-up Enable bit based on GPIO pin number */
 static inline void gpio_b91_irq_pin_wakeup_clr(const struct device *dev, gpio_pin_t pin)
 {
-	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base +
-		GET_PORT_NUM(GET_GPIO(dev));
+	const uint8_t wakeup_trigger_en_reg = reg_wakeup_trig_en_base + GET_PORT_NUM(GET_GPIO(dev));
 
 	analog_write_reg8(wakeup_trigger_en_reg,
-		analog_read_reg8(wakeup_trigger_en_reg) & ~BIT(pin));
+			  analog_read_reg8(wakeup_trigger_en_reg) & ~BIT(pin));
 }
 
 #endif /* CONFIG_PM_DEVICE */
-
 
 /* Set IRQ Enable bit based on IRQ number */
 static inline void gpio_b91_irq_en_set(const struct device *dev, gpio_pin_t pin)
@@ -219,8 +222,7 @@ static inline void gpio_b91_irq_status_clr(uint8_t irq)
 }
 
 /* Set pin's irq type */
-void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
-		      uint8_t trigger_type)
+void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin, uint8_t trigger_type)
 {
 	uint8_t irq_lvl = 0;
 	uint8_t irq_mask = 0;
@@ -247,7 +249,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	case INTR_RISING_EDGE:
 		BM_CLR(gpio->polarity, BIT(pin));
 #if CONFIG_SOC_RISCV_TELINK_B91
-		BM_CLR(reg_gpio_irq_risc_mask, irq_lvl);
+		BM_CLR(GPIO_IRQ_REG, irq_lvl);
 #endif
 #if CONFIG_SOC_RISCV_TELINK_B92
 		BM_CLR(reg_gpio_irq_ctrl, irq_lvl);
@@ -257,7 +259,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	case INTR_FALLING_EDGE:
 		BM_SET(gpio->polarity, BIT(pin));
 #if CONFIG_SOC_RISCV_TELINK_B91
-		BM_CLR(reg_gpio_irq_risc_mask, irq_lvl);
+		BM_CLR(GPIO_IRQ_REG, irq_lvl);
 #endif
 #if CONFIG_SOC_RISCV_TELINK_B92
 		BM_CLR(reg_gpio_irq_ctrl, irq_lvl);
@@ -270,7 +272,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	}
 	gpio_b91_irq_status_clr(irq_num);
 #if CONFIG_SOC_RISCV_TELINK_B91
-	BM_SET(reg_gpio_irq_risc_mask, irq_mask);
+	BM_SET(GPIO_IRQ_REG, irq_mask);
 #endif
 #if CONFIG_SOC_RISCV_TELINK_B92
 	BM_SET(reg_gpio_irq_ctrl, irq_mask);
@@ -289,8 +291,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 }
 
 /* Set pin's pull-up/down resistor */
-static void gpio_b91_up_down_res_set(volatile struct gpio_b91_t *gpio,
-				     gpio_pin_t pin,
+static void gpio_b91_up_down_res_set(volatile struct gpio_b91_t *gpio, gpio_pin_t pin,
 				     uint8_t up_down_res)
 {
 	uint8_t val;
@@ -321,8 +322,7 @@ static void gpio_b91_up_down_res_set(volatile struct gpio_b91_t *gpio,
 }
 
 /* Config Pin pull-up / pull-down resistors */
-static void gpio_b91_config_up_down_res(volatile struct gpio_b91_t *gpio,
-					gpio_pin_t pin,
+static void gpio_b91_config_up_down_res(volatile struct gpio_b91_t *gpio, gpio_pin_t pin,
 					gpio_flags_t flags)
 {
 	if ((flags & GPIO_PULL_UP) != 0) {
@@ -335,8 +335,7 @@ static void gpio_b91_config_up_down_res(volatile struct gpio_b91_t *gpio,
 }
 
 /* Config Pin In/Out direction */
-static void gpio_b91_config_in_out(volatile struct gpio_b91_t *gpio,
-				   gpio_pin_t pin,
+static void gpio_b91_config_in_out(volatile struct gpio_b91_t *gpio, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
 	uint8_t ie_addr = 0;
@@ -376,9 +375,7 @@ static int gpio_b91_init(const struct device *dev)
 }
 
 /* API implementation: pin_configure */
-static int gpio_b91_pin_configure(const struct device *dev,
-				  gpio_pin_t pin,
-				  gpio_flags_t flags)
+static int gpio_b91_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
@@ -417,8 +414,7 @@ static int gpio_b91_pin_configure(const struct device *dev,
 }
 
 /* API implementation: port_get_raw */
-static int gpio_b91_port_get_raw(const struct device *dev,
-				 gpio_port_value_t *value)
+static int gpio_b91_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
@@ -428,8 +424,7 @@ static int gpio_b91_port_get_raw(const struct device *dev,
 }
 
 /* API implementation: port_set_masked_raw */
-static int gpio_b91_port_set_masked_raw(const struct device *dev,
-					gpio_port_pins_t mask,
+static int gpio_b91_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					gpio_port_value_t value)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
@@ -440,8 +435,7 @@ static int gpio_b91_port_set_masked_raw(const struct device *dev,
 }
 
 /* API implementation: port_set_bits_raw */
-static int gpio_b91_port_set_bits_raw(const struct device *dev,
-				      gpio_port_pins_t mask)
+static int gpio_b91_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
@@ -451,8 +445,7 @@ static int gpio_b91_port_set_bits_raw(const struct device *dev,
 }
 
 /* API implementation: port_clear_bits_raw */
-static int gpio_b91_port_clear_bits_raw(const struct device *dev,
-					gpio_port_pins_t mask)
+static int gpio_b91_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
@@ -462,8 +455,7 @@ static int gpio_b91_port_clear_bits_raw(const struct device *dev,
 }
 
 /* API implementation: port_toggle_bits */
-static int gpio_b91_port_toggle_bits(const struct device *dev,
-				     gpio_port_pins_t mask)
+static int gpio_b91_port_toggle_bits(const struct device *dev, gpio_port_pins_t mask)
 {
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
@@ -473,8 +465,8 @@ static int gpio_b91_port_toggle_bits(const struct device *dev,
 }
 
 /* API implementation: interrupts handler */
-#if IS_INST_IRQ_EN(0) || IS_INST_IRQ_EN(1) || IS_INST_IRQ_EN(2) || \
-	IS_INST_IRQ_EN(3) || IS_INST_IRQ_EN(4)
+#if IS_INST_IRQ_EN(0) || IS_INST_IRQ_EN(1) || IS_INST_IRQ_EN(2) || IS_INST_IRQ_EN(3) ||            \
+	IS_INST_IRQ_EN(4)
 static void gpio_b91_irq_handler(const struct device *dev)
 {
 	struct gpio_b91_data *data				= dev->data;
@@ -510,17 +502,15 @@ static void gpio_b91_irq_handler(const struct device *dev)
 #endif
 
 /* API implementation: pin_interrupt_configure */
-static int gpio_b91_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
+static int gpio_b91_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_b91_config *cfg = dev->config;
 	int ret_status = 0;
 	bool current_pin_value = ((GET_GPIO(dev)->input) >> pin) & 0x0001;
 
 	switch (mode) {
-	case GPIO_INT_MODE_DISABLED:                /* GPIO interrupt disable */
+	case GPIO_INT_MODE_DISABLED: /* GPIO interrupt disable */
 		gpio_b91_irq_en_clr(dev, pin);
 		break;
 
@@ -570,8 +560,7 @@ static int gpio_b91_pin_interrupt_configure(const struct device *dev,
 }
 
 /* API implementation: manage_callback */
-static int gpio_b91_manage_callback(const struct device *dev,
-				    struct gpio_callback *callback,
+static int gpio_b91_manage_callback(const struct device *dev, struct gpio_callback *callback,
 				    bool set)
 {
 	struct gpio_b91_data *data = dev->data;
@@ -588,18 +577,16 @@ static const struct gpio_driver_api gpio_b91_driver_api = {
 	.port_clear_bits_raw = gpio_b91_port_clear_bits_raw,
 	.port_toggle_bits = gpio_b91_port_toggle_bits,
 	.pin_interrupt_configure = gpio_b91_pin_interrupt_configure,
-	.manage_callback = gpio_b91_manage_callback
-};
+	.manage_callback = gpio_b91_manage_callback};
 
 /* If instance 0 is present and has interrupt enabled, connect IRQ */
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0
 static void gpio_b91_irq_connect_0(void)
 {
-	#if IS_INST_IRQ_EN(0)
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    gpio_b91_irq_handler,
+#if IS_INST_IRQ_EN(0)
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), gpio_b91_irq_handler,
 		    DEVICE_DT_INST_GET(0), 0);
-	#endif
+#endif
 }
 #endif
 
@@ -607,11 +594,10 @@ static void gpio_b91_irq_connect_0(void)
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
 static void gpio_b91_irq_connect_1(void)
 {
-	#if IS_INST_IRQ_EN(1)
-	IRQ_CONNECT(DT_INST_IRQN(1), DT_INST_IRQ(1, priority),
-		    gpio_b91_irq_handler,
+#if IS_INST_IRQ_EN(1)
+	IRQ_CONNECT(DT_INST_IRQN(1), DT_INST_IRQ(1, priority), gpio_b91_irq_handler,
 		    DEVICE_DT_INST_GET(1), 0);
-	#endif
+#endif
 }
 #endif
 
@@ -619,11 +605,10 @@ static void gpio_b91_irq_connect_1(void)
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2
 static void gpio_b91_irq_connect_2(void)
 {
-	#if IS_INST_IRQ_EN(2)
-	IRQ_CONNECT(DT_INST_IRQN(2), DT_INST_IRQ(2, priority),
-		    gpio_b91_irq_handler,
+#if IS_INST_IRQ_EN(2)
+	IRQ_CONNECT(DT_INST_IRQN(2), DT_INST_IRQ(2, priority), gpio_b91_irq_handler,
 		    DEVICE_DT_INST_GET(2), 0);
-	#endif
+#endif
 }
 #endif
 
@@ -631,11 +616,10 @@ static void gpio_b91_irq_connect_2(void)
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
 static void gpio_b91_irq_connect_3(void)
 {
-	#if IS_INST_IRQ_EN(3)
-	IRQ_CONNECT(DT_INST_IRQN(3), DT_INST_IRQ(3, priority),
-		    gpio_b91_irq_handler,
+#if IS_INST_IRQ_EN(3)
+	IRQ_CONNECT(DT_INST_IRQN(3), DT_INST_IRQ(3, priority), gpio_b91_irq_handler,
 		    DEVICE_DT_INST_GET(3), 0);
-	#endif
+#endif
 }
 #endif
 
@@ -643,11 +627,10 @@ static void gpio_b91_irq_connect_3(void)
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 4
 static void gpio_b91_irq_connect_4(void)
 {
-	#if IS_INST_IRQ_EN(4)
-	IRQ_CONNECT(DT_INST_IRQN(4), DT_INST_IRQ(4, priority),
-		    gpio_b91_irq_handler,
+#if IS_INST_IRQ_EN(4)
+	IRQ_CONNECT(DT_INST_IRQN(4), DT_INST_IRQ(4, priority), gpio_b91_irq_handler,
 		    DEVICE_DT_INST_GET(4), 0);
-	#endif
+#endif
 }
 #endif
 

@@ -6,10 +6,10 @@
 
 /dts-v1/;
 
-// #include <zephyr/dt-bindings/adc/adc.h>
-// #include <zephyr/dt-bindings/adc/b91-adc.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/b91-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-// #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
@@ -141,9 +141,8 @@
 			riscv,ndev = <63>;
 		};
 
-/*
 		uart0: serial@80140080 {
-			compatible = "telink,b91-uart";
+			compatible = "telink,b92-uart";
 			reg = <0x80140080 0x40>;
 			interrupts = <31 1>;
 			interrupt-parent = <&plic0>;
@@ -171,7 +170,7 @@
 			reg = <0x80101800 0x20>;
 			status = "disabled";
 		};
-*/
+
 		pwm0: pwm@80140400 {
 			compatible = "telink,b91-pwm";
 			reg = <0x80140400 0x80>;
@@ -179,7 +178,7 @@
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
-/*
+
 		hspi: spi@81FFFFC0 {
 			compatible = "telink,b91-spi";
 			reg = <0x81FFFFC0 0x40>;
@@ -230,7 +229,6 @@
 			num-out-endpoints = <2>;
 			status = "disabled";
 		};
-*/
 
 		pinctrl: pinctrl@80140330 {
 			compatible = "telink,b91-pinctrl";

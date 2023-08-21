@@ -141,12 +141,10 @@
 	status = "okay";
 };
 
-// PAY ATTENTION HERE !
 &gpiod {
 	status = "okay";
 };
 
-/*
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -161,7 +159,6 @@
 &ieee802154 {
 	status = "okay";
 };
-*/
 
 &pwm0 {
 	status = "okay";
