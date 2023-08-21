@@ -93,7 +93,8 @@
 				       ((pin & 0xf0) ? 1 : 0)))
 
 
-#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) && defined(CONFIG_PM_DEVICE)
+#if (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)) \
+						&& defined(CONFIG_PM_DEVICE)
 
 static int pinctrl_b9x_init(const struct device *dev)
 {
@@ -145,7 +146,7 @@ static int pinctrl_b9x_init(void)
 
 SYS_INIT(pinctrl_b9x_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION && CONFIG_PM_DEVICE */
+#endif
 
 /* Act as GPIO function disable */
 static inline void pinctrl_b9x_gpio_function_disable(uint32_t pin)

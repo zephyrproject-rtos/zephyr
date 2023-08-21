@@ -6,6 +6,20 @@ if BOARD_TLSR9528A
 config BOARD
 	default "tlsr9528a"
 
+endif
+
+if BOARD_TLSR9528A_RETENTION
+
+config BOARD
+	default "tlsr9528a_retention"
+
+config BOARD_TLSR9X_NON_RETENTION_RAM_CODE
+	default n
+
+endif
+
+if BOARD_TLSR9528A || BOARD_TLSR9528A_RETENTION
+
 config SOC_FLASH_TELINK_B9X
 	default y if FLASH
 

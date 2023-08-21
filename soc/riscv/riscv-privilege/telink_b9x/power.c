@@ -59,7 +59,7 @@ static uint64_t get_mtime(void)
 	return (((uint64_t)mtime_h) << 32) | mtime_l;
 }
 
-#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)
 static void set_mtime_compare(uint64_t time_cmp)
 {
 	*(volatile uint64_t *const)((uint32_t)(MTIMECMP_REG +
@@ -81,9 +81,9 @@ static void set_mtime(uint64_t time)
 	*rl = (uint32_t)time;
 }
 
-#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)
 volatile bool b9x_deep_sleep_retention;
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
+#endif
 
 /**
  * @brief PM state set API implementation.
@@ -114,7 +114,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			set_mtime(current_time);
 		}
 		break;
-#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)
 	case PM_STATE_STANDBY:
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
@@ -127,7 +127,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			b9x_deep_sleep_retention = true;
 		}
 		break;
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
+#endif
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		k_cpu_idle();
@@ -143,9 +143,9 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
+#if defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) || defined(CONFIG_BOARD_TLSR9528A_RETENTION)
 	b9x_deep_sleep_retention = false;
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
+#endif
 
 	/*
 	 * System is now in active mode. Enabling interrupts which were
