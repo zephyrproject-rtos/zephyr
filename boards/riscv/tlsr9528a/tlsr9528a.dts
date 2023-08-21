@@ -161,7 +161,7 @@
 &pwm0 {
 	status = "okay";
 	clock-frequency = <93750>;
-	pinctrl-0 = <&pwm_ch0_pd1_default>;
+	pinctrl-0 = <&pwm_ch0_pd0_default>;
 	pinctrl-names = "default";
 };
 

@@ -44,8 +44,8 @@
 
 	/* PWM Channel 0 (PD1) */
 
-	pwm_ch0_pd1_default: pwm_ch0_pd1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_1, B92_FUNC_PWM0)>;
+	pwm_ch0_pd0_default: pwm_ch0_pd0_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_PWM0)>;
 	};
 
 	/* PSPI: CLK(PE1), MOSI(PE2), MISO(PE3) */

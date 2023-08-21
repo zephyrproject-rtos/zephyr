@@ -182,7 +182,7 @@
 		};
 
 		pwm0: pwm@80140400 {
-			compatible = "telink,b91-pwm";
+			compatible = "telink,b9x-pwm";
 			reg = <0x80140400 0x80>;
 			channels = <6>;
 			status = "disabled";
