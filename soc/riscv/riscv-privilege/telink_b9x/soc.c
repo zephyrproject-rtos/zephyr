@@ -7,7 +7,6 @@
 #include <sys.h>
 #include <clock.h>
 #include <gpio.h>
-#include <ext_driver/ext_pm.h>
 #include <zephyr/device.h>
 
 
@@ -24,14 +23,26 @@
 #define CLK_96MHZ                   96000000u
 
 /* Power Mode value */
-#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
-	#define POWER_MODE      LDO_1P4_LDO_1P8
-#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 1
-	#define POWER_MODE      DCDC_1P4_LDO_1P8
-#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 2
-	#define POWER_MODE      DCDC_1P4_DCDC_1P8
-#else
-	#error "Wrong value for power-mode parameter"
+#if CONFIG_SOC_RISCV_TELINK_B91
+	#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
+		#define POWER_MODE      LDO_1P4_LDO_1P8
+	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 1
+		#define POWER_MODE      DCDC_1P4_LDO_1P8
+	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 2
+		#define POWER_MODE      DCDC_1P4_DCDC_1P8
+	#else
+		#error "Wrong value for power-mode parameter"
+	#endif
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
+		#define POWER_MODE      LDO_1P2_LDO_2P0
+	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 1
+		#define POWER_MODE      DCDC_1P2_LDO_2P0
+	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 2
+		#define POWER_MODE      DCDC_1P2_DCDC_2P0
+	#else
+		#error "Wrong value for power-mode parameter"
+	#endif
 #endif
 
 /* Vbat Type value */

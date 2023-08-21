@@ -1,8 +1,8 @@
-# Copyright (c) 2021 Telink Semiconductor
+# Copyright (c) 2021-2023 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RISCV_TELINK_B91
-	bool "Telink B91 SoC Implementation"
+config SOC_SERIES_RISCV_TELINK_B9x
+	bool "Telink B9x SoCs Implementation"
 	select RISCV
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M
@@ -13,4 +13,4 @@ config SOC_SERIES_RISCV_TELINK_B91
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	select HAS_TELINK_DRIVERS
 	help
-	  Enable support for Telink B91 SoC
+	  Enable support for Telink B9x SoC

@@ -24,11 +24,22 @@ entry:
 	.org 0x20
 	.word ('T'<<24 | 'L'<<16 | 'N'<<8 | 'K')
 
+#if CONFIG_SOC_RISCV_TELINK_B91
 	.org 0x26
 #if defined(CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE
 	.short (0x173b)                 #/ 2 - wire SPI interface
 #else
 	.short (0x65eb)                 #/ 4 - wire SPI interface
+#endif
+
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	.org 0x24
+#if defined(CONFIG_TELINK_B92_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B92_2_WIRE_SPI_ENABLE
+	.word (0x3B0097A9)		/* 2 - wire SPI interface */
+#else
+	.word (0xEB0095BA)		/* 4 - wire SPI interface */
+#endif
+
 #endif
 
 	.align 2

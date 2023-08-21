@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Linker script for the Telink B91 SoC
+ * @brief Linker script for the Telink B9x SoCs
  */
 
 #include <zephyr/devicetree.h>

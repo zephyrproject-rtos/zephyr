@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2021-2023 Telink Semiconductor
+ * Copyright (c) 2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
+/*
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/b91-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+*/
 
 / {
 	#address-cells = <1>;
@@ -31,15 +33,15 @@
 		state0: state0 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			min-residency-us = <500>;
-			exit-latency-us = <10>;
+			min-residency-us = <3000>;
+			exit-latency-us = <1000>;
 		};
 	};
 
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "telink,telink_b91-soc";
+		compatible = "telink,telink_b92-soc";
 		ranges;
 
 		ram_ilm: memory@0 {
@@ -58,7 +60,7 @@
 		};
 
 		flash_mspi: flash-controller@80140100 {
-			compatible = "telink,b91-flash-controller";
+			compatible = "telink,b92-flash-controller";
 			reg = <0x80140100 0x40>;
 
 			#address-cells = <1>;
@@ -71,13 +73,14 @@
 		};
 
 		power: power@80140180 {
-			compatible = "telink,b91-power";
+			compatible = "telink,b92-power";
 			reg = <0x80140180 0x40>;
-			power-mode = "LDO_1P4_LDO_1P8";
+			power-mode = "LDO_1P2_LDO_2P0";
 			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
 			status = "okay";
 		};
 
+/*
 		gpioa: gpio@80140300 {
 			compatible = "telink,b91-gpio";
 			gpio-controller;
@@ -127,6 +130,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+*/
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
@@ -141,6 +145,7 @@
 			riscv,ndev = <63>;
 		};
 
+/*
 		uart0: serial@80140080 {
 			compatible = "telink,b91-uart";
 			reg = <0x80140080 0x40>;
@@ -240,11 +245,6 @@
 						"pull_up_en";
 			status = "okay";
 		};
-
-		wdt: watchdog@140140 {
-			compatible = "telink,b91-watchdog";
-			reg = <0x140140 0x10>;
-			status = "disabled";
-		};
+*/
 	};
 };

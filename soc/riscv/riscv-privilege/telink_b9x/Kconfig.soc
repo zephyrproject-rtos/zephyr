@@ -1,11 +1,11 @@
-# Copyright (c) 2021 Telink Semiconductor
+# Copyright (c) 2021-2023 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 choice
 prompt "CPU Architecture of SoC"
-depends on SOC_SERIES_RISCV_TELINK_B91
+depends on SOC_SERIES_RISCV_TELINK_B9x
 
-config B91_CPU_RISCV32
+config B9xCPU_RISCV32
 	bool "RISCV32 CPU Architecture"
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M
@@ -16,14 +16,14 @@ config B91_CPU_RISCV32
 
 endchoice
 
-config TELINK_B91_HWDSP
+config TELINK_B9x_HWDSP
 	bool "Support Hardware DSP"
 	select RISCV_SOC_CONTEXT_SAVE
-	depends on SOC_SERIES_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9x
 
 config TELINK_B91_MBEDTLS_HW_ACCELERATION
 	bool "Use Telink B91 platform mbedtls HW acceleration"
-	depends on SOC_SERIES_RISCV_TELINK_B91 && MBEDTLS
+	depends on SOC_SERIES_RISCV_TELINK_B9x && MBEDTLS
 	default y
 	help
 		This option enables Telink B91 hardware accelerated mbedtls version.
@@ -32,14 +32,20 @@ config TELINK_B91_PFT_ARCH
 	bool "Support performance throttling"
 	default y
 	select RISCV_SOC_CONTEXT_SAVE
-	depends on SOC_SERIES_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9x
 
 choice
-prompt "Telink B91 SoC implementation"
-depends on SOC_SERIES_RISCV_TELINK_B91
+prompt "Telink B9x SoCs implementation"
+depends on SOC_SERIES_RISCV_TELINK_B9x
 
 config SOC_RISCV_TELINK_B91
 	bool "Telink B91 SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+
+config SOC_RISCV_TELINK_B92
+	bool "Telink B92 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
@@ -54,14 +60,14 @@ config SHELL_BACKENDS
 
 config TELINK_B91_REBOOT_ON_FAULT
 	bool "Reboot system when fault happened"
-	depends on SOC_SERIES_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9x
 	default n
 	help
 		This option enables Telink B91 chip reboot after fault.
 
 config TELINK_B91_REBOOT_ON_FAULT_DELAY
 	int "Reboot system delay in mS"
-	depends on SOC_SERIES_RISCV_TELINK_B91 && TELINK_B91_REBOOT_ON_FAULT
+	depends on SOC_SERIES_RISCV_TELINK_B9x && TELINK_B91_REBOOT_ON_FAULT
 	default 1000
 	range 0 30000
 	help
@@ -69,14 +75,21 @@ config TELINK_B91_REBOOT_ON_FAULT_DELAY
 
 config TELINK_B91_USB_SWI_DISABLE
 	bool "Don't use USB SWI interface"
-	depends on SOC_SERIES_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9x
 	default n
 	help
 		This option disables USB SWI interface
 
 config TELINK_B91_2_WIRE_SPI_ENABLE
 	bool "Use 2-wire SPI interface to FLASH"
-	depends on SOC_SERIES_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9x
+	default n
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_B92_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	depends on SOC_SERIES_RISCV_TELINK_B9x
 	default n
 	help
 		This option enables 2-wire SPI interface to FLASH
