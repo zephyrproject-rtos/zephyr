@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2021 Telink Semiconductor
+ * Copyright (c) 2021-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT telink_b91_i2c
+#define DT_DRV_COMPAT telink_b9x_i2c
 
 #include "i2c.h"
 #include "clock.h"
@@ -17,18 +17,18 @@ LOG_MODULE_REGISTER(i2c_telink);
 #include <zephyr/drivers/pinctrl.h>
 
 /* I2C configuration structure */
-struct i2c_b91_cfg {
+struct i2c_b9x_cfg {
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
 };
 
 /* I2C data structure */
-struct i2c_b91_data {
+struct i2c_b9x_data {
 	struct k_sem mutex;
 };
 
 /* API implementation: configure */
-static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
+static int i2c_b9x_configure(const struct device *dev, uint32_t dev_config)
 {
 	ARG_UNUSED(dev);
 
@@ -72,14 +72,14 @@ static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
 }
 
 /* API implementation: transfer */
-static int i2c_b91_transfer(const struct device *dev,
+static int i2c_b9x_transfer(const struct device *dev,
 			    struct i2c_msg *msgs,
 			    uint8_t num_msgs,
 			    uint16_t addr)
 {
 	int status = 0;
 	uint8_t send_stop = 0;
-	struct i2c_b91_data *data = dev->data;
+	struct i2c_b9x_data *data = dev->data;
 
 	/* get the mutex */
 	k_sem_take(&data->mutex, K_FOREVER);
@@ -119,18 +119,18 @@ static int i2c_b91_transfer(const struct device *dev,
 };
 
 /* API implementation: init */
-static int i2c_b91_init(const struct device *dev)
+static int i2c_b9x_init(const struct device *dev)
 {
 	int status = 0;
-	const struct i2c_b91_cfg *cfg = dev->config;
-	struct i2c_b91_data *data = dev->data;
+	const struct i2c_b9x_cfg *cfg = dev->config;
+	struct i2c_b9x_data *data = dev->data;
 	uint32_t dev_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->bitrate));
 
 	/* init mutex */
 	k_sem_init(&data->mutex, 1, 1);
 
 	/* config i2c on startup */
-	status = i2c_b91_configure(dev, dev_config);
+	status = i2c_b9x_configure(dev, dev_config);
 	if (status != 0) {
 		LOG_ERR("Failed to configure I2C on init");
 		return status;
@@ -147,32 +147,32 @@ static int i2c_b91_init(const struct device *dev)
 }
 
 /* I2C driver APIs structure */
-static const struct i2c_driver_api i2c_b91_api = {
-	.configure = i2c_b91_configure,
-	.transfer = i2c_b91_transfer,
+static const struct i2c_driver_api i2c_b9x_api = {
+	.configure = i2c_b9x_configure,
+	.transfer = i2c_b9x_transfer,
 };
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported I2C instance");
 
 /* I2C driver registration */
-#define I2C_B91_INIT(inst)					      \
+#define I2C_b9x_INIT(inst)					      \
 								      \
 	PINCTRL_DT_INST_DEFINE(inst);				      \
 								      \
-	static struct i2c_b91_data i2c_b91_data_##inst;		      \
+	static struct i2c_b9x_data i2c_b9x_data_##inst;		      \
 								      \
-	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {	      \
+	static struct i2c_b9x_cfg i2c_b9x_cfg_##inst = {	      \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),	      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	      \
 	};							      \
 								      \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		      \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b9x_init,		      \
 				  NULL,				      \
-				  &i2c_b91_data_##inst,		      \
-				  &i2c_b91_cfg_##inst,		      \
+				  &i2c_b9x_data_##inst,		      \
+				  &i2c_b9x_cfg_##inst,		      \
 				  POST_KERNEL,			      \
 				  CONFIG_I2C_INIT_PRIORITY,	      \
-				  &i2c_b91_api);
+				  &i2c_b9x_api);
 
-DT_INST_FOREACH_STATUS_OKAY(I2C_B91_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_b9x_INIT)

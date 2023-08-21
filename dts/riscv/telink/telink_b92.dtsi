@@ -214,7 +214,7 @@
 		};
 
 		i2c: i2c@80140280 {
-			compatible = "telink,b91-i2c";
+			compatible = "telink,b9x-i2c";
 			reg = <0x80140280 0x40>;
 			#address-cells = <1>;
 			#size-cells = <0>;
