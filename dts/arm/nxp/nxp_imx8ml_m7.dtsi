@@ -164,12 +164,12 @@
 		};
 
 		uart1: uart@30860000 {
-            compatible = "nxp,imx-iuart";
-            reg = <0x30860000 0x10000>;
-            interrupts = <26 3>;
-            clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
-            status = "disabled";
-        };
+			compatible = "nxp,imx-iuart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
+			status = "disabled";
+		};
 
 		mailbox0: mailbox@30ab0000 {
 			compatible = "nxp,imx-mu";
