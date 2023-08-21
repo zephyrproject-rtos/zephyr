@@ -1764,7 +1764,7 @@ static void usbd_work_handler(struct k_work *item)
 
 static void usbd_retry_timer_expire(struct k_timer *timer)
 {
-	struct b91_usbd_ep_ctx *ep_ctx = k_timer_user_data_get(timer);
+	struct b9x_usbd_ep_ctx *ep_ctx = k_timer_user_data_get(timer);
 
 	submit_usbd_event(USBD_EVT_EP_RETRY, ep_ctx - usbd_ctx.ep_ctx);
 }
