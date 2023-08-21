@@ -224,7 +224,7 @@ void sys_clock_announce(int32_t ticks)
 
 	announce_remaining = ticks;
 
-	struct _timeout *t = first();
+	struct _timeout *t;
 
 	for (t = first();
 	     (t != NULL) && (t->dticks <= announce_remaining);
