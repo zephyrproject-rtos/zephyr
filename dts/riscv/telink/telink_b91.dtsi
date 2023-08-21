@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/adc/b91-adc.h>
+#include <zephyr/dt-bindings/adc/b9x-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -213,7 +213,7 @@
 		};
 
 		adc: adc@ea {
-			compatible = "telink,b91-adc";
+			compatible = "telink,b9x-adc";
 			reg = <0xea 0x18>;
 			status = "disabled";
 			#io-channel-cells = <1>;

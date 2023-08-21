@@ -1,9 +1,9 @@
-# Copyright (c) 2022, Telink Semiconductor
+# Copyright (c) 2022-2023, Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-description: Telink B91 ADC node
+description: Telink B9x ADC node
 
-compatible: "telink,b91-adc"
+compatible: "telink,b9x-adc"
 
 include: [adc-controller.yaml, pinctrl-device.yaml]
 

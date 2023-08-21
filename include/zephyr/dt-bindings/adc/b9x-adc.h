@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2022 Telink Semiconductor
+ * Copyright (c) 2022-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B91_ADC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B91_ADC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B9X_ADC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B9X_ADC_H_
 
 #define DT_ADC_GPIO_PB0      0x01
 #define DT_ADC_GPIO_PB1      0x02
@@ -19,4 +19,4 @@
 #define DT_ADC_GPIO_PD1      0x0a
 #define DT_ADC_VBAT          0x0f
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B91_ADC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_B9X_ADC_H_ */
