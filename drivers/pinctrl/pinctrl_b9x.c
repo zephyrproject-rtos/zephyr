@@ -212,13 +212,14 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	}
 
 	mask = (uint8_t) ~(BIT(offset) | BIT(offset + 1));
-	func = func << offset;
 
 	/* set func value */
 #if CONFIG_SOC_RISCV_TELINK_B91
+	func = func << offset;
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & mask) | func;
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B92_PIN_FUNC_POS)) | (func & B92_PIN_FUNC_POS);
+	func = func << offset;
 #endif
 
 	/* set pull value */

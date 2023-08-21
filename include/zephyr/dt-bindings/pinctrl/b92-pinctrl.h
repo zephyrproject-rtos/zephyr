@@ -117,10 +117,10 @@
 
 /* B92 pin configuration bit field positions and masks */
 
-#define B9x_PULL_POS     19
+#define B9x_PULL_POS     21
 #define B9x_PULL_MSK     0x3
 #define B9x_FUNC_POS     16
-#define B92_FUNC_MSK     0x3F
+#define B92_FUNC_MSK     0x1F
 #define B9x_PORT_POS     8
 #define B9x_PORT_MSK     0xFF
 

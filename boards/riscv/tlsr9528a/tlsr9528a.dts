@@ -146,7 +146,7 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_pb4_default &uart0_rx_pb5_default>;
+	pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
 	pinctrl-names = "default";
 };
 
