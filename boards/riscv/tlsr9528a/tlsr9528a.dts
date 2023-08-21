@@ -200,6 +200,6 @@
 };
 
 zephyr_udc0: &usbd {
-	compatible = "telink,b91-usbd";
+	compatible = "telink,b9x-usbd";
 	status = "okay";
 };

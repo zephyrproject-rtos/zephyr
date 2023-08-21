@@ -9,7 +9,7 @@ config BOARD
 config SOC_FLASH_TELINK_B9X
 	default y if FLASH
 
-config USB_TELINK_B91
+config USB_TELINK_B9X
 	default y
 
 if BT

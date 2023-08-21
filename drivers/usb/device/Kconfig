@@ -179,27 +179,27 @@ config USB_MCUX_THREAD_STACK_SIZE
 
 endif # USB_MCUX
 
-config USB_TELINK_B91
-	bool "Telink Semiconductor USB Device Controller Driver"
+config USB_TELINK_B9X
+	bool "Telink Semiconductor USB Device Controller Driver for B9x"
 	default y
-	depends on SOC_RISCV_TELINK_B91
+	depends on SOC_SERIES_RISCV_TELINK_B9X
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
-	  B91 USB Device Controller Driver
+	  B9x USB Device Controller Driver
 
-config USB_B91_EVT_QUEUE_SIZE
+config USB_B9X_EVT_QUEUE_SIZE
 	int "USBD event queue size"
 	range 4 64
 	default 32
-	depends on USB_TELINK_B91
+	depends on USB_TELINK_B9X
 	help
 	  Size of the driver's internal event queue.
 	  Required size will depend on number of endpoints (class instances) in use.
 
-config USB_B91_WORK_QUEUE_STACK_SIZE
+config USB_B9X_WORK_QUEUE_STACK_SIZE
 	int "USBD work queue stack size"
 	default 1024
-	depends on USB_TELINK_B91
+	depends on USB_TELINK_B9X
 	help
 	  Size of the stack for the work queue thread that is used in the driver
 	  for handling the events from the USBD ISR, i.e. executing endpoint
