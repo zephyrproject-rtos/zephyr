@@ -189,10 +189,10 @@
 			#pwm-cells = <3>;
 		};
 
-		hspi: spi@81FFFFC0 {
-			compatible = "telink,b91-spi";
-			reg = <0x81FFFFC0 0x40>;
-			peripheral-id = "HSPI_MODULE";
+		gspi: spi@8BFFFF00 {
+			compatible = "telink,b92-spi";
+			reg = <0x8BFFFF00 0x100>;
+			peripheral-id = "GSPI_MODULE";
 			cs0-pin = "0";
 			cs1-pin = "0";
 			cs2-pin = "0";
@@ -201,10 +201,10 @@
 			status = "disabled";
 		};
 
-		pspi: spi@80140040 {
-			compatible = "telink,b91-spi";
-			reg = <0x80140040 0x40>;
-			peripheral-id = "PSPI_MODULE";
+		lspi: spi@87FFFF00 {
+			compatible = "telink,b92-spi";
+			reg = <0x87FFFF00 0x100>;
+			peripheral-id = "LSPI_MODULE";
 			cs0-pin = "0";
 			cs1-pin = "0";
 			cs2-pin = "0";

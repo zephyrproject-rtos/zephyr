@@ -161,24 +161,24 @@
 	pinctrl-names = "default";
 };
 
-&pspi {
+&lspi {
 	status = "okay";
-	cs0-pin = "PSPI_CSN_PC4";
-	pinctrl-0 = <&pspi_clk_pc5_default &pspi_miso_pc6_default &pspi_mosi_pc7_default>;
+	cs0-pin = "LSPI_CSN_PE0_PIN";
+	pinctrl-0 = <&lspi_clk_pe1_default &lspi_miso_pe3_default &lspi_mosi_pe2_default>;
 	pinctrl-names = "default";
 };
 
-&hspi {
+&gspi {
 	status = "okay";
-	cs0-pin = "HSPI_CSN_PA1";
-	pinctrl-0 = <&hspi_clk_pa2_default &hspi_miso_pa3_default &hspi_mosi_pa4_default>;
+	cs0-pin = "GPIO_PA1";
+	pinctrl-0 = <&gspi_clk_pa2_default &gspi_miso_pa3_default &gspi_mosi_pa4_default>;
 	pinctrl-names = "default";
 };
 
 &i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c_scl_pc0_default &i2c_scl_pc1_default>;
+	pinctrl-0 = <&i2c_scl_pc0_default &i2c_sda_pc1_default>;
 	pinctrl-names = "default";
 };
 

@@ -48,36 +48,36 @@
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_PWM0)>;
 	};
 
-	/* PSPI: CLK(PE1), MOSI(PE2), MISO(PE3) */
+	/* LSPI: CLK(PE1), MOSI(PE2), MISO(PE3) */
 
-	pspi_clk_pc5_default: pspi_clk_pc5_default {
+	lspi_clk_pe1_default: lspi_clk_pe1_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_1, B92_FUNC_DEFAULT)>;
 	};
-	pspi_mosi_pc7_default: pspi_mosi_pc7_default {
+	lspi_mosi_pe2_default: lspi_mosi_pe2_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_2, B92_FUNC_DEFAULT)>;
 	};
-	pspi_miso_pc6_default: pspi_miso_pc6_default {
+	lspi_miso_pe3_default: lspi_miso_pe3_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_3, B92_FUNC_DEFAULT)>;
 	};
 
-	/* HSPI: CLK(PA2), MOSI(PA4), MISO(PA3) */
+	/* GSPI: CLK(PA2), MOSI(PA4), MISO(PA3) */
 
-	hspi_clk_pa2_default: hspi_clk_pa2_default {
+	gspi_clk_pa2_default: gspi_clk_pa2_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_2, B92_FUNC_GSPI_CK_IO)>;
 	};
-	hspi_mosi_pa4_default: hspi_mosi_pa4_default {
+	gspi_mosi_pa4_default: gspi_mosi_pa4_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B92_FUNC_GSPI_MOSI_IO)>;
 	};
-	hspi_miso_pa3_default: hspi_miso_pa3_default {
+	gspi_miso_pa3_default: gspi_miso_pa3_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B92_FUNC_GSPI_MISO_IO)>;
 	};
 
-	/* Define I2C pins: SCL(PE1), SDA(PE3) */
+	/* Define I2C pins: SCL(PC0), SDA(PC1) */
 
 	i2c_scl_pc0_default: i2c_scl_pc0_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_0, B92_FUNC_I2C_SCL_IO)>;
 	};
-	i2c_scl_pc1_default: i2c_scl_pc1_default {
+	i2c_sda_pc1_default: i2c_sda_pc1_default {
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_1, B92_FUNC_I2C_SDA_IO)>;
 	};
 
