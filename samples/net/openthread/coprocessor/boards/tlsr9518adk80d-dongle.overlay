@@ -16,10 +16,10 @@
 	pad-mul-sel = <1>;
 
 	uart0_tx_pa3_default: uart0_tx_pa3_default {
-		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_3, B91_FUNC_B)>;
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B91_FUNC_B)>;
 	};
 	uart0_rx_pa4_default: uart0_rx_pa4_default {
-		pinmux = <B91_PINMUX_SET(B91_PORT_A, B91_PIN_4, B91_FUNC_B)>;
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B91_FUNC_B)>;
 	};
 };
 

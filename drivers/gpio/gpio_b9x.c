@@ -43,6 +43,13 @@
 /* Check that gpio is port D */
 #define IS_PORT_D(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiod)))
 
+/* Check that gpio is port F */
+#if CONFIG_SOC_RISCV_TELINK_B92
+#define IS_PORT_F(gpio)         ((uint32_t)gpio == DT_REG_ADDR(DT_NODELABEL(gpiof)))
+#else
+#define IS_PORT_F(gpio)         0
+#endif
+
 /* Check that 'inst' has only 1 interrupt selected in dts */
 #define IS_INST_IRQ_EN(inst)    (DT_NUM_IRQS(DT_DRV_INST(inst)) == 1)
 
@@ -289,7 +296,11 @@ static void gpio_b9x_up_down_res_set(volatile struct gpio_b9x_t *gpio,
 
 	pin = BIT(pin);
 	val = up_down_res & 0x03;
-	analog_reg = 0x0e + (GET_PORT_NUM(gpio) << 1) + ((pin & 0xf0) ? 1 : 0);
+	if (IS_PORT_F(gpio)) {
+		analog_reg = 0x23 + ((pin & 0xf0) ? 1 : 0);
+	} else {
+		analog_reg = 0x0e + (GET_PORT_NUM(gpio) << 1) + ((pin & 0xf0) ? 1 : 0);
+	}
 
 	if (pin & 0x11) {
 		val = val << 0;
@@ -340,6 +351,10 @@ static void gpio_b9x_config_in_out(volatile struct gpio_b9x_t *gpio,
 
 	/* Enable/disable output */
 	WRITE_BIT(gpio->oen, pin, ~flags & GPIO_OUTPUT);
+	/* Clear GPIO output value for input configuration */
+	if (IS_PORT_F(gpio) && (flags & GPIO_INPUT)) {
+		WRITE_BIT(gpio->output, pin, 0);
+	}
 
 	/* Enable/disable input */
 	if (ie_addr != 0) {

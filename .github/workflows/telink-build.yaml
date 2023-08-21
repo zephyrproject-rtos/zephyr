@@ -39,10 +39,15 @@ jobs:
         west zephyr-export
         pip install -r zephyr/scripts/requirements.txt
 
-    - name: Build basic/blinky
+    - name: Build B91 basic/blinky
       run: |
         cd ..
-        west build -b tlsr9518adk80d             -d build_blinky                    zephyr/samples/basic/blinky
+        west build -b tlsr9518adk80d             -d build_blinky_b91                zephyr/samples/basic/blinky
+
+    - name: Build B92 basic/blinky
+      run: |
+        cd ..
+        west build -b tlsr9528a                  -d build_blinky_b92                zephyr/samples/basic/blinky
 
     - name: Build basic/blinky with PM
       run: |
@@ -127,7 +132,8 @@ jobs:
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
-        cp ../build_blinky/zephyr/zephyr.bin                    telink_build_artifacts/blinky.bin
+        cp ../build_blinky_b91/zephyr/zephyr.bin                telink_build_artifacts/b91_blinky.bin
+        cp ../build_blinky_b92/zephyr/zephyr.bin                telink_build_artifacts/b92_blinky.bin
         cp ../build_blinky_pm/zephyr/zephyr.bin                 telink_build_artifacts/blinky_pm.bin
         cp ../build_bt_peripheral_ht/zephyr/zephyr.bin          telink_build_artifacts/bt_peripheral_ht.bin
         cp ../build_bt_peripheral_ht_pm/zephyr/zephyr.bin       telink_build_artifacts/bt_peripheral_ht_pm.bin

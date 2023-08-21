@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <stimer.h>
-#include <b91_sleep.h>
+#include <sleep.h>
 #include <zephyr/kernel.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -29,7 +29,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #endif /* CONFIG_BT */
 
 /**
- * @brief This define converts Machine Timer ticks to B91 System Timer ticks.
+ * @brief This define converts Machine Timer ticks to B9x System Timer ticks.
  */
 #define MTIME_TO_STIME_SCALE (SYSTEM_TIMER_TICK_1S / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 
@@ -82,7 +82,7 @@ static void set_mtime(uint64_t time)
 }
 
 #ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
-volatile bool b91_deep_sleep_retention;
+volatile bool b9x_deep_sleep_retention;
 #endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 
 /**
@@ -108,7 +108,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 		}
-		if (b91_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
+		if (b9x_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
 			current_time +=
 				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
 			set_mtime(current_time);
@@ -119,12 +119,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 		}
-		if (b91_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
+		if (b9x_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
 			current_time +=
 				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
 			set_mtime_compare(wakeup_time);
 			set_mtime(current_time);
-			b91_deep_sleep_retention = true;
+			b9x_deep_sleep_retention = true;
 		}
 		break;
 #endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
@@ -144,7 +144,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 
 #ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
-	b91_deep_sleep_retention = false;
+	b9x_deep_sleep_retention = false;
 #endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
 
 	/*

@@ -28,12 +28,12 @@ description: |
         /* configuration for UART0 TX default state */
         uart0_tx_pb2_default: uart0_tx_pb2_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B9X_PINMUX_SET(B9X_PORT_B, B9X_PIN_2, B91_FUNC_C)>;
+          pinmux = <B9x_PINMUX_SET(B9X_PORT_B, B9X_PIN_2, B91_FUNC_C)>;
         };
         /* configuration for UART0 RX default state */
         uart0_rx_pb3_default: uart0_rx_pb3_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B9X_PINMUX_SET(B9X_PORT_B, B9X_PIN_3, B91_FUNC_C)>;
+          pinmux = <B9x_PINMUX_SET(B9X_PORT_B, B9X_PIN_3, B91_FUNC_C)>;
         };
       };
 

@@ -595,10 +595,10 @@ static int uart_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
 		{
-			extern volatile bool b91_deep_sleep_retention;
+			extern volatile bool b9x_deep_sleep_retention;
 
-			if (b91_deep_sleep_retention) {
-				uart_b91_driver_init(dev);
+			if (b9x_deep_sleep_retention) {
+				uart_b9x_driver_init(dev);
 			}
 		}
 #endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */

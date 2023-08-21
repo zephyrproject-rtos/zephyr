@@ -7,6 +7,7 @@
 #include <sys.h>
 #include <clock.h>
 #include <gpio.h>
+#include <ext_driver/ext_pm.h>
 #include <watchdog.h>
 #include <zephyr/device.h>
 

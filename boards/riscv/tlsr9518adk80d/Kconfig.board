@@ -11,6 +11,6 @@ config BOARD_TLSR9518ADK80D_RETENTION
 
 config BOARD_TLSR9518ADK80D_NON_RETENTION_RAM_CODE
 	bool "Place Telink RAM code into non retention memory"
-	depends on SOC_SERIES_RISCV_TELINK_B91 && BOARD_TLSR9518ADK80D_RETENTION
+	depends on SOC_SERIES_RISCV_TELINK_B9X && BOARD_TLSR9518ADK80D_RETENTION
 	help
 		Place Telink RAM code into non retention memory and restore ram code on each boot.

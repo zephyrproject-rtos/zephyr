@@ -139,6 +139,15 @@
 	status = "okay";
 };
 
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	interrupts = <38 1>;
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
