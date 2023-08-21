@@ -11,12 +11,17 @@
 		sw0 = &button0;
 	};
 
-	keys {
+	keys: keys {
 		compatible = "gpio-keys";
 		button0: button0 {
 			/* gpio0 pin 0 is already aliased to led0 */
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button1 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -25,15 +30,22 @@
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&input_sdl_touch>;
 	};
+
+	lvgl_button_input {
+		compatible = "zephyr,lvgl-button-input";
+		input = <&keys>;
+		input-codes = <INPUT_KEY_1>;
+		coordinates = <160 120>;
+	};
 };
 
 &gpio0 {
-	ngpios = <2>;
+	ngpios = <3>;
 
 	sdl_gpio {
 		status = "okay";
 		compatible = "zephyr,gpio-emul-sdl";
 		/* Skip pin 0 with the unknown code 0 */
-		scancodes = <0 21>;
+		scancodes = <0 21 5>;
 	};
 };
