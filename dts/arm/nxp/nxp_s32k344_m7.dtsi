@@ -597,6 +597,144 @@
 			interrupt-names = "common", "tx", "rx", "safety";
 			status = "disabled";
 		};
+
+		emios0: emios@40088000 {
+			compatible = "nxp,s32-emios";
+			reg = <0x40088000 0x4000>;
+			clocks = <&clock NXP_S32_EMIOS0_CLK>;
+			interrupts = <61 0>, <62 0>, <63 0>,
+					<64 0>, <65 0>, <66 0>;
+			status = "disabled";
+
+			master_bus {
+				emios0_bus_a: emios0_bus_a {
+					channel = <23>;
+					bus-type = "BUS_A";
+					channel-mask = <0x07FFFFF>;
+					status = "disabled";
+				};
+
+				emios0_bus_b: emios0_bus_b {
+					channel = <0>;
+					bus-type = "BUS_B";
+					channel-mask = <0x00000FE>;
+					status = "disabled";
+				};
+
+				emios0_bus_c: emios0_bus_c {
+					channel = <8>;
+					bus-type = "BUS_C";
+					channel-mask = <0x0000FE00>;
+					status = "disabled";
+				};
+
+				emios0_bus_d: emios0_bus_d {
+					channel = <16>;
+					bus-type = "BUS_D";
+					channel-mask = <0x00FE0000>;
+					status = "disabled";
+				};
+
+				emios0_bus_f: emios0_bus_f {
+					channel = <22>;
+					bus-type = "BUS_F";
+					channel-mask = <0x0BFFFFF>;
+					status = "disabled";
+				};
+			};
+		};
+
+		emios1: emios@4008c000 {
+			compatible = "nxp,s32-emios";
+			reg = <0x4008c000 0x4000>;
+			clocks = <&clock NXP_S32_EMIOS1_CLK>;
+			interrupts = <69 0>, <70 0>, <71 0>,
+					<72 0>, <73 0>, <74 0>;
+			status = "disabled";
+
+			master_bus {
+				emios1_bus_a: emios1_bus_a {
+					channel = <23>;
+					bus-type = "BUS_A";
+					channel-mask = <0x07FFFFF>;
+					status = "disabled";
+				};
+
+				emios1_bus_b: emios1_bus_b {
+					channel = <0>;
+					bus-type = "BUS_B";
+					channel-mask = <0x00000FE>;
+					status = "disabled";
+				};
+
+				emios1_bus_c: emios1_bus_c {
+					channel = <8>;
+					bus-type = "BUS_C";
+					channel-mask = <0x0000FE00>;
+					status = "disabled";
+				};
+
+				emios1_bus_d: emios1_bus_d {
+					channel = <16>;
+					bus-type = "BUS_D";
+					channel-mask = <0x00FE0000>;
+					status = "disabled";
+				};
+
+				emios1_bus_f: emios1_bus_f {
+					channel = <22>;
+					channel-mask = <0x0BFFFFF>;
+					bus-type = "BUS_F";
+					status = "disabled";
+				};
+			};
+		};
+
+		emios2: emios@40090000 {
+			compatible = "nxp,s32-emios";
+			reg = <0x40090000 0x4000>;
+			clocks = <&clock NXP_S32_EMIOS2_CLK>;
+			interrupts = <77 0>, <78 0>, <79 0>,
+					<80 0>, <81 0>, <82 0>;
+			status = "disabled";
+
+			master_bus {
+				emios2_bus_a: emios2_bus_a {
+					channel = <23>;
+					bus-type = "BUS_A";
+					channel-mask = <0x07FFFFF>;
+					status = "disabled";
+				};
+
+				emios2_bus_b: emios2_bus_b {
+					channel = <0>;
+					bus-type = "BUS_B";
+					channel-mask = <0x00000FE>;
+					status = "disabled";
+				};
+
+				emios2_bus_c: emios2_bus_c {
+					channel = <8>;
+					bus-type = "BUS_C";
+					channel-mask = <0x0000FE00>;
+					status = "disabled";
+				};
+
+				emios2_bus_d: emios2_bus_d {
+					channel = <16>;
+					bus-type = "BUS_D";
+					channel-mask = <0x00FE0000>;
+					status = "disabled";
+				};
+
+				emios2_bus_f: emios2_bus_f {
+					channel = <22>;
+					bus-type = "BUS_F";
+					channel-mask = <0x0BFFFFF>;
+					status = "disabled";
+				};
+			};
+		};
 	};
 };
 
