@@ -240,7 +240,7 @@
 			status = "disabled";
 		};
 
-		pinctrl: pinctrl@80140330 {
+		pinctrl: pinctrl@80140348 {
 			compatible = "telink,b9x-pinctrl";
 			reg = <0x80140348 0x30
 				   0x80140306 0x30
