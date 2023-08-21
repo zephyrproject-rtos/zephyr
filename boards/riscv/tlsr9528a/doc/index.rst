@@ -1,36 +1,35 @@
-.. _tlsr9518adk80d:
-
-Telink TLSR9518ADK80D
+.. _tlsr9528a:
+Telink TLSR9528A
 #####################
 
 Overview
 ********
 
-The TLSR9518A Generic Starter Kit is a hardware platform which
+The TLSR9528A Generic Starter Kit is a hardware platform which
 can be used to verify the `Telink TLSR9 series chipset`_ and develop applications
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
 
-.. figure:: img/tlsr9518adk80d.jpg
+.. figure:: img/tlsr9528a.jpg
      :align: center
-     :alt: TLSR9518ADK80D
+     :alt: TLSR9528A
 
-More information about the board can be found at the `Telink B91 Generic Starter Kit Hardware Guide`_ website.
+More information about the board can be found at the `Telink B92 Generic Starter Kit Hardware Guide`_ website.
 
 Hardware
 ********
 
-The TLSR9518A SoC integrates a powerful 32-bit RISC-V MCU, DSP, AI Engine, 2.4 GHz ISM Radio, 256
-KB SRAM (128 KB of Data Local Memory and 128 KB of Instruction Local Memory), external Flash memory,
+The TLSR9528A SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 512
+KB SRAM (256 KB of Data Local Memory and 256 KB of Instruction Local Memory), external Flash memory,
 stereo audio codec, 14 bit AUX ADC, analog and digital Microphone input, PWM, flexible IO interfaces,
 and other peripheral blocks required for advanced IoT, hearable, and wearable devices.
 
-.. figure:: img/tlsr9518_block_diagram.jpg
+.. figure:: img/tlsr9528_block_diagram.jpg
      :align: center
-     :alt: TLSR9518ADK80D_SOC
+     :alt: TLSR9528A_SOC
 
-The TLSR9518ADK80D default board configuration provides the following hardware components:
+The TLSR9528A default board configuration provides the following hardware components:
 
 - RF conducted antenna
 - 1 MB External Flash memory with reset button
@@ -45,7 +44,7 @@ The TLSR9518ADK80D default board configuration provides the following hardware c
 Supported Features
 ==================
 
-The Zephyr TLSR9518ADK80D board configuration supports the following hardware features:
+The Zephyr TLSR9528A board configuration supports the following hardware features:
 
 +----------------+------------+------------------------------+
 | Interface      | Controller | Driver/Component             |
@@ -99,10 +98,10 @@ Default configuration and IOs
 System Clock
 ------------
 
-The TLSR9518ADK80D board is configured to use the 24 MHz external crystal oscillator
+The TLSR9528A board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 48 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/riscv/tlsr9518adk80d/tlsr9518adk80d.dts``):
+(``boards/riscv/tlsr9528a/tlsr9528a.dts``):
 
 - 16000000
 - 24000000
@@ -120,14 +119,14 @@ The following values also could be assigned to the system clock in the board DTS
 PINs Configuration
 ------------------
 
-The TLSR9518A SoC has five GPIO controllers (PORT_A to PORT_E), but only two are
+The TLSR9528A SoC has five GPIO controllers (PORT_A to PORT_E), but only two are
 currently enabled (PORT_B for LEDs control and PORT_C for buttons) in the board DTS file:
 
 - LED0 (blue): PB4, LED1 (green): PB5, LED2 (white): PB6, LED3 (red): PB7
 - Key Matrix SW0: PC2_PC3, SW1: PC2_PC1, SW2: PC0_PC3, SW3: PC0_PC1
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/riscv/tlsr9518adk80d/tlsr9518adk80d.dts`` file:
+``boards/riscv/tlsr9528a/tlsr9528a.dts`` file:
 
 - UART0 TX: PB2, RX: PB3
 - UART1 TX: PC6, RX: PC7
@@ -139,7 +138,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 Serial Port
 -----------
 
-The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
+The TLSR9528A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -159,10 +158,10 @@ Here is an example for the "hello_world" application.
 .. code-block:: console
 
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9528a samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
-In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file since this
+In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9528a/tlsr9528a_defconfig`` file since this
 toolchain is compatible only with the float point unit usage.
 
 .. code-block:: console
@@ -172,7 +171,7 @@ toolchain is compatible only with the float point unit usage.
    # Specify the Telink RISC-V Toolchain location
    export CROSS_COMPILE=~/toolchains/nds32le-elf-mculib-v5f/bin/riscv32-elf-
    # From the root of the zephyr repository
-   west build -b tlsr9518adk80d samples/hello_world
+   west build -b tlsr9528a samples/hello_world
 
 `Telink RISC-V Linux Toolchain`_ is available on the `Burning and Debugging Tools for TLSR9 Series in Linux`_ page.
 
@@ -189,13 +188,13 @@ serial port:
 .. code-block:: console
 
    *** Booting Zephyr OS version 2.5.0  ***
-   Hello World! tlsr9518adk80d
+   Hello World! tlsr9528a
 
 
 Flashing
 ========
 
-To flash the TLSR9518ADK80D board see the sources below:
+To flash the TLSR9528A board see the sources below:
 
 - `Burning and Debugging Tools for all Series`_
 - `Burning and Debugging Tools for TLSR9 Series`_
@@ -260,7 +259,7 @@ References
 .. target-notes::
 
 .. _Telink TLSR9 series chipset: http://wiki.telink-semi.cn/wiki/chip-series/TLSR9-Series/
-.. _Telink B91 Generic Starter Kit Hardware Guide: http://wiki.telink-semi.cn/wiki/Hardware/B91_Generic_Starter_Kit_Hardware_Guide/
+.. _Telink B92 Generic Starter Kit Hardware Guide: [UNDER_DEVELOPMENT]
 .. _Telink RISC-V Linux Toolchain: http://wiki.telink-semi.cn/tools_and_sdk/Tools/IDE/telink_riscv_linux_toolchain.zip
 .. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for TLSR9 Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/

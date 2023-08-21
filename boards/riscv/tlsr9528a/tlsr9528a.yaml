@@ -5,7 +5,7 @@ arch: riscv32
 toolchain:
   - cross-compile
   - zephyr
-ram: 128
+ram: 256
 flash: 1024
 supported:
   - gpio
