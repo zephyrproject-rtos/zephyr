@@ -145,16 +145,6 @@ void npcx_dbg_freeze_enable(bool enable)
 /* Pin-control driver registration */
 static int npcx_scfg_init(void)
 {
-	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
-
-	/*
-	 * Set bit 7 of DEVCNT again for npcx7 series. Please see Errata
-	 * for more information. It will be fixed in next chip.
-	 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		inst_scfg->DEVCNT |= BIT(7);
-	}
-
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
 		npcx_pinctrl_alt_sel(&def_alts[i], 0);
