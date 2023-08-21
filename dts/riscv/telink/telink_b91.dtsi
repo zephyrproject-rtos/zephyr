@@ -166,7 +166,7 @@
 		};
 
 		trng0: trng@80101800 {
-			compatible = "telink,b91-trng";
+			compatible = "telink,b9x-trng";
 			reg = <0x80101800 0x20>;
 			status = "disabled";
 		};

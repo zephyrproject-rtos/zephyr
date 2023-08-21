@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2021 Telink Semiconductor
+ * Copyright (c) 2021-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT telink_b91_trng
+#define DT_DRV_COMPAT telink_b9x_trng
 
 #include <trng.h>
 #include <zephyr/drivers/entropy.h>
@@ -12,7 +12,7 @@
 
 
 /* API implementation: driver initialization */
-static int entropy_b91_trng_init(const struct device *dev)
+static int entropy_b9x_trng_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -22,7 +22,7 @@ static int entropy_b91_trng_init(const struct device *dev)
 }
 
 /* API implementation: get_entropy */
-static int entropy_b91_trng_get_entropy(const struct device *dev,
+static int entropy_b9x_trng_get_entropy(const struct device *dev,
 					uint8_t *buffer, uint16_t length)
 {
 	ARG_UNUSED(dev);
@@ -46,26 +46,26 @@ static int entropy_b91_trng_get_entropy(const struct device *dev,
 }
 
 /* API implementation: get_entropy_isr */
-static int entropy_b91_trng_get_entropy_isr(const struct device *dev,
+static int entropy_b9x_trng_get_entropy_isr(const struct device *dev,
 					    uint8_t *buffer, uint16_t length,
 					    uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
 	/* No specific handling in case of running from ISR, just call standard API */
-	entropy_b91_trng_get_entropy(dev, buffer, length);
+	entropy_b9x_trng_get_entropy(dev, buffer, length);
 
 	return 0;
 }
 
 /* Entropy driver APIs structure */
-static const struct entropy_driver_api entropy_b91_trng_api = {
-	.get_entropy = entropy_b91_trng_get_entropy,
-	.get_entropy_isr = entropy_b91_trng_get_entropy_isr
+static const struct entropy_driver_api entropy_b9x_trng_api = {
+	.get_entropy = entropy_b9x_trng_get_entropy,
+	.get_entropy_isr = entropy_b9x_trng_get_entropy_isr
 };
 
 /* Entropy driver registration */
-DEVICE_DT_INST_DEFINE(0, entropy_b91_trng_init,
+DEVICE_DT_INST_DEFINE(0, entropy_b9x_trng_init,
 		      NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		      &entropy_b91_trng_api);
+		      &entropy_b9x_trng_api);
