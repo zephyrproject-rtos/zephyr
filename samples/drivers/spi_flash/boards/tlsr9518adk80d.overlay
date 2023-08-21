@@ -18,7 +18,7 @@
 		/* 16777216 bits = 2 Mbytes */
 		size = <0x1000000>;
 		reg = <0>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <48000000>;
 		jedec-id = [85 60 15];
 		status = "okay";
 	};
