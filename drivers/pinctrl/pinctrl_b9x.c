@@ -28,6 +28,7 @@
 #define reg_gpio_en(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, gpio_en) + \
 						((pin >> 8) * 8)))
 
+#if CONFIG_SOC_RISCV_TELINK_B91
 /**
  *      Function Multiplexer Register
  *         ADDR              PINS
@@ -49,6 +50,27 @@
 						(((pin >> 8) == 4) ? 0x20          : 0) +	 \
 						(((pin >> 8) == 5) ? 0x26          : 0) +	 \
 						((pin & 0x0f0)     ? 1             : 0)))
+
+#elif CONFIG_SOC_RISCV_TELINK_B92
+/**
+ *      Function Multiplexer Register
+ *         ADDR              PINS
+ *      pin_mux:          PORT_A[0]
+ *      pin_mux + 1:      PORT_A[1]
+ *      ...........       ...........
+ *      pin_mux + 0x2E:   PORT_F[6]
+ *      pin_mux + 0x2F:   PORT_F[7]
+ */
+#define reg_pin_mux(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, pin_mux) + \
+						((pin >> 8) * 8) +            \
+						((pin & B9x_PIN_1) ? 1 : 0) + \
+						((pin & B9x_PIN_2) ? 2 : 0) + \
+						((pin & B9x_PIN_3) ? 3 : 0) + \
+						((pin & B9x_PIN_4) ? 4 : 0) + \
+						((pin & B9x_PIN_5) ? 5 : 0) + \
+						((pin & B9x_PIN_6) ? 6 : 0) + \
+						((pin & B9x_PIN_7) ? 7 : 0)))
+#endif
 
 /**
  *      Pull Up resistors enable
@@ -133,33 +155,33 @@ static inline void pinctrl_b9x_gpio_function_disable(uint32_t pin)
 	reg_gpio_en(pin) &= ~bit;
 }
 
-/* Get function value bits start position (offset) */
+/* Get pull up (and function for B91) value bits start position (offset) */
 static inline int pinctrl_b9x_get_offset(uint32_t pin, uint8_t *offset)
 {
 	switch (B9x_PINMUX_GET_PIN_ID(pin)) {
 	case B9x_PIN_0:
-		*offset = B9x_PIN_0_FUNC_POS;
+		*offset = B9x_PIN_0_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_1:
-		*offset = B9x_PIN_1_FUNC_POS;
+		*offset = B9x_PIN_1_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_2:
-		*offset = B9x_PIN_2_FUNC_POS;
+		*offset = B9x_PIN_2_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_3:
-		*offset = B9x_PIN_3_FUNC_POS;
+		*offset = B9x_PIN_3_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_4:
-		*offset = B9x_PIN_4_FUNC_POS;
+		*offset = B9x_PIN_4_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_5:
-		*offset = B9x_PIN_5_FUNC_POS;
+		*offset = B9x_PIN_5_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_6:
-		*offset = B9x_PIN_6_FUNC_POS;
+		*offset = B9x_PIN_6_PULL_UP_EN_POS;
 		break;
 	case B9x_PIN_7:
-		*offset = B9x_PIN_7_FUNC_POS;
+		*offset = B9x_PIN_7_PULL_UP_EN_POS;
 		break;
 
 	default:
@@ -180,19 +202,24 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	uint32_t pin = B9x_PINMUX_GET_PIN(*pinctrl);
 	uint8_t pull_up_en_addr = reg_pull_up_en(pin);
 
+	/* disable GPIO function (can be enabled back by GPIO init using GPIO driver) */
+	pinctrl_b9x_gpio_function_disable(pin);
+
 	/* calculate offset and mask for the func and pull values */
 	status = pinctrl_b9x_get_offset(pin, &offset);
 	if (status != 0) {
 		return status;
 	}
-	mask = (uint8_t) ~(BIT(offset) | BIT(offset + 1));
 
-	/* disable GPIO function (can be enabled back by GPIO init using GPIO driver) */
-	pinctrl_b9x_gpio_function_disable(pin);
+	mask = (uint8_t) ~(BIT(offset) | BIT(offset + 1));
+	func = func << offset;
 
 	/* set func value */
-	func = func << offset;
+#if CONFIG_SOC_RISCV_TELINK_B91
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & mask) | func;
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B92_PIN_FUNC_POS)) | (func & B92_PIN_FUNC_POS);
+#endif
 
 	/* set pull value */
 	pull = pull << offset;

@@ -38,16 +38,16 @@
 #define B9x_PULL_DOWN    2
 #define B9x_PULL_UP      3
 
-/* Pin function positions */
+/* Pin pull up and function positions */
 
-#define B9x_PIN_0_FUNC_POS    0x00
-#define B9x_PIN_1_FUNC_POS    0x02
-#define B9x_PIN_2_FUNC_POS    0x04
-#define B9x_PIN_3_FUNC_POS    0x06
-#define B9x_PIN_4_FUNC_POS    0x00
-#define B9x_PIN_5_FUNC_POS    0x02
-#define B9x_PIN_6_FUNC_POS    0x04
-#define B9x_PIN_7_FUNC_POS    0x06
+#define B9x_PIN_0_PULL_UP_EN_POS    0x00
+#define B9x_PIN_1_PULL_UP_EN_POS    0x02
+#define B9x_PIN_2_PULL_UP_EN_POS    0x04
+#define B9x_PIN_3_PULL_UP_EN_POS    0x06
+#define B9x_PIN_4_PULL_UP_EN_POS    0x00
+#define B9x_PIN_5_PULL_UP_EN_POS    0x02
+#define B9x_PIN_6_PULL_UP_EN_POS    0x04
+#define B9x_PIN_7_PULL_UP_EN_POS    0x06
 
 /* B91 pin configuration bit field positions and masks */
 

@@ -128,6 +128,16 @@
 			#gpio-cells = <2>;
 		};
 
+		gpiof: gpio@80140328 {
+			compatible = "telink,b9x-gpio";
+			gpio-controller;
+			interrupt-parent = <&plic0>;
+			interrupts = <37 1>, <38 1>, <39 1>;
+			reg = <0x80140328 0x08>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
@@ -232,8 +242,8 @@
 
 		pinctrl: pinctrl@80140330 {
 			compatible = "telink,b9x-pinctrl";
-			reg = <0x80140330 0x28
-				   0x80140306 0x28
+			reg = <0x80140348 0x30
+				   0x80140306 0x30
 				   0x0000000e 0x0C>;
 			reg-names = "pin_mux",
 						"gpio_en",

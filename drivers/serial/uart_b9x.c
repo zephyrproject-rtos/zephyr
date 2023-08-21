@@ -372,8 +372,6 @@ static void uart_b9x_poll_out(const struct device *dev, uint8_t c)
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	while (!(uart->txrx_status & FLD_UART_TXDONE_IRQ)) {
 	}
-
-	uart->txrx_status |= FLD_UART_TXDONE_IRQ;
 #endif
 }
 
