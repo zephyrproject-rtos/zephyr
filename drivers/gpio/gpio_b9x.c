@@ -61,8 +61,15 @@
 #define reg_irq_risc1_en(i)      REG_ADDR8(0x140340 + i)
 
 /* GPIO Wakeup Enable registers */
+#if CONFIG_SOC_RISCV_TELINK_B91
 #define reg_wakeup_trig_pol_base 0x41
 #define reg_wakeup_trig_en_base  0x46
+#elif CONFIG_SOC_RISCV_TELINK_B92
+#define reg_wakeup_trig_pol_base 0x3f
+#define reg_wakeup_trig_en_base  0x45
+#else
+#error "SOC version is not supported"
+#endif
 
 /* Pull-up/down resistors */
 #define GPIO_PIN_UP_DOWN_FLOAT   ((uint8_t)0u)
