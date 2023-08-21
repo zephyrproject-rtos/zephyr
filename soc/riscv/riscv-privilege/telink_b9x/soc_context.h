@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SOC_RISCV_TELINK_B91_SOC_CONTEXT_H
-#define SOC_RISCV_TELINK_B91_SOC_CONTEXT_H
+#ifndef SOC_RISCV_TELINK_B9X_SOC_CONTEXT_H
+#define SOC_RISCV_TELINK_B9X_SOC_CONTEXT_H
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 
 /* Telink B91 specific registers. */
-#if defined(CONFIG_TELINK_B91_PFT_ARCH) && defined(__riscv_dsp)
+#if defined(CONFIG_TELINK_B9X_PFT_ARCH) && defined(__riscv_dsp)
 	#define SOC_ESF_MEMBERS	\
 	uint32_t mxstatus;	\
 	uint32_t ucode		\
@@ -23,7 +23,7 @@
 	(soc_context)->mxstatus = 0;		 \
 	(soc_context)->ucode = 0
 
-#elif defined(CONFIG_TELINK_B91_PFT_ARCH)
+#elif defined(CONFIG_TELINK_B9X_PFT_ARCH)
 	#define SOC_ESF_MEMBERS	\
 	uint32_t mxstatus
 
@@ -47,4 +47,4 @@
 
 #endif  /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#endif  /* SOC_RISCV_TELINK_B91_SOC_CONTEXT_H */
+#endif  /* SOC_RISCV_TELINK_B9X_SOC_CONTEXT_H */

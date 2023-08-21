@@ -21,14 +21,14 @@ GTEXT(__soc_restore_context)
 
 SECTION_FUNC(exception.other, __soc_save_context)
 
-#ifdef CONFIG_TELINK_B91_PFT_ARCH
+#ifdef CONFIG_TELINK_B9X_PFT_ARCH
 	csrr t0, NDS_MXSTATUS
 #endif
 #ifdef __riscv_dsp
 	csrr t1, ucode
 #endif
 
-#ifdef CONFIG_TELINK_B91_PFT_ARCH
+#ifdef CONFIG_TELINK_B9X_PFT_ARCH
 	sw t0, __soc_esf_t_mxstatus_OFFSET(a0)
 #endif
 #ifdef __riscv_dsp
@@ -38,14 +38,14 @@ SECTION_FUNC(exception.other, __soc_save_context)
 
 SECTION_FUNC(exception.other, __soc_restore_context)
 
-#ifdef CONFIG_TELINK_B91_PFT_ARCH
+#ifdef CONFIG_TELINK_B9X_PFT_ARCH
 	lw t0, __soc_esf_t_mxstatus_OFFSET(a0)
 #endif
 #ifdef __riscv_dsp
 	lw t1, __soc_esf_t_ucode_OFFSET(a0)
 #endif
 
-#ifdef CONFIG_TELINK_B91_PFT_ARCH
+#ifdef CONFIG_TELINK_B9X_PFT_ARCH
 	csrw NDS_MXSTATUS, t0
 #endif
 #ifdef __riscv_dsp

@@ -5,11 +5,7 @@ if (CONFIG_TELINK_B91_USB_SWI_DISABLE)
 	message(STATUS "USB SWI interface is disabled")
 endif()
 
-if (CONFIG_TELINK_B91_2_WIRE_SPI_ENABLE AND CONFIG_SOC_RISCV_TELINK_B91)
-	message(WARNING "2-wire SPI interface enabled!")
-endif()
-
-if (CONFIG_TELINK_B92_2_WIRE_SPI_ENABLE AND CONFIG_SOC_RISCV_TELINK_B92)
+if (CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE)
 	message(WARNING "2-wire SPI interface enabled!")
 endif()
 
