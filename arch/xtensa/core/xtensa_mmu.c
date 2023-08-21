@@ -275,12 +275,16 @@ static void xtensa_mmu_init(bool is_core0)
 	/* Finally, lets invalidate all entries in way 6 as the page tables
 	 * should have already mapped the regions we care about for boot.
 	 */
-	for (entry = 0; entry < 8; entry++) {
+	for (entry = 0; entry < BIT(XCHAL_ITLB_ARF_ENTRIES_LOG2); entry++) {
+		__asm__ volatile("iitlb %[idx]\n\t"
+				 "isync"
+				 :: [idx] "a"((entry << 29) | 6));
+	}
+
+	for (entry = 0; entry < BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2); entry++) {
 		__asm__ volatile("idtlb %[idx]\n\t"
-				"iitlb %[idx]\n\t"
-				"dsync\n\t"
-				"isync"
-				:: [idx] "a"((entry << 29) | 6));
+				 "dsync"
+				 :: [idx] "a"((entry << 29) | 6));
 	}
 
 	/* Map VECBASE to a fixed data TLB */
