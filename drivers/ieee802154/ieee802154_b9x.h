@@ -106,41 +106,41 @@ static const uint8_t b9x_tx_pwr_lt[] = {
 	RF_POWER_N30dBm,        /* -30.0 dBm: -28 */
 	RF_POWER_N30dBm,        /* -30.0 dBm: -27 */
 	RF_POWER_N30dBm,        /* -30.0 dBm: -26 */
-	RF_POWER_N22p53dBm,     /* -23.5 dBm: -25 */
-	RF_POWER_N22p53dBm,     /* -23.5 dBm: -24 */
-	RF_POWER_N22p53dBm,     /* -23.5 dBm: -23 */
-	RF_POWER_N22p53dBm,     /* -23.5 dBm: -22 */
-	RF_POWER_N22p53dBm,     /* -23.5 dBm: -21 */
-	RF_POWER_N13p42dBm,     /* -17.8 dBm: -20 */
-	RF_POWER_N13p42dBm,     /* -17.8 dBm: -19 */
-	RF_POWER_N13p42dBm,     /* -17.8 dBm: -18 */
-	RF_POWER_N13p42dBm,     /* -17.8 dBm: -17 */
-	RF_POWER_N13p42dBm,     /* -17.8 dBm: -16 */
-	RF_POWER_N9p03dBm,     /* -12.0 dBm: -15 */
-	RF_POWER_N9p03dBm,     /* -12.0 dBm: -14 */
-	RF_POWER_N9p03dBm,     /* -12.0 dBm: -13 */
-	RF_POWER_N9p03dBm,     /* -12.0 dBm: -12 */
-	RF_POWER_N9p03dBm,     /* -12.0 dBm: -11 */
-	RF_POWER_N5p94dBm,      /*  -8.7 dBm: -10 */
-	RF_POWER_N5p94dBm,      /*  -8.7 dBm:  -9 */
-	RF_POWER_N5p94dBm,      /*  -8.7 dBm:  -8 */
-	RF_POWER_N5p94dBm,      /*  -6.5 dBm:  -7 */
-	RF_POWER_N5p94dBm,      /*  -6.5 dBm:  -6 */
-	RF_POWER_N3p95dBm,      /*  -4.7 dBm:  -5 */
-	RF_POWER_N3p95dBm,      /*  -4.7 dBm:  -4 */
-	RF_POWER_N2p51dBm,      /*  -3.3 dBm:  -3 */
-	RF_POWER_N1p52dBm,      /*  -2.0 dBm:  -2 */
-	RF_POWER_N0p43dBm,      /*  -1.3 dBm:  -1 */
+	RF_POWER_N22p53dBm,     /* -22.5 dBm: -25 */
+	RF_POWER_N22p53dBm,     /* -22.5 dBm: -24 */
+	RF_POWER_N22p53dBm,     /* -22.5 dBm: -23 */
+	RF_POWER_N22p53dBm,     /* -22.5 dBm: -22 */
+	RF_POWER_N22p53dBm,     /* -22.5 dBm: -21 */
+	RF_POWER_N13p42dBm,     /* -13.5 dBm: -20 */
+	RF_POWER_N13p42dBm,     /* -13.5 dBm: -19 */
+	RF_POWER_N13p42dBm,     /* -13.5 dBm: -18 */
+	RF_POWER_N13p42dBm,     /* -13.5 dBm: -17 */
+	RF_POWER_N13p42dBm,     /* -13.5 dBm: -16 */
+	RF_POWER_N9p03dBm,      /* -9.0 dBm: -15 */
+	RF_POWER_N9p03dBm,      /* -9.0 dBm: -14 */
+	RF_POWER_N9p03dBm,      /* -9.0 dBm: -13 */
+	RF_POWER_N9p03dBm,      /* -9.0 dBm: -12 */
+	RF_POWER_N9p03dBm,      /* -9.0 dBm: -11 */
+	RF_POWER_N5p94dBm,      /*  -5.9 dBm: -10 */
+	RF_POWER_N5p94dBm,      /*  -5.9 dBm:  -9 */
+	RF_POWER_N5p94dBm,      /*  -5.9 dBm:  -8 */
+	RF_POWER_N5p94dBm,      /*  -5.9 dBm:  -7 */
+	RF_POWER_N5p94dBm,      /*  -5.9 dBm:  -6 */
+	RF_POWER_N3p95dBm,      /*  -4.0 dBm:  -5 */
+	RF_POWER_N3p95dBm,      /*  -4.0 dBm:  -4 */
+	RF_POWER_N2p51dBm,      /*  -2.5 dBm:  -3 */
+	RF_POWER_N1p52dBm,      /*  -1.5 dBm:  -2 */
+	RF_POWER_N0p43dBm,      /*  -0.5 dBm:  -1 */
 	RF_POWER_P0p01dBm,      /*   0.0 dBm:   0 */
-	RF_POWER_P1p03dBm,      /*   0.8 dBm:   1 */
-	RF_POWER_P1p62dBm,      /*   2.3 dBm:   2 */
-	RF_POWER_P2p51dBm,      /*   3.2 dBm:   3 */
-	RF_POWER_P3p51dBm,      /*   4.3 dBm:   4 */
-	RF_POWER_P4p61dBm,      /*   5.6 dBm:   5 */
-	RF_POWER_P5p21dBm,      /*   5.6 dBm:   6 */
-	RF_POWER_P7p00dBm,      /*   6.9 dBm:   7 */
-	RF_POWER_P8p25dBm,      /*   8.0 dBm:   8 */
-	RF_POWER_P9p90dBm,      /*   9.1 dBm:   9 */
+	RF_POWER_P1p03dBm,      /*   1.0 dBm:   1 */
+	RF_POWER_P1p62dBm,      /*   1.6 dBm:   2 */
+	RF_POWER_P2p51dBm,      /*   2.5 dBm:   3 */
+	RF_POWER_P3p51dBm,      /*   3.5 dBm:   4 */
+	RF_POWER_P4p61dBm,      /*   4.6 dBm:   5 */
+	RF_POWER_P5p21dBm,      /*   5.2 dBm:   6 */
+	RF_POWER_P7p00dBm,      /*   7.0 dBm:   7 */
+	RF_POWER_P8p25dBm,      /*   8.2 dBm:   8 */
+	RF_POWER_P9p90dBm,      /*   9.9 dBm:   9 */
 };
 
 #endif
