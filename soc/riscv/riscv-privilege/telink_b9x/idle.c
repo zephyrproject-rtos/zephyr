@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
- * Contributors: 2018 Antmicro <www.antmicro.com>
+ * Copyright (c) 2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +16,7 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {
 	sys_trace_idle();
 
-__irq_pending = true;
+	__irq_pending = true;
 
 	/* unlock interrupts */
 	irq_unlock(key);
@@ -58,7 +57,6 @@ void arch_cpu_atomic_idle(unsigned int key)
 	riscv_idle(key);
 }
 
-#ifdef CONFIG_SOC_RISCV_TELINK_B92
 /**
  * @brief Telink B92 SOC handle IRQ implementation
  *
@@ -72,4 +70,3 @@ void __soc_handle_irq(unsigned long mcause)
 	__asm__ ("sll t0, t1, a0");
 	__asm__ ("csrrc t1, mip, t0");
 }
-#endif
