@@ -23,6 +23,7 @@ add_custom_target(codechecker ALL
     --keep-gcc-include-fixed
     --keep-gcc-intrin
     --output ${output_dir}/codechecker.plist
+    --name zephyr # Set a default metadata name
     ${CODECHECKER_ANALYZE_OPTS}
     ${CMAKE_BINARY_DIR}/compile_commands.json
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json ${output_dir}/codechecker.ready
@@ -66,6 +67,18 @@ else()
       ${output_dir}/codechecker.plist
       ${CODECHECKER_PARSE_OPTS}
       || ${CMAKE_COMMAND} -E true # parse has exit code 2 if a report is emitted by an analyzer
+    VERBATIM
+    USES_TERMINAL
+    COMMAND_EXPAND_LISTS
+  )
+endif()
+
+if(CODECHECKER_STORE OR CODECHECKER_STORE_OPTS)
+  add_custom_command(
+    TARGET codechecker POST_BUILD
+    COMMAND ${CODECHECKER_EXE} store
+      ${CODECHECKER_STORE_OPTS}
+      ${output_dir}/codechecker.plist
     VERBATIM
     USES_TERMINAL
     COMMAND_EXPAND_LISTS
