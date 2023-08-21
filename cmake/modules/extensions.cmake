@@ -2581,13 +2581,19 @@ function(zephyr_var_name variable scope out)
 endfunction()
 
 # Usage:
-#   zephyr_get(<variable> [MERGE [REVERSE]] [SYSBUILD [LOCAL|GLOBAL]] [VAR <var1> ...])
+#   zephyr_get(<variable> [MERGE [REVERSE]] [SYSBUILD [LOCAL|GLOBAL]] [ARGLIST] [VAR <var1> ...])
 #
 # Return the value of <variable> as local scoped variable of same name. If MERGE
 # is supplied, will return a list of found items. If REVERSE is supplied
 # together with MERGE, the order of the list will be reversed before being
 # returned. Reverse will happen before the list is returned and hence it will
 # not change the order of precedence in which the list itself is constructed.
+#
+# If ARGLIST is supplied, then the value will be interpreted as a list of
+# command-line arguments. If the found value is a single string, it will be
+# split into a list of strings delimited by unquoted whitespace. If it's already
+# a list, then it will stay unchanged. When MERGE is supplied as well, every
+# found item will be transformed separately, before outputting the full list.
 #
 # VAR can be used either to store the result in a variable with a different
 # name, or to look for values from multiple variables.
@@ -2617,7 +2623,7 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "MERGE;REVERSE" "SYSBUILD" "VAR" ${ARGN})
+  cmake_parse_arguments(GET_VAR "MERGE;REVERSE;ARGLIST" "SYSBUILD" "VAR" ${ARGN})
 
   if(DEFINED GET_VAR_SYSBUILD)
     if(NOT ("${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL" OR
@@ -2651,6 +2657,7 @@ function(zephyr_get variable)
       get_property(sysbuild_global_${var} TARGET sysbuild_cache PROPERTY ${var})
       if(NOT DEFINED sysbuild_local_${var} AND sysbuild_main_app)
         set(sysbuild_local_${var} ${sysbuild_global_${var}})
+        set(sysbuild_global_${var})
       endif()
       if(NOT "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
         set(sysbuild_global_${var})
@@ -2675,6 +2682,9 @@ function(zephyr_get variable)
       zephyr_var_name("${var}" "${scope}" expansion_var)
       if(DEFINED expansion_var)
         string(CONFIGURE "${expansion_var}" scope_value)
+        if(GET_VAR_ARGLIST AND NOT "${scope_value}" MATCHES ";")
+          separate_arguments(scope_value UNIX_COMMAND ${scope_value})
+        endif()
         if(GET_VAR_MERGE)
           list(APPEND ${variable} ${scope_value})
         else()
@@ -2707,7 +2717,9 @@ function(zephyr_get variable)
   endforeach()
 
   if(GET_VAR_MERGE)
-    if(GET_VAR_REVERSE)
+    if(GET_VAR_ARGLIST)
+      # Keep duplicates.
+    elseif(GET_VAR_REVERSE)
       list(REVERSE ${variable})
       list(REMOVE_DUPLICATES ${variable})
       list(REVERSE ${variable})

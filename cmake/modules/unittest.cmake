@@ -19,16 +19,7 @@ include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 #   INCLUDE: list of additional include paths relative to ZEPHYR_BASE
 
 foreach(extra_flags EXTRA_CPPFLAGS EXTRA_LDFLAGS EXTRA_CFLAGS EXTRA_CXXFLAGS EXTRA_AFLAGS)
-  list(LENGTH ${extra_flags} flags_length)
-  if(flags_length LESS_EQUAL 1)
-    # A length of zero means no argument.
-    # A length of one means a single argument or a space separated list was provided.
-    # In both cases, it is safe to do a separate_arguments on the argument.
-    separate_arguments(${extra_flags}_AS_LIST UNIX_COMMAND ${${extra_flags}})
-  else()
-    # Already a proper list, no conversion needed.
-    set(${extra_flags}_AS_LIST "${${extra_flags}}")
-  endif()
+  zephyr_get(${extra_flags}_AS_LIST ARGLIST VAR ${extra_flags})
 endforeach()
 
 set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})

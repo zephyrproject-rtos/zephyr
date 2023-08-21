@@ -600,6 +600,101 @@ function(test_snippets_scope)
   assert_equal(VARIABLE_1 "snippet 1")
 endfunction()
 
+
+function(test_arglist)
+  if(NOT TARGET snippets_scope)
+    zephyr_create_scope(snippets)
+  endif()
+
+  foreach(var VARIABLE_1 VARIABLE_2 TESTCASE_VARIABLE)
+    zephyr_set(${var} SCOPE snippets)
+    unset(ENV{${var}})
+    unset(${var} CACHE)
+    unset(${var})
+  endforeach()
+
+  # String values are handled by separate_arguments().
+  set(ENV{VARIABLE_1} "--environment value --environment \"value with spaces\"")
+  zephyr_get(VARIABLE_1 ARGLIST)
+  assert_equal(VARIABLE_1 "--environment;value;--environment;value with spaces")
+
+  unset(VARIABLE_1 CACHE)
+  zephyr_set(VARIABLE_1 "--snippet value -- -a 1 -b=2 -c '3' -d='4' -e \"5\" -f=\"6\"" SCOPE snippets)
+
+  zephyr_get(VARIABLE_1 ARGLIST)
+  assert_equal(VARIABLE_1 "--snippet;value;--;-a;1;-b=2;-c;3;-d=4;-e;5;-f=6")
+
+  # List values are kept as is, including quotes.
+  set(VARIABLE_1 --cmake-cache value --cmake-cache "value with spaces" CACHE INTERNAL "")
+  zephyr_get(VARIABLE_1 ARGLIST)
+  assert_equal(VARIABLE_1 "--cmake-cache;value;--cmake-cache;value with spaces")
+
+  zephyr_set(VARIABLE_1 SCOPE snippets)
+  unset(ENV{VARIABLE_1})
+  unset(VARIABLE_1 CACHE)
+  set(VARIABLE_1 --local value -- -a 1 -b=2 -c '3' -d='4' -e \"5\" -f=\"6\")
+
+  zephyr_get(VARIABLE_1 ARGLIST)
+  assert_equal(VARIABLE_1 "--local;value;--;-a;1;-b=2;-c;'3';-d='4';-e;\"5\";-f=\"6\"")
+
+  # Duplicates (here: -I) are *not* removed, even with MERGE ARGLIST.
+  set(ENV{VARIABLE_1} "-I /path/1/env")
+  set(ENV{VARIABLE_2} "-I /path/2/env")
+  zephyr_set(VARIABLE_1 "-I /path/1/snippet" SCOPE snippets)
+  zephyr_set(VARIABLE_2 "-I /path/2/snippet" SCOPE snippets)
+  set(VARIABLE_1 "-I /path/1/cache" CACHE INTERNAL "")
+  set(VARIABLE_2 "-I /path/2/cache" CACHE INTERNAL "")
+  set(VARIABLE_1 "-I /path/1/local")
+  set(VARIABLE_2 "-I /path/2/local")
+
+  zephyr_get(RESULT MERGE ARGLIST VAR VARIABLE_1 VARIABLE_2)
+  assert_equal(RESULT "-I;/path/1/cache;-I;/path/2/cache;-I;/path/1/snippet;-I;/path/2/snippet;-I;/path/1/env;-I;/path/2/env;-I;/path/1/local;-I;/path/2/local")
+
+  zephyr_set(VARIABLE_2 SCOPE snippets)
+  unset(ENV{VARIABLE_2})
+  unset(VARIABLE_2)
+
+  # A cache-only value, not defined in current scope, should only appear once.
+  set(VARIABLE_2 "same value" CACHE INTERNAL "")
+  set(VARIABLE_2 "same value")
+
+  zephyr_get(VARIABLE_2 MERGE ARGLIST)
+  assert_equal(VARIABLE_2 "same;value;same;value")
+
+  unset(VARIABLE_2)
+  zephyr_get(VARIABLE_2 MERGE ARGLIST)
+  assert_equal(VARIABLE_2 "same;value")
+
+  # Both space-separated strings and CMake lists can be found in different scopes.
+  set(TESTCASE_VARIABLE "-arg3 \"cmake cache\"" CACHE INTERNAL "")
+  zephyr_set(TESTCASE_VARIABLE "-arg2;snippet" SCOPE snippets)
+  set(ENV{TESTCASE_VARIABLE} "-arg1 environment")
+  set(TESTCASE_VARIABLE "-arg0" "local")
+
+  zephyr_get(TESTCASE_VARIABLE MERGE REVERSE SYSBUILD LOCAL ARGLIST)
+  assert_equal(TESTCASE_VARIABLE
+    IMAGE no_sysbuild    "-arg0;local;-arg1;environment;-arg2;snippet;-arg3;cmake cache"
+    IMAGE zephyr_get     "-arg0;local;-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main"
+    IMAGE zephyr_get_2nd "-arg0;local;-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.2nd"
+    IMAGE zephyr_get_3rd "-arg0;local;-arg1;environment;-arg2;snippet;-arg3;cmake cache"
+    IMAGE zephyr_get_4th "-arg0;local;-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main"
+  )
+  unset(TESTCASE_VARIABLE)
+  zephyr_get(TESTCASE_VARIABLE MERGE REVERSE SYSBUILD GLOBAL ARGLIST)
+  assert_equal(TESTCASE_VARIABLE
+    IMAGE no_sysbuild    "-arg1;environment;-arg2;snippet;-arg3;cmake cache"
+    # This image's LOCAL and GLOBAL are identical, and the value appears once,
+    # taken only from -DTESTCASE_VARIABLE=<...>.
+    IMAGE zephyr_get     "-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main"
+    IMAGE zephyr_get_2nd "-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main;sysbuild.2nd"
+    IMAGE zephyr_get_3rd "-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main"
+    # This image's LOCAL and GLOBAL are identical, and the value appears twice,
+    # taken from -DTESTCASE_VARIABLE=<...> and -Dzephyr_get_4th_TESTCASE_VARIABLE=<...>.
+    IMAGE zephyr_get_4th "-arg1;environment;-arg2;snippet;-arg3;cmake cache;sysbuild.main;sysbuild.main"
+  )
+endfunction()
+
+
 run_suite(
   test_precedence
   test_precedence_with_sysbuild
@@ -607,4 +702,5 @@ run_suite(
   test_multivar
   test_merge_reverse
   test_snippets_scope
+  test_arglist
 )
