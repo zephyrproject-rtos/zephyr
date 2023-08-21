@@ -120,8 +120,13 @@ static const clock_video_pll_config_t videoPllConfig = {
 
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
+#ifdef CONFIG_XIP
 	.start = CONFIG_FLASH_BASE_ADDRESS,
-	.size = KB(CONFIG_FLASH_SIZE),
+	.size = (uint32_t)&_flash_used,
+#else
+	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.size = (uint32_t)&_image_ram_size,
+#endif
 	.plugin = PLUGIN_FLAG,
 	.placeholder = 0xFFFFFFFF,
 };
