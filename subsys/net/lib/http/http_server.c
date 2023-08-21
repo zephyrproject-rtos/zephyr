@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "headers/server_functions.h"
+#include "headers/http_service.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -14,15 +15,15 @@
 
 #ifdef __linux__
 
-#define CONFIG_MAX_HTTP_RESPONSE_SIZE   128
-#define CONFIG_MAX_HTTP_URL_LENGTH      64
-#define CONFIG_NET_HTTP_MAX_FRAME_SIZE 2048
+#define CONFIG_NET_HTTP_SERVER_MAX_RESPONSE_SIZE 128
+#define CONFIG_NET_HTTP_SERVER_MAX_URL_LENGTH    64
+#define CONFIG_NET_HTTP_SERVER_MAX_FRAME_SIZE    2048
 
 #endif
 
-#define MAX_HTTP_RESPONSE_SIZE CONFIG_MAX_HTTP_RESPONSE_SIZE
-#define MAX_HTTP_URL_LENGTH    CONFIG_MAX_HTTP_URL_LENGTH
-#define MAX_FRAME_SIZE         CONFIG_NET_HTTP_MAX_FRAME_SIZE
+#define HTTP_SERVER_MAX_RESPONSE_SIZE CONFIG_NET_HTTP_SERVER_MAX_RESPONSE_SIZE
+#define HTTP_SERVER_MAX_URL_LENGTH    CONFIG_NET_HTTP_SERVER_MAX_URL_LENGTH
+#define HTTP_SERVER_MAX_FRAME_SIZE    CONFIG_NET_HTTP_SERVER_MAX_FRAME_SIZE
 
 #if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
@@ -40,6 +41,7 @@
 #else
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/sys/eventfd.h>
 
@@ -48,18 +50,21 @@
 #if defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
 #define SERVER_IPV4_ADDR "192.0.2.1"
+#include <zephyr/data/json.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_server, LOG_LEVEL_DBG);
+#include <zephyr/net/tls_credentials.h>
 
 #elif defined(__linux__)
 
 #define SERVER_IPV4_ADDR "127.0.0.1"
 #include "headers/mlog.h"
+#include <jansson.h>
 
 #endif
 
-static char url_buffer[CONFIG_MAX_HTTP_URL_LENGTH];
-static char http_response[CONFIG_MAX_HTTP_RESPONSE_SIZE];
+static char url_buffer[CONFIG_NET_HTTP_SERVER_MAX_URL_LENGTH];
+static char http_response[CONFIG_NET_HTTP_SERVER_MAX_RESPONSE_SIZE];
 static const char *preface = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 static struct http_parser_settings parserSettings;
@@ -91,13 +96,27 @@ static const char content_404[] = {
 
 bool has_upgrade_header = true;
 
+#if defined(__ZEPHYR__)
+static const struct json_obj_descr arithmetic_result_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct arithmetic_result, x, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct arithmetic_result, y, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct arithmetic_result, result, JSON_TOK_NUMBER),
+};
+#endif
+
 int http_server_init(struct http_server_ctx *ctx)
 {
+	int proto = IPPROTO_TCP;
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	proto = IPPROTO_TLS_1_2;
+#endif
+
 	/* Create a socket */
 #if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
-	ctx->server_fd = socket(ctx->config.address_family, SOCK_STREAM, 0);
+	ctx->server_fd = socket(ctx->config.address_family, SOCK_STREAM, proto);
 #else
-	ctx->server_fd = zsock_socket(ctx->config.address_family, SOCK_STREAM, 0);
+	ctx->server_fd = zsock_socket(ctx->config.address_family, SOCK_STREAM, proto);
 #endif
 	if (ctx->server_fd < 0) {
 		LOG_ERR("socket");
@@ -111,6 +130,30 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 #else
 	if (zsock_setsockopt(ctx->server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) <
+	    0) {
+		LOG_ERR("setsockopt");
+		return -errno;
+	}
+#endif
+
+#if defined(CONFIG_TLS_CREDENTIALS) || defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	static const sec_tag_t server_tag_list_verify_none[] = {
+		HTTP_SERVER_SERVER_CERTIFICATE_TAG,
+	};
+
+	const sec_tag_t *sec_tag_list;
+	size_t sec_tag_list_size;
+
+	sec_tag_list = server_tag_list_verify_none;
+	sec_tag_list_size = sizeof(server_tag_list_verify_none);
+
+	if (setsockopt(ctx->server_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_list, sec_tag_list_size) <
+	    0) {
+		LOG_ERR("setsockopt");
+		return -errno;
+	}
+
+	if (setsockopt(ctx->server_fd, SOL_TLS, TLS_HOSTNAME, "localhost", sizeof("localhost")) <
 	    0) {
 		LOG_ERR("setsockopt");
 		return -errno;
@@ -192,6 +235,7 @@ int http_server_init(struct http_server_ctx *ctx)
 	ctx->fds[1].events = POLLIN;
 
 	ctx->num_clients = 0;
+	ctx->results_count = 0;
 	ctx->infinite = 1;
 
 	return ctx->server_fd;
@@ -221,7 +265,8 @@ int accept_new_client(int server_fd)
 
 int http_server_start(struct http_server_ctx *ctx)
 {
-	LOG_INF("Waiting for incoming connections at http://%s:%d", SERVER_IPV4_ADDR, ctx->config.port);
+	LOG_INF("Waiting for incoming connections at http://%s:%d", SERVER_IPV4_ADDR,
+		ctx->config.port);
 
 	eventfd_t value;
 
@@ -303,7 +348,6 @@ int http_server_start(struct http_server_ctx *ctx)
 			int valread = zsock_recv(client->client_fd, client->buffer + client->offset,
 						 sizeof(client->buffer) - client->offset, 0);
 #endif
-
 			if (valread <= 0) {
 				if (valread == 0) {
 					LOG_INF("Connection closed by peer");
@@ -345,15 +389,15 @@ void initialize_client_ctx(struct http_client_ctx *ctx_client, int new_socket)
 {
 	ctx_client->client_fd = new_socket;
 	ctx_client->offset = 0;
-	ctx_client->server_state = HTTP_PREFACE_STATE;
+	ctx_client->server_state = HTTP_SERVER_PREFACE_STATE;
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		ctx_client->streams[i].stream_state = HTTP_STREAM_IDLE;
+		ctx_client->streams[i].stream_state = HTTP_SERVER_STREAM_IDLE;
 		ctx_client->streams[i].stream_id = 0;
 	}
 }
 
 struct http_stream_ctx *find_http_stream_context(struct http_client_ctx *ctx_client,
-						   uint32_t stream_id)
+						 uint32_t stream_id)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		if (ctx_client->streams[i].stream_id == stream_id) {
@@ -364,12 +408,12 @@ struct http_stream_ctx *find_http_stream_context(struct http_client_ctx *ctx_cli
 }
 
 struct http_stream_ctx *allocate_http_stream_context(struct http_client_ctx *ctx_client,
-						       uint32_t stream_id)
+						     uint32_t stream_id)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (ctx_client->streams[i].stream_state == HTTP_STREAM_IDLE) {
+		if (ctx_client->streams[i].stream_state == HTTP_SERVER_STREAM_IDLE) {
 			ctx_client->streams[i].stream_id = stream_id;
-			ctx_client->streams[i].stream_state = HTTP_STREAM_OPEN;
+			ctx_client->streams[i].stream_state = HTTP_SERVER_STREAM_OPEN;
 			return &ctx_client->streams[i];
 		}
 	}
@@ -383,40 +427,42 @@ int handle_http_request(struct http_server_ctx *ctx_server, struct http_client_c
 
 	do {
 		switch (ctx_client->server_state) {
-		case HTTP_PREFACE_STATE:
+		case HTTP_SERVER_PREFACE_STATE:
 			ret = handle_http_preface(ctx_client);
 			break;
-		case HTTP_REQUEST_STATE:
+		case HTTP_SERVER_REQUEST_STATE:
 			ret = handle_http1_request(ctx_server, ctx_client, client_index);
 			break;
-		case HTTP_FRAME_HEADER_STATE:
+		case HTTP_SERVER_FRAME_HEADER_STATE:
 			ret = handle_http_frame_header(ctx_server, ctx_client, client_index);
 			break;
-		case HTTP_FRAME_HEADERS_STATE:
+		case HTTP_SERVER_FRAME_HEADERS_STATE:
 			ret = handle_http_frame_headers(ctx_client);
 			break;
-		case HTTP_FRAME_CONTINUATION_STATE:
+		case HTTP_SERVER_FRAME_CONTINUATION_STATE:
 			ret = handle_http_frame_continuation(ctx_client);
 			break;
-		case HTTP_FRAME_SETTINGS_STATE:
+		case HTTP_SERVER_FRAME_SETTINGS_STATE:
 			ret = handle_http_frame_settings(ctx_client);
 			break;
-		case HTTP_FRAME_WINDOW_UPDATE_STATE:
+		case HTTP_SERVER_FRAME_WINDOW_UPDATE_STATE:
 			ret = handle_http_frame_window_update(ctx_client);
 			break;
-		case HTTP_FRAME_RST_STREAM_STATE:
+		case HTTP_SERVER_FRAME_RST_STREAM_STATE:
 			ret = handle_http_frame_rst_frame(ctx_server, ctx_client, client_index);
-		case HTTP_FRAME_GOAWAY_STATE:
+			break;
+		case HTTP_SERVER_FRAME_GOAWAY_STATE:
 			ret = handle_http_frame_goaway(ctx_server, ctx_client, client_index);
 			break;
-		case HTTP_FRAME_PRIORITY_STATE:
+		case HTTP_SERVER_FRAME_PRIORITY_STATE:
 			ret = handle_http_frame_priority(ctx_client);
 			break;
-		case HTTP_DONE_STATE:
+		case HTTP_SERVER_DONE_STATE:
 			ret = handle_http_done(ctx_server, ctx_client, client_index);
 			break;
 		default:
-			LOG_ERR("Unknown state.");
+			ret = handle_http_done(ctx_server, ctx_client, client_index);
+			break;
 		}
 
 	} while (ret == 0 && ctx_client->offset > 0);
@@ -424,62 +470,55 @@ int handle_http_request(struct http_server_ctx *ctx_server, struct http_client_c
 	return ret;
 }
 
-int handle_http_frame_header(struct http_server_ctx *ctx_server,
-			      struct http_client_ctx *ctx_client, int client_index)
+int handle_http_frame_header(struct http_server_ctx *ctx_server, struct http_client_ctx *ctx_client,
+			     int client_index)
 {
-	LOG_DBG("HTTP_FRAME_HEADER");
+	LOG_DBG("HTTP_SERVER_FRAME_HEADER");
 
 	int parse_result = parse_http_frame_header(ctx_client);
 
 	if (parse_result == 0) {
 		return -EAGAIN;
-	} else if (parse_result == -1) {
-		return -EINVAL;
+	} else if (parse_result < 0) {
+		return parse_result;
 	}
 
-	ctx_client->bytes_parsed_in_current_frame = 0;
-
-	switch (ctx_client->current_frame.type) {
-	case HTTP_HEADERS_FRAME:
-		enter_http_frame_headers_state(ctx_server, ctx_client, client_index);
-		break;
-	case HTTP_CONTINUATION_FRAME:
-		enter_http_frame_continuation_state(ctx_client);
-		break;
-	case HTTP_SETTINGS_FRAME:
-		enter_http_frame_settings_state(ctx_client);
-		break;
-	case HTTP_WINDOW_UPDATE_FRAME:
-		enter_http_frame_window_update_state(ctx_client);
-		break;
-	case HTTP_RST_STREAM_FRAME:
-		return enter_http_frame_rst_stream_state(ctx_server, ctx_client, client_index);
-	case HTTP_GOAWAY_FRAME:
-		return enter_http_frame_goaway_state(ctx_server, ctx_client, client_index);
-	case HTTP_PRIORITY_FRAME:
-		enter_http_frame_priority_state(ctx_client);
-		break;
-	default:
-		return enter_http_http_done_state(ctx_server, ctx_client, client_index);
-	}
-
-	int bytes_consumed = HTTP_FRAME_HEADER_SIZE + ctx_client->current_frame.length;
+	int bytes_consumed = HTTP_SERVER_FRAME_HEADER_SIZE;
 
 	ctx_client->offset -= bytes_consumed;
 	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
+
+	switch (ctx_client->current_frame.type) {
+	case HTTP_SERVER_HEADERS_FRAME:
+		return enter_http_frame_headers_state(ctx_server, ctx_client, client_index);
+	case HTTP_SERVER_CONTINUATION_FRAME:
+		return enter_http_frame_continuation_state(ctx_client);
+	case HTTP_SERVER_SETTINGS_FRAME:
+		return enter_http_frame_settings_state(ctx_client);
+	case HTTP_SERVER_WINDOW_UPDATE_FRAME:
+		return enter_http_frame_window_update_state(ctx_client);
+	case HTTP_SERVER_RST_STREAM_FRAME:
+		return enter_http_frame_rst_stream_state(ctx_server, ctx_client, client_index);
+	case HTTP_SERVER_GOAWAY_FRAME:
+		return enter_http_frame_goaway_state(ctx_server, ctx_client, client_index);
+	case HTTP_SERVER_PRIORITY_FRAME:
+		return enter_http_frame_priority_state(ctx_client);
+	default:
+		return enter_http_http_done_state(ctx_server, ctx_client, client_index);
+	}
 
 	return 0;
 }
 
 int enter_http_frame_settings_state(struct http_client_ctx *ctx_client)
 {
-	ctx_client->server_state = HTTP_FRAME_SETTINGS_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_SETTINGS_STATE;
 
 	return 0;
 }
 
 int enter_http_frame_headers_state(struct http_server_ctx *ctx_server,
-				    struct http_client_ctx *ctx_client, int client_index)
+				   struct http_client_ctx *ctx_client, int client_index)
 {
 	struct http_frame *frame = &ctx_client->current_frame;
 	struct http_stream_ctx *stream =
@@ -493,16 +532,15 @@ int enter_http_frame_headers_state(struct http_server_ctx *ctx_server,
 			LOG_ERR("No available stream slots. Connection closed.");
 			close_client_connection(ctx_server, client_index);
 
-			return -errno;
+			return -ENOMEM;
 		}
 	}
 
 	if (settings_end_headers_flag(ctx_client->current_frame.flags) &&
-	    settings_end_headers_flag(ctx_client->current_frame.flags)) {
-		ctx_client->server_state = HTTP_FRAME_HEADERS_STATE;
-		handle_http_frame_headers(ctx_client);
+	    settings_end_stream_flag(ctx_client->current_frame.flags)) {
+		ctx_client->server_state = HTTP_SERVER_FRAME_HEADERS_STATE;
 	} else {
-		ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+		ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 	}
 
 	return 0;
@@ -510,61 +548,61 @@ int enter_http_frame_headers_state(struct http_server_ctx *ctx_server,
 
 int enter_http_frame_continuation_state(struct http_client_ctx *ctx_client)
 {
-	ctx_client->server_state = HTTP_FRAME_CONTINUATION_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_CONTINUATION_STATE;
 
 	return 0;
 }
 
 int enter_http_frame_window_update_state(struct http_client_ctx *ctx_client)
 {
-	ctx_client->server_state = HTTP_FRAME_WINDOW_UPDATE_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_WINDOW_UPDATE_STATE;
 
 	return 0;
 }
 
 int enter_http_frame_priority_state(struct http_client_ctx *ctx_client)
 {
-	ctx_client->server_state = HTTP_FRAME_PRIORITY_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_PRIORITY_STATE;
 
 	return 0;
 }
 
 int enter_http_frame_rst_stream_state(struct http_server_ctx *ctx_server,
-				       struct http_client_ctx *ctx_client, int client_index)
+				      struct http_client_ctx *ctx_client, int client_index)
 {
-	ctx_client->server_state = HTTP_FRAME_RST_STREAM_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_RST_STREAM_STATE;
 
 	return 0;
 }
 
 int enter_http_frame_goaway_state(struct http_server_ctx *ctx_server,
-				   struct http_client_ctx *ctx_client, int client_index)
+				  struct http_client_ctx *ctx_client, int client_index)
 {
-	ctx_client->server_state = HTTP_FRAME_GOAWAY_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_GOAWAY_STATE;
 
 	return 0;
 }
 
 int enter_http_http_done_state(struct http_server_ctx *ctx_server,
-				 struct http_client_ctx *ctx_client, int client_index)
+			       struct http_client_ctx *ctx_client, int client_index)
 {
-	ctx_client->server_state = HTTP_DONE_STATE;
+	ctx_client->server_state = HTTP_SERVER_DONE_STATE;
 
 	return 0;
 }
 
 int handle_http_preface(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_PREFACE_STATE.");
+	LOG_DBG("HTTP_SERVER_PREFACE_STATE.");
 	if (ctx_client->offset < strlen(preface)) {
 		/* We don't have full preface yet, get more data. */
 		return -EAGAIN;
 	}
 
 	if (strncmp(ctx_client->buffer, preface, strlen(preface)) != 0) {
-		ctx_client->server_state = HTTP_REQUEST_STATE;
+		ctx_client->server_state = HTTP_SERVER_REQUEST_STATE;
 	} else {
-		ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+		ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
 		ctx_client->offset -= strlen(preface);
 		memmove(ctx_client->buffer, ctx_client->buffer + strlen(preface),
@@ -577,7 +615,7 @@ int handle_http_preface(struct http_client_ctx *ctx_client)
 int handle_http1_request(struct http_server_ctx *ctx_server, struct http_client_ctx *ctx_client,
 			 int client_index)
 {
-	LOG_DBG("HTTP_REQUEST.");
+	LOG_DBG("HTTP_SERVER_REQUEST.");
 	const char *data;
 	int len;
 	int total_received = 0;
@@ -593,7 +631,7 @@ int handle_http1_request(struct http_server_ctx *ctx_server, struct http_client_
 	total_received += ctx_client->offset;
 	offset += ctx_client->offset;
 
-	if (offset >= MAX_HTTP_RESPONSE_SIZE) {
+	if (offset >= HTTP_SERVER_MAX_RESPONSE_SIZE) {
 		offset = 0;
 	}
 
@@ -608,7 +646,7 @@ int handle_http1_request(struct http_server_ctx *ctx_server, struct http_client_
 
 		memset(ctx_client->buffer, 0, sizeof(ctx_client->buffer));
 		ctx_client->offset = 0;
-		ctx_client->server_state = HTTP_PREFACE_STATE;
+		ctx_client->server_state = HTTP_SERVER_PREFACE_STATE;
 
 	} else {
 		data = content_200;
@@ -617,7 +655,22 @@ int handle_http1_request(struct http_server_ctx *ctx_server, struct http_client_
 		enum http_method method = parser.method;
 		const char *method_str = http_method_str(method);
 
-		if (strcmp(method_str, "GET") == 0 && strcmp(url_buffer, "/") == 0) {
+		LOG_DBG("HTTP Method: %s", method_str);
+
+		if (strncmp(method_str, "GET", 3) == 0 && strncmp(url_buffer, "/results", 8) == 0) {
+			handle_get_request(ctx_server, ctx_client->client_fd);
+		} else if (strncmp(method_str, "POST", 4) == 0 &&
+			   strncmp(url_buffer, "/add", 4) == 0) {
+			char *json_start = strstr(ctx_client->buffer, "\r\n\r\n");
+
+			if (json_start) {
+				handle_post_request(ctx_server, json_start);
+			}
+
+			char response[] = "HTTP/1.1 200 OK\r\nContent-Type: "
+					  "text/plain\r\n\r\nAdded successfully.\n";
+			sendall(ctx_client->client_fd, response, strlen(response));
+		} else if (strncmp(method_str, "GET", 3) == 0 && strncmp(url_buffer, "/", 1) == 0) {
 			sprintf(http_response,
 				"HTTP/1.1 200 OK\r\n"
 				"Content-Type: text/html\r\n"
@@ -652,9 +705,9 @@ int handle_http1_request(struct http_server_ctx *ctx_server, struct http_client_
 }
 
 int handle_http_done(struct http_server_ctx *ctx_server, struct http_client_ctx *ctx_client,
-		      int client_index)
+		     int client_index)
 {
-	LOG_DBG("HTTP_DONE_STATE");
+	LOG_DBG("HTTP_SERVER_DONE_STATE");
 
 	close_client_connection(ctx_server, client_index);
 
@@ -663,13 +716,17 @@ int handle_http_done(struct http_server_ctx *ctx_server, struct http_client_ctx 
 
 int handle_http_frame_headers(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_FRAME_HEADERS");
+	LOG_DBG("HTTP_SERVER_FRAME_HEADERS");
 
 	unsigned char response_headers_frame[16];
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
+
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
 
 	const char *method;
 	const char *path;
@@ -680,14 +737,14 @@ int handle_http_frame_headers(struct http_client_ctx *ctx_client)
 		method = http_method_str(method_h2c);
 		path = url_buffer;
 	} else {
-		method = header_parsing(ctx_client, HTTP_HPACK_METHOD);
-		path = header_parsing(ctx_client, HTTP_HPACK_PATH);
+		method = http_hpack_parse_header(ctx_client, HTTP_SERVER_HPACK_METHOD);
+		path = http_hpack_parse_header(ctx_client, HTTP_SERVER_HPACK_PATH);
 	}
 
 	if (strcmp(method, "GET") == 0 && strcmp(path, "/") == 0) {
 
 		generate_response_headers_frame(response_headers_frame, frame->stream_identifier,
-						HTTP_HPACK_STATUS_200);
+						HTTP_SERVER_HPACK_STATUS_2OO);
 
 		size_t ret = sendall(ctx_client->client_fd, response_headers_frame,
 				     sizeof(response_headers_frame));
@@ -698,11 +755,11 @@ int handle_http_frame_headers(struct http_client_ctx *ctx_client)
 
 		size_t content_size = sizeof(content_200);
 
-		send_data(ctx_client->client_fd, content_200, content_size, HTTP_DATA_FRAME,
-			  HTTP_FLAG_END_STREAM, frame->stream_identifier);
+		send_data(ctx_client->client_fd, content_200, content_size, HTTP_SERVER_DATA_FRAME,
+			  HTTP_SERVER_FLAG_END_STREAM, frame->stream_identifier);
 	} else {
 		generate_response_headers_frame(response_headers_frame, frame->stream_identifier,
-						HTTP_HPACK_STATUS_404);
+						HTTP_SERVER_HPACK_STATUS_4O4);
 
 		size_t ret = sendall(ctx_client->client_fd, response_headers_frame,
 				     sizeof(response_headers_frame));
@@ -713,43 +770,66 @@ int handle_http_frame_headers(struct http_client_ctx *ctx_client)
 
 		size_t content_size = sizeof(content_404);
 
-		send_data(ctx_client->client_fd, content_404, content_size, HTTP_DATA_FRAME,
-			  HTTP_FLAG_END_STREAM, frame->stream_identifier);
+		send_data(ctx_client->client_fd, content_404, content_size, HTTP_SERVER_DATA_FRAME,
+			  HTTP_SERVER_FLAG_END_STREAM, frame->stream_identifier);
 	}
 
-	ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
 
 	return 0;
 }
 
 int handle_http_frame_priority(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_FRAME_PRIORITY_STATE");
+	LOG_DBG("HTTP_SERVER_FRAME_PRIORITY_STATE");
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
 
-	ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
+
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
 	return 0;
 }
 
 int handle_http_frame_continuation(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_FRAME_CONTINUATION_STATE");
-	ctx_client->server_state = HTTP_FRAME_HEADERS_STATE;
+	LOG_DBG("HTTP_SERVER_FRAME_CONTINUATION_STATE");
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADERS_STATE;
 
 	return 0;
 }
 
 int handle_http_frame_settings(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_FRAME_SETTINGS");
+	LOG_DBG("HTTP_SERVER_FRAME_SETTINGS");
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
+
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
 
 	if (!settings_ack_flag(frame->flags)) {
 		ssize_t ret =
@@ -766,41 +846,59 @@ int handle_http_frame_settings(struct http_client_ctx *ctx_client)
 		}
 	}
 
-	ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
 	return 0;
 }
 
 int handle_http_frame_window_update(struct http_client_ctx *ctx_client)
 {
-	LOG_DBG("HTTP_FRAME_WINDOW_UPDATE");
+	LOG_DBG("HTTP_SERVER_FRAME_WINDOW_UPDATE");
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
 
 	if (!has_upgrade_header) {
 
 		frame->stream_identifier = 1;
 		handle_http_frame_headers(ctx_client);
-		ctx_client->server_state = HTTP_FRAME_GOAWAY_STATE;
+		ctx_client->server_state = HTTP_SERVER_FRAME_GOAWAY_STATE;
 
 		return 0;
 	}
 
-	ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
+
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
 	return 0;
 }
 
-int handle_http_frame_goaway(struct http_server_ctx *ctx_server,
-			      struct http_client_ctx *ctx_client, int client_index)
+int handle_http_frame_goaway(struct http_server_ctx *ctx_server, struct http_client_ctx *ctx_client,
+			     int client_index)
 {
-	LOG_DBG("HTTP_FRAME_GOAWAY");
+	LOG_DBG("HTTP_SERVER_FRAME_GOAWAY");
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
+
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
 
 	close_client_connection(ctx_server, client_index);
 	has_upgrade_header = true;
@@ -812,20 +910,29 @@ int handle_http_frame_goaway(struct http_server_ctx *ctx_server,
 }
 
 int handle_http_frame_rst_frame(struct http_server_ctx *ctx_server,
-				 struct http_client_ctx *ctx_client, int client_index)
+				struct http_client_ctx *ctx_client, int client_index)
 {
 	LOG_DBG("FRAME_RST_STREAM");
 
 	struct http_frame *frame = &ctx_client->current_frame;
 
-	print_http_frames(frame);
+	print_http_frames(ctx_client);
 
-	ctx_client->server_state = HTTP_FRAME_HEADER_STATE;
+	if (ctx_client->offset < frame->length) {
+		return -EAGAIN;
+	}
+
+	int bytes_consumed = ctx_client->current_frame.length;
+
+	ctx_client->offset -= bytes_consumed;
+	memmove(ctx_client->buffer, ctx_client->buffer + bytes_consumed, ctx_client->offset);
+
+	ctx_client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
 	return 0;
 }
 
-int on_header_field(struct http_parser *parser, const char *at, size_t length)
+int on_header_field(struct http_parser *p, const char *at, size_t length)
 {
 	if (length == 7 && strncasecmp(at, "Upgrade", length) == 0) {
 		LOG_INF("The \"Upgrade: h2c\" header is present.");
@@ -834,7 +941,7 @@ int on_header_field(struct http_parser *parser, const char *at, size_t length)
 	return 0;
 }
 
-int on_url(struct http_parser *parser, const char *at, size_t length)
+int on_url(struct http_parser *p, const char *at, size_t length)
 {
 	strncpy(url_buffer, at, length);
 	url_buffer[length] = '\0';
@@ -868,7 +975,7 @@ void generate_response_headers_frame(unsigned char *response_headers_frame, int 
 	response_headers_frame[1] = 0x00;
 	response_headers_frame[2] = 0x07;
 	response_headers_frame[3] = 0x01;
-	response_headers_frame[4] = HTTP_FLAG_END_HEADERS;
+	response_headers_frame[4] = HTTP_SERVER_FLAG_END_HEADERS;
 	response_headers_frame[5] = 0x00;
 	response_headers_frame[6] = 0x00;
 	response_headers_frame[7] = 0x00;
@@ -886,12 +993,12 @@ void generate_response_headers_frame(unsigned char *response_headers_frame, int 
 void send_data(int socket_fd, const char *payload, size_t length, uint8_t type, uint8_t flags,
 	       uint32_t stream_id)
 {
-	if (9 + length > MAX_FRAME_SIZE) {
+	if (9 + length > HTTP_SERVER_MAX_FRAME_SIZE) {
 		LOG_ERR("Payload is too large for the buffer");
 		return;
 	}
 
-	uint8_t data_frame[MAX_FRAME_SIZE];
+	uint8_t data_frame[HTTP_SERVER_MAX_FRAME_SIZE];
 
 	data_frame[0] = (length >> 16) & 0xFF;
 	data_frame[1] = (length >> 8) & 0xFF;
@@ -918,37 +1025,40 @@ void send_data(int socket_fd, const char *payload, size_t length, uint8_t type, 
 const char *get_frame_type_name(enum http_frame_type type)
 {
 	switch (type) {
-	case HTTP_DATA_FRAME:
+	case HTTP_SERVER_DATA_FRAME:
 		return "DATA";
-	case HTTP_HEADERS_FRAME:
+	case HTTP_SERVER_HEADERS_FRAME:
 		return "HEADERS";
-	case HTTP_PRIORITY_FRAME:
+	case HTTP_SERVER_PRIORITY_FRAME:
 		return "PRIORITY";
-	case HTTP_RST_STREAM_FRAME:
+	case HTTP_SERVER_RST_STREAM_FRAME:
 		return "RST_STREAM";
-	case HTTP_SETTINGS_FRAME:
+	case HTTP_SERVER_SETTINGS_FRAME:
 		return "SETTINGS";
-	case HTTP_PUSH_PROMISE_FRAME:
+	case HTTP_SERVER_PUSH_PROMISE_FRAME:
 		return "PUSH_PROMISE";
-	case HTTP_PING_FRAME:
+	case HTTP_SERVER_PING_FRAME:
 		return "PING";
-	case HTTP_GOAWAY_FRAME:
+	case HTTP_SERVER_GOAWAY_FRAME:
 		return "GOAWAY";
-	case HTTP_WINDOW_UPDATE_FRAME:
+	case HTTP_SERVER_WINDOW_UPDATE_FRAME:
 		return "WINDOW_UPDATE";
-	case HTTP_CONTINUATION_FRAME:
+	case HTTP_SERVER_CONTINUATION_FRAME:
 		return "CONTINUATION";
 	default:
 		return "UNKNOWN";
 	}
 }
 
-void print_http_frames(struct http_frame *frame)
+void print_http_frames(struct http_client_ctx *ctx_client)
 {
 	const char *bold = "\033[1m";
 	const char *reset = "\033[0m";
 	const char *green = "\033[32m";
 	const char *blue = "\033[34m";
+
+	struct http_frame *frame = &ctx_client->current_frame;
+	int payload_received_length;
 
 	LOG_DBG("%s=====================================%s", green, reset);
 	LOG_DBG("%sReceived %s Frame :%s", bold, get_frame_type_name(frame->type), reset);
@@ -957,7 +1067,14 @@ void print_http_frames(struct http_frame *frame)
 	LOG_DBG("  %sFlags:%s %u", blue, reset, frame->flags);
 	LOG_DBG("  %sStream Identifier:%s %u", blue, reset, frame->stream_identifier);
 	printf("  %sPayload:%s ", blue, reset);
-	for (unsigned int j = 0; j < frame->length; j++) {
+
+	if (ctx_client->offset > frame->length) {
+		payload_received_length = frame->length;
+	} else {
+		payload_received_length = ctx_client->offset;
+	}
+
+	for (unsigned int j = 0; j < payload_received_length; j++) {
 		printf("%02x ", frame->payload[j]);
 	}
 	printf("\n");
@@ -974,65 +1091,137 @@ int parse_http_frame_header(struct http_client_ctx *ctx_client)
 	frame->length = 0;
 	frame->stream_identifier = 0;
 
-	while (ctx_client->bytes_parsed_in_current_frame < HTTP_FRAME_HEADER_SIZE) {
-		int index = ctx_client->bytes_parsed_in_current_frame;
-
-		if (buffer_len <= index) {
-			return 0;
-		}
-
-		switch (index) {
-		case 0:
-		case 1:
-		case 2:
-			frame->length = (frame->length << 8) | buffer[index];
-			break;
-
-		case HTTP_FRAME_TYPE_OFFSET:
-			frame->type = buffer[index];
-			break;
-
-		case HTTP_FRAME_FLAGS_OFFSET:
-			frame->flags = buffer[index];
-			break;
-
-		case HTTP_FRAME_STREAM_ID_OFFSET:
-		case HTTP_FRAME_STREAM_ID_OFFSET + 1:
-		case HTTP_FRAME_STREAM_ID_OFFSET + 2:
-		case HTTP_FRAME_STREAM_ID_OFFSET + 3:
-			frame->stream_identifier = (frame->stream_identifier << 8) | buffer[index];
-			break;
-
-		default:
-			return -errno;
-		}
-
-		ctx_client->bytes_parsed_in_current_frame++;
-	}
-
-	/* Once we're here, the frame header is completely parsed */
-	frame->stream_identifier &= 0x7FFFFFFF;
-
-	if (buffer_len < HTTP_FRAME_HEADER_SIZE + frame->length) {
+	if (buffer_len < HTTP_SERVER_FRAME_HEADER_SIZE) {
 		return 0;
 	}
 
-	frame->payload = buffer + HTTP_FRAME_HEADER_SIZE;
+	frame->length = (buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET] << 16) |
+			(buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET + 1] << 8) |
+			buffer[HTTP_SERVER_FRAME_LENGTH_OFFSET + 2];
+	frame->type = buffer[HTTP_SERVER_FRAME_TYPE_OFFSET];
+	frame->flags = buffer[HTTP_SERVER_FRAME_FLAGS_OFFSET];
+	frame->stream_identifier = (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET] << 24) |
+				   (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 1] << 16) |
+				   (buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 2] << 8) |
+				   buffer[HTTP_SERVER_FRAME_STREAM_ID_OFFSET + 3];
+	frame->stream_identifier &= 0x7FFFFFFF;
+
+	frame->payload = buffer;
 
 	return 1;
 }
 
 bool settings_ack_flag(unsigned char flags)
 {
-	return (flags & HTTP_FLAG_SETTINGS_ACK) != 0;
+	return (flags & HTTP_SERVER_FLAG_SETTINGS_ACK) != 0;
 }
 
 bool settings_end_headers_flag(unsigned char flags)
 {
-	return (flags & HTTP_FLAG_END_HEADERS) != 0;
+	return (flags & HTTP_SERVER_FLAG_END_HEADERS) != 0;
 }
 
-bool settings_stream_flag(unsigned char flags)
+bool settings_end_stream_flag(unsigned char flags)
 {
-	return (flags & HTTP_FLAG_END_STREAM) != 0;
+	return (flags & HTTP_SERVER_FLAG_END_STREAM) != 0;
+}
+
+void handle_post_request(struct http_server_ctx *ctx_server, char *request_payload)
+{
+#if defined(__ZEPHYR__)
+	struct arithmetic_result ar;
+
+	int ret = json_obj_parse(request_payload, strlen(request_payload), arithmetic_result_descr,
+				 ARRAY_SIZE(arithmetic_result_descr), &ar);
+
+	if (ret < 0) {
+		return;
+	}
+
+	ar.result = ar.x + ar.y;
+
+	if (ctx_server->results_count < POST_REQUEST_STORAGE_LIMIT) {
+		ctx_server->results[ctx_server->results_count] = ar;
+		ctx_server->results_count++;
+	}
+#else
+	json_error_t error;
+	json_t *root = json_loads(request_payload, 0, &error);
+
+	if (!root) {
+		fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
+		return;
+	}
+
+	json_t *x_json = json_object_get(root, "x");
+	json_t *y_json = json_object_get(root, "y");
+
+	if (!json_is_integer(x_json) || !json_is_integer(y_json)) {
+		fprintf(stderr, "error: x or y is not an integer or doesn't exist.\n");
+		json_decref(root);
+		return;
+	}
+
+	int x = json_integer_value(x_json);
+	int y = json_integer_value(y_json);
+
+	if (ctx_server->results_count < POST_REQUEST_STORAGE_LIMIT) {
+		ctx_server->results[ctx_server->results_count].x = x;
+		ctx_server->results[ctx_server->results_count].y = y;
+		ctx_server->results[ctx_server->results_count].result = x + y;
+		ctx_server->results_count++;
+	}
+
+	json_decref(root);
+#endif
+}
+
+void handle_get_request(struct http_server_ctx *ctx_server, int client)
+{
+#if defined(__ZEPHYR__)
+	char json_response[1024] = "[";
+
+	for (int i = 0; i < ctx_server->results_count; i++) {
+		char entry[128];
+
+		int len = json_obj_encode_buf(arithmetic_result_descr,
+					      ARRAY_SIZE(arithmetic_result_descr),
+					      &ctx_server->results[i], entry, sizeof(entry));
+
+		if (len < 0) {
+			return;
+		}
+
+		strcat(json_response, entry);
+
+		if (i != ctx_server->results_count - 1) {
+			strcat(json_response, ", ");
+		}
+	}
+
+	strcat(json_response, "]");
+#else
+	json_t *root = json_array();
+
+	for (int i = 0; i < ctx_server->results_count; i++) {
+		json_t *item = json_object();
+
+		json_object_set_new(item, "x", json_integer(ctx_server->results[i].x));
+		json_object_set_new(item, "y", json_integer(ctx_server->results[i].y));
+		json_object_set_new(item, "result", json_integer(ctx_server->results[i].result));
+		json_array_append_new(root, item);
+	}
+
+	char *json_response = json_dumps(root, 0);
+
+	json_decref(root);
+#endif
+
+	char header[HTTP_SERVER_MAX_RESPONSE_SIZE];
+
+	snprintf(header, sizeof(header),
+		 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n",
+		 strlen(json_response));
+	sendall(client, header, strlen(header));
+	sendall(client, json_response, strlen(json_response));
 }
