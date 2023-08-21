@@ -1,9 +1,9 @@
 # Copyright (c) 2021, Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-description: Telink B91 IEEE802154 node
+description: Telink B9x IEEE802154 node
 
-compatible: "telink,b91-zb"
+compatible: "telink,b9x-zb"
 
 include: base.yaml
 
