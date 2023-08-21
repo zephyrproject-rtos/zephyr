@@ -83,10 +83,10 @@ config BT_ESP32
 	help
 	  Espressif HCI bluetooth interface
 
-config BT_B91
-	bool "Telink B91 HCI driver"
+config BT_B9X
+	bool "Telink B9X HCI driver"
 	help
-	  Telink B91 HCI bluetooth interface
+	  Telink B9X HCI bluetooth interface
 
 config BT_NO_DRIVER
 	bool "No default HCI driver"

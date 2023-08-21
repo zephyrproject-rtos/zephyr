@@ -37,7 +37,7 @@ config BT_HCI_ACL_FLOW_CONTROL
 	default n
 
 choice BT_HCI_BUS_TYPE
-	default BT_B91
+	default BT_B9X
 endchoice
 
 endif # BT

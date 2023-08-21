@@ -9,17 +9,17 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <b91_bt.h>
+#include <b9x_bt.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_hci_driver_b91);
+LOG_MODULE_REGISTER(bt_hci_driver_b9x);
 
 #define HCI_CMD                 0x01
 #define HCI_ACL                 0x02
 #define HCI_EVT                 0x04
 
-#define HCI_BT_B91_TIMEOUT K_MSEC(2000)
+#define HCI_BT_B9X_TIMEOUT K_MSEC(2000)
 
 static K_SEM_DEFINE(hci_send_sem, 1, 1);
 
@@ -48,7 +48,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_b91_evt_recv(uint8_t *data, size_t len)
+static struct net_buf *bt_b9x_evt_recv(uint8_t *data, size_t len)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -96,7 +96,7 @@ static struct net_buf *bt_b91_evt_recv(uint8_t *data, size_t len)
 	return buf;
 }
 
-static struct net_buf *bt_b91_acl_recv(uint8_t *data, size_t len)
+static struct net_buf *bt_b9x_acl_recv(uint8_t *data, size_t len)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -137,7 +137,7 @@ static struct net_buf *bt_b91_acl_recv(uint8_t *data, size_t len)
 	return buf;
 }
 
-static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
+static void hci_b9x_host_rcv_pkt(uint8_t *data, uint16_t len)
 {
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
@@ -149,11 +149,11 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 
 	switch (pkt_indicator) {
 	case HCI_EVT:
-		buf = bt_b91_evt_recv(data, len);
+		buf = bt_b9x_evt_recv(data, len);
 		break;
 
 	case HCI_ACL:
-		buf = bt_b91_acl_recv(data, len);
+		buf = bt_b9x_acl_recv(data, len);
 		break;
 
 	default:
@@ -167,17 +167,17 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 	}
 }
 
-static void hci_b91_controller_rcv_pkt_ready(void)
+static void hci_b9x_controller_rcv_pkt_ready(void)
 {
 	k_sem_give(&hci_send_sem);
 }
 
-static b91_bt_host_callback_t vhci_host_cb = {
-	.host_send_available = hci_b91_controller_rcv_pkt_ready,
-	.host_read_packet = hci_b91_host_rcv_pkt
+static b9x_bt_host_callback_t vhci_host_cb = {
+	.host_send_available = hci_b9x_controller_rcv_pkt_ready,
+	.host_read_packet = hci_b9x_host_rcv_pkt
 };
 
-static int bt_b91_send(struct net_buf *buf)
+static int bt_b9x_send(struct net_buf *buf)
 {
 	int err = 0;
 	uint8_t type;
@@ -200,8 +200,8 @@ static int bt_b91_send(struct net_buf *buf)
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
-	if (k_sem_take(&hci_send_sem, HCI_BT_B91_TIMEOUT) == 0) {
-		b91_bt_host_send_packet(type, buf->data, buf->len);
+	if (k_sem_take(&hci_send_sem, HCI_BT_B9X_TIMEOUT) == 0) {
+		b9x_bt_host_send_packet(type, buf->data, buf->len);
 	} else {
 		LOG_ERR("Send packet timeout error");
 		err = -ETIMEDOUT;
@@ -214,43 +214,51 @@ done:
 	return err;
 }
 
-static int hci_b91_open(void)
+static int hci_b9x_open(void)
 {
 	int status;
 
-	status = b91_bt_controller_init();
+	status = b9x_bt_controller_init();
 	if (status) {
 		LOG_ERR("Bluetooth controller init failed %d", status);
 		return status;
 	}
 
-	b91_bt_host_callback_register(&vhci_host_cb);
+	b9x_bt_host_callback_register(&vhci_host_cb);
 
+#if CONFIG_SOC_RISCV_TELINK_B91
 	LOG_DBG("B91 BT started");
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	LOG_DBG("B92 BT started");
+#endif
 
 	return 0;
 }
 
-static int hci_b91_close(void)
+static int hci_b9x_close(void)
 {
 	bt_le_adv_stop();
-	b91_bt_controller_deinit();
+	b9x_bt_controller_deinit();
 
 	return 0;
 }
 
 static const struct bt_hci_driver drv = {
+#if CONFIG_SOC_RISCV_TELINK_B91
 	.name   = "BT B91",
-	.open   = hci_b91_open,
-	.close	= hci_b91_close,
-	.send   = bt_b91_send,
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	.name   = "BT B92",
+#endif
+	.open   = hci_b9x_open,
+	.close	= hci_b9x_close,
+	.send   = bt_b9x_send,
 	.bus    = BT_HCI_DRIVER_BUS_IPM,
 #if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
 	.quirks = BT_QUIRK_NO_AUTO_DLE,
 #endif
 };
 
-static int bt_b91_init(void)
+static int bt_b9x_init(void)
 {
 
 	bt_hci_driver_register(&drv);
@@ -258,4 +266,4 @@ static int bt_b91_init(void)
 	return 0;
 }
 
-SYS_INIT(bt_b91_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_b9x_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
