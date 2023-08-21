@@ -2140,6 +2140,7 @@ Twister:
     - scripts/twister
     - scripts/pylib/twister/
     - scripts/tests/twister/
+    - scripts/tests/twister_blackbox/
     - doc/develop/test/twister.rst
     - scripts/pylib/pytest-twister-harness/
     - doc/develop/test/pytest.rst
