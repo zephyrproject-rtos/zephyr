@@ -131,11 +131,11 @@
 };
 
 &gpioc {
-	interrupts = <37 1>;
 	status = "okay";
 };
 
 &gpiod {
+	interrupts = <37 1>;
 	status = "okay";
 };
 

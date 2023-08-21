@@ -148,7 +148,7 @@
 					0xe4200000 0x00010000 >;
 			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <3>;
-			riscv,ndev = <63>;
+			riscv,ndev = <46>;
 		};
 
 		uart0: serial@80140080 {
