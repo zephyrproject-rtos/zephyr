@@ -11,7 +11,7 @@ import re
 # -dM") core-isa.h file for the current architecture and assigns
 # registers to usages.
 
-NEEDED = ("ALLOCA", "CPU", "FLUSH")
+NEEDED = ("A0SAVE", "CPU", "FLUSH")
 
 coreisa = sys.argv[1]
 outfile = sys.argv[2]
