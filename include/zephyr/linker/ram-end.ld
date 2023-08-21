@@ -9,6 +9,7 @@
 	LAST_RAM_ALIGN
 #endif
 	_image_ram_end = .;
+	_image_ram_size = _image_ram_end - _image_ram_start;
 	_end = .; /* end of image */
 	z_mapped_end = .;
     } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
