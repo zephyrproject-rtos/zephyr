@@ -12,10 +12,6 @@
 	 */
 	pad-mul-sel = <1>;
 
-	pwm_ch0_pd1_default: pwm_ch0_pd1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_1, B92_FUNC_PWM0)>;
-	};
-
 	/* UART0: TX(PB2), RX(PB3), RTS(PB4), CTS(PB6) */
 
 	uart0_tx_pb2_default: uart0_tx_pb2_default {
@@ -46,4 +42,75 @@
 		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_4, B92_FUNC_UART1_CTS_I)>;
 	};
 
+	/* PWM Channel 0 (PD1) */
+
+	pwm_ch0_pd1_default: pwm_ch0_pd1_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_1, B92_FUNC_PWM0)>;
+	};
+
+	/* PSPI: CLK(PE1), MOSI(PE2), MISO(PE3) */
+
+	pspi_clk_pc5_default: pspi_clk_pc5_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_1, B92_FUNC_DEFAULT)>;
+	};
+	pspi_mosi_pc7_default: pspi_mosi_pc7_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_2, B92_FUNC_DEFAULT)>;
+	};
+	pspi_miso_pc6_default: pspi_miso_pc6_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_3, B92_FUNC_DEFAULT)>;
+	};
+
+	/* HSPI: CLK(PA2), MOSI(PA4), MISO(PA3) */
+
+	hspi_clk_pa2_default: hspi_clk_pa2_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_2, B92_FUNC_GSPI_CK_IO)>;
+	};
+	hspi_mosi_pa4_default: hspi_mosi_pa4_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B92_FUNC_GSPI_MOSI_IO)>;
+	};
+	hspi_miso_pa3_default: hspi_miso_pa3_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B92_FUNC_GSPI_MISO_IO)>;
+	};
+
+	/* Define I2C pins: SCL(PE1), SDA(PE3) */
+
+	i2c_scl_pe1_default: i2c_scl_pe1_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_1, B92_FUNC_I2C_SCL_IO)>;
+	};
+	i2c_sda_pe3_default: i2c_sda_pe3_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_3, B92_FUNC_I2C_SDA_IO)>;
+	};
+
+	/* Define ADC pins: PB0..PB7, PD0-PD1 */
+
+	adc_pb0_default: adc_pb0_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_0, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb1_default: adc_pb1_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_1, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb2_default: adc_pb2_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_2, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb3_default: adc_pb3_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_3, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb4_default: adc_pb4_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_4, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb5_default: adc_pb5_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_5, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb6_default: adc_pb6_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_6, B92_FUNC_DEFAULT)>;
+	};
+	adc_pb7_default: adc_pb7_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_7, B92_FUNC_DEFAULT)>;
+	};
+	adc_pd0_default: adc_pd0_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_DEFAULT)>;
+	};
+	adc_pd1_default: adc_pd1_default {
+		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_1, B92_FUNC_DEFAULT)>;
+	};
 };

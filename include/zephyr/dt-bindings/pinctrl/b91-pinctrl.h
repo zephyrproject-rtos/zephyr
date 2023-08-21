@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Telink Semiconductor
+ * Copyright (c) 2021-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,9 @@
 
 /* IDs for B91 GPIO functions */
 
-#define B9x_FUNC_A       0x00
-#define B9x_FUNC_B       0x01
-#define B9x_FUNC_C       0x02
+#define B91_FUNC_A       0x00
+#define B91_FUNC_B       0x01
+#define B91_FUNC_C       0x02
 
 /* IDs for GPIO Ports  */
 
@@ -32,7 +32,7 @@
 #define B9x_PIN_6        0x40
 #define B9x_PIN_7        0x80
 
-/* B91 pinctrl pull-up/down */
+/* B9x pinctrl pull-up/down */
 
 #define B9x_PULL_NONE    0
 #define B9x_PULL_DOWN    2
@@ -54,7 +54,7 @@
 #define B9x_PULL_POS     19
 #define B9x_PULL_MSK     0x3
 #define B9x_FUNC_POS     16
-#define B92_FUNC_MSK     0x3
+#define B91_FUNC_MSK     0x3
 #define B9x_PORT_POS     8
 #define B9x_PORT_MSK     0xFF
 
@@ -68,7 +68,7 @@
 					   (port << B9x_PORT_POS) | \
 					   (pin << B9x_PIN_POS))
 #define B9x_PINMUX_GET_PULL(pinmux)       ((pinmux >> B9x_PULL_POS) & B9x_PULL_MSK)
-#define B9x_PINMUX_GET_FUNC(pinmux)       ((pinmux >> B9x_FUNC_POS) & B92_FUNC_MSK)
+#define B9x_PINMUX_GET_FUNC(pinmux)       ((pinmux >> B9x_FUNC_POS) & B91_FUNC_MSK)
 #define B9x_PINMUX_GET_PIN(pinmux)        ((pinmux >> B9x_PIN_POS) & B9x_PIN_MSK)
 #define B9x_PINMUX_GET_PIN_ID(pinmux)     ((pinmux >> B9x_PIN_POS) & B9x_PIN_ID_MSK)
 

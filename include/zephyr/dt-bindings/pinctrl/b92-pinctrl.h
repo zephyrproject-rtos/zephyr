@@ -9,6 +9,7 @@
 
 /* IDs for B92 GPIO functions */
 
+#define B92_FUNC_DEFAULT 0x00
 #define B92_FUNC_GSPI_CN3 0x01
 #define B92_FUNC_GSPI_CN2 0x02
 #define B92_FUNC_GSPI_CN1 0x03
@@ -89,7 +90,7 @@
 #define B9x_PIN_6        0x40
 #define B9x_PIN_7        0x80
 
-/* B92 pinctrl pull-up/down */
+/* B9x pinctrl pull-up/down */
 
 #define B9x_PULL_NONE    0
 #define B9x_PULL_DOWN    2

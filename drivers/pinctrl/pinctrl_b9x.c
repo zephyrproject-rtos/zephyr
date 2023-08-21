@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Telink Semiconductor
+ * Copyright (c) 2022-2023 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
