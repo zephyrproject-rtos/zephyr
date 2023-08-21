@@ -2641,7 +2641,7 @@ function(zephyr_get variable)
   # This is needed to properly handle cases where we want to check value against
   # environment value or when appending with the MERGE operation.
   foreach(var ${GET_VAR_VAR})
-    set(current_${var} ${${var}})
+    get_current_scope(current_${var} ${var})
     set(${var})
 
     if(SYSBUILD)
@@ -2994,6 +2994,31 @@ function(target_byproducts)
                      BYPRODUCTS ${TB_BYPRODUCTS}
                      COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
   )
+endfunction()
+
+# Usage:
+#   get_current_scope(<out-variable> <variable>)
+#
+# This function reliably obtains the value of <variable> in the current scope
+# and returns it in <out-variable>. If <variable> is not defined in that scope,
+# then <out-variable> becomes unset.
+#
+function(get_current_scope out variable)
+  if(DEFINED CACHE{${variable}} AND "$CACHE{${variable}}" STREQUAL "${${variable}}")
+    # Temporarily unset the variable from cache and restore it later.
+    # This is the only way to reveal whether the current value comes
+    # from the current scope or the cache.
+    get_property(${variable}_cache CACHE ${variable} PROPERTY VALUE)
+    get_property(${variable}_type CACHE ${variable} PROPERTY TYPE)
+    get_property(${variable}_doc CACHE ${variable} PROPERTY HELPSTRING)
+    unset(${variable} CACHE)
+  endif()
+
+  set(${out} ${${variable}} PARENT_SCOPE)
+
+  if(DEFINED ${variable}_cache)
+    set(${variable} ${${variable}_cache} CACHE ${${variable}_type} "${${variable}_doc}")
+  endif()
 endfunction()
 
 ########################################################
