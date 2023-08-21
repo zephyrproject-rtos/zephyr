@@ -9,3 +9,4 @@ tests:
     sysbuild: true
     extra_args: TESTCASE_VARIABLE="sysbuild.main"
       zephyr_get_2nd_TESTCASE_VARIABLE="sysbuild.2nd"
+      zephyr_get_4th_TESTCASE_VARIABLE="sysbuild.main"

@@ -137,6 +137,9 @@ function(test_precedence_with_sysbuild)
     # GLOBAL sysbuild-defined value for this tertiary image;
     # it has no LOCAL value of its own.
     IMAGE zephyr_get_3rd "sysbuild.main"
+    # Provided -Dzephyr_get_4th_TESTCASE_VARIABLE=<...> serves as
+    # the LOCAL sysbuild-defined value for this quaternary image.
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 
   unset(TESTCASE_VARIABLE CACHE)
@@ -149,12 +152,14 @@ function(test_precedence_with_sysbuild)
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     # This image has no LOCAL sysbuild-defined value.
     IMAGE zephyr_get_3rd "environment"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
   assert_equal(CACHE{TESTCASE_VARIABLE}
     IMAGE no_sysbuild    "environment"
     IMAGE zephyr_get     ""
     IMAGE zephyr_get_2nd ""
     IMAGE zephyr_get_3rd "environment"
+    IMAGE zephyr_get_4th ""
   )
 
   unset(TESTCASE_VARIABLE CACHE)
@@ -168,6 +173,7 @@ function(test_precedence_with_sysbuild)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     IMAGE zephyr_get_3rd "sysbuild.main"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 endfunction()
 
@@ -220,6 +226,7 @@ function(test_merge)
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     # This image has no LOCAL sysbuild-defined value.
     IMAGE zephyr_get_3rd ""
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 
   unset(TESTCASE_VARIABLE)
@@ -232,6 +239,8 @@ function(test_merge)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main"
     IMAGE zephyr_get_3rd "sysbuild.main"
+    # This image's LOCAL and GLOBAL are identical; duplicates are removed.
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 
   # Add more variable scopes.
@@ -245,6 +254,7 @@ function(test_merge)
     IMAGE zephyr_get     "sysbuild.main;cmake cache;environment;local"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache;environment;local"
     IMAGE zephyr_get_3rd "sysbuild.main;cmake cache;environment;local"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache;environment;local"
   )
 
   unset(TESTCASE_VARIABLE)
@@ -254,6 +264,7 @@ function(test_merge)
     IMAGE zephyr_get     "sysbuild.main;cmake cache;environment"
     IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache;environment"
     IMAGE zephyr_get_3rd "cmake cache;environment"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache;environment"
   )
 
   unset(TESTCASE_VARIABLE)
@@ -266,6 +277,7 @@ function(test_merge)
     IMAGE zephyr_get     "sysbuild.main;environment"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;environment"
     IMAGE zephyr_get_3rd "sysbuild.main;environment"
+    IMAGE zephyr_get_4th "sysbuild.main;environment"
   )
   assert_equal(CACHE{TESTCASE_VARIABLE} "")
 endfunction()
@@ -363,6 +375,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     IMAGE zephyr_get_3rd "sysbuild.main"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
   zephyr_get(RESULT SYSBUILD LOCAL VAR TESTCASE_VARIABLE VARIABLE_1 VARIABLE_2 VARIABLE_3)
   assert_equal(RESULT
@@ -370,6 +383,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     IMAGE zephyr_get_3rd "cmake cache s"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 
   unset(RESULT)
@@ -379,6 +393,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get_3rd "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
   )
   unset(RESULT)
   zephyr_get(RESULT SYSBUILD LOCAL MERGE VAR TESTCASE_VARIABLE VARIABLE_1 VARIABLE_2 VARIABLE_3)
@@ -387,6 +402,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
     IMAGE zephyr_get_3rd "cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache s;cmake cache 2;environment s;environment 1;environment 3;local s;local 2;local 3"
   )
   unset(RESULT)
   zephyr_get(RESULT SYSBUILD GLOBAL MERGE VAR VARIABLE_3 VARIABLE_2 VARIABLE_1 TESTCASE_VARIABLE)
@@ -395,6 +411,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get_3rd "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
   )
   unset(RESULT)
   zephyr_get(RESULT SYSBUILD LOCAL MERGE VAR VARIABLE_3 VARIABLE_2 VARIABLE_1 TESTCASE_VARIABLE)
@@ -403,6 +420,7 @@ function(test_multivar)
     IMAGE zephyr_get     "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get_2nd "sysbuild.2nd;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
     IMAGE zephyr_get_3rd "cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
+    IMAGE zephyr_get_4th "sysbuild.main;cmake cache 2;cmake cache s;environment 3;environment 1;environment s;local 3;local 2;local s"
   )
 endfunction()
 
@@ -451,6 +469,7 @@ function(test_merge_reverse)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "sysbuild.main"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
 
   # Add more variable scopes.
@@ -464,6 +483,7 @@ function(test_merge_reverse)
     IMAGE zephyr_get     "local s;environment s;cmake cache s;sysbuild.main"
     IMAGE zephyr_get_2nd "local s;environment s;cmake cache s;sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "local s;environment s;cmake cache s;sysbuild.main"
+    IMAGE zephyr_get_4th "local s;environment s;cmake cache s;sysbuild.main"
   )
 
   unset(TESTCASE_VARIABLE)
@@ -473,6 +493,7 @@ function(test_merge_reverse)
     IMAGE zephyr_get     "environment s;cmake cache s;sysbuild.main"
     IMAGE zephyr_get_2nd "environment s;cmake cache s;sysbuild.2nd"
     IMAGE zephyr_get_3rd "environment s;cmake cache s"
+    IMAGE zephyr_get_4th "environment s;cmake cache s;sysbuild.main"
   )
 
   unset(RESULT)
@@ -485,6 +506,7 @@ function(test_merge_reverse)
     IMAGE zephyr_get     "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main"
     IMAGE zephyr_get_2nd "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main;sysbuild.2nd"
     IMAGE zephyr_get_3rd "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main"
+    IMAGE zephyr_get_4th "local s;local 1;local 2;environment s;environment 1;environment 2;cmake cache s;cmake cache 1;cmake cache 2;sysbuild.main"
   )
 endfunction()
 
@@ -543,6 +565,7 @@ function(test_snippets_scope)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     IMAGE zephyr_get_3rd "sysbuild.main"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
   zephyr_get(TESTCASE_VARIABLE SYSBUILD LOCAL)
   assert_equal(TESTCASE_VARIABLE
@@ -550,6 +573,7 @@ function(test_snippets_scope)
     IMAGE zephyr_get     "sysbuild.main"
     IMAGE zephyr_get_2nd "sysbuild.2nd"
     IMAGE zephyr_get_3rd "snippet s"
+    IMAGE zephyr_get_4th "sysbuild.main"
   )
   unset(TESTCASE_VARIABLE)
   zephyr_get(TESTCASE_VARIABLE MERGE SYSBUILD GLOBAL)
@@ -558,6 +582,7 @@ function(test_snippets_scope)
     IMAGE zephyr_get     "sysbuild.main;snippet s"
     IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.main;snippet s"
     IMAGE zephyr_get_3rd "sysbuild.main;snippet s"
+    IMAGE zephyr_get_4th "sysbuild.main;snippet s"
   )
 
   # If an environment value wins, it gets cached and promoted above snippets.

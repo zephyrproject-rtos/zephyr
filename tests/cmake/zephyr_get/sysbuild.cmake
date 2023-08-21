@@ -3,7 +3,7 @@
 # Add a few copies of the same image, so that we can configure
 # multiple instances of the same test suite with minor tweaks,
 # including different arguments given to them via testcase.yaml.
-foreach(suffix "2nd" "3rd")
+foreach(suffix "2nd" "3rd" "4th")
   set(image ${DEFAULT_IMAGE}_${suffix})
   if(NOT TARGET ${image})
     ExternalZephyrProject_Add(
