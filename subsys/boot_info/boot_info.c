@@ -21,6 +21,10 @@
 #define BBRAM_BACKEND_FCNTS(inst)                                               \
 	const struct device *const bi_dev_##inst =				\
 		DEVICE_DT_GET(BACKEND_PHANDLE(inst));				\
+	const struct device *bi_get_device_##inst(void)				\
+	{									\
+		return bi_dev_##inst;						\
+	}									\
 	size_t bi_get_size_##inst(void)                                         \
 	{                                                                       \
 		if (!device_is_ready(bi_dev_##inst)) {				\
@@ -60,6 +64,10 @@ DT_FOREACH_STATUS_OKAY(zephyr_boot_info_bbram, BBRAM_BACKEND_FCNTS)
 #define FLASH_BACKEND_FCNTS(inst)                                               \
 	const struct device *const bi_dev_##inst = DEVICE_DT_GET(		\
 		DT_MTD_FROM_FIXED_PARTITION(BACKEND_PHANDLE(inst)));            \
+	const struct device *bi_get_device_##inst(void)				\
+	{									\
+		return bi_dev_##inst;						\
+	}									\
 	size_t bi_get_size_##inst(void)                                         \
 	{                                                                       \
 		if (!device_is_ready(bi_dev_##inst)) {				\
@@ -120,6 +128,10 @@ DT_FOREACH_STATUS_OKAY(zephyr_boot_info_flash, FLASH_BACKEND_FCNTS)
 #define EEPROM_BACKEND_FCNTS(inst)                                              \
 	const struct device *const bi_dev_##inst =				\
 		DEVICE_DT_GET(BACKEND_PHANDLE(inst));				\
+	const struct device *bi_get_device_##inst(void)				\
+	{									\
+		return bi_dev_##inst;						\
+	}									\
 	size_t bi_get_size_##inst(void)                                         \
 	{                                                                       \
 		if (!device_is_ready(bi_dev_##inst)) {				\

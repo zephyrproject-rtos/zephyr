@@ -12,6 +12,16 @@
 #define BOOT_INFO DT_NODELABEL(boot_info)
 #define BOOT_INFO_ALIAS DT_ALIAS(bi)
 
+static void *boot_info_api_setup(void)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		k_object_access_grant(boot_info_get_device(BOOT_INFO),
+				      k_current_get());
+	}
+
+	return NULL;
+}
+
 ZTEST_USER(boot_info_api, test_get_size)
 {
 	size_t bi_size = boot_info_get_size(BOOT_INFO);
@@ -41,4 +51,4 @@ ZTEST_USER(boot_info_api, test_get_set)
 	zassert_equal(memcmp(rd, wr, sizeof(wr)), 0, "data mismatch");
 }
 
-ZTEST_SUITE(boot_info_api, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(boot_info_api, NULL, boot_info_api_setup, NULL, NULL, NULL);

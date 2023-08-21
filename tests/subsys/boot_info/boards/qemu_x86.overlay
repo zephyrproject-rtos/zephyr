@@ -3,12 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/delete-node/ &storage_partition;
+
+&flash_sim0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@1000 {
+			label = "storage";
+			reg = <0x00001000 0x00000400>;
+		};
+	};
+};
+
 / {
         boot_info: boot_info {
-                compatible = "zephyr,boot-info-eeprom";
-                backend = <&eeprom0>;
-                size = <256>;
-                offset = <256>;
+                compatible = "zephyr,boot-info-flash";
+                backend = <&storage_partition>;
         };
 
         aliases {

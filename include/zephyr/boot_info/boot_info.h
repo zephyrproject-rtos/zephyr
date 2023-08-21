@@ -72,6 +72,15 @@ extern "C" {
  */
 
 /**
+ * @brief boot_info_get_device: Get the device that is used as backend for
+ *	  the boot_info area.
+ *
+ * @param _node: nodelabel of the boot_info area (e.g. DT_NODELABEL(boot_info)).
+ * @retval size of the boot_info area.
+ */
+#define boot_info_get_device(_node) _CONCAT(bi_get_device_, _node)()
+
+/**
  * @brief boot_info_get_size: Get the size of the boot_info area.
  *
  * @param _node: nodelabel of the boot_info area (e.g. DT_NODELABEL(boot_info)).
@@ -102,6 +111,7 @@ extern "C" {
  */
 
 #define DEFINE_BOOT_INFO_PROTO(inst)                                            \
+	const struct device *bi_get_device_##inst(void);			\
 	size_t bi_get_size_##inst(void);                                        \
 	int bi_get_##inst(void *data);                                          \
 	int bi_set_##inst(const void *data);
