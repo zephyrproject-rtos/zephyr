@@ -94,7 +94,7 @@ endif # SOC_RISCV_TELINK_B91
 if SOC_RISCV_TELINK_B92
 config TELINK_B9X_2_WIRE_SPI_ENABLE
 	bool
-	default y
+	default n
 endif # SOC_RISCV_TELINK_B92
 
 endif # SOC_SERIES_RISCV_TELINK_B9X
