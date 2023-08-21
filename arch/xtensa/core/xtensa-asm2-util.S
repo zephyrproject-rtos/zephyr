@@ -421,15 +421,12 @@ _handle_tlb_miss_kernel:
 _DoubleExceptionVector:
 #ifdef CONFIG_XTENSA_MMU
 	wsr a0, ZSR_ALLOCA
-	wsr a1, ZSR_EXTRA0
 	rsync
 
 	rsr.exccause a0
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_dblexc
 
-_not_handle_tlb_miss_dblexc:
-	rsr a1, ZSR_EXTRA0
 	rsr a0, ZSR_ALLOCA
 #endif
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
@@ -452,54 +449,19 @@ _not_handle_tlb_miss_dblexc:
 
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_dblexc:
-	/* The tiny space reserved for each vector is not enough
-	 * to accommodate code below, and beqz cannot jump too far.
-	 * So we have this here as a trampoline.
+	/* Handle all data TLB misses here.
+	 * These data TLB misses are mostly caused by preloading
+	 * page table entries in the level 1 exception handler.
+	 * Failure to load the PTE will result in another exception
+	 * with different failure (exccause), which can be handled
+	 * when the CPU re-enters the double exception handler.
 	 */
-	j _handle_tlb_miss_dblexc_helper
-#endif
-.popsection
-
-#ifdef CONFIG_XTENSA_MMU
-.pushsection .iram.text, "ax"
-_handle_tlb_miss_dblexc_helper:
-	/* It is possible that VECBASE is not mapped in TLB
-	 * so TLB misses would be raised. We will need to
-	 * map it and return so it can continue handling
-	 * the original exception.
-	 */
-
-	/* Find the address of mapped region of this PTE page.
-	 * Since each PTE page maps 1024 of 4K pages, we simply
-	 * need to multiply by 1024 (shift left by 10).
-	 */
-	rsr.ptevaddr a0
-	slli a0, a0, 10
-
-	/* Get the beginning address of the 4K page mapped for
-	 * VECBASE. Shift 12 bits right and left as a way to zero
-	 * the lower 11 bits.
-	 */
-	rsr.vecbase a1
-	srli a1, a1, 12
-	slli a1, a1, 12
-
-	/* If it is VECBASE causing TLB miss, we load the PTE page
-	 * and continue.
-	 */
-	beq a0, a1, _dblexc_load_pte
-
-	/* Ignore TLB miss is not on VECBASE page. */
-	j _not_handle_tlb_miss_dblexc
-
-_dblexc_load_pte:
 	rsr.ptevaddr a0
 	l32i a0, a0, 0
 
-	rsr a1, ZSR_EXTRA0
 	rsr a0, ZSR_ALLOCA
 	rfde
-.popsection
 #endif
+.popsection
 
 #endif
