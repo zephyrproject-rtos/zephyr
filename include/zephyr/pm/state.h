@@ -193,6 +193,20 @@ struct pm_state_info {
 		    (PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),), ())
 
 /**
+ * @brief Helper macro to initialize an entry of a struct pm_state_info array
+ * when using UTIL_LISTIFY in PM_STATE_INFO_LIST_FROM_DT_REINIT.
+ *
+ * @note Only enabled states are initialized.
+ *
+ * @param i UTIL_LISTIFY entry index.
+ * @param node_id A node identifier with compatible zephyr,power-state
+ */
+#define Z_PM_STATE_INFO_FROM_DT_REINIT(i, node_id)						  \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id, reinit_power_states, i), okay), \
+		    (PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, reinit_power_states, i)),), \
+		    ())
+
+/**
  * @brief Helper macro to initialize an entry of a struct pm_state array when
  * using UTIL_LISTIFY in PM_STATE_LIST_FROM_DT_CPU.
  *
@@ -301,6 +315,60 @@ struct pm_state_info {
 	{								       \
 		LISTIFY(DT_PROP_LEN_OR(node_id, cpu_power_states, 0),	       \
 			Z_PM_STATE_INFO_FROM_DT_CPU, (), node_id)	       \
+	}
+
+/**
+ * @brief Initialize an array of struct pm_state_info with information from all
+ * the states present and enabled in the given device node identifier.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+	soc {
+ *		...
+ *		cpu0: cpu@0 {
+ *			device_type = "cpu";
+ *			...
+ *			cpu-power-states = <&state0 &state1>;
+ *		};
+
+ *		i2c1: i2c@50000000 {
+ *			...
+ *			reinit-power-states = <&state1>;
+ *		};
+ *
+ *		power-states {
+ *			state0: state0 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-idle";
+ *				min-residency-us = <10000>;
+ *				exit-latency-us = <100>;
+ *			};
+ *
+ *			state1: state1 {
+ *				compatible = "zephyr,power-state";
+ *				power-state-name = "suspend-to-ram";
+ *				min-residency-us = <50000>;
+ *				exit-latency-us = <500>;
+ *			};
+ *		};
+ *	};
+
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * const struct pm_state_info states[] =
+ *	PM_STATE_INFO_LIST_FROM_DT_REINIT(DT_NODELABEL(i2c1));
+ * @endcode
+ *
+ * @param node_id A device node identifier.
+ */
+#define PM_STATE_INFO_LIST_FROM_DT_REINIT(node_id)				\
+	{									\
+		LISTIFY(DT_PROP_LEN_OR(node_id, reinit_power_states, 0),	\
+			Z_PM_STATE_INFO_FROM_DT_REINIT, (), node_id)		\
 	}
 
 /**
