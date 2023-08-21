@@ -1,0 +1,5 @@
+description: Telink B9x Flash Controller
+
+compatible: "telink,b9x-flash-controller"
+
+include: flash-controller.yaml

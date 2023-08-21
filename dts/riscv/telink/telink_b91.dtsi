@@ -58,7 +58,7 @@
 		};
 
 		flash_mspi: flash-controller@80140100 {
-			compatible = "telink,b91-flash-controller";
+			compatible = "telink,b9x-flash-controller";
 			reg = <0x80140100 0x40>;
 
 			#address-cells = <1>;

@@ -57,9 +57,9 @@
 			interrupt-parent = <&plic0>;
 		};
 
-		flash_mspi: flash-controller@80140100 {
-			compatible = "telink,b92-flash-controller";
-			reg = <0x80140100 0x40>;
+		flash_mspi: flash-controller@A3FFFF00 {
+			compatible = "telink,b9x-flash-controller";
+			reg = <0xA3FFFF00 0x100>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;

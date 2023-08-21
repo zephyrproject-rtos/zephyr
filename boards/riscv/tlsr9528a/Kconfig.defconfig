@@ -6,7 +6,7 @@ if BOARD_TLSR9528A
 config BOARD
 	default "tlsr9528a"
 
-config SOC_FLASH_TELINK_B91
+config SOC_FLASH_TELINK_B9X
 	default y if FLASH
 
 config USB_TELINK_B91

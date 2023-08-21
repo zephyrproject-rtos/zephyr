@@ -1,0 +1,11 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_TELINK_B9X
+	bool "Telink Semiconductor B9x flash driver"
+	default y
+	depends on DT_HAS_TELINK_B9X_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables Telink B9x flash driver.
