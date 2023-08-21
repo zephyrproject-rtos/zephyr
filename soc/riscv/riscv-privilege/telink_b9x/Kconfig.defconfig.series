@@ -29,7 +29,7 @@ config RISCV_GP
 
 config NUM_IRQS
 	int
-	default 76
+	default 59
 
 config 2ND_LVL_ISR_TBL_OFFSET
 	int

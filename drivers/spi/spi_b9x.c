@@ -365,7 +365,7 @@ static int spi_b9x_config(const struct device *dev,
 	/* init SPI master */
 	spi_master_init(b9x_config->peripheral_id,
 			clk_src * 1000000 / (2 * config->frequency) - 1, mode);
-	spi_master_config(b9x_config->peripheral_id, SPI_NOMAL);
+	spi_master_config(b9x_config->peripheral_id, SPI_NORMAL);
 
 	/* set lines configuration */
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {

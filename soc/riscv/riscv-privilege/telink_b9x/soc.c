@@ -37,11 +37,11 @@
 	#endif
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
-		#define POWER_MODE      LDO_1P2_LDO_2P0
+		#define POWER_MODE      LDO_1P4_LDO_2P0
 	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 1
-		#define POWER_MODE      DCDC_1P2_LDO_2P0
+		#define POWER_MODE      DCDC_1P4_LDO_2P0
 	#elif DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 2
-		#define POWER_MODE      DCDC_1P2_DCDC_2P0
+		#define POWER_MODE      DCDC_1P4_DCDC_2P0
 	#else
 		#error "Wrong value for power-mode parameter"
 	#endif
@@ -81,7 +81,11 @@ int soc_b9x_init(void)
 #endif /* CONFIG_PM && CONFIG_BT_B9X */
 
 	/* system init */
+#if CONFIG_SOC_RISCV_TELINK_B91
 	sys_init(POWER_MODE, VBAT_TYPE);
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	sys_init(POWER_MODE, VBAT_TYPE, POWER_MODE);
+#endif
 
 #if CONFIG_PM
 	gpio_shutdown(GPIO_ALL);
