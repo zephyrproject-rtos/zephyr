@@ -1,9 +1,9 @@
-# Copyright (c) 2021, Telink Semiconductor
+# Copyright (c) 2023, Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-description: Telink B91 GPIO node
+description: Telink B9x GPIO node
 
-compatible: "telink,b91-gpio"
+compatible: "telink,b9x-gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 

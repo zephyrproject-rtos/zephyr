@@ -69,7 +69,7 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  pending register, etc. The driver must implement it to work.
 
 
-source "drivers/gpio/Kconfig.b91"
+source "drivers/gpio/Kconfig.b9x"
 
 source "drivers/gpio/Kconfig.dw"
 

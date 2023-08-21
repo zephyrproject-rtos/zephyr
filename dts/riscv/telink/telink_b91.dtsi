@@ -79,7 +79,7 @@
 		};
 
 		gpioa: gpio@80140300 {
-			compatible = "telink,b91-gpio";
+			compatible = "telink,b9x-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
@@ -89,7 +89,7 @@
 		};
 
 		gpiob: gpio@80140308 {
-			compatible = "telink,b91-gpio";
+			compatible = "telink,b9x-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
@@ -99,7 +99,7 @@
 		};
 
 		gpioc: gpio@80140310 {
-			compatible = "telink,b91-gpio";
+			compatible = "telink,b9x-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
@@ -109,7 +109,7 @@
 		};
 
 		gpiod: gpio@80140318 {
-			compatible = "telink,b91-gpio";
+			compatible = "telink,b9x-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
@@ -119,7 +119,7 @@
 		};
 
 		gpioe: gpio@80140320 {
-			compatible = "telink,b91-gpio";
+			compatible = "telink,b9x-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
