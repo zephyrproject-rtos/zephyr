@@ -616,6 +616,24 @@ filter: <expression>
 
     Would match it.
 
+required_snippets: <list of needed snippets>
+    :ref:`Snippets <snippets>` are supported in twister for test cases that
+    require them. As with normal applications, twister supports using the base
+    zephyr snippet directory and test application directory for finding
+    snippets. Listed snippets will filter supported tests for boards (snippets
+    must be compatible with a board for the test to run on them, they are not
+    optional).
+
+    The following is an example yaml file with 2 required snippets.
+
+    ::
+
+        tests:
+          snippet.example:
+            required_snippets:
+              - cdc-acm-console
+              - user-snippet-example
+
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
 running with -v or examining the discard report
