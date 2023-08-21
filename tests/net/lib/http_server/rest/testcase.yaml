@@ -1,4 +1,5 @@
 common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
   harness: net
   min_ram: 16
   tags:
