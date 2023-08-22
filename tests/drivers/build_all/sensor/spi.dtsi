@@ -286,9 +286,17 @@ test_spi_bmi08x_gyro: bmi08x@24 {
 	gyro-fs = <1000>;
 };
 
-test_spi_lis2duxs12: lis2duxs12@25 {
-	compatible = "st,lis2duxs12";
+test_spi_lis2dux12: lis2dux12@25 {
+	compatible = "st,lis2dux12";
 	reg = <0x25>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_spi_lis2duxs12: lis2duxs12@26 {
+	compatible = "st,lis2duxs12";
+	reg = <0x26>;
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 	status = "okay";
