@@ -138,7 +138,7 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
 /**
  * @brief Atomically test and clear a bit.
  *
- * Atomically clear bit number @a bit of @a target and return its old value.
+ * Atomically clear bit number @a bit of @a target.
  * The target may be a single atomic variable or an array of them.
  *
  * @note As for all atomic APIs, includes a
@@ -162,7 +162,7 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
 /**
  * @brief Atomically set a bit.
  *
- * Atomically set bit number @a bit of @a target and return its old value.
+ * Atomically set bit number @a bit of @a target.
  * The target may be a single atomic variable or an array of them.
  *
  * @note As for all atomic APIs, includes a
