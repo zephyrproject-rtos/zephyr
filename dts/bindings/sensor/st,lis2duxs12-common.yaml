@@ -1,0 +1,77 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+    enum:
+      - 0 # 2g  (0.061 mg/LSB)
+      - 1 # 4g  (0.122 mg/LSB)
+      - 2 # 8g  (0.244 mg/LSB)
+      - 3 # 16g (0.488 mg/LSB)
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dsv16x_data_rate_t enumerative in hal/st
+      module. Please note that this values will also enable/disable High performance mode.
+      Default is power-up configuration.
+    enum:
+      - 0x00  # Power-Down
+      - 0x01  # 1Hz6 (ultra low power)
+      - 0x02  # 3Hz (ultra low power)
+      - 0x03  # 25Hz (ultra low power)
+      - 0x04  # 6Hz (low power)
+      - 0x05  # 12Hz5 (low power)
+      - 0x06  # 25Hz (low power)
+      - 0x07  # 50Hz (low power)
+      - 0x08  # 100Hz (low power)
+      - 0x09  # 200Hz (low power)
+      - 0x0a  # 400Hz (low power)
+      - 0x0b  # 800Hz (low power)
+      - 0x14  # 6Hz (high performance)
+      - 0x15  # 12Hz5 (high performance)
+      - 0x16  # 25Hz (high performance)
+      - 0x17  # 50Hz (high performance)
+      - 0x18  # 100Hz (high performance)
+      - 0x19  # 200Hz (high performance)
+      - 0x1a  # 400Hz (high performance)
+      - 0x1b  # 800Hz (high performance)
+      - 0x2e  # Single-shot high latency by INT2
+      - 0x2f  # Single-shot high latency by IF
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

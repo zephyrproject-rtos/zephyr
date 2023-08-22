@@ -744,3 +744,10 @@ test_i2c_ist8310@6f {
 	reg = <0x6f>;
 	status = "okay";
 };
+
+test_i2c_lis2duxs12: lis2duxs12@70 {
+	compatible = "st,lis2duxs12";
+	reg = <0x70>;
+	irq-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};

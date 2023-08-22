@@ -85,6 +85,9 @@ config USE_STDC_LIS2DH12
 config USE_STDC_LIS2DS12
 	bool
 
+config USE_STDC_LIS2DUXS12
+	bool
+
 config USE_STDC_LIS2DTW12
 	bool
 

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LIS2DUXS12 3-axis accelerometer sensor
+    accessed through SPI bus
+
+compatible: "st,lis2duxs12"
+
+include: ["spi-device.yaml", "st,lis2duxs12-common.yaml"]
