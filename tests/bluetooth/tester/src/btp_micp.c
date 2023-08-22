@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -30,6 +31,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct bt_micp_mic_ctlr *mic_ctlr;
+static struct bt_micp_mic_dev_register_param mic_dev_register_param;
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
@@ -47,6 +49,7 @@ extern struct btp_aics_instance aics_client_instance;
 extern struct bt_aics_cb aics_client_cb;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
+/* Microphone Control Profile */
 static void btp_send_micp_found_ev(struct bt_conn *conn, const struct chrc_handles *micp_handles)
 {
 	struct btp_micp_discovered_ev ev;
@@ -237,7 +240,7 @@ static const struct btp_handler micp_handlers[] = {
 		.opcode = BTP_MICP_CTLR_MUTE,
 		.expect_len = sizeof(struct btp_micp_mute_cmd),
 		.func = micp_mute,
-	}
+	},
 };
 
 uint8_t tester_init_micp(void)
@@ -260,5 +263,216 @@ uint8_t tester_init_micp(void)
 uint8_t tester_unregister_micp(void)
 {
 	(void)bt_micp_mic_ctlr_cb_register(NULL);
+	return BTP_STATUS_SUCCESS;
+}
+
+/* Microphone Control Service */
+static uint8_t mics_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	struct btp_mics_read_supported_commands_rp *rp = rsp;
+
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_MICS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE_DISABLE);
+	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE_READ);
+	tester_set_bit(rp->data, BTP_MICS_DEV_MUTE);
+	tester_set_bit(rp->data, BTP_MICS_DEV_UNMUTE);
+
+	*rsp_len = sizeof(*rp) + 1;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MICP Mute disable");
+
+	err = bt_micp_mic_dev_mute_disable();
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mics_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MICS Mute state read");
+
+	err = bt_micp_mic_dev_mute_get();
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MICS Mute");
+
+	err = bt_micp_mic_dev_mute();
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MICS Mute");
+
+	err = bt_micp_mic_dev_unmute();
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static void btp_send_mics_mute_state_ev(uint8_t mute)
+{
+	struct btp_mics_mute_state_ev ev;
+
+	ev.mute = mute;
+
+	tester_event(BTP_SERVICE_ID_MICS, BTP_MICS_MUTE_STATE_EV, &ev, sizeof(ev));
+}
+
+static void mic_dev_mute_cb(uint8_t mute)
+{
+	LOG_DBG("Microphone Device Mute cb");
+
+	btp_send_mics_mute_state_ev(mute);
+}
+
+static struct bt_micp_mic_dev_cb mic_dev_cb = {
+	.mute = mic_dev_mute_cb,
+};
+
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
+{
+	LOG_DBG("AICS state callback (%d)", err);
+}
+
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
+{
+	LOG_DBG("AICS gain setting callback (%d)", err);
+}
+
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
+{
+	LOG_DBG("AICS input type callback (%d)", err);
+}
+
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
+{
+	LOG_DBG("AICS status callback (%d)", err);
+}
+
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
+{
+	LOG_DBG("AICS description callback (%d)", err);
+}
+
+struct bt_aics_cb aics_mic_dev_cb = {
+	.state = aics_state_cb,
+	.gain_setting = aics_gain_setting_cb,
+	.type = aics_input_type_cb,
+	.status = aics_status_cb,
+	.description = aics_description_cb,
+};
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
+
+static const struct btp_handler mics_handlers[] = {
+	{
+		.opcode = BTP_MICS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = mics_supported_commands,
+	},
+	{
+		.opcode = BTP_MICS_DEV_MUTE_DISABLE,
+		.expect_len = 0,
+		.func = mics_mute_disable,
+	},
+	{
+		.opcode = BTP_MICS_DEV_MUTE_READ,
+		.expect_len = 0,
+		.func = mics_mute_read,
+	},
+	{
+		.opcode = BTP_MICS_DEV_MUTE,
+		.expect_len = 0,
+		.func = mics_mute,
+	},
+	{
+		.opcode = BTP_MICS_DEV_UNMUTE,
+		.expect_len = 0,
+		.func = mics_unmute,
+	},
+};
+
+uint8_t tester_init_mics(void)
+{
+	int err;
+
+	memset(&mic_dev_register_param, 0, sizeof(mic_dev_register_param));
+
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+	char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
+
+	for (size_t i = 0; i < ARRAY_SIZE(mic_dev_register_param.aics_param); i++) {
+		mic_dev_register_param.aics_param[i].desc_writable = true;
+		snprintf(input_desc[i], sizeof(input_desc[i]),
+			 "Input %zu", i + 1);
+		mic_dev_register_param.aics_param[i].description = input_desc[i];
+		mic_dev_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+		mic_dev_register_param.aics_param[i].status = 1;
+		mic_dev_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+		mic_dev_register_param.aics_param[i].units = 1;
+		mic_dev_register_param.aics_param[i].min_gain = 0;
+		mic_dev_register_param.aics_param[i].max_gain = 100;
+		mic_dev_register_param.aics_param[i].cb = &aics_mic_dev_cb;
+	}
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
+
+	mic_dev_register_param.cb = &mic_dev_cb;
+
+	err = bt_micp_mic_dev_register(&mic_dev_register_param);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+	err = bt_micp_mic_dev_included_get(&micp_included);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
+
+	tester_register_command_handlers(BTP_SERVICE_ID_MICS, mics_handlers,
+					 ARRAY_SIZE(mics_handlers));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_unregister_mics(void)
+{
 	return BTP_STATUS_SUCCESS;
 }
