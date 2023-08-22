@@ -2,7 +2,16 @@ tests:
   arch.interrupt:
     # nios2 excluded, see #22956
     arch_exclude: nios2
+    platform_exclude: qemu_cortex_m0
     tags:
       - kernel
       - interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.interrupt.qemu_cortex_m0:
+    platform_allow: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=y
