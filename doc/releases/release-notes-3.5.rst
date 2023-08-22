@@ -195,6 +195,8 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Added :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_RX_TIMEOUT` to set rx timeout for native posix.
+
 * Flash
 
   * Introduce npcx flash driver that supports two or more spi nor flashes via a
