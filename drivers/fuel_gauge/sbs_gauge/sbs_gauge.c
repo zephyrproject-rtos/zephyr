@@ -179,7 +179,7 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 
 static int sbs_gauge_do_battery_cutoff(const struct device *dev)
 {
-	int rc;
+	int rc = -ENOTSUP;
 	const struct sbs_gauge_config *cfg = dev->config;
 
 	if (cfg->cutoff_cfg == NULL) {
