@@ -459,6 +459,10 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 };
 
+&mbox {
+	status = "okay";
+};
+
 /* Disable this node if not using USB and need another MPU region */
 &sram1 {
 	status = "okay";
