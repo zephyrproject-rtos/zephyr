@@ -283,7 +283,7 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 			      NULL,							\
 			      &gpio_smartbond_p##id##_data,				\
 			      &gpio_smartbond_p##id##_config,				\
-			      POST_KERNEL,						\
+			      PRE_KERNEL_1,						\
 			      CONFIG_GPIO_INIT_PRIORITY,				\
 			      &gpio_smartbond_drv_api_funcs);
 
