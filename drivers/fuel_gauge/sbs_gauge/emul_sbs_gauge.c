@@ -342,9 +342,6 @@ static void emul_sbs_gauge_reset_rule_after(const struct ztest_unit_test *test, 
 	DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL_RESET_RULE_BEFORE)
 }
 ZTEST_RULE(emul_sbs_gauge_reset, NULL, emul_sbs_gauge_reset_rule_after);
-#else /* !CONFIG_ZTEST */
-/* Stub ZTEST_DMEM in case emulator is not used in a testing environment. */
-#define ZTEST_DMEM
 #endif /* CONFIG_ZTEST */
 
 /**
