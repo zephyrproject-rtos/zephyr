@@ -51,7 +51,7 @@ config MODEM_GSM_WORKQ_STACK_SIZE
 
 config MODEM_GSM_INIT_PRIORITY
 	int "Init priority for the GSM modem driver"
-	default 42
+	default 60
 	range 0 99
 	help
 	  The GSM modem is initialized in POST_KERNEL using priority in
