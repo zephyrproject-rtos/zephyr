@@ -1679,6 +1679,9 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 		if (bond_flag) {
 			bt_keys_store(conn->le.keys);
+		} else {
+			LOG_ERR("Setting nobond");
+			atomic_set_bit(conn->flags, BT_CONN_SMP_NOBOND);
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,

@@ -50,6 +50,8 @@ enum {
 	BT_CONN_CTE_REQ_ENABLED,              /* CTE request procedure is enabled */
 	BT_CONN_CTE_RSP_ENABLED,              /* CTE response procedure is enabled */
 
+	BT_CONN_SMP_NOBOND,                   /* This connection is paired, but does not have a bond. */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
@@ -425,3 +427,10 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);
 void bt_conn_process_tx(struct bt_conn *conn);
+struct bt_conn *bt_conn_lookup_addr_le_bondcrypted(uint8_t id, const bt_addr_le_t *peer);
+
+inline static bool bt_conn_is_bondcrypted(const struct bt_conn *conn)
+{
+	return bt_conn_get_security(conn) > BT_SECURITY_L1 &&
+	       !atomic_test_bit(conn->flags, BT_CONN_SMP_NOBOND);
+}

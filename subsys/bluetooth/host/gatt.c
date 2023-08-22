@@ -1315,6 +1315,10 @@ static void sc_process(struct k_work *work)
 
 static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 {
+	if (cfg->conn) {
+		bt_conn_unref(cfg->conn);
+		cfg->conn = NULL;
+	}
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
 	cfg->id = 0U;
 	cfg->value = 0U;
@@ -2055,13 +2059,16 @@ static bool bt_gatt_ccc_cfg_is_matching_conn(const struct bt_conn *conn,
 {
 	bool conn_encrypted = bt_conn_get_security(conn) >= BT_SECURITY_L2;
 
+	if (!bt_conn_is_bondcrypted(conn)) {
+		return conn == cfg->conn;
+	}
+
 	if (cfg->link_encrypted && !conn_encrypted) {
 		return false;
 	}
 
 	return bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer);
 }
-
 static struct bt_conn *bt_gatt_ccc_cfg_conn_lookup(const struct bt_gatt_ccc_cfg *cfg)
 {
 	struct bt_conn *conn;
@@ -2177,6 +2184,9 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
 
+		if (!bt_conn_is_bondcrypted(conn)) {
+			cfg->conn = bt_conn_ref(conn);
+		}
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 		cfg->id = conn->id;
 		cfg->link_encrypted = (bt_conn_get_security(conn) >= BT_SECURITY_L2);
@@ -2717,7 +2727,12 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			continue;
 		}
 
-		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
+		if (cfg->conn) {
+			conn = bt_conn_ref(cfg->conn);
+		} else {
+			conn = bt_conn_lookup_addr_le_bondcrypted(cfg->id, &cfg->peer);
+		}
+
 		if (!conn) {
 			continue;
 		}
@@ -3255,12 +3270,31 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	ccc = attr->user_data;
 
+	/* GC: If connection just re-encrypted, we delete the CCC that
+	 * applied to the non-encrypted connection. Since it's not
+	 * possible to exit encryption, it will never be used again.
+	 */
+	if (bt_conn_is_bondcrypted(conn)) {
+		for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+			struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+			/* `cfg->conn` is never set for a bonded `cfg`. */
+			if (conn == cfg->conn) {
+				clear_ccc_cfg(cfg);
+			}
+		}
+	}
+
 	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
 		/* Ignore configuration for different peer or not active */
 		if (!cfg->value || !bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
 			continue;
+		}
+
+		if (!cfg->conn && !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			cfg->conn = bt_conn_ref(conn);
 		}
 
 		/* Check if attribute requires encryption/authentication */
@@ -3357,6 +3391,11 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 				/* Update address in case it has changed */
 				bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 			}
+		}
+
+		if (cfg->conn == conn) {
+			bt_conn_unref(cfg->conn);
+			cfg->conn = NULL;
 		}
 	}
 
@@ -3549,6 +3588,7 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 
 	sub = gatt_sub_find(conn);
 	if (!sub) {
+		LOG_ERR("No subscription found conn %u", bt_conn_index(conn));
 		return;
 	}
 
@@ -5490,6 +5530,29 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 
 #define CCC_STORE_MAX 48
 
+static bool bt_gatt_ccc_cfg_is_bonded(struct bt_gatt_ccc_cfg *cfg)
+{
+	return cfg->conn == NULL;
+}
+
+static struct bt_gatt_ccc_cfg *ccc_find_bonded_cfg(struct _bt_gatt_ccc *ccc,
+						   const bt_addr_le_t *addr, uint8_t id)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (!bt_gatt_ccc_cfg_is_bonded(cfg)) {
+			continue;
+		}
+
+		if (id == cfg->id && bt_addr_le_eq(&cfg->peer, addr)) {
+			return cfg;
+		}
+	}
+
+	return NULL;
+}
+
 static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 					    const bt_addr_le_t *addr,
 					    uint8_t id)
@@ -5569,7 +5632,7 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 	LOG_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
 		load->entry->value);
 
-	cfg = ccc_find_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
+	cfg = ccc_find_bonded_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
 	if (!cfg) {
 		cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY, 0);
 		if (!cfg) {
