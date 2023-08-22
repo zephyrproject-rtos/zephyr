@@ -56,6 +56,8 @@ struct gpio_smartbond_wkup_regs {
 struct gpio_smartbond_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
+	/* Pins that are configured for both edges (handled by software) */
+	gpio_port_pins_t both_edges_pins;
 	sys_slist_t callbacks;
 };
 
@@ -184,12 +186,30 @@ static int gpio_smartbond_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
+static void gpio_smartbond_arm_next_edge_interrupt(const struct device *dev,
+						   uint32_t pin_mask)
+{
+	const struct gpio_smartbond_config *config = dev->config;
+	uint32_t pin_value;
+
+	do {
+		pin_value = config->data_regs->data & pin_mask;
+		if (pin_value) {
+			config->wkup_regs->pol |= pin_mask;
+		} else {
+			config->wkup_regs->pol &= ~pin_mask;
+		}
+	} while (pin_value != (config->data_regs->data & pin_mask));
+}
+
 static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 						gpio_pin_t pin,
 						enum gpio_int_mode mode,
 						enum gpio_int_trig trig)
 {
 	const struct gpio_smartbond_config *config = dev->config;
+	struct gpio_smartbond_data *data = dev->data;
+	uint32_t pin_mask = BIT(pin);
 
 	/* Not supported by hardware */
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -202,16 +222,15 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {
 			/* Not supported by hardware */
-			return -ENOTSUP;
-		}
-
-		if (trig == GPIO_INT_TRIG_HIGH) {
-			config->wkup_regs->pol &= ~BIT(pin);
+			data->both_edges_pins |= pin_mask;
+			gpio_smartbond_arm_next_edge_interrupt(dev, pin_mask);
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			config->wkup_regs->pol &= ~pin_mask;
 		} else {
-			config->wkup_regs->pol |= BIT(pin);
+			config->wkup_regs->pol |= pin_mask;
 		}
 
-		config->wkup_regs->sel |= BIT(pin);
+		config->wkup_regs->sel |= pin_mask;
 	}
 
 	return 0;
@@ -230,10 +249,21 @@ static void gpio_smartbond_isr(const struct device *dev)
 	const struct gpio_smartbond_config *config = dev->config;
 	struct gpio_smartbond_data *data = dev->data;
 	uint32_t stat;
+	uint32_t two_edge_triggered;
 
 	WAKEUP->WKUP_RESET_IRQ_REG = WAKEUP_WKUP_RESET_IRQ_REG_WKUP_IRQ_RST_Msk;
 
 	stat = config->wkup_regs->status;
+
+	two_edge_triggered = stat & data->both_edges_pins;
+	while (two_edge_triggered) {
+		int pos = find_lsb_set(two_edge_triggered) - 1;
+
+		two_edge_triggered &= ~BIT(pos);
+		/* Re-arm for other edge */
+		gpio_smartbond_arm_next_edge_interrupt(dev, BIT(pos));
+	}
+
 	config->wkup_regs->clear = stat;
 
 	gpio_fire_callbacks(&data->callbacks, dev, stat);
