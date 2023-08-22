@@ -1315,6 +1315,10 @@ static void sc_process(struct k_work *work)
 
 static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 {
+	if (cfg->conn) {
+		bt_conn_unref(cfg->conn);
+		cfg->conn = NULL;
+	}
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
 	cfg->id = 0U;
 	cfg->value = 0U;
@@ -2055,6 +2059,10 @@ static bool bt_gatt_ccc_cfg_is_matching_conn(const struct bt_conn *conn,
 {
 	bool conn_encrypted = bt_conn_get_security(conn) >= BT_SECURITY_L2;
 
+	if (!bt_conn_is_bondcrypted(conn)) {
+		return conn == cfg->conn;
+	}
+
 	if (cfg->link_encrypted && !conn_encrypted) {
 		return false;
 	}
@@ -2064,15 +2072,59 @@ static bool bt_gatt_ccc_cfg_is_matching_conn(const struct bt_conn *conn,
 
 static struct bt_conn *bt_gatt_ccc_cfg_conn_lookup(const struct bt_gatt_ccc_cfg *cfg)
 {
-	struct bt_conn *conn;
+	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		struct bt_conn *conn = bt_conn_lookup_index(i);
 
-	conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
-	if (conn) {
+		if (!conn) {
+			continue;
+		}
+
 		if (bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
 			return conn;
 		}
 
 		bt_conn_unref(conn);
+	}
+
+	return NULL;
+}
+
+/** True if this cfg is for a bond. False if this cfg is a transient cfg for a
+ *  nonbonded connection.
+ */
+static bool bt_gatts_ccc_cfg_is_bonded(const struct bt_gatt_ccc_cfg *cfg)
+{
+	return cfg->conn == NULL;
+}
+
+/** Find the cfg for a bond identified by (id, peer).
+ */
+static struct bt_gatt_ccc_cfg *find_ccc_bond_cfg(uint8_t id, const bt_addr_le_t *peer,
+						 struct _bt_gatt_ccc *ccc)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (bt_gatts_ccc_cfg_is_bonded(cfg) && cfg->id == id &&
+		    bt_addr_le_eq(peer, &cfg->peer)) {
+			return cfg;
+		}
+	}
+
+	return NULL;
+}
+
+/** Find the transient cfg for a connection.
+ */
+static struct bt_gatt_ccc_cfg *find_ccc_transient_cfg(const struct bt_conn *conn,
+						   struct _bt_gatt_ccc *ccc)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (cfg->conn == conn) {
+			return cfg;
+		}
 	}
 
 	return NULL;
@@ -2177,6 +2229,9 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
 
+		if (!bt_conn_is_bondcrypted(conn)) {
+			cfg->conn = bt_conn_ref(conn);
+		}
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 		cfg->id = conn->id;
 		cfg->link_encrypted = (bt_conn_get_security(conn) >= BT_SECURITY_L2);
@@ -2717,7 +2772,12 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			continue;
 		}
 
-		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
+		if (cfg->conn) {
+			conn = bt_conn_ref(cfg->conn);
+		} else {
+			conn = bt_conn_lookup_addr_le_bondcrypted(cfg->id, &cfg->peer);
+		}
+
 		if (!conn) {
 			continue;
 		}
@@ -3235,11 +3295,10 @@ static void sc_restore(struct bt_conn *conn)
 }
 
 static uint8_t bt_gatts_ccc_changed_conn(const struct bt_gatt_attr *attr, uint16_t handle,
-					 void *user_data)
+					 void *_conn)
 {
-	struct bt_conn *conn = user_data;
+	struct bt_conn *conn = _conn;
 	struct _bt_gatt_ccc *ccc;
-	size_t i;
 
 	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
 	if (attr->write != bt_gatt_attr_write_ccc) {
@@ -3248,22 +3307,8 @@ static uint8_t bt_gatts_ccc_changed_conn(const struct bt_gatt_attr *attr, uint16
 
 	ccc = attr->user_data;
 
-	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
-		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
-
-		/* Ignore configuration for different peer or not active */
-		if (!cfg->value || !bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
-			continue;
-		}
-
+	if (find_ccc_cfg(conn, ccc)) {
 		gatt_ccc_changed(attr, ccc);
-
-		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED) &&
-		    ccc == &sc_ccc) {
-			sc_restore(conn);
-		}
-
-		return BT_GATT_ITER_CONTINUE;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -3324,6 +3369,11 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 				/* Update address in case it has changed */
 				bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 			}
+		}
+
+		if (cfg->conn == conn) {
+			bt_conn_unref(cfg->conn);
+			cfg->conn = NULL;
 		}
 	}
 
@@ -3516,6 +3566,7 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 
 	sub = gatt_sub_find(conn);
 	if (!sub) {
+		LOG_ERR("No subscription found conn %u", bt_conn_index(conn));
 		return;
 	}
 
@@ -5457,6 +5508,29 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 
 #define CCC_STORE_MAX 48
 
+static bool bt_gatt_ccc_cfg_is_bonded(struct bt_gatt_ccc_cfg *cfg)
+{
+	return cfg->conn == NULL;
+}
+
+static struct bt_gatt_ccc_cfg *ccc_find_bonded_cfg(struct _bt_gatt_ccc *ccc,
+						   const bt_addr_le_t *addr, uint8_t id)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (!bt_gatt_ccc_cfg_is_bonded(cfg)) {
+			continue;
+		}
+
+		if (id == cfg->id && bt_addr_le_eq(&cfg->peer, addr)) {
+			return cfg;
+		}
+	}
+
+	return NULL;
+}
+
 static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 					    const bt_addr_le_t *addr,
 					    uint8_t id)
@@ -5536,7 +5610,7 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 	LOG_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
 		load->entry->value);
 
-	cfg = ccc_find_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
+	cfg = ccc_find_bonded_cfg(ccc, load->addr_with_id.addr, load->addr_with_id.id);
 	if (!cfg) {
 		cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY, 0);
 		if (!cfg) {
@@ -5730,15 +5804,65 @@ void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	}
 }
 
+/** Move the connection cfg into the bond. This overwrites the current bond cfg,
+ *  if any. Note that the old cfg may be from an unencrypted context.
+ */
+static uint8_t bt_gatts_ccc_move_into_bond(const struct bt_gatt_attr *attr, uint16_t handle,
+					   void *user_data)
+{
+	struct bt_conn *conn = user_data;
+	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_cfg *existing_bond_cfg;
+	struct bt_gatt_ccc_cfg *existing_transient_cfg;
+
+	__ASSERT_NO_MSG(conn);
+
+	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	existing_bond_cfg = find_ccc_bond_cfg(conn->id, &conn->le.dst, ccc);
+	existing_transient_cfg = find_ccc_transient_cfg(conn, ccc);
+
+	if (existing_transient_cfg) {
+		if (existing_bond_cfg) {
+			clear_ccc_cfg(existing_bond_cfg);
+		}
+
+		/* Upgrade this cfg to a bond cfg. */
+		bt_conn_unref(existing_transient_cfg->conn);
+		existing_transient_cfg->conn = NULL;
+
+		/* These values should have been kept up-to-date. */
+		__ASSERT_NO_MSG(existing_transient_cfg->id == conn->id);
+		__ASSERT_NO_MSG(bt_addr_le_eq(&existing_transient_cfg->peer, &conn->le.dst));
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
 void bt_gatt_encrypt_change(struct bt_conn *conn)
 {
 	LOG_DBG("conn %p", conn);
+
+	__ASSERT_NO_MSG(bt_conn_get_security(conn) >= BT_SECURITY_L2);
 
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 	add_subscriptions(conn);
 #endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
+	if (bt_conn_is_bondcrypted(conn)) {
+		bt_gatt_foreach_attr(0x0001, 0xffff, bt_gatts_ccc_move_into_bond, conn);
+	}
+
 	bt_gatt_foreach_attr(0x0001, 0xffff, bt_gatts_ccc_changed_conn, conn);
+
+	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		sc_restore(conn);
+	}
 
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {

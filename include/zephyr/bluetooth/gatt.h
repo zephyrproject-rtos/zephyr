@@ -732,6 +732,17 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 
 /** @brief GATT CCC configuration entry. */
 struct bt_gatt_ccc_cfg {
+	/** This is set if this cfg entry if for a non-bonded
+	  * connection. If this is not set, this cfg is for a bond
+	  * (which lives across connections).
+	  *
+	  * The moment this connection (referenced here) finishes a
+	  * bonding procedure, this whole cfg object is deleted. A new
+	  * one will be created on the next CCC write (but nothing is
+	  * copied from this one).
+	  */
+	struct bt_conn *conn;
+
 	/** Local identity, BT_ID_DEFAULT in most cases. */
 	uint8_t id;
 	/** Remote peer address. */

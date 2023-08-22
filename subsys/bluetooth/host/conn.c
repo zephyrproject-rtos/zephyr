@@ -2416,6 +2416,38 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 	return bt_addr_le_eq(peer, &conn->le.init_addr);
 }
 
+struct bt_conn *bt_conn_lookup_addr_le_bondcrypted(uint8_t id, const bt_addr_le_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
+		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
+
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->type != BT_CONN_TYPE_LE) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (!bt_conn_is_peer_addr_le(conn, id, peer)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (!bt_conn_is_bondcrypted(conn)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		return conn;
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	int i;
