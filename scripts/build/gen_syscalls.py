@@ -129,11 +129,11 @@ syscall_tracer_with_return_template = """
 #ifndef DISABLE_SYSCALL_TRACING
 {trace_diagnostic}
 #define {func_name}({argnames}) ({{ \
-	{func_type} retval; \
+	{func_type} syscall__retval; \
 	sys_port_trace_syscall_enter({syscall_id}, {func_name}{trace_argnames}); \
-	retval = {func_name}({argnames}); \
-	sys_port_trace_syscall_exit({syscall_id}, {func_name}{trace_argnames}, retval); \
-	retval; \
+	syscall__retval = {func_name}({argnames}); \
+	sys_port_trace_syscall_exit({syscall_id}, {func_name}{trace_argnames}, syscall__retval); \
+	syscall__retval; \
 }})
 #endif
 #endif
@@ -241,8 +241,8 @@ def wrapper_defs(func_name, func_type, args, fn):
         invoke = "\t\t" + "(void) %s;\n" % invoke
         retcode = "\t\t" + "return;\n"
     elif valist_args:
-        invoke = "\t\t" + "%s retval = %s;\n" % (func_type, invoke)
-        retcode = "\t\t" + "return retval;\n"
+        invoke = "\t\t" + "%s invoke__retval = %s;\n" % (func_type, invoke)
+        retcode = "\t\t" + "return invoke__retval;\n"
     else:
         invoke = "\t\t" + "return (%s) %s;\n" % (func_type, invoke)
         retcode = ""
