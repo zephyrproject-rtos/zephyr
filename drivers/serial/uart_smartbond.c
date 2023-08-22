@@ -82,6 +82,7 @@ struct uart_smartbond_cfg {
 #if CONFIG_PM_DEVICE
 	int rx_wake_timeout;
 	struct gpio_dt_spec rx_wake_gpio;
+	struct gpio_dt_spec dtr_gpio;
 #endif
 };
 
@@ -94,6 +95,7 @@ struct uart_smartbond_runtime_cfg {
 
 enum uart_smartbond_pm_policy_state_flag {
 	UART_SMARTBOND_PM_POLICY_STATE_RX_FLAG,
+	UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG,
 	UART_SMARTBOND_PM_POLICY_STATE_FLAG_COUNT,
 };
 
@@ -108,6 +110,7 @@ struct uart_smartbond_data {
 	uint8_t rx_enabled;
 	uint8_t tx_enabled;
 #if CONFIG_PM_DEVICE
+	struct gpio_callback dtr_wake_cb;
 	const struct uart_smartbond_cfg *config;
 	struct gpio_callback rx_wake_cb;
 	int rx_wake_timeout;
@@ -328,6 +331,22 @@ static void uart_smartbond_wake_handler(const struct device *gpio, struct gpio_c
 	}
 }
 
+static void uart_smartbond_dtr_handler(const struct device *gpio, struct gpio_callback *cb,
+				       uint32_t pins)
+{
+	struct uart_smartbond_data *data = CONTAINER_OF(cb, struct uart_smartbond_data,
+							dtr_wake_cb);
+	int pin = find_lsb_set(pins) - 1;
+
+	if (gpio_pin_get(gpio, pin) == 1) {
+		uart_smartbond_pm_policy_state_lock_put(data,
+							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+	} else {
+		uart_smartbond_pm_policy_state_lock_get(data,
+							UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+	}
+}
+
 #endif
 
 static int uart_smartbond_init(const struct device *dev)
@@ -353,6 +372,22 @@ static int uart_smartbond_init(const struct device *dev)
 		 */
 		rx_wake_timeout = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
 #endif
+	}
+	/* If DTR pin is configured, use it for power management */
+	if (config->dtr_gpio.port != NULL) {
+		gpio_init_callback(&data->dtr_wake_cb, uart_smartbond_dtr_handler,
+				   BIT(config->dtr_gpio.pin));
+		ret = gpio_add_callback(config->dtr_gpio.port, &data->dtr_wake_cb);
+		if (ret == 0) {
+			ret = gpio_pin_interrupt_configure_dt(&config->dtr_gpio,
+							      GPIO_INT_MODE_EDGE |
+							      GPIO_INT_TRIG_BOTH);
+			/* Check if DTR is already active (low), if so lock power state */
+			if (gpio_pin_get(config->dtr_gpio.port, config->dtr_gpio.pin) == 0) {
+				uart_smartbond_pm_policy_state_lock_get(data,
+					UART_SMARTBOND_PM_POLICY_STATE_DTR_FLAG);
+			}
+		}
 	}
 	if (rx_wake_timeout > 0 && config->rx_wake_gpio.port != NULL) {
 		k_work_init_delayable(&data->rx_timeout_work,
@@ -688,9 +723,12 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 	.rx_wake_timeout = (DT_INST_PROP_OR(n, rx_wake_timeout, 0)),
 #define UART_PM_WAKE_RX_PIN(n)	\
 	.rx_wake_gpio = GPIO_DT_SPEC_INST_GET_OR(n, rx_wake_gpios, {0}),
+#define UART_PM_WAKE_DTR_PIN(n)	\
+	.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dtr_gpios, {0}),
 #else
 #define UART_PM_WAKE_RX_PIN(n) /* Not used */
 #define UART_PM_WAKE_RX_TIMEOUT(n) /* Not used */
+#define UART_PM_WAKE_DTR_PIN(n) /* Not used */
 #endif
 
 #define UART_SMARTBOND_DEVICE(id)								\
@@ -702,6 +740,7 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 		.hw_flow_control_supported = DT_INST_PROP(id, hw_flow_control_supported),	\
 		UART_PM_WAKE_RX_TIMEOUT(id)							\
 		UART_PM_WAKE_RX_PIN(id)								\
+		UART_PM_WAKE_DTR_PIN(id)							\
 	};											\
 	static struct uart_smartbond_data uart_smartbond_##id##_data = {			\
 		.current_config = {								\
