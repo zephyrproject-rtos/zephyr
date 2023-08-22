@@ -162,23 +162,23 @@ static void send_sf(void)
 }
 
 
-static void get_sf(struct isotp_recv_ctx *recv_ctx, size_t data_size)
+static void get_sf(size_t data_size)
 {
 	int ret;
 
 	memset(data_buf, 0, sizeof(data_buf));
-	ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf), K_MSEC(1000));
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(1000));
 	zassert_equal(ret, data_size, "recv returned %d", ret);
 
 	ret = check_data(data_buf, random_data, data_size);
 	zassert_equal(ret, 0, "Data differ");
 }
 
-static void get_sf_ignore(struct isotp_recv_ctx *recv_ctx)
+static void get_sf_ignore(void)
 {
 	int ret;
 
-	ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
 	zassert_equal(ret, ISOTP_RECV_TIMEOUT, "recv returned %d", ret);
 }
 
@@ -191,8 +191,7 @@ static void send_test_data(const uint8_t *data, size_t len)
 	zassert_equal(ret, 0, "Send returned %d", ret);
 }
 
-static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
-			      const uint8_t *data, size_t len, int32_t delay)
+static void receive_test_data(const uint8_t *data, size_t len, int32_t delay)
 {
 	size_t remaining_len = len;
 	int ret, recv_len;
@@ -200,7 +199,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
-		recv_len = isotp_recv(recv_ctx, data_buf, sizeof(data_buf),
+		recv_len = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf),
 				      K_MSEC(1000));
 		zassert_true(recv_len >= 0, "recv error: %d", recv_len);
 
@@ -216,7 +215,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		}
 	} while (remaining_len);
 
-	ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf), K_MSEC(50));
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(50));
 	zassert_equal(ret, ISOTP_RECV_TIMEOUT,
 		      "Expected timeout but got %d", ret);
 }
@@ -360,7 +359,7 @@ ZTEST(isotp_conformance, test_receive_sf)
 
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 
-	get_sf(&recv_ctx, DATA_SIZE_SF);
+	get_sf(DATA_SIZE_SF);
 
 	single_frame.data[0] = SF_PCI_BYTE_LEN_8;
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
@@ -370,7 +369,7 @@ ZTEST(isotp_conformance, test_receive_sf)
 	single_frame.length = 7;
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 
-	get_sf_ignore(&recv_ctx);
+	get_sf_ignore();
 #endif
 
 	isotp_unbind(&recv_ctx);
@@ -416,7 +415,7 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 
-	get_sf(&recv_ctx, DATA_SIZE_SF_EXT);
+	get_sf(DATA_SIZE_SF_EXT);
 
 	single_frame.data[1] = SF_PCI_BYTE_1;
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
@@ -426,7 +425,7 @@ ZTEST(isotp_conformance, test_receive_sf_ext)
 	single_frame.length = 7;
 	send_frame_series(&single_frame, 1, rx_addr.std_id);
 
-	get_sf_ignore(&recv_ctx);
+	get_sf_ignore();
 #endif
 
 	isotp_unbind(&recv_ctx);
@@ -471,19 +470,19 @@ ZTEST(isotp_conformance, test_receive_sf_fixed)
 
 	/* default source address */
 	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id);
-	get_sf(&recv_ctx, DATA_SIZE_SF);
+	get_sf(DATA_SIZE_SF);
 
 	/* different source address */
 	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | 0xFF);
-	get_sf(&recv_ctx, DATA_SIZE_SF);
+	get_sf(DATA_SIZE_SF);
 
 	/* different priority */
 	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | (7U << 26));
-	get_sf(&recv_ctx, DATA_SIZE_SF);
+	get_sf(DATA_SIZE_SF);
 
 	/* different target address (should fail) */
 	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | 0xFF00);
-	get_sf_ignore(&recv_ctx);
+	get_sf_ignore();
 
 	isotp_unbind(&recv_ctx);
 }
@@ -616,7 +615,7 @@ ZTEST(isotp_conformance, test_receive_data)
 
 	send_frame_series(des_frames, ARRAY_SIZE(des_frames), rx_addr.std_id);
 
-	receive_test_data(&recv_ctx, random_data, DATA_SEND_LENGTH, 0);
+	receive_test_data(random_data, DATA_SEND_LENGTH, 0);
 
 	can_remove_rx_filter(can_dev, filter_id);
 	isotp_unbind(&recv_ctx);
@@ -676,7 +675,7 @@ ZTEST(isotp_conformance, test_receive_data_blocks)
 	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(50));
 	zassert_equal(ret, -EAGAIN, "Expected timeout but got %d", ret);
 
-	receive_test_data(&recv_ctx, random_data, DATA_SEND_LENGTH, 0);
+	receive_test_data(random_data, DATA_SEND_LENGTH, 0);
 
 	can_remove_rx_filter(can_dev, filter_id);
 	isotp_unbind(&recv_ctx);
