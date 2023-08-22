@@ -7,10 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/canbus/isotp.h>
 
-
-#define RX_THREAD_STACK_SIZE 512
-#define RX_THREAD_PRIORITY 2
-
 const struct isotp_fc_opts fc_opts_8_0 = {.bs = 8, .stmin = 0};
 const struct isotp_fc_opts fc_opts_0_5 = {.bs = 0, .stmin = 5};
 
@@ -39,8 +35,8 @@ const struct device *can_dev;
 struct isotp_recv_ctx recv_ctx_8_0;
 struct isotp_recv_ctx recv_ctx_0_5;
 
-K_THREAD_STACK_DEFINE(rx_8_0_thread_stack, RX_THREAD_STACK_SIZE);
-K_THREAD_STACK_DEFINE(rx_0_5_thread_stack, RX_THREAD_STACK_SIZE);
+K_THREAD_STACK_DEFINE(rx_8_0_thread_stack, CONFIG_SAMPLE_RX_THREAD_STACK_SIZE);
+K_THREAD_STACK_DEFINE(rx_0_5_thread_stack, CONFIG_SAMPLE_RX_THREAD_STACK_SIZE);
 struct k_thread rx_8_0_thread_data;
 struct k_thread rx_0_5_thread_data;
 
@@ -171,7 +167,7 @@ int main(void)
 	tid = k_thread_create(&rx_8_0_thread_data, rx_8_0_thread_stack,
 			      K_THREAD_STACK_SIZEOF(rx_8_0_thread_stack),
 			      rx_8_0_thread, NULL, NULL, NULL,
-			      RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+			      CONFIG_SAMPLE_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!tid) {
 		printk("ERROR spawning rx thread\n");
 	}
@@ -179,7 +175,7 @@ int main(void)
 	tid = k_thread_create(&rx_0_5_thread_data, rx_0_5_thread_stack,
 			      K_THREAD_STACK_SIZEOF(rx_0_5_thread_stack),
 			      rx_0_5_thread, NULL, NULL, NULL,
-			      RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+			      CONFIG_SAMPLE_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!tid) {
 		printk("ERROR spawning rx thread\n");
 	}
