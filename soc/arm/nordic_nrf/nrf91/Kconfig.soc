@@ -26,8 +26,8 @@ config SOC_NRF9160_SICA
 # That's why in the top level of SoC definitions (for user-configurable
 # options in Kconfig, for example) the nRF9161 term is used and nRF9120
 # underneath.
-config SOC_NRF9161_SICA
-	bool "NRF9161_SICA"
+config SOC_NRF9161_LACA
+	bool "NRF9161_LACA"
 	select SOC_NRF9120
 
 config SOC_NRF9131_LACA

@@ -3,7 +3,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF9161_SICA
+if SOC_NRF9161_LACA
 
 config BOARD_NRF9161DK_NRF9161
 	bool "nRF9161 DK NRF9161"
@@ -11,4 +11,4 @@ config BOARD_NRF9161DK_NRF9161
 config BOARD_NRF9161DK_NRF9161_NS
 	bool "nRF9161 DK NRF9161 non-secure"
 
-endif # SOC_NRF9161_SICA
+endif # SOC_NRF9161_LACA
