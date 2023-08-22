@@ -12,7 +12,7 @@
 static char heap_mem[HEAP_SIZE];
 static struct sys_heap heap;
 
-void print_sys_memory_stats(void);
+static void print_sys_memory_stats(void);
 
 int main(void)
 {
@@ -34,7 +34,7 @@ int main(void)
 	return 0;
 }
 
-void print_sys_memory_stats(void)
+static void print_sys_memory_stats(void)
 {
 	struct sys_memory_stats stats;
 
