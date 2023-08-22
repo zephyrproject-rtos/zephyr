@@ -27,7 +27,6 @@ static enum {
 	BLOCK_GET_FAIL = 0,
 	XFER_GET_FAIL = 1
 } msg_fail_type;
-static bool recover_settings;
 static enum bt_mesh_blob_xfer_phase expected_stop_phase;
 
 static void test_args_parse(int argc, char *argv[])
@@ -53,14 +52,7 @@ static void test_args_parse(int argc, char *argv[])
 			.name = "{inactive, start, wait-block, wait-chunk, complete, suspended}",
 			.option = "expected-phase",
 			.descript = "Expected DFU Server phase value restored from flash"
-		},
-		{
-			.dest = &recover_settings,
-			.type = 'b',
-			.name = "{0, 1}",
-			.option = "recover",
-			.descript = "Recover settings from persistent storage"
-		},
+		}
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
@@ -1452,10 +1444,6 @@ static void test_cli_stop(void)
 {
 	int err;
 
-	if (!recover_settings) {
-		bt_mesh_test_host_files_remove();
-	}
-
 	bt_mesh_test_cfg_set(NULL, 1000);
 	k_sem_init(&blob_caps_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
@@ -1551,10 +1539,6 @@ static void srv_check_reboot_and_continue(void)
 
 static void test_srv_stop(void)
 {
-	if (!recover_settings) {
-		bt_mesh_test_host_files_remove();
-	}
-
 	bt_mesh_test_cfg_set(NULL, 1000);
 	k_sem_init(&blob_srv_end_sem, 0, 1);
 	k_sem_init(&first_block_wr_sem, 0, 1);

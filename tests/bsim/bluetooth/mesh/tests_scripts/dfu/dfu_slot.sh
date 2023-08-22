@@ -13,20 +13,20 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    from storage.
 conf=prj_mesh1d1_conf
 overlay=overlay_pst_conf
-RunTest dfu_slot dfu_dist_dfu_slot_create
+RunTestFlash dfu_slot dfu_dist_dfu_slot_create -flash_erase
 
-RunTest dfu_slot dfu_dist_dfu_slot_create_recover
+RunTestFlash dfu_slot dfu_dist_dfu_slot_create_recover
 
-RunTest dfu_slot dfu_dist_dfu_slot_delete_all
+RunTestFlash dfu_slot dfu_dist_dfu_slot_delete_all
 
-RunTest dfu_slot dfu_dist_dfu_slot_check_delete_all
+RunTestFlash dfu_slot dfu_dist_dfu_slot_check_delete_all -flash_rm
 
 conf=prj_mesh1d1_conf
 overlay="overlay_pst_conf_overlay_psa_conf"
-RunTest dfu_slot_psa dfu_dist_dfu_slot_create
+RunTestFlash dfu_slot_psa dfu_dist_dfu_slot_create -flash_erase
 
-RunTest dfu_slot_psa dfu_dist_dfu_slot_create_recover
+RunTestFlash dfu_slot_psa dfu_dist_dfu_slot_create_recover
 
-RunTest dfu_slot_psa dfu_dist_dfu_slot_delete_all
+RunTestFlash dfu_slot_psa dfu_dist_dfu_slot_delete_all
 
-RunTest dfu_slot_psa dfu_dist_dfu_slot_check_delete_all
+RunTestFlash dfu_slot_psa dfu_dist_dfu_slot_check_delete_all -flash_rm
