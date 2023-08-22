@@ -458,28 +458,28 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
-		val->val1 = (data->full_charge_capacity / 1000);
-		val->val2 = ((data->full_charge_capacity % 1000) * 1000U);
+		val->val1 = data->full_charge_capacity;
+		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
-		val->val1 = (data->remaining_charge_capacity / 1000);
-		val->val2 = ((data->remaining_charge_capacity % 1000) * 1000U);
+		val->val1 = data->remaining_charge_capacity;
+		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
-		val->val1 = (data->nom_avail_capacity / 1000);
-		val->val2 = ((data->nom_avail_capacity % 1000) * 1000U);
+		val->val1 = data->nom_avail_capacity;
+		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
-		val->val1 = (data->full_avail_capacity / 1000);
-		val->val2 = ((data->full_avail_capacity % 1000) * 1000U);
+		val->val1 = data->full_avail_capacity;
+		val->val2 = 0;
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_POWER:
-		val->val1 = (data->avg_power / 1000);
-		val->val2 = ((data->avg_power % 1000) * 1000U);
+		val->val1 = data->avg_power;
+		val->val2 = 0;
 		break;
 
 	default:
