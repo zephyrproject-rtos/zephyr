@@ -32,7 +32,7 @@ static int process_profile_connection(struct bt_conn *conn)
 	int err = 0;
 
 	if (!atomic_test_and_set_bit(flags_for_conn, CCP_FLAG_GTBS_DISCOVER)) {
-		err = bt_tbs_client_discover(conn, true);
+		err = bt_tbs_client_discover(conn);
 		if (err != 0) {
 			printk("bt_tbs_client_discover (err %d)\n", err);
 		}
