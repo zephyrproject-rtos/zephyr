@@ -596,6 +596,7 @@ static int fpga_ice40_init(const struct device *dev)
 		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
-			      &fpga_ice40_config_##inst, POST_KERNEL, 0, &fpga_ice40_api);
+			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
+			      &fpga_ice40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FPGA_ICE40_DEFINE)
