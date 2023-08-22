@@ -34,6 +34,8 @@ def parse_args():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-P", "--pull_request", required=False, default=None, type=int,
                        help="Operate on one pull-request only.")
+    group.add_argument("-I", "--issue", required=False, default=None, type=int,
+                       help="Operate on one issue only.")
     group.add_argument("-s", "--since", required=False,
                        help="Process pull-requests since date.")
     group.add_argument("-m", "--modules", action="store_true",
@@ -212,6 +214,57 @@ def process_pr(gh, maintainer_file, number):
     time.sleep(1)
 
 
+def process_issue(gh, maintainer_file, number):
+    gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
+    issue = gh_repo.get_issue(number)
+
+    log(f"Working on {issue.url}: {issue.title}")
+
+    if issue.assignees:
+        print(f"Already assigned {issue.assignees}, bailing out")
+        return
+
+    label_to_maintainer = defaultdict(set)
+    for _, area in maintainer_file.areas.items():
+        if not area.labels:
+            continue
+
+        labels = set()
+        for label in area.labels:
+            labels.add(label.lower())
+        labels = tuple(sorted(labels))
+
+        for maintainer in area.maintainers:
+            label_to_maintainer[labels].add(maintainer)
+
+    # Add extra entries for areas with multiple labels so they match with just
+    # one label if it's specific enough.
+    for areas, maintainers in dict(label_to_maintainer).items():
+        for area in areas:
+            if tuple([area]) not in label_to_maintainer:
+                label_to_maintainer[tuple([area])] = maintainers
+
+    issue_labels = set()
+    for label in issue.labels:
+        label_name = label.name.lower()
+        if tuple([label_name]) not in label_to_maintainer:
+            print(f"Ignoring label: {label}")
+            continue
+        issue_labels.add(label_name)
+    issue_labels = tuple(sorted(issue_labels))
+
+    print(f"Using labels: {issue_labels}")
+
+    if issue_labels not in label_to_maintainer:
+        print(f"no match for the label set, not assigning")
+        return
+
+    for maintainer in label_to_maintainer[issue_labels]:
+        log(f"Adding {maintainer} to {issue.html_url}")
+        if not args.dry_run:
+            issue.add_to_assignees(maintainer)
+
+
 def process_modules(gh, maintainers_file):
     manifest = Manifest.from_file()
 
@@ -274,6 +327,8 @@ def main():
 
     if args.pull_request:
         process_pr(gh, maintainer_file, args.pull_request)
+    if args.issue:
+        process_issue(gh, maintainer_file, args.issue)
     elif args.modules:
         process_modules(gh, maintainer_file)
     else:
