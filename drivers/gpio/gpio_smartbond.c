@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 
 #include <DA1469xAB.h>
+#include <da1469x_pdc.h>
 
 #define GPIO_MODE_RESET		0x200
 
@@ -68,6 +69,8 @@ struct gpio_smartbond_config {
 	volatile uint32_t *mode_regs;
 	volatile struct gpio_smartbond_latch_regs *latch_regs;
 	volatile struct gpio_smartbond_wkup_regs *wkup_regs;
+	/* Value of TRIG_SELECT for PDC_CTRLx_REG entry */
+	uint8_t wkup_trig_select;
 };
 
 static void gpio_smartbond_wkup_init(void)
@@ -210,15 +213,26 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_smartbond_config *config = dev->config;
 	struct gpio_smartbond_data *data = dev->data;
 	uint32_t pin_mask = BIT(pin);
+#if CONFIG_PM
+	int trig_select_id = (config->wkup_trig_select << 5) | pin;
+	int pdc_ix;
+#endif
 
 	/* Not supported by hardware */
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		return -ENOTSUP;
 	}
 
+#if CONFIG_PM
+	pdc_ix = da1469x_pdc_find(trig_select_id, MCU_PDC_MASTER_M33, MCU_PDC_EN_XTAL);
+#endif
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		config->wkup_regs->sel &= ~BIT(pin);
-		config->wkup_regs->clear = BIT(pin);
+		config->wkup_regs->sel &= ~pin_mask;
+		config->wkup_regs->clear = pin_mask;
+		data->both_edges_pins &= ~pin_mask;
+#if CONFIG_PM
+		da1469x_pdc_del(pdc_ix);
+#endif
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {
 			/* Not supported by hardware */
@@ -231,6 +245,15 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 		}
 
 		config->wkup_regs->sel |= pin_mask;
+#if CONFIG_PM
+		if (pdc_ix < 0) {
+			pdc_ix = da1469x_pdc_add(trig_select_id, MCU_PDC_MASTER_M33,
+						 MCU_PDC_EN_XTAL);
+		}
+		if (pdc_ix < 0) {
+			return -ENOMEM;
+		}
+#endif
 	}
 
 	return 0;
@@ -294,6 +317,7 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 						DT_INST_REG_ADDR_BY_NAME(id, latch),	\
 		.wkup_regs = (volatile struct gpio_smartbond_wkup_regs *)		\
 						DT_INST_REG_ADDR_BY_NAME(id, wkup),	\
+		.wkup_trig_select = id,							\
 	};										\
 											\
 	static struct gpio_smartbond_data gpio_smartbond_p##id##_data;			\
