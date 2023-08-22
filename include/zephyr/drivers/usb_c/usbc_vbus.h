@@ -61,10 +61,15 @@ static inline bool usbc_vbus_check_level(const struct device *dev, enum tc_vbus_
  *
  * @retval 0 on success
  * @retval -EIO on failure
+ * @retval -ENOTSUP if the driver doesn't implement the request
  */
 static inline int usbc_vbus_measure(const struct device *dev, int *meas)
 {
 	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
+
+	if (api->measure == NULL) {
+		return -ENOTSUP;
+	}
 
 	return api->measure(dev, meas);
 }
@@ -78,10 +83,15 @@ static inline int usbc_vbus_measure(const struct device *dev, int *meas)
  * @retval 0 on success
  * @retval -EIO on failure
  * @retval -ENOENT if discharge pin isn't defined
+ * @retval -ENOTSUP if the driver doesn't implement the request
  */
 static inline int usbc_vbus_discharge(const struct device *dev, bool enable)
 {
 	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
+
+	if (api->discharge == NULL) {
+		return -ENOTSUP;
+	}
 
 	return api->discharge(dev, enable);
 }
@@ -95,10 +105,15 @@ static inline int usbc_vbus_discharge(const struct device *dev, bool enable)
  * @retval 0 on success
  * @retval -EIO on failure
  * @retval -ENOENT if enable pin isn't defined
+ * @retval -ENOTSUP if the driver doesn't implement the request
  */
 static inline int usbc_vbus_enable(const struct device *dev, bool enable)
 {
 	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
+
+	if (api->enable == NULL) {
+		return -ENOTSUP;
+	}
 
 	return api->enable(dev, enable);
 }
