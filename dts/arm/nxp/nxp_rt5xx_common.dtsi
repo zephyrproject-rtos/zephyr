@@ -546,6 +546,15 @@
 		#address-cells = <3>;
 		#size-cells = <0>;
 	};
+
+	mbox:mbox@110000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x110000 0x100>;
+		interrupts = <34 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
 };
 
 &flexspi {
