@@ -3,12 +3,12 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF9161_SICA
+if SOC_NRF9161_LACA
 
 config SOC
-	default "nRF9161_SICA"
+	default "nRF9161_LACA"
 
 config NUM_IRQS
 	default 65
 
-endif # SOC_NRF9161_SICA
+endif # SOC_NRF9161_LACA
