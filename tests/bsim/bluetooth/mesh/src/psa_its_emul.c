@@ -95,7 +95,7 @@ static int itsemul_set(const char *name, size_t len_rd, settings_read_cb read_cb
 	return 0;
 }
 
-BT_MESH_SETTINGS_DEFINE(psa_its_emu, "itsemul", itsemul_set);
+SETTINGS_STATIC_HANDLER_DEFINE(psa_its_emu, "itsemul", NULL, itsemul_set, NULL, NULL);
 
 psa_status_t psa_its_get_info(psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
 {
@@ -164,7 +164,7 @@ psa_status_t psa_its_set(psa_storage_uid_t uid, uint32_t data_length, const void
 		return PSA_ERROR_STORAGE_FAILURE;
 	}
 
-	snprintk(path, sizeof(path), "bt/mesh/itsemul/%llu", uid);
+	snprintk(path, sizeof(path), "itsemul/%llu", uid);
 
 	p_item->uid = uid;
 	p_pst_item = &p_item->pst_item;
@@ -196,7 +196,7 @@ psa_status_t psa_its_remove(psa_storage_uid_t uid)
 	}
 	memset(p_item, 0, sizeof(psa_its_item_t));
 
-	snprintk(path, sizeof(path), "bt/mesh/itsemul/%llu", uid);
+	snprintk(path, sizeof(path), "itsemul/%llu", uid);
 
 	if (settings_delete(path)) {
 		LOG_ERR("Failed to remove its item: %s", path);
