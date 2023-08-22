@@ -584,7 +584,7 @@ static void test_dist_dfu_slot_create(void)
 	bt_mesh_device_setup(&prov, &dist_comp);
 	dist_prov_and_conf(DIST_ADDR);
 
-	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT; i++) {
+	for (i = CONFIG_BT_MESH_DFU_SLOT_CNT - 1; i >= 0; i--) {
 		fwid[0] = i;
 		metadata[0] = i;
 		slot[i] = bt_mesh_dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len, uri,
