@@ -170,7 +170,9 @@ int main(void)
 			      CONFIG_SAMPLE_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!tid) {
 		printk("ERROR spawning rx thread\n");
+		return 0;
 	}
+	k_thread_name_set(tid, "rx_8_0");
 
 	tid = k_thread_create(&rx_0_5_thread_data, rx_0_5_thread_stack,
 			      K_THREAD_STACK_SIZEOF(rx_0_5_thread_stack),
@@ -178,7 +180,9 @@ int main(void)
 			      CONFIG_SAMPLE_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!tid) {
 		printk("ERROR spawning rx thread\n");
+		return 0;
 	}
+	k_thread_name_set(tid, "rx_0_5");
 
 	printk("Start sending data\n");
 
