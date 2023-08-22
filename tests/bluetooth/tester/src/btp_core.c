@@ -148,10 +148,15 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_BAP:
 		status = tester_init_bap();
 		break;
-		case BTP_SERVICE_ID_MICP:
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	case BTP_SERVICE_ID_MICP:
 		status = tester_init_micp();
 		break;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+	case BTP_SERVICE_ID_MICS:
+		status = tester_init_mics();
+		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_HAS)
 	case BTP_SERVICE_ID_HAS:
 		status = tester_init_has();
