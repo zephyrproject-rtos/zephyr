@@ -14,10 +14,19 @@
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+/* precompute CYC_PER_TICK at driver init to avoid runtime divisions */
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+static uint32_t cyc_per_tick;
+static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
+{
+	return cyc_per_tick;
+}
+#else
+static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
+{
+	return sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+}
+#endif
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -28,9 +37,7 @@
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
-
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
+#define MIN_DELAY MAX(1024U, get_cyc_per_tick()/16U)
 
 static struct k_spinlock lock;
 
@@ -133,7 +140,6 @@ static uint32_t elapsed(void)
  */
 ISR_DIRECT_DECLARE(sys_clock_isr)
 {
-	uint32_t dcycles;
 	uint32_t dticks;
 
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
@@ -145,7 +151,7 @@ ISR_DIRECT_DECLARE(sys_clock_isr)
 	cycle_count += overflow_cyc;
 	overflow_cyc = 0;
 
-	if (TICKLESS) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
 		 * in sys_clock_set_timeout(), followed by resetting of
 		 * the counter (VAL = 0).
@@ -157,10 +163,9 @@ ISR_DIRECT_DECLARE(sys_clock_isr)
 		 *
 		 * We can assess if this is the case by inspecting COUNTFLAG.
 		 */
-
-		dcycles = cycle_count - announced_cycles;
-		dticks = dcycles / CYC_PER_TICK;
-		announced_cycles += dticks * CYC_PER_TICK;
+		dticks = (uint32_t)(cycle_count - announced_cycles);
+		dticks /= get_cyc_per_tick();
+		announced_cycles += dticks * get_cyc_per_tick();
 		sys_clock_announce(dticks);
 	} else {
 		sys_clock_announce(1);
@@ -178,7 +183,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * the counter. (Note: we can assume if idle==true that
 	 * interrupts are already disabled)
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&
+			idle && ticks == K_TICKS_FOREVER) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
@@ -188,9 +194,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t delay;
 	uint32_t val1, val2;
 	uint32_t last_load_ = last_load;
+	const k_ticks_t max_ticks = COUNTER_MAX / get_cyc_per_tick() - 1;
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = (ticks == K_TICKS_FOREVER) ? max_ticks : ticks;
+	ticks = CLAMP(ticks - 1, 0, (const int32_t)max_ticks);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -199,7 +206,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	val1 = SysTick->VAL;
 
 	cycle_count += pending;
-	overflow_cyc = 0U;
+	overflow_cyc = 0;
 
 	uint32_t unannounced = cycle_count - announced_cycles;
 
@@ -212,16 +219,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 */
 		last_load = MIN_DELAY;
 	} else {
+		const uint32_t max_cycles = max_ticks * get_cyc_per_tick();
 		/* Desired delay in the future */
-		delay = ticks * CYC_PER_TICK;
+		delay = ticks * get_cyc_per_tick();
 
 		/* Round delay up to next tick boundary */
 		delay += unannounced;
-		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
+		delay = DIV_ROUND_UP(delay, get_cyc_per_tick()) * get_cyc_per_tick();
 		delay -= unannounced;
 		delay = MAX(delay, MIN_DELAY);
-		if (delay > MAX_CYCLES) {
-			last_load = MAX_CYCLES;
+		if (delay > max_cycles) {
+			last_load = max_cycles;
 		} else {
 			last_load = delay;
 		}
@@ -253,7 +261,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
-	if (!TICKLESS) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
@@ -262,7 +270,7 @@ uint32_t sys_clock_elapsed(void)
 	uint32_t cyc = elapsed() + unannounced;
 
 	k_spin_unlock(&lock, key);
-	return cyc / CYC_PER_TICK;
+	return cyc / get_cyc_per_tick();
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -301,9 +309,12 @@ void sys_clock_disable(void)
 static int sys_clock_driver_init(void)
 {
 
+	cyc_per_tick = sys_clock_hw_cycles_per_sec() /
+			CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-	last_load = CYC_PER_TICK - 1;
-	overflow_cyc = 0U;
+	last_load = get_cyc_per_tick() - 1;
+	overflow_cyc = 0;
 	SysTick->LOAD = last_load;
 	SysTick->VAL = 0; /* resets timer to last_load */
 	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
