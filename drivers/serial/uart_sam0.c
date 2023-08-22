@@ -1152,7 +1152,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 	}
 
 	if (dev_data->rx_next_len) {
-		struct uart_event evt = {
+		struct uart_event next_evt = {
 			.type = UART_RX_BUF_RELEASED,
 			.data.rx_buf = {
 				.buf = dev_data->rx_next_buf,
@@ -1163,7 +1163,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 		dev_data->rx_next_len = 0U;
 
 		if (dev_data->async_cb) {
-			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev, &next_evt, dev_data->async_cb_data);
 		}
 	}
 
