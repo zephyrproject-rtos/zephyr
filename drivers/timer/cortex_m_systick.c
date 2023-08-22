@@ -11,8 +11,44 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 
-#define COUNTER_MAX 0x00ffffff
-#define TIMER_STOPPED 0xff000000
+#define COUNTER_MAX	GENMASK(23, 0)
+#define TIMER_STOPPED	(~COUNTER_MAX)
+
+#define SYST_BASE	((mem_addr_t)DT_REG_ADDR(DT_NODELABEL(systick)))
+
+/* SysTick Control and Status Register
+ *
+ * The SysTick SYST_CSR register enables the SysTick features.
+ * The register resets to 0x00000000, or to 0x00000004 if your device does not
+ * implement a reference clock.
+ */
+#define SYST_CSR	SYST_BASE
+#define SYST_CSR_COUNTFLAG	BIT(16)
+#define SYST_CSR_CLKSOURCE	BIT(2)
+#define SYST_CSR_TICKINT	BIT(1)
+#define SYST_CSR_ENABLE		BIT(0)
+
+/* SysTick Reload Value Register
+ *
+ *  The SYST_RVR register specifies the start value to load into the
+ *  SYST_CVR register.
+ */
+#define SYST_RVR	(SYST_BASE + 0x4)
+
+/* SysTick Current Value Register
+ *
+ * The SYST_CVR register contains the current value of the SysTick counter.
+ */
+#define SYST_CVR	(SYST_BASE + 0x8)
+
+/*TODO: should be used in time calculation, in case of external clock usage */
+#define SYST_CALIB	(SYST_BASE + 0xc)
+#define SYST_CALIB_NOREF	BIT(31)
+#define SYST_CALIB_SKEW		BIT(30)
+
+#define SYST_CSR_RUN (SYST_CSR_ENABLE		| \
+				SYST_CSR_TICKINT	| \
+				SYST_CSR_CLKSOURCE)
 
 /* precompute CYC_PER_TICK at driver init to avoid runtime divisions */
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -30,7 +66,7 @@ static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
- * reliably" -- it becomes the minimum value of the LOAD register, and
+ * reliably" -- it becomes the minimum value of the RVR register, and
  * thus reflects how much time we can reliably see expire between
  * calls to elapsed() to read the COUNTFLAG bit.  So it needs to be
  * set to be larger than the maximum time the interrupt might be
@@ -82,19 +118,19 @@ static cycle_t announced_cycles;
  * Each time cycle_count is updated with the value from overflow_cyc,
  * the overflow_cyc must be reset to zero.
  */
-static volatile uint32_t overflow_cyc;
+static uint32_t overflow_cyc;
 
 /* This internal function calculates the amount of HW cycles that have
  * elapsed since the last time the absolute HW cycles counter has been
  * updated. 'cycle_count' may be updated either by the ISR, or when we
- * re-program the SysTick.LOAD register, in sys_clock_set_timeout().
+ * re-program the SysTick.SYST_RVR register, in sys_clock_set_timeout().
  *
  * Additionally, the function updates the 'overflow_cyc' counter, that
  * holds the amount of elapsed HW cycles due to (possibly) multiple
  * timer wraps (overflows).
  *
  * Prerequisites:
- * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
+ * - reprogramming of SysTick.SYST_RVR must be clearing the SysTick.CVR
  *   register and the 'overflow_cyc' counter.
  * - ISR must be clearing the 'overflow_cyc' counter.
  * - no more than one counter-wrap has occurred between
@@ -104,12 +140,12 @@ static volatile uint32_t overflow_cyc;
  */
 static uint32_t elapsed(void)
 {
-	uint32_t val1 = SysTick->VAL;	/* A */
-	uint32_t ctrl = SysTick->CTRL;	/* B */
-	uint32_t val2 = SysTick->VAL;	/* C */
+	uint32_t val1 = sys_read32(SYST_CVR);	/* A */
+	uint32_t ctrl = sys_read32(SYST_CSR);	/* B */
+	uint32_t val2 = sys_read32(SYST_CVR);	/* C */
 
 	/* SysTick behavior: The counter wraps at zero automatically,
-	 * setting the COUNTFLAG field of the CTRL register when it
+	 * setting the COUNTFLAG field of the SYST_CSR register when it
 	 * does.  Reading the control register automatically clears
 	 * that field.
 	 *
@@ -122,13 +158,13 @@ static uint32_t elapsed(void)
 	 * So the count in val2 is post-wrap and last_load needs to be
 	 * added if and only if COUNTFLAG is set or val1 < val2.
 	 */
-	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
-	    || (val1 < val2)) {
+	if ((ctrl & SYST_CSR_COUNTFLAG) || (val1 < val2)) {
 		overflow_cyc += last_load;
 
 		/* We know there was a wrap, but we might not have
-		 * seen it in CTRL, so clear it. */
-		(void)SysTick->CTRL;
+		 * seen it in SYST_CSR, so clear it.
+		 */
+		sys_read32(SYST_CSR);
 	}
 
 	return (last_load - val2) + overflow_cyc;
@@ -142,6 +178,7 @@ ISR_DIRECT_DECLARE(sys_clock_isr)
 {
 	uint32_t dticks;
 
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
 	elapsed();
 
@@ -152,24 +189,27 @@ ISR_DIRECT_DECLARE(sys_clock_isr)
 	overflow_cyc = 0;
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
+		/* In TICKLESS mode, the SysTick.SYST_RVR is re-programmed
 		 * in sys_clock_set_timeout(), followed by resetting of
-		 * the counter (VAL = 0).
+		 * the counter (SYST_CVR = 0).
 		 *
-		 * If a timer wrap occurs right when we re-program LOAD,
-		 * the ISR is triggered immediately after sys_clock_set_timeout()
-		 * returns; in that case we shall not increment the cycle_count
-		 * because the value has been updated before LOAD re-program.
+		 * If a timer wrap occurs right when we re-program SYST_RVR,
+		 * the ISR is triggered immediately after
+		 * sys_clock_set_timeout() returns; in that case we shall
+		 * not increment the cycle_count because the value has been
+		 * updated before SYST_RVR re-program.
 		 *
 		 * We can assess if this is the case by inspecting COUNTFLAG.
 		 */
 		dticks = (uint32_t)(cycle_count - announced_cycles);
 		dticks /= get_cyc_per_tick();
 		announced_cycles += dticks * get_cyc_per_tick();
-		sys_clock_announce(dticks);
 	} else {
-		sys_clock_announce(1);
+		dticks = 1;
 	}
+	k_spin_unlock(&lock, key);
+
+	sys_clock_announce(dticks);
 
 	ISR_DIRECT_PM();
 	return 1;
@@ -177,100 +217,116 @@ ISR_DIRECT_DECLARE(sys_clock_isr)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
+	const k_ticks_t max_ticks = COUNTER_MAX / get_cyc_per_tick() - 1;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
 	/* Fast CPUs and a 24 bit counter mean that even idle systems
 	 * need to wake up multiple times per second.  If the kernel
 	 * allows us to miss tick announcements in idle, then shut off
 	 * the counter. (Note: we can assume if idle==true that
 	 * interrupts are already disabled)
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&
-			idle && ticks == K_TICKS_FOREVER) {
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-		last_load = TIMER_STOPPED;
-		return;
+	if (ticks == K_TICKS_FOREVER) {
+		if (idle) {
+			sys_clock_disable();
+			return;
+		}
+		ticks = max_ticks;
 	}
 
-#if defined(CONFIG_TICKLESS_KERNEL)
-	uint32_t delay;
-	uint32_t val1, val2;
-	uint32_t last_load_ = last_load;
-	const k_ticks_t max_ticks = COUNTER_MAX / get_cyc_per_tick() - 1;
-
-	ticks = (ticks == K_TICKS_FOREVER) ? max_ticks : ticks;
+	/* passing ticks==1 means "announce the next tick",
+	 * ticks value of zero (or even negative) is legal and
+	 * treated identically: it simply indicates the
+	 * kernel would like the next tick announcement ASAP.
+	 */
 	ticks = CLAMP(ticks - 1, 0, (const int32_t)max_ticks);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	K_SPINLOCK(&lock) {
+		uint32_t delay;
+		uint32_t val1, val2;
+		uint32_t last_load_ = last_load;
 
-	uint32_t pending = elapsed();
+		uint32_t pending = elapsed();
 
-	val1 = SysTick->VAL;
+		val1 = sys_read32(SYST_CVR);
 
-	cycle_count += pending;
-	overflow_cyc = 0;
+		cycle_count += pending;
+		overflow_cyc = 0;
 
-	uint32_t unannounced = cycle_count - announced_cycles;
+		uint32_t unannounced = cycle_count - announced_cycles;
 
-	if ((int32_t)unannounced < 0) {
-		/* We haven't announced for more than half the 32-bit
-		 * wrap duration, because new timeouts keep being set
-		 * before the existing one fires.  Force an announce
-		 * to avoid loss of a wrap event, making sure the
-		 * delay is at least the minimum delay possible.
-		 */
-		last_load = MIN_DELAY;
-	} else {
-		const uint32_t max_cycles = max_ticks * get_cyc_per_tick();
-		/* Desired delay in the future */
-		delay = ticks * get_cyc_per_tick();
-
-		/* Round delay up to next tick boundary */
-		delay += unannounced;
-		delay = DIV_ROUND_UP(delay, get_cyc_per_tick()) * get_cyc_per_tick();
-		delay -= unannounced;
-		delay = MAX(delay, MIN_DELAY);
-		if (delay > max_cycles) {
-			last_load = max_cycles;
+		if ((int32_t)unannounced < 0) {
+			/* We haven't announced for more than half the 32-bit
+			 * wrap duration, because new timeouts keep being set
+			 * before the existing one fires.  Force an announce
+			 * to avoid loss of a wrap event, making sure the
+			 * delay is at least the minimum delay possible.
+			 */
+			last_load = MIN_DELAY;
 		} else {
-			last_load = delay;
+			const uint32_t max_cycles = max_ticks *
+					get_cyc_per_tick();
+			/* Desired delay in the future */
+			delay = ticks * get_cyc_per_tick();
+
+			/* Round delay up to next tick boundary */
+			delay += unannounced;
+			delay = DIV_ROUND_UP(delay, get_cyc_per_tick()) *
+					get_cyc_per_tick();
+			delay -= unannounced;
+			delay = MAX(delay, MIN_DELAY);
+			if (delay > max_cycles) {
+				last_load = max_cycles;
+			} else {
+				last_load = delay;
+			}
+		}
+
+		val2 = sys_read32(SYST_CVR);
+
+		sys_write32(last_load - 1, SYST_RVR);
+		sys_write32(0, SYST_CVR); /* resets timer to last_load */
+
+		/*
+		 * Add elapsed cycles while computing the new load to
+		 * cycle_count.
+		 *
+		 * Note that comparing val1 and val2 is normaly not good enough
+		 * to guess if the counter wrapped during this interval.
+		 * Indeed if val1 is close to SYST_RVR, then there are little
+		 * chances to catch val2 between val1 and SYST_RVR after a wrap.
+		 * COUNTFLAG should be checked in addition. But since the load
+		 * computation is faster than MIN_DELAY, then we don't need
+		 * to worry about this case.
+		 */
+		if (val1 < val2) {
+			cycle_count += (val1 + (last_load_ - val2));
+		} else {
+			cycle_count += (val1 - val2);
 		}
 	}
-
-	val2 = SysTick->VAL;
-
-	SysTick->LOAD = last_load - 1;
-	SysTick->VAL = 0; /* resets timer to last_load */
-
-	/*
-	 * Add elapsed cycles while computing the new load to cycle_count.
-	 *
-	 * Note that comparing val1 and val2 is normaly not good enough to
-	 * guess if the counter wrapped during this interval. Indeed if val1 is
-	 * close to LOAD, then there are little chances to catch val2 between
-	 * val1 and LOAD after a wrap. COUNTFLAG should be checked in addition.
-	 * But since the load computation is faster than MIN_DELAY, then we
-	 * don't need to worry about this case.
-	 */
-	if (val1 < val2) {
-		cycle_count += (val1 + (last_load_ - val2));
-	} else {
-		cycle_count += (val1 - val2);
-	}
-	k_spin_unlock(&lock, key);
-#endif
 }
 
 uint32_t sys_clock_elapsed(void)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
+	uint32_t ret;
+
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		k_spinlock_key_t key = k_spin_lock(&lock);
+		uint32_t unannounced = cycle_count - announced_cycles;
+		uint32_t cyc = elapsed() + unannounced;
+
+		k_spin_unlock(&lock, key);
+
+		ret = cyc / get_cyc_per_tick();
+	} else {
+		ret = 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t unannounced = cycle_count - announced_cycles;
-	uint32_t cyc = elapsed() + unannounced;
-
-	k_spin_unlock(&lock, key);
-	return cyc / get_cyc_per_tick();
+	return ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -297,13 +353,16 @@ uint64_t sys_clock_cycle_get_64(void)
 void sys_clock_idle_exit(void)
 {
 	if (last_load == TIMER_STOPPED) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		sys_write32(SYST_CSR_RUN, SYST_CSR);
 	}
 }
 
 void sys_clock_disable(void)
 {
-	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+	K_SPINLOCK(&lock) {
+		sys_write32(0, SYST_CSR);
+		last_load = TIMER_STOPPED;
+	}
 }
 
 static int sys_clock_driver_init(void)
@@ -315,11 +374,9 @@ static int sys_clock_driver_init(void)
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = get_cyc_per_tick() - 1;
 	overflow_cyc = 0;
-	SysTick->LOAD = last_load;
-	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
+	sys_write32(last_load, SYST_RVR);
+	sys_write32(0, SYST_CVR); /* reset timer to the last_load */
+	sys_write32(SYST_CSR_RUN, SYST_CSR);
 	return 0;
 }
 
