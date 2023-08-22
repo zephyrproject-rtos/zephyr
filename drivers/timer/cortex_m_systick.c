@@ -37,9 +37,9 @@ static struct k_spinlock lock;
 static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
-#define cycle_t uint64_t
+typedef uint64_t cycle_t;
 #else
-#define cycle_t uint32_t
+typedef uint32_t cycle_t;
 #endif
 
 /*
@@ -127,10 +127,12 @@ static uint32_t elapsed(void)
 	return (last_load - val2) + overflow_cyc;
 }
 
-/* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
-void sys_clock_isr(void *arg)
+/* sys_clock_isr is calling directly from the platform's vectors table.
+ * Also ISR_DIRECT_DECLARE() makes it ready to use and doesn't require any
+ * additional hooks via IRQ_CONNECT/IRQ_DIRECT_CONNECT
+ */
+ISR_DIRECT_DECLARE(sys_clock_isr)
 {
-	ARG_UNUSED(arg);
 	uint32_t dcycles;
 	uint32_t dticks;
 
@@ -163,7 +165,9 @@ void sys_clock_isr(void *arg)
 	} else {
 		sys_clock_announce(1);
 	}
-	z_arm_int_exit();
+
+	ISR_DIRECT_PM();
+	return 1;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
