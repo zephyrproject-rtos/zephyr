@@ -55,7 +55,6 @@ struct bt_tbs_server_inst {
 #endif /* IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) */
 	struct bt_gatt_discover_params discover_params;
 	struct bt_tbs_instance *current_inst;
-	bool subscribe_all;
 };
 
 static const struct bt_tbs_client_cb *tbs_client_cbs;
@@ -1537,7 +1536,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 #endif /* defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) */
 		}
 
-		if (srv_insts[conn_index].subscribe_all && sub_params != NULL) {
+		if (sub_params != NULL) {
 			sub_params->value = 0;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
@@ -2220,7 +2219,7 @@ int bt_tbs_client_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 
-int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe)
+int bt_tbs_client_discover(struct bt_conn *conn)
 {
 	uint8_t conn_index;
 	struct bt_tbs_server_inst *srv_inst;
@@ -2240,8 +2239,6 @@ int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe)
 	(void)memset(srv_inst->tbs_insts, 0, sizeof(srv_inst->tbs_insts)); /* reset data */
 	srv_inst->inst_cnt = 0;
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
-	/* Discover TBS on peer, setup handles and notify/indicate */
-	srv_inst->subscribe_all = subscribe;
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	(void)memset(&srv_inst->gtbs_inst, 0, sizeof(srv_inst->gtbs_inst)); /* reset data */
 	return primary_discover_gtbs(conn);
