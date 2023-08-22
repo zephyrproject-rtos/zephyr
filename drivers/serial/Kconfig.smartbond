@@ -7,5 +7,6 @@ config UART_SMARTBOND
 	depends on DT_HAS_RENESAS_SMARTBOND_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN if PM_DEVICE
 	help
 	  Enable UART driver for Renesas SmartBond(tm) DA1469x series MCU.
