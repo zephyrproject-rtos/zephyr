@@ -20,7 +20,6 @@ endif()
 if(CONFIG_SETTINGS)
 
  target_sources(app PRIVATE
-  src/settings_test_backend.c
   src/test_persistence.c
   src/test_replay_cache.c
   src/test_provision.c

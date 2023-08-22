@@ -224,8 +224,6 @@ static const struct stack_cfg {
 };
 static const struct stack_cfg *current_stack_cfg;
 
-static bool clear_settings;
-
 static void test_args_parse(int argc, char *argv[])
 {
 	char *access_cfg_str = NULL;
@@ -245,14 +243,7 @@ static void test_args_parse(int argc, char *argv[])
 			.name = "{0, 1}",
 			.option = "stack-cfg",
 			.descript = ""
-		},
-		{
-			.dest = &clear_settings,
-			.type = 'b',
-			.name = "{0, 1}",
-			.option = "clear-settings",
-			.descript = "",
-		},
+		}
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
@@ -445,7 +436,6 @@ static void provisioner_setup(void)
 
 static void test_provisioning_data_save(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -636,7 +626,6 @@ static void node_configure(void)
 
 static void test_access_data_save(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -876,7 +865,6 @@ static void test_cfg_save(void)
 
 	ASSERT_TRUE(current_stack_cfg != NULL);
 
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	if (device_setup_and_self_provision()) {
@@ -992,10 +980,6 @@ static int mesh_settings_load_cb(const char *key, size_t len, settings_read_cb r
  */
 static void test_reprovisioning_device(void)
 {
-	if (clear_settings) {
-		bt_mesh_test_host_files_remove();
-	}
-
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	device_setup();
@@ -1027,7 +1011,6 @@ static void test_reprovisioning_provisioner(void)
 	int err;
 	bool status;
 
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
 	provisioner_setup();
