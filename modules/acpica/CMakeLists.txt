@@ -1,25 +1,25 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-set(ACPI_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/)
-set(INC_DIR ${ACPI_DIR}/source/include/)
-set(SRC_DIR ${ACPI_DIR}/source)
-set(COMP_DIR ${ACPI_DIR}/source/components)
-set(PARENT_SRC_DIR ${ACPI_DIR}../../zephyr)
-set(ACPI_PARENT_DIR ${ACPI_DIR}/../)
-
-zephyr_include_directories(
-	${PARENT_SRC_DIR}/include/
-	${ACPI_PARENT_DIR}/
-	${INC_DIR}/
-	${INC_DIR}/platform/
-	${SRC_DIR}/compiler/
-	${ZEPHYR_CURRENT_MODULE_DIR}/generate/zephyr/
-	${SRC_DIR}/tools/acpiexec/
-	${SRC_DIR}/tools/acpidump/
-)
-
 if (CONFIG_ACPI)
+	set(ACPI_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/)
+	set(INC_DIR ${ACPI_DIR}/source/include/)
+	set(SRC_DIR ${ACPI_DIR}/source)
+	set(COMP_DIR ${ACPI_DIR}/source/components)
+	set(PARENT_SRC_DIR ${ACPI_DIR}../../zephyr)
+	set(ACPI_PARENT_DIR ${ACPI_DIR}/../)
+
+	zephyr_include_directories(
+		${PARENT_SRC_DIR}/include/
+		${ACPI_PARENT_DIR}/
+		${INC_DIR}/
+		${INC_DIR}/platform/
+		${SRC_DIR}/compiler/
+		${ZEPHYR_CURRENT_MODULE_DIR}/generate/zephyr/
+		${SRC_DIR}/tools/acpiexec/
+		${SRC_DIR}/tools/acpidump/
+	)
+
 	zephyr_library()
 
 	add_compile_definitions(__ZEPHYR__)
