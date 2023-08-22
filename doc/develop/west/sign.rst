@@ -5,7 +5,9 @@ Signing Binaries
 
 The ``west sign`` :ref:`extension <west-extensions>` command can be used to
 sign a Zephyr application binary for consumption by a bootloader using an
-external tool. Run ``west sign -h`` for command line help.
+external tool. In some configurations, ``west sign`` is also used to invoke
+an external, post-processing tool that "stitches" the final components of
+the image together. Run ``west sign -h`` for command line help.
 
 MCUboot / imgtool
 *****************
