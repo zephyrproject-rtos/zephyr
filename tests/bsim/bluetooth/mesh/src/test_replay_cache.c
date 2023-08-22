@@ -124,7 +124,6 @@ static void rx_sar_conf(void)
 
 static void test_tx_immediate_replay_attack(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_setup();
 	tx_sar_conf();
 
@@ -173,7 +172,6 @@ static void test_tx_immediate_replay_attack(void)
 
 static void test_rx_immediate_replay_attack(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_setup();
 	rx_sar_conf();
 	bt_mesh_test_ra_cb_setup(rx_ended);
@@ -187,7 +185,6 @@ static void test_rx_immediate_replay_attack(void)
 
 static void test_tx_power_replay_attack(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_setup();
 	tx_sar_conf();
 
@@ -253,7 +250,7 @@ static void send_end_cb(int err, void *cb_data)
 
 static bool msg_send(uint16_t src, uint16_t dst)
 {
-	struct bt_mesh_send_cb cb = {
+	static struct bt_mesh_send_cb cb = {
 		.end = send_end_cb,
 	};
 	struct bt_mesh_msg_ctx ctx = {
@@ -318,9 +315,11 @@ static bool ivi_update_toggle(void)
 	return res;
 }
 
+/* 1 second delays have been added to prevent interfering tail of
+ * the previous rx transaction with the beginning of the new tx transaction.
+ */
 static void test_rx_rpl_frag(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_setup();
 
 	k_sleep(K_SECONDS(10));
@@ -329,6 +328,8 @@ static void test_rx_rpl_frag(void)
 	for (int i = 0; i < 3; i++) {
 		ASSERT_TRUE(msg_recv(100 + i));
 	}
+
+	k_sleep(K_SECONDS(1));
 
 	/* Ask tx node to proceed to next test step. */
 	ASSERT_TRUE(msg_send(rx_cfg.addr, tx_cfg.addr));
@@ -342,6 +343,8 @@ static void test_rx_rpl_frag(void)
 	ASSERT_TRUE(msg_recv(100));
 	ASSERT_TRUE(msg_recv(102));
 
+	k_sleep(K_SECONDS(1));
+
 	/* Ask tx node to proceed to next test step. */
 	ASSERT_TRUE(msg_send(rx_cfg.addr, tx_cfg.addr));
 
@@ -351,6 +354,8 @@ static void test_rx_rpl_frag(void)
 	/* Bump SeqNum in RPL for even addresses. */
 	ASSERT_TRUE(msg_recv(100));
 	ASSERT_TRUE(msg_recv(102));
+
+	k_sleep(K_SECONDS(1));
 
 	/* Start IVI Update again. */
 	/* RPL entry with odd address should be removed causing fragmentation in RPL. old_iv flag
@@ -384,9 +389,11 @@ static void test_rx_rpl_frag(void)
 	PASS();
 }
 
+/* 1 second delays have been added to prevent interfering tail of
+ * the previous rx transaction with the beginning of the new tx transaction.
+ */
 static void test_tx_rpl_frag(void)
 {
-	bt_mesh_test_host_files_remove();
 	bt_mesh_test_setup();
 
 	k_sleep(K_SECONDS(10));
@@ -396,10 +403,10 @@ static void test_tx_rpl_frag(void)
 		ASSERT_TRUE(msg_send(100 + i, rx_cfg.addr));
 	}
 
-	k_sleep(K_SECONDS(3));
-
 	/* Wait for the rx node. */
 	ASSERT_TRUE(msg_recv(rx_cfg.addr));
+
+	k_sleep(K_SECONDS(1));
 
 	/* Start IVI Update. */
 	ASSERT_TRUE(ivi_update_toggle());
@@ -410,6 +417,8 @@ static void test_tx_rpl_frag(void)
 
 	/* Wait for the rx node. */
 	ASSERT_TRUE(msg_recv(rx_cfg.addr));
+
+	k_sleep(K_SECONDS(1));
 
 	/* Complete IVI Update. */
 	ASSERT_FALSE(ivi_update_toggle());

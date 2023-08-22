@@ -1182,8 +1182,6 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
  */
 static void test_device_pb_remote_server_unproved(void)
 {
-	bt_mesh_test_host_files_remove();
-
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
 
 	PASS();
@@ -1195,7 +1193,6 @@ static void test_device_pb_remote_server_unproved(void)
  */
 static void test_device_pb_remote_server_unproved_unresponsive(void)
 {
-	bt_mesh_test_host_files_remove();
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp_unresponsive);
 
 	k_sem_init(&pdu_send_sem, 0, 1);
@@ -1306,7 +1303,6 @@ static void test_provisioner_pb_remote_client_ncrp_provision(void)
 	uint16_t pb_remote_server_addr;
 	uint8_t status;
 
-	bt_mesh_test_host_files_remove();
 	provisioner_pb_remote_client_setup();
 
 	/* Provision the 2nd device over PB-Adv. */
@@ -1433,7 +1429,6 @@ static void test_provisioner_pb_remote_client_ncrp_second_time(void)
  */
 static void test_device_pb_remote_server_ncrp_prepare(void)
 {
-	bt_mesh_test_host_files_remove();
 	device_pb_remote_server_setup_unproved(&rpr_srv_comp);
 
 	LOG_INF("Preparing for Composition Data change");

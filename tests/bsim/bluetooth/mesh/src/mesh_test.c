@@ -6,7 +6,6 @@
 #include "mesh_test.h"
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
-#include "settings_test_backend.h"
 #include "mesh/crypto.h"
 
 #define LOG_MODULE_NAME mesh_test
@@ -553,12 +552,3 @@ void bt_mesh_test_sar_conf_set(struct bt_mesh_sar_tx *tx_set, struct bt_mesh_sar
 	}
 }
 #endif /* defined(CONFIG_BT_MESH_SAR_CFG) */
-
-void bt_mesh_test_host_files_remove(void)
-{
-#if defined(CONFIG_SETTINGS)
-	/* crypto library initialization to be able to remove stored keys. */
-	bt_mesh_crypto_init();
-	settings_test_backend_clear();
-#endif
-}
