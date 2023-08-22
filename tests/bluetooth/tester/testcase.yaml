@@ -11,6 +11,7 @@ tests:
     build_only: true
     platform_allow:
       - qemu_x86
+      - native_posix
       - nrf5340dk_nrf5340_cpuapp
     extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
     tags: bluetooth
@@ -19,6 +20,7 @@ tests:
     build_only: true
     platform_allow:
       - qemu_x86
+      - native_posix
       - nrf52dk_nrf52832
     extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
     tags: bluetooth
