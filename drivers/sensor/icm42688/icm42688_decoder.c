@@ -77,28 +77,6 @@ static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 	}
 }
 
-static enum sensor_channel icm42688_get_channel_from_position(int pos)
-{
-	switch (pos) {
-	case 0:
-		return SENSOR_CHAN_DIE_TEMP;
-	case 1:
-		return SENSOR_CHAN_ACCEL_X;
-	case 2:
-		return SENSOR_CHAN_ACCEL_Y;
-	case 3:
-		return SENSOR_CHAN_ACCEL_Z;
-	case 4:
-		return SENSOR_CHAN_GYRO_X;
-	case 5:
-		return SENSOR_CHAN_GYRO_Y;
-	case 6:
-		return SENSOR_CHAN_GYRO_Z;
-	default:
-		return SENSOR_CHAN_MAX;
-	}
-}
-
 int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel chan, int32_t reading,
 				q31_t *out)
 {
@@ -221,7 +199,7 @@ int icm42688_encode(const struct device *dev, const enum sensor_channel *const c
 }
 
 static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel channel,
-				   size_t channel_idx, sensor_frame_iterator_t *fit,
+				   size_t channel_idx, uint32_t *fit,
 				   uint16_t max_count, void *data_out)
 {
 	const struct icm42688_encoded_data *edata = (const struct icm42688_encoded_data *)buffer;
@@ -340,7 +318,7 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, enum sensor_channel c
 }
 
 static int icm42688_decoder_decode(const uint8_t *buffer, enum sensor_channel channel,
-				   size_t channel_idx, sensor_frame_iterator_t *fit,
+				   size_t channel_idx, uint32_t *fit,
 				   uint16_t max_count, void *data_out)
 {
 	return icm42688_one_shot_decode(buffer, channel, channel_idx, fit, max_count, data_out);
