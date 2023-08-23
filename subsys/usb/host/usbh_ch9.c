@@ -37,21 +37,15 @@ int usbh_req_setup(const struct device *dev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
-	xfer = uhc_xfer_alloc(dev, addr, ep, 0, 64, SETUP_REQ_TIMEOUT, NULL);
+	xfer = uhc_xfer_alloc(dev, addr, ep, 0, 64, SETUP_REQ_TIMEOUT, NULL, NULL);
 	if (!xfer) {
 		return -ENOMEM;
 	}
 
-	buf = uhc_xfer_buf_alloc(dev, xfer, sizeof(req));
-	if (!buf) {
-		ret = -ENOMEM;
-		goto buf_alloc_err;
-	}
-
-	net_buf_add_mem(buf, &req, sizeof(req));
+	memcpy(xfer->setup_pkt, &req, sizeof(req));
 
 	if (wLength) {
-		buf = uhc_xfer_buf_alloc(dev, xfer, wLength);
+		buf = uhc_xfer_buf_alloc(dev, wLength);
 		if (!buf) {
 			ret = -ENOMEM;
 			goto buf_alloc_err;
@@ -60,12 +54,11 @@ int usbh_req_setup(const struct device *dev,
 		if (usb_reqtype_is_to_device(&req) && data != NULL) {
 			net_buf_add_mem(buf, data, wLength);
 		}
-	}
 
-	buf = uhc_xfer_buf_alloc(dev, xfer, 0);
-	if (!buf) {
-		ret = -ENOMEM;
-		goto buf_alloc_err;
+		ret = uhc_xfer_buf_add(dev, xfer, buf);
+		if (ret) {
+			goto buf_alloc_err;
+		}
 	}
 
 	return uhc_ep_enqueue(dev, xfer);
