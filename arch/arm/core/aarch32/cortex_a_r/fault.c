@@ -110,7 +110,7 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 
 #if defined(CONFIG_FPU_SHARING)
 
-static void ALWAYS_INLINE z_arm_fpu_caller_save(struct __fpu_sf *fpu)
+static ALWAYS_INLINE void z_arm_fpu_caller_save(struct __fpu_sf *fpu)
 {
 	__asm__ volatile (
 		"vstmia %0, {s0-s15};\n"

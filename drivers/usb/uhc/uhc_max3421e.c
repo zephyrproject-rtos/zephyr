@@ -177,7 +177,7 @@ static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
 }
 
 /* Set peripheral (device) address to be used in next transfer */
-static int ALWAYS_INLINE max3421e_peraddr(const struct device *dev,
+static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev,
 					  const uint8_t addr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
