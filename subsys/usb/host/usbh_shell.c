@@ -107,27 +107,22 @@ static int bazfoo_request(struct usbh_contex *const ctx,
 
 	shell_info(ctx_shell, "host: transfer finished %p, err %d", xfer, err);
 
-	while (!k_fifo_is_empty(&xfer->done)) {
-		struct net_buf *buf;
-
-		buf = net_buf_get(&xfer->done, K_NO_WAIT);
-		if (buf) {
-			/*
-			 * FIXME: We don not distinguish the context
-			 * of the request and always try to print it
-			 * as descriptor first. If it is not a known descriptor,
-			 * we show a hexdump in any case.
-			 * This is just simple enough for first steps and will
-			 * be revised with coming peripheral device management.
-			 */
-			if (xfer->ep == USB_CONTROL_EP_IN) {
-				print_desc(ctx_shell, buf);
-			} else {
-				shell_hexdump(ctx_shell, buf->data, buf->len);
-			}
-
-			uhc_xfer_buf_free(dev, buf);
+	if (xfer->buf) {
+		/*
+		 * FIXME: We don not distinguish the context
+		 * of the request and always try to print it
+		 * as descriptor first. If it is not a known descriptor,
+		 * we show a hexdump in any case.
+		 * This is just simple enough for first steps and will
+		 * be revised with coming peripheral device management.
+		 */
+		if (xfer->ep == USB_CONTROL_EP_IN) {
+			print_desc(ctx_shell, xfer->buf);
+		} else {
+			shell_hexdump(ctx_shell, xfer->buf->data, xfer->buf->len);
 		}
+
+		uhc_xfer_buf_free(dev, xfer->buf);
 	}
 
 	return uhc_xfer_free(dev, xfer);
@@ -191,12 +186,12 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	ep = strtol(argv[2], NULL, 16);
 	len = MIN(sizeof(vreq_test_buf), strtol(argv[3], NULL, 10));
 
-	xfer = uhc_xfer_alloc(uhs_ctx.dev, addr, ep, 0, 512, 10, NULL);
+	xfer = uhc_xfer_alloc(uhs_ctx.dev, addr, ep, 0, 512, 10, NULL, NULL);
 	if (!xfer) {
 		return -ENOMEM;
 	}
 
-	buf = uhc_xfer_buf_alloc(uhs_ctx.dev, xfer, len);
+	buf = uhc_xfer_buf_alloc(uhs_ctx.dev, len);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -204,6 +199,8 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	if (USB_EP_DIR_IS_OUT(ep)) {
 		net_buf_add_mem(buf, vreq_test_buf, len);
 	}
+
+	uhc_xfer_buf_add(uhs_ctx.dev, xfer, buf);
 
 	return uhc_ep_enqueue(uhs_ctx.dev, xfer);
 }
