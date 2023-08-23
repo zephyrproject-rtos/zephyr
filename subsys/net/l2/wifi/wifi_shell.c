@@ -1322,7 +1322,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),
 	SHELL_CMD(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),
-	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_CMD(reg_domain, NULL,
 		"Set or Get Wi-Fi regulatory domain\n"
 		"Usage: wifi reg_domain [ISO/IEC 3166-1 alpha2] [-f]\n"
