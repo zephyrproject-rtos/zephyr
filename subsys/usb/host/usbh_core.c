@@ -51,7 +51,7 @@ static int event_ep_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static int ALWAYS_INLINE usbh_event_handler(struct usbh_contex *const ctx,
+static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 					    struct uhc_event *const event)
 {
 	int ret = 0;

@@ -193,7 +193,7 @@ __asm__(".align 4\n\t"
 	"  call0 power_gate_exit\n\t");
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
-static void ALWAYS_INLINE power_off_exit(void)
+static ALWAYS_INLINE void power_off_exit(void)
 {
 	__asm__(
 		"  movi  a0, 0\n\t"
