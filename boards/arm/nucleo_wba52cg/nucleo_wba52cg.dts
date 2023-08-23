@@ -47,6 +47,10 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -72,6 +76,10 @@
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
 	apb7-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
 };
 
 &usart1 {
