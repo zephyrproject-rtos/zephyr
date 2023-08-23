@@ -19,6 +19,12 @@ config USBC_TCPC_INIT_PRIORITY
 	  Note that the priority needs to be lower than the USBC stack
 	  so that it can start before the USBC sub-system.
 
+config USBC_TCPC_SHELL
+	bool "Shell commands for TCPC subsystem"
+	default n
+	help
+	  Enable support for TCPC shell commands
+
 source "drivers/usb_c/tcpc/Kconfig.tcpc_stm32"
 source "drivers/usb_c/tcpc/Kconfig.tcpc_tcpci"
 
