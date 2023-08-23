@@ -15,6 +15,7 @@ tests:
       - samples
       - display
       - gui
+      - lvgl
     modules:
       - lvgl
     integration_platforms:
