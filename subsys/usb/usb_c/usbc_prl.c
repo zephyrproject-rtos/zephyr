@@ -401,6 +401,12 @@ static void prl_tx_set_state(const struct device *dev, const enum usbc_prl_tx_st
 
 	__ASSERT(state < ARRAY_SIZE(prl_tx_states), "invalid prl_tx_state %d", state);
 	smf_set_state(SMF_CTX(prl_tx), &prl_tx_states[state]);
+
+	/*
+	 * This call prevents the USB-C thread from going to sleep and allows to immediately execute
+	 * the logic in the new state for faster response
+	 */
+	usbc_prevent_sleep_once(dev);
 }
 
 /**
@@ -413,6 +419,12 @@ static void prl_hr_set_state(const struct device *dev, const enum usbc_prl_hr_st
 
 	__ASSERT(state < ARRAY_SIZE(prl_hr_states), "invalid prl_hr_state %d", state);
 	smf_set_state(SMF_CTX(prl_hr), &prl_hr_states[state]);
+
+	/*
+	 * This call prevents the USB-C thread from going to sleep and allows to immediately execute
+	 * the logic in the new state for faster response
+	 */
+	usbc_prevent_sleep_once(dev);
 }
 
 /**

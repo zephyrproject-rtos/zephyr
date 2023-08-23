@@ -79,7 +79,12 @@ static void sink_power_sub_states(const struct device *dev)
  */
 void tc_unattached_snk_entry(void *obj)
 {
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
 	LOG_INF("Unattached.SNK");
+
+	/* This call prevents the USB-C thread from sleeping and decreases the response time */
+	usbc_prevent_sleep_once(tc->dev);
 }
 
 /**
@@ -109,6 +114,9 @@ void tc_attach_wait_snk_entry(void *obj)
 	LOG_INF("AttachWait.SNK");
 
 	tc->cc_state = TC_CC_NONE;
+
+	/* This call prevents the USB-C thread from sleeping and decreases the response time */
+	usbc_prevent_sleep_once(tc->dev);
 }
 
 /**
@@ -138,6 +146,14 @@ void tc_attach_wait_snk_run(void *obj)
 	/* Wait for CC debounce */
 	if (usbc_timer_running(&tc->tc_t_cc_debounce) &&
 	    usbc_timer_expired(&tc->tc_t_cc_debounce) == false) {
+		if (CONFIG_USBC_STATE_MACHINE_CYCLE_TIME >= TC_T_CC_DEBOUNCE_MIN_MS) {
+			/*
+			 * This call prevents the USB-C thread from going to sleep and decreases the
+			 * response time
+			 */
+			usbc_prevent_sleep_once(tc->dev);
+		}
+
 		return;
 	}
 
@@ -156,6 +172,12 @@ void tc_attach_wait_snk_run(void *obj)
 	if (vbus_present) {
 		tc_set_state(dev, TC_ATTACHED_SNK_STATE);
 	}
+
+	/*
+	 * This call prevents the USB-C thread from going to sleep and decreases the
+	 * response time
+	 */
+	usbc_prevent_sleep_once(tc->dev);
 }
 
 void tc_attach_wait_snk_exit(void *obj)
@@ -204,6 +226,11 @@ void tc_attached_snk_run(void *obj)
 	/* Detach detection */
 	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT) == false) {
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+		/*
+		 * This call prevents the USB-C thread from going to sleep and decreases the
+		 * response time
+		 */
+		usbc_prevent_sleep_once(tc->dev);
 		return;
 	}
 

@@ -345,6 +345,9 @@ void pe_message_received(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	atomic_set_bit(pe->flags, PE_FLAGS_MSG_RECEIVED);
+
+	/* This call prevents the USB-C thread from sleeping and decreases the response time */
+	usbc_prevent_sleep_once(dev);
 }
 
 /**
@@ -422,6 +425,12 @@ void pe_set_state(const struct device *dev, const enum usbc_pe_state state)
 
 	__ASSERT(state < ARRAY_SIZE(pe_states), "invalid pe_state %d", state);
 	smf_set_state(SMF_CTX(data->pe), &pe_states[state]);
+
+	/*
+	 * This call prevents the USB-C thread from going to sleep and allows to immediately execute
+	 * the logic in the new state for faster response
+	 */
+	usbc_prevent_sleep_once(dev);
 }
 
 /**
