@@ -8,6 +8,7 @@ ram: 2048
 supported:
   - watchdog
   - rtc
+  - pwm
 testing:
   timeout_multiplier: 4
   ignore_tags:
