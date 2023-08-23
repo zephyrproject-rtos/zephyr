@@ -496,7 +496,7 @@ struct bmi08x_gyro_config {
 	uint8_t int3_4_conf_io;
 #endif
 	uint8_t gyro_hz;
-	uint8_t gyro_fs;
+	uint16_t gyro_fs;
 };
 
 struct bmi08x_accel_data {
