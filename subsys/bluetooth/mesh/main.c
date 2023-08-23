@@ -51,7 +51,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	struct bt_mesh_key mesh_net_key;
 	bool is_net_key_valid = false;
 	bool is_dev_key_valid = false;
-	bool is_cdb_dev_key_valid = false;
 	int err = 0;
 
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
@@ -59,7 +58,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	}
 
 	struct bt_mesh_cdb_subnet *subnet = NULL;
-	struct bt_mesh_cdb_node *node;
+	struct bt_mesh_cdb_node *node = NULL;
 
 	LOG_INF("Primary Element: 0x%04x", addr);
 	LOG_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x", net_idx, flags, iv_index);
@@ -122,7 +121,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 			LOG_ERR("Failed to import cdb device key");
 			goto end;
 		}
-		is_cdb_dev_key_valid = true;
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			bt_mesh_cdb_node_store(node);
@@ -169,7 +167,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	bt_mesh_start();
 
 end:
-	if (err && is_cdb_dev_key_valid && IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+	if (err && node != NULL && IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 		bt_mesh_cdb_node_del(node, true);
 	}
 
