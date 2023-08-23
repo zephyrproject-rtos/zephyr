@@ -6,3 +6,13 @@
 properties:
   reg:
     required: true
+
+  use-external-clk:
+    type: boolean
+    description: |
+      When set, SysTick will use the "external" clock as
+      own reference instead of CPU's one.
+
+  external-frequency:
+    type: int
+    description: external clock frequency value

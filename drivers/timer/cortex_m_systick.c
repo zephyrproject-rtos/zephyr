@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2023 MUNIC SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +47,19 @@
 #define SYST_CALIB_NOREF	BIT(31)
 #define SYST_CALIB_SKEW		BIT(30)
 
-#define SYST_CSR_RUN (SYST_CSR_ENABLE		| \
+#define USE_EXT_CLOCK	DT_PROP_OR(DT_NODELABEL(systick), use_external_clk, 0)
+
+#if USE_EXT_CLOCK
+
+#define SYS_CLOCK_FRQ	DT_PROP(DT_NODELABEL(systick), external_frequency)
+#define SYST_CSR_RUN	(SYST_CSR_ENABLE | SYST_CSR_TICKINT)
+static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
+{
+	return SYS_CLOCK_FRQ / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+}
+#else
+#define SYS_CLOCK_FRQ	sys_clock_hw_cycles_per_sec()
+#define SYST_CSR_RUN (SYST_CSR_ENABLE			| \
 				SYST_CSR_TICKINT	| \
 				SYST_CSR_CLKSOURCE)
 
@@ -63,6 +76,7 @@ static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
 	return sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 }
 #endif
+#endif
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -73,7 +87,11 @@ static ALWAYS_INLINE const uint32_t get_cyc_per_tick(void)
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024U, get_cyc_per_tick()/16U)
+#define MIN_IRQ_DELAY		1024U
+/* Minimal safe counter's value */
+#define TIMER_GUARD_VALUE	2
+
+static uint32_t min_delay_rvr;
 
 static struct k_spinlock lock;
 
@@ -265,7 +283,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			 * to avoid loss of a wrap event, making sure the
 			 * delay is at least the minimum delay possible.
 			 */
-			last_load = MIN_DELAY;
+			last_load = min_delay_rvr;
 		} else {
 			const uint32_t max_cycles = max_ticks *
 					get_cyc_per_tick();
@@ -277,7 +295,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			delay = DIV_ROUND_UP(delay, get_cyc_per_tick()) *
 					get_cyc_per_tick();
 			delay -= unannounced;
-			delay = MAX(delay, MIN_DELAY);
+			delay = MAX(delay, min_delay_rvr);
 			if (delay > max_cycles) {
 				last_load = max_cycles;
 			} else {
@@ -367,11 +385,19 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
+	/* Set Systick registers to the known state */
+	sys_clock_disable();
+	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 
+#if !USE_EXT_CLOCK && defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() /
 			CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#endif
+	min_delay_rvr = (uint64_t)MIN_IRQ_DELAY * SYS_CLOCK_FRQ /
+				sys_clock_hw_cycles_per_sec();
+	min_delay_rvr = MAX((int32_t)min_delay_rvr, TIMER_GUARD_VALUE);
+	min_delay_rvr = MAX(min_delay_rvr, get_cyc_per_tick()/16U);
 
-	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = get_cyc_per_tick() - 1;
 	overflow_cyc = 0;
 	sys_write32(last_load, SYST_RVR);
