@@ -33,6 +33,9 @@
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/dhcpv4.h>
 #endif
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+#include <zephyr/net/dhcpv6.h>
+#endif
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/ipv4_autoconf.h>
 #endif
@@ -275,6 +278,69 @@ struct net_if_ipv6 {
 	uint8_t hop_limit;
 };
 
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+struct net_if_dhcpv6 {
+	/** Used for timer list. */
+	sys_snode_t node;
+
+	/** Generated Client ID. */
+	struct net_dhcpv6_duid_storage clientid;
+
+	/** Server ID of the selected server. */
+	struct net_dhcpv6_duid_storage serverid;
+
+	/** DHCPv6 client state. */
+	enum net_dhcpv6_state state;
+
+	/** DHCPv6 client configuration parameters. */
+	struct net_dhcpv6_params params;
+
+	/** Timeout for the next event, absolute time, milliseconds. */
+	uint64_t timeout;
+
+	/** Time of the current exchange start, absolute time, milliseconds */
+	uint64_t exchange_start;
+
+	/** Renewal time, absolute time, milliseconds. */
+	uint64_t t1;
+
+	/** Rebinding time, absolute time, milliseconds. */
+	uint64_t t2;
+
+	/** The time when the last lease expires (terminates rebinding,
+	 *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
+	 */
+	uint64_t expire;
+
+	/** Generated IAID for IA_NA. */
+	uint32_t addr_iaid;
+
+	/** Generated IAID for IA_PD. */
+	uint32_t prefix_iaid;
+
+	/** Retransmit timeout for the current message, milliseconds. */
+	uint32_t retransmit_timeout;
+
+	/** Current best server preference received. */
+	int16_t server_preference;
+
+	/** Retransmission counter. */
+	uint8_t retransmissions;
+
+	/** Transaction ID for current exchange. */
+	uint8_t tid[DHCPV6_TID_SIZE];
+
+	/** Prefix length. */
+	uint8_t prefix_len;
+
+	/** Assigned IPv6 prefix. */
+	struct in6_addr prefix;
+
+	/** Assigned IPv6 address. */
+	struct in6_addr addr;
+};
+#endif /* defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6) */
+
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
@@ -412,6 +478,10 @@ struct net_if_config {
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
+
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
 
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
