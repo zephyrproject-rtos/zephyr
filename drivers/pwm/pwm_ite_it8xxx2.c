@@ -106,6 +106,11 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 		*reg_pwmpol &= ~BIT(ch);
 	}
 
+	/* Enable PWM output open-drain */
+	if (flags & PWM_IT8XXX2_OPEN_DRAIN) {
+		inst->PWMODENR |= BIT(ch);
+	}
+
 	/* If pulse cycles is 0, set duty cycle 0 and enable pwm channel */
 	if (pulse_cycles == 0) {
 		*reg_dcr = 0;
