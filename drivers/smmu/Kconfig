@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ARM_SMMU
+	bool "Support for arm smmu"
+	select IOMMU
+	help
+	  Enable support for arm smmu
+
+config SMMU_CTX_ALLOCATOR_SIZE
+	int "SMMU ctx allocator size"
+	default 4
+	help
+	  Maximum number of smmu ctx that can be allocated from ctx allocator.
+	  SMMU ctx is the data structure represent the child device managed by
+	  SMMU.
+
+choice SMMU_DEFAULT_TYPE
+	bool "SMMU default type"
+	default SMMU_TYPE_DMA_TRANSLATE
+
+config SMMU_TYPE_DMA_TRANSLATE
+	bool "Translate-strict"
+
+config SMMU_TYPE_GLOBAL_BYPASS
+	bool "Global bypass"
+
+endchoice
