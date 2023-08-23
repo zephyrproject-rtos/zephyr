@@ -342,7 +342,7 @@
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/i3c/                             @dcpleung
 /drivers/i3c/i3c_cdns.c                   @XenuIsWatching
-/drivers/ieee802154/                      @rlubos @tbursztyka @jukkar
+/drivers/ieee802154/                      @rlubos @tbursztyka @jukkar @fgrandel
 /drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @jciupis
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
@@ -704,6 +704,7 @@
 /include/zephyr/net/buf.h                        @jhedberg @tbursztyka @rlubos @jukkar
 /include/zephyr/net/coap*.h                      @rlubos
 /include/zephyr/net/conn_mgr*.h                  @rlubos @glarsennordic @jukkar
+/include/zephyr/net/ieee802154*.h                @rlubos @tbursztyka @jukkar @fgrandel
 /include/zephyr/net/lwm2m*.h                     @rlubos
 /include/zephyr/net/mqtt.h                       @rlubos
 /include/zephyr/net/mqtt_sn.h                    @rlubos @BeckmaR
@@ -878,6 +879,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/net/lib/sockets/                  @rlubos @tbursztyka @jukkar
 /subsys/net/lib/tls_credentials/          @rlubos
 /subsys/net/l2/                           @rlubos @tbursztyka @jukkar
+/subsys/net/l2/ieee802154/                @rlubos @tbursztyka @jukkar @fgrandel
 /subsys/net/l2/canbus/                    @alexanderwachter
 /subsys/net/pkt_filter/                   @npitre
 /subsys/net/*/openthread/                 @rlubos
@@ -924,6 +926,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/net/buf/                           @jhedberg @tbursztyka @jukkar
 /tests/net/conn_mgr/                      @rlubos @glarsennordic @jukkar
 /tests/net/conn_mgr_conn/                 @rlubos @glarsennordic @jukkar
+/tests/net/ieee802154/l2/                 @rlubos @tbursztyka @jukkar @fgrandel
 /tests/net/lib/                           @rlubos @tbursztyka @jukkar
 /tests/net/lib/http_header_fields/        @rlubos @tbursztyka @jukkar
 /tests/net/lib/mqtt_packet/               @rlubos
