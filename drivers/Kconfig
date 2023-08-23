@@ -83,5 +83,6 @@ source "drivers/wifi/Kconfig"
 source "drivers/xen/Kconfig"
 source "drivers/sip_svc/Kconfig"
 source "drivers/smmu/Kconfig"
+source "drivers/ata/Kconfig"
 
 endmenu
