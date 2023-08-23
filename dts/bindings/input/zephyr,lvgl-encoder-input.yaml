@@ -1,0 +1,32 @@
+# Copyright 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LVGL encoder indev pseudo-device
+
+  Listens for button/encoder input events and routes the
+  lv_indev_data_t to the underlying encoder lv_indev_t managed by LVGL.
+
+  Example configuration:
+
+  encoder {
+          compatible = "zephyr,lvgl-encoder-input";
+          rotation-input-code = <INPUT_REL_Y>;
+          button-input-code = <INPUT_KEY_0>;
+  };
+
+compatible: "zephyr,lvgl-encoder-input"
+
+include: zephyr,lvgl-common-input.yaml
+
+properties:
+  rotation-input-code:
+    type: int
+    required: true
+    description: |
+      Input event code associated with rotation (INPUT_REL_*).
+
+  button-input-code:
+    type: int
+    description: |
+      Input event key code for encoder button (INPUT_KEY_* or INPUT_BTN_*).

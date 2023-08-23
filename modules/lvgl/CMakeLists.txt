@@ -14,6 +14,7 @@ zephyr_library()
 
 zephyr_include_directories(${LVGL_DIR}/src/)
 zephyr_include_directories(.)
+zephyr_include_directories(include)
 
 zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)
 zephyr_compile_definitions(LV_CONF_PATH=${CMAKE_CURRENT_SOURCE_DIR}/lv_conf.h)
@@ -227,6 +228,7 @@ zephyr_library_sources(input/lvgl_common_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_KSCAN  input/lvgl_pointer_kscan.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_INPUT input/lvgl_pointer_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_BUTTON_INPUT input/lvgl_button_input.c)
+zephyr_library_sources_ifdef(CONFIG_LV_Z_ENCODER_INPUT input/lvgl_encoder_input.c)
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)
