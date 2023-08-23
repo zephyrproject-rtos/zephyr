@@ -21,6 +21,17 @@
 		shell_print(sh, "%s vbus: %d mV", DEVICE_DT_GET(node)->name, val);                 \
 	}
 
+/** Macro used to call the get_chip function from USB-C connector node */
+#define TCPC_GET_CHIP_NODE(node)                                                                   \
+	{                                                                                          \
+		ret |= tcpc_get_chip_info(DEVICE_DT_GET(DT_PROP(node, tcpc)), &chip_info);         \
+		shell_print(sh, "Chip: %s", DEVICE_DT_GET(node)->name);                            \
+		shell_print(sh, "\tVendor:   %04x", chip_info.vendor_id);                          \
+		shell_print(sh, "\tProduct:  %04x", chip_info.product_id);                         \
+		shell_print(sh, "\tDevice:   %04x", chip_info.device_id);                          \
+		shell_print(sh, "\tFirmware: %llx", chip_info.fw_version_number);                  \
+	}
+
 /**
  * @brief Shell command that dumps standard registers of TCPCs for all available USB-C ports
  *
@@ -55,9 +66,29 @@ static int cmd_tcpc_vbus(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+/**
+ * @brief Shell command that prints the TCPCs chips information for all available USB-C ports
+ *
+ * @param sh Shell structure
+ * @param argc Unused arguments count
+ * @param argv Unused arguments
+ * @return int ORed return values of all the functions executed, 0 in case of success
+ */
+static int cmd_tcpc_chip_info(const struct shell *sh, size_t argc, char **argv)
+{
+	struct tcpc_chip_info chip_info;
+	int ret = 0;
+
+	DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_GET_CHIP_NODE);
+
+	return ret;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_tcpc_cmds,
 			       SHELL_CMD(dump, NULL, "Dump TCPC registers", cmd_tcpc_dump),
 			       SHELL_CMD(vbus, NULL, "Display all VBUS voltages", cmd_tcpc_vbus),
+			       SHELL_CMD(chip, NULL, "Display chips information",
+					 cmd_tcpc_chip_info),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(tcpc, &sub_tcpc_cmds, "TCPC (USB-C PD) diagnostics", NULL);
