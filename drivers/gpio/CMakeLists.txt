@@ -83,5 +83,3 @@ if(CONFIG_GPIO_SC18IM704)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
   zephyr_library_sources(gpio_sc18im704.c)
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_GPIO_ALTERA_PIO gpio_altera_pio.c)
