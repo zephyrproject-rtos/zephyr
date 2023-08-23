@@ -2105,6 +2105,7 @@ Shields:
   collaborators:
     - avisconti
     - jfischer-no
+    - kartben
   files:
     - boards/shields/
     - doc/hardware/porting/shields.rst
