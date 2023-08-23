@@ -208,6 +208,11 @@ static void xtensa_init_page_tables(void)
 	sys_cache_data_flush_all();
 }
 
+__weak void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+}
+
 static void xtensa_mmu_init(bool is_core0)
 {
 	volatile uint8_t entry;
@@ -320,6 +325,8 @@ static void xtensa_mmu_init(bool is_core0)
 
 	xtensa_dtlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
 	xtensa_itlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
+
+	arch_xtensa_mmu_post_init(is_core0);
 }
 
 void z_xtensa_mmu_init(void)
