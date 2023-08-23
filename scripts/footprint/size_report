@@ -737,6 +737,8 @@ def main():
     """
     parse_args()
 
+    sys.stdout.reconfigure(encoding='utf-8')
+
     # Init colorama
     init()
 
