@@ -1034,6 +1034,16 @@
 		pinmux = < MCHP_XEC_PINMUX(00, MCHP_AF1) >;
 	};
 
+	/omit-if-no-ref/ gpio000_gpio000: gpio000_gpio000 {
+		pinmux = < MCHP_XEC_PINMUX(000, MCHP_AF0) >;
+	};
+	/omit-if-no-ref/ gpio161_gpio161: gpio161_gpio161 {
+		pinmux = < MCHP_XEC_PINMUX(0161, MCHP_AF0) >;
+	};
+	/omit-if-no-ref/ gpio162_gpio162: gpio162_gpio162 {
+		pinmux = < MCHP_XEC_PINMUX(0162, MCHP_AF0) >;
+	};
+
 	/omit-if-no-ref/ sys_shdn_fw_n_gpio221: sys_shdn_fw_n_gpio221 {
 		pinmux = < MCHP_XEC_PINMUX(0221, MCHP_AF5) >;
 	};
