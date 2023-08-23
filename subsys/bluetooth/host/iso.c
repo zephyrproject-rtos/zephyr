@@ -1371,7 +1371,7 @@ static int hci_le_remove_iso_data_path(struct bt_conn *iso, uint8_t dir)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = iso->handle;
+	cp->handle = sys_cpu_to_le16(iso->handle);
 	cp->path_dir = dir;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REMOVE_ISO_PATH, buf, &rsp);
