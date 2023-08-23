@@ -1,5 +1,7 @@
 common:
-  tags: filesystem
+  tags:
+    - filesystem
+    - fatfs
   modules:
     - fatfs
 tests:
