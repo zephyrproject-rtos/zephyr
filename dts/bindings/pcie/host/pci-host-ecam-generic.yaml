@@ -22,6 +22,13 @@ properties:
       definition of non-prefetchable memory. One or both of prefetchable Memory
       and IO Space may also be provided.
 
+  iommu-maps:
+    type: phandle-array
+    description: |
+      Maps a Request ID to an IOMMU and associated IOMMU specifier data.
+      The property is an arbitrary number of tuples of
+      (iommu, rid-base, iommu-base, length)
+
   interrupt-map-mask:
     type: array
 
