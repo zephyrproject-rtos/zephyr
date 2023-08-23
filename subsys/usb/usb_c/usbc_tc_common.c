@@ -70,7 +70,14 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		}
 
 		/* Sample CC lines */
-		tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2);
+		if (tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2) != 0) {
+			/* If this function fails, it may mean that the TCPC is in sleep mode or
+			 * the communication with TCPC has failed, so we can assume that the CC
+			 * lines are open or existing connection is faulty.
+			 */
+			tc->cc1 = TC_CC_VOLT_OPEN;
+			tc->cc2 = TC_CC_VOLT_OPEN;
+		}
 
 		/* Detect polarity */
 		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
