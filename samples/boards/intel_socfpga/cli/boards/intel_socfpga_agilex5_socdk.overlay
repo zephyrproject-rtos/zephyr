@@ -85,10 +85,24 @@
 
 &spi0 {
 	status = "okay";
+	/* Can select one or multiple slave select pins.
+	 * following are example pins:
+	 * gpio1 17 GPIO_ACTIVE_LOW
+	 * gpio1 19 GPIO_ACTIVE_LOW
+	 * gpio1 23 GPIO_ACTIVE_LOW
+	 */
+	cs-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 };
 
 &spi1 {
 	status = "okay";
+	/* Can select one or multiple slave select pins.
+	 * following are example pins:
+	 * gpio0 19 GPIO_ACTIVE_LOW
+	 * gpio0 23 GPIO_ACTIVE_LOW
+	 * gpio1 3 GPIO_ACTIVE_LOW
+	 */
+	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 };
 
 &usbotg {

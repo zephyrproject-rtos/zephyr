@@ -418,10 +418,7 @@
 		#size-cells = <0>;
 		reg = <0x10DA4000 0x1000>;
 		clock-frequency = <100000000>;
-		cs-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>,
-				<&gpio1 19 GPIO_ACTIVE_LOW>,
-				<&gpio1 23 GPIO_ACTIVE_LOW>;
-		fifo-depth = <16>;
+		fifo-depth = <256>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
@@ -434,10 +431,7 @@
 		#size-cells = <0>;
 		reg = <0x10DA5000 0x1000>;
 		clock-frequency = <100000000>;
-		cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>,
-				<&gpio0 23 GPIO_ACTIVE_LOW>,
-				<&gpio1 3 GPIO_ACTIVE_LOW>;
-		fifo-depth = <16>;
+		fifo-depth = <256>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
