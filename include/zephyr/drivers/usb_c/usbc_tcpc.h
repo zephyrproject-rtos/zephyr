@@ -154,7 +154,9 @@ __subsystem struct tcpc_driver_api {
 	int (*set_debug_detach)(const struct device *dev);
 	int (*set_drp_toggle)(const struct device *dev, bool enable);
 	int (*get_snk_ctrl)(const struct device *dev);
+	int (*set_snk_ctrl)(const struct device *dev, bool enable);
 	int (*get_src_ctrl)(const struct device *dev);
+	int (*set_src_ctrl)(const struct device *dev, bool enable);
 	int (*get_chip_info)(const struct device *dev, struct tcpc_chip_info *chip_info);
 	int (*set_low_power_mode)(const struct device *dev, bool enable);
 	int (*sop_prime_enable)(const struct device *dev, bool enable);
@@ -757,6 +759,25 @@ static inline int tcpc_get_snk_ctrl(const struct device *dev)
 }
 
 /**
+ * @brief Set the VBUS sinking state of the TCPC
+ *
+ * @param dev Runtime device structure
+ * @param enable True if sinking should be enabled, false if disabled
+ * @retval 0 on success
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_set_snk_ctrl(const struct device *dev, bool enable)
+{
+	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+
+	if (api->set_snk_ctrl == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_snk_ctrl(dev, enable);
+}
+
+/**
  * @brief Queries the current sourcing state of the TCPC
  *
  * @param dev Runtime device structure
@@ -775,6 +796,25 @@ static inline int tcpc_get_src_ctrl(const struct device *dev)
 	}
 
 	return api->get_src_ctrl(dev);
+}
+
+/**
+ * @brief Set the VBUS sourcing state of the TCPC
+ *
+ * @param dev Runtime device structure
+ * @param enable True if sourcing should be enabled, false if disabled
+ * @retval 0 on success
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_set_src_ctrl(const struct device *dev, bool enable)
+{
+	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+
+	if (api->set_src_ctrl == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_src_ctrl(dev, enable);
 }
 
 /**
