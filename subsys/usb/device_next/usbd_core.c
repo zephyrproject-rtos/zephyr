@@ -120,7 +120,7 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 }
 
 /* TODO: Add event broadcaster to user application */
-static int ALWAYS_INLINE usbd_event_handler(struct usbd_contex *const uds_ctx,
+static ALWAYS_INLINE int usbd_event_handler(struct usbd_contex *const uds_ctx,
 					    struct udc_event *const event)
 {
 	int ret = 0;

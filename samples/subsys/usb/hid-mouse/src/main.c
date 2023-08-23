@@ -42,7 +42,7 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	usb_status = status;
 }
 
-static void ALWAYS_INLINE rwup_if_suspended(void)
+static ALWAYS_INLINE void rwup_if_suspended(void)
 {
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
 		if (usb_status == USB_DC_SUSPEND) {
