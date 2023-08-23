@@ -5,6 +5,7 @@ common:
   tags:
     - posix
     - filesystem
+    - fatfs
   min_ram: 128
   modules:
     - fatfs
