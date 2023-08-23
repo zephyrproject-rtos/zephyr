@@ -214,14 +214,23 @@ static void tc_cc_open_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
 
 	/* Disable VCONN */
-	tcpc_set_vconn(tcpc, false);
+	ret = tcpc_set_vconn(tcpc, false);
+	if (ret != 0 && ret != -ENOSYS) {
+		LOG_ERR("Set vconn failed: %d", ret);
+		return;
+	}
 
 	/* Open CC lines */
-	tcpc_set_cc(tcpc, TC_CC_OPEN);
+	ret = tcpc_set_cc(tcpc, TC_CC_OPEN);
+	if (ret != 0) {
+		LOG_ERR("Set CC lines failed: %d", ret);
+		return;
+	}
 }
 
 /**
