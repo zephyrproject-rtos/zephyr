@@ -2203,13 +2203,14 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
-				uint32_t dw[MIN(php->len_dw, 20)];
+				uint32_t dw[20];
 				struct jesd216_bfp bfp;
 			} u2;
 			const struct jesd216_bfp *bfp = &u2.bfp;
 
 			ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
-					     (uint8_t *)u2.dw, sizeof(u2.dw));
+					     (uint8_t *)u2.dw,
+					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
 			if (ret == 0) {
 				ret = spi_nor_process_bfp(dev, php, bfp);
 			}
