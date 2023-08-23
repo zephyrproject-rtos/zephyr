@@ -6,6 +6,7 @@ common:
     - backend
     - filesystem
     - fs
+    - littlefs
 tests:
   logging.log_backend_fs.automounted:
     platform_allow:
