@@ -16,6 +16,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config GPIO_SHELL
 	bool "GPIO Shell"
+	default y
 	depends on SHELL
 	help
 	  Enable GPIO Shell for testing.
