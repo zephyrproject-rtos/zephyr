@@ -31,7 +31,13 @@
   - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
 
 "CI-tfm-test":
-  - "**/*"
+  - "boards/arm/nrf5340dk_nrf5340/**/*"
+  - "boards/arm/nrf9160dk_nrf9160/**/*"
+  - "drivers/entropy/*"
+  - "dts/arm/nordic/nrf5340*"
+  - "dts/arm/nordic/nrf9160*"
+  - "modules/trusted-firmware-m/**/*"
+  - "samples/tfm_integration/**/*"
 
 "CI-ble-test":
   - "**/*"
@@ -88,7 +94,16 @@
   - "**/*"
 
 "CI-crypto-test":
-  - "**/*"
+  - "boards/arm/nrf52840dk_nrf52840/**/*"
+  - "boards/arm/nrf5340dk_nrf5340/**/*"
+  - "boards/arm/nrf9160dk_nrf9160/**/*"
+  - "drivers/entropy/*"
+  - "drivers/serial/**/*"
+  - "dts/arm/nordic/nrf52840*"
+  - "dts/arm/nordic/nrf5340*"
+  - "dts/arm/nordic/nrf9160*"
+  - "include/drivers/serial/**/*"
+  - "modules/mbedtls/**/*"
 
 "CI-fem-test":
   - "**/*"
