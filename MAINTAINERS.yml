@@ -1037,6 +1037,7 @@ Release Notes:
     - jciupis
     - cfriedt
     - fgrandel
+    - jukkar
   files:
     - drivers/ieee802154/
     - include/zephyr/net/ieee802154_radio.h
@@ -1421,6 +1422,7 @@ Release Notes:
   status: maintained
   maintainers:
     - tbursztyka
+    - jukkar
   collaborators:
     - rlubos
     - kludentwo
@@ -1835,6 +1837,7 @@ Networking:
   status: maintained
   maintainers:
     - rlubos
+    - jukkar
   collaborators:
     - tbursztyka
     - ssharks
@@ -1858,6 +1861,7 @@ Networking:
   status: odd fixes
   collaborators:
     - rlubos
+    - jukkar
   files:
     - samples/net/sockets/
     - subsys/net/lib/sockets/
@@ -1872,6 +1876,7 @@ Networking:
   collaborators:
     - rlubos
     - tbursztyka
+    - jukkar
   files:
     - include/zephyr/net/buf.h
     - subsys/net/buf.c
@@ -1885,6 +1890,7 @@ Networking:
     - rlubos
   collaborators:
     - glarsennordic
+    - jukkar
   files:
     - include/zephyr/net/conn_mgr*.h
     - subsys/net/conn_mgr/
@@ -1953,6 +1959,7 @@ Networking:
   collaborators:
     - rlubos
     - fgrandel
+    - jukkar
   files:
     - doc/connectivity/networking/api/ieee802154.rst
     - include/zephyr/net/ieee802154.h
@@ -3234,9 +3241,9 @@ West:
 "West project: net-tools":
   status: odd fixes
   maintainers:
-    - rlubos
-  collaborators:
     - jukkar
+  collaborators:
+    - rlubos
   files: []
   labels:
     - manifest-net-tools
