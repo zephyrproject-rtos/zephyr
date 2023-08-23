@@ -222,6 +222,7 @@ void tc_attached_src_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	LOG_INF("Attached.SRC");
 
@@ -232,7 +233,12 @@ void tc_attached_src_entry(void *obj)
 	tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 
 	/* Start sourcing VBUS */
-	if (data->policy_cb_src_en(dev, true) == 0) {
+	if (!data->policy_cb_src_en || data->policy_cb_src_en(dev, true) == 0) {
+		ret = tcpc_set_src_ctrl(data->tcpc, true);
+		if (ret < 0 && ret != -ENOSYS) {
+			LOG_ERR("Couldn't enable VBUS source");
+		}
+
 		/* Start sourcing VCONN */
 		if (policy_check(dev, CHECK_VCONN_CONTROL)) {
 			if (tcpc_set_vconn(tcpc, true) == 0) {
@@ -287,6 +293,7 @@ void tc_attached_src_exit(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	__ASSERT(data->policy_cb_src_en != NULL,
 			"policy_cb_src_en must not be NULL");
@@ -296,6 +303,11 @@ void tc_attached_src_exit(void *obj)
 
 	/* Stop sourcing VBUS */
 	data->policy_cb_src_en(dev, false);
+
+	ret = tcpc_set_src_ctrl(data->tcpc, false);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Couldn't disable VBUS source");
+	}
 
 	/* Stop sourcing VCONN */
 	tcpc_set_vconn(tcpc, false);

@@ -140,6 +140,8 @@ static int tc_init(const struct device *dev)
 	/* Stop sourcing VBUS */
 	data->policy_cb_src_en(dev, false);
 
+	tcpc_set_src_ctrl(tcpc, false);
+
 	/* Stop sourcing VCONN */
 	tcpc_set_vconn(tcpc, false);
 #endif
