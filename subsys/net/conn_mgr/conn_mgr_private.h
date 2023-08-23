@@ -51,8 +51,8 @@
 #define CONN_MGR_IPV4_EVENTS_MASK	(NET_EVENT_IPV4_ADDR_ADD	| \
 					 NET_EVENT_IPV4_ADDR_DEL)
 
-extern struct k_sem conn_mgr_event_signal;
-extern struct k_mutex conn_mgr_lock;
+extern struct k_sem conn_mgr_mon_updated;
+extern struct k_mutex conn_mgr_mon_lock;
 
 void conn_mgr_init_events_handler(void);
 

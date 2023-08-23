@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(conn_mgr_conn, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_connectivity_impl.h>
 #include "conn_mgr_private.h"
