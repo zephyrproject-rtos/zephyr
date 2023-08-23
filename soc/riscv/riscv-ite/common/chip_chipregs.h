@@ -221,6 +221,10 @@ struct pwm_it8xxx2_regs {
 	volatile uint8_t CTR2;
 	/* 0x043: Cycle Time3 */
 	volatile uint8_t CTR3;
+	/* 0x044~0x048: Reserved7 */
+	volatile uint8_t reserved7[5];
+	/* 0x049: PWM Output Open-Drain Enable */
+	volatile uint8_t PWMODENR;
 };
 #endif /* !__ASSEMBLER__ */
 
