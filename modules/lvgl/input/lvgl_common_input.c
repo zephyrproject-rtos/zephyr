@@ -8,8 +8,16 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <lvgl_input_device.h>
 
 LOG_MODULE_DECLARE(lvgl);
+
+lv_indev_t *lvgl_input_get_indev(const struct device *dev)
+{
+	struct lvgl_common_input_data *common_data = dev->data;
+
+	return common_data->indev;
+}
 
 static void lvgl_input_read_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
