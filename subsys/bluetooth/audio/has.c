@@ -1308,7 +1308,6 @@ static void features_work_process(struct k_work *work)
 
 int bt_has_features_set(const struct bt_has_features_param *features)
 {
-	uint8_t tmp_features;
 	int err;
 
 	if (!has.registered) {
@@ -1322,36 +1321,21 @@ int bt_has_features_set(const struct bt_has_features_param *features)
 		return 0;
 	}
 
-	tmp_features = has.features;
-
 	err = has_features_register(features);
 	if (err != 0) {
 		LOG_DBG("Failed to register features");
 		return err;
 	}
 
-	bool tmp_pending_ntf_features[ARRAY_SIZE(has_client_list)];
-
 	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		struct has_client *client = &has_client_list[i];
-		/* save old state */
-		tmp_pending_ntf_features[i] = atomic_test_bit(client->flags, FLAG_FEATURES_CHANGED);
-		/* mark to notify */
+
 		atomic_set_bit(client->flags, FLAG_FEATURES_CHANGED);
 	}
 
 	err = k_work_submit(&features_work);
 	if (err < 0) {
-		/* restore old values */
-		for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
-			struct has_client *client = &has_client_list[i];
-
-			atomic_set_bit_to(client->flags, FLAG_FEATURES_CHANGED,
-					  tmp_pending_ntf_features[i]);
-		}
-		has.features = tmp_features;
-
-		return err;
+		LOG_ERR("Failed to reschedule features notification err %d", err);
 	}
 
 	return 0;
