@@ -36,6 +36,7 @@ tests:
       - nucleo_u575zi_q
       - nucleo_c031c6
       - stm32h573i_dk
+      - nucleo_wba52cg
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
@@ -68,6 +69,7 @@ tests:
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
+      - nucleo_wba52cg
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
