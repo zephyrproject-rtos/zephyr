@@ -1,5 +1,7 @@
 common:
-  tags: filesystem
+  tags:
+    - filesystem
+    - littlefs
   platform_allow:
     - nrf52840dk_nrf52840
     - native_posix
