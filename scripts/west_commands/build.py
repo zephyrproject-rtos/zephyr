@@ -166,10 +166,13 @@ class Build(Forceable):
             # we get path + testitem
             item = os.path.basename(self.args.test_item)
             test_path = os.path.dirname(self.args.test_item)
-            if test_path:
+            if test_path and os.path.exists(test_path):
                 self.args.source_dir = test_path
-            if not self._parse_test_item(item):
-                log.die("No test metadata found")
+                if not self._parse_test_item(item):
+                    log.die("No test metadata found")
+            else:
+                log.die("test item path does not exist")
+
         if source_dir:
             if self.args.source_dir:
                 log.die("source directory specified twice:({} and {})".format(
@@ -322,22 +325,23 @@ class Build(Forceable):
 
             self.args.sysbuild = sysbuild
 
-        args = []
-        if extra_conf_files:
-            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+        if found_test_metadata:
+            args = []
+            if extra_conf_files:
+                args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
-        if extra_dtc_overlay_files:
-            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
+            if extra_dtc_overlay_files:
+                args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
 
-        if extra_overlay_confs:
-            args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
-        # Build the final argument list
-        args_expanded = ["-D{}".format(a.replace('"', '')) for a in args]
+            if extra_overlay_confs:
+                args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
+            # Build the final argument list
+            args_expanded = ["-D{}".format(a.replace('"', '')) for a in args]
 
-        if self.args.cmake_opts:
-            self.args.cmake_opts.extend(args_expanded)
-        else:
-            self.args.cmake_opts = args_expanded
+            if self.args.cmake_opts:
+                self.args.cmake_opts.extend(args_expanded)
+            else:
+                self.args.cmake_opts = args_expanded
 
         return found_test_metadata
 
