@@ -310,28 +310,19 @@ static int max3421e_xfer_control(const struct device *dev,
 				 const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
 	int ret;
 
 	/* Just restart if device NAKed packet */
-	if (uhc_xfer_is_queued(xfer) && HRSLT_IS_NAK(hrsl)) {
+	if (HRSLT_IS_NAK(hrsl)) {
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
-		return -ENODATA;
-	}
 
-	if (!uhc_xfer_is_queued(xfer) && xfer->setup) {
-		return -EINVAL;
-	}
-
-	if (!xfer->setup) {
-		/* Handle SETUP stage */
+	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
+		LOG_DBG("Handle SETUP stage");
 		ret = max3421e_write(dev, MAX3421E_REG_SUDFIFO,
-				     buf->data, MIN(buf->len, 8));
+				     xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (ret) {
 			return ret;
 		}
@@ -341,25 +332,26 @@ static int max3421e_xfer_control(const struct device *dev,
 			return ret;
 		}
 
-		uhc_xfer_setup(xfer);
-		uhc_xfer_queued(xfer);
-
 		return 0;
 	}
 
-	if (buf->size != 0) {
-		/* handle DATA stage */
-		ret = max3421e_xfer_data(dev, buf, xfer->ep);
-	} else {
-		/* handle ACK stage */
+	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
+		LOG_DBG("Handle DATA stage");
+		return max3421e_xfer_data(dev, buf, xfer->ep);
+	}
+
+	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
+		LOG_DBG("Handle STATUS stage");
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSOUT(0));
 		} else {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSIN(0));
 		}
+
+		return ret;
 	}
 
-	return ret;
+	return -EINVAL;
 }
 
 static int max3421e_xfer_bulk(const struct device *dev,
@@ -367,26 +359,19 @@ static int max3421e_xfer_bulk(const struct device *dev,
 			      const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct net_buf *buf;
-	int ret;
+	struct net_buf *buf = xfer->buf;
 
 	/* Just restart if device NAKed packet */
-	if (uhc_xfer_is_queued(xfer) && HRSLT_IS_NAK(hrsl)) {
+	if (HRSLT_IS_NAK(hrsl)) {
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
-	buf = k_fifo_peek_head(&xfer->queue);
 	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
+		LOG_ERR("No buffer to handle");
 		return -ENODATA;
 	}
 
-	ret = max3421e_xfer_data(dev, buf, xfer->ep);
-	if (!ret) {
-		uhc_xfer_queued(xfer);
-	}
-
-	return ret;
+	return max3421e_xfer_data(dev, buf, xfer->ep);
 }
 
 static int max3421e_schedule_xfer(const struct device *dev)
@@ -444,27 +429,27 @@ static int max3421e_hrslt_success(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
+	bool finished = false;
 	int err = 0;
 	size_t len;
 	uint8_t bc;
 
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		return -ENODATA;
-	}
-
 	switch (MAX3421E_HXFR_TYPE(priv->hxfr)) {
 	case MAX3421E_HXFR_TYPE_SETUP:
-		err = uhc_xfer_done(xfer);
+		if (xfer->buf != NULL) {
+			xfer->stage = UHC_CONTROL_STAGE_DATA;
+		} else {
+			xfer->stage = UHC_CONTROL_STAGE_STATUS;
+		}
 		break;
 	case MAX3421E_HXFR_TYPE_HSOUT:
 		LOG_DBG("HSOUT");
-		err = uhc_xfer_done(xfer);
+		finished = true;
 		break;
 	case MAX3421E_HXFR_TYPE_HSIN:
 		LOG_DBG("HSIN");
-		err = uhc_xfer_done(xfer);
+		finished = true;
 		break;
 	case MAX3421E_HXFR_TYPE_ISOOUT:
 		LOG_ERR("ISO OUT is not implemented");
@@ -477,7 +462,11 @@ static int max3421e_hrslt_success(const struct device *dev)
 	case MAX3421E_HXFR_TYPE_BULKOUT:
 		if (buf->len == 0) {
 			LOG_INF("hrslt bulk out %u", buf->len);
-			err = uhc_xfer_done(xfer);
+			if (xfer->ep == USB_CONTROL_EP_OUT) {
+				xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			} else {
+				finished = true;
+			}
 		}
 		break;
 	case MAX3421E_HXFR_TYPE_BULKIN:
@@ -502,9 +491,23 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
-			err = uhc_xfer_done(xfer);
+			if (xfer->ep == USB_CONTROL_EP_IN) {
+				xfer->stage = UHC_CONTROL_STAGE_STATUS;
+			} else {
+				finished = true;
+			}
 		}
 		break;
+	}
+
+	if (finished) {
+		LOG_DBG("Transfer finished");
+		uhc_xfer_return(dev, xfer, 0);
+		priv->last_xfer = NULL;
+	}
+
+	if (err) {
+		max3421e_xfer_drop_active(dev, err);
 	}
 
 	return err;
@@ -515,24 +518,10 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
 	const uint8_t hrsl = priv->hrsl;
-	int ret;
+	int ret = 0;
 
 	if (xfer == NULL) {
 		LOG_ERR("No transfers to handle");
-		return -ENODATA;
-	}
-
-	/* If an active xfer is not marked then something has gone wrong */
-	if (!uhc_xfer_is_queued(xfer)) {
-		LOG_ERR("Active transfer not queued");
-		max3421e_xfer_drop_active(dev, -EINVAL);
-		return -EINVAL;
-	}
-
-	/* There should always be a buffer in the fifo when a xfer is active */
-	if (k_fifo_is_empty(&xfer->queue)) {
-		LOG_ERR("No buffers to handle");
-		max3421e_xfer_drop_active(dev, -ENODATA);
 		return -ENODATA;
 	}
 
@@ -549,27 +538,15 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 			max3421e_xfer_drop_active(dev, -ETIMEDOUT);
 		}
 
-		ret = 0;
 		break;
 	case MAX3421E_HR_STALL:
 		max3421e_xfer_drop_active(dev, -EPIPE);
-		ret = 0;
 		break;
 	case MAX3421E_HR_TOGERR:
 		LOG_WRN("Toggle error");
-		ret = 0;
 		break;
 	case MAX3421E_HR_SUCCESS:
 		ret = max3421e_hrslt_success(dev);
-		if (ret) {
-			max3421e_xfer_drop_active(dev, ret);
-		} else {
-			if (k_fifo_is_empty(&xfer->queue)) {
-				uhc_xfer_return(dev, xfer, 0);
-				priv->last_xfer = NULL;
-			}
-		}
-
 		break;
 	default:
 		/* TODO: Handle all reasonalbe result codes */
@@ -578,7 +555,7 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 static void max3421e_handle_condet(const struct device *dev)
