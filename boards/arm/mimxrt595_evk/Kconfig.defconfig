@@ -29,14 +29,13 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_MCUX_LPC
 
-if PM
 # Turn on Device Level Power Management as we wish
 # to reconfigure the FlexSPI pins for power savings
 # when transitioning the SoC to Deep Low Power modes.
 config PM_DEVICE
-	default y
+	default y if PM
+
 config REGULATOR
-	default y
-endif # PM
+	default y if PM || POWEROFF
 
 endif # BOARD_MIMXRT595_EVK
