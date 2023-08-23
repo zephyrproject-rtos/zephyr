@@ -1911,7 +1911,7 @@ Networking:
   files:
     - include/zephyr/net/conn_mgr*.h
     - subsys/net/conn_mgr/
-    - tests/net/conn_mgr/
+    - tests/net/conn_mgr_monitor/
     - tests/net/conn_mgr_conn/
   labels:
     - "area: Networking"

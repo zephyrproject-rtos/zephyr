@@ -927,7 +927,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/lib/cmsis_dsp/                     @stephanosio
 /tests/net/                               @rlubos @tbursztyka @jukkar
 /tests/net/buf/                           @jhedberg @tbursztyka @jukkar
-/tests/net/conn_mgr/                      @rlubos @glarsennordic @jukkar
+/tests/net/conn_mgr_monitor/              @rlubos @glarsennordic @jukkar
 /tests/net/conn_mgr_conn/                 @rlubos @glarsennordic @jukkar
 /tests/net/ieee802154/l2/                 @rlubos @tbursztyka @jukkar @fgrandel
 /tests/net/lib/                           @rlubos @tbursztyka @jukkar

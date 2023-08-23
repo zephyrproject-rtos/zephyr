@@ -26,7 +26,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include <errno.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
@@ -337,7 +337,7 @@ int smp_udp_open(void)
 
 	if (started) {
 		/* One or more threads were started, send interface notifications */
-		conn_mgr_resend_status();
+		conn_mgr_mon_resend_status();
 	}
 
 	return 0;
