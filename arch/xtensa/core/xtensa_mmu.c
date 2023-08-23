@@ -15,9 +15,6 @@
 #include <kernel_arch_func.h>
 #include <mmu.h>
 
-/* Kernel specific ASID. Ring field in the PTE */
-#define MMU_KERNEL_RING 0
-
 /* Fixed data TLB way to map the page table */
 #define MMU_PTE_WAY 7
 
@@ -134,7 +131,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	uint32_t page, *table;
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
-		uint32_t pte = Z_XTENSA_PTE(page, MMU_KERNEL_RING, attrs);
+		uint32_t pte = Z_XTENSA_PTE(page, Z_XTENSA_KERNEL_RING, attrs);
 		uint32_t l2_pos = Z_XTENSA_L2_POS(page);
 		uint32_t l1_pos = page >> 22;
 
@@ -145,7 +142,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 				"map 0x%08x\n", page);
 
 			l1_page_table[l1_pos] =
-				Z_XTENSA_PTE((uint32_t)table, MMU_KERNEL_RING,
+				Z_XTENSA_PTE((uint32_t)table, Z_XTENSA_KERNEL_RING,
 						Z_XTENSA_MMU_CACHED_WT);
 		}
 
@@ -242,7 +239,7 @@ static void xtensa_mmu_init(bool is_core0)
 	 * Lets use one of the wired entry, so we never have tlb miss for
 	 * the top level table.
 	 */
-	xtensa_dtlb_entry_write(Z_XTENSA_PTE((uint32_t)l1_page_table, MMU_KERNEL_RING,
+	xtensa_dtlb_entry_write(Z_XTENSA_PTE((uint32_t)l1_page_table, Z_XTENSA_KERNEL_RING,
 				Z_XTENSA_MMU_CACHED_WT),
 			Z_XTENSA_TLB_ENTRY(Z_XTENSA_PAGE_TABLE_VADDR, MMU_PTE_WAY));
 
@@ -253,13 +250,13 @@ static void xtensa_mmu_init(bool is_core0)
 	__asm__ volatile("rsr.vecbase %0" : "=r"(vecbase));
 
 	xtensa_itlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_TLB_ENTRY(
 			Z_XTENSA_PTEVADDR + MB(4), 3));
 
 	xtensa_dtlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_TLB_ENTRY(
 			Z_XTENSA_PTEVADDR + MB(4), 3));
@@ -295,7 +292,7 @@ static void xtensa_mmu_init(bool is_core0)
 	/* Map VECBASE to a fixed data TLB */
 	xtensa_dtlb_entry_write(
 			Z_XTENSA_PTE((uint32_t)vecbase,
-				     MMU_KERNEL_RING, Z_XTENSA_MMU_CACHED_WB),
+				     Z_XTENSA_KERNEL_RING, Z_XTENSA_MMU_CACHED_WB),
 			Z_XTENSA_TLB_ENTRY((uint32_t)vecbase, MMU_VECBASE_WAY));
 
 	/* To finish, just restore vecbase and invalidate TLB entries
@@ -320,7 +317,7 @@ static void xtensa_mmu_init(bool is_core0)
 	 * TLB misses.
 	 */
 	xtensa_itlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_AUTOFILL_TLB_ENTRY(vecbase));
 }
@@ -361,7 +358,7 @@ __weak void arch_reserved_pages_update(void)
 static bool l2_page_table_map(void *vaddr, uintptr_t phys, uint32_t flags)
 {
 	uint32_t l1_pos = (uint32_t)vaddr >> 22;
-	uint32_t pte = Z_XTENSA_PTE(phys, MMU_KERNEL_RING, flags);
+	uint32_t pte = Z_XTENSA_PTE(phys, Z_XTENSA_KERNEL_RING, flags);
 	uint32_t l2_pos = Z_XTENSA_L2_POS((uint32_t)vaddr);
 	uint32_t *table;
 
@@ -372,7 +369,7 @@ static bool l2_page_table_map(void *vaddr, uintptr_t phys, uint32_t flags)
 			return false;
 		}
 
-		l1_page_table[l1_pos] = Z_XTENSA_PTE((uint32_t)table, MMU_KERNEL_RING,
+		l1_page_table[l1_pos] = Z_XTENSA_PTE((uint32_t)table, Z_XTENSA_KERNEL_RING,
 				Z_XTENSA_MMU_CACHED_WT);
 	}
 
