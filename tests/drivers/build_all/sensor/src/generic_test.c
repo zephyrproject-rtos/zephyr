@@ -8,11 +8,23 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_data_types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/bitarray.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(generic_test);
+
+/**
+ * A union of all sensor data types.
+ */
+union sensor_data_union {
+	struct sensor_three_axis_data three_axis;
+	struct sensor_occurrence_data occurrence;
+	struct sensor_q31_data q31;
+	struct sensor_byte_data byte;
+	struct sensor_uint64_data uint64;
+};
 
 /*
  * Set up an RTIO context that can be shared for all sensors
@@ -176,36 +188,72 @@ static void run_generic_test(const struct device *dev)
 		/* Release the CQE */
 		rtio_cqe_release(&sensor_read_rtio_ctx, cqe);
 
-		enum sensor_channel channel;
-		sensor_frame_iterator_t fit = {0};
-		sensor_channel_iterator_t cit = {0};
 		const struct sensor_decoder_api *decoder;
-		int8_t shift;
-		q31_t q;
+		union sensor_data_union decoded_data;
 
 		zassert_ok(sensor_get_decoder(dev, &decoder));
 
-		/* Decode the buffer and verify all channels */
-		while (decoder->decode(buf, &fit, &cit, &channel, &q, 1) > 0) {
-			zassert_true(channel_table[channel].supported);
-			zassert_false(channel_table[channel].received);
-			channel_table[channel].received = true;
+		/* Loop through each channel */
+		for (int ch = 0; ch < ARRAY_SIZE(channel_table); ch++) {
+			if (!channel_table[ch].supported) {
+				continue;
+			}
 
-			zassert_ok(decoder->get_shift(buf, channel, &shift));
+			struct sensor_decode_context ctx =
+				SENSOR_DECODE_CONTEXT_INIT(decoder, buf, ch, 0);
+
+			rv = sensor_decode(&ctx, &decoded_data, 1);
+			zassert_equal(1, rv, "Could not decode (error %d, ch %d, iteration %d/%d)",
+				      rv, ch, iteration + 1,
+				      CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS);
+
+			channel_table[ch].received = true;
+
+			/* Retrieve the actual value */
+			q31_t q;
+			int8_t shift;
+
+			switch (ch) {
+			/* Special handling to break out triplet samples. */
+			case SENSOR_CHAN_MAGN_X:
+			case SENSOR_CHAN_ACCEL_X:
+			case SENSOR_CHAN_GYRO_X:
+				q = decoded_data.three_axis.readings[0].x;
+				shift = decoded_data.three_axis.shift;
+				break;
+			case SENSOR_CHAN_MAGN_Y:
+			case SENSOR_CHAN_ACCEL_Y:
+			case SENSOR_CHAN_GYRO_Y:
+				q = decoded_data.three_axis.readings[0].y;
+				shift = decoded_data.three_axis.shift;
+				break;
+			case SENSOR_CHAN_MAGN_Z:
+			case SENSOR_CHAN_ACCEL_Z:
+			case SENSOR_CHAN_GYRO_Z:
+				q = decoded_data.three_axis.readings[0].z;
+				shift = decoded_data.three_axis.shift;
+				break;
+
+			/* Default case for single Q31 samples */
+			default:
+				q = decoded_data.q31.readings[0].value;
+				shift = decoded_data.q31.shift;
+				break;
+			}
 
 			/* Align everything to be a 64-bit Q32.32 number for comparison */
 			int64_t expected_shifted =
-				(int64_t)channel_table[channel].expected_values[iteration]
-				<< channel_table[channel].expected_value_shift;
+				(int64_t)channel_table[ch].expected_values[iteration]
+				<< channel_table[ch].expected_value_shift;
 			int64_t actual_shifted = (int64_t)q << shift;
-			int64_t epsilon_shifted = (int64_t)channel_table[channel].epsilon
-						  << channel_table[channel].expected_value_shift;
+			int64_t epsilon_shifted = (int64_t)channel_table[ch].epsilon
+						  << channel_table[ch].expected_value_shift;
 
 			zassert_within(expected_shifted, actual_shifted, epsilon_shifted,
 				       "Expected %lld, got %lld (shift %d, ch %d, iteration %d/%d, "
 				       "Error %lld, Epsilon %lld)",
-				       expected_shifted, actual_shifted, shift, channel,
-				       iteration + 1, CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS,
+				       expected_shifted, actual_shifted, shift, ch, iteration + 1,
+				       CONFIG_GENERIC_SENSOR_TEST_NUM_EXPECTED_VALS,
 				       expected_shifted - actual_shifted, epsilon_shifted);
 		}
 
@@ -221,7 +269,8 @@ static void run_generic_test(const struct device *dev)
 			}
 		}
 
-		zassert_equal(0, missing_channel_count);
+		zassert_equal(0, missing_channel_count, "%d channel(s) not received",
+			      missing_channel_count);
 	}
 }
 
