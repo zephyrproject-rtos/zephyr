@@ -11,6 +11,7 @@ supported:
   - gpio
   - rtc
   - i2c
+  - spi
 testing:
   timeout_multiplier: 4
   ignore_tags:
