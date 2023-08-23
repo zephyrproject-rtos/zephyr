@@ -130,7 +130,7 @@ static void cap_stream_started_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST)) {
 		bt_cap_initiator_started(cap_stream);
 	}
 
