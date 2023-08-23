@@ -191,7 +191,7 @@ static int bmi08x_gyr_config(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return bmi08x_gyr_odr_set(dev, val->val1, val->val2 / 1000);
 	default:
-		LOG_ERR("Gyro attribute not supported.");
+		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
 	}
 }
@@ -215,7 +215,7 @@ static int bmi08x_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_XYZ:
 		return bmi08x_gyr_config(dev, chan, attr, val);
 	default:
-		LOG_ERR("attr_set() not supported on this channel.");
+		LOG_DBG("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 }
@@ -227,7 +227,7 @@ static int bmi08x_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_GYRO_XYZ) {
-		LOG_ERR("Unsupported sensor channel");
+		LOG_DBG("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -315,7 +315,7 @@ static int bmi08x_channel_get(const struct device *dev, enum sensor_channel chan
 		bmi08x_gyr_channel_get(dev, chan, val);
 		return 0;
 	default:
-		LOG_ERR("Channel not supported.");
+		LOG_DBG("Channel not supported.");
 		return -ENOTSUP;
 	}
 }
