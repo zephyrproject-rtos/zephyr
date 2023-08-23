@@ -472,7 +472,7 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
 		IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER,                                             \
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
 			.gyro_hz = DT_INST_ENUM_IDX(inst, gyro_hz),                                \
-		BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),          \
+		BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs = DT_INST_PROP(inst, gyro_fs),              \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                     \
