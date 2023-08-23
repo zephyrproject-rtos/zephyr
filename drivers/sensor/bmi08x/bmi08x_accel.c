@@ -333,7 +333,7 @@ static int bmi08x_acc_config(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return bmi08x_acc_odr_set(dev, val->val1, val->val2 / 1000);
 	default:
-		LOG_ERR("Accel attribute not supported.");
+		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 }
@@ -357,7 +357,7 @@ static int bmi08x_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return bmi08x_acc_config(dev, chan, attr, val);
 	default:
-		LOG_ERR("attr_set() not supported on this channel.");
+		LOG_DBG("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 }
@@ -369,7 +369,7 @@ static int bmi08x_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_ACCEL_XYZ) {
-		LOG_ERR("Unsupported sensor channel");
+		LOG_DBG("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -492,7 +492,7 @@ static int bmi08x_channel_get(const struct device *dev, enum sensor_channel chan
 	case SENSOR_CHAN_DIE_TEMP:
 		return bmi08x_temp_channel_get(dev, val);
 	default:
-		LOG_ERR("Channel not supported.");
+		LOG_DBG("Channel not supported.");
 		return -ENOTSUP;
 	}
 
