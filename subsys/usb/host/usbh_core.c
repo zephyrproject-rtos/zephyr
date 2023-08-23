@@ -39,14 +39,9 @@ static int event_ep_request(struct usbh_contex *const ctx,
 		return class_data->request(ctx, event->xfer, event->status);
 	}
 
-	while (!k_fifo_is_empty(&xfer->done)) {
-		struct net_buf *buf;
-
-		buf = net_buf_get(&xfer->done, K_NO_WAIT);
-		if (buf) {
-			LOG_HEXDUMP_INF(buf->data, buf->len, "buf");
-			uhc_xfer_buf_free(dev, buf);
-		}
+	if (xfer->buf) {
+		LOG_HEXDUMP_INF(xfer->buf->data, xfer->buf->len, "buf");
+		uhc_xfer_buf_free(dev, xfer->buf);
 	}
 
 	return uhc_xfer_free(dev, xfer);
