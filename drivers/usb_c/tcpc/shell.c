@@ -25,6 +25,20 @@
 /** Macro used to call the vbus_measure function from the USB-C connector node */
 #define TCPC_VBUS_CONN_NODE(node) TCPC_VBUS_DEV(DEVICE_DT_GET(DT_PROP(node, vbus)))
 
+/** Macro used to call the get_chip function from the TCPC device pointer */
+#define TCPC_GET_CHIP_DEV(dev)                                                                     \
+	{                                                                                          \
+		ret |= tcpc_get_chip_info(dev, &chip_info);                                        \
+		shell_print(sh, "Chip: %s", dev->name);                                            \
+		shell_print(sh, "\tVendor:   %04x", chip_info.vendor_id);                          \
+		shell_print(sh, "\tProduct:  %04x", chip_info.product_id);                         \
+		shell_print(sh, "\tDevice:   %04x", chip_info.device_id);                          \
+		shell_print(sh, "\tFirmware: %llx", chip_info.fw_version_number);                  \
+	}
+
+/** Macro used to call the get_chip function from the USB-C connector node */
+#define TCPC_GET_CHIP_CONN_NODE(node) TCPC_GET_CHIP_DEV(DEVICE_DT_GET(DT_PROP(node, tcpc)))
+
 /**
  * @brief Shell command that dumps standard registers of TCPCs for all available USB-C ports
  *
@@ -80,6 +94,34 @@ static int cmd_tcpc_vbus(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
+ * @brief Shell command that prints the TCPCs chips information for all available USB-C ports
+ *
+ * @param sh Shell structure
+ * @param argc Arguments count
+ * @param argv Device name
+ * @return int ORed return values of all the functions executed, 0 in case of success
+ */
+static int cmd_tcpc_chip_info(const struct shell *sh, size_t argc, char **argv)
+{
+	struct tcpc_chip_info chip_info;
+	int ret = 0;
+
+	if (argc <= 1) {
+		DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_GET_CHIP_CONN_NODE);
+	} else {
+		const struct device *dev = device_get_binding(argv[1]);
+
+		if (dev != NULL) {
+			TCPC_GET_CHIP_DEV(dev);
+		} else {
+			ret = -ENODEV;
+		}
+	}
+
+	return ret;
+}
+
+/**
  * @brief Function used to create subcommands with devices names
  *
  * @param idx counter of devices
@@ -106,6 +148,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_tcpc_cmds,
 					     "Display VBUS voltage\n"
 					     "Usage: tcpc vbus [<vbus device>]",
 					     cmd_tcpc_vbus, 1, 1),
+			       SHELL_CMD_ARG(chip, &list_device_names,
+					     "Display chip information\n"
+					     "Usage: tcpc chip [<tcpc device>]",
+					     cmd_tcpc_chip_info, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(tcpc, &sub_tcpc_cmds, "TCPC (USB-C PD) diagnostics", NULL);
