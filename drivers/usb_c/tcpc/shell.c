@@ -14,6 +14,17 @@
 /** Macro used to call the dump_std_reg function from the USB-C connector node */
 #define TCPC_DUMP_CONN_NODE(node) TCPC_DUMP_DEV(DEVICE_DT_GET(DT_PROP(node, tcpc)))
 
+/** Macro used to call the vbus_measure function from the VBUS device pointer */
+#define TCPC_VBUS_DEV(dev)                                                                         \
+	{                                                                                          \
+		int val;                                                                           \
+		ret |= usbc_vbus_measure(dev, &val);                                               \
+		shell_print(sh, "%s vbus: %d mV", dev->name, val);                                 \
+	}
+
+/** Macro used to call the vbus_measure function from the USB-C connector node */
+#define TCPC_VBUS_CONN_NODE(node) TCPC_VBUS_DEV(DEVICE_DT_GET(DT_PROP(node, vbus)))
+
 /**
  * @brief Shell command that dumps standard registers of TCPCs for all available USB-C ports
  *
@@ -33,6 +44,33 @@ static int cmd_tcpc_dump(const struct shell *sh, size_t argc, char **argv)
 
 		if (dev != NULL) {
 			TCPC_DUMP_DEV(dev);
+		} else {
+			ret = -ENODEV;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Shell command that prints the vbus measures for all available USB-C ports
+ *
+ * @param sh Shell structure
+ * @param argc Arguments count
+ * @param argv Device name
+ * @return int ORed return values of all the functions executed, 0 in case of success
+ */
+static int cmd_tcpc_vbus(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret = 0;
+
+	if (argc <= 1) {
+		DT_FOREACH_STATUS_OKAY(usb_c_connector, TCPC_VBUS_CONN_NODE);
+	} else {
+		const struct device *dev = device_get_binding(argv[1]);
+
+		if (dev != NULL) {
+			TCPC_VBUS_DEV(dev);
 		} else {
 			ret = -ENODEV;
 		}
@@ -64,6 +102,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_tcpc_cmds,
 					     "Dump TCPC registers\n"
 					     "Usage: tcpc dump [<tcpc device>]",
 					     cmd_tcpc_dump, 1, 1),
+			       SHELL_CMD_ARG(vbus, &list_device_names,
+					     "Display VBUS voltage\n"
+					     "Usage: tcpc vbus [<vbus device>]",
+					     cmd_tcpc_vbus, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(tcpc, &sub_tcpc_cmds, "TCPC (USB-C PD) diagnostics", NULL);
