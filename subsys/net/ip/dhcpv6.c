@@ -1374,6 +1374,10 @@ static void dhcpv6_enter_confirming(struct net_if *iface)
 static void dhcpv6_enter_bound(struct net_if *iface)
 {
 	iface->config.dhcpv6.timeout = iface->config.dhcpv6.t1;
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DHCP_BOUND, iface,
+					&iface->config.dhcpv6,
+					sizeof(iface->config.dhcpv6));
 }
 
 static void dhcpv6_enter_state(struct net_if *iface, enum net_dhcpv6_state state)
@@ -2101,6 +2105,8 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 		goto out;
 	}
 
+	net_mgmt_event_notify(NET_EVENT_IPV6_DHCP_START, iface);
+
 	NET_DBG("Starting DHCPv6 on iface %p", iface);
 
 	iface->config.dhcpv6.params = *params;
@@ -2159,6 +2165,8 @@ void net_dhcpv6_stop(struct net_if *iface)
 
 		break;
 	}
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_DHCP_STOP, iface);
 
 	k_mutex_unlock(&lock);
 }

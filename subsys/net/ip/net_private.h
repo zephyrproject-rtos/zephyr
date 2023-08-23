@@ -30,6 +30,9 @@ union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
+#if defined(CONFIG_NET_DHCPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
 #if defined(CONFIG_NET_L2_WIFI_MGMT)
 	union wifi_mgmt_events wifi;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
