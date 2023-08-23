@@ -351,6 +351,16 @@ int usbc_suspend(const struct device *dev);
 int usbc_request(const struct device *dev, const enum usbc_policy_request_t req);
 
 /**
+ * @internal
+ * @brief Prevent one USB-C stack sleep to execute one more iteration of state machines.
+ * Used internally to decrease the response time.
+ *
+ * @param dev Runtime device structure
+ * @return int 0 on success
+ */
+int usbc_prevent_sleep_once(const struct device *dev);
+
+/**
  * @brief Set pointer to Device Policy Manager (DPM) data
  *
  * @param dev Runtime device structure

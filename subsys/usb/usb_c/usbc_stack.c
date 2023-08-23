@@ -37,7 +37,12 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		k_thread_suspend(port->port_thread);
 	}
 
-	k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	/* Check if there wasn't any request to do a one more iteration of USB-C state machines */
+	if (!port->req_next_sm_iter) {
+		k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	} else {
+		port->req_next_sm_iter = 0;
+	}
 }
 
 #define USBC_SUBSYS_INIT(inst)                                                                     \
@@ -129,6 +134,15 @@ int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
 	/* Add public request to fifo */
 	data->request.val = req;
 	k_fifo_put(&data->request_fifo, &data->request);
+
+	return 0;
+}
+
+int usbc_prevent_sleep_once(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->req_next_sm_iter = 1;
 
 	return 0;
 }
