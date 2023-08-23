@@ -46,6 +46,8 @@ struct ps8xxx_data {
 	/** Polarity of CC lines for PD and VCONN */
 	enum tc_cc_polarity cc_polarity;
 
+	/** Boolean value if there was a change on the CC lines since last check */
+	bool cc_changed;
 	/** State of CC1 line */
 	enum tc_cc_voltage_state cc1;
 	/** State of CC2 line */
@@ -107,6 +109,15 @@ int ps8xxx_tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state *cc1,
 		return -EIO;
 	}
 
+	if (IS_ENABLED(CONFIG_USBC_CSM_SINK_ONLY) && !data->cc_changed) {
+		*cc1 = data->cc1;
+		*cc2 = data->cc2;
+
+		return 0;
+	}
+
+	data->cc_changed = false;
+
 	ret = tcpci_tcpm_get_cc(&cfg->bus, cc1, cc2);
 
 	if (IS_ENABLED(CONFIG_USBC_CSM_SINK_ONLY) || *cc1 != data->cc1 || *cc2 != data->cc2) {
@@ -122,6 +133,8 @@ int ps8xxx_tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
 	struct ps8xxx_data *data = dev->data;
+
+	data->cc_changed = true;
 
 	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_RP_MASK,
 				 TCPC_REG_ROLE_CTRL_SET(0, rp, 0, 0));
@@ -147,6 +160,8 @@ int ps8xxx_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 	if (!data->initialized) {
 		return -EIO;
 	}
+
+	data->cc_changed = true;
 
 	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL,
 				 TCPC_REG_ROLE_CTRL_CC1_MASK | TCPC_REG_ROLE_CTRL_CC2_MASK,
@@ -188,6 +203,7 @@ int ps8xxx_tcpc_set_vconn(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
+	data->cc_changed = true;
 	ret = tcpci_update_reg8(&cfg->bus, TCPC_REG_POWER_CTRL, TCPC_REG_POWER_CTRL_VCONN_EN,
 				enable ? TCPC_REG_POWER_CTRL_VCONN_EN : 0);
 
@@ -309,6 +325,7 @@ int ps8xxx_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity po
 		return ret;
 	}
 
+	data->cc_changed = true;
 	data->cc_polarity = polarity;
 	return 0;
 }
@@ -589,6 +606,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		if (alert_type == TCPC_ALERT_HARD_RESET_RECEIVED) {
 			LOG_DBG("PS8xxx hard rst received");
 			tcpci_init_alert_mask(dev);
+			data->cc_changed = true;
 		} else if (alert_type == TCPC_ALERT_FAULT_STATUS) {
 			uint8_t fault;
 
@@ -602,6 +620,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 			tcpci_read_reg8(&cfg->bus, TCPC_REG_EXT_STATUS, &ext_status);
 			tcpci_write_reg8(&cfg->bus, TCPC_REG_EXT_STATUS, ext_status);
 
+			data->cc_changed = true;
 			LOG_DBG("PS8xxx ext status: %02x", ext_status);
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
 			uint8_t pwr_status;
@@ -619,6 +638,8 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 			LOG_DBG("PS8xxx ext alert: %02x", alert_status);
 		} else if (alert_type == TCPC_ALERT_MSG_STATUS) {
 			data->msg_pending = true;
+		} else if (alert_type == TCPC_ALERT_CC_STATUS) {
+			data->cc_changed = true;
 		}
 
 		if (data->alert_handler != NULL) {
@@ -711,6 +732,7 @@ static int ps8xxx_dev_init(const struct device *dev)
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(node),                                                        \
 		.init_retries = 0,                                                                 \
+		.cc_changed = true,                                                                \
 	}
 
 #define PS8XXX_DRIVER_CFG_INIT(node)                                                               \
