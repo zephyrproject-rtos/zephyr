@@ -11,8 +11,10 @@
 
 #include <zephyr/kernel.h>
 
-#define SET_L(x) ((uint64_t)(x)&BIT64_MASK(32))
+#define SET_L(x) ((uint64_t)(x) & BIT64_MASK(32))
 #define SET_H(x) ((((uint64_t)x) & BIT64_MASK(32)) << 32)
+
+#define CONVERTTOMHZ(x) (x / 1000000)
 
 LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
 
@@ -34,6 +36,7 @@ int cad_qspi_set_baudrate_div(struct cad_qspi_params *cad_params, uint32_t div)
 	}
 
 	if (div > 0xf) {
+		LOG_ERR("Invalid divider value div = %x\n", div);
 		return CAD_INVALID;
 	}
 
@@ -125,7 +128,7 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 		return -EINVAL;
 	}
 
-	/* chip select */
+	/* Chip select */
 	sys_write32((sys_read32(cad_params->reg_base + CAD_QSPI_CFG) & CAD_QSPI_CFG_CS_MSK) |
 			    CAD_QSPI_CFG_CS(cs),
 		    cad_params->reg_base + CAD_QSPI_CFG);
@@ -177,6 +180,7 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	}
 
 	if ((num_bytes > 8) || (num_bytes == 0)) {
+		LOG_ERR("Invalid number of bytes\n");
 		return -1;
 	}
 
@@ -209,11 +213,12 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 			 uint32_t num_bytes, uint32_t *input)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
-		LOG_ERR("Faulty dummy byes\n");
+		LOG_ERR("Faulty dummy bytes\n");
 		return -1;
 	}
 
 	if ((num_bytes > 8) || (num_bytes == 0)) {
+		LOG_ERR("Invalid number of bytes\n");
 		return -1;
 	}
 
@@ -244,6 +249,7 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	uint32_t cmd;
 
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
+		LOG_ERR("Faulty dummy bytes\n");
 		return -1;
 	}
 
@@ -531,7 +537,7 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	 *7.  Find the range of read delay that have same as
 	 *    item 2 and divide it to 2
 	 */
-	div_actual = (qspi_clk_mhz + (dev_clk - 1)) / dev_clk;
+	div_actual = (CONVERTTOMHZ(qspi_clk_mhz) + (dev_clk - 1)) / dev_clk;
 	div_bits = (((div_actual + 1) / 2) - 1);
 	status = cad_qspi_set_baudrate_div(cad_params, div_bits);
 
@@ -588,6 +594,7 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 	}
 
 	if (cad_qspi_idle(cad_params) == 0) {
+		LOG_ERR("QSPI is not idle\n");
 		return -1;
 	}
 
@@ -625,14 +632,14 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 	}
 
 	if (cad_qspi_idle(cad_params) == 0) {
-		LOG_ERR("device not idle");
+		LOG_ERR("Device not idle");
 		return -EBUSY;
 	}
 	status = cad_qspi_timing_config(cad_params, clk_phase, clk_pol, csda, csdads, cseot, cssot,
 					rddatacap);
 
 	if (status != 0) {
-		LOG_ERR("config set timing failure\n");
+		LOG_ERR("Config set timing failure\n");
 		return status;
 	}
 
@@ -640,18 +647,18 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 
 	status = cad_qspi_int_disable(cad_params, CAD_QSPI_INT_STATUS_ALL);
 	if (status != 0) {
-		LOG_ERR("failed disable\n");
+		LOG_ERR("Failed to disable Qspi\n");
 		return status;
 	}
 
 	cad_qspi_set_baudrate_div(cad_params, 0xf);
 	status = cad_qspi_enable(cad_params);
 	if (status != 0) {
-		LOG_ERR("failed enable\n");
+		LOG_ERR("failed to enable Qspi\n");
 		return status;
 	}
 
-	qspi_desired_clk_freq = 100;
+	qspi_desired_clk_freq = 90;
 	cad_qspi_calibration(cad_params, qspi_desired_clk_freq, cad_params->clk_rate);
 
 	status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDID, 0, 3, &rdid);
@@ -683,11 +690,11 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 	 */
 
 	cap_code = CAD_QSPI_STIG_RDID_CAPACITYID(rdid);
+	if (((cap_code >> 4) < 0x9) && ((cap_code & 0xf) < 0x9)) {
+		uint32_t decoded_cap = (uint32_t)(((cap_code >> 4) * 10) + (cap_code & 0xf));
 
-	if (!(((cap_code >> 4) > 0x9) || ((cap_code & 0xf) > 0x9))) {
-		uint32_t decoded_cap = ((cap_code >> 4) * 10) + (cap_code & 0xf);
-
-		cad_params->qspi_device_size = 1 << (decoded_cap + 6);
+		decoded_cap = decoded_cap > 25?25:decoded_cap;
+		cad_params->qspi_device_size = (uint32_t)(1 << (decoded_cap + 6));
 		LOG_INF("QSPI Capacity: %x", cad_params->qspi_device_size);
 
 	} else {
@@ -695,10 +702,13 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 		return -1;
 	}
 
-	cad_qspi_configure_dev_size(cad_params, cad_params->qspi_device_address_byte,
+	status = cad_qspi_configure_dev_size(cad_params, cad_params->qspi_device_address_byte,
 				    cad_params->qspi_device_page_size,
 				    cad_params->qspi_device_bytes_per_block);
-
+	if (status != 0) {
+		LOG_ERR("Failed to configure device size\n");
+		return status;
+	}
 	LOG_INF("Flash size: %d Bytes", cad_params->qspi_device_size);
 
 	return status;
@@ -707,7 +717,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint32_t offset,
 				       uint8_t *buffer, uint32_t len)
 {
-	int status = 0, i;
+	int status = 0;
 	uint32_t write_count, write_capacity, *write_data, space, write_fill_level, sram_partition;
 	uint8_t *write_byte_data;
 
@@ -733,7 +743,7 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 		space = MIN(write_capacity - write_fill_level,
 			    (len - write_count) / sizeof(uint32_t));
 		write_data = (uint32_t *)(buffer + write_count);
-		for (i = 0; i < space; ++i) {
+		for (uint32_t i = 0; i < space; ++i) {
 			sys_write32(*write_data++, cad_params->data_base);
 		}
 		write_count += space * sizeof(uint32_t);
@@ -755,7 +765,7 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 	int status;
 	uint32_t read_count = 0;
 	uint8_t *read_data;
-	int level = 1, count = 0, i;
+	int level = 1, count = 0;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -774,7 +784,7 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
 			read_data = buffer + read_count;
 
-			for (i = 0; i < level; ++i) {
+			for (uint32_t i = 0; i < level; ++i) {
 				*read_data++ = sys_read8(cad_params->data_base);
 			}
 
@@ -816,7 +826,7 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 {
 	uint32_t bank_count, bank_addr, bank_offset, copy_len;
 	uint8_t *read_data;
-	int i, status;
+	int status;
 
 	status = 0;
 
@@ -857,7 +867,7 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 
 	copy_len = MIN(size, CAD_QSPI_BANK_SIZE - bank_offset);
 
-	for (i = 0; i < bank_count; ++i) {
+	for (uint32_t i = 0; i < bank_count; ++i) {
 		status = cad_qspi_device_bank_select(cad_params, CAD_QSPI_BANK_ADDR(bank_addr));
 		if (status != 0) {
 			break;
@@ -882,13 +892,14 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t size)
 {
 	int status = 0;
-	uint32_t subsector_offset = offset & (cad_params->qspi_device_subsector_size - 1);
-	uint32_t erase_size = MIN(size, cad_params->qspi_device_subsector_size - subsector_offset);
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
 		return -EINVAL;
 	}
+
+	uint32_t subsector_offset = offset & (cad_params->qspi_device_subsector_size - 1);
+	uint32_t erase_size = MIN(size, cad_params->qspi_device_subsector_size - subsector_offset);
 
 	while (size) {
 		status = cad_qspi_erase_subsector(cad_params, offset);
@@ -919,6 +930,7 @@ int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t of
 
 	if ((offset >= cad_params->qspi_device_size) ||
 	    (offset + size - 1 >= cad_params->qspi_device_size) || (size == 0)) {
+		LOG_ERR("Invalid write parameter\n");
 		return -EINVAL;
 	}
 
@@ -970,6 +982,7 @@ int cad_qspi_update(struct cad_qspi_params *cad_params, void *Buffer, uint32_t o
 	status = cad_qspi_erase(cad_params, offset, size);
 
 	if (status != 0) {
+		LOG_ERR("Erase Failed\n");
 		return status;
 	}
 

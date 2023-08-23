@@ -22,11 +22,11 @@ struct flash_cad_priv {
 	DEVICE_MMIO_NAMED_RAM(qspi_reg);
 	DEVICE_MMIO_NAMED_RAM(qspi_data);
 	struct cad_qspi_params params;
-	/* clock frequency of timer */
+	/* Clock frequency of timer */
 	uint32_t freq;
-	/* clock controller dev instance */
+	/* Clock controller dev instance */
 	const struct device *clk_dev;
-	/* identifier for timer to get clock freq from clk manager */
+	/* Identifier for timer to get clock freq from clk manager */
 	clock_control_subsys_t clkid;
 	/* Mutex to prevent multiple processes from accessing the same driver api */
 	struct k_mutex qspi_mutex;

@@ -11,51 +11,51 @@
 
 #define CAD_QSPI_MICRON_N25Q_SUPPORT CONFIG_CAD_QSPI_MICRON_N25Q_SUPPORT
 
-#define CAD_INVALID    -1
-#define CAD_QSPI_ERROR -2
+#define CAD_INVALID                          -1
+#define CAD_QSPI_ERROR                       -2
 
-#define CAD_QSPI_ADDR_FASTREAD         0
-#define CAD_QSPI_ADDR_FASTREAD_DUAL_IO 1
-#define CAD_QSPI_ADDR_FASTREAD_QUAD_IO 2
-#define CAT_QSPI_ADDR_SINGLE_IO        0
-#define CAT_QSPI_ADDR_DUAL_IO          1
-#define CAT_QSPI_ADDR_QUAD_IO          2
+#define CAD_QSPI_ADDR_FASTREAD               0
+#define CAD_QSPI_ADDR_FASTREAD_DUAL_IO       1
+#define CAD_QSPI_ADDR_FASTREAD_QUAD_IO       2
+#define CAT_QSPI_ADDR_SINGLE_IO              0
+#define CAT_QSPI_ADDR_DUAL_IO                1
+#define CAT_QSPI_ADDR_QUAD_IO                2
 
-#define CAD_QSPI_BANK_ADDR(x)  ((x) >> 24)
-#define CAD_QSPI_BANK_ADDR_MSK GENMASK(31, 24)
+#define CAD_QSPI_BANK_ADDR(x)                ((x) >> 24)
+#define CAD_QSPI_BANK_ADDR_MSK               GENMASK(31, 24)
 
-#define CAD_QSPI_COMMAND_TIMEOUT 0x10000000
+#define CAD_QSPI_COMMAND_TIMEOUT             0x10000000
 
-#define CAD_QSPI_CFG                     0x0
-#define CAD_QSPI_CFG_BAUDDIV_MSK         0xff87ffff
-#define CAD_QSPI_CFG_BAUDDIV(x)          FIELD_PREP(0x780000, x)
-#define CAD_QSPI_CFG_CS_MSK              ~0x3c00
-#define CAD_QSPI_CFG_CS(x)               (((x) << 11))
-#define CAD_QSPI_CFG_ENABLE              (BIT(0))
-#define CAD_QSPI_CFG_ENDMA_CLR_MSK       0xffff7fff
-#define CAD_QSPI_CFG_IDLE                (BIT(31))
-#define CAD_QSPI_CFG_SELCLKPHASE_CLR_MSK 0xfffffffb
-#define CAD_QSPI_CFG_SELCLKPOL_CLR_MSK   0xfffffffd
+#define CAD_QSPI_CFG                         0x0
+#define CAD_QSPI_CFG_BAUDDIV_MSK             0xff87ffff
+#define CAD_QSPI_CFG_BAUDDIV(x)              FIELD_PREP(0x780000, x)
+#define CAD_QSPI_CFG_CS_MSK                  ~0x3c00
+#define CAD_QSPI_CFG_CS(x)                   (((x) << 11))
+#define CAD_QSPI_CFG_ENABLE                  (BIT(0))
+#define CAD_QSPI_CFG_ENDMA_CLR_MSK           0xffff7fff
+#define CAD_QSPI_CFG_IDLE                    (BIT(31))
+#define CAD_QSPI_CFG_SELCLKPHASE_CLR_MSK     0xfffffffb
+#define CAD_QSPI_CFG_SELCLKPOL_CLR_MSK       0xfffffffd
 
-#define CAD_QSPI_DELAY           0xc
-#define CAD_QSPI_DELAY_CSSOT(x)  (FIELD_GET(0xff, (x)) << 0)
-#define CAD_QSPI_DELAY_CSEOT(x)  (FIELD_GET(0xff, (x)) << 8)
-#define CAD_QSPI_DELAY_CSDADS(x) (FIELD_GET(0xff, (x)) << 16)
-#define CAD_QSPI_DELAY_CSDA(x)   (FIELD_GET(0xff, (x)) << 24)
+#define CAD_QSPI_DELAY                       0xc
+#define CAD_QSPI_DELAY_CSSOT(x)              (FIELD_GET(0xff, (x)) << 0)
+#define CAD_QSPI_DELAY_CSEOT(x)              (FIELD_GET(0xff, (x)) << 8)
+#define CAD_QSPI_DELAY_CSDADS(x)             (FIELD_GET(0xff, (x)) << 16)
+#define CAD_QSPI_DELAY_CSDA(x)               (FIELD_GET(0xff, (x)) << 24)
 
-#define CAD_QSPI_DEVSZ                    0x14
-#define CAD_QSPI_DEVSZ_ADDR_BYTES(x)      ((x) << 0)
-#define CAD_QSPI_DEVSZ_BYTES_PER_PAGE(x)  ((x) << 4)
-#define CAD_QSPI_DEVSZ_BYTES_PER_BLOCK(x) ((x) << 16)
+#define CAD_QSPI_DEVSZ                       0x14
+#define CAD_QSPI_DEVSZ_ADDR_BYTES(x)         ((x) << 0)
+#define CAD_QSPI_DEVSZ_BYTES_PER_PAGE(x)     ((x) << 4)
+#define CAD_QSPI_DEVSZ_BYTES_PER_BLOCK(x)    ((x) << 16)
 
-#define CAD_QSPI_DEVWR                  0x8
-#define CAD_QSPI_DEVRD                  0x4
-#define CAD_QSPI_DEV_OPCODE(x)          (FIELD_GET(0xff, (x)) << 0)
-#define CAD_QSPI_DEV_INST_TYPE(x)       (FIELD_GET(0x03, (x)) << 8)
-#define CAD_QSPI_DEV_ADDR_TYPE(x)       (FIELD_GET(0x03, (x)) << 12)
-#define CAD_QSPI_DEV_DATA_TYPE(x)       (FIELD_GET(0x03, (x)) << 16)
-#define CAD_QSPI_DEV_MODE_BIT(x)        (FIELD_GET(0x01, (x)) << 20)
-#define CAD_QSPI_DEV_DUMMY_CLK_CYCLE(x) (FIELD_GET(0x0f, (x)) << 24)
+#define CAD_QSPI_DEVWR                       0x8
+#define CAD_QSPI_DEVRD                       0x4
+#define CAD_QSPI_DEV_OPCODE(x)               (FIELD_GET(0xff, (x)) << 0)
+#define CAD_QSPI_DEV_INST_TYPE(x)            (FIELD_GET(0x03, (x)) << 8)
+#define CAD_QSPI_DEV_ADDR_TYPE(x)            (FIELD_GET(0x03, (x)) << 12)
+#define CAD_QSPI_DEV_DATA_TYPE(x)            (FIELD_GET(0x03, (x)) << 16)
+#define CAD_QSPI_DEV_MODE_BIT(x)             (FIELD_GET(0x01, (x)) << 20)
+#define CAD_QSPI_DEV_DUMMY_CLK_CYCLE(x)      (FIELD_GET(0x0f, (x)) << 24)
 
 #define CAD_QSPI_FLASHCMD                    0x90
 #define CAD_QSPI_FLASHCMD_ADDR               0x94
@@ -77,22 +77,22 @@
 #define CAD_QSPI_FLASHCMD_WRDATA0            0xa8
 #define CAD_QSPI_FLASHCMD_WRDATA1            0xac
 
-#define CAD_QSPI_RDDATACAP          0x10
-#define CAD_QSPI_RDDATACAP_BYP(x)   (FIELD_GET(1, (x)) << 0)
-#define CAD_QSPI_RDDATACAP_DELAY(x) (FIELD_GET(0xf, (x)) << 1)
+#define CAD_QSPI_RDDATACAP                   0x10
+#define CAD_QSPI_RDDATACAP_BYP(x)            (FIELD_GET(1, (x)) << 0)
+#define CAD_QSPI_RDDATACAP_DELAY(x)          (FIELD_GET(0xf, (x)) << 1)
 
-#define CAD_QSPI_REMAPADDR              0x24
-#define CAD_QSPI_REMAPADDR_VALUE_SET(x) (FIELD_GET(0xffffffff, (x)) << 0)
+#define CAD_QSPI_REMAPADDR                   0x24
+#define CAD_QSPI_REMAPADDR_VALUE_SET(x)      (FIELD_GET(0xffffffff, (x)) << 0)
 
-#define CAD_QSPI_SRAMPART              0x18
-#define CAD_QSPI_SRAMFILL              0x2c
-#define CAD_QSPI_SRAMPART_ADDR(x)      (FIELD_GET(0x3ff, ((x) >> 0)))
-#define CAD_QSPI_SRAM_FIFO_ENTRY_COUNT (1024 / sizeof(uint8_t))
-#define CAD_QSPI_SRAMFILL_INDWRPART(x) (FIELD_GET(0x00ffff, ((x) >> 16)))
-#define CAD_QSPI_SRAMFILL_INDRDPART(x) (FIELD_GET(0x00ffff, ((x) >> 0)))
+#define CAD_QSPI_SRAMPART                    0x18
+#define CAD_QSPI_SRAMFILL                    0x2c
+#define CAD_QSPI_SRAMPART_ADDR(x)            (FIELD_GET(0x3ff, ((x) >> 0)))
+#define CAD_QSPI_SRAM_FIFO_ENTRY_COUNT       (1024 / sizeof(uint8_t))
+#define CAD_QSPI_SRAMFILL_INDWRPART(x)       (FIELD_GET(0x00ffff, ((x) >> 16)))
+#define CAD_QSPI_SRAMFILL_INDRDPART(x)       (FIELD_GET(0x00ffff, ((x) >> 0)))
 
-#define CAD_QSPI_SELCLKPHASE(x) (FIELD_GET(1, (x)) << 2)
-#define CAD_QSPI_SELCLKPOL(x)   (FIELD_GET(1, (x)) << 1)
+#define CAD_QSPI_SELCLKPHASE(x)              (FIELD_GET(1, (x)) << 2)
+#define CAD_QSPI_SELCLKPOL(x)                (FIELD_GET(1, (x)) << 1)
 
 #define CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(x) (FIELD_GET(1, ((x) >> 7)))
 #define CAD_QSPI_STIG_FLAGSR_ERASEREADY(x)   (FIELD_GET(1, ((x) >> 7)))
@@ -114,46 +114,38 @@
 #define CAD_QSPI_STIG_RDID_CAPACITYID(x)     (FIELD_GET(0xff, ((x) >> 16)))
 #define CAD_QSPI_STIG_SR_BUSY(x)             (FIELD_GET(1, ((x))))
 
-#define CAD_QSPI_INST_SINGLE 0
-#define CAD_QSPI_INST_DUAL   1
-#define CAD_QSPI_INST_QUAD   2
+#define CAD_QSPI_INST_SINGLE                 0
+#define CAD_QSPI_INST_DUAL                   1
+#define CAD_QSPI_INST_QUAD                   2
 
-#define CAD_QSPI_INDRDSTADDR        0x68
-#define CAD_QSPI_INDRDCNT           0x6c
-#define CAD_QSPI_INDRD              0x60
-#define CAD_QSPI_INDRD_RD_STAT(x)   (FIELD_GET(1, ((x) >> 2)))
-#define CAD_QSPI_INDRD_START        1
-#define CAD_QSPI_INDRD_IND_OPS_DONE 0x20
-
-#define CAD_QSPI_INDWR           0x70
-#define CAD_QSPI_INDWR_RDSTAT(x) (FIELD_GET(1, ((x) >> 2)))
-#define CAD_QSPI_INDWRSTADDR     0x78
-#define CAD_QSPI_INDWRCNT        0x7c
-#define CAD_QSPI_INDWR           0x70
-#define CAD_QSPI_INDWR_START     0x1
-#define CAD_QSPI_INDWR_INDDONE   0x20
-
-#define CAD_QSPI_INT_STATUS_ALL 0x0000ffff
-
-#define CAD_QSPI_N25Q_DIE_SIZE 0x02000000
-#define CAD_QSPI_BANK_SIZE     0x01000000
-#define CAD_QSPI_PAGE_SIZE     0x00000100
-
-#define CAD_QSPI_IRQMSK 0x44
-
-#define QSPI_FAST_READ 0xb
-
-#define QSPI_WRITE 0x2
+#define CAD_QSPI_INDRDSTADDR                 0x68
+#define CAD_QSPI_INDRDCNT                    0x6c
+#define CAD_QSPI_INDRD                       0x60
+#define CAD_QSPI_INDRD_RD_STAT(x)            (FIELD_GET(1, ((x) >> 2)))
+#define CAD_QSPI_INDRD_START                 1
+#define CAD_QSPI_INDRD_IND_OPS_DONE          0x20
+#define CAD_QSPI_INDWR                       0x70
+#define CAD_QSPI_INDWR_RDSTAT(x)             (FIELD_GET(1, ((x) >> 2)))
+#define CAD_QSPI_INDWRSTADDR                 0x78
+#define CAD_QSPI_INDWRCNT                    0x7c
+#define CAD_QSPI_INDWR                       0x70
+#define CAD_QSPI_INDWR_START                 0x1
+#define CAD_QSPI_INDWR_INDDONE               0x20
+#define CAD_QSPI_INT_STATUS_ALL              0x0000ffff
+#define CAD_QSPI_N25Q_DIE_SIZE               0x02000000
+#define CAD_QSPI_BANK_SIZE                   0x01000000
+#define CAD_QSPI_PAGE_SIZE                   0x00000100
+#define CAD_QSPI_IRQMSK                      0x44
+#define QSPI_FAST_READ                       0xb
+#define QSPI_WRITE                           0x2
 
 /* QSPI CONFIGURATIONS */
-
-#define QSPI_CONFIG_CPOL 1
-#define QSPI_CONFIG_CPHA 1
-
-#define QSPI_CONFIG_CSSOT  0x14
-#define QSPI_CONFIG_CSEOT  0x14
-#define QSPI_CONFIG_CSDADS 0xff
-#define QSPI_CONFIG_CSDA   0xc8
+#define QSPI_CONFIG_CPOL                     1
+#define QSPI_CONFIG_CPHA                     1
+#define QSPI_CONFIG_CSSOT                    0x14
+#define QSPI_CONFIG_CSEOT                    0x14
+#define QSPI_CONFIG_CSDADS                   0xff
+#define QSPI_CONFIG_CSDA                     0xc8
 
 struct cad_qspi_params {
 	uintptr_t reg_base;
@@ -176,7 +168,8 @@ void cad_qspi_set_chip_select(struct cad_qspi_params *cad_params, int cs);
 int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t size);
 int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
 		   uint32_t size);
-int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset, uint32_t size);
+int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
+		  uint32_t size);
 int cad_qspi_update(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
 		    uint32_t size);
 
