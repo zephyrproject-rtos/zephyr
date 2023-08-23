@@ -79,7 +79,7 @@ int main(void)
 		k_free(r_Page_buffer);
 		return ret;
 	}
-	printk("QSPI flash driver data erase sucessful....\n");
+	printk("QSPI flash driver data erase successful....\n");
 
 	ret = flash_write(qspi_dev, OFFSET_PAGE, w_Page_buffer, page.size * QSPI_NUM_PAGES);
 	if (ret < 0) {
@@ -117,7 +117,7 @@ int main(void)
 		k_free(r_Page_buffer);
 		return ret;
 	}
-	printk("QSPI flash driver data erase sucessful....\n");
+	printk("QSPI flash driver data erase successful....\n");
 
 	ret = flash_read(qspi_dev, OFFSET_PAGE, r_Page_buffer, page.size * QSPI_NUM_PAGES);
 	if (ret != 0) {
@@ -136,7 +136,7 @@ int main(void)
 		k_free(r_Page_buffer);
 		return ret;
 	}
-	printk("QSPI flash driver read verfied after erase....\n");
+	printk("QSPI flash driver read verified after erase....\n");
 	printk("QSPI flash driver test sample completed....\n");
 
 	return 0;
