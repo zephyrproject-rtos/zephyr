@@ -719,6 +719,19 @@ skip_ipv4:
 	   iface->config.dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
 
+#if defined(CONFIG_NET_DHCPV6)
+	PR("DHCPv6 address requested : %s\n",
+	   iface->config.dhcpv6.params.request_addr ?
+	   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr) : "none");
+	PR("DHCPv6 prefix requested  : %s\n",
+	   iface->config.dhcpv6.params.request_prefix ?
+	   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix) : "none");
+	PR("DHCPv6 state             : %s\n",
+	   net_dhcpv6_state_name(iface->config.dhcpv6.state));
+	PR("DHCPv6 attempts          : %d\n",
+	   iface->config.dhcpv6.retransmissions + 1);
+#endif /* CONFIG_NET_DHCPV6 */
+
 #else
 	ARG_UNUSED(iface);
 	ARG_UNUSED(user_data);
@@ -2512,6 +2525,29 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc2 = "del";
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
+		break;
+	case NET_EVENT_IPV6_DHCP_START:
+		*desc = "DHCPv6";
+		*desc2 = "start";
+		break;
+	case NET_EVENT_IPV6_DHCP_BOUND:
+		*desc = "DHCPv6";
+		*desc2 = "bound";
+#if defined(CONFIG_NET_DHCPV6)
+		struct net_if_dhcpv6 *data = (struct net_if_dhcpv6 *)msg->data;
+
+		if (data->params.request_addr) {
+			info = net_addr_ntop(AF_INET6, &data->addr, extra_info,
+					     extra_info_len);
+		} else if (data->params.request_prefix) {
+			info = net_addr_ntop(AF_INET6, &data->prefix, extra_info,
+					     extra_info_len);
+		}
+#endif
+		break;
+	case NET_EVENT_IPV6_DHCP_STOP:
+		*desc = "DHCPv6";
+		*desc2 = "stop";
 		break;
 	case NET_EVENT_IPV4_ADDR_ADD:
 		*desc = "IPv4 address";
