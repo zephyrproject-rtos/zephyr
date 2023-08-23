@@ -32,7 +32,7 @@ struct spi_dw_config {
 	uint32_t clock_frequency;
 	spi_dw_config_t config_func;
 	uint8_t op_modes;
-	uint8_t fifo_depth;
+	uint32_t fifo_depth;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
