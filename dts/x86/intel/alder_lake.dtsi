@@ -99,6 +99,85 @@
 			reg-shift = <2>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c0: i2c0 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54e8>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
+		i2c1: i2c1 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54e9>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c2: i2c2 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54ea>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c3: i2c3 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54eb>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c4: i2c4 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54c5>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+		};
+
+		i2c5: i2c5 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x54c6>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
 			status = "disabled";
 		};
 	};
