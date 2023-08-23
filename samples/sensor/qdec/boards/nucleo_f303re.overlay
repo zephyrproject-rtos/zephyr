@@ -1,0 +1,24 @@
+/*
+ * Copyright 2023 Giuseppe Iellamo <giuseppe.iellamo@altorobotics.ai>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+    aliases {
+        qdec0 = &qdec;
+    };
+};
+
+&timers3 {
+    status = "okay";
+
+    qdec: qdec {
+        status = "okay";
+        pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch2_pb5>;
+        pinctrl-names = "default";
+        st,encoder-mode = <MODE_X4_TI12>;
+        st,input-filter-level = <FDIV1_N2>;
+        st,counts-per-revolution = <16>;
+    };
+};
