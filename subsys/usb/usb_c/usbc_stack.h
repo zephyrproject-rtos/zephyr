@@ -107,6 +107,9 @@ struct usbc_port_data {
 	/** Device Policy manager Request */
 	struct request_value request;
 
+	/** Bypass next sleep and request one more iteration of the USB-C state machines */
+	bool bypass_next_sleep;
+
 	/* USB-C Callbacks */
 
 	/**
