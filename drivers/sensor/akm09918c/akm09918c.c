@@ -9,6 +9,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_data_types.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
@@ -19,7 +20,18 @@
 
 LOG_MODULE_REGISTER(AKM09918C, CONFIG_SENSOR_LOG_LEVEL);
 
-static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel chan)
+/**
+ * @brief Perform the bus transaction to fetch samples
+ *
+ * @param dev Sensor device to operate on
+ * @param chan Channel ID to fetch
+ * @param x Location to write X channel sample.
+ * @param y Location to write Y channel sample.
+ * @param z Location to write Z channel sample.
+ * @return int 0 if successful or error code
+ */
+int akm09918c_sample_fetch_helper(const struct device *dev, enum sensor_channel chan, int16_t *x,
+				  int16_t *y, int16_t *z)
 {
 	struct akm09918c_data *data = dev->data;
 	const struct akm09918c_config *cfg = dev->config;
@@ -54,11 +66,19 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 		return -EBUSY;
 	}
 
-	data->x_sample = sys_le16_to_cpu(buf[1] | (buf[2] << 8));
-	data->y_sample = sys_le16_to_cpu(buf[3] | (buf[4] << 8));
-	data->z_sample = sys_le16_to_cpu(buf[5] | (buf[6] << 8));
+	*x = sys_le16_to_cpu(buf[1] | (buf[2] << 8));
+	*y = sys_le16_to_cpu(buf[3] | (buf[4] << 8));
+	*z = sys_le16_to_cpu(buf[5] | (buf[6] << 8));
 
 	return 0;
+}
+
+static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	struct akm09918c_data *data = dev->data;
+
+	return akm09918c_sample_fetch_helper(dev, chan, &data->x_sample, &data->y_sample,
+					     &data->z_sample);
 }
 
 static void akm09918c_convert(struct sensor_value *val, int16_t sample)
@@ -149,13 +169,6 @@ static int akm09918c_attr_set(const struct device *dev, enum sensor_channel chan
 	return 0;
 }
 
-static const struct sensor_driver_api akm09918c_driver_api = {
-	.sample_fetch = akm09918c_sample_fetch,
-	.channel_get = akm09918c_channel_get,
-	.attr_get = akm09918c_attr_get,
-	.attr_set = akm09918c_attr_set,
-};
-
 static inline int akm09918c_check_who_am_i(const struct i2c_dt_spec *i2c)
 {
 	uint8_t buffer[2];
@@ -203,6 +216,17 @@ static int akm09918c_init(const struct device *dev)
 
 	return 0;
 }
+
+static const struct sensor_driver_api akm09918c_driver_api = {
+	.sample_fetch = akm09918c_sample_fetch,
+	.channel_get = akm09918c_channel_get,
+	.attr_get = akm09918c_attr_get,
+	.attr_set = akm09918c_attr_set,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = akm09918c_submit,
+	.get_decoder = akm09918c_get_decoder,
+#endif
+};
 
 #define AKM09918C_DEFINE(inst)                                                                     \
 	static struct akm09918c_data akm09918c_data_##inst;                                        \
