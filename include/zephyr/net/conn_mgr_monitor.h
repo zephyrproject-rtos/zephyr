@@ -20,7 +20,7 @@ struct net_l2;
  * @brief Resend either NET_L4_CONNECTED or NET_L4_DISCONNECTED depending on whether connectivity
  * is currently available.
  */
-void conn_mgr_resend_status(void);
+void conn_mgr_mon_resend_status(void);
 
 /**
  * @brief Mark an iface to be ignored by conn_mgr.
@@ -77,7 +77,7 @@ void conn_mgr_watch_l2(const struct net_l2 *l2);
 
 #else
 
-#define conn_mgr_resend_status(...)
+#define conn_mgr_mon_resend_status(...)
 #define conn_mgr_ignore_iface(...)
 #define conn_mgr_watch_iface(...)
 #define conn_mgr_ignore_l2(...)

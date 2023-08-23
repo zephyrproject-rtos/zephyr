@@ -719,7 +719,7 @@ static int enable(const struct shell_transport *transport, bool blocking)
 
 	/* Listen for network connection status */
 	net_mgmt_add_event_callback(&sh_mqtt->mgmt_cb);
-	conn_mgr_resend_status();
+	conn_mgr_mon_resend_status();
 
 	return 0;
 }
