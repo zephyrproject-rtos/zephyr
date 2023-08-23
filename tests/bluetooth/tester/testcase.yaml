@@ -3,6 +3,7 @@ tests:
     build_only: true
     platform_allow:
       - qemu_x86
+      - native_posix
       - nrf52840dk_nrf52840
     tags: bluetooth
     harness: bluetooth
@@ -20,11 +21,5 @@ tests:
       - qemu_x86
       - nrf52dk_nrf52832
     extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
-    tags: bluetooth
-    harness: bluetooth
-  bluetooth.general.tester_native:
-    build_only: true
-    platform_allow: native_posix
-    extra_args: OVERLAY_CONFIG="overlay-native.conf"
     tags: bluetooth
     harness: bluetooth
