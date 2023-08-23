@@ -23,4 +23,9 @@
 #define FDIV32_N6	14
 #define FDIV32_N8	15
 
+
+#define MODE_X2_TI1	0
+#define MODE_X2_TI2	1
+#define MODE_X4_TI12	2
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_QDEC_STM32_H_ */

@@ -20,6 +20,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 #include <stm32_ll_tim.h>
 
@@ -32,6 +33,7 @@ struct qdec_stm32_dev_cfg {
 	TIM_TypeDef *timer_inst;
 	bool is_input_polarity_inverted;
 	uint8_t input_filtering_level;
+	uint8_t encoder_mode;
 	uint32_t counts_per_revolution;
 };
 
@@ -123,6 +125,18 @@ static int qdec_stm32_initialize(const struct device *dev)
 	}
 	LL_TIM_SetAutoReload(dev_cfg->timer_inst, max_counter_value);
 
+	switch (dev_cfg->encoder_mode) {
+	case MODE_X2_TI1:
+		init_props.EncoderMode = LL_TIM_ENCODERMODE_X2_TI1;
+		break;
+	case MODE_X2_TI2:
+		init_props.EncoderMode = LL_TIM_ENCODERMODE_X2_TI2;
+		break;
+	case MODE_X4_TI12:
+		init_props.EncoderMode = LL_TIM_ENCODERMODE_X4_TI12;
+		break;
+	}
+
 	if (LL_TIM_ENCODER_Init(dev_cfg->timer_inst, &init_props) != SUCCESS) {
 		LOG_ERR("Initalization failed");
 		return -EIO;
@@ -150,6 +164,7 @@ static const struct sensor_driver_api qdec_stm32_driver_api = {
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),	\
 		.input_filtering_level = DT_INST_PROP(n, st_input_filter_level),		\
 		.counts_per_revolution = DT_INST_PROP(n, st_counts_per_revolution),		\
+		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),				\
 	};										\
 											\
 	static struct qdec_stm32_dev_data qdec##n##_stm32_data;				\

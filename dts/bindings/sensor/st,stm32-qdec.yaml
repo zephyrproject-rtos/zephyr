@@ -70,3 +70,17 @@ properties:
     description: |
       This is a number >= 1 that is used to determine how many revolutions
       were done based on the current counter's value.
+
+  st,encoder-mode:
+    type: int
+    description: |
+      Encoder counting mode
+      MODE_X2_TI1 Counter counts up/down on TI2FP2 edge depending on TI1FP1 level
+      MODE_X2_TI2  Counter counts up/down on TI1FP1 edge depending on TI2FP2 level
+      MODE_X4_TI12 Counter counts up/down on both TI1FP1 and TI2FP2 edges
+      depending on the level of the other input
+    default: 0
+    enum:
+      - 0 # MODE_X2_TI1
+      - 1 # MODE_X2_TI2
+      - 2 # MODE_X4_TI1
