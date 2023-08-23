@@ -345,6 +345,9 @@ void pe_message_received(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	atomic_set_bit(pe->flags, PE_FLAGS_MSG_RECEIVED);
+
+	/* Allow the PE to be executed once more and respond faster for the received message */
+	usbc_bypass_next_sleep(dev);
 }
 
 /**
@@ -422,6 +425,9 @@ void pe_set_state(const struct device *dev, const enum usbc_pe_state state)
 
 	__ASSERT(state < ARRAY_SIZE(pe_states), "invalid pe_state %d", state);
 	smf_set_state(SMF_CTX(data->pe), &pe_states[state]);
+
+	/* Allow the PE to execute logic from the new state without additional delay */
+	usbc_bypass_next_sleep(dev);
 }
 
 /**
