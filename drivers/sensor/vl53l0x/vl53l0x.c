@@ -300,36 +300,6 @@ static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.channel_get = vl53l0x_channel_get,
 };
 
-#ifdef CONFIG_PM_DEVICE
-static int vl53l0x_pm_action(const struct device *dev,
-			     enum pm_device_action action)
-{
-	const struct vl53l0x_config *const config = dev->config;
-	int ret;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		ret = gpio_pin_set_dt(&config->xshut, 0);
-		if (ret < 0) {
-			LOG_ERR("[%s] XSHUT pin inactive", dev->name);
-			return ret;
-		}
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		ret = gpio_pin_set_dt(&config->xshut, 1);
-		if (ret < 0) {
-			LOG_ERR("[%s] XSHUT pin active", dev->name);
-			return ret;
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
-
 static int vl53l0x_init(const struct device *dev)
 {
 	int r;
@@ -377,6 +347,36 @@ static int vl53l0x_init(const struct device *dev)
 	LOG_DBG("[%s] Initialized", dev->name);
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int vl53l0x_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct vl53l0x_config *const config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = vl53l0x_init(dev);
+		if (ret != 0) {
+			LOG_ERR("resume init: %d", ret);
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* HW Standby */
+		ret = gpio_pin_set_dt(&config->xshut, 1);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin active", dev->name);
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif
 
 #define VL53L0X_INIT(inst)						 \
 	static struct vl53l0x_config vl53l0x_##inst##_config = {	 \
