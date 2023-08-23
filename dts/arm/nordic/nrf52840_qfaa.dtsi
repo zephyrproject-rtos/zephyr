@@ -21,5 +21,6 @@
 			     "nordic,nrf52", "simple-bus";
 	};
 
-	/delete-node/ &usbd;
 };
+
+/delete-node/ &usbd;
