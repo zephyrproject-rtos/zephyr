@@ -1177,7 +1177,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	uint8_t power_role;
 
 	/* Get the message */
-	if (tcpc_receive_data(tcpc, rx_emsg) <= 0) {
+	if (tcpc_is_rx_pending_msg(tcpc, NULL) == 0 || tcpc_receive_data(tcpc, rx_emsg) <= 0) {
 		/* No pending message or problem getting the message */
 		return;
 	}
