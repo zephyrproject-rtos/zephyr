@@ -293,14 +293,14 @@
 /drivers/entropy/*rv32m1*                 @dleach02
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @sjvasanth1
-/drivers/ethernet/                        @tbursztyka
+/drivers/ethernet/                        @tbursztyka @jukkar
 /drivers/ethernet/*dwmac*                 @npitre
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
 /drivers/ethernet/*smsc91x*               @sgrrzhf
 /drivers/ethernet/*adin2111*              @GeorgeCGV
-/drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
+/drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf @jukkar
 /drivers/ethernet/phy/*adin2111*          @GeorgeCGV
 /drivers/mdio/                            @rlubos @tbursztyka @arvinf
 /drivers/mdio/*adin2111*                  @GeorgeCGV
@@ -342,7 +342,7 @@
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/i3c/                             @dcpleung
 /drivers/i3c/i3c_cdns.c                   @XenuIsWatching
-/drivers/ieee802154/                      @rlubos @tbursztyka
+/drivers/ieee802154/                      @rlubos @tbursztyka @jukkar
 /drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @jciupis
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
@@ -452,8 +452,8 @@
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
-/drivers/net/                             @rlubos @tbursztyka
-/drivers/ptp_clock/                       @tbursztyka
+/drivers/net/                             @rlubos @tbursztyka @jukkar
+/drivers/ptp_clock/                       @tbursztyka @jukkar
 /drivers/spi/                             @tbursztyka
 /drivers/spi/*b91*                        @andy-liu-telink
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
@@ -503,7 +503,7 @@
 /drivers/watchdog/*rpi_pico*              @thedjnK
 /drivers/watchdog/*dw*                    @softwarecki
 /drivers/watchdog/*ifx*                   @sreeramIfx
-/drivers/wifi/                            @rlubos @tbursztyka
+/drivers/wifi/                            @rlubos @tbursztyka @jukkar
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
@@ -700,17 +700,17 @@
 /include/zephyr/lorawan/lorawan.h                @Mani-Sadhasivam
 /include/zephyr/mgmt/osdp.h                      @sidcha
 /include/zephyr/mgmt/mcumgr/                     @nordicjm
-/include/zephyr/net/                             @rlubos @tbursztyka
-/include/zephyr/net/buf.h                        @jhedberg @tbursztyka @rlubos
+/include/zephyr/net/                             @rlubos @tbursztyka @jukkar
+/include/zephyr/net/buf.h                        @jhedberg @tbursztyka @rlubos @jukkar
 /include/zephyr/net/coap*.h                      @rlubos
-/include/zephyr/net/conn_mgr*.h			 @rlubos @glarsennordic
+/include/zephyr/net/conn_mgr*.h                  @rlubos @glarsennordic @jukkar
 /include/zephyr/net/lwm2m*.h                     @rlubos
 /include/zephyr/net/mqtt.h                       @rlubos
 /include/zephyr/net/mqtt_sn.h                    @rlubos @BeckmaR
 /include/zephyr/net/net_pkt_filter.h             @npitre
 /include/zephyr/posix/                           @cfreidt
 /include/zephyr/pm/pm.h                          @nashif @ceolin
-/include/zephyr/drivers/ptp_clock.h              @tbursztyka
+/include/zephyr/drivers/ptp_clock.h              @tbursztyka @jukkar
 /include/zephyr/rtio/                            @teburd
 /include/zephyr/sensing/                           @lixuzha @ghu0510 @qianruh
 /include/zephyr/shared_irq.h                     @dcpleung @nashif @andyross
@@ -762,14 +762,14 @@
 /samples/drivers/smbus/                   @finikorg
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
 /samples/modules/canopennode/             @henrikbrixandersen
-/samples/net/                             @rlubos @tbursztyka
+/samples/net/                             @rlubos @tbursztyka @jukkar
 /samples/net/cloud/tagoio_http_post/      @nandojve
-/samples/net/dns_resolve/                 @rlubos @tbursztyka
+/samples/net/dns_resolve/                 @rlubos @tbursztyka @jukkar
 /samples/net/lwm2m_client/                @rlubos
 /samples/net/mqtt_publisher/              @rlubos
 /samples/net/mqtt_sn_publisher/           @rlubos @BeckmaR
 /samples/net/sockets/coap_*/              @rlubos
-/samples/net/sockets/                     @rlubos @tbursztyka
+/samples/net/sockets/                     @rlubos @tbursztyka @jukkar
 /samples/sensor/                          @MaureenHelm
 /samples/shields/                         @avisconti
 /samples/subsys/ipc/ipc_service/icmsg     @emob-nordic
@@ -856,7 +856,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/ipc/                              @carlocaione
 /subsys/ipc/ipc_service/*/*icmsg*         @emob-nordic
 /subsys/logging/                          @nordic-krch
-/subsys/logging/backends/log_backend_net.c @nordic-krch @rlubos
+/subsys/logging/backends/log_backend_net.c @nordic-krch @rlubos @jukkar
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @de-nordic @nordicjm
@@ -864,20 +864,20 @@ scripts/build/gen_image_info.py           @tejlmand
 /subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no
-/subsys/net/buf.c                         @jhedberg @tbursztyka @rlubos
-/subsys/net/conn_mgr/			  @rlubos @glarsennordic
-/subsys/net/ip/                           @rlubos @tbursztyka
-/subsys/net/lib/                          @rlubos @tbursztyka
-/subsys/net/lib/dns/                      @rlubos @tbursztyka @cfriedt
+/subsys/net/buf.c                         @jhedberg @tbursztyka @rlubos @jukkar
+/subsys/net/conn_mgr/                     @rlubos @glarsennordic @jukkar
+/subsys/net/ip/                           @rlubos @tbursztyka @jukkar
+/subsys/net/lib/                          @rlubos @tbursztyka @jukkar
+/subsys/net/lib/dns/                      @rlubos @tbursztyka @cfriedt @jukkar
 /subsys/net/lib/lwm2m/                    @rlubos
-/subsys/net/lib/config/                   @rlubos @tbursztyka
+/subsys/net/lib/config/                   @rlubos @tbursztyka @jukkar
 /subsys/net/lib/mqtt/                     @rlubos
 /subsys/net/lib/mqtt_sn/                  @rlubos @BeckmaR
 /subsys/net/lib/coap/                     @rlubos
 /subsys/net/lib/sockets/socketpair.c      @cfriedt
-/subsys/net/lib/sockets/                  @rlubos @tbursztyka
+/subsys/net/lib/sockets/                  @rlubos @tbursztyka @jukkar
 /subsys/net/lib/tls_credentials/          @rlubos
-/subsys/net/l2/                           @rlubos @tbursztyka
+/subsys/net/l2/                           @rlubos @tbursztyka @jukkar
 /subsys/net/l2/canbus/                    @alexanderwachter
 /subsys/net/pkt_filter/                   @npitre
 /subsys/net/*/openthread/                 @rlubos
@@ -920,19 +920,19 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif
 /tests/lib/cmsis_dsp/                     @stephanosio
-/tests/net/                               @rlubos @tbursztyka
-/tests/net/buf/                           @jhedberg @tbursztyka
-/tests/net/conn_mgr/			  @rlubos @glarsennordic
-/tests/net/conn_mgr_conn/		  @rlubos @glarsennordic
-/tests/net/lib/                           @rlubos @tbursztyka
-/tests/net/lib/http_header_fields/        @rlubos @tbursztyka
+/tests/net/                               @rlubos @tbursztyka @jukkar
+/tests/net/buf/                           @jhedberg @tbursztyka @jukkar
+/tests/net/conn_mgr/                      @rlubos @glarsennordic @jukkar
+/tests/net/conn_mgr_conn/                 @rlubos @glarsennordic @jukkar
+/tests/net/lib/                           @rlubos @tbursztyka @jukkar
+/tests/net/lib/http_header_fields/        @rlubos @tbursztyka @jukkar
 /tests/net/lib/mqtt_packet/               @rlubos
 /tests/net/lib/mqtt_sn_packet/            @rlubos @BeckmaR
 /tests/net/lib/mqtt_sn_client/            @rlubos @BeckmaR
 /tests/net/lib/coap/                      @rlubos
 /tests/net/npf/                           @npitre
 /tests/net/socket/socketpair/             @cfriedt
-/tests/net/socket/                        @rlubos @tbursztyka
+/tests/net/socket/                        @rlubos @tbursztyka @jukkar
 /tests/subsys/debug/coredump/             @dcpleung
 /tests/subsys/fs/                         @nashif @de-nordic
 /tests/subsys/mgmt/mcumgr/                @de-nordic @nordicjm
