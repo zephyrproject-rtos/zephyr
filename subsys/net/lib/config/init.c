@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 
@@ -203,8 +204,26 @@ static void setup_ipv4(struct net_if *iface)
 #endif /* CONFIG_NET_IPV4 && !CONFIG_NET_DHCPV4 */
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
-#if !defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
-#error "You need to define an IPv6 address!"
+
+#if defined(CONFIG_NET_DHCPV6)
+static void setup_dhcpv6(struct net_if *iface)
+{
+	struct net_dhcpv6_params params = {
+		.request_addr = IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_REQUEST_ADDR),
+		.request_prefix = IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_REQUEST_PREFIX),
+	};
+
+	NET_INFO("Running dhcpv6 client...");
+
+	net_dhcpv6_start(iface, &params);
+}
+#else /* CONFIG_NET_DHCPV6 */
+#define setup_dhcpv6(...)
+#endif /* CONFIG_NET_DHCPV6 */
+
+#if !defined(CONFIG_NET_CONFIG_DHCPV6_REQUEST_ADDR) && \
+	!defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
+#error "You need to define an IPv6 address or enable DHCPv6!"
 #endif
 
 static struct net_mgmt_event_callback mgmt6_cb;
@@ -249,6 +268,21 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		NET_INFO("IPv6 address: %s",
 			 net_addr_ntop(AF_INET6, &laddr, hr_addr, NET_IPV6_ADDR_LEN));
+
+		if (ifaddr->addr_type == NET_ADDR_DHCP) {
+			char remaining_str[] = "infinite";
+			uint32_t remaining;
+
+			remaining = net_timeout_remaining(&ifaddr->lifetime,
+							  k_uptime_get_32());
+
+			if (!ifaddr->is_infinite) {
+				snprintk(remaining_str, sizeof(remaining_str),
+					 "%u", remaining);
+			}
+
+			NET_INFO("Lifetime: %s seconds", remaining_str);
+		}
 #endif
 
 		services_notify_ready(NET_CONFIG_NEED_IPV6);
@@ -264,6 +298,9 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	struct net_if_addr *ifaddr;
 	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt6_cb);
+
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
 		goto exit;
@@ -278,9 +315,6 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	if (flags & NET_CONFIG_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
-
-	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
-	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	/*
 	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
@@ -310,6 +344,7 @@ exit:
 
 #else
 #define setup_ipv6(...)
+#define setup_dhcpv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE)
@@ -408,6 +443,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 	setup_ipv4(iface);
 	setup_dhcpv4(iface);
 	setup_ipv6(iface, flags);
+	setup_dhcpv6(iface);
 
 	/* Network interface did not come up. */
 	if (timeout > 0 && count < 0) {

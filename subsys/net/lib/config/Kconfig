@@ -195,6 +195,23 @@ config NET_CONFIG_BT_NODE
 
 endif # NET_CONFIG_SETTINGS
 
+if NET_DHCPV6
+
+config NET_CONFIG_DHCPV6_REQUEST_ADDR
+	bool "Request IPv6 address when configuring DHCPv6 client"
+	default y
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 address from the DHCPv6 server.
+
+config NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	bool "Request IPv6 prefix when configuring DHCPv6 client"
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 prefix from the DHCPv6 server.
+
+endif # NET_DHCPV6
+
 config NET_CONFIG_CLOCK_SNTP_INIT
 	bool "Initialize system clock using SNTP on application startup"
 	depends on SNTP && POSIX_CLOCK
