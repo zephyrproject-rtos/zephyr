@@ -180,6 +180,54 @@
 
 			status = "disabled";
 		};
+
+		spi0: spi0 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x54aa>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_4_e 10 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+
+		spi1: spi1 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x54ab>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_4_f 16 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		spi2: spi2 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x54fb>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_1_d 9 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
 	};
 
 	soc {
