@@ -36,6 +36,6 @@ struct emul_stub_dev_api {
 	static struct emul_stub_dev_config stub_config_##n;                                        \
 	static struct emul_stub_dev_api stub_api_##n;                                              \
 	DEVICE_DT_INST_DEFINE(n, &emul_init_stub_##n, NULL, &stub_data_##n, &stub_config_##n,      \
-			      POST_KERNEL, 1, &stub_api_##n);
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &stub_api_##n);
 
 #endif /* ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_ */
