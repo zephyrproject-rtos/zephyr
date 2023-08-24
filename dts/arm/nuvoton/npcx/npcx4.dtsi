@@ -257,7 +257,6 @@
 		/* ADC0 comparator configuration in npcx4 series */
 		adc0: adc@400d1000 {
 			channel-count = <26>;
-			threshold-reg-offset = <0x80>;
 			threshold-count = <6>;
 		};
 
@@ -270,7 +269,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
 			vref-mv = <3300>;
 			channel-count = <26>;
-			threshold-reg-offset = <0x80>;
 			threshold-count = <6>;
 			status = "disabled";
 		};
