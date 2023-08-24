@@ -251,21 +251,20 @@ This board configuration supports `Lauterbach TRACE32`_ and `SEGGER J-Link`_
 West runners for flashing and debugging applications. Follow the steps described
 in :ref:`lauterbach-trace32-debug-host-tools` and :ref:`jlink-debug-host-tools`,
 to setup the flash and debug host tools for these runners, respectively. The
-default runner is Lauterbach TRACE32.
+default runner is J-Link.
 
 Flashing
 ========
 
-Run the ``west flash`` command to flash the application to the board using
-Lauterbach TRACE32. Alternatively, run ``west flash -r jlink`` to use SEGGER
-J-Link.
+Run the ``west flash`` command to flash the application using SEGGER J-Link.
+Alternatively, run ``west flash -r trace32`` to use Lauterbach TRACE32.
 
 The Lauterbach TRACE32 runner supports additional options that can be passed
 through command line:
 
 .. code-block:: console
 
-   west flash --startup-args elfFile=<elf_path> loadTo=<flash/sram>
+   west flash -r trace32 --startup-args elfFile=<elf_path> loadTo=<flash/sram>
       eraseFlash=<yes/no> verifyFlash=<yes/no>
 
 Where:
@@ -285,14 +284,14 @@ For example, to erase and verify flash content:
 
 .. code-block:: console
 
-   west flash --startup-args elfFile=build/zephyr/zephyr.elf loadTo=flash eraseFlash=yes verifyFlash=yes
+   west flash -r trace32 --startup-args elfFile=build/zephyr/zephyr.elf loadTo=flash eraseFlash=yes verifyFlash=yes
 
 Debugging
 =========
 
-Run the ``west debug`` command to launch the Lauterbach TRACE32 software
-debugging interface. Alternatively, run ``west debug -r jlink`` to start a
-command line debugging session using SEGGER J-Link.
+Run the ``west debug`` command to start a GDB session using SEGGER J-Link.
+Alternatively, run ``west debug -r trace32`` to launch the Lauterbach TRACE32
+software debugging interface.
 
 References
 **********
