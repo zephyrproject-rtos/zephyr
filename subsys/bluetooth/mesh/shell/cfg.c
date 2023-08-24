@@ -98,13 +98,13 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 
-	if (page != 0x00 && page != 0x01 && page != 0x80) {
-		shell_print(sh, "Got page 0x%02x. No parser available.",
+	if (page != 0 && page != 1 && page != 128 && page != 129) {
+		shell_print(sh, "Got page %d. No parser available.",
 			    page);
 		return 0;
 	}
 
-	if (page != 1) {
+	if (page == 0 || page == 128) {
 		err = bt_mesh_comp_p0_get(&comp, &buf);
 
 		if (err) {
@@ -113,7 +113,8 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 			return 0;
 		}
 
-		shell_print(sh, "Got Composition Data for 0x%04x:", bt_mesh_shell_target_ctx.dst);
+		shell_print(sh, "Got Composition Data for 0x%04x, page: %d:",
+			    bt_mesh_shell_target_ctx.dst, page);
 		shell_print(sh, "\tCID      0x%04x", comp.cid);
 		shell_print(sh, "\tPID      0x%04x", comp.pid);
 		shell_print(sh, "\tVID      0x%04x", comp.vid);
@@ -153,7 +154,7 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && page == 1) {
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && (page == 1 || page == 129)) {
 		/* size of 32 is chosen arbitrary, as sufficient for testing purposes */
 		NET_BUF_SIMPLE_DEFINE(p1_buf, 32);
 		NET_BUF_SIMPLE_DEFINE(p1_item_buf, 32);
@@ -167,7 +168,7 @@ static int cmd_get_comp(const struct shell *sh, size_t argc, char *argv[])
 			return 0;
 		}
 		shell_print(sh,
-			    "Got Composition Data for 0x%04x, page: 0x%02x:",
+			    "Got Composition Data for 0x%04x, page: %d:",
 			    bt_mesh_shell_target_ctx.dst, page);
 
 		while (bt_mesh_comp_p1_elem_pull(&buf, &p1_elem)) {
