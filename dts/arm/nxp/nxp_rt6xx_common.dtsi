@@ -501,6 +501,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "disabled";
+	clocks = <&clkctl1 MCUX_FLEXSPI_CLK>;
 };
 
 &nvic {

@@ -687,6 +687,7 @@
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	clocks = <&clkctl1 MCUX_FLEXSPI_CLK>;
 };
 
 &flexspi2 {
@@ -695,6 +696,7 @@
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	clocks = <&clkctl1 MCUX_FLEXSPI2_CLK>;
 };
 
 &nvic {

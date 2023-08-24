@@ -95,6 +95,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
 		};
 
 		flexspi2: spi@400d0000 {
@@ -104,6 +105,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_FLEXSPI2_CLK 0x0 0>;
 		};
 
 		semc: semc0@400d4000 {

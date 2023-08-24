@@ -433,8 +433,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		key = irq_lock();
 	}
 
+	/* Clock FlexSPI at 84 MHZ (42MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MEMC_FLEXSPI_CLOCK_42M);
+					data->port, MHZ(84));
 
 	while (len) {
 		/* Writing between two page sizes crashes the platform so we
@@ -477,8 +478,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
+	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MEMC_FLEXSPI_CLOCK_166M);
+					data->port, MHZ(332));
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uint32_t) dst, size);
