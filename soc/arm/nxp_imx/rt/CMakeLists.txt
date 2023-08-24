@@ -35,6 +35,14 @@ if (CONFIG_SOC_SERIES_IMX_RT10XX AND CONFIG_MEMC_MCUX_FLEXSPI)
   endif()
 endif ()
 
+
+if (CONFIG_SOC_SERIES_IMX_RT11XX AND CONFIG_MEMC_MCUX_FLEXSPI)
+  zephyr_sources(flexspi_rt11xx.c)
+  if (CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+    zephyr_code_relocate(FILES flexspi_rt11xx.c LOCATION ITCM_TEXT)
+  endif()
+endif ()
+
 if (CONFIG_PM AND CONFIG_SOC_SERIES_IMX_RT10XX)
   zephyr_sources(power_rt10xx.c)
   zephyr_code_relocate(FILES power_rt10xx.c LOCATION ITCM_TEXT)
