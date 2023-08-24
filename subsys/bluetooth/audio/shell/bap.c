@@ -24,13 +24,11 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
 #include "shell/bt.h"
 #include "audio.h"
-
-#define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
-#define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -38,7 +36,7 @@ struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
 				    (UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT)];
 
 static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 10000u, 60000u, 10000u, 60000u);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;
@@ -400,7 +398,8 @@ void sdu_sent_cb(struct bt_bap_stream *bap_stream)
 }
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
 
-const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, const char *preset_arg)
+const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
+						    const char *preset_arg)
 {
 	if (is_unicast) {
 		for (size_t i = 0U; i < ARRAY_SIZE(lc3_unicast_presets); i++) {
@@ -414,6 +413,10 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, const char 
 				return &lc3_broadcast_presets[i];
 			}
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_GMAP)) {
+		return gmap_get_named_preset(is_unicast, dir, preset_arg);
 	}
 
 	return NULL;
@@ -588,8 +591,7 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
-	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
-	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2, CONTEXT);
 
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
@@ -996,6 +998,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	struct shell_stream *uni_stream;
 	struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep *ep = NULL;
+	enum bt_audio_dir dir;
 	unsigned long index;
 	uint8_t conn_index;
 	int err = 0;
@@ -1029,6 +1032,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	} else if (!strcmp(argv[1], "sink")) {
+		dir = BT_AUDIO_DIR_SINK;
 		ep = snks[conn_index][index];
 
 		named_preset = default_sink_preset;
@@ -1036,6 +1040,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 	} else if (!strcmp(argv[1], "source")) {
+		dir = BT_AUDIO_DIR_SOURCE;
 		ep = srcs[conn_index][index];
 
 		named_preset = default_source_preset;
@@ -1083,7 +1088,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 			if (argc > i) {
 				arg = argv[++i];
 
-				named_preset = bap_get_named_preset(true, arg);
+				named_preset = bap_get_named_preset(true, dir, arg);
 				if (named_preset == NULL) {
 					shell_error(sh, "Unable to parse named_preset %s", arg);
 					return -ENOEXEC;
@@ -1422,14 +1427,18 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct named_lc3_preset *named_preset;
+	enum bt_audio_dir dir;
 	bool unicast = true;
 
 	if (!strcmp(argv[1], "sink")) {
+		dir = BT_AUDIO_DIR_SINK;
 		named_preset = default_sink_preset;
 	} else if (!strcmp(argv[1], "source")) {
+		dir = BT_AUDIO_DIR_SOURCE;
 		named_preset = default_source_preset;
 	} else if (!strcmp(argv[1], "broadcast")) {
 		unicast = false;
+		dir = BT_AUDIO_DIR_SOURCE;
 
 		named_preset = default_broadcast_source_preset;
 	} else {
@@ -1438,7 +1447,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
-		named_preset = bap_get_named_preset(unicast, argv[2]);
+		named_preset = bap_get_named_preset(unicast, dir, argv[2]);
 		if (named_preset == NULL) {
 			shell_error(sh, "Unable to parse named_preset %s", argv[2]);
 			return -ENOEXEC;
@@ -2053,7 +2062,8 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				i++;
 				arg = argv[i];
 
-				named_preset = bap_get_named_preset(false, arg);
+				named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE,
+								    arg);
 				if (named_preset == NULL) {
 					shell_error(sh, "Unable to parse named_preset %s",
 						    arg);
@@ -2930,6 +2940,10 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
 		ad_len += cap_acceptor_ad_data_add(&data_array[ad_len], data_array_size - ad_len,
 						   true);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_GMAP)) {
+		ad_len += gmap_ad_data_add(&data_array[ad_len], data_array_size - ad_len);
 	}
 
 	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
