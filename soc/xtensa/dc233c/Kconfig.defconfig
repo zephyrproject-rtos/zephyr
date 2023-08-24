@@ -1,0 +1,31 @@
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XTENSA_DC233C
+
+config SOC
+	default "dc233c"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "dc233c"
+
+config XTENSA_MMU_NUM_L2_TABLES
+	int
+	default 48 if XTENSA_MMU
+
+# Both SRAM_OFFSET and KERNEL_VM_OFFSET are set at 1MB.
+# This is to allow VECBASE to be mapped permanently
+# via TLB way 4 (which covers 1MB).
+config SRAM_OFFSET
+	hex
+	default 0x100000
+
+config KERNEL_VM_OFFSET
+	hex
+	default 0x100000
+
+endif
