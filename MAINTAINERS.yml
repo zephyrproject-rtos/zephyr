@@ -1849,11 +1849,16 @@ Networking:
     - doc/connectivity/networking/
     - tests/net/
   files-exclude:
+    - doc/connectivity/networking/api/ieee802154.rst
+    - include/zephyr/net/ieee802154*.h
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
+    - subsys/net/l2/ieee802154/
     - subsys/net/lib/coap/
+    - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/lwm2m/
     - subsys/net/lib/tls_credentials/
+    - tests/net/ieee802154/
   labels:
     - "area: Networking"
 
@@ -1962,11 +1967,9 @@ Networking:
     - jukkar
   files:
     - doc/connectivity/networking/api/ieee802154.rst
-    - include/zephyr/net/ieee802154.h
-    - include/zephyr/net/ieee802154_pkt.h
-    - include/zephyr/net/ieee802154_mgmt.h
+    - include/zephyr/net/ieee802154*.h
     - subsys/net/l2/ieee802154/
-    - subsys/net/lib/config/ieee802154_*
+    - subsys/net/lib/config/ieee802154*
     - tests/net/ieee802154/
   labels:
     - "area: IEEE 802.15.4"
