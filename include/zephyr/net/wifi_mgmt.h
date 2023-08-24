@@ -461,6 +461,19 @@ struct wifi_raw_scan_result {
 	uint8_t data[CONFIG_WIFI_MGMT_RAW_SCAN_RESULT_LENGTH];
 };
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+/* for use in max info size calculations */
+union wifi_mgmt_events {
+	struct wifi_scan_result scan_result;
+	struct wifi_status connect_status;
+	struct wifi_iface_status iface_status;
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	struct wifi_raw_scan_result raw_scan_result;
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+	struct wifi_twt_params twt_params;
+};
+
+
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
