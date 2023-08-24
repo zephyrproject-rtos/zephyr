@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/byteorder.h>
+
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -79,6 +81,12 @@ void print_qos(const struct bt_audio_codec_qos *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
-	       qos->interval, qos->framing, qos->phy, qos->sdu,
-	       qos->rtn, qos->latency, qos->pd);
+	       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+}
+
+void copy_unicast_stream_preset(struct unicast_stream *stream,
+				const struct named_lc3_preset *named_preset)
+{
+	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
+	memcpy(&stream->codec_cfg, &named_preset->preset.codec_cfg, sizeof(stream->codec_cfg));
 }
