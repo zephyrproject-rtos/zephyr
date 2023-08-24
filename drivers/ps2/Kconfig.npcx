@@ -5,7 +5,8 @@
 
 menuconfig PS2_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) PS2 driver"
-	depends on SOC_FAMILY_NPCX && ESPI_PERIPHERAL_8042_KBC
+	depends on DT_HAS_NUVOTON_NPCX_PS2_CHANNEL_ENABLED
+	default y
 	help
 	  Enable the NPCX family PS2 driver. It provides four PS/2 channels.
 	  Each channel has two quasi-bidirectional signals that serve as
