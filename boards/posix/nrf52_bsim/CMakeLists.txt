@@ -50,7 +50,7 @@ zephyr_library_include_directories(
 )
 
 set(libpath ${BSIM_OUT_PATH}/lib)
-target_link_options(native_simulator INTERFACE
+set_property(TARGET native_simulator APPEND PROPERTY RUNNER_LINK_LIBRARIES
 	${libpath}/libUtilv1.32.a
 	${libpath}/libPhyComv1.32.a
 	${libpath}/lib2G4PhyComv1.32.a
