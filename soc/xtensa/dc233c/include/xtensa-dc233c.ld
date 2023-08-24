@@ -322,6 +322,12 @@ SECTIONS
 
     *(.text.arch_is_in_isr)
 
+    /* To support backtracing */
+    *libarch__xtensa__core.a:xtensa_backtrace.c.obj(.literal.*)
+    *libarch__xtensa__core.a:xtensa_backtrace.c.obj(.text.*)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1.literal)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1)
+
     *libkernel.a:fatal.c.obj(.literal.*)
     *libkernel.a:fatal.c.obj(.text.*)
 
