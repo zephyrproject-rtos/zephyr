@@ -1607,4 +1607,115 @@ ZTEST(coap, test_remove_non_existent_coap_option)
 	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
 }
 
+static void assert_coap_packet_set_path_query_options(const char *path,
+						      const char * const *expected,
+						      size_t expected_len, uint16_t code)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	struct coap_option options[16] = {0};
+	int res;
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+	TC_PRINT("Assert path: %s\n", path);
+
+	res = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			       COAP_TOKEN_MAX_LEN, coap_next_token(),
+			       COAP_METHOD_GET, 0x1234);
+	zassert_equal(res, 0, "Could not initialize packet");
+
+	res = coap_packet_set_path(&cpkt, path);
+	zassert_equal(res, 0, "Could not set path/query, path: %s", path);
+
+	res = coap_find_options(&cpkt, code, options, ARRAY_SIZE(options));
+	if (res <= 0) {
+		/* fail if we expect options */
+		zassert_true(((expected == NULL) && (expected_len == 0U)),
+			     "Expected options but found none, path: %s", path);
+	}
+
+	for (unsigned int i = 0U; i < expected_len; ++i) {
+		/* validate expected options, the rest shall be 0 */
+		if (i < expected_len) {
+			zassert_true((options[i].len == strlen(expected[i])),
+				     "Expected and parsed option lengths don't match"
+				     ", path: %s",
+				     path);
+
+			zassert_mem_equal(options[i].value, expected[i], options[i].len,
+					  "Expected and parsed option values don't match"
+					  ", path: %s",
+					  path);
+		} else {
+			zassert_true((options[i].len == 0U),
+				     "Unexpected options shall be empty"
+				     ", path: %s",
+				     path);
+		}
+	}
+}
+
+ZTEST(coap, test_coap_packet_set_path)
+{
+	assert_coap_packet_set_path_query_options(" ", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("/", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("?", NULL, 0U, COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("?a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("?a&b",
+						 (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a", NULL, 0, COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a/",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+
+	assert_coap_packet_set_path_query_options("a?b=t&a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a?b=t&a",
+						  (const char *const[]){"b=t", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a?b=t&aa",
+						  (const char *const[]){"b=t", "aa"},
+						  2U, COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a?b&a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a?b&a",
+						  (const char *const[]){"b", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a?b&aa",
+						  (const char *const[]){"b", "aa"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a/b",
+						  (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/b/",
+						  (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/b?b&a",
+						  (const char *const[]){"b", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a/b?b&aa",
+						  (const char *const[]){"b", "aa"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a/bb",
+						  (const char *const[]){"a", "bb"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/bb/",
+						  (const char *const[]){"a", "bb"}, 2U,
+						  COAP_OPTION_URI_PATH);
+}
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);
