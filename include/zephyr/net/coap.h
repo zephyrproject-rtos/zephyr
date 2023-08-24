@@ -372,6 +372,17 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num);
 
 /**
+ * @brief Parses provided coap path (with/without query) or query and appends
+ * that as options to the @a cpkt.
+ *
+ * @param cpkt Packet to append path and query options for.
+ * @param path Null-terminated string of coap path, query or both.
+ *
+ * @retval 0 in case of success or negative in case of error.
+ */
+int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
+
+/**
  * @brief Creates a new CoAP Packet from input data.
  *
  * @param cpkt New packet to be initialized using the storage from @a data.

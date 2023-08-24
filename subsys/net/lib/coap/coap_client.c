@@ -14,9 +14,6 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_client.h>
 
 #define COAP_VERSION 1
-#define COAP_PATH_ELEM_DELIM '/'
-#define COAP_PATH_ELEM_QUERY '?'
-#define COAP_PATH_ELEM_AMP '&'
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
 #define DEFAULT_RETRY_AMOUNT 5
@@ -116,108 +113,6 @@ static bool has_ongoing_requests(void)
 	return has_requests;
 }
 
-static int coap_client_init_path_options(struct coap_packet *pckt, const char *path)
-{
-	int ret = 0;
-	int path_start, path_end;
-	int path_length;
-	bool contains_query = false;
-	int i;
-
-	path_start = 0;
-	path_end = 0;
-	path_length = strlen(path);
-	for (i = 0; i < path_length; i++) {
-		path_end = i;
-		if (path[i] == COAP_PATH_ELEM_DELIM) {
-			/* Guard for preceding delimiters */
-			if (path_start < path_end) {
-				ret = coap_packet_append_option(pckt, COAP_OPTION_URI_PATH,
-								path + path_start,
-								path_end - path_start);
-				if (ret < 0) {
-					LOG_ERR("Failed to append path to CoAP message");
-					goto out;
-				}
-			}
-			/* Check if there is a new path after delimiter,
-			 * if not, point to the end of string to not add
-			 * new option after this
-			 */
-			if (path_length > i + 1) {
-				path_start = i + 1;
-			} else {
-				path_start = path_length;
-			}
-		} else if (path[i] == COAP_PATH_ELEM_QUERY) {
-			/* Guard for preceding delimiters */
-			if (path_start < path_end) {
-				ret = coap_packet_append_option(pckt, COAP_OPTION_URI_PATH,
-								path + path_start,
-								path_end - path_start);
-				if (ret < 0) {
-					LOG_ERR("Failed to append path to CoAP message");
-					goto out;
-				}
-			}
-			/* Rest of the path is query */
-			contains_query = true;
-			if (path_length > i + 1) {
-				path_start = i + 1;
-			} else {
-				path_start = path_length;
-			}
-			break;
-		}
-	}
-
-	if (contains_query) {
-		for (i = path_start; i < path_length; i++) {
-			path_end = i;
-			if (path[i] == COAP_PATH_ELEM_AMP || path[i] == COAP_PATH_ELEM_QUERY) {
-				/* Guard for preceding delimiters */
-				if (path_start < path_end) {
-					ret = coap_packet_append_option(pckt, COAP_OPTION_URI_QUERY,
-									path + path_start,
-									path_end - path_start);
-					if (ret < 0) {
-						LOG_ERR("Failed to append path to CoAP message");
-						goto out;
-					}
-				}
-				/* Check if there is a new query option after delimiter,
-				 * if not, point to the end of string to not add
-				 * new option after this
-				 */
-				if (path_length > i + 1) {
-					path_start = i + 1;
-				} else {
-					path_start = path_length;
-				}
-			}
-		}
-	}
-
-	if (path_start < path_length) {
-		if (contains_query) {
-			ret = coap_packet_append_option(pckt, COAP_OPTION_URI_QUERY,
-							path + path_start,
-							path_end - path_start + 1);
-		} else {
-			ret = coap_packet_append_option(pckt, COAP_OPTION_URI_PATH,
-							path + path_start,
-							path_end - path_start + 1);
-		}
-		if (ret < 0) {
-			LOG_ERR("Failed to append path to CoAP message");
-			goto out;
-		}
-	}
-
-out:
-	return ret;
-}
-
 static enum coap_block_size coap_client_default_block_size(void)
 {
 	switch (CONFIG_COAP_CLIENT_BLOCK_SIZE) {
@@ -268,7 +163,7 @@ static int coap_client_init_request(struct coap_client *client,
 		goto out;
 	}
 
-	ret = coap_client_init_path_options(&internal_req->request, req->path);
+	ret = coap_packet_set_path(&internal_req->request, req->path);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to parse path to options %d", ret);
