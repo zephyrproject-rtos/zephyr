@@ -1011,6 +1011,27 @@ static int spi_stm32_clock_configure(const struct spi_stm32_config *cfg)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+/**
+ * @brief Reinitialization of SPI context
+ *
+ * This function reenables clocks, which is required upon exiting certain
+ * low-power modes on select SoCs.
+ *
+ * @param dev SPI device struct
+ *
+ * @return 0
+ */
+static void spi_stm32_reinit(uint8_t direction, void *ctx)
+{
+	ARG_UNUSED(direction);
+	const struct device *dev = ctx;
+	const struct spi_stm32_config *cfg = dev->config;
+
+	spi_stm32_clock_configure(cfg);
+}
+#endif /* CONFIG_PM */
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -1058,6 +1079,15 @@ static int spi_stm32_init(const struct device *dev)
 	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
+
+#ifdef CONFIG_PM
+	if (cfg->reinit_states_size > 0) {
+		for (size_t i = 0; i < cfg->reinit_states_size; i++) {
+			pm_notifier_register(cfg->notifier, cfg->reinit_states[i].state,
+					     cfg->reinit_states[i].substate_id);
+		}
+	}
+#endif /* CONFIG_PM */
 
 	return 0;
 }
@@ -1130,10 +1160,29 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
 #endif
 
+#ifdef CONFIG_PM
+#define STM32_SPI_REINIT_STATE_INIT(id)					\
+	static const struct pm_state_info reinit_states_##id[]		\
+		= PM_STATE_INFO_LIST_FROM_DT_REINIT(DT_DRV_INST(id))
+
+#define STM32_SPI_REINIT_CFG_INIT(id)					\
+	.notifier = &PM_NOTIFIER(DT_INST_DEP_ORD(id)),			\
+	.reinit_states = reinit_states_##id,				\
+	.reinit_states_size = ARRAY_SIZE(reinit_states_##id),
+#else
+#define STM32_SPI_REINIT_STATE_INIT(id)
+#define STM32_SPI_REINIT_CFG_INIT(id)
+#endif /* CONFIG_PM */
+
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
 PINCTRL_DT_INST_DEFINE(id);						\
+									\
+STM32_SPI_REINIT_STATE_INIT(id);					\
+									\
+PM_NOTIFIER_DEFINE(DT_INST_DEP_ORD(id), PM_STATE_EXIT,			\
+		   spi_stm32_reinit, DEVICE_DT_INST_GET(id));		\
 									\
 static const struct stm32_pclken pclken_##id[] =			\
 					       STM32_DT_INST_CLOCKS(id);\
@@ -1145,6 +1194,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
+	STM32_SPI_REINIT_CFG_INIT(id)					\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\

@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
 #define ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
 
+#include <zephyr/pm/pm.h>
 #include <stm32_ll_spi.h>
 
 #include "spi_context.h"
@@ -32,6 +33,11 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+#ifdef CONFIG_PM
+	struct pm_notifier *notifier;
+	const struct pm_state_info *reinit_states;
+	size_t reinit_states_size;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
