@@ -478,7 +478,10 @@ static uint8_t count_mod_ext(struct bt_mesh_model *mod, uint8_t *max_offset)
 			}
 		}
 	}
-	memcpy(max_offset, &offset_record, sizeof(uint8_t));
+
+	if (max_offset) {
+		memcpy(max_offset, &offset_record, sizeof(uint8_t));
+	}
 	return extensions;
 }
 
@@ -487,10 +490,12 @@ static bool is_cor_present(struct bt_mesh_model *mod, uint8_t *cor_id)
 	int i;
 
 	MOD_REL_LIST_FOR_EACH(i) {
-		if ((IS_MOD_BASE(mod, i) ||
-		     IS_MOD_EXTENSION(mod, i)) &&
-		     mod_rel_list[i].type < RELATION_TYPE_EXT) {
-			memcpy(cor_id, &mod_rel_list[i].type, sizeof(uint8_t));
+		if ((IS_MOD_BASE(mod, i) || IS_MOD_EXTENSION(mod, i)) &&
+		    mod_rel_list[i].type < RELATION_TYPE_EXT) {
+			if (cor_id) {
+				memcpy(cor_id, &mod_rel_list[i].type, sizeof(uint8_t));
+			}
+
 			return true;
 		}
 	}
@@ -557,6 +562,43 @@ static void add_items_to_page(struct net_buf_simple *buf, struct bt_mesh_model *
 	}
 }
 
+static size_t mod_items_size(struct bt_mesh_model *mod)
+{
+	int i, offset;
+	size_t temp_size = 0;
+	int ext_mod_cnt = count_mod_ext(mod, NULL);
+
+	if (!ext_mod_cnt) {
+		return 0;
+	}
+
+	MOD_REL_LIST_FOR_EACH(i) {
+		if (IS_MOD_EXTENSION(mod, i)) {
+			offset = mod->elem_idx - mod_rel_list[i].elem_base;
+			temp_size += (ext_mod_cnt < 32 && offset < 4 && offset > -5) ? 1 : 2;
+		}
+	}
+
+	return temp_size;
+}
+
+static size_t page1_elem_size(struct bt_mesh_elem *elem)
+{
+	size_t temp_size = 2;
+
+	for (int i = 0; i < elem->model_count; i++) {
+		temp_size += is_cor_present(&elem->models[i], NULL) ? 2 : 1;
+		temp_size += mod_items_size(&elem->models[i]);
+	}
+
+	for (int i = 0; i < elem->vnd_model_count; i++) {
+		temp_size += is_cor_present(&elem->vnd_models[i], NULL) ? 2 : 1;
+		temp_size += mod_items_size(&elem->vnd_models[i]);
+	}
+
+	return temp_size;
+}
+
 int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf)
 {
 	const struct bt_mesh_comp *comp;
@@ -567,6 +609,22 @@ int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf)
 	comp = bt_mesh_comp_get();
 
 	for (i = 0; i < comp->elem_count; i++) {
+		if (net_buf_simple_tailroom(buf) <
+		    (page1_elem_size(&comp->elem[i]) + BT_MESH_MIC_SHORT)) {
+			if (IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)) {
+				/* Mesh Profile 1.1 Section 4.4.1.2.2:
+				 * If the complete list of models does not fit in the Data field,
+				 * the element shall not be reported.
+				 */
+				LOG_DBG("Element 0x%04x didn't fit in the Data field",
+					comp->elem[i].addr);
+				return 0;
+			}
+
+			LOG_ERR("Too large device composition");
+			return -E2BIG;
+		}
+
 		net_buf_simple_add_u8(buf, comp->elem[i].model_count);
 		net_buf_simple_add_u8(buf, comp->elem[i].vnd_model_count);
 		for (j = 0; j < comp->elem[i].model_count; j++) {
