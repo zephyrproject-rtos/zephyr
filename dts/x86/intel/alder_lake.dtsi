@@ -119,5 +119,15 @@
 			reg = <0x0400 0x20>;
 			status = "disabled";
 		};
+
+		pwm0: pwm0@fd6d0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0xfd6d0000 0x400>;
+			reg-offset = <0x204>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
+			status = "okay";
+		};
 	};
 };

@@ -7,6 +7,7 @@ toolchain:
 ram: 2048
 supported:
   - watchdog
+  - pwm
 testing:
   timeout_multiplier: 4
   ignore_tags:
