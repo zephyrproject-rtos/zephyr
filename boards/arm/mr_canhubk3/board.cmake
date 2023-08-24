@@ -11,7 +11,7 @@ else()
   board_runner_args(trace32 "loadTo=sram")
 endif()
 
-board_runner_args(jlink "--device=S32K344")
+board_runner_args(jlink "--device=S32K344" "--reset-after-load")
 
-include(${ZEPHYR_BASE}/boards/common/trace32.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/trace32.board.cmake)
