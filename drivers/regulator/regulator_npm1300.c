@@ -265,17 +265,34 @@ int regulator_npm1300_get_voltage(const struct device *dev, int32_t *volt_uv)
 static int set_buck_mode(const struct device *dev, uint8_t chan, regulator_mode_t mode)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t pfm_mask = BIT(chan);
+	uint8_t pfm_data;
+	uint8_t pwm_reg;
+	int ret;
 
 	switch (mode) {
 	case NPM1300_BUCK_MODE_PWM:
-		return mfd_npm1300_reg_write(config->mfd, BUCK_BASE,
-					     BUCK_OFFSET_PWM_SET + (chan * 2U), 1U);
+		pfm_data = 0U;
+		pwm_reg = BUCK_OFFSET_PWM_SET;
+		break;
 	case NPM1300_BUCK_MODE_AUTO:
-		return mfd_npm1300_reg_write(config->mfd, BUCK_BASE,
-					     BUCK_OFFSET_PWM_CLR + (chan * 2U), 1U);
+		pfm_data = 0U;
+		pwm_reg = BUCK_OFFSET_PWM_CLR;
+		break;
+	case NPM1300_BUCK_MODE_PFM:
+		pfm_data = pfm_mask;
+		pwm_reg = BUCK_OFFSET_PWM_CLR;
+		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	ret = mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0, pfm_data, pfm_mask);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mfd_npm1300_reg_write(config->mfd, BUCK_BASE, pwm_reg + (chan * 2U), 1U);
 }
 
 static int set_ldsw_mode(const struct device *dev, uint8_t chan, regulator_mode_t mode)
