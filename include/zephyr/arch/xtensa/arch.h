@@ -243,7 +243,33 @@ static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 	FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
 } while (0)
 
-#endif
+#else /* CONFIG_XTENSA_RPO_CACHE */
+
+static inline bool arch_xtensa_is_ptr_cached(void *ptr)
+{
+	ARG_UNUSED(ptr);
+
+	return false;
+}
+
+static inline bool arch_xtensa_is_ptr_uncached(void *ptr)
+{
+	ARG_UNUSED(ptr);
+
+	return false;
+}
+
+static inline void *arch_xtensa_cached_ptr(void *ptr)
+{
+	return ptr;
+}
+
+static inline void *arch_xtensa_uncached_ptr(void *ptr)
+{
+	return ptr;
+}
+
+#endif /* CONFIG_XTENSA_RPO_CACHE */
 
 #ifdef CONFIG_XTENSA_MMU
 extern void arch_xtensa_mmu_post_init(bool is_core0);
