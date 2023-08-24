@@ -32,8 +32,9 @@ void imxrt_pre_init_display_interface(void);
 void imxrt_post_init_display_interface(void);
 #endif
 
-void flexspi_clock_set_div(uint32_t value);
-uint32_t flexspi_clock_get_freq(void);
+#ifdef CONFIG_MEMC
+uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
+#endif
 
 #ifdef __cplusplus
 }
