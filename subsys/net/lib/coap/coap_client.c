@@ -198,7 +198,7 @@ static int coap_client_init_path_options(struct coap_packet *pckt, const char *p
 		}
 	}
 
-	if (path_start < path_end) {
+	if (path_start < path_length) {
 		if (contains_query) {
 			ret = coap_packet_append_option(pckt, COAP_OPTION_URI_QUERY,
 							path + path_start,
