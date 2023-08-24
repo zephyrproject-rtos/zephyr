@@ -15,6 +15,7 @@
  * The hardware accelerator mechanism is shared by four PS/2 channels.
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/ps2.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
