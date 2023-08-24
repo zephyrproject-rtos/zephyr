@@ -955,5 +955,10 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		     \
 			 &i2s_nrf_drv_api);
 
-/* Existing SoCs only have one I2S instance. */
+#ifdef CONFIG_HAS_HW_NRF_I2S0
 I2S_NRFX_DEVICE(0);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_I2S20
+I2S_NRFX_DEVICE(20);
+#endif
