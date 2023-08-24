@@ -11,6 +11,8 @@
 #include "soc/soc_memory_layout.h"
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 #include "debug_helpers.h"
+#elif defined(CONFIG_SOC_XTENSA_DC233C)
+#include "backtrace_helpers.h"
 #endif
 static int mask, cause;
 
@@ -38,6 +40,8 @@ static inline bool z_xtensa_stack_ptr_is_sane(uint32_t sp)
 	return esp_stack_ptr_is_sane(sp);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	return intel_adsp_ptr_is_sane(sp);
+#elif defined(CONFIG_SOC_XTENSA_DC233C)
+	return xtensa_dc233c_stack_ptr_is_sane(sp);
 #else
 #warning "z_xtensa_stack_ptr_is_sane is not defined for this platform"
 #endif
@@ -49,6 +53,8 @@ static inline bool z_xtensa_ptr_executable(const void *p)
 	return esp_ptr_executable(p);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	return intel_adsp_ptr_executable(p);
+#elif defined(CONFIG_SOC_XTENSA_DC233C)
+	return xtensa_dc233c_ptr_executable(p);
 #else
 #warning "z_xtensa_ptr_executable is not defined for this platform"
 #endif
