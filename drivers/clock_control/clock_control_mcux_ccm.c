@@ -317,15 +317,63 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				/ (CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
 		break;
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	case IMX_CCM_FLEXSPI_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_FlexspiClkRoot);
+		break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
+	case IMX_CCM_FLEXSPI2_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_Flexspi2ClkRoot);
+		break;
+#endif
 	}
 
 	return 0;
 }
 
+/*
+ * Since this function is used to reclock the FlexSPI when running in
+ * XIP, it must be located in RAM when MEMC Flexspi driver is enabled.
+ */
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI
+#define CCM_SET_FUNC_ATTR __ramfunc
+#else
+#define CCM_SET_FUNC_ATTR
+#endif
+
+static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
+			clock_control_subsys_t subsys,
+			clock_control_subsys_rate_t rate)
+{
+	uint32_t clock_name = (uintptr_t)subsys;
+	uint32_t clock_rate = (uintptr_t)rate;
+
+	switch (clock_name) {
+	case IMX_CCM_FLEXSPI_CLK:
+		__fallthrough;
+	case IMX_CCM_FLEXSPI2_CLK:
+#if defined(CONFIG_SOC_SERIES_IMX_RT10XX) && defined(CONFIG_MEMC_MCUX_FLEXSPI)
+		/* The SOC is using the FlexSPI for XIP. Therefore,
+		 * the FlexSPI itself must be managed within the function,
+		 * which is SOC specific.
+		 */
+		return flexspi_clock_set_freq(clock_name, clock_rate);
+#endif
+	default:
+		/* Silence unused variable warning */
+		ARG_UNUSED(clock_rate);
+		return -ENOTSUP;
+	}
+}
+
+
+
 static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.on = mcux_ccm_on,
 	.off = mcux_ccm_off,
 	.get_rate = mcux_ccm_get_subsys_rate,
+	.set_rate = mcux_ccm_set_subsys_rate,
 };
 
 static int mcux_ccm_init(const struct device *dev)
