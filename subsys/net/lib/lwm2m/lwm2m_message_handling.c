@@ -417,12 +417,6 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 #endif
 
-bool lwm2m_outgoing_is_part_of_blockwise(struct lwm2m_message *msg)
-{
-	return msg->block_send;
-}
-
-
 void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
 	struct lwm2m_message *msg;
