@@ -689,7 +689,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 	}
 
 	if (snk_cnt > 0U) {
-		snk_named_preset = bap_get_named_preset(true, argv[1]);
+		snk_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SINK, argv[1]);
 		if (snk_named_preset == NULL) {
 			shell_error(sh, "Unable to parse snk_named_preset %s", argv[1]);
 			return -ENOEXEC;
@@ -699,7 +699,7 @@ int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
 	if (src_cnt > 0U) {
 		const char *preset_arg = argc > 2 ? argv[2] : argv[1];
 
-		src_named_preset = bap_get_named_preset(true, preset_arg);
+		src_named_preset = bap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, preset_arg);
 		if (src_named_preset == NULL) {
 			shell_error(sh, "Unable to parse src_named_preset %s", argv[1]);
 			return -ENOEXEC;
@@ -1030,7 +1030,7 @@ static int cmd_cap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
+int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 			    const struct bap_broadcast_ac_param *param)
 {
 	/* TODO: Use CAP API when the CAP shell has broadcast support */
@@ -1059,7 +1059,7 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		return -ENOEXEC;
 	}
 
-	named_preset = bap_get_named_preset(false, argv[1]);
+	named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE, argv[1]);
 	if (named_preset == NULL) {
 		shell_error(sh, "Unable to parse named_preset %s", argv[1]);
 		return -ENOEXEC;
@@ -1135,8 +1135,8 @@ static int cmd_cap_ac_14(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct bap_broadcast_ac_param param = {
 		.name = "AC_13",
-		.stream_cnt = 1U,
-		.chan_cnt = 2U,
+		.stream_cnt = 2U,
+		.chan_cnt = 1U,
 	};
 
 	return cap_ac_broadcast(sh, argc, argv, &param);
