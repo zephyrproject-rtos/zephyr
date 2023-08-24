@@ -23,10 +23,6 @@ if "ZEPHYR_BASE" not in os.environ:
 # These are globaly used variables. They are assigned in __main__ and are visible in further methods
 # however, pylint complains that it doesn't recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
-repository_path = zephyr_base
-repo_to_scan = zephyr_base
-args = None
-
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
@@ -94,29 +90,89 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True):
-        self.modified_files = modified_files
+    def __init__(self, repository_path, commits, ignore_path, alt_tags, testsuite_root,
+                 platforms=[], detailed_test_id=True):
+
+        self.modified_files = []
         self.testsuite_root = testsuite_root
         self.resolved_files = []
         self.twister_options = []
         self.full_twister = False
         self.all_tests = []
         self.tag_options = []
-        self.pull_request = pull_request
         self.platforms = platforms
         self.detailed_test_id = detailed_test_id
         self.ignore_path = ignore_path
         self.tag_cfg_file = alt_tags
+        self.commits = commits
+        self.repository_path = repository_path
+        self.git_repo = None
+
+    def init(self):
+        if self.commits:
+            self.git_repo = Repo(self.repository_path)
+            commit = self.git_repo.git.diff("--name-only", self.commits)
+            self.modified_files = commit.split("\n")
+        else:
+            sys.exit(1)
+
+        if self.modified_files:
+            logging.info("Changed files:")
+            for file in self.modified_files:
+                logging.info(file)
+            logging.info("--------------")
 
     def process(self):
-        self.find_modules()
+        if 'west.yml' in self.modified_files:
+            self.find_modules()
+
         self.find_tags()
         self.find_tests()
         if not self.platforms:
             self.find_archs()
             self.find_boards()
         self.find_excludes()
+
+    def finalize(self, output_file, ntests_per_builder):
+        # remove duplicates and filtered test cases
+        dup_free = []
+        dup_free_set = set()
+        errors = 0
+
+        unfiltered_suites = list(filter(lambda t: t.get('status', None) is  None, self.all_tests))
+        logging.info(f'Total tests gathered: {len(unfiltered_suites)}')
+        for ts in unfiltered_suites:
+            n = ts.get("name")
+            a = ts.get("arch")
+            p = ts.get("platform")
+            if ts.get('status') == 'error':
+                logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
+                errors += 1
+            if (n, a, p,) not in dup_free_set:
+                dup_free.append(ts)
+                dup_free_set.add((n, a, p,))
+
+        logging.info(f'Total tests to be run (after removing duplicates): {len(dup_free)}')
+        with open(".testplan", "w") as tp:
+            total_tests = len(dup_free)
+            if total_tests and total_tests < ntests_per_builder:
+                nodes = 1
+            else:
+                nodes = round(total_tests / ntests_per_builder)
+
+            tp.write(f"TWISTER_TESTS={total_tests}\n")
+            tp.write(f"TWISTER_NODES={nodes}\n")
+            tp.write(f"TWISTER_FULL={self.full_twister}\n")
+            logging.info(f'Total nodes to launch: {nodes}')
+
+        # write plan
+        if dup_free:
+            data = {}
+            data['testsuites'] = dup_free
+            with open(output_file, 'w', newline='') as json_file:
+                json.dump(data, json_file, indent=4, separators=(',',':'))
+
+        return errors
 
     def get_plan(self, options, integration=False, use_testsuite_root=True):
         fname = "_test_plan_partial.json"
@@ -134,50 +190,50 @@ class Filters:
         with open(fname, newline='') as jsonfile:
             json_data = json.load(jsonfile)
             suites = json_data.get("testsuites", [])
+            unfiltered_suites = list(filter(lambda t: t.get('status', None) is  None, suites))
+            logging.info(f"Added {len(unfiltered_suites)} suites to plan.")
             self.all_tests.extend(suites)
         if os.path.exists(fname):
             os.remove(fname)
 
     def find_modules(self):
-        if 'west.yml' in self.modified_files:
-            print(f"Manifest file 'west.yml' changed")
-            print("=========")
-            old_manifest_content = repo_to_scan.git.show(f"{args.commits[:-2]}:west.yml")
-            with open("west_old.yml", "w") as manifest:
-                manifest.write(old_manifest_content)
-            old_manifest = Manifest.from_file("west_old.yml")
-            new_manifest = Manifest.from_file("west.yml")
-            old_projs = set((p.name, p.revision) for p in old_manifest.projects)
-            new_projs = set((p.name, p.revision) for p in new_manifest.projects)
-            logging.debug(f'old_projs: {old_projs}')
-            logging.debug(f'new_projs: {new_projs}')
-            # Removed projects
-            rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs),
-                old_projs - new_projs))
-            # Updated projects
-            uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs),
-                new_projs - old_projs))
-            # Added projects
-            aprojs = new_projs - old_projs - uprojs
+        logging.info("Manifest file 'west.yml' changed")
+        old_manifest_content = self.git_repo.git.show(f"{self.commits[:-2]}:west.yml")
+        with open("west_old.yml", "w") as manifest:
+            manifest.write(old_manifest_content)
+        old_manifest = Manifest.from_file("west_old.yml")
+        new_manifest = Manifest.from_file("west.yml")
+        old_projs = set((p.name, p.revision) for p in old_manifest.projects)
+        new_projs = set((p.name, p.revision) for p in new_manifest.projects)
+        logging.debug(f'old_projs: {old_projs}')
+        logging.debug(f'new_projs: {new_projs}')
+        # Removed projects
+        rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs),
+            old_projs - new_projs))
+        # Updated projects
+        uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs),
+            new_projs - old_projs))
+        # Added projects
+        aprojs = new_projs - old_projs - uprojs
 
-            # All projs
-            projs = rprojs | uprojs | aprojs
-            projs_names = [name for name, rev in projs]
+        # All projs
+        projs = rprojs | uprojs | aprojs
+        projs_names = [name for name, rev in projs]
 
-            logging.info(f'rprojs: {rprojs}')
-            logging.info(f'uprojs: {uprojs}')
-            logging.info(f'aprojs: {aprojs}')
-            logging.info(f'project: {projs_names}')
+        logging.info(f'rprojs: {rprojs}')
+        logging.info(f'uprojs: {uprojs}')
+        logging.info(f'aprojs: {aprojs}')
+        logging.info(f'project: {projs_names}')
 
-            _options = []
-            for p in projs_names:
-                _options.extend(["-t", p ])
+        _options = []
+        if self.platforms:
+            for platform in self.platforms:
+                _options.extend(["-p", platform])
 
-            if self.platforms:
-                for platform in self.platforms:
-                    _options.extend(["-p", platform])
+        for prj in projs_names:
+            _options.extend(["-t", prj ])
 
-            self.get_plan(_options, True)
+        self.get_plan(_options, True)
 
 
     def find_archs(self):
@@ -185,20 +241,27 @@ class Filters:
         # Some architectures like riscv require special handling, i.e. riscv
         # directory covers 2 architectures known to twister: riscv32 and riscv64.
         archs = set()
-
+        # if we have changes other than architecture related, consider this a
+        # global change and not architecture specific
+        _global_change = False
         for f in self.modified_files:
-            p = re.match(r"^arch\/([^/]+)\/", f)
-            if not p:
-                p = re.match(r"^include\/zephyr\/arch\/([^/]+)\/", f)
-            if p:
-                if p.group(1) != 'common':
-                    if p.group(1) == 'riscv':
+            _match = re.match(r"^arch\/([^/]+)\/", f)
+            if not _match:
+                _match = re.match(r"^include\/zephyr\/arch\/([^/]+)\/", f)
+            if _match:
+                if _match.group(1) != 'common':
+                    if _match.group(1) == 'riscv':
                         archs.add('riscv32')
                         archs.add('riscv64')
                     else:
-                        archs.add(p.group(1))
+                        archs.add(_match.group(1))
                     # Modified file is treated as resolved, since a matching scope was found
                     self.resolved_files.append(f)
+            else:
+                _global_change = True
+
+        if _global_change:
+            return
 
         _options = []
         for arch in archs:
@@ -228,8 +291,8 @@ class Filters:
                 resolved.append(f)
 
         roots = [zephyr_base]
-        if repository_path != zephyr_base:
-            roots.append(repository_path)
+        if self.repository_path != zephyr_base:
+            roots.append(self.repository_path)
 
         # Look for boards in monitored repositories
         lb_args = argparse.Namespace(**{ 'arch_roots': roots, 'board_roots': roots})
@@ -345,7 +408,7 @@ class Filters:
         if exclude_tags:
             logging.info(f'Potential tag based filters: {exclude_tags}')
 
-    def find_excludes(self, skip=[]):
+    def find_excludes(self):
         with open(self.ignore_path, "r") as twister_ignore:
             ignores = twister_ignore.read().splitlines()
             ignores = filter(lambda x: not x.startswith("#"), ignores)
@@ -357,10 +420,10 @@ class Filters:
             if pattern:
                 found.update(fnmatch.filter(files_not_resolved, pattern))
 
-        logging.debug(found)
-        logging.debug(files_not_resolved)
+        logging.info(f"found matches: {found}")
+        logging.info(f"not resolved files: {files_not_resolved}")
 
-        # Full twister run can be ordered by detecting great number of tests/boards changed
+        # Full twister run can be requested by detecting great number of tests/boards changed
         # or if not all modified files were resolved (corresponding scope found)
         self.full_twister = self.full_twister or sorted(files_not_resolved) != sorted(found)
 
@@ -389,8 +452,6 @@ def parse_args():
             help="File with information about changed/deleted/added files.")
     parser.add_argument('-o', '--output-file', default="testplan.json",
             help="JSON file with the test plan to be passed to twister")
-    parser.add_argument('-P', '--pull-request', action="store_true",
-            help="This is a pull request")
     parser.add_argument('-p', '--platform', action="append",
             help="Limit this for a platform or a list of platforms.")
     parser.add_argument('-t', '--tests_per_builder', default=700, type=int,
@@ -401,14 +462,16 @@ def parse_args():
             help="Include paths to tests' locations in tests' names.")
     parser.add_argument("--no-detailed-test-id", dest='detailed_test_id', action="store_false",
             help="Don't put paths into tests' names.")
-    parser.add_argument('-r', '--repo-to-scan', default=None,
+    parser.add_argument('-r', '--repo-to-scan', default=zephyr_base,  type=Path,
             help="Repo to scan")
-    parser.add_argument('--ignore-path',
+    parser.add_argument('--ignores-file',  type=Path,
             default=os.path.join(zephyr_base, 'scripts', 'ci', 'twister_ignore.txt'),
             help="Path to a text file with patterns of files to be matched against changed files")
-    parser.add_argument('--alt-tags',
+    parser.add_argument('--tags-file',  type=Path,
             default=os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml'),
             help="Path to a file describing relations between directories and tags")
+    # Deprecated and to be removed
+    parser.add_argument("--pull-request", action="store_true")
     parser.add_argument(
             "-T", "--testsuite-root", action="append", default=[],
             help="Base directory to recursively search for test cases. All "
@@ -422,68 +485,27 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
-
+def _main():
     args = parse_args()
-    files = []
-    errors = 0
     if args.repo_to_scan:
         repository_path = Path(args.repo_to_scan)
-    if args.commits:
-        repo_to_scan = Repo(repository_path)
-        commit = repo_to_scan.git.diff("--name-only", args.commits)
-        files = commit.split("\n")
-    elif args.modified_files:
-        with open(args.modified_files, "r") as fp:
-            files = json.load(fp)
+    else:
+        repository_path = zephyr_base
 
-    if files:
-        print("Changed files:\n=========")
-        print("\n".join(files))
-        print("=========")
+    suite_filter = Filters(
+            repository_path,
+            args.commits,
+            args.ignores_file,
+            args.tags_file,
+            args.testsuite_root,
+            args.platform,
+            args.detailed_test_id)
 
-    f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
-                args.pull_request, args.platform, args.detailed_test_id)
-    f.process()
-
-    # remove dupes and filtered cases
-    dup_free = []
-    dup_free_set = set()
-    logging.info(f'Total tests gathered: {len(f.all_tests)}')
-    for ts in f.all_tests:
-        if ts.get('status') == 'filtered':
-            continue
-        n = ts.get("name")
-        a = ts.get("arch")
-        p = ts.get("platform")
-        if ts.get('status') == 'error':
-            logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
-            errors += 1
-        if (n, a, p,) not in dup_free_set:
-            dup_free.append(ts)
-            dup_free_set.add((n, a, p,))
-
-    logging.info(f'Total tests to be run: {len(dup_free)}')
-    with open(".testplan", "w") as tp:
-        total_tests = len(dup_free)
-        if total_tests and total_tests < args.tests_per_builder:
-            nodes = 1
-        else:
-            nodes = round(total_tests / args.tests_per_builder)
-
-        tp.write(f"TWISTER_TESTS={total_tests}\n")
-        tp.write(f"TWISTER_NODES={nodes}\n")
-        tp.write(f"TWISTER_FULL={f.full_twister}\n")
-        logging.info(f'Total nodes to launch: {nodes}')
-
-    header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
-            'handler_time', 'used_ram', 'used_rom']
-
-    # write plan
-    if dup_free:
-        data = {}
-        data['testsuites'] = dup_free
-        with open(args.output_file, 'w', newline='') as json_file:
-            json.dump(data, json_file, indent=4, separators=(',',':'))
+    suite_filter.init()
+    suite_filter.process()
+    errors = suite_filter.finalize(args.output_file, args.tests_per_builder)
 
     sys.exit(errors)
+
+if __name__ == "__main__":
+    _main()
