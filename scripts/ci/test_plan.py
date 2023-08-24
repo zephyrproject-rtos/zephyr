@@ -159,6 +159,10 @@ class Filters:
             for p in projs_names:
                 _options.extend(["-t", p ])
 
+            if self.platforms:
+                for platform in self.platforms:
+                    _options.extend(["-p", platform])
+
             self.get_plan(_options, True)
 
 
