@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 extern enum bst_result_t bst_result;
 
@@ -61,44 +61,6 @@ static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT +
 					    CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 CREATE_FLAG(flag_unicast_stream_configured);
-
-static bool valid_metadata_type(uint8_t type, uint8_t len)
-{
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR:   /* 2 - 255 octets */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
-	}
-}
 
 static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
