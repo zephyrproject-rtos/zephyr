@@ -794,9 +794,3 @@ void bt_mesh_beacon_disable(void)
 	/* If this fails, we'll do an early exit in the work handler. */
 	(void)k_work_cancel_delayable(&beacon_timer);
 }
-
-void bt_mesh_beacon_priv_random_get(uint8_t *random, size_t size)
-{
-	__ASSERT(size <= sizeof(priv_random.val), "Invalid random value size %u", size);
-	memcpy(random, priv_random.val, size);
-}
