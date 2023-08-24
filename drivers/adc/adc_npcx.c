@@ -41,12 +41,6 @@ LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 #define ADC_NPCX_THRVAL_RESOLUTION	10
 #define ADC_NPCX_THRVAL_MAX		BIT_MASK(ADC_NPCX_THRVAL_RESOLUTION)
 
-/* ADC threshold detection registers */
-#define THRCTL(dev, ctl_no) (*((volatile uint16_t *) npcx_thrctl_reg(dev, ctl_no)))
-#ifdef CONFIG_SOC_SERIES_NPCX4
-#define THEN(dev) (*((volatile uint16_t *) npcx_then_reg(dev)))
-#endif
-
 /* Device config */
 struct adc_npcx_config {
 	/* adc controller base address */
@@ -57,8 +51,6 @@ struct adc_npcx_config {
 	const uint8_t channel_count;
 	/* amount of thresholds supported */
 	const uint8_t threshold_count;
-	/* threshold control register offset */
-	const uint16_t threshold_reg_offset;
 	/* routine for configuring ADC's ISR */
 	void (*irq_cfg_func)(void);
 	const struct pinctrl_dev_config *pcfg;
@@ -170,38 +162,23 @@ static inline void adc_npcx_config_channels(const struct device *dev, uint32_t c
 	}
 }
 
-static inline uint32_t npcx_thrctl_reg(const struct device *dev,
-				       uint32_t ctl_no)
-{
-	const struct adc_npcx_config *config = dev->config;
-
-	return (config->base + config->threshold_reg_offset) + (ctl_no - 1) * 2;
-}
-
-#ifdef CONFIG_SOC_SERIES_NPCX4
-static inline uint32_t npcx_then_reg(const struct device *dev)
-{
-	const struct adc_npcx_config *config = dev->config;
-
-	return (config->base + config->threshold_reg_offset + 0x10);
-}
-#endif
-
 static inline void adc_npcx_enable_threshold_detect(const struct device *dev, uint8_t th_sel,
 						    bool enable)
 {
+	const struct adc_npcx_config *config = dev->config;
+
 	if (enable) {
 #ifdef CONFIG_SOC_SERIES_NPCX4
-		THEN(dev) |= BIT(th_sel);
+		THEN(config->base) |= BIT(th_sel);
 #else
-		THRCTL(dev, (th_sel + 1)) |= BIT(NPCX_THRCTL_THEN);
+		THRCTL(config->base, th_sel) |= BIT(NPCX_THRCTL_THEN);
 #endif
 
 	} else {
 #ifdef CONFIG_SOC_SERIES_NPCX4
-		THEN(dev) &= ~BIT(th_sel);
+		THEN(config->base) &= ~BIT(th_sel);
 #else
-		THRCTL(dev, (th_sel + 1)) &= ~BIT(NPCX_THRCTL_THEN);
+		THRCTL(config->base, th_sel) &= ~BIT(NPCX_THRCTL_THEN);
 #endif
 	}
 }
@@ -616,16 +593,16 @@ static int adc_npcx_threshold_ctrl_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	SET_FIELD(THRCTL(dev, (th_sel + 1)),
+	SET_FIELD(THRCTL(config->base, th_sel),
 		  NPCX_THRCTL_CHNSEL, t_ctrl->chnsel);
 
 	if (t_ctrl->l_h) {
-		THRCTL(dev, (th_sel + 1)) |= BIT(NPCX_THRCTL_L_H);
+		THRCTL(config->base, th_sel) |= BIT(NPCX_THRCTL_L_H);
 	} else {
-		THRCTL(dev, (th_sel + 1)) &= ~BIT(NPCX_THRCTL_L_H);
+		THRCTL(config->base, th_sel) &= ~BIT(NPCX_THRCTL_L_H);
 	}
 	/* Set the threshold value. */
-	SET_FIELD(THRCTL(dev, (th_sel + 1)), NPCX_THRCTL_THRVAL,
+	SET_FIELD(THRCTL(config->base, th_sel), NPCX_THRCTL_THRVAL,
 		  t_ctrl->thrval);
 
 	adc_context_release(&data->ctx, 0);
@@ -879,7 +856,6 @@ static int adc_npcx_init(const struct device *dev)
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),				\
 		.channel_count = DT_INST_PROP(n, channel_count),		\
 		.threshold_count = DT_INST_PROP(n, threshold_count),		\
-		.threshold_reg_offset = DT_INST_PROP(n, threshold_reg_offset),	\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,			\
 	};									\

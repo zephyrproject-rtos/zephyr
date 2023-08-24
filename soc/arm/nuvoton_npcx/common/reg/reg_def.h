@@ -581,12 +581,34 @@ struct adc_reg {
 	volatile uint16_t MEAST;
 };
 
+/* ADC internal inline functions for multi-registers */
 static inline uint32_t npcx_chndat_offset(uint32_t ch)
 {
 	return 0x40 + ch * 2;
 }
 
+static inline uint32_t npcx_thr_base(void)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x014;
+	} else if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		return 0x060;
+	} else { /* NPCX4 and later series */
+		return 0x080;
+	}
+}
+
+static inline uint32_t npcx_thrctl_offset(uint32_t ctrl)
+{
+	return npcx_thr_base() + ctrl * 2;
+}
+
 #define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
+#define THRCTL(base, ctrl) \
+	(*(volatile uint16_t *)(base + npcx_thrctl_offset(ctrl)))
+#ifdef CONFIG_SOC_SERIES_NPCX4
+#define THEN(base) (*(volatile uint16_t *)(base + 0x90))
+#endif
 
 /* ADC register fields */
 #define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)
