@@ -18,8 +18,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 2. Verify Node Composition Refresh procedure.
 #    PB-Remote client (1st device):
 #     - check that Composition Data pages 0 (old comp data) and 128 (new comp data) are different
+#     - check that Composition Data pages 1 (old comp data) and 129 (new comp data) are different
 #     - run Node Composition Refresh procedure on the 3rd device
 #     - verify Composition Data pages 0 (new comp data) and 128 (same as page 0)
+#     - verify Composition Data pages 1 (new comp data) and 129 (same as page 1)
 #    PB-Remote server (3rd device):
 #     - start with a new Composition Data
 # 3. Verify that old settings are removed on the 3rd device after Composition Data change.
