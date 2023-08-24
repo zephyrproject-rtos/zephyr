@@ -122,6 +122,8 @@ DT_FOREACH_STATUS_OKAY(zephyr_boot_info_flash, DEFINE_BOOT_INFO_PROTO)
 
 DT_FOREACH_STATUS_OKAY(zephyr_boot_info_eeprom, DEFINE_BOOT_INFO_PROTO)
 
+DT_FOREACH_STATUS_OKAY(zephyr_boot_info_retained_mem, DEFINE_BOOT_INFO_PROTO)
+
 #ifdef __cplusplus
 }
 #endif

@@ -10,6 +10,7 @@
 #include <zephyr/drivers/bbram.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/retained_mem.h>
 #include <zephyr/boot_info/boot_info.h>
 
 #define BACKEND_PHANDLE(inst) DT_PHANDLE(inst, backend)
@@ -167,3 +168,50 @@ DT_FOREACH_STATUS_OKAY(zephyr_boot_info_flash, FLASH_BACKEND_FCNTS)
 	}
 
 DT_FOREACH_STATUS_OKAY(zephyr_boot_info_eeprom, EEPROM_BACKEND_FCNTS)
+
+#define RETAINED_MEM_BACKEND_FCNTS(inst)                                        \
+	const struct device *const bi_dev_##inst =				\
+		DEVICE_DT_GET(BACKEND_PHANDLE(inst));				\
+	const struct device *bi_get_device_##inst(void)				\
+	{									\
+		return bi_dev_##inst;						\
+	}									\
+	size_t bi_get_size_##inst(void)                                         \
+	{                                                                       \
+										\
+		if (!device_is_ready(bi_dev_##inst)) {				\
+			return 0U;						\
+		}								\
+										\
+		const ssize_t be_size = retained_mem_size(bi_dev_##inst);	\
+										\
+		if ((be_size < 0) || (be_size < BI_OFF(inst))) {		\
+			return 0U;						\
+		}								\
+										\
+		return MIN(BI_SIZE(inst), be_size - BI_OFF(inst));		\
+	}                                                                       \
+	int bi_get_##inst(void *data)                                           \
+	{                                                                       \
+		const size_t bi_size = bi_get_size_##inst();			\
+										\
+		if (bi_size == 0U) {						\
+			return -EINVAL;                                         \
+		}                                                               \
+                                                                                \
+		return retained_mem_read(bi_dev_##inst, BI_OFF(inst), data,	\
+					 bi_size);				\
+	}                                                                       \
+	int bi_set_##inst(const void *data)                                     \
+	{                                                                       \
+		const size_t bi_size = bi_get_size_##inst();			\
+										\
+		if (bi_size == 0U) {						\
+			return -EINVAL;                                         \
+		}                                                               \
+                                                                                \
+		return retained_mem_write(bi_dev_##inst, BI_OFF(inst), data,	\
+					  bi_size);				\
+	}
+
+DT_FOREACH_STATUS_OKAY(zephyr_boot_info_retained_mem, RETAINED_MEM_BACKEND_FCNTS)

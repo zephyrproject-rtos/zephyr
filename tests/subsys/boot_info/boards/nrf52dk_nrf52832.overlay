@@ -5,68 +5,31 @@
 
 #include <common/mem.h>
 
-/delete-node/ &storage_partition;
-
-&flash0 {
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		storage_partition: partition@7a000 {
-			label = "storage";
-			reg = <0x0007a000 0x00001000>;
-		};
-	};
-};
-
 / {
 	sram_2000FC00: sram@2000FC00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2000FC00 0x400>;
-                zephyr,memory-region = "FlashSim";
+                zephyr,memory-region = "Retention";
                 status = "okay";
-        };
 
-        soc {
-                sim_flash_controller: sim-flash-controller@0 {
-	                compatible = "zephyr,sim-flash";
-                        reg = <0x0 0x1>;
-
-			#address-cells = <1>;
-		        #size-cells = <1>;
-		        erase-value = <0xff>;
-                        memory-region = <&sram_2000FC00>;
-
-			flash_sim0: flash_sim@0 {
-			        status = "okay";
-			        compatible = "soc-nv-flash";
-			        erase-block-size = <0x400>;
-			        write-block-size = <1>;
-			        reg = <0x00000000 0x400>;
-
-                                partitions {
-		                        compatible = "fixed-partitions";
-		                        #address-cells = <1>;
-		                        #size-cells = <1>;
-
-		                        bi_partition: partition@0 {
-			                        label = "bootinfo";
-			                        reg = <0x00000000 0x400>;
-		                        };
-	                        };
-                        };
-                };
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+	        };
         };
 
         boot_info: boot_info {
-                compatible = "zephyr,boot-info-flash";
-                backend = <&bi_partition>;
-                size = <0x32>;
+                compatible = "zephyr,boot-info-retained-mem";
+                backend = <&retainedmem0>;
+                size = <0x400>;
         };
 
         aliases {
                 bi = &boot_info;
         };
+
+};
+
+&sram0 {
+	reg = <0x20000000 0xFC00>;
 };
