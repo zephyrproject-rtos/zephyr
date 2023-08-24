@@ -91,6 +91,7 @@ extern struct bt_le_scan_cb common_scan_cb;
 extern const struct bt_data ad[AD_SIZE];
 extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
+extern atomic_t flag_disconnected;
 extern atomic_t flag_conn_updated;
 extern volatile bt_security_t security_level;
 
