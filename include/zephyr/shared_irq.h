@@ -1,7 +1,7 @@
 /* shared_irq - Shared interrupt driver */
 
 /*
- * Copyright (c) 2015 Intel corporation
+ * Copyright (c) 2015 - 2023 Intel corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-typedef int (*isr_t)(const struct device *dev);
+typedef int (*isr_t)(const struct device *dev, unsigned int irq_number);
 
 /* driver API definition */
 typedef int (*shared_irq_register_t)(const struct device *dev,
