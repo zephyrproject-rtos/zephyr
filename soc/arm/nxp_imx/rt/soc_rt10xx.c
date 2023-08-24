@@ -55,7 +55,7 @@ const clock_enet_pll_config_t ethPllConfig = {
 	defined(CONFIG_SOC_MIMXRT1024)
 	.enableClkOutput500M = true,
 #endif
-#ifdef CONFIG_ETH_MCUX
+#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_MCUX)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	.enableClkOutput = true,
 #endif
