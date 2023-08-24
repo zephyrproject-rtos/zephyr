@@ -25,21 +25,26 @@ LOG_MODULE_REGISTER(spi_loopback);
 #define MODE_LOOP 0
 #endif
 
-#define SPI_OP SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | \
-	       SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE
+#define SPI_OP(frame_size) SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | \
+	       SPI_MODE_CPHA | SPI_WORD_SET(frame_size) | SPI_LINES_SINGLE
 
 
-static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP, 0);
-static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP, 0);
+static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP(8), 0);
+static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(8), 0);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+static __used struct spi_dt_spec spi_fast_16 = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP(16), 0);
+static __used struct spi_dt_spec spi_slow_16 = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(16), 0);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
 #define STACK_SIZE 512
-#define BUF_SIZE 17
+#define BUF_SIZE 18
 #define BUF2_SIZE 36
 
 #if CONFIG_NOCACHE_MEMORY
-static const char tx_data[BUF_SIZE] = "0123456789abcdef\0";
+static const char tx_data[BUF_SIZE] = "0123456789abcdef-\0";
 static __aligned(32) char buffer_tx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
 static __aligned(32) char buffer_rx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
@@ -47,7 +52,7 @@ static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section_
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
-static uint8_t buffer_tx[] = "0123456789abcdef\0";
+static uint8_t buffer_tx[] = "0123456789abcdef-\0";
 static uint8_t buffer_rx[BUF_SIZE] = {};
 
 static uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
@@ -576,6 +581,51 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    ) {
 		goto end;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+
+/* 16 bits DMA test require to change dmamux config. by adding:
+ * STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS
+ */
+#ifndef CONFIG_SPI_STM32_DMA
+
+	zassert_true(spi_is_ready_dt(&spi_slow_16),
+		"Slow spi lookback (16 bits) device is not ready");
+
+	LOG_INF("SPI test slow config (16 bits)");
+
+	if (spi_complete_multiple(&spi_slow_16) ||
+	    spi_complete_loop(&spi_slow_16) ||
+	    spi_null_tx_buf(&spi_slow_16) ||
+	    spi_rx_half_start(&spi_slow_16) ||
+	    spi_rx_half_end(&spi_slow_16) ||
+	    spi_rx_every_4(&spi_slow_16)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(&spi_slow_16)
+#endif /* (CONFIG_SPI_ASYNC) */
+	    ) {
+		goto end;
+	}
+
+	zassert_true(spi_is_ready_dt(&spi_fast_16),
+		"Fast spi lookback (16 bits) device is not ready");
+
+	LOG_INF("SPI test fast config (16 bits)");
+
+	if (spi_complete_multiple(&spi_fast_16) ||
+	    spi_complete_loop(&spi_fast_16) ||
+	    spi_null_tx_buf(&spi_fast_16) ||
+	    spi_rx_half_start(&spi_fast_16) ||
+	    spi_rx_half_end(&spi_fast_16) ||
+	    spi_rx_every_4(&spi_fast_16)
+#if (CONFIG_SPI_ASYNC)
+	    || spi_async_call(&spi_fast_16)
+#endif /* (CONFIG_SPI_ASYNC) */
+	    ) {
+		goto end;
+	}
+#endif /* CONFIG_SPI_STM32_DMA */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 	if (spi_resource_lock_test(&spi_slow, &spi_fast)) {
 		goto end;
