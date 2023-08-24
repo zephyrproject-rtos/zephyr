@@ -836,12 +836,15 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	uint_fast8_t dret;
 	int len;
 	int ret;
+	char *payload;
+	uint16_t in_len;
 
 	setup_in_fmt_data(msg);
 
 	fd = engine_get_in_user_data(&msg->in);
+	payload = (char *)coap_packet_get_payload(msg->in.in_cpkt, &in_len);
 
-	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_REGION(&msg->in), &fd->dcd, &isize);
+	dret = cbor_decode_lwm2m_senml(payload, in_len, &fd->dcd, &isize);
 
 	if (dret != ZCBOR_SUCCESS) {
 		__ASSERT_NO_MSG(false);
