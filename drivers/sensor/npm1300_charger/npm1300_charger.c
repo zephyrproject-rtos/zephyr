@@ -71,7 +71,10 @@ struct npm1300_charger_data {
 #define ADC_OFFSET_IBAT_EN   0x24U
 
 /* nPM1300 VBUS register offsets */
+#define VBUS_OFFSET_ILIMUPDATE  0x00U
+#define VBUS_OFFSET_ILIM        0x01U
 #define VBUS_OFFSET_ILIMSTARTUP 0x02U
+#define VBUS_OFFSET_DETECT      0x05U
 #define VBUS_OFFSET_STATUS      0x07U
 
 /* Ibat status */
@@ -104,6 +107,11 @@ struct adc_results_t {
 /* NTC temp masks */
 #define NTCTEMP_MSB_SHIFT 2U
 #define NTCTEMP_LSB_MASK  0x03U
+
+/* VBUS masks */
+#define DETECT_HI_MASK    0x0AU
+#define DETECT_HI_CURRENT 1500000
+#define DETECT_LO_CURRENT 500000
 
 /* Linear range for charger terminal voltage */
 static const struct linear_range charger_volt_ranges[] = {
@@ -310,6 +318,32 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 			val->val2 = 0U;
 		}
 		return ret;
+
+	case SENSOR_CHAN_CURRENT:
+		if (attr != SENSOR_ATTR_UPPER_THRESH) {
+			return -ENOTSUP;
+		}
+
+		ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_DETECT, &data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (data == 0U) {
+			/* No charger connected */
+			val->val1 = 0;
+			val->val2 = 0;
+		} else if ((data & DETECT_HI_MASK) != 0U) {
+			/* CC1 or CC2 indicate 1.5A or 3A capability */
+			val->val1 = DETECT_HI_CURRENT / 1000000;
+			val->val2 = DETECT_HI_CURRENT % 1000000;
+		} else {
+			val->val1 = DETECT_LO_CURRENT / 1000000;
+			val->val2 = DETECT_LO_CURRENT % 1000000;
+		}
+
+		return 0;
+
 	default:
 		return -ENOTSUP;
 	}
@@ -321,12 +355,12 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 	const struct npm1300_charger_config *const config = dev->config;
 	int ret;
 
+	if (attr != SENSOR_ATTR_CONFIGURATION) {
+		return -ENOTSUP;
+	}
+
 	switch ((uint32_t)chan) {
 	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
-		if (attr != SENSOR_ATTR_CONFIGURATION) {
-			return -ENOTSUP;
-		}
-
 		if (val->val1 == 0) {
 			/* Disable charging */
 			return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_CLR,
@@ -339,6 +373,27 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 			return ret;
 		}
 		return mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_EN_SET, 1U);
+
+	case SENSOR_CHAN_CURRENT:
+		/* Set vbus current limit */
+		int32_t current = (val->val1 * 1000000) + val->val2;
+		uint16_t idx;
+
+		ret = linear_range_group_get_win_index(vbus_current_ranges,
+						       ARRAY_SIZE(vbus_current_ranges), current,
+						       current, &idx);
+
+		if (ret == -EINVAL) {
+			return ret;
+		}
+
+		ret = mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIM, idx);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* Switch to new current limit, this will be reset automatically on USB removal */
+		return mfd_npm1300_reg_write(config->mfd, VBUS_BASE, VBUS_OFFSET_ILIMUPDATE, 1U);
 
 	default:
 		return -ENOTSUP;
