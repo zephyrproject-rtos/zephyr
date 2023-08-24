@@ -2321,7 +2321,7 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 						       struct bt_mesh_comp_p1_elem *elem)
 {
 	if (buf->len < 6) {
-		LOG_ERR("No more elements to pull or missing data");
+		LOG_DBG("No more elements to pull or missing data");
 		return NULL;
 	}
 	size_t elem_size = 0;
