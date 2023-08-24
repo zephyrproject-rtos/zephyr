@@ -31,10 +31,7 @@ union net_mgmt_events {
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
 #if defined(CONFIG_NET_L2_WIFI_MGMT)
-	struct wifi_scan_result wifi_scan_result;
-#if defined(CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS)
-	struct wifi_raw_scan_result raw_scan_result;
-#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+	union wifi_mgmt_events wifi;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #if defined(CONFIG_NET_IPV6)
 	struct net_event_ipv6_prefix ipv6_prefix;
