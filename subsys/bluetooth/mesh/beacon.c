@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(bt_mesh_beacon);
 #define PROV_XMIT                  BT_MESH_TRANSMIT(0, 20)
 
 static struct k_work_delayable beacon_timer;
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 static struct {
 	/**
 	 * Identifier for the current Private beacon random-value.
@@ -54,6 +55,7 @@ static struct {
 	uint8_t val[13];
 	uint64_t timestamp;
 } priv_random;
+#endif
 
 struct beacon_params {
 	bool private;
