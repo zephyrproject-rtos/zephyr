@@ -1354,8 +1354,17 @@ function(zephyr_code_relocate)
     # supporting relative and absolute paths
     set(genex_src_dir "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCE_DIR>")
     set(genex_src_list "$<TARGET_PROPERTY:${CODE_REL_LIBRARY},SOURCES>")
-    set(src_list_abs "$<FILTER:${genex_src_list},INCLUDE,^/>")
-    set(src_list_rel "$<FILTER:${genex_src_list},EXCLUDE,^/>")
+
+    if(CMAKE_HOST_WIN32)
+      # Note that this assumes windows absolute filenames start with a letter and colon, this does
+      # not support \\x network paths and is untested under the likes of msys2/cygwin
+      set(src_list_abs "$<FILTER:${genex_src_list},INCLUDE,^[A-Za-z]\:>")
+      set(src_list_rel "$<FILTER:${genex_src_list},EXCLUDE,^[A-Za-z]\:>")
+    else()
+      set(src_list_abs "$<FILTER:${genex_src_list},INCLUDE,^/>")
+      set(src_list_rel "$<FILTER:${genex_src_list},EXCLUDE,^/>")
+    endif()
+
     set(src_list "${genex_src_dir}/$<JOIN:${src_list_rel},$<SEMICOLON>${genex_src_dir}/>")
     set(nonempty_src_list "$<$<BOOL:${src_list_rel}>:${src_list}>")
     set(sep_list "$<$<AND:$<BOOL:${src_list_abs}>,$<BOOL:${src_list_rel}>>:$<SEMICOLON>>")
