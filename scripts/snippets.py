@@ -39,6 +39,8 @@ def _new_append():
 def _new_board2appends():
     return defaultdict(_new_append)
 
+fofoaofmaofmaosmf
+
 @dataclass
 class Snippet:
     '''Class for keeping track of all the settings discovered for an
