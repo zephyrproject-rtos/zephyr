@@ -278,6 +278,7 @@
 /drivers/dma/*xmc4xxx*                    @talih0
 /drivers/edac/                            @finikorg
 /drivers/iossm/                           @Smale-12048867
+/drivers/ilc/                             @nbalabak
 /drivers/eeprom/                          @henrikbrixandersen
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*b91*                    @andy-liu-telink
