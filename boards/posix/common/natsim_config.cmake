@@ -14,6 +14,7 @@ set(nsi_config_content
   "NSI_EXE:=${zephyr_build_path}/${KERNEL_EXE_NAME}"
   "NSI_EXTRA_SRCS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_SOURCES>,\ >"
   "NSI_LINK_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_LINK_OPTIONS>,\ >"
+  "NSI_EXTRA_LIBS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,RUNNER_LINK_LIBRARIES>,\ >"
   "NSI_PATH:=${NSI_DIR}/"
 )
 
