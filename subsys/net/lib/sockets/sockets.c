@@ -525,10 +525,22 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 			cb = zsock_connected_cb;
 		}
 
-		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
-					   ctx->user_data));
-		SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb, timeout,
-					      ctx->user_data));
+		if (net_context_get_type(ctx) == SOCK_STREAM) {
+			/* For STREAM sockets net_context_recv() only installs
+			 * recv callback w/o side effects, and it has to be done
+			 * first to avoid race condition, when TCP stream data
+			 * arrives right after connect.
+			 */
+			SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
+						   K_NO_WAIT, ctx->user_data));
+			SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb,
+						      timeout, ctx->user_data));
+		} else {
+			SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb,
+						      timeout, ctx->user_data));
+			SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
+						   K_NO_WAIT, ctx->user_data));
+		}
 	}
 
 	return 0;
