@@ -116,7 +116,7 @@ of your board.
 
 Once the image is flashed and booted, the sample will print the image build
 time to the console. After it connects to the internet, in hawkbit server UI,
-you should see the the frdm_k64f show up in the Targets pane. It's time to
+you should see the frdm_k64f show up in the Targets pane. It's time to
 upload a firmware binary to the server, and update it using this UI.
 
 Step 7: Building and signing the test image
