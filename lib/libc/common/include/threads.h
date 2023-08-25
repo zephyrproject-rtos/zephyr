@@ -63,6 +63,17 @@ int cnd_signal(cnd_t *cond);
 int cnd_broadcast(cnd_t *cond);
 void cnd_destroy(cnd_t *cond);
 
+#ifndef thread_local
+#define	thread_local _Thread_local
+#endif
+
+typedef void (*tss_dtor_t)(void *val);
+
+int tss_create(tss_t *key, tss_dtor_t destructor);
+void *tss_get(tss_t key);
+int tss_set(tss_t key, void *val);
+void tss_delete(tss_t key);
+
 #ifdef __cplusplus
 }
 #endif

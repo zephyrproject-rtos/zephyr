@@ -14,6 +14,7 @@ extern "C" {
 typedef int cnd_t;
 typedef int mtx_t;
 typedef int thrd_t;
+typedef int tss_t;
 
 #ifdef __cplusplus
 }

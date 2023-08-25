@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/cnd.c
     source/thrd/mtx.c
     source/thrd/thrd.c
+    source/thrd/tss.c
     )
 
 # Prevent compiler from optimizing calloc into an infinite recursive call
