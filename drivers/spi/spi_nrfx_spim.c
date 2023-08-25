@@ -310,6 +310,11 @@ static void transfer_next_chunk(const struct device *dev)
 		nrfx_spim_xfer_desc_t xfer;
 		nrfx_err_t result;
 		const uint8_t *tx_buf = ctx->tx_buf;
+
+		if (chunk_len > dev_config->max_chunk_len) {
+			chunk_len = dev_config->max_chunk_len;
+		}
+
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 		if (spi_context_tx_buf_on(ctx) && !nrfx_is_in_ram(tx_buf)) {
 			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
@@ -320,10 +325,6 @@ static void transfer_next_chunk(const struct device *dev)
 			tx_buf = dev_data->buffer;
 		}
 #endif
-		if (chunk_len > dev_config->max_chunk_len) {
-			chunk_len = dev_config->max_chunk_len;
-		}
-
 		dev_data->chunk_len = chunk_len;
 
 		xfer.p_tx_buffer = tx_buf;
