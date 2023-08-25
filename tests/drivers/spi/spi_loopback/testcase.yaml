@@ -78,6 +78,12 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+  drivers.spi.stm32_spi_interrupt.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
     platform_allow:
