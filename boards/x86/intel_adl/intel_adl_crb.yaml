@@ -9,6 +9,7 @@ supported:
   - watchdog
   - pwm
   - gpio
+  - rtc
 testing:
   timeout_multiplier: 4
   ignore_tags:
