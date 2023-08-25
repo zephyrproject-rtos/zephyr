@@ -291,8 +291,8 @@ static int cmd_feature_set_prst(const struct shell *sh,
 	return err;
 }
 
-static int cmd_device_config(const struct shell *sh,
-			     size_t argc, char **argv)
+static int cmd_config_set(const struct shell *sh,
+			  size_t argc, char **argv)
 {
 	uint8_t cfg;
 	int err;
@@ -304,6 +304,23 @@ static int cmd_device_config(const struct shell *sh,
 		shell_error(sh, "host: Failed to set configuration");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, new configuration %u",
+			    udev->addr, cfg);
+	}
+
+	return err;
+}
+
+static int cmd_config_get(const struct shell *sh,
+			  size_t argc, char **argv)
+{
+	uint8_t cfg;
+	int err;
+
+	err = usbh_req_get_cfg(udev, &cfg);
+	if (err) {
+		shell_error(sh, "host: Failed to set configuration");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, current configuration %u",
 			    udev->addr, cfg);
 	}
 
@@ -484,11 +501,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
+	SHELL_CMD_ARG(get, NULL, NULL,
+		      cmd_config_get, 1, 0),
+	SHELL_CMD_ARG(set, NULL, "<configuration>",
+		      cmd_config_set, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 	SHELL_CMD_ARG(address, NULL, "<address>",
 		      cmd_device_address, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "<config>",
-		      cmd_device_config, 2, 0),
+	SHELL_CMD_ARG(config, &config_cmds, "get|set configuration",
+		      NULL, 1, 0),
 	SHELL_CMD_ARG(interface, NULL, "<interface> <alternate>",
 		      cmd_device_interface, 3, 0),
 	SHELL_CMD_ARG(descriptor, &desc_cmds, "descriptor request",
