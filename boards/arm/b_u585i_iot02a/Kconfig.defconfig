@@ -18,6 +18,10 @@ config USE_DT_CODE_PARTITION
 
 if BUILD_WITH_TFM
 
+# Initial Attestation key provisioned by the BL1 bootloader
+config TFM_INITIAL_ATTESTATION_KEY
+	default y
+
 config TFM_DUMMY_PROVISIONING
 	default n
 
