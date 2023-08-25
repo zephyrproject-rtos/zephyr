@@ -1,0 +1,4 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+config SHIELD_APOLLO4P_EVB_DISP_SHIELD
+	def_bool $(shields_list_contains,apollo4p_evb_disp_shield)
