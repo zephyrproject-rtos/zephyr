@@ -143,8 +143,13 @@ static struct dummy_api dummy_api_funcs = {
 	.send = dummy_send,
 };
 
+#if defined(CONFIG_NET_INTERFACE_NAME)
+#define DEV1_NAME "dummy0"
+#define DEV2_NAME "dummy1"
+#else
 #define DEV1_NAME "dummy_1"
 #define DEV2_NAME "dummy_2"
+#endif
 
 NET_DEVICE_INIT(dummy_1, DEV1_NAME, NULL, NULL, &dummy_data1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
@@ -164,8 +169,11 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 {
 	int ret;
 	struct ifreq ifreq = { 0 };
+
+#if !defined(CONFIG_NET_INTERFACE_NAME)
 	const struct device *dev1 = device_get_binding(DEV1_NAME);
 	const struct device *dev2 = device_get_binding(DEV2_NAME);
+#endif
 
 	uint8_t send_buf[32];
 	uint8_t recv_buf[sizeof(send_buf)] = { 0 };
@@ -198,8 +206,10 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
+#if !defined(CONFIG_NET_INTERFACE_NAME)
 	zassert_equal_ptr(dev1, current_dev, "invalid interface used (%p vs %p)",
 			  dev1, current_dev);
+#endif
 
 	k_msleep(10);
 
@@ -221,8 +231,10 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
+#if !defined(CONFIG_NET_INTERFACE_NAME)
 	zassert_equal_ptr(dev2, current_dev, "invalid interface used (%p vs %p)",
 			  dev2, current_dev);
+#endif
 
 	/* Server socket should only receive data from the bound interface. */
 
@@ -257,7 +269,9 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
+#if !defined(CONFIG_NET_INTERFACE_NAME)
 	zassert_equal_ptr(dev1, current_dev, "invalid interface used");
+#endif
 
 	/* Server socket should now receive data from interface 1 as well. */
 

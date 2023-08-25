@@ -688,7 +688,11 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 	int ret;
 	uint8_t dummy_data = 0;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "net1"
+#else
 		.ifr_name = "offloaded_2"
+#endif
 	};
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET
@@ -719,7 +723,11 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 	int ret;
 	uint8_t dummy_data = 0;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "dummy0"
+#else
 		.ifr_name = "dummy_native"
+#endif
 	};
 	struct sockaddr_in addr = test_peer_addr;
 
@@ -750,7 +758,11 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "net1"
+#else
 		.ifr_name = "offloaded_2"
+#endif
 	};
 	int tls_native = 1;
 	struct sockaddr_in addr = test_peer_addr;
@@ -793,7 +805,11 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	struct ifreq ifreq = {
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		.ifr_name = "dummy0"
+#else
 		.ifr_name = "dummy_native"
+#endif
 	};
 	int tls_native = 1;
 	struct sockaddr_in addr = test_peer_addr;
