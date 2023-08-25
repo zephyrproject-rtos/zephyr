@@ -1418,7 +1418,7 @@ Release Notes:
   labels:
     - "area: Watchdog"
 
-"Drivers: WiFi":
+"Drivers: Wi-Fi":
   status: maintained
   maintainers:
     - tbursztyka
@@ -1429,9 +1429,9 @@ Release Notes:
   files:
     - drivers/wifi/
   labels:
-    - "area: Wifi"
+    - "area: Wi-Fi"
 
-"Drivers: WiFi es-WiFi":
+"Drivers: Wi-Fi es-WiFi":
   status: odd fixes
   collaborators:
     - loicpoulain
@@ -1441,7 +1441,7 @@ Release Notes:
     Inventek es-WiFi
 
   labels:
-    - "area: Wifi"
+    - "area: Wi-Fi"
 
 "Drivers: Memory Management":
   status: maintained
@@ -2009,7 +2009,7 @@ Networking:
     - tests/net/wifi/
   labels:
     - "area: Networking"
-    - "area: WiFi"
+    - "area: Wi-Fi"
 
 NIOS-2 arch:
   status: maintained
