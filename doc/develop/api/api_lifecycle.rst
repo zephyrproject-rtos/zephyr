@@ -20,6 +20,9 @@ no longer optimal or supported by the underlying platforms.
 An up-to-date table of all APIs and their maturity level can be found in the
 :ref:`api_overview` page.
 
+
+.. _api_lifecycle_experimental:
+
 Experimental
 *************
 
@@ -36,6 +39,10 @@ The following requirements apply to all new APIs:
   of said API (in the case of peripheral APIs, this corresponds to one driver)
 - At least one sample using the new API (may only build on one single board)
 
+When introducing a new and experimental API, mark the API version in the headers
+where the API is defined. An experimental API shall have a version where the minor
+version is up to one (0.1.z). (see `api overview <api_overview>`)
+
 Peripheral APIs (Hardware Related)
 ==================================
 
@@ -46,12 +53,18 @@ the Architecture working group consisting of representatives from different vend
 The API shall be promoted to ``unstable`` when it has at least two
 implementations on different hardware platforms.
 
+.. _api_lifecycle_unstable:
+
 Unstable
 ********
 
 The API is in the process of settling, but has not yet had sufficient real-world
 testing to be considered stable. The API is considered generic in nature and can
 be used on different hardware platforms.
+
+When the API changes status to unstable API, mark the API version in the headers
+where the API is defined. Unstable APIs shall have a version where the minor
+version is larger than one (0.y.z | y > 1 ). (see `api overview <api_overview>`)
 
 .. note::
 
@@ -68,6 +81,8 @@ Hardware Agnostic APIs
 
 For hardware agnostic APIs, multiple applications using it are required to
 promote an API from ``experimental`` to ``unstable``.
+
+.. _api_lifecycle_stable:
 
 Stable
 *******
@@ -93,6 +108,11 @@ In order to declare an API ``stable``, the following steps need to be followed:
 #. The Pull Request must be submitted for discussion in the next
    `Zephyr Architecture meeting`_ where, barring any objections, the Pull Request
    will be merged
+
+
+When the API changes status to stable API, mark the API version in the headers
+where the API is defined. Stable APIs shall have a version where the major
+version is one or larger (x.y.z | x >= 1 ). (see `api overview <api_overview>`)
 
 .. _breaking_api_changes:
 
@@ -176,6 +196,11 @@ for it to be discussed and ultimately even voted on in the `Zephyr TSC meeting`_
 
 If the Pull Request is merged then an email must be sent to the ``devel`` and
 ``user`` mailing lists informing them of the change.
+
+The API version shall be changed to signal backward incompatible changes. This
+is achieved by incrementing the major version (X.y.z | X > 1).  It MAY also
+include minor and patch level changes. Patch and minor versions MUST be reset to
+0 when major version is incremented. (see `api overview <api_overview>`)
 
 .. note::
 
