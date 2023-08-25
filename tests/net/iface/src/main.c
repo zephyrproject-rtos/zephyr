@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1129,6 +1130,55 @@ ZTEST(net_iface, test_ipv6_addr_foreach)
 	/* iface4 has no IPv6 address configured */
 	net_if_ipv6_addr_foreach(iface4, foreach_ipv6_addr_check, &count);
 	zassert_equal(count, 0, "Incorrect number of callback calls");
+}
+
+ZTEST(net_iface, test_interface_name)
+{
+	int ret;
+
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	char buf[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	struct net_if *iface;
+	char *name;
+
+	iface = net_if_get_default();
+	memset(buf, 0, sizeof(buf));
+
+	ret = net_if_get_name(NULL, NULL, -1);
+	zassert_equal(ret, -EINVAL, "Unexpected value returned");
+
+	ret = net_if_get_name(iface, NULL, -1);
+	zassert_equal(ret, -EINVAL, "Unexpected value returned");
+
+	ret = net_if_get_name(iface, buf, 0);
+	zassert_equal(ret, -EINVAL, "Unexpected value returned");
+
+	name = "mynetworkiface0";
+	ret = net_if_set_name(iface, name);
+	zassert_equal(ret, -ENAMETOOLONG, "Unexpected value (%d) returned", ret);
+
+	name = "eth0";
+	ret = net_if_set_name(iface, name);
+	zassert_equal(ret, 0, "Unexpected value (%d) returned", ret);
+
+	ret = net_if_get_name(iface, buf, 1);
+	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
+
+	ret = net_if_get_name(iface, buf, strlen(name) - 1);
+	zassert_equal(ret, -ERANGE, "Unexpected value (%d) returned", ret);
+
+	ret = net_if_get_name(iface, buf, sizeof(buf) - 1);
+	zassert_equal(ret, strlen(name), "Unexpected value (%d) returned", ret);
+
+	ret = net_if_get_by_name(name);
+	zassert_equal(ret, net_if_get_by_iface(iface), "Unexpected value (%d) returned", ret);
+
+	ret = net_if_get_by_name("ENOENT");
+	zassert_equal(ret, -ENOENT, "Unexpected value (%d) returned", ret);
+#else
+	ret = net_if_get_name(NULL, NULL, -1);
+	zassert_equal(ret, -ENOTSUP, "Invalid value returned");
+#endif
 }
 
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);
