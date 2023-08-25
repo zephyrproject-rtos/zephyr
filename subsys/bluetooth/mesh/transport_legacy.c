@@ -204,7 +204,7 @@ bool bt_mesh_tx_in_progress(void)
 
 static void seg_tx_done(struct seg_tx *tx, uint8_t seg_idx)
 {
-	k_mem_slab_free(&segs, (void **)&tx->seg[seg_idx]);
+	k_mem_slab_free(&segs, (void *)tx->seg[seg_idx]);
 	tx->seg[seg_idx] = NULL;
 	tx->nack_count--;
 }
@@ -550,7 +550,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				/* PDUs for a specific Friend should only go
 				 * out through the Friend Queue.
 				 */
-				k_mem_slab_free(&segs, &buf);
+				k_mem_slab_free(&segs, buf);
 				tx->seg[seg_o] = NULL;
 			}
 
@@ -1116,7 +1116,7 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 			continue;
 		}
 
-		k_mem_slab_free(&segs, &rx->seg[i]);
+		k_mem_slab_free(&segs, rx->seg[i]);
 		rx->seg[i] = NULL;
 	}
 

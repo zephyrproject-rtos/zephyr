@@ -392,7 +392,7 @@ static int intel_gna_deregister_model(const struct device *dev,
 
 	gna_model = (struct intel_gna_model *)model_handle;
 	gna_model->registered = false;
-	k_mem_slab_free(&gna->model_slab, &model_handle);
+	k_mem_slab_free(&gna->model_slab, model_handle);
 
 	return 0;
 }

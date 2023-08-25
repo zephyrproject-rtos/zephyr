@@ -226,7 +226,7 @@ static void dummy_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 	void *block;
 
 	block = rx_buf;
-	k_mem_slab_free(&dummy_mcumgr_slab, &block);
+	k_mem_slab_free(&dummy_mcumgr_slab, block);
 }
 
 /**

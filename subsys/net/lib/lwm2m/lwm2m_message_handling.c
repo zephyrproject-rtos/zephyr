@@ -265,7 +265,7 @@ static inline int request_body_encode_buffer(uint8_t **buffer)
 static inline void release_body_encode_buffer(uint8_t **buffer)
 {
 	if (buffer && *buffer) {
-		k_mem_slab_free(&body_encode_buffer_slab, (void **)buffer);
+		k_mem_slab_free(&body_encode_buffer_slab, (void *)*buffer);
 		log_buffer_usage();
 	}
 }

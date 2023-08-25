@@ -3052,7 +3052,7 @@ static void att_reset(struct bt_att *att)
 	 * and `bt_conn_unref` to follow convention.
 	 */
 	att->conn = NULL;
-	k_mem_slab_free(&att_slab, (void **)&att);
+	k_mem_slab_free(&att_slab, (void *)att);
 }
 
 static void att_chan_detach(struct bt_att_chan *chan)
@@ -3288,7 +3288,7 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 
 	LOG_DBG("chan %p", chan);
 
-	k_mem_slab_free(&chan_slab, (void **)&chan);
+	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
 #if defined(CONFIG_BT_EATT)
@@ -3862,7 +3862,7 @@ void bt_att_req_free(struct bt_att_req *req)
 		req->buf = NULL;
 	}
 
-	k_mem_slab_free(&req_slab, (void **)&req);
+	k_mem_slab_free(&req_slab, (void *)req);
 }
 
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf)

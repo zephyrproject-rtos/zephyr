@@ -5151,9 +5151,9 @@ extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * associated memory slab.
  *
  * @param slab Address of the memory slab.
- * @param mem Pointer to block address area (as set by k_mem_slab_alloc()).
+ * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
-extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
+extern void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
 
 /**
  * @brief Get the number of used blocks in a memory slab.

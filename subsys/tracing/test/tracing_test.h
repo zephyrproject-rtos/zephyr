@@ -678,7 +678,7 @@ void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, void **mem, k_tim
 void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, void **mem, k_timeout_t timeout);
 void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_timeout_t timeout,
 				     int ret);
-void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem);
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void *mem);
 
 void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 			    k_timer_expiry_t stop_fn);

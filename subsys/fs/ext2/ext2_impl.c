@@ -80,7 +80,7 @@ static struct ext2_block *get_block_struct(void)
 	ret = k_mem_slab_alloc(&ext2_block_memory_slab, (void **)&b->data, K_NO_WAIT);
 	if (ret < 0) {
 		LOG_ERR("get block: alloc block memory error %d", ret);
-		k_mem_slab_free(&ext2_block_struct_slab, (void **)&b);
+		k_mem_slab_free(&ext2_block_struct_slab, (void *)b);
 		return NULL;
 	}
 	return b;
@@ -140,8 +140,8 @@ void ext2_drop_block(struct ext2_block *b)
 	}
 
 	if (b != NULL && b->data != NULL) {
-		k_mem_slab_free(&ext2_block_memory_slab, (void **)&b->data);
-		k_mem_slab_free(&ext2_block_struct_slab, (void **)&b);
+		k_mem_slab_free(&ext2_block_memory_slab, (void *)b->data);
+		k_mem_slab_free(&ext2_block_struct_slab, (void *)b);
 	}
 }
 
@@ -1466,7 +1466,7 @@ int ext2_inode_get(struct ext2_data *fs, uint32_t ino, struct ext2_inode **ret)
 		int rc2 = ext2_fetch_inode(fs, ino, inode);
 
 		if (rc2 < 0) {
-			k_mem_slab_free(&inode_struct_slab, (void **)&inode);
+			k_mem_slab_free(&inode_struct_slab, (void *)inode);
 			return rc2;
 		}
 	}
@@ -1523,7 +1523,7 @@ int ext2_inode_drop(struct ext2_inode *inode)
 			}
 		}
 
-		k_mem_slab_free(&inode_struct_slab, (void **)&inode);
+		k_mem_slab_free(&inode_struct_slab, (void *)inode);
 
 		/* copy last open in place of freed inode */
 		uint32_t last = fs->open_inodes - 1;

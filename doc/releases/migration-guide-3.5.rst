@@ -11,6 +11,14 @@ application from Zephyr v3.4.0 to Zephyr v3.5.0.
 Required changes
 ****************
 
+* The kernel :c:func:`k_mem_slab_free` function has changed its signature, now
+  taking a ``void *mem`` pointer instead of a ``void **mem`` double-pointer.
+  The new signature will not immediately trigger a compiler error or warning,
+  instead likely causing a invalid memory access at runtime. A new ``_ASSERT``
+  statement, that you can enable with :kconfig:option:`CONFIG_ASSERT`, will
+  detect if you pass the function memory not belonging to the memory blocks in
+  the slab.
+
 * The :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE` default value is now ``0`` (was
   ``16``). Bootloaders that use a part of the SRAM should set this value to an
   appropriate size. :github:`60371`
