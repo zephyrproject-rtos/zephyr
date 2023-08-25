@@ -122,7 +122,7 @@ void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 
 	LOG_ERR(" **  A0 %p  SP %p  A2 %p  A3 %p",
 		(void *)bsa->a0,
-		((char *)bsa + sizeof(*bsa)),
+		(void *)((char *)bsa + sizeof(*bsa)),
 		(void *)bsa->a2, (void *)bsa->a3);
 
 	if (reg_blks_remaining > 0) {
