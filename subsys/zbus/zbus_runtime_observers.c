@@ -90,7 +90,7 @@ int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer
 			sys_slist_remove(chan->runtime_observers, &prev_obs_nd->node,
 					 &obs_nd->node);
 
-			k_mem_slab_free(&_zbus_runtime_obs_pool, (void **)&obs_nd);
+			k_mem_slab_free2(&_zbus_runtime_obs_pool, (void *)obs_nd);
 
 			k_mutex_unlock(chan->mutex);
 
