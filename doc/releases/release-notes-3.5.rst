@@ -41,6 +41,9 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* The kernel :c:func:`k_mem_slab_free` function has been deprecated in favor of
+  the new :c:func:`k_mem_slab_free2`.
+
 * Setting the GIC architecture version by selecting
   :kconfig:option:`CONFIG_GIC_V1`, :kconfig:option:`CONFIG_GIC_V2` and
   :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.

@@ -119,7 +119,7 @@ A warning is printed if a suitable block is not obtained.
 Releasing a Memory Block
 ========================
 
-A memory block is released by calling :c:func:`k_mem_slab_free`.
+A memory block is released by calling :c:func:`k_mem_slab_free2`.
 
 The following code builds on the example above, and allocates a memory block,
 then releases it once it is no longer needed.
@@ -130,7 +130,11 @@ then releases it once it is no longer needed.
 
     k_mem_slab_alloc(&my_slab, &block_ptr, K_FOREVER);
     ... /* use memory block pointed at by block_ptr */
-    k_mem_slab_free(&my_slab, &block_ptr);
+    k_mem_slab_free2(&my_slab, block_ptr);
+
+.. note::
+
+   A previous version of the function, :c:func:`k_mem_slab_free` was deprecated.
 
 Suggested Uses
 **************
