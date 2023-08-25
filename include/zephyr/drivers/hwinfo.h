@@ -16,6 +16,8 @@
 /**
  * @brief Hardware Information Interface
  * @defgroup hwinfo_interface Hardware Info Interface
+ * @since 1.14
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

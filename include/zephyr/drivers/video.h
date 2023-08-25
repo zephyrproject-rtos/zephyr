@@ -15,6 +15,8 @@
 /**
  * @brief Video Interface
  * @defgroup video_interface Video Interface
+ * @since 2.1
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
