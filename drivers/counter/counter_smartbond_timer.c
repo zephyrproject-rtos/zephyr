@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT renesas_smartbond_timer
 
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/smartbond_clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 
@@ -225,7 +225,7 @@ static int counter_smartbond_init_timer(const struct device *dev)
 	TIMER_Type *timer0 = ((TIMER_Type *)cfg->timer) == TIMER ? TIMER : NULL;
 	const struct device *osc_dev;
 	uint32_t osc_freq;
-	uint32_t osc;
+	enum smartbond_clock osc;
 
 	if (cfg->clock_src_divn) {
 		/* Timer clock source is DIVn 32MHz */
@@ -238,17 +238,17 @@ static int counter_smartbond_init_timer(const struct device *dev)
 		switch ((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
 			 CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) {
 		case LP_CLK_OSC_RC32K:
-			osc = DT_DEP_ORD(DT_NODELABEL(rc32k));
+			osc = SMARTBOND_CLK_RC32K;
 			break;
 		case LP_CLK_OSC_RCX:
-			osc = DT_DEP_ORD(DT_NODELABEL(rcx));
+			osc = SMARTBOND_CLK_RCX;
 			break;
 		default:
 		case LP_CLK_OSC_XTAL32K:
-			osc = DT_DEP_ORD(DT_NODELABEL(xtal32k));
+			osc = SMARTBOND_CLK_XTAL32K;
 			break;
 		}
-		clock_control_get_rate(osc_dev, (clock_control_subsys_t *)&osc, &osc_freq);
+		clock_control_get_rate(osc_dev, (clock_control_subsys_t)osc, &osc_freq);
 		data->freq = osc_freq / (cfg->prescaler + 1);
 	}
 	timer->TIMER2_PRESCALER_REG = cfg->prescaler;
