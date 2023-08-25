@@ -1,0 +1,12 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP BLE HCI information
+
+compatible: "nxp,hci-ble"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
