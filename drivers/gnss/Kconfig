@@ -36,6 +36,11 @@ config GNSS_DUMP_TO_LOG_BUF_SIZE
 
 endif
 
+config GNSS_PARSE
+	bool "GNSS parsing utilities"
+	help
+	  Enable GNSS parsing utilities.
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
