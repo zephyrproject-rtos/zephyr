@@ -145,6 +145,13 @@ function(ExternalZephyrProject_Add)
     )
   endif()
 
+  if(TARGET ${ZBUILD_APPLICATION})
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(APPLICATION ${ZBUILD_APPLICATION} ...) "
+      "already exists. Application names must be unique."
+    )
+  endif()
+
   if(DEFINED ZBUILD_APP_TYPE)
     if(NOT ZBUILD_APP_TYPE IN_LIST app_types)
       message(FATAL_ERROR
@@ -155,6 +162,16 @@ function(ExternalZephyrProject_Add)
 
   endif()
 
+  if(NOT DEFINED SYSBUILD_CURRENT_SOURCE_DIR)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(${ARGV0} <val> ...) must not be called outside of"
+      " sysbuild_add_subdirectory(). SYSBUILD_CURRENT_SOURCE_DIR is undefined."
+    )
+  endif()
+  set_property(
+    DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
   set_property(
     GLOBAL
     APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
@@ -564,6 +581,45 @@ endfunction()
 
 function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
+endfunction()
+
+# Usage:
+#   sysbuild_add_subdirectory(<source_dir> [<binary_dir>])
+#
+# This function extends the standard add_subdirectory() command with additional,
+# recursive processing of the sysbuild images added via <source_dir>.
+#
+# After exiting <source_dir>, this function will take every image added so far,
+# and include() its sysbuild.cmake file (if found). If more images get added at
+# this stage, their sysbuild.cmake files will be included as well, and so on.
+# This continues until all expected images have been added, before returning.
+#
+function(sysbuild_add_subdirectory source_dir)
+  if(ARGC GREATER 2)
+    message(FATAL_ERROR
+      "sysbuild_add_subdirectory(...) called with incorrect number of arguments"
+      " (expected at most 2, got ${ARGC})"
+    )
+  endif()
+  set(binary_dir ${ARGV1})
+
+  # Update SYSBUILD_CURRENT_SOURCE_DIR in this scope, to support nesting
+  # of sysbuild_add_subdirectory() and even regular add_subdirectory().
+  cmake_path(ABSOLUTE_PATH source_dir NORMALIZE OUTPUT_VARIABLE SYSBUILD_CURRENT_SOURCE_DIR)
+  add_subdirectory(${source_dir} ${binary_dir})
+
+  while(TRUE)
+    get_property(added_images DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}" PROPERTY sysbuild_images)
+    if(NOT added_images)
+      break()
+    endif()
+    set_property(DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}" PROPERTY sysbuild_images "")
+
+    foreach(image ${added_images})
+      ExternalProject_Get_property(${image} SOURCE_DIR)
+      include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
+    endforeach()
+  endwhile()
 endfunction()
 
 # Usage:
