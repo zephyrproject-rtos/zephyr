@@ -386,7 +386,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	k_mem_slab_free(&fifo_elem_slab, (void **)&ev->block.data);
+	k_mem_slab_free2(&fifo_elem_slab, (void *)ev->block.data);
 }
 
 /**
