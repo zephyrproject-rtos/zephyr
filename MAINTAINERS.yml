@@ -1428,6 +1428,7 @@ Release Notes:
   collaborators:
     - rlubos
     - kludentwo
+    - krish2718
   files:
     - drivers/wifi/
   labels:
@@ -2003,6 +2004,7 @@ Networking:
     - jukkar
   collaborators:
     - rlubos
+    - krish2718
   files:
     - doc/connectivity/networking/api/wifi.rst
     - include/zephyr/net/wifi*.h
