@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_STRNLEN source/string/strnlen.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/cnd.c
     source/thrd/mtx.c
+    source/thrd/once.c
     source/thrd/thrd.c
     source/thrd/tss.c
     )
