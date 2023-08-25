@@ -97,6 +97,8 @@ The Zephyr stm32f469i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| SDIO      | on-chip    | SD-card controller                  |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -119,6 +121,7 @@ Default Zephyr Peripheral Mapping:
 - UART_6 TX/RX : PG14/PG9 (Arduino Serial)
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - SPI2 NSS/SCK/MISO/MOSI : PH6/PD3/PB14/PB15 (Arduino SPI)
+- SDIO D0/D1/D2/D3/CLK/Detect : PC8/PC9/PC10/PC11/PC12/PG2
 - USB DM : PA11
 - USB DP : PA12
 - USER_PB : PA0
