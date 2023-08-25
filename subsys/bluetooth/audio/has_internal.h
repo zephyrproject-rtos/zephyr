@@ -77,6 +77,7 @@ struct bt_has_cp_read_preset_rsp {
 struct bt_has_cp_preset_changed {
 	uint8_t change_id;
 	uint8_t is_last;
+	uint8_t additional_params[0];
 } __packed;
 
 struct bt_has_cp_generic_update {
