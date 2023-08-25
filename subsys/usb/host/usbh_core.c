@@ -17,9 +17,6 @@ LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbh_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_thread_data;
 
-/* TODO */
-static struct usbh_class_data *class_data;
-
 K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
 	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
@@ -29,15 +26,10 @@ static int usbh_event_carrier(const struct device *dev,
 	return k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
 }
 
-static int event_ep_request(struct usbh_contex *const ctx,
-			    struct uhc_event *const event)
+static int discard_ep_request(struct usbh_contex *const ctx,
+			      struct uhc_transfer *const xfer)
 {
-	struct uhc_transfer *xfer = event->xfer;
 	const struct device *dev = ctx->dev;
-
-	if (class_data && class_data->request) {
-		return class_data->request(ctx, event->xfer, event->status);
-	}
 
 	if (xfer->buf) {
 		LOG_HEXDUMP_INF(xfer->buf->data, xfer->buf->len, "buf");
@@ -52,51 +44,33 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 {
 	int ret = 0;
 
+	if (event->type == UHC_EVT_EP_REQUEST) {
+		return discard_ep_request(ctx, event->xfer);
+	}
+
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
 	case UHC_EVT_DEV_CONNECTED_FS:
 	case UHC_EVT_DEV_CONNECTED_HS:
 		LOG_DBG("Device connected event");
-		if (class_data && class_data->connected) {
-			ret = class_data->connected(ctx);
-		}
 		break;
 	case UHC_EVT_DEV_REMOVED:
 		LOG_DBG("Device removed event");
-		if (class_data && class_data->removed) {
-			ret = class_data->removed(ctx);
-		}
 		break;
 	case UHC_EVT_RESETED:
 		LOG_DBG("Bus reset");
-		/* TODO */
-		if (class_data && class_data->removed) {
-			ret = class_data->removed(ctx);
-		}
 		break;
 	case UHC_EVT_SUSPENDED:
 		LOG_DBG("Bus suspended");
-		if (class_data && class_data->suspended) {
-			ret = class_data->suspended(ctx);
-		}
 		break;
 	case UHC_EVT_RESUMED:
 		LOG_DBG("Bus resumed");
-		if (class_data && class_data->resumed) {
-			ret = class_data->resumed(ctx);
-		}
 		break;
 	case UHC_EVT_RWUP:
 		LOG_DBG("RWUP event");
-		if (class_data && class_data->rwup) {
-			ret = class_data->rwup(ctx);
-		}
-		break;
-	case UHC_EVT_EP_REQUEST:
-		event_ep_request(ctx, event);
 		break;
 	case UHC_EVT_ERROR:
-		LOG_DBG("Error event");
+		LOG_DBG("Error event %d", event->status);
 		break;
 	default:
 		break;
@@ -131,9 +105,10 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 	}
 
 	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		LOG_DBG("class data %p", cdata);
-		/* TODO */
-		class_data = cdata;
+		/*
+		 * For now, we have not implemented any class drivers,
+		 * so just keep it as placeholder.
+		 */
 		break;
 	}
 
