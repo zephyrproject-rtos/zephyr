@@ -16,7 +16,7 @@
  * - Client Key derivation with master salt see RFC8613 Appendix C.1.1
  * - Generating OSCORE request with key form C.1.1 see RFC8613 Appendix C.4
  */
-ZTEST(oscore_tests, oscore_client_test1)
+ZTEST(oscore_tests, test_oscore_client_test1)
 {
 	enum err r;
 	struct context c_client;
@@ -75,7 +75,7 @@ ZTEST(oscore_tests, oscore_client_test1)
  * - Client Key derivation without master salt see RFC8613 Appendix C.2.1
  * - Generating OSCORE request with key form C.2.1 see RFC8613 Appendix C.5
  */
-ZTEST(oscore_tests, oscore_client_test3)
+ZTEST(oscore_tests, test_oscore_client_test3)
 {
 	enum err r;
 	struct context c_client;
@@ -123,7 +123,7 @@ ZTEST(oscore_tests, oscore_client_test3)
  * - Client Key derivation with ID Context see Appendix 3.1
  * - OSCORE request generation see Appendix C6
  */
-ZTEST(oscore_tests, oscore_client_test5)
+ZTEST(oscore_tests, test_oscore_client_test5)
 {
 	enum err r;
 	struct context c_client;
@@ -171,7 +171,7 @@ ZTEST(oscore_tests, oscore_client_test5)
  * - Server Key derivation with master salt see RFC8613 Appendix C.1.2
  * - Generating OSCORE response with key form C.1.2 see RFC8613 Appendix C.7
  */
-ZTEST(oscore_tests, oscore_server_test2)
+ZTEST(oscore_tests, test_oscore_server_test2)
 {
 	enum err r;
 	struct context c_server;
@@ -219,7 +219,7 @@ ZTEST(oscore_tests, oscore_server_test2)
 			    "coap2oscore failed");
 }
 
-ZTEST(oscore_tests, oscore_server_test4)
+ZTEST(oscore_tests, test_oscore_server_test4)
 {
 	enum err r;
 	struct context c_server;
@@ -260,7 +260,7 @@ ZTEST(oscore_tests, oscore_server_test4)
  * Test 6:
  * - Server Key derivation with ID context see RFC8613 Appendix C.3.2
  */
-ZTEST(oscore_tests, oscore_server_test6)
+ZTEST(oscore_tests, test_oscore_server_test6)
 {
 	enum err r;
 	struct context c_server;
@@ -302,7 +302,7 @@ ZTEST(oscore_tests, oscore_server_test6)
  * - Simple ACK packet should not be encrypted and result should be the same as
  *   input buffer (see RFC8613 Section 4.2)
  */
-ZTEST(oscore_tests, oscore_misc_test8)
+ZTEST(oscore_tests, test_oscore_misc_test8)
 {
 	enum err r;
 	struct context c;
