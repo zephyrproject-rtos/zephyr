@@ -119,7 +119,7 @@
   - "subsys/settings/**/*"
   - "subsys/net/lib/openthread/**/*"
   - "subsys/mgmt/mcumgr/**/*"
-  - "samples/hci_rpmsg/**/*"
+  - "samples/bluetooth/hci_rpmsg/**/*"
   - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
   - any:
       - "subsys/bluetooth/**/*"
@@ -140,7 +140,7 @@
   - "subsys/net/**/*"
   - "subsys/mgmt/mcumgr/**/*"
   - "drivers/net/**/*"
-  - "samples/hci_rpmsg/**/*"
+  - "samples/bluetooth/hci_rpmsg/**/*"
   - any:
       - "subsys/bluetooth/**/*"
       - "!subsys/bluetooth/mesh/**/*"
@@ -193,3 +193,16 @@
 "CI-wifi":
   - "subsys/net/l2/wifi/**/*"
   - "subsys/net/l2/ethernet/**/*"
+
+"CI-sidewalk-test":
+  - "include/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/dfu/**/*"
+  - "subsys/settings/**/*"
+  - "subsys/mgmt/mcumgr/**/*"
+  - "samples/bluetooth/hci_rpmsg/**/*"
+  - any:
+      - "subsys/bluetooth/**/*"
+      - "!subsys/bluetooth/mesh/**/*"
+      - "!subsys/bluetooth/audio/**/*"
