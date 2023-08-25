@@ -7,10 +7,37 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/boot_info/boot_info.h>
 
 #define BOOT_INFO DT_NODELABEL(boot_info)
 #define BOOT_INFO_ALIAS DT_ALIAS(bi)
+
+const uint8_t *hdr = "\x08\x04";
+
+static void make_valid(uint8_t *data, size_t len)
+{
+	uint8_t crc8;
+
+	memcpy(data, hdr, sizeof(hdr));
+	crc8 = crc8_ccitt(0U, data, len - sizeof(crc8));
+	memcpy(data + len - sizeof(crc8), &crc8, sizeof(crc8));
+}
+
+static bool is_valid(uint8_t *data, size_t len)
+{
+	if (memcmp(data, hdr, sizeof(hdr)) != 0) {
+		return false;
+	}
+
+	uint8_t crc8 = crc8_ccitt(0U, data, len - sizeof(crc8));
+
+	if (memcmp(data + len - sizeof(crc8), &crc8, sizeof(crc8)) != 0) {
+		return false;
+	}
+
+	return true;
+}
 
 static void *boot_info_api_setup(void)
 {
@@ -41,12 +68,16 @@ ZTEST_USER(boot_info_api, test_get_set)
 	rc = boot_info_get(BOOT_INFO, wr);
 	zassert_equal(rc, 0, "boot_info_get returned [%d]", rc);
 
-	memset(wr, 0xa, sizeof(wr));
+	memset(wr + sizeof(hdr), 0xa, sizeof(wr) - sizeof(hdr) - sizeof(uint32_t));
+	make_valid(wr, sizeof(wr));
+
 	rc = boot_info_set(BOOT_INFO, wr);
 	zassert_equal(rc, 0, "boot_info_set returned [%d]", rc);
 
 	rc = boot_info_get(BOOT_INFO, rd);
 	zassert_equal(rc, 0, "boot_info_get returned [%d]", rc);
+
+	zassert_equal(is_valid(rd, sizeof(rd)), true, "boot_info data is invalid");
 
 	zassert_equal(memcmp(rd, wr, sizeof(wr)), 0, "data mismatch");
 }
