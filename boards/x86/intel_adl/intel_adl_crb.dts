@@ -11,6 +11,10 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	aliases {
+		rtc = &rtc;
+	};
 };
 
 &uart0 {
