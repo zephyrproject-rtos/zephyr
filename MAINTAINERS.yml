@@ -2214,6 +2214,28 @@ State machine framework:
   labels:
     - "area: State Machine Framework"
 
+ADI Platforms:
+  status: maintained
+  maintainers:
+    - MaureenHelm
+  collaborators:
+    - galak
+    - microbuilder
+  files:
+    - drivers/*/max*
+    - drivers/*/*max*/
+    - drivers/dac/dac_ltc*
+    - drivers/ethernet/eth_adin*
+    - drivers/mdio/mdio_adin*
+    - drivers/regulator/regulator_adp5360*
+    - drivers/sensor/adt*/
+    - drivers/sensor/adxl*/
+    - dts/bindings/*/adi,*
+    - dts/bindings/*/lltc,*
+    - dts/bindings/*/maxim,*
+  labels:
+    - "platform: ADI"
+
 GD32 Platforms:
   status: maintained
   maintainers:
