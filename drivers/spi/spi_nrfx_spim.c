@@ -316,7 +316,8 @@ static void transfer_next_chunk(const struct device *dev)
 		}
 
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
-		if (spi_context_tx_buf_on(ctx) && !nrfx_is_in_ram(tx_buf)) {
+		if (spi_context_tx_buf_on(ctx) &&
+		    !nrf_dma_accessible_check(&dev_config->spim.p_reg, tx_buf)) {
 			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
 				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
 			}
