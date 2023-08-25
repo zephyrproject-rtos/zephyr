@@ -479,6 +479,10 @@
 #define MBEDTLS_SSL_DTLS_CONNECTION_ID
 #endif
 
+#if defined(CONFIG_MBEDTLS_HKDF_C)
+#define MBEDTLS_HKDF_C
+#endif
+
 /* User config file */
 
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)

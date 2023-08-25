@@ -481,4 +481,8 @@ config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	  which allows to identify DTLS connections across changes
 	  in the underlying transport.
 
+config MBEDTLS_HKDF_C
+	bool "HMAC-based Extract-and-Expand Key Derivation Function API"
+	depends on MBEDTLS_MD
+
 endmenu
