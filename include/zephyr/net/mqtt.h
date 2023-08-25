@@ -7,6 +7,8 @@
 /** @file mqtt.h
  *
  * @defgroup mqtt_socket MQTT Client library
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  * @brief MQTT Client Implementation

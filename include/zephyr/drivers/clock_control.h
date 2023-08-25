@@ -17,6 +17,8 @@
 /**
  * @brief Clock Control Interface
  * @defgroup clock_control_interface Clock Control Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

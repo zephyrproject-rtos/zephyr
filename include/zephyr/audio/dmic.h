@@ -28,6 +28,8 @@
  * @brief Abstraction for digital microphones
  *
  * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @since 1.13
+ * @version 0.1.0
  * @ingroup audio_interface
  * @{
  */
