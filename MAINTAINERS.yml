@@ -709,16 +709,18 @@ Release Notes:
     - martinjaeger
     - str4t0m
   files:
+    - boards/shields/mcp2515/
     - doc/hardware/peripherals/canbus/
     - drivers/can/
     - drivers/net/canbus.c
     - dts/bindings/can/
+    - dts/bindings/phy/can-transceiver*
     - include/zephyr/canbus/
     - include/zephyr/devicetree/can.h
     - include/zephyr/drivers/can.h
     - include/zephyr/drivers/can/
     - include/zephyr/net/canbus.h
-    - include/zephyr/net/socketcan.h
+    - include/zephyr/net/socketcan*.h
     - samples/drivers/can/
     - samples/modules/canopennode/
     - samples/net/sockets/can/
