@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config IPC_SERVICE_ICMSG_NOCOPY_RX
-	bool
+	bool "No-copy receiving with the icmsg library"
 	depends on IPC_SERVICE_ICMSG
 	help
 	  Enable nocopy feature for receiving path of the icmsg library that
