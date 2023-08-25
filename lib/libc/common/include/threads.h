@@ -74,6 +74,8 @@ void *tss_get(tss_t key);
 int tss_set(tss_t key, void *val);
 void tss_delete(tss_t key);
 
+void call_once(once_flag *flag, void (*func)(void));
+
 #ifdef __cplusplus
 }
 #endif
