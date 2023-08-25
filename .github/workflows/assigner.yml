@@ -46,6 +46,6 @@ jobs:
         else
           echo "Unknown event: ${{ github.event_name }}"
           exit 1
-        endif
+        fi
 
         python3 scripts/set_assignees.py $FLAGS
