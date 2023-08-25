@@ -1162,6 +1162,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	flexcan_config_t flexcan_config;
+	struct can_timing timing;
 	uint32_t clock_freq;
 	int err;
 
@@ -1182,53 +1183,67 @@ static int mcux_flexcan_init(const struct device *dev)
 	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
 		   MCUX_FLEXCAN_MAX_TX);
 
-	data->timing.sjw = config->sjw;
+	timing.sjw = config->sjw;
 	if (config->sample_point && USE_SP_ALGO) {
-		err = can_calc_timing(dev, &data->timing, config->bitrate,
+		err = can_calc_timing(dev, &timing, config->bitrate,
 				      config->sample_point);
 		if (err == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
 			return -EIO;
 		}
 		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
-			data->timing.prescaler, data->timing.phase_seg1,
-			data->timing.phase_seg2);
+			timing.prescaler, timing.phase_seg1,
+			timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", err);
 	} else {
 		data->timing.sjw = config->sjw;
-		data->timing.prop_seg = config->prop_seg;
-		data->timing.phase_seg1 = config->phase_seg1;
-		data->timing.phase_seg2 = config->phase_seg2;
-		err = can_calc_prescaler(dev, &data->timing, config->bitrate);
+		timing.prop_seg = config->prop_seg;
+		timing.phase_seg1 = config->phase_seg1;
+		timing.phase_seg2 = config->phase_seg2;
+		err = can_calc_prescaler(dev, &timing, config->bitrate);
 		if (err) {
 			LOG_WRN("Bitrate error: %d", err);
 		}
 	}
 
+	err = can_set_timing(dev, &timing);
+	if (err != 0) {
+		LOG_ERR("failed to set timing (err %d)", err);
+		return -ENODEV;
+	}
+
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+	struct can_timing timing_data;
 	if (config->flexcan_fd) {
-		data->timing_data.sjw = config->sjw_data;
+		timing_data.sjw = config->sjw_data;
 		if (config->sample_point_data && USE_SP_ALGO) {
-			err = can_calc_timing_data(dev, &data->timing_data, config->bitrate_data,
+			err = can_calc_timing_data(dev, &timing_data, config->bitrate_data,
 					config->sample_point_data);
 			if (err == -EINVAL) {
 				LOG_ERR("Can't find timing for given param");
 				return -EIO;
 			}
 			LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
-				data->timing_data.prescaler, data->timing_data.phase_seg1,
-				data->timing_data.phase_seg2);
+				timing_data.prescaler, timing_data.phase_seg1,
+				timing_data.phase_seg2);
 			LOG_DBG("Sample-point err : %d", err);
 		} else {
-			data->timing_data.sjw = config->sjw_data;
-			data->timing_data.prop_seg = config->prop_seg_data;
-			data->timing_data.phase_seg1 = config->phase_seg1_data;
-			data->timing_data.phase_seg2 = config->phase_seg2_data;
-			err = can_calc_prescaler(dev, &data->timing_data, config->bitrate_data);
+			timing_data.sjw = config->sjw_data;
+			timing_data.prop_seg = config->prop_seg_data;
+			timing_data.phase_seg1 = config->phase_seg1_data;
+			timing_data.phase_seg2 = config->phase_seg2_data;
+			err = can_calc_prescaler(dev, &timing_data, config->bitrate_data);
 			if (err) {
 				LOG_WRN("Bitrate error: %d", err);
 			}
 		}
+
+		err = can_set_timing_data(dev, &timing_data);
+		if (err != 0) {
+			LOG_ERR("failed to set data timing (err %d)", err);
+			return -ENODEV;
+		}
+
 	}
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
@@ -1478,10 +1493,13 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id,	\
 			FLEXCAN_MAX_BITRATE(id)),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
-	};								\
-									\
-	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
-									\
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_flexcan_data mcux_flexcan_data_##id = {                                 \
+		.timing = {.sjw = DT_INST_PROP(id, sjw)},                                          \
+		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD,                                             \
+			   (.timing_data = {.sjw = DT_INST_PROP_OR(id, sjw_data, 0)}))};           \
+                                                                                                   \
 	CAN_DEVICE_DT_INST_DEFINE(id, mcux_flexcan_init,		\
 				  NULL, &mcux_flexcan_data_##id,	\
 				  &mcux_flexcan_config_##id,		\
