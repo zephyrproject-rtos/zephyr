@@ -179,6 +179,7 @@ config TFM_PARTITION_PLATFORM_CUSTOM_REBOOT
 
 config TFM_DUMMY_PROVISIONING
 	bool "Provision with dummy values. NOT to be used in production"
+	select TFM_INITIAL_ATTESTATION_KEY
 	default y
 	help
 	  If this option is enabled (as it is by default), a set of dummy
@@ -187,6 +188,13 @@ config TFM_DUMMY_PROVISIONING
 	  used by default.
 	  This option MUST not be used in production hardware, as the keys are
 	  insecure.
+
+config TFM_INITIAL_ATTESTATION_KEY
+	bool
+	help
+	  Hidden option to mark that the TF-M platform has an initial
+	  attestation key, which is a requirement for the Initial Attestation
+	  partition.
 
 config TFM_BL2_NOT_SUPPORTED
 	bool
