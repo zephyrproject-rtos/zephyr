@@ -11,6 +11,7 @@ extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
 atomic_t flag_connected;
 atomic_t flag_conn_updated;
+volatile bt_security_t security_level;
 
 const struct bt_data ad[AD_SIZE] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
@@ -94,6 +95,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	default_conn = NULL;
 	UNSET_FLAG(flag_connected);
 	UNSET_FLAG(flag_conn_updated);
+	security_level = BT_SECURITY_L1;
 }
 
 static void conn_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency,
@@ -105,10 +107,20 @@ static void conn_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint1
 	SET_FLAG(flag_conn_updated);
 }
 
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
+{
+	printk("Security changed: %p level %d err %d\n", conn, level, err);
+
+	if (err == BT_SECURITY_ERR_SUCCESS) {
+		security_level = level;
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_updated = conn_param_updated_cb,
+	.security_changed = security_changed_cb,
 };
 
 void test_tick(bs_time_t HW_device_time)
