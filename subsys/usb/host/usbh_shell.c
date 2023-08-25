@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 static struct usb_device *udev;
 const static struct shell *ctx_shell;
+static uint8_t vreq_test_buf[1024];
 
 static void print_dev_desc(const struct shell *sh,
 			   const struct usb_device_descriptor *const desc)
@@ -56,123 +57,6 @@ static void print_cfg_desc(const struct shell *sh,
 	shell_print(sh, "bmAttributes\t\t%02x", desc->bmAttributes);
 	shell_print(sh, "bMaxPower\t\t%u mA", desc->bMaxPower * 2);
 }
-
-static void print_desc(const struct shell *sh, const struct net_buf *const buf)
-{
-	struct usb_desc_header *head = (void *)buf->data;
-
-	if (buf->len < sizeof(struct usb_desc_header)) {
-		return;
-	}
-
-	switch (head->bDescriptorType) {
-	case USB_DESC_DEVICE: {
-		struct usb_device_descriptor *desc = (void *)buf->data;
-
-		if (buf->len < sizeof(struct usb_device_descriptor)) {
-			shell_hexdump(ctx_shell, buf->data, buf->len);
-			break;
-		}
-
-		desc->bcdUSB = sys_le16_to_cpu(desc->bcdUSB);
-		desc->idVendor = sys_le16_to_cpu(desc->idVendor);
-		desc->idProduct = sys_le16_to_cpu(desc->idProduct);
-		desc->bcdDevice = sys_le16_to_cpu(desc->bcdDevice);
-		print_dev_desc(sh, desc);
-		break;
-	}
-	case USB_DESC_CONFIGURATION: {
-		struct usb_cfg_descriptor *desc = (void *)buf->data;
-
-		if (buf->len < sizeof(struct usb_cfg_descriptor)) {
-			shell_hexdump(ctx_shell, buf->data, buf->len);
-			break;
-		}
-
-		desc->wTotalLength = sys_le16_to_cpu(desc->wTotalLength);
-		print_cfg_desc(sh, desc);
-		break;
-	}
-	default:
-		shell_hexdump(ctx_shell, buf->data, buf->len);
-		break;
-	}
-}
-
-static int bazfoo_request(struct usbh_contex *const ctx,
-			  struct uhc_transfer *const xfer,
-			  int err)
-{
-	const struct device *dev = ctx->dev;
-
-	shell_info(ctx_shell, "host: transfer finished %p, err %d", xfer, err);
-
-	if (xfer->buf) {
-		/*
-		 * FIXME: We don not distinguish the context
-		 * of the request and always try to print it
-		 * as descriptor first. If it is not a known descriptor,
-		 * we show a hexdump in any case.
-		 * This is just simple enough for first steps and will
-		 * be revised with coming peripheral device management.
-		 */
-		if (xfer->ep == USB_CONTROL_EP_IN) {
-			print_desc(ctx_shell, xfer->buf);
-		} else {
-			shell_hexdump(ctx_shell, xfer->buf->data, xfer->buf->len);
-		}
-
-		uhc_xfer_buf_free(dev, xfer->buf);
-	}
-
-	return uhc_xfer_free(dev, xfer);
-}
-
-static int bazfoo_connected(struct usbh_contex *const ctx)
-{
-	shell_info(ctx_shell, "host: USB device connected");
-
-	return 0;
-}
-
-static int bazfoo_removed(struct usbh_contex *const ctx)
-{
-	shell_info(ctx_shell, "host: USB device removed");
-
-	return 0;
-}
-
-static int bazfoo_rwup(struct usbh_contex *const ctx)
-{
-	shell_info(ctx_shell, "host: Bus remote wakeup event");
-
-	return 0;
-}
-
-static int bazfoo_suspended(struct usbh_contex *const ctx)
-{
-	shell_info(ctx_shell, "host: Bus suspended");
-
-	return 0;
-}
-
-static int bazfoo_resumed(struct usbh_contex *const ctx)
-{
-	shell_info(ctx_shell, "host: Bus resumed");
-
-	return 0;
-}
-
-USBH_DEFINE_CLASS(bazfoo) = {
-	.request = bazfoo_request,
-	.connected = bazfoo_connected,
-	.removed = bazfoo_removed,
-	.rwup = bazfoo_rwup,
-	.suspended = bazfoo_suspended,
-	.resumed = bazfoo_resumed,
-};
-
-static uint8_t vreq_test_buf[1024];
 
 static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 {
