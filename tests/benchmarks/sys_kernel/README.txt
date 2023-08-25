@@ -182,7 +182,7 @@ END TEST CASE
 
 TEST CASE: Memslab #2
 TEST COVERAGE:
-        k_mem_slab_free
+        k_mem_slab_free2
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
 DETAILS: Average time for 1 iteration: NNNN nSec

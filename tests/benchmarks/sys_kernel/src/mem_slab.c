@@ -60,7 +60,7 @@ static int mem_slab_free_test(int no_of_loops)
 	int i;
 
 	for (i = 0; i < no_of_loops; i++) {
-		k_mem_slab_free(&my_slab, &slab_array[i]);
+		k_mem_slab_free2(&my_slab, slab_array[i]);
 	}
 
 	return i;
@@ -85,11 +85,11 @@ int mem_slab_test(void)
 
 	return_value += check_result(i, t);
 
-	/* Test k_mem_slab_free. */
+	/* Test k_mem_slab_free2. */
 	fprintf(output_file, sz_test_case_fmt,
 		"Memslab #2");
 	fprintf(output_file, sz_description,
-		"\n\tk_mem_slab_free");
+		"\n\tk_mem_slab_free2");
 	printf(sz_test_start_fmt);
 
 	t = BENCH_START();
