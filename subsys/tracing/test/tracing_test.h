@@ -408,8 +408,8 @@
 	sys_trace_k_mem_slab_alloc_blocking(slab, mem, timeout)
 #define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)                                   \
 	sys_trace_k_mem_slab_alloc_exit(slab, mem, timeout, ret)
-#define sys_port_trace_k_mem_slab_free_enter(slab)
-#define sys_port_trace_k_mem_slab_free_exit(slab) sys_trace_k_mem_slab_free_exit(slab, mem)
+#define sys_port_trace_k_mem_slab_free2_enter(slab)
+#define sys_port_trace_k_mem_slab_free2_exit(slab) sys_trace_k_mem_slab_free2_exit(slab, mem)
 
 #define sys_port_trace_k_timer_init(timer) sys_trace_k_timer_init(timer, expiry_fn, stop_fn)
 #define sys_port_trace_k_timer_start(timer, duration, period)					   \
@@ -678,7 +678,7 @@ void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, void **mem, k_tim
 void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, void **mem, k_timeout_t timeout);
 void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_timeout_t timeout,
 				     int ret);
-void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem);
+void sys_trace_k_mem_slab_free2_exit(struct k_mem_slab *slab, void **mem);
 
 void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 			    k_timer_expiry_t stop_fn);

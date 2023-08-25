@@ -318,8 +318,8 @@ extern "C" {
 #define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout)
 #define sys_port_trace_k_mem_slab_alloc_blocking(slab, timeout)
 #define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)
-#define sys_port_trace_k_mem_slab_free_enter(slab)
-#define sys_port_trace_k_mem_slab_free_exit(slab)
+#define sys_port_trace_k_mem_slab_free2_enter(slab)
+#define sys_port_trace_k_mem_slab_free2_exit(slab)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)

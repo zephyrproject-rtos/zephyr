@@ -582,10 +582,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)                                   \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_MSLAB_ALLOC, (uint32_t)ret)
 
-#define sys_port_trace_k_mem_slab_free_enter(slab)                                                 \
-	SEGGER_SYSVIEW_RecordU32(TID_MSLAB_FREE, (uint32_t)(uintptr_t)slab)
+#define sys_port_trace_k_mem_slab_free2_enter(slab)                                                \
+	SEGGER_SYSVIEW_RecordU32(TID_MSLAB_FREE2, (uint32_t)(uintptr_t)slab)
 
-#define sys_port_trace_k_mem_slab_free_exit(slab) SEGGER_SYSVIEW_RecordEndCall(TID_MSLAB_ALLOC)
+#define sys_port_trace_k_mem_slab_free2_exit(slab) SEGGER_SYSVIEW_RecordEndCall(TID_MSLAB_ALLOC)
 
 #define sys_port_trace_k_timer_init(timer)                                                         \
 	SEGGER_SYSVIEW_RecordU32(TID_TIMER_INIT, (uint32_t)(uintptr_t)timer)

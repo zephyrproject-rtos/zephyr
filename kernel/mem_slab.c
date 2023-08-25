@@ -154,12 +154,12 @@ void k_mem_slab_free2(struct k_mem_slab *slab, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free2, slab);
 	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (pending_thread != NULL) {
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free2, slab);
 
 			z_thread_return_value_set_with_data(pending_thread, 0, mem);
 			z_ready_thread(pending_thread);
@@ -171,7 +171,7 @@ void k_mem_slab_free2(struct k_mem_slab *slab, void *mem)
 	slab->free_list = (char *) mem;
 	slab->num_used--;
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free2, slab);
 
 	k_spin_unlock(&slab->lock, key);
 }

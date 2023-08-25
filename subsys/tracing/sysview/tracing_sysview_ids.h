@@ -74,7 +74,7 @@ extern "C" {
 
 #define TID_MSLAB_INIT (52u + TID_OFFSET)
 #define TID_MSLAB_ALLOC (53u + TID_OFFSET)
-#define TID_MSLAB_FREE (54u + TID_OFFSET)
+#define TID_MSLAB_FREE2 (54u + TID_OFFSET)
 
 #define TID_TIMER_INIT (55u + TID_OFFSET)
 #define TID_TIMER_START (56u + TID_OFFSET)

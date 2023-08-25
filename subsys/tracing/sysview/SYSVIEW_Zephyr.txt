@@ -88,7 +88,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 
 84  k_mem_slab_init            slab=%I, buffer=%p, bock_size=%u, num_blocks=%u | Returns ErrCodePosix
 85  k_mem_slab_alloc           slab=%I, mem=%p, Timeout=%TimeOut | Returns %ErrCodePosix
-86  k_mem_slab_free            slab=%I, mem=%p
+86  k_mem_slab_free2           slab=%I, mem=%p
 
 87  k_timer_init               timer=%I, expiry_fn=%I, stop_fn=%I
 88  k_timer_start              timer=%I, duration=%TimeOut , period=%u ticks
