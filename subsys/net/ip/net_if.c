@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -4732,6 +4733,144 @@ struct net_if *net_if_get_first_wifi(void)
 	return NULL;
 }
 
+int net_if_get_name(struct net_if *iface, char *buf, int len)
+{
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	int name_len;
+
+	if (iface == NULL || buf == NULL || len <= 0) {
+		return -EINVAL;
+	}
+
+	name_len = strlen(net_if_get_config(iface)->name);
+	if (name_len >= len) {
+		return -ERANGE;
+	}
+
+	strncpy(buf, net_if_get_config(iface)->name, name_len);
+
+	return name_len;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int net_if_set_name(struct net_if *iface, const char *buf)
+{
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	int name_len;
+
+	if (iface == NULL || buf == NULL) {
+		return -EINVAL;
+	}
+
+	name_len = strlen(buf);
+	if (name_len >= sizeof(iface->config.name)) {
+		return -ENAMETOOLONG;
+	}
+
+	strncpy(net_if_get_config(iface)->name, buf, name_len);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int net_if_get_by_name(const char *name)
+{
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	if (name == NULL) {
+		return -EINVAL;
+	}
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (strncmp(net_if_get_config(iface)->name, name, strlen(name)) == 0) {
+			return net_if_get_by_iface(iface);
+		}
+	}
+
+	return -ENOENT;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+#if defined(CONFIG_NET_INTERFACE_NAME)
+static void set_default_name(struct net_if *iface)
+{
+	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = { 0 };
+	int ret;
+
+	if (net_if_is_wifi(iface)) {
+		static int count;
+
+		snprintk(name, sizeof(name) - 1, "wlan%d", count++);
+
+	} else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
+#if defined(CONFIG_NET_L2_ETHERNET)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "eth%d", count++);
+		}
+#endif /* CONFIG_NET_L2_ETHERNET */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+#if defined(CONFIG_NET_L2_IEEE802154)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "ieee%d", count++);
+		}
+#endif /* CONFIG_NET_L2_IEEE802154 */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_DUMMY)) {
+#if defined(CONFIG_NET_L2_DUMMY)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "dummy%d", count++);
+		}
+#endif /* CONFIG_NET_L2_DUMMY */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW)) {
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "can%d", count++);
+		}
+#endif /* CONFIG_NET_L2_CANBUS_RAW */
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_PPP)) {
+#if defined(CONFIG_NET_L2_PPP)
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(PPP)) {
+			static int count;
+
+			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
+		}
+#endif /* CONFIG_NET_L2_PPP */
+	}
+
+	if (name[0] == '\0') {
+		static int count;
+
+		snprintk(name, sizeof(name) - 1, "net%d", count++);
+	}
+
+	ret = net_if_set_name(iface, name);
+	if (ret < 0) {
+		NET_WARN("Cannot set default name for interface %d (%p) (%d)",
+			 net_if_get_by_iface(iface), iface, ret);
+	}
+}
+#endif /* CONFIG_NET_INTERFACE_NAME */
+
 void net_if_init(void)
 {
 	int if_count = 0;
@@ -4745,6 +4884,13 @@ void net_if_init(void)
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		init_iface(iface);
 		if_count++;
+
+#if defined(CONFIG_NET_INTERFACE_NAME)
+		memset(net_if_get_config(iface)->name, 0,
+		       sizeof(iface->config.name));
+
+		set_default_name(iface);
+#endif
 	}
 
 	if (if_count == 0) {
