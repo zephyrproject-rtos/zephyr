@@ -464,35 +464,9 @@ static int veml7700_channel_get(const struct device *dev,
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-
-static int veml7700_pm_action(const struct device *dev,
-			      enum pm_device_action action)
+static int veml7700_enable(const struct device *dev)
 {
 	const struct veml7700_config *conf = dev->config;
-
-	if (conf->psm != VEML7700_PSM_DISABLED) {
-		switch (action) {
-		case PM_DEVICE_ACTION_SUSPEND:
-			return veml7700_set_shutdown_flag(dev, 1);
-
-		case PM_DEVICE_ACTION_RESUME:
-			return veml7700_set_shutdown_flag(dev, 0);
-
-		default:
-			return -ENOTSUP;
-		}
-	}
-
-	return 0;
-}
-
-#endif /* CONFIG_PM_DEVICE */
-
-static int veml7700_init(const struct device *dev)
-{
-	const struct veml7700_config *conf = dev->config;
-	struct veml7700_data *data = dev->data;
 	int ret;
 
 	if (!i2c_is_ready_dt(&conf->bus)) {
@@ -505,16 +479,6 @@ static int veml7700_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
-	/* Set initial data values */
-	data->thresh_low = 0;
-	data->thresh_high = 0xFFFF;
-	data->gain = VEML7700_ALS_GAIN_1_4;
-	data->it = VEML7700_ALS_IT_100;
-	data->int_mode = VEML7700_INT_DISABLED;
-	data->als_counts = 0;
-	data->als_lux = 0;
-	data->shut_down = (conf->psm != VEML7700_PSM_DISABLED) ? 0 : 1;
 
 	/* Initialize sensor configuration */
 	ret = veml7700_write_thresh_low(dev);
@@ -535,6 +499,42 @@ static int veml7700_init(const struct device *dev)
 	return 0;
 }
 
+static int veml7700_init(const struct device *dev)
+{
+	/* If the device is behind a power domain, it will start in
+	 * PM_DEVICE_STATE_OFF.
+	 */
+	if (pm_device_on_power_domain(dev)) {
+		pm_device_init_off(dev);
+		LOG_INF("Init %s as PM_DEVICE_STATE_OFF", dev->name);
+		return 0;
+	}
+
+	return veml7700_enable(dev);
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int veml7700_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return veml7700_set_shutdown_flag(dev, 1);
+
+	case PM_DEVICE_ACTION_RESUME:
+		return veml7700_set_shutdown_flag(dev, 0);
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+		return veml7700_enable(dev);
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct sensor_driver_api veml7700_api = {
 	.sample_fetch = veml7700_sample_fetch,
 	.channel_get = veml7700_channel_get,
@@ -542,23 +542,27 @@ static const struct sensor_driver_api veml7700_api = {
 	.attr_get = veml7700_attr_get
 };
 
-#define VEML7700_INIT(n)                                                    \
-	static struct veml7700_data veml7700_data_##n;                      \
-									    \
-	static const struct veml7700_config veml7700_config_##n = {         \
-		.bus = I2C_DT_SPEC_INST_GET(n),                             \
-		.psm = DT_INST_PROP(n, psm_mode)                            \
-	};                                                                  \
-                                                                            \
-	PM_DEVICE_DT_INST_DEFINE(n, veml7700_pm_action);                    \
-                                                                            \
-	SENSOR_DEVICE_DT_INST_DEFINE(n,                                     \
-				     veml7700_init,                         \
-				     PM_DEVICE_DT_INST_GET(n),              \
-				     &veml7700_data_##n,                    \
-				     &veml7700_config_##n,                  \
-				     POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY,           \
-				     &veml7700_api);
+#define VEML7700_INIT(n)                                                                           \
+	static const struct veml7700_config veml7700_config_##n = {                                \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.psm = DT_INST_PROP(n, psm_mode),                                                  \
+	};                                                                                         \
+                                                                                                   \
+	static struct veml7700_data veml7700_data_##n = {                                          \
+		.thresh_low = 0,                                                                   \
+		.thresh_high = 0xFFFF,                                                             \
+		.gain = VEML7700_ALS_GAIN_1_4,                                                     \
+		.it = VEML7700_ALS_IT_100,                                                         \
+		.int_mode = VEML7700_INT_DISABLED,                                                 \
+		.als_counts = 0,                                                                   \
+		.als_lux = 0,                                                                      \
+		.shut_down = (DT_INST_PROP(n, psm_mode) != VEML7700_PSM_DISABLED) ? 0 : 1,         \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, veml7700_pm_action);                                           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, veml7700_init, PM_DEVICE_DT_INST_GET(n),                   \
+				     &veml7700_data_##n, &veml7700_config_##n, POST_KERNEL,        \
+				     CONFIG_SENSOR_INIT_PRIORITY, &veml7700_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEML7700_INIT)
