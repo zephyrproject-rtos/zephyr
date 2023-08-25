@@ -1,6 +1,8 @@
 tests:
   libraries.uoscore:
     min_flash: 240
+    modules:
+      - uoscore-uedhoc
     tags:
       - net
       - crypto
