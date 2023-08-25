@@ -424,6 +424,14 @@ struct net_if_config {
 	 */
 	sys_slist_t virtual_interfaces;
 #endif /* CONFIG_NET_L2_VIRTUAL */
+
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	/**
+	 * Network interface can have a name and it is possible
+	 * to search a network interface using this name.
+	 */
+	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+#endif
 };
 
 /**
@@ -2575,6 +2583,46 @@ bool net_if_is_wifi(struct net_if *iface);
  */
 struct net_if *net_if_get_first_wifi(void);
 
+/**
+ * @brief Get network interface name.
+ *
+ * @details If interface name support is not enabled, empty string is returned.
+ *
+ * @param iface Pointer to network interface
+ * @param buf User supplied buffer
+ * @param len Length of the user supplied buffer
+ *
+ * @return Length of the interface name copied to buf,
+ *         -EINVAL if invalid parameters,
+ *         -ERANGE if name cannot be copied to the user supplied buffer,
+ *         -ENOTSUP if interface name support is disabled,
+ */
+int net_if_get_name(struct net_if *iface, char *buf, int len);
+
+/**
+ * @brief Set network interface name.
+ *
+ * @details Normally this function is not needed to call as the system
+ *          will automatically assign a name to the network interface.
+ *
+ * @param iface Pointer to network interface
+ * @param buf User supplied name
+ *
+ * @return 0 name is set correctly
+ *         -ENOTSUP interface name support is disabled
+ *         -EINVAL if invalid parameters are given,
+ *         -ENAMETOOLONG if name is too long
+ */
+int net_if_set_name(struct net_if *iface, const char *buf);
+
+/**
+ * @brief Get interface index according to its name
+ *
+ * @param name Name of the network interface
+ *
+ * @return Interface index
+ */
+int net_if_get_by_name(const char *name);
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
