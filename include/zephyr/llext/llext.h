@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief Linkable loadable extensions
  * @defgroup llext Linkable loadable extensions
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup os_services
  * @{
  */

@@ -38,6 +38,8 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 /**
  * @brief Kernel APIs
  * @defgroup kernel_apis Kernel APIs
+ * @since 1.0
+ * @version 1.0.0
  * @{
  * @}
  */

@@ -32,6 +32,8 @@ extern "C" {
 /**
  * @brief GPIO Driver APIs
  * @defgroup gpio_interface GPIO Driver APIs
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

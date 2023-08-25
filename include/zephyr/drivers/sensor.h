@@ -15,6 +15,8 @@
 /**
  * @brief Sensor Interface
  * @defgroup sensor_interface Sensor Interface
+ * @since 1.2
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
