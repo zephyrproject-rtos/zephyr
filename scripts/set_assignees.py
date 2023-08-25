@@ -327,7 +327,7 @@ def main():
 
     if args.pull_request:
         process_pr(gh, maintainer_file, args.pull_request)
-    if args.issue:
+    elif args.issue:
         process_issue(gh, maintainer_file, args.issue)
     elif args.modules:
         process_modules(gh, maintainer_file)
