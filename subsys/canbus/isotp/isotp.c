@@ -988,7 +988,7 @@ static inline void free_send_ctx(struct isotp_send_ctx **ctx)
 	}
 
 	if ((*ctx)->is_ctx_slab) {
-		k_mem_slab_free(&ctx_slab, (void **)ctx);
+		k_mem_slab_free(&ctx_slab, (void *)*ctx);
 	}
 }
 
@@ -1280,7 +1280,7 @@ int isotp_send_buf(const struct device *can_dev,
 
 	buf = net_buf_alloc_len(&isotp_tx_pool, len, timeout);
 	if (!buf) {
-		k_mem_slab_free(&ctx_slab, (void **)&ctx);
+		k_mem_slab_free(&ctx_slab, (void *)ctx);
 		return ISOTP_NO_BUF_DATA_LEFT;
 	}
 

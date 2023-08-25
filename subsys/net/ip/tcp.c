@@ -585,7 +585,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	memset(conn, 0, sizeof(*conn));
 
-	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
 
 	k_mutex_unlock(&tcp_lock);
 
@@ -1656,7 +1656,7 @@ fail:
 		conn->queue_recv_data = NULL;
 	}
 
-	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
 	return NULL;
 }
 

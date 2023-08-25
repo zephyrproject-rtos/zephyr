@@ -222,7 +222,7 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
-	k_mem_slab_free(&posix_timer_slab, (void *) &timer);
+	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 
 	return 0;
 }

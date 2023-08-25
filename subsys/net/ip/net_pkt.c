@@ -602,7 +602,7 @@ done:
 		net_pkt_cursor_init(pkt);
 	}
 
-	k_mem_slab_free(pkt->slab, (void **)&pkt);
+	k_mem_slab_free(pkt->slab, (void *)pkt);
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG

@@ -124,13 +124,13 @@ static inline void i2s_purge_stream_buffers(struct stream *strm,
 
 	if (in_drop) {
 		while (k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(mem_slab, &buffer);
+			k_mem_slab_free(mem_slab, buffer);
 		}
 	}
 
 	if (out_drop) {
 		while (k_msgq_get(&strm->out_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(mem_slab, &buffer);
+			k_mem_slab_free(mem_slab, buffer);
 		}
 	}
 }
@@ -277,7 +277,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev,
 	ret = k_msgq_get(&strm->out_queue, &buffer, K_NO_WAIT);
 	if (ret == 0) {
 		/* transmission complete. free the buffer */
-		k_mem_slab_free(strm->cfg.mem_slab, &buffer);
+		k_mem_slab_free(strm->cfg.mem_slab, buffer);
 		(strm->free_tx_dma_blocks)++;
 	} else {
 		LOG_ERR("no buf in out_queue for channel %u", channel);

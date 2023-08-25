@@ -57,7 +57,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 
 		msgq->pool = k_calloc(msg_count, msg_size);
 		if (msgq->pool == NULL) {
-			k_mem_slab_free(&cv2_msgq_slab, (void *) &msgq);
+			k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
 			return NULL;
 		}
 		msgq->is_dynamic_allocation = TRUE;
@@ -274,7 +274,7 @@ osStatus_t osMessageQueueDelete(osMessageQueueId_t msgq_id)
 	if (msgq->is_dynamic_allocation) {
 		k_free(msgq->pool);
 	}
-	k_mem_slab_free(&cv2_msgq_slab, (void *)&msgq);
+	k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
 
 	return osOK;
 }

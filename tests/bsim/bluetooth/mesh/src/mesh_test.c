@@ -337,7 +337,7 @@ int bt_mesh_test_recv(uint16_t len, uint16_t dst, const uint8_t *uuid, k_timeout
 		return -EINVAL;
 	}
 
-	k_mem_slab_free(&msg_pool, (void **)&msg);
+	k_mem_slab_free(&msg_pool, (void *)msg);
 
 	return 0;
 }
@@ -352,7 +352,7 @@ int bt_mesh_test_recv_msg(struct bt_mesh_test_msg *msg, k_timeout_t timeout)
 
 	*msg = *queued;
 
-	k_mem_slab_free(&msg_pool, (void **)&queued);
+	k_mem_slab_free(&msg_pool, (void *)queued);
 
 	return 0;
 }
@@ -363,7 +363,7 @@ int bt_mesh_test_recv_clear(void)
 	int count = 0;
 
 	while ((queued = k_queue_get(&recv, K_NO_WAIT))) {
-		k_mem_slab_free(&msg_pool, (void **)&queued);
+		k_mem_slab_free(&msg_pool, (void *)queued);
 		count++;
 	}
 

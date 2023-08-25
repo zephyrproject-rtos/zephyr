@@ -61,7 +61,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 		LOG_INF("%d - got buffer %p of %u bytes", i, buffer, size);
 
-		k_mem_slab_free(&mem_slab, &buffer);
+		k_mem_slab_free(&mem_slab, buffer);
 	}
 
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_STOP);

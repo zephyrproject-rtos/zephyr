@@ -332,7 +332,7 @@ static ALWAYS_INLINE void udc_vrt_thread_handler(void *arg)
 			udc_submit_event(dev, UDC_EVT_ERROR, err);
 		}
 
-		k_mem_slab_free(&udc_vrt_slab, (void **)&vrt_ev);
+		k_mem_slab_free(&udc_vrt_slab, (void *)vrt_ev);
 	}
 }
 

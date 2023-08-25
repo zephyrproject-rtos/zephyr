@@ -130,7 +130,7 @@ then releases it once it is no longer needed.
 
     k_mem_slab_alloc(&my_slab, &block_ptr, K_FOREVER);
     ... /* use memory block pointed at by block_ptr */
-    k_mem_slab_free(&my_slab, &block_ptr);
+    k_mem_slab_free(&my_slab, block_ptr);
 
 Suggested Uses
 **************

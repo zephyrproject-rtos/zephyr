@@ -427,7 +427,7 @@ static void bt_mesh_net_local(struct k_work *work)
 
 		net_buf_simple_init_with_data(&sbuf, buf->data, buf->len);
 		(void)bt_mesh_trans_recv(&sbuf, &rx);
-		k_mem_slab_free(&loopback_buf_pool, (void **)&buf);
+		k_mem_slab_free(&loopback_buf_pool, (void *)buf);
 	}
 }
 
@@ -609,7 +609,7 @@ void bt_mesh_net_loopback_clear(uint16_t net_idx)
 
 		if (net_idx == BT_MESH_KEY_ANY || net_idx == buf->sub->net_idx) {
 			LOG_DBG("Dropped 0x%06x", SEQ(buf->data));
-			k_mem_slab_free(&loopback_buf_pool, (void **)&buf);
+			k_mem_slab_free(&loopback_buf_pool, (void *)buf);
 		} else {
 			sys_slist_append(&new_list, &buf->node);
 		}

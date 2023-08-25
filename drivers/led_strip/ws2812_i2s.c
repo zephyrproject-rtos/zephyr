@@ -139,7 +139,7 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	/* Flush the buffer on the wire. */
 	ret = i2s_write(cfg->dev, mem_block, cfg->tx_buf_bytes);
 	if (ret < 0) {
-		k_mem_slab_free(cfg->mem_slab, &mem_block);
+		k_mem_slab_free(cfg->mem_slab, mem_block);
 		LOG_ERR("Failed to write data: %d", ret);
 		return ret;
 	}
