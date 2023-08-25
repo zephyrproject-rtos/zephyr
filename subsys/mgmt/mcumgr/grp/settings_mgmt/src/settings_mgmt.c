@@ -106,8 +106,6 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -219,8 +217,6 @@ static int settings_mgmt_write(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -316,8 +312,6 @@ static int settings_mgmt_delete(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -371,8 +365,6 @@ static int settings_mgmt_commit(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -411,8 +403,6 @@ static int settings_mgmt_load(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
@@ -451,8 +441,6 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 					      &ret_rc, &ret_group);
 
 		if (status != MGMT_CB_OK) {
-			bool ok;
-
 			if (status == MGMT_CB_ERROR_RC) {
 				return ret_rc;
 			}
