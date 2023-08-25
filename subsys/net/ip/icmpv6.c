@@ -429,6 +429,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv6_handler *cb;
+	enum net_verdict res;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -455,7 +456,12 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
 		    (cb->code == icmp_hdr->code || cb->code == 0U)) {
-			return cb->handler(pkt, ip_hdr, icmp_hdr);
+			res = cb->handler(pkt, ip_hdr, icmp_hdr);
+			if (res == NET_CONTINUE) {
+				continue;
+			} else {
+				return res;
+			}
 		}
 	}
 drop:
