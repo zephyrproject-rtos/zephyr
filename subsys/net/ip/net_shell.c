@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,8 +379,21 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	char ifname[CONFIG_NET_INTERFACE_NAME_LEN + 1] = { 0 };
+	int ret_name;
+
+	ret_name = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
+	if (ret_name < 1 || ifname[0] == '\0') {
+		snprintk(ifname, sizeof(ifname), "?");
+	}
+
+	PR("\nInterface %s (%p) (%s) [%d]\n", ifname, iface, iface2str(iface, &extra),
+	   net_if_get_by_iface(iface));
+#else
 	PR("\nInterface %p (%s) [%d]\n", iface, iface2str(iface, &extra),
 	   net_if_get_by_iface(iface));
+#endif
 	PR("===========================%s\n", extra);
 
 	if (!net_if_is_up(iface)) {
