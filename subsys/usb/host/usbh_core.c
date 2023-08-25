@@ -9,8 +9,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
-#include "usbh_internal.h"
 #include <zephyr/sys/iterable_sections.h>
+
+#include "usbh_internal.h"
+#include "usbh_device.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 
@@ -45,7 +48,15 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 	int ret = 0;
 
 	if (event->type == UHC_EVT_EP_REQUEST) {
-		return discard_ep_request(ctx, event->xfer);
+		struct usb_device *const udev = event->xfer->udev;
+		usbh_udev_cb_t cb = event->xfer->cb;
+
+		if (event->xfer->cb) {
+			ret = cb(udev, event->xfer);
+		} else {
+			ret = discard_ep_request(ctx, event->xfer);
+		}
+		return ret;
 	}
 
 	switch (event->type) {

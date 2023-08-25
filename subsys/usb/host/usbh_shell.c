@@ -12,7 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbh.h>
 
-#include "usbh_internal.h"
+#include "usbh_device.h"
 #include "usbh_ch9.h"
 
 #include <zephyr/logging/log.h>
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 #define FOOBAZ_VREQ_IN		0x5c
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-
+static struct usb_device *udev;
 const static struct shell *ctx_shell;
 
 static void print_dev_desc(const struct shell *sh,
@@ -178,29 +178,26 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 {
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
-	uint8_t addr;
 	uint8_t ep;
 	size_t len;
 
-	addr = strtol(argv[1], NULL, 10);
-	ep = strtol(argv[2], NULL, 16);
-	len = MIN(sizeof(vreq_test_buf), strtol(argv[3], NULL, 10));
+	ep = strtol(argv[1], NULL, 16);
+	len = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 
-	xfer = uhc_xfer_alloc(uhs_ctx.dev, addr, ep, 0, 512, 10, NULL, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, 0, 512, 10, NULL);
 	if (!xfer) {
 		return -ENOMEM;
 	}
 
-	buf = uhc_xfer_buf_alloc(uhs_ctx.dev, len);
+	buf = usbh_xfer_buf_alloc(udev, len);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
+	xfer->buf = buf;
 	if (USB_EP_DIR_IS_OUT(ep)) {
 		net_buf_add_mem(buf, vreq_test_buf, len);
 	}
-
-	uhc_xfer_buf_add(uhs_ctx.dev, xfer, buf);
 
 	return uhc_ep_enqueue(uhs_ctx.dev, xfer);
 }
@@ -212,15 +209,25 @@ static int cmd_vendor_in(const struct shell *sh,
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_IN;
 	const uint16_t wValue = 0x0000;
+	struct net_buf *buf;
 	uint16_t wLength;
-	uint8_t addr;
+	int ret;
 
-	addr = strtol(argv[1], NULL, 10);
-	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
+	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[1], NULL, 10));
+	buf = usbh_xfer_buf_alloc(udev, wLength);
+	if (!buf) {
+		shell_print(sh, "host: Failed to allocate buffer");
+		return -ENOMEM;
+	}
 
-	return usbh_req_setup(uhs_ctx.dev, addr,
-			      bmRequestType, bRequest, wValue, 0, wLength,
-			      NULL);
+	ret = usbh_req_setup(udev, bmRequestType, bRequest, wValue, 0, wLength, buf);
+	if (ret == 0) {
+		memcpy(vreq_test_buf, buf->data, MIN(buf->len, wLength));
+	}
+
+	usbh_xfer_buf_free(udev, buf);
+
+	return ret;
 }
 
 static int cmd_vendor_out(const struct shell *sh,
@@ -230,32 +237,35 @@ static int cmd_vendor_out(const struct shell *sh,
 				      (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_OUT;
 	const uint16_t wValue = 0x0000;
+	struct net_buf *buf;
 	uint16_t wLength;
-	uint8_t addr;
+	int ret;
 
-	addr = strtol(argv[1], NULL, 10);
-	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
-
-	for (int i = 0; i < wLength; i++) {
-		vreq_test_buf[i] = i;
+	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[1], NULL, 10));
+	buf = usbh_xfer_buf_alloc(udev, wLength);
+	if (!buf) {
+		shell_print(sh, "host: Failed to allocate buffer");
+		return -ENOMEM;
 	}
 
-	return usbh_req_setup(uhs_ctx.dev, addr,
-			      bmRequestType, bRequest, wValue, 0, wLength,
-			      vreq_test_buf);
+	net_buf_add_mem(buf, &vreq_test_buf, wLength);
+	ret = usbh_req_setup(udev, bmRequestType, bRequest, wValue, 0, wLength, buf);
+	usbh_xfer_buf_free(udev, buf);
+
+	return ret;
 }
 
 static int cmd_desc_device(const struct shell *sh,
 			   size_t argc, char **argv)
 {
-	uint8_t addr;
+	struct usb_device_descriptor desc;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-
-	err = usbh_req_desc_dev(uhs_ctx.dev, addr);
+	err = usbh_req_desc_dev(udev, &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
+	} else {
+		print_dev_desc(sh, &desc);
 	}
 
 	return err;
@@ -264,17 +274,17 @@ static int cmd_desc_device(const struct shell *sh,
 static int cmd_desc_config(const struct shell *sh,
 			   size_t argc, char **argv)
 {
-	uint8_t addr;
+	struct usb_cfg_descriptor desc;
 	uint8_t cfg;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	cfg = strtol(argv[2], NULL, 10);
+	cfg = strtol(argv[1], NULL, 10);
 
-	/* TODO: cfg is ignored, add to usbh_req_desc_cfg */
-	err = usbh_req_desc_cfg(uhs_ctx.dev, addr, cfg, 128);
+	err = usbh_req_desc_cfg(udev, cfg, sizeof(desc), &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request configuration descriptor");
+	} else {
+		print_cfg_desc(sh, &desc);
 	}
 
 	return err;
@@ -284,19 +294,27 @@ static int cmd_desc_string(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	const uint8_t type = USB_DESC_STRING;
-	uint8_t addr;
+	struct net_buf *buf;
 	uint8_t id;
 	uint8_t idx;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	id = strtol(argv[2], NULL, 10);
-	idx = strtol(argv[3], NULL, 10);
+	id = strtol(argv[1], NULL, 10);
+	idx = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_desc(uhs_ctx.dev, addr, type, idx, id, 128);
+	buf = usbh_xfer_buf_alloc(udev, 128);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	err = usbh_req_desc(udev, type, idx, id, 128, buf);
 	if (err) {
 		shell_print(sh, "host: Failed to request configuration descriptor");
+	} else {
+		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
+
+	usbh_xfer_buf_free(udev, buf);
 
 	return err;
 }
@@ -304,20 +322,18 @@ static int cmd_desc_string(const struct shell *sh,
 static int cmd_feature_set_halt(const struct shell *sh,
 				size_t argc, char **argv)
 {
-	uint8_t addr;
 	uint8_t ep;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	ep = strtol(argv[2], NULL, 16);
+	ep = strtol(argv[1], NULL, 16);
 
-	/* TODO: add usbh_req_set_sfs_halt(uhs_ctx.dev, 0); */
-	err = usbh_req_set_sfs_rwup(uhs_ctx.dev, addr);
+	/* TODO: add usbh_req_set_sfs_halt(&uhs_ctx, NULL, 0); */
+	err = usbh_req_set_sfs_rwup(udev);
 	if (err) {
 		shell_error(sh, "host: Failed to set halt feature");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature set",
-			    addr, ep);
+			    udev->addr, ep);
 	}
 
 	return err;
@@ -326,16 +342,13 @@ static int cmd_feature_set_halt(const struct shell *sh,
 static int cmd_feature_clear_rwup(const struct shell *sh,
 				  size_t argc, char **argv)
 {
-	uint8_t addr;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-
-	err = usbh_req_clear_sfs_rwup(uhs_ctx.dev, addr);
+	err = usbh_req_clear_sfs_rwup(udev);
 	if (err) {
 		shell_error(sh, "host: Failed to clear rwup feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, rwup feature cleared", addr);
+		shell_print(sh, "host: Device 0x%02x, rwup feature cleared", udev->addr);
 	}
 
 	return err;
@@ -344,16 +357,13 @@ static int cmd_feature_clear_rwup(const struct shell *sh,
 static int cmd_feature_set_rwup(const struct shell *sh,
 				size_t argc, char **argv)
 {
-	uint8_t addr;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-
-	err = usbh_req_set_sfs_rwup(uhs_ctx.dev, addr);
+	err = usbh_req_set_sfs_rwup(udev);
 	if (err) {
 		shell_error(sh, "host: Failed to set rwup feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, rwup feature set", addr);
+		shell_print(sh, "host: Device 0x%02x, rwup feature set", udev->addr);
 	}
 
 	return err;
@@ -362,19 +372,17 @@ static int cmd_feature_set_rwup(const struct shell *sh,
 static int cmd_feature_set_ppwr(const struct shell *sh,
 				size_t argc, char **argv)
 {
-	uint8_t addr;
 	uint8_t port;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	port = strtol(argv[2], NULL, 10);
+	port = strtol(argv[1], NULL, 10);
 
-	err = usbh_req_set_hcfs_ppwr(uhs_ctx.dev, addr, port);
+	err = usbh_req_set_hcfs_ppwr(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set ppwr feature");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, port %d, ppwr feature set",
-			    addr, port);
+			    udev->addr, port);
 	}
 
 	return err;
@@ -383,19 +391,17 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 static int cmd_feature_set_prst(const struct shell *sh,
 				size_t argc, char **argv)
 {
-	uint8_t addr;
 	uint8_t port;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	port = strtol(argv[2], NULL, 10);
+	port = strtol(argv[1], NULL, 10);
 
-	err = usbh_req_set_hcfs_prst(uhs_ctx.dev, addr, port);
+	err = usbh_req_set_hcfs_prst(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set prst feature");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, port %d, prst feature set",
-			    addr, port);
+			    udev->addr, port);
 	}
 
 	return err;
@@ -404,19 +410,17 @@ static int cmd_feature_set_prst(const struct shell *sh,
 static int cmd_device_config(const struct shell *sh,
 			     size_t argc, char **argv)
 {
-	uint8_t addr;
 	uint8_t cfg;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	cfg = strtol(argv[2], NULL, 10);
+	cfg = strtol(argv[1], NULL, 10);
 
-	err = usbh_req_set_cfg(uhs_ctx.dev, addr, cfg);
+	err = usbh_req_set_cfg(udev, cfg);
 	if (err) {
 		shell_error(sh, "host: Failed to set configuration");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, new configuration %u",
-			    addr, cfg);
+			    udev->addr, cfg);
 	}
 
 	return err;
@@ -425,21 +429,19 @@ static int cmd_device_config(const struct shell *sh,
 static int cmd_device_interface(const struct shell *sh,
 				size_t argc, char **argv)
 {
-	uint8_t addr;
 	uint8_t iface;
 	uint8_t alt;
 	int err;
 
-	addr = strtol(argv[1], NULL, 10);
-	iface = strtol(argv[2], NULL, 10);
-	alt = strtol(argv[3], NULL, 10);
+	iface = strtol(argv[1], NULL, 10);
+	alt = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_alt(uhs_ctx.dev, addr, iface, alt);
+	err = usbh_req_set_alt(udev, iface, alt);
 	if (err) {
 		shell_error(sh, "host: Failed to set interface alternate");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, new %u alternate %u",
-			    addr, iface, alt);
+			    udev->addr, iface, alt);
 	}
 
 	return err;
@@ -453,7 +455,7 @@ static int cmd_device_address(const struct shell *sh,
 
 	addr = strtol(argv[1], NULL, 10);
 
-	err = usbh_req_set_address(uhs_ctx.dev, 0, addr);
+	err = usbh_req_set_address(udev, addr);
 	if (err) {
 		shell_error(sh, "host: Failed to set address");
 	} else {
@@ -524,6 +526,7 @@ static int cmd_usbh_init(const struct shell *sh,
 	int err;
 
 	ctx_shell = sh;
+	udev = usbh_device_get_any(&uhs_ctx);
 
 	err = usbh_init(&uhs_ctx);
 	if (err == -EALREADY) {
@@ -568,54 +571,54 @@ static int cmd_usbh_disable(const struct shell *sh,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(desc_cmds,
-	SHELL_CMD_ARG(device, NULL, "<address>",
-		      cmd_desc_device, 2, 0),
-	SHELL_CMD_ARG(configuration, NULL, "<address> <index>",
-		      cmd_desc_config, 3, 0),
-	SHELL_CMD_ARG(string, NULL, "<address> <id> <index>",
-		      cmd_desc_string, 4, 0),
+	SHELL_CMD_ARG(device, NULL, NULL,
+		      cmd_desc_device, 1, 0),
+	SHELL_CMD_ARG(configuration, NULL, "<index>",
+		      cmd_desc_config, 2, 0),
+	SHELL_CMD_ARG(string, NULL, "<id> <index>",
+		      cmd_desc_string, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
-	SHELL_CMD_ARG(rwup, NULL, "<address>",
-		      cmd_feature_set_rwup, 2, 0),
-	SHELL_CMD_ARG(ppwr, NULL, "<address> <port>",
-		      cmd_feature_set_ppwr, 3, 0),
-	SHELL_CMD_ARG(prst, NULL, "<address> <port>",
-		      cmd_feature_set_prst, 3, 0),
-	SHELL_CMD_ARG(halt, NULL, "<address> <endpoint>",
-		      cmd_feature_set_halt, 3, 0),
+	SHELL_CMD_ARG(rwup, NULL, NULL,
+		      cmd_feature_set_rwup, 1, 0),
+	SHELL_CMD_ARG(ppwr, NULL, "<port>",
+		      cmd_feature_set_ppwr, 2, 0),
+	SHELL_CMD_ARG(prst, NULL, "<port>",
+		      cmd_feature_set_prst, 2, 0),
+	SHELL_CMD_ARG(halt, NULL, "<endpoint>",
+		      cmd_feature_set_halt, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
-	SHELL_CMD_ARG(rwup, NULL, "<address>",
-		      cmd_feature_clear_rwup, 2, 0),
-	SHELL_CMD_ARG(halt, NULL, "<address> <endpoint>",
-		      cmd_feature_set_halt, 3, 0),
+	SHELL_CMD_ARG(rwup, NULL, NULL,
+		      cmd_feature_clear_rwup, 1, 0),
+	SHELL_CMD_ARG(halt, NULL, "<endpoint>",
+		      cmd_feature_set_halt, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 	SHELL_CMD_ARG(address, NULL, "<address>",
 		      cmd_device_address, 2, 0),
-	SHELL_CMD_ARG(config, NULL, "<address> <config>",
-		      cmd_device_config, 3, 0),
-	SHELL_CMD_ARG(interface, NULL, "<address> <interface> <alternate>",
-		      cmd_device_interface, 4, 0),
+	SHELL_CMD_ARG(config, NULL, "<config>",
+		      cmd_device_config, 2, 0),
+	SHELL_CMD_ARG(interface, NULL, "<interface> <alternate>",
+		      cmd_device_interface, 3, 0),
 	SHELL_CMD_ARG(descriptor, &desc_cmds, "descriptor request",
 		      NULL, 1, 0),
 	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "feature selector",
 		      NULL, 1, 0),
 	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "feature selector",
 		      NULL, 1, 0),
-	SHELL_CMD_ARG(vendor_in, NULL, "<address> <length>",
-		      cmd_vendor_in, 3, 0),
-	SHELL_CMD_ARG(vendor_out, NULL, "<address> <length>",
-		      cmd_vendor_out, 3, 0),
-	SHELL_CMD_ARG(bulk, NULL, "<address> <endpoint> <length>",
-		      cmd_bulk, 4, 0),
+	SHELL_CMD_ARG(vendor_in, NULL, "<length>",
+		      cmd_vendor_in, 2, 0),
+	SHELL_CMD_ARG(vendor_out, NULL, "<length>",
+		      cmd_vendor_out, 2, 0),
+	SHELL_CMD_ARG(bulk, NULL, "<endpoint> <length>",
+		      cmd_bulk, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
