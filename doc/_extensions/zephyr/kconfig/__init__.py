@@ -225,7 +225,7 @@ class KconfigDomain(Domain):
         """Register a new Kconfig option to the domain."""
 
         self.data["options"].append(
-            (option, option, "option", self.env.docname, option, -1)
+            (option, option, "option", self.env.docname, option, 1)
         )
 
 
