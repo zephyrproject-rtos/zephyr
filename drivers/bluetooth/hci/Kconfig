@@ -112,6 +112,11 @@ config BT_DA1469X
 	  Bluetooth HCI driver for communication with CMAC core
 	  on DA1469x MCU.
 
+config BT_NXP
+	bool "NXP HCI driver"
+	help
+	  NXP HCI bluetooth interface
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	select BT_HAS_HCI_VS
@@ -144,16 +149,12 @@ config BT_BLUENRG_ACI
 
 endif # BT_SPI
 
-if BT_AMBIQ_HCI
-
 config BT_HCI_INIT_PRIORITY
 	int "BT HCI init priority"
-	default 75
+	default 75 if BT_AMBIQ_HCI
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-	  The priority of BT HCI driver initialization needs to be lower than
-	  the SPI, GPIO, clock controller drivers initialization priorities.
-
-endif # BT_AMBIQ_HCI
+	  The priority of BT HCI driver initialization.
 
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
@@ -173,6 +174,7 @@ menuconfig BT_AIROC
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
 	  solution to enable small-form-factor IoT designs.
 source "drivers/bluetooth/hci/Kconfig.infineon"
+source "drivers/bluetooth/hci/Kconfig.nxp"
 
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
