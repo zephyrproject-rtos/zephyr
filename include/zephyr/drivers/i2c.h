@@ -15,6 +15,8 @@
 /**
  * @brief I2C Interface
  * @defgroup i2c_interface I2C Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */

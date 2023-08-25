@@ -11,6 +11,8 @@
 /**
  * @brief Fuel Gauge Interface
  * @defgroup fuel_gauge_interface Fuel Gauge Interface
+ * @since 3.3
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
