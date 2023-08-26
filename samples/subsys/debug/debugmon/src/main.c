@@ -58,7 +58,7 @@ void z_arm_debug_monitor(void)
 int main(void)
 {
 	/* Set up led and led timer */
-	if (!device_is_ready(led.port)) {
+	if (!gpio_is_ready_dt(&led)) {
 		printk("Device not ready\n");
 		return 0;
 	}

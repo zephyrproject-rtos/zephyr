@@ -31,7 +31,7 @@ static int init_leds(void)
 	int err;
 
 	for (int i = 0; i < ARRAY_SIZE(led_dev); i++) {
-		if (!device_is_ready(led_dev[i].port)) {
+		if (!gpio_is_ready_dt(&led_dev[i])) {
 			LOG_ERR("LED%u GPIO device not ready", i);
 			return -ENODEV;
 		}

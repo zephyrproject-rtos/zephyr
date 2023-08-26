@@ -103,7 +103,7 @@ static int nct38xx_alert_init(const struct device *dev)
 	/* Set the alert pin for handling the interrupt */
 	k_work_init(&data->alert_worker, nct38xx_alert_worker);
 
-	if (!device_is_ready(config->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->irq_gpio)) {
 		LOG_ERR("%s device not ready", config->irq_gpio.port->name);
 		return -ENODEV;
 	}

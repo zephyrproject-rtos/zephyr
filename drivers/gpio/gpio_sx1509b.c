@@ -557,7 +557,7 @@ static int sx1509b_init(const struct device *dev)
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
 	drv_data->dev = dev;
 
-	if (!device_is_ready(cfg->nint_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->nint_gpio)) {
 		rc = -ENODEV;
 		goto out;
 	}

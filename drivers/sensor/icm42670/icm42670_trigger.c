@@ -114,7 +114,7 @@ int icm42670_trigger_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(cfg->gpio_int.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		LOG_ERR("gpio_int gpio not ready");
 		return -ENODEV;
 	}

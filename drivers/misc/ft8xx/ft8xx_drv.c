@@ -63,7 +63,7 @@ int ft8xx_drv_init(void)
 	/* TODO: Verify if such entry in DTS is present.
 	 * If not, use polling mode.
 	 */
-	if (!device_is_ready(irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&irq_gpio)) {
 		LOG_ERR("GPIO device %s is not ready", irq_gpio.port->name);
 		return -ENODEV;
 	}

@@ -1357,7 +1357,7 @@ static inline int configure_gpios(const struct device *dev)
 	const struct mcr20a_config *config = dev->config;
 
 	/* setup gpio for the modem interrupt */
-	if (!device_is_ready(config->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
@@ -1366,7 +1366,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	if (!PART_OF_KW2XD_SIP) {
 		/* setup gpio for the modems reset */
-		if (!device_is_ready(config->reset_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->reset_gpio)) {
 			LOG_ERR("Reset GPIO device not ready");
 			return -EINVAL;
 		}

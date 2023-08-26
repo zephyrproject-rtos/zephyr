@@ -226,12 +226,12 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 
 	LOG_ERR("attempting to recover bus");
 
-	if (!device_is_ready(config->scl.port)) {
+	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->sda.port)) {
+	if (!gpio_is_ready_dt(&config->sda)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}

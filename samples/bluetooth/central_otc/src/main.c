@@ -188,7 +188,7 @@ static void configure_button_irq(const struct gpio_dt_spec btn)
 {
 	int ret;
 
-	if (!device_is_ready(btn.port)) {
+	if (!gpio_is_ready_dt(&btn)) {
 		printk("Error: button device %s is not ready\n", btn.port->name);
 		return;
 	}

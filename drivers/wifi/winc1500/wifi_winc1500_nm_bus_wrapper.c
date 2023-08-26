@@ -88,18 +88,18 @@ static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 int8_t nm_bus_init(void *pvinit)
 {
 	/* configure GPIOs */
-	if (!device_is_ready(winc1500_config.chip_en_gpio.port)) {
+	if (!gpio_is_ready_dt(&winc1500_config.chip_en_gpio)) {
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&winc1500_config.chip_en_gpio, GPIO_OUTPUT_LOW);
 
 
-	if (!device_is_ready(winc1500_config.irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&winc1500_config.irq_gpio)) {
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&winc1500_config.irq_gpio, GPIO_INPUT);
 
-	if (!device_is_ready(winc1500_config.reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&winc1500_config.reset_gpio)) {
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&winc1500_config.reset_gpio, GPIO_OUTPUT_LOW);

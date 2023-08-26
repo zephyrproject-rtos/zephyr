@@ -362,7 +362,7 @@ static int ht16k33_init(const struct device *dev)
 	if (config->irq_enabled) {
 		uint8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 
-		if (!device_is_ready(config->irq.port)) {
+		if (!gpio_is_ready_dt(&config->irq)) {
 			LOG_ERR("IRQ device not ready");
 			return -EINVAL;
 		}

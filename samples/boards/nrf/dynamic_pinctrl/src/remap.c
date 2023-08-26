@@ -35,7 +35,7 @@ static int remap_pins(void)
 							       gpios, {0});
 
 
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		return -ENODEV;
 	}
 

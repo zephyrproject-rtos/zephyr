@@ -593,7 +593,7 @@ int main(void)
 			   BIT(sw_device[2].pin) | BIT(sw_device[3].pin));
 
 	for (i = 0; i < ARRAY_SIZE(sw_device); i++) {
-		if (!device_is_ready(sw_device[i].port)) {
+		if (!gpio_is_ready_dt(&sw_device[i])) {
 			printk("SW%d GPIO controller device is not ready\n", i);
 			return 0;
 		}
@@ -605,7 +605,7 @@ int main(void)
 
 	/* Initialize LED's */
 	for (i = 0; i < ARRAY_SIZE(led_onoff_states); i++) {
-		if (!device_is_ready(led_onoff_states[i].led_device.port)) {
+		if (!gpio_is_ready_dt(&led_onoff_states[i].led_device)) {
 			printk("LED%d GPIO controller device is not ready\n", i);
 			return 0;
 		}

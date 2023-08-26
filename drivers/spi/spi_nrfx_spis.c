@@ -304,7 +304,7 @@ static int spi_nrfx_init(const struct device *dev)
 	}
 
 	if (dev_config->wake_gpio.port) {
-		if (!device_is_ready(dev_config->wake_gpio.port)) {
+		if (!gpio_is_ready_dt(&dev_config->wake_gpio)) {
 			return -ENODEV;
 		}
 

@@ -98,7 +98,7 @@ int main(void)
 	const struct device *hid_dev;
 	int ret;
 
-	if (!device_is_ready(led0.port)) {
+	if (!gpio_is_ready_dt(&led0)) {
 		LOG_ERR("LED device %s is not ready", led0.port->name);
 		return 0;
 	}

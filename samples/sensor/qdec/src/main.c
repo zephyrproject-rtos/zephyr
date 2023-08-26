@@ -48,13 +48,13 @@ static void qenc_emulate_init(void)
 	printk("Quadrature encoder emulator enabled with %u ms period\n",
 		QUAD_ENC_EMUL_PERIOD);
 
-	if (!device_is_ready(phase_a.port)) {
+	if (!gpio_is_ready_dt(&phase_a)) {
 		printk("%s: device not ready.", phase_a.port->name);
 		return;
 	}
 	gpio_pin_configure_dt(&phase_a, GPIO_OUTPUT);
 
-	if (!device_is_ready(phase_b.port)) {
+	if (!gpio_is_ready_dt(&phase_b)) {
 		printk("%s: device not ready.", phase_b.port->name);
 		return;
 	}

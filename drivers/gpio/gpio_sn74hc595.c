@@ -170,7 +170,7 @@ static int gpio_sn74hc595_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(config->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
 		LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
 		return -ENODEV;
 	}

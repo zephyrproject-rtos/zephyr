@@ -149,7 +149,7 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

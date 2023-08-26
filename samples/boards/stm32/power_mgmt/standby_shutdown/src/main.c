@@ -110,7 +110,7 @@ int main(void)
 	}
 
 
-	__ASSERT_NO_MSG(device_is_ready(led.port));
+	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n",
 			button.port->name);

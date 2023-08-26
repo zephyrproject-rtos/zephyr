@@ -101,7 +101,7 @@ int mpu6050_init_interrupt(const struct device *dev)
 	struct mpu6050_data *drv_data = dev->data;
 	const struct mpu6050_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

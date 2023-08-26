@@ -545,7 +545,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
-	if (!device_is_ready(config->int_gpios.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpios)) {
 		LOG_ERR("GPIO device pointer is not ready to be used");
 		return -ENODEV;
 	}

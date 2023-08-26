@@ -114,7 +114,7 @@ static int pd_gpio_init(const struct device *dev)
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
 
-	if (!device_is_ready(cfg->enable.port)) {
+	if (!gpio_is_ready_dt(&cfg->enable)) {
 		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
