@@ -28,9 +28,16 @@
 #define ISR_HANDLER intr_handler_t
 #endif
 
-#define USBSERIAL_TIMEOUT_MAX_US 50000
-
-static int s_usbserial_timeout;
+/*
+ * Timeout after which the poll_out function stops waiting for space in the tx fifo.
+ *
+ * Without this timeout, the function would get stuck forever and block the processor if no host is
+ * connected to the USB port.
+ *
+ * USB full-speed uses a frame rate of 1 ms. Thus, a timeout of 50 ms provides plenty of safety
+ * margin even for a loaded bus. This is the same value as used in the ESP-IDF.
+ */
+#define USBSERIAL_POLL_OUT_TIMEOUT_MS (50U)
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
@@ -44,6 +51,7 @@ struct serial_esp32_usb_data {
 	void *irq_cb_data;
 #endif
 	int irq_line;
+	int64_t last_tx_time;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -65,20 +73,20 @@ static int serial_esp32_usb_poll_in(const struct device *dev, unsigned char *p_c
 
 static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
 
-	/* Wait for space in FIFO */
-	while (!usb_serial_jtag_ll_txfifo_writable() &&
-		s_usbserial_timeout < (USBSERIAL_TIMEOUT_MAX_US / 100)) {
-		k_usleep(100);
-		s_usbserial_timeout++;
-	}
-
-	if (usb_serial_jtag_ll_txfifo_writable()) {
-		usb_serial_jtag_ll_write_txfifo(&c, 1);
-		usb_serial_jtag_ll_txfifo_flush();
-		s_usbserial_timeout = 0;
-	}
+	/*
+	 * If there is no USB host connected, this function will busy-wait once for the timeout
+	 * period, but return immediately for subsequent calls.
+	 */
+	do {
+		if (usb_serial_jtag_ll_txfifo_writable()) {
+			usb_serial_jtag_ll_write_txfifo(&c, 1);
+			usb_serial_jtag_ll_txfifo_flush();
+			data->last_tx_time = k_uptime_get();
+			return;
+		}
+	} while ((k_uptime_get() - data->last_tx_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS);
 }
 
 static int serial_esp32_usb_err_check(const struct device *dev)
