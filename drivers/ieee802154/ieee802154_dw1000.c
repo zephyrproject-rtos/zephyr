@@ -1502,7 +1502,7 @@ static int dw1000_init(const struct device *dev)
 	dwt_set_spi_slow(dev, DWT_SPI_SLOW_FREQ);
 
 	/* Initialize IRQ GPIO */
-	if (!device_is_ready(hi_cfg->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&hi_cfg->irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
@@ -1521,7 +1521,7 @@ static int dw1000_init(const struct device *dev)
 	}
 
 	/* Initialize RESET GPIO */
-	if (!device_is_ready(hi_cfg->rst_gpio.port)) {
+	if (!gpio_is_ready_dt(&hi_cfg->rst_gpio)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
 	}

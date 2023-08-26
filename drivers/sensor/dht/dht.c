@@ -228,7 +228,7 @@ static int dht_init(const struct device *dev)
 	int rc = 0;
 	const struct dht_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->dio_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->dio_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

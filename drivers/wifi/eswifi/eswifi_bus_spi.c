@@ -235,7 +235,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	const struct eswifi_spi_config *cfg = &eswifi_config_spi0; /* Static instance */
 
 	/* SPI DATA READY PIN */
-	if (!device_is_ready(cfg->dr.port)) {
+	if (!gpio_is_ready_dt(&cfg->dr)) {
 		LOG_ERR("device %s is not ready", cfg->dr.port->name);
 		return -ENODEV;
 	}

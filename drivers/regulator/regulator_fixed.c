@@ -99,7 +99,7 @@ static int regulator_fixed_init(const struct device *dev)
 	init_enabled = regulator_common_is_init_enabled(dev);
 
 	if (cfg->enable.port != NULL) {
-		if (!device_is_ready(cfg->enable.port)) {
+		if (!gpio_is_ready_dt(&cfg->enable)) {
 			LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
 			return -ENODEV;
 		}

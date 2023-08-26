@@ -644,7 +644,7 @@ static int dsa_ksz8xxx_gpio_reset(void)
 {
 	struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
-	if (!device_is_ready(reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&reset_gpio)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
 	}

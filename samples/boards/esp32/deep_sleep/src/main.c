@@ -83,7 +83,7 @@ int main(void)
 			ESP_EXT1_WAKEUP_ANY_HIGH);
 #endif /* CONFIG_EXAMPLE_EXT1_WAKEUP */
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
-	if (!device_is_ready(wakeup_button.port)) {
+	if (!gpio_is_ready_dt(&wakeup_button)) {
 		printk("Error: wakeup button device %s is not ready\n", wakeup_button.port->name);
 		return 0;
 	}

@@ -812,7 +812,7 @@ static int gpio_pca95xx_init(const struct device *dev)
 			    gpio_pca95xx_interrupt_worker);
 
 		/* Configure GPIO interrupt pin */
-		if (!device_is_ready(config->int_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->int_gpio)) {
 			LOG_ERR("PCA95XX[0x%X]: interrupt GPIO not ready",
 				config->bus.addr);
 			return -ENODEV;

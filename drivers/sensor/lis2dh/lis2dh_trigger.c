@@ -450,7 +450,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	 */
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(cfg->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
 		/* API may return false even when ptr is NULL */
 		if (cfg->gpio_drdy.port != NULL) {
 			LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
@@ -490,7 +490,7 @@ check_gpio_int:
 	 */
 
 	/* setup any motion gpio interrupt */
-	if (!device_is_ready(cfg->gpio_int.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		/* API may return false even when ptr is NULL */
 		if (cfg->gpio_int.port != NULL) {
 			LOG_ERR("device %s is not ready", cfg->gpio_int.port->name);

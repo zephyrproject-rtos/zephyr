@@ -172,7 +172,7 @@ int main(void)
 	uint8_t report[4] = { 0x00 };
 	const struct device *accel_dev, *hid_dev;
 
-	if (!device_is_ready(led_gpio.port)) {
+	if (!gpio_is_ready_dt(&led_gpio)) {
 		LOG_ERR("%s: device not ready.", led_gpio.port->name);
 		return 0;
 	}

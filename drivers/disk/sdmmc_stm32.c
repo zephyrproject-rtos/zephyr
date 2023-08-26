@@ -498,7 +498,7 @@ static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv)
 		return 0;
 	}
 
-	if (!device_is_ready(priv->cd.port)) {
+	if (!gpio_is_ready_dt(&priv->cd)) {
 		return -ENODEV;
 	}
 
@@ -548,7 +548,7 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 		return 0;
 	}
 
-	if (!device_is_ready(priv->pe.port)) {
+	if (!gpio_is_ready_dt(&priv->pe)) {
 		return -ENODEV;
 	}
 

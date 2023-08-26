@@ -19,7 +19,7 @@ static inline void external_antenna(bool on)
 	 * PCB nor external antenna is selected.  Select the PCB
 	 * antenna.
 	 */
-	if (!device_is_ready(ufl_gpio.port)) {
+	if (!gpio_is_ready_dt(&ufl_gpio)) {
 		return;
 	}
 

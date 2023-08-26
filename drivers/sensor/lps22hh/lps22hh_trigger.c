@@ -165,7 +165,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(cfg->gpio_int.port)
+	if (!gpio_is_ready_dt(&cfg->gpio_int)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	    && (cfg->i3c.bus == NULL)
 #endif

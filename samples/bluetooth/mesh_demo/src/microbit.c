@@ -269,8 +269,8 @@ int board_init(uint16_t *addr)
 	struct mb_display *disp = mb_display_get();
 
 	if (!(device_is_ready(nvm) && device_is_ready(pwm) &&
-	      device_is_ready(button_a.port) &&
-	      device_is_ready(button_b.port))) {
+	      gpio_is_ready_dt(&button_a) &&
+	      gpio_is_ready_dt(&button_b))) {
 		printk("One or more devices are not ready\n");
 		return -ENODEV;
 	}

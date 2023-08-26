@@ -112,7 +112,7 @@ static int tca954x_root_init(const struct device *dev)
 
 	/* If the RESET line is available, configure it. */
 	if (config->reset_gpios.port) {
-		if (!device_is_ready(config->reset_gpios.port)) {
+		if (!gpio_is_ready_dt(&config->reset_gpios)) {
 			LOG_ERR("%s is not ready",
 				config->reset_gpios.port->name);
 			return -ENODEV;

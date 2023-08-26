@@ -35,7 +35,7 @@ int led_init(void)
 {
 	int ret;
 
-	led_ok = device_is_ready(led.port);
+	led_ok = gpio_is_ready_dt(&led);
 	if (!led_ok) {
 		LOG_ERR("Error: LED on GPIO %s pin %d is not ready",
 			led.port->name, led.pin);

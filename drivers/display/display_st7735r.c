@@ -455,7 +455,7 @@ static int st7735r_init(const struct device *dev)
 	}
 
 	if (config->reset.port != NULL) {
-		if (!device_is_ready(config->reset.port)) {
+		if (!gpio_is_ready_dt(&config->reset)) {
 			LOG_ERR("Reset GPIO port for display not ready");
 			return -ENODEV;
 		}
@@ -468,7 +468,7 @@ static int st7735r_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(config->cmd_data.port)) {
+	if (!gpio_is_ready_dt(&config->cmd_data)) {
 		LOG_ERR("cmd/DATA GPIO port not ready");
 		return -ENODEV;
 	}

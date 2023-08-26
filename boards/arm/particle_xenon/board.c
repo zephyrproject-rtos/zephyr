@@ -16,11 +16,11 @@ static inline void external_antenna(bool on)
 	struct gpio_dt_spec ufl_gpio = SKY_UFLn_GPIO_SPEC;
 	struct gpio_dt_spec pcb_gpio = SKY_PCBn_GPIO_SPEC;
 
-	if (!device_is_ready(ufl_gpio.port)) {
+	if (!gpio_is_ready_dt(&ufl_gpio)) {
 		return;
 	}
 
-	if (!device_is_ready(pcb_gpio.port)) {
+	if (!gpio_is_ready_dt(&pcb_gpio)) {
 		return;
 	}
 

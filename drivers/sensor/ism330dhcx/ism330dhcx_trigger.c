@@ -251,7 +251,7 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 	const struct ism330dhcx_config *cfg = dev->config;
 	int ret;
 
-	if (!device_is_ready(cfg->drdy_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->drdy_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}
