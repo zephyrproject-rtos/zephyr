@@ -28,7 +28,7 @@ int main(void)
 
 	printk("PWM-based blinky\n");
 
-	if (!device_is_ready(pwm_led0.dev)) {
+	if (!pwm_is_ready_dt(&pwm_led0)) {
 		printk("Error: PWM device %s is not ready\n",
 		       pwm_led0.dev->name);
 		return 0;

@@ -32,7 +32,7 @@ int main(void)
 
 	printk("Servomotor control\n");
 
-	if (!device_is_ready(servo.dev)) {
+	if (!pwm_is_ready_dt(&servo)) {
 		printk("Error: PWM device %s is not ready\n", servo.dev->name);
 		return 0;
 	}
