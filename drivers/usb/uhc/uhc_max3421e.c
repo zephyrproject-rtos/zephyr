@@ -1052,7 +1052,7 @@ static int max3421e_driver_init(const struct device *dev)
 	int ret;
 
 	if (config->dt_rst.port) {
-		if (!device_is_ready(config->dt_rst.port)) {
+		if (!gpio_is_ready_dt(&config->dt_rst)) {
 			LOG_ERR("GPIO device %s not ready",
 				config->dt_rst.port->name);
 			return -EIO;
@@ -1072,7 +1072,7 @@ static int max3421e_driver_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->dt_int.port)) {
+	if (!gpio_is_ready_dt(&config->dt_int)) {
 		LOG_ERR("GPIO device %s not ready", config->dt_int.port->name);
 		return -EIO;
 	}

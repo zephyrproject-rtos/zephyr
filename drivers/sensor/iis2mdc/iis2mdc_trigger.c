@@ -109,7 +109,7 @@ int iis2mdc_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(config->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&config->gpio_drdy)) {
 		LOG_ERR("Cannot get pointer to drdy_gpio device");
 		return -ENODEV;
 	}

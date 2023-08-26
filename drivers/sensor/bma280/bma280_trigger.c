@@ -225,7 +225,7 @@ int bma280_init_interrupt(const struct device *dev)
 	}
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(config->int1_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int1_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

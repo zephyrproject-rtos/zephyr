@@ -253,12 +253,12 @@ static int mcux_lpi2c_recover_bus(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int error = 0;
 
-	if (!device_is_ready(config->scl.port)) {
+	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->sda.port)) {
+	if (!gpio_is_ready_dt(&config->sda)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}

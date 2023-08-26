@@ -964,7 +964,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	/* Initialize interrupt handling  */
-	if (!device_is_ready(dev_cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
 		LOG_ERR("Interrupt GPIO port not ready");
 		return -ENODEV;
 	}

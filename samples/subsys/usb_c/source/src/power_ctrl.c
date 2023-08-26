@@ -89,25 +89,25 @@ static int power_ctrl_init(void)
 {
 	int ret;
 
-	if (!device_is_ready(source_en.port)) {
+	if (!gpio_is_ready_dt(&source_en)) {
 		LOG_ERR("Error: Source Enable device %s is not ready\n",
 			source_en.port->name);
 		return -ENOENT;
 	}
 
-	if (!device_is_ready(dcdc_en.port)) {
+	if (!gpio_is_ready_dt(&dcdc_en)) {
 		LOG_ERR("Error: DCDC Enable device %s is not ready\n",
 			dcdc_en.port->name);
 		return -ENOENT;
 	}
 
-	if (!device_is_ready(vconn1_en.port)) {
+	if (!gpio_is_ready_dt(&vconn1_en)) {
 		LOG_ERR("Error: VCONN1 Enable device %s is not ready\n",
 			vconn1_en.port->name);
 		return -ENOENT;
 	}
 
-	if (!device_is_ready(vconn2_en.port)) {
+	if (!gpio_is_ready_dt(&vconn2_en)) {
 		LOG_ERR("Error: VCONN2 Enable device %s is not ready\n",
 			vconn2_en.port->name);
 		return -ENOENT;

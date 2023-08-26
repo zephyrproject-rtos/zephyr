@@ -336,7 +336,7 @@ static int pcf8574_init(const struct device *dev)
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_int.port) {
-		if (!device_is_ready(drv_cfg->gpio_int.port)) {
+		if (!gpio_is_ready_dt(&drv_cfg->gpio_int)) {
 			LOG_ERR("Port is not ready");
 			return -ENODEV;
 		}

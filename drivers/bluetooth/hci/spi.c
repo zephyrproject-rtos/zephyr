@@ -562,12 +562,12 @@ static int bt_spi_init(void)
 		return -EIO;
 	}
 
-	if (!device_is_ready(irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(rst_gpio.port)) {
+	if (!gpio_is_ready_dt(&rst_gpio)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
 	}

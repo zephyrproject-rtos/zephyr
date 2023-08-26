@@ -1142,7 +1142,7 @@ static int ds3231_init(const struct device *dev)
 	 */
 
 	if (cfg->isw_gpios.port != NULL) {
-		if (!device_is_ready(cfg->isw_gpios.port)) {
+		if (!gpio_is_ready_dt(&cfg->isw_gpios)) {
 			LOG_ERR("INTn/SQW GPIO device not ready");
 			rc = -ENODEV;
 			goto out;

@@ -73,7 +73,7 @@ static bool init_buttons(void)
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
 	static struct gpio_callback sw0_cb_data;
 
-	if (!device_is_ready(sw0_spec.port)) {
+	if (!gpio_is_ready_dt(&sw0_spec)) {
 		printk("%s is not ready\n", sw0_spec.port->name);
 		return false;
 	}
@@ -101,7 +101,7 @@ static bool init_buttons(void)
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	static struct gpio_callback sw1_cb_data;
 
-	if (!device_is_ready(sw1_spec.port)) {
+	if (!gpio_is_ready_dt(&sw1_spec)) {
 		printk("%s is not ready\n", sw1_spec.port->name);
 		return false;
 	}

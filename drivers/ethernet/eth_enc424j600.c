@@ -662,7 +662,7 @@ static int enc424j600_init(const struct device *dev)
 	}
 
 	/* Initialize GPIO */
-	if (!device_is_ready(config->interrupt.port)) {
+	if (!gpio_is_ready_dt(&config->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}

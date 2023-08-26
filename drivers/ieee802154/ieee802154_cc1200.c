@@ -740,7 +740,7 @@ static int cc1200_init(const struct device *dev)
 	k_sem_init(&cc1200->tx_sync, 0, 1);
 
 	/* Configure GPIOs */
-	if (!device_is_ready(config->interrupt.port)) {
+	if (!gpio_is_ready_dt(&config->interrupt)) {
 		LOG_ERR("GPIO port %s is not ready",
 			config->interrupt.port->name);
 		return -ENODEV;

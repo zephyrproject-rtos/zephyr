@@ -951,12 +951,12 @@ static int configure_gpios(const struct device *dev)
 {
 	const struct cc2520_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->vreg_en.port) ||
-	    !device_is_ready(cfg->reset.port) ||
-	    !device_is_ready(cfg->fifo.port) ||
-	    !device_is_ready(cfg->cca.port) ||
-	    !device_is_ready(cfg->sfd.port) ||
-	    !device_is_ready(cfg->fifop.port)) {
+	if (!gpio_is_ready_dt(&cfg->vreg_en) ||
+	    !gpio_is_ready_dt(&cfg->reset) ||
+	    !gpio_is_ready_dt(&cfg->fifo) ||
+	    !gpio_is_ready_dt(&cfg->cca) ||
+	    !gpio_is_ready_dt(&cfg->sfd) ||
+	    !gpio_is_ready_dt(&cfg->fifop)) {
 		return -ENODEV;
 	}
 

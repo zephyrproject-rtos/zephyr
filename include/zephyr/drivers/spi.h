@@ -682,7 +682,7 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 	}
 	/* Validate CS gpio port is ready, if it is used */
 	if (spi_cs_is_gpio_dt(spec) &&
-	    !device_is_ready(spec->config.cs.gpio.port)) {
+	    !gpio_is_ready_dt(&spec->config.cs.gpio)) {
 		return false;
 	}
 	return true;
@@ -704,7 +704,7 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
 	}
 	/* Validate CS gpio port is ready, if it is used */
 	if (spi_cs_is_gpio_dt(spec) &&
-	    !device_is_ready(spec->config.cs.gpio.port)) {
+	    !gpio_is_ready_dt(&spec->config.cs.gpio)) {
 		return false;
 	}
 	return true;

@@ -50,7 +50,7 @@ int main(void)
 	}
 
 #ifdef CONFIG_GPIO
-	if (device_is_ready(button_gpio.port)) {
+	if (gpio_is_ready_dt(&button_gpio)) {
 		int err;
 
 		err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);

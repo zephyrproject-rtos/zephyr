@@ -6262,7 +6262,7 @@ static int hl7800_init(const struct device *dev)
 
 	/* setup port devices and pin directions */
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
-		if (!device_is_ready(hl7800_cfg.gpio[i].port)) {
+		if (!gpio_is_ready_dt(&hl7800_cfg.gpio[i])) {
 			LOG_ERR("gpio port (%s) not ready!",
 				hl7800_cfg.gpio[i].port->name);
 			return -ENODEV;

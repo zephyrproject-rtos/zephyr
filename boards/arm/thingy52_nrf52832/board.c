@@ -15,7 +15,7 @@ static int pwr_ctrl_init(void)
 {
 	int ret;
 
-	if (!device_is_ready(ccs_gpio.port)) {
+	if (!gpio_is_ready_dt(&ccs_gpio)) {
 		return -ENODEV;
 	}
 

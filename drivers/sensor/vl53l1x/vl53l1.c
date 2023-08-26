@@ -93,7 +93,7 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 
 		drv_data->dev = dev;
 
-		if (!device_is_ready(config->gpio1.port)) {
+		if (!gpio_is_ready_dt(&config->gpio1)) {
 			LOG_ERR("%s: device %s is not ready", dev->name, config->gpio1.port->name);
 			return -ENODEV;
 		}

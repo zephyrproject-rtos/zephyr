@@ -35,7 +35,7 @@ int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(mux.port)) {
+	if (!gpio_is_ready_dt(&mux)) {
 		LOG_ERR("DAPLink QSPI MUX GPIO device not ready");
 		return -EINVAL;
 	}

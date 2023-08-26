@@ -172,7 +172,7 @@ static int busy_sim_init(const struct device *dev)
 	const struct busy_sim_config *config = dev->config;
 	struct busy_sim_data *data = dev->data;
 
-	if ((config->pin_spec.port && !device_is_ready(config->pin_spec.port)) ||
+	if ((config->pin_spec.port && !gpio_is_ready_dt(&config->pin_spec)) ||
 	    !device_is_ready(config->counter) ||
 	    (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR) &&
 	    !device_is_ready(config->entropy))) {

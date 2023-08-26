@@ -918,7 +918,7 @@ static inline int configure_gpios(const struct device *dev)
 	const struct rf2xx_config *conf = dev->config;
 
 	/* Chip IRQ line */
-	if (!device_is_ready(conf->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
@@ -927,14 +927,14 @@ static inline int configure_gpios(const struct device *dev)
 					GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Chip RESET line */
-	if (!device_is_ready(conf->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->reset_gpio)) {
 		LOG_ERR("RESET GPIO device not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
 	/* Chip SLPTR line */
-	if (!device_is_ready(conf->slptr_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->slptr_gpio)) {
 		LOG_ERR("SLPTR GPIO device not ready");
 		return -ENODEV;
 	}
@@ -942,7 +942,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip DIG2 line (Optional feature) */
 	if (conf->dig2_gpio.port != NULL) {
-		if (!device_is_ready(conf->dig2_gpio.port)) {
+		if (!gpio_is_ready_dt(&conf->dig2_gpio)) {
 			LOG_ERR("DIG2 GPIO device not ready");
 			return -ENODEV;
 		}
@@ -955,7 +955,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip CLKM line (Optional feature) */
 	if (conf->clkm_gpio.port != NULL) {
-		if (!device_is_ready(conf->clkm_gpio.port)) {
+		if (!gpio_is_ready_dt(&conf->clkm_gpio)) {
 			LOG_ERR("CLKM GPIO device not ready");
 			return -ENODEV;
 		}

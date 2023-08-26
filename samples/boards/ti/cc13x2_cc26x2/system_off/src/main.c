@@ -32,7 +32,7 @@ int main(void)
 	CC1352R1_LAUNCHXL_shutDownExtFlash();
 
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
-	if (!device_is_ready(sw0_gpio.port)) {
+	if (!gpio_is_ready_dt(&sw0_gpio)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
 		return 0;
 	}
