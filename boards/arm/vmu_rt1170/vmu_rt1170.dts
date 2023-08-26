@@ -261,7 +261,7 @@
 		compatible = "bosch,bmi08x-accel";
 		reg = <0>;
 		int-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <10000000>;
 		int1-map-io = <0x01>;
 		int2-map-io = <0x00>;
 		int1-conf-io = <0x04>;
@@ -274,7 +274,7 @@
 		compatible = "bosch,bmi08x-gyro";
 		reg = <1>;
 		int-gpios = <&gpio2 28 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <10000000>;
 		int3-4-map-io = <0x01>;
 		int3-4-conf-io = <0x02>;
 		gyro-hz = "1000_116";
