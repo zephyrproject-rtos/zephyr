@@ -85,7 +85,7 @@ int main(void)
 {
 	static struct gpio_callback button_cb_data;
 
-	if (!device_is_ready(pwm.dev)) {
+	if (!pwm_is_ready_dt(&pwm)) {
 		printk("%s: device not ready.\n", pwm.dev->name);
 		return 0;
 	}

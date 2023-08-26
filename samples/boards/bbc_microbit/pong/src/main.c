@@ -521,7 +521,7 @@ int main(void)
 
 	k_work_init_delayable(&refresh, game_refresh);
 
-	if (!device_is_ready(pwm.dev)) {
+	if (!pwm_is_ready_dt(&pwm)) {
 		printk("%s: device not ready.\n", pwm.dev->name);
 		return 0;
 	}

@@ -113,7 +113,7 @@ static int power_ctrl_init(void)
 		return -ENOENT;
 	}
 
-	if (!device_is_ready(pwm_ctl.dev)) {
+	if (!pwm_is_ready_dt(&pwm_ctl)) {
 		LOG_ERR("Error: PWM CTL device is not ready\n");
 		return -ENOENT;
 	}
