@@ -23,21 +23,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <zephyr/net/http/parser_url.h>
-#ifdef __linux__
-#include <assert.h>
-#define __ASSERT(x, ...) assert(x)
-#define __ASSERT_NO_MSG(x) assert(x)
-#define __fallthrough
-#else
 #include <zephyr/sys/__assert.h>
-#include <zephyr/toolchain.h>
-#endif
 #include <stddef.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <zephyr/net/http/parser_url.h>
+#include <zephyr/toolchain.h>
 
 #ifndef BIT_AT
 # define BIT_AT(a, i)                                                \
