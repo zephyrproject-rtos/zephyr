@@ -45,7 +45,8 @@ struct gpio_keys_pin_data {
  */
 static void gpio_keys_change_deferred(struct k_work *work)
 {
-	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(work, struct gpio_keys_pin_data, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(dwork, struct gpio_keys_pin_data, work);
 	const struct device *dev = pin_data->dev;
 	int key_index = pin_data - (struct gpio_keys_pin_data *)dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
