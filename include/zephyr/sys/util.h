@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_SYS_UTIL_H_
 
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain/common.h>
 
 /* needs to be outside _ASMLANGUAGE so 'true' and 'false' can turn
  * into '1' and '0' for asm or linker scripts
@@ -202,6 +203,27 @@ extern "C" {
 	})
 
 /**
+ * @brief Validate if two entities have a compatible type
+ *
+ * @param a the first entity to be compared
+ * @param a the second entity to be compared
+ * @return 1 if the two elements are compatible, 0 if they are not
+ */
+#define SAME_TYPE(a, b) __builtin_types_compatible_p(__typeof__(a), __typeof__(b))
+
+/**
+ * @brief Validate CONTAINER_OF parameters, only applies to C mode.
+ */
+#ifndef __cplusplus
+#define CONTAINER_OF_VALIDATE(ptr, type, field)               \
+	BUILD_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->field) || \
+		     SAME_TYPE(*(ptr), void),                 \
+		     "pointer type mismatch in CONTAINER_OF");
+#else
+#define CONTAINER_OF_VALIDATE(ptr, type, field)
+#endif
+
+/**
  * @brief Get a pointer to a structure containing the element
  *
  * Example:
@@ -222,8 +244,11 @@ extern "C" {
  * @param field the name of the field within the struct @p ptr points to
  * @return a pointer to the structure that contains @p ptr
  */
-#define CONTAINER_OF(ptr, type, field) \
-	((type *)(((char *)(ptr)) - offsetof(type, field)))
+#define CONTAINER_OF(ptr, type, field)                               \
+	({                                                           \
+		CONTAINER_OF_VALIDATE(ptr, type, field)              \
+		((type *)(((char *)(ptr)) - offsetof(type, field))); \
+	})
 
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align.
