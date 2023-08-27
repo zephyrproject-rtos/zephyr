@@ -5,4 +5,8 @@
 
 mainmenu "HTTP2 server sample application"
 
+config NET_HTTP_SERVER_SERVICE_PORT
+	int "Port number for http service"
+	default 8080
+
 source "Kconfig.zephyr"

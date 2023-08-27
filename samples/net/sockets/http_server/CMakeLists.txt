@@ -20,3 +20,6 @@ set(source_file_not_found src/not_found_page.html)
 generate_inc_file_for_target(app ${source_file_not_found} ${gen_dir}/not_found_page.html.gz.inc --gzip)
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
+
+zephyr_linker_sources(SECTIONS sections-rom.ld)
+zephyr_iterable_section(NAME http_resource_desc_test_http_service KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
