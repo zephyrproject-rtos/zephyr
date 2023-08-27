@@ -14,12 +14,12 @@ config ETH_DWC_XGMAC
 	default y if NET_L2_ETHERNET
 
 config PHY_GENERIC_MII
-	default y if NET_L2_ETHERNET
+	default y if ETH_DWC_XGMAC
 
 config MDIO
-	default y if NET_L2_ETHERNET
+	default y if ETH_DWC_XGMAC
 
 config MDIO_DWCXGMAC
-	default y if NET_L2_ETHERNET
+	default y if ETH_DWC_XGMAC
 
 endif # NETWORKING
