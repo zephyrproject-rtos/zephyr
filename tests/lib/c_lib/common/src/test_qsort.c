@@ -22,7 +22,7 @@ static int compare_ints(const void *a, const void *b)
  * @brief Test qsort function
  *
  */
-ZTEST(test_c_lib, test_qsort)
+ZTEST(libc_common, test_qsort)
 {
 	{
 		int actual_int[] = { 1, 3, 2 };
@@ -138,7 +138,7 @@ static int compare_ints_with_boolp_arg(const void *a, const void *b, void *argp)
 	return (aa > bb) - (aa < bb);
 }
 
-ZTEST(test_c_lib, test_qsort_r)
+ZTEST(libc_common, test_qsort_r)
 {
 	bool arg = false;
 

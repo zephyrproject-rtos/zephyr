@@ -13,7 +13,7 @@
 
 #include <zephyr/ztest.h>
 
-ZTEST(test_c_lib, test_strerror)
+ZTEST(libc_strerror, test_strerror)
 {
 	const char *expected;
 	const char *actual;
@@ -55,7 +55,7 @@ ZTEST(test_c_lib, test_strerror)
 	}
 }
 
-ZTEST(test_c_lib, test_strerror_r)
+ZTEST(libc_strerror, test_strerror_r)
 {
 	const char *expected;
 	char actual[] = {'1', 'n', 'v', 'a', '1', '1', 'd', ' ',  'a',
@@ -96,3 +96,5 @@ ZTEST(test_c_lib, test_strerror_r)
 	/* do not change errno on failure */
 	zassert_equal(0, errno, "");
 }
+
+ZTEST_SUITE(libc_strerror, NULL, NULL, NULL, NULL, NULL);
