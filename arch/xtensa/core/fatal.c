@@ -8,12 +8,7 @@
 #include <zephyr/kernel_structs.h>
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
-#include <xtensa-asm2-context.h>
-#if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
-#if XCHAL_HAVE_WINDOWED
 #include <xtensa_backtrace.h>
-#endif
-#endif
 #include <zephyr/debug/coredump.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
