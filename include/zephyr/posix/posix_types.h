@@ -75,6 +75,7 @@ BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
 typedef uint32_t pthread_cond_t;
 
 struct pthread_condattr {
+	clockid_t clock;
 };
 
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \

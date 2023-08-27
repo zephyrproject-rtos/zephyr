@@ -110,26 +110,34 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
  *
  * See IEEE 1003.1.
  *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_condattr_init(pthread_condattr_t *att)
-{
-	ARG_UNUSED(att);
-	return 0;
-}
+int pthread_condattr_init(pthread_condattr_t *att);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_condattr_destroy(pthread_condattr_t *att)
-{
-	ARG_UNUSED(att);
-	return 0;
-}
+int pthread_condattr_destroy(pthread_condattr_t *att);
+
+/**
+ * @brief POSIX threading comatibility API
+ *
+ * See IEEE 1003.1
+ *
+ */
+int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
+		clockid_t *ZRESTRICT clock_id);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ *
+ */
+
+int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
 
 /**
  * @brief Declare a mutex as initialized
@@ -364,9 +372,7 @@ int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
  * Unix code.  Leave the declarations here so they can be easily
  * uncommented and implemented as needed.
 
-int pthread_condattr_getclock(const pthread_condattr_t * clockid_t *);
 int pthread_condattr_getpshared(const pthread_condattr_t * int *);
-int pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
 int pthread_condattr_setpshared(pthread_condattr_t *, int);
 int pthread_mutex_consistent(pthread_mutex_t *);
 int pthread_mutex_getprioceiling(const pthread_mutex_t * int *);
