@@ -256,6 +256,28 @@ def _find_ztest_testcases(search_area, testcase_regex):
 
     return testcase_names, warnings
 
+def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> list:
+    """
+    Find C or C++ sources in the directory specified by "path"
+    """
+    if not os.path.isdir(path):
+        return []
+
+    # back up previous CWD
+    oldpwd = os.getcwd()
+    os.chdir(path)
+
+    filenames = []
+    for ext in extensions:
+        # glob.glob('**/*.c') does not pick up the base directory
+        filenames += [os.path.join(path, x) for x in glob.glob(f'*.{ext}')]
+        # glob matches in subdirectories too
+        filenames += [os.path.join(path, x) for x in glob.glob(f'**/*.{ext}')]
+
+    # restore previous CWD
+    os.chdir(oldpwd)
+
+    return filenames
 
 def scan_testsuite_path(testsuite_path):
     subcases = []
@@ -265,7 +287,7 @@ def scan_testsuite_path(testsuite_path):
     ztest_suite_names = []
 
     src_dir_path = _find_src_dir_path(testsuite_path)
-    for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
+    for filename in find_c_files_in(src_dir_path):
         if os.stat(filename).st_size == 0:
             continue
         try:
@@ -288,7 +310,7 @@ def scan_testsuite_path(testsuite_path):
         except ValueError as e:
             logger.error("%s: error parsing source file: %s" % (filename, e))
 
-    for filename in glob.glob(os.path.join(testsuite_path, "*.c*")):
+    for filename in find_c_files_in(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
