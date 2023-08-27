@@ -55,7 +55,7 @@
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
 #endif
 
-ZTEST_SUITE(test_c_lib, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(libc_common, NULL, NULL, NULL, NULL, NULL);
 
 /*
  * variables used during limits library testing; must be marked as "volatile"
@@ -74,7 +74,7 @@ volatile long long_one = 1L;
  *
  */
 
-ZTEST(test_c_lib, test_limits)
+ZTEST(libc_common, test_limits)
 {
 
 	zassert_true((long_max + long_one == LONG_MIN));
@@ -85,7 +85,7 @@ static ssize_t foobar(void)
 	return -1;
 }
 
-ZTEST(test_c_lib, test_ssize_t)
+ZTEST(libc_common, test_ssize_t)
 {
 	zassert_true(foobar() < 0);
 }
@@ -95,7 +95,7 @@ ZTEST(test_c_lib, test_ssize_t)
  * @brief Test boolean types and values library
  *
  */
-ZTEST(test_c_lib, test_stdbool)
+ZTEST(libc_common, test_stdbool)
 {
 
 	zassert_true((true == 1), "true value");
@@ -115,7 +115,7 @@ volatile size_t size_of_long_variable = sizeof(long_variable);
  * @brief Test standard type definitions library
  *
  */
-ZTEST(test_c_lib, test_stddef)
+ZTEST(libc_common, test_stddef)
 {
 #ifdef CONFIG_64BIT
 	zassert_true((size_of_long_variable == 8), "sizeof");
@@ -137,7 +137,7 @@ volatile uint32_t unsigned_int = 0xffffff00;
  * @brief Test integer types library
  *
  */
-ZTEST(test_c_lib, test_stdint)
+ZTEST(libc_common, test_stdint)
 {
 	zassert_true((unsigned_int + unsigned_byte + 1u == 0U));
 
@@ -162,7 +162,7 @@ ZTEST(test_c_lib, test_stdint)
  * @brief Test time_t to make sure it is at least 64 bits
  *
  */
-ZTEST(test_c_lib, test_time_t)
+ZTEST(libc_common, test_time_t)
 {
 #ifdef CONFIG_EXTERNAL_LIBC
 	ztest_test_skip();
@@ -184,7 +184,7 @@ char buffer[BUFSIZE];
  * @brief Test string memset
  *
  */
-ZTEST(test_c_lib, test_memset)
+ZTEST(libc_common, test_memset)
 {
 	int i, ret;
 	const char set = 'a';
@@ -206,7 +206,7 @@ ZTEST(test_c_lib, test_memset)
  * @see strlen(), strnlen().
  *
  */
-ZTEST(test_c_lib, test_strlen)
+ZTEST(libc_common, test_strlen)
 {
 	(void)memset(buffer, '\0', BUFSIZE);
 	(void)memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
@@ -223,7 +223,7 @@ ZTEST(test_c_lib, test_strlen)
  * @see strcmp(), strncasecmp().
  *
  */
-ZTEST(test_c_lib, test_strcmp)
+ZTEST(libc_common, test_strcmp)
 {
 	strcpy(buffer, "eeeee");
 	char test = 0;
@@ -244,7 +244,7 @@ ZTEST(test_c_lib, test_strcmp)
  *
  * @see strncmp().
  */
-ZTEST(test_c_lib, test_strncmp)
+ZTEST(libc_common, test_strncmp)
 {
 	static const char pattern[] = "eeeeeeeeeeee";
 
@@ -271,7 +271,7 @@ ZTEST(test_c_lib, test_strncmp)
  *
  * @see strcpy().
  */
-ZTEST(test_c_lib, test_strcpy)
+ZTEST(libc_common, test_strcpy)
 {
 	(void)memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!\0");
@@ -285,7 +285,7 @@ ZTEST(test_c_lib, test_strcpy)
  *
  * @see strncpy().
  */
-ZTEST(test_c_lib, test_strncpy)
+ZTEST(libc_common, test_strncpy)
 {
 	int ret;
 
@@ -304,7 +304,7 @@ ZTEST(test_c_lib, test_strncpy)
  *
  * @see strchr().
  */
-ZTEST(test_c_lib, test_strchr)
+ZTEST(libc_common, test_strchr)
 {
 	char *rs = NULL;
 	int ret;
@@ -328,7 +328,7 @@ ZTEST(test_c_lib, test_strchr)
  *
  * @see strspn(),strcspn().
  */
-ZTEST(test_c_lib, test_strxspn)
+ZTEST(libc_common, test_strxspn)
 {
 	const char *empty = "";
 	const char *cset = "abc";
@@ -352,7 +352,7 @@ ZTEST(test_c_lib, test_strxspn)
  *
  * @see memcmp()
  */
-ZTEST(test_c_lib, test_memcmp)
+ZTEST(libc_common, test_memcmp)
 {
 	int ret;
 	unsigned char m1[] = "a\0$def";
@@ -383,7 +383,7 @@ int cmp_func(const void *a, const void *b)
 	return (*(int *)a - *(int *)b);
 }
 
-ZTEST(test_c_lib, test_bsearch)
+ZTEST(libc_common, test_bsearch)
 {
 	void *result = NULL;
 	int arr[5] = { 2, 5, 20, 50, 60 };
@@ -404,7 +404,7 @@ ZTEST(test_c_lib, test_bsearch)
  *
  * @see abs()
  */
-ZTEST(test_c_lib, test_abs)
+ZTEST(libc_common, test_abs)
 {
 	int val = -5, value = 5;
 
@@ -418,7 +418,7 @@ ZTEST(test_c_lib, test_abs)
  *
  * @see atoi()
  */
-ZTEST(test_c_lib, test_atoi)
+ZTEST(libc_common, test_atoi)
 {
 	zassert_equal(atoi("123"), 123, "atoi error");
 	zassert_equal(atoi("2c5"), 2, "atoi error");
@@ -442,7 +442,7 @@ ZTEST(test_c_lib, test_atoi)
  * isprint(), isspace(), isupper(), isxdigit().
  *
  */
-ZTEST(test_c_lib, test_checktype)
+ZTEST(libc_common, test_checktype)
 {
 	static const char exp_alnum[] =
 		"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -537,7 +537,7 @@ ZTEST(test_c_lib, test_checktype)
  *
  * @see memchr().
  */
-ZTEST(test_c_lib, test_memchr)
+ZTEST(libc_common, test_memchr)
 {
 	static const char str[] = "testfunction";
 
@@ -556,7 +556,7 @@ ZTEST(test_c_lib, test_memchr)
  *
  * @see memcpy().
  */
-ZTEST(test_c_lib, test_memcpy)
+ZTEST(libc_common, test_memcpy)
 {
 	/* make sure the buffer is word aligned */
 	uintptr_t mem_dest[4] = {0};
@@ -606,7 +606,7 @@ ZTEST(test_c_lib, test_memcpy)
  *
  * @see memmove().
  */
-ZTEST(test_c_lib, test_memmove)
+ZTEST(libc_common, test_memmove)
 {
 	char move_buffer[6] = "12123";
 	char move_new[6] = {0};
@@ -632,7 +632,7 @@ ZTEST(test_c_lib, test_memmove)
  * @see strcat(), strcspn(), strncat().
  *
  */
-ZTEST(test_c_lib, test_str_operate)
+ZTEST(libc_common, test_str_operate)
 {
 	char str1[10] = "aabbcc", ncat[10] = "ddee";
 	char *str2 = "b";
@@ -684,7 +684,7 @@ ZTEST(test_c_lib, test_str_operate)
  * @see strtol().
  *
  */
-ZTEST(test_c_lib, test_strtol)
+ZTEST(libc_common, test_strtol)
 {
 	static const char buf1[] = "+10379aegi";
 	static const char buf2[] = "   -10379aegi";
@@ -773,7 +773,7 @@ ZTEST(test_c_lib, test_strtol)
  * @see strtoul().
  *
  */
-ZTEST(test_c_lib, test_strtoul)
+ZTEST(libc_common, test_strtoul)
 {
 	static const char buf1[] = "+10379aegi";
 	static const char buf2[] = "   -10379aegi";
@@ -1012,7 +1012,7 @@ void test_strtoull(void)
  * @brief test convert function
  *
  */
-ZTEST(test_c_lib, test_tolower_toupper)
+ZTEST(libc_common, test_tolower_toupper)
 {
 	static const char test[] = "Az09Za{#!";
 	static const char toup[] = "AZ09ZA{#!";
@@ -1056,7 +1056,7 @@ void test_strtok_r_do(char *str, char *sep, int tlen,
 	}
 }
 
-ZTEST(test_c_lib, test_strtok_r)
+ZTEST(libc_common, test_strtok_r)
 {
 	static const char * const tc01[] = { "1", "2", "3", "4", "5" };
 
@@ -1077,7 +1077,7 @@ ZTEST(test_c_lib, test_strtok_r)
  *
  * @see gmtime(),gmtime_r().
  */
-ZTEST(test_c_lib, test_time)
+ZTEST(libc_common, test_time)
 {
 	time_t tests1 = 0;
 	time_t tests2 = -5;
@@ -1099,7 +1099,7 @@ ZTEST(test_c_lib, test_time)
  * @brief Test rand function
  *
  */
-ZTEST(test_c_lib, test_rand)
+ZTEST(libc_common, test_rand)
 {
 #ifdef CONFIG_MINIMAL_LIBC
 	int a;
@@ -1117,7 +1117,7 @@ ZTEST(test_c_lib, test_rand)
  * @brief Test srand function
  *
  */
-ZTEST(test_c_lib, test_srand)
+ZTEST(libc_common, test_srand)
 {
 #ifdef CONFIG_MINIMAL_LIBC
 	int a;
@@ -1151,7 +1151,7 @@ ZTEST(test_c_lib, test_srand)
  * @brief Test rand function for reproducibility
  *
  */
-ZTEST(test_c_lib, test_rand_reproducibility)
+ZTEST(libc_common, test_rand_reproducibility)
 {
 #ifdef CONFIG_MINIMAL_LIBC
 	int a;
@@ -1218,7 +1218,7 @@ ZTEST(test_c_lib, test_rand_reproducibility)
  *
  * @see abort().
  */
-ZTEST(test_c_lib, test_abort)
+ZTEST(libc_common, test_abort)
 {
 #ifdef CONFIG_EXTERNAL_LIBC
 	ztest_test_skip();
@@ -1247,7 +1247,7 @@ static struct k_thread tdata;
 
 #endif
 
-ZTEST(test_c_lib, test_exit)
+ZTEST(libc_common, test_exit)
 {
 #ifdef CONFIG_EXTERNAL_LIBC
 	ztest_test_skip();

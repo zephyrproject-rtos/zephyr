@@ -94,7 +94,7 @@ static int isnanf(float x)
 #define MAX_FLOAT_ERROR_PERCENT		(3.5e-5)
 #define MAX_DOUBLE_ERROR_PERCENT	(4.5e-14)
 
-ZTEST(test_c_lib, test_sqrtf)
+ZTEST(libc_common, test_sqrtf)
 {
 int i;
 float	exponent, resf, square, root_squared;
@@ -164,7 +164,7 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 	TC_PRINT("test_sqrtf max error %d counts\n", max_error);
 }
 
-ZTEST(test_c_lib, test_sqrt)
+ZTEST(libc_common, test_sqrt)
 {
 int i;
 double	resd, error, square, root_squared, exponent;
