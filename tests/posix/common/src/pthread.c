@@ -233,6 +233,28 @@ void *thread_top_term(void *p1)
 	return NULL;
 }
 
+ZTEST(posix_apis, test_pthread_condattr)
+{
+	clockid_t clock_id;
+	pthread_condattr_t att;
+
+	zassert_ok(pthread_condattr_init(&att), "pthread_condattr_init failed");
+
+	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_getclock failed");
+	zassert_equal(clock_id, CLOCK_MONOTONIC, "clock attribute not set correctly");
+
+	zassert_ok(pthread_condattr_setclock(&att, CLOCK_REALTIME),
+		   "pthread_condattr_setclock failed");
+
+	zassert_ok(pthread_condattr_getclock(&att, &clock_id), "pthread_condattr_setclock failed");
+	zassert_equal(clock_id, CLOCK_REALTIME, "clock attribute not set correctly");
+
+	zassert_equal(pthread_condattr_setclock(&att, 42),
+		      -EINVAL, "pthread_condattr_setclock did not return EINVAL");
+
+	zassert_ok(pthread_condattr_destroy(&att), "pthread_condattr_destroy failed");
+}
+
 ZTEST(posix_apis, test_pthread_execution)
 {
 	int i, ret, min_prio, max_prio;
