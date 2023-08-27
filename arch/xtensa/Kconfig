@@ -14,6 +14,20 @@ config SIMULATOR_XTENSA
 	help
 	  Specify if the board configuration should be treated as a simulator.
 
+config XTENSA_CALL0_ABI
+	bool "Use non-windowed ABI"
+	help
+	  When selected, all code will be built to use the CALL0 ABI
+	  instead of register windows (though the context management
+	  code will still exploit the extra registers for faster
+	  interrupt/exception handling -- this does not build a Zephyr
+	  to run on hardware that truly lacks register windows).  This
+	  is required for userspace, as exception handling across a
+	  priviledge boundary must be able to spill the full context.
+	  For other systems, it improves context switch speed and
+	  stack usage at the expense of somewhat higher code size and
+	  execution time for function calls.
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	prompt "Hardware clock cycles per second, 2000000 for ISS"
 	default 2000000

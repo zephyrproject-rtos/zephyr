@@ -22,4 +22,8 @@ set(NOSYSDEF_CFLAG "")
 
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
 
+if(CONFIG_XTENSA_CALL0_ABI)
+  list(APPEND TOOLCHAIN_C_FLAGS -mabi=call0)
+endif()
+
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
