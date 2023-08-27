@@ -202,4 +202,39 @@ static int pthread_cond_pool_init(void)
 
 	return 0;
 }
+
+int pthread_condattr_init(pthread_condattr_t *att)
+{
+	__ASSERT_NO_MSG(att != NULL);
+
+	att->clock = CLOCK_MONOTONIC;
+
+	return 0;
+}
+
+int pthread_condattr_destroy(pthread_condattr_t *att)
+{
+	ARG_UNUSED(att);
+
+	return 0;
+}
+
+int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
+		clockid_t *ZRESTRICT clock_id)
+{
+	*clock_id = att->clock;
+
+	return 0;
+}
+
+int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id)
+{
+	if (clock_id != CLOCK_REALTIME && clock_id != CLOCK_MONOTONIC) {
+		return -EINVAL;
+	}
+
+	att->clock = clock_id;
+
+	return 0;
+}
 SYS_INIT(pthread_cond_pool_init, PRE_KERNEL_1, 0);
