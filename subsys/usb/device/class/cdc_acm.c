@@ -229,8 +229,9 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 
 static void tx_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct cdc_acm_dev_data_t *dev_data =
-		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
+		CONTAINER_OF(dwork, struct cdc_acm_dev_data_t, tx_work);
 	const struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config;
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;

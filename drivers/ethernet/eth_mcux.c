@@ -622,8 +622,9 @@ static void eth_mcux_phy_work(struct k_work *item)
 
 static void eth_mcux_delayed_phy_work(struct k_work *item)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct eth_context *context =
-		CONTAINER_OF(item, struct eth_context, delayed_phy_work);
+		CONTAINER_OF(dwork, struct eth_context, delayed_phy_work);
 
 	eth_mcux_phy_event(context);
 }

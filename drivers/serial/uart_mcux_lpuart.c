@@ -820,7 +820,8 @@ static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t
 
 static void mcux_lpuart_async_rx_timeout(struct k_work *work)
 {
-	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mcux_lpuart_rx_dma_params *rx_params = CONTAINER_OF(dwork,
 								   struct mcux_lpuart_rx_dma_params,
 								   timeout_work);
 	struct mcux_lpuart_async_data *async_data = CONTAINER_OF(rx_params,
@@ -834,7 +835,8 @@ static void mcux_lpuart_async_rx_timeout(struct k_work *work)
 
 static void mcux_lpuart_async_tx_timeout(struct k_work *work)
 {
-	struct mcux_lpuart_tx_dma_params *tx_params = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mcux_lpuart_tx_dma_params *tx_params = CONTAINER_OF(dwork,
 								   struct mcux_lpuart_tx_dma_params,
 								   timeout_work);
 	struct mcux_lpuart_async_data *async_data = CONTAINER_OF(tx_params,
