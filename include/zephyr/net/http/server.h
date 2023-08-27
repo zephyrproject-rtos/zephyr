@@ -9,10 +9,9 @@
 
 #include <stdint.h>
 
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+#if defined(CONFIG_POSIX_API)
 
 #include <stddef.h>
-#include <sys/socket.h>
 #include <poll.h>
 
 #else
@@ -21,29 +20,34 @@
 
 #endif
 
-#if !defined(__ZEPHYR__)
-
-#define CONFIG_NET_HTTP_SERVER_MAX_CLIENTS                10
-#define CONFIG_NET_HTTP_SERVER_MAX_STREAMS                100
-#define CONFIG_NET_HTTP_SERVER_CLIENT_BUFFER_SIZE         256
-#define CONFIG_NET_HTTP_SERVER_POST_REQUEST_STORAGE_LIMIT 100
-
-#endif
-
 #define CLIENT_BUFFER_SIZE         CONFIG_NET_HTTP_SERVER_CLIENT_BUFFER_SIZE
 #define MAX_CLIENTS                CONFIG_NET_HTTP_SERVER_MAX_CLIENTS
 #define MAX_STREAMS                CONFIG_NET_HTTP_SERVER_MAX_STREAMS
-#define POST_REQUEST_STORAGE_LIMIT CONFIG_NET_HTTP_SERVER_POST_REQUEST_STORAGE_LIMIT
 
-struct arithmetic_result {
-	int x;
-	int y;
-	int result;
+#define GET     0x01
+#define POST    0x02
+#define HEAD    0x03
+#define PUT     0x04
+#define DELETE  0x05
+
+enum http_resource_type {
+	HTTP_RESOURCE_TYPE_STATIC,
+	HTTP_RESOURCE_TYPE_REST
 };
 
-struct http_server_config {
-	int port;
-	sa_family_t address_family;
+struct http_resource_detail {
+	uintptr_t bitmask_of_supported_http_methods;
+	enum http_resource_type type;
+};
+
+struct http_resource_detail_static {
+	struct http_resource_detail common;
+	const void *static_data;
+	size_t static_data_len;
+};
+
+struct http_resource_detail_rest {
+	struct http_resource_detail common;
 };
 
 enum http_stream_state {
@@ -98,12 +102,8 @@ struct http_server_ctx {
 	int server_fd;
 	int event_fd;
 	size_t num_clients;
-	int infinite;
-	struct http_server_config config;
 	struct pollfd fds[MAX_CLIENTS + 2];
 	struct http_client_ctx clients[MAX_CLIENTS];
-	struct arithmetic_result results[POST_REQUEST_STORAGE_LIMIT];
-	int results_count;
 };
 
 /* Initializes the HTTP2 server */
