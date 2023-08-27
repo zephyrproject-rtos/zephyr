@@ -42,7 +42,7 @@ struct http_resource_desc {
 	const STRUCT_SECTION_ITERABLE_ALTERNATE(http_resource_desc_##_service, http_resource_desc, \
 						_name) = {                                         \
 		.resource = _resource,                                                             \
-		.detail = (_detail),                                                               \
+		.detail = (void *)(_detail),                                                       \
 	}
 
 struct http_service_desc {
