@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT snps_dwcxgmac
 
 #include "eth_dwc_xgmac_priv.h"
-
-#define ETH_XGMAC_IS_INST_RESET_EN(inst) DT_NODE_HAS_PROP(DT_DRV_INST(inst), resets)
-#define ETH_XGMAC_CHECK_RESET(inst)      ETH_XGMAC_IS_INST_RESET_EN(inst) ||
-
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 #include <zephyr/drivers/reset.h>
-#endif
+
+#define LOG_MODULE_NAME eth_dwc_xgmac
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
+
+#define ETH_XGMAC_CHECK_RESET(inst) DT_NODE_HAS_PROP(DT_DRV_INST(inst), resets)
 
 /**
  * @brief Run-time device configuration data structure.
@@ -187,10 +187,6 @@ struct eth_dwc_xgmac_config {
 #endif
 };
 
-#define LOG_MODULE_NAME eth_dwc_xgmac
-#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
-
 static inline mem_addr_t get_reg_base_addr(const struct device *dev)
 {
 	return (mem_addr_t)DEVICE_MMIO_GET(dev);
@@ -214,9 +210,9 @@ static inline int dwxgmac_software_reset(mem_addr_t ioaddr)
 	return 0;
 }
 
-static void dwxgmac_dma_init(mem_addr_t ioaddr, const struct xgmac_dma_cfg *const dma_cfg)
+static void dwxgmac_dma_init(const struct device *dev, const struct xgmac_dma_cfg *const dma_cfg)
 {
-
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	mem_addr_t reg_addr =
 		(mem_addr_t)(ioaddr + XGMAC_DMA_BASE_ADDR_OFFSET + DMA_SYSBUS_MODE_OFST);
 
@@ -246,19 +242,21 @@ static void dwxgmac_dma_init(mem_addr_t ioaddr, const struct xgmac_dma_cfg *cons
 	reg_val = DMA_RX_EDMA_CONTROL_RDPS_SET(dma_cfg->edma_rdps);
 
 	sys_write32(reg_val, reg_addr);
+	LOG_DBG("%s: DMA engine common initialization completed", dev->name);
 }
 
-static void dwxgmac_dma_chnl_init(mem_addr_t ioaddr,
+static void dwxgmac_dma_chnl_init(const struct device *dev,
 				  const struct eth_dwc_xgmac_config *const config,
 				  struct eth_dwc_xgmac_dev_data *const data)
 {
-	int dma_chnl;
-	int max_dma_chnl = config->num_dma_chnl;
+	uint32_t dma_chnl;
+	uint32_t max_dma_chnl = config->num_dma_chnl;
 	struct xgmac_dma_chnl_config *const dma_chnl_cfg =
 		(struct xgmac_dma_chnl_config *)&config->dma_chnl_cfg;
 	struct xgmac_dma_tx_desc_meta *tx_desc_meta;
 	struct xgmac_dma_rx_desc_meta *rx_desc_meta;
 	uint32_t reg_val;
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	mem_addr_t reg_addr;
 
 	for (dma_chnl = 0; dma_chnl < max_dma_chnl; dma_chnl++) {
@@ -333,18 +331,18 @@ static void dwxgmac_dma_chnl_init(mem_addr_t ioaddr,
 		tx_desc_meta->next_to_use = 0u;
 		rx_desc_meta->next_to_read = 0u;
 		rx_desc_meta->rx_pkt = (struct net_pkt *)NULL;
+		LOG_DBG("%s: DMA channel %d initialization completed", dev->name, dma_chnl);
 	}
 }
 
 static void dwxgmac_dma_desc_init(const struct eth_dwc_xgmac_config *const config,
 				  struct eth_dwc_xgmac_dev_data *const data)
 {
-	const int max_dma_chnl = config->num_dma_chnl;
-	int dma_chnl;
+	const uint32_t max_dma_chnl = config->num_dma_chnl;
+	uint32_t dma_chnl;
 	struct xgmac_dma_chnl_config *const dma_chnl_cfg =
 		(struct xgmac_dma_chnl_config *)&config->dma_chnl_cfg;
 
-	struct xgmac_dma_rx_desc *rx_desc;
 	struct xgmac_dma_tx_desc_meta *tx_desc_meta;
 	struct xgmac_dma_rx_desc_meta *rx_desc_meta;
 
@@ -365,30 +363,34 @@ static void dwxgmac_dma_desc_init(const struct eth_dwc_xgmac_config *const confi
 
 		memset((void *)(rx_desc_meta->desc_list_addr), 0,
 		       ((dma_chnl_cfg->rdrl) * sizeof(struct xgmac_dma_rx_desc)));
-
-		for (int desc_idx = 0; desc_idx < dma_chnl_cfg->rdrl; desc_idx++) {
-			rx_desc = (data->dma_rx_desc + (desc_idx + dma_chnl * dma_chnl_cfg->rdrl));
-			rx_desc->rdes3.wb.own = XGMAC_DESC_OWNED_BY_DMA;
-		}
 	}
 }
 
-static void dwxgmac_dma_mtl_init(mem_addr_t ioaddr, const struct eth_dwc_xgmac_config *const config)
+static void dwxgmac_dma_mtl_init(const struct device *dev,
+				 const struct eth_dwc_xgmac_config *const config)
 {
-	int max_q_count =
+	uint32_t max_q_count =
 		config->num_tx_Qs > config->num_rx_Qs ? config->num_tx_Qs : config->num_rx_Qs;
-	int q_idx;
+	uint32_t q_idx;
 
 	struct xgmac_mtl_config *mtl_cfg = (struct xgmac_mtl_config *)&config->mtl_cfg;
 	struct xgmac_tcq_config *const tcq_config = (struct xgmac_tcq_config *)config->tcq_config;
 
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
+
+	/**
+	 * Configure MTL operation mode options/
+	 */
 	mem_addr_t reg_addr =
 		(mem_addr_t)(ioaddr + XGMAC_MTL_BASE_ADDR_OFFSET + MTL_OPERATION_MODE_OFST);
 	uint32_t reg_val = MTL_OPERATION_MODE_ETSALG_SET(mtl_cfg->etsalg) |
 			   MTL_OPERATION_MODE_RAA_SET(mtl_cfg->raa);
 	sys_write32(reg_val, reg_addr);
 
-	for (int tc_id = 0; tc_id < config->num_TCs; tc_id++) {
+	/**
+	 *  Program the Traffic class priorites.
+	 */
+	for (uint32_t tc_id = 0; tc_id < config->num_TCs; tc_id++) {
 		reg_addr = (ioaddr + XGMAC_MTL_BASE_ADDR_OFFSET + MTL_TC_PRTY_MAP0_OFST +
 			    ((tc_id / NUM_OF_TCs_PER_TC_PRTY_MAP_REG) * XGMAC_REG_SIZE_BYTES));
 		reg_val = (sys_read32(reg_addr) &
@@ -399,6 +401,14 @@ static void dwxgmac_dma_mtl_init(mem_addr_t ioaddr, const struct eth_dwc_xgmac_c
 	}
 
 	for (q_idx = 0u; q_idx < max_q_count; q_idx++) {
+		/**
+		 * Below sequence of register initializations are required for the MTL transmit
+		 * and receive queues initialization. Refer registers description in dwcxgmac data
+		 * book for more details.
+		 * - Enable dynamic mapping of RX queues to RX DMA channels by programming
+		 *   QxDDMACH bit in MTL_RXQ_DMA_MAP register.
+		 * - Configure MTL TX queue options and enable the TX queue.
+		 */
 		reg_addr = (ioaddr + XGMAC_MTL_BASE_ADDR_OFFSET + MTL_RXQ_DMA_MAP0_OFST +
 			    ((q_idx / NUM_OF_RxQs_PER_DMA_MAP_REG) * XGMAC_REG_SIZE_BYTES));
 		reg_val = (sys_read32(reg_addr) &
@@ -443,22 +453,38 @@ static void dwxgmac_dma_mtl_init(mem_addr_t ioaddr, const struct eth_dwc_xgmac_c
 	}
 }
 
-static void dwxgmac_set_mac_addr_by_idx(mem_addr_t ioaddr, uint8_t *addr, uint8_t idx, bool sa)
+static void dwxgmac_set_mac_addr_by_idx(const struct device *dev, uint8_t *addr, uint8_t idx,
+					bool sa)
 {
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	uint32_t reg_val;
 
-	reg_val = (addr[5] << 8) | addr[4];
-	idx ? (reg_val |= CORE_MAC_ADDRESS1_HIGH_SA_SET(sa)) : ARG_UNUSED(sa);
+	reg_val = (addr[MAC_ADDR_BYTE_5] << BIT_OFFSET_8) | addr[MAC_ADDR_BYTE_4];
+	if (idx != 0u) {
+		/*
+		 * 'sa' bit specifies if This MAC address[47:0] is used to compare with the source
+		 * address fields of the received packet. MAC Address with index 0 is always enabled
+		 * for recive packet MAC address filtering. And 'sa' bit of MAC address with index 0
+		 * is reserved hence this step is excluded for index 0.
+		 */
+		reg_val |= CORE_MAC_ADDRESSx_HIGH_SA_SET(sa);
+	}
 	sys_write32(reg_val | CORE_MAC_ADDRESS1_HIGH_AE_SET_MSK,
 		    ioaddr + XGMAC_CORE_ADDRx_HIGH(idx));
 
-	reg_val = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
+	reg_val = (addr[MAC_ADDR_BYTE_3] << BIT_OFFSET_24) |
+		  (addr[MAC_ADDR_BYTE_2] << BIT_OFFSET_16) |
+		  (addr[MAC_ADDR_BYTE_1] << BIT_OFFSET_8) | addr[MAC_ADDR_BYTE_0];
 	sys_write32(reg_val, ioaddr + XGMAC_CORE_ADDRx_LOW(idx));
+	LOG_DBG("%s: Udate MAC address %x %x %x %x %x %x at index %d", dev->name,
+		addr[MAC_ADDR_BYTE_5], addr[MAC_ADDR_BYTE_4], addr[MAC_ADDR_BYTE_3],
+		addr[MAC_ADDR_BYTE_2], addr[MAC_ADDR_BYTE_1], addr[MAC_ADDR_BYTE_0], idx);
 }
 
-static void eth_dwc_xgmac_update_link_speed(uint32_t ioaddr,
+static void eth_dwc_xgmac_update_link_speed(const struct device *dev,
 					    enum eth_dwc_xgmac_link_speed link_speed)
 {
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	uint32_t reg_val;
 
 	reg_val = sys_read32(ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
@@ -467,29 +493,29 @@ static void eth_dwc_xgmac_update_link_speed(uint32_t ioaddr,
 	switch (link_speed) {
 	case LINK_10MBIT:
 		reg_val |= CORE_MAC_TX_CONFIGURATION_SS_SET(CORE_MAC_TX_CONFIGURATION_SS_10MHZ);
+		LOG_DBG("%s: MAC link speed updated to 10Mbps", dev->name);
 		break;
 	case LINK_100MBIT:
 		reg_val |= CORE_MAC_TX_CONFIGURATION_SS_SET(CORE_MAC_TX_CONFIGURATION_SS_100MHZ);
+		LOG_DBG("%s: MAC link speed updated to 100Mbps", dev->name);
 		break;
 	case LINK_1GBIT:
 		reg_val |= CORE_MAC_TX_CONFIGURATION_SS_SET(CORE_MAC_TX_CONFIGURATION_SS_1000MHZ);
+		LOG_DBG("%s: MAC link speed updated to 1Gbps", dev->name);
 		break;
-	/*
-	 * case LINK_2500MBIT:
-	 * reg_val |= CORE_MAC_TX_CONFIGURATION_SS_SET(CORE_MAC_TX_CONFIGURATION_SS_2500MHZ);
-	 * break;
-	 */
 	default:
-		/*Do nothing*/
+		LOG_ERR("%s: Invalid link speed configuration value", dev->name);
 	}
 
 	sys_write32(reg_val, ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
 }
 
-static void dwxgmac_mac_init(uint32_t ioaddr, const struct eth_dwc_xgmac_config *const config,
+static void dwxgmac_mac_init(const struct device *dev,
+			     const struct eth_dwc_xgmac_config *const config,
 			     struct eth_dwc_xgmac_dev_data *const data)
 {
 	struct xgmac_mac_config *const mac_cfg = (struct xgmac_mac_config *)&config->mac_cfg;
+	uint32_t ioaddr = get_reg_base_addr(dev);
 	uint32_t reg_val;
 
 	/* Enable MAC HASH & MAC Perfect filtering */
@@ -507,7 +533,7 @@ static void dwxgmac_mac_init(uint32_t ioaddr, const struct eth_dwc_xgmac_config 
 	sys_write32(reg_val, ioaddr + CORE_MAC_PACKET_FILTER_OFST);
 
 	reg_val = 0;
-	for (int q = 0; q < config->num_rx_Qs; q++) {
+	for (uint32_t q = 0; q < config->num_rx_Qs; q++) {
 		reg_val |= (XGMAC_RXQxEN_DCB << (q * XGMAC_RXQxEN_SIZE_BITS));
 	}
 	sys_write32(reg_val, ioaddr + CORE_MAC_RXQ_CTRL0_OFST);
@@ -527,7 +553,7 @@ static void dwxgmac_mac_init(uint32_t ioaddr, const struct eth_dwc_xgmac_config 
 	sys_write32(reg_val, ioaddr + CORE_MAC_RX_CONFIGURATION_OFST);
 
 	/* Configure MAC link speed */
-	eth_dwc_xgmac_update_link_speed(ioaddr, data->link_speed);
+	eth_dwc_xgmac_update_link_speed(dev, data->link_speed);
 }
 
 static inline void dwxgmac_irq_init(const struct device *dev)
@@ -546,12 +572,19 @@ static inline void dwxgmac_irq_init(const struct device *dev)
 static inline void add_frags_to_pkt(struct net_pkt *rx_pkt, struct net_buf *frag1,
 				    uint16_t frag1_len, struct net_buf *frag2, uint16_t frag2_len)
 {
+	/**
+	 * Append the receive fragments in RX packet.
+	 */
 	frag1->len = frag1_len;
 	net_pkt_frag_add(rx_pkt, frag1);
 	if (frag2_len) {
 		frag2->len = frag2_len;
 		net_pkt_frag_add(rx_pkt, frag2);
 	} else {
+		/**
+		 * If second frgament length zero then put it back to RX fragment
+		 * pool by freeing it.
+		 */
 		net_pkt_frag_unref(frag2);
 	}
 }
@@ -564,17 +597,35 @@ static void get_and_refill_desc_frags(struct xgmac_dma_rx_desc *rx_desc, uint16_
 
 	*frag1 = (struct net_buf *)((mem_addr_t)*(rx_frags + (desc_id * RX_FRAGS_PER_DESC)));
 	*frag2 = (struct net_buf *)((mem_addr_t)*(rx_frags + (desc_id * RX_FRAGS_PER_DESC) + 1u));
+	/**
+	 * Reserve a free fragment in netwrok RX fragments pool
+	 */
 	new_frag = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_frag) {
 		LOG_ERR("Failed to allocate a network buffer to refill the DMA descriptor");
 		return;
 	}
+	/**
+	 * Replace newly reserved fragment one address with old fragment one address in rx_frags
+	 * array at the index corresponding to the descriptor index.
+	 */
 	*(rx_frags + (desc_id * RX_FRAGS_PER_DESC)) = (mem_addr_t)new_frag;
+	/**
+	 * Update the dword0 and dword1 of the receive descriptor with buffer address available in
+	 * newly reserved fragment. dword0 and dword1 combinely makes 64bit address of the RX data
+	 * buffer.
+	 */
 	rx_desc->rdes0.dword = POINTER_TO_UINT(new_frag->data);
 	rx_desc->rdes1.dword = POINTER_TO_UINT(new_frag->data) >> XGMAC_REG_SIZE_BITS;
-
+	/**
+	 * Reserve another free fragment in netwrok RX fragments pool
+	 */
 	new_frag = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_frag) {
+		/**
+		 * If we fails reserve another fragment to fill the the RX descriptor buffer pointer
+		 * 2, then free the previusly allocated first fragment too. Log an error and return.
+		 */
 		rx_desc->rdes0.dword = 0u;
 		rx_desc->rdes0.dword = 1u;
 		net_pkt_frag_unref((struct net_buf *)(*(rx_frags + (desc_id * RX_FRAGS_PER_DESC))));
@@ -582,8 +633,22 @@ static void get_and_refill_desc_frags(struct xgmac_dma_rx_desc *rx_desc, uint16_
 		LOG_ERR("Failed to allocate a network buffer to refill the DMA descriptor");
 		return;
 	}
+	/**
+	 * Replace newly reserved fragment two address with old fragment two address in rx_frags
+	 * array at the index corresponding to the descriptor index.
+	 */
 	*(rx_frags + (desc_id * RX_FRAGS_PER_DESC) + 1u) = (mem_addr_t)new_frag;
+	/**
+	 * Update the dword2 and dword3 of the receive descriptor with buffer address available in
+	 * newly reserved fragment two. dword2 and part of dword3 together makes address of the RX
+	 * data buffer.
+	 */
 	rx_desc->rdes2.dword = POINTER_TO_UINT(new_frag->data);
+	/**
+	 * Put the RX descriptor back to DMA ownership by setting OWN bit in RX descriptor dword3
+	 * Set IOC bit in dword3 to receive an interrupt after this RX descriptor is beling proceesd
+	 * and put to application ownership.
+	 */
 	rx_desc->rdes3.dword = XGMAC_RDES3_OWN | XGMAC_RDES3_IOC |
 			       (POINTER_TO_UINT(new_frag->data) >> XGMAC_REG_SIZE_BITS);
 }
@@ -601,7 +666,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 		(struct xgmac_dma_rx_desc *)(data->dma_rx_desc + (dma_chnl * dma_chnl_cfg->rdrl));
 	struct xgmac_dma_rx_desc *rx_desc, rx_desc_data;
 	struct net_buf *frag1 = NULL, *frag2 = NULL;
-	int desc_data_len;
+	uint32_t desc_data_len;
 	int err;
 
 	mem_addr_t *rx_frags = (mem_addr_t *)(data->rx_frags + (((dma_chnl * dma_chnl_cfg->rdrl)) *
@@ -614,7 +679,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 					  &frag2);
 
 		if (rx_desc_data.rdes3.dword & XGMAC_RDES3_FD) {
-			LOG_DBG("received FD fragment. descriptor indx = %d",
+			LOG_DBG("%s: received FD fragment. descriptor indx = %d", dev->name,
 				rx_desc_meta->next_to_read);
 			if (rx_desc_meta->rx_pkt) {
 				net_pkt_frag_unref(rx_desc_meta->rx_pkt->frags);
@@ -622,7 +687,8 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 			}
 			rx_desc_meta->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
 			if (!rx_desc_meta->rx_pkt) {
-				LOG_ERR("Failed allocate a network packet for receive data");
+				LOG_ERR("%s: Failed allocate a network packet for receive data",
+					dev->name);
 				/*Error processing*/
 				return;
 			}
@@ -630,7 +696,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 
 		if (rx_desc_meta->rx_pkt != NULL) {
 			if (rx_desc_data.rdes3.dword & XGMAC_RDES3_LD) {
-				LOG_DBG("received LD fragment. descriptor indx = %d",
+				LOG_DBG("%s: received LD fragment. descriptor indx = %d", dev->name,
 					rx_desc_meta->next_to_read);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 				data->stats.pkts.rx++;
@@ -658,16 +724,17 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 						data->stats.errors.rx++;
 #endif
 						net_pkt_unref(rx_desc_meta->rx_pkt);
-						LOG_DBG("received packet dropped %d", err);
+						LOG_DBG("%s: received packet dropped %d", dev->name,
+							err);
 					} else {
-						LOG_DBG("received a packet");
+						LOG_DBG("%s: received a packet", dev->name);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 						data->stats.bytes.received +=
 							net_pkt_get_len(rx_desc_meta->rx_pkt);
 #endif
 					}
 				} else {
-					LOG_ERR("rx packet error");
+					LOG_ERR("%s: rx packet error", dev->name);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 					data->stats.errors.rx++;
 #endif
@@ -680,8 +747,9 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 						 CONFIG_NET_BUF_DATA_SIZE);
 			}
 		} else {
-			LOG_ERR("Received a fragment with no FD fragmanet received in the "
-				"sequence");
+			LOG_ERR("%s: Received a fragment with no FD fragmanet received in the "
+				"sequence",
+				dev->name);
 		}
 		rx_desc_meta->next_to_read =
 			((rx_desc_meta->next_to_read + 1) % dma_chnl_cfg->rdrl);
@@ -716,7 +784,7 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 				pkt = (struct net_pkt *)(*(
 					data->tx_pkts +
 					((dma_chnl * dma_chnl_cfg->tdrl) + desc_idx)));
-				LOG_DBG("dwc xgmac: %p packet unreferenced for after tx", pkt);
+				LOG_DBG("%s: %p packet unreferenced for after tx", dev->name, pkt);
 				net_pkt_unref(pkt);
 				*(data->tx_pkts + ((dma_chnl * dma_chnl_cfg->tdrl) + desc_idx)) =
 					(mem_addr_t)NULL;
@@ -745,35 +813,35 @@ static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_int
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_TPS_SET_MSK) {
 		/* Transmit process stopped interrupt*/
-		LOG_ERR("DMA channel %d Transmit process stopped", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Transmit process stopped", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_TBU_SET_MSK) {
 		/* Transmit buffer unavailable interrupt*/
-		LOG_ERR("DMA channel %d Transmit buffer unavailable", dma_chnl);
+		LOG_DBG("%s: DMA channel %d Transmit buffer unavailable", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_RBU_SET_MSK) {
 		/* Receive buffer unavailable interrupt*/
-		LOG_ERR("DMA channel %d Receive buffer unavailable", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Receive buffer unavailable", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_RPS_SET_MSK) {
 		/* Receive process stopped interrupt*/
-		LOG_ERR("DMA channel %d Receive process stopped", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Receive process stopped", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_DDE_SET_MSK) {
 		/* Descriptor definition error interrupt*/
-		LOG_ERR("DMA channel %d  Descriptor definition error", dma_chnl);
+		LOG_ERR("%s: DMA channel %d  Descriptor definition error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_FBE_SET_MSK) {
 		/* Fatal bus error interrupt*/
-		LOG_ERR("DMA channel %d Fatal bus error", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Fatal bus error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_CDE_SET_MSK) {
 		/* Context descriptor error interrupt*/
-		LOG_ERR("DMA channel %d Context descriptor error", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Context descriptor error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_AIS_SET_MSK) {
 		/* Abnormal interrupt status interrupt*/
-		LOG_ERR("DMA channel %d Abnormal error", dma_chnl);
+		LOG_ERR("%s: DMA channel %d Abnormal error", dev->name, dma_chnl);
 	}
 }
 
@@ -844,7 +912,7 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 	    (!net_if_flag_is_set(data->iface, NET_IF_UP))) {
 		dma_int_status =
 			sys_read32(ioaddr + XGMAC_DMA_BASE_ADDR_OFFSET + DMA_INTERRUPT_STATUS_OFST);
-		for (int x = 0; x < config->num_dma_chnl; x++) {
+		for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 			if (dma_int_status & BIT(x)) {
 				reg_val = DMA_CHx_STATUS_NIS_SET_MSK | DMA_CHx_STATUS_AIS_SET_MSK |
 					  DMA_CHx_STATUS_CDE_SET_MSK | DMA_CHx_STATUS_FBE_SET_MSK |
@@ -871,7 +939,7 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 	 * The status will be cleared once the corresponding action is completed in the work item
 	 */
 	cntxt_data->dma_interrupt_sts |= sys_read32(reg_addr);
-	for (int x = 0; x < config->num_dma_chnl; x++) {
+	for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 		if (cntxt_data->dma_interrupt_sts & BIT(x)) {
 			reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
 				    DMA_CHx_STATUS_OFST);
@@ -937,6 +1005,9 @@ static void eth_dwc_xgmac_irq_poll(struct k_timer *timer)
  *
  * @param dev Pointer to the ethernet device
  * @retval 0 if the device initialization completed successfully
+ *         -ENODEV if reset is applicable and if reset device is not available or not ready.
+ *         -ENOSYS if reset is applicable and if it failes to toggle the reset signal.
+ *         -ETIMEDOUT if XGMAC software reset gets timeout.
  */
 static int eth_dwc_xgmac_dev_init(const struct device *dev)
 {
@@ -950,14 +1021,17 @@ static int eth_dwc_xgmac_dev_init(const struct device *dev)
 
 	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
-			LOG_ERR("Reset device is not ready");
+			LOG_ERR("%s, Reset device is not ready", dev->name);
 			return -ENODEV;
 		}
 		ret = reset_line_toggle(config->reset.dev, config->reset.id);
 		if (ret) {
-			LOG_ERR("failed to reset peripheral");
+			LOG_ERR("%s: Failed to reset peripheral", dev->name);
 			return ret;
 		}
+	} else {
+		LOG_ERR("%s, Reset device is not available", dev->name);
+		return -ENODEV;
 	}
 
 #endif
@@ -968,22 +1042,22 @@ static int eth_dwc_xgmac_dev_init(const struct device *dev)
 	 */
 	ret = dwxgmac_software_reset(ioaddr);
 	if (ret) {
-		LOG_ERR("MAC reset timeout");
+		LOG_ERR("%s: MAC reset timeout", dev->name);
 		return ret;
 	}
 
-	dwxgmac_dma_init(ioaddr, &config->dma_cfg);
+	dwxgmac_dma_init(dev, &config->dma_cfg);
 
 	dwxgmac_dma_desc_init(config, data);
 
-	dwxgmac_dma_chnl_init(ioaddr, config, data);
+	dwxgmac_dma_chnl_init(dev, config, data);
 
-	dwxgmac_dma_mtl_init(ioaddr, config);
+	dwxgmac_dma_mtl_init(dev, config);
 
-	dwxgmac_mac_init(ioaddr, config, data);
+	dwxgmac_mac_init(dev, config, data);
 
 	/* set MAC address */
-	dwxgmac_set_mac_addr_by_idx(ioaddr, data->mac_addr, 0, false);
+	dwxgmac_set_mac_addr_by_idx(dev, data->mac_addr, 0, false);
 
 	dwxgmac_irq_init(dev);
 	LOG_INF("XGMAC ethernet driver init done");
@@ -999,7 +1073,6 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 	bool is_up = state->is_up;
 
 	if (is_up) {
-		LOG_INF("Link up");
 		/* Announce link up status */
 		switch (state->speed) {
 		case LINK_HALF_1000BASE_T:
@@ -1016,15 +1089,16 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 			dev_data->link_speed = LINK_10MBIT;
 		}
 		/* Configure MAC link speed */
-		eth_dwc_xgmac_update_link_speed(get_reg_base_addr(mac_dev), dev_data->link_speed);
-		net_eth_carrier_on(dev_data->iface);
+		eth_dwc_xgmac_update_link_speed(mac_dev, dev_data->link_speed);
 		/* Set up link */
+		net_eth_carrier_on(dev_data->iface);
+		LOG_INF("%s: Link up", mac_dev->name);
 
 	} else {
-		LOG_INF("Link down");
 		dev_data->link_speed = LINK_DOWN;
 		/* Announce link down status */
 		net_eth_carrier_off(dev_data->iface);
+		LOG_INF("%s: Link down", mac_dev->name);
 	}
 }
 
@@ -1056,12 +1130,13 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 #endif
 
 	{
-		/*
-		 * Every RX descriptor in the descriptor ring needs to be prefilled with 2 RX buffer
-		 * addresses by the MAC driver S/W and OWN bit will be set to 1. When new data is
-		 * received the DMA will check the OWN bit and moves the data to corresponding
-		 * recive buffers and clears the descripot OWN bit. If received data size is more
-		 * than total of 2 buffer sizes  then DMA will use next descriptor in the ring.
+		/**
+		 * Every RX descriptor in the descriptor ring, needs to be prefilled with 2 RX
+		 * buffer addresses and put it to DMA ownership by setting the OWN bit. When new
+		 * data is received the DMA will check the OWN bit and moves the data to
+		 * corresponding recive buffers and puts the RX descriptor to application ownership
+		 * by clearing the OWN bit. If received data size is more than total of 2 buffer
+		 * sizes  then DMA will use next descriptor in the ring.
 		 */
 		struct xgmac_dma_chnl_config *const dma_chnl_cfg =
 			(struct xgmac_dma_chnl_config *)&dev_conf->dma_chnl_cfg;
@@ -1076,7 +1151,7 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 
 		ioaddr = get_reg_base_addr(dev);
 		/* Reserve the RX buffers and fill the RX descriptors with buffer addresses*/
-		for (int dma_chnl = 0u; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
+		for (uint32_t dma_chnl = 0u; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
 			tx_desc_meta =
 				(struct xgmac_dma_tx_desc_meta *)&dev_data->tx_desc_meta[dma_chnl];
 			rx_desc_meta =
@@ -1097,31 +1172,38 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 							  (((dma_chnl * dma_chnl_cfg->rdrl) +
 							    desc_id) *
 							   RX_FRAGS_PER_DESC));
-				rx_frags[0u] = (mem_addr_t)net_pkt_get_reserve_rx_data(
+				rx_frags[RX_FRAG_ONE] = (mem_addr_t)net_pkt_get_reserve_rx_data(
 					CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
-				if (!rx_frags[0u]) {
-					LOG_ERR("Failed to allocate a network buffer to fill the "
-						"DMA descriptor");
+				if (!rx_frags[RX_FRAG_ONE]) {
+					LOG_ERR("%s: Failed to allocate a network buffer to fill "
+						"the "
+						"RxDesc[%d]",
+						dev->name, desc_id);
 					break;
 				}
-				rx_desc->rdes0.dword =
-					POINTER_TO_UINT(((struct net_buf *)rx_frags[0u])->data);
+				rx_desc->rdes0.dword = POINTER_TO_UINT(
+					((struct net_buf *)rx_frags[RX_FRAG_ONE])->data);
 				rx_desc->rdes1.dword =
-					POINTER_TO_UINT(((struct net_buf *)rx_frags[0u])->data) >>
+					POINTER_TO_UINT(
+						((struct net_buf *)rx_frags[RX_FRAG_ONE])->data) >>
 					32u;
-				rx_frags[1u] = (mem_addr_t)net_pkt_get_reserve_rx_data(
+				rx_frags[RX_FRAG_TWO] = (mem_addr_t)net_pkt_get_reserve_rx_data(
 					CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
-				if (!rx_frags[1u]) {
-					net_pkt_frag_unref((struct net_buf *)(rx_frags[0u]));
-					LOG_ERR("Failed to allocate a network buffer to fill the "
-						"DMA descriptor");
+				if (!rx_frags[RX_FRAG_TWO]) {
+					net_pkt_frag_unref(
+						(struct net_buf *)(rx_frags[RX_FRAG_ONE]));
+					LOG_ERR("%s: Failed to allocate a network buffer to fill "
+						"the "
+						"RxDesc[%d]",
+						dev->name, desc_id);
 					break;
 				}
-				rx_desc->rdes2.dword =
-					POINTER_TO_UINT(((struct net_buf *)rx_frags[1u])->data);
+				rx_desc->rdes2.dword = POINTER_TO_UINT(
+					((struct net_buf *)rx_frags[RX_FRAG_TWO])->data);
 				rx_desc->rdes3.dword =
 					XGMAC_RDES3_OWN | XGMAC_RDES3_IOC |
-					(POINTER_TO_UINT(((struct net_buf *)rx_frags[1u])->data) >>
+					(POINTER_TO_UINT(
+						 ((struct net_buf *)rx_frags[RX_FRAG_TWO])->data) >>
 					 32u);
 				rx_desc_meta->desc_tail_addr = (mem_addr_t)(rx_desc + 1);
 			}
@@ -1131,6 +1213,8 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 			reg_val =
 				DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(rx_desc_meta->desc_tail_addr);
 			sys_write32(reg_val, reg_addr);
+			LOG_DBG("%s: DMA channel %d Rx descriptors initialization completed",
+				dev->name, dma_chnl);
 		}
 	}
 
@@ -1141,13 +1225,14 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 	net_if_carrier_off(iface);
 	ethernet_init(iface);
 	net_if_set_mtu(iface, dev_conf->mtu);
+	LOG_DBG("%s: MTU size is set to %d", dev->name, dev_conf->mtu);
 	if (device_is_ready(dev_conf->phy_dev)) {
 		phy_link_callback_set(dev_conf->phy_dev, &phy_link_state_change_callback,
 				      (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERR("%s: PHY device not ready", dev->name);
 	}
-	LOG_INF("Ethernet iface init done");
+	LOG_INF("%s: Ethernet iface init done binded to iface@0x%p", dev->name, iface);
 }
 
 /**
@@ -1173,18 +1258,18 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
 
 	ioaddr = get_reg_base_addr(dev);
 
-	for (int dma_chnl = 0u; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
+	for (uint32_t dma_chnl = 0u; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
+		/* Start the transmit DMA channel */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_TX_CONTROL_OFST);
 		reg_val = sys_read32(reg_addr) | DMA_CHx_TX_CONTROL_ST_SET_MSK;
 		sys_write32(reg_val, reg_addr);
-
+		/* Start the receive DMA channel */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_RX_CONTROL_OFST);
 		reg_val = sys_read32(reg_addr) | DMA_CHx_RX_CONTROL_SR_SET_MSK;
 		sys_write32(reg_val, reg_addr);
-
-		/* enable the channel dma channel interrupts*/
+		/* Enable the dma channel interrupts */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_INTERRUPT_ENABLE_OFST);
 		reg_val = DMA_CHx_INTERRUPT_ENABLE_NIE_SET(1u) |
@@ -1199,16 +1284,17 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
 			  DMA_CHx_INTERRUPT_ENABLE_TXSE_SET(1u) |
 			  DMA_CHx_INTERRUPT_ENABLE_TIE_SET(1u);
 		sys_write32(reg_val, reg_addr);
+		LOG_DBG("%s: Interrupts enabled for DMA Channel %d", dev->name, dma_chnl);
 	}
-
+	/* Enable the MAC transmit functionality*/
 	reg_val = sys_read32(ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
 	reg_val |= CORE_MAC_TX_CONFIGURATION_TE_SET(1u);
 	sys_write32(reg_val, (ioaddr + CORE_MAC_TX_CONFIGURATION_OFST));
-
+	/* Enable the MAC receive functionality*/
 	reg_val = sys_read32(ioaddr + CORE_MAC_RX_CONFIGURATION_OFST);
 	reg_val |= CORE_MAC_RX_CONFIGURATION_RE_SET(1u);
 	sys_write32(reg_val, (ioaddr + CORE_MAC_RX_CONFIGURATION_OFST));
-
+	/* Enable the MAC Link Status Change Interrupt */
 	reg_val = sys_read32(ioaddr + CORE_MAC_INTERRUPT_ENABLE_OFST);
 	reg_val = CORE_MAC_INTERRUPT_ENABLE_LSIE_SET(1u);
 	sys_write32(reg_val, (ioaddr + CORE_MAC_INTERRUPT_ENABLE_OFST));
@@ -1218,10 +1304,12 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
 		      K_USEC(CONFIG_ETH_DWC_XGMAC_INTERRUPT_POLLING_INTERVAL_US),
 		      K_USEC(CONFIG_ETH_DWC_XGMAC_INTERRUPT_POLLING_INTERVAL_US));
 #else
+	/* If polling mode is configred then start the ISR polling timer */
 	(dev_conf->irq_enable_fn)(dev, true);
 #endif
 
 	dev_data->dev_started = true;
+	LOG_DBG("%s: Device started", dev->name);
 	return 0;
 }
 
@@ -1249,41 +1337,45 @@ static int eth_dwc_xgmac_stop_device(const struct device *dev)
 
 	ioaddr = get_reg_base_addr(dev);
 
-	for (int dma_chnl = 0; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
+	for (uint32_t dma_chnl = 0; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
+		/* Stop the transmit DMA channel */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_TX_CONTROL_OFST);
 		reg_val = sys_read32(reg_addr) & DMA_CHx_TX_CONTROL_ST_CLR_MSK;
 		sys_write32(reg_val, reg_addr);
-
+		/* Stop the receive DMA channel */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_RX_CONTROL_OFST);
 		reg_val = sys_read32(reg_addr) & DMA_CHx_RX_CONTROL_SR_CLR_MSK;
 		sys_write32(reg_val, reg_addr);
-
+		/* Disable the dma channel interrupts */
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
 			    DMA_CHx_INTERRUPT_ENABLE_OFST);
 		reg_val = 0u;
 		sys_write32(reg_val, reg_addr);
+		LOG_DBG("%s: Interrupts disabled for DMA Channel %d", dev->name, dma_chnl);
 	}
-
+	/* Disable the MAC transmit functionality */
 	reg_val = sys_read32(ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
 	reg_val &= CORE_MAC_TX_CONFIGURATION_TE_CLR_MSK;
 	sys_write32(reg_val, (ioaddr + CORE_MAC_TX_CONFIGURATION_OFST));
-
+	/* Disable the MAC receive functionality */
 	reg_val = sys_read32(ioaddr + CORE_MAC_RX_CONFIGURATION_OFST);
 	reg_val &= CORE_MAC_RX_CONFIGURATION_RE_CLR_MSK;
 	sys_write32(reg_val, (ioaddr + CORE_MAC_RX_CONFIGURATION_OFST));
-
+	/* Disable the MAC interrupts */
 	reg_addr = (ioaddr + CORE_MAC_INTERRUPT_ENABLE_OFST);
 	reg_val = 0u;
 	sys_write32(reg_val, reg_addr);
 
 #ifdef CONFIG_ETH_DWC_XGMAC_POLLING_MODE
+	/* If polling mode is configred then stop the ISR polling timer */
 	k_timer_stop(&dev_data->isr_polling_timer);
 #else
+	/* If interrupt mode is configured the disable ISR in interrupt controller */
 	(dev_conf->irq_enable_fn)(dev, false);
 #endif
-
+	LOG_DBG("%s: Device stopped", dev->name);
 	return 0;
 }
 
@@ -1329,7 +1421,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	uint32_t tdes2_flgs, tdes3_flgs, tdes3_fd_flg;
 
 	if (!pkt || !pkt->frags) {
-		LOG_ERR("cannot TX, invalid argument");
+		LOG_ERR("%s: cannot TX, invalid argument", dev->name);
 		return -EINVAL;
 	}
 
@@ -1358,12 +1450,12 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	/*lock the TX desc ring while acquiring the resources*/
 	(void)k_mutex_lock(&(context.descmeta->ring_lock), K_FOREVER);
 	(void)net_pkt_ref(pkt);
-	LOG_DBG("dwc xgmac: %p packet referanced for tx", pkt);
+	LOG_DBG("%s: %p packet referanced for tx", dev->name, pkt);
 	tdes3_fd_flg = XGMAC_TDES3_FD;
 	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
 		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
 		if (ret != 0) {
-			LOG_DBG("enough free tx descriptors are not available");
+			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);
 			goto abort_tx;
 		}
 		context.tx_desc = (struct xgmac_dma_tx_desc *)(dev_data->dma_tx_desc +
@@ -1384,8 +1476,8 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 			/* Set interrupt on completion for last fragment descriptor */
 			tdes3_flgs |= XGMAC_TDES3_LD;
 			tdes2_flgs |= XGMAC_TDES2_IOC;
-			/* pin the transmitted packet address to unpin after getting transmitted by
-			 * HW
+			/* pin the transmitted packet address. This packet will get unpin after
+			 * getting transmitted by HW.
 			 */
 			*(dev_data->tx_pkts + ((context.q_id * dma_ch_cfg->tdrl) +
 					       context.pkt_desc_id)) = (mem_addr_t)pkt;
@@ -1435,7 +1527,7 @@ abort_tx:
 		k_sem_give(&context.descmeta->free_tx_descs_sem);
 	}
 	(void)k_mutex_unlock(&(context.descmeta->ring_lock));
-	LOG_DBG("dwc xgmac: %p packet unreferenced after dropping", pkt);
+	LOG_DBG("%s: %p packet unreferenced after dropping", dev->name, pkt);
 	net_pkt_unref(pkt);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 	dev_data->stats.tx_dropped++;
@@ -1480,27 +1572,29 @@ static enum phy_link_speed get_phy_adv_speeds(bool auto_neg, bool duplex_mode,
 	return adv_speeds;
 }
 #ifdef CONFIG_ETH_DWC_XGMAC_HW_FILTERING
-static inline int get_free_mac_addr_indx(mem_addr_t ioaddr)
+static inline uint32_t get_free_mac_addr_indx(const struct device *dev)
 {
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	mem_addr_t reg_addr;
 	uint32_t reg_val;
 
-	for (int idx = 1u; idx < XGMAC_MAX_MAC_ADDR_COUNT; idx++) {
+	for (uint32_t idx = 1u; idx < XGMAC_MAX_MAC_ADDR_COUNT; idx++) {
 		reg_addr = (ioaddr + XGMAC_CORE_ADDRx_HIGH(idx));
 		reg_val = sys_read32(reg_addr);
 		if (!(reg_val & CORE_MAC_ADDRESS1_HIGH_AE_SET_MSK)) {
 			return idx;
 		}
 	}
-	LOG_ERR("MAC address filter failed. All MAC address slots are in use");
+	LOG_ERR("%s, MAC address filter failed. All MAC address slots are in use", dev->name);
 	return -EIO;
 }
 
-static inline void disable_filter_for_mac_addr(mem_addr_t ioaddr, uint8_t *addr)
+static inline void disable_filter_for_mac_addr(const struct device *dev, uint8_t *addr)
 {
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	mem_addr_t reg_addr;
 
-	for (int idx = 1u; idx < XGMAC_MAX_MAC_ADDR_COUNT; idx++) {
+	for (uint32_t idx = 1u; idx < XGMAC_MAX_MAC_ADDR_COUNT; idx++) {
 		reg_addr = (ioaddr + XGMAC_CORE_ADDRx_HIGH(idx) + 2u);
 		if (!(memcmp((uint8_t *)reg_addr, addr, 6u))) {
 			sys_write32(CORE_MAC_ADDRESS1_HIGH_AE_CLR_MSK, XGMAC_CORE_ADDRx_HIGH(idx));
@@ -1531,7 +1625,6 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 	const struct ethphy_driver_api *phy_api = phy->api;
 	enum phy_link_speed adv_speeds;
 
-	mem_addr_t ioaddr = get_reg_base_addr(dev);
 	int retval = 0;
 
 	(void)k_mutex_lock(&dev_data->dev_cfg_lock, K_FOREVER);
@@ -1582,7 +1675,7 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 		retval = net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 					      ETH_MAC_ADDRESS_SIZE, NET_LINK_ETHERNET);
 		if (retval == 0) {
-			dwxgmac_set_mac_addr_by_idx(ioaddr, dev_data->mac_addr, 0u, false);
+			dwxgmac_set_mac_addr_by_idx(dev, dev_data->mac_addr, 0u, false);
 		}
 		break;
 #ifdef CONFIG_ETH_DWC_XGMAC_PROMISCUOUS
@@ -1606,10 +1699,10 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		if (!(config->filter.set)) {
-			disable_filter_for_mac_addr(ioaddr,
+			disable_filter_for_mac_addr(dev,
 						    (uint8_t *)config->filter.mac_address.addr);
 		} else {
-			int mac_idx = get_free_mac_addr_indx(ioaddr);
+			uint32_t mac_idx = get_free_mac_addr_indx(dev);
 
 			if (mac_idx > 0u) {
 				dwxgmac_set_mac_addr_by_idx(

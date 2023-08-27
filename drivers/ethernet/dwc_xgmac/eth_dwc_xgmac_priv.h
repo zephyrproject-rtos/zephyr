@@ -38,141 +38,141 @@
 #define MTL_RXQ_DMA_MAP_QxDDMACH_SET(q_pos, value) ((value & 0x1u) << (8u * q_pos + 7u))
 #define MTL_RXQ_DMA_MAP_QxMDMACH_SET(q_pos, value) ((value & 0x7u) << (8u * q_pos))
 
-#define NUM_OF_TCs_PER_TC_PRTY_MAP_REG    (4u)
-#define TC_PRTY_MAP_FEILD_SIZE_IN_BITS    (8u)
-#define MTL_TCx_PRTY_MAP_MSK(TCx_pos)     (~(0xff << (TCx_pos * TC_PRTY_MAP_FEILD_SIZE_IN_BITS)))
+#define NUM_OF_TCs_PER_TC_PRTY_MAP_REG (4u)
+#define TC_PRTY_MAP_FEILD_SIZE_IN_BITS (8u)
+#define MTL_TCx_PRTY_MAP_MSK(TCx_pos)  (~(0xff << (TCx_pos * TC_PRTY_MAP_FEILD_SIZE_IN_BITS)))
 
 #define MTL_TCx_PRTY_MAP_PSTC_SET(TCx_pos, prio) ((prio & 0xff) << (8u * TCx_pos))
 
-#define DMA_MODE_OFST  0x0
+#define DMA_MODE_OFST (0x0)
 
-#define DMA_MODE_SWR_SET(value) (((value) << 0) & 0x00000001)
+#define DMA_MODE_SWR_SET(value) ((value)&0x00000001)
 
-#define DMA_MODE_SWR_SET_MSK	0x00000001
+#define DMA_MODE_SWR_SET_MSK (0x00000001)
 
-#define DMA_MODE_INTM_CLR_MSK	 0xffffcfff
+#define DMA_MODE_INTM_CLR_MSK (0xffffcfff)
 
 #define DMA_MODE_INTM_SET(value) (((value) << 12) & 0x00003000)
 
-#define DMA_SYSBUS_MODE_OFST  0x4
+#define DMA_SYSBUS_MODE_OFST (0x4)
 
 #define DMA_SYSBUS_MODE_RD_OSR_LMT_SET(value) (((value) << 16) & 0x001f0000)
 
 #define DMA_SYSBUS_MODE_WR_OSR_LMT_SET(value) (((value) << 24) & 0x1f000000)
 
-#define DMA_SYSBUS_MODE_AAL_SET(value)     (((value) << 12) & 0x00001000)
+#define DMA_SYSBUS_MODE_AAL_SET(value) (((value) << 12) & 0x00001000)
 
-#define DMA_SYSBUS_MODE_EAME_SET(value)    (((value) << 11) & 0x00000800)
+#define DMA_SYSBUS_MODE_EAME_SET(value) (((value) << 11) & 0x00000800)
 
-#define DMA_SYSBUS_MODE_BLEN4_SET(value)   (((value) << 1) & 0x00000002)
+#define DMA_SYSBUS_MODE_BLEN4_SET(value) (((value) << 1) & 0x00000002)
 
-#define DMA_SYSBUS_MODE_BLEN8_SET(value)   (((value) << 2) & 0x00000004)
+#define DMA_SYSBUS_MODE_BLEN8_SET(value) (((value) << 2) & 0x00000004)
 
-#define DMA_SYSBUS_MODE_BLEN16_SET(value)  (((value) << 3) & 0x00000008)
+#define DMA_SYSBUS_MODE_BLEN16_SET(value) (((value) << 3) & 0x00000008)
 
-#define DMA_SYSBUS_MODE_BLEN32_SET(value)  (((value) << 4) & 0x00000010)
+#define DMA_SYSBUS_MODE_BLEN32_SET(value) (((value) << 4) & 0x00000010)
 
-#define DMA_SYSBUS_MODE_BLEN64_SET(value)  (((value) << 5) & 0x00000020)
+#define DMA_SYSBUS_MODE_BLEN64_SET(value) (((value) << 5) & 0x00000020)
 
 #define DMA_SYSBUS_MODE_BLEN128_SET(value) (((value) << 6) & 0x00000040)
 
 #define DMA_SYSBUS_MODE_BLEN256_SET(value) (((value) << 7) & 0x00000080)
 
-#define DMA_SYSBUS_MODE_UNDEF_SET(value)   (((value) << 0) & 0x00000001)
+#define DMA_SYSBUS_MODE_UNDEF_SET(value) ((value)&0x00000001)
 
-#define DMA_TX_EDMA_CONTROL_OFST  0x40
+#define DMA_TX_EDMA_CONTROL_OFST (0x40)
 
-#define DMA_TX_EDMA_CONTROL_TDPS_SET(value) (((value) << 0) & 0x00000003)
+#define DMA_TX_EDMA_CONTROL_TDPS_SET(value) ((value)&0x00000003)
 
-#define DMA_RX_EDMA_CONTROL_OFST  0x44
+#define DMA_RX_EDMA_CONTROL_OFST (0x44)
 
-#define DMA_RX_EDMA_CONTROL_RDPS_SET(value) (((value) << 0) & 0x00000003)
+#define DMA_RX_EDMA_CONTROL_RDPS_SET(value) ((value)&0x00000003)
 
-#define DMA_INTERRUPT_STATUS_OFST  0x8
+#define DMA_INTERRUPT_STATUS_OFST (0x8)
 
-#define DMA_CHx_STATUS_OFST  0x60
+#define DMA_CHx_STATUS_OFST (0x60)
 
-#define DMA_CHx_STATUS_TI_SET_MSK    0x00000001
+#define DMA_CHx_STATUS_TI_SET_MSK (0x00000001)
 
-#define DMA_CHx_STATUS_RI_SET_MSK    0x00000040
+#define DMA_CHx_STATUS_RI_SET_MSK (0x00000040)
 
-#define DMA_CHx_STATUS_TPS_SET_MSK    0x00000002
+#define DMA_CHx_STATUS_TPS_SET_MSK (0x00000002)
 
-#define DMA_CHx_STATUS_TBU_SET_MSK    0x00000004
+#define DMA_CHx_STATUS_TBU_SET_MSK (0x00000004)
 
-#define DMA_CHx_STATUS_RBU_SET_MSK    0x00000080
+#define DMA_CHx_STATUS_RBU_SET_MSK (0x00000080)
 
-#define DMA_CHx_STATUS_RPS_SET_MSK    0x00000100
+#define DMA_CHx_STATUS_RPS_SET_MSK (0x00000100)
 
-#define DMA_CHx_STATUS_DDE_SET_MSK    0x00000200
+#define DMA_CHx_STATUS_DDE_SET_MSK (0x00000200)
 
-#define DMA_CHx_STATUS_FBE_SET_MSK    0x00001000
+#define DMA_CHx_STATUS_FBE_SET_MSK (0x00001000)
 
-#define DMA_CHx_STATUS_CDE_SET_MSK    0x00002000
+#define DMA_CHx_STATUS_CDE_SET_MSK (0x00002000)
 
-#define DMA_CHx_STATUS_AIS_SET_MSK    0x00004000
+#define DMA_CHx_STATUS_AIS_SET_MSK (0x00004000)
 
-#define DMA_CHx_STATUS_NIS_SET_MSK    0x00008000
+#define DMA_CHx_STATUS_NIS_SET_MSK (0x00008000)
 
-#define DMA_CHx_CONTROL_OFST  0x0
+#define DMA_CHx_CONTROL_OFST (0x0)
 
-#define DMA_CHx_CONTROL_SPH_SET(value)      (((value) << 24) & 0x01000000)
+#define DMA_CHx_CONTROL_SPH_SET(value) (((value) << 24) & 0x01000000)
 
-#define DMA_CHx_CONTROL_PBLX8_SET(value)    (((value) << 16) & 0x00010000)
+#define DMA_CHx_CONTROL_PBLX8_SET(value) (((value) << 16) & 0x00010000)
 
-#define DMA_CHx_CONTROL_MSS_SET(value)      (((value) << 0) & 0x00003fff)
+#define DMA_CHx_CONTROL_MSS_SET(value) ((value)&0x00003fff)
 
-#define DMA_CHx_TX_CONTROL_OFST	 0x4
+#define DMA_CHx_TX_CONTROL_OFST (0x4)
 
 #define DMA_CHx_TX_CONTROL_TXPBL_SET(value) (((value) << 16) & 0x003f0000)
 
-#define DMA_CHx_TX_CONTROL_TSE_SET(value)   (((value) << 12) & 0x00001000)
+#define DMA_CHx_TX_CONTROL_TSE_SET(value) (((value) << 12) & 0x00001000)
 
 #define DMA_CHx_TX_CONTROL_RESERVED_OSP_SET(value) (((value) << 4) & 0x00000010)
 
-#define DMA_CHx_TX_CONTROL_ST_CLR_MSK	 0xfffffffe
+#define DMA_CHx_TX_CONTROL_ST_CLR_MSK (0xfffffffe)
 
-#define DMA_CHx_RX_CONTROL_OFST	 0x8
+#define DMA_CHx_RX_CONTROL_OFST (0x8)
 
-#define DMA_CHx_RX_CONTROL_RPF_SET(value)   (((value) << 31) & 0x80000000)
+#define DMA_CHx_RX_CONTROL_RPF_SET(value) (((value) << 31) & 0x80000000)
 
 #define DMA_CHx_RX_CONTROL_RXPBL_SET(value) (((value) << 16) & 0x003f0000)
 
-#define DMA_CHx_RX_CONTROL_RBSZ_SET(value)  ((value << 1) & 0x00007ff0)
+#define DMA_CHx_RX_CONTROL_RBSZ_SET(value) ((value << 1) & 0x00007ff0)
 
-#define DMA_CHx_RX_CONTROL_SR_CLR_MSK	 0xfffffffe
+#define DMA_CHx_RX_CONTROL_SR_CLR_MSK (0xfffffffe)
 
-#define DMA_CHx_TXDESC_LIST_HADDRESS_OFST  0x10
+#define DMA_CHx_TXDESC_LIST_HADDRESS_OFST (0x10)
 
-#define DMA_CHx_TXDESC_LIST_HADDRESS_TDESHA_SET(value) (((value) << 0) & 0x000000ff)
+#define DMA_CHx_TXDESC_LIST_HADDRESS_TDESHA_SET(value) ((value)&0x000000ff)
 
-#define DMA_CHx_TXDESC_LIST_LADDRESS_OFST  0x14
+#define DMA_CHx_TXDESC_LIST_LADDRESS_OFST (0x14)
 
-#define DMA_CHx_RXDESC_LIST_HADDRESS_OFST  0x18
+#define DMA_CHx_RXDESC_LIST_HADDRESS_OFST (0x18)
 
-#define DMA_CHx_RXDESC_LIST_LADDRESS_OFST  0x1c
+#define DMA_CHx_RXDESC_LIST_LADDRESS_OFST (0x1c)
 
-#define DMA_CHx_TXDESC_TAIL_LPOINTER_OFST  0x24
+#define DMA_CHx_TXDESC_TAIL_LPOINTER_OFST (0x24)
 
-#define DMA_CHx_TXDESC_TAIL_LPOINTER_TDT_SET(value) (((value) << 3) & 0xfffffff8)
+#define DMA_CHx_TXDESC_TAIL_LPOINTER_TDT_SET(value) ((value)&0xfffffff8)
 
-#define DMA_CHx_RXDESC_TAIL_LPOINTER_OFST  0x2c
+#define DMA_CHx_RXDESC_TAIL_LPOINTER_OFST (0x2c)
 
-#define DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(value) (((value) << 3) & 0xfffffff8)
+#define DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(value) ((value)&0xfffffff8)
 
-#define DMA_CHx_TX_CONTROL2_OFST  0x30
+#define DMA_CHx_TX_CONTROL2_OFST (0x30)
 
 #define DMA_CHx_TX_CONTROL2_TDRL_SET(value) (((value) << 0) & 0x0000ffff)
 
-#define DMA_CHx_RX_CONTROL2_OFST  0x34
+#define DMA_CHx_RX_CONTROL2_OFST (0x34)
 
 #define DMA_CHx_RX_CONTROL2_RDRL_SET(value) (((value) << 0) & 0x0000ffff)
 
-#define DMA_CHx_TX_CONTROL_ST_SET_MSK	 0x00000001
+#define DMA_CHx_TX_CONTROL_ST_SET_MSK (0x00000001)
 
-#define DMA_CHx_RX_CONTROL_SR_SET_MSK	 0x00000001
+#define DMA_CHx_RX_CONTROL_SR_SET_MSK (0x00000001)
 
-#define DMA_CHx_INTERRUPT_ENABLE_OFST  0x38
+#define DMA_CHx_INTERRUPT_ENABLE_OFST (0x38)
 
 #define DMA_CHx_INTERRUPT_ENABLE_NIE_SET(value) (((value) << 15) & 0x00008000)
 
@@ -196,17 +196,17 @@
 
 #define DMA_CHx_INTERRUPT_ENABLE_TIE_SET(value) (((value) << 0) & 0x00000001)
 
-#define MTL_OPERATION_MODE_OFST	 0x0
+#define MTL_OPERATION_MODE_OFST (0x0)
 
 #define MTL_OPERATION_MODE_ETSALG_SET(value) (((value) << 5) & 0x00000060)
 
 #define MTL_OPERATION_MODE_RAA_SET(value) (((value) << 2) & 0x00000004)
 
-#define MTL_TC_PRTY_MAP0_OFST  0x40
+#define MTL_TC_PRTY_MAP0_OFST (0x40)
 
-#define MTL_RXQ_DMA_MAP0_OFST  0x30
+#define MTL_RXQ_DMA_MAP0_OFST (0x30)
 
-#define MTL_TCQx_MTL_TXQx_OPERATION_MODE_OFST  0x0
+#define MTL_TCQx_MTL_TXQx_OPERATION_MODE_OFST (0x0)
 
 #define MTL_TCQx_MTL_TXQx_OPERATION_MODE_TQS_SET(value) (((value) << 16) & 0x007f0000)
 
@@ -218,11 +218,11 @@
 
 #define MTL_TCQx_MTL_TXQx_OPERATION_MODE_TSF_SET(value) (((value) << 1) & 0x00000002)
 
-#define MTL_TCQx_MTC_TCx_ETS_CONTROL_OFST  0x10
+#define MTL_TCQx_MTC_TCx_ETS_CONTROL_OFST (0x10)
 
 #define MTL_TCQx_MTC_TCx_ETS_CONTROL_TSA_SET(value) (((value) << 0) & 0x00000003)
 
-#define MTL_TCQx_MTL_RXQx_OPERATION_MODE_OFST  0x40
+#define MTL_TCQx_MTL_RXQx_OPERATION_MODE_OFST (0x40)
 
 #define MTL_TCQx_MTL_RXQx_OPERATION_MODE_RQS_SET(value) (((value) << 16) & 0x003f0000)
 
@@ -238,27 +238,27 @@
 
 #define MTL_TCQx_MTL_RXQx_OPERATION_MODE_RTC_SET(value) (((value) << 0) & 0x00000003)
 
-#define MTL_INTERRUPT_STATUS_OFST  0x20
+#define MTL_INTERRUPT_STATUS_OFST (0x20)
 
-#define CORE_MAC_ADDRESS1_HIGH_SA_SET(value) (((value) << 30) & 0x40000000)
+#define CORE_MAC_ADDRESSx_HIGH_SA_SET(value) (((value) << 30) & 0x40000000)
 
-#define CORE_MAC_ADDRESS1_HIGH_AE_SET_MSK    0x80000000
+#define CORE_MAC_ADDRESS1_HIGH_AE_SET_MSK (0x80000000)
 
-#define CORE_MAC_ADDRESS0_HIGH_OFST  0x300
+#define CORE_MAC_ADDRESS0_HIGH_OFST (0x300)
 
-#define CORE_MAC_ADDRESS0_LOW_OFST  0x304
+#define CORE_MAC_ADDRESS0_LOW_OFST (0x304)
 
-#define CORE_MAC_TX_CONFIGURATION_OFST	0x0
+#define CORE_MAC_TX_CONFIGURATION_OFST (0x0)
 
-#define CORE_MAC_TX_CONFIGURATION_SS_CLR_MSK	0x1fffffff
+#define CORE_MAC_TX_CONFIGURATION_SS_CLR_MSK (0x1fffffff)
 
 #define CORE_MAC_TX_CONFIGURATION_SS_SET(value) (((value) << 29) & 0xe0000000)
 
 #define CORE_MAC_TX_CONFIGURATION_JD_SET(value) (((value) << 16) & 0x00010000)
 
-#define CORE_MAC_RXQ_CTRL0_OFST	 0xa0
+#define CORE_MAC_RXQ_CTRL0_OFST (0xa0)
 
-#define CORE_MAC_RX_CONFIGURATION_OFST	0x4
+#define CORE_MAC_RX_CONFIGURATION_OFST (0x4)
 
 #define CORE_MAC_RX_CONFIGURATION_GPSLCE_SET(value) (((value) << 6) & 0x00000040)
 
@@ -274,25 +274,25 @@
 
 #define CORE_MAC_RX_CONFIGURATION_RE_SET(value) (((value) << 0) & 0x00000001)
 
-#define CORE_MAC_TX_CONFIGURATION_TE_CLR_MSK	0xfffffffe
+#define CORE_MAC_TX_CONFIGURATION_TE_CLR_MSK (0xfffffffe)
 
-#define CORE_MAC_TX_CONFIGURATION_SS_10MHZ   0x07
+#define CORE_MAC_TX_CONFIGURATION_SS_10MHZ (0x07)
 
-#define CORE_MAC_TX_CONFIGURATION_SS_100MHZ  0x04
+#define CORE_MAC_TX_CONFIGURATION_SS_100MHZ (0x04)
 
-#define CORE_MAC_TX_CONFIGURATION_SS_1000MHZ 0x03
+#define CORE_MAC_TX_CONFIGURATION_SS_1000MHZ (0x03)
 
-#define CORE_MAC_TX_CONFIGURATION_SS_2500MHZ 0x06
+#define CORE_MAC_TX_CONFIGURATION_SS_2500MHZ (0x06)
 
-#define CORE_MAC_RX_CONFIGURATION_RE_CLR_MSK	0xfffffffe
+#define CORE_MAC_RX_CONFIGURATION_RE_CLR_MSK (0xfffffffe)
 
-#define CORE_MAC_INTERRUPT_STATUS_OFST	0xb0
+#define CORE_MAC_INTERRUPT_STATUS_OFST (0xb0)
 
-#define CORE_MAC_INTERRUPT_ENABLE_OFST	0xb4
+#define CORE_MAC_INTERRUPT_ENABLE_OFST (0xb4)
 
 #define CORE_MAC_INTERRUPT_ENABLE_LSIE_SET(value) (((value) << 0) & 0x00000001)
 
-#define CORE_MAC_PACKET_FILTER_OFST  0x8
+#define CORE_MAC_PACKET_FILTER_OFST (0x8)
 
 #define CORE_MAC_PACKET_FILTER_IPFE_SET(value) (((value) << 20) & 0x00100000)
 
@@ -304,11 +304,11 @@
 
 #define CORE_MAC_RX_CONFIGURATION_IPC_SET(value) (((value) << 9) & 0x00000200)
 
-#define CORE_MAC_ADDRESS1_HIGH_AE_CLR_MSK    0x7fffffff
+#define CORE_MAC_ADDRESS1_HIGH_AE_CLR_MSK 0x7fffffff
 
-#define CORE_MAC_ADDRESS1_LOW_ADDRLO_SET_MSK	0xffffffff
+#define CORE_MAC_ADDRESS1_LOW_ADDRLO_SET_MSK 0xffffffff
 
-#define CORE_MAC_PACKET_FILTER_PR_CLR_MSK    0xfffffffe
+#define CORE_MAC_PACKET_FILTER_PR_CLR_MSK 0xfffffffe
 
 #define CORE_MAC_PACKET_FILTER_PR_SET(value) (((value) << 0) & 0x00000001)
 
@@ -318,6 +318,15 @@
 
 /* 0th index mac address is not used for L2 filtering */
 #define XGMAC_MAX_MAC_ADDR_COUNT (32u)
+#define MAC_ADDR_BYTE_5          (5)
+#define MAC_ADDR_BYTE_4          (4)
+#define MAC_ADDR_BYTE_3          (3)
+#define MAC_ADDR_BYTE_2          (2)
+#define MAC_ADDR_BYTE_1          (1)
+#define MAC_ADDR_BYTE_0          (0)
+#define BIT_OFFSET_8             (8)
+#define BIT_OFFSET_16            (16)
+#define BIT_OFFSET_24            (24)
 
 #define XGMAC_RXQxEN_DCB       (2u) /* RX queue enabled for Data Center Bridging or Generic */
 #define XGMAC_RXQxEN_SIZE_BITS (2u)
@@ -338,6 +347,8 @@
 
 #define RX_FRAGS_PER_DESC  (2u)
 #define XGMAC_POLLING_MODE (2u)
+#define RX_FRAG_ONE        (0u)
+#define RX_FRAG_TWO        (1u)
 
 #ifdef CONFIG_ETH_DWC_XGMAC_ARP_OFFLOAD
 #define ETH_DWC_XGMAC_ARP_OFFLOAD (1u)
