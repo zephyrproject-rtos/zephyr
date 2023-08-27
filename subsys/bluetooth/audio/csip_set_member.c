@@ -445,7 +445,7 @@ static void set_lock_timer_handler(struct k_work *work)
 	struct k_work_delayable *delayable;
 	struct bt_csip_set_member_svc_inst *svc_inst;
 
-	delayable = CONTAINER_OF(work, struct k_work_delayable, work);
+	delayable = k_work_delayable_from_work(work);
 	svc_inst = CONTAINER_OF(delayable, struct bt_csip_set_member_svc_inst,
 				set_lock_timer);
 

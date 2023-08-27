@@ -89,8 +89,9 @@ static struct triggered_from_msgq_test_item triggered_from_msgq_test;
 
 static void work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
 	TC_PRINT(" - Running test item %d\n", ti->key);
 	k_msleep(WORK_ITEM_WAIT);
@@ -202,8 +203,9 @@ static void test_sequence(void)
 
 static void resubmit_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
 	k_msleep(WORK_ITEM_WAIT);
 
@@ -242,8 +244,9 @@ ZTEST(workqueue_triggered, test_resubmit)
 
 static void delayed_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
+			CONTAINER_OF(dwork, struct delayed_test_item, work);
 
 	TC_PRINT(" - Running delayed test item %d\n", ti->key);
 

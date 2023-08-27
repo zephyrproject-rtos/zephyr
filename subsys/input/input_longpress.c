@@ -36,8 +36,9 @@ struct longpress_data {
 
 static void longpress_deferred(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct longpress_data_entry *entry = CONTAINER_OF(
-			work, struct longpress_data_entry, work);
+			dwork, struct longpress_data_entry, work);
 	const struct device *dev = entry->dev;
 	const struct longpress_config *cfg = dev->config;
 	uint16_t code;
