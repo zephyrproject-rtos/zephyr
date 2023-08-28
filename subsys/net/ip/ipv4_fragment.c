@@ -121,8 +121,9 @@ static void reassembly_info(char *str, struct net_ipv4_reassembly *reass)
 
 static void reassembly_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct net_ipv4_reassembly *reass =
-		CONTAINER_OF(work, struct net_ipv4_reassembly, timer);
+		CONTAINER_OF(dwork, struct net_ipv4_reassembly, timer);
 
 	reassembly_info("Reassembly cancelled", reass);
 
