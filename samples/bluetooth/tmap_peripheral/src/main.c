@@ -24,20 +24,15 @@
 
 #include "tmap_peripheral.h"
 
-#define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
-				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
-				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
-				 BT_AUDIO_CONTEXT_TYPE_GAME | \
-				 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
-
 static struct bt_conn *default_conn;
 static struct k_work_delayable call_terminate_set_work;
 static struct k_work_delayable media_pause_set_work;
 
 static uint8_t unicast_server_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
+	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
 	0x00, /* Metadata length */
 };
 
@@ -47,8 +42,8 @@ static const uint8_t cap_addata[] = {
 };
 
 static uint8_t tmap_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */
-	(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), 0x00, /* TMAP Role */
+	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),                    /* TMAS UUID */
+	BT_BYTES_LIST_LE16(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), /* TMAP Role */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
