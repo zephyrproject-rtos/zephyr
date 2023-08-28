@@ -16,7 +16,7 @@
  *
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
