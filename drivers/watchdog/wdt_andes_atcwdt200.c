@@ -92,7 +92,7 @@ LOG_MODULE_REGISTER(wdt_andes);
 
 static const struct device *const syscon_dev =
 				DEVICE_DT_GET(DT_NODELABEL(syscon));
-static const struct device *const counter_dev =
+static const struct device *const pit_counter_dev =
 				DEVICE_DT_GET(DT_NODELABEL(pit0));
 
 struct counter_alarm_cfg alarm_cfg;
@@ -142,7 +142,7 @@ static void wdt_atcwdt200_set_max_timeout(const struct device *dev)
 
 	key = k_spin_lock(&data->lock);
 
-	counter_freq = counter_get_frequency(counter_dev);
+	counter_freq = counter_get_frequency(pit_counter_dev);
 
 	alarm_cfg.flags = 0;
 	alarm_cfg.callback = wdt_counter_cb;
@@ -177,7 +177,7 @@ static int wdt_atcwdt200_disable(const struct device *dev)
 	k_spin_unlock(&data->lock, key);
 
 	wdt_atcwdt200_set_max_timeout(dev);
-	counter_cancel_channel_alarm(counter_dev, 2);
+	counter_cancel_channel_alarm(pit_counter_dev, 2);
 
 	return 0;
 }
@@ -202,12 +202,12 @@ static int wdt_atcwdt200_setup(const struct device *dev, uint8_t options)
 
 	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ==
 			WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		counter_cancel_channel_alarm(counter_dev, 2);
+		counter_cancel_channel_alarm(pit_counter_dev, 2);
 		sys_write32(WDT_WREN_NUM, WDT_WREN(wdt_addr));
 		sys_write32(reg, WDT_CTRL(wdt_addr));
 		goto out;
 	} else {
-		ret = counter_set_channel_alarm(counter_dev, 2, &alarm_cfg);
+		ret = counter_set_channel_alarm(pit_counter_dev, 2, &alarm_cfg);
 		if (ret != 0) {
 			ret = -EINVAL;
 			goto out;
@@ -260,7 +260,7 @@ static int wdt_atcwdt200_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	counter_freq = counter_get_frequency(counter_dev);
+	counter_freq = counter_get_frequency(pit_counter_dev);
 	rst_period = wdt_atcwdt200_convtime(cfg->window.max, &scaler);
 
 	if (rst_period < 0 || WDOGCFG_PERIOD_MAX < rst_period) {
@@ -329,7 +329,7 @@ static int wdt_atcwdt200_init(const struct device *dev)
 	data->counter_callback = wdt_counter_cb;
 	uint32_t ret;
 
-	counter_start(counter_dev);
+	counter_start(pit_counter_dev);
 
 	ret = syscon_write_reg(syscon_dev, SMU_RESET_REGLO,
 				((uint32_t)((unsigned long)
