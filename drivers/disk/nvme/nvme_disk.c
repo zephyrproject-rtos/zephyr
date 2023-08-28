@@ -27,7 +27,7 @@ static int nvme_disk_read(struct disk_info *disk,
 			  uint32_t num_sector)
 {
 	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name);
+						 struct nvme_namespace, name[0]);
 	struct nvme_completion_poll_status status =
 		NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
@@ -70,7 +70,7 @@ static int nvme_disk_write(struct disk_info *disk,
 			   uint32_t num_sector)
 {
 	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name);
+						 struct nvme_namespace, name[0]);
 	struct nvme_completion_poll_status status =
 		NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
@@ -137,7 +137,7 @@ static int nvme_disk_flush(struct nvme_namespace *ns)
 static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
 	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name);
+						 struct nvme_namespace, name[0]);
 	int ret = 0;
 
 	nvme_lock(disk->dev);
