@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_rtos_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/drivers/timer/system_timer.h>

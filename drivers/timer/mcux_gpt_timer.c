@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_gpt_hw_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <fsl_gpt.h>
 #include <zephyr/sys_clock.h>

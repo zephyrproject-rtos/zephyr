@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
