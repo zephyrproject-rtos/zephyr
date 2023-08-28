@@ -761,7 +761,7 @@ static int backend_init(const struct device *instance)
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	__ASSERT((VDEV_STATUS_SIZE % sys_cache_data_line_size_get()) == 0U,
 		  "VDEV status area must be aligned to the cache line");
-	__ASSERT((VRING_ALIGNMENT % sys_cache_data_line_size_get()) == 0U,
+	__ASSERT((MEM_ALIGNMENT % sys_cache_data_line_size_get()) == 0U,
 		  "Static VRINGs must be aligned to the cache line");
 	__ASSERT((conf->buffer_size % sys_cache_data_line_size_get()) == 0U,
 		  "Buffers must be aligned to the cache line ");
