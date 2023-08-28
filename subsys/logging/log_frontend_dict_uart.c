@@ -158,9 +158,10 @@ static void uart_callback(const struct device *dev,
 	case UART_TX_DONE:
 	{
 		union log_frontend_pkt generic_pkt;
+		struct log_frontend_uart_pkt_hdr *hdr;
 
-		generic_pkt.generic = CONTAINER_OF(evt->data.tx.buf,
-						   struct log_frontend_uart_generic_pkt, hdr);
+		hdr = (struct log_frontend_uart_pkt_hdr *)evt->data.tx.buf;
+		generic_pkt.generic = CONTAINER_OF(hdr, struct log_frontend_uart_generic_pkt, hdr);
 
 		mpsc_pbuf_free(&buf, generic_pkt.ro_pkt);
 		atomic_val_t rem_pkts = atomic_dec(&active_cnt);
