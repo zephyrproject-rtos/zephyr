@@ -2884,7 +2884,6 @@ West:
   files:
     - modules/canopennode/
   labels:
-    - manifest-canopennode
     - "area: CAN"
 
 "West project: chre":
@@ -2894,7 +2893,7 @@ West:
   files:
     - samples/modules/chre/
   labels:
-    - manifest-chre
+    - "area: CHRE"
 
 "West project: cmsis":
   status: maintained
@@ -2908,7 +2907,7 @@ West:
     - modules/cmsis/Kconfig.cmsis_dsp
     - modules/cmsis/Kconfig.cmsis_nn
   labels:
-    - manifest-cmsis
+    - "area: ARM"
 
 "West project: edtt":
   status: maintained
@@ -2919,7 +2918,7 @@ West:
     - thoh-ot
   files: []
   labels:
-    - manifest-edtt
+    - "area: Tests"
 
 "West project: fatfs":
   status: maintained
@@ -2928,7 +2927,7 @@ West:
   files:
     - modules/fatfs/
   labels:
-    - manifest-fatfs
+    - "area: Storage"
 
 "West project: hal_altera":
   status: odd fixes
@@ -2937,7 +2936,7 @@ West:
   files:
     - modules/Kconfig.altera
   labels:
-    - manifest-hal_altera
+    - "platform: Altera"
 
 "West project: hal_ambiq":
   status: maintained
@@ -2948,7 +2947,7 @@ West:
     - msobkowski
   files: []
   labels:
-    - manifest-hal_ambiq
+    - "platform: Ambiq"
 
 "West project: hal_atmel":
   status: maintained
@@ -2959,7 +2958,7 @@ West:
   files:
     - modules/Kconfig.atmel
   labels:
-    - manifest-hal_atmel
+    - "platform: Microchip SAM"
 
 "West project: hal_cypress":
   status: maintained
@@ -2971,7 +2970,7 @@ West:
   files:
     - modules/Kconfig.cypress
   labels:
-    - manifest-hal_cypress
+    - "platform: Infineon"
 
 "West project: hal_espressif":
   status: maintained
@@ -2983,7 +2982,7 @@ West:
     - LucasTambor
   files: []
   labels:
-    - manifest-hal_espressif
+    - "platform: ESP32"
 
 "West project: hal_gigadevice":
   status: maintained
@@ -2995,7 +2994,7 @@ West:
   files:
     - modules/hal_gigadevice/
   labels:
-    - manifest-hal_gigadevice
+    - "platform: GD32"
 
 "West project: hal_infineon":
   status: maintained
@@ -3009,7 +3008,7 @@ West:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
   labels:
-    - manifest-hal_infineon
+    - "platform: Infineon"
 
 "West project: hal_microchip":
   status: maintained
@@ -3021,7 +3020,8 @@ West:
   files:
     - modules/Kconfig.microchip
   labels:
-    - manifest-hal_microchip
+    - "platform: Microchip SAM"
+    - "platform: Microchip MEC"
 
 "West project: hal_nordic":
   status: maintained
@@ -3033,7 +3033,7 @@ West:
   files:
     - modules/hal_nordic/
   labels:
-    - manifest-hal_nordic
+    - "platform: nRF"
 
 "West project: hal_nuvoton":
   status: maintained
@@ -3042,7 +3042,7 @@ West:
   files:
     - modules/Kconfig.nuvoton
   labels:
-    - manifest-hal_nuvoton
+    - "platform: Nuvoton"
 
 "West project: hal_nxp":
   status: maintained
@@ -3060,7 +3060,7 @@ West:
     - modules/Kconfig.mcux
     - modules/Kconfig.nxp_s32
   labels:
-    - manifest-hal_nxp
+    - "platform: NXP"
 
 "West project: hal_openisa":
   status: odd fixes
@@ -3069,7 +3069,7 @@ West:
   files:
     - modules/Kconfig.vega
   labels:
-    - manifest-hal_openisa
+    - "platform: openisa/RV32M1"
 
 "West project: hal_quicklogic":
   status: odd fixes
@@ -3077,7 +3077,7 @@ West:
     - fkokosinski
   files: []
   labels:
-    - manifest-hal_quicklogic
+    - "platform: Quicklogic"
 
 "West project: hal_renesas":
   status: maintained
@@ -3085,7 +3085,7 @@ West:
     - andrzej-kaczmarek
   files: []
   labels:
-    - manifest-hal_renesas
+    - "platform: Renesas"
 
 "West project: hal_rpi_pico":
   status: maintained
@@ -3094,7 +3094,7 @@ West:
   files:
     - modules/hal_rpi_pico/
   labels:
-    - manifest-hal_rpi_pico
+    - "platform: Raspberry Pi Pico"
 
 "West project: hal_silabs":
   status: maintained
@@ -3107,7 +3107,7 @@ West:
   files:
     - modules/Kconfig.silabs
   labels:
-    - manifest-hal_silabs
+    - "platform: SiLabs"
 
 "West project: hal_st":
   status: maintained
@@ -3118,7 +3118,7 @@ West:
   files:
     - modules/Kconfig.st
   labels:
-    - manifest-hal_st
+    - "area: Sensors"
 
 "West project: hal_stm32":
   status: maintained
@@ -3132,7 +3132,7 @@ West:
   files:
     - modules/Kconfig.stm32
   labels:
-    - manifest-hal_stm32
+    - "platform: STM32"
 
 "West project: hal_telink":
   status: maintained
@@ -3141,7 +3141,7 @@ West:
   files:
     - modules/Kconfig.telink
   labels:
-    - manifest-hal_telink
+    - "platform: Telink"
 
 "West project: hal_ti":
   status: maintained
@@ -3151,7 +3151,7 @@ West:
     - cfriedt
   files: []
   labels:
-    - manifest-hal_ti
+    - "platform: TI"
 
 "West project: hal_wurthelektronik":
   status: maintained
@@ -3160,7 +3160,7 @@ West:
   files:
     - modules/Kconfig.wurthelektronik
   labels:
-    - manifest-hal_wurthelektronik
+    - "area: Sensors"
 
 "West project: hal_xtensa":
   status: maintained
@@ -3172,7 +3172,7 @@ West:
   files:
     - modules/Kconfig.xtensa
   labels:
-    - manifest-hal_xtensa
+    - "area: Xtensa"
 
 "West project: hal_intel":
   status: maintained
@@ -3184,7 +3184,7 @@ West:
   files:
     - modules/Kconfig.intel
   labels:
-    - manifest-hal_intel
+    - "platform: Intel"
 
 "West project: libmetal":
   status: odd fixes
@@ -3194,7 +3194,7 @@ West:
   files:
     - modules/Kconfig.libmetal
   labels:
-    - manifest-libmetal
+    - "area: AMP"
 
 "West project: liblc3":
   status: maintained
@@ -3207,14 +3207,14 @@ West:
   files:
     - modules/liblc3/
   labels:
-    - manifest-liblc3
+    - "area: Audio"
 
 "West project: littlefs":
   status: odd fixes
   files:
     - modules/littlefs/
   labels:
-    - manifest-littlefs
+    - "area: Storage"
 
 "West project: loramac-node":
   status: maintained
@@ -3223,7 +3223,7 @@ West:
   files:
     - modules/loramac-node/
   labels:
-    - manifest-loramac-node
+    - "area: LoRa"
 
 "West project: lvgl":
   status: maintained
@@ -3236,7 +3236,7 @@ West:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
   labels:
-    - manifest-lvgl
+    - "area: LVGL"
 
 "West project: lz4":
   status: odd fixes
@@ -3245,7 +3245,7 @@ West:
   files:
     - modules/lz4/
   labels:
-    - manifest-lz4
+    - "area: Compression"
 
 "West project: mbedtls":
   status: maintained
@@ -3255,7 +3255,7 @@ West:
   files:
     - modules/mbedtls/
   labels:
-    - manifest-mbedtls
+    - "area: Crypto / RNG"
 
 "West project: mcuboot":
   status: maintained
@@ -3268,7 +3268,7 @@ West:
     - modules/Kconfig.mcuboot
     - tests/boot/test_mcuboot/
   labels:
-    - manifest-mcuboot
+    - "area: MCUBoot"
 
 "West project: mipi-sys-t":
   status: odd fixes
@@ -3277,7 +3277,7 @@ West:
   files:
     - modules/Kconfig.syst
   labels:
-    - manifest-mipi-sys-t
+    - "area: Tracing"
 
 "West project: nanopb":
   status: odd fixes
@@ -3287,7 +3287,7 @@ West:
     - modules/nanopb/
     - samples/modules/nanopb/
   labels:
-    - manifest-nanopb
+    - "area: Serialization"
 
 "West project: net-tools":
   status: odd fixes
@@ -3297,7 +3297,7 @@ West:
     - rlubos
   files: []
   labels:
-    - manifest-net-tools
+    - "area: Networking"
 
 "West project: nrf_hw_models":
   status: maintained
@@ -3308,7 +3308,7 @@ West:
     - thoh-ot
   files: []
   labels:
-    - manifest-nrf_hw_models
+    - "area: native port"
 
 "West project: open-amp":
   status: odd fixes
@@ -3317,7 +3317,7 @@ West:
   files:
     - modules/Kconfig.open-amp
   labels:
-    - manifest-open-amp
+    - "area: AMP"
 
 "West project: openthread":
   status: maintained
@@ -3330,7 +3330,7 @@ West:
   files:
     - modules/openthread/
   labels:
-    - manifest-openthread
+    - "area: OpenThread"
 
 "West project: picolibc":
   status: maintained
@@ -3340,7 +3340,8 @@ West:
     - stephanosio
   files: []
   labels:
-    - manifest-picolibc
+    - "area: C Library"
+    - "area: picolibc"
 
 "West project: segger":
   status: odd fixes
@@ -3349,7 +3350,7 @@ West:
   files:
     - modules/segger/
   labels:
-    - manifest-segger
+    - "area: Debugging"
 
 "West project: sof":
   status: maintained
@@ -3364,7 +3365,7 @@ West:
   files:
     - modules/Kconfig.sof
   labels:
-    - manifest-sof
+    - "area: Audio"
 
 "West project: tflite-micro":
   status: odd fixes
@@ -3374,7 +3375,7 @@ West:
     - modules/tflite-micro/
     - samples/modules/tflite-micro/
   labels:
-    - manifest-tflite-micro
+    - "area: Neural Networks"
 
 "West project: thrift":
   status: maintained
@@ -3385,14 +3386,15 @@ West:
     - samples/modules/thrift/
     - tests/lib/thrift/
   labels:
-    - manifest-thrift
+    - "area: Thrift"
+    - "area: Serialization"
 
 "West project: tinycrypt":
   status: odd fixes
   files:
     - modules/Kconfig.tinycrypt
   labels:
-    - manifest-tinycrypt
+    - "area: Crypto / RNG"
 
 "West project: TraceRecorderSource":
   status: maintained
@@ -3401,7 +3403,7 @@ West:
   files:
     - modules/TraceRecorder/
   labels:
-    - manifest-TraceRecorderSource
+    - "area: Tracing"
 
 "West project: trusted-firmware-m":
   status: maintained
@@ -3413,7 +3415,7 @@ West:
   files:
     - modules/trusted-firmware-m/
   labels:
-    - manifest-trusted-firmware-m
+    - "area: TF-M"
 
 "West project: tf-m-tests":
   status: maintained
@@ -3424,7 +3426,7 @@ West:
     - SebastianBoe
   files: []
   labels:
-    - manifest-tf-m-tests
+    - "area: TF-M"
 
 "West project: trusted-firmware-a":
   status: maintained
@@ -3436,7 +3438,7 @@ West:
   files:
     - modules/trusted-firmware-a/
   labels:
-    - manifest-trusted-firmware-a
+    - "area: TF-A"
 
 "West project: psa-arch-tests":
   status: maintained
@@ -3447,7 +3449,7 @@ West:
     - SebastianBoe
   files: []
   labels:
-    - manifest-psa-arch-tests
+    - "area: TF-M"
 
 "West project: uoscore-uedhoc":
   status: maintained
@@ -3457,7 +3459,8 @@ West:
   files:
     - modules/uoscore-uedhoc/
   labels:
-    - manifest-uoscore-uedhoc
+    - "area: Networking"
+    - "area: Crypto / RNG"
 
 "West project: zcbor":
   status: maintained
@@ -3466,7 +3469,7 @@ West:
   files:
     - modules/zcbor/
   labels:
-    - manifest-zcbor
+    - "area: CBOR"
 
 "West project: zscilib":
   status: maintained
@@ -3474,7 +3477,7 @@ West:
     - microbuilder
   files: []
   labels:
-    - manifest-zscilib
+    - "area: Sensors"
 
 Xtensa arch:
   status: maintained
