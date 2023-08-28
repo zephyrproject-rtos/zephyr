@@ -115,6 +115,9 @@ config USE_STDC_LIS3DSH
 config USE_STDC_LIS3MDL
 	bool
 
+config USE_STDC_LPS22DF
+	bool
+
 config USE_STDC_LPS22HB
 	bool
 

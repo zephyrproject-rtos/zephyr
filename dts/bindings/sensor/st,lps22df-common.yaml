@@ -1,0 +1,88 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.
+
+  odr:
+    type: int
+    default: 0
+    description: |
+        Specify the output data rate expressed in samples per second (Hz).
+        The default is the power-on reset value.
+
+        0 = Power-Down
+        1 = 1Hz
+        2 = 4Hz
+        3 = 10Hz
+        4 = 25Hz
+        5 = 50Hz
+        6 = 75Hz
+        7 = 100Hz
+        8 = 200Hz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+
+  lpf:
+    type: int
+    default: 0
+    description: |
+        Specify the low pass filter value to be applied to pressure data.
+        The default is the power-on reset value.
+
+        0 = Low Pass Filter disabled
+        1 = Low Pass Filter set to ODR/4
+        3 = Low Pass Filter set to ODR/9
+    enum:
+      - 0
+      - 1
+      - 3
+
+  avg:
+    type: int
+    default: 0
+    description: |
+        Specify the average filter value (i.e. number of samples) to be applied
+        to pressure and temperature data.
+        The default is the power-on reset value.
+
+        0 = Average of 4 data samples
+        1 = Average of 8 data samples
+        2 = Average of 16 data samples
+        3 = Average of 32 data samples
+        4 = Average of 64 data samples
+        5 = Average of 128 data samples
+        6 = Average of 256 data samples
+        7 = Average of 512 data samples
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
