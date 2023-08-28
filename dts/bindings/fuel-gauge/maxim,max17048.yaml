@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
+# Copyright (c) 2023 Fraunhofer AICOS
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -8,3 +9,22 @@ description: |
 compatible: "maxim,max17048"
 
 include: [i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+  overvoltage-threshold:
+    description: |
+      Overvoltage in mV. If triggers are enabled, an interrupt is triggered upon
+      this value is reached.
+    type: int
+  undervoltage-threshold:
+    description: |
+      Undervoltage in mV. If triggers are enabled, an interrupt is triggered upon
+      this value is reached.
+    type: int
+  low-soc-threshold:
+    description: |
+      Empty alert threshold in %. If triggers are enabled, an interrupt is
+      triggered when this SOC value is crossed.
+    type: int

@@ -26,22 +26,6 @@ LOG_MODULE_REGISTER(MAX17048);
 #endif
 
 /**
- * Storage for the fuel gauge basic information
- */
-struct max17048_data {
-	/* Charge as percentage */
-	uint8_t charge;
-	/* Voltage as mV */
-	uint16_t voltage;
-
-	/* Time in minutes */
-	uint16_t time_to_full;
-	uint16_t time_to_empty;
-	/* True if battery chargin, false if discharging */
-	bool charging;
-};
-
-/**
  * I2C communication
  * The way we read a value is first writing the address we want to read and then
  * wait for 2 bytes containing the data.
@@ -169,6 +153,12 @@ static int max17048_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_MAX17048_TRIGGER
+	if (max17048_trigger_init(dev) < 0) {
+		LOG_ERR("Failed to set trigger.");
+	};
+#endif /* CONFIG_MAX17048_TRIGGER */
+
 	return 0;
 }
 
@@ -242,7 +232,6 @@ static int max17048_get_props(const struct device *dev, struct fuel_gauge_get_pr
 		 */
 		data->charging = crate > 0;
 
-
 		/**
 		 * In the following code, we multiply by 1000 the charge to increase the
 		 * precision. If we just truncate the division without this multiplier,
@@ -296,10 +285,19 @@ static const struct fuel_gauge_driver_api max17048_driver_api = {
 	static struct max17048_data max17048_data_##inst;                                          \
                                                                                                    \
 	static const struct max17048_config max17048_config_##inst = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                                \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
+		.undervoltage_threshold =                                                          \
+			DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), undervoltage_threshold, 0),       \
+		.overvoltage_threshold =                                                           \
+			DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), overvoltage_threshold,            \
+				   MAX17048_OVERVOLTAGE_THRESHOLD_MAX),                            \
+		.low_soc_threshold = DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), low_soc_threshold,   \
+						MAX17048_SOC_THRESHOLD_POR),                       \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &max17048_init, NULL, &max17048_data_##inst,                   \
-			&max17048_config_##inst, POST_KERNEL,                                \
-			CONFIG_FUEL_GAUGE_INIT_PRIORITY, &max17048_driver_api);
+			      &max17048_config_##inst, POST_KERNEL,                                \
+			      CONFIG_FUEL_GAUGE_INIT_PRIORITY, &max17048_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17048_DEFINE)
