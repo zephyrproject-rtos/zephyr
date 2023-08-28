@@ -6,16 +6,6 @@ if BOARD_HSDK
 config BOARD
 	default "hsdk"
 
-if GPIO
-
-config GPIO_INIT_PRIORITY
-	default 60
-
-config I2C
-	default y
-
-endif # GPIO
-
 if SPI_DW
 
 config SPI_DW_ACCESS_WORD_ONLY

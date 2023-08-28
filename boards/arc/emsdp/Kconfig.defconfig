@@ -8,14 +8,6 @@ if BOARD_EMSDP
 config BOARD
 	default "emsdp"
 
-
-if GPIO
-
-config GPIO_INIT_PRIORITY
-	default 70
-
-endif # GPIO
-
 if SPI
 
 config SPI_DW
