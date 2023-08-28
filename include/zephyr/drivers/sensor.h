@@ -495,7 +495,9 @@ struct sensor_decoder_api {
 	 * @param[out]    channels The channels that were decoded
 	 * @param[out]    values The scaled data that was decoded
 	 * @param[in]     max_count The maximum number of channels to decode.
-	 * @return
+	 * @retval        > 0 The number of decoded values
+	 * @retval        0 Nothing else to decode on the @p buffer
+	 * @retval        < 0 Error
 	 */
 	int (*decode)(const uint8_t *buffer, sensor_frame_iterator_t *fit,
 		      sensor_channel_iterator_t *cit, enum sensor_channel *channels, q31_t *values,
