@@ -80,6 +80,7 @@ static int pd_intel_adsp_init(const struct device *dev)
 	};									\
 	PM_DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_pm_action);			\
 	DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_init, PM_DEVICE_DT_INST_GET(id),\
-			      &pd_pg_reg##id, NULL, POST_KERNEL, 75, NULL);
+			      &pd_pg_reg##id, NULL, POST_KERNEL,                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)
