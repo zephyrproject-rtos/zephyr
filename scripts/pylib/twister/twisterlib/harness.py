@@ -24,8 +24,7 @@ logger.setLevel(logging.DEBUG)
 _WINDOWS = platform.system() == 'Windows'
 
 
-# pylint: disable=anomalous-backslash-in-string
-result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in (\\d*[.,]?\\d*) seconds")
+result_re = re.compile(r".*(PASS|FAIL|SKIP) - (test_)?(.*) in (\d*[.,]?\d*) seconds")
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
