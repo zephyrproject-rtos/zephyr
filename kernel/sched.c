@@ -66,6 +66,11 @@ static inline int is_preempt(struct k_thread *thread)
 	return thread->base.preempt <= _PREEMPT_THRESHOLD;
 }
 
+BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
+	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
+	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
+	     "threads.");
+
 static inline int is_metairq(struct k_thread *thread)
 {
 #if CONFIG_NUM_METAIRQ_PRIORITIES > 0
@@ -322,7 +327,8 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	/* MetaIRQs must always attempt to return back to a
 	 * cooperative thread they preempted and not whatever happens
 	 * to be highest priority now. The cooperative thread was
@@ -542,7 +548,8 @@ void z_time_slice(void)
  */
 static void update_metairq_preempt(struct k_thread *thread)
 {
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	if (is_metairq(thread) && !is_metairq(_current) &&
 	    !is_preempt(_current)) {
 		/* Record new preemption */
