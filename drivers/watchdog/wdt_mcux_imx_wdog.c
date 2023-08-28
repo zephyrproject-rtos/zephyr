@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_wdog
 
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys_clock.h>
 #include <fsl_wdog.h>
@@ -20,6 +21,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog);
 struct mcux_wdog_config {
 	WDOG_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct mcux_wdog_data {
@@ -135,8 +137,14 @@ static void mcux_wdog_isr(const struct device *dev)
 static int mcux_wdog_init(const struct device *dev)
 {
 	const struct mcux_wdog_config *config = dev->config;
+	int ret;
 
 	config->irq_config_func(dev);
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -150,9 +158,12 @@ static const struct wdt_driver_api mcux_wdog_api = {
 
 static void mcux_wdog_config_func(const struct device *dev);
 
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct mcux_wdog_config mcux_wdog_config = {
 	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
 	.irq_config_func = mcux_wdog_config_func,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct mcux_wdog_data mcux_wdog_data;
