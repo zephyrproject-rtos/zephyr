@@ -411,8 +411,9 @@ ZTEST(workqueue_delayed, test_delayed)
 
 static void triggered_work_handler(struct k_work *work)
 {
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
 	struct triggered_test_item *ti =
-			CONTAINER_OF(work, struct triggered_test_item, work);
+			CONTAINER_OF(pwork, struct triggered_test_item, work);
 
 	TC_PRINT(" - Running triggered test item %d\n", ti->key);
 
@@ -545,8 +546,9 @@ ZTEST(workqueue_triggered, test_already_triggered)
 
 static void triggered_resubmit_work_handler(struct k_work *work)
 {
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
 	struct triggered_test_item *ti =
-			CONTAINER_OF(work, struct triggered_test_item, work);
+			CONTAINER_OF(pwork, struct triggered_test_item, work);
 
 	results[num_results++] = ti->key;
 
