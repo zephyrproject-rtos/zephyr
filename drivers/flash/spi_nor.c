@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/init.h>
 #include <string.h>
@@ -1149,19 +1150,17 @@ static int spi_nor_configure(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	if (cfg->reset) {
-		if (!device_is_ready(cfg->reset->port)) {
-			LOG_ERR("Reset pin not ready");
-			return -ENODEV;
-		}
-		if (gpio_pin_configure_dt(cfg->reset, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
-			return -ENODEV;
-		}
-		rc = gpio_pin_set_dt(cfg->reset, 0);
-		if (rc) {
-			return rc;
-		}
+	if (!gpio_is_ready_dt(&cfg->reset)) {
+		LOG_ERR("Reset pin not ready");
+		return -ENODEV;
+	}
+	if (gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_ACTIVE)) {
+		LOG_ERR("Couldn't configure reset pin");
+		return -ENODEV;
+	}
+	rc = gpio_pin_set_dt(&cfg->reset, 0);
+	if (rc) {
+		return rc;
 	}
 #endif
 
@@ -1427,7 +1426,7 @@ static const struct spi_nor_config spi_nor_config_0 = {
 	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8),
 				    CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios)
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
 
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
