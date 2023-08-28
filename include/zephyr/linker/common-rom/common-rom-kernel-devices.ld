@@ -20,7 +20,30 @@
 		__init_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
+	/* HACK: needs a new iterable "sub-section" API */
+	SECTION_PROLOGUE(device_area,,)
+	{
+		_device_list_start = .;
+		_device_list_EARLY_start = .;
+		KEEP(*(SORT(._device.static.EARLY_?_*)));
+		KEEP(*(SORT(._device.static.EARLY_??_*)));
+		_device_list_PRE_KERNEL_1_start = .;
+		KEEP(*(SORT(._device.static.PRE_KERNEL_1_?_*)));
+		KEEP(*(SORT(._device.static.PRE_KERNEL_1_??_*)));
+		_device_list_PRE_KERNEL_2_start = .;
+		KEEP(*(SORT(._device.static.PRE_KERNEL_2_?_*)));
+		KEEP(*(SORT(._device.static.PRE_KERNEL_2_??_*)));
+		_device_list_POST_KERNEL_start = .;
+		KEEP(*(SORT(._device.static.POST_KERNEL_?_*)));
+		KEEP(*(SORT(._device.static.POST_KERNEL_??_*)));
+		_device_list_APPLICATION_start = .;
+		KEEP(*(SORT(._device.static.APPLICATION_?_*)));
+		KEEP(*(SORT(._device.static.APPLICATION_??_*)));
+		_device_list_SMP_start = .;
+		KEEP(*(SORT(._device.static.SMP_?_*)));
+		KEEP(*(SORT(._device.static.SMP_??_*)));
+		_device_list_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)

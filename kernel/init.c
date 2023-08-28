@@ -69,6 +69,14 @@ extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
 extern const struct init_entry __init_end[];
 
+extern const struct device _device_list_EARLY_start[];
+extern const struct device _device_list_PRE_KERNEL_1_start[];
+extern const struct device _device_list_PRE_KERNEL_2_start[];
+extern const struct device _device_list_POST_KERNEL_start[];
+extern const struct device _device_list_APPLICATION_start[];
+/* FIXME: iterable sections used in device.h do not use const? */
+extern struct device _device_list_end[];
+
 enum init_level {
 	INIT_LEVEL_EARLY = 0,
 	INIT_LEVEL_PRE_KERNEL_1,
@@ -82,6 +90,8 @@ enum init_level {
 
 #ifdef CONFIG_SMP
 extern const struct init_entry __init_SMP_start[];
+
+extern const struct device _device_list_SMP_start[];
 #endif
 
 /*
@@ -230,18 +240,32 @@ __pinned_bss
 bool z_sys_post_kernel;
 
 /**
- * @brief Execute all the init entry initialization functions at a given level
+ * @brief Execute all devices and init entry initialization functions at a given
+ * level
  *
- * @details Invokes the initialization routine for each init entry object
- * created by the INIT_ENTRY_DEFINE() macro using the specified level.
- * The linker script places the init entry objects in memory in the order
- * they need to be invoked, with symbols indicating where one level leaves
- * off and the next one begins.
+ * @details Invokes the initialization routine for each device and init entry
+ * object created by the SYS_INIT() macro using the specified level. Devices are
+ * initialized first, then init entry objects. The linker script places the init
+ * entry objects in memory in the order they need to be invoked, with symbols
+ * indicating where one level leaves off and the next one begins.
  *
  * @param level init level to run.
  */
 static void z_sys_init_run_level(enum init_level level)
 {
+	static const struct device *dev_levels[] = {
+		_device_list_EARLY_start,
+		_device_list_PRE_KERNEL_1_start,
+		_device_list_PRE_KERNEL_2_start,
+		_device_list_POST_KERNEL_start,
+		_device_list_APPLICATION_start,
+#ifdef CONFIG_SMP
+		_device_list_SMP_start,
+#endif
+		/* End marker */
+		_device_list_end,
+	};
+
 	static const struct init_entry *levels[] = {
 		__init_EARLY_start,
 		__init_PRE_KERNEL_1_start,
@@ -254,39 +278,36 @@ static void z_sys_init_run_level(enum init_level level)
 		/* End marker */
 		__init_end,
 	};
-	const struct init_entry *entry;
 
-	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev;
+	for (const struct device *dev = dev_levels[level]; dev < dev_levels[level+1]; dev++) {
+		int rc = 0;
 
-		if (dev != NULL) {
-			int rc = 0;
-
-			if (entry->init_fn.dev != NULL) {
-				rc = entry->init_fn.dev(dev);
-				/* Mark device initialized. If initialization
-				 * failed, record the error condition.
-				 */
-				if (rc != 0) {
-					if (rc < 0) {
-						rc = -rc;
-					}
-					if (rc > UINT8_MAX) {
-						rc = UINT8_MAX;
-					}
-					dev->state->init_res = rc;
+		if (dev->init != NULL) {
+			rc = dev->init(dev);
+			/* Mark device initialized. If initialization failed,
+			 * record the error condition.
+			 */
+			if (rc != 0) {
+				if (rc < 0) {
+					rc = -rc;
 				}
+				if (rc > UINT8_MAX) {
+					rc = UINT8_MAX;
+				}
+				dev->state->init_res = rc;
 			}
-
-			dev->state->initialized = true;
-
-			if (rc == 0) {
-				/* Run automatic device runtime enablement */
-				(void)pm_device_runtime_auto_enable(dev);
-			}
-		} else {
-			(void)entry->init_fn.sys();
 		}
+
+		dev->state->initialized = true;
+
+		if (rc == 0) {
+			/* Run automatic device runtime enablement */
+			(void)pm_device_runtime_auto_enable(dev);
+		}
+	}
+
+	for (const struct init_entry *entry = levels[level]; entry < levels[level+1]; entry++) {
+		(void)entry->init_fn.sys();
 	}
 }
 
