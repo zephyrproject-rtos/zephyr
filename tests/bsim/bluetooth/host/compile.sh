@@ -46,6 +46,8 @@ app=tests/bsim/bluetooth/host/gatt/ccc_store compile
 app=tests/bsim/bluetooth/host/gatt/ccc_store conf_file=prj_2.conf compile
 app=tests/bsim/bluetooth/host/gatt/sc_indicate compile
 
+app=tests/bsim/bluetooth/host/iso/cis compile
+
 app=tests/bsim/bluetooth/host/l2cap/general compile
 app=tests/bsim/bluetooth/host/l2cap/userdata compile
 app=tests/bsim/bluetooth/host/l2cap/stress compile
