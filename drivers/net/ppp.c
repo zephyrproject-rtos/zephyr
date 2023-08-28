@@ -610,7 +610,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
-		CONTAINER_OF(buf, struct ppp_driver_context, buf);
+		CONTAINER_OF(buf, struct ppp_driver_context, buf[0]);
 	size_t i, len = *off;
 
 	for (i = 0; i < *off; i++) {
