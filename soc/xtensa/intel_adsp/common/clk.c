@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
 
 #include <adsp_clk.h>
 #include <adsp_shim.h>
@@ -19,6 +20,8 @@ static struct k_spinlock lock;
 int adsp_clock_freq_enc[] = ADSP_CPU_CLOCK_FREQ_ENC;
 int adsp_clock_freq_mask[] = ADSP_CPU_CLOCK_FREQ_MASK;
 
+#define HW_CLK_CHANGE_TIMEOUT_USEC 10000
+
 static void select_cpu_clock_hw(uint32_t freq_idx)
 {
 	uint32_t enc = adsp_clock_freq_enc[freq_idx];
@@ -28,8 +31,9 @@ static void select_cpu_clock_hw(uint32_t freq_idx)
 	ADSP_CLKCTL |= enc;
 
 	/* Wait for requested clock to be on */
-	while ((ADSP_CLKCTL & status_mask) != status_mask) {
-		k_busy_wait(10);
+	if (!WAIT_FOR((ADSP_CLKCTL & status_mask) == status_mask,
+		      HW_CLK_CHANGE_TIMEOUT_USEC, k_busy_wait(1))) {
+		k_panic();
 	}
 
 	/* Switch to requested clock */
