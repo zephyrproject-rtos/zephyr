@@ -44,7 +44,7 @@ config DOMAIN_CPUNET_BOARD
 	help
 	  The board which will be used for CPUNET domain when creating a multi
 	  image application where one or more images should be located on
-	  another board. For example hci_rpmsg on the bl5340_dvk_cpunet for
+	  another board. For example hci_ipc on the bl5340_dvk_cpunet for
 	  Bluetooth applications.
 
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS

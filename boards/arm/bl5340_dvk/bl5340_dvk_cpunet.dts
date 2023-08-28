@@ -22,7 +22,7 @@
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		zephyr,bt-hci-ipc = &ipc0;
 	};
 
 	aliases {
