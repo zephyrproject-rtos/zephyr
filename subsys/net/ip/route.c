@@ -76,7 +76,7 @@ static inline struct net_nbr *get_nexthop_nbr(struct net_nbr *start, int idx)
 
 static void release_nexthop_route(struct net_route_nexthop *route_nexthop)
 {
-	struct net_nbr *nbr = CONTAINER_OF(route_nexthop, struct net_nbr, __nbr);
+	struct net_nbr *nbr = CONTAINER_OF((uint8_t *)route_nexthop, struct net_nbr, __nbr[0]);
 
 	net_nbr_unref(nbr);
 }
