@@ -323,6 +323,10 @@ Libraries / Subsystems
 * File systems
 
   * Added support for ext2 file system.
+  * Added support of mounting littlefs on the block device from the shell/fs.
+  * Added alignment parameter to FS_LITTLEFS_DECLARE_CUSTOM_CONFIG macro, it can speed up read/write
+    operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
+    because we can avoid extra copy of data from card bffer to read/prog buffer.
 
 HALs
 ****
