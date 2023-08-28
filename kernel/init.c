@@ -61,13 +61,13 @@ static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
 					  CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
-extern const struct init_entry __init_start[];
-extern const struct init_entry __init_EARLY_start[];
-extern const struct init_entry __init_PRE_KERNEL_1_start[];
-extern const struct init_entry __init_PRE_KERNEL_2_start[];
-extern const struct init_entry __init_POST_KERNEL_start[];
-extern const struct init_entry __init_APPLICATION_start[];
-extern const struct init_entry __init_end[];
+extern const sys_init_fn_t __init_start[];
+extern const sys_init_fn_t __init_EARLY_start[];
+extern const sys_init_fn_t __init_PRE_KERNEL_1_start[];
+extern const sys_init_fn_t __init_PRE_KERNEL_2_start[];
+extern const sys_init_fn_t __init_POST_KERNEL_start[];
+extern const sys_init_fn_t __init_APPLICATION_start[];
+extern const sys_init_fn_t __init_end[];
 
 extern const struct device _device_list_EARLY_start[];
 extern const struct device _device_list_PRE_KERNEL_1_start[];
@@ -89,7 +89,7 @@ enum init_level {
 };
 
 #ifdef CONFIG_SMP
-extern const struct init_entry __init_SMP_start[];
+extern const sys_init_fn_t __init_SMP_start[];
 
 extern const struct device _device_list_SMP_start[];
 #endif
@@ -266,7 +266,7 @@ static void z_sys_init_run_level(enum init_level level)
 		_device_list_end,
 	};
 
-	static const struct init_entry *levels[] = {
+	static const sys_init_fn_t *levels[] = {
 		__init_EARLY_start,
 		__init_PRE_KERNEL_1_start,
 		__init_PRE_KERNEL_2_start,
@@ -306,8 +306,8 @@ static void z_sys_init_run_level(enum init_level level)
 		}
 	}
 
-	for (const struct init_entry *entry = levels[level]; entry < levels[level+1]; entry++) {
-		(void)entry->init_fn.sys();
+	for (const sys_init_fn_t *entry = levels[level]; entry < levels[level+1]; entry++) {
+		(void)(*entry)();
 	}
 }
 
