@@ -18,11 +18,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver);
 
-#define RPMSG_CMD 0x01
-#define RPMSG_ACL 0x02
-#define RPMSG_SCO 0x03
-#define RPMSG_EVT 0x04
-#define RPMSG_ISO 0x05
+#define IPC_CMD 0x01
+#define IPC_ACL 0x02
+#define IPC_SCO 0x03
+#define IPC_EVT 0x04
+#define IPC_ISO 0x05
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
@@ -65,7 +65,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -114,7 +114,7 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -156,7 +156,7 @@ static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
@@ -198,28 +198,28 @@ static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static void bt_rpmsg_rx(const uint8_t *data, size_t len)
+static void bt_ipc_rx(const uint8_t *data, size_t len)
 {
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
-	LOG_HEXDUMP_DBG(data, len, "RPMsg data:");
+	LOG_HEXDUMP_DBG(data, len, "ipc data:");
 
 	pkt_indicator = *data++;
 	remaining -= sizeof(pkt_indicator);
 
 	switch (pkt_indicator) {
-	case RPMSG_EVT:
-		buf = bt_rpmsg_evt_recv(data, remaining);
+	case IPC_EVT:
+		buf = bt_ipc_evt_recv(data, remaining);
 		break;
 
-	case RPMSG_ACL:
-		buf = bt_rpmsg_acl_recv(data, remaining);
+	case IPC_ACL:
+		buf = bt_ipc_acl_recv(data, remaining);
 		break;
 
-	case RPMSG_ISO:
-		buf = bt_rpmsg_iso_recv(data, remaining);
+	case IPC_ISO:
+		buf = bt_ipc_iso_recv(data, remaining);
 		break;
 
 	default:
@@ -247,7 +247,7 @@ static void bt_rpmsg_rx(const uint8_t *data, size_t len)
 	}
 }
 
-static int bt_rpmsg_send(struct net_buf *buf)
+static int bt_ipc_send(struct net_buf *buf)
 {
 	int err;
 	uint8_t pkt_indicator;
@@ -256,13 +256,13 @@ static int bt_rpmsg_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		pkt_indicator = RPMSG_ACL;
+		pkt_indicator = IPC_ACL;
 		break;
 	case BT_BUF_CMD:
-		pkt_indicator = RPMSG_CMD;
+		pkt_indicator = IPC_CMD;
 		break;
 	case BT_BUF_ISO_OUT:
-		pkt_indicator = RPMSG_ISO;
+		pkt_indicator = IPC_ISO;
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
@@ -288,7 +288,7 @@ static void hci_ept_bound(void *priv)
 
 static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
-	bt_rpmsg_rx(data, len);
+	bt_ipc_rx(data, len);
 }
 
 static struct ipc_ept_cfg hci_ept_cfg = {
@@ -311,11 +311,12 @@ int __weak bt_hci_transport_teardown(const struct device *dev)
 	return 0;
 }
 
-static int bt_rpmsg_open(void)
+static int bt_ipc_open(void)
 {
 	int err;
+
 	const struct device *hci_ipc_instance =
-		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_ipc));
 
 	err = bt_hci_transport_setup(NULL);
 	if (err) {
@@ -346,7 +347,7 @@ static int bt_rpmsg_open(void)
 	return 0;
 }
 
-static int bt_rpmsg_close(void)
+static int bt_ipc_close(void)
 {
 	int err;
 
@@ -365,7 +366,7 @@ static int bt_rpmsg_close(void)
 	}
 
 	const struct device *hci_ipc_instance =
-		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_ipc));
 
 	err = ipc_service_close_instance(hci_ipc_instance);
 	if (err) {
@@ -383,17 +384,17 @@ static int bt_rpmsg_close(void)
 }
 
 static const struct bt_hci_driver drv = {
-	.name		= "RPMsg",
-	.open		= bt_rpmsg_open,
-	.close		= bt_rpmsg_close,
-	.send		= bt_rpmsg_send,
+	.name		= "IPC",
+	.open		= bt_ipc_open,
+	.close		= bt_ipc_close,
+	.send		= bt_ipc_send,
 	.bus		= BT_HCI_DRIVER_BUS_IPM,
 #if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
 	.quirks         = BT_QUIRK_NO_AUTO_DLE,
 #endif
 };
 
-static int bt_rpmsg_init(void)
+static int bt_ipc_init(void)
 {
 
 	int err;
@@ -406,4 +407,4 @@ static int bt_rpmsg_init(void)
 	return err;
 }
 
-SYS_INIT(bt_rpmsg_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_ipc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

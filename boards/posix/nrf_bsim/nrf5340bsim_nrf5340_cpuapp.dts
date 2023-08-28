@@ -46,7 +46,7 @@
 
 	chosen {
 		zephyr,flash = &flash0;
-		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
 
