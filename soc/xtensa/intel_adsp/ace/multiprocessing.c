@@ -19,6 +19,9 @@
 #include <zephyr/cache.h>
 
 #define CORE_POWER_CHECK_NUM 128
+
+#define CPU_POWERUP_TIMEOUT_USEC 10000
+
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 static void ipc_isr(void *arg)
@@ -117,8 +120,9 @@ void soc_start_core(int cpu_num)
 		sys_cache_data_flush_range(rom_jump_vector, sizeof(*rom_jump_vector));
 		soc_cpu_power_up(cpu_num);
 
-		while (!soc_cpu_is_powered(cpu_num)) {
-			k_busy_wait(HW_STATE_CHECK_DELAY);
+		if (!WAIT_FOR(soc_cpu_is_powered(cpu_num),
+			      CPU_POWERUP_TIMEOUT_USEC, k_busy_wait(HW_STATE_CHECK_DELAY))) {
+			k_panic();
 		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
@@ -132,8 +136,9 @@ void soc_start_core(int cpu_num)
 	DSPCS.capctl[cpu_num].ctl &= ~DSPCS_CTL_SPA;
 
 	/* Checking current power status of the core. */
-	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA)) {
-		k_busy_wait(HW_STATE_CHECK_DELAY);
+	if (!WAIT_FOR((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) != DSPCS_CTL_CPA,
+		      CPU_POWERUP_TIMEOUT_USEC, k_busy_wait(HW_STATE_CHECK_DELAY))) {
+		k_panic();
 	}
 
 	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;

@@ -44,6 +44,8 @@ __imr void power_init(void)
 
 #define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
 
+#define CPU_POWERUP_TIMEOUT_USEC 10000
+
 /**
  * @brief Power down procedure.
  *
@@ -351,8 +353,9 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 		soc_cpu_power_up(cpu);
 
-		while (!soc_cpu_is_powered(cpu)) {
-			k_busy_wait(HW_STATE_CHECK_DELAY);
+		if (!WAIT_FOR(soc_cpu_is_powered(cpu),
+			      CPU_POWERUP_TIMEOUT_USEC, k_busy_wait(HW_STATE_CHECK_DELAY))) {
+			k_panic();
 		}
 
 		DSPCS.bootctl[cpu].bctl |=
