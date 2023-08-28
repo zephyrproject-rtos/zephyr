@@ -539,7 +539,6 @@ static void nvs_sector_advance(struct nvs_fs *fs, uint32_t *addr)
  */
 static int nvs_sector_close(struct nvs_fs *fs)
 {
-	int rc;
 	struct nvs_ate close_ate;
 	size_t ate_size;
 
@@ -555,7 +554,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 
 	nvs_ate_crc8_update(&close_ate);
 
-	rc = nvs_flash_ate_wrt(fs, &close_ate);
+	(void)nvs_flash_ate_wrt(fs, &close_ate);
 
 	nvs_sector_advance(fs, &fs->ate_wra);
 
