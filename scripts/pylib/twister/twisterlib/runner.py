@@ -684,7 +684,7 @@ class ProjectBuilder(FilterBuilder):
         elf = ELFFile(open(elf_file, "rb"))
 
         logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
-        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]*)__([^\s]*)")
+        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
         detected_cases = []
         for section in elf.iter_sections():
             if isinstance(section, SymbolTableSection):
