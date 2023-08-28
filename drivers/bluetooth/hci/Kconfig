@@ -10,6 +10,7 @@ config BT_UART
 	select SERIAL
 	select UART_INTERRUPT_DRIVEN
 
+
 choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
 
@@ -28,14 +29,21 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+# Removed: Here only to give the user a warning about its removal
+# Remove after 3.7.0 is released
 config BT_RPMSG
-	bool "HCI using RPMsg"
+	bool "[REMOVED] HCI using RPMsg"
+	help
+	  Use BT_HCI_IPC instead
+
+config BT_HCI_IPC
+	bool "HCI using the IPC subsystem"
 	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
 	help
 	  Bluetooth HCI driver for communication with another CPU
-	  using RPMsg framework.
+	  using the IPC subsystem.
 
 config BT_SPI
 	bool "SPI HCI"
@@ -145,7 +153,7 @@ source "drivers/bluetooth/hci/Kconfig.infineon"
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
-	default y if BT_RPMSG || BT_ESP32
+	default y if BT_HCI_IPC || BT_ESP32
 	help
 	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
 	  Update procedure for new connections for controllers that do not
