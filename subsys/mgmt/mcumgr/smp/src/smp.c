@@ -479,7 +479,7 @@ bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret)
 
 	if (ret != 0) {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-		struct cbor_nb_writer *container = CONTAINER_OF(zse, struct cbor_nb_writer, zs);
+		struct cbor_nb_writer *container = CONTAINER_OF(zse, struct cbor_nb_writer, zs[0]);
 
 		container->error_group = group;
 		container->error_ret = ret;
