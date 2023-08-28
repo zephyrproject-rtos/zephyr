@@ -336,7 +336,6 @@ int intel_adsp_hda_dma_init(const struct device *dev)
 	if (pm_device_on_power_domain(dev)) {
 		pm_device_init_off(dev);
 	} else {
-		intel_adsp_hda_channels_init(dev);
 		pm_device_init_suspended(dev);
 	}
 
