@@ -15,11 +15,11 @@ config MBOX_NRFX_IPC
 if BOARD_PAN1783_EVB_CPUAPP
 
 choice BT_HCI_BUS_TYPE
-	default BT_RPMSG if BT
+	default BT_HCI_IPC if BT
 endchoice
 
 config HEAP_MEM_POOL_SIZE
-	default 4096 if BT_RPMSG
+	default 4096 if BT_HCI_IPC
 
 endif #  BOARD_PAN1783_EVB_CPUAPP
 
