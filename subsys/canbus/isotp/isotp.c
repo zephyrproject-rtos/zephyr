@@ -10,7 +10,6 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/timeout_q.h>
 
 LOG_MODULE_REGISTER(isotp, CONFIG_ISOTP_LOG_LEVEL);
 
@@ -187,10 +186,9 @@ static inline struct net_buf *receive_alloc_buffer_chain(uint32_t len)
 	return buf;
 }
 
-static void receive_timeout_handler(struct _timeout *to)
+static void receive_timeout_handler(struct k_timer *timer)
 {
-	struct isotp_recv_ctx *ctx = CONTAINER_OF(to, struct isotp_recv_ctx,
-						  timeout);
+	struct isotp_recv_ctx *ctx = CONTAINER_OF(timer, struct isotp_recv_ctx, timer);
 
 	switch (ctx->state) {
 	case ISOTP_RX_STATE_WAIT_CF:
@@ -219,8 +217,7 @@ static int receive_alloc_buffer(struct isotp_recv_ctx *ctx)
 	}
 
 	if (!buf) {
-		z_add_timeout(&ctx->timeout, receive_timeout_handler,
-			      K_MSEC(ISOTP_ALLOC_TIMEOUT));
+		k_timer_start(&ctx->timer, K_MSEC(ISOTP_ALLOC_TIMEOUT), K_NO_WAIT);
 
 		if (ctx->wft == ISOTP_WFT_FIRST) {
 			LOG_DBG("Allocation failed. Append to alloc list");
@@ -237,7 +234,7 @@ static int receive_alloc_buffer(struct isotp_recv_ctx *ctx)
 	}
 
 	if (ctx->state == ISOTP_RX_STATE_TRY_ALLOC) {
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 		ctx->wft = ISOTP_WFT_FIRST;
 		sys_slist_find_and_remove(&global_ctx.alloc_list,
 					  &ctx->alloc_node);
@@ -297,7 +294,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		__fallthrough;
 	case ISOTP_RX_STATE_TRY_ALLOC:
 		LOG_DBG("SM try to allocate");
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 		ret = receive_alloc_buffer(ctx);
 		if (ret) {
 			LOG_DBG("SM allocation failed. Wait for free buffer");
@@ -309,8 +306,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 	case ISOTP_RX_STATE_SEND_FC:
 		LOG_DBG("SM send CTS FC frame");
 		receive_send_fc(ctx, ISOTP_PCI_FS_CTS);
-		z_add_timeout(&ctx->timeout, receive_timeout_handler,
-			      K_MSEC(ISOTP_CR));
+		k_timer_start(&ctx->timer, K_MSEC(ISOTP_CR), K_NO_WAIT);
 		ctx->state = ISOTP_RX_STATE_WAIT_CF;
 		break;
 
@@ -318,8 +314,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		if (++ctx->wft < CONFIG_ISOTP_WFTMAX) {
 			LOG_DBG("Send wait frame number %d", ctx->wft);
 			receive_send_fc(ctx, ISOTP_PCI_FS_WAIT);
-			z_add_timeout(&ctx->timeout, receive_timeout_handler,
-				      K_MSEC(ISOTP_ALLOC_TIMEOUT));
+			k_timer_start(&ctx->timer, K_MSEC(ISOTP_ALLOC_TIMEOUT), K_NO_WAIT);
 			ctx->state = ISOTP_RX_STATE_TRY_ALLOC;
 			break;
 		}
@@ -332,7 +327,7 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 		__fallthrough;
 	case ISOTP_RX_STATE_ERR:
 		LOG_DBG("SM ERR state. err nr: %d", ctx->error_nr);
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 
 		if (ctx->error_nr == ISOTP_N_BUFFER_OVERFLW) {
 			receive_send_fc(ctx, ISOTP_PCI_FS_OVFLW);
@@ -484,9 +479,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 		return;
 	}
 
-	z_abort_timeout(&ctx->timeout);
-	z_add_timeout(&ctx->timeout, receive_timeout_handler,
-		      K_MSEC(ISOTP_CR));
+	k_timer_start(&ctx->timer, K_MSEC(ISOTP_CR), K_NO_WAIT);
 
 	if ((frame->data[index++] & ISOTP_PCI_SN_MASK) != ctx->sn_expected++) {
 		LOG_ERR("Sequence number mismatch");
@@ -629,7 +622,7 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 	}
 
 	k_work_init(&ctx->work, receive_work_handler);
-	z_init_timeout(&ctx->timeout);
+	k_timer_init(&ctx->timer, receive_timeout_handler, NULL);
 
 	return ISOTP_N_OK;
 }
@@ -642,7 +635,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx)
 		can_remove_rx_filter(ctx->can_dev, ctx->filter_id);
 	}
 
-	z_abort_timeout(&ctx->timeout);
+	k_timer_stop(&ctx->timer);
 
 	sys_slist_find_and_remove(&global_ctx.ff_sf_alloc_list,
 				  &ctx->alloc_node);
@@ -745,10 +738,9 @@ static void send_can_tx_cb(const struct device *dev, int error, void *arg)
 	k_work_submit(&ctx->work);
 }
 
-static void send_timeout_handler(struct _timeout *to)
+static void send_timeout_handler(struct k_timer *timer)
 {
-	struct isotp_send_ctx *ctx = CONTAINER_OF(to, struct isotp_send_ctx,
-						  timeout);
+	struct isotp_send_ctx *ctx = CONTAINER_OF(timer, struct isotp_send_ctx, timer);
 
 	if (ctx->state != ISOTP_TX_SEND_CF) {
 		send_report_error(ctx, ISOTP_N_TIMEOUT_BS);
@@ -799,9 +791,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 
 	case ISOTP_PCI_FS_WAIT:
 		LOG_DBG("Got WAIT frame");
-		z_abort_timeout(&ctx->timeout);
-		z_add_timeout(&ctx->timeout, send_timeout_handler,
-			      K_MSEC(ISOTP_BS));
+		k_timer_start(&ctx->timer, K_MSEC(ISOTP_BS), K_NO_WAIT);
 		if (ctx->wft >= CONFIG_ISOTP_WFTMAX) {
 			LOG_INF("Got to many wait frames");
 			send_report_error(ctx, ISOTP_N_WFT_OVRN);
@@ -827,7 +817,7 @@ static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, vo
 	ARG_UNUSED(dev);
 
 	if (ctx->state == ISOTP_TX_WAIT_FC) {
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 		send_process_fc(ctx, frame);
 	} else {
 		LOG_ERR("Got unexpected PDU");
@@ -1019,7 +1009,7 @@ static int alloc_ctx(struct isotp_send_ctx **ctx, k_timeout_t timeout)
 #define free_send_ctx(x)
 #endif /*CONFIG_ISOTP_ENABLE_CONTEXT_BUFFERS*/
 
-static k_timeout_t stmin_to_ticks(uint8_t stmin)
+static k_timeout_t stmin_to_timeout(uint8_t stmin)
 {
 	/* According to ISO 15765-2 stmin should be 127ms if value is corrupt */
 	if (stmin > ISOTP_STMIN_MAX ||
@@ -1042,15 +1032,14 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 
 	case ISOTP_TX_SEND_FF:
 		send_ff(ctx);
-		z_add_timeout(&ctx->timeout, send_timeout_handler,
-			      K_MSEC(ISOTP_BS));
+		k_timer_start(&ctx->timer, K_MSEC(ISOTP_BS), K_NO_WAIT);
 		ctx->state = ISOTP_TX_WAIT_FC;
 		LOG_DBG("SM send FF");
 		break;
 
 	case ISOTP_TX_SEND_CF:
 		LOG_DBG("SM send CF");
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 		do {
 			ret = send_cf(ctx);
 			if (!ret) {
@@ -1067,9 +1056,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 			}
 
 			if (ctx->opts.bs && !ctx->bs) {
-				z_add_timeout(&ctx->timeout,
-					      send_timeout_handler,
-					      K_MSEC(ISOTP_BS));
+				k_timer_start(&ctx->timer, K_MSEC(ISOTP_BS), K_NO_WAIT);
 				ctx->state = ISOTP_TX_WAIT_FC;
 				LOG_DBG("BS reached. Wait for FC again");
 				break;
@@ -1085,8 +1072,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		break;
 
 	case ISOTP_TX_WAIT_ST:
-		z_add_timeout(&ctx->timeout, send_timeout_handler,
-			      stmin_to_ticks(ctx->opts.stmin));
+		k_timer_start(&ctx->timer, stmin_to_timeout(ctx->opts.stmin), K_NO_WAIT);
 		ctx->state = ISOTP_TX_SEND_CF;
 		LOG_DBG("SM wait ST");
 		break;
@@ -1102,7 +1088,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		}
 
 		LOG_DBG("SM finish");
-		z_abort_timeout(&ctx->timeout);
+		k_timer_stop(&ctx->timer);
 
 		if (ctx->has_callback) {
 			ctx->fin_cb.cb(ctx->error_nr, ctx->fin_cb.arg);
@@ -1173,7 +1159,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 	ctx->error_nr = ISOTP_N_OK;
 	ctx->wft = 0;
 	k_work_init(&ctx->work, send_work_handler);
-	z_init_timeout(&ctx->timeout);
+	k_timer_init(&ctx->timer, send_timeout_handler, NULL);
 
 	len = get_ctx_data_length(ctx);
 	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
