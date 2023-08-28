@@ -59,11 +59,11 @@ endif # BOARD_THINGY53_NRF5340_CPUAPP_NS
 if !TRUSTED_EXECUTION_SECURE
 
 choice BT_HCI_BUS_TYPE
-	default BT_RPMSG if BT
+	default BT_HCI_IPC if BT
 endchoice
 
 config HEAP_MEM_POOL_SIZE
-	default 4096 if BT_RPMSG
+	default 4096 if BT_HCI_IPC
 
 config BT_HAS_HCI_VS
 	default BT

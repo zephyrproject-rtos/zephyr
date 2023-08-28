@@ -245,7 +245,7 @@ int bt_hci_transport_setup(const struct device *dev);
 /**
  * @brief Teardown the HCI transport.
  *
- * @note A weak version of this function is included in the RPMSG driver, so
+ * @note A weak version of this function is included in the IPC driver, so
  *		defining it is optional. NRF5340 includes support to put network core
  *		in reset state.
  *

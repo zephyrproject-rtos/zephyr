@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(NOT("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL ""))
-	set(NET_APP hci_rpmsg)
+	set(NET_APP hci_ipc)
 	set(NET_APP_SRC_DIR ${ZEPHYR_BASE}/samples/bluetooth/${NET_APP})
 
 	ExternalZephyrProject_Add(

@@ -1,37 +1,36 @@
-.. _bluetooth-hci-rpmsg-sample:
+.. _bluetooth-hci-ipc-sample:
 
-Bluetooth: HCI RPMsg
-####################
+Bluetooth: HCI IPC
+##################
 
 Overview
 ********
 
 This sample exposes :ref:`bluetooth_controller` support
-to another device or CPU using RPMsg transport which is
-a part of `OpenAMP <https://github.com/OpenAMP/open-amp/>`__.
+to another device or CPU using IPC subsystem.
 
 Requirements
 ************
 
-* A board with :ref:`ipm_api` driver and Bluetooth LE support
+* A board with IPC subsystem and Bluetooth LE support
 
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/hci_rpmsg`
+This sample can be found under :zephyr_file:`samples/bluetooth/hci_ipc`
 in the Zephyr tree.
 
 To use this application, you need a board with a Bluetooth controller
-and IPM drivers.
+and IPC support.
 You can then build this application and flash it onto your board in
 the usual way. See :ref:`boards` for board-specific building and
 programming information.
 
 To test this sample, you need a separate device/CPU that acts as Bluetooth
-HCI RPMsg peer.
-This sample is compatible with the HCI RPMsg driver provided by
+HCI IPC peer.
+This sample is compatible with the HCI IPC driver provided by
 Zephyr's Bluetooth :ref:`bt_hci_drivers` core. See the
-:kconfig:option:`CONFIG_BT_RPMSG` configuration option for more information.
+:kconfig:option:`CONFIG_BT_HCI_IPC` configuration option for more information.
 
 You might need to adjust the Kconfig configuration of this sample to make it
 compatible with the peer application. For example, :kconfig:option:`CONFIG_BT_MAX_CONN`
