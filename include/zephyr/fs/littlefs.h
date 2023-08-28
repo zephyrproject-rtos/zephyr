@@ -45,14 +45,13 @@ struct fs_littlefs {
  * This defines static arrays required for caches, and initializes the
  * littlefs configuration structure to use the provided values instead
  * of the global Kconfig defaults.  A pointer to the named object must
- * be stored in the ``.fs_data`` field of a :c:type:`struct fs_mount`
- * object.
+ * be stored in the @ref fs_mount_t.fs_data field of a @ref fs_mount_t object.
  *
  * To define an instance for the Kconfig defaults, use
- * :c:macro:`FS_LITTLEFS_DECLARE_DEFAULT_CONFIG`.
+ * @ref FS_LITTLEFS_DECLARE_DEFAULT_CONFIG.
  *
  * To completely control file system configuration the application can
- * directly define and initialize a :c:type:`struct fs_littlefs`
+ * directly define and initialize a @ref fs_littlefs
  * object.  The application is responsible for ensuring the configured
  * values are consistent with littlefs requirements.
  *
