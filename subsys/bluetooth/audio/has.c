@@ -275,7 +275,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 	/* Notify after reconnection */
-	if (atomic_test_and_clear_bit(client->flags, FLAG_ACTIVE_INDEX_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_ACTIVE_INDEX_CHANGED)) {
 		/* Emit active preset notification */
 		k_work_submit(&active_preset_work);
 	}
@@ -287,8 +287,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 #if defined(CONFIG_BT_HAS_FEATURES_NOTIFIABLE)
-	if (atomic_test_and_clear_bit(client->flags, FLAG_FEATURES_CHANGED)) {
-		/* Emit preset changed notifications */
+	if (atomic_test_bit(client->flags, FLAG_FEATURES_CHANGED)) {
+		/* Emit features changed notification */
 		k_work_submit(&features_work);
 	}
 #endif /* CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
@@ -644,7 +644,7 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.start_index = preset->index + 1;
 			client->read_presets_req.num_presets--;
 		}
-	} else if (atomic_test_and_clear_bit(client->flags, FLAG_CONTROL_POINT_NOTIFY)) {
+	} else {
 		const struct has_preset *preset = NULL;
 		const struct has_preset *next = NULL;
 		bool is_last = true;
@@ -664,12 +664,9 @@ static void process_control_point_work(struct k_work *work)
 		err = bt_has_cp_generic_update(client, preset, is_last);
 		if (err) {
 			LOG_ERR("bt_has_cp_read_preset_rsp failed (err %d)", err);
-		}
-
-		if (err || is_last) {
-			atomic_clear_bit(client->flags, FLAG_CONTROL_POINT_NOTIFY);
-		} else {
+		} else if (!is_last) {
 			client->preset_changed_index_next = preset->index + 1;
+			atomic_set_bit(client->flags, FLAG_CONTROL_POINT_NOTIFY);
 		}
 	}
 }
