@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
-#include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -322,25 +321,6 @@ typedef int16_t device_handle_t;
 	static const struct device DEVICE_NAME_GET(dev_id)
 
 /**
- * @brief Get a @ref init_entry reference from a devicetree node.
- *
- * @param node_id A devicetree node identifier
- *
- * @return A pointer to the @ref init_entry object created for that node
- */
-#define DEVICE_INIT_DT_GET(node_id)                                            \
-	(&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id)))
-
-/**
- * @brief Get a @ref init_entry reference from a device identifier.
- *
- * @param dev_id Device identifier.
- *
- * @return A pointer to the init_entry object created for that device
- */
-#define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
-
-/**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
  * Fields in this are expected to be default-initialized to zero. The
@@ -386,6 +366,8 @@ struct device {
 	struct device_state *state;
 	/** Address of the device instance private data */
 	void *data;
+	/** Initialization function */
+	int (*init)(const struct device *dev);
 #if defined(CONFIG_DEVICE_DEPS) || defined(__DOXYGEN__)
 	/**
 	 * Optional pointer to dependencies associated with the device.
@@ -847,17 +829,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #endif /* CONFIG_DEVICE_DEPS */
 
 /**
- * @brief Init sub-priority of the device
- *
- * The sub-priority is defined by the devicetree ordinal, which ensures that
- * multiple drivers running at the same priority level run in an order that
- * respects the devicetree dependencies.
- */
-#define Z_DEVICE_INIT_SUB_PRIO(node_id)                                        \
-	COND_CODE_1(DT_NODE_EXISTS(node_id),                                   \
-		    (DT_DEP_ORD_STR_SORTABLE(node_id)), (0))
-
-/**
  * @brief Maximum device name length.
  *
  * The maximum length is set so that device_get_binding() can be used from
@@ -878,6 +849,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @brief Initializer for @ref device.
  *
  * @param name_ Name of the device.
+ * @param init_ Device init function.
  * @param pm_ Reference to @ref pm_device (optional).
  * @param data_ Reference to device data.
  * @param config_ Reference to device config.
@@ -885,9 +857,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_)         \
+#define Z_DEVICE_INIT(name_, init_, pm_, data_, config_, api_, state_, deps_)  \
 	{                                                                      \
 		.name = name_,                                                 \
+		.init = init_,                                                 \
 		.config = (config_),                                           \
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
@@ -902,8 +875,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param level Initialization level
  * @param prio Initialization priority
  */
-#define Z_DEVICE_SECTION_NAME(level, prio)                                     \
-	_CONCAT(INIT_LEVEL_ORD(level), _##prio)
+#define Z_DEVICE_SECTION_NAME(node_id, level, prio)                            \
+	_CONCAT(level##_##prio##_,                                             \
+		COND_CODE_1(DT_NODE_EXISTS(node_id),                           \
+			    (DT_DEP_ORD_STR_SORTABLE(node_id)), (0)))
 
 /**
  * @brief Define a @ref device
@@ -912,6 +887,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * software device).
  * @param dev_id Device identifier (used to name the defined @ref device).
  * @param name Name of the device.
+ * @param init_fn Device init function.
  * @param pm Reference to @ref pm_device associated with the device.
  * (optional).
  * @param data Reference to device data.
@@ -921,32 +897,13 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param api Reference to device API.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, deps)                           \
+#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config, \
+			     level, prio, api, state, deps)                    \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const STRUCT_SECTION_ITERABLE_NAMED(device,                            \
-		Z_DEVICE_SECTION_NAME(level, prio),                            \
+		Z_DEVICE_SECTION_NAME(node_id, level, prio),                   \
 		DEVICE_NAME_GET(dev_id)) =                                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
-
-/**
- * @brief Define the init entry for a device.
- *
- * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
- * software device).
- * @param dev_id Device identifier.
- * @param init_fn_ Device init function.
- * @param level Initialization level.
- * @param prio Initialization priority.
- */
-#define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_, level, prio)     \
-	static const Z_DECL_ALIGN(struct init_entry) __used __noasan           \
-		Z_INIT_ENTRY_SECTION(level, prio,                              \
-				     Z_DEVICE_INIT_SUB_PRIO(node_id))          \
-		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
-			.init_fn = {.dev = (init_fn_)},                        \
-			.dev = &DEVICE_NAME_GET(dev_id),                       \
-	}
+		Z_DEVICE_INIT(name, init_fn, pm, data, config, api, state, deps)
 
 /**
  * @brief Define a @ref device and all other required objects.
@@ -976,10 +933,9 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                         \
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))      \
                                                                                \
-	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
-                                                                               \
-	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config, \
+			     level, prio, api, state,                          \
+			     Z_DEVICE_DEPS_NAME(dev_id))
 
 #if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 /**
