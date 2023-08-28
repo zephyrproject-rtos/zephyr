@@ -321,7 +321,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 		if (false) {
 
-#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_BROADCASTER) && CONFIG_BT_CTLR_ADV_AUX_SET > 0
 		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_AUX_BASE,
 				    TICKER_ID_ADV_AUX_LAST)) {
 			const struct ll_adv_aux_set *aux;
@@ -391,7 +391,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-#endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_AUX_SET > 0 */
 
 #if defined(CONFIG_BT_CONN)
 		} else if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
