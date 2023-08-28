@@ -401,7 +401,7 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
 
 /**
  * @typedef sensor_frame_iterator_t
- * @brief Used for iterating over the data frames via the :c:struct:`sensor_decoder_api`
+ * @brief Used for iterating over the data frames via the sensor_decoder_api.
  *
  * Example usage:
  *
@@ -435,21 +435,21 @@ typedef uint32_t sensor_frame_iterator_t;
 
 /**
  * @typedef sensor_channel_iterator_t
- * @brief Used for iterating over data channels in the same frame via :c:struct:`sensor_decoder_api`
+ * @brief Used for iterating over data channels in the same frame via sensor_decoder_api
  */
 typedef uint32_t sensor_channel_iterator_t;
 
 /**
  * @brief Decodes a single raw data buffer
  *
- * Data buffers are provided on the :c:struct:`rtio` context that's supplied to
+ * Data buffers are provided on the @ref rtio context that's supplied to
  * c:func:`sensor_read`.
  */
 struct sensor_decoder_api {
 	/**
 	 * @brief Get the number of frames in the current buffer.
 	 *
-	 * @param[in]  buffer The buffer provided on the :c:struct:`rtio` context.
+	 * @param[in]  buffer The buffer provided on the @ref rtio context.
 	 * @param[out] frame_count The number of frames on the buffer (at least 1)
 	 * @return 0 on success
 	 * @return <0 on error
@@ -459,9 +459,9 @@ struct sensor_decoder_api {
 	/**
 	 * @brief Get the timestamp associated with the first frame.
 	 *
-	 * @param[in]  buffer The buffer provided on the :c:struct:`rtio` context.
+	 * @param[in]  buffer The buffer provided on the @ref rtio context.
 	 * @param[out] timestamp_ns The closest timestamp for when the first frame was generated
-	 *             as attained by :c:func:`k_uptime_ticks`.
+	 *             as attained by k_uptime_ticks().
 	 * @return 0 on success
 	 * @return <0 on error
 	 */
@@ -473,7 +473,7 @@ struct sensor_decoder_api {
 	 * This value can be used by shifting the q31_t value resulting in the SI unit of the
 	 * reading. It is guaranteed that the shift for a channel will not change between frames.
 	 *
-	 * @param[in]  buffer The buffer provided on the :c:struct:`rtio` context.
+	 * @param[in]  buffer The buffer provided on the @ref rtio context.
 	 * @param[in]  channel_type The c:enum:`sensor_channel` to query
 	 * @param[out] shift The bit shift of the channel for this data buffer.
 	 * @return 0 on success
@@ -489,7 +489,7 @@ struct sensor_decoder_api {
 	 * @p max_count is 2, only 1 channel will be decoded and the frame iterator will be modified
 	 * so that the next call to decode will begin at the next frame.
 	 *
-	 * @param[in]     buffer The buffer provided on the :c:struct:`rtio` context
+	 * @param[in]     buffer The buffer provided on the @ref rtio context
 	 * @param[in,out] fit The current frame iterator
 	 * @param[in,out] cit The current channel iterator
 	 * @param[out]    channels The channels that were decoded
@@ -525,7 +525,7 @@ struct sensor_read_config {
 /**
  * @brief Define a reading instance of a sensor
  *
- * Use this macro to generate a :c:struct:`rtio_iodev` for reading specific channels. Example:
+ * Use this macro to generate a @ref rtio_iodev for reading specific channels. Example:
  *
  * @code(.c)
  * SENSOR_DT_READ_IODEV(icm42688_accelgyro, DT_NODELABEL(icm42688),
@@ -787,10 +787,9 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
  * @brief checks if a given channel is a 3-axis channel
  *
  * @param[in] chan The channel to check
- * @return true if @p chan is :c:enum:`SENSOR_CHAN_ACCEL_XYZ`
- * @return true if @p chan is :c:enum:`SENSOR_CHAN_GYRO_XYZ`
- * @return true if @p chan is :c:enum:`SENSOR_CHAN_MAGN_XYZ`
- * @return false otherwise
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
+ *         @ref SENSOR_CHAN_MAGN_XYZ
+ * @retval false otherwise
  */
 #define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
 	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
@@ -831,7 +830,7 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
  * invalid. Please be sure the flush or wait for all pending operations to complete before using the
  * data after a configuration change.
  *
- * It is also important that the `data` field of the iodev is a :c:struct:`sensor_read_config`.
+ * It is also important that the `data` field of the iodev is a @ref sensor_read_config.
  *
  * @param[in] iodev The iodev to reconfigure
  * @param[in] sensor The sensor to read from
@@ -866,10 +865,10 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
  * @brief Read data from a sensor.
  *
  * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
- * @p ctx. This call will generate a :c:struct:`rtio_sqe` that will leverage the RTIO's internal
+ * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
  * mempool when the time comes to service the read.
  *
- * @param[in] iodev The iodev created by :c:macro:`SENSOR_DT_READ_IODEV`
+ * @param[in] iodev The iodev created by @ref SENSOR_DT_READ_IODEV
  * @param[in] ctx The RTIO context to service the read
  * @param[in] userdata Optional userdata that will be available when the read is complete
  * @return 0 on success
@@ -903,7 +902,7 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, void *
  * @param[in] result The result code of the read (0 being success)
  * @param[in] buf The data buffer holding the sensor data
  * @param[in] buf_len The length (in bytes) of the @p buf
- * @param[in] userdata The optional userdata passed to :c:func:`sensor_read`
+ * @param[in] userdata The optional userdata passed to sensor_read()
  */
 typedef void (*sensor_processing_callback_t)(int result, uint8_t *buf, uint32_t buf_len,
 					     void *userdata);
@@ -911,7 +910,7 @@ typedef void (*sensor_processing_callback_t)(int result, uint8_t *buf, uint32_t 
 /**
  * @brief Helper function for common processing of sensor data.
  *
- * This function can be called in a blocking manner after :c:func:`sensor_read` or in a standalone
+ * This function can be called in a blocking manner after sensor_read() or in a standalone
  * thread dedicated to processing. It will wait for a cqe from the RTIO context, once received, it
  * will decode the userdata and call the @p cb. Once the @p cb returns, the buffer will be released
  * back into @p ctx's mempool if available.
