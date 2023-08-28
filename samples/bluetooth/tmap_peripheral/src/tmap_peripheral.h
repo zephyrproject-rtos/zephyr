@@ -6,6 +6,23 @@
 
 #include <zephyr/types.h>
 
+#if defined(CONFIG_BT_ASCS_ASE_SNK)
+#define AVAILABLE_SINK_CONTEXT                                                                     \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA | BT_AUDIO_CONTEXT_TYPE_GAME |                                \
+	 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
+#else
+#define AVAILABLE_SINK_CONTEXT 0x0000
+#endif /* CONFIG_BT_ASCS_ASE_SNK */
+
+#if defined(CONFIG_BT_ASCS_ASE_SRC)
+#define AVAILABLE_SOURCE_CONTEXT                                                                   \
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA | BT_AUDIO_CONTEXT_TYPE_GAME |                                \
+	 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
+#else
+#define AVAILABLE_SOURCE_CONTEXT 0x0000
+#endif /* CONFIG_BT_ASCS_ASE_SRC */
 /**
  * @brief Initialize the VCP Volume Renderer role
  *
