@@ -51,9 +51,7 @@ extern "C" {
  * than a pointer. The device.h API mainly uses handles to store lists of
  * multiple devices in a compact way.
  *
- * The extreme values and zero have special significance. Negative values
- * identify functionality that does not correspond to a Zephyr device, such as
- * the system clock or a SYS_INIT() function.
+ * The negative, extreme values and zero have special significance.
  *
  * @see device_handle_get()
  * @see device_from_handle()
