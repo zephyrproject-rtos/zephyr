@@ -1061,6 +1061,18 @@ static int dwc_handle_xfrc(const struct device *dev)
 	return 0;
 }
 
+/* lock DWC */
+static int uhc_dwc_lock(const struct device *dev)
+{
+	return uhc_lock_internal(dev, K_FOREVER);
+}
+
+/* unlock DWC */
+static int uhc_dwc_unlock(const struct device *dev)
+{
+	return uhc_unlock_internal(dev);
+}
+
 /* DWC thread to handle transfers */
 static void dwc_thread(const struct device *dev)
 {
@@ -1075,6 +1087,8 @@ static void dwc_thread(const struct device *dev)
 		count = 0;
 		total_stages = 1;
 		total_stages_set = false;
+		priv->schedule = true;
+		uhc_dwc_lock(dev);
 
 		while ((count < total_stages) && (priv->schedule)) {
 			count++;
@@ -1096,6 +1110,7 @@ static void dwc_thread(const struct device *dev)
 				total_stages_set = true;
 			}
 		}
+		uhc_dwc_unlock(dev);
 	}
 }
 
@@ -1104,7 +1119,6 @@ static int uhc_dwc_enqueue(const struct device *dev, struct uhc_transfer *const 
 {
 	struct dev_priv_data *priv = uhc_get_private(dev);
 
-	priv->schedule = true;
 	uhc_xfer_append(dev, xfer);
 	k_sem_give(&priv->xfr_sem);
 
@@ -1959,18 +1973,6 @@ static int uhc_dwc_disable(const struct device *dev)
 static int uhc_dwc_shutdown(const struct device *dev)
 {
 	return 0;
-}
-
-/* lock DWC */
-static int uhc_dwc_lock(const struct device *dev)
-{
-	return uhc_lock_internal(dev, K_FOREVER);
-}
-
-/* unlock DWC */
-static int uhc_dwc_unlock(const struct device *dev)
-{
-	return uhc_unlock_internal(dev);
 }
 
 static int usbh_pre_init(void)
