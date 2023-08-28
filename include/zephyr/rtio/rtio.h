@@ -128,7 +128,7 @@ extern "C" {
 /**
  * @brief The SQE should continue producing CQEs until canceled
  *
- * This flag must exist along :c:macro:`RTIO_SQE_MEMPOOL_BUFFER` and signals that when a read is
+ * This flag must exist along @ref RTIO_SQE_MEMPOOL_BUFFER and signals that when a read is
  * complete. It should be placed back in queue until canceled.
  */
 #define RTIO_SQE_MULTISHOT BIT(4)
@@ -326,7 +326,7 @@ struct rtio_block_pool {
  * The rtio executor along with any objects implementing the rtio_iodev interface are
  * the consumers of submissions and producers of completions.
  *
- * No work is started until rtio_submit is called.
+ * No work is started until rtio_submit() is called.
  */
 struct rtio {
 #ifdef CONFIG_RTIO_SUBMIT_SEM
@@ -378,7 +378,7 @@ extern struct k_mem_partition rtio_partition;
 /**
  * @brief Compute the mempool block index for a given pointer
  *
- * @param[in] r RTIO contex
+ * @param[in] r RTIO context
  * @param[in] ptr Memory pointer in the mempool
  * @return Index of the mempool block associated with the pointer. Or UINT16_MAX if invalid.
  */
@@ -1274,11 +1274,11 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
  * @brief Copy an array of SQEs into the queue and get resulting handles back
  *
  * Copies one or more SQEs into the RTIO context and optionally returns their generated SQE handles.
- * Handles can be used to cancel events via the :c:func:`rtio_sqe_cancel` call.
+ * Handles can be used to cancel events via the rtio_sqe_cancel() call.
  *
  * @param[in]  r RTIO context
  * @param[in]  sqes Pointer to an array of SQEs
- * @param[out] handle Optional pointer to :c:struct:`rtio_sqe` pointer to store the handle of the
+ * @param[out] handle Optional pointer to @ref rtio_sqe pointer to store the handle of the
  *             first generated SQE. Use NULL to ignore.
  * @param[in]  sqe_count Count of sqes in array
  *
