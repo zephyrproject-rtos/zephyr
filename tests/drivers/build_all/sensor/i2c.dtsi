@@ -794,3 +794,10 @@ test_i2c_adxl367: adxl367@77 {
 	reg = <0x77>;
 	odr = <4>;
 };
+
+test_i2c_lps22df: lps22df@78 {
+	compatible = "st,lps22df";
+	reg = <0x78>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
