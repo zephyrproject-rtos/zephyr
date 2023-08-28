@@ -6,7 +6,7 @@
 
 #include <limits.h>
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>

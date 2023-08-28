@@ -12,7 +12,7 @@
 
 #define DT_DRV_COMPAT gaisler_gptimer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>

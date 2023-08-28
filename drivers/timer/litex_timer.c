@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/timer/system_timer.h>
