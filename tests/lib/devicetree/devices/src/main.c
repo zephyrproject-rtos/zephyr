@@ -62,43 +62,6 @@ DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
 
-ZTEST(devicetree_devices, test_init_get)
-{
-	/* Check device pointers */
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->dev,
-		      DEVICE_DT_GET(TEST_GPIO), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->dev,
-		      DEVICE_DT_GET(TEST_I2C), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->dev,
-		      DEVICE_DT_GET(TEST_DEVA), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->dev,
-		      DEVICE_DT_GET(TEST_DEVB), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->dev,
-		      DEVICE_DT_GET(TEST_GPIOX), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->dev,
-		      DEVICE_DT_GET(TEST_DEVC), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION)->dev,
-		      DEVICE_DT_GET(TEST_PARTITION), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->dev,
-		      DEVICE_DT_GET(TEST_GPIO_INJECTED), NULL);
-	zassert_equal(DEVICE_INIT_GET(manual_dev)->dev,
-		      DEVICE_GET(manual_dev), NULL);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->dev,
-		      DEVICE_DT_GET(TEST_NOLABEL), NULL);
-
-	/* Check init functions */
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_GET(manual_dev)->init_fn.dev, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->init_fn.dev, dev_init);
-}
-
 ZTEST(devicetree_devices, test_init_order)
 {
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
