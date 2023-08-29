@@ -163,5 +163,6 @@ static inline unsigned int optimal_num_desc(size_t mem_size, unsigned int buf_si
 		num_desc++;
 	}
 
-	return (1 << (find_msb_set(--num_desc) - 1));
+	/* if num_desc == 1 there is not enough memory */
+	return (--num_desc == 0) ? 0 : (1 << LOG2(num_desc));
 }
