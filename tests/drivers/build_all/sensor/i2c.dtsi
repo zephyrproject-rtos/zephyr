@@ -776,3 +776,9 @@ test_i2c_amd_sb_tsi: amd_sb_tsi@74 {
 	compatible = "amd,sb-tsi";
 	reg = <0x74>;
 };
+
+test_i2c_mc3419: mc3419@75 {
+	compatible = "memsic,mc3419";
+	reg = <0x75>;
+	int-gpios = <&test_gpio 0 0>;
+};
