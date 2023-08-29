@@ -70,6 +70,9 @@ struct nxp_enet_mac_config {
 	void (*irq_config_func)(void);
 	const struct device *phy_dev;
 	const struct device *mdio;
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	const struct device *ptp_clock;
+#endif
 };
 
 struct nxp_enet_mac_data {
@@ -84,6 +87,10 @@ struct nxp_enet_mac_data {
 	struct k_sem rx_thread_sem;
 	struct k_mutex tx_frame_buf_mutex;
 	struct k_mutex rx_frame_buf_mutex;
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	struct k_sem ptp_ts_sem;
+	struct k_mutex *ptp_mutex;
+#endif
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
 	 * interfacing with MCUX. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
@@ -111,6 +118,10 @@ struct nxp_enet_mac_data {
 
 extern void nxp_enet_mdio_callback(const struct device *mdio_dev,
 				enum nxp_enet_callback_reason event);
+
+extern void nxp_enet_ptp_clock_callback(const struct device *dev,
+		enum nxp_enet_callback_reason event,
+		union nxp_enet_ptp_data *ptp_data);
 
 static inline struct net_if *get_iface(struct nxp_enet_mac_data *data, uint16_t vlan_tag)
 {
@@ -156,6 +167,86 @@ static void net_if_mcast_cb(struct net_if *iface,
 #endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
 /*
+ *****************
+ * PTP Functions *
+ *****************
+ */
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
+{
+	int eth_hlen;
+
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_vlan_hdr *hdr_vlan;
+	struct ethernet_context *eth_ctx;
+	bool vlan_enabled = false;
+
+	eth_ctx = net_if_l2_data(iface);
+	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
+		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+		vlan_enabled = true;
+
+		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
+
+		eth_hlen = sizeof(struct net_eth_vlan_hdr);
+	} else
+#endif /* CONFIG_NET_VLAN */
+	{
+		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
+
+		eth_hlen = sizeof(struct net_eth_hdr);
+	}
+
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+
+	return true;
+}
+
+
+#if defined(CONFIG_NET_L2_PTP)
+static inline void ts_register_tx_event(const struct device *dev,
+					 enet_frame_info_t *frameinfo)
+{
+	struct nxp_enet_mac_data *data = dev->data;
+	struct net_pkt *pkt;
+
+	pkt = frameinfo->context;
+	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
+		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt)) {
+			if (frameinfo->isTsAvail) {
+				k_mutex_lock(data->ptp_mutex, K_FOREVER);
+
+				pkt->timestamp.nanosecond =
+					frameinfo->timeStamp.nanosecond;
+				pkt->timestamp.second =
+					frameinfo->timeStamp.second;
+
+				net_if_add_tx_timestamp(pkt);
+				k_sem_give(&data->ptp_ts_sem);
+				k_mutex_unlock(data->ptp_mutex);
+			}
+		}
+
+		net_pkt_unref(pkt);
+	}
+}
+#endif /* CONFIG_NET_L2_PTP */
+
+static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev)
+{
+	const struct nxp_enet_mac_config *config = dev->config;
+
+	return config->ptp_clock;
+}
+
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET */
+
+/*
  **************************************
  * L2 Networking Driver API Functions *
  **************************************
@@ -168,6 +259,10 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	struct nxp_enet_mac_data *data = dev->data;
 	uint16_t total_len = net_pkt_get_len(pkt);
 	status_t status;
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	bool timestamped_frame;
+#endif
 
 	/* Wait for a TX buffer descriptor to be available */
 	k_sem_take(&data->tx_buf_sem, K_FOREVER);
@@ -182,9 +277,30 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	/* Send frame to ring buffer for transmit */
-	status = ENET_SendFrame(config->base, &data->enet_handle,
-				data->tx_frame_buf, total_len, RING_ID, false, NULL);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt);
+	if (timestamped_frame) {
+		status = ENET_SendFrame(config->base, &data->enet_handle,
+					  data->tx_frame_buf, total_len, RING_ID, true, pkt);
+		if (!status) {
+			net_pkt_ref(pkt);
+			/*
+			 * Network stack will modify the packet upon return,
+			 * so wait for the packet to be timestamped,
+			 * which will occur within the TX ISR, before
+			 * returning
+			 */
+			k_sem_take(&data->ptp_ts_sem, K_FOREVER);
+		}
+
+	} else
+#endif
+	{
+		/* Send frame to ring buffer for transmit */
+		status = ENET_SendFrame(config->base, &data->enet_handle,
+					data->tx_frame_buf, total_len,
+					RING_ID, false, NULL);
+	}
 
 	if (status) {
 		LOG_ERR("ENET_SendFrame error: %d", (int)status);
@@ -237,6 +353,9 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 	ARG_UNUSED(dev);
 
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+		ETHERNET_PTP |
+#endif
 #if defined(CONFIG_NET_DSA)
 		ETHERNET_DSA_MASTER_PORT |
 #endif
@@ -292,6 +411,10 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	struct net_pkt *pkt;
 	status_t status;
 	uint32_t ts;
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	enet_ptp_time_t ptp_time_data;
+#endif
 
 	status = ENET_GetRxFrameSize(&data->enet_handle,
 				     (uint32_t *)&frame_length, RING_ID);
@@ -366,6 +489,32 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		}
 	}
 #endif /* CONFIG_NET_VLAN */
+
+	/*
+	 * Use MAC timestamp
+	 */
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	k_mutex_lock(data->ptp_mutex, K_FOREVER);
+	if (eth_get_ptp_data(get_iface(data, vlan_tag), pkt)) {
+		ENET_Ptp1588GetTimer(config->base, &data->enet_handle,
+					&ptp_time_data);
+		/* If latest timestamp reloads after getting from Rx BD,
+		 * then second - 1 to make sure the actual Rx timestamp is
+		 * accurate
+		 */
+		if (ptp_time_data.nanosecond < ts) {
+			ptp_time_data.second--;
+		}
+
+		pkt->timestamp.nanosecond = ts;
+		pkt->timestamp.second = ptp_time_data.second;
+	} else {
+		/* Invalid value. */
+		pkt->timestamp.nanosecond = UINT32_MAX;
+		pkt->timestamp.second = UINT64_MAX;
+	}
+	k_mutex_unlock(data->ptp_mutex);
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data, vlan_tag);
 #if defined(CONFIG_NET_DSA)
@@ -498,6 +647,9 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		k_sem_give(&data->rx_thread_sem);
 		break;
 	case kENET_TxEvent:
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET) && defined(CONFIG_NET_L2_PTP)
+		ts_register_tx_event(dev, frameinfo);
+#endif
 		/* Free the TX buffer. */
 		k_sem_give(&data->tx_buf_sem);
 		break;
@@ -584,6 +736,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	k_sem_init(&data->ptp_ts_sem, 0, 1);
+#endif
 
 	if (config->generate_mac) {
 		config->generate_mac(data->mac_addr);
@@ -645,6 +800,14 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	nxp_enet_mdio_callback(config->mdio, nxp_enet_module_reset);
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	union nxp_enet_ptp_data ptp_data;
+
+	nxp_enet_ptp_clock_callback(config->ptp_clock, nxp_enet_module_reset, &ptp_data);
+	data->ptp_mutex = ptp_data.for_mac.ptp_mutex;
+	ENET_SetTxReclaim(&data->enet_handle, true, 0);
+#endif
+
 	ENET_ActiveRead(config->base);
 
 	err = nxp_enet_phy_init(dev);
@@ -663,12 +826,15 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
+#endif
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
 	.set_config		= eth_nxp_enet_set_config,
 	.send			= eth_nxp_enet_tx,
 #if defined(CONFIG_NET_DSA)
 	.send                   = dsa_tx,
-#else
+#endif
 };
 
 #define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)				\
@@ -784,10 +950,26 @@ static const struct ethernet_api api_funcs = {
 	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii) ? NXP_ENET_RMII_MODE :	\
 	NXP_ENET_INVALID_MII_MODE)
 
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
+#define NXP_ENET_FRAMEINFO_ARRAY(n)							\
+	static enet_frame_info_t							\
+		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
+#define NXP_ENET_FRAMEINFO(n)	\
+	.txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
+#else
+#define NXP_ENET_PTP_DEV(n)
+#define NXP_ENET_FRAMEINFO_ARRAY(n)
+#define NXP_ENET_FRAMEINFO(n)	\
+	.txFrameInfo = NULL
+#endif
+
 #define NXP_ENET_INIT(n)								\
 		NXP_ENET_GENERATE_MAC(n)						\
 											\
 		PINCTRL_DT_INST_DEFINE(n);						\
+											\
+		NXP_ENET_FRAMEINFO_ARRAY(n)						\
 											\
 		static void nxp_enet_##n##_irq_config_func(void)			\
 		{									\
@@ -833,11 +1015,12 @@ static const struct ethernet_api api_funcs = {
 				.txBufferAlign = nxp_enet_##n##_tx_buffer[0],		\
 				.rxMaintainEnable = true,				\
 				.txMaintainEnable = true,				\
-				.txFrameInfo = NULL,					\
+				NXP_ENET_FRAMEINFO(n)					\
 			},								\
 			.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),			\
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			.mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),		\
+			NXP_ENET_PTP_DEV(n)						\
 			NXP_ENET_DECIDE_MAC_GEN_FUNC(n)					\
 		};									\
 											\
