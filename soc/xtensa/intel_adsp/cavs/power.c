@@ -69,7 +69,7 @@ static struct core_state core_desc[CONFIG_MP_MAX_NUM_CPUS] = {{0}};
  * @param hpsram_pg_mask pointer to memory segments power gating mask
  * (each bit corresponds to one ebb)
  */
-extern void power_down_cavs(bool disable_lpsram, uint32_t *hpsram_pg_mask);
+extern void power_down_cavs(bool disable_lpsram, uint32_t __sparse_cache * hpsram_pg_mask);
 
 static inline void __sparse_cache *uncache_to_cache(void *address)
 {
@@ -95,7 +95,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			};
 			struct imr_layout *imr_layout = (struct imr_layout *)L3_MEM_BASE_ADDR;
 
-			__ASSERT_NO_MSG(arch_xtensa_is_ptr_uncached(L3_MEM_BASE_ADDR));
+			__ASSERT_NO_MSG(arch_xtensa_is_ptr_uncached((void *)L3_MEM_BASE_ADDR));
 			imr_layout->imr_state.header = hdr;
 
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
