@@ -13,5 +13,3 @@ ram: 512
 flash: 1024
 supported:
   - gpio
-testing:
-  default: true
