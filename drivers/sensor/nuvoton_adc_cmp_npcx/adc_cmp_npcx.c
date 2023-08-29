@@ -256,7 +256,7 @@ static const struct sensor_driver_api adc_cmp_npcx_api = {
 	static const struct adc_cmp_npcx_config adc_cmp_npcx_config_##inst = {\
 		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),         \
 		.chnsel = DT_INST_IO_CHANNELS_INPUT(inst),                    \
-		.th_sel = inst,                                               \
+		.th_sel = DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst),       \
 		.thr_mv = DT_INST_PROP_OR(inst, threshold_mv,                 \
 			ADC_CMP_NPCX_UNDEFINED),                              \
 		.comparison = DT_INST_STRING_TOKEN_OR(inst,                   \
