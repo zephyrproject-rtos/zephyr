@@ -1181,7 +1181,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 
 static void seg_discard(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, discard);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_rx *rx = CONTAINER_OF(dwork, struct seg_rx, discard);
 
 	LOG_WRN("SAR Discard timeout expired");
 	seg_rx_reset(rx, false);
