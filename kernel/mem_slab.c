@@ -149,6 +149,11 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
+	__ASSERT(((char *)mem >= slab->buffer) &&
+		 ((((char *)mem - slab->buffer) % slab->block_size) == 0) &&
+		 ((char *)mem <= (slab->buffer + (slab->block_size * (slab->num_blocks - 1)))),
+		 "Invalid memory pointer provided");
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
 	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
