@@ -49,6 +49,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.10
 
+   * - ``conn_mgr``
+     - Experimental
+     - 3.4.0
+
    * - :ref:`can_api`
      - Stable
      - 1.14
