@@ -66,7 +66,7 @@ static int eswifi_spi_write(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	int status;
 
 	spi_tx_buf[0].buf = data;
-	spi_tx_buf[0].len = dlen / 2; /* 16-bit words */
+	spi_tx_buf[0].len = dlen;
 	spi_tx.buffers = spi_tx_buf;
 	spi_tx.count = ARRAY_SIZE(spi_tx_buf);
 
@@ -88,7 +88,7 @@ static int eswifi_spi_read(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	int status;
 
 	spi_rx_buf[0].buf = data;
-	spi_rx_buf[0].len = dlen / 2; /* 16-bit words */
+	spi_rx_buf[0].len = dlen;
 	spi_rx.buffers = spi_rx_buf;
 	spi_rx.count = ARRAY_SIZE(spi_rx_buf);
 
