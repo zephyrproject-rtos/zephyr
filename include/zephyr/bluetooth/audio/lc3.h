@@ -266,7 +266,7 @@ enum bt_audio_codec_config_type {
 				    BT_BYTES_LIST_LE16(_len_max)),                                 \
 		COND_CODE_1(_max_frames_per_sdu, (),                                               \
 			    (BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_COUNT,                   \
-						 (_max_frames_per_sdu)))),                         \
+						 (_max_frames_per_sdu))))                          \
 	}
 
 /**
@@ -314,10 +314,10 @@ enum bt_audio_codec_config_type {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,                          \
 				    BT_BYTES_LIST_LE32(_loc)),                                     \
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FRAME_LEN,                           \
-				    BT_BYTES_LIST_LE16(_len))                                      \
+				    BT_BYTES_LIST_LE16(_len)),                                     \
 		COND_CODE_1(_frames_per_sdu, (),                                                   \
 			    (BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU,     \
-						 (_frames_per_sdu)))),                             \
+						 (_frames_per_sdu))))                              \
 	}
 
 /**
@@ -326,7 +326,7 @@ enum bt_audio_codec_config_type {
 #define BT_AUDIO_CODEC_CFG_LC3_META(_stream_context)                                               \
 	{                                                                                          \
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,                         \
-				    BT_BYTES_LIST_LE16(_stream_context)),                          \
+				    BT_BYTES_LIST_LE16(_stream_context))                           \
 	}
 
 /**
