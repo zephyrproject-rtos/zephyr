@@ -21,6 +21,8 @@
 #define	CTR_DMINLINE_SHIFT	16
 #define	CTR_DMINLINE_MASK	BIT_MASK(4)
 
+#ifdef CONFIG_DCACHE
+
 static size_t dcache_line_size;
 
 /**
@@ -165,6 +167,10 @@ int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 	return 0;
 }
 
+#endif
+
+#ifdef CONFIG_ICACHE
+
 void arch_icache_enable(void)
 {
 	arch_icache_invd_all();
@@ -209,3 +215,5 @@ int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 {
 	return -ENOTSUP;
 }
+
+#endif
