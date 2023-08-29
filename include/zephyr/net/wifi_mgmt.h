@@ -339,7 +339,7 @@ struct wifi_ps_params {
 	 */
 	unsigned int timeout_ms;
 	/** Wi-Fi power save type */
-	enum ps_param_type type;
+	enum wifi_ps_param_type type;
 	/** Wi-Fi power save fail reason */
 	enum wifi_config_ps_param_fail_reason fail_reason;
 };
