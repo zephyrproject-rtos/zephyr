@@ -16,6 +16,10 @@
 #include <zephyr/drivers/dma.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
+#ifdef CONFIG_SPI_RTIO
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/spinlock.h>
+#endif
 
 LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
@@ -56,6 +60,16 @@ struct spi_mcux_data {
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
+
+#ifdef CONFIG_SPI_RTIO
+	struct rtio *r;
+	struct rtio_iodev iodev;
+	struct rtio_iodev_sqe *txn_head;
+	struct rtio_iodev_sqe *txn_curr;
+	struct spi_dt_spec dt_spec;
+	struct k_spinlock lock;
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
@@ -143,11 +157,21 @@ static void spi_mcux_isr(const struct device *dev)
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
+#ifdef CONFIG_SPI_RTIO
+static void spi_mcux_iodev_complete(const struct device *dev, int status);
+#endif
+
 static void spi_mcux_master_transfer_callback(LPSPI_Type *base,
 		lpspi_master_handle_t *handle, status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
 
+#ifdef CONFIG_SPI_RTIO
+	if (data->txn_head != NULL) {
+		spi_mcux_iodev_complete(data->dev, status);
+		return;
+	}
+#endif
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
@@ -642,6 +666,13 @@ static int spi_mcux_init(const struct device *dev)
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
+#ifdef CONFIG_SPI_RTIO
+	data->dt_spec.bus = dev;
+	data->iodev.api = &spi_iodev_api;
+	data->iodev.data = &data->dt_spec;
+	rtio_mpsc_init(&data->iodev.iodev_sq);
+#endif
+
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
@@ -652,13 +683,161 @@ static int spi_mcux_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_SPI_RTIO
+static inline k_spinlock_key_t spi_spin_lock(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	return k_spin_lock(&data->lock);
+}
+
+static inline void spi_spin_unlock(const struct device *dev, k_spinlock_key_t key)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	k_spin_unlock(&data->lock, key);
+}
+
+
+static void spi_mcux_iodev_next(const struct device *dev, bool completion);
+
+static void spi_mcux_iodev_start(const struct device *dev)
+{
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct rtio_sqe *sqe = &data->txn_curr->sqe;
+	struct spi_dt_spec *spi_dt_spec = sqe->iodev->data;
+	struct spi_config *spi_cfg = &spi_dt_spec->config;
+	struct rtio_iodev_sqe *txn_head = data->txn_head;
+
+	LPSPI_Type *base = config->base;
+	lpspi_transfer_t transfer;
+	status_t status;
+
+	transfer.configFlags = kLPSPI_MasterPcsContinuous |
+			       (spi_cfg->slave << LPSPI_MASTER_PCS_SHIFT);
+
+	switch (sqe->op) {
+	case RTIO_OP_RX:
+		transfer.txData = NULL;
+		transfer.rxData = sqe->buf;
+		transfer.dataSize = sqe->buf_len;
+		break;
+	case RTIO_OP_TX:
+		transfer.rxData = NULL;
+		transfer.txData = sqe->buf;
+		transfer.dataSize = sqe->buf_len;
+		break;
+	case RTIO_OP_TINY_TX:
+		transfer.rxData = NULL;
+		transfer.txData = sqe->tiny_buf;
+		transfer.dataSize = sqe->tiny_buf_len;
+		break;
+	case RTIO_OP_TXRX:
+		transfer.txData = sqe->tx_buf;
+		transfer.rxData = sqe->rx_buf;
+		transfer.dataSize = sqe->txrx_buf_len;
+		break;
+	default:
+		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+
+		spi_mcux_iodev_next(dev, true);
+		rtio_iodev_sqe_err(txn_head, -EINVAL);
+		spi_mcux_iodev_complete(dev, 0);
+		return;
+	}
+
+	data->transfer_len = transfer.dataSize;
+
+	k_spinlock_key_t key = spi_spin_lock(dev);
+
+	status = LPSPI_MasterTransferNonBlocking(base, &data->handle,
+						 &transfer);
+	spi_spin_unlock(dev, key);
+	if (status != kStatus_Success) {
+		LOG_ERR("Transfer could not start");
+		rtio_iodev_sqe_err(txn_head, -EIO);
+	}
+}
+
+static void spi_mcux_iodev_next(const struct device *dev, bool completion)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	k_spinlock_key_t key = spi_spin_lock(dev);
+
+	if (!completion && data->txn_curr != NULL) {
+		spi_spin_unlock(dev, key);
+		return;
+	}
+
+	struct rtio_mpsc_node *next = rtio_mpsc_pop(&data->iodev.iodev_sq);
+
+	if (next != NULL) {
+		struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(next, struct rtio_iodev_sqe, q);
+
+		data->txn_head = next_sqe;
+		data->txn_curr = next_sqe;
+	} else {
+		data->txn_head = NULL;
+		data->txn_curr = NULL;
+	}
+
+	spi_spin_unlock(dev, key);
+
+	if (data->txn_curr != NULL) {
+		struct spi_dt_spec *spi_dt_spec = data->txn_curr->sqe.iodev->data;
+		struct spi_config *spi_cfg = &spi_dt_spec->config;
+
+		spi_mcux_configure(dev, spi_cfg);
+		spi_context_cs_control(&data->ctx, true);
+		spi_mcux_iodev_start(dev);
+	}
+}
+
+static void spi_mcux_iodev_submit(const struct device *dev,
+				 struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	rtio_mpsc_push(&data->iodev.iodev_sq, &iodev_sqe->q);
+	spi_mcux_iodev_next(dev, false);
+}
+
+static void spi_mcux_iodev_complete(const struct device *dev, int status)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	if (data->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
+		data->txn_curr = rtio_txn_next(data->txn_curr);
+		spi_mcux_iodev_start(dev);
+	} else {
+		struct rtio_iodev_sqe *txn_head = data->txn_head;
+
+		spi_context_cs_control(&data->ctx, false);
+		spi_mcux_iodev_next(dev, true);
+		rtio_iodev_sqe_ok(txn_head, status);
+	}
+}
+
+
+#endif
+
+
 static const struct spi_driver_api spi_mcux_driver_api = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_mcux_iodev_submit,
+#endif
 	.release = spi_mcux_release,
 };
+
+
+#define SPI_MCUX_RTIO_DEFINE(n) RTIO_DEFINE(spi_mcux_rtio_##n, CONFIG_SPI_MCUX_RTIO_SQ_SIZE,	\
+					   CONFIG_SPI_MCUX_RTIO_SQ_SIZE)
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #define SPI_DMA_CHANNELS(n)								\
@@ -692,7 +871,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 				.block_count = 1,					\
 				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, source)	\
 			}								\
-		}									\
+		},									\
 	))
 #else
 #define SPI_DMA_CHANNELS(n)
@@ -700,6 +879,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 
 #define SPI_MCUX_LPSPI_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());	\
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
@@ -727,6 +907,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),		\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 		SPI_DMA_CHANNELS(n)					\
+		IF_ENABLED(CONFIG_SPI_RTIO,				\
+			(.r = &spi_mcux_rtio_##n,))			\
+									\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,			\
