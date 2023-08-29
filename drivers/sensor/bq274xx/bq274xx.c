@@ -626,7 +626,6 @@ static int bq274xx_gauge_init(const struct device *dev)
 	struct bq274xx_data *data = dev->data;
 	int ret;
 	uint16_t id;
-	int32_t delay_remainder_ms;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
@@ -640,11 +639,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 	}
 #endif
 
-	delay_remainder_ms = POWER_UP_DELAY_MS - k_uptime_get_32();
-	if (delay_remainder_ms > 0) {
-		LOG_DBG("Power up delay remainder: %dms", delay_remainder_ms);
-		k_msleep(delay_remainder_ms);
-	}
+	k_sleep(K_TIMEOUT_ABS_MS(POWER_UP_DELAY_MS));
 
 	ret = bq274xx_get_device_type(dev, &id);
 	if (ret < 0) {
