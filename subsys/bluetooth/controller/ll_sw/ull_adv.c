@@ -2423,8 +2423,25 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
+#if defined(CONFIG_BT_PERIPHERAL) && (defined(CONFIG_BT_ASSERT) || defined(CONFIG_ASSERT))
+	struct ll_adv_set *adv = param;
+	struct pdu_adv *pdu = lll_adv_data_peek(&adv->lll);
+	bool connectable = (pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+			   (pdu->type == PDU_ADV_TYPE_DIRECT_IND) ||
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			   ((pdu->type == PDU_ADV_TYPE_EXT_IND) &&
+			    (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN)) ||
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+			   0;
+#endif /* CONFIG_BT_PERIPHERAL && (CONFIG_BT_ASSERT || CONFIG_ASSERT) */
+
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+		  param == ull_disable_mark_get() ||
+#if defined(CONFIG_BT_PERIPHERAL)
+		   /* if using connectable adv and lll.conn is 0 -> a connection is underway */
+		  (connectable && !adv->lll.conn) ||
+#endif /* CONFIG_BT_PERIPHERAL */
+		  0);
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
