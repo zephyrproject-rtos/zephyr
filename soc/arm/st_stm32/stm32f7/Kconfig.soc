@@ -2,6 +2,7 @@
 
 # Copyright (c) 2018 Yurii Hamann
 # Copyright (c) 2022, Rtone.
+# Copyright (c) 2023, Rahul Arasikere.
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -22,6 +23,10 @@ config SOC_STM32F756XX
 
 config SOC_STM32F750XX
 	bool "STM32F750XX"
+
+config SOC_STM32F765XX
+	bool "STM32F765XX"
+	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 config SOC_STM32F767XX
 	bool "STM32F767XX"
