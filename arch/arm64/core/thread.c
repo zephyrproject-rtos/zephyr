@@ -13,7 +13,6 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/arch/cpu.h>
 
 /*

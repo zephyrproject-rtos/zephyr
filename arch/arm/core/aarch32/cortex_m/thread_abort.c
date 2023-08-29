@@ -21,7 +21,6 @@
 #include <zephyr/linker/sections.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/__assert.h>
 
 void z_impl_k_thread_abort(k_tid_t thread)
