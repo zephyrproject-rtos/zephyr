@@ -5,3 +5,13 @@ config PTP_CLOCK
 	bool "Precision Time Protocol (PTP) Clock drivers"
 	help
 	  Enable options for Precision Time Protocol Clock drivers.
+
+if PTP_CLOCK
+
+config PTP_CLOCK_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  PTP Clock device driver initialization priority
+
+endif # PTP_CLOCK
