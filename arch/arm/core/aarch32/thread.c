@@ -14,7 +14,6 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/barrier.h>
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
