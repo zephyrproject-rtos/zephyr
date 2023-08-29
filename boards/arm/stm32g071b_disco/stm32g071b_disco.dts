@@ -144,11 +144,10 @@
 		status = "okay";
 		compatible = "ti,ina230";
 		reg = <0x40>;
-		config = <INA230_CONFIG(
-			INA230_OPER_MODE_BUS_VOLTAGE_CONT,
-			INA230_CONV_TIME_1100,
-			INA230_CONV_TIME_1100,
-			INA230_AVG_MODE_1)>;
+		adc-mode = "Bus voltage continuous";
+		vbus-conversion-time-us = <1100>;
+		vshunt-conversion-time-us = <1100>;
+		avg-count = <1>;
 		current-lsb-microamps = <1000>;
 		rshunt-micro-ohms = <15000>;
 	};
