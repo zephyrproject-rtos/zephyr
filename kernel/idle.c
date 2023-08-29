@@ -8,12 +8,13 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/pm/pm.h>
 #include <stdbool.h>
 #include <zephyr/logging/log.h>
+/* private kernel APIs */
 #include <ksched.h>
 #include <kswap.h>
+#include <wait_q.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

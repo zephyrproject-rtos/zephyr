@@ -6,7 +6,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/wait_q.h>
+
+/* private kernel APIs */
+#include <wait_q.h>
 #include <ksched.h>
 
 #include "app_threads.h"
