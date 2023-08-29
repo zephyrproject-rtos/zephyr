@@ -14,7 +14,7 @@
  */
 
 #include <zephyr/drivers/pm_cpu_ops.h>
-#include <zephyr/exc_handle.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>

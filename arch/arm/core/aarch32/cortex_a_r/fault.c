@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <zephyr/exc_handle.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
