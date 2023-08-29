@@ -1,7 +1,8 @@
 # Copyright (c) 2018, I-SENSE group of ICCS
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields that give the number of endpoints supported by the USB hardware
+# Common fields that give the number of endpoints/host channels
+# supported by the USB hardware
 
 include: usb-controller.yaml
 
@@ -24,3 +25,8 @@ properties:
     description: |
       Number of OUT endpoints supported by hardware
       (including EP0 OUT)
+
+  num-host-channels:
+    type: int
+    description: |
+      Number of host channels supported by hardware
