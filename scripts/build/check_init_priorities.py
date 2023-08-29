@@ -24,17 +24,12 @@ import pickle
 import sys
 
 from elftools.elf.elffile import ELFFile
-from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
                                 "dts", "python-devicetree", "src"))
 from devicetree import edtlib  # pylint: disable=unused-import
-
-# Prefix used for relocation sections containing initialization data, as in
-# sequence of "struct init_entry".
-_INIT_SECTION_PREFIX = (".rel.z_init_", ".rela.z_init_")
 
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
@@ -65,8 +60,9 @@ _IGNORE_COMPATIBLES = frozenset([
 class Priority:
     """Parses and holds a device initialization priority.
 
-    Parses an ELF section name for the corresponding initialization level and
-    priority, for example ".rel.z_init_PRE_KERNEL_155_" for "PRE_KERNEL_1 55".
+    Parses an ELF section name for the corresponding device level, priority, and
+    subpriority, for example "._device.static.PRE_KERNEL_1_55_00090" for
+    "PRE_KERNEL_1 55 90".
 
     The object can be used for comparing levels with one another.
 
@@ -77,7 +73,7 @@ class Priority:
         for idx, level in enumerate(_DEVICE_INIT_LEVELS):
             if level in name:
                 _, priority_str = name.strip("_").split(level)
-                priority, sub_priority = priority_str.split("_")
+                priority, sub_priority = priority_str[1:].split("_")
                 self._level = idx
                 self._priority = int(priority)
                 self._sub_priority = int(sub_priority)
@@ -107,9 +103,9 @@ class Priority:
 class ZephyrObjectFile:
     """Load an object file and finds the device defined within it.
 
-    Load an object file and scans the relocation sections looking for the known
-    ones containing initialization callbacks. Then finds what device ordinals
-    are being initialized at which priority and stores the list internally.
+    Load an object file and scans the devices in it, together with their
+    section. Then finds what device ordinals are being initialized at which
+    priority and stores the list internally.
 
     A dictionary of {ordinal: Priority} is available in the defined_devices
     class variable.
@@ -120,60 +116,25 @@ class ZephyrObjectFile:
     def __init__(self, file_path):
         self.file_path = file_path
         self._elf = ELFFile(open(file_path, "rb"))
-        self._load_symbols()
         self._find_defined_devices()
 
-    def _load_symbols(self):
-        """Initialize the symbols table."""
-        self._symbols = {}
-
-        for section in self._elf.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            for num, sym in enumerate(section.iter_symbols()):
-                if sym.name:
-                    self._symbols[num] = sym.name
-
-    def _device_ord_from_rel(self, rel):
-        """Find a device ordinal from a device symbol name."""
-        sym_id = rel["r_info_sym"]
-        sym_name = self._symbols.get(sym_id, None)
-
-        if not sym_name:
-            return None
-
-        if not sym_name.startswith(_DEVICE_ORD_PREFIX):
-            return None
-
-        _, device_ord = sym_name.split(_DEVICE_ORD_PREFIX)
-        return int(device_ord)
-
     def _find_defined_devices(self):
-        """Find the device structures defined in the object file."""
-        self.defined_devices = {}
-
+        dev_syms = []
+        sects = []
         for section in self._elf.iter_sections():
-            if not isinstance(section, RelocationSection):
-                continue
+            sects.append(section)
+            if isinstance(section, SymbolTableSection):
+                for sym in section.iter_symbols():
+                    if (sym.name and
+                        sym.name.startswith(_DEVICE_ORD_PREFIX) and
+                        sym.entry.st_shndx != "SHN_UNDEF"):
+                        dev_syms.append(sym)
 
-            if not section.name.startswith(_INIT_SECTION_PREFIX):
-                continue
-
-            prio = Priority(section.name)
-
-            for rel in section.iter_relocations():
-                device_ord = self._device_ord_from_rel(rel)
-                if not device_ord:
-                    continue
-
-                if device_ord in self.defined_devices:
-                    raise ValueError(
-                            f"Device {device_ord} already defined, stale "
-                            "object files in the build directory? "
-                            "Try running a clean build.")
-
-                self.defined_devices[device_ord] = prio
+        self.defined_devices = {}
+        for dev_sym in dev_syms:
+            device_ord = int(dev_sym.name.split(_DEVICE_ORD_PREFIX)[1])
+            device_prio = Priority(sects[dev_sym.entry.st_shndx].name)
+            self.defined_devices[device_ord] = device_prio
 
     def __repr__(self):
         return (f"<{self.__class__.__name__} {self.file_path} "

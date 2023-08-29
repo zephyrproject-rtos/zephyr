@@ -10,8 +10,7 @@ import mock
 import pathlib
 import unittest
 
-from elftools.elf.relocation import RelocationSection
-from elftools.elf.sections import SymbolTableSection
+from elftools.elf.sections import Section, SymbolTableSection
 
 import check_init_priorities
 
@@ -19,54 +18,54 @@ class TestPriority(unittest.TestCase):
     """Tests for the Priority class."""
 
     def test_priority_parsing(self):
-        prio1 = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_0_")
+        prio1 = check_init_priorities.Priority("._device.static.POST_KERNEL_12_0_")
         self.assertEqual(prio1._level_priority, (3, 12, 0))
 
-        prio2 = check_init_priorities.Priority("noisenoise_POST_KERNEL99_00023_")
+        prio2 = check_init_priorities.Priority("noisenoise_POST_KERNEL_99_00023_")
         self.assertEqual(prio2._level_priority, (3, 99, 23))
 
-        prio3 = check_init_priorities.Priority("_PRE_KERNEL_10_99999_")
+        prio3 = check_init_priorities.Priority("_PRE_KERNEL_1_0_99999_")
         self.assertEqual(prio3._level_priority, (1, 0, 99999))
 
-        prio4 = check_init_priorities.Priority("_PRE_KERNEL_110_00001_")
+        prio4 = check_init_priorities.Priority("_PRE_KERNEL_1_10_00001_")
         self.assertEqual(prio4._level_priority, (1, 10, 1))
 
         with self.assertRaises(ValueError):
             check_init_priorities.Priority("i-am-not-a-priority")
             check_init_priorities.Priority("_DOESNOTEXIST0_")
-            check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_blah")
-            check_init_priorities.Priority(".rel.z_init_2_")
-            check_init_priorities.Priority(".rel.z_init_POST_KERNEL1_")
+            check_init_priorities.Priority("._device.static.POST_KERNEL_12_blah")
+            check_init_priorities.Priority("._device.static.2_")
+            check_init_priorities.Priority("._device.static.POST_KERNEL_1_")
 
     def test_priority_levels(self):
         prios = [
-                check_init_priorities.Priority(".rel.z_init_EARLY0_0_"),
-                check_init_priorities.Priority(".rel.z_init_EARLY1_0_"),
-                check_init_priorities.Priority(".rel.z_init_EARLY11_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_10_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_11_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_1_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_00002_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_111_00010_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_20_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_21_0_"),
-                check_init_priorities.Priority(".rel.z_init_PRE_KERNEL_211_0_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL0_0_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL1_0_"),
-                check_init_priorities.Priority(".rel.z_init_POST_KERNEL11_0_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION0_0_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION1_0_"),
-                check_init_priorities.Priority(".rel.z_init_APPLICATION11_0_"),
-                check_init_priorities.Priority(".rel.z_init_SMP0_0_"),
-                check_init_priorities.Priority(".rel.z_init_SMP1_0_"),
-                check_init_priorities.Priority(".rel.z_init_SMP11_0_"),
+                check_init_priorities.Priority("._device.static.EARLY_0_0_"),
+                check_init_priorities.Priority("._device.static.EARLY_1_0_"),
+                check_init_priorities.Priority("._device.static.EARLY_11_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_0_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_1_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_11_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_11_1_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_11_00002_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_1_11_00010_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_2_0_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_2_1_0_"),
+                check_init_priorities.Priority("._device.static.PRE_KERNEL_2_11_0_"),
+                check_init_priorities.Priority("._device.static.POST_KERNEL_0_0_"),
+                check_init_priorities.Priority("._device.static.POST_KERNEL_1_0_"),
+                check_init_priorities.Priority("._device.static.POST_KERNEL_11_0_"),
+                check_init_priorities.Priority("._device.static.APPLICATION_0_0_"),
+                check_init_priorities.Priority("._device.static.APPLICATION_1_0_"),
+                check_init_priorities.Priority("._device.static.APPLICATION_11_0_"),
+                check_init_priorities.Priority("._device.static.SMP_0_0_"),
+                check_init_priorities.Priority("._device.static.SMP_1_0_"),
+                check_init_priorities.Priority("._device.static.SMP_11_0_"),
                 ]
 
         self.assertListEqual(prios, sorted(prios))
 
     def test_priority_strings(self):
-        prio = check_init_priorities.Priority(".rel.z_init_POST_KERNEL12_00023_")
+        prio = check_init_priorities.Priority("._device.static.POST_KERNEL_12_00023_")
         self.assertEqual(str(prio), "POST_KERNEL 12 23")
         self.assertEqual(repr(prio), "<Priority POST_KERNEL 12 23>")
 
@@ -74,68 +73,42 @@ class testZephyrObjectFile(unittest.TestCase):
     """Tests for the ZephyrObjectFile class."""
 
     @mock.patch("check_init_priorities.ZephyrObjectFile.__init__", return_value=None)
-    def test_load_symbols(self, mock_zofinit):
+    def test_find_defined_devices(self, mock_zofinit):
         mock_elf = mock.Mock()
 
         sts = mock.Mock(spec=SymbolTableSection)
-        rel = mock.Mock(spec=RelocationSection)
-        mock_elf.iter_sections.return_value = [sts, rel]
+        sec1 = mock.Mock(spec=Section)
+        sec1.name = "._device.static.POST_KERNEL_12_00023_"
+        sec2 = mock.Mock(spec=Section)
+        sec2.name = ".something_else"
+        mock_elf.iter_sections.return_value = [sts, sec1, sec2]
 
         s0 = mock.Mock()
         s0.name = "a"
         s1 = mock.Mock()
         s1.name = None
         s2 = mock.Mock()
-        s2.name = "b"
-        sts.iter_symbols.return_value = [s0, s1, s2]
-
-        obj = check_init_priorities.ZephyrObjectFile("")
-        obj._elf = mock_elf
-        obj._load_symbols()
-
-        self.assertDictEqual(obj._symbols, {0: "a", 2: "b"})
-
-    @mock.patch("check_init_priorities.Priority")
-    @mock.patch("check_init_priorities.ZephyrObjectFile._device_ord_from_rel")
-    @mock.patch("check_init_priorities.ZephyrObjectFile.__init__", return_value=None)
-    def test_find_defined_devices(self, mock_zofinit, mock_dofr, mock_prio):
-        mock_elf = mock.Mock()
-
-        sts = mock.Mock(spec=SymbolTableSection)
-        rel1 = mock.Mock(spec=RelocationSection)
-        rel1.name = ".rel.z_init_SOMETHING"
-        rel2 = mock.Mock(spec=RelocationSection)
-        rel2.name = ".rel.something_else"
-        mock_elf.iter_sections.return_value = [sts, rel1, rel2]
-
-        r0 = mock.Mock()
-        rel1.iter_relocations.return_value = [r0]
-
-        mock_dofr.return_value = 123
-
-        r0_prio = mock.Mock()
-        mock_prio.return_value = r0_prio
+        s2.name = "__device_dts_ord_123"
+        s2entry = mock.Mock()
+        s2entry.st_shndx = 1
+        s2.entry = s2entry
+        s3 = mock.Mock()
+        s3.name = "__device_dts_ord_321"
+        s3entry = mock.Mock()
+        s3entry.st_shndx = "SHN_UNDEF"
+        s3.entry = s3entry
+        sts.iter_symbols.return_value = [s0, s1, s2, s3]
 
         obj = check_init_priorities.ZephyrObjectFile("")
         obj._elf = mock_elf
         obj._find_defined_devices()
 
-        self.assertDictEqual(obj.defined_devices, {123: r0_prio})
-        mock_dofr.assert_called_once_with(r0)
-        mock_prio.assert_called_once_with(rel1.name)
-
-    @mock.patch("check_init_priorities.ZephyrObjectFile.__init__", return_value=None)
-    def test_device_ord_from_rel(self, mock_zofinit):
-        obj = check_init_priorities.ZephyrObjectFile("")
-
-        obj._symbols = {
-                1: "blah",
-                2: "__device_dts_ord_123",
-                }
-
-        self.assertEqual(obj._device_ord_from_rel({"r_info_sym": 0}), None)
-        self.assertEqual(obj._device_ord_from_rel({"r_info_sym": 1}), None)
-        self.assertEqual(obj._device_ord_from_rel({"r_info_sym": 2}), 123)
+        self.assertDictEqual(
+            obj.defined_devices,
+            {
+                123: check_init_priorities.Priority("POST_KERNEL_12_00023_")
+            }
+        )
 
 class testValidator(unittest.TestCase):
     """Tests for the Validator class."""
