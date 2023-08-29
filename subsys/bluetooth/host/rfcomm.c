@@ -45,8 +45,10 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define RFCOMM_DISC_TIMEOUT     K_SECONDS(20)
 #define RFCOMM_IDLE_TIMEOUT     K_SECONDS(2)
 
-#define DLC_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_dlc, rtx_work)
-#define SESSION_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_session, rtx_work)
+#define DLC_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
+				 struct bt_rfcomm_dlc, rtx_work)
+#define SESSION_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
+				     struct bt_rfcomm_session, rtx_work)
 
 static struct bt_rfcomm_server *servers;
 
