@@ -662,20 +662,20 @@ int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg 
 /** @brief Lookup a specific value based on type
  *
  *  Depending on context bt_audio_codec_cfg will be either codec capabilities, codec configuration
- * or meta data.
+ *  or meta data.
  *
  *  Typically types used are:
  *  @ref bt_audio_codec_capability_type
  *  @ref bt_audio_codec_config_type
  *  @ref bt_audio_metadata_type
  *
- *  @param codec_cfg The codec data to search in.
- *  @param type The type id to look for
- *  @param data Pointer to the data-pointer to update when item is found
- *  @return True if the type is found, false otherwise.
+ *  @param[in] codec_cfg The codec data to search in.
+ *  @param[in] type The type id to look for
+ *  @param[out] data Pointer to the data-pointer to update when item is found
+ *  @return Length of found @p data or 0 if not found
  */
-bool bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
-				const uint8_t **data);
+uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
+				   const uint8_t **data);
 
 /** @} */ /* End of bt_audio_codec_cfg */
 
