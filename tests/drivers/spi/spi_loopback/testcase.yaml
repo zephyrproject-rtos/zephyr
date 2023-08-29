@@ -30,7 +30,10 @@ tests:
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
-    platform_allow: tdk_robokit1
+    platform_allow:
+      - tdk_robokit1
+      - mimxrt1170_evk_cm7
+      - vmu_rt1170
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
