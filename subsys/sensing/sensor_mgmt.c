@@ -5,7 +5,7 @@
  */
 #include <zephyr/sys/__assert.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensing_sensor.h>
