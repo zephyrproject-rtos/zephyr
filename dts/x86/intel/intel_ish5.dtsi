@@ -150,5 +150,18 @@
 			clock-frequency = <I2C_BITRATE_FAST>;
 			status = "disabled";
 		};
+
+		gpio0: gpio@100000 {
+			compatible = "intel,sedi-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			peripheral-id = <0>;
+			reg = <0x00100000 0x1000>;
+			interrupt-parent = <&intc>;
+			ngpios = <32>;
+			interrupts = <13 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
 	};
 };
