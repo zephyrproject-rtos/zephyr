@@ -40,7 +40,7 @@ static void chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 	/* Try to send data */
 	err = bt_l2cap_chan_send(l2cap_chan, buf);
-	if (err) {
+	if (err < 0) {
 		FAIL("Could not send data, error %d\n", err);
 	}
 
