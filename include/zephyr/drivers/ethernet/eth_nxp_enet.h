@@ -7,7 +7,14 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
 #define ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
 
+/*
+ * This header is for NXP ENET driver development
+ * and has definitions for internal implementations
+ * not to be used by application
+ */
+
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,9 +34,21 @@ enum nxp_enet_callback_reason {
 	nxp_enet_interrupt_enabled,
 };
 
+struct nxp_enet_ptp_data_for_mac {
+	struct k_mutex *ptp_mutex;
+};
+
+union nxp_enet_ptp_data {
+	struct nxp_enet_ptp_data_for_mac for_mac;
+};
+
 /* Calback for mdio device called from mac driver */
 void nxp_enet_mdio_callback(const struct device *mdio_dev,
 		enum nxp_enet_callback_reason event);
+
+void nxp_enet_ptp_clock_callback(const struct device *dev,
+		enum nxp_enet_callback_reason event,
+		union nxp_enet_ptp_data *ptp_data);
 
 
 #ifdef __cplusplus
