@@ -247,9 +247,9 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 int sdmmc_read_csd(struct sd_card *card)
 {
 	int ret;
-	uint32_t csd[4];
+	uint32_t csd[4] = {0};
 	/* Keep CSD on stack for reduced RAM usage */
-	struct sd_csd card_csd;
+	struct sd_csd card_csd = {0};
 
 	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
 		ret = sdmmc_spi_read_cxd(card, SD_SEND_CSD, csd);
@@ -270,11 +270,11 @@ int sdmmc_read_csd(struct sd_card *card)
 /* Reads card identification register, and decodes it */
 int card_read_cid(struct sd_card *card)
 {
-	uint32_t cid[4];
+	uint32_t cid[4] = {0};
 	int ret;
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 	/* Keep CID on stack for reduced RAM usage */
-	struct sd_cid card_cid;
+	struct sd_cid card_cid = {0};
 #endif
 
 	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
