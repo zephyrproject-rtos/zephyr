@@ -828,11 +828,13 @@ void z_xtensa_mmu_tlb_shootdown(void)
 	 */
 	key = arch_irq_lock();
 
-	/* We don't have information on which page tables have changed,
-	 * so we just invalidate the cache for all L1 page tables.
-	 */
-	sys_cache_data_invd_range((void *)l1_page_table, sizeof(l1_page_table));
-	sys_cache_data_invd_range((void *)l2_page_tables, sizeof(l2_page_tables));
+	K_SPINLOCK(&xtensa_mmu_lock) {
+		/* We don't have information on which page tables have changed,
+		 * so we just invalidate the cache for all L1 page tables.
+		 */
+		sys_cache_data_invd_range((void *)l1_page_table, sizeof(l1_page_table));
+		sys_cache_data_invd_range((void *)l2_page_tables, sizeof(l2_page_tables));
+	}
 
 #ifdef CONFIG_USERSPACE
 	struct k_thread *thread = _current_cpu->current;
