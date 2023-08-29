@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
