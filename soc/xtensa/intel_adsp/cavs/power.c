@@ -93,8 +93,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 				.adsp_imr_magic = ADSP_IMR_MAGIC_VALUE,
 				.imr_restore_vector = rom_entry,
 			};
-			struct imr_layout *imr_layout =
-			  arch_xtensa_uncached_ptr((struct imr_layout *)L3_MEM_BASE_ADDR);
+			struct imr_layout *imr_layout = (struct imr_layout *)L3_MEM_BASE_ADDR;
+
+			__ASSERT_NO_MSG(arch_xtensa_is_ptr_uncached(L3_MEM_BASE_ADDR));
 			imr_layout->imr_state.header = hdr;
 
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
