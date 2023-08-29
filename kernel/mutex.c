@@ -30,7 +30,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <errno.h>
 #include <zephyr/init.h>
 #include <zephyr/syscall_handler.h>

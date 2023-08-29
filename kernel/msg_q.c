@@ -17,7 +17,7 @@
 #include <zephyr/linker/sections.h>
 #include <string.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/init.h>
