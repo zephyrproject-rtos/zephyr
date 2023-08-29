@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Texas Instruments, Incorporated
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -455,7 +456,7 @@ enum wifi_twt_fail_reason {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const twt_err_code_tbl[] = {
+static const char * const wifi_twt_err_code_tbl[] = {
 	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
@@ -478,17 +479,17 @@ static const char * const twt_err_code_tbl[] = {
 /** @endcond */
 
 /** Helper function to get user-friendly TWT error code name. */
-static inline const char *get_twt_err_code_str(int16_t err_no)
+static inline const char *wifi_twt_get_err_code_str(int16_t err_no)
 {
-	if ((err_no) < (int16_t)ARRAY_SIZE(twt_err_code_tbl)) {
-		return twt_err_code_tbl[err_no];
+	if ((err_no) < (int16_t)ARRAY_SIZE(wifi_twt_err_code_tbl)) {
+		return wifi_twt_err_code_tbl[err_no];
 	}
 
 	return "<unknown>";
 }
 
 /** Wi-Fi power save parameters. */
-enum ps_param_type {
+enum wifi_ps_param_type {
 	/** Power save state. */
 	WIFI_PS_PARAM_STATE,
 	/** Power save listen interval. */
@@ -535,7 +536,7 @@ enum wifi_config_ps_param_fail_reason {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const ps_param_config_err_code_tbl[] = {
+static const char * const wifi_ps_param_config_err_code_tbl[] = {
 	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecified",
 	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
 	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] =
@@ -552,10 +553,10 @@ static const char * const ps_param_config_err_code_tbl[] = {
 /** @endcond */
 
 /** Helper function to get user-friendly power save error code name. */
-static inline const char *get_ps_config_err_code_str(int16_t err_no)
+static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
 {
-	if ((err_no) < (int16_t)ARRAY_SIZE(ps_param_config_err_code_tbl)) {
-		return ps_param_config_err_code_tbl[err_no];
+	if ((err_no) < (int16_t)ARRAY_SIZE(wifi_ps_param_config_err_code_tbl)) {
+		return wifi_ps_param_config_err_code_tbl[err_no];
 	}
 
 	return "<unknown>";
