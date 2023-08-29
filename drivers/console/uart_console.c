@@ -545,14 +545,12 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 				break;
 			}
 
-			last_char = byte;
-			continue;
-		}
-
 		/* Ignore characters if there's no more buffer space */
-		if (cur + end < sizeof(cmd->line) - 1) {
+		} else if (cur + end < sizeof(cmd->line) - 1) {
 			insert_char(&cmd->line[cur++], byte, end);
 		}
+
+		last_char = byte;
 	}
 }
 
