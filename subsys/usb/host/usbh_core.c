@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/init.h>
 #include "usbh_internal.h"
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
