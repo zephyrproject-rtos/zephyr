@@ -15,7 +15,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <inttypes.h>
-#include <zephyr/exc_handle.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
