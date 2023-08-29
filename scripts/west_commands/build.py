@@ -123,7 +123,12 @@ class Build(Forceable):
                            (try "-t usage")''')
         group.add_argument('-T', '--test-item',
                            help='''Build based on test data in testcase.yaml
-                           or sample.yaml''')
+                           or sample.yaml. If source directory is not used
+                           an argument has to be defined as
+                           SOURCE_PATH/TEST_NAME.
+                           E.g. samples/hello_world/sample.basic.helloworld.
+                           If source directory is passed
+                           then "TEST_NAME" is enough.''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
@@ -165,7 +170,10 @@ class Build(Forceable):
         if self.args.test_item:
             # we get path + testitem
             item = os.path.basename(self.args.test_item)
-            test_path = os.path.dirname(self.args.test_item)
+            if self.args.source_dir:
+                test_path = self.args.source_dir
+            else:
+                test_path = os.path.dirname(self.args.test_item)
             if test_path and os.path.exists(test_path):
                 self.args.source_dir = test_path
                 if not self._parse_test_item(item):
