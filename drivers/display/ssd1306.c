@@ -56,6 +56,7 @@ struct ssd1306_config {
 	struct gpio_dt_spec data_cmd;
 #endif
 	struct gpio_dt_spec reset;
+	int ready_time_ms;
 };
 
 struct ssd1306_data {
@@ -403,6 +404,8 @@ static int ssd1306_init(const struct device *dev)
 
 	LOG_DBG("");
 
+	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
+
 	if (!ssd1306_bus_ready(dev)) {
 		LOG_ERR("Bus device %s not ready!", config->bus.bus->name);
 		return -EINVAL;
@@ -434,7 +437,8 @@ static const struct ssd1306_config ssd1306_config = {
 		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),
 	.data_cmd = GPIO_DT_SPEC_INST_GET(0, data_cmd_gpios),
 #endif
-	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 })
+	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
+	.ready_time_ms = DT_INST_PROP(0, ready_time_ms),
 };
 
 static struct ssd1306_data ssd1306_driver;
