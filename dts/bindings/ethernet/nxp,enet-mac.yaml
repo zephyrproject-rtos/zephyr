@@ -16,3 +16,9 @@ properties:
     required: true
     description: |
       Corresponding mdio device
+
+  nxp,ptp-clock:
+    type: phandle
+    required: true
+    description: |
+      Corresponding ptp clock device
