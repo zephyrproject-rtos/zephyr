@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <zephyr/drivers/virtualization/ivshmem.h>
 
-static const struct device *ivshmem;
+static const struct device *ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
 
 #ifdef CONFIG_IVSHMEM_DOORBELL
 
@@ -48,14 +48,12 @@ static void doorbell_notification_thread(const struct shell *sh)
 
 static bool get_ivshmem(const struct shell *sh)
 {
-	if (ivshmem == NULL) {
-		ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
-		if (!device_is_ready(ivshmem)) {
-			shell_error(sh, "IVshmem device is not ready");
-		}
+	if (!device_is_ready(ivshmem)) {
+		shell_error(sh, "IVshmem device is not ready");
+		return false;
 	}
 
-	return ivshmem != NULL ? true : false;
+	return true;
 }
 
 static int cmd_ivshmem_shmem(const struct shell *sh,
