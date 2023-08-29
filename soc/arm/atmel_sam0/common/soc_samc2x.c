@@ -38,28 +38,9 @@ static void mclk_init(void)
 
 static void gclks_init(void)
 {
-	OSCCTRL->XOSCCTRL.reg = OSCCTRL_XOSCCTRL_GAIN(0x3);
-	// To enable XOSC as an external crystal oscillator, the XTAL Enable bit (XOSCCTRL.XTALEN)
-	// must be written to '1'. If XOSCCTRL.XTALEN is zero, the external clock input on XIN will
-	// be enabled.
-	OSCCTRL->XOSCCTRL.bit.AMPGC = 1;
-	OSCCTRL->XOSCCTRL.bit.ONDEMAND = 0;
-	OSCCTRL->XOSCCTRL.bit.XTALEN = 1;
-	OSCCTRL->XOSCCTRL.bit.ENABLE = 1;
-	OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDR((3U - 1U)) | OSCCTRL_DPLLRATIO_LDRFRAC(0U);
-	while (OSCCTRL->DPLLSYNCBUSY.bit.DPLLRATIO) {
-	}
-	// 0x0 XOSC32K XOSC32K clock reference
-	// 0x1 XOSC XOSC clock reference
-	// 0x2 GCLK GCLK clock reference
-	OSCCTRL->DPLLCTRLB.reg = OSCCTRL_DPLLCTRLB_REFCLK(0x1U) | OSCCTRL_DPLLCTRLB_FILTER(0x0U) | OSCCTRL_DPLLCTRLB_LPEN | OSCCTRL_DPLLPRESC_PRESC(0x0U);
-	while (OSCCTRL->DPLLSYNCBUSY.bit.DPLLPRESC) {
-	}
-	OSCCTRL->DPLLCTRLA.reg = OSCCTRL_DPLLCTRLA_ENABLE;
-	while (OSCCTRL->DPLLSYNCBUSY.bit.ENABLE) {
-	}
-	GCLK->GENCTRL[0].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DPLL96M) | GCLK_GENCTRL_DIV(1) |
-			       GCLK_GENCTRL_GENEN;
+	GCLK->GENCTRL[0].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
+			     | GCLK_GENCTRL_DIV(1)
+			     | GCLK_GENCTRL_GENEN;
 }
 
 static int atmel_samc_init(void)
