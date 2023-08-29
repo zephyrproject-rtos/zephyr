@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
