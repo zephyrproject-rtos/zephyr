@@ -527,7 +527,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 		mac = (uint8_t *)(FCFG1_BASE + FCFG1_O_MAC_15_4_0);
 	}
 
-	memcpy(&drv_data->mac, mac, sizeof(drv_data->mac));
+	sys_memcpy_swap(&drv_data->mac, mac, sizeof(drv_data->mac));
 
 	/* Setup circular RX queue (TRM 25.3.2.7) */
 	memset(&drv_data->rx_entry[0], 0, sizeof(drv_data->rx_entry[0]));

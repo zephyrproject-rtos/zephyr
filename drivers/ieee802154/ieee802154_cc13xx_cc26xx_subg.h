@@ -36,7 +36,7 @@ struct ieee802154_cc13xx_cc26xx_subg_data {
 	RF_Object rf_object;
 
 	struct net_if *iface;
-	uint8_t mac[8];
+	uint8_t mac[8]; /* in big endian */
 
 	struct k_mutex tx_mutex;
 
