@@ -713,6 +713,7 @@ Release Notes:
     - str4t0m
   files:
     - boards/shields/mcp2515/
+    - boards/shields/tcan4550evm/
     - doc/hardware/peripherals/canbus/
     - drivers/can/
     - drivers/net/canbus.c
