@@ -2088,7 +2088,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 	net_buf_unref(frag);
 
-	return ret;
+	return sent;
 }
 
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
