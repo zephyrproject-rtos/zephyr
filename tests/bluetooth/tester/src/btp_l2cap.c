@@ -51,7 +51,9 @@ static uint8_t recv_cb_buf[DATA_BUF_SIZE + sizeof(struct btp_l2cap_data_received
 static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
 	struct btp_l2cap_data_received_ev *ev = (void *) recv_cb_buf;
-	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
+	struct bt_l2cap_le_chan *l2cap_le_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_le_chan, chan);
+	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
 
 	ev->chan_id = chan->chan_id;
 	ev->data_length = sys_cpu_to_le16(buf->len);
@@ -74,7 +76,9 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	struct btp_l2cap_connected_ev ev;
-	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
+	struct bt_l2cap_le_chan *l2cap_le_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_le_chan, chan);
+	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
 	struct bt_conn_info info;
 
 	ev.chan_id = chan->chan_id;
@@ -101,7 +105,9 @@ static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
 static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	struct btp_l2cap_disconnected_ev ev;
-	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
+	struct bt_l2cap_le_chan *l2cap_le_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_le_chan, chan);
+	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
 	struct bt_conn_info info;
 
 	/* release netbuf on premature disconnection */
@@ -136,7 +142,9 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	struct btp_l2cap_reconfigured_ev ev;
-	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
+	struct bt_l2cap_le_chan *l2cap_le_chan = CONTAINER_OF(
+			l2cap_chan, struct bt_l2cap_le_chan, chan);
+	struct channel *chan = CONTAINER_OF(l2cap_le_chan, struct channel, le);
 
 	(void)memset(&ev, 0, sizeof(ev));
 

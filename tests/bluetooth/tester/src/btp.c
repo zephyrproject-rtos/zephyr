@@ -161,7 +161,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		return buf;
 	}
 
-	k_fifo_put(&cmds_queue, CONTAINER_OF(buf, struct btp_buf, data));
+	k_fifo_put(&cmds_queue, CONTAINER_OF(buf, struct btp_buf, data[0]));
 
 	*off = 0;
 	return new_buf->data;

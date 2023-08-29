@@ -43,8 +43,8 @@ static struct bt_avdtp_seid_lsep *lseps;
 
 #define AVDTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avdtp, br_chan.chan)
 
-#define AVDTP_KWORK(_work) CONTAINER_OF(_work, struct bt_avdtp_req,\
-					timeout_work)
+#define AVDTP_KWORK(_work) CONTAINER_OF(k_work_delayable_from_work(_work), \
+					struct bt_avdtp_req, timeout_work)
 
 #define AVDTP_TIMEOUT K_SECONDS(6)
 
