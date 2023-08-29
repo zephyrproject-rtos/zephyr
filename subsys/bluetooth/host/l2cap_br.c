@@ -30,7 +30,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
-#define BR_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_br_chan, rtx_work)
+#define BR_CHAN_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
+				     struct bt_l2cap_br_chan, rtx_work)
 
 #define L2CAP_BR_PSM_START	0x0001
 #define L2CAP_BR_PSM_END	0xffff
@@ -1371,7 +1372,7 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
+	struct bt_l2cap_br *l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan.chan);
 	struct bt_l2cap_sig_hdr *hdr;
 	uint16_t len;
 

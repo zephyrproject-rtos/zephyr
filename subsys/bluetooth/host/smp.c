@@ -630,7 +630,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
-		smp = CONTAINER_OF(chan, struct bt_smp, chan);
+		smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 		smp->local_dist &= ~dist_complete;
 
 		/* if all keys were distributed, pairing is done */
@@ -648,7 +648,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
-		smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+		smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 		smp->local_dist &= ~dist_complete;
 
 		/* if all keys were distributed, pairing is done */
@@ -831,7 +831,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -849,7 +849,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 
 static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -1406,7 +1406,7 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 
 static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
@@ -1513,7 +1513,7 @@ static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_smp_br, chan);
+	return CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 }
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn)
@@ -2689,7 +2689,7 @@ static struct bt_smp *smp_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_smp, chan);
+	return CONTAINER_OF(chan, struct bt_smp, chan.chan);
 }
 
 bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint8_t *ltk)
@@ -4442,7 +4442,7 @@ static bool is_in_pairing_procedure(struct bt_smp *smp)
 
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
@@ -4549,7 +4549,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 
 static void bt_smp_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
@@ -4563,7 +4563,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_keys *keys = chan->conn->le.keys;
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
@@ -4598,7 +4598,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 				  uint8_t hci_status)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_conn *conn = chan->conn;
 
 	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x", chan, conn,
