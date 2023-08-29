@@ -13,7 +13,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/rb.h>
 #include <zephyr/kernel/sched_priq.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
 
 #ifdef __cplusplus
 extern "C" {
