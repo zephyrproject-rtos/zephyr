@@ -9,12 +9,13 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
-#include <ksched.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
 
 /**
  * @brief Initialize kernel memory slab subsystem.

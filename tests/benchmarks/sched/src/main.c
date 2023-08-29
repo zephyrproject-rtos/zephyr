@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <ksched.h>
 
 /* This is a scheduler microbenchmark, designed to measure latencies

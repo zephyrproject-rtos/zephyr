@@ -7,7 +7,7 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel/sched_priq.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <zephyr/syscall_handler.h>
