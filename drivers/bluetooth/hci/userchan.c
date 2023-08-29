@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
@@ -45,6 +46,7 @@ struct sockaddr_hci {
 
 #define SOL_HCI          0
 
+/* Bluetooth spec v5.4 Vol 4, Part A Table 2.1 */
 #define H4_CMD           0x01
 #define H4_ACL           0x02
 #define H4_SCO           0x03
@@ -93,6 +95,69 @@ static struct net_buf *get_rx(const uint8_t *buf)
 	return NULL;
 }
 
+/**
+ * @brief Decode the length of an HCI H4 packet
+ * @details Decodes packet length according to Bluetooth spec v5.4 Vol 4 Part E
+ * @param buf	Pointer to a HCI packet buffer
+ * @return Length of the HCI packet in bytes, zero if no valid packet found.
+ */
+static uint16_t packet_len(const uint8_t *buf)
+{
+	uint16_t payload_len = 0;
+	uint8_t header_len = 0;
+	const uint8_t type = buf[0];
+	const uint8_t *hdr = &buf[sizeof(type)];
+
+	switch (type) {
+	case H4_CMD: {
+		const struct bt_hci_cmd_hdr *cmd = (const struct bt_hci_cmd_hdr *)hdr;
+
+		/* Parameter Total Length */
+		payload_len = cmd->param_len;
+		header_len = BT_HCI_CMD_HDR_SIZE;
+		break;
+	}
+	case H4_ACL: {
+		const struct bt_hci_acl_hdr *acl = (const struct bt_hci_acl_hdr *)hdr;
+
+		/* Data Total Length */
+		payload_len = sys_le16_to_cpu(acl->len);
+		header_len = BT_HCI_ACL_HDR_SIZE;
+		break;
+	}
+	case H4_SCO: {
+		const struct bt_hci_sco_hdr *sco = (const struct bt_hci_sco_hdr *)hdr;
+
+		/* Data_Total_Length */
+		payload_len = sco->len;
+		header_len = BT_HCI_SCO_HDR_SIZE;
+		break;
+	}
+	case H4_EVT: {
+		const struct bt_hci_evt_hdr *evt = (const struct bt_hci_evt_hdr *)hdr;
+
+		/* Parameter Total Length */
+		payload_len = evt->len;
+		header_len = BT_HCI_EVT_HDR_SIZE;
+		break;
+	}
+	case H4_ISO: {
+		const struct bt_hci_iso_hdr *iso = (const struct bt_hci_iso_hdr *)hdr;
+
+		/* ISO_Data_Load_Length parameter */
+		payload_len =  bt_iso_hdr_len(sys_le16_to_cpu(iso->len));
+		header_len = BT_HCI_ISO_HDR_SIZE;
+		break;
+	}
+	/* If no valid packet type found */
+	default:
+		LOG_WRN("Unknown packet type 0x%02x", type);
+		return 0;
+	}
+
+	return sizeof(type) + header_len + payload_len;
+}
+
 static bool uc_ready(void)
 {
 	struct pollfd pollfd = { .fd = uc_fd, .events = POLLIN };
@@ -114,6 +179,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		size_t buf_tailroom;
 		size_t buf_add_len;
 		ssize_t len;
+		const uint8_t *frame_start = frame;
 
 		if (!uc_ready()) {
 			k_sleep(K_MSEC(1));
@@ -135,25 +201,45 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			return;
 		}
 
-		buf = get_rx(frame);
-		if (!buf) {
-			LOG_DBG("Discard adv report due to insufficient buf");
-			continue;
+		while (len > 0) {
+
+			const uint8_t packet_type = frame_start[0];
+			const uint16_t decoded_len = packet_len(frame_start);
+
+			if (decoded_len == 0) {
+				LOG_ERR("HCI Packet type is invalid, length could not be decoded");
+				break;
+			}
+
+			if (decoded_len > len) {
+				LOG_ERR("Decoded HCI packet length (%d bytes) is greater "
+					"than buffer length (%d bytes)", decoded_len, len);
+				break;
+			}
+
+			buf = get_rx(frame_start);
+			if (!buf) {
+				LOG_DBG("Discard adv report due to insufficient buf");
+				continue;
+			}
+
+			buf_tailroom = net_buf_tailroom(buf);
+			buf_add_len = decoded_len - sizeof(packet_type);
+			if (buf_tailroom < buf_add_len) {
+				LOG_ERR("Not enough space in buffer %zu/%zu",
+					buf_add_len, buf_tailroom);
+				net_buf_unref(buf);
+				continue;
+			}
+
+			net_buf_add_mem(buf, frame_start + sizeof(packet_type), buf_add_len);
+
+			LOG_DBG("Calling bt_recv(%p)", buf);
+
+			bt_recv(buf);
+			len -= decoded_len;
+			frame_start += decoded_len;
 		}
-
-		buf_tailroom = net_buf_tailroom(buf);
-		buf_add_len = len - 1;
-		if (buf_tailroom < buf_add_len) {
-			LOG_ERR("Not enough space in buffer %zu/%zu", buf_add_len, buf_tailroom);
-			net_buf_unref(buf);
-			continue;
-		}
-
-		net_buf_add_mem(buf, &frame[1], buf_add_len);
-
-		LOG_DBG("Calling bt_recv(%p)", buf);
-
-		bt_recv(buf);
 
 		k_yield();
 	}
