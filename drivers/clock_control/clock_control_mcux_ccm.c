@@ -236,6 +236,11 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = CLOCK_GetIpgFreq();
 		break;
 #endif
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	case IMX_CCM_ENET_PLL:
+		*rate = CLOCK_GetPllFreq(kCLOCK_PllEnet);
+		break;
+#endif
 
 #ifdef CONFIG_UART_MCUX_IUART
 	case IMX_CCM_UART1_CLK:
