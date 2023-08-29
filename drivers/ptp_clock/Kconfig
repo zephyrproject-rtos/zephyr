@@ -8,6 +8,8 @@ config PTP_CLOCK
 
 if PTP_CLOCK
 
+source "drivers/ptp_clock/Kconfig.nxp_enet"
+
 config PTP_CLOCK_INIT_PRIORITY
 	int "Init priority"
 	default 75
