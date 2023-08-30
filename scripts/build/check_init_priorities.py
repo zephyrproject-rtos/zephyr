@@ -22,6 +22,7 @@ import os
 import pathlib
 import pickle
 import sys
+import re
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import RelocationSection
@@ -75,9 +76,18 @@ class Priority:
     """
     def __init__(self, name):
         for idx, level in enumerate(_DEVICE_INIT_LEVELS):
+            expr = re.compile(rf".*{level}(\d+)_(\d+).*")
             if level in name:
                 _, priority_str = name.strip("_").split(level)
-                priority, sub_priority = priority_str.split("_")
+
+                # ARCMWDT linker generates extended section names
+                # (ex.: .rela.z_init_POST_KERNEL40_0_.__init_k_sys_work_q_init).
+                # limitation is required for reading only 2 parameters from
+                # priority string.
+                m = expr.match(name)
+                if not m:
+                    continue
+                priority, sub_priority = m.groups()
                 self._level = idx
                 self._priority = int(priority)
                 self._sub_priority = int(sub_priority)
