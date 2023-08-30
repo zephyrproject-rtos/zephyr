@@ -79,6 +79,9 @@ struct log_msg_hdr {
 	const void *source;
 	log_timestamp_t timestamp;
 #endif
+#if CONFIG_LOG_THREAD_ID_PREFIX
+	void *tid;
+#endif
 };
 
 /* Messages are aligned to alignment required by cbprintf package. */
@@ -653,6 +656,21 @@ static inline const void *log_msg_get_source(struct log_msg *msg)
 static inline log_timestamp_t log_msg_get_timestamp(struct log_msg *msg)
 {
 	return msg->hdr.timestamp;
+}
+
+/** @brief Get Thread ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Thread ID.
+ */
+static inline void *log_msg_get_tid(struct log_msg *msg)
+{
+#if CONFIG_LOG_THREAD_ID_PREFIX
+	return msg->hdr.tid;
+#else
+	return NULL;
+#endif
 }
 
 /** @brief Get data buffer.
