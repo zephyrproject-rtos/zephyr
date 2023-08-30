@@ -30,7 +30,5 @@ target_include_directories(mocks PUBLIC
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 
 target_link_libraries(mocks PRIVATE test_interface host_mocks)
-
 target_link_options(mocks PUBLIC
-  -T "${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/mock-sections.ld"
-)
+  "SHELL:-T ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/mock-sections.ld")
