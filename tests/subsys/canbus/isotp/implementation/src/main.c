@@ -35,15 +35,12 @@ const struct isotp_fc_opts fc_opts_single = {
 	.bs = 0,
 	.stmin = 1
 };
+
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 
 struct isotp_recv_ctx recv_ctx;
