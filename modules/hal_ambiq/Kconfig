@@ -40,4 +40,9 @@ config AMBIQ_HAL_USE_SPI
 	help
 	  Use the SPI driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_MSPI
+	bool
+	help
+	  Use the MSPI driver from Ambiq HAL
+
 endif # AMBIQ_HAL
