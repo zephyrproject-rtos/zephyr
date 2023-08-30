@@ -27,7 +27,6 @@ size_t bt_mesh_comp_page_0_size(void);
 int bt_mesh_comp_data_get_page_0(struct net_buf_simple *buf, size_t offset);
 size_t bt_mesh_metadata_page_0_size(void);
 int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset);
-int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf);
 
 /* Find local element based on unicast address */
 struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
