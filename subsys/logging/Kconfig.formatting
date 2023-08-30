@@ -104,6 +104,12 @@ config LOG_DICTIONARY_SUPPORT
 
 	  This should be selected by the backend automatically.
 
+config LOG_THREAD_ID_PREFIX
+	bool "Thread ID prefix"
+	help
+	  Enable support for prefixing log message with thread name or ID.
+	  Thread name is used if THREAD_NAME is enabled.
+
 config LOG_CUSTOM_FORMAT_SUPPORT
 	bool "Custom format support"
 	default n
