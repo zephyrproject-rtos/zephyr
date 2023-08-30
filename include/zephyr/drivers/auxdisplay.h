@@ -283,7 +283,7 @@ typedef int (*auxdisplay_write_t)(const struct device *dev, const uint8_t *data,
 typedef int (*auxdisplay_custom_command_t)(const struct device *dev,
 					   struct auxdisplay_custom_data *command);
 
-struct auxdisplay_driver_api {
+__subsystem struct auxdisplay_driver_api {
 	auxdisplay_display_on_t display_on;
 	auxdisplay_display_off_t display_off;
 	auxdisplay_cursor_set_enabled_t cursor_set_enabled;
