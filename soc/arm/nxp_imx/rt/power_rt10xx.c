@@ -7,7 +7,7 @@
  * sleep mode must be defined within this file, or linked to RAM.
  */
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_pmu.h>
