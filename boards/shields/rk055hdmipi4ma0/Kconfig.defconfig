@@ -16,16 +16,10 @@ if LVGL
 
 # Configure LVGL to use touchscreen with KSCAN API
 
-config KSCAN
-	default y
-
 config INPUT
-	default y if KSCAN
+	default y
 
 config INPUT_GT911_INTERRUPT
-	default y
-
-config LV_Z_POINTER_KSCAN
 	default y
 
 # LVGL should allocate buffers equal to size of display

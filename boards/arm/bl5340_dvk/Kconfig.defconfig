@@ -104,15 +104,9 @@ config BT_HCI_VS
 # https://www.buydisplay.com/2-8-inch-tft-touch-shield-for-arduino-w-capacitive-touch-screen-module
 if DISPLAY
 
-if KSCAN
-
-config INPUT_FT5336
-	default y
-
 config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
 
 if LVGL
 
@@ -129,22 +123,7 @@ endchoice
 config LV_COLOR_16_SWAP
 	default y
 
-config KSCAN
-	default y
-
 config INPUT
-	default y
-
-config LV_Z_POINTER_KSCAN
-	default y
-
-config LV_Z_POINTER_KSCAN_SWAP_XY
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_X
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL

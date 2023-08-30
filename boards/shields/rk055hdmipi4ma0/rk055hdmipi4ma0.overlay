@@ -22,11 +22,16 @@
 		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_rk055hdmipi4ma0>;
+	};
 };
 
 &nxp_mipi_i2c {
 	status = "okay";
-	touch_controller_rk055hdmipi4ma0: gt911-rk055hdmipi4ma0@5d {
+	gt911_rk055hdmipi4ma0: gt911-rk055hdmipi4ma0@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_HIGH>;

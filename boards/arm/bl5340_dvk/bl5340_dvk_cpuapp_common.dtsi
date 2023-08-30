@@ -74,6 +74,14 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		swap-xy;
+		invert-x;
+		invert-y;
+	};
+
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
@@ -141,7 +149,7 @@
 		irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>, <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
-	ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;

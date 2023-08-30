@@ -61,6 +61,11 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft6202>;
+	};
+
 	aliases {
 		led0 = &red_led_1;
 		led1 = &green_led_2;
@@ -125,7 +130,7 @@ arduino_serial: &usart6 {};
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	ft6202@2a {
+	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
 		int-gpios = <&gpioi 13 0>;
