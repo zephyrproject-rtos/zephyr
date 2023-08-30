@@ -66,7 +66,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
-
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&cavs_intc1>;
 			status = "okay";
 		};
 
@@ -78,7 +79,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
-
+			interrupts = <0x0 0 0>;
+			interrupt-parent = <&cavs_intc1>;
 			status = "okay";
 		};
 	};
