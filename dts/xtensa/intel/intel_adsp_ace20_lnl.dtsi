@@ -385,6 +385,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			interrupts = <13 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -396,6 +398,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			interrupts = <12 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
