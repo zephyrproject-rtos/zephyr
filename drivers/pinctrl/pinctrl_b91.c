@@ -7,6 +7,7 @@
 #include "analog.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/init.h>
 
 #define DT_DRV_COMPAT telink_b91_pinctrl
 
