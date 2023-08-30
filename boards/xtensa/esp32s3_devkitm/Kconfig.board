@@ -6,6 +6,10 @@ config BOARD_ESP32S3_DEVKITM
 	bool "ESP32S3 DevKitM Board"
 	depends on SOC_SERIES_ESP32S3
 
+config BOARD_ESP32S3_DEVKITM_APPCPU
+	bool "ESP32S3 Board configuration for APPCPU (core 1)."
+	depends on SOC_SERIES_ESP32S3 && SOC_ESP32S3_APPCPU
+
 choice SOC_PART_NUMBER
 	default SOC_ESP32S3_MINI_N8
 endchoice
