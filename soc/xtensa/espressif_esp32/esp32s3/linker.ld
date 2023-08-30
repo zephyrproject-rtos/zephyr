@@ -14,7 +14,12 @@
   #include "mcuboot.ld"
 
 #else
+
   /* Application default linker script */
-  #include "default.ld"
+  #if defined(CONFIG_SOC_ESP32S3_APPCPU)
+    #include "default_appcpu.ld"
+  #else
+    #include "default.ld"
+  #endif
 
 #endif /* CONFIG_MCUBOOT */

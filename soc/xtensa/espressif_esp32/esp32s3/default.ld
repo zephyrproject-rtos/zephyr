@@ -57,6 +57,14 @@
 #define IROM_SEG_LEN FLASH_SIZE
 #endif
 
+#ifdef CONFIG_SOC_ESP32S3_PROCPU
+#define APPCPU_IRAM_SIZE CONFIG_ESP32S3_APPCPU_IRAM
+#define APPCPU_DRAM_SIZE CONFIG_ESP32S3_APPCPU_DRAM
+#else
+#define APPCPU_IRAM_SIZE 0x0
+#define APPCPU_DRAM_SIZE 0x0
+#endif
+
 #define IROM_SEG_ALIGN 0x10000
 
 /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
@@ -69,9 +77,10 @@ MEMORY
   mcuboot_hdr (RX): org = 0x0, len = 0x20
   metadata (RX): org = 0x20, len = 0x20
   ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
-  iram0_0_seg(RX): org = SRAM_IRAM_ORG, len = SRAM_IRAM_SIZE
+  iram0_0_seg(RX): org = SRAM_IRAM_ORG, len = SRAM_IRAM_SIZE - APPCPU_IRAM_SIZE
+  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN - APPCPU_DRAM_SIZE
+
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN
 
   /* DROM is the first segment placed in generated binary.
    * MCUboot binary for ESP32 has image header of 0x20 bytes.
@@ -86,6 +95,7 @@ MEMORY
 #if defined(CONFIG_ESP_SPIRAM)
   ext_ram_seg(RWX): org = EXT_RAM_ORG, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
+
   /* RTC fast memory (executable). Persists over deep sleep.
    */
   rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000

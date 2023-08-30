@@ -54,9 +54,17 @@ IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 
 	/* clear interrupt flag */
 	if (core_id == 0) {
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
+#endif
 	} else {
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
+#endif
 	}
 
 	/* first of all take the own of the shared memory */
@@ -130,12 +138,21 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 		memcpy(dev_data->shm.app_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 1 from CPU 0");
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
+#endif
+
 	} else {
 		memcpy(dev_data->shm.pro_cpu_shm, data, size);
 		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 0 from CPU 1");
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
+		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
+#endif
 	}
 
 	irq_unlock(key);
@@ -217,7 +234,6 @@ static int esp32_ipm_init(const struct device *dev)
 			NULL);
 
 		LOG_DBG("Waiting CPU0 to sync");
-
 		while (!atomic_cas(&data->control->lock,
 			ESP32_IPM_LOCK_FREE_VAL, data->this_core_id))
 			;

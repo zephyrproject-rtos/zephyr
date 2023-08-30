@@ -5,7 +5,7 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc.h"
+#include <soc.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -47,6 +47,45 @@ extern int _ext_ram_bss_end;
 #endif
 
 extern void z_cstart(void);
+
+#ifdef CONFIG_SOC_ESP32S3_PROCPU
+extern const unsigned char esp32s3_appcpu_fw_array[];
+
+void IRAM_ATTR esp_start_appcpu(void)
+{
+	esp_image_header_t *header = (esp_image_header_t *)&esp32s3_appcpu_fw_array[0];
+	esp_image_segment_header_t *segment =
+		(esp_image_segment_header_t *)&esp32s3_appcpu_fw_array[sizeof(esp_image_header_t)];
+	uint8_t *segment_payload;
+	uint32_t entry_addr = header->entry_addr;
+	uint32_t idx = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+
+	for (int i = 0; i < header->segment_count; i++) {
+		segment_payload = (uint8_t *)&esp32s3_appcpu_fw_array[idx];
+
+		if (segment->load_addr >= SOC_IRAM_LOW && segment->load_addr < SOC_IRAM_HIGH) {
+			/* IRAM segment only accepts 4 byte access, avoid memcpy usage here */
+			volatile uint32_t *src = (volatile uint32_t *)segment_payload;
+			volatile uint32_t *dst = (volatile uint32_t *)segment->load_addr;
+
+			for (int i = 0; i < segment->data_len / 4; i++) {
+				dst[i] = src[i];
+			}
+
+		} else if (segment->load_addr >= SOC_DRAM_LOW &&
+			   segment->load_addr < SOC_DRAM_HIGH) {
+			memcpy((void *)segment->load_addr, (const void *)segment_payload,
+			       segment->data_len);
+		}
+
+		idx += segment->data_len;
+		segment = (esp_image_segment_header_t *)&esp32s3_appcpu_fw_array[idx];
+		idx += sizeof(esp_image_segment_header_t);
+	}
+
+	esp_appcpu_start((void *)entry_addr);
+}
+#endif /* CONFIG_SOC_ESP32S3_PROCPU*/
 
 #ifndef CONFIG_MCUBOOT
 /*
@@ -92,7 +131,7 @@ void IRAM_ATTR __esp_platform_start(void)
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
 	 */
-	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
 #ifdef CONFIG_MCUBOOT
 	/* MCUboot early initialisation. */
@@ -148,6 +187,11 @@ void IRAM_ATTR __esp_platform_start(void)
 	esp_clk_init();
 
 	esp_timer_early_init();
+
+#if CONFIG_SOC_ESP32S3_PROCPU
+	/* start the ESP32S3 APP CPU */
+	esp_start_appcpu();
+#endif
 
 #if CONFIG_SOC_FLASH_ESP32
 	spi_flash_guard_set(&g_flash_guard_default_ops);
