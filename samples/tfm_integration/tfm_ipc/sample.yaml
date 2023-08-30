@@ -8,6 +8,7 @@ tests:
       - introduction
       - tfm
       - trusted-firmware-m
+      - mcuboot
     platform_allow:
       - mps2_an521_ns
       - nrf5340dk_nrf5340_cpuapp_ns

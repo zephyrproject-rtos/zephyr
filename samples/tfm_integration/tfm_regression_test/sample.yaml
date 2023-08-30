@@ -2,6 +2,7 @@ common:
   tags:
     - tfm
     - trusted-firmware-m
+    - mcuboot
   platform_allow:
 
     - nrf5340dk_nrf5340_cpuapp_ns
