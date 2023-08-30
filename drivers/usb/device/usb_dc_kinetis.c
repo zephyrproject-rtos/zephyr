@@ -14,7 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
