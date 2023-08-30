@@ -173,6 +173,7 @@ void z_arm64_el1_init(void)
 	reg = read_sctlr_el1();
 	reg |= (SCTLR_EL1_RES1 |	/* RES1 */
 		SCTLR_I_BIT |		/* Enable i-cache */
+		SCTLR_C_BIT |		/* Enable d-cache */
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el1(reg);
 
