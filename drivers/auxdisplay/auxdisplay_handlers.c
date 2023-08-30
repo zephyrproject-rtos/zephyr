@@ -37,7 +37,7 @@ static inline int z_vrfy_auxdisplay_position_blinking_set_enabled(const struct d
 #include <syscalls/auxdisplay_position_blinking_set_enabled_mrsh.c>
 
 static inline int z_vrfy_auxdisplay_cursor_shift_set(const struct device *dev, uint8_t direction,
-						     bool display_shift);
+						     bool display_shift)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_AUXDISPLAY));
 	return z_impl_auxdisplay_cursor_shift_set(dev, direction, display_shift);
@@ -78,13 +78,13 @@ static inline int z_vrfy_auxdisplay_display_position_get(const struct device *de
 }
 #include <syscalls/auxdisplay_display_position_get_mrsh.c>
 
-static inline int z_vrfy_auxdisplay_capabilities_get_api(const struct device *dev,
+static inline int z_vrfy_auxdisplay_capabilities_get(const struct device *dev,
 						struct auxdisplay_capabilities *capabilities)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_AUXDISPLAY));
-	return z_impl_auxdisplay_capabilities_get_api(dev, capabilities);
+	return z_impl_auxdisplay_capabilities_get(dev, capabilities);
 }
-#include <syscalls/auxdisplay_capabilities_get_api_mrsh.c>
+#include <syscalls/auxdisplay_capabilities_get_mrsh.c>
 
 static inline int z_vrfy_auxdisplay_clear(const struct device *dev)
 {
@@ -105,17 +105,17 @@ static inline int z_vrfy_auxdisplay_brightness_set(const struct device *dev,
 						   uint8_t brightness)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_AUXDISPLAY));
-	return z_impl_auxdisplay_backlight_get(dev, backlight);
+	return z_impl_auxdisplay_brightness_set(dev, brightness);
 }
 #include <syscalls/auxdisplay_brightness_set_mrsh.c>
 
-static inline int z_vrfy_auxdisplay_brightness_set(const struct device *dev,
-						   uint8_t brightness)
+static inline int z_vrfy_auxdisplay_backlight_get(const struct device *dev,
+						  uint8_t *backlight)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_AUXDISPLAY));
 	return z_impl_auxdisplay_backlight_get(dev, backlight);
 }
-#include <syscalls/auxdisplay_brightness_set_mrsh.c>
+#include <syscalls/auxdisplay_backlight_get_mrsh.c>
 
 static inline int z_vrfy_auxdisplay_backlight_set(const struct device *dev,
 						  uint8_t backlight)
@@ -125,7 +125,7 @@ static inline int z_vrfy_auxdisplay_backlight_set(const struct device *dev,
 }
 #include <syscalls/auxdisplay_backlight_set_mrsh.c>
 
-static inline bool z_vrfy_auxdisplay_is_busy(const struct device *dev)
+static inline int z_vrfy_auxdisplay_is_busy(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_AUXDISPLAY));
 	return z_impl_auxdisplay_is_busy(dev);
