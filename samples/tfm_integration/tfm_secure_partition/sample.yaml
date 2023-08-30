@@ -1,5 +1,7 @@
 common:
-  tags: tfm
+  tags:
+    - tfm
+    - trusted-firmware-m
   platform_allow:
     - mps2_an521_ns
     - v2m_musca_s1_ns
@@ -22,4 +24,6 @@ sample:
 
 tests:
   sample.tfm.secure_partition:
-    tags: tfm
+    tags:
+      - tfm
+      - trusted-firmware-m

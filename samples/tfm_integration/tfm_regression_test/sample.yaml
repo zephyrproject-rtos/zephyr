@@ -1,5 +1,7 @@
 common:
-  tags: tfm
+  tags:
+    - tfm
+    - trusted-firmware-m
   platform_allow:
 
     - nrf5340dk_nrf5340_cpuapp_ns
