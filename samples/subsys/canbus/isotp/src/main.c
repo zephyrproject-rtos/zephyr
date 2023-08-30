@@ -12,23 +12,15 @@ const struct isotp_fc_opts fc_opts_0_5 = {.bs = 0, .stmin = 5};
 
 const struct isotp_msg_id rx_addr_8_0 = {
 	.std_id = 0x80,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr_8_0 = {
 	.std_id = 0x180,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 const struct isotp_msg_id rx_addr_0_5 = {
 	.std_id = 0x01,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr_0_5 = {
 	.std_id = 0x101,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 
 const struct device *can_dev;
