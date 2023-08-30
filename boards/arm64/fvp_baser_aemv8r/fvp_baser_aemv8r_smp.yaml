@@ -13,4 +13,4 @@ flash: 64
 supported:
   - smp
 testing:
-  timeout_multiplier: 8
+  timeout_multiplier: 20
