@@ -314,7 +314,40 @@ Release Activity
 Merge Criteria
 ++++++++++++++
 
-* All continuous integration checks have passed
+* Minimal of 2 approvals, including an approval by the designated assignee.
+* Pull requests should be reviewed by at least a maintainer or collaborator of
+  each affected area; Unless the changes to a given area are considered trivial
+  enough, in which case approvals by other affected subsystems
+  maintainers/collaborators would suffice.
+* Four eye principle on the organisation level. We already require at least 2
+  approvals (basic four eye principle), however, such reviews and approvals
+  might be unintentionally biased in the case where the submitter is from the
+  same organisation as the approvers. To allow for project wide review and
+  approvals, the merge criteria is extended with the guidelines below:
+
+  * Changes or additions to common and shared code shall have approvals from
+    different organisations (at least one approval from an
+    organisation different than the submitters').
+    Common and shared code is defined as anything that does not fall under
+    :file:`soc`, :file:`boards` and :file:`drivers/*/*`.
+  * Changes or additions to hardware support (driver, SoC, boards) shall at
+    least have the merger be from a different organisation. This applies only
+    to implementation of an API supporting vendor specific hardware and not the
+    APIs.
+  * Release engineers may make exceptions for areas with contributions primarily
+    coming from one organisation and where reviews from other organisations are
+    not possible, however, merges shall be completed by a person from a different
+    organisation. In such cases, the minimum review period of at least 2 days
+    shall be strictly followed to allow for additional reviews.
+  * Release engineers shall not merge code changes originating and reviewed
+    only by their own organisation. To be able to merge such changes, at least
+    one review shall be from a different organisation.
+
+* A minimum review period of 2 business days, 4 hours for trivial changes (see
+  :ref:`review_time`).
+* Hotfixes can be merged at any time after CI has passed and are excluded from
+  most of the conditions listed above.
+* All required checks are passing:
 
   * Codeowners
   * Device Tree
@@ -322,7 +355,7 @@ Merge Criteria
   * Gitlint
   * Identity/Emails
   * Kconfig
-  * License
+  * License checks
   * Checkpatch (Coding Style)
   * Pylint
   * Integration Tests (Via twister) on emulation/simulation platforms
@@ -335,15 +368,3 @@ Merge Criteria
   * Coding Guidelines
   * Static Analysis (Coverity)
   * Documentation coverage (APIs)
-
-* PR template with checklist
-
-* Minimal of 2 approvals
-
-  * A collaborator from the same subsystem.
-  * Alternately another maintainer of another subsystem
-  * Approval by the assignee
-
-* A minimum review period of 2 days, 4 hours for trivial changes (see
-  :ref:`review_time`). Hotfixes can be merged at any time after CI passes.
-* All required checks are passing
