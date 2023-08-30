@@ -129,6 +129,27 @@ extern "C" {
 #endif
 
 /**
+ * @name ISO-TP message ID flags
+ * @anchor ISOTP_MSG_FLAGS
+ *
+ * @{
+ */
+
+/** Message uses ISO-TP extended addressing (first payload byte of CAN frame) */
+#define ISOTP_MSG_EXT_ADDR BIT(0)
+
+/**
+ * Message uses ISO-TP fixed addressing (according to SAE J1939). Only valid in combination with
+ * ``ISOTP_MSG_IDE``.
+ */
+#define ISOTP_MSG_FIXED_ADDR BIT(1)
+
+/** Message uses extended (29-bit) CAN ID */
+#define ISOTP_MSG_IDE BIT(2)
+
+/** @} */
+
+/**
  * @brief ISO-TP message id struct
  *
  * Used to pass addresses to the bind and send functions.
@@ -146,12 +167,8 @@ struct isotp_msg_id {
 	};
 	/** ISO-TP extended address (if used) */
 	uint8_t ext_addr;
-	/** Indicates the CAN identifier type (0 for standard or 1 for extended) */
-	uint8_t ide : 1;
-	/** Indicates if ISO-TP extended addressing is used */
-	uint8_t use_ext_addr : 1;
-	/** Indicates if ISO-TP fixed addressing (acc. to SAE J1939) is used */
-	uint8_t use_fixed_addr : 1;
+	/** Flags. @see @ref ISOTP_MSG_FLAGS. */
+	uint8_t flags;
 };
 
 /*

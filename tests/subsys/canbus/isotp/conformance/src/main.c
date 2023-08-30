@@ -72,43 +72,34 @@ const struct isotp_fc_opts fc_opts_single = {
 	.bs = 0,
 	.stmin = 0
 };
+
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
-	.ide = 0,
-	.use_ext_addr = 0
 };
 
 const struct isotp_msg_id rx_addr_ext = {
 	.std_id = 0x10,
-	.ide = 0,
-	.use_ext_addr = 1,
-	.ext_addr = EXT_ADDR
+	.ext_addr = EXT_ADDR,
+	.flags = ISOTP_MSG_EXT_ADDR,
 };
 
 const struct isotp_msg_id tx_addr_ext = {
 	.std_id = 0x11,
-	.ide = 0,
-	.use_ext_addr = 1,
-	.ext_addr = EXT_ADDR
+	.ext_addr = EXT_ADDR,
+	.flags = ISOTP_MSG_EXT_ADDR,
 };
 
 const struct isotp_msg_id rx_addr_fixed = {
 	.ext_id = 0x18DA0201,
-	.ide = 1,
-	.use_ext_addr = 0,
-	.use_fixed_addr = 1
+	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE,
 };
 
 const struct isotp_msg_id tx_addr_fixed = {
 	.ext_id = 0x18DA0102,
-	.ide = 1,
-	.use_ext_addr = 0,
-	.use_fixed_addr = 1
+	.flags = ISOTP_MSG_FIXED_ADDR | ISOTP_MSG_IDE,
 };
 
 const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));

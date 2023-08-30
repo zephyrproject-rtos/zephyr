@@ -118,7 +118,7 @@ static inline uint32_t receive_get_sf_length(struct net_buf *buf)
 static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 {
 	struct can_frame frame = {
-		.flags = ctx->tx_addr.ide != 0 ? CAN_FRAME_IDE : 0,
+		.flags = (ctx->tx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FRAME_IDE : 0,
 		.id = ctx->tx_addr.ext_id
 	};
 	uint8_t *data = frame.data;
@@ -127,7 +127,7 @@ static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 
 	__ASSERT_NO_MSG(!(fs & ISOTP_PCI_TYPE_MASK));
 
-	if (ctx->tx_addr.use_ext_addr) {
+	if ((ctx->tx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		*data++ = ctx->tx_addr.ext_addr;
 	}
 
@@ -374,13 +374,13 @@ static void process_ff_sf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 	uint8_t payload_len;
 	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 
-	if (ctx->rx_addr.use_ext_addr) {
+	if ((ctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		if (frame->data[index++] != ctx->rx_addr.ext_addr) {
 			return;
 		}
 	}
 
-	if (ctx->rx_addr.use_fixed_addr) {
+	if ((ctx->rx_addr.flags & ISOTP_MSG_FIXED_ADDR) != 0) {
 		/* store actual CAN ID used by the sender */
 		ctx->rx_addr.ext_id = frame->id;
 		/* replace TX target address with RX source address */
@@ -465,7 +465,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct can_frame *frame)
 	int index = 0;
 	uint32_t data_len;
 
-	if (ctx->rx_addr.use_ext_addr) {
+	if ((ctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		if (frame->data[index++] != ctx->rx_addr.ext_addr) {
 			return;
 		}
@@ -557,14 +557,15 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 {
 	uint32_t mask;
 
-	if (ctx->rx_addr.use_fixed_addr) {
+	if ((ctx->rx_addr.flags & ISOTP_MSG_FIXED_ADDR) != 0) {
 		mask = ISOTP_FIXED_ADDR_RX_MASK;
 	} else {
 		mask = CAN_EXT_ID_MASK;
 	}
 
 	struct can_filter filter = {
-		.flags = CAN_FILTER_DATA | ((ctx->rx_addr.ide != 0) ? CAN_FILTER_IDE : 0),
+		.flags = CAN_FILTER_DATA |
+			 ((ctx->rx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0),
 		.id = ctx->rx_addr.ext_id,
 		.mask = mask
 	};
@@ -755,7 +756,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 {
 	uint8_t *data = frame->data;
 
-	if (ctx->rx_addr.use_ext_addr) {
+	if ((ctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		if (ctx->rx_addr.ext_addr != *data++) {
 			return;
 		}
@@ -854,7 +855,7 @@ static void pull_data_ctx(struct isotp_send_ctx *ctx, size_t len)
 static inline int send_sf(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.flags = ctx->tx_addr.ide != 0 ? CAN_FRAME_IDE : 0,
+		.flags = (ctx->tx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FRAME_IDE : 0,
 		.id = ctx->tx_addr.ext_id
 	};
 	size_t len = get_ctx_data_length(ctx);
@@ -865,7 +866,7 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 	data = get_data_ctx(ctx);
 	pull_data_ctx(ctx, len);
 
-	if (ctx->tx_addr.use_ext_addr) {
+	if ((ctx->tx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		frame.data[index++] = ctx->tx_addr.ext_addr;
 	}
 
@@ -895,7 +896,7 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 static inline int send_ff(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.flags = ctx->tx_addr.ide != 0 ? CAN_FRAME_IDE : 0,
+		.flags = (ctx->tx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FRAME_IDE : 0,
 		.id = ctx->tx_addr.ext_id,
 		.dlc = ISOTP_CAN_DL
 	};
@@ -904,7 +905,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 	int ret;
 	const uint8_t *data;
 
-	if (ctx->tx_addr.use_ext_addr) {
+	if ((ctx->tx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		frame.data[index++] = ctx->tx_addr.ext_addr;
 	}
 
@@ -936,7 +937,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 static inline int send_cf(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame = {
-		.flags = ctx->tx_addr.ide != 0 ? CAN_FRAME_IDE : 0,
+		.flags = (ctx->tx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FRAME_IDE : 0,
 		.id = ctx->tx_addr.ext_id,
 	};
 	int index = 0;
@@ -945,7 +946,7 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 	int rem_len;
 	const uint8_t *data;
 
-	if (ctx->tx_addr.use_ext_addr) {
+	if ((ctx->tx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		frame.data[index++] = ctx->tx_addr.ext_addr;
 	}
 
@@ -1116,7 +1117,8 @@ static void send_work_handler(struct k_work *item)
 static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 {
 	struct can_filter filter = {
-		.flags = CAN_FILTER_DATA | ((ctx->rx_addr.ide != 0) ? CAN_FILTER_IDE : 0),
+		.flags = CAN_FILTER_DATA |
+			 ((ctx->rx_addr.flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0),
 		.id = ctx->rx_addr.ext_id,
 		.mask = CAN_EXT_ID_MASK
 	};
@@ -1164,7 +1166,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 	len = get_ctx_data_length(ctx);
 	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
 		ctx->tx_addr.ext_id, ctx->rx_addr.ext_id);
-	if (len > ISOTP_CAN_DL - (tx_addr->use_ext_addr ? 2 : 1)) {
+	if (len > ISOTP_CAN_DL - ((ctx->tx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0 ? 2 : 1)) {
 		ret = attach_fc_filter(ctx);
 		if (ret) {
 			LOG_ERR("Can't attach fc filter: %d", ret);
