@@ -1,7 +1,8 @@
-.. _blinky-sample:
+.. zephyr:code-sample:: blinky-sample
+   :name: Blinky
+   :relevant-api: gpio_interface
 
-Blinky
-######
+   Blink an LED forever using the GPIO API.
 
 Overview
 ********
@@ -15,7 +16,7 @@ The source code shows how to:
 #. Configure the GPIO pin as an output
 #. Toggle the pin forever
 
-See :ref:`pwm-blinky-sample` for a similar sample that uses the PWM API instead.
+See :zephyr:code-sample:`pwm-blinky-sample` for a similar sample that uses the PWM API instead.
 
 .. _blinky-sample-requirements:
 

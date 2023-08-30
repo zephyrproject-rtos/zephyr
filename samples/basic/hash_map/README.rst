@@ -1,7 +1,8 @@
-.. _system_hashmap:
+.. zephyr:code-sample:: system_hashmap
+   :name: System Hashmap
+   :relevant-api: hashmap_apis
 
-System Hashmap
-##############
+   Insert, replace, and remove entries in a hashmap.
 
 Overview
 ********
