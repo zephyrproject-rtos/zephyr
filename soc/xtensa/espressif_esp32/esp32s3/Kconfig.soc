@@ -13,11 +13,8 @@ config SOC_TOOLCHAIN_NAME
 
 choice SOC_PART_NUMBER
 	prompt "ESP32-S3 SOC Selection"
-	depends on SOC_SERIES_ESP32S3
 
 	# SoC with/without embedded flash
-	config SOC_ESP32S3
-		bool "ESP32S3"
 	config SOC_ESP32S3_R2
 		bool "ESP32S3_R2"
 	config SOC_ESP32S3_R8
@@ -49,6 +46,20 @@ choice SOC_PART_NUMBER
 		bool "ESP32S3_WROOM_N16"
 
 endchoice # SOC_PART_NUMBER
+
+config ESP32S3_APPCPU_IRAM
+	hex "ESP32S3 APPCPU IRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x20000
+	help
+	  Defines APPCPU IRAM area in bytes.
+
+config ESP32S3_APPCPU_DRAM
+	hex "ESP32S3 APPCPU DRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x10000
+	help
+	  Defines APPCPU DRAM area in bytes.
 
 choice ESP32S3_RTC_CLK_SRC
 	prompt "RTC clock source"

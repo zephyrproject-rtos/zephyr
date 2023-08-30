@@ -328,6 +328,11 @@ static void esp32_clock_perip_init(void)
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
 static void esp32_clock_perip_init(void)
 {
+#if defined(CONFIG_SOC_ESP32S3_APPCPU)
+	/* skip APPCPU configuration */
+	return;
+#endif
+
 	uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
 	uint32_t common_perip_clk1 = 0;
 
