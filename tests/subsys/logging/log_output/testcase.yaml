@@ -15,3 +15,9 @@ tests:
       - logging
     extra_configs:
       - CONFIG_LOG_TIMESTAMP_64BIT=y
+  logging.log_output.thread_id:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_THREAD_ID_PREFIX=y
