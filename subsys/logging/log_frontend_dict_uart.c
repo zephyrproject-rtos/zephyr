@@ -9,6 +9,7 @@
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/init.h>
 
 static uint32_t dbuf[CONFIG_LOG_FRONTEND_DICT_UART_BUFFER_SIZE / sizeof(uint32_t)];
 
