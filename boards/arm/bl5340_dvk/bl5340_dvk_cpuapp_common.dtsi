@@ -16,7 +16,6 @@
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,display = &ili9340;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
@@ -107,7 +106,6 @@
 		accel0 = &lis3dh;
 		bbram0 = &extrtc0;
 		spi-flash0 = &mx25r64;
-		kscan0 = &touch_controller;
 	};
 };
 
@@ -153,10 +151,6 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
-
-		touch_controller: kscan-input {
-			compatible = "zephyr,kscan-input";
-		};
 	};
 
 	bme680@76 {

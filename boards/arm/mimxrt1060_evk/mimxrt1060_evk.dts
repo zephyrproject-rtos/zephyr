@@ -19,7 +19,6 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
-		kscan0 = &kscan_input;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
 	};
@@ -35,7 +34,6 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	sdram0: memory@80000000 {
@@ -204,10 +202,6 @@ arduino_i2c: &lpi2c1 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-
-		kscan_input: kscan-input {
-			compatible = "zephyr,kscan-input";
-		};
 	};
 };
 
