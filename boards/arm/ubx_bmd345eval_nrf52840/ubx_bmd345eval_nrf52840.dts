@@ -162,6 +162,13 @@
 
 &gpio1 {
 	status = "okay";
+
+	fem-pins {
+		gpio-hog;
+		/* A_SEL, MODE pins */
+		gpios = <2 GPIO_ACTIVE_HIGH>, <4 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
 };
 
 &uart0 {
