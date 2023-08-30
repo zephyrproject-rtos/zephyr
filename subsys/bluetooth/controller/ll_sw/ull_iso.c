@@ -983,6 +983,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		struct ll_conn_iso_group *cig;
 		uint32_t rand_max_sdu;
 		uint8_t event_offset;
+		uint8_t max_sdu;
 		uint8_t rand_8;
 
 		cis = ll_iso_stream_connected_get(handle);
@@ -996,21 +997,23 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		cig = cis->group;
 		source_handle = cis->hdr.datapath_in->source_hdl;
 
+		max_sdu = IS_PERIPHERAL(cig) ? cis->p_max_sdu : cis->c_max_sdu;
+
 		switch (cis->hdr.test_mode.tx_payload_type) {
 		case BT_HCI_ISO_TEST_ZERO_SIZE_SDU:
 			remaining_tx = 0;
 			break;
 
 		case BT_HCI_ISO_TEST_VARIABLE_SIZE_SDU:
-			/* Randomize the length [4..p_max_sdu] */
+			/* Randomize the length [4..max_sdu] */
 			lll_rand_get(&rand_8, sizeof(rand_8));
-			rand_max_sdu = rand_8 * (cis->p_max_sdu - ISO_TEST_PACKET_COUNTER_SIZE);
+			rand_max_sdu = rand_8 * (max_sdu - ISO_TEST_PACKET_COUNTER_SIZE);
 			remaining_tx = ISO_TEST_PACKET_COUNTER_SIZE + (rand_max_sdu >> 8);
 			break;
 
 		case BT_HCI_ISO_TEST_MAX_SIZE_SDU:
-			LL_ASSERT(cis->p_max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
-			remaining_tx = cis->p_max_sdu;
+			LL_ASSERT(max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
+			remaining_tx = max_sdu;
 			break;
 
 		default:
@@ -1151,18 +1154,12 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 		cis->hdr.datapath_in = dp;
 		cig = cis->group;
 
-		if (cig->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-			/* peripheral */
-			sdu_interval = cig->c_sdu_interval;
-		} else {
-			/* central */
-			sdu_interval = cig->p_sdu_interval;
-		}
+		sdu_interval = IS_PERIPHERAL(cig) ? cig->p_sdu_interval : cig->c_sdu_interval;
 
 		/* Setup the test source */
 		err = isoal_source_create(handle, cig->lll.role, cis->framed,
-					  cis->lll.rx.bn, cis->lll.rx.ft,
-					  cis->lll.rx.max_pdu, sdu_interval,
+					  cis->lll.tx.bn, cis->lll.tx.ft,
+					  cis->lll.tx.max_pdu, sdu_interval,
 					  cig->iso_interval, cis->sync_delay,
 					  cig->sync_delay, ll_iso_pdu_alloc,
 					  ll_iso_pdu_write, ll_iso_pdu_emit,
