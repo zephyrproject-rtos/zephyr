@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/iterable_sections.h>
 
