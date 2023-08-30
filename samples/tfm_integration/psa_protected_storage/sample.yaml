@@ -28,4 +28,6 @@ common:
 
 tests:
   sample.tfm.protected_storage:
-    tags: tfm
+    tags:
+      - tfm
+      - trusted-firmware-m
