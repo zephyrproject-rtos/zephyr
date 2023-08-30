@@ -94,7 +94,8 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 
 	__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(zero));
 
-	if (old_switch_handle != NULL) {
+	if (!IS_ENABLED(CONFIG_XTENSA_CALL0_ABI)
+	    && old_switch_handle != NULL) {
 		int32_t a0save;
 
 		__asm__ volatile("mov %0, a0;"

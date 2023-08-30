@@ -7,12 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_THREAD_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_THREAD_H_
 
-#ifndef _ASMLANGUAGE
+#include <zephyr/arch/xtensa/xtensa-win0.h>
 
-/* Xtensa doesn't use these structs, but Zephyr core requires they be
- * defined so they can be included in struct _thread_base.  Dummy
- * field exists for sizeof compatibility with C++.
- */
+#ifndef _ASMLANGUAGE
 
 struct _callee_saved {
 	char dummy;
@@ -21,6 +18,9 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
+#ifdef CONFIG_XTENSA_CALL0_ABI
+	xtensa_win0_ctx_t ctx; /* must be first */
+#endif
 	uint32_t last_cpu;
 };
 

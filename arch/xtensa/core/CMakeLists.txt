@@ -8,10 +8,14 @@ zephyr_library_sources(
   cpu_idle.c
   fatal.c
   window_vectors.S
-  xtensa-asm2-util.S
-  xtensa-asm2.c
   irq_manage.c
   )
+
+if(CONFIG_XTENSA_CALL0_ABI)
+  zephyr_library_sources(xtensa-win0.S xtensa-win0.c)
+else()
+  zephyr_library_sources(xtensa-asm2-util.S xtensa-asm2.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_XTENSA_USE_CORE_CRT1 crt1.S)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
