@@ -77,6 +77,16 @@ void z_shared_isr(const void *data);
 extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #endif /* CONFIG_SHARED_INTERRUPTS */
 
+/**
+ * @brief Helper function used to compute the index in _sw_isr_table
+ * based on passed IRQ.
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return corresponding index in _sw_isr_table
+ */
+unsigned int z_get_sw_isr_table_idx(unsigned int irq);
+
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
 
