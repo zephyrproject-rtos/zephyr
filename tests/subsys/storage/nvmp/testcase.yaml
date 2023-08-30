@@ -1,0 +1,13 @@
+common:
+  depends_on: nvmp
+  tags: nvmp
+  platform_allow:
+    - qemu_cortex_m3
+    - qemu_x86
+tests:
+  mtd.cortex_m3.api:
+    platform_allow: qemu_cortex_m3
+    timeout: 60
+  mtd.qemu_x86.api:
+    platform_allow: qemu_x86
+    timeout: 60

@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+# Compatible used to describe nvmp on flash
+
+include: base.yaml

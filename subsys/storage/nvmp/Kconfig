@@ -1,0 +1,73 @@
+# Copyright (c) 2023, Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NVMP
+	bool "nvmp support"
+	help
+	  Enables support for the nvmp system, which enables using unified
+	  routines to read/write and erase non volatile memory. Supported nvmp
+	  backends are flash, eeprom and retained_mem.
+
+if NVMP
+
+config NVMP_FLASH
+	bool "nvmp support for flash devices"
+	default y
+	depends on FLASH
+	help
+	  Enables nvmp support for flash devices.
+
+config NVMP_EEPROM
+	bool "nvmp support for eeprom devices"
+	default y
+	depends on EEPROM
+	help
+	  Enables nvmp support for eeprom devices.
+
+if NVMP_EEPROM
+
+config NVMP_EEPROM_ERASE
+	bool "nvmp eeprom erase support"
+	default y
+	help
+	  Enables nvmp eeprom erase by writing a fixed value
+
+endif #NVMP_EEPROM
+
+config NVMP_RETAINED_MEM
+	bool "nvmp support for retained_mem devices"
+	default y
+	depends on RETAINED_MEM
+	help
+	  Enables nvmp support for retained_mem devices.
+
+if NVMP_RETAINED_MEM
+
+config NVMP_RETAINED_MEM_ERASE
+	bool "nvmp retained_mem erase support"
+	default y
+	help
+	  Enables nvmp retained_mem erase by writing a fixed value
+
+endif #NVMP_RETAINED_MEM
+
+config NVMP_ERASE_BUFSIZE
+	int "nvmp erase bufsize"
+	default 64
+	range 16 256
+	help
+	  Size of the buffer used to erase when nvmp is used on backends that
+	  do not provide an erase function.
+
+config NVMP_ERASE_VALUE
+	hex "nvmp erase value"
+	default 0xff
+	help
+	  Value used to erase when nvmp is used on backends that do not
+	  provide an erase function.
+
+module = NVMP
+module-str = nvmp
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NVMP

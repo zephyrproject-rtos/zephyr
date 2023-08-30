@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2023 Laczen
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash_sim0 {
+        compatible = "soc-nv-flash", "zephyr,nvmp-flash";
+
+	partitions {
+		compatible = "fixed-partitions", "zephyr,nvmp-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@1000 {
+			label = "storage";
+			reg = <0x00001000 0x00010000>;
+		};
+
+		slot0_partition: partition@11000 {
+			label = "image-0";
+			reg = <0x00011000 0x00010000>;
+		};
+		slot1_partition: partition@21000 {
+			label = "image-1";
+			reg = <0x00021000 0x00010000>;
+		};
+		eepromemu_partition: partition@31000 {
+			label = "eeprom-emu";
+			reg = <0x00031000 0x00010000>;
+		};
+	};
+};
+
+&eeprom0 {
+        compatible = "zephyr,sim-eeprom", "zephyr,nvmp-eeprom";
+        status = "okay";
+	nvmp_partitions {
+		compatible = "zephyr,nvmp-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom0_partition: partition@0 {
+			reg = <0x00000000 0x00001000>;
+			status = "okay";
+		};
+
+	};
+};
