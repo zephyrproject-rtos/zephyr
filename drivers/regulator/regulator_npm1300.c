@@ -141,16 +141,46 @@ static int retention_set_voltage(const struct device *dev, int32_t retention_uv)
 				     idx);
 }
 
+static int buck_get_voltage_index(const struct device *dev, uint8_t chan, uint8_t *idx)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t sel;
+	int ret;
+
+	ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_SW_CTRL, &sel);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((sel >> chan) & 1U) {
+		/* SW control */
+		return mfd_npm1300_reg_read(config->mfd, BUCK_BASE,
+					    BUCK_OFFSET_VOUT_NORM + (chan * 2U), idx);
+	}
+
+	/* VSET pin control */
+	return mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_VOUT_STAT + chan, idx);
+}
+
 static int buck_set_voltage(const struct device *dev, uint8_t chan, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_npm1300_config *config = dev->config;
 	uint8_t mask;
+	uint8_t curr_idx;
 	uint16_t idx;
 	int ret;
 
 	ret = linear_range_get_win_index(&buckldo_range, min_uv, max_uv, &idx);
 
 	if (ret == -EINVAL) {
+		return ret;
+	}
+
+	/* Get current setting, and return if current and new index match */
+	ret = buck_get_voltage_index(dev, chan, &curr_idx);
+
+	if ((ret < 0) || (idx == curr_idx)) {
 		return ret;
 	}
 
@@ -201,26 +231,10 @@ int regulator_npm1300_set_voltage(const struct device *dev, int32_t min_uv, int3
 
 static int buck_get_voltage(const struct device *dev, uint8_t chan, int32_t *volt_uv)
 {
-	const struct regulator_npm1300_config *config = dev->config;
-	uint8_t sel;
 	uint8_t idx;
 	int ret;
 
-	ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_SW_CTRL, &sel);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	if ((sel >> chan) & 1U) {
-		/* SW control */
-		ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE,
-					   BUCK_OFFSET_VOUT_NORM + (chan * 2U), &idx);
-	} else {
-		/* VSET pin control */
-		ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_VOUT_STAT + chan,
-					   &idx);
-	}
+	ret = buck_get_voltage_index(dev, chan, &idx);
 
 	if (ret < 0) {
 		return ret;
