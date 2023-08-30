@@ -85,6 +85,7 @@ extensions = [
     "notfound.extension",
     "sphinx_copybutton",
     "zephyr.external_content",
+    "zephyr.domain",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
