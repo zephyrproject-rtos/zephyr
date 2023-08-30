@@ -544,6 +544,21 @@ a.internal:visited code.literal {
     color: var(--admonition-tip-title-color);
 }
 
+/* Admonition tweaks - sphinx_togglebutton */
+
+.rst-content .admonition.toggle {
+    overflow: visible;
+}
+
+.rst-content .admonition.toggle button {
+    display: inline-flex;
+}
+
+.rst-content .admonition.toggle .tb-icon {
+    height: 1em;
+    width: 1em;
+}
+
 /* Keyboard shortcuts tweaks */
 kbd, .kbd,
 .rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > kbd,
