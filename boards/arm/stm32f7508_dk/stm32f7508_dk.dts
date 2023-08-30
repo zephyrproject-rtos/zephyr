@@ -43,6 +43,11 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+	};
+
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
@@ -98,7 +103,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioi 13 0>;

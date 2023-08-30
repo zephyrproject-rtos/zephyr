@@ -20,11 +20,17 @@
 		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft3267_g1120b0mipi>;
+		invert-y;
+	};
 };
 
 &nxp_mipi_i2c {
 	status = "okay";
-	ft3267@38 {
+	ft3267_g1120b0mipi: ft3267@38 {
 		/*
 		 * Note- the actual controller present on this IC is a FT3267,
 		 * but the FT35336 driver in Zephyr supports this IC.

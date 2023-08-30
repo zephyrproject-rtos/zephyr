@@ -8,11 +8,8 @@ if BOARD_STM32H7B3I_DK
 config BOARD
 	default "stm32h7b3i_dk"
 
-config KSCAN
-	default y if DISPLAY
-
 config INPUT
-	default y if KSCAN
+	default y if LVGL
 
 config INPUT_FT5336_INTERRUPT
 	default y if INPUT_FT5336

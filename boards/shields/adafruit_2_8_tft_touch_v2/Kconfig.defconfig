@@ -25,22 +25,7 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_32
 endchoice
 
-config KSCAN
-	default y
-
 config INPUT
-	default y
-
-config LV_Z_POINTER_KSCAN
-	default y
-
-config LV_Z_POINTER_KSCAN_SWAP_XY
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_X
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL
