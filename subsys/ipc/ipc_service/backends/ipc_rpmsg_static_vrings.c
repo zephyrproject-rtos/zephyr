@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/ipc/ipc_service_backend.h>
