@@ -84,6 +84,7 @@ extensions = [
     "zephyr.vcs_link",
     "notfound.extension",
     "sphinx_copybutton",
+    "sphinx_togglebutton",
     "zephyr.external_content",
     "zephyr.domain",
 ]
