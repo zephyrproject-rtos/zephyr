@@ -11,6 +11,7 @@
 #include <hardware/resets.h>
 #include <pico/platform.h>
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/sys/util.h>
