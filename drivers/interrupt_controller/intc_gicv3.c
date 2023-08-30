@@ -299,6 +299,16 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
 		return;
 	}
 
+	if (GICR_IIDR_PRODUCT_ID_GET(sys_read32(rdist + GICR_IIDR)) >= 0x2) {
+		if (sys_read32(rdist + GICR_PWRR) & BIT(GICR_PWRR_RDPD)) {
+			sys_set_bit(rdist + GICR_PWRR, GICR_PWRR_RDAG);
+			sys_clear_bit(rdist + GICR_PWRR, GICR_PWRR_RDPD);
+			while (sys_read32(rdist + GICR_PWRR) & BIT(GICR_PWRR_RDPD)) {
+				;
+			}
+		}
+	}
+
 	sys_clear_bit(rdist + GICR_WAKER, GICR_WAKER_PS);
 	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA)) {
 		;
