@@ -86,6 +86,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_TBS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CCP);
 #endif /* CONFIG_BT_TBS_CLIENT */
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_VCP);
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -125,7 +128,7 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_mesh();
 		break;
 #endif /* CONFIG_BT_MESH */
-#if defined(CONFIG_BT_VCP_VOL_REND)
+#if defined(CONFIG_BT_VCP_VOL_REND) || defined(CONFIG_BT_VCP_VOL_CTLR)
 	case BTP_SERVICE_ID_VCS:
 		status = tester_init_vcs();
 		break;
@@ -134,6 +137,9 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		break;
 	case BTP_SERVICE_ID_AICS:
 		status = tester_init_aics();
+		break;
+	case BTP_SERVICE_ID_VCP:
+		status = tester_init_vcp();
 		break;
 #endif /* CONFIG_BT_VCP_VOL_REND */
 #if defined(CONFIG_BT_IAS)

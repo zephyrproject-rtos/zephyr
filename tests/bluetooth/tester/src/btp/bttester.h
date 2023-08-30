@@ -101,3 +101,6 @@ uint8_t tester_unregister_mics(void);
 
 uint8_t tester_init_ccp(void);
 uint8_t tester_unregister_ccp(void);
+
+uint8_t tester_init_vcp(void);
+uint8_t tester_unregister_vcp(void);
