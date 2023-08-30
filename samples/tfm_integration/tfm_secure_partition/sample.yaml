@@ -27,3 +27,4 @@ tests:
     tags:
       - tfm
       - trusted-firmware-m
+      - mcuboot
