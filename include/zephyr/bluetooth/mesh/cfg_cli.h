@@ -1786,6 +1786,40 @@ struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
 struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
 	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_ext_item *ext_item);
 
+/** Composition data page 2 record parsing structure. */
+struct bt_mesh_comp_p2_record {
+	/** Mesh profile ID. */
+	uint16_t id;
+	/** Mesh Profile Version. */
+	struct {
+		/** Major version. */
+		uint8_t x;
+		/** Minor version. */
+		uint8_t y;
+		/** Z version. */
+		uint8_t z;
+	} version;
+	/** Element offset buffer. */
+	struct net_buf_simple *elem_buf;
+	/** Additional data buffer. */
+	struct net_buf_simple *data_buf;
+};
+
+/** @brief Pull a Composition Data Page 2 Record from a composition data page 2
+ *         instance.
+ *
+ *  Each call to this function will pull out a new element from the composition
+ *  data page, until all elements have been pulled.
+ *
+ *  @param buf Composition data page 2 buffer
+ *  @param record Record to fill.
+ *
+ *  @return A pointer to @c record on success, or NULL if no more elements could
+ *          be pulled.
+ */
+struct bt_mesh_comp_p2_record *bt_mesh_comp_p2_record_pull(struct net_buf_simple *buf,
+							   struct bt_mesh_comp_p2_record *record);
+
 /** @brief Unpack a list of key index entries from a buffer.
  *
  * On success, @c dst_cnt is set to the amount of unpacked key index entries.
