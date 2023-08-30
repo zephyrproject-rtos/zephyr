@@ -18,7 +18,7 @@ Requirements and Wiring
 ***********************
 
 This sample has the same requirements and wiring considerations as the
-:ref:`pwm-blinky-sample`.
+:zephyr:code-sample:`pwm-blinky-sample`.
 
 Building and Running
 ********************
