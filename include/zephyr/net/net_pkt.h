@@ -2239,8 +2239,8 @@ struct net_pkt_data_access {
  * @brief Get data from a network packet in a contiguous way
  *
  * @details net_pkt's cursor should be properly initialized and,
- *          if needed, positioned using net_pkt_skip.
- *          Cursor position will be updated after the operation.
+ *          if needed, positioned using net_pkt_skip. Unlike other functions,
+ *          cursor position will not be updated after the operation.
  *
  * @param pkt    The network packet from where to get the data.
  * @param access A pointer to a valid net_pkt_data_access describing the
