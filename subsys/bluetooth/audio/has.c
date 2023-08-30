@@ -1117,9 +1117,12 @@ int bt_has_preset_unregister(uint8_t index)
 	return control_point_send_all(&buf);
 }
 
-int bt_has_preset_available(uint8_t index)
+static int set_preset_availability(uint8_t index, bool available)
 {
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+			      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
 	struct has_preset *preset = NULL;
+	uint8_t change_id;
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
 		LOG_ERR("index is invalid");
@@ -1131,50 +1134,33 @@ int bt_has_preset_available(uint8_t index)
 		return -ENOENT;
 	}
 
-	/* toggle property bit if needed */
-	if (!(preset->properties & BT_HAS_PROP_AVAILABLE)) {
-		NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
-				      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
-
-		preset->properties ^= BT_HAS_PROP_AVAILABLE;
-
-		preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_AVAILABLE, BT_HAS_IS_LAST);
-		net_buf_simple_add_u8(&buf, preset->index);
-
-		return control_point_send_all(&buf);
+	if ((preset->properties & BT_HAS_PROP_AVAILABLE) == available) {
+		/* availability not changed */
+		return 0;
 	}
 
-	return 0;
+	preset->properties ^= BT_HAS_PROP_AVAILABLE;
+
+	if (is_preset_available(preset)) {
+		change_id = BT_HAS_CHANGE_ID_PRESET_AVAILABLE;
+	} else {
+		change_id = BT_HAS_CHANGE_ID_PRESET_UNAVAILABLE;
+	}
+
+	preset_changed_prepare(&buf, change_id, BT_HAS_IS_LAST);
+	net_buf_simple_add_u8(&buf, preset->index);
+
+	return control_point_send_all(&buf);
+}
+
+int bt_has_preset_available(uint8_t index)
+{
+	return set_preset_availability(index, true);
 }
 
 int bt_has_preset_unavailable(uint8_t index)
 {
-	struct has_preset *preset = NULL;
-
-	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
-		LOG_ERR("index is invalid");
-		return -EINVAL;
-	}
-
-	preset_foreach(index, index, preset_found, &preset);
-	if (preset == NULL) {
-		return -ENOENT;
-	}
-
-	/* toggle property bit if needed */
-	if (preset->properties & BT_HAS_PROP_AVAILABLE) {
-		NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
-				      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
-
-		preset->properties ^= BT_HAS_PROP_AVAILABLE;
-
-		preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_UNAVAILABLE, BT_HAS_IS_LAST);
-		net_buf_simple_add_u8(&buf, preset->index);
-
-		return control_point_send_all(&buf);
-	}
-
-	return 0;
+	return set_preset_availability(index, false);
 }
 
 struct bt_has_preset_foreach_data {
