@@ -593,7 +593,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
 
-	err = bt_bap_unicast_server_disable(stream);
+	err = bt_bap_stream_disable(stream);
 	zassert_equal(0, err, "Failed to disable stream: err %d", err);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
