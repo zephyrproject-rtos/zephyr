@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
