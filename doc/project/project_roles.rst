@@ -271,7 +271,7 @@ Generic guidelines for deciding and filling in the Maintainers' list
 
 * Pull requests may be re-assigned if this is needed or more appropriate
 
-  * Re-assigned by original assignee (see “Assignee” slide)
+  * Re-assigned by original assignee
 
 * In general, updates to the MAINTAINERS file should be
   in a standalone commit alongside other changes introducing new files and
