@@ -1137,6 +1137,51 @@ struct bt_mesh_comp {
 	struct bt_mesh_elem *elem; /**< List of elements. */
 };
 
+/** Composition data page 2 record. */
+struct bt_mesh_comp2_record {
+	/** Mesh profile ID. */
+	uint16_t id;
+	/** Mesh Profile Version. */
+	struct {
+		/** Major version. */
+		uint8_t x;
+		/** Minor version. */
+		uint8_t y;
+		/** Z version. */
+		uint8_t z;
+	} version;
+	/** Element offset count. */
+	uint8_t elem_offset_cnt;
+	/** Element offset list. */
+	const uint8_t *elem_offset;
+	/** Length of additional data. */
+	uint16_t data_len;
+	/** Additional data. */
+	const void *data;
+};
+
+/** Node Composition data page 2 */
+struct bt_mesh_comp2 {
+	/** The number of Mesh Profile records on a device. */
+	size_t record_cnt;
+	/** List of records. */
+	const struct bt_mesh_comp2_record *record;
+};
+
+/** @brief Register composition data page 2 of the device.
+ *
+ *  Register Mesh Profiles information (Ref section 3.12 in
+ *  Bluetooth SIG Assigned Numbers) for composition data
+ *  page 2 of the device.
+ *
+ *  @note There must be at least one record present in @c comp2
+ *
+ *  @param comp2 Pointer to composition data page 2.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_comp2_register(const struct bt_mesh_comp2 *comp2);
+
 #ifdef __cplusplus
 }
 #endif

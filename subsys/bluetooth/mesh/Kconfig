@@ -1373,6 +1373,11 @@ config BT_MESH_COMP_PAGE_1
 	help
 	  Enable support for Composition Data Page 1.
 
+config BT_MESH_COMP_PAGE_2
+	bool "Support for Composition Data Page 2"
+	help
+	  Enable support for Composition Data Page 2.
+
 config BT_MESH_MODEL_EXTENSION_LIST_SIZE
 	int "Model extensions list size"
 	depends on BT_MESH_COMP_PAGE_1
