@@ -68,6 +68,10 @@ In order to make use of the C++ exceptions, the
 :kconfig:option:`CONFIG_CPP_EXCEPTIONS` must be selected in the application
 configuration file.
 
+.. note::
+   Additional C++ features can be added to Zephyr via the
+   :ref:`pigweed_cpp_support` module.
+
 Zephyr Minimal C++ Library
 **************************
 
