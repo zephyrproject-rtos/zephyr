@@ -6,7 +6,7 @@
 
 /* Based on STM32 EXTI driver, which is (c) 2016 Open-RnD Sp. z o.o. */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
