@@ -2443,3 +2443,38 @@ struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
 	}
 	return ext_item;
 }
+
+struct bt_mesh_comp_p2_record *bt_mesh_comp_p2_record_pull(struct net_buf_simple *buf,
+							   struct bt_mesh_comp_p2_record *record)
+{
+	if (buf->len < 8) {
+		LOG_DBG("No more elements to pull or missing data");
+		return NULL;
+	}
+
+	uint8_t elem_offset_cnt;
+	uint16_t data_len;
+
+	record->id = net_buf_simple_pull_le16(buf);
+	record->version.x = net_buf_simple_pull_u8(buf);
+	record->version.y = net_buf_simple_pull_u8(buf);
+	record->version.z = net_buf_simple_pull_u8(buf);
+	elem_offset_cnt = net_buf_simple_pull_u8(buf);
+	if (buf->len < elem_offset_cnt + 2) {
+		LOG_WRN("Invalid composition data offset count");
+		return NULL;
+	}
+
+	net_buf_simple_init_with_data(record->elem_buf,
+				      net_buf_simple_pull_mem(buf, elem_offset_cnt),
+				      elem_offset_cnt);
+	data_len = net_buf_simple_pull_le16(buf);
+	if (buf->len < data_len) {
+		LOG_WRN("Invalid composition data additional data length");
+		return NULL;
+	}
+
+	net_buf_simple_init_with_data(record->data_buf,
+				      net_buf_simple_pull_mem(buf, data_len), data_len);
+	return record;
+}
