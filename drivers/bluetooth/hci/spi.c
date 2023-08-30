@@ -287,8 +287,6 @@ static void bt_spi_rx_thread(void)
 	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
-	/* Enable the interrupt line */
-	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	while (true) {
 
 		/* Wait for interrupt pin to be active */
@@ -497,12 +495,12 @@ static int bt_spi_open(void)
 		return err;
 	}
 
+	/* Enable the interrupt line */
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+
 	/* Take BLE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 	gpio_pin_set_dt(&rst_gpio, 0);
-
-	/* Give the controller some time to boot */
-	k_sleep(K_MSEC(1));
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
