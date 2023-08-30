@@ -160,6 +160,10 @@ class ZephyrObjectFile:
             if not section.name.startswith(_INIT_SECTION_PREFIX):
                 continue
 
+            sect_name_num_segments = len(section.name.split("."))
+            if sect_name_num_segments > 3:
+                section.name = section.name.rsplit(".", sect_name_num_segments - 3)[0]
+
             prio = Priority(section.name)
 
             for rel in section.iter_relocations():
