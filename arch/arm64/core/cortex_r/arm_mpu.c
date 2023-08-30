@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
@@ -62,8 +63,12 @@ static inline uint8_t get_num_regions(void)
 
 /**
  * @brief enable the MPU
+ *
+ * On the SMP system, The function that enables MPU can not insert stack protector
+ * code because the canary values read by the secondary CPUs before enabling MPU
+ * and after enabling it are not equal due to cache coherence issues.
  */
-void arm_core_mpu_enable(void)
+FUNC_NO_STACK_PROTECTOR void arm_core_mpu_enable(void)
 {
 	uint64_t val;
 
@@ -110,7 +115,12 @@ static void mpu_init(void)
 	barrier_isync_fence_full();
 }
 
-static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
+/*
+ * Changing the MPU region may change the cache related attribute and cause
+ * cache coherence issues, so it's necessary to avoid invoking functions in such
+ * critical scope to avoid memory access before the MPU regions are all configured.
+ */
+static ALWAYS_INLINE void mpu_set_region(uint32_t rnr, uint64_t rbar,
 				  uint64_t rlar)
 {
 	write_prselr_el1(rnr);
@@ -135,8 +145,14 @@ static inline void mpu_clr_region(uint32_t rnr)
 	barrier_isync_fence_full();
 }
 
-/* This internal functions performs MPU region initialization. */
-static void region_init(const uint32_t index,
+/*
+ * This internal functions performs MPU region initialization.
+ *
+ * Changing the MPU region may change the cache related attribute and cause
+ * cache coherence issues, so it's necessary to avoid invoking functions in such
+ * critical scope to avoid memory access before the MPU regions are all configured.
+ */
+static ALWAYS_INLINE void region_init(const uint32_t index,
 			const struct arm_mpu_region *region_conf)
 {
 	uint64_t rbar = region_conf->base & MPU_RBAR_BASE_Msk;
@@ -156,8 +172,12 @@ static void region_init(const uint32_t index,
  *
  * This function here provides the default configuration mechanism
  * for the Memory Protection Unit (MPU).
+ *
+ * On the SMP system, The function that enables MPU can not insert stack protector
+ * code because the canary values read by the secondary CPUs before enabling MPU
+ * and after enabling it are not equal due to cache coherence issues.
  */
-void z_arm64_mm_init(bool is_primary_core)
+FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 {
 	uint64_t val;
 	uint32_t r_index;
@@ -396,9 +416,13 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	int ret = 0;
 
 	arm_core_mpu_background_region_enable();
+
 	/*
 	 * Clean the dynamic regions
+	 * Before cleaning them, we need to flush dyn_regions to memory, because we need to read it
+	 * in updating mpu region.
 	 */
+	sys_cache_data_flush_range(dyn_regions, sizeof(struct dynamic_region_info) * region_num);
 	for (size_t i = reg_avail_idx; i < get_num_regions(); i++) {
 		mpu_clr_region(i);
 	}
