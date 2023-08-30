@@ -140,12 +140,12 @@
 		.mair_idx = MPU_MAIR_INDEX_DEVICE,		      \
 	}
 
-#define REGION_RAM_ATTR						      \
-	{							      \
-		/* AP, XN, SH */				      \
-		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, \
-		/* Cache-ability */				      \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,		      \
+#define REGION_RAM_ATTR							\
+	{								\
+		/* AP, XN, SH */					\
+		.rbar = NOT_EXEC | P_RW_U_NA_Msk | INNER_SHAREABLE_Msk, \
+		/* Cache-ability */					\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			\
 	}
 
 #define REGION_RAM_NOCACHE_ATTR					      \
@@ -156,20 +156,20 @@
 		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,	      \
 	}
 
-#define REGION_RAM_TEXT_ATTR				   \
-	{						   \
-		/* AP, XN, SH */			   \
-		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
-		/* Cache-ability */			   \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,	   \
+#define REGION_RAM_TEXT_ATTR					\
+	{							\
+		/* AP, XN, SH */				\
+		.rbar = P_RO_U_RO_Msk | INNER_SHAREABLE_Msk,	\
+		/* Cache-ability */				\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,		\
 	}
 
-#define REGION_RAM_RO_ATTR					      \
-	{							      \
-		/* AP, XN, SH */				      \
-		.rbar = NOT_EXEC | P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
-		/* Cache-ability */				      \
-		.mair_idx = MPU_MAIR_INDEX_SRAM,		      \
+#define REGION_RAM_RO_ATTR						\
+	{								\
+		/* AP, XN, SH */					\
+		.rbar = NOT_EXEC | P_RO_U_RO_Msk | INNER_SHAREABLE_Msk, \
+		/* Cache-ability */					\
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			\
 	}
 
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
@@ -194,7 +194,7 @@
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to PRBAR */
-	uint8_t rbar : 5;
+	uint8_t rbar : 6;
 	/* MAIR index for attribute indirection */
 	uint8_t mair_idx : 3;
 };
