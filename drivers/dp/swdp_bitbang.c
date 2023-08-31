@@ -252,8 +252,8 @@ static ALWAYS_INLINE void pin_swdio_out_disable(const struct device *dev)
 		pin_delay_asm(delay);			\
 	} while (0)
 
-static int sw_sequence(const struct device *dev, uint32_t count,
-		       const uint8_t *data)
+static int sw_output_sequence(const struct device *dev, uint32_t count,
+			      const uint8_t *data)
 {
 	struct sw_cfg_data *sw_data = dev->data;
 	unsigned int key;
@@ -280,6 +280,37 @@ static int sw_sequence(const struct device *dev, uint32_t count,
 		n--;
 	}
 
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int sw_input_sequence(const struct device *dev, uint32_t count,
+			     uint8_t *data)
+{
+	struct sw_cfg_data *sw_data = dev->data;
+	unsigned int key;
+	uint32_t val = 0U; /* current byte */
+	uint32_t n = 8U; /* bit counter */
+	uint32_t bit;
+
+	LOG_DBG("reading %u bits", count);
+	key = irq_lock();
+
+	pin_swdio_out_disable(dev);
+	while (count--) {
+		if (n == 0U) {
+			*data++ = val;
+			val = 0;
+			n = 8U;
+		}
+		SW_READ_BIT(dev, bit, sw_data->clock_delay);
+		LOG_DBG("Read bit: %d", bit);
+		val = (val << 1 | bit);
+		n--;
+	}
+
+	*data = val; /* write last byte */
 	irq_unlock(key);
 
 	return 0;
@@ -653,7 +684,8 @@ static int sw_gpio_init(const struct device *dev)
 }
 
 static struct swdp_api swdp_bitbang_api = {
-	.swdp_sequence	= sw_sequence,
+	.swdp_output_sequence = sw_output_sequence,
+	.swdp_input_sequence = sw_input_sequence,
 	.swdp_transfer	= sw_transfer,
 	.swdp_set_pins	= sw_set_pins,
 	.swdp_get_pins	= sw_get_pins,
@@ -669,7 +701,7 @@ static struct swdp_api swdp_bitbang_api = {
 		    (NULL))
 
 #define SW_DEVICE_DEFINE(n)								\
-	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, dout_gpios)) == 				\
+	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, dout_gpios)) ==				\
 		     (DT_INST_NODE_HAS_PROP(n, dnoe_gpios)),				\
 		     "Either the dout-gpios or dnoe-gpios property is missing.");	\
 											\
