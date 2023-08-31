@@ -119,7 +119,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_1_1(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMED,                     \
+			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
 					     BT_AUDIO_CODEC_QOS_2M, 97u, 5u, 24u, 40000u))
 
 /**
@@ -130,7 +130,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_2_1(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMED,                    \
+			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
 					     BT_AUDIO_CODEC_QOS_2M, 130u, 5u, 31u, 40000u))
 
 /**
@@ -282,7 +282,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_1_2(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMED,                     \
+			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
 					     BT_AUDIO_CODEC_QOS_2M, 97u, 13u, 80u, 40000u))
 
 /**
@@ -293,7 +293,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_2_2(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMED,                    \
+			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
 					     BT_AUDIO_CODEC_QOS_2M, 130u, 13u, 85u, 40000u))
 
 /**
@@ -449,7 +449,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_1_1(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMED,                     \
+			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
 					     BT_AUDIO_CODEC_QOS_2M, 97u, 4u, 24u, 40000u))
 
 /**
@@ -460,7 +460,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_2_1(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMED,                    \
+			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
 					     BT_AUDIO_CODEC_QOS_2M, 130u, 4u, 31u, 40000u))
 
 /**
@@ -616,7 +616,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_1_2(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMED,                     \
+			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
 					     BT_AUDIO_CODEC_QOS_2M, 97u, 4u, 54u, 40000u))
 
 /**
@@ -627,7 +627,7 @@ struct bt_bap_lc3_preset {
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_2_2(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMED,                    \
+			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
 					     BT_AUDIO_CODEC_QOS_2M, 130u, 4u, 60u, 40000u))
 
 /**
