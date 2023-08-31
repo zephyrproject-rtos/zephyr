@@ -40,26 +40,14 @@ SAMPLE_INSTANCE_DEFINE(app_part, inst1);
 #define INST2_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst2)
 SAMPLE_INSTANCE_DEFINE(app_part, inst2);
 
-#if !defined(NRF_RTC1) && defined(CONFIG_SOC_FAMILY_NRF)
-#include <soc.h>
-#endif
-
 static uint32_t timestamp_get(void)
 {
-#ifdef CONFIG_SOC_FAMILY_NRF
-	return NRF_RTC1->COUNTER;
-#else
 	return k_cycle_get_32();
-#endif
 }
 
 static uint32_t timestamp_freq(void)
 {
-#ifdef CONFIG_SOC_FAMILY_NRF
-	return 32768 / (NRF_RTC1->PRESCALER + 1);
-#else
 	return sys_clock_hw_cycles_per_sec();
-#endif
 }
 
 /**
