@@ -82,8 +82,6 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_GPIO
           ${rp2_common_dir}/hardware_gpio/include)
 
-  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_UART
-          ${rp2_common_dir}/hardware_uart/uart.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_UART
           ${rp2_common_dir}/hardware_uart/include)
 
