@@ -297,7 +297,7 @@ static uint16_t dap_swj_sequence(struct dap_context *const ctx,
 		return 1U;
 	}
 
-	api->swdp_sequence(ctx->swdp_dev, count, &request[1]);
+	api->swdp_output_sequence(ctx->swdp_dev, count, &request[1]);
 	response[0] = DAP_OK;
 
 	return 1U;

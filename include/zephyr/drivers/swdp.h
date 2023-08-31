@@ -43,9 +43,14 @@ extern "C" {
  */
 struct swdp_api {
 	/* Generate SWJ Sequence according to sequence bit count and bit data */
-	int (*swdp_sequence)(const struct device *dev,
-			    uint32_t count,
-			    const uint8_t *data);
+	int (*swdp_output_sequence)(const struct device *dev,
+				    uint32_t count,
+				    const uint8_t *data);
+
+	/* Read count bits from SWDIO into data LSB first */
+	int (*swdp_input_sequence)(const struct device *dev,
+				   uint32_t count,
+				   uint8_t *data);
 
 	/*
 	 * Perform SWDP transfer based on host request value and store
