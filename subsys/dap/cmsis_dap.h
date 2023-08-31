@@ -22,7 +22,7 @@
 #include <zephyr/kernel.h>
 
 /* Firmware Version */
-#define DAP_FW_VER				"1.10"
+#define DAP_FW_VER				"2.1.0"
 
 /* DAP Command IDs */
 #define ID_DAP_INFO				0x00U
@@ -42,6 +42,7 @@
 #define ID_DAP_SWJ_SEQUENCE			0x12U
 
 #define ID_DAP_SWDP_CONFIGURE			0x13U
+#define ID_DAP_SWDP_SEQUENCE			0x1DU
 
 #define ID_DAP_JTAG_SEQUENCE			0x14U
 #define ID_DAP_JTAG_CONFIGURE			0x15U
