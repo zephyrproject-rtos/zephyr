@@ -14,6 +14,9 @@ config OUTPUT_PRINT_MEMORY_USAGE
 config BOARD
 	default "nrf52_bsim"
 
+config NATIVE_SIMULATOR_CPU_N
+	default 0
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
