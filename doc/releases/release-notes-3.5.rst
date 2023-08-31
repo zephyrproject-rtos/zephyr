@@ -14,55 +14,6 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
-API Changes
-***********
-
-Changes in this release
-=======================
-
-* Set :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE` default value to ``0`` (was
-  ``16``). Bootloaders that use a part of the SRAM should set this value to an
-  appropriate size. :github:`60371`
-
-* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
-  were more precisely specified and all in-tree call sites updated accordingly.
-  Fields for timed TX and TX/RX timestamps have been consolidated. See
-  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
-  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
-  documentation. As this is largely an internal API, existing applications will
-  most probably continue to work unchanged.
-
-* The Kconfig option CONFIG_GPIO_NCT38XX_INTERRUPT has been renamed to
-  :kconfig:option:`CONFIG_GPIO_NCT38XX_ALERT`.
-
-Removed APIs in this release
-============================
-
-Deprecated in this release
-==========================
-
-* Setting the GIC architecture version by selecting
-  :kconfig:option:`CONFIG_GIC_V1`, :kconfig:option:`CONFIG_GIC_V2` and
-  :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.
-  The GIC version should now be specified by adding the appropriate compatible, for
-  example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
-
-Stable API changes in this release
-==================================
-
-* MCUmgr SMP version 2 error codes entry has changed due to a collision with an
-  existing response in shell_mgmt. Previously, these errors had the entry ``ret``
-  but now have the entry ``err``. ``smp_add_cmd_ret()`` is now deprecated and
-  :c:func:`smp_add_cmd_err` should be used instead, ``MGMT_CB_ERROR_RET`` is
-  now deprecated and :c:enumerator:`MGMT_CB_ERROR_ERR` should be used instead.
-  SMP version 2 error code defines for in-tree modules have been updated to
-  replace the ``*_RET_RC_*`` parts with ``*_ERR_*``.
-
-New APIs in this release
-========================
-
-* Introduced MCUmgr client support with handlers for img_mgmt and os_mgmt.
-
 Kernel
 ******
 
@@ -285,6 +236,14 @@ Drivers and Sensors
 Networking
 **********
 
+* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
+  were more precisely specified and all in-tree call sites updated accordingly.
+  Fields for timed TX and TX/RX timestamps have been consolidated. See
+  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
+  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
+  documentation. As this is largely an internal API, existing applications will
+  most probably continue to work unchanged.
+
 * CoAP:
 
   * Use 64 bit timer values for calculating transmission timeouts. This fixes potential problems for
@@ -321,6 +280,8 @@ Libraries / Subsystems
 **********************
 
 * Management
+
+  * Introduced MCUmgr client support with handlers for img_mgmt and os_mgmt.
 
   * Added response checking to MCUmgr's :c:enumerator:`MGMT_EVT_OP_CMD_RECV`
     notification callback to allow applications to reject MCUmgr commands.

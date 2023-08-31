@@ -89,6 +89,19 @@ specific release and can be found at https://docs.zephyrproject.org/.
    release-notes-1.*
    release-notes-*
 
+Migration Guides
+****************
+
+Zephyr provides migration guides for all major releases, in order to assist
+users transition from the previous release.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :reversed:
+
+   migration-guide-*
+
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
 .. _`Zephyr 2.7.5`: https://docs.zephyrproject.org/2.7.5/
