@@ -271,9 +271,9 @@
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/display/display_ili9342c.*       @extremegtx
 /drivers/dac/                             @martinjaeger
-/drivers/dai/                             @juimonen @marcinszkudlinski @abonislawski
-/drivers/dai/intel/                       @juimonen @marcinszkudlinski @abonislawski
-/drivers/dai/intel/ssp/                   @juimonen @marcinszkudlinski @abonislawski
+/drivers/dai/                             @kv2019i @marcinszkudlinski @abonislawski
+/drivers/dai/intel/                       @kv2019i @marcinszkudlinski @abonislawski
+/drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/dmic/                  @marcinszkudlinski @abonislawski
 /drivers/dai/intel/alh/                   @abonislawski
 /drivers/dma/*dw*                         @tbursztyka
