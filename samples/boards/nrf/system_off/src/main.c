@@ -10,13 +10,13 @@
 #include <stdio.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>
 
-#include <hal/nrf_gpio.h>
-#include <soc.h>
+static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
 #define BUSY_WAIT_S 2U
 #define SLEEP_S 2U
@@ -48,11 +48,12 @@ int main(void)
 		printf("Retained data not supported\n");
 	}
 
-	/* Configure to generate PORT event (wakeup) on button 1 press. */
-	nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios),
-			   NRF_GPIO_PIN_PULLUP);
-	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios),
-			       NRF_GPIO_PIN_SENSE_LOW);
+	/* configure sw0 as input, interrupt as level active to allow wake-up */
+	rc = gpio_pin_configure_dt(&sw0, GPIO_INPUT);
+	if (rc < 0) {
+		printf("Could not configure sw0 GPIO (%d)\n", rc);
+		return 0;
+	}
 
 	printf("Busy-wait %u s\n", BUSY_WAIT_S);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
@@ -70,7 +71,13 @@ int main(void)
 	k_sleep(K_SECONDS(SLEEP_S));
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 
-	printf("Entering system off; press BUTTON1 to restart\n");
+	rc = gpio_pin_interrupt_configure_dt(&sw0, GPIO_INT_LEVEL_ACTIVE);
+	if (rc < 0) {
+		printf("Could not configure sw0 GPIO interrupt (%d)\n", rc);
+		return 0;
+	}
+
+	printf("Entering system off; press sw0 to restart\n");
 
 	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
 		/* Update the retained state */
