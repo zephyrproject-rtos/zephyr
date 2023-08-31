@@ -158,11 +158,11 @@ static inline void trigger_irq(int vector)
 }
 
 #elif defined(CONFIG_ARCH_POSIX)
-#include "irq_ctrl.h"
+#include <zephyr/arch/posix/posix_soc_if.h>
 
 static inline void trigger_irq(int irq)
 {
-	hw_irq_ctrl_raise_im_from_sw(irq);
+	posix_sw_set_pending_IRQ(irq);
 }
 
 #elif defined(CONFIG_RISCV)
