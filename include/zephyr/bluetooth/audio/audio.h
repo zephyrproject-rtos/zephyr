@@ -410,9 +410,9 @@ enum bt_audio_dir {
 	}
 
 /** @brief Codec QoS Framing */
-enum {
-	BT_AUDIO_CODEC_QOS_UNFRAMED = 0x00,
-	BT_AUDIO_CODEC_QOS_FRAMED = 0x01,
+enum bt_audio_codec_qos_framing {
+	BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED = 0x00,
+	BT_AUDIO_CODEC_QOS_FRAMING_FRAMED = 0x01,
 };
 
 /** @brief Codec QoS Preferred PHY */
@@ -432,8 +432,8 @@ enum {
  *  @param _pd Presentation Delay (usec)
  */
 #define BT_AUDIO_CODEC_QOS_UNFRAMED(_interval, _sdu, _rtn, _latency, _pd)                          \
-	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_UNFRAMED, BT_AUDIO_CODEC_QOS_2M, _sdu,    \
-			   _rtn, _latency, _pd)
+	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED, BT_AUDIO_CODEC_QOS_2M,  \
+			   _sdu, _rtn, _latency, _pd)
 
 /**
  *  @brief Helper to declare Input Framed bt_audio_codec_qos
@@ -445,8 +445,8 @@ enum {
  *  @param _pd Presentation Delay (usec)
  */
 #define BT_AUDIO_CODEC_QOS_FRAMED(_interval, _sdu, _rtn, _latency, _pd)                            \
-	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_FRAMED, BT_AUDIO_CODEC_QOS_2M, _sdu,      \
-			   _rtn, _latency, _pd)
+	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED, BT_AUDIO_CODEC_QOS_2M,    \
+			   _sdu, _rtn, _latency, _pd)
 
 /** @brief Codec QoS structure. */
 struct bt_audio_codec_qos {
@@ -454,7 +454,7 @@ struct bt_audio_codec_qos {
 	uint8_t  phy;
 
 	/** QoS Framing */
-	uint8_t  framing;
+	enum bt_audio_codec_qos_framing framing;
 
 	/** QoS Retransmission Number */
 	uint8_t rtn;
