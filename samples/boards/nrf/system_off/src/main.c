@@ -4,15 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "retained.h"
+
+#include <inttypes.h>
 #include <stdio.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
-#include <soc.h>
-#include "retained.h"
+#include <zephyr/sys/util.h>
+
 #include <hal/nrf_gpio.h>
+#include <soc.h>
 
 #define BUSY_WAIT_S 2U
 #define SLEEP_S 2U
