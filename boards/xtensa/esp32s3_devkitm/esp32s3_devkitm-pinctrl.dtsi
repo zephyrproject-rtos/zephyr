@@ -40,6 +40,24 @@
 		};
 	};
 
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO4>,
+				 <I2S0_O_BCK_GPIO5>,
+				 <I2S0_O_WS_GPIO6>,
+				 <I2S0_SD_GPIO7>;
+		};
+	};
+
+	i2s1_default: i2s1_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO8>,
+				 <I2S0_O_BCK_GPIO9>,
+				 <I2S0_O_WS_GPIO10>,
+				 <I2S0_SD_GPIO11>;
+		};
+	};
+
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_MISO_GPIO13>,

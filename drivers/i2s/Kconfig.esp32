@@ -1,0 +1,7 @@
+config I2S_ESP32
+	bool "ESP32 I2S driver"
+	default n
+	depends on DT_HAS_ESPRESSIF_ESP32_I2S_ENABLED
+	select GPIO_ESP32
+	help
+	  Enables the ESP32 I2S driver

@@ -79,6 +79,15 @@
 	pinctrl-names = "default";
 };
 
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+
+	dma-names = "rx", "tx";
+	dmas = <&dma 3>, <&dma 3>;
+};
+
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -166,4 +175,8 @@
 			reg = <0x00250000 0x00006000>;
 		};
 	};
+};
+
+&dma {
+	status = "okay";
 };
