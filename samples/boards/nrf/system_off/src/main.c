@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
@@ -22,11 +23,11 @@ int main(void)
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
-		printk("%s: device not ready.\n", cons->name);
+		printf("%s: device not ready.\n", cons->name);
 		return 0;
 	}
 
-	printk("\n%s system off demo\n", CONFIG_BOARD);
+	printf("\n%s system off demo\n", CONFIG_BOARD);
 
 	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
 		bool retained_ok = retained_validate();
@@ -35,12 +36,12 @@ int main(void)
 		retained.boots += 1;
 		retained_update();
 
-		printk("Retained data: %s\n", retained_ok ? "valid" : "INVALID");
-		printk("Boot count: %u\n", retained.boots);
-		printk("Off count: %u\n", retained.off_count);
-		printk("Active Ticks: %" PRIu64 "\n", retained.uptime_sum);
+		printf("Retained data: %s\n", retained_ok ? "valid" : "INVALID");
+		printf("Boot count: %u\n", retained.boots);
+		printf("Off count: %u\n", retained.off_count);
+		printf("Active Ticks: %" PRIu64 "\n", retained.uptime_sum);
 	} else {
-		printk("Retained data not supported\n");
+		printf("Retained data not supported\n");
 	}
 
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
@@ -49,23 +50,23 @@ int main(void)
 	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios),
 			       NRF_GPIO_PIN_SENSE_LOW);
 
-	printk("Busy-wait %u s\n", BUSY_WAIT_S);
+	printf("Busy-wait %u s\n", BUSY_WAIT_S);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
 
-	printk("Busy-wait %u s with UART off\n", BUSY_WAIT_S);
+	printf("Busy-wait %u s with UART off\n", BUSY_WAIT_S);
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 
-	printk("Sleep %u s\n", SLEEP_S);
+	printf("Sleep %u s\n", SLEEP_S);
 	k_sleep(K_SECONDS(SLEEP_S));
 
-	printk("Sleep %u s with UART off\n", SLEEP_S);
+	printf("Sleep %u s with UART off\n", SLEEP_S);
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	k_sleep(K_SECONDS(SLEEP_S));
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 
-	printk("Entering system off; press BUTTON1 to restart\n");
+	printf("Entering system off; press BUTTON1 to restart\n");
 
 	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
 		/* Update the retained state */
