@@ -3234,19 +3234,12 @@ static void sc_restore(struct bt_conn *conn)
 	}
 }
 
-struct conn_data {
-	struct bt_conn *conn;
-	bt_security_t sec;
-};
-
-static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
-			  void *user_data)
+static uint8_t bt_gatts_ccc_changed_conn(const struct bt_gatt_attr *attr, uint16_t handle,
+					 void *user_data)
 {
-	struct conn_data *data = user_data;
-	struct bt_conn *conn = data->conn;
+	struct bt_conn *conn = user_data;
 	struct _bt_gatt_ccc *ccc;
 	size_t i;
-	uint8_t err;
 
 	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
 	if (attr->write != bt_gatt_attr_write_ccc) {
@@ -3261,32 +3254,6 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 		/* Ignore configuration for different peer or not active */
 		if (!cfg->value || !bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
 			continue;
-		}
-
-		/* Check if attribute requires encryption/authentication */
-		err = bt_gatt_check_perm(conn, attr, BT_GATT_PERM_WRITE_MASK);
-		if (err) {
-			bt_security_t sec;
-
-			if (err == BT_ATT_ERR_WRITE_NOT_PERMITTED) {
-				LOG_WRN("CCC %p not writable", attr);
-				continue;
-			}
-
-			sec = BT_SECURITY_L2;
-
-			if (err == BT_ATT_ERR_AUTHENTICATION) {
-				sec = BT_SECURITY_L3;
-			}
-
-			/* Check if current security is enough */
-			if (IS_ENABLED(CONFIG_BT_SMP) &&
-			    bt_conn_get_security(conn) < sec) {
-				if (data->sec < sec) {
-					data->sec = sec;
-				}
-				continue;
-			}
 		}
 
 		gatt_ccc_changed(attr, ccc);
@@ -5688,14 +5655,38 @@ static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 	return 0;
 }
 
+void bt_secure_if_bond_exists(struct bt_conn *conn) {
+	int err;
+
+	LOG_INF("");
+
+	if (!IS_ENABLED(CONFIG_BT_SMP)) {
+		return;
+	}
+
+	/* Disable CONFIG_BT_GATT_AUTO_SEC_REQ if this device will talk to
+	 * centrals that misbehave when they receive a Security Request upon
+	 * connection.
+	 */
+	if (conn->role == BT_HCI_ROLE_PERIPHERAL && !IS_ENABLED(CONFIG_BT_GATT_AUTO_SEC_REQ)) {
+		LOG_INF("quirk: peripheral security request disabled");
+		return;
+	}
+
+	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		LOG_INF("sending security req conn %p", conn);
+
+		err = bt_conn_set_security(conn, BT_SECURITY_L2);
+
+		if (err) {
+			LOG_ERR("Failed to secure %p (%d)", conn, err);
+		}
+	}
+}
+
 void bt_gatt_connected(struct bt_conn *conn)
 {
-	struct conn_data data;
-
 	LOG_DBG("conn %p", conn);
-
-	data.conn = conn;
-	data.sec = BT_SECURITY_L1;
 
 	/* Load CCC settings from backend if bonded */
 	if (IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING) &&
@@ -5716,34 +5707,7 @@ void bt_gatt_connected(struct bt_conn *conn)
 		settings_load_subtree_direct(key, ccc_set_direct, (void *)key);
 	}
 
-	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
-
-	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part C page 2192:
-	 *
-	 * 10.3.1.1 Handling of GATT indications and notifications
-	 *
-	 * A client “requests” a server to send indications and notifications
-	 * by appropriately configuring the server via a Client Characteristic
-	 * Configuration Descriptor. Since the configuration is persistent
-	 * across a disconnection and reconnection, security requirements must
-	 * be checked against the configuration upon a reconnection before
-	 * sending indications or notifications. When a server reconnects to a
-	 * client to send an indication or notification for which security is
-	 * required, the server shall initiate or request encryption with the
-	 * client prior to sending an indication or notification. If the client
-	 * does not have an LTK indicating that the client has lost the bond,
-	 * enabling encryption will fail.
-	 */
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    (conn->role == BT_HCI_ROLE_CENTRAL ||
-	     IS_ENABLED(CONFIG_BT_GATT_AUTO_SEC_REQ)) &&
-	    bt_conn_get_security(conn) < data.sec) {
-		int err = bt_conn_set_security(conn, data.sec);
-
-		if (err) {
-			LOG_WRN("Failed to set security for bonded peer (%d)", err);
-		}
-	}
+	bt_secure_if_bond_exists(conn);
 
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
 	int err;
@@ -5768,18 +5732,13 @@ void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 
 void bt_gatt_encrypt_change(struct bt_conn *conn)
 {
-	struct conn_data data;
-
 	LOG_DBG("conn %p", conn);
-
-	data.conn = conn;
-	data.sec = BT_SECURITY_L1;
 
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 	add_subscriptions(conn);
 #endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
 
-	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
+	bt_gatt_foreach_attr(0x0001, 0xffff, bt_gatts_ccc_changed_conn, conn);
 
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {
