@@ -1181,8 +1181,8 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	},                                                               \
 	.config_irq = config_can_##inst##_irq,                           \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
-	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),         \
-	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id, 1000000), \
+	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),       \
+	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000), \
 };
 
 #define CAN_STM32_DATA_INST(inst) \
