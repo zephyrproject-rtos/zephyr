@@ -7,5 +7,5 @@
 
 &sip_smc {
 	status = "okay";
-	zephyr,num-clients = <1>;
+	zephyr,num-clients = <5>;
 };

@@ -76,7 +76,7 @@
 
 &sip_smc {
 	status = "okay";
-	zephyr,num-clients = <2>;
+	zephyr,num-clients = <5>;
 };
 
 &nand {
