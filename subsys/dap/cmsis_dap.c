@@ -922,6 +922,31 @@ static uint16_t dap_process_cmd(struct dap_context *const ctx,
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
+	case ID_DAP_UART_TRANSPORT:
+		LOG_ERR("UART Transport unsupported");
+		retval = 1;
+		*response = DAP_ERROR;
+		break;
+	case ID_DAP_UART_CONFIGURE:
+		LOG_ERR("UART Configure unsupported");
+		retval = 1;
+		*response = DAP_ERROR;
+		break;
+	case ID_DAP_UART_CONTROL:
+		LOG_ERR("UART Control unsupported");
+		retval = 1;
+		*response = DAP_ERROR;
+		break;
+	case ID_DAP_UART_STATUS:
+		LOG_ERR("UART Status unsupported");
+		retval = 1;
+		*response = DAP_ERROR;
+		break;
+	case ID_DAP_UART_TRANSFER:
+		LOG_ERR("UART Transfer unsupported");
+		retval = 1;
+		*response = DAP_ERROR;
+		break;
 
 	default:
 		*(response - 1) = ID_DAP_INVALID;
