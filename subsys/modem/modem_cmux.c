@@ -667,7 +667,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 static void modem_cmux_receive_handler(struct k_work *item)
 {
-	struct modem_cmux *cmux = CONTAINER_OF(item, struct modem_cmux, receive_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
 	uint8_t buf[16];
 	int ret;
 
@@ -688,7 +689,8 @@ static void modem_cmux_receive_handler(struct k_work *item)
 
 static void modem_cmux_transmit_handler(struct k_work *item)
 {
-	struct modem_cmux *cmux = CONTAINER_OF(item, struct modem_cmux, transmit_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, transmit_work);
 	uint8_t *reserved;
 	uint32_t reserved_size;
 	int ret;
@@ -721,7 +723,8 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 
 static void modem_cmux_connect_handler(struct k_work *item)
 {
-	struct modem_cmux *cmux = CONTAINER_OF(item, struct modem_cmux, connect_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, connect_work);
 
 	cmux->state = MODEM_CMUX_STATE_CONNECTING;
 
@@ -740,7 +743,8 @@ static void modem_cmux_connect_handler(struct k_work *item)
 
 static void modem_cmux_disconnect_handler(struct k_work *item)
 {
-	struct modem_cmux *cmux = CONTAINER_OF(item, struct modem_cmux, disconnect_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, disconnect_work);
 	struct modem_cmux_command *command;
 	uint8_t data[2];
 
@@ -828,7 +832,8 @@ struct modem_pipe_api modem_cmux_dlci_pipe_api = {
 
 static void modem_cmux_dlci_open_handler(struct k_work *item)
 {
-	struct modem_cmux_dlci *dlci = CONTAINER_OF(item, struct modem_cmux_dlci, open_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux_dlci *dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, open_work);
 
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPENING;
 
@@ -847,7 +852,8 @@ static void modem_cmux_dlci_open_handler(struct k_work *item)
 
 static void modem_cmux_dlci_close_handler(struct k_work *item)
 {
-	struct modem_cmux_dlci *dlci = CONTAINER_OF(item, struct modem_cmux_dlci, close_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux_dlci *dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, close_work);
 	struct modem_cmux *cmux = dlci->cmux;
 
 	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSING;

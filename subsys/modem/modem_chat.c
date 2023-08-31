@@ -165,7 +165,8 @@ static void modem_chat_script_run_handler(struct k_work *item)
 
 static void modem_chat_script_timeout_handler(struct k_work *item)
 {
-	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_timeout_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, script_timeout_work);
 
 	/* Abort script */
 	modem_chat_script_stop(chat, MODEM_CHAT_SCRIPT_RESULT_TIMEOUT);
@@ -274,7 +275,8 @@ static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
 
 static void modem_chat_script_send_handler(struct k_work *item)
 {
-	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, script_send_work);
 	uint16_t timeout;
 
 	/* Validate script running */
@@ -308,7 +310,8 @@ static void modem_chat_script_send_handler(struct k_work *item)
 
 static void modem_chat_script_send_timeout_handler(struct k_work *item)
 {
-	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_timeout_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, script_send_timeout_work);
 
 	/* Validate script is currently running */
 	if (chat->script == NULL) {
@@ -644,7 +647,8 @@ static void modem_chat_process_bytes(struct modem_chat *chat)
 
 static void modem_chat_process_handler(struct k_work *item)
 {
-	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, process_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, process_work);
 	int ret;
 
 	/* Fill work buffer */
