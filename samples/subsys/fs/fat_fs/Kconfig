@@ -7,6 +7,8 @@
 
 mainmenu "FAT Filesystem Sample Application"
 
+source "samples/subsys/fs/fat_fs/Kconfig.usb2"
+
 config DISK_DRIVE_NAME
 	string "Disk drive name to be used by application"
 	default "SD"

@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB2_FAT_FS
+	bool "Configure USB 2.0 for FAT FS sample application"
+	default n
+	help
+	  Enable USB 2.0 drive to be mounted and used by FAT FS sample
+	  application.
+
+if USB2_FAT_FS
+
+config DISK_DRIVE_NAME
+	string "Disk drive name to be used by application"
+	default "USB2"
+	help
+	  Name of the disk drive to be used by sample application.
+
+config DEV_CONNECTION_WAIT
+	int "Device connection wait value"
+	default 10
+	help
+	  Before using devices like USB wait for the enumeration process to
+	  complete. The wait value configured is in seconds.
+
+endif # USB2_FAT_FS
