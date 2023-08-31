@@ -217,3 +217,29 @@ static __unused const struct ntc_compensation comp_murata_ncp15wb473[] = {
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
 				  comp_murata_ncp15wb473)
+
+/* tdk,ntcg163jf103ft1 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT tdk_ntcg163jf103ft1
+
+static __unused const struct ntc_compensation comp_tdk_ntcg163jf103ft1[] = {
+	{ -25, 86560 },
+	{ -15, 53460 },
+	{ -5, 33930 },
+	{ 5, 22070 },
+	{ 15, 14700 },
+	{ 25, 10000 },
+	{ 35, 6942 },
+	{ 45, 4911 },
+	{ 55, 3536 },
+	{ 65, 2588 },
+	{ 75, 1924 },
+	{ 85, 1451 },
+	{ 95, 1110 },
+	{ 105, 860 },
+	{ 115, 674 },
+	{ 125, 534 },
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
+				  comp_tdk_ntcg163jf103ft1)
