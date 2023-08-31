@@ -817,10 +817,10 @@ Release Notes:
 "Drivers: DAI":
   status: maintained
   maintainers:
-    - juimonen
+    - kv2019i
   collaborators:
     - lgirdwood
-    - kv2019i
+    - juimonen
   files:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
