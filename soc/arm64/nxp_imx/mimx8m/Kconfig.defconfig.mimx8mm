@@ -1,10 +1,10 @@
-# Copyright 2020-2022 NXP
+# Copyright 2020-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_MIMX8MM_A53
 
 config SOC
-	default "mimx8mm6"
+	default "mimx8mm6_ca53"
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
