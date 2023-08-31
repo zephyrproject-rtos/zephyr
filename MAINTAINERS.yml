@@ -899,9 +899,7 @@ Release Notes:
     - "area: eSPI"
 
 "Drivers: Ethernet":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1034,12 +1032,11 @@ Release Notes:
 "Drivers: IEEE 802.15.4":
   status: maintained
   maintainers:
-    - tbursztyka
+    - fgrandel
   collaborators:
     - rlubos
     - jciupis
     - cfriedt
-    - fgrandel
     - jukkar
   files:
     - drivers/ieee802154/
@@ -1424,7 +1421,6 @@ Release Notes:
 "Drivers: Wi-Fi":
   status: maintained
   maintainers:
-    - tbursztyka
     - jukkar
   collaborators:
     - rlubos
