@@ -1124,6 +1124,29 @@ static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 	return 0;
 }
 
+/**
+ * @brief Helper function for converting int32_t to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ */
+static inline void sensor_value_from_int32(struct sensor_value *val, int32_t inp)
+{
+	val->val1 = inp;
+	val->val2 = 0;
+}
+
+/**
+ * @brief Helper function for converting struct sensor_value to int32_t.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline int32_t sensor_value_to_int32(struct sensor_value *val)
+{
+	return val->val1;
+}
+
 #ifdef CONFIG_SENSOR_INFO
 
 struct sensor_info {
