@@ -1,0 +1,14 @@
+sample:
+  description: Hello World sample from external flash
+    application
+  name: hello world xip
+tests:
+  sample.boards.st.hello_world_xip:
+    tags: introduction
+    sysbuild: true
+    extra_args:
+      - SB_CONFIG_BOOTLOADER_MCUBOOT=y
+    integration_platforms:
+      - stm32h573i_dk
+    platform_allow:
+      - stm32h573i_dk
