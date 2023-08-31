@@ -452,7 +452,7 @@ History Feature
 
 This feature enables commands history in the shell. It is activated by:
 :kconfig:option:`CONFIG_SHELL_HISTORY` set to ``y``. History can be accessed
-using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl + n` and :kbd:`Ctrl + p`
+using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl+n` and :kbd:`Ctrl+p`
 if meta keys are active.
 Number of commands that can be stored depends on size
 of :kconfig:option:`CONFIG_SHELL_HISTORY_BUFFER` parameter.
@@ -486,36 +486,36 @@ The shell module supports the following meta keys:
 
    * - Meta keys
      - Action
-   * - :kbd:`Ctrl + a`
+   * - :kbd:`Ctrl+a`
      - Moves the cursor to the beginning of the line.
-   * - :kbd:`Ctrl + b`
+   * - :kbd:`Ctrl+b`
      - Moves the cursor backward one character.
-   * - :kbd:`Ctrl + c`
+   * - :kbd:`Ctrl+c`
      - Preserves the last command on the screen and starts a new command in
        a new line.
-   * - :kbd:`Ctrl + d`
+   * - :kbd:`Ctrl+d`
      - Deletes the character under the cursor.
-   * - :kbd:`Ctrl + e`
+   * - :kbd:`Ctrl+e`
      - Moves the cursor to the end of the line.
-   * - :kbd:`Ctrl + f`
+   * - :kbd:`Ctrl+f`
      - Moves the cursor forward one character.
-   * - :kbd:`Ctrl + k`
+   * - :kbd:`Ctrl+k`
      - Deletes from the cursor to the end of the line.
-   * - :kbd:`Ctrl + l`
+   * - :kbd:`Ctrl+l`
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
-   * - :kbd:`Ctrl + n`
+   * - :kbd:`Ctrl+n`
      - Moves in history to next entry.
-   * - :kbd:`Ctrl + p`
+   * - :kbd:`Ctrl+p`
      - Moves in history to previous entry.
-   * - :kbd:`Ctrl + u`
+   * - :kbd:`Ctrl+u`
      - Clears the currently typed command.
-   * - :kbd:`Ctrl + w`
+   * - :kbd:`Ctrl+w`
      - Removes the word or part of the word to the left of the cursor. Words
        separated by period instead of space are treated as one word.
-   * - :kbd:`Alt + b`
+   * - :kbd:`Alt+b`
      - Moves the cursor backward one word.
-   * - :kbd:`Alt + f`
+   * - :kbd:`Alt+f`
      - Moves the cursor forward one word.
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_METAKEYS` set to ``y``.
