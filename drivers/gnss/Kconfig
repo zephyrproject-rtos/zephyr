@@ -41,6 +41,12 @@ config GNSS_PARSE
 	help
 	  Enable GNSS parsing utilities.
 
+config GNSS_NMEA0183
+	bool "NMEA0183 parsing utilities"
+	select GNSS_PARSE
+	help
+	  Enable NMEA0183 parsing utilities.
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
