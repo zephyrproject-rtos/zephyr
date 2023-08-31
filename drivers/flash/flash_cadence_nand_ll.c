@@ -184,14 +184,13 @@ static int cdns_nand_pio_set_features(uintptr_t base_address, uint8_t feat_addr,
 static int cdns_pio_transfer_complete(uintptr_t base_address, uint8_t thread)
 {
 	uint32_t status;
-#ifndef CONFIG_CDNS_NAND_INTERRUPT_SUPPORT
 
 	if (!WAIT_FOR(((cdns_nand_get_thrd_status(base_address, thread)) != 0), IDLE_TIME_OUT,
 		      k_msleep(1))) {
 		LOG_ERR("Timed out waiting for thread status response");
 		return -ETIMEDOUT;
 	}
-#endif
+
 	status = cdns_nand_get_thrd_status(base_address, thread);
 	if ((status & (BIT(F_CSTAT_COMP)))) {
 		if ((status & (BIT(F_CSTAT_FAIL)))) {
