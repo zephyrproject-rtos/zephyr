@@ -163,21 +163,28 @@ static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 	return 0;
 }
 
+int bmi270_init_kernel_objects(const struct device *dev)
+{
+#if CONFIG_BMI270_TRIGGER_OWN_THREAD
+	struct bmi270_data *data = dev->data;
+
+	k_sem_init(&data->trig_sem, 0, 1);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_BMI270_THREAD_STACK_SIZE,
+			(k_thread_entry_t)bmi270_thread, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY), 0, K_NO_WAIT);
+#elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
+	struct bmi270_data *data = dev->data;
+
+	k_work_init(&data->trig_work, bmi270_trig_work_cb);
+#endif
+	return 0;
+}
 
 int bmi270_init_interrupts(const struct device *dev)
 {
 	const struct bmi270_config *cfg = dev->config;
 	struct bmi270_data *data = dev->data;
 	int ret;
-
-#if CONFIG_BMI270_TRIGGER_OWN_THREAD
-	k_sem_init(&data->trig_sem, 0, 1);
-	k_thread_create(&data->thread, data->thread_stack, CONFIG_BMI270_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bmi270_thread, data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY), 0, K_NO_WAIT);
-#elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
-	k_work_init(&data->trig_work, bmi270_trig_work_cb);
-#endif
 
 	ret = bmi270_init_int_pin(&cfg->int1, &data->int1_cb,
 				  bmi270_int1_callback);
@@ -281,32 +288,53 @@ int bmi270_trigger_set(const struct device *dev,
 {
 	struct bmi270_data *data = dev->data;
 	const struct bmi270_config *cfg = dev->config;
+	int ret = 0;
 
 	switch (trig->type) {
 	case SENSOR_TRIG_MOTION:
 		if (!cfg->int1.port) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		k_mutex_lock(&data->trigger_mutex, K_FOREVER);
 		data->motion_handler = handler;
 		data->motion_trigger = trig;
 		k_mutex_unlock(&data->trigger_mutex);
-		return bmi270_anymo_config(dev, handler != NULL);
+		ret = bmi270_anymo_config(dev, handler != NULL);
+		break;
 
 	case SENSOR_TRIG_DATA_READY:
 		if (!cfg->int2.port) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		k_mutex_lock(&data->trigger_mutex, K_FOREVER);
 		data->drdy_handler = handler;
 		data->drdy_trigger = trig;
 		k_mutex_unlock(&data->trigger_mutex);
-		return bmi270_drdy_config(dev, handler != NULL);
+		ret = bmi270_drdy_config(dev, handler != NULL);
+		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		break;
 	}
 
-	return 0;
+	if (ret) {
+		return ret;
+	}
+
+	/* claim the device for PM_DEVICE_RUNTIME if triggers are configured */
+	bool enable = (data->motion_handler || data->drdy_handler);
+
+	if (data->pm_device_is_claimed == enable) {
+		return 0;
+	}
+
+	ret = enable ? pm_device_runtime_get(dev) : pm_device_runtime_put(dev);
+	if (!ret) {
+		data->pm_device_is_claimed = enable;
+	}
+	return ret;
 }

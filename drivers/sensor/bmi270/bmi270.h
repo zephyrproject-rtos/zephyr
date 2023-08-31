@@ -18,6 +18,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device_runtime.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
@@ -274,6 +275,7 @@ struct bmi270_data {
 	atomic_t int_flags;
 	uint16_t anymo_1;
 	uint16_t anymo_2;
+	bool pm_device_is_claimed;
 
 #if CONFIG_BMI270_TRIGGER_OWN_THREAD
 	struct k_sem trig_sem;
@@ -365,6 +367,7 @@ int bmi270_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler);
 
 int bmi270_init_interrupts(const struct device *dev);
+int bmi270_init_kernel_objects(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

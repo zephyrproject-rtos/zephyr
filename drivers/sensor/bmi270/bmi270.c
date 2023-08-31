@@ -11,6 +11,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
@@ -492,6 +494,10 @@ static int bmi270_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return -ENOTSUP;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret) {
+		return ret;
+	}
 	ret = bmi270_reg_read(dev, BMI270_REG_ACC_X_LSB, buf, 12);
 	if (ret == 0) {
 		data->ax = (int16_t)sys_get_le16(&buf[0]);
@@ -509,7 +515,7 @@ static int bmi270_sample_fetch(const struct device *dev, enum sensor_channel cha
 		data->gz = 0;
 	}
 
-	return ret;
+	return pm_device_runtime_put(dev);
 }
 
 static int bmi270_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -641,9 +647,9 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static int bmi270_init(const struct device *dev)
+static int bmi270_init_chip(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	struct bmi270_data *data = dev->data;
 	uint8_t chip_id;
 	uint8_t soft_reset_cmd;
@@ -651,13 +657,6 @@ static int bmi270_init(const struct device *dev)
 	uint8_t msg;
 	uint8_t tries;
 	uint8_t adv_pwr_save;
-
-	ret = bmi270_bus_check(dev);
-	if (ret < 0) {
-		LOG_ERR("Could not initialize bus");
-		return ret;
-	}
-
 #if CONFIG_BMI270_TRIGGER
 	data->dev = dev;
 	k_mutex_init(&data->trigger_mutex);
@@ -797,6 +796,60 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 		&bmi270_feature_base :					\
 		&bmi270_feature_max_fifo)
 
+int bmi270_pm(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+	const uint8_t soft_reset_cmd = BMI270_CMD_SOFT_RESET;
+	struct bmi270_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Do nothing */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* (Re-)initialize the chip */
+		ret = bmi270_init_chip(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Put the chip into default low-power mode */
+		ret = bmi270_reg_write(dev, BMI270_REG_CMD, &soft_reset_cmd, 1);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* De-init triggers */
+#if CONFIG_BMI270_TRIGGER
+		data->motion_handler = NULL;
+		data->motion_trigger = NULL;
+		data->drdy_handler = NULL;
+		data->drdy_trigger = NULL;
+#else
+		ARG_UNUSED(data);
+#endif
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
+static int bmi270_init(const struct device *dev)
+{
+	int ret;
+
+
+	ret = bmi270_bus_check(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not initialize bus");
+		return ret;
+	}
+
+#if CONFIG_BMI270_TRIGGER
+	bmi270_init_kernel_objects(dev);
+#endif
+
+	return pm_device_driver_init(dev, bmi270_pm);
+}
+
 #if CONFIG_BMI270_TRIGGER
 #define BMI270_CONFIG_INT(inst) \
 	.int1 = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, irq_gpios, 0, {}),\
@@ -817,7 +870,7 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.bus_io = &bmi270_bus_io_i2c,
 
 #define BMI270_CREATE_INST(inst)					\
-									\
+	PM_DEVICE_DT_INST_DEFINE(inst, bmi270_pm);			\
 	static struct bmi270_data bmi270_drv_##inst;			\
 									\
 	static const struct bmi270_config bmi270_config_##inst = {	\
@@ -830,7 +883,7 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 									\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      bmi270_init,				\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(inst),		\
 			      &bmi270_drv_##inst,			\
 			      &bmi270_config_##inst,			\
 			      POST_KERNEL,				\
