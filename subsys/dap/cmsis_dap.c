@@ -638,6 +638,52 @@ static uint16_t dap_transfer(struct dap_context *const ctx,
 	return retval;
 }
 
+static uint16_t dap_swdp_sequence(struct dap_context *const ctx,
+				  const uint8_t *const request,
+				  uint8_t *const response)
+{
+	const struct swdp_api *api = ctx->swdp_dev->api;
+	const uint8_t *request_data = request + 1;
+	uint8_t *response_data = response + 1;
+	uint8_t count = request[0];
+	uint8_t num_cycles;
+	uint32_t num_bytes;
+	bool input;
+
+	switch (ctx->debug_port) {
+	case DAP_PORT_SWD:
+		response[0] = DAP_OK;
+		break;
+	case DAP_PORT_JTAG:
+	default:
+		LOG_ERR("port unsupported");
+		response[0] = DAP_ERROR;
+		return 1U;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		input = *request_data & BIT(7);
+		num_cycles = *request_data & BIT_MASK(7);
+		num_bytes = (num_cycles + 7) >> 3; /* rounded up to full bytes */
+
+		if (num_cycles == 0) {
+			num_cycles = 64;
+		}
+
+		request_data += 1;
+
+		if (input) {
+			api->swdp_input_sequence(ctx->swdp_dev, num_cycles, response_data);
+			response_data += num_bytes;
+		} else {
+			api->swdp_output_sequence(ctx->swdp_dev, num_cycles, request_data);
+			request_data += num_bytes;
+		}
+	}
+
+	return response_data - response;
+}
+
 /*
  * Process SWD DAP_TransferBlock command and prepare response.
  * pyOCD counterpart is _encode_transfer_block_data.
@@ -864,6 +910,9 @@ static uint16_t dap_process_cmd(struct dap_context *const ctx,
 		break;
 	case ID_DAP_SWDP_CONFIGURE:
 		retval = dap_swdp_configure(ctx, request, response);
+		break;
+	case ID_DAP_SWDP_SEQUENCE:
+		retval = dap_swdp_sequence(ctx, request, response);
 		break;
 	case ID_DAP_JTAG_SEQUENCE:
 		LOG_ERR("JTAG sequence unsupported");
