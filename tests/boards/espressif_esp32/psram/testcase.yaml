@@ -1,0 +1,9 @@
+tests:
+  boards.esp32.psram:
+    platform_allow:
+      - esp32_devkitc_wrover
+      - esp32s2_saola
+      - esp32s3_devkitm
+    tags:
+      - spiram
+      - cache
