@@ -421,7 +421,7 @@ static void broadcast_source_create_inval(void)
 
 	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
 
-	qos.framing = BT_AUDIO_CODEC_QOS_FRAMED + 1;
+	qos.framing = BT_AUDIO_CODEC_QOS_FRAMING_FRAMED + 1;
 
 	printk("Test bt_bap_broadcast_source_create with qos.framing 0x%02X\n", qos.framing);
 	err = bt_bap_broadcast_source_create(&create_param, &broadcast_sources[0]);
@@ -851,7 +851,7 @@ static void test_broadcast_source_reconfig_inval(struct bt_bap_broadcast_source 
 
 	memcpy(&qos, &preset_16_2_1.qos, sizeof(preset_16_2_1.qos));
 
-	qos.framing = BT_AUDIO_CODEC_QOS_FRAMED + 1;
+	qos.framing = BT_AUDIO_CODEC_QOS_FRAMING_FRAMED + 1;
 
 	printk("Test bt_bap_broadcast_source_reconfig with qos.framing %u\n", qos.framing);
 	err = bt_bap_broadcast_source_reconfig(source, &preset_16_2_1.codec_cfg, &qos);
