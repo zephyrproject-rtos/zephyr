@@ -175,7 +175,7 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
 	} else {
-		LOG_WRN("No callback for connected set");
+		LOG_WRN("No callback for started set");
 	}
 }
 
@@ -884,13 +884,18 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 			     sizeof(param.bcode));
 	}
 
+	/* Set the enabling state early in case that the BIS is connected before we can manage to
+	 * set it afterwards
+	 */
+	broadcast_source_set_state(source, BT_BAP_EP_STATE_ENABLING);
+
 	err = bt_iso_big_create(adv, &param, &source->big);
 	if (err != 0) {
 		LOG_DBG("Failed to create BIG: %d", err);
+		broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
+
 		return err;
 	}
-
-	broadcast_source_set_state(source, BT_BAP_EP_STATE_ENABLING);
 
 	return 0;
 }
