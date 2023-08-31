@@ -82,6 +82,7 @@ extensions = [
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
+    "zephyr.manifest_projects_table",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
@@ -171,6 +172,7 @@ html_context = {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
+        "West Projects": f"{reference_prefix}/develop/projects/index.html",
     }
 }
 
@@ -292,6 +294,7 @@ external_content_contents = [
 ]
 external_content_keep = [
     "reference/kconfig/*",
+    "develop/manifest/index.rst",
     "build/dts/api/bindings.rst",
     "build/dts/api/bindings/**/*",
     "build/dts/api/compatibles/**/*",
