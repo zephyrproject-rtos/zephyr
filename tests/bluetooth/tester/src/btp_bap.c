@@ -1218,7 +1218,7 @@ static int client_create_unicast_group(struct audio_connection *audio_conn, uint
 	 * in the right order.
 	 */
 	for (uint8_t i = 0; i < cig_id; i++) {
-		if (cigs[cig_id] == NULL) {
+		if (cigs[i] == NULL) {
 			return -EINVAL;
 		}
 	}
