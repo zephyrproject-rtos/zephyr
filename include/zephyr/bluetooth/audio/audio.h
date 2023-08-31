@@ -398,16 +398,16 @@ enum bt_audio_dir {
  *  @param _latency Maximum Transport Latency (msec)
  *  @param _pd Presentation Delay (usec)
  */
-#define BT_AUDIO_CODEC_QOS(_interval, _framing, _phy, _sdu, _rtn, _latency, _pd) \
-	{ \
-		.interval = _interval, \
-		.framing = _framing, \
-		.phy = _phy, \
-		.sdu = _sdu, \
-		.rtn = _rtn, \
-		.latency = _latency, \
-		.pd = _pd, \
-	}
+#define BT_AUDIO_CODEC_QOS(_interval, _framing, _phy, _sdu, _rtn, _latency, _pd)                   \
+	((struct bt_audio_codec_qos){                                                              \
+		.interval = _interval,                                                             \
+		.framing = _framing,                                                               \
+		.phy = _phy,                                                                       \
+		.sdu = _sdu,                                                                       \
+		.rtn = _rtn,                                                                       \
+		.latency = _latency,                                                               \
+		.pd = _pd,                                                                         \
+	})
 
 /** @brief Codec QoS Framing */
 enum bt_audio_codec_qos_framing {
