@@ -54,7 +54,7 @@ NSI_OBJCOPY?=objcopy
 NSI_DEBUG?=-g
 #  Build optimization level (by default disabled to ease debugging)
 NSI_OPT?=-O0
-#  Warnings swtiches (for the runner itself)
+#  Warnings switches (for the runner itself)
 NSI_WARNINGS?=-Wall -Wpedantic
 #  Preprocessor flags
 NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
