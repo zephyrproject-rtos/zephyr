@@ -16,6 +16,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 
@@ -215,12 +217,18 @@ static int bme680_sample_fetch(const struct device *dev,
 	uint16_t adc_hum, adc_gas_res;
 	int size = BME680_LEN_FIELD;
 	int ret;
+	int pm_err;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
+	ret = pm_device_runtime_get(dev);
+	if (ret) {
+		return ret;
+	}
+
 	ret = bme680_reg_read(dev, BME680_REG_FIELD0, buff, size);
 	if (ret < 0) {
-		return ret;
+		goto exit;
 	}
 
 	data->new_data = buff[0] & BME680_MSK_NEW_DATA;
@@ -244,11 +252,15 @@ static int bme680_sample_fetch(const struct device *dev,
 	/* Trigger the next measurement */
 	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
 			       BME680_CTRL_MEAS_VAL);
-	if (ret < 0) {
-		return ret;
+
+exit:
+	pm_err = pm_device_runtime_put(dev);
+
+	if (pm_err < 0) {
+		return pm_err;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int bme680_channel_get(const struct device *dev,
@@ -359,16 +371,10 @@ static int bme680_read_compensation(const struct device *dev)
 	return 0;
 }
 
-static int bme680_init(const struct device *dev)
+static int bme680_init_chip(const struct device *dev)
 {
 	struct bme680_data *data = dev->data;
 	int err;
-
-	err = bme680_bus_check(dev);
-	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
-		return err;
-	}
 
 #if BME680_BUS_SPI
 	if (bme680_is_on_spi(dev)) {
@@ -439,6 +445,48 @@ static const struct sensor_driver_api bme680_api_funcs = {
 	.channel_get = bme680_channel_get,
 };
 
+static int bme680_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Do nothing */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-initialize the chip */
+		ret = bme680_init_chip(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Put the chip into sleep mode */
+		ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
+			BME680_PRESS_OVER | BME680_TEMP_OVER | BME680_MODE_SLEEP);
+
+		if (ret < 0) {
+			LOG_DBG("CTRL_MEAS write failed: %d", ret);
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* Do nothing */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
+static int bme680_init(const struct device *dev)
+{
+	int err = bme680_bus_check(dev);
+
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+	}
+	return pm_device_driver_init(dev, bme680_pm_action);
+}
+
 /* Initializes a struct bme680_config for an instance on a SPI bus. */
 #define BME680_CONFIG_SPI(inst)				\
 	{						\
@@ -464,9 +512,12 @@ static const struct sensor_driver_api bme680_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\
 			    (BME680_CONFIG_I2C(inst)));			\
+									\
+	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_action);		\
+									\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			 bme680_init,					\
-			 NULL,						\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme680_data_##inst,				\
 			 &bme680_config_##inst,				\
 			 POST_KERNEL,					\
