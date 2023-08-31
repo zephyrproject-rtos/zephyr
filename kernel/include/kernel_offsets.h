@@ -78,7 +78,7 @@ GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_HANDLES_OFFSET,
 		 offsetof(struct device, deps));
 #endif
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_PM_OFFSET,
 		 offsetof(struct device, pm));
 #endif

@@ -399,10 +399,11 @@ struct device {
 	 */
 	Z_DEVICE_DEPS_CONST device_handle_t *deps;
 #endif /* CONFIG_DEVICE_DEPS */
-#if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 	/**
 	 * Reference to the device PM resources (only available if
-	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
+	 * @kconfig{CONFIG_PM_DEVICE} or @kconfig{CONFIG_PM_DEVICE_RUNTIME} is
+	 * enabled).
 	 */
 	struct pm_device *pm;
 #endif
@@ -876,6 +877,12 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(name)) <= Z_DEVICE_MAX_NAME_LEN,       \
 			    Z_STRINGIFY(DEVICE_NAME_GET(name)) " too long")
 
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME)
+#define Z_DEVICE_PM_INIT(pm_) .pm = (pm_),
+#else
+#define Z_DEVICE_PM_INIT(pm_)
+#endif /* CONFIG_PM_DEVICE || CONFIG_PM_DEVICE_RUNTIME */
+
 /**
  * @brief Initializer for @ref device.
  *
@@ -894,8 +901,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.api = (api_),                                                 \
 		.state = (state_),                                             \
 		.data = (data_),                                               \
+		Z_DEVICE_PM_INIT(pm_) /**/                                     \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
-		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
 	}
 
 /**
