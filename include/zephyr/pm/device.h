@@ -369,56 +369,6 @@ void pm_device_children_action_run(const struct device *dev,
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
- * @brief Obtain the power state of a device.
- *
- * @param dev Device instance.
- * @param state Pointer where device power state will be stored.
- *
- * @retval 0 If successful.
- * @retval -ENOSYS If device does not implement power management.
- */
-int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *state);
-
-/**
- * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
- *
- * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. However
- * in order to save power some drivers may choose to only initialize the device
- * to the suspended state, or actively put the device into the suspended state.
- * This function can therefore be used to notify the PM subsystem that the
- * device is in #PM_DEVICE_STATE_SUSPENDED instead of the default.
- *
- * @param dev Device instance.
- */
-static inline void pm_device_init_suspended(const struct device *dev)
-{
-	struct pm_device *pm = dev->pm;
-
-	pm->state = PM_DEVICE_STATE_SUSPENDED;
-}
-
-/**
- * @brief Initialize a device state to #PM_DEVICE_STATE_OFF.
- *
- * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. In
- * general, this makes sense because the device initialization function will
- * resume and configure a device, leaving it operational. However, when power
- * domains are enabled, the device may be connected to a switchable power
- * source, in which case it won't be powered at boot. This function can
- * therefore be used to notify the PM subsystem that the device is in
- * #PM_DEVICE_STATE_OFF instead of the default.
- *
- * @param dev Device instance.
- */
-static inline void pm_device_init_off(const struct device *dev)
-{
-	struct pm_device *pm = dev->pm;
-
-	pm->state = PM_DEVICE_STATE_OFF;
-}
-
-/**
  * @brief Mark a device as busy.
  *
  * Devices marked as busy will not be suspended when the system goes into
@@ -493,42 +443,100 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
 
+#else
+
+static inline void pm_device_busy_set(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void pm_device_busy_clear(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline bool pm_device_is_any_busy(void)
+{
+	return false;
+}
+
+static inline bool pm_device_is_busy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+
+static inline bool pm_device_wakeup_enable(const struct device *dev,
+					   bool enable)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+	return false;
+}
+
+static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+
+static inline bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 /**
- * @brief Lock current device state.
- *
- * This function locks the current device power state. Once
- * locked the device power state will not be changed by
- * system power management or device runtime power
- * management until unlocked.
- *
- * @note The given device should not have device runtime enabled.
- *
- * @see pm_device_state_unlock
+ * @brief Obtain the power state of a device.
  *
  * @param dev Device instance.
+ * @param state Pointer where device power state will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If device does not implement power management.
  */
-void pm_device_state_lock(const struct device *dev);
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *state);
 
 /**
- * @brief Unlock the current device state.
+ * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
  *
- * Unlocks a previously locked device pm.
- *
- * @see pm_device_state_lock
+ * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. However
+ * in order to save power some drivers may choose to only initialize the device
+ * to the suspended state, or actively put the device into the suspended state.
+ * This function can therefore be used to notify the PM subsystem that the
+ * device is in #PM_DEVICE_STATE_SUSPENDED instead of the default.
  *
  * @param dev Device instance.
  */
-void pm_device_state_unlock(const struct device *dev);
+static inline void pm_device_init_suspended(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	pm->state = PM_DEVICE_STATE_SUSPENDED;
+}
 
 /**
- * @brief Check if the device pm is locked.
+ * @brief Initialize a device state to #PM_DEVICE_STATE_OFF.
+ *
+ * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. In
+ * general, this makes sense because the device initialization function will
+ * resume and configure a device, leaving it operational. However, when power
+ * domains are enabled, the device may be connected to a switchable power
+ * source, in which case it won't be powered at boot. This function can
+ * therefore be used to notify the PM subsystem that the device is in
+ * #PM_DEVICE_STATE_OFF instead of the default.
  *
  * @param dev Device instance.
- *
- * @retval true If device is locked.
- * @retval false If device is not locked.
  */
-bool pm_device_state_is_locked(const struct device *dev);
+static inline void pm_device_init_off(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	pm->state = PM_DEVICE_STATE_OFF;
+}
 
 /**
  * @brief Check if the device is on a switchable power domain.
@@ -597,7 +605,45 @@ bool pm_device_is_powered(const struct device *dev);
  */
 int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb);
 
+/**
+ * @brief Lock current device state.
+ *
+ * This function locks the current device power state. Once
+ * locked the device power state will not be changed by
+ * system power management or device runtime power
+ * management until unlocked.
+ *
+ * @note The given device should not have device runtime enabled.
+ *
+ * @see pm_device_state_unlock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_lock(const struct device *dev);
+
+/**
+ * @brief Unlock the current device state.
+ *
+ * Unlocks a previously locked device pm.
+ *
+ * @see pm_device_state_lock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_unlock(const struct device *dev);
+
+/**
+ * @brief Check if the device pm is locked.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device is locked.
+ * @retval false If device is not locked.
+ */
+bool pm_device_state_is_locked(const struct device *dev);
+
 #else
+
 static inline int pm_device_state_get(const struct device *dev,
 				      enum pm_device_state *state)
 {
@@ -616,50 +662,7 @@ static inline void pm_device_init_off(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
-static inline void pm_device_busy_set(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline void pm_device_busy_clear(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline bool pm_device_is_any_busy(void) { return false; }
-static inline bool pm_device_is_busy(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
-static inline bool pm_device_wakeup_enable(const struct device *dev,
-					   bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-	return false;
-}
-static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
-static inline bool pm_device_wakeup_is_capable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
-static inline void pm_device_state_lock(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline void pm_device_state_unlock(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-static inline bool pm_device_state_is_locked(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return false;
-}
+
 static inline bool pm_device_on_power_domain(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -700,7 +703,23 @@ static inline int pm_device_driver_init(const struct device *dev, pm_device_acti
 	return rc;
 }
 
-#endif /* CONFIG_PM_DEVICE */
+static inline void pm_device_state_lock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void pm_device_state_unlock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline bool pm_device_state_is_locked(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
+
+#endif /* CONFIG_PM_DEVICE || CONFIG_PM_DEVICE_RUNTIME */
 
 /** @} */
 

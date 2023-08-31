@@ -222,6 +222,8 @@ int pm_device_state_get(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+
 bool pm_device_is_any_busy(void)
 {
 	const struct device *devs;
@@ -325,6 +327,8 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
+
+#endif /* CONFIG_PM_DEVICE */
 
 void pm_device_state_lock(const struct device *dev)
 {
