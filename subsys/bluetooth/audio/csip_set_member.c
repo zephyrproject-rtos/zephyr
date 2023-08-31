@@ -39,6 +39,27 @@
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
+enum {
+	FLAG_ACTIVE,
+	FLAG_SET_MEMBER_LOCK,
+	FLAG_NUM,
+};
+
+struct csip_client {
+	bt_addr_le_t addr;
+
+/* Since there's a 1-to-1 connection between bonded devices, and devices in
+ * the array containing this struct, if the security manager overwrites
+ * the oldest keys, we also overwrite the oldest entry
+ */
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+	uint32_t age;
+#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+
+	/* Pending notification flags */
+	ATOMIC_DEFINE(flags, FLAG_NUM);
+};
+
 struct bt_csip_set_member_svc_inst {
 	struct bt_csip_set_sirk set_sirk;
 	uint8_t set_size;
@@ -48,7 +69,7 @@ struct bt_csip_set_member_svc_inst {
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
-	struct csip_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
+	struct csip_client clients[CONFIG_BT_MAX_PAIRED];
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -95,14 +116,14 @@ static void notify_client(struct bt_conn *conn, void *data)
 
 	notify_lock_value(svc_inst, conn);
 
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (pend_notify->pending &&
-		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
-			pend_notify->pending = false;
+		if (atomic_test_bit(client->flags, FLAG_SET_MEMBER_LOCK) &&
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
+			atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
 			break;
 		}
 	}
@@ -119,18 +140,18 @@ static void notify_clients(struct bt_csip_set_member_svc_inst *svc_inst,
 	/* Mark all bonded devices as pending notifications, and clear those
 	 * that are notified in `notify_client`
 	 */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (pend_notify->active) {
+		if (atomic_test_bit(client->flags, FLAG_ACTIVE)) {
 			if (excluded_client != NULL &&
-			    bt_addr_le_eq(bt_conn_get_dst(excluded_client), &pend_notify->addr)) {
+			    bt_addr_le_eq(bt_conn_get_dst(excluded_client), &client->addr)) {
 				continue;
 			}
 
-			pend_notify->pending = true;
+			atomic_set_bit(client->flags, FLAG_SET_MEMBER_LOCK);
 		}
 	}
 
@@ -474,15 +495,15 @@ static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
-		for (int j = 0; j < ARRAY_SIZE(svc_inst->pend_notify); j++) {
-			struct csip_pending_notifications *pend_notify;
+		for (int j = 0; j < ARRAY_SIZE(svc_inst->clients); j++) {
+			struct csip_client *client;
 
-			pend_notify = &svc_inst->pend_notify[j];
+			client = &svc_inst->clients[i];
 
-			if (pend_notify->pending &&
-			    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
+			if (atomic_test_bit(client->flags, FLAG_SET_MEMBER_LOCK) &&
+			    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
 				notify_lock_value(svc_inst, conn);
-				pend_notify->pending = false;
+				atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
 				break;
 			}
 		}
@@ -509,13 +530,13 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 	/* Check if the disconnected device once was bonded and stored
 	 * here as a bonded device
 	 */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
-			(void)memset(pend_notify, 0, sizeof(*pend_notify));
+		if (bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
+			(void)memset(client, 0, sizeof(*client));
 			break;
 		}
 	}
@@ -536,54 +557,54 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 				      struct bt_conn *conn)
 {
 	/* Check if already in list, and do nothing if it is */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (pend_notify->active &&
-		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
+		if (atomic_test_bit(client->flags, FLAG_ACTIVE) &&
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			pend_notify->age = svc_inst->age_counter++;
+			client->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
 	}
 
-	/* Copy addr to list over devices to save notifications for */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	/* Else add the device */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (!pend_notify->active) {
-			bt_addr_le_copy(&pend_notify->addr,
-					bt_conn_get_dst(conn));
-			pend_notify->active = true;
+		if (!atomic_test_bit(client->flags, FLAG_ACTIVE)) {
+			atomic_set_bit(client->flags, FLAG_ACTIVE);
+			memcpy(&client->addr, bt_conn_get_dst(conn), sizeof(bt_addr_le_t));
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			pend_notify->age = svc_inst->age_counter++;
+			client->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+
 			return;
 		}
 	}
 
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-	struct csip_pending_notifications *oldest;
+	struct csip_client *oldest;
 
-	oldest = &svc_inst->pend_notify[0];
+	oldest = &svc_inst->clients[0];
 
-	for (int i = 1; i < ARRAY_SIZE(svc_inst->pend_notify); i++) {
-		struct csip_pending_notifications *pend_notify;
+	for (int i = 1; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
 
-		pend_notify = &svc_inst->pend_notify[i];
+		client = &svc_inst->clients[i];
 
-		if (pend_notify->age < oldest->age) {
-			oldest = pend_notify;
+		if (client->age < oldest->age) {
+			oldest = client;
 		}
 	}
 	(void)memset(oldest, 0, sizeof(*oldest));
 	bt_addr_le_copy(&oldest->addr, &conn->le.dst);
-	oldest->active = true;
+	atomic_set_bit(client->flags, FLAG_ACTIVE);
 	oldest->age = svc_inst->age_counter++;
 #else
 	LOG_WRN("Could not add device to pending notification list");
@@ -596,9 +617,9 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 	/**
 	 * If a pairing is complete for a bonded device, then we
 	 * 1) Store the connection pointer to later validate SIRK encryption
-	 * 2) Check if the device is already in the `pend_notify`, and if it is
+	 * 2) Check if the device is already in the `clients`, and if it is
 	 * not, then we
-	 * 3) Check if there's room for another device in the `pend_notify`
+	 * 3) Check if there's room for another device in the `clients`
 	 *    array. If there are no more room for a new device, then
 	 * 4) Either we ignore this new device (bad luck), or we overwrite
 	 *    the oldest entry, following the behavior of the key storage.
@@ -621,15 +642,13 @@ static void csip_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
-		for (int j = 0; j < ARRAY_SIZE(svc_inst->pend_notify); j++) {
-			struct csip_pending_notifications *pend_notify;
+		for (int j = 0; j < ARRAY_SIZE(svc_inst->clients); j++) {
 
-			pend_notify = &svc_inst->pend_notify[j];
-
-			if (pend_notify->active &&
-			    bt_addr_le_eq(peer, &pend_notify->addr)) {
-				(void)memset(pend_notify, 0,
-					     sizeof(*pend_notify));
+			/* Check if match, and if active, if so, reset */
+			if (atomic_test_bit(svc_inst->clients[i].flags, FLAG_ACTIVE) &&
+			bt_addr_le_eq(peer, &svc_inst->clients[i].addr)) {
+				atomic_clear(svc_inst->clients[i].flags);
+				(void)memset(&svc_inst->clients[i].addr, 0, sizeof(bt_addr_le_t));
 				break;
 			}
 		}
