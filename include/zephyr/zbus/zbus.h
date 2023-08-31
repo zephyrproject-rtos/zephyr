@@ -342,7 +342,8 @@ k_timeout_t _zbus_timeout_remainder(uint64_t end_ticks);
  *
  * This macro defines an observer of subscriber type. It defines a message queue where the
  * subscriber will receive the notification asynchronously, and initialize the ``struct
- * zbus_observer`` defining the subscriber.
+ * zbus_observer`` defining the subscriber. The subscribers are defined in the enabled
+ * state with this macro.
  *
  * @param[in] _name The subscriber's name.
  * @param[in] _queue_size The notification queue's size.
@@ -371,7 +372,7 @@ k_timeout_t _zbus_timeout_remainder(uint64_t end_ticks);
  *
  * This macro defines an observer of listener type. This macro establishes the callback where the
  * listener will be notified synchronously and initialize the ``struct zbus_observer`` defining the
- * listener. The listeners are defined in the disabled state with this macro.
+ * listener. The listeners are defined in the enabled state with this macro.
  *
  * @param[in] _name The listener's name.
  * @param[in] _cb The callback function.
