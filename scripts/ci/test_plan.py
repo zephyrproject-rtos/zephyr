@@ -167,7 +167,7 @@ class Filters:
 
 
     def find_archs(self):
-        # we match both arch/<arch>/* and include/arch/<arch> and skip common.
+        # we match both arch/<arch>/* and include/zephyr/arch/<arch> and skip common.
         # Some architectures like riscv require special handling, i.e. riscv
         # directory covers 2 architectures known to twister: riscv32 and riscv64.
         archs = set()
@@ -175,7 +175,7 @@ class Filters:
         for f in self.modified_files:
             p = re.match(r"^arch\/([^/]+)\/", f)
             if not p:
-                p = re.match(r"^include\/arch\/([^/]+)\/", f)
+                p = re.match(r"^include\/zephyr\/arch\/([^/]+)\/", f)
             if p:
                 if p.group(1) != 'common':
                     if p.group(1) == 'riscv':
