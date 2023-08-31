@@ -16,7 +16,6 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
@@ -45,10 +44,7 @@
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
 		};
-		slot1_partition: partition@78000 {
-			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
-		};
+
 		scratch_partition: partition@e0000 {
 			label = "image-scratch";
 			reg = <0x000e0000 DT_SIZE_K(64)>;
