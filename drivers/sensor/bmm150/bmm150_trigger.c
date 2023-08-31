@@ -67,6 +67,13 @@ static void bmm150_gpio_callback(const struct device *port,
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
 
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(data->dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return;
+	}
+
 #if defined(CONFIG_BMM150_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->sem);
 #elif defined(CONFIG_BMM150_TRIGGER_GLOBAL_THREAD)
@@ -146,10 +153,7 @@ int bmm150_trigger_mode_init(const struct device *dev)
 	k_work_init(&data->work, bmm150_work_handler);
 #endif
 
-#if defined(CONFIG_BMM150_TRIGGER_GLOBAL_THREAD) || \
-	defined(CONFIG_BMM150_TRIGGER_DIRECT)
 	data->dev = dev;
-#endif
 
 	ret = gpio_pin_configure_dt(&cfg->drdy_int, GPIO_INPUT);
 	if (ret < 0) {

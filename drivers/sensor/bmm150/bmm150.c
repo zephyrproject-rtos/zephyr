@@ -8,6 +8,7 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 #include "bmm150.h"
 
 LOG_MODULE_REGISTER(BMM150, CONFIG_SENSOR_LOG_LEVEL);
@@ -100,6 +101,8 @@ static int bmm150_opmode(const struct device *dev, uint8_t mode)
 static int bmm150_set_odr(const struct device *dev, uint8_t val)
 {
 	uint8_t i;
+	struct bmm150_data *data = dev->data;
+
 
 	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
 		if (val <= bmm150_samp_freq_table[i].freq) {
@@ -110,13 +113,16 @@ static int bmm150_set_odr(const struct device *dev, uint8_t val)
 						      BMM150_SHIFT_ODR));
 		}
 	}
+
+	data->odr = val;
+
 	return -ENOTSUP;
 }
 
 #if defined(BMM150_SET_ATTR)
 static int bmm150_read_rep_xy(const struct device *dev)
 {
-	struct bmm150_data *data = dev->driver->data;
+	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *config = dev->config;
 	uint8_t reg_val;
 
@@ -309,9 +315,15 @@ static int bmm150_sample_fetch(const struct device *dev,
 	uint16_t values[BMM150_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
+	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_MAGN_XYZ);
+
+	ret = pm_device_runtime_get(dev);
+	if (ret) {
+		return ret;
+	}
 
 	if (bmm150_reg_read(dev, BMM150_REG_X_L, (uint8_t *)values, sizeof(values)) < 0) {
 		LOG_ERR("failed to read sample");
@@ -335,7 +347,7 @@ static int bmm150_sample_fetch(const struct device *dev,
 	drv_data->sample_z = bmm150_compensate_z(&drv_data->tregs,
 							raw_z, rhall);
 
-	return 0;
+	return pm_device_runtime_put(dev);
 }
 
 /*
@@ -570,6 +582,18 @@ static int bmm150_init_chip(const struct device *dev)
 
 	/* Setting preset mode */
 	preset = bmm150_presets_table[BMM150_DEFAULT_PRESET];
+
+	/* Overriding preset if values have been changed before */
+	if (data->odr) {
+		preset.odr = data->odr;
+	}
+	if (data->rep_xy) {
+		preset.rep_xy = data->rep_xy;
+	}
+	if (data->rep_z) {
+		preset.rep_z = data->rep_z;
+	}
+
 	if (bmm150_set_odr(dev, preset.odr) < 0) {
 		LOG_ERR("failed to set ODR to %d",
 			    preset.odr);
@@ -601,10 +625,6 @@ static int bmm150_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
-	data->rep_xy = 0;
-	data->rep_z = 0;
-	data->odr = 0;
-	data->max_odr = 0;
 	data->sample_x = 0;
 	data->sample_y = 0;
 	data->sample_z = 0;
@@ -623,12 +643,17 @@ err_poweroff:
 	return -EIO;
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int ret;
+	int ret = 0;
+	struct bmm150_data *data = dev->data;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Re-Initialize Chip */
+		ret = bmm150_init_chip(dev);
+
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* Need to enter sleep mode before setting OpMode to normal */
 		ret = bmm150_power_control(dev, 1);
@@ -642,6 +667,15 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		if (ret != 0) {
 			LOG_ERR("failed to enter normal mode: %d", ret);
 		}
+
+#ifdef CONFIG_BMM150_TRIGGER
+		if (data->drdy_trigger) {
+			bmm150_trigger_set(dev, data->drdy_trigger, data->drdy_handler);
+		}
+#else
+		ARG_UNUSED(data);
+#endif
+
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = bmm150_power_control(dev, 0); /* Suspend */
@@ -649,27 +683,31 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 			LOG_ERR("failed to enter suspend mode: %d", ret);
 		}
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	/* do nothing */
+		break;
 	default:
 		return -ENOTSUP;
 	}
 
+
 	return ret;
 }
-#endif
 
 static int bmm150_init(const struct device *dev)
 {
 	int err = 0;
+	struct bmm150_data *data = dev->data;
+
+	data->rep_xy = 0;
+	data->rep_z = 0;
+	data->odr = 0;
+	data->max_odr = 0;
 
 	err = bmm150_bus_check(dev);
 	if (err < 0) {
 		LOG_DBG("bus check failed: %d", err);
 		return err;
-	}
-
-	if (bmm150_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
-		return -EIO;
 	}
 
 #ifdef CONFIG_BMM150_TRIGGER
@@ -679,7 +717,8 @@ static int bmm150_init(const struct device *dev)
 	}
 #endif
 
-	return 0;
+	/* Boot according to state */
+	return pm_device_driver_init(dev, pm_action);
 }
 
 /* Initializes a struct bmm150_config for an instance on a SPI bus. */

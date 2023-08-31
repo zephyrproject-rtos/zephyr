@@ -180,10 +180,7 @@ struct bmm150_data {
 	struct k_work work;
 #endif
 
-#if defined(CONFIG_BMM150_TRIGGER_GLOBAL_THREAD) || \
-	defined(CONFIG_BMM150_TRIGGER_DIRECT)
 	const struct device *dev;
-#endif
 
 #ifdef CONFIG_BMM150_TRIGGER
 	const struct sensor_trigger *drdy_trigger;
