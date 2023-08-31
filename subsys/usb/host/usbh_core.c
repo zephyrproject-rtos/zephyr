@@ -242,7 +242,7 @@ static int usbh_enum_thread(struct usbh_contex *const ctx)
 		return err;
 	}
 
-	LOG_INF("Enumeration started");
+	printk("Enumeration started\n");
 	while (atomic_test_bit(&data->status, UHC_STATUS_DEV_CONN) &&
 		(retry_desc <= CONFIG_USBH_ENUM_MAX_RETRY) && !enum_complete) {
 		switch (data->enum_meta_data.req_type) {
@@ -290,7 +290,7 @@ static int usbh_enum_thread(struct usbh_contex *const ctx)
 	}
 
 	if (enum_success) {
-		LOG_INF("USB enumeration success");
+		printk("USB enumeration success\n");
 	} else {
 		atomic_clear_bit(&data->enum_meta_data.state, ENUM_IN_PROGRESS_STATUS);
 		LOG_ERR("USB enumeration failed");
