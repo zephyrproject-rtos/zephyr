@@ -196,7 +196,7 @@ class Filters:
 
                 self.get_plan(_options, True)
             else:
-                self.get_plan(_options, False)
+                self.get_plan(_options, True)
 
     def find_boards(self):
         boards = set()
