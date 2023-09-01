@@ -286,6 +286,8 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	zassert_equal(ret, 0, "close failed, %d", errno);
 	ret = close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 void test_ipv4_so_bindtodevice(void)
@@ -423,7 +425,7 @@ void test_getpeername(int family)
 	ret = close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
-	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 
