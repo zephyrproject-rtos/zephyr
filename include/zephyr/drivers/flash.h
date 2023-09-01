@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -58,6 +58,13 @@ struct flash_pages_layout {
  */
 struct flash_parameters {
 	const size_t write_block_size;
+	/* Device capabilities */
+	struct {
+		/* Device has erase separated from program/write operation
+		 * which means user has to explicitly call the procedure.
+		 */
+		uint32_t explicit_erase: 1;
+	} caps;
 	uint8_t erase_value; /* Byte value of erased flash */
 };
 
@@ -133,7 +140,9 @@ typedef int (*flash_api_ex_op)(const struct device *dev, uint16_t code,
 __subsystem struct flash_driver_api {
 	flash_api_read read;
 	flash_api_write write;
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	flash_api_erase erase;
+#endif
 	flash_api_get_parameters get_parameters;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
