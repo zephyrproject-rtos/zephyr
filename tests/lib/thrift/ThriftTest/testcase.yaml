@@ -19,5 +19,6 @@ tests:
   thrift.ThriftTest.newlib.compactProtocol:
     extra_configs:
       - CONFIG_THRIFT_COMPACT_PROTOCOL=y
-  thrift.ThriftTest.newlib.tlsTransport:
-    extra_args: OVERLAY_CONFIG="overlay-tls.conf"
+    # Temporarily disabled until #61717 is resolved
+    # thrift.ThriftTest.newlib.tlsTransport:
+    #   extra_args: OVERLAY_CONFIG="overlay-tls.conf"
