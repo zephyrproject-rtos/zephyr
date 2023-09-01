@@ -27,22 +27,17 @@ static K_THREAD_STACK_DEFINE(server_stack, STACK_SIZE);
 
 static struct k_thread server_thread;
 
-/* Magic, SETTINGS[0], HEADERS[1]: GET /, HEADERS[3]: GET /index.html */
-static const unsigned char Frame1[] = {
+/* Magic, SETTINGS[0], HEADERS[1]: GET /, HEADERS[3]: GET /index.html, SETTINGS[0], GOAWAY[0]*/
+static const unsigned char Frame[] = {
 	0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32, 0x2e, 0x30, 0x0d,
 	0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a, 0x00, 0x00, 0x0c, 0x04, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x04, 0x00, 0x00, 0xff, 0xff,
 	0x00, 0x00, 0x21, 0x01, 0x05, 0x00, 0x00, 0x00, 0x01, 0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b,
 	0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, 0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90,
 	0x7a, 0x8a, 0xaa, 0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83, 0x00, 0x00, 0x07,
-	0x01, 0x05, 0x00, 0x00, 0x00, 0x03, 0x82, 0x85, 0x86, 0xc0, 0xbf, 0x90, 0xbe};
-
-/* SETTINGS[0] */
-static const unsigned char Frame2[] = {0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00};
-
-/* GOAWAY[0] */
-static const unsigned char Frame3[] = {0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
-				       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	0x01, 0x05, 0x00, 0x00, 0x00, 0x03, 0x82, 0x85, 0x86, 0xc0, 0xbf, 0x90, 0xbe, 0x00, 0x00,
+	0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static uint16_t test_http_service_port = htons(SERVER_PORT);
 HTTP_SERVICE_DEFINE(test_http_service, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &test_http_service_port, 1,
@@ -52,6 +47,7 @@ static const char index_html_gz[] = "Hello, World!";
 struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
+			.bitmask_of_supported_http_methods = GET,
 		},
 	.static_data = index_html_gz,
 	.static_data_len = sizeof(index_html_gz),
@@ -68,10 +64,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 
 	k_sem_give(&server_sem);
 
-	ctx->infinite = 0;
-	for (int i = 0; i < 2; i++) {
-		http_server_start(ctx);
-	}
+	http_server_start(ctx);
 }
 
 static void test_streams(void)
@@ -120,15 +113,12 @@ static void test_streams(void)
 	r = connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(r, -1, "failed to connect (%d)", errno);
 
-	r = send(client_fd, Frame1, sizeof(Frame1), 0);
+	r = send(client_fd, Frame, sizeof(Frame), 0);
 	zassert_not_equal(r, -1, "send() failed (%d)", errno);
 
 	memset(addrstr, 0, sizeof(addrstr));
 	r = recv(client_fd, addrstr, sizeof(addrstr), 0);
 	zassert_not_equal(r, -1, "recv() failed (%d)", errno);
-
-	r = send(client_fd, Frame2, sizeof(Frame2), 0);
-	zassert_not_equal(r, -1, "send() failed (%d)", errno);
 
 	memset(addrstr, 0, sizeof(addrstr));
 	r = recv(client_fd, addrstr, sizeof(addrstr), 0);
@@ -191,17 +181,16 @@ static void test_streams(void)
 
 	zassert_true((type == 0x0 && stream_id == 3), "Expected a DATA frame with stream ID 3");
 
-	r = send(client_fd, Frame3, sizeof(Frame3), 0);
-	zassert_not_equal(r, -1, "send() failed (%d)", errno);
-
 	r = close(client_fd);
 	zassert_not_equal(-1, r, "close() failed on the client fd (%d)", errno);
 
-	r = close(server_fd);
-	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
+	http_server_stop(&ctx);
 
 	r = k_thread_join(&server_thread, K_FOREVER);
 	zassert_equal(0, r, "k_thread_join() failed (%d)", r);
+
+	r = close(server_fd);
+	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
 }
 
 ZTEST(server_function_tests, test_http_concurrent_streams)
@@ -282,7 +271,7 @@ static void test_common(int test_support)
 
 	} else if (test_support == SUPPORT_HTTP_SERVER_UPGRADE) {
 
-		r = send(client_fd, Frame1, sizeof(Frame1), 0);
+		r = send(client_fd, Frame, sizeof(Frame), 0);
 		zassert_not_equal(r, -1, "send() failed (%d)", errno);
 
 		memset(addrstr, 0, sizeof(addrstr));
@@ -297,11 +286,13 @@ static void test_common(int test_support)
 	r = close(client_fd);
 	zassert_not_equal(-1, r, "close() failed on the client fd (%d)", errno);
 
-	r = close(server_fd);
-	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
+	http_server_stop(&ctx);
 
 	r = k_thread_join(&server_thread, K_FOREVER);
 	zassert_equal(0, r, "k_thread_join() failed (%d)", r);
+
+	r = close(server_fd);
+	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
 }
 
 ZTEST(server_function_tests, test_http_upgrade)
@@ -338,20 +329,12 @@ ZTEST(server_function_tests, test_http_support_ipv4)
 	close(server_fd);
 }
 
-int http_server_stop(struct http_server_ctx *ctx)
-{
-	eventfd_write(ctx->event_fd, 1);
-
-	return 0;
-}
-
 static void server_thread_stp_fn(void *arg0, void *arg1, void *arg2)
 {
 	struct http_server_ctx *ctx = (struct http_server_ctx *)arg0;
 
-	k_sleep(K_SECONDS(2));
+	k_sem_give(&server_sem);
 
-	ctx->infinite = 0;
 	int program_status = http_server_start(ctx);
 
 	zassert_equal(program_status, 0, "The server didn't shut down successfully");
@@ -359,6 +342,10 @@ static void server_thread_stp_fn(void *arg0, void *arg1, void *arg2)
 
 ZTEST(server_function_tests, test_http_server_stop)
 {
+	int r;
+
+	k_sem_init(&server_sem, 0, 1);
+
 	struct http_server_ctx ctx;
 
 	int server_fd = http_server_init(&ctx);
@@ -367,14 +354,15 @@ ZTEST(server_function_tests, test_http_server_stop)
 
 	k_thread_create(&server_thread, server_stack, STACK_SIZE, server_thread_stp_fn, &ctx, NULL,
 			NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
-
-	k_sleep(K_MSEC(100));
+	k_sem_take(&server_sem, K_MSEC(TIMEOUT));
 
 	http_server_stop(&ctx);
 
-	k_thread_join(&server_thread, K_FOREVER);
+	r = k_thread_join(&server_thread, K_FOREVER);
+	zassert_equal(0, r, "k_thread_join() failed (%d)", r);
 
-	close(server_fd);
+	r = close(server_fd);
+	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
 }
 
 ZTEST(server_function_tests, test_http_server_init)
