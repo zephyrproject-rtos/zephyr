@@ -648,15 +648,6 @@ test_i2c_akm09918c: akm09918c@5f {
 	reg = <0x5f>;
 };
 
-test_i2c_wsen_tids: wsen_tids@60 {
-	compatible = "we,wsen-tids";
-	reg = <0x60>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = <25>;
-	temp-high-threshold = <0>;
-	temp-low-threshold = <0>;
-};
-
 test_i2c_vl53l1x: vl53l1x@61 {
 	compatible = "st,vl53l1x";
 	reg = <0x61>;
