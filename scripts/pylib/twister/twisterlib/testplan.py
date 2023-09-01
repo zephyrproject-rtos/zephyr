@@ -64,6 +64,8 @@ class Filters:
     SKIP = 'Skip filter'
     # in case of incompatibility between selected and allowed toolchains.
     TOOLCHAIN = 'Toolchain filter'
+    # in case an optional module is not available
+    MODULE = 'Module filter'
 
 
 class TestLevel:
@@ -740,7 +742,7 @@ class TestPlan:
 
                 if ts.modules and self.modules:
                     if not set(ts.modules).issubset(set(self.modules)):
-                        instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.TESTSUITE)
+                        instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.MODULE)
 
                 if self.options.level:
                     tl = self.get_level(self.options.level)
@@ -1035,7 +1037,7 @@ def change_skip_to_error_if_integration(options, instance):
         # Do not treat this as error if filter type is command line
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
-                         Filters.TOOLCHAIN}
+                         Filters.TOOLCHAIN, Filters.MODULE}
         if filters.intersection(ignore_filters):
             return
         instance.status = "error"
