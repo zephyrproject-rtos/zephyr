@@ -12,6 +12,8 @@ on:
       - "boards/posix/**"
       - "soc/posix/**"
       - "arch/posix/**"
+      - "include/zephyr/arch/posix/**"
+      - "scripts/native_simulator/**"
       - "samples/net/sockets/echo_*/**"
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
@@ -86,6 +88,8 @@ jobs:
             boards/posix/**
             soc/posix/**
             arch/posix/**
+            include/zephyr/arch/posix/**
+            scripts/native_simulator/**
             tests/bsim/*
 
       - name: Check if Bluethooth files changed
