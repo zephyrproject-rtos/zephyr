@@ -41,6 +41,9 @@
 
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request, struct lwm2m_message *msg);
+/* Define pre_request_cb type */
+typedef int (*lwm2m_engine_pre_request_cb_t)(struct lwm2m_message *msg);
+
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 struct lwm2m_message *find_msg(struct coap_pending *pending, struct coap_reply *reply);
@@ -60,6 +63,18 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg);
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
 
 int lwm2m_register_payload_handler(struct lwm2m_message *msg);
+
+/**
+ * @brief Registers one callback for every lwm2m request
+ *        Is used to wakeup the device. This callback will
+ *        be called as the first callback for read, write
+ *        and execute
+ *
+ * @param pre_request_cb
+ * @return  0 if successful
+ *          -EBUSY if already registered
+ */
+int lwm2m_register_pre_request_cb(lwm2m_engine_pre_request_cb_t pre_request_cb);
 
 int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format);
 
