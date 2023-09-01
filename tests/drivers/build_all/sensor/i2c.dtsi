@@ -684,12 +684,6 @@ test_i2c_s11059: s11059@64 {
 	integration-time = <546000>;
 };
 
-test_i2c_wsen_pdus: wsen_pdus@65 {
-	compatible = "we,wsen-pdus";
-	reg = <0x65>;
-	sensor-type = <3>;
-};
-
 test_i2c_veml7700: veml7700@66 {
 	compatible = "vishay,veml7700";
 	reg = <0x66>;
