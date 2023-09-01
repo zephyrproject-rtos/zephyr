@@ -689,6 +689,13 @@ config NET_CONTEXT_DSCP_ECN
 	  Notification values on net_context. Those values are then used in
 	  IPv4/IPv6 header when sending packets over net_context.
 
+config NET_CONTEXT_REUSEADDR
+	bool "Add REUSEADDR support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEADDR flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address.
+
 config NET_TEST
 	bool "Network Testing"
 	help
