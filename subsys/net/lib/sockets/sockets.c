@@ -2013,6 +2013,20 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				return 0;
 			}
 			break;
+
+		case SO_REUSEADDR:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEADDR)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_REUSEADDR,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+			break;
 		}
 
 		break;
@@ -2149,10 +2163,19 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			break;
 
 		case SO_REUSEADDR:
-			/* Ignore for now. Provided to let port
-			 * existing apps.
-			 */
-			return 0;
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEADDR)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_REUSEADDR,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 
 		case SO_PRIORITY:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {

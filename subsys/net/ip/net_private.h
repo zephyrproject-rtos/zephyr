@@ -58,6 +58,7 @@ extern void net_process_tx_packet(struct net_pkt *pkt);
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
+extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -70,6 +71,11 @@ static inline const char *net_context_state(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return NULL;
+}
+static inline bool net_context_is_reuseaddr_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
 }
 #endif
 
