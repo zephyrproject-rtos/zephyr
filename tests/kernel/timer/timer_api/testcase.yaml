@@ -36,7 +36,7 @@ tests:
       - qemu_arc_hs6x
     integration_platforms:
       - qemu_cortex_m3
-      - nsim_em
+      - qemu_arc_em
     extra_configs:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n

@@ -15,7 +15,7 @@ common:
     - nsim_hs6x
   integration_platforms:
     - qemu_cortex_m3
-    - nsim_em
+    - qemu_arc_em
   tags:
     - kernel
     - scheduler
