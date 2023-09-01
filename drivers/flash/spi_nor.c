@@ -1360,11 +1360,23 @@ flash_nor_get_parameters(const struct device *dev)
 	return &flash_nor_parameters;
 }
 
+static uint32_t spi_nor_get_info_word(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	#if (DT_INST_NODE_HAS_PROP(0, no_erase))
+		return FLASH_INFO_WORD_F_NO_ERASE;
+	#else
+		return 0;
+	#endif
+}
+
 static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
 	.get_parameters = flash_nor_get_parameters,
+	.get_info_word = spi_nor_get_info_word,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
