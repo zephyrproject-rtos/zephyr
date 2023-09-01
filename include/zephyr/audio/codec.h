@@ -112,6 +112,35 @@ typedef union {
 } audio_property_value_t;
 
 /**
+ * @brief Codec error type
+ */
+enum audio_codec_error_type {
+	/** Output over-current */
+	AUDIO_CODEC_ERROR_OVERCURRENT = BIT(0),
+
+	/** Codec over-temperature */
+	AUDIO_CODEC_ERROR_OVERTEMPERATURE = BIT(1),
+
+	/** Power low voltage */
+	AUDIO_CODEC_ERROR_UNDERVOLTAGE = BIT(2),
+
+	/** Power high voltage */
+	AUDIO_CODEC_ERROR_OVERVOLTAGE = BIT(3),
+
+	/** Output direct-current */
+	AUDIO_CODEC_ERROR_DC = BIT(4),
+};
+
+/**
+ * @typedef audio_codec_error_callback_t
+ * @brief Callback for error interrupt
+ *
+ * @param dev Pointer to the codec device
+ * @param errors Device errors (bitmask of @ref audio_codec_error_type values)
+ */
+typedef void (*audio_codec_error_callback_t)(const struct device *dev, uint32_t errors);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * For internal use only, skip these in public documentation.
@@ -126,6 +155,9 @@ struct audio_codec_api {
 			    audio_channel_t channel,
 			    audio_property_value_t val);
 	int (*apply_properties)(const struct device *dev);
+	int (*clear_errors)(const struct device *dev);
+	int (*register_error_callback)(const struct device *dev,
+			 audio_codec_error_callback_t cb);
 };
 /**
  * @endcond
@@ -221,6 +253,55 @@ static inline int audio_codec_apply_properties(const struct device *dev)
 		(const struct audio_codec_api *)dev->api;
 
 	return api->apply_properties(dev);
+}
+
+/**
+ * @brief Clear any codec errors
+ *
+ * Clear all codec errors.
+ * If an error interrupt exists, it will be de-asserted.
+ *
+ * @param dev Pointer to the device structure for codec driver instance.
+ *
+ * @return 0 on success, negative error code on failure
+ */
+static inline int audio_codec_clear_errors(const struct device *dev)
+{
+	const struct audio_codec_api *api =
+		(const struct audio_codec_api *)dev->api;
+
+	if (api->clear_errors == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->clear_errors(dev);
+}
+
+/**
+ * @brief Register a callback function for codec error
+ *
+ * The callback will be called from a thread, so I2C or SPI operations are
+ * safe.  However, the thread's stack is limited and defined by the
+ * driver.  It is currently up to the caller to ensure that the callback
+ * does not overflow the stack.
+ *
+ * @param dev Pointer to the audio codec device
+ * @param cb The function that should be called when an error is detected
+ * fires
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_register_error_callback(const struct device *dev,
+				     audio_codec_error_callback_t cb)
+{
+	const struct audio_codec_api *api =
+		(const struct audio_codec_api *)dev->api;
+
+	if (api->register_error_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->register_error_callback(dev, cb);
 }
 
 #ifdef __cplusplus
