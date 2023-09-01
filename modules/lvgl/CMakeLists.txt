@@ -13,11 +13,10 @@ zephyr_interface_library_named(LVGL)
 zephyr_library()
 
 zephyr_include_directories(${LVGL_DIR}/src/)
-zephyr_include_directories(.)
 zephyr_include_directories(include)
 
 zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)
-zephyr_compile_definitions(LV_CONF_PATH=${CMAKE_CURRENT_SOURCE_DIR}/lv_conf.h)
+zephyr_compile_definitions(LV_CONF_PATH=${CMAKE_CURRENT_SOURCE_DIR}/include/lv_conf.h)
 
 zephyr_library_sources(
     ${LVGL_DIR}/src/core/lv_disp.c
