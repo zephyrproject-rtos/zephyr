@@ -930,8 +930,8 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 			   TICKER_NULL_REMAINDER,
 			   TICKER_NULL_LAZY,
 			   TICKER_NULL_SLOT,
-			   preempt_ticker_cb, first,
-			   ticker_start_op_cb, first);
+			   preempt_ticker_cb, first->prepare_param.param,
+			   ticker_start_op_cb, NULL);
 
 	return ret;
 }
@@ -1007,7 +1007,7 @@ static void preempt(void *param)
 	}
 
 	/* Preemptor not in pipeline */
-	if (next != param) {
+	if (next->prepare_param.param != param) {
 		uint32_t ret;
 
 		/* Start the preempt timeout */
