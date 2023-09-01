@@ -515,13 +515,6 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
-test_i2c_wsen_hids: wsen_hids@4d {
-	compatible = "we,wsen-hids";
-	reg = <0x4d>;
-	drdy-gpios = <&test_gpio 0 0>;
-	odr = "1";
-};
-
 test_i2c_max17055: max17055@4f {
 	compatible = "maxim,max17055";
 	reg = <0x4f>;
