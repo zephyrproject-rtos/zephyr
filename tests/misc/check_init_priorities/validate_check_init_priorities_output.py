@@ -8,12 +8,12 @@
 import sys
 
 REFERENCE_OUTPUT = [
-        "INFO: /i2c@11112222/test-i2c-dev@12 PRE_KERNEL_1 51 31 > /gpio@ffff PRE_KERNEL_1 50 27",
-        "INFO: /i2c@11112222/test-i2c-dev@12 PRE_KERNEL_1 51 31 > /i2c@11112222 PRE_KERNEL_1 50 28",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 PRE_KERNEL_1 49 29 < /gpio@ffff PRE_KERNEL_1 50 27",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 PRE_KERNEL_1 49 29 < /i2c@11112222 PRE_KERNEL_1 50 28",
-        "INFO: /i2c@11112222/test-i2c-dev@11 PRE_KERNEL_1 50 30 > /gpio@ffff PRE_KERNEL_1 50 27",
-        "INFO: /i2c@11112222/test-i2c-dev@11 PRE_KERNEL_1 50 30 > /i2c@11112222 PRE_KERNEL_1 50 28",
+        "ERROR: /i2c@11112222/test-i2c-dev@10 PRE_KERNEL_1 49 31 < /gpio@ffff PRE_KERNEL_1 50 29",
+        "ERROR: /i2c@11112222/test-i2c-dev@10 PRE_KERNEL_1 49 31 < /i2c@11112222 PRE_KERNEL_1 50 30",
+        "INFO: /i2c@11112222/test-i2c-dev@11 PRE_KERNEL_1 50 32 > /gpio@ffff PRE_KERNEL_1 50 29",
+        "INFO: /i2c@11112222/test-i2c-dev@11 PRE_KERNEL_1 50 32 > /i2c@11112222 PRE_KERNEL_1 50 30",
+        "INFO: /i2c@11112222/test-i2c-dev@12 PRE_KERNEL_1 51 33 > /gpio@ffff PRE_KERNEL_1 50 29",
+        "INFO: /i2c@11112222/test-i2c-dev@12 PRE_KERNEL_1 51 33 > /i2c@11112222 PRE_KERNEL_1 50 30"
 ]
 
 if len(sys.argv) != 2:
