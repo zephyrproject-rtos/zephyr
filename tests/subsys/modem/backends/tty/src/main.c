@@ -142,7 +142,7 @@ ZTEST(modem_backend_tty_suite, test_receive_ready_event_raised)
 {
 	int ret;
 	bool result;
-	char *msg = "Test me buddy";
+	char msg[] = "Test me buddy";
 
 	ret = write(primary_fd, msg, sizeof(msg));
 	zassert_true(ret == sizeof(msg), "Failed to write to primary FD");
