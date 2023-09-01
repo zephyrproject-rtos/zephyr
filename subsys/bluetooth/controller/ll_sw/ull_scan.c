@@ -500,6 +500,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 				 * enabled.
 				 */
 			}
+
+#if defined(CONFIG_BT_TICKER_EXT)
+			ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* CONFIG_BT_TICKER_EXT */
 		}
 
 		/* 1M scan window starts without any offset */
@@ -559,6 +563,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			} else {
 				ticks_offset = 0U;
 			}
+
+#if defined(CONFIG_BT_TICKER_EXT)
+			ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* CONFIG_BT_TICKER_EXT */
 		} else {
 			ticks_offset = 0U;
 		}
