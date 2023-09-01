@@ -148,6 +148,7 @@ static inline const char *wifi_band_txt(enum wifi_frequency_bands band)
 #define WIFI_SAE_PSWD_MAX_LEN 128
 #define WIFI_MAC_ADDR_LEN 6
 
+#define WIFI_CHANNEL_MIN 1
 #define WIFI_CHANNEL_MAX 233
 #define WIFI_CHANNEL_ANY 255
 
@@ -354,6 +355,38 @@ static const char * const wifi_ps_mode2str[] = {
 	[WIFI_PS_MODE_WMM] = "WMM power save",
 };
 /** @endcond */
+
+/* Interface index Min and Max values */
+#define WIFI_INTERFACE_INDEX_MIN 1
+#define WIFI_INTERFACE_INDEX_MAX 255
+
+/** Wifi operational mode */
+enum wifi_operational_modes {
+	/** STA mode setting enable */
+	WIFI_STA_MODE = BIT(0),
+	/** Monitor mode setting enable */
+	WIFI_MONITOR_MODE = BIT(1),
+	/** TX injection mode setting enable */
+	WIFI_TX_INJECTION_MODE = BIT(2),
+	/** Promiscuous mode setting enable */
+	WIFI_PROMISCUOUS_MODE = BIT(3),
+	/** AP mode setting enable */
+	WIFI_AP_MODE = BIT(4),
+	/** Softap mode setting enable */
+	WIFI_SOFTAP_MODE = BIT(5),
+};
+
+/** Mode filter settings */
+enum wifi_filter {
+	/** Support management, data and control packet sniffing */
+	WIFI_PACKET_FILTER_ALL = BIT(0),
+	/** Support only sniffing of management packets */
+	WIFI_PACKET_FILTER_MGMT = BIT(1),
+	/** Support only sniffing of data packets */
+	WIFI_PACKET_FILTER_DATA = BIT(2),
+	/** Support only sniffing of control packets */
+	WIFI_PACKET_FILTER_CTRL = BIT(3),
+};
 
 /** Wi-Fi Target Wake Time (TWT) operations. */
 enum wifi_twt_operation {

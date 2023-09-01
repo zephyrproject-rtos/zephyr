@@ -69,6 +69,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
 	/** Set power save timeout */
 	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
+	/** Set or get Mode of operation */
+	NET_REQUEST_WIFI_CMD_MODE,
+	/** Set or get packet filter setting for current mode */
+	NET_REQUEST_WIFI_CMD_PACKET_FILTER,
+	/** Set or get Wi-Fi channel for Monitor or TX-Injection mode */
+	NET_REQUEST_WIFI_CMD_CHANNEL,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -130,6 +136,21 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS_TIMEOUT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
+
+#define NET_REQUEST_WIFI_MODE				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_MODE);
+
+#define NET_REQUEST_WIFI_PACKET_FILTER			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PACKET_FILTER)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER);
+
+#define NET_REQUEST_WIFI_CHANNEL			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CHANNEL)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
 
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -475,6 +496,37 @@ union wifi_mgmt_events {
 	struct wifi_twt_params twt_params;
 };
 
+/** Wi-Fi mode setup */
+struct wifi_mode_info {
+	/** Mode setting for a specific mode of operation */
+	uint8_t mode;
+	/** Interface index */
+	uint8_t if_index;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
+/** Wi-Fi filter setting for monitor, prmoiscuous, TX-injection modes */
+struct wifi_filter_info {
+	/** Filter setting */
+	uint8_t filter;
+	/** Interface index */
+	uint8_t if_index;
+	/** Filter buffer size */
+	uint16_t buffer_size;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
+/** Wi-Fi channel setting for monitor and TX-injection modes */
+struct wifi_channel_info {
+	/** Channel value to set */
+	uint16_t channel;
+	/** Interface index */
+	uint8_t if_index;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
 
 #include <zephyr/net/net_if.h>
 
@@ -596,6 +648,30 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	/** Set or get packet filter settings for monitor and promiscuous modes
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param packet filter settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*filter)(const struct device *dev, struct wifi_filter_info *filter);
+	/** Set or get mode of operation
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param mode settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*mode)(const struct device *dev, struct wifi_mode_info *mode);
+	/** Set or get current channel of operation
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param channel settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
 };
 
 /** Wi-Fi management offload API */
