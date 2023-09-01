@@ -1650,11 +1650,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 	LOG_DBG("got status 0x%x", status);
 
-	if (conn->state != BT_CONN_CONNECTED) {
-		/* If disconnection has been triggered in between the security update
-		 * and the call to this function we need to abort the pairing.
+	if (conn->le.keys == NULL) {
+		/* We can get here if the application calls `bt_unpair` in the
+		 * `security_changed` callback.
 		 */
-		LOG_WRN("Not connected!");
+		LOG_WRN("The in-progress pairing has been deleted!");
 		status = BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1677,7 +1677,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_keys_show_sniffer_info(conn->le.keys, NULL);
 		}
 
-		if (bond_flag) {
+		if (bond_flag && conn->le.keys) {
 			bt_keys_store(conn->le.keys);
 		}
 
