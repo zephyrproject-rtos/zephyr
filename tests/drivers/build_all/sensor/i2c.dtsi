@@ -522,14 +522,6 @@ test_i2c_wsen_hids: wsen_hids@4d {
 	odr = "1";
 };
 
-test_i2c_itds: itds@4e {
-	compatible = "we,wsen-itds";
-	reg = <0x4e>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = "800";
-	op-mode = "high-perf";
-};
-
 test_i2c_max17055: max17055@4f {
 	compatible = "maxim,max17055";
 	reg = <0x4f>;

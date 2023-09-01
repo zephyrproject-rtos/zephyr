@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
-add_subdirectory_ifdef(CONFIG_ITDS wsen_itds)
 add_subdirectory_ifdef(CONFIG_WSEN_HIDS wsen_hids)
 add_subdirectory_ifdef(CONFIG_WSEN_PADS wsen_pads)
 add_subdirectory_ifdef(CONFIG_WSEN_PDUS wsen_pdus)
