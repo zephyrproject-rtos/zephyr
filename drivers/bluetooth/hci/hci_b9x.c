@@ -237,7 +237,9 @@ static int hci_b9x_open(void)
 
 static int hci_b9x_close(void)
 {
+#if defined(CONFIG_BT_HCI_HOST) && defined(CONFIG_BT_BROADCASTER)
 	bt_le_adv_stop();
+#endif /* CONFIG_BT_HCI_HOST && CONFIG_BT_BROADCASTER */
 	b9x_bt_controller_deinit();
 
 	return 0;
