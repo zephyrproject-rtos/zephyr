@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/drivers/dai.h>
@@ -961,11 +960,11 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		},							\
 	};								\
 									\
-	PM_DEVICE_DT_INST_DEFINE(n, dmic_pm_action);			\
+	PM_DEVICE_RUNTIME_DT_INST_DEFINE(n, dmic_pm_action);		\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 		dai_dmic_initialize_device,				\
-		PM_DEVICE_DT_INST_GET(n),				\
+		PM_DEVICE_RUNTIME_DT_INST_GET(n),			\
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\

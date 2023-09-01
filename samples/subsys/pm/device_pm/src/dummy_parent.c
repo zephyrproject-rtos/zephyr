@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/printk.h>
 #include "dummy_parent.h"
@@ -49,8 +48,8 @@ int dummy_parent_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-PM_DEVICE_DEFINE(dummy_parent, dummy_parent_pm_action);
+PM_DEVICE_RUNTIME_DEFINE(dummy_parent, dummy_parent_pm_action);
 
 DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init,
-		    PM_DEVICE_GET(dummy_parent), NULL, NULL, POST_KERNEL,
+		    PM_DEVICE_RUNTIME_GET(dummy_parent), NULL, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

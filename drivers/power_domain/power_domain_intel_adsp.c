@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <adsp_shim.h>
 
@@ -78,8 +77,8 @@ static int pd_intel_adsp_init(const struct device *dev)
 		.SPA_bit = DT_INST_PROP(id, bit_position),			\
 		.CPA_bit = DT_INST_PROP(id, bit_position),			\
 	};									\
-	PM_DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_pm_action);			\
-	DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_init, PM_DEVICE_DT_INST_GET(id),\
+	PM_DEVICE_RUNTIME_DT_INST_DEFINE(id, pd_intel_adsp_pm_action);		\
+	DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_init, PM_DEVICE_RUNTIME_DT_INST_GET(id),\
 			      &pd_pg_reg##id, NULL, POST_KERNEL,                \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 

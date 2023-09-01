@@ -1294,7 +1294,7 @@ static const struct flash_driver_api qspi_nor_api = {
 #endif /* CONFIG_FLASH_JESD216_API */
 };
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 static int enter_dpd(const struct device *const dev)
 {
 	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
@@ -1346,7 +1346,7 @@ static int exit_dpd(const struct device *const dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 static int qspi_nor_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
@@ -1361,14 +1361,6 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-#ifndef CONFIG_PM_DEVICE_RUNTIME
-		/* If PM_DEVICE_RUNTIME, we don't uninit after RESUME */
-		ret = qspi_device_init(dev);
-		if (ret < 0) {
-			return ret;
-		}
-#endif
-
 		if (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
 			return -EBUSY;
 		}
@@ -1404,10 +1396,6 @@ static int qspi_nor_pm_action(const struct device *dev,
 			return ret;
 		}
 
-#ifndef CONFIG_PM_DEVICE_RUNTIME
-		/* If PM_DEVICE_RUNTIME, we're immediately going to use the device */
-		qspi_device_uninit(dev);
-#endif
 		break;
 
 	default:
@@ -1416,7 +1404,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
@@ -1500,9 +1488,9 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 	.id = DT_INST_PROP(0, jedec_id),
 };
 
-PM_DEVICE_DT_INST_DEFINE(0, qspi_nor_pm_action);
+PM_DEVICE_RUNTIME_DT_INST_DEFINE(0, qspi_nor_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, qspi_nor_init, PM_DEVICE_DT_INST_GET(0),
+DEVICE_DT_INST_DEFINE(0, qspi_nor_init, PM_DEVICE_RUNTIME_DT_INST_GET(0),
 		      &qspi_nor_dev_data, &qspi_nor_dev_config,
 		      POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		      &qspi_nor_api);

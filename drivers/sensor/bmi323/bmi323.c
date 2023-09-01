@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
@@ -1223,15 +1222,15 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 	return ret;
 }
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 static int bosch_bmi323_pm_suspend(const struct device *dev)
 {
 	/* Soft reset device to put it into suspend */
 	return bosch_bmi323_soft_reset(dev);
 }
-#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 static int bosch_bmi323_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
@@ -1260,7 +1259,7 @@ static int bosch_bmi323_pm_action(const struct device *dev, enum pm_device_actio
 
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 static int bosch_bmi323_init(const struct device *dev)
 {
@@ -1325,9 +1324,9 @@ static int bosch_bmi323_init(const struct device *dev)
 		.int_gpio_callback = bosch_bmi323_irq_callback##inst,                              \
 	};                                                                                         \
                                                                                                    \
-	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                                    \
+	PM_DEVICE_RUNTIME_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                            \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_RUNTIME_DT_INST_GET(inst), \
 				     &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,       \
 				     POST_KERNEL, 99, &bosch_bmi323_api);
 

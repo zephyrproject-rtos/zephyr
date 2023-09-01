@@ -13,7 +13,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
 #include <soc_miwu.h>
@@ -936,7 +935,7 @@ static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
 	.send = shi_npcx_backend_send,
 };
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 static int shi_npcx_pm_cb(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
@@ -958,7 +957,7 @@ static int shi_npcx_pm_cb(const struct device *dev, enum pm_device_action action
 #endif
 
 /* Assume only one peripheral */
-PM_DEVICE_DT_INST_DEFINE(0, shi_npcx_pm_cb);
+PM_DEVICE_RUNTIME_DT_INST_DEFINE(0, shi_npcx_pm_cb);
 
 PINCTRL_DT_INST_DEFINE(0);
 static const struct shi_npcx_config shi_cfg = {
@@ -975,8 +974,8 @@ static struct shi_npcx_data shi_data = {
 	.out_msg = shi_data.out_msg_padded + SHI_OUT_START_PAD - EC_SHI_FRAME_START_LENGTH,
 };
 
-DEVICE_DT_INST_DEFINE(0, shi_npcx_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
+DEVICE_DT_INST_DEFINE(0, shi_npcx_init, PM_DEVICE_RUNTIME_DT_INST_GET(0), &shi_data, &shi_cfg,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
 
 EC_HOST_CMD_SHI_NPCX_DEFINE(ec_host_cmd_shi_npcx);
 

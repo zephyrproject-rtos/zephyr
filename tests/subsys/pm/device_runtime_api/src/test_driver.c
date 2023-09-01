@@ -7,7 +7,7 @@
 #include "test_driver.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 struct test_driver_data {
 	bool ongoing;
@@ -62,10 +62,10 @@ int test_driver_init(const struct device *dev)
 	return 0;
 }
 
-PM_DEVICE_DEFINE(test_driver, test_driver_action);
+PM_DEVICE_RUNTIME_DEFINE(test_driver, test_driver_action);
 
 static struct test_driver_data data;
 
 DEVICE_DEFINE(test_driver, "test_driver", &test_driver_init,
-	      PM_DEVICE_GET(test_driver), &data, NULL, POST_KERNEL,
+	      PM_DEVICE_RUNTIME_GET(test_driver), &data, NULL, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);

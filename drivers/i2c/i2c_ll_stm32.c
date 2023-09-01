@@ -7,7 +7,6 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -286,7 +285,7 @@ static const struct i2c_driver_api api_funcs = {
 #endif
 };
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 
 static int i2c_stm32_suspend(const struct device *dev)
 {
@@ -404,7 +403,7 @@ static int i2c_stm32_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 
 static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -517,10 +516,10 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
 									\
-PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);			\
+PM_DEVICE_RUNTIME_DT_INST_DEFINE(index, i2c_stm32_pm_action);		\
 									\
 I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,			\
-			 PM_DEVICE_DT_INST_GET(index),			\
+			 PM_DEVICE_RUNTIME_DT_INST_GET(index),		\
 			 &i2c_stm32_dev_data_##index,			\
 			 &i2c_stm32_cfg_##index,			\
 			 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\

@@ -239,9 +239,10 @@ int dev_pm_control(const struct device *dev, enum pm_device_action action)
 	return 0;
 }
 
-PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), NULL, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
-		 NULL, NULL, POST_KERNEL, 80, NULL);
+PM_DEVICE_RUNTIME_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), NULL,
+		 PM_DEVICE_RUNTIME_DT_GET(DT_NODELABEL(test_dev)), NULL, NULL,
+		 POST_KERNEL, 80, NULL);
 
 ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 {
