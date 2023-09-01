@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2023 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -37,6 +37,14 @@ struct flash_pages_layout {
 	size_t pages_size;
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+/** Bit of device info word that indicates device does not require
+ * erase before write. */
+#define FLASH_INFO_WORD_F_NO_ERASE	BIT(1)
+
+#define FLASH_NEEDS_ERASE_BEFORE_WRITE(dev)	\
+	(flash_get_info_word(dev) & FLASH_INFO_WORD_F_NO_ERASE)
+
 
 /**
  * @}
@@ -95,6 +103,14 @@ typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 
 typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device *dev);
 
+/**
+ * @brief Get device information word
+ *
+ * Device information word. Every device is required to return the word filled in
+ * with proper information.
+ */
+typedef uint32_t (*flash_api_get_info_word)(const struct device *dev);
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /**
  * @brief Retrieve a flash device's layout.
@@ -133,6 +149,7 @@ __subsystem struct flash_driver_api {
 	flash_api_write write;
 	flash_api_erase erase;
 	flash_api_get_parameters get_parameters;
+	flash_api_get_info_word get_info_word;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -245,6 +262,25 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 	int rc;
 
 	rc = api->erase(dev, offset, size);
+
+	return rc;
+}
+
+/**
+ * @brief Get device info word
+ *
+ * Returns device information word, a uint32_t type. All devices need to
+ * return the information word.
+ */
+__syscall uint32_t flash_get_info_word(const struct device *dev);
+
+static inline uint32_t z_impl_flash_get_info_word(const struct device *dev)
+{
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+	int rc;
+
+	rc = api->get_info_word(dev);
 
 	return rc;
 }

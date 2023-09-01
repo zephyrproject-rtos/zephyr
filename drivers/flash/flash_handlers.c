@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +42,13 @@ static inline const struct flash_parameters *z_vrfy_flash_get_parameters(const s
 	return z_impl_flash_get_parameters(dev);
 }
 #include <syscalls/flash_get_parameters_mrsh.c>
+
+static inline uint32_t z_vrfy_flash_get_info_word(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, get_info_word));
+	return z_impl_flash_get_info_word((const struct device *)dev);
+}
+#include <syscalls/flash_write_mrsh.c>
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,
