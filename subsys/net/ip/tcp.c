@@ -2276,7 +2276,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		tcp_out(conn, RST);
 		do_close = true;
 		close_status = -ECONNRESET;
-		goto next_state;
+		goto out;
 	}
 
 	if (FL(&fl, &, RST)) {
@@ -2292,7 +2292,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		do_close = true;
 		close_status = -ECONNRESET;
-		goto next_state;
+		goto out;
 	}
 
 	if (tcp_options_len && !tcp_options_check(&conn->recv_options, pkt,
@@ -2301,7 +2301,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		tcp_out(conn, RST);
 		do_close = true;
 		close_status = -ECONNRESET;
-		goto next_state;
+		goto out;
 	}
 
 	if (th && (conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
@@ -2316,7 +2316,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		tcp_out(conn, RST);
 		do_close = true;
 		close_status = -ECONNRESET;
-		goto next_state;
+		goto out;
 	}
 
 	if (th) {
@@ -2904,6 +2904,7 @@ next_state:
 			   tcp_state_to_str(conn->state, true));
 	}
 
+out:
 	if (pkt) {
 		if (verdict == NET_OK) {
 			net_pkt_unref(pkt);
