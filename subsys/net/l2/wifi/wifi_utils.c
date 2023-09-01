@@ -183,6 +183,7 @@ static int wifi_utils_get_all_chans_in_range(uint16_t chan_start,
 		}
 
 		*chan_idx = idx;
+		break;
 	default:
 		NET_ERR("Unknown band value: %d", band_idx);
 		return -EINVAL;
