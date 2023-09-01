@@ -1,5 +1,5 @@
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2019-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # Common properties used by nodes describing M25P80-compatible SPI NOR
@@ -89,6 +89,11 @@ properties:
 
       This value, when present, identifies bits in the status register
       that should be cleared when the device is initialized.
+
+  no-erase:
+    type: boolean
+    description:
+      If true, then device does not require erase prior to write.
 
   mxicy,mx25r-power-mode:
     type: string
