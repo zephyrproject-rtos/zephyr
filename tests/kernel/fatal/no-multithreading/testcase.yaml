@@ -3,7 +3,10 @@ common:
     - qemu_cortex_m3
     - qemu_arc_em
     - qemu_arc_hs
+    - qemu_arc_hs5x
     - qemu_arc_hs6x
+    - qemu_arc_hs6x
+    - qemu_arc_hs_xip
     - qemu_riscv32
     - qemu_riscv32e
     - qemu_riscv64
@@ -11,6 +14,9 @@ common:
     - nsim_em7d_v22
     - nsim_hs
     - nsim_hs_mpuv6
+    - nsim_hs_sram
+    - nsim_hs_flash_xip
+    - nsim_hs3x_hostlink
     - nsim_hs5x
     - nsim_hs6x
   integration_platforms:
