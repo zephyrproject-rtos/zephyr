@@ -1,9 +1,0 @@
-# Copyright (c) 2023 Würth Elektronik eiSos GmbH & Co. KG
-# SPDX-License-Identifier: Apache-2.0
-
-description: |
-    Würth Elektronik WSEN-PADS absolute pressure sensor (SPI bus)
-
-compatible: "we,wsen-pads"
-
-include: ["spi-device.yaml", "we,wsen-pads-common.yaml"]
