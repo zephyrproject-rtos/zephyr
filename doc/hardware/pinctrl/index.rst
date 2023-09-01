@@ -145,9 +145,10 @@ In most situations, the states defined in Devicetree will be the ones used in
 the compiled firmware. However, there are some cases where certain states will
 be conditionally used depending on a compilation flag. A typical case is the
 ``sleep`` state. This state is only used in practice if
-:kconfig:option:`CONFIG_PM_DEVICE` is enabled. If a firmware variant without device
-power management is needed, one should in theory remove the ``sleep`` state from
-Devicetree to not waste ROM space storing such unused state.
+:kconfig:option:`CONFIG_PM_DEVICE` or :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
+are enabled. If a firmware variant without device power management is needed,
+one should in theory remove the ``sleep`` state from Devicetree to not waste ROM
+space storing such unused state.
 
 States can be skipped by the ``pinctrl`` Devicetree macros if a definition named
 ``PINCTRL_SKIP_{STATE_NAME}`` expanding to ``1`` is present when pin control
@@ -157,7 +158,7 @@ management:
 
 .. code-block:: c
 
-    #ifndef CONFIG_PM_DEVICE
+    #if !defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME)
     /** If device power management is not enabled, "sleep" state will be ignored. */
     #define PINCTRL_SKIP_SLEEP 1
     #endif
