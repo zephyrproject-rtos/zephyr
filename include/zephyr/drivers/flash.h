@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -58,8 +58,58 @@ struct flash_pages_layout {
  */
 struct flash_parameters {
 	const size_t write_block_size;
+	/* Device capabilities. Only drivers are supposed to set the
+	 * capabilities directly, users need to call the FLASH_CAPS_
+	 * macros on pointer to flash_parameters to get capabilities.
+	 */
+	struct {
+		/* Device has no explicit erase, so it either erases on
+		 * write or does not require it at all.
+		 * This also includes devices that support erase but
+		 * do not require it.
+		 */
+		bool no_explicit_erase: 1;
+	} caps;
 	uint8_t erase_value; /* Byte value of erased flash */
 };
+
+/** Set for ordinary Flash where erase is needed before write of random data */
+#define FLASH_ERASE_C_EXPLICIT		0x01
+/** Reserved for users as initializer for variables that will later store
+ * capabilities.
+ */
+#define FLASH_ERASE_CAPS_UNSET		(int)-1
+/* The values below are now reserved but not used */
+#define FLASH_ERASE_C_SUPPORTED		0x02
+#define FLASH_ERASE_C_VAL_BIT		0x04
+#define FLASH_ERASE_UNIFORM_PAGE	0x08
+
+
+/* @brief Parser for flash_parameters for retrieving erase capabilities
+ *
+ * The functions parses flash_parameters type object and returns combination
+ * of erase capabilities of 0 if device does not have any.
+ * Not that in some cases availability of erase may be dependent on driver
+ * options, so even if by hardware design a device provides some erase
+ * capabilities, the function may return 0 if these been disabled or not
+ * implemented by driver.
+ *
+ * @param p		pointer to flash_parameters type object
+ *
+ * @return 0 or combination of FLASH_ERASE_C_ capabilities.
+ */
+static inline
+int flash_params_get_erase_cap(const struct flash_parameters *p)
+{
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	return (p->caps.no_explicit_erase) ? 0 : FLASH_ERASE_C_EXPLICIT;
+#else
+	return FLASH_ERASE_C_EXPLICIT;
+#endif
+#endif
+	return 0;
+}
 
 /**
  * @}
