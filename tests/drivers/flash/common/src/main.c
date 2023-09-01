@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,15 +56,20 @@ static uint8_t erase_value;
 static void *flash_driver_setup(void)
 {
 	int rc;
+	uint8_t erase_value;
 
 	zassert_true(device_is_ready(flash_dev));
 
-	flash_params = flash_get_parameters(flash_dev);
-	erase_value = flash_params->erase_value;
+	if (FLASH_NEEDS_ERASE_BEFORE_WRITE(flash_dev)) {
+		flash_params = flash_get_parameters(flash_dev);
+		erase_value = flash_params->erase_value;
+		/* For tests purposes use page (in nrf_qspi_nor page = 64 kB) */
+		flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET,
+					    &page_info);
+	} else {
+		erase_value = 0x55;
+	}
 
-	/* For tests purposes use page (in nrf_qspi_nor page = 64 kB) */
-	flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET,
-				    &page_info);
 
 	/* Check if test region is not empty */
 	uint8_t buf[EXPECTED_SIZE];
@@ -87,23 +92,25 @@ static void *flash_driver_setup(void)
 		     "Test area exceeds flash size");
 
 	/* Check if flash is cleared */
-	bool is_buf_clear = true;
+	if (FLASH_NEEDS_ERASE_BEFORE_WRITE(flash_dev)) {
+		bool is_buf_clear = true;
 
-	for (off_t i = 0; i < EXPECTED_SIZE; i++) {
-		if (buf[i] != erase_value) {
-			is_buf_clear = false;
-			break;
+		for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+			if (buf[i] != erase_value) {
+				is_buf_clear = false;
+				break;
+			}
 		}
-	}
 
-	if (!is_buf_clear) {
-		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
-		rc = flash_erase(flash_dev, page_info.start_offset,
-				(page_info.size *
-				((EXPECTED_SIZE + page_info.size - 1)
-				/ page_info.size)));
+		if (!is_buf_clear) {
+			/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+			rc = flash_erase(flash_dev, page_info.start_offset,
+					(page_info.size *
+					((EXPECTED_SIZE + page_info.size - 1)
+					/ page_info.size)));
 
-		zassert_equal(rc, 0, "Flash memory not properly erased");
+			zassert_equal(rc, 0, "Flash memory not properly erased");
+		}
 	}
 
 	return NULL;
@@ -114,9 +121,16 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	int rc;
 	uint8_t buf[EXPECTED_SIZE];
 	const uint8_t canary = erase_value;
+	uint32_t start;
+
+	if (FLASH_NEEDS_ERASE_BEFORE_WRITE(flash_dev)) {
+		start = page_info.start_offset;
+	} else {
+		start = TEST_AREA_OFFSET;
+	}
 
 	rc = flash_write(flash_dev,
-			 page_info.start_offset,
+			 start,
 			 expected, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot write to flash");
 
@@ -131,7 +145,7 @@ ZTEST(flash_driver, test_read_unaligned_address)
 				buf[buf_o + len] = canary;
 				memset(buf + buf_o, 0, len);
 				rc = flash_read(flash_dev,
-						page_info.start_offset + ad_o,
+						start + ad_o,
 						buf + buf_o, len);
 				zassert_equal(rc, 0, "Cannot read flash");
 				zassert_equal(memcmp(buf + buf_o,
