@@ -14,6 +14,8 @@ Notes:
 
 REDIRECTS = [
     ('application/index', 'develop/application/index'),
+    ('boards/x86/ehl_crb/doc/index', 'boards/x86/intel_ehl/doc/index'),
+    ('boards/x86/rpl_crb/doc/index', 'boards/x86/intel_rpl/doc/index'),
     ('development_process/code_flow', 'project/code_flow'),
     ('development_process/index', 'project/index'),
     ('development_process/issues', 'project/issues'),
