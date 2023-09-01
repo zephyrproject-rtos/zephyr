@@ -446,6 +446,66 @@ void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface,
 					sizeof(twt_sleep_state));
 }
 
+static int wifi_mode(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_mode_info *mode_info = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->mode == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->mode(dev, mode_info);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_MODE, wifi_mode);
+
+static int wifi_packet_filter(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_filter_info *filter_info = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->filter == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->filter(dev, filter_info);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER, wifi_packet_filter);
+
+static int wifi_channel(uint32_t mgmt_request, struct net_if *iface,
+				void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_channel_info *channel_info = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->channel == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->channel(dev, channel_info);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL, wifi_channel);
+
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					   struct wifi_raw_scan_result *raw_scan_result)
