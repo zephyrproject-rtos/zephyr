@@ -103,6 +103,9 @@ GTEXT(_isr_wrapper)
  */
 SECTION_FUNC(exception.entry, _isr_wrapper)
 
+/* Provide requested alignment, which depends e.g. on MTVEC format */
+.balign CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT
+
 #ifdef CONFIG_USERSPACE
 	/* retrieve address of _current_cpu preserving s0 */
 	csrrw s0, mscratch, s0
