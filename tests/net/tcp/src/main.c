@@ -124,6 +124,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_test(sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_syn_rst_ack(sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th);
 static void handle_client_closing_test(sa_family_t af, struct tcphdr *th);
 static void handle_data_fin1_test(sa_family_t af, struct tcphdr *th);
@@ -333,6 +334,13 @@ static struct net_pkt *prepare_syn_ack_packet(sa_family_t af, uint16_t src_port,
 				      NULL, 0U);
 }
 
+static struct net_pkt *prepare_rst_ack_packet(sa_family_t af, uint16_t src_port,
+					      uint16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, RST | ACK,
+				      NULL, 0U);
+}
+
 static struct net_pkt *prepare_ack_packet(sa_family_t af, uint16_t src_port,
 					  uint16_t dst_port)
 {
@@ -429,6 +437,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case 11:
 		handle_data_during_fin1_test(net_pkt_family(pkt), &th);
+		break;
+	case 12:
+		handle_syn_rst_ack(net_pkt_family(pkt), &th);
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -1002,6 +1013,68 @@ ZTEST(net_tcp, test_client_syn_resend)
 
 	net_context_put(ctx);
 }
+
+static void handle_syn_rst_ack(sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	int ret;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		seq = 0U;
+		ack = ntohl(th->th_seq) + 1U;
+		reply = prepare_rst_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		t_state = T_CLOSING;
+		break;
+	default:
+		return;
+	}
+
+	ret = net_recv_data(net_iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   peer replies RST+ACK,
+ *   net_context_connect should report an error
+ */
+ZTEST(net_tcp, test_client_syn_rst_ack)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 12;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				  sizeof(struct sockaddr_in),
+				  NULL,
+				  K_MSEC(1000), NULL);
+
+	zassert_true(ret < 0, "Connect successful on RST+ACK");
+	zassert_not_equal(net_context_get_state(ctx), NET_CONTEXT_CONNECTED,
+			  "Context should not be connected");
+
+	net_context_put(ctx);
+}
+
 
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th)
 {
