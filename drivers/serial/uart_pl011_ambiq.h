@@ -36,9 +36,6 @@ static inline int pl011_ambiq_clk_set(const struct device *dev, uint32_t clk)
 	case 24000000:
 		clksel = PL011_CR_AMBIQ_CLKSEL_24MHZ;
 		break;
-	case 48000000:
-		clksel = PL011_CR_AMBIQ_CLKSEL_48MHZ;
-		break;
 	default:
 		return -EINVAL;
 	}
