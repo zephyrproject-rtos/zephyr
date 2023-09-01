@@ -158,7 +158,8 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 					  const struct sockaddr *remote_addr,
 					  const struct sockaddr *local_addr,
 					  uint16_t remote_port,
-					  uint16_t local_port)
+					  uint16_t local_port,
+					  bool reuseport_set)
 {
 	struct net_conn *conn;
 	struct net_conn *tmp;
@@ -171,38 +172,6 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 		}
 
 		if (conn->family != family) {
-			continue;
-		}
-
-		if (remote_addr) {
-			if (!(conn->flags & NET_CONN_REMOTE_ADDR_SET)) {
-				continue;
-			}
-
-			if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			    remote_addr->sa_family == AF_INET6 &&
-			    remote_addr->sa_family ==
-			    conn->remote_addr.sa_family) {
-				if (!net_ipv6_addr_cmp(
-					    &net_sin6(remote_addr)->sin6_addr,
-					    &net_sin6(&conn->remote_addr)->
-								sin6_addr)) {
-					continue;
-				}
-			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-				   remote_addr->sa_family == AF_INET &&
-				   remote_addr->sa_family ==
-				   conn->remote_addr.sa_family) {
-				if (!net_ipv4_addr_cmp(
-					    &net_sin(remote_addr)->sin_addr,
-					    &net_sin(&conn->remote_addr)->
-								sin_addr)) {
-					continue;
-				}
-			} else {
-				continue;
-			}
-		} else if (conn->flags & NET_CONN_REMOTE_ADDR_SET) {
 			continue;
 		}
 
@@ -238,13 +207,48 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 			continue;
 		}
 
-		if (net_sin(&conn->remote_addr)->sin_port !=
-		    htons(remote_port)) {
+		if (net_sin(&conn->local_addr)->sin_port !=
+		    htons(local_port)) {
 			continue;
 		}
 
-		if (net_sin(&conn->local_addr)->sin_port !=
-		    htons(local_port)) {
+		if (remote_addr) {
+			if (!(conn->flags & NET_CONN_REMOTE_ADDR_SET)) {
+				continue;
+			}
+
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    remote_addr->sa_family == AF_INET6 &&
+			    remote_addr->sa_family ==
+			    conn->remote_addr.sa_family) {
+				if (!net_ipv6_addr_cmp(
+					    &net_sin6(remote_addr)->sin6_addr,
+					    &net_sin6(&conn->remote_addr)->
+								sin6_addr)) {
+					continue;
+				}
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				   remote_addr->sa_family == AF_INET &&
+				   remote_addr->sa_family ==
+				   conn->remote_addr.sa_family) {
+				if (!net_ipv4_addr_cmp(
+					    &net_sin(remote_addr)->sin_addr,
+					    &net_sin(&conn->remote_addr)->
+								sin_addr)) {
+					continue;
+				}
+			} else {
+				continue;
+			}
+		} else if (conn->flags & NET_CONN_REMOTE_ADDR_SET) {
+			continue;
+		} else if (reuseport_set && conn->context != NULL &&
+			   net_context_is_reuseport_set(conn->context)) {
+			continue;
+		}
+
+		if (net_sin(&conn->remote_addr)->sin_port !=
+		    htons(remote_port)) {
 			continue;
 		}
 
@@ -270,10 +274,13 @@ int net_conn_register(uint16_t proto, uint8_t family,
 	uint8_t flags = 0U;
 
 	conn = conn_find_handler(proto, family, remote_addr, local_addr,
-				 remote_port, local_port);
+				 remote_port, local_port,
+				 context != NULL ?
+					net_context_is_reuseport_set(context) :
+					false);
 	if (conn) {
 		NET_ERR("Identical connection handler %p already found.", conn);
-		return -EALREADY;
+		return -EADDRINUSE;
 	}
 
 	conn = conn_get_unused();
@@ -734,14 +741,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
 			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
 				continue; /* wrong local address */
-			}
-
-			/* If we have an existing best_match, and that one
-			 * specifies a remote port, then we've matched to a
-			 * LISTENING connection that we should not override.
-			 */
-			if (best_match != NULL && best_match->flags & NET_CONN_REMOTE_PORT_SPEC) {
-				continue; /* do not override listening connection */
 			}
 
 			if (best_rank < NET_CONN_RANK(conn->flags)) {

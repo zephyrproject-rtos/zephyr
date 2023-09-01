@@ -69,6 +69,15 @@ bool net_context_is_reuseaddr_set(struct net_context *context)
 #endif
 }
 
+bool net_context_is_reuseport_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	return context->options.reuseport;
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static inline bool is_in_tcp_listen_state(struct net_context *context)
 {
@@ -104,7 +113,8 @@ static inline bool is_in_tcp_time_wait_state(struct net_context *context)
 static int check_used_port(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr,
-			   bool reuseaddr_set)
+			   bool reuseaddr_set,
+			   bool reuseport_set)
 
 {
 	int i;
@@ -130,11 +140,17 @@ static int check_used_port(enum net_ip_protocol proto,
 					net_sin6_ptr(&contexts[i].local)->sin6_addr) ||
 			     net_ipv6_is_addr_unspecified(
 					&net_sin6(local_addr)->sin6_addr))) {
-				if (reuseaddr_set &&
-				    !is_in_tcp_listen_state(&contexts[i]) &&
-				    !(net_ipv6_is_addr_unspecified(
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be unspecified.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   !is_in_tcp_listen_state(&contexts[i]) &&
+					   !(net_ipv6_is_addr_unspecified(
 						net_sin6_ptr(&contexts[i].local)->sin6_addr) &&
-				      net_ipv6_is_addr_unspecified(
+					     net_ipv6_is_addr_unspecified(
 						&net_sin6(local_addr)->sin6_addr))) {
 					/* In case of REUSEADDR, only one context may be
 					 * bound to the unspecified address, but not both.
@@ -153,7 +169,14 @@ static int check_used_port(enum net_ip_protocol proto,
 							     sin6_addr,
 				    &((struct sockaddr_in6 *)
 				      local_addr)->sin6_addr)) {
-				if (reuseaddr_set && is_in_tcp_time_wait_state(&contexts[i])) {
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be bound to exactly the same address.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   is_in_tcp_time_wait_state(&contexts[i])) {
 					/* With REUSEADDR, the existing context must be
 					 * in the TCP TIME_WAIT state.
 					 */
@@ -172,11 +195,17 @@ static int check_used_port(enum net_ip_protocol proto,
 					net_sin_ptr(&contexts[i].local)->sin_addr) ||
 			     net_ipv4_is_addr_unspecified(
 					&net_sin(local_addr)->sin_addr))) {
-				if (reuseaddr_set &&
-				    !is_in_tcp_listen_state(&contexts[i]) &&
-				    !(net_ipv4_is_addr_unspecified(
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be unspecified.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   !is_in_tcp_listen_state(&contexts[i]) &&
+					   !(net_ipv4_is_addr_unspecified(
 						net_sin_ptr(&contexts[i].local)->sin_addr) &&
-				      net_ipv4_is_addr_unspecified(
+					     net_ipv4_is_addr_unspecified(
 						&net_sin(local_addr)->sin_addr))) {
 					/* In case of REUSEADDR, only one context may be
 					 * bound to the unspecified address, but not both.
@@ -195,7 +224,14 @@ static int check_used_port(enum net_ip_protocol proto,
 							      sin_addr,
 				    &((struct sockaddr_in *)
 				      local_addr)->sin_addr)) {
-				if (reuseaddr_set && is_in_tcp_time_wait_state(&contexts[i])) {
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be bound to exactly the same address.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   is_in_tcp_time_wait_state(&contexts[i])) {
 					/* With REUSEADDR, the existing context must be
 					 * in the TCP TIME_WAIT state.
 					 */
@@ -218,7 +254,7 @@ static uint16_t find_available_port(struct net_context *context,
 	do {
 		local_port = sys_rand32_get() | 0x8000;
 	} while (check_used_port(net_context_get_proto(context),
-				 htons(local_port), addr, false) == -EEXIST);
+				 htons(local_port), addr, false, false) == -EEXIST);
 
 	return htons(local_port);
 }
@@ -231,7 +267,7 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 {
-	return check_used_port(proto, htons(local_port), local_addr, false) != 0;
+	return check_used_port(proto, htons(local_port), local_addr, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -693,7 +729,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ret = check_used_port(context->proto,
 					      addr6->sin6_port,
 					      addr,
-					      net_context_is_reuseaddr_set(context));
+					      net_context_is_reuseaddr_set(context),
+					      net_context_is_reuseport_set(context));
 			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr6->sin6_port));
@@ -794,7 +831,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ret = check_used_port(context->proto,
 					      addr4->sin_port,
 					      addr,
-					      net_context_is_reuseaddr_set(context));
+					      net_context_is_reuseaddr_set(context),
+					      net_context_is_reuseport_set(context));
 			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr4->sin_port));
@@ -1427,6 +1465,32 @@ static int get_context_reuseaddr(struct net_context *context,
 	}
 
 	if (context->options.reuseaddr == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_reuseport(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.reuseport == true) {
 		*((int *)value) = (int) true;
 	} else {
 		*((int *)value) = (int) false;
@@ -2516,6 +2580,28 @@ static int set_context_reuseaddr(struct net_context *context,
 #endif
 }
 
+static int set_context_reuseport(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	bool reuseport = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		reuseport = true;
+	}
+
+	context->options.reuseport = reuseport;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2557,6 +2643,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_REUSEADDR:
 		ret = set_context_reuseaddr(context, value, len);
+		break;
+	case NET_OPT_REUSEPORT:
+		ret = set_context_reuseport(context, value, len);
 		break;
 	}
 
@@ -2606,6 +2695,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_REUSEADDR:
 		ret = get_context_reuseaddr(context, value, len);
+		break;
+	case NET_OPT_REUSEPORT:
+		ret = get_context_reuseport(context, value, len);
 		break;
 	}
 
