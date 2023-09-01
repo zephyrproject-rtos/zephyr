@@ -111,23 +111,36 @@ to run Zephyr applications and kernel tests, but you need to set up
 some environment configurations as follows:
 
 * Please install uefi-run in your system environment according to this
-  reference link https://github.com/Richard-W/uefi-run.
+  reference link https://github.com/Richard-W/uefi-run. Note that uefi-run
+  from snapstore may not work because of strict snap confinements.
+  The preferred method is installing with cargo.
 
 * Please install OVMF in your system environment according to this
   reference link https://github.com/tianocore/tianocore.github.io/wiki/OVMF.
+  The easiest way is to install a special ``ovmf`` package found in many distros.
+  For example, use the following command in Ubuntu:
+
+  .. code-block:: console
+
+     sudo apt install ovmf
 
 * Set system environment variable OVMF_FD_PATH,
-  for example: export OVMF_FD_PATH=/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd
+  for example:
 
-For example, with the test "sample.basic.helloworld.uefi":
+  .. code-block:: console
 
-.. code-block:: console
+     export OVMF_FD_PATH=/usr/share/OVMF/OVMF_CODE.fd
 
-        export OVMF_FD_PATH=/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd
-        west build -b qemu_x86_64 -p auto samples/hello_world/ -DCONF_FILE=prj_uefi.conf
-        west build -t run
+Now you can build application, for example UEFI boot test sample found under
+:zephyr_file:`tests/boot/uefi`:
 
-This will build an image with the hello_world sample app, boot it on
+.. zephyr-app-commands::
+   :zephyr-app: tests/boot/uefi
+   :host-os: unix
+   :board: qemu_x86_64
+   :goals: run
+
+This will build an image with the uefi boot test app, boot it on
 qemu_x86_64 using UEFI, and display the following console output:
 
 .. code-block:: console
