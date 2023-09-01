@@ -31,21 +31,21 @@ static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
 	zassert_equal(bind(sock, addr, addrlen),
 		      0,
-		      "bind failed");
+		      "bind failed with error %d", errno);
 }
 
 static void test_listen(int sock)
 {
 	zassert_equal(listen(sock, MAX_CONNS),
 		      0,
-		      "listen failed");
+		      "listen failed with error %d", errno);
 }
 
 static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
 	zassert_equal(connect(sock, addr, addrlen),
 		      0,
-		      "connect failed");
+		      "connect failed with error %d", errno);
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the connection proceed */
@@ -554,6 +554,8 @@ ZTEST(net_socket_tcp, test_v4_broken_link)
 	test_close(s_sock);
 
 	restore_packet_loss_ratio();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST_USER(net_socket_tcp, test_v4_sendto_recvfrom)
