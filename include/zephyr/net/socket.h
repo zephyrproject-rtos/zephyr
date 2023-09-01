@@ -1035,7 +1035,7 @@ struct ifreq {
 #define SO_OOBINLINE 10
 /** sockopt: Socket lingers on close (ignored, for compatibility) */
 #define SO_LINGER 13
-/** sockopt: Allow multiple sockets to reuse a single port (ignored, for compatibility) */
+/** sockopt: Allow multiple sockets to reuse a single port */
 #define SO_REUSEPORT 15
 
 /** sockopt: Receive low watermark (ignored, for compatibility) */

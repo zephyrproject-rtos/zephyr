@@ -696,6 +696,13 @@ config NET_CONTEXT_REUSEADDR
 	  Allow to set the SO_REUSEADDR flag on a socket. This enables multiple
 	  sockets to bind to the same local IP address.
 
+config NET_CONTEXT_REUSEPORT
+	bool "Add REUSEPORT support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEPORT flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address and port combination.
+
 config NET_TEST
 	bool "Network Testing"
 	help
