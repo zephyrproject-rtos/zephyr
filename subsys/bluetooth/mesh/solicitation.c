@@ -153,12 +153,12 @@ static bool sol_pdu_decrypt(struct bt_mesh_subnet *sub, void *data)
 		net_buf_simple_init(out, 0);
 		net_buf_simple_add_mem(out, in->data, in->len);
 
-		err = bt_mesh_net_obfuscate(out->data, 0, sub->keys[i].msg.privacy);
+		err = bt_mesh_net_obfuscate(out->data, 0, &sub->keys[i].msg.privacy);
 		if (err) {
 			LOG_DBG("obfuscation err %d", err);
 			continue;
 		}
-		err = bt_mesh_net_decrypt(sub->keys[i].msg.enc, out,
+		err = bt_mesh_net_decrypt(&sub->keys[i].msg.enc, out,
 					  0, BT_MESH_NONCE_SOLICITATION);
 		if (!err) {
 			LOG_DBG("Decrypted PDU %s", bt_hex(out->data, out->len));
