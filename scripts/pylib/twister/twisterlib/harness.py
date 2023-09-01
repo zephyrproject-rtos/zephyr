@@ -143,10 +143,15 @@ class Robot(Harness):
 
             if cmake_proc.returncode == 0:
                 self.instance.status = "passed"
+                # all tests in one Robot file are treated as a single test case,
+                # so its status should be set accordingly to the instance status
+                # please note that there should be only one testcase in testcases list
+                self.instance.testcases[0].status = "passed"
             else:
                 logger.error("Robot test failure: %s for %s" %
                              (handler.sourcedir, self.instance.platform.name))
                 self.instance.status = "failed"
+                self.instance.testcases[0].status = "failed"
 
             if out:
                 with open(os.path.join(self.instance.build_dir, handler.log), "wt") as log:
