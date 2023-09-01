@@ -85,7 +85,7 @@
 	pinctrl-names = "default";
 
 	dma-names = "rx", "tx";
-	dmas = <&dma 3>, <&dma 3>;
+	dmas = <&dma 2>, <&dma 3>;
 };
 
 &spi2 {

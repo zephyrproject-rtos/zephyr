@@ -21,8 +21,6 @@ LOG_MODULE_REGISTER(i2s_ll_esp32);
 
 #define I2S_ESP32_RX_BLOCK_COUNT 1
 #define I2S_ESP32_TX_BLOCK_COUNT 1
-// TODO get address from DTS
-#define I2S0_ADDR                (void *)0x6000F000
 
 #define MODULO_INC(val, max)                                                                       \
 	{                                                                                          \
@@ -135,7 +133,7 @@ static esp_err_t i2s_calculate_common_clock(i2s_hal_config_t *const hal_config,
 	clk_cfg->bclk = hal_config->sample_rate * hal_config->total_chan * hal_config->sample_bits;
 	/* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate
 	 * by mclk = sample_rate * multiple */
-	clk_cfg->mclk = hal_config->sample_rate * I2S_MCLK_MULTIPLE_256;
+	clk_cfg->mclk = hal_config->sample_rate * multi;
 
 	/* Calculate bclk_div = mclk / bclk */
 	clk_cfg->bclk_div = clk_cfg->mclk / clk_cfg->bclk;
@@ -175,7 +173,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 	hal_config->total_chan = i2s_cfg->channels;
 	hal_config->sample_bits = channel_length;
 	/* chan_bits: default '0' means equal to 'sample_bits' */
-	hal_config->chan_bits = hal_config->sample_bits;
+	hal_config->chan_bits = i2s_cfg->word_size;
 	hal_config->sample_rate = i2s_cfg->frame_clk_freq;
 
 	/* Works only because 2 channels max */
@@ -498,9 +496,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 		goto rx_disable;
 	}
 
-	// TODO get dynamic address of the I2S module
-	ret = reload_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg, I2S0_ADDR,
-			 stream->mem_block, stream->cfg.block_size);
+	ret = reload_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg,
+			 stream->i2s_blk_addr, stream->mem_block, stream->cfg.block_size);
 	if (ret < 0) {
 		goto rx_disable;
 	}
@@ -571,7 +568,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 	k_sem_give(&stream->sem);
 
 	ret = reload_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg, stream->mem_block,
-			 I2S0_ADDR, stream->cfg.block_size);
+			 stream->i2s_blk_addr, stream->cfg.block_size);
 	if (ret < 0) {
 		goto tx_disable;
 	}
@@ -672,8 +669,9 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	/* remember active RX DMA channel (used in callback) */
 	active_dma_rx_channel[stream->dma_channel] = dev;
 
-	ret = start_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg, I2S0_ADDR,
-			stream->mem_block, stream->fifo_threshold, stream->cfg.block_size);
+	ret = start_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg,
+			stream->i2s_blk_addr, stream->mem_block, stream->fifo_threshold,
+			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start RX DMA transfer: %d", ret);
 		return ret;
@@ -706,7 +704,7 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	active_dma_tx_channel[stream->dma_channel] = dev;
 
 	ret = start_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg, stream->mem_block,
-			I2S0_ADDR, stream->fifo_threshold, stream->cfg.block_size);
+			stream->i2s_blk_addr, stream->fifo_threshold, stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
@@ -820,7 +818,8 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 		.stream_disable = dir##_stream_disable,                                            \
 		.queue_drop = dir##_queue_drop,                                                    \
 		.mem_block_queue.buf = dir##_##index##_ring_buf,                                   \
-		.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf)}
+		.mem_block_queue.len = ARRAY_SIZE(dir##_##index##_ring_buf),                       \
+		.i2s_blk_addr = (void *)DT_REG_ADDR(DT_NODELABEL(i2s##index))}
 
 #define I2S_ESP32_INIT(index)                                                                      \
                                                                                                    \

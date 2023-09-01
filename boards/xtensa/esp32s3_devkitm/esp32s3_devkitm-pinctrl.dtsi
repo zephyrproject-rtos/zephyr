@@ -43,8 +43,8 @@
 	i2s0_default: i2s0_default {
 		group1 {
 			pinmux = <I2S0_MCLK_GPIO4>,
-				 <I2S0_O_BCK_GPIO5>,
-				 <I2S0_O_WS_GPIO6>,
+				 <I2S0_I_WS_GPIO5>,
+				 <I2S0_I_BCK_GPIO6>,
 				 <I2S0_SD_GPIO7>;
 		};
 	};

@@ -204,7 +204,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_I2S0_MODULE>;
 			dma-clk = <ESP32_GDMA_MODULE>;
-			dma-host = <2>;
 			status = "disabled";
 		};
 
@@ -217,7 +216,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_I2S1_MODULE>;
 			dma-clk = <ESP32_GDMA_MODULE>;
-			dma-host = <3>;
 			status = "disabled";
 		};
 

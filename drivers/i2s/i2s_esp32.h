@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #pragma once
 
 #include <zephyr/drivers/i2s.h>
@@ -58,6 +52,8 @@ struct stream {
 	int (*stream_start)(struct stream *, const struct device *dev);
 	void (*stream_disable)(struct stream *, const struct device *dev);
 	void (*queue_drop)(struct stream *);
+
+	void *i2s_blk_addr;
 };
 
 /* Device run time data */
@@ -65,8 +61,8 @@ struct i2s_esp32_data {
 	struct stream rx;
 	struct stream tx;
 
-	i2s_hal_context_t hal_ctx;    /*!< I2S hal context*/
-	i2s_hal_config_t hal_cfg; /*!< I2S hal configurations*/
+	i2s_hal_context_t hal_ctx; /*!< I2S hal context*/
+	i2s_hal_config_t hal_cfg;  /*!< I2S hal configurations*/
 	i2s_hal_clock_cfg_t clk_cfg;
 };
 
