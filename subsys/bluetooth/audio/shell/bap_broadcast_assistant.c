@@ -779,7 +779,6 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 						   size_t argc, char **argv)
 {
-	struct bt_bap_scan_delegator_subgroup subgroup_params[BT_ISO_MAX_GROUP_ISO_COUNT] = { 0 };
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	/* TODO: Add support to select which PA sync to BIG sync to */
 	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
@@ -855,6 +854,9 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 	/* The MIN is used to handle `array-bounds` error on some compilers */
 	param.num_subgroups = MIN(received_base.subgroup_count, BROADCAST_SNK_SUBGROUP_CNT);
+#if BROADCAST_SNK_SUBGROUP_CNT > 0
+	struct bt_bap_scan_delegator_subgroup subgroup_params[BROADCAST_SNK_SUBGROUP_CNT] = {0};
+
 	param.subgroups = subgroup_params;
 	for (size_t i = 0; i < param.num_subgroups; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup_param = &subgroup_params[i];
@@ -873,12 +875,22 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 		metadata_len = subgroup->codec_cfg.meta_len;
+		if (metadata_len > sizeof(subgroup_param->metadata)) {
+			shell_error(sh,
+				    "Could not set %zu octets of metadata for subgroup_param of "
+				    "size %zu",
+				    metadata_len, sizeof(subgroup_param->metadata));
+
+			return -ENOEXEC;
+		}
+
 		memcpy(subgroup_param->metadata, subgroup->codec_cfg.meta, metadata_len);
 #else
 		metadata_len = 0U;
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 		subgroup_param->metadata_len = metadata_len;
 	}
+#endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
 	if (err != 0) {
