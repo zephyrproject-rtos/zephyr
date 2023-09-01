@@ -1,4 +1,4 @@
-.. _mimxrt1170_evk:
+﻿.. _mimxrt1170_evk:
 
 NXP MIMXRT1170-EVK/EVKB
 #######################
@@ -9,7 +9,7 @@ Overview
 The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-M4
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets. Zephyr
-supports the initial revision of this EVK, as well as EVK rev B.
+supports the initial revision of this EVK, as well as rev EVKB.
 
 .. image:: mimxrt1170_evk.jpg
    :align: center
@@ -59,7 +59,7 @@ Hardware
 - Debug
 
   - JTAG 20-pin connector
-  - OpenSDA with DAPLink
+  - on-board debugger
 
 - Sensor
 
@@ -90,16 +90,17 @@ This platform has the following external memories:
 | Device             | Controller | Status                              |
 +====================+============+=====================================+
 | W9825G6KH          | SEMC       | Enabled via device configuration    |
-|                    |            | data block, which sets up SEMC at   |
-|                    |            | boot time                           |
+| SDRAM              |            | data (DCD) block, which sets up     |
+|                    |            | the SEMC at boot time               |
 +--------------------+------------+-------------------------------------+
-| IS25WP128          | FLEXSPI    | Enabled via flash configurationn    |
-| (RT1170 EVK)       |            | block, which sets up FLEXSPI at     |
-|                    |            | boot time.                          |
+| IS25WP128          | FLEXSPI    | Enabled via flash configuration     |
+| QSPI flash         |            | block (FCB), which sets up the      |
+| (RT1170 EVK)       |            | FLEXSPI at boot time.               |
 +--------------------+------------+-------------------------------------+
-| W25Q512NWEIQ       | FLEXSPI    | Enabled via flash configurationn    |
-| (RT1170 EVKB)      |            | block, which sets up FLEXSPI at     |
-|                    |            | boot time. Supported for XIP only.  |
+| W25Q512NWEIQ       | FLEXSPI    | Enabled via flash configuration     |
+| QSPI flash         |            | block (FCB), which sets up the      |
+| (RT1170 EVKB)      |            | FLEXSPI at boot time. Supported for |
+|                    |            | XIP only.                           |
 +--------------------+------------+-------------------------------------+
 
 Supported Features
@@ -123,6 +124,8 @@ RT1170 EVKB (`mimxrt1170_evkb_cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | COUNTER   | on-chip    | gpt                                 | Supported       | Supported       |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
+| TIMER     | on-chip    | gpt                                 | Supported       | Supported       |
++-----------+------------+-------------------------------------+-----------------+-----------------+
 | CAN       | on-chip    | flexcan                             | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SPI       | on-chip    | spi                                 | Supported (M7)  | Supported       |
@@ -139,11 +142,10 @@ RT1170 EVKB (`mimxrt1170_evkb_cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | DMA       | on-chip    | dma                                 | Supported       | Supported       |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| GPT       | on-chip    | gpt                                 | Supported       | Supported       |
-+-----------+------------+-------------------------------------+-----------------+-----------------+
 | WATCHDOG  | on-chip    | watchdog                            | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ENET      | on-chip    | ethernet                            | Supported (M7)  | No support      |
+| ENET      | on-chip    | ethernet - 10/100M (ENET_QOS or     | Supported (M7)  | No support      |
+| ENET1G    |            | GigE not supported yet)             |                 |                 |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SAI       | on-chip    | i2s                                 | Supported       | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
@@ -165,10 +167,9 @@ RT1170 EVKB (`mimxrt1170_evkb_cm7/cm4`)
 | SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 
-The default configuration can be found in the defconfig file:
+The default configuration can be found in the defconfig files:
 ``boards/arm/mimxrt1170_evk/mimxrt1170_evk_cm7_defconfig``
-
-Other hardware features are not currently supported by the port.
+``boards/arm/mimxrt1170_evk/mimxrt1170_evkb_cm7_defconfig``
 
 Connections and I/Os
 ====================
@@ -310,33 +311,62 @@ secondary core should be placed into a loop, then a debugger can be attached
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
-however the :ref:`pyocd-debug-host-tools` do not yet support programming the
-external flashes on this board so you must reconfigure the board for one of the
-following debug probes instead.
+A debug probe is used for both flashing and debugging the board. The on-board
+debugger listed below works with the LinkServer runner by default, or can be
+reprogrammed with JLink firmware.
+- MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
+- MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
 
 .. _Using J-Link RT1170:
 
 Using J-Link
 ---------------------------------
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
+JLink is the default runner for this board.  Install the
+:ref:`jlink-debug-host-tools` and make sure they are in your search path.
 
 There are two options: the onboard debug circuit can be updated with Segger
 J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
-EVK. See `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
+`Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+.. _Using LinkServer RT1170:
+
+Using LinkServer
+----------------------------------
+
+Known limitations with LinkServer and these boards include:
+- ``west debug`` does not yet work correctly, and the application image is not
+properly written to the memory.  `NXP MCUXpresso for Visual Studio Code`_
+can be used to debug Zephyr applications with LinkServer.
+- ``west flash`` will not write images to non-flash locations. The flash
+command only works when all data in the image is written to flash memory
+regions.
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
+
+Use the ``-r linkserver`` option with West to use the LinkServer runner.
+
+.. code-block:: console
+
+   west flash -r linkserver
+
 
 Configuring a Console
 =====================
 
-Regardless of your choice in debug probe, we will use the OpenSDA
-microcontroller as a usb-to-serial adapter for the serial console. Check that
-jumpers J5 and J8 are **on** (they are on by default when boards ship from
-the factory) to connect UART signals to the OpenSDA microcontroller.
+We will use the on-board debugger
+microcontroller as a usb-to-serial adapter for the serial console. The following
+jumper settings are default on these boards, and are required to connect the
+UART signals to the USB bridge circuit:
+- MIMXRT1170-EVKB: JP2 open (default)
+- MIMXRT1170-EVK:  J31 and J32 shorted (default)
 
-Connect a USB cable from your PC to J11.
+Connect a USB cable from your PC to the on-board debugger USB port:
+- MIMXRT1170-EVKB: J86
+- MIMXRT1170-EVK:  J11
 
 Use the following settings with your serial terminal of choice (minicom, putty,
 etc.):
@@ -351,7 +381,7 @@ Flashing
 
 Here is an example for the :ref:`hello_world` application.
 
-Before power on the board, make sure SW1 is set to 0001b
+Before powering the board, make sure SW1 is set to 0001b
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -364,7 +394,7 @@ see the following message in the terminal:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
+   ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk_cm7
 
 Debugging
@@ -382,7 +412,7 @@ should see the following message in the terminal:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
+   ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk_cm7
 
 .. _MIMXRT1170-EVK Website:
@@ -403,5 +433,11 @@ should see the following message in the terminal:
 .. _Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK:
    https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1160-EVK-or-MIMXRT1170-EVK/ta-p/1529760
 
+.. _Using J-Link with MIMXRT1170-EVKB:
+   https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1170-EVKB/ta-p/1715138
+
 .. _AN13264:
    https://www.nxp.com/docs/en/application-note/AN13264.pdf
+
+.. _NXP MCUXpresso for Visual Studio Code:
+	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
