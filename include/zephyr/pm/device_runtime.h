@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_
 
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,37 @@ extern "C" {
  */
 
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * Get the name of device runtime PM resources.
+ *
+ * @param dev_id Device id.
+ */
+#define Z_PM_DEVICE_RUNTIME_NAME(dev_id) _CONCAT(__pm_device_runtime_, dev_id)
+
+/**
+ * Define device PM resources for the given node identifier.
+ *
+ * @param node_id Node identifier (DT_INVALID_NODE if not a DT device).
+ * @param dev_id Device id.
+ * @param pm_action_cb PM control callback.
+ */
+#define Z_PM_DEVICE_RUNTIME_DEFINE(node_id, dev_id, pm_action_cb)              \
+	static struct pm_device Z_PM_DEVICE_RUNTIME_NAME(dev_id) =             \
+	Z_PM_DEVICE_INIT(Z_PM_DEVICE_RUNTIME_NAME(dev_id), node_id,            \
+			 pm_action_cb)
+
+/**
+ * Get a reference to the device runtime PM resources.
+ *
+ * @param dev_id Device id.
+ */
+#define Z_PM_DEVICE_RUNTIME_GET(dev_id) (&Z_PM_DEVICE_RUNTIME_NAME(dev_id))
+
+/** @endcond */
+
 /**
  * @brief Automatically enable device runtime based on devicetree properties
  *
@@ -158,6 +190,9 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
 
 #else
 
+#define Z_PM_DEVICE_RUNTIME_DEFINE(node_id, dev_id, pm_action_cb)
+#define Z_PM_DEVICE_RUNTIME_GET(dev_id) NULL
+
 static inline int pm_device_runtime_auto_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -201,6 +236,85 @@ static inline bool pm_device_runtime_is_enabled(const struct device *dev)
 }
 
 #endif
+
+/**
+ * Define device runtime PM resources for the given device name.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE_RUNTIME} is not
+ * enabled.
+ *
+ * @param dev_id Device id.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_RUNTIME_DT_DEFINE, #PM_DEVICE_RUNTIME_DT_INST_DEFINE
+ */
+#define PM_DEVICE_RUNTIME_DEFINE(dev_id, pm_action_cb) \
+	Z_PM_DEVICE_RUNTIME_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb)
+
+/**
+ * Define device runtime PM resources for the given node identifier.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE_RUNTIME} is not
+ * enabled.
+ *
+ * @param node_id Node identifier.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_RUNTIME_DT_INST_DEFINE, #PM_DEVICE_RUNTIME_DEFINE
+ */
+#define PM_DEVICE_RUNTIME_DT_DEFINE(node_id, pm_action_cb)                     \
+	Z_PM_DEVICE_RUNTIME_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),       \
+				   pm_action_cb)
+
+/**
+ * Define device runtime PM resources for the given instance.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE_RUNTIME} is not
+ * enabled.
+ *
+ * @param inst Instance.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_RUNTIME_DT_DEFINE, #PM_DEVICE_RUNTIME_DEFINE
+ */
+#define PM_DEVICE_RUNTIME_DT_INST_DEFINE(inst, pm_action_cb)                   \
+	Z_PM_DEVICE_RUNTIME_DEFINE(DT_DRV_INST(inst),                          \
+			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(inst)), pm_action_cb)
+
+/**
+ * @brief Obtain a reference to the device runtime PM resources for the given
+ * device.
+ *
+ * @param dev_id Device id.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE_RUNTIME} is disabled).
+ */
+#define PM_DEVICE_RUNTIME_GET(dev_id) Z_PM_DEVICE_RUNTIME_GET(dev_id)
+
+/**
+ * @brief Obtain a reference to the device runtime PM resources for the given
+ * node.
+ *
+ * @param node_id Node identifier.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE_RUNTIME} is disabled).
+ */
+#define PM_DEVICE_RUNTIME_DT_GET(node_id)                                      \
+	PM_DEVICE_RUNTIME_GET(Z_DEVICE_DT_DEV_ID(node_id))
+
+/**
+ * @brief Obtain a reference to the device runtime PM resources for the given
+ * instance.
+ *
+ * @param inst Instance.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE_RUNTIME} is disabled).
+ */
+#define PM_DEVICE_RUNTIME_DT_INST_GET(inst)                                    \
+	PM_DEVICE_RUNTIME_DT_GET(DT_DRV_INST(inst))
 
 /** @} */
 
