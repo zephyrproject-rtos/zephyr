@@ -18,7 +18,9 @@
 		led2 = &led_white;
 		led3 = &led_red;
 		sw0 = &key_1;
+		sw1 = &key_2;
 		sw2 = &key_3;
+		sw3 = &key_4;
 		pwm-led0 = &pwm_led_blue;
 		pwm-0 = &pwm0;
 		watchdog0 = &wdt;
@@ -63,11 +65,19 @@
 		compatible = "gpio-keys";
 		key_1: button_1 {
 			label = "User KEY1";
-			gpios = <&gpioc 2 GPIO_PULL_DOWN>;
+			gpios = <&gpioc 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		key_2: button_2 {
+			label = "User KEY2";
+			gpios = <&gpioc 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_3: button_3 {
 			label = "User KEY3";
-			gpios = <&gpioc 0 GPIO_PULL_DOWN>;
+			gpios = <&gpioc 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		key_4: button_4 {
+			label = "User KEY4";
+			gpios = <&gpioc 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		key_dfu: button_dfu {
 			label = "USB DFU";
