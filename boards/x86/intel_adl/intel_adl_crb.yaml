@@ -10,6 +10,7 @@ supported:
   - pwm
   - gpio
   - rtc
+  - i2c
 testing:
   timeout_multiplier: 4
   ignore_tags:
