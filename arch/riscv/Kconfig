@@ -323,6 +323,15 @@ config CMSIS_V2_THREAD_MAX_STACK_SIZE
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 256
 
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	int "Alignment of RISC-V trap handler in bytes"
+	default 4
+	help
+	  This value configures the alignment of RISC-V trap handling
+	  code. The requirement for a particular alignment arises from
+	  the format of MTVEC register which is RISC-V platform-specific.
+	  The minimum alignment is 4 bytes according to the Spec.
+
 config GEN_IRQ_VECTOR_TABLE
 	select RISCV_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGED
 
