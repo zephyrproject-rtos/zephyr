@@ -187,8 +187,9 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 #endif
 	switch (cfg->direction) {
 	case HOST_TO_MEMORY:
-		uint32_t rp = *DGBRP(cfg->base, cfg->regblock_size, channel);
-		uint32_t next_rp = (rp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
+		; /* Only statements can be labeled in C, a declaration is not valid */
+		const uint32_t rp = *DGBRP(cfg->base, cfg->regblock_size, channel);
+		const uint32_t next_rp = (rp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
 			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
 
 		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
@@ -196,8 +197,9 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 		intel_adsp_hda_enable_buffer_interrupt(cfg->base, cfg->regblock_size, channel);
 		break;
 	case MEMORY_TO_HOST:
-		uint32_t wp = *DGBWP(cfg->base, cfg->regblock_size, channel);
-		uint32_t next_wp = (wp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
+		;
+		const uint32_t wp = *DGBWP(cfg->base, cfg->regblock_size, channel);
+		const uint32_t next_wp = (wp + INTEL_HDA_MIN_FPI_INCREMENT_FOR_INTERRUPT) %
 			intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
 
 		intel_adsp_hda_set_buffer_segment_ptr(cfg->base, cfg->regblock_size,
