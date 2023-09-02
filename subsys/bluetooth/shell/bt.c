@@ -67,6 +67,8 @@ static struct bt_conn_auth_info_cb auth_info_cb;
 
 #define ADV_DATA_DELIMITER ", "
 
+#define AD_SIZE 9
+
 /*
  * Based on the maximum number of parameters for HCI_LE_Generate_DHKey
  * See BT Core Spec V5.2 Vol. 4, Part E, section 7.8.37
@@ -1902,11 +1904,12 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	static uint8_t hex_data[1650];
 	bool appearance = false;
 	struct bt_data *data;
-	struct bt_data ad[9];
-	struct bt_data sd[9];
+	struct bt_data ad[AD_SIZE];
+	struct bt_data sd[AD_SIZE];
 	size_t hex_data_len;
 	size_t ad_len = 0;
 	size_t sd_len = 0;
+	size_t len = 0;
 	bool discoverable = false;
 	size_t *data_len;
 	int err;
@@ -1947,8 +1950,6 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			data = sd;
 			data_len = &sd_len;
 		} else {
-			size_t len;
-
 			len = hex2bin(arg, strlen(arg), &hex_data[hex_data_len],
 				      sizeof(hex_data) - hex_data_len);
 
@@ -1970,15 +1971,18 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_APPEARANCE,
 			  appearance);
 
-	ad_len = ad_init(&ad[*data_len], ARRAY_SIZE(ad) - *data_len,
-			 adv_set_opt[selected_adv]);
-	if (ad_len < 0) {
+	len = ad_init(&data[*data_len], AD_SIZE - *data_len, adv_set_opt[selected_adv]);
+	if (len < 0) {
 		shell_error(sh, "Failed to initialize stack advertising data");
 
 		return -ENOEXEC;
 	}
 
-	ad_len += *data_len;
+	if (data == ad) {
+		ad_len += len;
+	} else {
+		sd_len += len;
+	}
 
 	err = bt_le_ext_adv_set_data(adv, ad_len > 0 ? ad : NULL, ad_len,
 					  sd_len > 0 ? sd : NULL, sd_len);
