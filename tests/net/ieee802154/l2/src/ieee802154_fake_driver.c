@@ -26,7 +26,7 @@ uint8_t mock_ext_addr_be[8] = {0x00, 0x12, 0x4b, 0x00, 0x00, 0x9e, 0xa3, 0xc2};
 
 static enum ieee802154_hw_caps fake_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+	return IEEE802154_HW_FCS;
 }
 
 static int fake_cca(const struct device *dev)
@@ -119,6 +119,20 @@ static int fake_stop(const struct device *dev)
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+/* API implementation: attr_get */
+static int fake_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			 struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 static void fake_iface_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -152,6 +166,7 @@ static struct ieee802154_radio_api fake_radio_api = {
 	.start			= fake_start,
 	.stop			= fake_stop,
 	.tx			= fake_tx,
+	.attr_get		= fake_attr_get,
 };
 
 NET_DEVICE_INIT(fake, "fake_ieee802154",
