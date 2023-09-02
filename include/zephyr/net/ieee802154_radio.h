@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2023 F. Grandel, Zephyr Project
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Public IEEE 802.15.4 Radio API
+ * @brief Public IEEE 802.15.4 Driver API
  *
  * All references to the spec refer to IEEE 802.15.4-2020.
  */
@@ -96,6 +97,14 @@ enum ieee802154_channel {
 	IEEE802154_2_4_GHZ_CHANNEL_MAX = 26,
 };
 
+/**
+ * IEEE 802.15.4 driver capabilities
+ *
+ * Any driver properties that can be represented in binary form should be
+ * modeled as capabilities. These are called "hardware" capabilities for
+ * historical reasons but may also represent driver firmware capabilities (e.g.
+ * MAC offloading features).
+ */
 enum ieee802154_hw_caps {
 
 	/*
@@ -231,7 +240,7 @@ struct ieee802154_key {
 	uint8_t key_index;
 };
 
-/** IEEE802.15.4 Transmission mode. */
+/** IEEE 802.15.4 Transmission mode. */
 enum ieee802154_tx_mode {
 	/** Transmit packet immediately, no CCA. */
 	IEEE802154_TX_MODE_DIRECT,
@@ -267,7 +276,7 @@ enum ieee802154_tx_mode {
 	IEEE802154_TX_MODE_PRIV_START = IEEE802154_TX_MODE_COMMON_COUNT,
 };
 
-/** IEEE802.15.4 Frame Pending Bit table address matching mode. */
+/** IEEE 802.15.4 Frame Pending Bit table address matching mode. */
 enum ieee802154_fpb_mode {
 	/** The pending bit shall be set only for addresses found in the list.
 	 */
@@ -279,10 +288,10 @@ enum ieee802154_fpb_mode {
 	IEEE802154_FPB_ADDR_MATCH_ZIGBEE,
 };
 
-/** IEEE802.15.4 driver configuration types. */
+/** IEEE 802.15.4 driver configuration types. */
 enum ieee802154_config_type {
-	/** Indicates how radio driver should set Frame Pending bit in ACK
-	 *  responses for Data Requests. If enabled, radio driver should
+	/** Indicates how the driver should set Frame Pending bit in ACK
+	 *  responses for Data Requests. If enabled, the driver should
 	 *  determine whether to set the bit or not based on the information
 	 *  provided with ``IEEE802154_CONFIG_ACK_FPB`` config and FPB address
 	 *  matching mode specified. Otherwise, Frame Pending bit should be set
@@ -304,15 +313,19 @@ enum ieee802154_config_type {
 	/** Enable/disable promiscuous mode. */
 	IEEE802154_CONFIG_PROMISCUOUS,
 
-	/** Specifies new radio event handler. Specifying NULL as a handler
-	 *  will disable radio events notification.
+	/** Specifies new IEEE 802.15.4 driver event handler. Specifying NULL as
+	 *  a handler will disable events notification.
 	 */
 	IEEE802154_CONFIG_EVENT_HANDLER,
 
-	/** Updates MAC keys and key index for radios supporting transmit security. */
+	/** Updates MAC keys and key index for drivers supporting transmit
+	 *  security offloading.
+	 */
 	IEEE802154_CONFIG_MAC_KEYS,
 
-	/** Sets the current MAC frame counter value for radios supporting transmit security. */
+	/** Sets the current MAC frame counter value for drivers supporting
+	 * transmit security offloading.
+	 */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
 	/** Sets the current MAC frame counter value if the provided value is greater than
@@ -331,12 +344,12 @@ enum ieee802154_config_type {
 	 *
 	 *  In order to configure a CSL receiver the upper layer should combine several
 	 *  configuration options in the following way:
-	 *    1. Use ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` once to inform the radio driver of the
+	 *    1. Use ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` once to inform the driver of the
 	 *       short and extended addresses of the peer to which it should inject CSL IEs.
 	 *    2. Use ``IEEE802154_CONFIG_CSL_RX_TIME`` periodically, before each use of
 	 *       ``IEEE802154_CONFIG_CSL_PERIOD`` setting parameters of the nearest CSL RX window,
 	 *       and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
-	 *       the nearest one) CSL RX window, to allow the radio driver to calculate the proper
+	 *       the nearest one) CSL RX window, to allow the driver to calculate the proper
 	 *       CSL Phase to the nearest CSL window to inject in the CSL IEs for both transmitted
 	 *       data and ACK frames.
 	 *    3. Use ``IEEE802154_CONFIG_CSL_PERIOD`` on each value change to update the current CSL
@@ -381,7 +394,7 @@ enum ieee802154_config_type {
 	IEEE802154_CONFIG_PRIV_START = IEEE802154_CONFIG_COMMON_COUNT,
 };
 
-/** IEEE802.15.4 driver configuration data. */
+/** IEEE 802.15.4 driver configuration data. */
 struct ieee802154_config {
 	/** Configuration data. */
 	union {
@@ -497,7 +510,7 @@ enum ieee802154_attr {
 };
 
 /**
- * @brief IEEE 802.15.4 driver attributes.
+ * @brief IEEE 802.15.4 driver attribute values.
  *
  * @details This structure is reserved to scalar and structured attributes that
  * originate in the driver implementation and can neither be implemented as
@@ -522,15 +535,30 @@ struct ieee802154_attr_value {
 };
 
 /**
- * @brief IEEE 802.15.4 radio interface API.
+ * @brief IEEE 802.15.4 driver interface API.
  *
+ * @note This structure is called "radio" API for backwards compatibility. A
+ * better name would be "IEEE 802.15.4 driver API" as typical drivers will not
+ * only implement L1/radio (PHY) features but also L2 (MAC) features if the
+ * vendor-specific driver hardware or firmware offers offloading opportunities.
+ *
+ * While L1-level driver features are exclusively implemented by drivers and MAY
+ * be mandatory to support certain application requirements, L2 features SHOULD
+ * be optional by default and only need to be implemented for performance
+ * optimization or precise timing as deemed necessary by driver maintainers.
+ * Fallback implementations ("Soft MAC") SHOULD be provided in the
+ * driver-independent L2 layer for all L2/MAC features especially if these
+ * features are not implemented in vendor hardware/firmware by a majority of
+ * existing in-tree drivers. If, however, a driver offers offloading
+ * opportunities then L2 implementations SHALL delegate performance critical or
+ * resource intensive tasks to the driver.
  */
 struct ieee802154_radio_api {
 	/**
 	 * @brief network interface API
 	 *
 	 * @note Network devices must extend the network interface API. It is
-	 * therefore mandatory to place it at the top of the radio API struct so
+	 * therefore mandatory to place it at the top of the driver API struct so
 	 * that it can be cast to a network interface.
 	 */
 	struct net_if_api iface_api;
@@ -538,7 +566,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Get the device driver capabilities.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @return Bit field with all supported device driver capabilities.
 	 */
@@ -547,7 +575,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Clear Channel Assessment - Check channel's activity
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @retval 0 the channel is available
 	 * @retval -EBUSY The channel is busy.
@@ -559,7 +587,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Set current channel
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param channel the number of the channel to be set in CPU byte order
 	 *
 	 * @retval 0 channel was successfully set
@@ -577,7 +605,7 @@ struct ieee802154_radio_api {
 	 *
 	 * @note requires IEEE802154_HW_FILTER capability.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param set true to set the filter, false to remove it
 	 * @param type the type of entity to be added/removed from the filter
 	 * list (a PAN ID or a source/destination address)
@@ -598,7 +626,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Set TX power level in dbm
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param dbm TX power in dbm
 	 *
 	 * @retval 0 The TX power was successfully set.
@@ -627,7 +655,7 @@ struct ieee802154_radio_api {
 	 * in software ("soft MAC") or will be provided by the driver itself
 	 * ("hard MAC").
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param mode the transmission mode, some of which require specific
 	 * offloading capabilities.
 	 * @param pkt pointer to the network packet to be transmitted.
@@ -654,7 +682,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Start the device and place it in receive mode.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @retval 0 The driver was successfully started.
 	 * @retval -EIO The driver could not be started.
@@ -664,7 +692,7 @@ struct ieee802154_radio_api {
 	/**
 	 * @brief Stop the device and switch off the receiver (sleep mode).
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @retval 0 The driver was successfully stopped.
 	 * @retval -EIO The driver could not be stopped.
@@ -675,9 +703,9 @@ struct ieee802154_radio_api {
 	 * @brief Start continuous carrier wave transmission.
 	 *
 	 * @details To leave this mode, `start()` or `stop()` should be called,
-	 * putting the radio driver in receive or sleep mode, respectively.
+	 * putting the driver in receive or sleep mode, respectively.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @retval 0 continuous carrier wave transmission started
 	 * @retval -EIO not started
@@ -685,9 +713,9 @@ struct ieee802154_radio_api {
 	int (*continuous_carrier)(const struct device *dev);
 
 	/**
-	 * @brief Set radio driver configuration.
+	 * @brief Set driver configuration.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param type the configuration type to be set
 	 * @param config the configuration parameters to be set for the given
 	 * configuration type
@@ -725,7 +753,7 @@ struct ieee802154_radio_api {
 	 *
 	 * @note The radio channel must be set prior to calling this function.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param duration duration of energy scan in ms
 	 * @param done_cb function called when the energy scan has finished
 	 *
@@ -751,7 +779,7 @@ struct ieee802154_radio_api {
 	 * @note requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME
 	 * capabilities.
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @return nanoseconds relative to the network subsystem's local clock
 	 */
@@ -771,7 +799,7 @@ struct ieee802154_radio_api {
 	 * @note Implementations may estimate this value based on current
 	 * operating conditions (e.g. temperature).
 	 *
-	 * @param dev pointer to radio device
+	 * @param dev pointer to IEEE 802.15.4 driver device
 	 *
 	 * @return current estimated clock accuracy in PPM
 	 */
@@ -799,9 +827,13 @@ struct ieee802154_radio_api {
 };
 
 /* Make sure that the network interface API is properly setup inside
- * IEEE 802154 radio API struct (it is the first one).
+ * IEEE 802.15.4 driver API struct (it is the first one).
  */
 BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
+
+/**
+ * IEEE 802.15.4 driver utils
+ */
 
 #define IEEE802154_AR_FLAG_SET (0x20)
 
@@ -820,13 +852,17 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 }
 
 /**
- * @brief Radio driver ACK handling callback into L2 that radio
- *        drivers must call when receiving an ACK package.
+ * IEEE 802.15.4 driver callbacks
+ */
+
+/**
+ * @brief IEEE 802.15.4 driver ACK handling callback into L2 that drivers must
+ *        call when receiving an ACK package.
  *
  * @details The IEEE 802.15.4 standard prescribes generic procedures for ACK
  *          handling on L2 (MAC) level. L2 stacks therefore have to provides a
  *          fast and re-usable generic implementation of this callback for
- *          radio drivers to call when receiving an ACK packet.
+ *          drivers to call when receiving an ACK packet.
  *
  *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
  *          "inversion-of-control" adaptation API and must be implemented by
@@ -845,11 +881,11 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 extern enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Radio driver initialization callback into L2 called by radio drivers
+ * @brief IEEE 802.15.4 driver initialization callback into L2 called by drivers
  *        to initialize the active L2 stack for a given interface.
  *
- * @details Radio drivers must call this function as part of their own
- *          initialization routine.
+ * @details Drivers must call this function as part of their own initialization
+ *          routine.
  *
  *          Note: This function is part of Zephyr's 802.15.4 stack L1 -> L2
  *          "inversion-of-control" adaptation API and must be implemented by
