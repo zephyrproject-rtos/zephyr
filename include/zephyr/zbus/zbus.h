@@ -92,7 +92,8 @@ struct zbus_channel {
  */
 enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_LISTENER_TYPE,
-	ZBUS_OBSERVER_SUBSCRIBER_TYPE
+	ZBUS_OBSERVER_SUBSCRIBER_TYPE,
+	ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,
 };
 
 /**
@@ -127,6 +128,13 @@ struct zbus_observer {
 
 		/** Observer callback function. It turns the observer into a listener. */
 		void (*const callback)(const struct zbus_channel *chan);
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER) || defined(__DOXYGEN__)
+		/** Observer message FIFO. It turns the observer into a message subscriber. It only
+		 * exists if the @kconfig{CONFIG_ZBUS_MSG_SUBSCRIBER} is enabled.
+		 */
+		struct k_fifo *const message_fifo;
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 	};
 };
 
@@ -156,8 +164,10 @@ struct zbus_channel_observation {
 
 #if defined(CONFIG_ZBUS_CHANNEL_NAME)
 #define ZBUS_CHANNEL_NAME_INIT(_name) .name = #_name,
+#define _ZBUS_CHAN_NAME(_chan)        (_chan)->name
 #else
 #define ZBUS_CHANNEL_NAME_INIT(_name)
+#define _ZBUS_CHAN_NAME(_chan) ""
 #endif
 
 #if defined(CONFIG_ZBUS_OBSERVER_NAME)
@@ -379,6 +389,37 @@ k_timeout_t _zbus_timeout_remainder(uint64_t end_ticks);
  */
 #define ZBUS_LISTENER_DEFINE(_name, _cb) ZBUS_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, true)
 
+/**
+ * @brief Define and initialize a message subscriber.
+ *
+ * This macro defines an observer of @ref ZBUS_OBSERVER_SUBSCRIBER_TYPE type. It defines a FIFO
+ * where the subscriber will receive the message asynchronously and initialize the @ref
+ * zbus_observer defining the subscriber.
+ *
+ * @param[in] _name The subscriber's name.
+ * @param[in] _enable The subscriber's initial state.
+ */
+#define ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, _enable)                                     \
+	static K_FIFO_DEFINE(_zbus_observer_fifo_##_name);                                         \
+	STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                                          \
+		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
+			.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,                                 \
+		.enabled = _enable,                                                                \
+		.message_fifo = &_zbus_observer_fifo_##_name,                                      \
+	}
+
+/**
+ * @brief Define and initialize an enabled message subscriber.
+ *
+ * This macro defines an observer of message subscriber type. It defines a FIFO where the
+ * subscriber will receive the message asynchronously and initialize the @ref
+ * zbus_observer defining the subscriber. The message subscribers are defined in the enabled state
+ * with this macro.
+
+ *
+ * @param[in] _name The subscriber's name.
+ */
+#define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
 /**
  *
  * @brief Publish to a channel
@@ -740,6 +781,31 @@ static inline const char *zbus_obs_name(const struct zbus_observer *obs)
  */
 int zbus_sub_wait(const struct zbus_observer *sub, const struct zbus_channel **chan,
 		  k_timeout_t timeout);
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER) || defined(__DOXYGEN__)
+
+/**
+ * @brief Wait for a channel message.
+ *
+ * This routine makes the subscriber wait for the new message in case of channel publication.
+ *
+ * @param[in] sub The subscriber's reference.
+ * @param[out] chan The notification channel's reference.
+ * @param[out] msg A reference to a copy of the published message.
+ * @param[in] timeout Waiting period for a notification arrival,
+ *                or one of the special values, K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Message received.
+ * @retval -EINVAL The observer is not a subscriber.
+ * @retval -ENOMSG Could not retrieve the net_buf from the subscriber FIFO.
+ * @retval -EILSEQ Received an invalid channel reference.
+ * @retval -EFAULT A parameter is incorrect, or the function context is invalid (inside an ISR). The
+ * function only returns this value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
+ */
+int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel **chan, void *msg,
+		      k_timeout_t timeout);
+
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 
 /**
  *
