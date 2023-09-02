@@ -869,6 +869,13 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 	    (preempt_req != preempt_ack)) {
 		uint32_t diff;
 
+		/* preempt timeout already started but no role/state in the head
+		 * of prepare pipeline.
+		 */
+		if (!prev || prev->is_aborted) {
+			return TICKER_STATUS_SUCCESS;
+		}
+
 		/* Calc the preempt timeout */
 		p = &next->prepare_param;
 		ull = HDR_LLL2ULL(p->param);
@@ -881,9 +888,9 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		ticks_at_preempt_new &= HAL_TICKER_CNTR_MASK;
 
 		/* Check for short preempt timeouts */
-		diff = ticks_at_preempt_new - ticks_at_preempt;
-		if (!prev || prev->is_aborted ||
-		    ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+		diff = ticker_ticks_diff_get(ticks_at_preempt_new,
+					     ticks_at_preempt);
+		if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
 			return TICKER_STATUS_SUCCESS;
 		}
 
