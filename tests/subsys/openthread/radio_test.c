@@ -68,9 +68,6 @@ static struct ieee802154_radio_api rapi = {.get_capabilities = get_capabilities,
 					   .start = start_mock,
 					   .stop = stop_mock,
 					   .configure = configure_mock,
-#ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
-					   .get_subg_channel_count = NULL,
-#endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 					   .ed_scan = scan_mock};
 
 #define DT_DRV_COMPAT vnd_ieee802154
@@ -126,8 +123,8 @@ static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 
 	zassert_equal(dev, radio, "Device handle incorrect.");
 
-	caps = IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
+	caps = IEEE802154_HW_FCS | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
 	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME)) {
 		caps |= IEEE802154_HW_TXTIME;
 	}
@@ -542,7 +539,6 @@ ZTEST(openthread_radio, test_promiscuous_mode_set_test)
  * @brief Test of proper radio to OT capabilities mapping
  * Tests if different radio capabilities map for their corresponding OpenThread
  * capability
- *
  */
 ZTEST(openthread_radio, test_get_caps_test)
 {
@@ -555,12 +551,6 @@ ZTEST(openthread_radio, test_get_caps_test)
 
 	/* not used by OT */
 	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_FCS;
-	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_NONE,
-		      "Incorrect capabilities returned.");
-	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_2_4_GHZ;
-	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_NONE,
-		      "Incorrect capabilities returned.");
-	get_capabilities_caps_mock_fake.return_val = IEEE802154_HW_SUB_GHZ;
 	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_NONE,
 		      "Incorrect capabilities returned.");
 
@@ -595,9 +585,8 @@ ZTEST(openthread_radio, test_get_caps_test)
 	/* all at once */
 	get_capabilities_caps_mock_fake.return_val =
 		IEEE802154_HW_FCS | IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER |
-		IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
-		IEEE802154_HW_SUB_GHZ | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_TXTIME |
-		IEEE802154_HW_SLEEP_TO_TX;
+		IEEE802154_HW_CSMA | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
+		IEEE802154_HW_TXTIME | IEEE802154_HW_SLEEP_TO_TX;
 	zassert_equal(
 		otPlatRadioGetCaps(ot),
 		OT_RADIO_CAPS_CSMA_BACKOFF | OT_RADIO_CAPS_ENERGY_SCAN | OT_RADIO_CAPS_ACK_TIMEOUT |

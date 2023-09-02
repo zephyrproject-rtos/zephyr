@@ -6,7 +6,6 @@ menuconfig IEEE802154_CC1200
 	bool "TI CC1200 Driver support"
 	default y
 	depends on DT_HAS_TI_CC1200_ENABLED
-	select NET_L2_IEEE802154_SUB_GHZ
 
 if IEEE802154_CC1200
 

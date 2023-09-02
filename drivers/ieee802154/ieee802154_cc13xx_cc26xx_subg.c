@@ -263,25 +263,26 @@ static inline int ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
 	__ASSERT_NO_MSG(frequency != NULL);
 	__ASSERT_NO_MSG(fractFreq != NULL);
 
-	/* See IEEE 802.15.4, section 10.1.3.3. */
-	if (channel == IEEE802154_SUB_GHZ_CHANNEL_MIN) {
+	/* See IEEE 802.15.4-2020, section 10.1.3.3. */
+	if (channel == 0) {
 		*frequency = 868;
 		/*
 		 * uint16_t fractional part of 868.3 MHz
 		 * equivalent to (0.3 * 1000 * BIT(16)) / 1000, rounded up
 		 */
 		*fractFreq = 0x4ccd;
-	} else if (channel <= IEEE802154_SUB_GHZ_CHANNEL_MAX) {
+	} else if (channel <= 10) {
 		*frequency = 906 + 2 * (channel - 1);
 		*fractFreq = 0;
 	} else {
 		*frequency = 0;
 		*fractFreq = 0;
-		return -EINVAL;
+		return channel <= 26 ? -ENOTSUP : -EINVAL;
 	}
 
-	/* TODO: This incorrectly mixes up legacy O-QPSK SubGHz PHY channel page zero
-	 *       frequency calculation with SUN FSK operating mode #3 PHY radio settings.
+	/* TODO: This incorrectly mixes up legacy BPSK SubGHz PHY channel page
+	 * zero frequency calculation with SUN FSK operating mode #3 PHY radio
+	 * settings.
 	 *
 	 * The correct channel frequency calculation for this PHY is on channel page 9,
 	 * using the formula ChanCenterFreq = ChanCenterFreq0 + channel * ChanSpacing.
@@ -299,14 +300,13 @@ static inline int ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(
 	 * Making derived MAC/PHY PIB attributes available to L2 requires an additional
 	 * attribute getter, see
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
+	 *
+	 * We resolve this bug right now by basing all timing on SUN FSK
+	 * parameters while maintaining the channel/channel page assignment of a
+	 * BPSK PHY.
 	 */
 
 	return 0;
-}
-
-static inline bool is_subghz(uint16_t channel)
-{
-	return (channel <= IEEE802154_SUB_GHZ_CHANNEL_MAX);
 }
 
 static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
@@ -362,7 +362,7 @@ static enum ieee802154_hw_caps
 ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 {
 	/* TODO: enable IEEE802154_HW_FILTER */
-	return IEEE802154_HW_FCS | IEEE802154_HW_SUB_GHZ;
+	return IEEE802154_HW_FCS;
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
@@ -449,13 +449,9 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	bool was_rx_on;
 	int ret;
 
-	if (!is_subghz(channel)) {
-		return -EINVAL;
-	}
-
 	ret = ieee802154_cc13xx_cc26xx_subg_channel_to_frequency(channel, &freq, &fract);
 	if (ret < 0) {
-		return -EINVAL;
+		return ret;
 	}
 
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
@@ -590,6 +586,20 @@ out:
 	return ret;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 0, 10);
+
+static int ieee802154_cc13xx_cc26xx_subg_attr_get(const struct device *dev,
+						  enum ieee802154_attr attr,
+						  struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 {
@@ -711,15 +721,6 @@ ieee802154_cc13xx_cc26xx_subg_configure(const struct device *dev,
 	return -ENOTSUP;
 }
 
-uint16_t ieee802154_cc13xx_cc26xx_subg_get_subg_channel_count(
-	const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* IEEE 802.15.4 SubGHz channels range from 0 to 10 for channel page zero. */
-	return 11;
-}
-
 static void ieee802154_cc13xx_cc26xx_subg_setup_rx_buffers(
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 {
@@ -791,8 +792,7 @@ static struct ieee802154_radio_api
 	.start = ieee802154_cc13xx_cc26xx_subg_start,
 	.stop = ieee802154_cc13xx_cc26xx_subg_stop_if,
 	.configure = ieee802154_cc13xx_cc26xx_subg_configure,
-	.get_subg_channel_count =
-		ieee802154_cc13xx_cc26xx_subg_get_subg_channel_count,
+	.attr_get = ieee802154_cc13xx_cc26xx_subg_attr_get,
 };
 
 static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
@@ -896,7 +896,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 		/* see IEEE 802.15.4, section 11.3, table 11-1 and section 10.2.8 */
 		.csEndTime = RF_convertUsToRatTicks(
 			IEEE802154_PHY_A_CCA_TIME *
-				IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US),
+				IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS),
 	},
 
 	.cmd_prop_tx_adv = {
@@ -916,7 +916,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 	},
 };
 
-#if defined(CONFIG_NET_L2_IEEE802154_SUB_GHZ)
+#if defined(CONFIG_NET_L2_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
 			  &ieee802154_cc13xx_cc26xx_subg_data, NULL,
 			  CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,

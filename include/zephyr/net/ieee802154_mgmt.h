@@ -212,10 +212,7 @@ enum net_event_ieee802154_cmd {
 #define IEEE802154_IS_CHAN_UNSCANNED(_channel_set, _chan)	\
 	(!IEEE802154_IS_CHAN_SCANNED(_channel_set, _chan))
 
-/* Useful define to request all 16 channels of channel page zero
- * in the 2450 MHz band to be scanned, from 11 to 26 included.
- */
-#define IEEE802154_ALL_CHANNELS	(0x03FFFC00)
+#define IEEE802154_ALL_CHANNELS	UINT32_MAX
 
 /**
  * @brief Scanning parameters

@@ -200,6 +200,23 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * A new mandatory method attr_get() was introduced into ieee802154_radio_api.
+    Drivers need to implement at least
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES and
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES.
+  * The hardware capabilities IEEE802154_HW_2_4_GHZ and IEEE802154_HW_SUB_GHZ
+    were removed as they were not aligned with the standard and some already
+    existing drivers couldn't properly express their channel page and channel
+    range (notably SUN FSK and HRP UWB drivers). The capabilities were replaced
+    by the standard conforming new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES that fits all in-tree drivers.
+  * The method get_subg_channel_count() was removed from ieee802154_radio_api.
+    This method could not properly express the channel range of existing drivers
+    (notably SUN FSK drivers that implement channel pages > 0 and may not have
+    zero-based channel ranges or UWB drivers that could not be represented at
+    all). The method was replaced by the new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES that fits all in-tree drivers.
+
 * Interrupt Controller
 
   * GIC: Architecture version selection is now based on the device tree
