@@ -18,6 +18,36 @@ config ZBUS_CHANNEL_NAME
 config ZBUS_OBSERVER_NAME
 	bool "Observer name field"
 
+config ZBUS_MSG_SUBSCRIBER
+	select NET_BUF
+	bool "Message subscribers will receive all messages in sequence."
+
+if ZBUS_MSG_SUBSCRIBER
+
+choice
+	prompt "ZBus msg_subscribers buffer allocation"
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC
+	bool "Use heap to allocate msg_subscriber buffers data"
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+	bool "Use fixed data size for msg_subscriber buffers pool"
+
+endchoice
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
+	default 16
+	int "The count of net_buf available to be used simutaneously."
+
+if ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
+	int "The size of the biggest message used with ZBus."
+
+endif # ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+
+endif # ZBUS_MSG_SUBSCRIBER
+
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."
 	default n
