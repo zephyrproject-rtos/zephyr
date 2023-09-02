@@ -519,7 +519,7 @@ out:
  *******************/
 static enum ieee802154_hw_caps cc1200_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_SUB_GHZ;
+	return IEEE802154_HW_FCS;
 }
 
 static int cc1200_cca(const struct device *dev)
@@ -703,11 +703,19 @@ static int cc1200_stop(const struct device *dev)
 	return 0;
 }
 
-static uint16_t cc1200_get_channel_count(const struct device *dev)
-{
-	struct cc1200_context *cc1200 = dev->data;
+/* driver-allocated attribute memory - constant across all driver instances as
+ * this driver's channel range is configured via a global KConfig setting.
+ */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 0, IEEE802154_CC1200_CHANNEL_LIMIT);
 
-	return cc1200->rf_settings->channel_limit;
+static int cc1200_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			   struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED,
+		&drv_attr.phy_supported_channels, value);
 }
 
 /******************
@@ -812,7 +820,7 @@ static struct ieee802154_radio_api cc1200_radio_api = {
 	.tx			= cc1200_tx,
 	.start			= cc1200_start,
 	.stop			= cc1200_stop,
-	.get_subg_channel_count = cc1200_get_channel_count,
+	.attr_get		= cc1200_attr_get,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0, cc1200_init, NULL, &cc1200_context_data,

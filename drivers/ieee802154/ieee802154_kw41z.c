@@ -359,7 +359,7 @@ static void kw41z_tmr3_disable(void)
 
 static enum ieee802154_hw_caps kw41z_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
 }
 
@@ -385,7 +385,7 @@ static int kw41z_cca(const struct device *dev)
 static int kw41z_set_channel(const struct device *dev, uint16_t channel)
 {
 	if (channel < 11 || channel > 26) {
-		return -EINVAL;
+		return channel < 11 ? -ENOTSUP : -EINVAL;
 	}
 
 	ZLL->CHANNEL_NUM0 = channel;
@@ -1078,6 +1078,19 @@ static int kw41z_configure(const struct device *dev,
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+static int kw41z_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			  struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 static struct ieee802154_radio_api kw41z_radio_api = {
 	.iface_api.init	= kw41z_iface_init,
 
@@ -1090,6 +1103,7 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.stop			= kw41z_stop,
 	.tx			= kw41z_tx,
 	.configure		= kw41z_configure,
+	.attr_get		= kw41z_attr_get,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)

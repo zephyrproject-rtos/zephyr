@@ -31,71 +31,310 @@ extern "C" {
  * @{
  */
 
-/* See section 6.1: "Some of the timing parameters in definition of the MAC are in units of PHY
- * symbols. For PHYs that have multiple symbol periods, the duration to be used for the MAC
- * parameters is defined in that PHY clause."
+/**
+ * MAC functional description (section 6)
  */
-#define IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US 20U /* see section 19.1, table 19-1 */
-#define IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US         16U /* see section 12.3.3 */
 
-/* TODO: Get PHY-specific symbol period from radio API. Requires an attribute getter, see
- *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
- *       For now we assume PHYs that current drivers actually implement.
+/**
+ * The symbol period (and therefore symbol rate) is defined in section 6.1: "Some
+ * of the timing parameters in definition of the MAC are in units of PHY symbols.
+ * For PHYs that have multiple symbol periods, the duration to be used for the
+ * MAC parameters is defined in that PHY clause."
+ *
+ * This is not necessarily the true physical symbol period, so take care to use
+ * this macro only when either the symbol period used for MAC timing is the same
+ * as the physical symbol period or if you actually mean the MAC timing symbol
+ * period.
+ *
+ * PHY specific symbol periods are defined in PHY specific sections below.
  */
-#define IEEE802154_PHY_SYMBOL_PERIOD_US(is_subg_phy)                                               \
-	((is_subg_phy) ? IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_US                     \
-		       : IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
+#define IEEE802154_PHY_SYMBOLS_PER_SECOND(symbol_period_ns) (NSEC_PER_SEC / symbol_period_ns)
 
-/* The inverse of the symbol period as defined in section 6.1. This is not necessarily the true
- * physical symbol period, so take care to use this macro only when either the symbol period used
- * for MAC timing is the same as the physical symbol period or if you actually mean the MAC timing
- * symbol period.
+/**
+ * MAC services (section 8)
  */
-#define IEEE802154_PHY_SYMBOLS_PER_SECOND(symbol_period) (USEC_PER_SEC / symbol_period)
 
-/* in bytes, see section 19.2.4 */
-#define IEEE802154_PHY_SUN_FSK_PHR_LEN 2
+/**
+ * The number of PHY symbols forming a superframe slot when the superframe order
+ * is equal to zero, see sections 8.4.2, table 8-93, aBaseSlotDuration and
+ * section 6.2.1.
+ */
+#define IEEE802154_MAC_A_BASE_SLOT_DURATION 60U
 
-/* Default PHY PIB attribute aTurnaroundTime, in PHY symbols, see section 11.3, table 11-1. */
+/**
+ * The number of slots contained in any superframe, see section 8.4.2,
+ * table 8-93, aNumSuperframeSlots.
+ */
+#define IEEE802154_MAC_A_NUM_SUPERFRAME_SLOTS 16U
+
+/**
+ * The number of PHY symbols forming a superframe when the superframe order is
+ * equal to zero, see section 8.4.2, table 8-93, aBaseSuperframeDuration.
+ */
+#define IEEE802154_MAC_A_BASE_SUPERFRAME_DURATION                                                  \
+	(IEEE802154_MAC_A_BASE_SLOT_DURATION * IEEE802154_MAC_A_NUM_SUPERFRAME_SLOTS)
+
+/**
+ * MAC PIB attribute aUnitBackoffPeriod, see section 8.4.2, table 8-93, in symbol
+ * periods, valid for all PHYs except SUN PHY in the 920 MHz band.
+ */
+#define IEEE802154_MAC_A_UNIT_BACKOFF_PERIOD(turnaround_time)                                      \
+	(turnaround_time + IEEE802154_PHY_A_CCA_TIME)
+
+/**
+ * Default macResponseWaitTime in multiples of aBaseSuperframeDuration as
+ * defined in section 8.4.3.1, table 8-94.
+ */
+#define IEEE802154_MAC_RESPONSE_WAIT_TIME_DEFAULT 32U
+
+/**
+ * General PHY requirements (section 10)
+ */
+
+/**
+ * @brief PHY channel pages, see section 10.1.3
+ *
+ * @details A device driver must support the mandatory channel pages, frequency
+ * bands and channels of at least one IEEE 802.15.4 PHY.
+ *
+ * Channel page and number assignments have developed over several versions of
+ * the standard and are not particularly well documented. Therefore some notes
+ * about peculiarities of channel pages and channel numbering:
+ * - The 2006 version of the standard had a read-only phyChannelsSupported PHY
+ *   PIB attribute that represented channel page/number combinations as a
+ *   bitmap. This attribute was removed in later versions of the standard as the
+ *   number of channels increased beyond what could be represented by a bit map.
+ *   That's the reason why we chose to represent supported channels as a
+ *   combination of channel pages and ranges instead.
+ * - In the 2020 version of the standard, 13 channel pages are explicitly
+ *   defined, but up to 32 pages could in principle be supported. This was a
+ *   hard requirement in the 2006 standard. In later standards it is implicit
+ *   from field specifications, e.g. the MAC PIB attribute macChannelPage
+ *   (section 8.4.3.4, table 8-100) or channel page fields used in the SRM
+ *   protocol (see section 8.2.26.5).
+ * - ASK PHY (channel page one) was deprecated in the 2015 version of the
+ *   standard. The 2020 version of the standard is a bit ambivalent whether
+ *   channel page one disappeared as well or should be interpreted as O-QPSK now
+ *   (see section 10.1.3.3). We resolve this ambivalence by deprecating channel
+ *   page one.
+ * - For some PHYs the standard doesn't clearly specify a channel page, namely
+ *   the GFSK, RS-GFSK, CMB and TASK PHYs. These are all rather new and left out
+ *   in our list as long as no driver wants to implement them.
+ *
+ * @warning The bit numbers are not arbitrary but represent the channel
+ * page numbers as defined by the standard. Therefore do not change the
+ * bit numbering.
+ */
+enum ieee802154_phy_channel_page {
+	/**
+	 * Channel page zero supports the 2.4G channels of the O-QPSK PHY and
+	 * all channels from the BPSK PHYs initially defined in the 2003
+	 * editions of the standard. For channel page zero, 16 channels are
+	 * available in the 2450 MHz band (channels 11-26, O-QPSK), 10 in the
+	 * 915 MHz band (channels 1-10, BPSK), and 1 in the 868 MHz band
+	 * (channel 0, BPSK).
+	 *
+	 * You can retrieve the channels supported by a specific driver on this
+	 * page via IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES attribute.
+	 *
+	 * see section 10.1.3.3
+	 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915 = BIT(0),
+
+	/** Formerly ASK PHY - deprecated in IEEE 802.15.4-2015 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_ONE_DEPRECATED = BIT(1),
+
+	/** O-QPSK PHY - 868 MHz and 915 MHz bands, see section 10.1.3.3 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915 = BIT(2),
+
+	/** CSS PHY - 2450 MHz band, see section 10.1.3.4 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_THREE_CSS = BIT(3),
+
+	/** UWB PHY - SubG, low and high bands, see section 10.1.3.5 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_FOUR_HRP_UWB = BIT(4),
+
+	/** O-QPSK PHY - 780 MHz band, see section 10.1.3.2 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_FIVE_OQPSK_780 = BIT(5),
+
+	/** reserved - not currently assigned */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_SIX_RESERVED = BIT(6),
+
+	/** MSK PHY - 780 MHz and 2450 MHz bands, see sections 10.1.3.6, 10.1.3.7 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_SEVEN_MSK = BIT(7),
+
+	/** LRP UWB PHY, see sections 10.1.3.8 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_EIGHT_LRP_UWB = BIT(8),
+
+	/**
+	 * SUN FSK/OFDM/O-QPSK PHYs - predefined bands, operating modes and
+	 * channels, see sections 10.1.3.9
+	 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED = BIT(9),
+
+	/**
+	 * SUN FSK/OFDM/O-QPSK PHYs - generic modulation and channel
+	 * description, see sections 10.1.3.9, 7.4.4.11
+	 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_TEN_SUN_FSK_GENERIC = BIT(10),
+
+	/** O-QPSK PHY - 2380 MHz band, see section 10.1.3.10 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_ELEVEN_OQPSK_2380 = BIT(11),
+
+	/** LECIM DSSS/FSK PHYs, see section 10.1.3.11 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWELVE_LECIM = BIT(12),
+
+	/** RCC PHY, see section 10.1.3.12 */
+	IEEE802154_ATTR_PHY_CHANNEL_PAGE_THIRTEEN_RCC = BIT(13),
+};
+
+struct ieee802154_phy_channel_range {
+	uint16_t from_channel;
+	uint16_t to_channel;
+};
+
+struct ieee802154_phy_supported_channels {
+	/**
+	 * @brief Pointer to an array of channel range structures.
+	 *
+	 * @warning The pointer must be stable and valid throughout the life of
+	 * the interface.
+	 */
+	const struct ieee802154_phy_channel_range *const ranges;
+
+	/** @brief The number of currently available channel ranges. */
+	const uint8_t num_ranges;
+};
+
+/**
+ * @brief Allocate memory for the supported channels driver attribute with a
+ * single channel range constant across all driver instances. This is what most
+ * IEEE 802.15.4 drivers need.
+ *
+ * @details Example usage:
+ *
+ * @code{.c}
+ *   IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+ * @endcode
+ *
+ * The attribute may then be referenced like this:
+ *
+ * @code{.c}
+ *   ... &drv_attr.phy_supported_channels ...
+ * @endcode
+ *
+ * See @ref ieee802154_attr_get_channel_page_and_range() for a further shortcut
+ * that can be combined with this macro.
+ *
+ * @param drv_attr name of the local static variable to be declared for the
+ * local attributes structure
+ * @param from the first channel to be supported
+ * @param to the last channel to be supported
+ */
+#define IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, from, to)                               \
+	static const struct {                                                                      \
+		const struct ieee802154_phy_channel_range phy_channel_range;                       \
+		const struct ieee802154_phy_supported_channels phy_supported_channels;             \
+	} drv_attr = {                                                                             \
+		.phy_channel_range = {.from_channel = (from), .to_channel = (to)},                 \
+		.phy_supported_channels =                                                          \
+			{                                                                          \
+				.ranges = &drv_attr.phy_channel_range,                             \
+				.num_ranges = 1U,                                                  \
+			},                                                                         \
+	}
+
+
+/**
+ * PHY services (section 11)
+ */
+
+/* Default PHY PIB attribute aTurnaroundTime, in PHY symbols,
+ * see section 11.3, table 11-1.
+ */
 #define IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT 12U
 
 /* PHY PIB attribute aTurnaroundTime for SUN, RS-GFSK, TVWS, and LECIM FSK PHY,
  * in PHY symbols, see section 11.3, table 11-1.
  */
-#define IEEE802154_PHY_A_TURNAROUND_TIME_1MS(symbol_period)                                        \
-	DIV_ROUND_UP(USEC_PER_MSEC, symbol_period)
-
-/* TODO: Get PHY-specific turnaround time from radio API, see
- *       https://github.com/zephyrproject-rtos/zephyr/issues/50336#issuecomment-1251122582.
- *       For now we assume PHYs that current drivers actually implement.
- */
-#define IEEE802154_PHY_A_TURNAROUND_TIME(is_subg_phy)                                              \
-	((is_subg_phy) ? IEEE802154_PHY_A_TURNAROUND_TIME_1MS(                                     \
-				 IEEE802154_PHY_SYMBOL_PERIOD_US(is_subg_phy))                     \
-		       : IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT)
+#define IEEE802154_PHY_A_TURNAROUND_TIME_1MS(symbol_period_ns)                                     \
+	DIV_ROUND_UP(NSEC_PER_MSEC, symbol_period_ns)
 
 /* PHY PIB attribute aCcaTime, in PHY symbols, all PHYs except for SUN O-QPSK,
  * see section 11.3, table 11-1.
  */
 #define IEEE802154_PHY_A_CCA_TIME 8U
 
+
 /**
- * @brief IEEE 802.15.4 Channel assignments
- *
- * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands (channel page zero).
- *
- * - Channel 0 is for 868.3 MHz.
- * - Channels 1-10 are for 906 to 924 MHz with 2 MHz channel spacing.
- * - Channels 11-26 are for 2405 to 2530 MHz with 5 MHz channel spacing.
- *
- * For more information, please refer to section 10.1.3.
+ * Q-OPSK PHY (section 12)
  */
-enum ieee802154_channel {
-	IEEE802154_SUB_GHZ_CHANNEL_MIN = 0,
-	IEEE802154_SUB_GHZ_CHANNEL_MAX = 10,
-	IEEE802154_2_4_GHZ_CHANNEL_MIN = 11,
-	IEEE802154_2_4_GHZ_CHANNEL_MAX = 26,
+
+/* Symbol periods, section 12.3.3 */
+#define IEEE802154_PHY_OQPSK_868MHZ_SYMBOL_PERIOD_NS         40000LL
+#define IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS 16000LL
+
+
+/**
+ * BPSK PHY (section 13)
+ */
+
+/* Symbol periods, section 13.3.3 */
+#define IEEE802154_PHY_BPSK_868MHZ_SYMBOL_PERIOD_NS 50000LL
+#define IEEE802154_PHY_BPSK_915MHZ_SYMBOL_PERIOD_NS 25000LL
+
+
+/**
+ * HRP UWB PHY (section 15)
+ */
+
+/* For HRP UWB the symbol period is derived from the preamble symbol period
+ * (T_psym), see section 11.3, table 11-1 and section 15.2.5, table 15-4
+ * (confirmed in IEEE 802.15.4z, section 15.1). Choosing among those periods
+ * cannot be done based on channel page and channel alone. The mean pulse
+ * repetition frequency must also be known, see the 'UwbPrf' parameter of the
+ * MCPS-DATA.request primitive (section 8.3.2, table 8-88) and the preamble
+ * parameters for HRP-ERDEV length 91 codes (IEEE 802.15.4z, section 15.2.6.2,
+ * table 15-7b).
+ */
+#define IEEE802154_PHY_HRP_UWB_PRF4_TPSYM_SYMBOL_PERIOD_NS  3974.36F
+#define IEEE802154_PHY_HRP_UWB_PRF16_TPSYM_SYMBOL_PERIOD_NS 993.59F
+#define IEEE802154_PHY_HRP_UWB_PRF64_TPSYM_SYMBOL_PERIOD_NS 1017.63F
+#define IEEE802154_PHY_HRP_UWB_ERDEV_TPSYM_SYMBOL_PERIOD_NS 729.17F
+
+/** @brief represents the nominal pulse rate frequency of an HRP UWB PHY */
+enum ieee802154_phy_hrp_uwb_nominal_prf {
+	/* standard modes, see section 8.3.2, table 8-88. */
+	IEEE802154_PHY_HRP_UWB_PRF_OFF = 0,
+	IEEE802154_PHY_HRP_UWB_NOMINAL_4_M = BIT(0),
+	IEEE802154_PHY_HRP_UWB_NOMINAL_16_M = BIT(1),
+	IEEE802154_PHY_HRP_UWB_NOMINAL_64_M = BIT(2),
+	/* enhanced ranging device (ERDEV) modes not specified in table 8-88,
+	 * see IEEE 802.15.4z, section 15.1, section 15.2.6.2, table 15-7b,
+	 * section 15.3.4.2 and section 15.3.4.3.
+	 */
+	IEEE802154_PHY_HRP_UWB_NOMINAL_64_M_BPRF = BIT(3),
+	IEEE802154_PHY_HRP_UWB_NOMINAL_128_M_HPRF = BIT(4),
+	IEEE802154_PHY_HRP_UWB_NOMINAL_256_M_HPRF = BIT(5),
 };
+
+#define IEEE802154_PHY_HRP_UWB_RDEV                                                                \
+	(IEEE802154_PHY_HRP_UWB_NOMINAL_4_M | IEEE802154_PHY_HRP_UWB_NOMINAL_16_M |                \
+	 IEEE802154_PHY_HRP_UWB_NOMINAL_64_M)
+
+#define IEEE802154_PHY_HRP_UWB_ERDEV                                                               \
+	(IEEE802154_PHY_HRP_UWB_NOMINAL_64_M_BPRF | IEEE802154_PHY_HRP_UWB_NOMINAL_128_M_HPRF |    \
+	 IEEE802154_PHY_HRP_UWB_NOMINAL_256_M_HPRF)
+
+
+/**
+ * SUN FSK PHY (section 19)
+ */
+
+/* symbol periods, section 19.1, table 19-1 */
+#define IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS 20000LL
+
+/* in bytes, see section 19.2.4 */
+#define IEEE802154_PHY_SUN_FSK_PHR_LEN 2
 
 /**
  * IEEE 802.15.4 driver capabilities
@@ -112,28 +351,10 @@ enum ieee802154_hw_caps {
 	 *
 	 * The following capabilities describe features of the underlying radio
 	 * hardware (PHY/L1).
-	 *
-	 * Note: A device driver must support the mandatory channel pages,
-	 * frequency bands and channels of at least one IEEE 802.15.4 PHY.
 	 */
-
-	/**
-	 * 2.4Ghz radio supported
-	 *
-	 * TODO: Replace with channel page attribute.
-	 */
-	IEEE802154_HW_2_4_GHZ = BIT(0),
-
-	/**
-	 * Sub-GHz radio supported
-	 *
-	 * TODO: Replace with channel page attribute.
-	 */
-	IEEE802154_HW_SUB_GHZ = BIT(1),
 
 	/** Energy detection (ED) supported (optional) */
-	IEEE802154_HW_ENERGY_SCAN = BIT(2),
-
+	IEEE802154_HW_ENERGY_SCAN = BIT(0),
 
 	/*
 	 * MAC offloading capabilities (optional)
@@ -151,37 +372,37 @@ enum ieee802154_hw_caps {
 	 */
 
 	/** Frame checksum verification supported */
-	IEEE802154_HW_FCS = BIT(3),
+	IEEE802154_HW_FCS = BIT(1),
 
 	/** Filtering of PAN ID, extended and short address supported */
-	IEEE802154_HW_FILTER = BIT(4),
+	IEEE802154_HW_FILTER = BIT(2),
 
 	/** Promiscuous mode supported */
-	IEEE802154_HW_PROMISC = BIT(5),
+	IEEE802154_HW_PROMISC = BIT(3),
 
 	/** CSMA-CA procedure supported on TX */
-	IEEE802154_HW_CSMA = BIT(6),
+	IEEE802154_HW_CSMA = BIT(4),
 
 	/** Waits for ACK on TX if AR bit is set in TX pkt */
-	IEEE802154_HW_TX_RX_ACK = BIT(7),
+	IEEE802154_HW_TX_RX_ACK = BIT(5),
 
 	/** Supports retransmission on TX ACK timeout */
-	IEEE802154_HW_RETRANSMISSION = BIT(8),
+	IEEE802154_HW_RETRANSMISSION = BIT(6),
 
 	/** Sends ACK on RX if AR bit is set in RX pkt */
-	IEEE802154_HW_RX_TX_ACK = BIT(9),
+	IEEE802154_HW_RX_TX_ACK = BIT(7),
 
 	/** TX at specified time supported */
-	IEEE802154_HW_TXTIME = BIT(10),
+	IEEE802154_HW_TXTIME = BIT(8),
 
 	/** TX directly from sleep supported */
-	IEEE802154_HW_SLEEP_TO_TX = BIT(11),
+	IEEE802154_HW_SLEEP_TO_TX = BIT(9),
 
 	/** Timed RX window scheduling supported */
-	IEEE802154_HW_RXTIME = BIT(12),
+	IEEE802154_HW_RXTIME = BIT(10),
 
 	/** TX security supported (key management, encryption and authentication) */
-	IEEE802154_HW_TX_SEC = BIT(13),
+	IEEE802154_HW_TX_SEC = BIT(11),
 
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
@@ -189,7 +410,7 @@ enum ieee802154_hw_caps {
 };
 
 /** @brief Number of bits used by ieee802154_hw_caps type. */
-#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (14)
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (12)
 
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
@@ -502,10 +723,32 @@ struct ieee802154_config {
  * details.
  */
 enum ieee802154_attr {
+	/**
+	 * Retrieves a bit field with supported channel pages. This attribute
+	 * SHALL be implemented by all drivers.
+	 */
+	IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES,
+
+	/**
+	 * Retrieves a pointer to the array of supported channel ranges within
+	 * the currently configured channel page. This attribute SHALL be
+	 * implemented by all drivers.
+	 */
+	IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES,
+
+	/**
+	 * Retrieves a bit field with supported HRP UWB nominal pulse repetition
+	 * frequencies. This attribute SHALL be implemented by all devices that
+	 * support channel page four (HRP UWB).
+	 */
+	IEEE802154_ATTR_PHY_HRP_UWB_SUPPORTED_PRFS,
+
 	/** Number of attributes defined in ieee802154_attr. */
 	IEEE802154_ATTR_COMMON_COUNT,
 
-	/** This and higher values are specific to the protocol- or driver-specific extensions. */
+	/** This and higher values are specific to the protocol- or
+	 * driver-specific extensions.
+	 */
 	IEEE802154_ATTR_PRIV_START = IEEE802154_ATTR_COMMON_COUNT,
 };
 
@@ -519,20 +762,120 @@ enum ieee802154_attr {
  * configuration data that originate from L2.
  *
  * @note To keep this union reasonably small, any attribute requiring a large
- * memory area, SHALL be provided pointing to memory allocated from the driver's
- * stack. Clients that need to persist the attribute value SHALL therefore copy
- * such memory before returning control to the driver.
+ * memory area, SHALL be provided pointing to stable memory allocated by the
+ * driver.
  */
 struct ieee802154_attr_value {
 	union {
-		/* TODO: Please remove when first attribute is added. */
-		uint8_t dummy;
-
-		/* TODO: Add driver specific PHY attributes (symbol rate,
-		 * aTurnaroundTime, aCcaTime, channels, channel pages, etc.)
+		/**
+		 * @brief A bit field that represents the supported channel
+		 * pages, see ieee802154_phy_channel_page.
+		 *
+		 * @note To keep the API extensible as required by the standard,
+		 * we model supported pages as a bitmap to support drivers that
+		 * implement runtime switching between multiple channel pages.
+		 *
+		 * @note Currently none of the Zephyr drivers implements more
+		 * than one channel page at runtime, therefore only one bit will
+		 * be set and we consider the current channel page (see the PHY
+		 * PIB attribute phyCurrentPage, section 11.3, table 11-2) to be
+		 * read-only, fixed and "well known" via the supported channel
+		 * pages attribute.
+		 *
+		 * TODO: Implement configuration of phyCurrentPage once drivers
+		 * need to support channel page switching at runtime.
 		 */
+		uint32_t phy_supported_channel_pages;
+
+		/**
+		 * @brief Pointer to a structure representing channel ranges
+		 * currently available on the selected channel page.
+		 *
+		 * @warning The pointer must be stable and valid throughout the
+		 * life of the interface.
+		 *
+		 * @details The selected channel page corresponds to the
+		 * phyCurrentPage PHY PIB attribute, see the description of
+		 * phy_supported_channel_pages above. Currently it can be
+		 * retrieved via the IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES
+		 * attribute.
+		 *
+		 * Most drivers will expose a single channel page with a single,
+		 * often zero-based, fixed channel range.
+		 *
+		 * Some notable exceptions:
+		 * * The legacy channel page (zero) exposes ranges in different
+		 *   bands and even PHYs that are usually not implemented by a
+		 *   single driver.
+		 * * SUN and LECIM PHYs specify a large number of bands and
+		 *   operating modes on a single page with overlapping channel
+		 *   ranges each. Some of these ranges are not zero-based or
+		 *   contain "holes". This explains why several ranges may be
+		 *   necessary to represent all available channels.
+		 * * UWB PHYs often support partial channel ranges on the same
+		 *   channel page depending on the supported bands.
+		 *
+		 * In these cases, drivers may expose custom configuration
+		 * attributes (Kconfig, devicetree, runtime, ...) that allow
+		 * switching between sub-ranges within the same channel page
+		 * (e.g. switching between SubG and 2.4G bands on channel page
+		 * zero or switching between multiple operating modes in the SUN
+		 * or LECIM PHYs.
+		 */
+		const struct ieee802154_phy_supported_channels *phy_supported_channels;
+
+		/**
+		 * @brief A bit field representing supported HRP UWB pulse
+		 * repetition frequencies (PRF), see enum
+		 * ieee802154_phy_hrp_uwb_nominal_prf.
+		 *
+		 * @note Currently none of the Zephyr HRP UWB drivers implements
+		 * more than one nominal PRF at runtime, therefore only one bit
+		 * will be set and we consider the current PRF (UwbPrf,
+		 * MCPS-DATA.request, section 8.3.2, table 8-88) to be
+		 * read-only, fixed and "well known" via the supported PRF
+		 * attribute.
+		 *
+		 * TODO: Allow the PRF to be configured for each TX call once
+		 * drivers need to support PRF switching at runtime.
+		 */
+		uint32_t phy_hrp_uwb_supported_nominal_prfs;
 	};
 };
+
+/**
+ * @brief Helper function to handle channel page and rank to be called from
+ * drivers' attr_get() implementation. This only applies to drivers with a
+ * single channel page.
+ *
+ * @param attr The attribute to be retrieved.
+ * @param phy_supported_channel_page The driver's unique channel page.
+ * @param phy_supported_channels Pointer to the structure that contains the
+ * driver's channel range or ranges.
+ * @param value The pointer to the value struct provided by the user.
+ *
+ * @retval 0 if the attribute could be resolved
+ * @retval -ENOENT if the attribute could not be resolved
+ */
+static inline int ieee802154_attr_get_channel_page_and_range(
+	enum ieee802154_attr attr,
+	const enum ieee802154_phy_channel_page phy_supported_channel_page,
+	const struct ieee802154_phy_supported_channels *phy_supported_channels,
+	struct ieee802154_attr_value *value)
+{
+	switch (attr) {
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
+		value->phy_supported_channel_pages = phy_supported_channel_page;
+		return 0;
+
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES:
+		value->phy_supported_channels = phy_supported_channels;
+		return 0;
+
+	default:
+		return -ENOENT;
+	}
+}
 
 /**
  * @brief IEEE 802.15.4 driver interface API.
@@ -592,7 +935,8 @@ struct ieee802154_radio_api {
 	 *
 	 * @retval 0 channel was successfully set
 	 * @retval -EINVAL The given channel is not within the range of valid
-	 * channels of the driver's current channel page.
+	 * channels of the driver's current channel page, see the
+	 * IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES driver attribute.
 	 * @retval -ENOTSUP The given channel is within the range of valid
 	 * channels of the driver's current channel page but unsupported by the
 	 * current driver.
@@ -735,18 +1079,6 @@ struct ieee802154_radio_api {
 			 const struct ieee802154_config *config);
 
 	/**
-	 * @brief Get the available amount of Sub-GHz channels.
-	 *
-	 * TODO: Replace with a combination of channel page and channel
-	 * attributes.
-	 *
-	 * @param dev pointer to radio device
-	 *
-	 * @return number of available channels in the sub-gigahertz band
-	 */
-	uint16_t (*get_subg_channel_count)(const struct device *dev);
-
-	/**
 	 * @brief Run an energy detection scan.
 	 *
 	 * @note requires IEEE802154_HW_ENERGY_SCAN capability
@@ -819,7 +1151,8 @@ struct ieee802154_radio_api {
 	 * member.
 	 *
 	 * @retval -ENOENT The driver does not provide the requested attribute.
-	 * The value structure has does not been updated with attribute data.
+	 * The value structure has not been updated with attribute data. The
+	 * content of the value attribute is undefined.
 	 */
 	int (*attr_get)(const struct device *dev,
 			enum ieee802154_attr attr,

@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 
 /* B91 data structure */
-static struct  b91_data data;
+static struct b91_data data;
 
 /* Set filter PAN ID */
 static int b91_set_pan_id(uint16_t pan_id)
@@ -403,7 +403,7 @@ static enum ieee802154_hw_caps b91_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
 }
 
@@ -428,8 +428,12 @@ static int b91_set_channel(const struct device *dev, uint16_t channel)
 {
 	ARG_UNUSED(dev);
 
-	if (channel < 11 || channel > 26) {
+	if (channel > 26) {
 		return -EINVAL;
+	}
+
+	if (channel < 11) {
+		return -ENOTSUP;
 	}
 
 	if (data.current_channel != channel) {
@@ -585,6 +589,20 @@ static int b91_configure(const struct device *dev,
 	return -ENOTSUP;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+/* API implementation: attr_get */
+static int b91_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 /* IEEE802154 driver APIs structure */
 static struct ieee802154_radio_api b91_radio_api = {
 	.iface_api.init = b91_iface_init,
@@ -598,6 +616,7 @@ static struct ieee802154_radio_api b91_radio_api = {
 	.tx = b91_tx,
 	.ed_scan = b91_ed_scan,
 	.configure = b91_configure,
+	.attr_get = b91_attr_get,
 };
 
 

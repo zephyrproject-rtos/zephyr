@@ -223,7 +223,6 @@ static void nrf5_get_capabilities_at_boot(void)
 		IEEE802154_HW_PROMISC |
 		IEEE802154_HW_FILTER |
 		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
-		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_RX_TX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
@@ -270,7 +269,7 @@ static int nrf5_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
-		return -EINVAL;
+		return channel < 11 ? -ENOTSUP : -EINVAL;
 	}
 
 	nrf_802154_channel_set(channel);
@@ -954,12 +953,20 @@ static int nrf5_configure(const struct device *dev,
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
 static int nrf5_attr_get(const struct device *dev,
 			 enum ieee802154_attr attr,
 			 struct ieee802154_attr_value *value)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(value);
+
+	if (ieee802154_attr_get_channel_page_and_range(
+		    attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		    &drv_attr.phy_supported_channels, value) == 0) {
+		return 0;
+	}
 
 	switch ((uint32_t)attr) {
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)

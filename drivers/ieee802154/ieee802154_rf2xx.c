@@ -141,11 +141,11 @@ static void rf2xx_set_rssi_base(const struct device *dev, uint16_t channel)
 	struct rf2xx_context *ctx = dev->data;
 	int8_t base;
 
-	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+	if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915) {
 		base = channel == 0
 				? RF2XX_RSSI_BPSK_20
 				: RF2XX_RSSI_BPSK_40;
-	} else if (ctx->cc_page == RF2XX_TRX_CC_PAGE_2) {
+	} else if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) {
 		base = channel == 0
 				? RF2XX_RSSI_OQPSK_SIN_RC_100
 				: RF2XX_RSSI_OQPSK_SIN_250;
@@ -364,8 +364,6 @@ static inline uint8_t *get_mac(const struct device *dev)
 
 static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->data;
-
 	LOG_DBG("HW Caps");
 
 	return IEEE802154_HW_FCS |
@@ -374,10 +372,7 @@ static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_CSMA |
 	       IEEE802154_HW_RETRANSMISSION |
 	       IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_RX_TX_ACK |
-	       (ctx->trx_model == RF2XX_TRX_MODEL_212
-				? IEEE802154_HW_SUB_GHZ
-				: IEEE802154_HW_2_4_GHZ);
+	       IEEE802154_HW_RX_TX_ACK;
 }
 
 static int rf2xx_configure_sub_channel(const struct device *dev, uint16_t channel)
@@ -386,11 +381,11 @@ static int rf2xx_configure_sub_channel(const struct device *dev, uint16_t channe
 	uint8_t reg;
 	uint8_t cc_mask;
 
-	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+	if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915) {
 		cc_mask = channel == 0
 				   ? RF2XX_CC_BPSK_20
 				   : RF2XX_CC_BPSK_40;
-	} else if (ctx->cc_page == RF2XX_TRX_CC_PAGE_2) {
+	} else if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) {
 		cc_mask = channel == 0
 				   ? RF2XX_CC_OQPSK_SIN_RC_100
 				   : RF2XX_CC_OQPSK_SIN_250;
@@ -404,13 +399,14 @@ static int rf2xx_configure_sub_channel(const struct device *dev, uint16_t channe
 
 	return 0;
 }
+
 static int rf2xx_configure_trx_path(const struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->data;
 	uint8_t reg;
 	uint8_t gc_tx_offset;
 
-	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+	if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915) {
 		gc_tx_offset = 0x03;
 	} else {
 		gc_tx_offset = 0x02;
@@ -440,24 +436,26 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("Set Channel %d", channel);
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
-		if ((ctx->cc_page == RF2XX_TRX_CC_PAGE_0
-		     || ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
+		if ((ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915
+		     || ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915)
 		    && channel > 10) {
 			LOG_ERR("Unsupported channel %u", channel);
-			return -EINVAL;
+			return channel > 26 ? -EINVAL : -ENOTSUP;
 		}
-		if (ctx->cc_page == RF2XX_TRX_CC_PAGE_5 && channel > 3) {
+		if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_FIVE_OQPSK_780 &&
+		    channel > 3) {
 			LOG_ERR("Unsupported channel %u", channel);
-			return -EINVAL;
+			return channel > 7 ? -EINVAL : -ENOTSUP;
 		}
 
 		rf2xx_configure_sub_channel(dev, channel);
 		rf2xx_configure_trx_path(dev);
 		rf2xx_set_rssi_base(dev, channel);
 	} else {
+		/* 2.4G O-QPSK, channel page zero */
 		if (channel < 11 || channel > 26) {
 			LOG_ERR("Unsupported channel %u", channel);
-			return -EINVAL;
+			return channel < 11 ? -ENOTSUP : -EINVAL;
 		}
 	}
 
@@ -830,11 +828,23 @@ int rf2xx_configure(const struct device *dev,
 	return ret;
 }
 
-uint16_t rf2xx_get_subgiga_channel_count(const struct device *dev)
+static int rf2xx_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			   struct ieee802154_attr_value *value)
 {
 	struct rf2xx_context *ctx = dev->data;
 
-	return ctx->cc_page == RF2XX_TRX_CC_PAGE_5 ? 4 : 11;
+	switch (attr) {
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
+		value->phy_supported_channel_pages = ctx->cc_page;
+		return 0;
+
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES:
+		value->phy_supported_channels = &ctx->cc_channels;
+		return 0;
+
+	default:
+		return -ENOENT;
+	}
 }
 
 static int power_on_and_setup(const struct device *dev)
@@ -1049,6 +1059,25 @@ static void rf2xx_iface_init(struct net_if *iface)
 
 	ctx->iface = iface;
 
+	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
+		if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915 ||
+		    ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) {
+			ctx->cc_range.from_channel = 0U;
+			ctx->cc_range.to_channel = 10U;
+		} else if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_FIVE_OQPSK_780) {
+			ctx->cc_range.from_channel = 0U;
+			ctx->cc_range.to_channel = 3U;
+		} else {
+			__ASSERT(false, "Unsupported channel page %u.", ctx->cc_page);
+		}
+	} else {
+		__ASSERT(ctx->cc_page ==
+				 IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+			 "Unsupported channel page %u.", ctx->cc_page);
+		ctx->cc_range.from_channel = 11U;
+		ctx->cc_range.to_channel = 26U;
+	}
+
 	ieee802154_init(iface);
 }
 
@@ -1064,7 +1093,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 	.start			= rf2xx_start,
 	.stop			= rf2xx_stop,
 	.configure		= rf2xx_configure,
-	.get_subg_channel_count	= rf2xx_get_subgiga_channel_count,
+	.attr_get		= rf2xx_attr_get,
 };
 
 #if !defined(CONFIG_IEEE802154_RAW_MODE)
@@ -1113,7 +1142,11 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 #define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
 	static struct rf2xx_context rf2xx_ctx_data_##n = {              \
 		.mac_addr = { DRV_INST_LOCAL_MAC_ADDRESS(n) },          \
-		.cc_page = DT_INST_ENUM_IDX_OR(n, channel_page, 0),	\
+		.cc_page = BIT(DT_INST_ENUM_IDX_OR(n, channel_page, 0)),\
+		.cc_channels = {                                        \
+			.ranges = &rf2xx_ctx_data_##n.cc_range,         \
+			.num_ranges = 1U,                               \
+		}                                                       \
 	}
 
 #define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \

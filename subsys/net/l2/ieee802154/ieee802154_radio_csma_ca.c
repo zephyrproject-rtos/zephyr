@@ -28,9 +28,15 @@ BUILD_ASSERT(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE <=
 /* See section 6.2.5.1. */
 static inline int unslotted_csma_ca_channel_access(struct net_if *iface)
 {
-	uint32_t turnaround_time = ieee802154_radio_get_a_turnaround_time(iface);
-	uint32_t symbol_period = ieee802154_radio_get_symbol_period_us(iface);
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
+	uint32_t turnaround_time, unit_backoff_period_us;
+
+	turnaround_time = ieee802154_radio_get_a_turnaround_time(iface);
+	unit_backoff_period_us = ieee802154_radio_get_multiple_of_symbol_period(
+					 iface, ctx->channel,
+					 IEEE802154_MAC_A_UNIT_BACKOFF_PERIOD(turnaround_time)) /
+				 NSEC_PER_USEC;
 
 	for (uint8_t nb = 0U; nb <= CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO; nb++) {
 		int ret;
@@ -42,8 +48,7 @@ static inline int unslotted_csma_ca_channel_access(struct net_if *iface)
 			 * radio API should expose a precise radio clock instead (which may
 			 * fall back to k_busy_wait() if the radio does not have a clock).
 			 */
-			k_busy_wait(bo_n * IEEE802154_A_UNIT_BACKOFF_PERIOD_US(turnaround_time,
-									       symbol_period));
+			k_busy_wait(bo_n * unit_backoff_period_us);
 		}
 
 		ret = ieee802154_radio_cca(iface);
