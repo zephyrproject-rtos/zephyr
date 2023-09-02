@@ -46,8 +46,8 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #define DW1000_RX_ANT_DLY		16450
 
 /* SHR Symbol Duration in ns */
-#define UWB_PHY_TPSYM_PRF64		1017.63
-#define UWB_PHY_TPSYM_PRF16		993.59
+#define UWB_PHY_TPSYM_PRF64		IEEE802154_PHY_HRP_UWB_PRF64_TPSYM_SYMBOL_PERIOD_NS
+#define UWB_PHY_TPSYM_PRF16		IEEE802154_PHY_HRP_UWB_PRF16_TPSYM_SYMBOL_PERIOD_NS
 
 #define UWB_PHY_NUMOF_SYM_SHR_SFD	8
 
@@ -624,9 +624,8 @@ static void dwt_gpio_callback(const struct device *dev,
 
 static enum ieee802154_hw_caps dwt_get_capabilities(const struct device *dev)
 {
-	/* TODO: Add channel page attribute with channel page four. */
 	/* TODO: Implement HW-supported AUTOACK + frame pending bit handling. */
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_TXTIME;
 }
 
@@ -683,6 +682,14 @@ static int dwt_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct dwt_context *ctx = dev->data;
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
+
+	if (channel > 15) {
+		return -EINVAL;
+	}
+
+	if (channel == 0 || channel == 6 || channel > 7) {
+		return -ENOTSUP;
+	}
 
 	rf_cfg->channel = channel;
 	LOG_INF("Set channel %u", channel);
@@ -938,6 +945,46 @@ static int dwt_configure(const struct device *dev,
 	}
 
 	return -ENOTSUP;
+}
+
+/* driver-allocated attribute memory - constant across all driver instances */
+static const struct {
+	const struct ieee802154_phy_channel_range phy_channel_range[2];
+	const struct ieee802154_phy_supported_channels phy_supported_channels;
+} drv_attr = {
+	.phy_channel_range = {
+		{ .from_channel = 1, .to_channel = 5 },
+		{ .from_channel = 7, .to_channel = 7 },
+	},
+	.phy_supported_channels = {
+		.ranges = drv_attr.phy_channel_range,
+		.num_ranges = 2U,
+	},
+};
+
+static int dwt_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			struct ieee802154_attr_value *value)
+{
+	if (ieee802154_attr_get_channel_page_and_range(
+		    attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_FOUR_HRP_UWB,
+		    &drv_attr.phy_supported_channels, value) == 0) {
+		return 0;
+	}
+
+	switch (attr) {
+	case IEEE802154_ATTR_PHY_HRP_UWB_SUPPORTED_PRFS: {
+		struct dwt_context *ctx = dev->data;
+		struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
+
+		value->phy_hrp_uwb_supported_nominal_prfs =
+			rf_cfg->prf == DWT_PRF_64M ? IEEE802154_PHY_HRP_UWB_NOMINAL_64_M
+						   : IEEE802154_PHY_HRP_UWB_NOMINAL_16_M;
+		return 0;
+	}
+
+	default:
+		return -ENOENT;
+	}
 }
 
 /*
@@ -1633,6 +1680,7 @@ static struct ieee802154_radio_api dwt_radio_api = {
 	.configure		= dwt_configure,
 	.ed_scan		= dwt_ed,
 	.tx			= dwt_tx,
+	.attr_get		= dwt_attr_get,
 };
 
 #define DWT_PSDU_LENGTH		(127 - DWT_FCS_LENGTH)

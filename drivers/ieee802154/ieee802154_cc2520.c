@@ -668,7 +668,7 @@ out:
 static enum ieee802154_hw_caps cc2520_get_capabilities(const struct device *dev)
 {
 	/* TODO: Add support for IEEE802154_HW_PROMISC */
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_RX_TX_ACK;
 }
 
@@ -686,8 +686,12 @@ static int cc2520_set_channel(const struct device *dev, uint16_t channel)
 {
 	LOG_DBG("%u", channel);
 
-	if (channel < 11 || channel > 26) {
+	if (channel > 26) {
 		return -EINVAL;
+	}
+
+	if (channel < 11) {
+		return -ENOTSUP;
 	}
 
 	/* See chapter 16 */
@@ -878,6 +882,19 @@ static int cc2520_stop(const struct device *dev)
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+static int cc2520_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			   struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 /******************
  * Initialization *
  *****************/
@@ -1048,6 +1065,7 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.start			= cc2520_start,
 	.stop			= cc2520_stop,
 	.tx			= cc2520_tx,
+	.attr_get		= cc2520_attr_get,
 };
 
 #if defined(CONFIG_IEEE802154_RAW_MODE)
