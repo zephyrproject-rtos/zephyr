@@ -127,6 +127,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		pkt = ieee802154_create_mac_cmd_frame(
 			iface, IEEE802154_CFI_BEACON_REQUEST, &params);
 		if (!pkt) {
+			k_sem_give(&ctx->scan_ctx_lock);
 			NET_DBG("Could not create Beacon Request");
 			ret = -ENOBUFS;
 			goto out;
