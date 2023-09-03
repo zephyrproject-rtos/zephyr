@@ -26,4 +26,8 @@ struct action_msg {
 	bool status;
 };
 
+struct net_log_msg {
+	int count_net;
+	int pkt_total;
+};
 #endif /* _ZBUS_MESSAGES_H_ */

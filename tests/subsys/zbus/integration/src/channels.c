@@ -34,6 +34,15 @@ ZBUS_CHAN_DEFINE(net_pkt_chan,	     /* Name */
 		 ZBUS_MSG_INIT(.total = 0) /* Initial value */
 );
 
+ZBUS_CHAN_DEFINE(net_log_chan,       /* Name */
+		 struct net_log_msg, /* Message type */
+
+		 NULL,                        /* Validator */
+		 NULL,                        /* User data */
+		 ZBUS_OBSERVERS(net_log_sub), /* observers */
+		 ZBUS_MSG_INIT(0)             /* Initial value */
+);
+
 ZBUS_CHAN_DEFINE(start_measurement_chan, /* Name */
 		 struct action_msg,	 /* Message type */
 
