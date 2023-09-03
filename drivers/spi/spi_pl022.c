@@ -889,7 +889,7 @@ static int spi_pl022_init(const struct device *dev)
 
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed to apply pinctrl state");
 		return ret;
 	}
