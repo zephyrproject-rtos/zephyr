@@ -23,6 +23,8 @@
 		sw0 = &btn0;
 		sw1 = &btn1;
 		watchdog0 = &wdt0;
+		mcuboot-led0 = &led1;
+		mcuboot-button0 = &btn1;
 	};
 
 	chosen {
