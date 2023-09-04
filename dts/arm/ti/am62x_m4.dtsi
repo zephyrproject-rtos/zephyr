@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 
@@ -52,6 +53,16 @@
 		clock-frequency = <48000000>;
 		current-speed = <115200>;
 		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	gpio0: gpio@4201010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x4201010 0x100>;
+		#address-cells = <2>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
 		status = "disabled";
 	};
 };
