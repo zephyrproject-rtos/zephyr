@@ -32,7 +32,7 @@ void arch_busy_wait(uint32_t usec_to_wait)
 		 * There may be wakes due to other interrupts or nested calls to
 		 * k_busy_wait in interrupt handlers
 		 */
-		fake_timer_wake_in_time(time_end);
+		nhw_fake_timer_wake_in_time(CONFIG_NATIVE_SIMULATOR_CPU_N, time_end);
 		posix_halt_cpu();
 	}
 }
@@ -58,7 +58,7 @@ void posix_cpu_hold(uint32_t usec_to_waste)
 		 * cpu_hold in interrupt handlers
 		 */
 		time_start = nsi_hws_get_time();
-		fake_timer_wake_in_time(time_start + to_wait);
+		nhw_fake_timer_wake_in_time(CONFIG_NATIVE_SIMULATOR_CPU_N, time_start + to_wait);
 		posix_change_cpu_state_and_wait(true);
 		to_wait -= nsi_hws_get_time() - time_start;
 

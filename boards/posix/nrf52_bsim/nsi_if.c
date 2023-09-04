@@ -12,6 +12,7 @@
 #include "bstests.h"
 #include "bs_tracing.h"
 #include "phy_sync_ctrl.h"
+#include "nsi_hw_scheduler.h"
 
 NATIVE_SIMULATOR_IF void nsif_cpu0_pre_cmdline_hooks(void)
 {
@@ -89,9 +90,11 @@ NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised(void)
 	posix_interrupt_raised();
 }
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_bst_tick(uint64_t time)
+NATIVE_SIMULATOR_IF int nsif_cpu0_test_hook(void *p)
 {
-	bst_tick(time);
+	(void) p;
+	bst_tick(nsi_hws_get_time());
+	return 0;
 }
 
 NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised_from_sw(void)
