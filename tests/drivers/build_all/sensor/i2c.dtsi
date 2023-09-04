@@ -1109,3 +1109,9 @@ apds_9306: apds9306@92 {
 	resolution = <13>;
 	frequency = <2000>;
 };
+
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@99 {
+	compatible = "we,wsen-hids-2525020210002";
+	reg = <0x99>;
+	precision = "high";
+};
