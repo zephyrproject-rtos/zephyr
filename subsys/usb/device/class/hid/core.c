@@ -59,7 +59,7 @@ struct usb_hid_config {
 		.bNumEndpoints = 1,					\
 		.bInterfaceClass = USB_BCC_HID,				\
 		.bInterfaceSubClass = 1,				\
-		.bInterfaceProtocol = CONFIG_USB_HID_PROTOCOL_CODE,	\
+		.bInterfaceProtocol = 0,				\
 		.iInterface = 0,					\
 	}
 #else

@@ -263,6 +263,9 @@ Networking
 USB
 ***
 
+* USB device HID
+  * Kconfig option USB_HID_PROTOCOL_CODE, deprecated in v2.6, is finally removed.
+
 Devicetree
 **********
 
