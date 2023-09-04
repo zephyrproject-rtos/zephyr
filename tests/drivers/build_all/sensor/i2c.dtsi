@@ -1053,3 +1053,9 @@ test_i2c_fxls8974: fxls8974@93 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@94 {
+	compatible = "we,wsen-hids-2525020210002";
+	reg = <0x94>;
+	precision = "High";
+};
