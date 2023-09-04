@@ -2,6 +2,7 @@ common:
   filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
   # FIXME: qemu_leon3 is excluded because of the alignment-related failure
   #        reported in the GitHub issue zephyrproject-rtos/zephyr#48992.
+  arch_exclude: posix
   platform_exclude: qemu_leon3
   tags: posix
   min_ram: 64
