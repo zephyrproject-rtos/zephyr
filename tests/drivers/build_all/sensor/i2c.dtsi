@@ -709,7 +709,7 @@ test_i2c_tcs3400: tcs3400@6b {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_tcn75a: tcn75a@6c {
+test_i2c_tcn75a: tcn75a@6c {
 	compatible = "microchip,tcn75a";
 	reg = <0x6c>;
 	alert-gpios = <&test_gpio 0 0>;
@@ -737,7 +737,7 @@ test_i2c_bmi08x_gyro: bmi08x@6e {
 	gyro-fs = <1000>;
 };
 
-test_i2c_ist8310@6f {
+test_i2c_ist8310: ist8310@6f {
 	compatible = "isentek,ist8310";
 	reg = <0x6f>;
 	status = "okay";
