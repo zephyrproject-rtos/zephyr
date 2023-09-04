@@ -132,6 +132,8 @@ SECTIONS
     *(.sdata2)
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
@@ -235,6 +237,11 @@ SECTIONS
     *libzephyr.a:app_cpu_start.*(.literal .text .literal.* .text.*)
     *esp_mcuboot.*(.literal .text .literal.* .text.*)
     *esp_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
+
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
