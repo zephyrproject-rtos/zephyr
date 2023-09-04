@@ -14,5 +14,6 @@ config SOC_SERIES_ESP32S2
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_PM
 	select HAS_POWEROFF
+	select APP_BUILD_USE_FLASH_SECTIONS if BOOTLOADER_ESP_IDF
 	help
 	  Enable support for Espressif ESP32-S2

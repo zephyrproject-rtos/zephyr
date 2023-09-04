@@ -19,6 +19,9 @@
 #include "esp_private/system_internal.h"
 #include "esp_clk_internal.h"
 #include <soc/interrupt_reg.h>
+#include <esp_private/spi_flash_os.h>
+#include "esp_private/esp_mmu_map_private.h"
+
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
 #include <zephyr/kernel_structs.h>
@@ -96,6 +99,22 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 */
 	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+
+    /**
+     * This function initialise the Flash chip to the user-defined settings.
+     *
+     * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible to
+     * different chips.
+     * In this stage, we re-configure the Flash (and MSPI) to required configuration
+     */
+	spi_flash_init_chip_state();
+
+	esp_mmu_map_init();
+
+#endif /*CONFIG_SOC_FLASH_ESP32*/
 
 	/* Configures the CPU clock, RTC slow and fast clocks, and performs
 	 * RTC slow clock calibration.
