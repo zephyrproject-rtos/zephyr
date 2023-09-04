@@ -142,13 +142,6 @@
 
 			#include "w1.dtsi"
 		};
-
-		dht22 {
-			compatible = "aosong,dht";
-			status = "okay";
-			dio-gpios = <&test_gpio 0 0>;
-			/* dht22; */
-		};
 	};
 };
 
