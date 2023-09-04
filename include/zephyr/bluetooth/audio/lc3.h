@@ -309,7 +309,7 @@ enum bt_audio_codec_config_type {
  */
 #define BT_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu)                 \
 	{                                                                                          \
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_BYTES_LIST_LE16(_freq)),    \
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ, (_freq)),                      \
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_DURATION, (_duration)),              \
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,                          \
 				    BT_BYTES_LIST_LE32(_loc)),                                     \
