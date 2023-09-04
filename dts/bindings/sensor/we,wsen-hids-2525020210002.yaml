@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-HIDS-2525020210002 humidity sensor
+
+compatible: "we,wsen-hids-2525020210002"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+
+  precision:
+    type: string
+    default: "mid"
+    enum:
+      - "low"
+      - "mid"
+      - "high"
+    description: |
+      Sensor measurement precision for temperature and humidity.
+      Supported precision options are low, mid or high.
+      Defaults to mid, which is a good compromise between
+      current usage and precision.
+
+  heater:
+    type: string
+    default: "OFF"
+    enum:
+      - "OFF"
+      - "ON_200MW_1S"
+      - "ON_200MW_100MS"
+      - "ON_110MW_1S"
+      - "ON_110MW_100MS"
+      - "ON_20MW_1S"
+      - "ON_20MW_100MS"
+    description: |
+      Activate the heater when fetching a sample for the specified amount of time.
+      This is only possible when the precison is set to high.
+      Defaults to OFF, since this option is valid for high precision
+      and the default precision is mid.
