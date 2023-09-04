@@ -244,3 +244,28 @@ uint8_t bst_delete(void)
 
 	return bst_result;
 }
+
+#if defined(CONFIG_NATIVE_SIMULATOR_CPU_N)
+#include "bstest_ticker.h"
+
+void bst_ticker_set_period(bs_time_t tick_period)
+{
+	bst_ticker_amp_set_period(CONFIG_NATIVE_SIMULATOR_CPU_N, tick_period);
+}
+
+void bst_ticker_set_next_tick_absolute(bs_time_t time)
+{
+	bst_ticker_amp_set_next_tick_absolutelute(CONFIG_NATIVE_SIMULATOR_CPU_N, time);
+}
+
+void bst_ticker_set_next_tick_delta(bs_time_t time)
+{
+	bst_ticker_amp_set_next_tick_delta(CONFIG_NATIVE_SIMULATOR_CPU_N, time);
+}
+
+void bst_awake_cpu_asap(void)
+{
+	bst_ticker_amp_awake_cpu_asap(CONFIG_NATIVE_SIMULATOR_CPU_N);
+}
+
+#endif /* defined(CONFIG_NATIVE_SIMULATOR_CPU_N) */
