@@ -442,7 +442,9 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
+#ifdef CONFIG_PTHREAD_IPC
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
+#endif
 void pthread_exit(void *retval);
 int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
