@@ -11,7 +11,9 @@
 #include <hal/systimer_hal.h>
 #include <hal/systimer_ll.h>
 #include <rom/ets_sys.h>
+#include <esp32c3/rtc.h>
 #include <esp_attr.h>
+#include <time.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -137,7 +139,6 @@ uint64_t sys_clock_cycle_get_64(void)
 
 static int sys_clock_driver_init(void)
 {
-
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
 		0,
 		sys_timer_isr,
@@ -152,6 +153,15 @@ static int sys_clock_driver_init(void)
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 0, true);
 	last_count = get_systimer_alarm();
 	set_systimer_alarm(last_count + CYC_PER_TICK);
+
+#ifdef CONFIG_POSIX_API
+	struct timespec tspec;
+
+	tspec.tv_sec = esp_rtc_get_time_us() / USEC_PER_SEC;
+	tspec.tv_nsec = esp_rtc_get_time_us() * 1000U;
+	clock_settime(CLOCK_REALTIME, &tspec);
+#endif
+
 	return 0;
 }
 

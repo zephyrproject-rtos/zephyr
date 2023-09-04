@@ -464,6 +464,7 @@ SECTIONS
   {
     _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data)
+    *(.rtc.data.*)
     *(.rtc.rodata)
     *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
     _rtc_data_end = ABSOLUTE(.);
