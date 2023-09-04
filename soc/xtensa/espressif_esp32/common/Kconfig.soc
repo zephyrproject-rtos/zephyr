@@ -212,6 +212,10 @@ config SPIRAM
 
 endmenu # SPI RAM config
 
+config APP_BUILD_USE_FLASH_SECTIONS
+	bool # Whether to place code/data into memory-mapped flash sections
+	default y if !MCUBOOT
+
 config MMU_PAGE_SIZE
 	hex
 	default 0x10000

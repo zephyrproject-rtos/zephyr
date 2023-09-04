@@ -11,6 +11,7 @@
 
 #include <esp32/rom/cache.h>
 #include <soc/dport_reg.h>
+#include "bootloader_flash_priv.h"
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
@@ -51,16 +52,14 @@ static int map_rom_segments(void)
 	}
 
 	uint32_t drom_vaddr_addr_aligned = _app_drom_vaddr & MMU_FLASH_MASK;
-	uint32_t drom_page_count = bootloader_cache_pages_to_map(_app_drom_size,
-			_app_drom_vaddr);
+	uint32_t drom_page_count = (_app_drom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
 	rc = cache_flash_mmu_set(0, 0, drom_vaddr_addr_aligned, _app_drom_start
 			& MMU_FLASH_MASK, 64, drom_page_count);
 	rc |= cache_flash_mmu_set(1, 0, drom_vaddr_addr_aligned, _app_drom_start
 			& MMU_FLASH_MASK, 64, drom_page_count);
 
 	uint32_t irom_vaddr_addr_aligned = _app_irom_vaddr & MMU_FLASH_MASK;
-	uint32_t irom_page_count = bootloader_cache_pages_to_map(_app_irom_size,
-			_app_irom_vaddr);
+	uint32_t irom_page_count = (_app_irom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
 	rc |= cache_flash_mmu_set(0, 0, irom_vaddr_addr_aligned, _app_irom_start
 			& MMU_FLASH_MASK, 64, irom_page_count);
 	rc |= cache_flash_mmu_set(1, 0, irom_vaddr_addr_aligned, _app_irom_start

@@ -11,6 +11,11 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+#include <esp_private/spi_flash_os.h>
+#include <esp_private/esp_mmu_map_private.h>
+#if CONFIG_ESP_SPIRAM
+#include <esp_psram.h>
+#endif
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
@@ -146,6 +151,13 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #if CONFIG_SOC_ESP32_PROCPU
 	/* start the ESP32 APP CPU */
 	esp_start_appcpu();
+#endif
+
+	esp_mmu_map_init();
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+	spi_flash_init_chip_state();
 #endif
 
 #if CONFIG_ESP_SPIRAM

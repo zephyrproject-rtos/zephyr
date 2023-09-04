@@ -11,6 +11,12 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+#include <esp_private/spi_flash_os.h>
+#include <esp_private/esp_mmu_map_private.h>
+#include <esp_flash_internal.h>
+#if CONFIG_ESP_SPIRAM
+#include <esp_psram.h>
+#endif
 
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
@@ -52,37 +58,13 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	extern uint32_t _init_start;
 
 	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__ (
-		"wsr %0, vecbase"
-		:
-		: "r"(&_init_start));
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	/* Zero out BSS */
 	z_bss_zero();
 
-	/*
-	 * Configure the mode of instruction cache :
-	 * cache size, cache associated ways, cache line size.
-	 */
-	esp_config_instruction_cache_mode();
-
-	/*
-	 * If we need use SPIRAM, we should use data cache, or if we want to
-	 * access rodata, we also should use data cache.
-	 * Configure the mode of data : cache size, cache associated ways, cache
-	 * line size.
-	 * Enable data cache, so if we don't use SPIRAM, it just works.
-	 */
-#if CONFIG_ESP_SPIRAM
-	esp_config_data_cache_mode();
-	esp_rom_Cache_Enable_DCache(0);
-#endif
-
 	/* Disable normal interrupts. */
-	__asm__ __volatile__ (
-		"wsr %0, PS"
-		:
-		: "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
@@ -108,12 +90,28 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	wdt_hal_disable(&rtc_wdt_ctx);
 	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-	/* Configures the CPU clock, RTC slow and fast clocks, and performs
-	 * RTC slow clock calibration.
+	/*
+	 * Configure the mode of instruction cache :
+	 * cache size, cache associated ways, cache line size.
 	 */
-	esp_clk_init();
+	esp_config_instruction_cache_mode();
 
-	esp_timer_early_init();
+	/*
+	 * If we need use SPIRAM, we should use data cache, or if we want to
+	 * access rodata, we also should use data cache.
+	 * Configure the mode of data : cache size, cache associated ways, cache
+	 * line size.
+	 * Enable data cache, so if we don't use SPIRAM, it just works.
+	 */
+	esp_config_data_cache_mode();
+	esp_rom_Cache_Enable_DCache(0);
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+	spi_flash_init_chip_state();
+#endif /*CONFIG_SOC_FLASH_ESP32*/
+
+	esp_mmu_map_init();
 
 #if CONFIG_ESP_SPIRAM
 
@@ -135,15 +133,20 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 #endif /* CONFIG_ESP_SPIRAM */
 
-/* Scheduler is not started at this point. Hence, guard functions
- * must be initialized after esp_spiram_init_cache which internally
- * uses guard functions. Setting guard functions before SPIRAM
- * cache initialization will result in a crash.
- */
+	/* Configures the CPU clock, RTC slow and fast clocks, and performs
+	 * RTC slow clock calibration.
+	 */
+	esp_clk_init();
+	esp_timer_early_init();
+
+	/* Scheduler is not started at this point. Hence, guard functions
+	 * must be initialized after esp_spiram_init_cache which internally
+	 * uses guard functions. Setting guard functions before SPIRAM
+	 * cache initialization will result in a crash.
+	 */
 #if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
-
 #endif /* CONFIG_MCUBOOT */
 
 	esp_intr_initialize();

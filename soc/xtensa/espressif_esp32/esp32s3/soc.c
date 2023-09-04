@@ -12,6 +12,13 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+#include <esp_private/spi_flash_os.h>
+#include <esp_private/esp_mmu_map_private.h>
+#include <esp_flash_internal.h>
+#if CONFIG_ESP_SPIRAM
+#include <esp_psram.h>
+#include <esp_private/esp_psram_extram.h>
+#endif
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
@@ -34,7 +41,6 @@
 #include <esp_timer.h>
 #include <esp_clk_internal.h>
 
-#include "esp32s3/spiram.h"
 
 #ifdef CONFIG_MCUBOOT
 #include "bootloader_init.h"
@@ -148,8 +154,21 @@ void IRAM_ATTR __esp_platform_start(void)
 	 */
 	esp_config_data_cache_mode();
 
-	/* Apply SoC patches */
-	esp_errata();
+	esp_mmu_map_init();
+
+#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_mspi_pin_init();
+
+	/**
+	 * This function initialise the Flash chip to the user-defined settings.
+	 *
+	 * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible
+	 * to different chips. In this stage, we re-configure the Flash (and MSPI) to required
+	 * configuration
+	 */
+	spi_flash_init_chip_state();
+#endif /*CONFIG_SOC_FLASH_ESP32*/
+
 
 #if CONFIG_ESP_SPIRAM
 	esp_err_t err = esp_spiram_init();
@@ -174,6 +193,9 @@ void IRAM_ATTR __esp_platform_start(void)
 	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 
 #endif /* CONFIG_ESP_SPIRAM */
+	/* Apply SoC patches */
+	esp_errata();
+
 
 	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start

@@ -100,10 +100,6 @@ MEMORY
    */
   rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000
 
-  /* RTC fast memory (same block as above), viewed from data bus
-   */
-  rtc_data_seg(RW): org = 0x600fe000, len = 0x2000
-
   /* RTC slow memory (data accessible). Persists over deep sleep.
    */
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
@@ -112,6 +108,8 @@ MEMORY
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
 }
+
+_esp_mmu_block_size = (CONFIG_MMU_PAGE_SIZE);
 
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -156,7 +154,7 @@ SECTIONS
   #include <zephyr/linker/rel-sections.ld>
 
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
-  _image_drom_size = LOADADDR(_RODATA_SECTION_END) + SIZEOF(_RODATA_SECTION_END)  - _image_drom_start;
+  _image_drom_size = _rodata_reserved_end  - _rodata_start;
   _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
 
   /* NOTE: .rodata section should be the first section in the linker script and no
@@ -165,14 +163,33 @@ SECTIONS
    * Adding .rodata as first section helps to reduce size of generated binary by
    * few kBs.
    */
+
+    /**
+   * This dummy section represents the .flash.text section but in default_rodata_seg.
+   * Thus, it must have its alignment and (at least) its size.
+   */
+  .flash.rodata.dummy (NOLOAD):
+  {
+    _flash_rodata_dummy_start = ABSOLUTE(.);
+    /* Start at the same alignment constraint than .flash.text */
+    . = ALIGN(ALIGNOF(.flash.text));
+    /* Create an empty gap as big as .flash.text section */
+    . = . + (_rodata_reserved_end - _rodata_reserved_start);
+    /* Prepare the alignment of the section above. Few bytes (0x20) must be
+     * added for the mapping header. */
+    . = ALIGN(_esp_mmu_block_size) + 0x40;
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
+
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(0x10))
   {
     _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
+    _rodata_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
     *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
 
+    _flash_rodata_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -180,6 +197,10 @@ SECTIONS
     . = ALIGN(4);
     *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__serial.a:uart_esp32.*) .rodata)
     *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__serial.a:uart_esp32.*) .rodata.*)
+
+    *(.rodata_wlog_error .rodata_wlog_error.*)
+    *(.rodata_wlog_info .rodata_wlog_info.*)
+    *(.rodata_wlog_warning .rodata_wlog_warning.*)
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
@@ -202,7 +223,16 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    . = ALIGN(4);
+    /* . = ALIGN(4); */
+    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
+    soc_reserved_memory_region_start = ABSOLUTE(.);
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
+    _rodata_end = ABSOLUTE(.);
     __rodata_region_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -230,9 +260,16 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
   {
+    /*
+      This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address
+      We don't need to include the noload rodata in this section
+    */
+    . = ALIGN (16);
+    *(.rodata_wlog_debug .rodata_wlog_debug.*)
+    *(.rodata_wlog_verbose .rodata_wlog_verbose.*)
+    . = . + SIZEOF(.flash.text);
+    . = ALIGN(_esp_mmu_block_size) + 0x20;
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN(16);
-    _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_ESP_SPIRAM)
@@ -337,6 +374,45 @@ SECTIONS
     *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:(.phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_rom_cache_esp32s2_esp32s3.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
+    *libhal.a:cache_hal.*(.literal .literal.* .text .text.*)
+    *libesp_system.a:esp_err.*(.literal .literal.* .text .text.*)
+
+    *libhal.a:i2c_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:ledc_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:mmu_hal.*(.literal .literal.* .text .text.*)
+    *libhal.a:spi_flash_encrypt_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libhal.a:spi_flash_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:spi_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:spi_slave_hal_iram.*(.literal .literal.* .text .text.*)
+    *libhal.a:systimer_hal.*(.literal .literal.* .text .text.*)
+
+    *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_flash_spi_init.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_psram.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_psram_impl_quad.*(.literal .literal.* .text .text.*) */
+    /* *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*) */
+
+    *libspi_flash.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_boya.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_gd.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_generic.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_issi.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_mxic.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_mxic_opi.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_th.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_chip_winbond.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_oct_flash_init.*(.literal .literal.* .text .text.*)
+    *libspi_flash.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
@@ -357,7 +433,8 @@ SECTIONS
   {
     /* ESP32-S3 memprot requires 16B padding for possible CPU
      * prefetch and 256B alignment for PMS split lines */
-    . = ALIGN(16);
+    . += 16;
+    . = ALIGN(0x100);
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
@@ -370,11 +447,12 @@ SECTIONS
 
   .iram0.bss (NOLOAD) :
   {
-    . = ALIGN(16);
-    *(.iram.bss)
-    *(.iram.bss*)
+    /* . = ALIGN(16); */
+    _iram_bss_start = ABSOLUTE(.);
+    *(.iram.bss .iram.bss.*)
+    _iram_bss_end = ABSOLUTE(.);
 
-    . = ALIGN(16);
+    . = ALIGN(4);
     _iram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
@@ -413,14 +491,14 @@ SECTIONS
     __bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
 
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
-    . = ALIGN(8);
-    *(.noinit)
-    *(.noinit.*)
-    . = ALIGN(8) ;
+    . = ALIGN(4);
+    _noinit_start = ABSOLUTE(.);
+    *(.noinit .noinit.*)
+    . = ALIGN(4) ;
+    _noinit_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   .dram0.data :
@@ -452,6 +530,37 @@ SECTIONS
     *libzephyr.a:loader.*(.rodata .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
+
+    *libesp_rom.a:esp_rom_cache_esp32s2_esp32s3.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libesp_rom.a:esp_rom_spiflash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libesp_rom.a:esp_rom_systimer.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libesp_rom.a:esp_rom_wdt.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:cache_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:i2c_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:ledc_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_hal_gpspi.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_slave_hal_iram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:systimer_hal.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_psram.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:memspi_host_driver.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_boya.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_gd.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_generic.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_issi.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_mxic.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_mxic_opi.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_th.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_chip_winbond.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_oct_flash_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:libbootloader_support.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
@@ -486,15 +595,10 @@ SECTIONS
   _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
   _image_irom_vaddr = ADDR(.flash.text);
 
-  .flash_text_dummy (NOLOAD): ALIGN(IROM_SEG_ALIGN)
-  {
-    . = SIZEOF(_RODATA_SECTION_NAME);
-    . = ALIGN(IROM_SEG_ALIGN) + 0x20;
-  } GROUP_LINK_IN(FLASH_CODE_REGION)
-
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
     _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.text start, this can be used for mmu driver to maintain virtual address */
     _text_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
@@ -522,6 +626,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
     /* Similar to _iram_start, this symbol goes here so it is
@@ -537,25 +642,44 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
+    _rtc_fast_start = ABSOLUTE(.);
     _rtc_text_start = ABSOLUTE(.);
-    *(.rtc.literal .rtc.text)
     *(.rtc.entry.text)
+
+    *(.rtc.literal .rtc.text .rtc.text.*)
+
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+    *(.rtc_text_end_test)
+
+    /* 16B padding for possible CPU prefetch and 4B alignment for PMS split lines */
+    . += 16;
+    . = ALIGN(4);
+
     _rtc_text_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
-  /* This section is required to skip rtc.text area because rtc_iram_seg and
-   * rtc_data_seg are reflect the same address space on different buses.
+  /**
+   * RTC data section holds RTC wake stub
+   * data/rodata, including from any source file
+   * named rtc_wake_stub*.c and the data marked with
+   * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
    */
-  .rtc.dummy :
+  .rtc.data :
   {
-     _rtc_dummy_start = ABSOLUTE(.);
-     _rtc_fast_start = ABSOLUTE(.);
-     . = SIZEOF(.rtc.text);
-     _rtc_dummy_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_data_seg, ROMABLE_REGION)
+    _rtc_data_start = ABSOLUTE(.);
 
-  /* This section located in RTC FAST Memory area.
+    _coredump_rtc_start = ABSOLUTE(.);
+    *(.rtc.coredump .rtc.coredump.*)
+    _coredump_rtc_end = ABSOLUTE(.);
+    *(.rtc.data .rtc.data.*)
+    *(.rtc.rodata .rtc.rodata.*)
+
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
+    _rtc_data_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
+
+  /**
+   * This section located in RTC FAST Memory area.
    * It holds data marked with RTC_FAST_ATTR attribute.
    * See the file "esp_attr.h" for more information.
    */
@@ -564,12 +688,17 @@ SECTIONS
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
 
+    _coredump_rtc_fast_start = ABSOLUTE(.);
+    *(.rtc.fast.coredump .rtc.fast.coredump.*)
+    _coredump_rtc_fast_end = ABSOLUTE(.);
+
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4) ;
     _rtc_force_fast_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_data_seg, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
-  /* RTC data section holds RTC wake stub
+  /**
+   * RTC data section holds RTC wake stub
    * data/rodata, including from any source file
    * named rtc_wake_stub*.c and the data marked with
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
@@ -577,24 +706,17 @@ SECTIONS
   .rtc.data :
   {
     _rtc_data_start = ABSOLUTE(.);
-    *(.rtc.data)
-    *(.rtc.rodata)
-    *rtc_wake_stub*.o(.data .rodata .data.* .rodata.* .bss .bss.*)
+
+    _coredump_rtc_start = ABSOLUTE(.);
+    *(.rtc.coredump .rtc.coredump.*)
+    _coredump_rtc_end = ABSOLUTE(.);
+    *(.rtc.data .rtc.data.*)
+    *(.rtc.rodata .rtc.rodata.*)
+
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
     _rtc_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
-  /* RTC bss, from any source file named rtc_wake_stub*.c */
-  .rtc.bss (NOLOAD) :
-  {
-    _rtc_bss_start = ABSOLUTE(.);
-    *rtc_wake_stub*.*(.bss .bss.*)
-    *rtc_wake_stub*.*(COMMON)
-
-    *(.rtc.data)
-    *(.rtc.rodata)
-
-    _rtc_bss_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
   /* RTC bss, from any source file named rtc_wake_stub*.c */
   .rtc.bss (NOLOAD) :
@@ -603,10 +725,13 @@ SECTIONS
     *rtc_wake_stub*.*(.bss .bss.*)
     *rtc_wake_stub*.*(COMMON)
 
+    *(.rtc.bss)
+
     _rtc_bss_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
-  /* This section holds data that should not be initialized at power up
+  /**
+   * This section holds data that should not be initialized at power up
    * and will be retained during deep sleep.
    * User data marked with RTC_NOINIT_ATTR will be placed
    * into this section. See the file "esp_attr.h" for more information.
@@ -620,7 +745,8 @@ SECTIONS
     _rtc_noinit_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
-  /* This section located in RTC SLOW Memory area.
+  /**
+   * This section located in RTC SLOW Memory area.
    * It holds data marked with RTC_SLOW_ATTR attribute.
    * See the file "esp_attr.h" for more information.
    */
@@ -636,9 +762,6 @@ SECTIONS
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
   _rtc_fast_length = (_rtc_force_fast_end - _rtc_fast_start);
-
-  ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)), "RTC_SLOW segment data does not fit.")
-  ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)), "RTC_FAST segment data does not fit.")
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
@@ -686,8 +809,8 @@ _heap_sentry = 0x3fceb910;
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
-
-#if defined(CONFIG_ESP_SPIRAM)
-ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
-          "External SPIRAM overflowed.")
-#endif /* CONFIG_ESP_SPIRAM */
+ASSERT(_flash_rodata_dummy_start == ORIGIN(RODATA_REGION),
+        ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
+ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)), "RTC_SLOW segment data does not fit.")
+ASSERT((_rtc_fast_length <= LENGTH(rtc_iram_seg)), "RTC_FAST segment data does not fit.")
