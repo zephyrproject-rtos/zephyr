@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(bt_audio_codec, CONFIG_BT_AUDIO_CODEC_LOG_LEVEL);
 struct search_type_param {
 	uint8_t type;
 	uint8_t data_len;
-	const uint8_t *data;
+	const uint8_t **data;
 };
 
 static bool parse_cb(struct bt_data *data, void *user_data)
@@ -32,7 +32,7 @@ static bool parse_cb(struct bt_data *data, void *user_data)
 
 	if (param->type == data->type) {
 		param->data_len = data->data_len;
-		param->data = data->data;
+		*param->data = data->data;
 
 		return false;
 	}
@@ -46,7 +46,7 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, u
 	struct search_type_param param = {
 		.type = type,
 		.data_len = 0,
-		.data = *data,
+		.data = data,
 	};
 	int err;
 
