@@ -1,0 +1,22 @@
+# Copyright (c) 2023 grandcentrix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8023A || SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8022A
+
+if NETWORKING
+
+config WIFI
+	default y
+
+config WIFI_OFFLOAD
+	default y
+
+config NET_L2_ETHERNET
+	default y
+
+config NET_L2_WIFI_MGMT
+	default y
+
+endif # NETWORKING
+
+endif # SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8023A || SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8022A

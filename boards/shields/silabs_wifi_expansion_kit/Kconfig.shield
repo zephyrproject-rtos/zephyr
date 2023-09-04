@@ -1,0 +1,8 @@
+# Copyright (c) 2023 grandcentrix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8023A
+	def_bool $(shields_list_contains,silabs_wifi_expansion_kit_slexp8023a)
+
+config SHIELD_SILABS_WIFI_EXPANSION_KIT_SLEXP8022A
+	def_bool $(shields_list_contains,silabs_wifi_expansion_kit_slexp8022a)

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 grandcentrix GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/wifi/silabs_wf200.h>
+
+&raspberrypi_spi {
+    wfx200@0 {
+        status = "ok";
+        compatible = "silabs,wfx200";
+        reg = <0>;
+        spi-max-frequency = <5200000>;
+
+        int-gpios = <&raspberrypi_header 20 GPIO_ACTIVE_HIGH>;
+        wake-gpios = <&raspberrypi_header 21 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&raspberrypi_header 22 GPIO_ACTIVE_LOW>;
+
+        pds = SILABS_WF200_PDS_WFM200_EVAL;
+
+	wfx200_sta {
+		status = "ok";
+		compatible = "silabs,wfx200-sta";
+	};
+
+	wfx200_ap {
+		status = "ok";
+		compatible = "silabs,wfx200-ap";
+	};
+    };
+};
