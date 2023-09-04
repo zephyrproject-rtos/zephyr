@@ -1,0 +1,14 @@
+common:
+  platform_allow:
+    - esp32_devkitc_wrover
+    - esp32c3_devkitm
+    - esp32s2_saola
+    - esp32s3_devkitm
+tests:
+  tests.boards.espressif.mcuboot:
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
