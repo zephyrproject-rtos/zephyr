@@ -42,3 +42,51 @@ Recommended Changes
   :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.
   The GIC version should now be specified by adding the appropriate compatible, for
   example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
+
+Picolibc-related Changes
+************************
+
+The default C library used on most targets has changed from the built-in
+minimal C library to Picolibc. While both provide standard C library
+interfaces and shouldn't cause any behavioral regressions for applications,
+there are a few side effects to be aware of when migrating to Picolibc.
+
+* Picolibc enables thread local storage
+  (:kconfig:option:`CONFIG_THREAD_LOCAL_STORAGE`) where supported. This
+  changes some internal operations within the kernel that improve
+  performance using some TLS variables. Zephyr places TLS variables in the
+  memory reserved for the stack, so stack usage for every thread will
+  increase by 8-16 bytes.
+
+* Picolibc uses the same malloc implementation as the minimal C library, but
+  the default heap size depends on which C library is in use. When using the
+  minimal C library, the default heap is zero bytes, which means that malloc
+  will always fail. When using Picolibc, the default is 16kB with
+  :kconfig:option:`CONFIG_MMU` or :kconfig:option:`ARCH_POSIX`, 2kB with
+  :kconfig:option:`CONFIG_USERSPACE` and
+  :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`. For all
+  other targets, the default heap uses all remaining memory on the system.
+  You can change this by adjusting
+  :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE`.
+
+* Picolibc can either be built as part of the OS build or pulled from the
+  toolchain. When building as part of the OS, the build will increase by
+  approximately 1000 files.
+
+* When using the standard C++ library with Picolibc, both of those must come
+  from the toolchain as the standard C++ library depends upon the C library
+  ABI.
+
+* Picolibc removes the ``-ffreestanding`` compiler option. This allows
+  significant compiler optimization improvements, but also means that the
+  compiler will now warn about declarations of `main` which don't conform to
+  the Zephyr required type -- ``int main(void)``.
+
+* Picolibc's default floating point input/output code is larger than the
+  minimal C library version (this is necessary to conform with the C
+  language "round trip" requirements for these operations). If you use
+  :kconfig:option:`CONFIG_CBPRINTF_FP_SUPPORT`, you will see increased
+  memory usage unless you also disable
+  :kconfig:option:`CONFIG_PICOLIBC_IO_FLOAT_EXACT`, which switches Picolibc
+  to a smaller, but inexact conversion algorithm. This requires building
+  Picolibc as a module.
