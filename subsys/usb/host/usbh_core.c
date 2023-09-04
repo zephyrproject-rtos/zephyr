@@ -136,9 +136,16 @@ static int event_ep_request(struct usbh_contex *const ctx, struct uhc_event *con
 	const struct device *dev = ctx->dev;
 	struct uhc_data *data = dev->data;
 	uint8_t xfer_stage = 0;
+	const struct uhc_api *api = dev->api;
+	int ret;
+
+	api->lock(dev);
 
 	if (class_data && class_data->request) {
-		return class_data->request(ctx, event->xfer, event->status);
+		ret = class_data->request(ctx, event->xfer, event->status);
+
+		api->unlock(dev);
+		return ret;
 	}
 
 	while (!k_fifo_is_empty(&xfer->done)) {
@@ -167,7 +174,10 @@ static int event_ep_request(struct usbh_contex *const ctx, struct uhc_event *con
 		}
 	}
 
-	return uhc_xfer_free(dev, xfer);
+	ret = uhc_xfer_free(dev, xfer);
+
+	api->unlock(dev);
+	return ret;
 }
 
 static void usbh_register_dev(void)

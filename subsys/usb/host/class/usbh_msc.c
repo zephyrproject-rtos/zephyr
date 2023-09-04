@@ -895,7 +895,7 @@ int request(struct usbh_contex *const uhs_ctx, struct uhc_transfer *const xfer, 
 		stage++;
 		buf = net_buf_get(&xfer->done, K_NO_WAIT);
 		if (buf) {
-			if (xfer->xfer_state == XFER_DONE) {
+			if (!err) {
 				if (USB_EP_DIR_IS_IN(xfer->ep) &&
 				    (xfer->attrib || stage == CTRL_DATA_STAGE)) {
 					msc_copy_data(buf->data, buf->size);
@@ -907,7 +907,11 @@ int request(struct usbh_contex *const uhs_ctx, struct uhc_transfer *const xfer, 
 
 	/* inform msc state machine */
 	if (p_msc_handle->msc_xfer_state == XFER_STARTED) {
-		p_msc_handle->msc_xfer_state = xfer->xfer_state;
+		if (err) {
+			p_msc_handle->msc_xfer_state = XFER_ERROR;
+		} else {
+			p_msc_handle->msc_xfer_state = XFER_DONE;
+		}
 		k_sem_give(&p_msc_handle->msc_xfr_sem);
 	}
 
