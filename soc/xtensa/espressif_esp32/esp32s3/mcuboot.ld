@@ -34,11 +34,41 @@
 
 #define IROM_SEG_ALIGN 16
 
+/** Simplified memory map for the bootloader.
+ *  Make sure the bootloader can load into main memory without overwriting itself.
+ *
+ *  ESP32-S3 ROM static data usage is as follows:
+ *  - 0x3fcd7e00 - 0x3fce9704: Shared buffers, used in UART/USB/SPI download mode only
+ *  - 0x3fce9710 - 0x3fceb710: PRO CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fceb710 - 0x3fced710: APP CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fced710 - 0x3fcf0000: ROM .bss and .data (not easily reclaimable)
+ *
+ *  The 2nd stage bootloader can take space up to the end of ROM shared
+ *  buffers area (0x3fce9704). For alignment purpose we shall use value (0x3fce9700).
+ */
+/* The offset between Dbus and Ibus. Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses. */
+iram_dram_offset = 0x6f0000;
+
+bootloader_usable_dram_end = 0x3fce9700;
+
+bootloader_stack_overhead = 0x0000; /* For safety margin between bootloader data section and startup stacks */
+bootloader_dram_seg_len = 0x6000;
+bootloader_iram_loader_seg_len = 0x3000;
+bootloader_iram_seg_len = 0x9000;
+
+/* Start of the lower region is determined by region size and the end of the higher region */
+bootloader_dram_seg_end = bootloader_usable_dram_end - bootloader_stack_overhead;
+/* bootloader_dram_seg_start = bootloader_dram_seg_end - bootloader_dram_seg_len; */
+/* We move the dram start to 0x3FCA0000 */
+bootloader_dram_seg_start = 0x3FCA0000;
+bootloader_iram_loader_seg_start = bootloader_dram_seg_start - bootloader_iram_loader_seg_len + iram_dram_offset;
+bootloader_iram_seg_start = bootloader_iram_loader_seg_start - bootloader_iram_seg_len;
+
 MEMORY
 {
-  iram_seg(RWX)        : org = 0x403B6000, len = 0x8000
-  iram_loader_seg(RWX) : org = 0x403BE000, len = 0x2000
-  dram_seg(RW)         : org = 0x3FCD0000, len = 0x6000
+  iram_seg (RWX) :                  org = bootloader_iram_seg_start, len = bootloader_iram_seg_len
+  iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
+  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
 
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -129,6 +159,9 @@ SECTIONS
     *(.sdata2)
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
+
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     . = ALIGN(4);
@@ -200,12 +233,12 @@ SECTIONS
     . = ALIGN (16);
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-    *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
+     *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_flash_config_esp32s3.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_init_common.*(.literal .text .literal.* .text.*)
+*libzephyr.a:bootloader_init_common.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
@@ -213,7 +246,7 @@ SECTIONS
     *libzephyr.a:bootloader_efuse_esp32s3.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
+*libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_panic.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
@@ -224,8 +257,8 @@ SECTIONS
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
+        *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+*libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
@@ -233,6 +266,11 @@ SECTIONS
     *libzephyr.a:app_cpu_start.*(.literal .text .literal.* .text.*)
     *esp_mcuboot.*(.literal .text .literal.* .text.*)
     *esp_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
+
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)

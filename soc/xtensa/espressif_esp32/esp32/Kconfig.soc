@@ -368,4 +368,13 @@ config ETH_DMA_TX_BUFFER_NUM
 
 endif # ESP32_EMAC config
 
+config SPI_FLASH_ROM_DRIVER_PATCH
+	bool "SPI flash ROM driver patched functions"
+	default y
+	help
+	  Enable this flag to use patched versions of SPI flash ROM driver functions.
+	  This option should be enabled, if any one of the following is true: (1) need to write
+	  to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
+	  SPI flash chip is manufactured by ISSI.
+
 endif # SOC_SERIES_ESP32 config

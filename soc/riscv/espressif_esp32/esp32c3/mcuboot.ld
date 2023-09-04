@@ -35,9 +35,9 @@
 /* Global symbols required for espressif hal build */
 MEMORY
 {
-  iram_seg        (RX) : org = 0x403CA000, len = 0x6000
-  iram_loader_seg (RX) : org = 0x403D0000, len = 0x4000
-  dram_seg        (RW) : org = 0x3FCD8000, len = 0x8000
+  iram_seg        (RX) : org = 0x403CA000, len = 0x9000
+  iram_loader_seg (RX) : org = 0x403D3000, len = 0x4000
+  dram_seg        (RW) : org = 0x3FCD8000, len = 0x9000
 
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -134,7 +134,8 @@ SECTIONS
     *(.sdata2)
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
-
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     . = ALIGN(4);
@@ -227,6 +228,10 @@ SECTIONS
     *libzephyr.a:esp_efuse_api_key_esp32xx.*(.literal .text .literal.* .text.*)
     *esp_mcuboot.*(.literal .text .literal.* .text.*)
     *esp_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
