@@ -978,9 +978,15 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     @staticmethod
-    def cmake_assemble_args(args, handler, extra_conf_files, extra_overlay_confs,
+    def cmake_assemble_args(extra_args, handler, extra_conf_files, extra_overlay_confs,
                             extra_dtc_overlay_files, cmake_extra_args,
                             build_dir):
+        # Retain quotes around config options
+        config_options = [arg for arg in extra_args if arg.startswith("CONFIG_")]
+        args = [arg for arg in extra_args if not arg.startswith("CONFIG_")]
+
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
+
         if handler.ready:
             args.extend(handler.args)
 
@@ -1003,7 +1009,7 @@ class ProjectBuilder(FilterBuilder):
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
         # Build the final argument list
-        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args]
+        args_expanded.extend(["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args])
         args_expanded.extend(["-D{}".format(a.replace('"', '')) for a in args])
 
         return args_expanded
