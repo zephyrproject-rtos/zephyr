@@ -8,6 +8,8 @@
 #ifndef NSI_COMMON_SRC_INCL_NSI_UTILS_H
 #define NSI_COMMON_SRC_INCL_NSI_UTILS_H
 
+/* Remove brackets from around a single argument: */
+#define NSI_DEBRACKET(...) __VA_ARGS__
 
 #define _NSI_STRINGIFY(x) #x
 #define NSI_STRINGIFY(s) _NSI_STRINGIFY(s)
