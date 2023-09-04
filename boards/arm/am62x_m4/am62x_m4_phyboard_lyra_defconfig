@@ -20,6 +20,9 @@ CONFIG_PINCTRL=y
 # Serial Driver
 CONFIG_SERIAL=y
 
+# GPIO Driver
+CONFIG_GPIO=y
+
 # Enable Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
