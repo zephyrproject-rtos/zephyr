@@ -337,6 +337,8 @@ USBH_CONTROLLER_DEFINE(dwc2_ctx, DEVICE_DT_GET(DT_DRV_INST(0)));
 #define DWC_HPTxStAddr			  (0x300U)
 
 /* additional helper macros */
+/* bit position used by transfer state atomic variable */
+#define DONE_URB				  (0u)
 /* Total size of a channel register set */
 #define DWC_CHx_REGS_SIZ			  (0x20u)
 /* Register offset of a channel X register */
@@ -449,6 +451,8 @@ struct dev_priv_data {
 	uint8_t bRequest;
 	/* is it control transfer */
 	bool is_ctrl_xfer;
+	/* current transfer state */
+	atomic_t curr_xfer_state;
 };
 
 /* device configuration structure */
@@ -1039,13 +1043,16 @@ static int dwc_handle_xfrc(const struct device *dev)
 
 	/* wait on transfer completion and update relevant state variables */
 	ret = k_sem_take(&priv->xfr_event_sem, K_MSEC(CONFIG_USBH_XFER_SEM_TIMEOUT));
-	if (ret || (priv->curr_state != URB_DONE)) {
+	if (ret || !(atomic_test_bit(&priv->curr_xfer_state, DONE_URB))) {
 		LOG_ERR("Transfer timed out");
 		dwc_xfer_drop_active(dev, -ETIMEDOUT);
 		return -ETIMEDOUT;
+	} else {
+		xfer->xfer_state = URB_DONE;
 	}
-	xfer->xfer_state = priv->curr_state;
+
 	priv->curr_state = URB_IDLE;
+	atomic_clear_bit(&priv->curr_xfer_state, DONE_URB);
 
 	ret = dwc_handle_xfr_success(dev);
 	if (ret) {
@@ -1089,7 +1096,6 @@ static void dwc_thread(const struct device *dev)
 		total_stages_set = false;
 		priv->schedule = true;
 		uhc_dwc_lock(dev);
-
 		while ((count < total_stages) && (priv->schedule)) {
 			count++;
 			priv->schedule = false;
@@ -1483,82 +1489,7 @@ static int uhc_isr_channel_in_handler(struct dev_priv_data *priv, uint32_t ch_nu
 	ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
 	reg_val = sys_read32(base_addr + ch_addr);
 
-	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_CHH))) {
-		if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_XFRC))) {
-			priv->hch[ch_num].err_cnt = 0U;
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-			hcintmsk = sys_read32(base_addr + ch_addr);
-			hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
-			sys_write32(hcintmsk, base_addr + ch_addr);
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_XFRC), base_addr + ch_addr);
-
-			if ((priv->hch[ch_num].xfer_sz / priv->hch[ch_num].max_packet) & 1U) {
-				priv->hch[ch_num].toggle_in ^= 1U;
-			}
-
-			dwc_hch_halt(priv, ch_num);
-			priv->hch[ch_num].state = HC_XFRC;
-		} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_BBERR))) {
-			priv->hch[ch_num].err_cnt = 0U;
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-			hcintmsk = sys_read32(base_addr + ch_addr);
-			hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
-			sys_write32(hcintmsk, base_addr + ch_addr);
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_BBERR), base_addr + ch_addr);
-
-			dwc_hch_halt(priv, ch_num);
-		} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_STALL))) {
-			priv->hch[ch_num].err_cnt = 0U;
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-			hcintmsk = sys_read32(base_addr + ch_addr);
-			hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
-			sys_write32(hcintmsk, base_addr + ch_addr);
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_STALL), base_addr + ch_addr);
-
-			dwc_hch_halt(priv, ch_num);
-		} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_TXERR))) {
-			if (priv->hch[ch_num].err_cnt >= 2) {
-				dwc_hch_halt(priv, ch_num);
-			} else {
-				ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-				hcintmsk = sys_read32(base_addr + ch_addr);
-
-				hcintmsk &= ~BIT(DWC_HCINTMSKx_ACK);
-				hcintmsk &= ~BIT(DWC_HCINTMSKx_NAK);
-				hcintmsk &= ~BIT(DWC_HCINTMSKx_DTERR);
-				sys_write32(hcintmsk, base_addr + ch_addr);
-
-				priv->hch[ch_num].err_cnt++;
-
-				/* re-activate the channel */
-				ch_addr = DWC_CHx_REG_OFFSET(DWC_HCCHAR0_OFFSET, ch_num);
-				reg_val = sys_read32(base_addr + ch_addr);
-				reg_val &= ~BIT(DWC_HCCHARx_CHDIS);
-				reg_val |= BIT(DWC_HCCHARx_CHENA);
-				sys_write32(reg_val, base_addr + ch_addr);
-			}
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_TXERR), base_addr + ch_addr);
-		}
-
-		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-		sys_write32(BIT(DWC_HCINTx_CHH), base_addr + ch_addr);
-
-		if (priv->hch[ch_num].state == HC_XFRC) {
-			priv->curr_state = URB_DONE;
-			k_sem_give(&priv->xfr_event_sem);
-		}
-	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_ACK))) {
+	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_ACK))) {
 		priv->hch[ch_num].err_cnt = 0U;
 
 		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
@@ -1601,6 +1532,88 @@ static int uhc_isr_channel_in_handler(struct dev_priv_data *priv, uint32_t ch_nu
 		dwc_hch_halt(priv, ch_num);
 	}
 
+	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_XFRC))) {
+		priv->hch[ch_num].err_cnt = 0U;
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+		hcintmsk = sys_read32(base_addr + ch_addr);
+		hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
+		sys_write32(hcintmsk, base_addr + ch_addr);
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_XFRC), base_addr + ch_addr);
+
+		if ((priv->hch[ch_num].xfer_sz / priv->hch[ch_num].max_packet) & 1U) {
+			priv->hch[ch_num].toggle_in ^= 1U;
+		}
+
+		dwc_hch_halt(priv, ch_num);
+		priv->hch[ch_num].state = HC_XFRC;
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_BBERR))) {
+		priv->hch[ch_num].err_cnt = 0U;
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+		hcintmsk = sys_read32(base_addr + ch_addr);
+		hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
+		sys_write32(hcintmsk, base_addr + ch_addr);
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_BBERR), base_addr + ch_addr);
+
+		dwc_hch_halt(priv, ch_num);
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_STALL))) {
+		priv->hch[ch_num].err_cnt = 0U;
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+		hcintmsk = sys_read32(base_addr + ch_addr);
+		hcintmsk |= BIT(DWC_HCINTMSKx_ACK);
+		sys_write32(hcintmsk, base_addr + ch_addr);
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_STALL), base_addr + ch_addr);
+
+		dwc_hch_halt(priv, ch_num);
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_TXERR))) {
+		if (priv->hch[ch_num].err_cnt >= 2) {
+			dwc_hch_halt(priv, ch_num);
+		} else {
+			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+			hcintmsk = sys_read32(base_addr + ch_addr);
+
+			hcintmsk &= ~BIT(DWC_HCINTMSKx_ACK);
+			hcintmsk &= ~BIT(DWC_HCINTMSKx_NAK);
+			hcintmsk &= ~BIT(DWC_HCINTMSKx_DTERR);
+			sys_write32(hcintmsk, base_addr + ch_addr);
+
+			priv->hch[ch_num].err_cnt++;
+
+			/* re-activate the channel */
+			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCCHAR0_OFFSET, ch_num);
+			reg_val = sys_read32(base_addr + ch_addr);
+			reg_val &= ~BIT(DWC_HCCHARx_CHDIS);
+			reg_val |= BIT(DWC_HCCHARx_CHENA);
+			sys_write32(reg_val, base_addr + ch_addr);
+		}
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_TXERR), base_addr + ch_addr);
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_CHH))) {
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_CHH), base_addr + ch_addr);
+
+		if (priv->hch[ch_num].state == HC_XFRC) {
+			priv->hch[ch_num].state = HC_IDLE;
+			priv->curr_state = URB_DONE;
+			atomic_set_bit(&priv->curr_xfer_state, DONE_URB);
+
+			/* make sure all the above made it to memory */
+			z_barrier_dmem_fence_full();
+			z_barrier_dsync_fence_full();
+
+			k_sem_give(&priv->xfr_event_sem);
+		}
+	}
+
 	return 0;
 }
 
@@ -1616,74 +1629,7 @@ static int uhc_isr_channel_out_handler(struct dev_priv_data *priv, uint32_t ch_n
 	ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
 	reg_val = sys_read32(base_addr + ch_addr);
 
-	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_CHH))) {
-		if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_XFRC))) {
-			priv->hch[ch_num].err_cnt = 0U;
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-			hcintmsk = sys_read32(base_addr + ch_addr);
-			hcintmsk |= BIT(DWC_HCINTx_ACK);
-			sys_write32(hcintmsk, base_addr + ch_addr);
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_XFRC), base_addr + ch_addr);
-
-			if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_NYET))) {
-				sys_write32(BIT(DWC_HCINTx_NYET), base_addr + ch_addr);
-			}
-
-			dwc_hch_halt(priv, ch_num);
-			priv->hch[ch_num].state = HC_XFRC;
-		} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_STALL))) {
-			priv->hch[ch_num].err_cnt = 0U;
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
-			hcintmsk = sys_read32(base_addr + ch_addr);
-			hcintmsk |= BIT(DWC_HCINTx_ACK);
-			sys_write32(hcintmsk, base_addr + ch_addr);
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_STALL), base_addr + ch_addr);
-
-			dwc_hch_halt(priv, ch_num);
-		} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_TXERR))) {
-			if (priv->hch[ch_num].err_cnt >= 2) {
-				dwc_hch_halt(priv, ch_num);
-			} else {
-				priv->hch[ch_num].err_cnt++;
-
-				/* re-activate the channel */
-				ch_addr = DWC_CHx_REG_OFFSET(DWC_HCCHAR0_OFFSET, ch_num);
-				reg_val = sys_read32(base_addr + ch_addr);
-				reg_val &= ~BIT(DWC_HCCHARx_CHDIS);
-				reg_val |= BIT(DWC_HCCHARx_CHENA);
-				sys_write32(reg_val, base_addr + ch_addr);
-			}
-
-			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-			sys_write32(BIT(DWC_HCINTx_TXERR), base_addr + ch_addr);
-		}
-
-		if (priv->hch[ch_num].ep_type == DWC_EP_TYPE_BULK) {
-			if (priv->hch[ch_num].xfer_len > 0U) {
-				num_packets = (priv->hch[ch_num].xfer_len +
-						priv->hch[ch_num].max_packet - 1U) /
-						priv->hch[ch_num].max_packet;
-
-				if ((num_packets & 1U) != 0U) {
-					priv->hch[ch_num].toggle_out ^= 1U;
-				}
-			}
-		}
-
-		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
-		sys_write32(BIT(DWC_HCINTx_CHH), base_addr + ch_addr);
-
-		if (priv->hch[ch_num].state == HC_XFRC) {
-			priv->curr_state = URB_DONE;
-			k_sem_give(&priv->xfr_event_sem);
-		}
-	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_ACK))) {
+	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_ACK))) {
 		priv->hch[ch_num].err_cnt = 0U;
 
 		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
@@ -1709,6 +1655,80 @@ static int uhc_isr_channel_out_handler(struct dev_priv_data *priv, uint32_t ch_n
 		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
 		sys_write32(BIT(DWC_HCINTx_BBERR), base_addr + ch_addr);
 		dwc_hch_halt(priv, ch_num);
+	}
+
+	if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_XFRC))) {
+		priv->hch[ch_num].err_cnt = 0U;
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+		hcintmsk = sys_read32(base_addr + ch_addr);
+		hcintmsk |= BIT(DWC_HCINTx_ACK);
+		sys_write32(hcintmsk, base_addr + ch_addr);
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_XFRC), base_addr + ch_addr);
+
+		if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_NYET))) {
+			sys_write32(BIT(DWC_HCINTx_NYET), base_addr + ch_addr);
+		}
+
+		dwc_hch_halt(priv, ch_num);
+		priv->hch[ch_num].state = HC_XFRC;
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_STALL))) {
+		priv->hch[ch_num].err_cnt = 0U;
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINTMSK0_OFFSET, ch_num);
+		hcintmsk = sys_read32(base_addr + ch_addr);
+		hcintmsk |= BIT(DWC_HCINTx_ACK);
+		sys_write32(hcintmsk, base_addr + ch_addr);
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_STALL), base_addr + ch_addr);
+
+		dwc_hch_halt(priv, ch_num);
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_TXERR))) {
+		if (priv->hch[ch_num].err_cnt >= 2) {
+			dwc_hch_halt(priv, ch_num);
+		} else {
+			priv->hch[ch_num].err_cnt++;
+
+			/* re-activate the channel */
+			ch_addr = DWC_CHx_REG_OFFSET(DWC_HCCHAR0_OFFSET, ch_num);
+			reg_val = sys_read32(base_addr + ch_addr);
+			reg_val &= ~BIT(DWC_HCCHARx_CHDIS);
+			reg_val |= BIT(DWC_HCCHARx_CHENA);
+			sys_write32(reg_val, base_addr + ch_addr);
+		}
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_TXERR), base_addr + ch_addr);
+	} else if (DWC_INTERRUPT_CHECK_SOURCE(reg_val, BIT(DWC_HCINTx_CHH))) {
+		if (priv->hch[ch_num].ep_type == DWC_EP_TYPE_BULK) {
+			if (priv->hch[ch_num].xfer_len > 0U) {
+				num_packets = (priv->hch[ch_num].xfer_len +
+						priv->hch[ch_num].max_packet - 1U) /
+						priv->hch[ch_num].max_packet;
+
+				if ((num_packets & 1U) != 0U) {
+					priv->hch[ch_num].toggle_out ^= 1U;
+				}
+			}
+		}
+
+		ch_addr = DWC_CHx_REG_OFFSET(DWC_HCINT0_OFFSET, ch_num);
+		sys_write32(BIT(DWC_HCINTx_CHH), base_addr + ch_addr);
+
+		if (priv->hch[ch_num].state == HC_XFRC) {
+			priv->hch[ch_num].state = HC_IDLE;
+			priv->curr_state = URB_DONE;
+			atomic_set_bit(&priv->curr_xfer_state, DONE_URB);
+
+			/* make sure all the above made it to memory */
+			z_barrier_dmem_fence_full();
+			z_barrier_dsync_fence_full();
+
+			k_sem_give(&priv->xfr_event_sem);
+		}
 	}
 
 	return 0;
@@ -1785,6 +1805,12 @@ static void dwc_isr_handler(struct device *dev)
 
 				/* interrupt the current transfer, if any */
 				priv->curr_state = URB_ERROR;
+				atomic_clear_bit(&priv->curr_xfer_state, DONE_URB);
+
+				/* make sure all the above made it to memory */
+				z_barrier_dmem_fence_full();
+				z_barrier_dsync_fence_full();
+
 				k_sem_give(&priv->xfr_event_sem);
 			}
 		}
