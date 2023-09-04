@@ -5,7 +5,7 @@
 zephyr_sources(soc.c)
 zephyr_sources(ccfg.c)
 
-if(CONFIG_PM OR CONFIG_POWEROFF)
+if(CONFIG_PM OR CONFIG_PM_DEVICE OR CONFIG_POWEROFF)
   zephyr_library_sources(power.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
