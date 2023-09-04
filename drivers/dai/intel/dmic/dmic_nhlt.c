@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 extern struct dai_dmic_global_shared dai_dmic_global;
 
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
-static const uint32_t base[4] = {PDM0, PDM1, PDM2, PDM3};
+static const uint32_t dmic_base[4] = {PDM0, PDM1, PDM2, PDM3};
 
 static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
 				  uint32_t reg, uint32_t val)
@@ -131,13 +131,13 @@ static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int p
 	uint32_t val;
 	int p_mcic, p_clkdiv, p_mfir, rate_div;
 
-	val = dai_dmic_read(dmic, base[pdm] + CIC_CONFIG);
+	val = dai_dmic_read(dmic, dmic_base[pdm] + CIC_CONFIG);
 	p_mcic = FIELD_GET(CIC_CONFIG_COMB_COUNT, val) + 1;
 
-	val = dai_dmic_read(dmic, base[pdm] + MIC_CONTROL);
+	val = dai_dmic_read(dmic, dmic_base[pdm] + MIC_CONTROL);
 	p_clkdiv = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, val) + 2;
 
-	val = dai_dmic_read(dmic, base[pdm] +
+	val = dai_dmic_read(dmic, dmic_base[pdm] +
 			    FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index + FIR_CONFIG);
 	LOG_ERR("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
 
@@ -187,8 +187,8 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 
 	if (*count < pdm_count) {
 		(*count)++;
-		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, dai_dmic_read(dmic, base[source_pdm] +
-									 MIC_CONTROL));
+		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, dai_dmic_read(
+						dmic, dmic_base[source_pdm] + MIC_CONTROL));
 		if (stereo)
 			dmic->enable[source_pdm] = 0x3; /* PDMi MIC A and B */
 		else
@@ -357,16 +357,16 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		return -EINVAL;
 	}
 
-	fir_control[0] = dai_dmic_read(dmic, base[0] +
+	fir_control[0] = dai_dmic_read(dmic, dmic_base[0] +
 				       dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
 				       FIR_CONTROL);
 
-	fir_control[1] = dai_dmic_read(dmic, base[1] +
+	fir_control[1] = dai_dmic_read(dmic, dmic_base[1] +
 				       dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
 				       FIR_CONTROL);
 
-	mic_control[0] = dai_dmic_read(dmic, base[0] + MIC_CONTROL);
-	mic_control[1] = dai_dmic_read(dmic, base[1] + MIC_CONTROL);
+	mic_control[0] = dai_dmic_read(dmic, dmic_base[0] + MIC_CONTROL);
+	mic_control[1] = dai_dmic_read(dmic, dmic_base[1] + MIC_CONTROL);
 
 	switch (FIELD_GET(OUTCONTROL_IPM, outcontrol)) {
 	case 0:
@@ -721,7 +721,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	pdm_cfg = (const struct nhlt_pdm_ctrl_cfg *)p;
 
 	for (pdm_idx = 0; pdm_idx < CONFIG_DAI_DMIC_HW_CONTROLLERS; pdm_idx++) {
-		pdm_base = base[pdm_idx];
+		pdm_base = dmic_base[pdm_idx];
 
 		if (!(pdm_ctrl_mask & (1 << pdm_idx))) {
 			/* Set MIC_MUTE bit to unused PDM */
