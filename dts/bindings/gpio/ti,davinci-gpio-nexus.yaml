@@ -7,7 +7,7 @@ description: GPIO controller for Davinci and Keystone devices
 
 compatible: "ti,davinci-gpio-nexus"
 
-include: [base.yaml, gpio-nexus.yaml]
+include: [base.yaml, gpio-nexus.yaml, pinctrl-device.yaml]
 
 properties:
   "#gpio-cells":
