@@ -34,7 +34,7 @@ test_current: current_amp {
 	sense-gain-div = <1>;
 };
 
-test_adc_emul: adc {
+test_adc_emul: adc-emul {
 	compatible = "zephyr,adc-emul";
 	nchannels = <2>;
 	ref-internal-mv = <3300>;
@@ -43,7 +43,7 @@ test_adc_emul: adc {
 	status = "okay";
 };
 
-test_ntc_thermistor_generic: ntc-thermistor-generic {
+test_adc_ntc_thermistor_generic: ntc-thermistor-generic {
 	compatible = "ntc-thermistor-generic";
 	io-channels = <&adc0 0>;
 	pullup-uv = <3300000>;
@@ -53,7 +53,7 @@ test_ntc_thermistor_generic: ntc-thermistor-generic {
 	zephyr,compensation-table = <0 0>, <1 1>;
 };
 
-test_epcos_b57861s0103a039: epcos-b57861s0103a039 {
+test_adc_epcos_b57861s0103a039: epcos-b57861s0103a039 {
 	compatible = "epcos,b57861s0103a039";
 	io-channels = <&adc0 0>;
 	pullup-uv = <3300000>;
