@@ -81,7 +81,7 @@ struct spi_mcux_data {
 #endif
 };
 
-static void spi_mcux_transfer_next_packet(const struct device *dev)
+static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -94,7 +94,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
-		return;
+		return 0;
 	}
 
 	transfer.configFlags = kLPSPI_MasterPcsContinuous |
@@ -144,8 +144,11 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	status = LPSPI_MasterTransferNonBlocking(base, &data->handle,
 						 &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
 	}
+
+	return 0;
 }
 
 static void spi_mcux_isr(const struct device *dev)
@@ -582,7 +585,10 @@ static int transceive(const struct device *dev,
 
 	spi_context_cs_control(&data->ctx, true);
 
-	spi_mcux_transfer_next_packet(dev);
+	ret = spi_mcux_transfer_next_packet(dev);
+	if (ret) {
+		goto out;
+	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 out:
