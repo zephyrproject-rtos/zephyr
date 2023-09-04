@@ -23,7 +23,7 @@ void handler(union sigval val)
 	       ++exp_count);
 }
 
-ZTEST(posix_apis, test_timer)
+void test_timer(int sigev_notify)
 {
 	int ret;
 	struct sigevent sig = { 0 };
@@ -32,11 +32,16 @@ ZTEST(posix_apis, test_timer)
 	struct timespec ts, te;
 	int64_t nsecs_elapsed, secs_elapsed, total_secs_timer;
 
-	sig.sigev_notify = SIGEV_SIGNAL;
+	exp_count = 0;
+	sig.sigev_notify = sigev_notify;
 	sig.sigev_notify_function = handler;
 	sig.sigev_value.sival_int = 20;
 
-	printk("POSIX timer test\n");
+	if (sigev_notify == SIGEV_SIGNAL)
+		printk("POSIX timer test SIGEV_SIGNAL\n");
+	else
+		printk("POSIX timer test SIGEV_THREAD\n");
+
 	ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
 
 	/*TESTPOINT: Check if timer is created successfully*/
@@ -88,6 +93,12 @@ ZTEST(posix_apis, test_timer)
 	/*TESTPOINT: Check if POSIX timer test passed*/
 	zassert_equal(total_secs_timer, secs_elapsed,
 		      "POSIX timer test has failed");
+}
+
+ZTEST(posix_apis, test_timer)
+{
+	test_timer(SIGEV_SIGNAL);
+	test_timer(SIGEV_THREAD);
 }
 
 ZTEST(posix_apis, test_timer_overrun)
