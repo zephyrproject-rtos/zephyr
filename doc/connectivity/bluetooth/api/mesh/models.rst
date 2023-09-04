@@ -26,6 +26,8 @@ used by network administrators to configure and diagnose mesh nodes.
    priv_beacon_srv
    rpr_cli
    rpr_srv
+   sar_cfg_cli
+   sar_cfg_srv
    srpl_cli
    srpl_srv
 

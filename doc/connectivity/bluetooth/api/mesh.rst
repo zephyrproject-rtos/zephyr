@@ -17,6 +17,7 @@ Read more about Bluetooth mesh on the
    mesh/access.rst
    mesh/models.rst
    mesh/msg.rst
+   mesh/sar_cfg.rst
    mesh/provisioning.rst
    mesh/proxy.rst
    mesh/heartbeat.rst
