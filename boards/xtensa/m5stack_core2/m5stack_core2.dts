@@ -7,6 +7,7 @@
 
 #include <espressif/esp32/esp32_d0wd_v3.dtsi>
 #include "m5stack_core2-pinctrl.dtsi"
+#include "grove_connectors.dtsi"
 #include <zephyr/dt-bindings/display/ili9xxx.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
 
@@ -60,6 +61,13 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_gpio33 &uart1_tx_gpio32>;
 	pinctrl-names = "default";
 };
 
@@ -155,6 +163,15 @@
 			compatible = "zephyr,kscan-input";
 		};
 	};
+};
+
+&i2c1 {
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-gpios = <&gpio0 32 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 33 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 };
 
 &spi3 {
