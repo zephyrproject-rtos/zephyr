@@ -230,6 +230,9 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
 {
 	LOG_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	if (cur_inst) {
+		cur_inst = NULL;
+	}
 }
 /* End L2CAP callbacks */
 
