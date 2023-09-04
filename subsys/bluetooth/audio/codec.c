@@ -180,7 +180,7 @@ int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *
 
 	*chan_allocation = sys_get_le32(data);
 
-	return BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND;
+	return 0;
 }
 
 int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *codec_cfg)
