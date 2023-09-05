@@ -137,9 +137,8 @@ void otPlatCryptoInit(void)
 	 * PSA with emulated TFM, Settings have to be initialized at the end of otPlatCryptoInit(),
 	 * to be available before storing Network Key.
 	 */
-	int err = settings_subsys_init();
-
-	__ASSERT(!err, "Failed to initialize settings");
+	__ASSERT_EVAL((void) settings_subsys_init(), int err = settings_subsys_init(),
+		      !err, "Failed to initialize settings");
 #endif
 }
 
