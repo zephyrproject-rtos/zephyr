@@ -72,8 +72,9 @@ of the M5Stack Core2 board.
 || LCD screen      || Built-in LCD TFT display \(`LCD-ILI9342C`_, 2", 320x240 px\)            |
 ||                 || controlled via SPI interface                                            |
 +------------------+--------------------------------------------------------------------------+
-|| 3-axis          || The `MPU-6886`_ is a 6-axis MotionTracking device that combines a       |
-|| gyrosopce       || 3-axis gyroscope and a 3-axis accelerometer.                            |
+|| 6-axis IMU      || The `MPU-6886`_ is a 6-axis motion tracker (6DOF IMU) device that       |
+|| MPU6886         || combines a 3-axis gyroscope and a 3-axis accelerometer.                 |
+||                 || For details please refer to :ref:`m5stack_core2_ext`                    |
 +------------------+--------------------------------------------------------------------------+
 || Built-in        || The `SPM-1423`_ I2S driven microphone.                                  |
 || microphone      ||                                                                         |
