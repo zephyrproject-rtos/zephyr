@@ -430,6 +430,9 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
 
+This driver only supports poll mode. Interrupt and async mode are not supported.
+Neither runtime configuration or line control are supported.
+
 .. _native_tty_uart:
 
 TTY UART
@@ -465,6 +468,9 @@ Multiple instances of such uart drivers are supported.
 
 The :ref:`sample-uart-native-tty` sample app provides a working example of the
 driver.
+
+This driver only supports poll mode. Interrupt and async mode are not supported.
+It has runtime configuration support, but no line control support.
 
 Subsystems backends
 *******************
