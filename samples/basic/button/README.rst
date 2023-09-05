@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: button-sample
+.. zephyr:code-sample:: button
    :name: Button
    :relevant-api: gpio_interface
 
@@ -28,7 +28,7 @@ You may see additional build errors if the ``sw0`` alias exists, but is not
 properly defined.
 
 The sample additionally supports an optional ``led0`` devicetree alias. This is
-the same alias used by the :zephyr:code-sample:`blinky-sample`. If this is provided, the LED
+the same alias used by the :zephyr:code-sample:`blinky` sample. If this is provided, the LED
 will be turned on when the button is pressed, and turned off off when it is
 released.
 

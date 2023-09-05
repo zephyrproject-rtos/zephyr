@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: system_hashmap
-   :name: System Hashmap
+   :name: System hashmap
    :relevant-api: hashmap_apis
 
    Insert, replace, and remove entries in a hashmap.
@@ -7,7 +7,7 @@
 Overview
 ********
 
-This is a simple example that repeatedly
+This is a simple example that repeatedly:
 
 * inserts up to ``CONFIG_TEST_LIB_HASH_MAP_MAX_ENTRIES``
 * replaces up to the same number that were previously inserted

@@ -101,7 +101,7 @@ To fetch Binary Blobs:
 Build blinking led sample
 *************************
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. code-block:: console
 

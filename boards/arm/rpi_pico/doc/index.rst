@@ -152,7 +152,7 @@ Using SEGGER JLink
 You can Flash the rpi_pico with a SEGGER JLink debug probe as described in
 :ref:`Building, Flashing and Debugging <west-flashing>`.
 
-Here is an example of building and flashing the :ref:`blinky-sample` application.
+Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -187,7 +187,7 @@ Depending on the interface used (such as JLink), you might need to
 checkout to a branch that supports this interface, before proceeding.
 Build and install OpenOCD as described in the README.
 
-Here is an example of building and flashing the :ref:`blinky-sample` application.
+Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -247,7 +247,7 @@ Using OpenOCD
 
 Install OpenOCD as described for flashing the board.
 
-Here is an example for debugging the :ref:`blinky-sample` application.
+Here is an example for debugging the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

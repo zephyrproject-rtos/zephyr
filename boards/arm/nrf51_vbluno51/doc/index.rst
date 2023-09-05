@@ -106,7 +106,7 @@ The VBLUno51 board has on-board DAPLink (CMSIS-DAP) interface for flashing and d
 You do not need any other programming device.
 You only need to install pyOCD tool (https://pypi.python.org/pypi/pyOCD)
 
-This tutorial uses the blinky application :ref:`blinky-sample`.
+This tutorial uses the blinky application :zephyr:code-sample:`blinky`.
 
 See the :ref:`getting_started` for general information on setting up
 your development environment. Then build and flash the application in
@@ -121,7 +121,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -136,8 +136,8 @@ Testing the VBLUno51 with Zephyr: buttons, LEDs, UART, BLE
  components on the VBLUno51 board:
 
  * :ref:`hello_world`
- * :ref:`blinky-sample`
- * :ref:`button-sample`
+ * :zephyr:code-sample:`blinky`
+ * :zephyr:code-sample:`button`
  * :ref:`bluetooth-beacon-sample`
  * :ref:`peripheral_hr`
 

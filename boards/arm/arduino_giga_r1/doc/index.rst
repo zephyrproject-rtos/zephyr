@@ -151,7 +151,7 @@ You should see the following message on the console:
 
 Similarly, you can build and flash samples on the M4 target.
 
-Here is an example for the :ref:`blinky-sample` application on M4 core.
+Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

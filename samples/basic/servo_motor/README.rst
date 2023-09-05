@@ -1,12 +1,13 @@
-.. _servo-motor-sample:
+.. zephyr:code-sample:: servo-motor
+   :name: Servomotor
+   :relevant-api: pwm_interface
 
-Servomotor
-##########
+   Drive a servomotor using the PWM API.
 
 Overview
 ********
 
-This is a sample app which drives a servomotor using PWM.
+This is a sample app which drives a servomotor using the :ref:`PWM API <pwm_api>`.
 
 The sample rotates a servomotor back and forth in the 180 degree range with a
 PWM control signal.

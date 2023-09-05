@@ -155,7 +155,7 @@ Nucleo G070RB board includes an ST-LINK/V2-1 embedded debug tool interface.
 Flashing an application to Nucleo G070RB
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

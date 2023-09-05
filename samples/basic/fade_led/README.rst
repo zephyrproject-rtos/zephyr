@@ -1,7 +1,8 @@
-.. _fade-led-sample:
+.. zephyr:code-sample:: fade-led
+   :name: Fade LED
+   :relevant-api: pwm_interface
 
-Fade LED
-########
+   Fade an LED using the PWM API.
 
 Overview
 ********
@@ -18,7 +19,7 @@ Requirements and Wiring
 ***********************
 
 This sample has the same requirements and wiring considerations as the
-:zephyr:code-sample:`pwm-blinky-sample`.
+:zephyr:code-sample:`pwm-blinky` sample.
 
 Building and Running
 ********************
