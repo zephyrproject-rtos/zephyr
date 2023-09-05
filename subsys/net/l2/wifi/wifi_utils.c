@@ -215,15 +215,30 @@ static int wifi_utils_validate_chan_str(char *chan_str)
 
 int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 {
+	char parse_str[WIFI_MGMT_BAND_STR_SIZE_MAX + 1];
 	char *band_str = NULL;
 	char *ctx = NULL;
 	enum wifi_frequency_bands band = WIFI_FREQ_BAND_UNKNOWN;
+	int len;
 
 	if (!scan_bands_str) {
 		return -EINVAL;
 	}
 
-	band_str = strtok_r(scan_bands_str, ",", &ctx);
+	len = strlen(scan_bands_str);
+
+	if (len > WIFI_MGMT_BAND_STR_SIZE_MAX) {
+		NET_ERR("Band string (%s) size (%d) exceeds maximum allowed value (%d)",
+			scan_bands_str,
+			len,
+			WIFI_MGMT_BAND_STR_SIZE_MAX);
+		return -EINVAL;
+	}
+
+	strncpy(parse_str, scan_bands_str, len);
+	parse_str[len] = '\0';
+
+	band_str = strtok_r(parse_str, ",", &ctx);
 
 	while (band_str) {
 		band = wifi_utils_map_band_str_to_idx(band_str);
