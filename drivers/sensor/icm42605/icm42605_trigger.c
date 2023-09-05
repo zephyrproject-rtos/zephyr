@@ -62,11 +62,7 @@ static void icm42605_gpio_callback(const struct device *dev,
 {
 	struct icm42605_data *drv_data =
 		CONTAINER_OF(cb, struct icm42605_data, gpio_cb);
-	const struct icm42605_config *cfg = drv_data->dev->config;
-
 	ARG_UNUSED(pins);
-
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
 	k_sem_give(&drv_data->gpio_sem);
 }
@@ -74,8 +70,6 @@ static void icm42605_gpio_callback(const struct device *dev,
 static void icm42605_thread_cb(const struct device *dev)
 {
 	struct icm42605_data *drv_data = dev->data;
-	const struct icm42605_config *cfg = dev->config;
-
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
 					     &drv_data->data_ready_trigger);
@@ -85,8 +79,6 @@ static void icm42605_thread_cb(const struct device *dev)
 	    drv_data->double_tap_handler != NULL) {
 		icm42605_tap_fetch(dev);
 	}
-
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void icm42605_thread(void *p1, void *p2, void *p3)
