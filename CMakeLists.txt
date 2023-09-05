@@ -293,7 +293,7 @@ if(CONFIG_COMPILER_FREESTANDING)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:compiler,freestanding>>)
 endif()
 
-if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
+if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT AND NOT DEFINED ZEPHYR_SCA_VARIANT)
   # @Intent: Set compiler specific flag to disable printf-related optimizations
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
 endif()
