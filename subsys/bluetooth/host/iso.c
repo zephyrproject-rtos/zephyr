@@ -1035,8 +1035,14 @@ void hci_le_cis_established(struct net_buf *buf)
 	/* ISO connection handles are already assigned at this point */
 	iso = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ISO);
 	if (!iso) {
-		LOG_ERR("No connection found for handle %u", handle);
-		bt_conn_unref(iso);
+		/* If it is a local disconnect, then we may have received the disconnect complete
+		 * event before this event, and in which case we do not expect to find the CIS
+		 * object
+		 */
+		if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+			LOG_ERR("No connection found for handle %u", handle);
+		}
+
 		return;
 	}
 
@@ -1107,10 +1113,11 @@ void hci_le_cis_established(struct net_buf *buf)
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 		bt_conn_unref(iso);
 		return;
-	}
+	} else if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+		iso->err = evt->status;
+		bt_iso_disconnected(iso);
+	} /* else we wait for disconnect event */
 
-	iso->err = evt->status;
-	bt_iso_disconnected(iso);
 	bt_conn_unref(iso);
 }
 
