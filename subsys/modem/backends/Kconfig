@@ -21,4 +21,12 @@ config MODEM_BACKEND_UART_ASYNC
 	bool "Modem UART backend module async implementation"
 	default y if UART_ASYNC_API
 
+if MODEM_BACKEND_UART_ASYNC
+
+config MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS
+	int "Modem UART async transmit timeout in milliseconds"
+	default 100
+
+endif
+
 endif # MODEM_BACKEND_UART
