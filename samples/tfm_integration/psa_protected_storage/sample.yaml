@@ -29,6 +29,5 @@ common:
 tests:
   sample.tfm.protected_storage:
     tags:
-      - tfm
       - trusted-firmware-m
       - mcuboot
