@@ -248,32 +248,19 @@ bool intel_adsp_hda_dma_chan_filter(const struct device *dev, int channel, void 
 int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+	int ret;
 	uint32_t size;
 	bool set_fifordy;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
-#if CONFIG_PM_DEVICE_RUNTIME
-	bool first_use = false;
-	enum pm_device_state state;
-
-	/* If the device is used for the first time, we need to let the power domain know that
-	 * we want to use it.
-	 */
-	if (pm_device_state_get(dev, &state) == 0) {
-		first_use = state != PM_DEVICE_STATE_ACTIVE;
-		if (first_use) {
-			int ret = pm_device_runtime_get(dev);
-
-			if (ret < 0) {
-				return ret;
-			}
-		}
-	}
-#endif
-
 	if (intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, channel)) {
 		return 0;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	set_fifordy = (cfg->direction == HOST_TO_MEMORY || cfg->direction == MEMORY_TO_HOST);
@@ -284,11 +271,6 @@ int intel_adsp_hda_dma_start(const struct device *dev, uint32_t channel)
 		intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel, size);
 	}
 
-#if CONFIG_PM_DEVICE_RUNTIME
-	if (!first_use) {
-		return pm_device_runtime_get(dev);
-	}
-#endif
 	return 0;
 }
 
