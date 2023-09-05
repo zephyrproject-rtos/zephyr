@@ -582,6 +582,7 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
 }
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
 	uint8_t ppi_dis, uint8_t cc_reg, uint8_t group_index)
 {
@@ -594,6 +595,7 @@ static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
 		SW_SWITCH_TIMER_S2_EVTS_COMP(group_index)) = 0;
 }
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 static inline void hal_radio_sw_switch_disable_group_clear(uint8_t ppi_dis, uint8_t cc_reg,
 							   uint8_t group_index)
