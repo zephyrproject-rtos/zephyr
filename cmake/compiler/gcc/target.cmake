@@ -42,21 +42,59 @@ execute_process(
     OUTPUT_VARIABLE temp_compiler_version
     )
 
-if("${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
-    set(fix_header_file include/limits.h)
-else()
-    set(fix_header_file include-fixed/limits.h)
+set(HEADER_SEARCH_C_FLAGS "")
+if(CONFIG_PICOLIBC)
+  if (CONFIG_PICOLIBC_USE_MODULE)
+    list(APPEND NOSTDINC "${PROJECT_BINARY_DIR}/picolibc/include")
+  else()
+    set(HEADER_SEARCH_C_FLAGS "--specs=picolibc.specs")
+  endif()
 endif()
 
-foreach(file_name include/stddef.h "${fix_header_file}")
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
-    OUTPUT_VARIABLE _OUTPUT
-    )
-  get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
+set(gcctmp "${CMAKE_BINARY_DIR}/gcctmp")
+foreach(include_line "#include <stddef.h>" "#include <limits.h>" "#include_next <limits.h>" "#include <stdbool.h>")
 
-  list(APPEND NOSTDINC ${_OUTPUT})
+  # Generate makefile dependencies for the target header file
+  file(WRITE "${gcctmp}" "${include_line}")
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${HEADER_SEARCH_C_FLAGS} -M -E -
+    INPUT_FILE "${gcctmp}"
+    OUTPUT_VARIABLE gcc_output
+    )
+  file(REMOVE "${gcctmp}")
+
+  # Convert the makefile-style output to a list of filenames
+  string(REGEX REPLACE "^-: " "" gcc_output "${gcc_output}")
+  string(REGEX REPLACE "^\\\\\n *" "" gcc_output "${gcc_output}")
+  string(REGEX REPLACE " *\\\\\n *" ";" gcc_output "${gcc_output}")
+
+  # Walk the filenames adding unique directories to the set
+
+  foreach(include_new ${gcc_output})
+    cmake_path(REMOVE_FILENAME include_new)
+
+    set(found FALSE)
+
+    # Check for unique prefixes
+    foreach(include_old ${NOSTDINC})
+
+      # Don't add if the new dir is a subdir of an old one
+      string(FIND "${include_new}" "${include_old}" has_new)
+
+      # Replace old dir if it is a subdir of the new one
+      string(FIND "${include_old}" "${include_new}" has_old)
+
+      if (${has_new} EQUAL 0)
+        set(found TRUE)
+      elseif(${has_old} EQUAL 0)
+        list(REMOVE_ITEM NOSTDINC "${include_old}")
+      endif()
+
+    endforeach()
+    if(NOT ${found})
+      list(APPEND NOSTDINC "${include_new}")
+    endif()
+  endforeach()
 endforeach()
 
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
