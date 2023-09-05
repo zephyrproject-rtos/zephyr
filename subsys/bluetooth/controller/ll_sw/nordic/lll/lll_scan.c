@@ -325,10 +325,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
+	uint32_t ticks_offset;
 	struct ull_hdr *ull;
+	uint32_t ticks_now;
 
 	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	ticks_offset = lll_event_offset_get(ull);
+	ticks_now = ticker_ticks_now_get();
+	p->ticks_at_expire = ticker_ticks_diff_get(ticks_now, ticks_offset);
 	p->remainder = 0;
 	p->lazy = 0;
 
