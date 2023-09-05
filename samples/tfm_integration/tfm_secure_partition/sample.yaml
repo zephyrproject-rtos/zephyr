@@ -1,6 +1,5 @@
 common:
   tags:
-    - tfm
     - trusted-firmware-m
   platform_allow:
     - mps2_an521_ns
@@ -25,6 +24,5 @@ sample:
 tests:
   sample.tfm.secure_partition:
     tags:
-      - tfm
       - trusted-firmware-m
       - mcuboot

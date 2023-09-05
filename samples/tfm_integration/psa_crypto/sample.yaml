@@ -7,7 +7,6 @@ tests:
   sample.psa_crypto:
     tags:
       - introduction
-      - tfm
       - trusted-firmware-m
       - crypto
       - csr

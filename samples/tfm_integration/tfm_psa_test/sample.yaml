@@ -1,6 +1,5 @@
 common:
   tags:
-    - tfm
     - trusted-firmware-m
     - mcuboot
   platform_allow:

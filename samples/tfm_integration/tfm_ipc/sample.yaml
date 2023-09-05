@@ -6,7 +6,6 @@ tests:
   sample.tfm_ipc:
     tags:
       - introduction
-      - tfm
       - trusted-firmware-m
       - mcuboot
     platform_allow:
@@ -31,7 +30,6 @@ tests:
   sample.tfm_ipc.no_bl2:
     tags:
       - introduction
-      - tfm
       - trusted-firmware-m
     platform_allow: mps2_an521_ns
     extra_configs:
