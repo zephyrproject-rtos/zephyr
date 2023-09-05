@@ -259,15 +259,30 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 				char ssids[][WIFI_SSID_MAX_LEN + 1])
 {
+	char parse_str[(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)) + 1];
 	char *ssid = NULL;
 	char *ctx = NULL;
 	uint8_t i = 0;
+	int len;
 
 	if (!scan_ssids_str) {
 		return -EINVAL;
 	}
 
-	ssid = strtok_r(scan_ssids_str, ",", &ctx);
+	len = strlen(scan_ssids_str);
+
+	if (len > (WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1))) {
+		NET_ERR("SSID string (%s) size (%d) exceeds maximum allowed value (%d)",
+			scan_ssids_str,
+			len,
+			(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)));
+		return -EINVAL;
+	}
+
+	strncpy(parse_str, scan_ssids_str, len);
+	parse_str[len] = '\0';
+
+	ssid = strtok_r(parse_str, ",", &ctx);
 
 	while (ssid) {
 		if (strlen(ssid) > WIFI_SSID_MAX_LEN) {

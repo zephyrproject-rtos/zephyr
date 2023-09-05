@@ -76,6 +76,7 @@ config WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	int "Maximum number of SSIDs that can be specified for SSID filtering"
 	default 1
+	range 1 4
 	help
 	  Maximum number of SSIDs that can be specified for SSID filtering.
 	  This can be set based on the underlying chipsets limitations.
