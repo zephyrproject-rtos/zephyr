@@ -507,6 +507,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 				 uint16_t identifier,
 				 uint16_t sequence,
 				 uint8_t tos,
+				 int priority,
 				 const void *data,
 				 size_t data_size)
 {
@@ -537,8 +538,18 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(tos));
-	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(tos));
+	if (priority >= NET_MAX_PRIORITIES) {
+		NET_ERR("Priority %d is too large, maximum allowed is %d",
+			priority, NET_MAX_PRIORITIES - 1);
+		return -EINVAL;
+	}
+
+	if (priority < 0) {
+		net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(tos));
+		net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(tos));
+	} else {
+		net_pkt_set_priority(pkt, priority);
+	}
 
 	if (net_ipv4_create(pkt, src, dst) ||
 	    icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {

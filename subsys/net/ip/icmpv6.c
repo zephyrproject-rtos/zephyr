@@ -341,6 +341,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 uint16_t identifier,
 				 uint16_t sequence,
 				 uint8_t tc,
+				 int priority,
 				 const void *data,
 				 size_t data_size)
 {
@@ -362,8 +363,18 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
-	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
+	if (priority >= NET_MAX_PRIORITIES) {
+		NET_ERR("Priority %d is too large, maximum allowed is %d",
+			priority, NET_MAX_PRIORITIES - 1);
+		return -EINVAL;
+	}
+
+	if (priority < 0) {
+		net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
+		net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
+	} else {
+		net_pkt_set_priority(pkt, priority);
+	}
 
 	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
