@@ -22,4 +22,23 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
     zephyr_link_libraries(-DPICOLIBC_INTEGER_PRINTF_SCANF)
   endif()
 
+  set(gcctmp "${CMAKE_BINARY_DIR}/gcctmp")
+  file(WRITE "${gcctmp}" "#include <picolibc.h>")
+
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} --specs=picolibc.specs -M -E -
+    INPUT_FILE "${gcctmp}"
+    OUTPUT_VARIABLE PICOLIBC_INCLUDE_DIR
+    )
+  file(REMOVE "${gcctmp}")
+
+  # Extract the pathname to picolibc.h from the makefile-style dependency
+  string(REGEX REPLACE "-: " "" PICOLIBC_INCLUDE_DIR "${PICOLIBC_INCLUDE_DIR}")
+  string(REGEX REPLACE "^\\\\\n *" "" PICOLIBC_INCLUDE_DIR "${PICOLIBC_INCLUDE_DIR}")
+
+  # Trim off the filename
+  cmake_path(REMOVE_FILENAME PICOLIBC_INCLUDE_DIR)
+
+  zephyr_system_include_directories("${PICOLIBC_INCLUDE_DIR}")
+
 endif()
