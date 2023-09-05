@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Prevas A/S
+ * Copyright (c) 2023 Syslinbit
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,6 +16,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -29,6 +31,29 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 /* RTC start time: 1st, Jan, 2000 */
 /* struct tm start:   1st, Jan, 1900 */
 #define TM_TO_RTC_OFFSET 100
+
+/* Convert part per billion calibration value to a number of clock pulses added or removed each
+ * 2^20 clock cycles so it is suitable for the CALR register fields
+ *
+ * nb_pulses = ppb * 2^20 / 10^9 = ppb * 2^11 / 5^9 = ppb * 2048 / 1953125
+ */
+#define PPB_TO_NB_PULSES(ppb) DIV_ROUND_CLOSEST((ppb) * 2048, 1953125)
+
+/* Convert CALR register value (number of clock pulses added or removed each 2^20 clock cycles)
+ * to part ber billion calibration value
+ *
+ * ppb = nb_pulses * 10^9 / 2^20 = nb_pulses * 5^9 / 2^11 = nb_pulses * 1953125 / 2048
+ */
+#define NB_PULSES_TO_PPB(pulses) DIV_ROUND_CLOSEST((pulses) * 1953125, 2048)
+
+/* CALP field can only be 512 or 0 as in reality CALP is a single bit field representing 512 pulses
+ * added every 2^20 clock cycles
+ */
+#define MAX_CALP (512)
+#define MAX_CALM (511)
+
+#define MAX_PPB NB_PULSES_TO_PPB(MAX_CALP)
+#define MIN_PPB -NB_PULSES_TO_PPB(MAX_CALM)
 
 struct rtc_stm32_config {
 	LL_RTC_InitTypeDef ll_rtc_config;
@@ -154,11 +179,80 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	return 0;
 }
 
+#ifdef CONFIG_RTC_CALIBRATION
+static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibration)
+{
+	ARG_UNUSED(dev);
+
+	/* Note : calibration is considered here to be ppb value to apply
+	 *        on clock period (not frequency) but with an opposite sign
+	 */
+
+	if ((calibration > MAX_PPB) || (calibration < MIN_PPB)) {
+		/* out of supported range */
+		return -EINVAL;
+	}
+
+	int32_t nb_pulses = PPB_TO_NB_PULSES(calibration);
+
+	/* we tested calibration against supported range
+	 * so theoretically nb_pulses is also within range
+	 */
+	__ASSERT_NO_MSG(nb_pulses <= MAX_CALP);
+	__ASSERT_NO_MSG(nb_pulses >= -MAX_CALM);
+
+	uint32_t calp, calm;
+
+	if (nb_pulses > 0) {
+		calp = LL_RTC_CALIB_INSERTPULSE_SET;
+		calm = MAX_CALP - nb_pulses;
+	} else {
+		calp = LL_RTC_CALIB_INSERTPULSE_NONE;
+		calm = -nb_pulses;
+	}
+
+	/* wait for recalibration to be ok if a previous recalibration occurred */
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RECALP(RTC) == 0, 100000, k_msleep(1))) {
+		return -EIO;
+	}
+
+	LL_RTC_DisableWriteProtection(RTC);
+
+	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
+
+	LL_RTC_EnableWriteProtection(RTC);
+
+	return 0;
+}
+
+static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	ARG_UNUSED(dev);
+
+	uint32_t calp_enabled = LL_RTC_CAL_IsPulseInserted(RTC);
+	uint32_t calm = LL_RTC_CAL_GetMinus(RTC);
+
+	int32_t nb_pulses = -((int32_t) calm);
+
+	if (calp_enabled) {
+		nb_pulses += MAX_CALP;
+	}
+
+	*calibration = NB_PULSES_TO_PPB(nb_pulses);
+
+	return 0;
+}
+#endif /* CONFIG_RTC_CALIBRATION */
+
 struct rtc_driver_api rtc_stm32_driver_api = {
 	.set_time = rtc_stm32_set_time,
 	.get_time = rtc_stm32_get_time,
 	/* RTC_ALARM not supported */
 	/* RTC_UPDATE not supported */
+#ifdef CONFIG_RTC_CALIBRATION
+	.set_calibration = rtc_stm32_set_calibration,
+	.get_calibration = rtc_stm32_get_calibration,
+#endif /* CONFIG_RTC_CALIBRATION */
 };
 
 #define RTC_STM32_DEV_CFG(n)                                                                       \
