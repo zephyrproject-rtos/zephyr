@@ -75,10 +75,10 @@ static int soc_b9x_init(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
-#if (defined(CONFIG_PM) && defined(CONFIG_BT_B9X))
+#ifdef CONFIG_PM
 	/* Select internal 32K for BLE PM, ASAP after boot */
 	blc_pm_select_internal_32k_crystal();
-#endif /* CONFIG_PM && CONFIG_BT_B9X */
+#endif /* CONFIG_PM  */
 
 	/* system init */
 #if CONFIG_SOC_RISCV_TELINK_B91

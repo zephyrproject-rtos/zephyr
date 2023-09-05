@@ -22,7 +22,7 @@ entry:
 	j start
 
 	.org 0x20
-	.word ('T'<<24 | 'L'<<16 | 'N'<<8 | 'K')
+	.word ('T' << 24 | 'L' << 16 | 'N' << 8 | 'K')
 
 #if CONFIG_SOC_RISCV_TELINK_B91
 	.org 0x26
@@ -35,9 +35,9 @@ entry:
 #elif CONFIG_SOC_RISCV_TELINK_B92
 	.org 0x24
 #if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.word (0x3B0097A9)		/* 2 - wire SPI interface */
+	.word (0x3b0097a9)              #/ 2 - wire SPI interface
 #else
-	.word (0xEB0095BA)		/* 4 - wire SPI interface */
+	.word (0xeb0095ba)              #/ 4 - wire SPI interface
 #endif
 
 #endif
@@ -92,12 +92,24 @@ _RETENTION_DATA_INIT:
 	la     t2, _RETENTION_DATA_VMA_START
 	la     t3, _RETENTION_DATA_VMA_END
 _RETENTION_DATA_INIT_BEGIN:
-	bleu   t3, t2, _RAMCODE_INIT
+	bleu   t3, t2, _RAMCODE_RET_INIT
 	lw     t0, 0(t1)
 	sw     t0, 0(t2)
 	addi   t1, t1, 4
 	addi   t2, t2, 4
 	j      _RETENTION_DATA_INIT_BEGIN
+
+_RAMCODE_RET_INIT:
+	la     t1, _RAMCODE_RET_LMA_START
+	la     t2, _RAMCODE_RET_VMA_START
+	la     t3, _RAMCODE_RET_VMA_END
+_RAMCODE_RET_INIT_BEGIN:
+	bleu   t3, t2, _RAMCODE_INIT
+	lw     t0, 0(t1)
+	sw     t0, 0(t2)
+	addi   t1, t1, 4
+	addi   t2, t2, 4
+	j      _RAMCODE_RET_INIT_BEGIN
 
 _RAMCODE_INIT:
 	la     t1, _RAMCODE_LMA_START
@@ -150,6 +162,7 @@ retention_start:
 	csrs   NDS_MMISC_CTL, t0
 
 	/* flash wakeup */
+#if CONFIG_SOC_RISCV_TELINK_B91
 _WAKEUP_FLASH:
 	lui    t0, 0x80140
 	li     t1, 0xff
@@ -172,14 +185,66 @@ _WAIT_EFUSE_LOAD_FINISH:
 	addi   t0, t0, 1
 	bgeu   t1, t0, _WAIT_EFUSE_LOAD_FINISH
 
-#ifdef CONFIG_BOARD_TLSR9518ADK80D_RETENTION
 _MULTI_ADDRESS_BEGIN:
 	lui    t0, 0x80140
 	la     t1, g_pm_multi_addr
 	lw     t2, 0(t1)
 	sw     t2, 0x104(t0)            #/ g_pm_multi_addr->0x80140104
+#elif CONFIG_SOC_RISCV_TELINK_B92
+	/* we are not in ISR so use ISR stack to restore registers */
+	la     sp, z_interrupt_stacks
+	li     t0, CONFIG_ISR_STACK_SIZE
+	add    sp, sp, t0
+	la     t0, pm_retention_register_recover
+	jalr   t0
 
-#endif /* CONFIG_BOARD_TLSR9518ADK80D_RETENTION */
+	lui    t0, 0xa3fff
+	addi   t0, t0, 0x790
+	li     t1, 0x0e
+	sb     t1, 0x78c(t0)            #/ xip_stop          :0xa3ffff1c = 0x0e
+_MSPI_WAIT_1:
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	lb      t2, 0x798(t0)
+	li      t3, 0x80
+	beq     t3, t2, _MSPI_WAIT_1    #/ read reg_mspi_status FLD_MSPI_BUSY(0xA3FFFF28[bit7])
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	li      t1, 0x06
+	sb      t1, 0x78c(t0)           #/ xip_disable       :0xa3ffff1c = 0x06
+	lui     t0, 0x80140
+	li      t1, 0x3f
+	sb      t1, 0x331(t0)           #/ mspi ie enable    :0x80140331 = 0x3f
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	li      t2, 0x80
+	sb      t2, 0x778(t0)           #/ mspi_ctrl1        :0xa3ffff08 = 0x80
+	li      t3, 0xab
+	sb      t3, 0x774(t0)           #/ wakeup_cmd        :0xa3ffff04 = 0xab
+_MSPI_WAIT_2:
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	lb      t2, 0x798(t0)
+	li      t3, 0x80
+	beq     t3, t2, _MSPI_WAIT_2    #/ read reg_mspi_status FLD_MSPI_BUSY(0xa3ffff28[bit7])
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	li      t1, 0x0a
+	sb      t1, 0x78c(t0)           #/ xip_enable        :0xa3ffff1c = 0x0a
+	/* flash wakeup need delay about 20us, efuse load need delay about 0us */
+	li      t0, 0
+	li      t1, 320                 #/ 25us
+_WAIT_EFUSE_LOAD_AND_FLASH_WAKEUP_FINISH:
+	addi    t0, t0, 1
+	bgeu    t1, t0, _WAIT_EFUSE_LOAD_AND_FLASH_WAKEUP_FINISH
+
+_MULTI_ADDRESS_BEGIN:
+	lui     t0, 0xa3fff
+	addi    t0, t0, 0x790
+	la      t1, g_pm_mspi_cfg
+	lw      t2, 0(t1)
+	sw      t2, 0x790(t0)           #/ g_pm_mspi_cfg->0xa3ffff20
+#endif /* flash wakeup chip dependent */
 
 #ifdef CONFIG_BOARD_TLSR9X_NON_RETENTION_RAM_CODE
 _IRAMCODE_INIT:
