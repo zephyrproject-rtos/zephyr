@@ -146,7 +146,11 @@
       - "!subsys/bluetooth/mesh/**/*"
 
 "CI-thread-test":
-  - "**/*"
+  - "subsys/net/**/*"
+  - "modules/mbedtls/**/*"
+  - "include/zephyr/net/**/*"
+  - "modules/openthread/**/*"
+  - "samples/net/openthread/**/*"
 
 "CI-nfc-test":
   - "**/*"
