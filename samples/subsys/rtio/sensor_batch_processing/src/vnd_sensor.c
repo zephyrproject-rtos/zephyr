@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-LOG_MODULE_REGISTER(vnd_sensor);
+LOG_MODULE_REGISTER(vnd_sensor, LOG_LEVEL_DBG);
 
 struct vnd_sensor_config {
 	uint32_t sample_period;
