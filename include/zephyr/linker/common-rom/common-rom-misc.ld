@@ -36,6 +36,7 @@
 
 #if defined(CONFIG_ZBUS)
 	ITERABLE_SECTION_ROM(zbus_channel, 4)
+	ITERABLE_SECTION_ROM(zbus_observer, 4)
 	ITERABLE_SECTION_ROM(zbus_channel_observation, 4)
 #endif /* CONFIG_ZBUS */
 
