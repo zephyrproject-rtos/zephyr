@@ -45,6 +45,7 @@ _names = [
     'nrfjprog',
     'nrfutil',
     'nsim',
+    'nxp_s32dbg',
     'openocd',
     'pyocd',
     'qemu',
