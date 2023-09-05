@@ -283,6 +283,9 @@ Drivers and Sensors
     * Replaced outdated :dtcompatible:`we,wsen-pdus` differential pressure sensor driver
       and renamed it to :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
 
+    * Replaced outdated :dtcompatible:`we,wsen-tids` temperature sensor driver
+      and renamed it to :dtcompatible:`we,wsen-tids-2521020222501`.
+
 * Serial
 
 * SPI
