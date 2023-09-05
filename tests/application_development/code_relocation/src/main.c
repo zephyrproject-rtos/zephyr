@@ -72,12 +72,13 @@ void z_early_memset(void *dst, int c, size_t n)
 	return (void)dst;
 }
 
-void *relocate_code_setup(void)
+static int relocate_code_setup(void)
 {
 #if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_MPU))
 	disable_mpu_rasr_xn();
 #endif	/* CONFIG_ARM_MPU */
-	return NULL;
+	return 0;
 }
+SYS_INIT(relocate_code_setup, PRE_KERNEL_1, 0);
 
-ZTEST_SUITE(code_relocation, NULL, relocate_code_setup, NULL, NULL, NULL);
+ZTEST_SUITE(code_relocation, NULL, NULL, NULL, NULL, NULL);
