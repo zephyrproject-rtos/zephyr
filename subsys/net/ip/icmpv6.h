@@ -222,6 +222,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 uint16_t identifier,
 				 uint16_t sequence,
 				 uint8_t tc,
+				 int priority,
 				 const void *data,
 				 size_t data_size);
 #else
@@ -230,6 +231,7 @@ static inline int net_icmpv6_send_echo_request(struct net_if *iface,
 					       uint16_t identifier,
 					       uint16_t sequence,
 					       uint8_t tc,
+					       int priority,
 					       const void *data,
 					       size_t data_size)
 {
@@ -238,6 +240,7 @@ static inline int net_icmpv6_send_echo_request(struct net_if *iface,
 	ARG_UNUSED(identifier);
 	ARG_UNUSED(sequence);
 	ARG_UNUSED(tc);
+	ARG_UNUSED(priority);
 	ARG_UNUSED(data);
 	ARG_UNUSED(data_size);
 
