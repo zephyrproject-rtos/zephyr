@@ -5,8 +5,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 set(output_file ${PROJECT_BINARY_DIR}/check_init_priorities_output.txt)
 
-add_custom_target(
-	check_init_priorities_output
+add_custom_command(
+  TARGET app
+  POST_BUILD
 	COMMENT "Running check_init_priorities.py"
 	COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
 	  --verbose
@@ -15,11 +16,7 @@ add_custom_target(
 	  --always-succeed
 	COMMAND ${PYTHON_EXECUTABLE} ${APPLICATION_SOURCE_DIR}/validate_check_init_priorities_output.py
 	  ${output_file}
-	DEPENDS zephyr_pre0
 )
-if (TARGET zephyr_pre1)
-  add_dependencies(zephyr_pre1 check_init_priorities_output)
-endif()
 
 project(check_init_priorities)
 
