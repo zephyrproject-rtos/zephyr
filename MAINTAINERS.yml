@@ -1992,10 +1992,9 @@ Networking:
 "Networking: Native IEEE 802.15.4":
   status: maintained
   maintainers:
-    - tbursztyka
+    - fgrandel
   collaborators:
     - rlubos
-    - fgrandel
     - jukkar
   files:
     - doc/connectivity/networking/api/ieee802154.rst
