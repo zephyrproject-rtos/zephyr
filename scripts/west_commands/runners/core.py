@@ -658,19 +658,21 @@ class ZephyrBinaryRunner(abc.ABC):
                   in the order they appear on the command line.'''
 
     @staticmethod
-    def require(program: str) -> str:
+    def require(program: str, path: Optional[str] = None) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
                         or path to a program binary.
+        :param path:    PATH where to search for the program binary.
+                        By default check on the system PATH.
 
         If ``program`` is an absolute path to an existing program
         binary, this call succeeds. Otherwise, try to find the program
-        by name on the system PATH.
+        by name on the system PATH or in the given PATH, if provided.
 
         If the program can be found, its path is returned.
         Otherwise, raises MissingProgram.'''
-        ret = shutil.which(program)
+        ret = shutil.which(program, path=path)
         if ret is None:
             raise MissingProgram(program)
         return ret
