@@ -429,7 +429,8 @@ TESTDATA_7 = [
     (
         os.path.join('dummy', 'path'),
         ['testsuite_file_1', 'testsuite_file_2'],
-        ['src_dir_file_1', 'src_dir_file_2'],
+        ['src_dir_file_1', 'src_dir_file_2', 'src_dir_file_3'],
+        {'src_dir_file_1': 1000, 'src_dir_file_2': 2000, 'src_dir_file_3': 0},
         {
             'testsuite_file_1': ScanPathResult(
                 matches = ['test_a', 'b'],
@@ -449,11 +450,12 @@ TESTDATA_7 = [
                 ztest_suite_names = ['feature_b']
             ),
             'src_dir_file_2': ValueError,
+            'src_dir_file_3': ValueError,
         },
         [
             'testsuite_file_2: can\'t find: dummy exception',
             'testsuite_file_1: dummy warning',
-            'src_dir_file_2: can\'t find: dummy exception',
+            'src_dir_file_2: error parsing source file: dummy exception',
         ],
         None,
         (['a', 'b', 'test_a', 'test_b'], ['feature_a', 'feature_b'])
@@ -462,6 +464,7 @@ TESTDATA_7 = [
         os.path.join('dummy', 'path'),
         [],
         ['src_dir_file'],
+        {'src_dir_file': 1000},
         {
             'src_dir_file': ScanPathResult(
                 matches = ['test_b', 'a'],
@@ -486,6 +489,7 @@ TESTDATA_7 = [
         os.path.join('dummy', 'path'),
         [],
         ['src_dir_file'],
+        {'src_dir_file': 100},
         {
             'src_dir_file': ScanPathResult(
                 matches = ['test_b', 'a'],
@@ -504,13 +508,13 @@ TESTDATA_7 = [
 
 
 @pytest.mark.parametrize(
-    'testsuite_path, testsuite_glob, src_dir_glob, scanpathresults,' \
+    'testsuite_path, testsuite_glob, src_dir_glob, sizes, scanpathresults,' \
     ' expected_logs, expected_exception, expected',
     TESTDATA_7,
     ids=[
         'valid',
         'warning in src dir',
-        'register with run error'
+        'register with run error',
     ]
 )
 def test_scan_testsuite_path(
@@ -518,6 +522,7 @@ def test_scan_testsuite_path(
     testsuite_path,
     testsuite_glob,
     src_dir_glob,
+    sizes,
     scanpathresults,
     expected_logs,
     expected_exception,
@@ -540,9 +545,16 @@ def test_scan_testsuite_path(
             raise scanpathresults[filename]('dummy exception')
         return scanpathresults[filename]
 
+    def mock_stat(filename, *args, **kwargs):
+        result = mock.Mock()
+        type(result).st_size = sizes[filename]
+
+        return result
+
     with mock.patch('twisterlib.testsuite._find_src_dir_path', mock_fsdp), \
          mock.patch('glob.glob', mock_glob), \
          mock.patch('twisterlib.testsuite.scan_file', mock_sf), \
+         mock.patch('os.stat', mock_stat), \
          pytest.raises(type(expected_exception)) if \
           expected_exception else nullcontext() as exception:
         result = scan_testsuite_path(testsuite_path)
