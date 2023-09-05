@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 IP-Logix Inc.
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +148,77 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+/* mdio write_c45 <port_addr> <dev_addr> <reg_addr> <value> */
+static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint16_t data;
+	uint16_t reg_addr;
+	uint8_t dev_addr;
+	uint8_t port_addr;
+
+	dev = DEVICE_DT_GET(MDIO_NODE_ID);
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
+
+		return -ENODEV;
+	}
+
+	port_addr = strtol(argv[1], NULL, 16);
+	dev_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
+	data = strtol(argv[4], NULL, 16);
+
+	mdio_bus_enable(dev);
+
+	if (mdio_write_c45(dev, port_addr, dev_addr, reg_addr, data) < 0) {
+		shell_error(sh, "Failed to write to device: %s", dev->name);
+		mdio_bus_disable(dev);
+
+		return -EIO;
+	}
+
+	mdio_bus_disable(dev);
+
+	return 0;
+}
+
+/* mdio read_c45 <port_addr> <dev_addr> <reg_addr> */
+static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint16_t data;
+	uint16_t reg_addr;
+	uint8_t dev_addr;
+	uint8_t port_addr;
+
+	dev = DEVICE_DT_GET(MDIO_NODE_ID);
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
+
+		return -ENODEV;
+	}
+
+	port_addr = strtol(argv[1], NULL, 16);
+	dev_addr = strtol(argv[2], NULL, 16);
+	reg_addr = strtol(argv[3], NULL, 16);
+
+	mdio_bus_enable(dev);
+
+	if (mdio_read_c45(dev, port_addr, dev_addr, reg_addr, &data) < 0) {
+		shell_error(sh, "Failed to read from device: %s", dev->name);
+		mdio_bus_disable(dev);
+
+		return -EIO;
+	}
+
+	mdio_bus_disable(dev);
+
+	shell_print(sh, "%x[%x:%x]: 0x%x", port_addr, dev_addr, reg_addr, data);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
 	SHELL_CMD_ARG(scan, NULL,
 		"Scan MDIO bus for devices: scan [<reg_addr>]",
@@ -157,6 +229,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
 	SHELL_CMD_ARG(write, NULL,
 		"Write to MDIO device: write <phy_addr> <reg_addr> <value>",
 		cmd_mdio_write, 4, 0),
+	SHELL_CMD_ARG(read_c45, NULL,
+		"Read from MDIO Clause 45 device: "
+		"read_c45 <port_addr> <dev_addr> <reg_addr>",
+		cmd_mdio_read_c45, 4, 0),
+	SHELL_CMD_ARG(write_c45, NULL,
+		"Write to MDIO Clause 45 device: "
+		"write_c45 <port_addr> <dev_addr> <reg_addr> <value>",
+		cmd_mdio_write_45, 5, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 
