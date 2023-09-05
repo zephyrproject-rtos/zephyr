@@ -679,6 +679,13 @@ test_i2c_tmd2620: tmd2620@62 {
 	wait-time-factor = <0>;
 };
 
+test_i2c_wsen_pads_2511020213301: wsen_pads_2511020213301@63 {
+	compatible = "we,wsen-pads-2511020213301";
+	reg = <0x63>;
+	interrupt-gpios = <&test_gpio 0 0>;
+	odr = <10>;
+};
+
 test_i2c_s11059: s11059@64 {
 	compatible = "hamamatsu,s11059";
 	reg = <0x64>;
