@@ -535,6 +535,7 @@ New Drivers
    * :dtcompatible:`st,lsm6dsv16x`
    * :dtcompatible:`ti,tmag3001`
    * :dtcompatible:`ti,tmp435`
+   * :dtcompatible:`we,wsen-pads-2511020213301`
    * :dtcompatible:`we,wsen-pdus-25131308XXXXX`
    * :dtcompatible:`we,wsen-tids-2521020222501`
 
