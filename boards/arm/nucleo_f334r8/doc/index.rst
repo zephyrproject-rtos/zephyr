@@ -143,7 +143,7 @@ Flashing an application to Nucleo F334R8
 
 Connect the Nucleo F334R8 to your host computer using the USB port,
 then build and flash an application. Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -156,7 +156,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for
-the :ref:`blinky-sample` application.
+the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

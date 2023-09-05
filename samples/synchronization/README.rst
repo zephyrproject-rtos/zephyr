@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: synchronization_sample
-   :name: Synchronization Sample
+.. zephyr:code-sample:: synchronization
+   :name: Basic Synchronization
    :relevant-api: thread_apis semaphore_apis
 
    Manipulate basic kernel synchronization primitives.

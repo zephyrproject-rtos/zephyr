@@ -169,7 +169,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 Run a serial host program to connect with your board:
 

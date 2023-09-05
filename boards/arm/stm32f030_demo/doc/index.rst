@@ -87,7 +87,7 @@ This interface is supported by the openocd version included in the Zephyr SDK.
 Flashing an application to STM32F030 DEMO BOARD
 -----------------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -100,7 +100,7 @@ Debugging
 =========
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

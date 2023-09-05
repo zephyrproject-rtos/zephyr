@@ -67,7 +67,7 @@ Programming and Debugging
 *************************
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
-emulated environment, for example, with the :ref:`synchronization_sample`
+emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample
 (note you may use ``qemu_arc_em``, ``qemu_arc_hs``,  ``qemu_arc_hs5x`` or
 ``qemu_arc_hs6x`` depending on target CPU):
 

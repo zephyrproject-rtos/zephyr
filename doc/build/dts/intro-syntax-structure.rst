@@ -468,7 +468,7 @@ Using its node label ``uart0``, the same node is set as the value of the chosen
 
 Zephyr sample applications sometimes use aliases to allow overriding the
 particular hardware device used by the application in a generic way. For
-example, :ref:`blinky-sample` uses this to abstract the LED to blink via the
+example, :zephyr:code-sample:`blinky` uses this to abstract the LED to blink via the
 ``led0`` alias.
 
 The ``/chosen`` node's properties are used to configure system- or
