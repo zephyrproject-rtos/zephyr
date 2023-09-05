@@ -677,7 +677,7 @@ class ZephyrBinaryRunner(abc.ABC):
             raise MissingProgram(program)
         return ret
 
-    def run_server_and_client(self, server, client):
+    def run_server_and_client(self, server, client, **kwargs):
         '''Run a server that ignores SIGINT, and a client that handles it.
 
         This routine portably:
@@ -686,20 +686,22 @@ class ZephyrBinaryRunner(abc.ABC):
           SIGINT
         - runs ``client`` in a subprocess while temporarily ignoring SIGINT
         - cleans up the server after the client exits.
+        - the keyword arguments, if any, will be passed down to both server and
+          client subprocess calls
 
         It's useful to e.g. open a GDB server and client.'''
-        server_proc = self.popen_ignore_int(server)
+        server_proc = self.popen_ignore_int(server, **kwargs)
         try:
-            self.run_client(client)
+            self.run_client(client, **kwargs)
         finally:
             server_proc.terminate()
             server_proc.wait()
 
-    def run_client(self, client):
+    def run_client(self, client, **kwargs):
         '''Run a client that handles SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
-            self.check_call(client)
+            self.check_call(client, **kwargs)
         finally:
             signal.signal(signal.SIGINT, previous)
 
