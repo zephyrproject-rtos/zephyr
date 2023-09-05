@@ -50,6 +50,8 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_TIMEOUT,
 	MODEM_CELLULAR_EVENT_REGISTERED,
 	MODEM_CELLULAR_EVENT_DEREGISTERED,
+	MODEM_CELLULAR_EVENT_BUS_OPENED,
+	MODEM_CELLULAR_EVENT_BUS_CLOSED,
 };
 
 struct modem_cellular_data {
@@ -172,6 +174,10 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "registered";
 	case MODEM_CELLULAR_EVENT_DEREGISTERED:
 		return "deregistered";
+	case MODEM_CELLULAR_EVENT_BUS_OPENED:
+		return "bus opened";
+	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
+		return "bus closed";
 	}
 
 	return "";
@@ -190,6 +196,26 @@ static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 
 static void modem_cellular_event_handler(struct modem_cellular_data *data,
 					 enum modem_cellular_event evt);
+
+static void modem_cellular_bus_pipe_handler(struct modem_pipe *pipe,
+					    enum modem_pipe_event event,
+					    void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	switch (event) {
+	case MODEM_PIPE_EVENT_OPENED:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_BUS_OPENED);
+		break;
+
+	case MODEM_PIPE_EVENT_CLOSED:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_BUS_CLOSED);
+		break;
+
+	default:
+		break;
+	}
+}
 
 static void modem_cellular_dlci1_pipe_handler(struct modem_pipe *pipe,
 					      enum modem_pipe_event event,
@@ -401,7 +427,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_chat_release(&data->chat);
 	modem_ppp_release(data->ppp);
 	modem_cmux_release(&data->cmux);
-	modem_pipe_close(data->uart_pipe);
+	modem_pipe_close_async(data->uart_pipe);
 	k_sem_give(&data->suspended_sem);
 	return 0;
 }
@@ -445,10 +471,6 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data *data)
 
 	if (modem_cellular_gpio_is_enabled(&config->reset_gpio)) {
 		gpio_pin_set_dt(&config->reset_gpio, 0);
-	}
-
-	if (modem_pipe_open(data->uart_pipe) < 0) {
-		return -EAGAIN;
 	}
 
 	return 0;
@@ -556,14 +578,8 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 
 static int modem_cellular_on_run_init_script_state_enter(struct modem_cellular_data *data)
 {
-	const struct modem_cellular_config *config =
-		(const struct modem_cellular_config *)data->dev->config;
-
-	if (modem_chat_attach(&data->chat, data->uart_pipe) < 0) {
-		return -EAGAIN;
-	}
-
-	return modem_chat_script_run(&data->chat, config->init_chat_script);
+	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
+	return modem_pipe_open_async(data->uart_pipe);
 }
 
 static void modem_cellular_run_init_script_event_handler(struct modem_cellular_data *data,
@@ -573,10 +589,21 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_BUS_OPENED:
+		modem_chat_attach(&data->chat, data->uart_pipe);
+		modem_chat_script_run(&data->chat, config->init_chat_script);
+		break;
+
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		net_if_set_link_addr(modem_ppp_get_iface(data->ppp), data->imei,
 				     ARRAY_SIZE(data->imei), NET_LINK_UNKNOWN);
 
+		modem_chat_release(&data->chat);
+		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
+		modem_pipe_close_async(data->uart_pipe);
+		break;
+
+	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_CONNECT_CMUX);
 		break;
 
@@ -603,19 +630,13 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 	}
 }
 
-static int modem_cellular_on_run_init_script_state_leave(struct modem_cellular_data *data)
-{
-	modem_chat_release(&data->chat);
-	return 0;
-}
-
 static int modem_cellular_on_connect_cmux_state_enter(struct modem_cellular_data *data)
 {
-	if (modem_cmux_attach(&data->cmux, data->uart_pipe) < 0) {
-		return -EAGAIN;
-	}
-
-	modem_cellular_start_timer(data, K_MSEC(500));
+	/*
+	 * Allow modem to switch bus into CMUX mode. Some modems disable UART RX while
+	 * switching, resulting in UART RX errors as bus is no longer pulled up by modem.
+	 */
+	modem_cellular_start_timer(data, K_MSEC(100));
 	return 0;
 }
 
@@ -624,6 +645,11 @@ static void modem_cellular_connect_cmux_event_handler(struct modem_cellular_data
 {
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
+		modem_pipe_open_async(data->uart_pipe);
+
+	case MODEM_CELLULAR_EVENT_BUS_OPENED:
+		modem_cmux_attach(&data->cmux, data->uart_pipe);
 		modem_cmux_connect_async(&data->cmux);
 		break;
 
@@ -700,20 +726,23 @@ static int modem_cellular_on_open_dlci2_state_leave(struct modem_cellular_data *
 
 static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data *data)
 {
-	const struct modem_cellular_config *config =
-		(const struct modem_cellular_config *)data->dev->config;
-
-	if (modem_chat_attach(&data->chat, data->dlci1_pipe) < 0) {
-		return -EAGAIN;
-	}
-
-	return modem_chat_script_run(&data->chat, config->dial_chat_script);
+	/* Allow modem time to enter command mode before running dial script */
+	modem_cellular_start_timer(data, K_MSEC(100));
+	return 0;
 }
 
 static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_data *data,
 							 enum modem_cellular_event evt)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_script_run(&data->chat, config->dial_chat_script);
+		break;
+
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		break;
@@ -792,6 +821,7 @@ static int modem_cellular_on_carrier_on_state_leave(struct modem_cellular_data *
 
 static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_data *data)
 {
+	modem_pipe_close_async(data->uart_pipe);
 	modem_cellular_start_timer(data, K_MSEC(2000));
 	return 0;
 }
@@ -963,10 +993,6 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:
 		ret = modem_cellular_on_power_on_pulse_state_leave(data);
-		break;
-
-	case MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT:
-		ret = modem_cellular_on_run_init_script_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
@@ -1262,7 +1288,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      100));
+							      0));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_init_chat_script, quectel_bg95_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1298,7 +1324,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(zephyr_gsm_ppp_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      100));
+							      0));
 
 MODEM_CHAT_SCRIPT_DEFINE(zephyr_gsm_ppp_init_chat_script, zephyr_gsm_ppp_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1334,7 +1360,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      100));
+							      0));
 
 MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_init_chat_script, simcom_sim7080_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1370,7 +1396,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      100));
+							      0));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1406,7 +1432,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      100));
+							      0));
 
 MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_init_chat_script, swir_hl7800_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
