@@ -23,7 +23,7 @@ endif # CAN
 if NETWORKING
 
 config NET_L2_ETHERNET
-	default y
+	default y if !NET_LOOPBACK && !NET_TEST
 
 endif # NETWORKING
 
