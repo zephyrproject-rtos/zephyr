@@ -35,7 +35,7 @@
 			compatible = "sifive,s7";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac";
+			riscv,isa = "rv64imac_zicsr_zifencei";
 			status = "okay";
 
 			hlic: interrupt-controller {
@@ -50,7 +50,7 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x1>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 
 			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -63,7 +63,7 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x2>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 
 			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -76,7 +76,7 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x3>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 
 			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -89,7 +89,7 @@
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x4>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 
 			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";

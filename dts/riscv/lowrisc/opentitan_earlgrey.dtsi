@@ -19,7 +19,7 @@
 			reg = <0x00>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv32imc";
+			riscv,isa = "rv32imcb_zicsr_zifencei";
 
 			hlic: interrupt-controller {
 				#interrupt-cells = <0x01>;

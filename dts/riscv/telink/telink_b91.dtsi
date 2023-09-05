@@ -23,6 +23,7 @@
 			reg = <0>;
 			clock-frequency = <24000000>;
 			compatible ="telink,b91", "riscv";
+			riscv,isa = "rv32imac_zicsr_zifencei";
 		};
 	};
 
