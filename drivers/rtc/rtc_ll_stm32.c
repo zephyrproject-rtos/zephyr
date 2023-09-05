@@ -156,13 +156,15 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
-	ARG_UNUSED(dev);
+	const struct rtc_stm32_config *cfg = dev->config;
+	uint32_t sync_prescaler = cfg->ll_rtc_config.SynchPrescaler;
 
-	uint32_t rtc_date, rtc_time;
+	uint32_t rtc_date, rtc_time, rtc_subsecond;
 
-	/* Read time and date registers */
-	rtc_time = LL_RTC_TIME_Get(RTC);
-	rtc_date = LL_RTC_DATE_Get(RTC);
+	/* Read subsecond, time and date registers */
+	rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
+	rtc_time      = LL_RTC_TIME_Get(RTC);
+	rtc_date      = LL_RTC_DATE_Get(RTC);
 
 	timeptr->tm_year = TM_TO_RTC_OFFSET + __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
@@ -174,7 +176,9 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	timeptr->tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
 	timeptr->tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
 
-	timeptr->tm_nsec = LL_RTC_TIME_GetSubSecond(RTC);
+	uint64_t temp = ((uint64_t)(sync_prescaler - rtc_subsecond)) * 1000000000L;
+
+	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, sync_prescaler + 1);
 
 	return 0;
 }
