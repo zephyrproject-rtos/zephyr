@@ -867,6 +867,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 
 	pub = mqtt_sn_publish_create(data);
 	if (!pub) {
+		k_work_reschedule(&client->process_work, K_NO_WAIT);
 		return -ENOMEM;
 	}
 
