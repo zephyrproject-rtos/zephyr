@@ -301,6 +301,21 @@ Sensors
         };
       };
 
+  * The :dtcompatible:`we,wsen-tids` driver has been renamed to
+    :dtcompatible:`we,wsen-tids-2521020222501`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        tids:tids-2521020222501@3F {
+          compatible = "we,wsen-tids-2521020222501";
+          reg = < 0x3F >;
+          odr = < 25 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+        };
+      };
+
 Serial
 ======
 
