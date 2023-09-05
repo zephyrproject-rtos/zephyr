@@ -83,7 +83,7 @@ An application-specific devicetree :ref:`binding <dt-bindings>` to identify
 board specific properties may be appropriate. See
 :zephyr_file:`tests/drivers/gpio/gpio_basic_api` for an example.
 
-For applications, see :ref:`blinky-sample` for a devicetree-based alternative.
+For applications, see :zephyr:code-sample:`blinky` for a devicetree-based alternative.
 
 ``select`` statements
 *********************

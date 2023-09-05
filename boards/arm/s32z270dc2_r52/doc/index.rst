@@ -99,7 +99,7 @@ using GPIO driver or configuring the pinmuxing for the device drivers.
 +-------------------+-------------+
 
 This board does not include user LED's or switches, which are needed for some
-of the samples such as :ref:`blinky-sample` or :ref:`button-sample`.
+of the samples such as :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button`.
 Follow the steps described in the sample description to enable support for this
 board.
 

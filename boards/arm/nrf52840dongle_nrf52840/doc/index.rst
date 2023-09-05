@@ -140,7 +140,7 @@ device. Make sure ``nrfutil`` is installed before proceeding.
    The red LED should start a fade pattern, signalling the bootloader is
    running.
 
-#. Compile a Zephyr application; we'll use :ref:`blinky <blinky-sample>`.
+#. Compile a Zephyr application; we'll use :zephyr:code-sample:`blinky`.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
@@ -298,7 +298,7 @@ flashed with an offset.
 Then build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -321,7 +321,7 @@ Testing the LEDs and buttons on the nRF52840 Dongle
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-* :ref:`blinky-sample`
+* :zephyr:code-sample:`blinky`
 
 You can build and program the examples to make sure Zephyr is running correctly
 on your board.

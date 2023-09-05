@@ -119,8 +119,8 @@ or the :ref:`cdc-acm-console` sample applications to see how this works.
 
 Testing LEDs and buttons on the Adafruit ItsyBitsy nRF52840 Express
 *******************************************************************
-The :ref:`button-sample` sample lets you test the buttons (switches) and the red LED.
-The :ref:`blinky-sample` sample lets you test the red LED.
+The :zephyr:code-sample:`button` sample lets you test the buttons (switches) and the red LED.
+The :zephyr:code-sample:`blinky` sample lets you test the red LED.
 
 The DotStar LED has been implemented as a SPI device and can be tested
 with the :ref:`led_apa102_sample` sample application.
@@ -151,7 +151,7 @@ Flashing
 Flashing is done by dragging and dropping the built Zephyr UF2-file
 into the :code:`ITSY840BOOT` drive.
 
-#. Build the Zephyr kernel and the :ref:`blinky-sample`
+#. Build the Zephyr kernel and the :zephyr:code-sample:`blinky`
    sample application:
 
    .. zephyr-app-commands::

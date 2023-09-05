@@ -141,7 +141,7 @@ Flashing an application to STM32F411E-DISCO
 Connect the STM32F411E-DISCO Discovery kit to your host computer using the
 USB port. Then build and flash an application.
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -162,7 +162,7 @@ Debugging
 =========
 
 You can debug applications in the usual way. Here is an example for
-the :ref:`blinky-sample` application.
+the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

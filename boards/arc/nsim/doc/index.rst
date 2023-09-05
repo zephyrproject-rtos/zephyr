@@ -107,7 +107,7 @@ The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, w
    particular toolchain.
 
 Use this configuration to run basic Zephyr applications and kernel tests in
-nSIM, for example, with the :ref:`synchronization_sample`:
+nSIM, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization

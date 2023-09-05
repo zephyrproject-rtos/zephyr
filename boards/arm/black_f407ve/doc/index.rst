@@ -202,7 +202,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to BLACK_F407VE
 ---------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 Run a serial host program to connect with your board:
 

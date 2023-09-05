@@ -87,7 +87,7 @@ can be entered by quickly tapping the reset button twice.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`blinky-sample` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky

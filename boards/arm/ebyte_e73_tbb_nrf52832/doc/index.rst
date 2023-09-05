@@ -206,8 +206,8 @@ the board are working properly with Zephyr:
 
 .. code-block:: console
 
-   :ref:`blinky-sample`
-   :ref:`button-sample`
+   :zephyr:code-sample:`blinky`
+   :zephyr:code-sample:`button`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in

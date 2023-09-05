@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: pwm-blinky-sample
+.. zephyr:code-sample:: pwm-blinky
    :name: PWM Blinky
    :relevant-api: pwm_interface
 
@@ -8,7 +8,7 @@ Overview
 ********
 
 This application blinks an LED using the :ref:`PWM API <pwm_api>`. See
-:zephyr:code-sample:`blinky-sample` for a GPIO-based sample.
+:zephyr:code-sample:`blinky` for a GPIO-based sample.
 
 The LED starts blinking at a 1 Hz frequency. The frequency doubles every 4
 seconds until it reaches 128 Hz. The frequency will then be halved every 4

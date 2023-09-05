@@ -650,14 +650,14 @@ Build the Blinky Sample
 
 .. note::
 
-   Blinky is compatible with most, but not all, :ref:`boards`. If your board
+   :zephyr:code-sample:`blinky` is compatible with most, but not all, :ref:`boards`. If your board
    does not meet Blinky's :ref:`blinky-sample-requirements`, then
    :ref:`hello_world` is a good alternative.
 
    If you are unsure what name west uses for your board, ``west boards``
    can be used to obtain a list of all boards Zephyr supports.
 
-Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
+Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, changing
 ``<your-board-name>`` appropriately for your board:
 
 .. tabs::
