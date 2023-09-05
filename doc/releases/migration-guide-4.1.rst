@@ -317,6 +317,21 @@ SDHC
 Sensors
 =======
 
+  * The :dtcompatible:`we,wsen-pads` driver has been renamed to
+    :dtcompatible:`we,wsen-pads-2511020213301`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pads:pads-2511020213301@5d {
+          compatible = "we,wsen-pads-2511020213301";
+          reg = <0x5d>;
+          odr = < 10 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        };
+      };
+
   * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
     :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
     The Device Tree can be configured as follows:
