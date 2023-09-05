@@ -275,6 +275,32 @@ vth __irq_vector_table _irq_vector_table[] = {
 #else
 #error "GPT timer enabled, but no known SOC selected. ISR table needs rework"
 #endif
+
+#elif defined(CONFIG_BOARD_MR_CANHUBK3)
+/* mr_canhubk3 board includes an off-chip watchdog that must be serviced to
+ * avoid triggering a reset, so add the interrupt handlers for its SPI bus
+ * master and interrupt pin.
+ */
+#include <zephyr/device.h>
+
+extern void SIUL2_EXT_IRQ_0_7_ISR(void);
+extern void spi_mcux_isr(const struct device *dev);
+
+void spi_mcux_isr_wrapper(void)
+{
+	spi_mcux_isr(DEVICE_DT_GET(DT_BUS(DT_ALIAS(watchdog0))));
+}
+
+#define IRQ_VECTOR_TABLE_SIZE 232u
+vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
+	[0 ... (IRQ_VECTOR_TABLE_SIZE - 1)] = 0,
+	[0] = isr0,
+	[1] = isr1,
+	[2] = isr2,
+	[53] = SIUL2_EXT_IRQ_0_7_ISR,
+	[168] = spi_mcux_isr_wrapper,
+};
+
 #else
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
