@@ -702,6 +702,7 @@ New Drivers
    * :dtcompatible:`we,wsen-pads-2511020213301`
    * :dtcompatible:`we,wsen-pdus-25131308XXXXX`
    * :dtcompatible:`we,wsen-tids-2521020222501`
+   * :dtcompatible:`we,wsen-itds-2533020201601`
 
 * Serial controller
 

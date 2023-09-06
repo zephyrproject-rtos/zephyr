@@ -1,0 +1,209 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  events-interrupt-gpios:
+    type: phandle-array
+    description: |
+      Events Interrupt pin (Tap, Freefall, .. etc) (INT0 Pin).
+      Interrupts are active high by default.
+
+  drdy-interrupt-gpios:
+    type: phandle-array
+    description: |
+      DRDY Interrupt pin (INT1 Pin).
+      Interrupts are active high by default.
+
+  odr:
+    type: string
+    required: true
+    enum:
+      - "1.6"
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
+    description: Output data rate in Hz
+      Note that the available output data rates depend on the selected operating mode. In
+      high performance mode the output data rate of the sensor can be configured between
+      12.5 Hz and 1600 Hz. In normal/low power mode the output data rate of the sensor can
+      be configured between 1.6 Hz and 200 Hz. Consult the ITDS user manual for more
+      information.
+      Also note that the minimum ODR required for using the tap recognition functionality
+      is 400 Hz.
+
+  op-mode:
+    type: string
+    required: true
+    enum:
+      - "low-power/normal"   # Low power or Normal mode
+      - "high-perf"   # High performance mode
+      - "single-conversion"   # Single Conversion mode
+    description: Operating mode of the sensor.
+
+  power-mode:
+    type: string
+    required: true
+    enum:
+      - "low-power"   # Low power mode
+      - "normal"      # Normal mode
+    description: Power mode of the sensor.
+
+  range:
+    type: int
+    default: 2
+    enum:
+      - 16 # 16g (1.952 mg/LSB)
+      - 8 #  8g (0.976 mg/LSB)
+      - 4 #  4g (0.488 mg/LSB)
+      - 2 #  2g (0.244 mg/LSB)
+    description: Range (full scale) in g. Defaults to 2, which is
+      the configuration at power-up.
+
+  low-noise:
+    type: boolean
+    description: Enables low-noise mode.
+
+  tap-mode:
+    type: int
+    default: 0
+    enum:
+      - 0 # Only single tap
+      - 1 # Single and double tap
+    description: Tap mode (only single tap or single and double tap).
+      Defaults to 0, which is the configuration at power-up.
+
+  tap-threshold:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Tap X/Y/Z axis thresholds (unsigned 5-bit, ranging from 0x00 to 0x1F).
+      Defaults to "<0>, <0>, <0>", which is the configuration at power-up.
+
+      Thresholds for tap recognition on the X/Y/Z axes corresponding to a
+      2g full-scale range. Setting a threshold to zero disables tap
+      detection on the corresponding axis.
+
+      Example:
+
+          tap-threshold = <0>, <6>, <10>
+
+      This disables tap recognition on X axis and sets thresholds for Y and Z
+      as follows: Y = 6 \* 2g/32 = 375mg and Z = 10 \* 2g/32 = 625mg.
+
+  tap-shock:
+    type: int
+    default: 0x0
+    description: |
+      Maximum duration of over-threshold event when detecting taps (unsigned
+      2-bit, ranging from 0x0 to 0x3). Defaults to zero, which is the
+      configuration at power-up.
+
+      A value of 0 corresponds to 4 \* 1/ODR and 1 LSB = 8 \* 1/ODR.
+
+  tap-latency:
+    type: int
+    default: 0x0
+    description: |
+      Maximum duration time gap for double-tap recognition (unsigned 4-bit,
+      ranging from 0x0 to 0xF). Defaults to zero, which is the
+      configuration at power-up.
+
+      A value of 0 corresponds to 16 \* 1/ODR and 1 LSB = 32 \* 1/ODR.
+
+  tap-quiet:
+    type: int
+    default: 0x0
+    description: |
+      Expected quiet time for double-tap recognition (unsigned 2-bit, ranging
+      from 0x0 to 0x3). This defines the time after the first detected tap in
+      which there must not be any over-threshold event. Defaults to zero, which
+      is the configuration at power-up.
+
+      A value of 0 corresponds to 2 \* 1/ODR and 1 LSB = 4 \* 1/ODR.
+
+  freefall-duration:
+    type: int
+    default: 0x0
+    description: |
+      Minimum duration of free-fall event (unsigned 6-bit, ranging from 0x0
+      to 0x3F). Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1 \* 1/ODR.
+
+  freefall-threshold:
+    type: int
+    default: 0x5
+    enum:
+      - 5  # 156.50 mg
+      - 7  # 218.75 mg
+      - 8  # 250.00 mg
+      - 10  # 312.50 mg
+      - 11  # 343.75 mg
+      - 13  # 406.25 mg
+      - 15  # 468.75 mg
+      - 16  # 500.00 mg
+    description: |
+      Free-fall threshold (amplitude of the "free-fall zone" around zero-g
+      level where the accelerations of all axes are small enough to generate
+      the free-fall interrupt). Defaults to 0x5, which is the configuration
+      at power-up.
+
+      Multiply by 31.25mg to get the used threshold.
+
+  delta-duration:
+    type: int
+    default: 0x0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Wake-up duration, i.e. minimum duration of wake-up event to be
+      recognized (unsigned 2-bit, ranging from 0x0 to 0x3).
+      Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1 \* 1/ODR
+
+  delta-threshold:
+    type: int
+    default: 0x0
+    description: |
+      Wake-up threshold (unsigned 6-bit, ranging from 0x0 to 0x3F).
+      The threshold value is applicable to both positive and negative
+      acceleration data. A wake-up event is recognized, if at least
+      one of the acceleration axis values exceeds the threshold value.
+
+      Defaults to 0, which is the configuration at power-up.
+
+      1 LSB = 1/64 of measurement range (full scale).
+
+  delta-offsets:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Wake-up X/Y/Z axis offsets (signed 8-bit, ranging from -128 to 127).
+      Defaults to "<0>, <0>, <0>", which is the configuration at power-up.
+
+      The weight of the offsets depends on the delta-offset-weight property.
+      E.g. for delta-offset-weight=<1>, an offset value of 0x40 corresponds
+      to approximately 1g.
+
+  delta-offset-weight:
+    type: int
+    default: 0x0
+    enum:
+      - 0   # 0.977 mg/LSB
+      - 1   # 15.6 mg/LSB
+    description: |
+      Wake-up offset weight (0 or 1).
+      Weight of the offsets specified in the delta-offsets property.
+      Defaults to 0, which is the configuration at power-up.
+
+      A value of 0 corresponds to 0.977 mg/LSB, a value of 1
+      corresponds to 15.6 mg/LSB.
