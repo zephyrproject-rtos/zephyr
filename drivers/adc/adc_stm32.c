@@ -167,9 +167,6 @@ struct adc_stm32_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
-	int8_t temp_channel;
-	int8_t vref_channel;
-	int8_t vbat_channel;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -610,93 +607,6 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
-/*
- * Enable internal channel source
- */
-static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
-{
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-
-	ARG_UNUSED(adc); /* Avoid 'unused variable' warning for some families */
-
-	/* Do not remove existing paths */
-	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
-}
-
-static void adc_stm32_setup_channel(const struct device *dev, uint8_t channel_id)
-{
-	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-
-	if (config->temp_channel == channel_id) {
-		adc_stm32_disable(adc);
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-		k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
-	}
-
-	if (config->vref_channel == channel_id) {
-		adc_stm32_disable(adc);
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-#ifdef LL_ADC_DELAY_VREFINT_STAB_US
-		k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
-#endif
-	}
-
-#if defined(LL_ADC_CHANNEL_VBAT)
-	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->vbat_channel == channel_id) {
-		adc_stm32_disable(adc);
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
-	}
-#endif /* LL_ADC_CHANNEL_VBAT */
-}
-
-static void adc_stm32_unset_common_path(const struct device *dev, uint32_t PathInternal)
-{
-	const struct adc_stm32_cfg *config = dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	const uint32_t currentPath = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
-
-	ARG_UNUSED(adc); /* Avoid 'unused variable' warning for some families */
-
-	PathInternal = ~PathInternal & currentPath;
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
-}
-
-static void adc_stm32_teardown_channels(const struct device *dev)
-{
-	const struct adc_stm32_cfg *config = dev->config;
-	struct adc_stm32_data *data = dev->data;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	uint8_t channel_id;
-
-	for (uint32_t channels = data->channels; channels; channels &= ~BIT(channel_id)) {
-		channel_id = find_lsb_set(channels) - 1;
-		if (config->temp_channel == channel_id) {
-			adc_stm32_disable(adc);
-			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-		}
-
-		if (config->vref_channel == channel_id) {
-			adc_stm32_disable(adc);
-			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-		}
-
-#if defined(LL_ADC_CHANNEL_VBAT)
-		/* Enable the bridge divider only when needed for ADC conversion. */
-		if (config->vbat_channel == channel_id) {
-			adc_stm32_disable(adc);
-			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
-		}
-#endif /* LL_ADC_CHANNEL_VBAT */
-	}
-
-	adc_stm32_enable(adc);
-}
-
 #ifdef CONFIG_ADC_STM32_DMA
 static void dma_callback(const struct device *dev, void *user_data,
 			 uint32_t channel, int status)
@@ -873,8 +783,6 @@ static int start_read(const struct device *dev,
 
 		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 
-		adc_stm32_setup_channel(dev, channel_id);
-
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 		/*
 		 * Each channel in the sequence must be previously enabled in PCSEL.
@@ -1047,10 +955,14 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
 	struct adc_stm32_data *data =
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
+	const struct adc_stm32_cfg *config = data->dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 
 	ARG_UNUSED(status);
 
-	adc_stm32_teardown_channels(data->dev);
+	adc_stm32_disable(adc);
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+				       LL_ADC_PATH_INTERNAL_NONE);
 }
 
 static int adc_stm32_read(const struct device *dev,
@@ -1538,9 +1450,6 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.temp_channel = DT_INST_PROP_OR(index, temp_channel, 0xFF),	\
-	.vref_channel = DT_INST_PROP_OR(index, vref_channel, 0xFF),	\
-	.vbat_channel = DT_INST_PROP_OR(index, vbat_channel, 0xFF),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
