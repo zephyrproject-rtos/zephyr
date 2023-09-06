@@ -261,7 +261,6 @@
 			interrupts = <47 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <17>;
 		};
 
 		rtc@40002800 {

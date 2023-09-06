@@ -24,12 +24,6 @@
 			};
 		};
 
-		adc2: adc@40022100 {
-			vbat-channel = <14>;
-			temp-channel = <18>;
-			vref-channel = <19>;
-		};
-
 		dmamux1: dmamux@40020800 {
 			dma-requests= <107>;
 		};

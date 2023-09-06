@@ -263,9 +263,6 @@
 			status = "disabled";
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			vbat-channel = <2>;
-			temp-channel = <16>;
-			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
