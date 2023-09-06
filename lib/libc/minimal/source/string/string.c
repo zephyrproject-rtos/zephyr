@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <zephyr/modules/module.h>
 
 /**
  *
@@ -31,6 +32,7 @@ char *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s)
 
 	return dest;
 }
+EXPORT_SYMBOL(strcpy);
 
 /**
  *
@@ -58,6 +60,7 @@ char *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s, size_t n)
 
 	return dest;
 }
+EXPORT_SYMBOL(strncpy);
 
 /**
  *
@@ -115,6 +118,7 @@ size_t strlen(const char *s)
 
 	return n;
 }
+EXPORT_SYMBOL(strlen);
 
 /**
  *
@@ -132,6 +136,7 @@ int strcmp(const char *s1, const char *s2)
 
 	return *s1 - *s2;
 }
+EXPORT_SYMBOL(strcmp);
 
 /**
  *
@@ -150,6 +155,7 @@ int strncmp(const char *s1, const char *s2, size_t n)
 
 	return (n == 0) ? 0 : (*s1 - *s2);
 }
+EXPORT_SYMBOL(strncmp);
 
 /**
  * @brief Separate `str` by any char in `sep` and return NULL terminated
@@ -233,6 +239,7 @@ int memcmp(const void *m1, const void *m2, size_t n)
 
 	return *c1 - *c2;
 }
+EXPORT_SYMBOL(memcmp);
 
 /**
  *
@@ -322,6 +329,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 
 	return d;
 }
+EXPORT_SYMBOL(memcpy);
 
 /**
  *
@@ -374,6 +382,7 @@ void *memset(void *buf, int c, size_t n)
 
 	return buf;
 }
+EXPORT_SYMBOL(memset);
 
 /**
  *

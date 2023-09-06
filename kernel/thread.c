@@ -29,6 +29,7 @@
 #include <zephyr/random/rand32.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/modules/module.h>
 #include <zephyr/sys/iterable_sections.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -100,6 +101,7 @@ bool k_is_in_isr(void)
 {
 	return arch_is_in_isr();
 }
+EXPORT_SYMBOL(k_is_in_isr);
 
 /*
  * This function tags the current thread as essential to system operation.
