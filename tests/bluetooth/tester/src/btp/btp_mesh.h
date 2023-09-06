@@ -954,6 +954,7 @@ struct btp_mmdl_dfu_firmware_update_rp {
 struct btp_mmdl_blob_srv_recv_cmd {
 	uint64_t id;
 	uint16_t timeout;
+	uint8_t ttl;
 } __packed;
 
 #define BTP_MMDL_BLOB_TRANSFER_START		0x66
@@ -963,6 +964,7 @@ struct btp_mmdl_blob_transfer_start_cmd {
 	uint8_t block_size;
 	uint16_t chunk_size;
 	uint16_t timeout;
+	uint8_t ttl;
 } __packed;
 
 #define BTP_MMDL_BLOB_TRANSFER_CANCEL		0x67
