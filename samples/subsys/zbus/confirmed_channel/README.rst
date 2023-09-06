@@ -1,7 +1,8 @@
-.. _zbus-confirmed-channel-sample:
+.. zephyr:code-sample:: zbus-confirmed-channel
+   :name: Confirmed channel
+   :relevant-api: zbus_apis
 
-Confirmed channel sample
-########################
+   Use confirmed zbus channels to ensure all subscribers consume a message.
 
 Overview
 ********

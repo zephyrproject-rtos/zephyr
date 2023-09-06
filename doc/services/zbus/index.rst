@@ -484,13 +484,13 @@ Samples
 
 For a complete overview of zbus usage, take a look at the samples. There are the following samples available:
 
-* :ref:`zbus-hello-world-sample` illustrates the code used above in action;
-* :ref:`zbus-work-queue-sample` shows how to define and use different kinds of observers. Note there is an example of using a work queue instead of executing the listener as an execution option;
-* :ref:`zbus-dyn-channel-sample` demonstrates how to use dynamically allocated exchanging data in zbus;
-* :ref:`zbus-uart-bridge-sample` shows an example of sending the operation of the channel to a host via serial;
-* :ref:`zbus-remote-mock-sample` illustrates how to implement an external mock (on the host) to send and receive messages to and from the bus.
-* :ref:`zbus-runtime-obs-registration-sample` illustrates a way of using the runtime observer registration feature;
-* :ref:`zbus-benchmark-sample` implements a benchmark with different combinations of inputs.
+* :zephyr:code-sample:`zbus-hello-world` illustrates the code used above in action;
+* :zephyr:code-sample:`zbus-work-queue` shows how to define and use different kinds of observers. Note there is an example of using a work queue instead of executing the listener as an execution option;
+* :zephyr:code-sample:`zbus-dyn-channel` demonstrates how to use dynamically allocated exchanging data in zbus;
+* :zephyr:code-sample:`zbus-uart-bridge` shows an example of sending the operation of the channel to a host via serial;
+* :zephyr:code-sample:`zbus-remote-mock` illustrates how to implement an external mock (on the host) to send and receive messages to and from the bus.
+* :zephyr:code-sample:`zbus-runtime-obs-registration` illustrates a way of using the runtime observer registration feature;
+* :zephyr:code-sample:`zbus-benchmark` implements a benchmark with different combinations of inputs.
 
 Suggested Uses
 **************
