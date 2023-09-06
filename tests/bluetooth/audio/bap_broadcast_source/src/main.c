@@ -219,3 +219,53 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
 	fixture->source = NULL;
 }
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_source_null)
+{
+	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_le_ext_adv ext_adv = {0};
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_start(NULL, &ext_adv);
+	zassert_not_equal(0, err, "Did not fail with null source");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_ext_adv_null)
+{
+	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_start(fixture->source, NULL);
+	zassert_not_equal(0, err, "Did not fail with null ext_adv");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_double_start)
+{
+	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_le_ext_adv ext_adv = {0};
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_start(fixture->source, &ext_adv);
+	zassert_equal(0, err, "Unable to start broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_start(fixture->source, &ext_adv);
+	zassert_not_equal(0, err, "Did not fail with starting already started source");
+}
