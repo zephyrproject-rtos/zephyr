@@ -55,11 +55,11 @@ LOG_MODULE_REGISTER(bt_mesh_pb_adv);
 
 /* Acked messages, will do retransmissions manually, taking acks into account:
  */
-#define RETRANSMITS_RELIABLE   0
+#define RETRANSMITS_RELIABLE   CONFIG_BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
 /* PDU acks: */
-#define RETRANSMITS_ACK        2
+#define RETRANSMITS_ACK        CONFIG_BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
 /* Link close retransmits: */
-#define RETRANSMITS_LINK_CLOSE 2
+#define RETRANSMITS_LINK_CLOSE CONFIG_BT_MESH_PB_ADV_LINK_CLOSE_RETRANSMIT_COUNT
 
 enum {
 	ADV_LINK_ACTIVE,    	/* Link has been opened */
@@ -178,8 +178,15 @@ static void free_segments(void)
 		}
 
 		link.tx.buf[i] = NULL;
-		/* Mark as canceled */
-		BT_MESH_ADV(buf)->busy = 0U;
+
+		/* Terminate active adv */
+		if (BT_MESH_ADV(buf)->busy == 0U) {
+			bt_mesh_adv_buf_terminate(buf);
+		} else {
+			/* Mark as canceled */
+			BT_MESH_ADV(buf)->busy = 0U;
+		}
+
 		net_buf_unref(buf);
 	}
 }
@@ -251,7 +258,7 @@ static struct net_buf *adv_buf_create(uint8_t retransmits)
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV, BT_MESH_ADV_TAG_PROV,
 				 BT_MESH_TRANSMIT(retransmits, 20),
 				 BUF_TIMEOUT);
 	if (!buf) {
