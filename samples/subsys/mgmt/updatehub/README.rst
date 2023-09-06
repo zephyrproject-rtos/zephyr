@@ -1,7 +1,8 @@
-.. _updatehub_fota_sample:
+.. zephyr:code-sample:: updatehub-fota
+   :name: UpdateHub embedded Firmware Over-The-Air (FOTA) update
+   :relevant-api: updatehub
 
-UpdateHub embedded Firmware Over-The-Air (FOTA) sample
-######################################################
+   Perform Firmware Over-The-Air (FOTA) updates using UpdateHub.
 
 Overview
 ********

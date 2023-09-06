@@ -1,13 +1,13 @@
-.. zephyr:code-sample:: edac-sample
+.. zephyr:code-sample:: edac
    :name: EDAC shell
    :relevant-api: edac
 
-   EDAC Shell Sample
+   Test error detection and correction (EDAC) using shell commands.
 
 Overview
 ********
 
-This sample demonstrates the EDAC driver API in a simple EDAC shell sample.
+This sample demonstrates the :ref:`EDAC driver API <edac_api>` in a simple EDAC shell sample.
 
 Building and Running
 ********************

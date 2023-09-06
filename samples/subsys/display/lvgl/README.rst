@@ -1,7 +1,8 @@
-.. _lvgl-sample:
+.. zephyr:code-sample:: lvgl
+   :name: LVGL basic sample
+   :relevant-api: display_interface
 
-LVGL Basic Sample
-#################
+   Display "Hello World" and a dynamic counter using LVGL.
 
 Overview
 ********

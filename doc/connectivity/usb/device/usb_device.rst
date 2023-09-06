@@ -39,7 +39,8 @@ Audio
 
 There is an experimental implementation of the Audio class. It follows specification
 version 1.00 (``bcdADC 0x0100``) and supports synchronous synchronisation type only.
-See :ref:`usb_audio_headphones_microphone` and :ref:`usb_audio_headset` for reference.
+See :zephyr:code-sample:`usb-audio-headphones-microphone` and
+:zephyr:code-sample:`usb-audio-headset` samples for reference.
 
 Bluetooth HCI USB transport layer
 =================================
@@ -106,7 +107,7 @@ and looks like this:
 		};
 	};
 
-Samples :ref:`usb_cdc-acm` and :ref:`usb_hid-cdc` have similar overlay files.
+Samples :zephyr:code-sample:`usb-cdc-acm` and :zephyr:code-sample:`usb-hid-cdc` have similar overlay files.
 And since no special properties are present, it may seem overkill to use
 devicetree to describe CDC ACM UART.  The motivation behind using devicetree
 is the easy interchangeability of a real UART controller and CDC ACM UART
@@ -117,7 +118,7 @@ Console over CDC ACM UART
 
 With the CDC ACM UART node from above and ``zephyr,console`` property of the
 chosen node, we can describe that CDC ACM UART is to be used with the console.
-A similar overlay file is used by :ref:`cdc-acm-console`.
+A similar overlay file is used by the :zephyr:code-sample:`usb-cdc-acm-console` sample.
 
 .. code-block:: devicetree
 
@@ -169,7 +170,7 @@ CDC ACM UART as backend for a subsystem or application:
   for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
-* ``zephyr,uart-mcumgr`` used by :ref:`smp_svr_sample`
+* ``zephyr,uart-mcumgr`` used by :zephyr:code-sample:`smp-svr` sample
 
 DFU
 ===
@@ -177,7 +178,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :ref:`usb_dfu` for reference.
+See :zephyr:code-sample:`usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
@@ -276,7 +277,7 @@ The disadvantage of this is that Kconfig options such as
 :kconfig:option:`CONFIG_HID_INTERRUPT_EP_MPS` apply to all instances. This design
 issue will be fixed in the HID class implementation for the new USB support.
 
-See :ref:`usb_hid` or :ref:`usb_hid-mouse` for reference.
+See :zephyr:code-sample:`usb-hid` or :zephyr:code-sample:`usb-hid-mouse` sample for reference.
 
 Mass Storage Class
 ==================
@@ -327,7 +328,7 @@ should be the same as ``disk-name`` property.
 The ``disk-property`` "NAND" may be confusing, but it is simply how some file
 systems identifies the disc. Therefore, if the application also accesses the
 file system on the exposed disc, default names should be used, see
-:ref:`usb_mass` for reference.
+:zephyr:code-sample:`usb-mass` sample for reference.
 
 Networking
 ==========
@@ -355,7 +356,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :ref:`webusb-sample` for reference.
+See :zephyr:code-sample:`webusb` sample for reference.
 
 Implementing a non-standard USB class
 *************************************
@@ -473,35 +474,35 @@ and documented requests.
 
 The following Product IDs are currently used:
 
-+-------------------------------------+--------+
-| Sample                              | PID    |
-+=====================================+========+
-| :ref:`usb_cdc-acm`                  | 0x0001 |
-+-------------------------------------+--------+
-| :ref:`usb_cdc-acm_composite`        | 0x0002 |
-+-------------------------------------+--------+
-| :ref:`usb_hid-cdc`                  | 0x0003 |
-+-------------------------------------+--------+
-| :ref:`cdc-acm-console`              | 0x0004 |
-+-------------------------------------+--------+
-| :ref:`usb_dfu`                      | 0x0005 |
-+-------------------------------------+--------+
-| :ref:`usb_hid`                      | 0x0006 |
-+-------------------------------------+--------+
-| :ref:`usb_hid-mouse`                | 0x0007 |
-+-------------------------------------+--------+
-| :ref:`usb_mass`                     | 0x0008 |
-+-------------------------------------+--------+
-| :ref:`testusb-app`                  | 0x0009 |
-+-------------------------------------+--------+
-| :ref:`webusb-sample`                | 0x000A |
-+-------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`     | 0x000B |
-+-------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`  | 0x000C |
-+-------------------------------------+--------+
-| :zephyr:code-sample:`wpan-usb`      | 0x000D |
-+-------------------------------------+--------+
++----------------------------------------------------+--------+
+| Sample                                             | PID    |
++====================================================+========+
+| :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-cdc`                  | 0x0003 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu`                      | 0x0005 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid`                      | 0x0006 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-mouse`                | 0x0007 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-mass`                     | 0x0008 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`testusb-app`                  | 0x0009 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`webusb`                       | 0x000A |
++----------------------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
++----------------------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
++----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.

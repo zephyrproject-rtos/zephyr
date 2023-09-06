@@ -1,7 +1,8 @@
-.. _input-dump-sample:
+.. zephyr:code-sample:: input-dump
+   :name: Input dump
+   :relevant-api: input_events
 
-Input Dump
-##########
+   Print all input events.
 
 Overview
 ********

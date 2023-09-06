@@ -114,8 +114,8 @@ Push buttons
 Logging
 -------
 
-Logging is done using the USB-CDC port. See the :ref:`logger_sample`
-or the :ref:`cdc-acm-console` sample applications to see how this works.
+Logging is done using the USB-CDC port. See the :zephyr:code-sample:`logging` sample
+or the :zephyr:code-sample:`usb-cdc-acm-console` sample applications to see how this works.
 
 Testing LEDs and buttons on the Adafruit ItsyBitsy nRF52840 Express
 *******************************************************************
