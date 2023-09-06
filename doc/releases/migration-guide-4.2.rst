@@ -136,6 +136,27 @@ GPIO
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
 
+Sensors
+=======
+
+  * The :dtcompatible:`we,wsen-itds` driver has been renamed to
+    :dtcompatible:`we,wsen-itds-2533020201601`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        itds:itds-2533020201601@19 {
+          compatible = "we,wsen-itds-2533020201601";
+          reg = <0x19>;
+          odr = "400";
+          op-mode = "high-perf";
+          power-mode = "normal";
+          events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+          drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+        };
+      };
+
 Serial
 =======
 
