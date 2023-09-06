@@ -11,10 +11,32 @@
 #include "foundation.h"
 #include "beacon.h"
 #include "cfg.h"
+#include "settings.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_priv_beacon_srv);
+
+static struct bt_mesh_model *priv_beacon_srv;
+
+/* Private Beacon configuration server model states */
+struct {
+	uint8_t state;
+	uint8_t interval;
+	uint8_t proxy_state;
+} priv_beacon_state;
+
+static int priv_beacon_store(bool delete)
+{
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
+	const void *data = delete ? NULL : &priv_beacon_state;
+	size_t len = delete ? 0 : sizeof(priv_beacon_state);
+
+	return bt_mesh_model_data_store(priv_beacon_srv, false, "pb", data, len);
+}
 
 static int beacon_status_rsp(struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx)
@@ -179,11 +201,63 @@ static int priv_beacon_srv_init(struct bt_mesh_model *mod)
 		return -EINVAL;
 	}
 
+	priv_beacon_srv = mod;
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
 
 	return 0;
 }
 
+static void priv_beacon_srv_reset(struct bt_mesh_model *model)
+{
+	(void)memset(&priv_beacon_state, 0, sizeof(priv_beacon_state));
+	priv_beacon_store(true);
+}
+
+#ifdef CONFIG_BT_SETTINGS
+static int priv_beacon_srv_settings_set(struct bt_mesh_model *model, const char *name,
+					size_t len_rd, settings_read_cb read_cb, void *cb_data)
+{
+	int err;
+
+	if (len_rd == 0) {
+		LOG_DBG("Cleared configuration state");
+		return 0;
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_data, &priv_beacon_state, sizeof(priv_beacon_state));
+	if (err) {
+		LOG_ERR("Failed to set Private Beacon state");
+		return err;
+	}
+
+	bt_mesh_priv_beacon_set(priv_beacon_state.state);
+	bt_mesh_priv_beacon_update_interval_set(priv_beacon_state.interval);
+	bt_mesh_priv_gatt_proxy_set(priv_beacon_state.proxy_state);
+	return 0;
+}
+
+static void priv_beacon_srv_pending_store(struct bt_mesh_model *model)
+{
+	priv_beacon_state.state = bt_mesh_priv_beacon_get();
+	priv_beacon_state.interval = bt_mesh_priv_beacon_update_interval_get();
+	priv_beacon_state.proxy_state = bt_mesh_priv_gatt_proxy_get();
+
+	priv_beacon_store(false);
+}
+#endif
+
 const struct bt_mesh_model_cb bt_mesh_priv_beacon_srv_cb = {
 	.init = priv_beacon_srv_init,
+	.reset = priv_beacon_srv_reset,
+#ifdef CONFIG_BT_SETTINGS
+	.settings_set = priv_beacon_srv_settings_set,
+	.pending_store = priv_beacon_srv_pending_store,
+#endif
 };
+
+void bt_mesh_priv_beacon_srv_store_schedule(void)
+{
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_model_data_store_schedule(priv_beacon_srv);
+	}
+}
