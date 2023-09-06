@@ -3745,7 +3745,7 @@ static void rx_queue_put(struct net_buf *buf)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
-int bt_recv(struct net_buf *buf)
+int bt_recv_locked(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -3796,7 +3796,18 @@ int bt_recv(struct net_buf *buf)
 	}
 }
 
-int bt_recv_prio(struct net_buf *buf)
+int bt_recv(struct net_buf *buf)
+{
+	int ret;
+
+	k_sched_lock();
+	ret = bt_recv_locked(buf);
+	k_sched_unlock();
+
+	return ret;
+}
+
+int bt_recv_prio_locked(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
@@ -3805,6 +3816,17 @@ int bt_recv_prio(struct net_buf *buf)
 	hci_event_prio(buf);
 
 	return 0;
+}
+
+int bt_recv_prio(struct net_buf *buf)
+{
+	int ret;
+
+	k_sched_lock();
+	ret = bt_recv_prio_locked(buf);
+	k_sched_unlock();
+
+	return ret;
 }
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
