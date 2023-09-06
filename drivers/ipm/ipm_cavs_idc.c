@@ -237,6 +237,6 @@ int cavs_idc_smp_init(void)
 }
 
 #ifndef CONFIG_SMP_BOOT_DELAY
-SYS_INIT(cavs_idc_smp_init, SMP, 0);
+SYS_INIT(cavs_idc_smp_init, APPLICATION, 99);
 #endif
 #endif
