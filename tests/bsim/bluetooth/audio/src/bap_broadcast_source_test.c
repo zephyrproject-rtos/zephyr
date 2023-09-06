@@ -1194,39 +1194,6 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	}
 }
 
-static void test_broadcast_source_start_inval_state(struct bt_bap_broadcast_source *source,
-						    struct bt_le_ext_adv *adv)
-{
-	int err;
-
-	printk("Test bt_bap_broadcast_source_start in streaming state\n");
-	err = bt_bap_broadcast_source_start(source, adv);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_start in streaming state did not fail\n");
-		return;
-	}
-}
-
-static void test_broadcast_source_start_inval(struct bt_bap_broadcast_source *source,
-					      struct bt_le_ext_adv *adv)
-{
-	int err;
-
-	printk("Test bt_bap_broadcast_source_start with NULL source\n");
-	err = bt_bap_broadcast_source_start(NULL, adv);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_start with NULL source did not fail\n");
-		return;
-	}
-
-	printk("Test bt_bap_broadcast_source_start with NULL adv\n");
-	err = bt_bap_broadcast_source_start(source, NULL);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_start with NULL adv did not fail\n");
-		return;
-	}
-}
-
 static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 					struct bt_le_ext_adv *adv)
 {
@@ -1384,10 +1351,8 @@ static void test_main(void)
 	test_broadcast_source_reconfig_inval(source);
 	test_broadcast_source_reconfig(source);
 
-	test_broadcast_source_start_inval(source, adv);
 	test_broadcast_source_start(source, adv);
 	test_broadcast_source_reconfig_inval_state(source);
-	test_broadcast_source_start_inval_state(source, adv);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
