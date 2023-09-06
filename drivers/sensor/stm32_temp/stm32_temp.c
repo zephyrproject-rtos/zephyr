@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <stm32_ll_icache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
@@ -35,6 +36,7 @@ LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 struct stm32_temp_data {
 	const struct device *adc;
 	const struct adc_channel_cfg adc_cfg;
+	ADC_TypeDef *adc_base;
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
 	int16_t sample_buffer;
@@ -77,6 +79,10 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
 		goto unlock;
 	}
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
+				       LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
@@ -168,6 +174,7 @@ static int stm32_temp_init(const struct device *dev)
 
 static struct stm32_temp_data stm32_temp_dev_data = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
+	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_cfg = {
 		.gain = ADC_GAIN_1,
 		.reference = ADC_REF_INTERNAL,
