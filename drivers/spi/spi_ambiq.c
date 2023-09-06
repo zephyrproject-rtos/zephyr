@@ -76,12 +76,14 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		if (config->operation & (SPI_MODE_CPOL && SPI_MODE_CPHA)) {
+	if (config->operation & SPI_MODE_CPOL) {
+		if (config->operation & SPI_MODE_CPHA) {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_3;
-		} else if (config->operation & SPI_MODE_CPOL) {
+		} else {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_2;
-		} else if (config->operation & SPI_MODE_CPHA) {
+		}
+	} else {
+		if (config->operation & SPI_MODE_CPHA) {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_1;
 		} else {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_0;
