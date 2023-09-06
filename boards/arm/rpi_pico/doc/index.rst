@@ -140,6 +140,16 @@ Zephyr does not (currently) assemble PIO programs. Rather, they should be
 manually assembled and embedded in source code. An example of how this is done
 can be found at `drivers/serial/uart_rpi_pico_pio.c`.
 
+Sample:  SPI vio PIO
+====================
+
+The :zephyr_file:`samples/sensor/bme280/README.rst` sample includes a
+demonstration of using the PIO SPI driver to communicate with an
+environmental sensor.  The PIO SPI driver supports using any
+combination of GPIO pins for an SPI bus, as well as allowing up to
+four independent SPI buses on a single board (using the two SPI
+devices as well as both PIO devices).
+
 Programming and Debugging
 *************************
 
