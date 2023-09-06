@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: fs-format
-   :name: Formatting
+   :name: Format filesystem
    :relevant-api: file_system_api
 
    Format different storage devices for different file systems.

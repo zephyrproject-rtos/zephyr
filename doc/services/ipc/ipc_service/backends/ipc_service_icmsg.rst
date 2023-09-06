@@ -83,4 +83,4 @@ and the backend informs the application by calling
 Samples
 =======
 
- - :ref:`ipc_icmsg_sample`
+ - :zephyr:code-sample:`ipc-icmsg`

@@ -1,7 +1,8 @@
-.. _webusb-sample:
+.. zephyr:code-sample:: webusb
+   :name: WebUSB
+   :relevant-api: usbd_api
 
-WebUSB sample application
-#########################
+   Receive and echo data from a web page using WebUSB API.
 
 For a deeper dive into the WebUSB, refer to
 https://developers.google.com/web/updates/2016/03/access-usb-devices-on-the-web
@@ -9,8 +10,8 @@ https://developers.google.com/web/updates/2016/03/access-usb-devices-on-the-web
 WebUSB API Specification:
 https://wicg.github.io/webusb/
 
-Sample Overview
-***************
+Overview
+********
 
 This simple echo application demonstrates the WebUSB sample application.
 This application receives the data and echoed back to the WebUSB

@@ -1,13 +1,14 @@
-.. _usb_shell-app:
+.. zephyr:code-sample:: usb-shell
+   :name: USB shell
+   :relevant-api: usbd_api
 
-USB support shell sample
-########################
+   Use shell commands to interact with USB device stack.
 
 Overview
 ********
 
 The sample enables new experimental USB device support and the shell function.
-It is primarily intended to aid in the development and testing of USB constoller
+It is primarily intended to aid in the development and testing of USB controller
 drivers and new USB support.
 
 Building and flashing

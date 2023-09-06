@@ -210,7 +210,7 @@ to the zephyr repository on your computer.
       nrfutil dfu usb-serial -pkg mcuboot.zip -p /dev/ttyACM0
 
 You can now flash a Zephyr application to the board using MCUboot's serial
-recovery mode. We'll use the :ref:`smp_svr_sample` since it's ready to be
+recovery mode. We'll use the :zephyr:code-sample:`smp-svr` sample since it's ready to be
 compiled for chain-loading by MCUboot (and itself supports firmware updates
 over Bluetooth).
 

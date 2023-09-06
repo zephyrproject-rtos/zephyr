@@ -1,12 +1,13 @@
-.. _hawkbit-api-sample:
+.. zephyr:code-sample:: hawkbit-api
+   :name: Eclipse hawkBit Direct Device Integration API
+   :relevant-api: hawkbit
 
-Hawkbit Direct Device Integration API sample
-############################################
+   Update a device using Eclipse hawkBit DDI API.
 
 Overview
 ********
 
-The hawkbit update server provides REST resources which are consumed by the
+The Eclipse hawkBit update server provides REST resources which are consumed by the
 device to retrieve software update tasks. This API is based on HTTP standards
 and a polling mechanism.
 

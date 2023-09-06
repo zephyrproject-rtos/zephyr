@@ -14,7 +14,7 @@ class API that should be used to implement the functions (classes).
 It will replace :ref:`usb_device_stack`.
 
 If you would like to play around with the new device support, or the new USB
-support in general, please try :ref:`usb_shell-app`. The sample is mainly to help
+support in general, please try :zephyr:code-sample:`usb-shell` sample. The sample is mainly to help
 test the capabilities of the stack and correct implementation of the USB controller
 drivers.
 
@@ -33,14 +33,14 @@ CDC ACM
 
 CDC ACM implementation has support for multiple instances.
 Description from :ref:`usb_device_cdc_acm` also applies to the new implementation.
-See :ref:`usb_cdc-acm` sample for reference.
+See :zephyr:code-sample:`usb-cdc-acm` sample for reference.
 To build the sample for the new device support, set the configuration
 ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via ``west``.
 
 Mass Storage Class
 ==================
 
-See :ref:`usb_mass` sample for reference.
+See :zephyr:code-sample:`usb-mass` sample for reference.
 To build the sample for the new device support, set the configuration
 ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via ``west``.
 

@@ -42,7 +42,7 @@ Notes on the above commands:
 - The ``CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`` value is the insecure default
   provided and used by by MCUboot for development and testing
 - You can change the ``hello_world`` application directory to any other
-  application that can be loaded by MCUboot, such as the :ref:`smp_svr_sample`
+  application that can be loaded by MCUboot, such as the :zephyr:code-sample:`smp-svr` sample.
 
 For more information on these and other related configuration options, see:
 
