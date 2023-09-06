@@ -9,10 +9,27 @@
 #include "access.h"
 #include "cfg.h"
 #include "foundation.h"
+#include "settings.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_od_priv_proxy_srv);
+
+
+static struct bt_mesh_model *od_priv_proxy_srv;
+static uint8_t on_demand_state;
+
+static int od_priv_proxy_store(bool delete)
+{
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
+	const void *data = delete ? NULL : &on_demand_state;
+	size_t len = delete ? 0 : sizeof(uint8_t);
+
+	return bt_mesh_model_data_store(od_priv_proxy_srv, false, "pp", data, len);
+}
 
 static int proxy_status_rsp(struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx)
@@ -64,6 +81,8 @@ const struct bt_mesh_model_op _bt_mesh_od_priv_proxy_srv_op[] = {
 
 static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
 {
+	od_priv_proxy_srv = mod;
+
 	struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
 		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_PRIV_BEACON_SRV);
 	struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
@@ -89,6 +108,52 @@ static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
+static void od_priv_proxy_srv_reset(struct bt_mesh_model *model)
+{
+	on_demand_state = 0;
+	od_priv_proxy_store(true);
+}
+
+#ifdef CONFIG_BT_SETTINGS
+static int od_priv_proxy_srv_settings_set(struct bt_mesh_model *model, const char *name,
+					  size_t len_rd, settings_read_cb read_cb, void *cb_data)
+{
+	int err;
+
+	if (len_rd == 0) {
+		LOG_DBG("Cleared configuration state");
+		return 0;
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_data, &on_demand_state, sizeof(uint8_t));
+	if (err) {
+		LOG_ERR("Failed to set OD private proxy state");
+		return err;
+	}
+
+	bt_mesh_od_priv_proxy_set(on_demand_state);
+	return 0;
+}
+
+static void od_priv_proxy_srv_pending_store(struct bt_mesh_model *model)
+{
+	on_demand_state = bt_mesh_od_priv_proxy_get();
+	od_priv_proxy_store(false);
+}
+#endif
+
 const struct bt_mesh_model_cb _bt_mesh_od_priv_proxy_srv_cb = {
 	.init = od_priv_proxy_srv_init,
+	.reset = od_priv_proxy_srv_reset,
+#ifdef CONFIG_BT_SETTINGS
+	.settings_set = od_priv_proxy_srv_settings_set,
+	.pending_store = od_priv_proxy_srv_pending_store,
+#endif
 };
+
+void bt_mesh_od_priv_proxy_srv_store_schedule(void)
+{
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_model_data_store_schedule(od_priv_proxy_srv);
+	}
+}

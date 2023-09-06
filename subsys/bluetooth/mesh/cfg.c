@@ -16,6 +16,7 @@
 #include "friend.h"
 #include "adv.h"
 #include "cfg.h"
+#include "od_priv_proxy.h"
 #include "priv_beacon.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_CFG_LOG_LEVEL
@@ -31,9 +32,6 @@ struct cfg_val {
 	uint8_t gatt_proxy;
 	uint8_t frnd;
 	uint8_t default_ttl;
-#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
-	uint8_t on_demand_state;
-#endif
 };
 
 void bt_mesh_beacon_set(bool beacon)
@@ -157,9 +155,9 @@ int bt_mesh_od_priv_proxy_set(uint8_t on_demand_proxy)
 		bt_mesh.on_demand_state = on_demand_proxy;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
+		bt_mesh_od_priv_proxy_srv_store_schedule();
 	}
 	return 0;
 #endif
@@ -449,9 +447,6 @@ static int cfg_set(const char *name, size_t len_rd,
 	bt_mesh_gatt_proxy_set(cfg.gatt_proxy);
 	bt_mesh_friend_set(cfg.frnd);
 	bt_mesh_default_ttl_set(cfg.default_ttl);
-#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
-	bt_mesh_od_priv_proxy_set(cfg.on_demand_state);
-#endif
 
 	LOG_DBG("Restored configuration state");
 
@@ -484,10 +479,6 @@ static void store_pending_cfg(void)
 	val.gatt_proxy = bt_mesh_gatt_proxy_get();
 	val.frnd = bt_mesh_friend_get();
 	val.default_ttl = bt_mesh_default_ttl_get();
-#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
-	val.on_demand_state = bt_mesh_od_priv_proxy_get();
-#endif
-
 
 	err = settings_save_one("bt/mesh/Cfg", &val, sizeof(val));
 	if (err) {
