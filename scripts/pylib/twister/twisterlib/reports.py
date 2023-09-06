@@ -258,6 +258,7 @@ class Reporting:
                 "name": instance.testsuite.name,
                 "arch": instance.platform.arch,
                 "platform": instance.platform.name,
+                "path": instance.testsuite.source_dir_rel
             }
             if instance.run_id:
                 suite['run_id'] = instance.run_id
