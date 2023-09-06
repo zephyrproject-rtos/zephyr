@@ -75,7 +75,7 @@ static int arc_shared_intc_update_post_smp(void)
 	return 0;
 }
 
-SYS_INIT(arc_shared_intc_update_post_smp, SMP, 0);
+SYS_INIT(arc_shared_intc_update_post_smp, APPLICATION, 99);
 #endif /* CONFIG_ARC_CONNECT */
 
 
