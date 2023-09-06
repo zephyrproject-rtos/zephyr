@@ -692,6 +692,7 @@ New Drivers
    * :dtcompatible:`pixart,pat9136`
    * :dtcompatible:`st,lsm6dsv32x`
    * :dtcompatible:`vishay,veml6031`
+   * :dtcompatible:`we,wsen-itds-2533020201601`
 
 * Serial controller
 
