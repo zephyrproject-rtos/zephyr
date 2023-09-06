@@ -850,6 +850,16 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #endif /* CONFIG_DEVICE_DEPS */
 
 /**
+ * @brief Init priority of the device
+ *
+ * The priority is the value specified in the driver, or 0 if the device has a
+ * devicetree entry and @kconfig{CONFIG_NO_DT_DEVICE_PRIORITIES} is enabled.
+ */
+#define Z_DEVICE_INIT_PRIO(node_id, prio)                                      \
+	COND_CODE_1(UTIL_AND(DT_NODE_EXISTS(node_id),                          \
+			     CONFIG_NO_DT_DEVICE_PRIORITIES), (0), (prio))
+
+/**
  * @brief Init sub-priority of the device
  *
  * The sub-priority is defined by the devicetree ordinal, which ensures that
@@ -965,7 +975,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	Z_DEVICE_LEVEL_CHECK_DEPRECATED_LEVEL(level)                           \
                                                                                \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan           \
-		Z_INIT_ENTRY_SECTION(level, prio,                              \
+		Z_INIT_ENTRY_SECTION(level, \
+				     Z_DEVICE_INIT_PRIO(node_id, prio), \
 				     Z_DEVICE_INIT_SUB_PRIO(node_id))          \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                 \
 			.init_fn = {.dev = (init_fn_)},                        \

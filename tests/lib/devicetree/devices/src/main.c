@@ -101,6 +101,19 @@ ZTEST(devicetree_devices, test_init_get)
 
 ZTEST(devicetree_devices, test_init_order)
 {
+#ifdef CONFIG_NO_DT_DEVICE_PRIORITIES
+	/* ordered by ordinal instead of the original priority */
+	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
+	zassert_equal(init_order[1], DEV_HDL(TEST_GPIO_INJECTED));
+	zassert_equal(init_order[2], DEV_HDL(TEST_I2C));
+	zassert_equal(init_order[3], DEV_HDL(TEST_DEVA));
+	zassert_equal(init_order[4], DEV_HDL(TEST_GPIOX));
+	zassert_equal(init_order[5], DEV_HDL(TEST_DEVB));
+	zassert_equal(init_order[6], DEV_HDL(TEST_NOLABEL));
+	zassert_equal(init_order[7], DEV_HDL(TEST_DEVC));
+	zassert_equal(init_order[8], DEV_HDL(TEST_PARTITION));
+	zassert_equal(init_order[9], DEV_HDL_NAME(manual_dev));
+#else
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
 	zassert_equal(init_order[1], DEV_HDL(TEST_I2C));
 	zassert_equal(init_order[2], DEV_HDL(TEST_DEVA));
@@ -111,6 +124,7 @@ ZTEST(devicetree_devices, test_init_order)
 	zassert_equal(init_order[7], DEV_HDL(TEST_GPIO_INJECTED));
 	zassert_equal(init_order[8], DEV_HDL_NAME(manual_dev));
 	zassert_equal(init_order[9], DEV_HDL(TEST_NOLABEL));
+#endif
 }
 
 static bool check_handle(device_handle_t hdl,

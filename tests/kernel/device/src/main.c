@@ -306,8 +306,10 @@ ZTEST(device, test_device_init_level)
  *
  * @ingroup kernel_device_tests
  */
+#ifndef CONFIG_NO_DT_DEVICE_PRIORITIES
 ZTEST(device, test_device_init_priority)
 {
+
 	bool sequence_correct = true;
 
 	/* we check if the stored pexecuting sequence for priority is correct,
@@ -322,6 +324,7 @@ ZTEST(device, test_device_init_priority)
 	zassert_true((sequence_correct == true),
 			"init sequence is not correct");
 }
+#endif
 
 /**
  * @brief Test initialization sub-priorities for device driver instances
