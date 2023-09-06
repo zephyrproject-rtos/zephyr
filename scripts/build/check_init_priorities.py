@@ -205,9 +205,9 @@ class Validator():
             obj = ZephyrObjectFile(file)
             if obj.defined_devices:
                 self._objs.append(obj)
-                for dev in obj.defined_devices:
+                for dev, prio in obj.defined_devices.items():
                     dev_path = self._ord2node[dev].path
-                    self.log.debug(f"{file}: {dev_path}")
+                    self.log.debug(f"{file}: {dev_path} {prio}")
 
         self._dev_priorities = {}
         for obj in self._objs:
