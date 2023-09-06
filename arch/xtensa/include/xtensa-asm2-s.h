@@ -507,6 +507,8 @@ _do_call_\@:
 	 * spills to the right place.
 	 */
 	beq a6, a1, _restore_\@
+
+#ifndef CONFIG_USERSPACE
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
@@ -516,7 +518,37 @@ _do_call_\@:
 	 */
 	SPILL_ALL_WINDOWS
 #endif
+
+	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
+#else
+	/* With userspace, we cannot simply restore A1 stack pointer
+	 * at this pointer because we need to swap page tables to
+	 * the incoming thread, and we do not want to call that
+	 * function with thread's stack. So we stash the new stack
+	 * pointer into A2 first, then move it to A1 after we have
+	 * swapped the page table.
+	 */
+	mov a2, a6
+
+	/* Need to switch page tables because the "next" handle
+	 * returned above is not the same handle as we started
+	 * with. This means we are being restored to another
+	 * thread.
+	 */
+	rsr a6, ZSR_CPU
+	l32i a6, a6, ___cpu_t_current_OFFSET
+
+	call4 z_xtensa_swap_update_page_tables
+	l32i a1, a1, 0
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
+
+	SPILL_ALL_WINDOWS
+
+	/* Moved stashed stack pointer to A1 to restore stack. */
+	mov a1, a2
+#endif
 
 _restore_\@:
 	j _restore_context
