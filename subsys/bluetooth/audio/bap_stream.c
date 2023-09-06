@@ -195,6 +195,18 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		return false;
 	}
 
+	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+		if (codec_cfg->cid != 0U) {
+			LOG_DBG("codec_cfg->cid (%u) is invalid", codec_cfg->cid);
+			return false;
+		}
+
+		if (codec_cfg->vid != 0U) {
+			LOG_DBG("codec_cfg->vid (%u) is invalid", codec_cfg->vid);
+			return false;
+		}
+	}
+
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	if (codec_cfg->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
 		LOG_DBG("codec_cfg->data_len (%zu) is invalid", codec_cfg->data_len);
