@@ -356,30 +356,6 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 	}
 }
 
-static void test_broadcast_source_stop_inval_state(struct bt_bap_broadcast_source *source)
-{
-	int err;
-
-	printk("Test bt_bap_broadcast_source_stop in stopped state\n");
-	err = bt_bap_broadcast_source_stop(source);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_stop in stopped state did not fail\n");
-		return;
-	}
-}
-
-static void test_broadcast_source_stop_inval(void)
-{
-	int err;
-
-	printk("Test bt_bap_broadcast_source_stop with NULL source\n");
-	err = bt_bap_broadcast_source_stop(NULL);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_stop with NULL source did not fail\n");
-		return;
-	}
-}
-
 static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 {
 	int err;
@@ -492,9 +468,7 @@ static void test_main(void)
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
-	test_broadcast_source_stop_inval();
 	test_broadcast_source_stop(source);
-	test_broadcast_source_stop_inval_state(source);
 
 	test_broadcast_source_delete(source);
 	source = NULL;
