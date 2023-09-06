@@ -87,7 +87,7 @@
 	#endif
 	#define take(x) do { \
 		stack_data_t data; k_stack_pop(x, &data, K_FOREVER); \
-		__ASSERT(data == MAGIC, "data was %x\n", data); \
+		__ASSERT(data == MAGIC, "data was %lx\n", data); \
 	} while ((0))
 	#define drop(x) k_stack_push(x, MAGIC)
 	#define fork_type_str "stacks"
