@@ -743,9 +743,6 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <19>;
-			vref-channel = <0>;
-			vbat-channel = <18>;
 			resolutions = <STM32_ADC_RES(14, 0x00)
 				       STM32_ADC_RES(12, 0x01)
 				       STM32_ADC_RES(10, 0x02)
@@ -761,9 +758,6 @@
 			interrupts = <113 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <13>;
-			vref-channel = <0>;
-			vbat-channel = <14>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
