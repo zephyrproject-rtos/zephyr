@@ -20,6 +20,8 @@
 #define EXPECTED_SIZE 512
 
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
+
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 static const struct flash_parameters *flash_params;
 static uint32_t sector_mask;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
@@ -39,14 +41,17 @@ static int sector_mask_from_offset(const struct device *dev, off_t offset,
 
 	return 0;
 }
+#endif
 
 static void *flash_stm32_setup(void)
 {
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 	struct flash_stm32_ex_op_sector_wp_out wp_status;
 	struct flash_stm32_ex_op_sector_wp_in wp_request;
 	uint8_t buf[EXPECTED_SIZE];
 	bool is_buf_clear = true;
 	int rc;
+#endif
 
 	/* Check if tested region fits in flash. */
 	zassert_true((TEST_AREA_OFFSET + EXPECTED_SIZE) < TEST_AREA_MAX,
@@ -54,6 +59,7 @@ static void *flash_stm32_setup(void)
 
 	zassert_true(device_is_ready(flash_dev));
 
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 	flash_params = flash_get_parameters(flash_dev);
 
 	rc = sector_mask_from_offset(flash_dev, TEST_AREA_OFFSET, EXPECTED_SIZE,
@@ -102,10 +108,12 @@ static void *flash_stm32_setup(void)
 	for (int i = 0; i < EXPECTED_SIZE; i++) {
 		expected[i] = i;
 	}
+#endif
 
 	return NULL;
 }
 
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 ZTEST(flash_stm32, test_stm32_write_protection)
 {
 	struct flash_stm32_ex_op_sector_wp_in wp_request;
@@ -153,7 +161,9 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 	zassert_equal(memcmp(buf, expected, EXPECTED_SIZE), 0,
 		      "Read data doesn't match expected data");
 }
+#endif
 
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 ZTEST(flash_stm32, test_stm32_readout_protection_disabled)
 {
 	struct flash_stm32_ex_op_rdp rdp_status;
@@ -167,5 +177,6 @@ ZTEST(flash_stm32, test_stm32_readout_protection_disabled)
 
 	TC_PRINT("RDP is disabled\n");
 }
+#endif
 
 ZTEST_SUITE(flash_stm32, NULL, flash_stm32_setup, NULL, NULL, NULL);
