@@ -94,18 +94,6 @@ class ConvertCodeSampleNode(SphinxTransform):
             index = parent.index(node)
             siblings_to_move = parent.children[index + 1 :]
 
-            # TODO remove once all :ref:`sample-xyz` have migrated to :zephyr:code-sample:`xyz`
-            # as this is the recommended way to reference code samples going forward.
-            self.env.app.env.domaindata["std"]["labels"][node["id"]] = (
-                self.env.docname,
-                node["id"],
-                node["name"],
-            )
-            self.env.app.env.domaindata["std"]["anonlabels"][node["id"]] = (
-                self.env.docname,
-                node["id"],
-            )
-
             # Create a new section
             new_section = nodes.section(ids=[node["id"]])
             new_section += nodes.title(text=node["name"])
