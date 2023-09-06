@@ -46,10 +46,16 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_ambiq_data *data = dev->data;
 	const struct spi_ambiq_config *cfg = dev->config;
+	struct spi_context *ctx = &(data->ctx);
 
 	data->iom_cfg.eInterfaceMode = AM_HAL_IOM_SPI_MODE;
 
 	int ret = 0;
+
+	if (spi_context_configured(ctx, config)) {
+		/* Already configured. No need to do it again. */
+		return 0;
+	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -105,6 +111,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	data->iom_cfg.ui32ClockFreq = cfg->clock_freq;
+	ctx->config = config;
 
 	/* Disable IOM instance as it cannot be configured when enabled*/
 	ret = am_hal_iom_disable(data->IOMHandle);
