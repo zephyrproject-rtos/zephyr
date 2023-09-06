@@ -72,6 +72,7 @@ ZTEST_F(eventfd, test_unset_poll_event_block)
 }
 
 K_THREAD_STACK_DEFINE(thread_stack, CONFIG_TEST_STACK_SIZE);
+static struct k_thread thread;
 
 static void thread_eventfd_read_42(void *arg1, void *arg2, void *arg3)
 {
@@ -84,8 +85,6 @@ static void thread_eventfd_read_42(void *arg1, void *arg2, void *arg3)
 
 ZTEST_F(eventfd, test_read_then_write_block)
 {
-	struct k_thread thread;
-
 	k_thread_create(&thread, thread_stack, K_THREAD_STACK_SIZEOF(thread_stack),
 			thread_eventfd_read_42, fixture, NULL, NULL, 0, 0, K_NO_WAIT);
 
@@ -107,7 +106,6 @@ static void thread_eventfd_write(void *arg1, void *arg2, void *arg3)
 
 ZTEST_F(eventfd, test_write_while_pollin)
 {
-	struct k_thread thread;
 	struct zsock_pollfd fds[] = {
 		{
 			.fd = fixture->fd,
@@ -143,7 +141,6 @@ static void thread_eventfd_read(void *arg1, void *arg2, void *arg3)
 
 ZTEST_F(eventfd, test_read_while_pollout)
 {
-	struct k_thread thread;
 	struct zsock_pollfd fds[] = {
 		{
 			.fd = fixture->fd,
