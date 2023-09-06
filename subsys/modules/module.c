@@ -45,6 +45,13 @@ int module_buf_seek(struct module_stream *s, size_t pos)
 	return 0;
 }
 
+void *module_buf_peek(struct module_stream *s, size_t pos)
+{
+	struct module_buf_stream *buf_s = CONTAINER_OF(s, struct module_buf_stream, stream);
+
+	return (void *)(buf_s->buf + pos);
+}
+
 int module_read(struct module_stream *s, void *buf, size_t len)
 {
 	return s->read(s, buf, len);
@@ -53,6 +60,14 @@ int module_read(struct module_stream *s, void *buf, size_t len)
 int module_seek(struct module_stream *s, size_t pos)
 {
 	return s->seek(s, pos);
+}
+
+void *module_peek(struct module_stream *s, size_t pos)
+{
+	if (s->peek)
+		return s->peek(s, pos);
+
+	return NULL;
 }
 
 static sys_slist_t _module_list = SYS_SLIST_STATIC_INIT(&_module_list);

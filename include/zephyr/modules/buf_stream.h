@@ -29,12 +29,14 @@ struct module_buf_stream {
 
 int module_buf_read(struct module_stream *s, void *buf, size_t len);
 int module_buf_seek(struct module_stream *s, size_t pos);
+void *module_buf_peek(struct module_stream *s, size_t pos);
 
 #define MODULE_BUF_STREAM(_buf, _buf_len)		\
 	{						\
 		.stream = {				\
 			.read = module_buf_read,	\
-			.seek = module_buf_seek		\
+			.seek = module_buf_seek,	\
+			.peek = module_buf_peek,	\
 		},					\
 		.buf = (_buf),				\
 		.len = (_buf_len),			\

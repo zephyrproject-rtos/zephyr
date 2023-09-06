@@ -95,6 +95,7 @@ struct module {
 struct module_stream {
 	int (*read)(struct module_stream *s, void *buf, size_t len);
 	int (*seek)(struct module_stream *s, size_t pos);
+	void *(*peek)(struct module_stream *s, size_t pos);
 
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[MOD_SECT_COUNT];
@@ -111,6 +112,11 @@ int module_read(struct module_stream *ms, void *buf, size_t len);
  * @brief Seek to an absolute location of the module (elf) file
  */
 int module_seek(struct module_stream *ms, size_t pos);
+
+/**
+ * @brief Peek at an absolute location of the module (elf) file
+ */
+void *module_peek(struct module_stream *ms, size_t pos);
 
 /**
  * @brief List head of loaded modules
