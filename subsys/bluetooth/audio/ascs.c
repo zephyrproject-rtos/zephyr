@@ -117,6 +117,10 @@ static void ase_free(struct bt_ascs_ase *ase)
 
 	LOG_DBG("conn %p ase %p id 0x%02x", (void *)ase->conn, ase, ase->ep.status.id);
 
+	if (ase->ep.iso != NULL) {
+		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
+	}
+
 	bt_conn_unref(ase->conn);
 	ase->conn = NULL;
 }
@@ -247,7 +251,10 @@ static void ase_set_state_idle(struct bt_ascs_ase *ase)
 
 	ase_status_changed(ase, BT_BAP_EP_STATE_IDLE);
 
-	bt_bap_stream_reset(stream);
+	if (stream->conn != NULL) {
+		bt_conn_unref(stream->conn);
+		stream->conn = NULL;
+	}
 
 	ops = stream->ops;
 	if (ops != NULL && ops->released != NULL) {
