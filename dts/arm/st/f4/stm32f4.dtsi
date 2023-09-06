@@ -513,10 +513,6 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			/* Temperature and VBAT sensor share channel 18 */
-			temp-channel = <18>;
-			vbat-channel = <18>;
-			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
