@@ -552,6 +552,7 @@ a.internal:visited code.literal {
 
 .rst-content .admonition.toggle button {
     display: inline-flex;
+    color: var(--admonition-note-title-color);
 }
 
 .rst-content .admonition.toggle .tb-icon {
