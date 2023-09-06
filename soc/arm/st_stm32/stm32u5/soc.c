@@ -14,6 +14,7 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_icache.h>
+#include <stm32_ll_dcache.h>
 #include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
@@ -34,6 +35,10 @@ static int stm32u5_init(void)
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
 	LL_ICACHE_Enable();
+
+	/* Enable data cache (master port write access) */
+	LL_DCACHE_SetReadBurstType(DCACHE1, LL_DCACHE_READ_BURST_INCR);
+	LL_DCACHE_Enable(DCACHE1);
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSIS */
