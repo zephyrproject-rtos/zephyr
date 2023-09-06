@@ -60,7 +60,7 @@ description: |
 
 compatible: "st,stm32-dmamux"
 
-include: dmamux-controller.yaml
+include: [dmamux-controller.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

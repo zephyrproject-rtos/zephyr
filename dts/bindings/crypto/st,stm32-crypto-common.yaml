@@ -1,7 +1,7 @@
 # Copyright (c) 2020, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
 # SPDX-License-Identifier: Apache-2.0
 
-include: base.yaml
+include: [base.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

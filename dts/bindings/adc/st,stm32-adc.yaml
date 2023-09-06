@@ -6,7 +6,7 @@ description: ST STM32 family ADC
 
 compatible: "st,stm32-adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

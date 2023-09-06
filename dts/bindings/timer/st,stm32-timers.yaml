@@ -5,7 +5,7 @@ description: STM32 timers
 
 compatible: "st,stm32-timers"
 
-include: [base.yaml, reset-device.yaml]
+include: [base.yaml, reset-device.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

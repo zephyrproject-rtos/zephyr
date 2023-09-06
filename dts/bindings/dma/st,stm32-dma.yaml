@@ -13,7 +13,7 @@ description: |
 
 compatible: "st,stm32-dma"
 
-include: dma-controller.yaml
+include: [dma-controller.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

@@ -5,7 +5,7 @@ description: STM32 Random Number Generator
 
 compatible: "st,stm32-rng"
 
-include: base.yaml
+include: [base.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

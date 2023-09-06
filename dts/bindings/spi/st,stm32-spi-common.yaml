@@ -3,7 +3,7 @@
 
 # Common fields for STM32 SPI peripherals.
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml, "st,power-management.yaml"]
 
 properties:
   reg:

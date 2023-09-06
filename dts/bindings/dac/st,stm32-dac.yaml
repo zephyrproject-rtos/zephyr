@@ -5,7 +5,7 @@ description: ST STM32 family DAC
 
 compatible: "st,stm32-dac"
 
-include: [dac-controller.yaml, pinctrl-device.yaml]
+include: [dac-controller.yaml, pinctrl-device.yaml, "st,power-management.yaml"]
 
 properties:
   reg:
