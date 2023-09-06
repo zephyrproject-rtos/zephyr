@@ -234,7 +234,7 @@ struct isotp_recv_ctx;
  * When calling this routine, a filter is applied in the CAN device, and the
  * context is initialized. The context must be valid until calling unbind.
  *
- * @param ctx     Context to store the internal states.
+ * @param rctx    Context to store the internal states.
  * @param can_dev The CAN device to be used for sending and receiving.
  * @param rx_addr Identifier for incoming data.
  * @param tx_addr Identifier for FC frames.
@@ -244,7 +244,7 @@ struct isotp_recv_ctx;
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_NO_FREE_FILTER if CAN device has no filters left.
  */
-int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
+int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 	       const struct isotp_msg_id *rx_addr,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_fc_opts *opts,
@@ -258,9 +258,9 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
  * buffers are freed.
  * The context can be discarded safely after calling this function.
  *
- * @param ctx     Context that should be unbound.
+ * @param rctx    Context that should be unbound.
  */
-void isotp_unbind(struct isotp_recv_ctx *ctx);
+void isotp_unbind(struct isotp_recv_ctx *rctx);
 
 /**
  * @brief Read out received data from fifo.
@@ -270,7 +270,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * If an error occurs, the function returns a negative number and leaves the
  * data buffer unchanged.
  *
- * @param ctx     Context that is already bound.
+ * @param rctx    Context that is already bound.
  * @param data    Pointer to a buffer where the data is copied to.
  * @param len     Size of the buffer.
  * @param timeout Timeout for incoming data.
@@ -279,8 +279,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
-int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
-	       k_timeout_t timeout);
+int isotp_recv(struct isotp_recv_ctx *rctx, uint8_t *data, size_t len, k_timeout_t timeout);
 
 /**
  * @brief Get the net buffer on data reception
@@ -292,7 +291,7 @@ int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
  * The net-buffers are referenced and must be freed with net_buf_unref after the
  * data is processed.
  *
- * @param ctx     Context that is already bound.
+ * @param rctx    Context that is already bound.
  * @param buffer  Pointer where the net_buf pointer is written to.
  * @param timeout Timeout for incoming data.
  *
@@ -300,8 +299,7 @@ int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
  * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
-int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
-		   k_timeout_t timeout);
+int isotp_recv_net(struct isotp_recv_ctx *rctx, struct net_buf **buffer, k_timeout_t timeout);
 
 /**
  * @brief Send data
@@ -312,7 +310,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * If a complete_cb is given, this function is non-blocking, and the callback
  * is called on completion with the return value as a parameter.
  *
- * @param ctx         Context to store the internal states.
+ * @param sctx        Context to store the internal states.
  * @param can_dev     The CAN device to be used for sending and receiving.
  * @param data        Data to be sent.
  * @param len         Length of the data to be sent.
@@ -324,7 +322,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_N_* on error
  */
-int isotp_send(struct isotp_send_ctx *ctx, const struct device *can_dev,
+int isotp_send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	       const uint8_t *data, size_t len,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_msg_id *rx_addr,
