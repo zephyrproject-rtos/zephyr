@@ -903,6 +903,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz @sjanc
+/tests/bluetooth/audio/                   @jhedberg @Vudentz @wopu-ot @Thalley
 /tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
 /tests/bsim/bluetooth/                    @alwa-nordic @jhedberg @Vudentz @wopu-ot
 /tests/bsim/bluetooth/audio/              @jhedberg @Vudentz @wopu-ot @Thalley
