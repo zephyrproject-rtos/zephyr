@@ -942,6 +942,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param prio Initialization priority.
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_, level, prio)     \
+	Z_INIT_CHECK_DEPRECATED_LEVEL(level)                                   \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan           \
 		Z_INIT_ENTRY_SECTION(level, prio,                              \
 				     Z_DEVICE_INIT_SUB_PRIO(node_id))          \

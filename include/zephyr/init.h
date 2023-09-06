@@ -38,8 +38,8 @@ extern "C" {
  * - `POST_KERNEL`: Executed after Kernel is alive. From this point on, Kernel
  *   primitives can be used.
  * - `APPLICATION`: Executed just before application code (`main`).
- * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
- *   SMP.
+ * - `SMP` (deprecated): Only available if @kconfig{CONFIG_SMP} is enabled,
+ *   specific for SMP.
  *
  * Initialization priority can take a value in the range of 0 to 99.
  *
@@ -81,6 +81,8 @@ union init_function {
  * @internal
  * Init entries need to be defined following these rules:
  *
+ * - Insert Z_INIT_CHECK_DEPRECATED_LEVEL() to issue a warning if the init level
+ *   is deprecated.
  * - Their name must be set using Z_INIT_ENTRY_NAME().
  * - They must be placed in a special init section, given by
  *   Z_INIT_ENTRY_SECTION().
@@ -135,13 +137,28 @@ struct init_entry {
 	__attribute__((__section__(                                           \
 		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
 
+/* Init level deprecation helpers */
+#define Z_INIT_DEPRECATED_EARLY
+#define Z_INIT_DEPRECATED_PRE_KERNEL_1
+#define Z_INIT_DEPRECATED_PRE_KERNEL_2
+#define Z_INIT_DEPRECATED_POST_KERNEL
+#define Z_INIT_DEPRECATED_APPLICATION
+#define Z_INIT_DEPRECATED_SMP __WARN("SMP level is deprecated")
+
+/**
+ * @brief Issue a warning if the given init level is deprecated.
+ *
+ * @param level Init level
+ */
+#define Z_INIT_CHECK_DEPRECATED_LEVEL(level) Z_INIT_DEPRECATED_##level
+
 /** @endcond */
 
 /**
  * @brief Obtain the ordinal for an init level.
  *
  * @param level Init level (EARLY, PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL,
- * APPLICATION, SMP).
+ * APPLICATION, SMP (deprecated)).
  *
  * @return Init level ordinal.
  */
@@ -162,8 +179,8 @@ struct init_entry {
  *
  * @param init_fn Initialization function.
  * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL_1`,
- * `PRE_KERNEL_2`, `POST_KERNEL`, `APPLICATION` and `SMP` if
- * @kconfig{CONFIG_SMP} is enabled.
+ * `PRE_KERNEL_2`, `POST_KERNEL`, `APPLICATION`. `SMP` level, available if
+ * @kconfig{CONFIG_SMP} is enabled, is deprecated.
  * @param prio Initialization priority within @p _level. Note that it must be a
  * decimal integer literal without leading zeroes or sign (e.g. `32`), or an
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic
@@ -187,6 +204,7 @@ struct init_entry {
  * @see SYS_INIT()
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                            \
+	Z_INIT_CHECK_DEPRECATED_LEVEL(level)                                   \
 	static const Z_DECL_ALIGN(struct init_entry)                           \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan           \
 		Z_INIT_ENTRY_NAME(name) = {                                    \
