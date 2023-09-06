@@ -20,9 +20,16 @@
 
 
 &i2c2 {
+	/* i2c2 is disabled by default because of pin conflict with can1 */
+	status = "okay";
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
 		size = <1024>;
 	};
+};
+
+&can1 {
+	/* can1 shares the pins with i2c2 and must be disabled */
+	status = "disabled";
 };
