@@ -1480,6 +1480,19 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 	return 0;
 }
 
+static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_stream *stream)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ase_pool[i];
+
+		if (ase->conn == conn && ase->ep.stream == stream) {
+			return &ase->ep;
+		}
+	}
+
+	return NULL;
+}
+
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_audio_codec_qos_pref *qos_pref)
@@ -1494,7 +1507,8 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	if (stream->ep != NULL) {
+	ep = ep_lookup_stream(conn, stream);
+	if (ep != NULL) {
 		LOG_DBG("Stream already configured for conn %p", (void *)stream->conn);
 		return -EALREADY;
 	}
