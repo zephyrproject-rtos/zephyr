@@ -11,9 +11,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
-#include <stm32_ll_icache.h>
 #include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
@@ -31,9 +31,8 @@ LOG_MODULE_REGISTER(soc);
  */
 static int stm32u5_init(void)
 {
-	/* Enable instruction cache in 1-way (direct mapped cache) */
-	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSIS */
