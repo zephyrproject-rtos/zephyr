@@ -66,6 +66,10 @@ config SOC_IT82302_AX
 	bool "IT82302 AX version"
 	select SOC_IT8XXX2_REG_SET_V2
 
+config SOC_IT82002_AW
+	bool "IT82002 AW version"
+	select SOC_IT8XXX2_REG_SET_V2
+
 endchoice
 
 config SOC_IT8XXX2_PLL_FLASH_48M
