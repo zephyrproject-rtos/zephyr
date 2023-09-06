@@ -268,6 +268,59 @@ static int lp50xx_enable(const struct device *dev, bool enable)
 				      value);
 }
 
+static int lp50xx_turn_on(const struct device *dev)
+{
+	int err;
+
+	/* Enable hardware */
+	err = lp50xx_hw_enable(dev, true);
+	if (err < 0) {
+		LOG_ERR("%s: failed to enable hardware", dev->name);
+		return err;
+	}
+
+	/* Reset device */
+	err = lp50xx_reset(dev);
+	if (err < 0) {
+		LOG_ERR("%s: failed to reset", dev->name);
+		return err;
+	}
+
+	return 0;
+}
+
+static int lp50xx_turn_off(const struct device *dev)
+{
+	int err;
+
+	/* Disable hardware */
+	err = lp50xx_hw_enable(dev, false);
+	if (err < 0) {
+		LOG_ERR("%s: failed to disable hardware", dev->name);
+		return err;
+	}
+
+	return 0;
+}
+
+static int lp50xx_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lp50xx_enable(dev, false);
+	case PM_DEVICE_ACTION_RESUME:
+		return lp50xx_enable(dev, true);
+	case PM_DEVICE_ACTION_TURN_ON:
+		return lp50xx_turn_on(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return lp50xx_turn_off(dev);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
@@ -302,46 +355,8 @@ static int lp50xx_init(const struct device *dev)
 		}
 	}
 
-	/* Enable hardware */
-	err = lp50xx_hw_enable(dev, true);
-	if (err < 0) {
-		LOG_ERR("%s: failed to enable hardware", dev->name);
-		return err;
-	}
-
-	/* Reset device */
-	err = lp50xx_reset(dev);
-	if (err < 0) {
-		LOG_ERR("%s: failed to reset", dev->name);
-		return err;
-	}
-
-	/* Enable device */
-	err = lp50xx_enable(dev, true);
-	if (err < 0) {
-		LOG_ERR("%s: failed to enable", dev->name);
-		return err;
-	}
-
-	return 0;
+	return pm_device_driver_init(dev, lp50xx_pm_action);
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int lp50xx_pm_action(const struct device *dev,
-			    enum pm_device_action action)
-{
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		return lp50xx_enable(dev, false);
-	case PM_DEVICE_ACTION_RESUME:
-		return lp50xx_enable(dev, true);
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 static const struct led_driver_api lp50xx_led_api = {
 	.on		= lp50xx_on,
