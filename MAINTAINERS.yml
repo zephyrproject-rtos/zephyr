@@ -228,6 +228,7 @@ Bluetooth:
     - tests/bluetooth/host*/
     - tests/bluetooth/mesh_*/
     - tests/bluetooth/mesh/
+    - tests/bluetooth/audio/
     - tests/bsim/bluetooth/mesh/
     - tests/bluetooth/shell/audio*
   labels:
@@ -315,6 +316,7 @@ Bluetooth Audio:
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
+    - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bluetooth/shell/audio*
   labels:
