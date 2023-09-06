@@ -42,3 +42,10 @@ Recommended Changes
   :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.
   The GIC version should now be specified by adding the appropriate compatible, for
   example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
+
+* ``SMP`` init level (used e.g. in :c:macro:`SYS_INIT`) is deprecated and will
+  be removed in future releases. The ``SMP`` level is the last level to be
+  initialized when :kconfig:option:`CONFIG_SMP` is enabled. Its usage was not
+  well documented, so users of this level are encouraged to analyze their
+  implementations and switch to other existing levels, e.g. ``POST_KERNEL`` or
+  ``APPLICATION``.
