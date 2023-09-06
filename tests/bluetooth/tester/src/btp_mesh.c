@@ -4228,6 +4228,10 @@ static uint8_t blob_transfer_start(const void *cmd, uint16_t cmd_len,
 		blob_cli_xfer.inputs.timeout_base = cp->timeout;
 	}
 
+	if (cp->ttl) {
+		blob_cli_xfer.inputs.ttl = cp->ttl;
+	}
+
 	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
 				    &blob_cli_xfer.xfer, &dummy_blob_io);
 
@@ -4311,13 +4315,15 @@ static uint8_t blob_srv_recv(const void *cmd, uint16_t cmd_len,
 
 	uint16_t timeout_base;
 	uint64_t id;
+	uint8_t ttl;
 
 	LOG_DBG("");
 
 	id = cp->id;
 	timeout_base = cp->timeout;
+	ttl = cp->ttl;
 
-	err = bt_mesh_blob_srv_recv(srv, id, &dummy_blob_io, BT_MESH_TTL_MAX,
+	err = bt_mesh_blob_srv_recv(srv, id, &dummy_blob_io, ttl,
 				    timeout_base);
 
 	if (err) {
