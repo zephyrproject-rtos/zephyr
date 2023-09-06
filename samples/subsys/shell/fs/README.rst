@@ -1,7 +1,8 @@
-.. _shell-fs-sample:
+.. zephyr:code-sample:: shell-fs
+   :name: File system shell
+   :relevant-api: file_system_api
 
-File system shell example
-#########################
+   Access a LittleFS file system partition in flash using the file system shell.
 
 Overview
 ********

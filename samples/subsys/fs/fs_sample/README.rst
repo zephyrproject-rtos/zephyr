@@ -1,8 +1,8 @@
 .. zephyr:code-sample:: fs
-   :name: Filesystem manipulation
+   :name: File system manipulation
    :relevant-api: file_system_api disk_access_interface
 
-   Use filesystem API with various filesystems and storage devices.
+   Use file system API with various filesystems and storage devices.
 
 Overview
 ********

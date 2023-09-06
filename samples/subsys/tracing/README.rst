@@ -1,10 +1,7 @@
-.. _tracing_sample:
+.. zephyr:code-sample:: tracing
+   :name: Tracing
 
-Send Tracing Formatted Packet To The Host With Supported Backends
-#################################################################
-
-Overview
-********
+   Send tracing formatted packet to the host with supported backends.
 
 This application can be used to demonstrate the tracing feature. The tracing
 formatted packet will be sent to the host with the currently supported tracing

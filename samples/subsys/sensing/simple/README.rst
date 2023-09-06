@@ -1,7 +1,8 @@
-.. _sensing subsytem-sample:
+.. zephyr:code-sample:: sensing
+   :name: Sensing subsystem
+   :relevant-api: sensing_api
 
-Sensing subsystem sample
-########################
+   Get high-level sensor data in defined intervals.
 
 Overview
 ********

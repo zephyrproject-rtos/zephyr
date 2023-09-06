@@ -75,7 +75,7 @@ USB Device Port
 
 The SAMD21 MCU has a USB device port that can be used to communicate
 with a host PC.  See the :ref:`usb-samples` sample applications for
-more, such as the :ref:`usb_cdc-acm` sample which prints "Hello World!"
+more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which prints "Hello World!"
 to the host PC.
 
 Programming and Debugging
