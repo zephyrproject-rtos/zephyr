@@ -57,7 +57,7 @@ enum {
 };
 
 struct bt_mesh_ext_adv {
-	uint8_t tag;
+	enum bt_mesh_adv_tags tags;
 	ATOMIC_DEFINE(flags, ADV_FLAGS_NUM);
 	struct bt_le_ext_adv *instance;
 	struct net_buf *buf;
@@ -70,17 +70,17 @@ static void send_pending_adv(struct k_work *work);
 static bool schedule_send(struct bt_mesh_ext_adv *adv);
 
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
-	.tag = (
+	.tags = (
 #if !defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-		BT_MESH_FRIEND_ADV |
+		BT_MESH_FRIEND_ADV_BIT |
 #endif
 #if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-		BT_MESH_PROXY_ADV |
+		BT_MESH_PROXY_ADV_BIT |
 #endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 #if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
-		BT_MESH_RELAY_ADV |
+		BT_MESH_RELAY_ADV_BIT |
 #endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
-		BT_MESH_LOCAL_ADV),
+		BT_MESH_LOCAL_ADV_BIT),
 
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
@@ -88,7 +88,7 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
 static STRUCT_SECTION_ITERABLE_ARRAY(bt_mesh_ext_adv, adv_relay, CONFIG_BT_MESH_RELAY_ADV_SETS) = {
 	[0 ... CONFIG_BT_MESH_RELAY_ADV_SETS - 1] = {
-		.tag = BT_MESH_RELAY_ADV,
+		.tags = BT_MESH_RELAY_ADV_BIT,
 		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 	}
 };
@@ -97,7 +97,7 @@ static STRUCT_SECTION_ITERABLE_ARRAY(bt_mesh_ext_adv, adv_relay, CONFIG_BT_MESH_
 #if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
 #define ADV_EXT_FRIEND 1
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_friend) = {
-	.tag = BT_MESH_FRIEND_ADV,
+	.tags = BT_MESH_FRIEND_ADV_BIT,
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
 #else /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
@@ -107,7 +107,7 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_friend) = {
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
 #define ADV_EXT_GATT 1
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_gatt) = {
-	.tag = BT_MESH_PROXY_ADV,
+	.tags = BT_MESH_PROXY_ADV_BIT,
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
 #else /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
@@ -234,18 +234,18 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 	return err;
 }
 
-static const char *adv_tag_to_str(enum bt_mesh_adv_tag tag)
+static const char *adv_tag_to_str(enum bt_mesh_adv_tags tags)
 {
-	if (tag & BT_MESH_LOCAL_ADV) {
+	if (tags & BT_MESH_LOCAL_ADV_BIT) {
 		return "local adv";
-	} else if (tag & BT_MESH_PROXY_ADV) {
+	} else if (tags & BT_MESH_PROXY_ADV_BIT) {
 		return "proxy adv";
-	} else if (tag & BT_MESH_RELAY_ADV) {
+	} else if (tags & BT_MESH_RELAY_ADV_BIT) {
 		return "relay adv";
-	} else if (tag & BT_MESH_FRIEND_ADV) {
+	} else if (tags & BT_MESH_FRIEND_ADV_BIT) {
 		return "friend adv";
 	} else {
-		return "(unknown tag)";
+		return "(unknown tags)";
 	}
 }
 
@@ -264,8 +264,8 @@ static void send_pending_adv(struct k_work *work)
 		 */
 		int64_t duration = k_uptime_delta(&adv->timestamp);
 
-		LOG_DBG("Advertising stopped after %u ms for (%u) %s", (uint32_t)duration, adv->tag,
-		       adv_tag_to_str(adv->tag));
+		LOG_DBG("Advertising stopped after %u ms for (%u) %s", (uint32_t)duration, adv->tags,
+		       adv_tag_to_str(adv->tags));
 
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
@@ -283,7 +283,7 @@ static void send_pending_adv(struct k_work *work)
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULED);
 
-	while ((buf = bt_mesh_adv_buf_get_by_tag(adv->tag, K_NO_WAIT))) {
+	while ((buf = bt_mesh_adv_buf_get_by_tag(adv->tags, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
 		if (!BT_MESH_ADV(buf)->busy) {
 			net_buf_unref(buf);
@@ -301,7 +301,7 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
-	    !(adv->tag & BT_MESH_PROXY_ADV)) {
+	    !(adv->tags & BT_MESH_RELAY_ADV_BIT)) {
 		return;
 	}
 
@@ -344,8 +344,8 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 
-	if ((IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && adv->tag & BT_MESH_FRIEND_ADV) ||
-	    (CONFIG_BT_MESH_RELAY_ADV_SETS > 0 && adv->tag == BT_MESH_RELAY_ADV)) {
+	if ((IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && adv->tags & BT_MESH_FRIEND_ADV_BIT) ||
+	    (CONFIG_BT_MESH_RELAY_ADV_SETS > 0 && adv->tags & BT_MESH_RELAY_ADV_BIT)) {
 		k_work_reschedule(&adv->work, K_NO_WAIT);
 	} else {
 		/* The controller will send the next advertisement immediately.
