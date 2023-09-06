@@ -24,22 +24,22 @@ void bt_mesh_stat_reset(void)
 
 void bt_mesh_stat_planned_count(struct bt_mesh_adv *adv)
 {
-	if (adv->tag & BT_MESH_LOCAL_ADV) {
+	if (adv->tag == BT_MESH_LOCAL_ADV) {
 		stat.tx_local_planned++;
-	} else if (adv->tag & BT_MESH_RELAY_ADV) {
+	} else if (adv->tag == BT_MESH_RELAY_ADV) {
 		stat.tx_adv_relay_planned++;
-	} else if (adv->tag & BT_MESH_FRIEND_ADV) {
+	} else if (adv->tag == BT_MESH_FRIEND_ADV) {
 		stat.tx_friend_planned++;
 	}
 }
 
 void bt_mesh_stat_succeeded_count(struct bt_mesh_adv *adv)
 {
-	if (adv->tag & BT_MESH_LOCAL_ADV) {
+	if (adv->tag == BT_MESH_LOCAL_ADV) {
 		stat.tx_local_succeeded++;
-	} else if (adv->tag & BT_MESH_RELAY_ADV) {
+	} else if (adv->tag == BT_MESH_RELAY_ADV) {
 		stat.tx_adv_relay_succeeded++;
-	} else if (adv->tag & BT_MESH_FRIEND_ADV) {
+	} else if (adv->tag == BT_MESH_FRIEND_ADV) {
 		stat.tx_friend_succeeded++;
 	}
 }
