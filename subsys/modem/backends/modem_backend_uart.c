@@ -36,18 +36,18 @@ struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 	backend->uart = config->uart;
 	k_work_init(&backend->receive_ready_work, modem_backend_uart_receive_ready_handler);
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_MODEM_BACKEND_UART_ASYNC
 	if (modem_backend_uart_async_is_supported(backend)) {
 		modem_backend_uart_async_init(backend, config);
 		return &backend->pipe;
 	}
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_MODEM_BACKEND_UART_ASYNC */
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_MODEM_BACKEND_UART_ISR
 	modem_backend_uart_isr_init(backend, config);
 
 	return &backend->pipe;
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_MODEM_BACKEND_UART_ISR */
 
 	__ASSERT(0, "No supported UART API");
 
