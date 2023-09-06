@@ -79,6 +79,16 @@ struct llext_symtable {
 	}
 
 /**
+ * @brief Export a system call to a table of symbols
+ *
+ * Takes a system call name and uses @a EXPORT_SYMBOL() to export the respective
+ * function.
+ *
+ * @param x System call to export
+ */
+#define EXPORT_SYSCALL(x) EXPORT_SYMBOL(z_impl_ ## x)
+
+/**
  * @}
  */
 
