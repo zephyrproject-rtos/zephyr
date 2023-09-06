@@ -1,12 +1,13 @@
-.. _video_tcpserversink-sample:
+.. zephyr:code-sample:: video-tcpserversink
+   :name: Video TCP server sink
+   :relevant-api: video_interface bsd_sockets
 
-VIDEO TCP SERVER SINK
-#####################
+   Capture video frames and send them over the network to a TCP client.
 
 Description
 ***********
 
-This sample application gets frames from video capture device and sends
+This sample application gets frames from a video capture device and sends
 them over the network to the connected TCP client.
 
 Requirements
