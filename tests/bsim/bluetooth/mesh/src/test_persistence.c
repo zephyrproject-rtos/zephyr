@@ -209,6 +209,9 @@ static const struct stack_cfg {
 	uint8_t priv_beacon_int;
 	uint8_t priv_beacon_gatt;
 #endif
+#ifdef CONFIG_BT_MESH_OD_PRIV_PROXY_SRV
+	uint8_t priv_proxy_val;
+#endif
 } stack_cfgs[] = {
 	{
 		.beacon = 1,
@@ -222,6 +225,9 @@ static const struct stack_cfg {
 		.priv_beacon_int = 123,
 		.priv_beacon_gatt = 0,
 #endif
+#ifdef CONFIG_BT_MESH_OD_PRIV_PROXY_SRV
+		.priv_proxy_val = 10,
+#endif
 	},
 	{
 		.beacon = 0,
@@ -234,6 +240,9 @@ static const struct stack_cfg {
 		.priv_beacon = 1,
 		.priv_beacon_int = 100,
 		.priv_beacon_gatt = 1,
+#endif
+#ifdef CONFIG_BT_MESH_OD_PRIV_PROXY_SRV
+		.priv_proxy_val = 20,
 #endif
 	},
 };
@@ -946,6 +955,16 @@ static void test_cfg_save(void)
 	}
 #endif
 
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) && defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+	uint8_t priv_proxy_val;
+
+	err = bt_mesh_od_priv_proxy_cli_set(test_netkey_idx, TEST_ADDR,
+					    current_stack_cfg->priv_proxy_val, &priv_proxy_val);
+	if (err || priv_proxy_val != current_stack_cfg->priv_proxy_val) {
+		FAIL("Failed to set OD Private proxy (err %d, value %d)", err, priv_proxy_val);
+	}
+#endif
+
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
 
 	PASS();
@@ -1012,6 +1031,15 @@ static void test_cfg_load(void)
 	if (err || priv_beacon_gatt != current_stack_cfg->priv_beacon_gatt) {
 		FAIL("Private beacon GATT proxy get failed (err %d, enabled %u)", err,
 		     priv_beacon_gatt);
+	}
+#endif
+
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) && defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
+	uint8_t priv_proxy_val;
+
+	err = bt_mesh_od_priv_proxy_cli_get(test_netkey_idx, TEST_ADDR, &priv_proxy_val);
+	if (err || priv_proxy_val != current_stack_cfg->priv_proxy_val) {
+		FAIL("Private proxy get failed (err %d, value %u)", err, priv_proxy_val);
 	}
 #endif
 
