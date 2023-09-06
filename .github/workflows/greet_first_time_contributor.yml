@@ -9,6 +9,8 @@ on:
 jobs:
   check_for_first_interaction:
     runs-on: ubuntu-22.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+
     steps:
       - uses: actions/checkout@v3
       - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-3
