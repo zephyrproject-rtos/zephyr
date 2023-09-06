@@ -598,7 +598,7 @@ static void receive_can_rx(const struct device *dev, struct can_frame *frame, vo
 	k_work_submit(&ctx->work);
 }
 
-static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
+static inline int add_ff_sf_filter(struct isotp_recv_ctx *ctx)
 {
 	struct can_filter filter;
 	uint32_t mask;
@@ -614,7 +614,7 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 	ctx->filter_id = can_add_rx_filter(ctx->can_dev, receive_can_rx, ctx,
 					   &filter);
 	if (ctx->filter_id < 0) {
-		LOG_ERR("Error attaching FF filter [%d]", ctx->filter_id);
+		LOG_ERR("Error adding FF filter [%d]", ctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;
 	}
 
@@ -664,9 +664,9 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 		return ISOTP_NO_NET_BUF_LEFT;
 	}
 
-	ret = attach_ff_filter(ctx);
+	ret = add_ff_sf_filter(ctx);
 	if (ret) {
-		LOG_ERR("Can't attach filter for binding");
+		LOG_ERR("Can't add filter for binding");
 		net_buf_unref(ctx->buf);
 		ctx->buf = NULL;
 		return ret;
@@ -878,12 +878,12 @@ static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, vo
 	k_work_submit(&ctx->work);
 }
 
-static size_t get_ctx_data_length(struct isotp_send_ctx *ctx)
+static size_t get_send_ctx_data_len(struct isotp_send_ctx *ctx)
 {
 	return ctx->is_net_buf ? net_buf_frags_len(ctx->buf) : ctx->len;
 }
 
-static const uint8_t *get_data_ctx(struct isotp_send_ctx *ctx)
+static const uint8_t *get_send_ctx_data(struct isotp_send_ctx *ctx)
 {
 	if (ctx->is_net_buf) {
 		return ctx->buf->data;
@@ -892,7 +892,7 @@ static const uint8_t *get_data_ctx(struct isotp_send_ctx *ctx)
 	}
 }
 
-static void pull_data_ctx(struct isotp_send_ctx *ctx, size_t len)
+static void pull_send_ctx_data(struct isotp_send_ctx *ctx, size_t len)
 {
 	if (ctx->is_net_buf) {
 		net_buf_pull_mem(ctx->buf, len);
@@ -958,7 +958,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 {
 	struct can_frame frame;
 	int index = 0;
-	size_t len = get_ctx_data_length(ctx);
+	size_t len = get_send_ctx_data_len(ctx);
 	int ret;
 	const uint8_t *data;
 
@@ -986,8 +986,8 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 	 * although it's not part of the FF frame
 	 */
 	ctx->sn = 1;
-	data = get_data_ctx(ctx);
-	pull_data_ctx(ctx, ctx->tx_addr.dl - index);
+	data = get_send_ctx_data(ctx);
+	pull_send_ctx_data(ctx, ctx->tx_addr.dl - index);
 	memcpy(&frame.data[index], data, ctx->tx_addr.dl - index);
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
@@ -1013,10 +1013,10 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 	/*sn wraps around at 0xF automatically because it has a 4 bit size*/
 	frame.data[index++] = ISOTP_PCI_TYPE_CF | ctx->sn;
 
-	rem_len = get_ctx_data_length(ctx);
+	rem_len = get_send_ctx_data_len(ctx);
 	len = MIN(rem_len, ctx->tx_addr.dl - index);
 	rem_len -= len;
-	data = get_data_ctx(ctx);
+	data = get_send_ctx_data(ctx);
 	memcpy(&frame.data[index], data, len);
 
 	if (IS_ENABLED(CONFIG_ISOTP_ENABLE_TX_PADDING) ||
@@ -1037,7 +1037,7 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 		       send_can_tx_cb, ctx);
 	if (ret == 0) {
 		ctx->sn++;
-		pull_data_ctx(ctx, len);
+		pull_send_ctx_data(ctx, len);
 		ctx->bs--;
 		ctx->tx_backlog++;
 	}
@@ -1059,7 +1059,7 @@ static inline void free_send_ctx(struct isotp_send_ctx **ctx)
 	}
 }
 
-static int alloc_ctx(struct isotp_send_ctx **ctx, k_timeout_t timeout)
+static int alloc_send_ctx(struct isotp_send_ctx **ctx, k_timeout_t timeout)
 {
 	int ret;
 
@@ -1180,7 +1180,7 @@ static void send_work_handler(struct k_work *item)
 	send_state_machine(ctx);
 }
 
-static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
+static inline int add_fc_filter(struct isotp_send_ctx *ctx)
 {
 	struct can_filter filter;
 
@@ -1189,7 +1189,7 @@ static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 	ctx->filter_id = can_add_rx_filter(ctx->can_dev, send_can_rx_cb, ctx,
 					   &filter);
 	if (ctx->filter_id < 0) {
-		LOG_ERR("Error attaching FC filter [%d]", ctx->filter_id);
+		LOG_ERR("Error adding FC filter [%d]", ctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;
 	}
 
@@ -1262,15 +1262,15 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		return ISOTP_N_ERROR;
 	}
 
-	len = get_ctx_data_length(ctx);
+	len = get_send_ctx_data_len(ctx);
 	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
 		ctx->tx_addr.ext_id, ctx->rx_addr.ext_id);
 	/* Single frames > 8 bytes use an additional byte for length (CAN-FD only) */
 	if (len > ctx->tx_addr.dl - (((tx_addr->flags & ISOTP_MSG_EXT_ADDR) != 0) ? 2 : 1) -
 			  ((ctx->tx_addr.dl > ISOTP_4BIT_SF_MAX_CAN_DL) ? 1 : 0)) {
-		ret = attach_fc_filter(ctx);
+		ret = add_fc_filter(ctx);
 		if (ret) {
-			LOG_ERR("Can't attach fc filter: %d", ret);
+			LOG_ERR("Can't add fc filter: %d", ret);
 			free_send_ctx(&ctx);
 			return ret;
 		}
@@ -1327,7 +1327,7 @@ int isotp_send_ctx_buf(const struct device *can_dev,
 
 	__ASSERT_NO_MSG(data);
 
-	ret = alloc_ctx(&ctx, timeout);
+	ret = alloc_send_ctx(&ctx, timeout);
 	if (ret) {
 		return ret;
 	}
@@ -1351,7 +1351,7 @@ int isotp_send_net_ctx_buf(const struct device *can_dev,
 
 	__ASSERT_NO_MSG(data);
 
-	ret = alloc_ctx(&ctx, timeout);
+	ret = alloc_send_ctx(&ctx, timeout);
 	if (ret) {
 		return ret;
 	}
@@ -1376,7 +1376,7 @@ int isotp_send_buf(const struct device *can_dev,
 
 	__ASSERT_NO_MSG(data);
 
-	ret = alloc_ctx(&ctx, timeout);
+	ret = alloc_send_ctx(&ctx, timeout);
 	if (ret) {
 		return ret;
 	}
