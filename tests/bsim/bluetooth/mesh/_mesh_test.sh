@@ -49,6 +49,8 @@ function RunTest(){
 
   test_options=$@
 
+  seed=1
+
   for testid in ${testid_in_order[@]}; do
     if Skip $testid; then
       echo "Skipping $testid (device #$idx)"
@@ -68,8 +70,9 @@ function RunTest(){
     Execute \
       ${exe_name} \
       -v=${verbosity_level} -s=$s_id -d=$idx -sync_preboot -RealEncryption=1 \
-      -testid=$testid ${testids["${testid}"]} ${test_options}
+      -rs=$seed -testid=$testid ${testids["${testid}"]} ${test_options}
     let idx=idx+1
+    let seed=seed+1
   done
 
   count=$(expr $idx + $extra_devs)
