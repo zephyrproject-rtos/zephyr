@@ -157,7 +157,7 @@ LittleFS Example
 
 This board configures to use the external 64 MiBi QSPI flash chip with a
 128 KiBy `littlefs`_ partition compatible with the one produced by the
-:ref:`littlefs-sample`.
+:zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass

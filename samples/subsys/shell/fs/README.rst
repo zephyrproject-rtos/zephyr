@@ -48,7 +48,7 @@ Particle Xenon
 ==============
 
 This target is customized to support the same SPI NOR partition table as
-the :ref:`littlefs-sample`.
+the :zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/fs
