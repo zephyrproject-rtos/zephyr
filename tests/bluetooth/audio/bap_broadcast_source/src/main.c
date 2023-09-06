@@ -224,6 +224,238 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	fixture->source = NULL;
 }
 
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_param_null)
+{
+	int err;
+
+	err = bt_bap_broadcast_source_create(NULL, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with null params");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_source_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	err = bt_bap_broadcast_source_create(create_param, NULL);
+	zassert_not_equal(0, err, "Did not fail with null source");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_subgroup_params_count_0)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	create_param->params_count = 0U;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with params_count %u", create_param->params_count);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_count_above_max)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	create_param->params_count = CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT + 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with params_count %u", create_param->params_count);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_subgroup_params_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	int err;
+
+	create_param->params = NULL;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	create_param->params = subgroup_params;
+	zassert_not_equal(0, err, "Did not fail with NULL subgroup params");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_qos_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_audio_codec_qos *qos = create_param->qos;
+	int err;
+
+	create_param->qos = NULL;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	create_param->qos = qos;
+	zassert_not_equal(0, err, "Did not fail with NULL qos");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_packing)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	create_param->packing = 0x02;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with packing %u", create_param->packing);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_params_count_0)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	int err;
+
+	subgroup_params->params_count = 0U;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with %u stream params",
+			  subgroup_params->params_count);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_params_count_above_max)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	int err;
+
+	subgroup_params->params_count = CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT + 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with %u stream params",
+			  subgroup_params->params_count);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_stream_params_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
+	int err;
+
+	subgroup_params->params = NULL;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	subgroup_params->params = stream_params;
+	zassert_not_equal(0, err, "Did not fail with NULL stream params");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_codec_cfg_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	int err;
+
+	subgroup_params->codec_cfg = NULL;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	subgroup_params->codec_cfg = codec_cfg;
+	zassert_not_equal(0, err, "Did not fail with NULL codec_cfg");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_codec_cfg_data_len)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	int err;
+
+	codec_cfg->data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with codec_cfg->data_len %zu", codec_cfg->data_len);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_codec_cfg_meta_len)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	int err;
+
+	codec_cfg->meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with codec_cfg->meta_len %zu", codec_cfg->meta_len);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_codec_cfg_cid)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	int err;
+
+	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
+	codec_cfg->cid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with codec_cfg->cid %u", codec_cfg->cid);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_subgroup_params_codec_cfg_vid)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	int err;
+
+	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
+	codec_cfg->vid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with codec_cfg->vid %u", codec_cfg->vid);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite,
+	test_broadcast_source_create_inval_stream_params_stream_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
+	struct bt_bap_stream *stream = stream_params->stream;
+	int err;
+
+	stream_params->stream = NULL;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	stream_params->stream = stream;
+	zassert_not_equal(0, err, "Did not fail with NULL stream_params->stream");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_stream_params_data_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
+	uint8_t *data = stream_params->data;
+	int err;
+
+	stream_params->data = NULL;
+	stream_params->data_len = 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	/* Restore the params for the cleanup after function */
+	stream_params->data = data;
+	zassert_not_equal(
+		0, err,
+		"Did not fail with NULL stream_params->data and stream_params_>data_len %zu",
+		stream_params->data_len);
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_stream_params_data_len)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
+	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
+	int err;
+
+	stream_params->data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_not_equal(0, err, "Did not fail with stream_params_>data_len %zu",
+			  stream_params->data_len);
+}
+
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_source_null)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
