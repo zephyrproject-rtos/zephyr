@@ -42,6 +42,7 @@ tests:
       - stm32f3_disco
       - stm32l562e_dk
       - twr_ke18f
+      - lpcxpresso55s36
     depends_on: dac
     integration_platforms:
       - nucleo_l152re
