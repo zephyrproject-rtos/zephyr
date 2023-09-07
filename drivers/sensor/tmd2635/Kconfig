@@ -1,0 +1,33 @@
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMD2635
+	bool "OSRAM-AMS TMD2635 Proxmimity Sensor"
+	default y
+	depends on DT_HAS_AMS_TMD2635_ENABLED
+	select I2C
+	help
+	  Enable driver for TMD2635 Sensor
+
+if TMD2635
+
+choice
+	prompt "Trigger Mode"
+	default TMD2635_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TMD2635_TRIGGER_NONE
+	bool "No Trigger"
+
+config TMD2635_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select TMD2635_TRIGGER
+
+endchoice # Trigger Mode
+
+config TMD2635_TRIGGER
+	bool
+
+endif # TMD2635
