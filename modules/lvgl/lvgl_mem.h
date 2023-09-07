@@ -22,6 +22,8 @@ void lvgl_free(void *ptr);
 
 void lvgl_print_heap_info(bool dump_chunks);
 
+void lvgl_heap_init(void);
+
 #ifdef __cplusplus
 }
 #endif
