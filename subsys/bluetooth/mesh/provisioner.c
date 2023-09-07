@@ -20,6 +20,8 @@
 
 #include "common/bt_str.h"
 
+#include "host/long_wq.h"
+
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
@@ -450,6 +452,13 @@ static void prov_dh_key_gen(void)
 	send_confirm();
 }
 
+static void prov_dh_key_gen_handler(struct k_work *work)
+{
+	prov_dh_key_gen();
+}
+
+static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
+
 static void prov_pub_key(const uint8_t *data)
 {
 	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
@@ -460,7 +469,7 @@ static void prov_pub_key(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, data, PUB_KEY_SIZE);
 	bt_mesh_prov_link.bearer->clear_tx();
 
-	prov_dh_key_gen();
+	k_work_submit(&dh_gen_work);
 }
 
 static void notify_input_complete(void)
