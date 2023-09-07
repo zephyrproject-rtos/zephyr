@@ -1,12 +1,13 @@
-.. _dac-sample:
+.. zephyr:code-sample:: dac
+   :name: Digital-to-Analog Converter (DAC)
+   :relevant-api: dac_interface
 
-Digital-to-Analog Converter (DAC)
-#################################
+   Generate an analog sawtooth signal using the DAC driver API.
 
 Overview
 ********
 
-This sample demonstrates how to use the DAC driver API.
+This sample demonstrates how to use the `DAC driver API <dac_api>`.
 
 Building and Running
 ********************

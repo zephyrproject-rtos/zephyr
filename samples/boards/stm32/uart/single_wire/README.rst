@@ -1,7 +1,8 @@
-.. _sample_uart_stm32_single_wire:
+.. zephyr:code-sample:: uart-stm32-single-wire
+   :name: STM32 single-wire UART
+   :relevant-api: uart_interface
 
-STM32 Single Wire UART
-######################
+   Use single-wire/half-duplex UART functionality of STM32 devices.
 
 Overview
 ********

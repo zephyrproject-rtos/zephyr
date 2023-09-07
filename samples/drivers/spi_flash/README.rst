@@ -1,12 +1,13 @@
-.. _spi-nor-sample:
+.. zephyr:code-sample:: spi-nor
+   :name: JEDEC SPI-NOR flash
+   :relevant-api: flash_interface
 
-JEDEC SPI-NOR Sample
-####################
+   Use the flash API to interact with an SPI NOR serial flash memory device.
 
 Overview
 ********
 
-This sample demonstrates using the flash API on a SPI NOR serial flash
+This sample demonstrates using the `flash API <flash_api>` on a SPI NOR serial flash
 memory device.  While trivial it is an example of direct access and
 allows confirmation that the flash is working and that automatic power
 savings is correctly implemented.

@@ -1,7 +1,8 @@
-.. _clock_control_litex_sample:
+.. zephyr:code-sample:: clock-control-litex
+   :name: LiteX clock control driver
+   :relevant-api: clock_control_interface
 
-LiteX Clock Control Driver Sample
-#################################
+   Use LiteX clock control driver to generate multiple clock signals.
 
 Introduction
 ************

@@ -1,7 +1,8 @@
-.. _sample-uart-native-tty:
+.. zephyr:code-sample:: uart-native-tty
+   :name: Native TTY UART
+   :relevant-api: uart_interface
 
-Native TTY UART
-###############
+   Use native TTY driver to send and receive data between two UART-to-USB bridge dongles.
 
 Overview
 ********
