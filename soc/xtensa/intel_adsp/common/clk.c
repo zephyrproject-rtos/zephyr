@@ -25,6 +25,15 @@ int adsp_clock_freq_mask[] = ADSP_CPU_CLOCK_FREQ_MASK;
 static void select_cpu_clock_hw(uint32_t freq_idx)
 {
 	uint32_t enc = adsp_clock_freq_enc[freq_idx];
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	uint32_t clk_ctl = ADSP_CLKCTL;
+
+	clk_ctl &= ~ADSP_CLKCTL_OSC_SOURCE_MASK;
+	clk_ctl |= (enc & ADSP_CLKCTL_OSC_SOURCE_MASK);
+
+	ADSP_CLKCTL = clk_ctl;
+#else
 	uint32_t status_mask = adsp_clock_freq_mask[freq_idx];
 
 	/* Request clock */
@@ -42,6 +51,7 @@ static void select_cpu_clock_hw(uint32_t freq_idx)
 
 	/* Release other clocks */
 	ADSP_CLKCTL &= ~ADSP_CLKCTL_OSC_REQUEST_MASK | enc;
+#endif
 }
 
 int adsp_clock_set_cpu_freq(uint32_t freq_idx)
