@@ -403,6 +403,7 @@
 		status = "disabled";
 		prescaler = <8>;
 		#pwm-cells = <3>;
+		clocks = <&clkctl1 MCUX_SCTIMER_CLK>;
 	};
 
 	wwdt0: watchdog@e000 {
