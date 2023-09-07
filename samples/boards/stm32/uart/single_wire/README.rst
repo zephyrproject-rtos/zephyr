@@ -20,7 +20,7 @@ Building and Running
 Build and flash as follows, replacing ``stm32f3_disco`` with your board:
 
  .. zephyr-app-commands::
-    :zephyr-app: samples/drivers/uart/stm32/single_wire
+    :zephyr-app: samples/boards/stm32/uart/single_wire
     :board: stm32f3_disco
     :goals: build flash
     :compact:
