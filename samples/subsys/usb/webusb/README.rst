@@ -62,6 +62,8 @@ Follow these steps to run the demo on your host system:
    interface, as well as demonstrate the communication between browser
    and WebUSB enabled device.
 
+   see :doc:`demo`
+
    #. To access JS app go to https://finikorg.github.io/webusb-sample/
 
    #. To host the demo page locally: Clone the repo and start a web server
