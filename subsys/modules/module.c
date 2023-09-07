@@ -130,7 +130,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 	     i < ms->hdr.e_shnum && str_cnt < 3;
 	     i++, pos += ms->hdr.e_shentsize) {
 		module_seek(ms, pos);
-		module_read(ms, (void *)&shdr, sizeof(elf_shdr_t));
+		module_read(ms, &shdr, sizeof(elf_shdr_t));
 
 		LOG_DBG("section %d at %x: name %d, type %d, flags %x, addr %x, size %d",
 			i,
@@ -178,7 +178,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 	     i < ms->hdr.e_shnum;
 	     i++, pos += ms->hdr.e_shentsize) {
 		module_seek(ms, pos);
-		module_read(ms, (void *)&shdr, sizeof(elf_shdr_t));
+		module_read(ms, &shdr, sizeof(elf_shdr_t));
 
 		elf32_word str_idx = shdr.sh_name;
 
@@ -298,7 +298,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 	     i < ms->hdr.e_shnum - 1;
 	     i++, pos += ms->hdr.e_shentsize) {
 		module_seek(ms, pos);
-		module_read(ms, (void *)&shdr, sizeof(elf_shdr_t));
+		module_read(ms, &shdr, sizeof(elf_shdr_t));
 
 		/* find relocation sections */
 		if (shdr.sh_type != SHT_REL && shdr.sh_type != SHT_RELA)
@@ -328,7 +328,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		for (j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
 			module_seek(ms, shdr.sh_offset + j * sizeof(elf_rel_t));
-			module_read(ms, (void *)&rel, sizeof(elf_rel_t));
+			module_read(ms, &rel, sizeof(elf_rel_t));
 
 			/* get corresponding symbol */
 			module_seek(ms, ms->sects[MOD_SECT_SYMTAB].sh_offset
@@ -404,7 +404,7 @@ int module_load(struct module_stream *ms, const char *name, struct module **m)
 	}
 
 	module_seek(ms, 0);
-	module_read(ms, (void *)&ehdr, sizeof(ehdr));
+	module_read(ms, &ehdr, sizeof(ehdr));
 
 	/* check whether this is an valid elf file */
 	if (memcmp(ehdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
