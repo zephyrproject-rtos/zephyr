@@ -568,18 +568,18 @@ void radio_status_reset(void)
 	 *       register value, PPI task will be triggered. Hence, other
 	 *       EVENT_* registers are not reset to save code and CPU time.
 	 */
-	NRF_RADIO->EVENTS_READY = 0;
-	NRF_RADIO->EVENTS_END = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_READY);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_END);
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 	/* Clear it only for SoCs supporting DF extension */
-	NRF_RADIO->EVENTS_PHYEND = 0;
-	NRF_RADIO->EVENTS_CTEPRESENT = 0;
-	NRF_RADIO->EVENTS_BCMATCH = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_PHYEND);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_CTEPRESENT);
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH);
 #endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
-	NRF_RADIO->EVENTS_DISABLED = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-	NRF_RADIO->EVENTS_RATEBOOST = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST);
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 }
@@ -1019,7 +1019,7 @@ uint32_t radio_rssi_get(void)
 
 void radio_rssi_status_reset(void)
 {
-	NRF_RADIO->EVENTS_RSSIEND = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_RSSIEND);
 }
 
 uint32_t radio_rssi_is_ready(void)
@@ -1051,7 +1051,7 @@ void radio_filter_disable(void)
 
 void radio_filter_status_reset(void)
 {
-	NRF_RADIO->EVENTS_DEVMATCH = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DEVMATCH);
 }
 
 uint32_t radio_filter_has_match(void)
@@ -1072,7 +1072,7 @@ void radio_bc_configure(uint32_t n)
 
 void radio_bc_status_reset(void)
 {
-	NRF_RADIO->EVENTS_BCMATCH = 0;
+	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH);
 }
 
 uint32_t radio_bc_has_match(void)
@@ -1356,7 +1356,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		start_us = (now_us << 1) - start_us;
 
 		/* Setup compare event with min. 1 us offset */
-		EVENT_TIMER->EVENTS_COMPARE[0] = 0U;
+		nrf_timer_event_clear(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0);
 		nrf_timer_cc_set(EVENT_TIMER, 0, start_us + 1U);
 
 		/* Capture the current time */
@@ -1749,9 +1749,9 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
-	NRF_CCM->EVENTS_ENDKSGEN = 0;
-	NRF_CCM->EVENTS_ENDCRYPT = 0;
-	NRF_CCM->EVENTS_ERROR = 0;
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
@@ -1820,9 +1820,9 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
-	NRF_CCM->EVENTS_ENDKSGEN = 0;
-	NRF_CCM->EVENTS_ENDCRYPT = 0;
-	NRF_CCM->EVENTS_ERROR = 0;
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
@@ -1899,9 +1899,9 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
 
-	NRF_AAR->EVENTS_END = 0;
-	NRF_AAR->EVENTS_RESOLVED = 0;
-	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_NOTRESOLVED);
 
 	radio_bc_configure(bcc);
 	radio_bc_status_reset();
@@ -1957,9 +1957,9 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
 
-	NRF_AAR->EVENTS_END = 0;
-	NRF_AAR->EVENTS_RESOLVED = 0;
-	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
+	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_NOTRESOLVED);
 
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
