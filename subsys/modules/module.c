@@ -396,7 +396,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 STRUCT_SECTION_START_EXTERN(module_symbol);
 
-int module_load(struct module_stream *ms, const char name[16], struct module **m)
+int module_load(struct module_stream *ms, const char *name, struct module **m)
 {
 	int ret;
 	elf_ehdr_t ehdr;
