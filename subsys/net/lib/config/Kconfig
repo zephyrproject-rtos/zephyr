@@ -176,6 +176,13 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 	  6 encryption/authentication with a 8 bytes length tag
 	  7 encryption/authentication with a 16 bytes length tag
 
+config NET_CONFIG_IEEE802154_ACK_REQUIRED
+	bool "IEEE 802.15.4 acknowledgment"
+	default y
+	help
+	  Whether or not to request and require IEEE 802.15.4 acknowledgment
+	  packets.
+
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
 config NET_CONFIG_BT_NODE

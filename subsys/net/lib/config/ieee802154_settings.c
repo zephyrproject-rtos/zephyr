@@ -45,6 +45,12 @@ int z_net_config_ieee802154_setup(struct net_if *iface)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_NET_CONFIG_IEEE802154_ACK_REQUIRED)) {
+		if (net_mgmt(NET_REQUEST_IEEE802154_SET_ACK, iface, NULL, 0)) {
+			return -EIO;
+		}
+	}
+
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID,
 		     iface, &pan_id, sizeof(uint16_t)) ||
 	    net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL,
