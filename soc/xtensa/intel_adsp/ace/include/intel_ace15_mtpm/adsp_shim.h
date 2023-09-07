@@ -140,7 +140,7 @@ struct ace_dfpmccu {
 
 #endif /* _ASMLANGUAGE */
 
-#define ACE_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
+#define ACE_CLKCTL_WOVCRO    BIT(21)	  /* Request WOVCRO clock */
 
 #define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
 #define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
