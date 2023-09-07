@@ -893,7 +893,7 @@ struct bt_mesh_model {
 	uint16_t * const groups;
 	const uint16_t groups_cnt;
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
+#if (CONFIG_BT_MESH_LABEL_COUNT > 0) || defined(__DOXYGEN__)
 	/** List of Label UUIDs the model is subscribed to. */
 	const uint8_t ** const uuids;
 #endif
@@ -909,7 +909,7 @@ struct bt_mesh_model {
 	struct bt_mesh_model *next;
 #endif
 
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV) || defined(__DOXYGEN__)
 	/* Pointer to the array of model metadata entries. */
 	struct bt_mesh_models_metadata_entry **metadata;
 #endif
