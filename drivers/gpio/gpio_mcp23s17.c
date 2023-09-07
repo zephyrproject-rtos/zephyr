@@ -340,14 +340,6 @@ static int mcp23s17_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return ret;
 }
 
-static int mcp23s17_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
-{
-	return -ENOTSUP;
-}
-
 static const struct gpio_driver_api api_table = {
 	.pin_configure = mcp23s17_config,
 	.port_get_raw = mcp23s17_port_get_raw,
@@ -355,7 +347,6 @@ static const struct gpio_driver_api api_table = {
 	.port_set_bits_raw = mcp23s17_port_set_bits_raw,
 	.port_clear_bits_raw = mcp23s17_port_clear_bits_raw,
 	.port_toggle_bits = mcp23s17_port_toggle_bits,
-	.pin_interrupt_configure = mcp23s17_pin_interrupt_configure,
 };
 
 static int mcp23s17_init(const struct device *dev)
