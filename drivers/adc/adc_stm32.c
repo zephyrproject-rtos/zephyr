@@ -154,9 +154,6 @@ static const uint32_t table_seq_len[] = {
 };
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE) */
 
-/* External channels (maximum). */
-#define STM32_CHANNEL_COUNT		20
-
 /* Number of different sampling time values */
 #define STM32_NB_SAMPLING_TIME	8
 
@@ -839,11 +836,6 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (data->channels > BIT(STM32_CHANNEL_COUNT) - 1) {
-		LOG_ERR("Channels bitmask uses out of range channel");
-		return -EINVAL;
-	}
-
 #if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
 	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
@@ -1112,11 +1104,6 @@ static int adc_stm32_channel_setup(const struct device *dev,
 
 	struct adc_stm32_data *data = dev->data;
 	int acq_time_index;
-
-	if (channel_cfg->channel_id >= STM32_CHANNEL_COUNT) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
-		return -EINVAL;
-	}
 
 	acq_time_index = adc_stm32_check_acq_time(dev,
 				channel_cfg->acquisition_time);
