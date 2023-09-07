@@ -305,6 +305,11 @@ manifest:
     - name: openthread
       revision: f7690fe7e9d638341921808cba6a3e695ec0131e
       path: modules/lib/openthread
+    - name: percepio
+      path: modules/debug/percepio
+      revision: 831f421994b67856970f131295d1a97ca9d1f086
+      groups:
+        - debug
     - name: picolibc
       path: modules/lib/picolibc
       revision: d07c38ff051386f8e09a143ea0a6c1d6d66dd1d8
@@ -325,11 +330,6 @@ manifest:
       path: modules/crypto/tinycrypt
       groups:
         - crypto
-    - name: TraceRecorderSource
-      revision: 1ede7ce8e7ab226e9a84d95266241ba3f38d91d2
-      path: modules/debug/TraceRecorder
-      groups:
-        - debug
     - name: trusted-firmware-m
       revision: b168d92c7ed3c77c94d7ce3362bdde5dbffe8424
       path: modules/tee/tf-m/trusted-firmware-m

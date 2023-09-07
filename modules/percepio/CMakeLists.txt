@@ -2,11 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+if (CONFIG_PERCEPIO_TRACERECORDER OR CONFIG_PERCEPIO_DFM)
+  zephyr_library()
+endif()
+
 if(CONFIG_PERCEPIO_TRACERECORDER)
 
-  set(TRACERECORDER_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
+  set(TRACERECORDER_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/TraceRecorder)
 
-  zephyr_library()
   zephyr_library_sources_ifdef(
     CONFIG_PERCEPIO_TRACERECORDER
     ${TRACERECORDER_DIR}/kernelports/Zephyr/trcKernelPort.c
@@ -81,6 +84,7 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     )
   endif()
 
+
   zephyr_include_directories(
     ${TRACERECORDER_DIR}/kernelports/Zephyr/include
     ${TRACERECORDER_DIR}/kernelports/Zephyr/config
@@ -88,8 +92,72 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     ${TRACERECORDER_DIR}/include
     )
 
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND python3 ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_syscalls.py ${CMAKE_BINARY_DIR} ${ZEPHYR_BASE}
+    )
+
+endif()
+
+if(CONFIG_PERCEPIO_DFM)
+
+  set(DFM_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/DFM)
+
+  zephyr_library_sources_ifdef(
+    CONFIG_PERCEPIO_DFM
+    ${DFM_DIR}/dfm.c
+    ${DFM_DIR}/dfmAlert.c
+    ${DFM_DIR}/dfmCloud.c
+    ${DFM_DIR}/dfmEntry.c
+    ${DFM_DIR}/dfmSession.c
+    ${DFM_DIR}/dfmStorage.c
+    ${DFM_DIR}/kernelports/Zephyr/dfmKernelPort.c
+    )
+
+  if(CONFIG_PERCEPIO_DFM_CFG_STORAGEPORT_NONE)
+    zephyr_library_sources(
+      ${DFM_DIR}/storageports/Dummy/dfmStoragePort.c
+    )
+
+    zephyr_include_directories(
+      ${DFM_DIR}/storageports/Dummy/include/
+    )
+  endif()
+
+  if(CONFIG_PERCEPIO_DFM_CFG_STORAGEPORT_FLASH)
+    zephyr_library_sources(
+      ${DFM_DIR}/kernelports/Zephyr/storageports/Flash/dfmStoragePort.c
+    )
+
+    zephyr_include_directories(
+      ${DFM_DIR}/kernelports/Zephyr/storageports/Flash/include/
+    )
+  endif()
+
+  if(CONFIG_PERCEPIO_DFM_CFG_CLOUDPORT_NONE)
+    zephyr_library_sources(
+      ${DFM_DIR}/cloudports/Dummy/dfmCloudPort.c
+    )
+
+    zephyr_include_directories(
+      ${DFM_DIR}/cloudports/Dummy/include/
+    )
+  endif()
+
+  if(CONFIG_PERCEPIO_DFM_CFG_CLOUDPORT_SERIAL)
+    zephyr_library_sources(
+      ${DFM_DIR}/kernelports/Zephyr/cloudports/Serial/dfmCloudPort.c
+    )
+
+    zephyr_include_directories(
+      ${DFM_DIR}/kernelports/Zephyr/cloudports/Serial/config/
+      ${DFM_DIR}/kernelports/Zephyr/cloudports/Serial/include/
+    )
+  endif()
+
+  zephyr_include_directories(
+    ${DFM_DIR}/kernelports/Zephyr/config
+    ${DFM_DIR}/kernelports/Zephyr/include
+    ${DFM_DIR}/include
     )
 
 endif()
