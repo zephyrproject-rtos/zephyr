@@ -642,6 +642,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	int start = 0;
 	size_t opt_cnt = 0;
 
+	param.options.priority = -1;
 	is_udp = proto == IPPROTO_UDP;
 
 	/* Parse options */
@@ -679,6 +680,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			param.options.tcp_nodelay = 1;
 			opt_cnt += 1;
 			break;
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		case 'p':
+			param.options.priority = parse_arg(&i, argc, argv);
+			if (param.options.priority < 0 ||
+			    param.options.priority > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			break;
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -852,6 +866,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			param.options.tcp_nodelay = 1;
 			opt_cnt += 1;
 			break;
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		case 'p':
+			param.options.priority = parse_arg(&i, argc, argv);
+			if (param.options.priority == -1 ||
+			    param.options.priority > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			break;
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -1146,6 +1173,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "-n: Disable Nagle's algorithm\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: tcp upload 192.0.2.2 1111 1 1K\n"
 		  "Example: tcp upload 2001:db8::2\n",
 		  cmd_tcp_upload),
@@ -1159,6 +1189,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: tcp upload2 v6 1 1K\n"
 		  "Example: tcp upload2 v4\n"
 		  "-n: Disable Nagle's algorithm\n"
@@ -1198,6 +1231,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
@@ -1212,6 +1248,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
