@@ -207,8 +207,17 @@ static inline bool arch_is_user_context(void)
 		"rur.THREADPTR %0\n\t"
 		: "=a" (thread)
 	);
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	extern __thread uint32_t is_user_mode;
 
+	if (!thread) {
+		return false;
+	}
+
+	return is_user_mode != 0;
+#else
 	return !!thread;
+#endif
 }
 
 #undef SYSINL

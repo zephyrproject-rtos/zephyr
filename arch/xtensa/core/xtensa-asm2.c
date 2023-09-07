@@ -28,6 +28,14 @@ Z_EXC_DECLARE(z_xtensa_user_string_nlen);
 static const struct z_exc_handle exceptions[] = {
 	Z_EXC_HANDLE(z_xtensa_user_string_nlen)
 };
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/*
+ * Per-thread (TLS) variable indicating whether execution is in user mode.
+ */
+__thread uint32_t is_user_mode;
+#endif
+
 #endif /* CONFIG_USERSPACE */
 
 void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
