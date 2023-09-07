@@ -102,11 +102,75 @@ void *module_find_sym(const struct module_symtable *sym_table, const char *sym_n
 	/* find symbols in module */
 	for (i = 0; i < sym_table->sym_cnt; i++) {
 		if (strcmp(sym_table->syms[i].name, sym_name) == 0) {
+			LOG_DBG("Found name %s at %p",
+				sym_table->syms[i].name, sym_table->syms[i].addr);
 			return sym_table->syms[i].addr;
 		}
 	}
 
+	LOG_DBG("Symbol \"%s\" not found", sym_name);
+
 	return NULL;
+}
+
+static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr_t *shdr)
+{
+	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
+	/*
+	 * CPU address where the .text section is stored, we use .text just as a
+	 * reference point
+	 */
+	uint8_t *text = module_peek(ms, ms->sects[MOD_SECT_TEXT].sh_offset);
+
+	LOG_DBG("Found %p in PLT %u size %u cnt %u text %p",
+		(void *)module_peek(ms, ms->sects[MOD_SECT_SHSTRTAB].sh_offset + shdr->sh_name),
+		shdr->sh_type, shdr->sh_entsize, sh_cnt, (void *)text);
+
+	const elf_shdr_t *sym_shdr = ms->sects + MOD_SECT_SYMTAB;
+	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
+
+	for (unsigned int i = 0; i < sh_cnt; i++) {
+		elf_rela_t *rela = module_peek(ms, shdr->sh_offset + i * shdr->sh_entsize);
+		/* Index in the symbol table */
+		int j = ELF32_R_SYM(rela->r_info);
+
+		if (j >= sym_cnt) {
+			LOG_WRN("PLT: idx %u >= %u", j, sym_cnt);
+			continue;
+		}
+
+		elf_sym_t *sym_tbl = module_peek(ms, sym_shdr->sh_offset +
+						 j * sizeof(elf_sym_t));
+		uint32_t stt = ELF_ST_TYPE(sym_tbl->st_info);
+		char *name = module_peek(ms, ms->sects[MOD_SECT_STRTAB].sh_offset +
+					 sym_tbl->st_name);
+		/*
+		 * Both r_offset and sh_addr are addresses for which the module
+		 * has been built.
+		 */
+		size_t got_offset = rela->r_offset - ms->sects[MOD_SECT_TEXT].sh_addr;
+
+		if (stt == STT_NOTYPE && sym_tbl->st_shndx == SHN_UNDEF && name[0] != '\0') {
+			void *link_addr = module_find_sym(&SYMTAB, name);
+
+			if (!link_addr) {
+				LOG_WRN("PLT: cannot find idx %u name %s", j, name);
+				continue;
+			}
+
+			if (!rela->r_offset) {
+				LOG_WRN("PLT: zero offset idx %u name %s", j, name);
+				continue;
+			}
+
+			LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x",
+				name, got_offset,
+				rela->r_offset, ms->sects[MOD_SECT_TEXT].sh_addr);
+
+			/* Resolve the symbol */
+			*(void **)(text + got_offset) = link_addr;
+		}
+	}
 }
 
 __weak void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
@@ -337,12 +401,21 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		if (strncmp(name, ".rel.text", sizeof(name)) == 0 ||
 		    strncmp(name, ".rela.text", sizeof(name)) == 0) {
 			loc = (uintptr_t)m->mem[MOD_MEM_TEXT];
-		} else if (strncmp(name, ".rel.bss", sizeof(name)) == 0) {
+		} else if (strncmp(name, ".rel.bss", sizeof(name)) == 0 ||
+			   strncmp(name, ".rela.bss", sizeof(name)) == 0) {
 			loc = (uintptr_t)m->mem[MOD_MEM_BSS];
-		} else if (strncmp(name, ".rel.rodata", sizeof(name)) == 0) {
+		} else if (strncmp(name, ".rel.rodata", sizeof(name)) == 0 ||
+			   strncmp(name, ".rela.rodata", sizeof(name)) == 0) {
 			loc = (uintptr_t)m->mem[MOD_MEM_RODATA];
-		} else if (strncmp(name, ".rel.data", sizeof(name)) == 0) {
+		} else if (strncmp(name, ".rel.data", sizeof(name)) == 0 ||
+			   strncmp(name, ".rela.data", sizeof(name)) == 0) {
 			loc = (uintptr_t)m->mem[MOD_MEM_DATA];
+		} else if (strncmp(name, ".rela.plt", sizeof(name)) == 0 ||
+			   strncmp(name, ".rela.dyn", sizeof(name)) == 0) {
+			module_link_plt(ms, m, &shdr);
+			continue;
+		} else {
+			continue;
 		}
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",

@@ -254,6 +254,12 @@ struct elf32_rel {
 	elf32_word r_info;
 };
 
+struct elf32_rela {
+	elf32_addr r_offset;
+	elf32_word r_info;
+	elf32_word r_addend;
+};
+
 #define ELF32_R_SYM(i) ((i) >> 8)
 #define ELF32_R_TYPE(i) ((i) & 0xff)
 
@@ -378,6 +384,7 @@ typedef elf32_addr elf_addr;
 typedef elf32_half elf_half;
 typedef elf32_word elf_word;
 typedef struct elf32_rel elf_rel_t;
+typedef struct elf32_rela elf_rela_t;
 typedef struct elf32_sym elf_sym_t;
 #define ELF_R_SYM ELF32_R_SYM
 #define ELF_R_TYPE ELF32_R_TYPE
