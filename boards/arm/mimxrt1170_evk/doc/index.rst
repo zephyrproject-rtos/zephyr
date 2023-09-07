@@ -317,10 +317,8 @@ reprogrammed with JLink firmware.
 - MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
 - MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
 
-.. _Using J-Link RT1170:
-
 Using J-Link
----------------------------------
+------------
 
 JLink is the default runner for this board.  Install the
 :ref:`jlink-debug-host-tools` and make sure they are in your search path.
@@ -330,10 +328,8 @@ J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
 EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
 `Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
 
-.. _Using LinkServer RT1170:
-
 Using LinkServer
-----------------------------------
+----------------
 
 Known limitations with LinkServer and these boards include:
 - ``west debug`` does not yet work correctly, and the application image is not
