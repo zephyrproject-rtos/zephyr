@@ -372,7 +372,7 @@ static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
 	for (i = 0; i < frames_cnt && remaining_length; i++) {
 		frames[i].data[0] = CF_PCI_BYTE_1 | ((i+1) & 0x0F);
 		frames[i].length = TX_DL;
-		memcpy(&des_frames[i].data[1], data_ptr, DATA_SIZE_CF);
+		memcpy(&frames[i].data[1], data_ptr, DATA_SIZE_CF);
 
 		if (remaining_length < DATA_SIZE_CF) {
 			if ((IS_ENABLED(CONFIG_ISOTP_ENABLE_TX_PADDING) && tx) ||
@@ -380,7 +380,7 @@ static void prepare_cf_frames(struct frame_desired *frames, size_t frames_cnt,
 				uint8_t padded_dlc = can_bytes_to_dlc(MAX(8, remaining_length + 1));
 				uint8_t padded_len = can_dlc_to_bytes(padded_dlc);
 
-				memset(&des_frames[i].data[remaining_length + 1], 0xCC,
+				memset(&frames[i].data[remaining_length + 1], 0xCC,
 				       padded_len - remaining_length - 1);
 				frames[i].length = padded_len;
 			} else {
