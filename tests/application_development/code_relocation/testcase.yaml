@@ -9,16 +9,17 @@ tests:
     platform_allow:
       - mimxrt1060_evk
   application_development.code_relocation_kinetis:
-    filter: CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC
+    filter: CONFIG_CPU_HAS_NXP_MPU
     arch_allow: arm
     extra_configs:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
     platform_allow:
       - frdm_k64f
   application_development.code_relocation.nxp_s32:
-    filter: not CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    filter: dt_chosen_enabled("zephyr,itcm")
     arch_allow: arm
     extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
       - CONFIG_RELOCATE_TO_ITCM=y
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
     platform_allow:
