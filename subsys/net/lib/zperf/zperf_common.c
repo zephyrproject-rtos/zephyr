@@ -131,7 +131,7 @@ const struct in6_addr *zperf_get_default_if_in6_addr(void)
 }
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
-			      int proto)
+			      int priority, int proto)
 {
 	socklen_t addrlen = peer_addr->sa_family == AF_INET6 ?
 			    sizeof(struct sockaddr_in6) :
@@ -190,6 +190,24 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 	default:
 		LOG_ERR("Invalid address family (%d)", peer_addr->sa_family);
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY) && priority >= 0) {
+		uint8_t prio = priority;
+
+		if (!IS_ENABLED(CONFIG_NET_ALLOW_ANY_PRIORITY) &&
+		    (prio >= NET_MAX_PRIORITIES)) {
+			NET_ERR("Priority %d is too large, maximum allowed is %d",
+				prio, NET_MAX_PRIORITIES - 1);
+			return -EINVAL;
+		}
+
+		if (zsock_setsockopt(sock, SOL_SOCKET, SO_PRIORITY,
+				     &prio,
+				     sizeof(prio)) != 0) {
+			NET_WARN("Failed to set SOL_SOCKET - SO_PRIORITY socket option.");
+			return -EINVAL;
+		}
 	}
 
 	ret = zsock_connect(sock, peer_addr, addrlen);
