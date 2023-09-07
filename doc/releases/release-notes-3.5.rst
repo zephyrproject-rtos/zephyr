@@ -22,6 +22,11 @@ Architectures
 
 * ARM
 
+  * Architectural support for Arm Cortex-M has been separated from Arm
+    Cortex-A and Cortex-R. This includes separate source modules to handle
+    tasks like IRQ management, exception handling, thread handling and swap.
+    For implementation details see :github:`60031`.
+
 * ARM
 
 * ARM64
