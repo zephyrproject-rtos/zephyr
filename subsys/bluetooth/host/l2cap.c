@@ -1363,6 +1363,12 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
+	/* The specification only allows up to 5 CIDs in this packet */
+	if (buf->len > (L2CAP_ECRED_CHAN_MAX_PER_REQ * sizeof(scid))) {
+		result = BT_L2CAP_RECONF_OTHER_UNACCEPT;
+		goto response;
+	}
+
 	while (buf->len >= sizeof(scid)) {
 		struct bt_l2cap_chan *chan;
 		scid = net_buf_pull_le16(buf);
