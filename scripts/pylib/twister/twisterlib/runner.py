@@ -1062,6 +1062,8 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     def gather_metrics(self, instance: TestInstance):
+        if self.options.create_rom_ram_report:
+            self.run_build(['--build', self.build_dir, "--target", "footprint"])
         if self.options.enable_size_report and not self.options.cmake_only:
             self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
         else:
