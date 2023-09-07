@@ -224,10 +224,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		ms->sects[sect_idx] = shdr;
 		ms->sect_map[i] = sect_idx;
 
-		m->mem[mem_idx] =
-			k_heap_alloc(&module_heap, ms->sects[sect_idx].sh_size, K_NO_WAIT);
-		module_seek(ms, ms->sects[sect_idx].sh_offset);
-		module_read(ms, m->mem[mem_idx], ms->sects[sect_idx].sh_size);
+		m->mem[mem_idx] = module_peek(ms, shdr.sh_offset);
 
 		m->mem_size += shdr.sh_size;
 
@@ -472,7 +469,6 @@ void module_unload(struct module *m)
 	for (int i = 0; i < MOD_MEM_COUNT; i++) {
 		if (m->mem[i] != NULL) {
 			LOG_DBG("freeing memory region %d", i);
-			k_heap_free(&module_heap, m->mem[i]);
 			m->mem[i] = NULL;
 		}
 	}
