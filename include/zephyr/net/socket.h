@@ -995,7 +995,11 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
+#if defined(CONFIG_NET_INTERFACE_NAME)
+#define IFNAMSIZ CONFIG_NET_INTERFACE_NAME_LEN
+#else
 #define IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
+#endif
 
 /** Interface description structure */
 struct ifreq {
