@@ -209,6 +209,19 @@ also can run for the
    :goals: build flash
    :compact:
 
+Building and Running for NXP LPCXpresso55S36
+============================================
+The sample can be built and executed for the :ref:`lpcxpresso55s36` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: lpcxpresso55s36
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J12 pin 4.
+
 Sample output
 =============
 
