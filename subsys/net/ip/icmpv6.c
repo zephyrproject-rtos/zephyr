@@ -363,11 +363,13 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
+#if !defined(CONFIG_NET_ALLOW_ANY_PRIORITY)
 	if (priority > NET_MAX_PRIORITIES) {
 		NET_ERR("Priority %d is too large, maximum is %d",
 			priority, NET_MAX_PRIORITIES);
 		return -EINVAL;
 	}
+#endif /* !CONFIG_NET_ALLOW_ANY_PRIORITY */
 
 	if (priority < 0) {
 		net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
