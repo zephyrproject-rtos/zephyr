@@ -109,6 +109,10 @@ void *module_find_sym(const struct module_symtable *sym_table, const char *sym_n
 	return NULL;
 }
 
+__weak void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
+{
+}
+
 /**
  * @brief load a relocatable object file.
  *
