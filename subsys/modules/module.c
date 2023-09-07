@@ -114,15 +114,20 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 	elf_shdr_t shdr;
 	size_t pos;
+	unsigned int str_cnt = 0;
 
 	ms->sect_map = k_heap_alloc(&module_heap, ms->hdr.e_shnum * sizeof(uint32_t), K_NO_WAIT);
 	if (!ms->sect_map)
 		return -ENOMEM;
 	ms->sect_cnt = ms->hdr.e_shnum;
 
-	/* Find string tables */
+	ms->sects[MOD_SECT_SHSTRTAB] =
+		ms->sects[MOD_SECT_STRTAB] =
+		ms->sects[MOD_SECT_SYMTAB] = (elf_shdr_t){0};
+
+	/* Find symbol and string tables */
 	for (i = 0, pos = ms->hdr.e_shoff;
-	     i < ms->hdr.e_shnum;
+	     i < ms->hdr.e_shnum && str_cnt < 3;
 	     i++, pos += ms->hdr.e_shentsize) {
 		module_seek(ms, pos);
 		module_read(ms, (void *)&shdr, sizeof(elf_shdr_t));
@@ -142,6 +147,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 			LOG_DBG("symtab at %d", i);
 			ms->sects[MOD_SECT_SYMTAB] = shdr;
 			ms->sect_map[i] = MOD_SECT_SYMTAB;
+			str_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ms->hdr.e_shstrndx == i) {
@@ -152,12 +158,19 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 				LOG_DBG("strtab at %d", i);
 				ms->sects[MOD_SECT_STRTAB] = shdr;
 				ms->sect_map[i] = MOD_SECT_STRTAB;
-				break;
 			}
+			str_cnt++;
 			break;
 		default:
 			break;
 		}
+	}
+
+	if (!ms->sects[MOD_SECT_SHSTRTAB].sh_type ||
+	    !ms->sects[MOD_SECT_STRTAB].sh_type ||
+	    !ms->sects[MOD_SECT_SYMTAB].sh_type) {
+		LOG_ERR("Some sections are missing or present multiple times!");
+		return -ENOENT;
 	}
 
 	/* Copy over useful sections */
