@@ -294,6 +294,33 @@
 		dma-names = "adc0-dma0", "adc0-dma1";
 	};
 
+	dac0: dac@b2000 {
+		compatible = "nxp,lpdac";
+		reg = < 0xb2000 0x1000>;
+		interrupts = <74 0>;
+		status = "disabled";
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+	};
+
+	dac1: dac@b6000 {
+		compatible = "nxp,lpdac";
+		reg = < 0xb6000 0x1000>;
+		interrupts = <75 0>;
+		status = "disabled";
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+	};
+
+	dac2: dac@b9000 {
+		compatible = "nxp,lpdac";
+		reg = < 0xb9000 0x1000>;
+		interrupts = <76 0>;
+		status = "disabled";
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+	};
+
 	can0: can@4009d000 {
 		compatible = "nxp,lpc-mcan";
 		reg = <0x4009d000 0x1000>;
