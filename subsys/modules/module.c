@@ -250,9 +250,14 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 	LOG_DBG("symbol count %d", sym_cnt);
 
+	/* Count global functions, exported by the object */
 	for (i = 0, pos = ms->sects[MOD_SECT_SYMTAB].sh_offset;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
+		if (!i)
+			/* A dummy entry */
+			continue;
+
 		module_seek(ms, pos);
 		module_read(ms, &sym, ent_size);
 
@@ -281,6 +286,10 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 	for (i = 0, j = 0, pos = ms->sects[MOD_SECT_SYMTAB].sh_offset;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
+		if (!i)
+			/* A dummy entry */
+			continue;
+
 		module_seek(ms, pos);
 		module_read(ms, &sym, ent_size);
 
