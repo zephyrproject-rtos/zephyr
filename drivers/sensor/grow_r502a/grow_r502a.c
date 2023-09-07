@@ -434,7 +434,7 @@ static int fps_empty_db(const struct device *dev)
 
 unlock:
 	k_mutex_unlock(&drv_data->lock);
-	return 0;
+	return ret;
 }
 
 static int fps_search(const struct device *dev, uint8_t char_buf_idx)
