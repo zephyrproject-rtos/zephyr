@@ -109,11 +109,6 @@ config ASSEMBLER_ISA_THUMB2
 	  When only the Thumb-2 ISA is supported (i.e. on Cortex-M cores), the
 	  assembler must use the Thumb-2 instruction set.
 
-	  When both the Thumb-2 and ARM ISAs are supported (i.e. on Cortex-A
-	  and Cortex-R cores), the assembler must use the ARM instruction set
-	  because the architecture assembly code makes use of the ARM
-	  instructions.
-
 config COMPILER_ISA_THUMB2
 	bool "Compile C/C++ functions using Thumb-2 instruction set"
 	depends on ISA_THUMB2

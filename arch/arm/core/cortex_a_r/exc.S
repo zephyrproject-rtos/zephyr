@@ -47,7 +47,11 @@ GTEXT(z_arm_data_abort)
 	 * construct an exception stack frame.
 	 */
 	srsdb sp!, #\mode
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+	stmfd sp, {r0-r3, r12, lr}
+#else
 	stmfd sp, {r0-r3, r12, lr}^
+#endif
 	sub sp, #24
 
 #if defined(CONFIG_FPU_SHARING)
@@ -115,6 +119,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	push {r0}
 	mrs r0, spsr
 	tst r0, #T_BIT
+	ite eq
 	subeq lr, #4	/* ARM   (!T_BIT) */
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
@@ -124,7 +129,11 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * construct an exception stack frame.
 	 */
 	srsdb sp!, #MODE_UND
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+	stmfd sp, {r0-r3, r12, lr}
+#else
 	stmfd sp, {r0-r3, r12, lr}^
+#endif
 	sub sp, #24
 
 	/* Increment exception nesting count */
@@ -225,10 +234,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	 * the true esf from the one passed to z_arm_fault_data.
 	 */
 	cmp r0, #0
+	it eq
 	ldreq r1, [sp, #24 + FPU_SF_SIZE]
 
 	exception_exit
 
+	it eq
 	streq r1, [sp, #24 + FPU_SF_SIZE]
 
 	b z_arm_exc_exit

@@ -64,7 +64,8 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
 
     /* Store rest of process context */
     cps #MODE_SYS
-    stm r0, {r4-r11, sp}
+    mov ip, sp
+    stm r0, {r4-r11, ip}
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
@@ -150,7 +151,8 @@ _thread_irq_disabled:
 
     /* restore r4-r11 and sp for incoming thread */
     cps #MODE_SYS
-    ldm r0, {r4-r11, sp}
+    ldm r0, {r4-r11, ip}
+    mov sp, ip
     cps #MODE_SVC
 
 #if defined(CONFIG_FPU_SHARING)
@@ -268,6 +270,7 @@ _vfp_not_enabled:
     ldr r2, =_kernel
     ldr r0, [r2, #_kernel_offset_to_fp_ctx]
     cmp r0, #0
+    it eq
     streq sp, [r2, #_kernel_offset_to_fp_ctx]
 #endif /* CONFIG_FPU_SHARING */
 
@@ -296,6 +299,7 @@ _vfp_not_enabled:
     mrs r0, spsr
     tst r0, #0x20
 
+    ittt eq
     ldreq r1, [lr, #-4]
     biceq r1, #0xff000000
     beq demux
@@ -378,9 +382,15 @@ _do_syscall:
 
     /* If leaving thumb mode, set the return address to thumb mode */
     tst r1, #T_BIT
+    it ne
     orrne r8, #1
 
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
+    /* Don't clear T bit if executing in Thumb state */
+    bic r1, #MODE_MASK
+#else
     bic r1, #(MODE_MASK | T_BIT)
+#endif
     orr r1, r1, #MODE_SYS
     str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
 

@@ -246,7 +246,8 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R)
     /* change processor mode to unprivileged, with all interrupts enabled. */
-    msr CPSR_c, #MODE_USR
+    mov ip, #MODE_USR
+    msr CPSR_c, ip
 #else
     /* change processor mode to unprivileged */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

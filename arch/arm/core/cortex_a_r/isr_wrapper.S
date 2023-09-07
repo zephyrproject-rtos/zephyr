@@ -111,6 +111,7 @@ _vfp_not_enabled:
 	ldr r2, =_kernel
 	ldr r0, [r2, #_kernel_offset_to_fp_ctx]
 	cmp r0, #0
+	it eq
 	streq sp, [r2, #_kernel_offset_to_fp_ctx]
 #endif /* CONFIG_FPU_SHARING */
 
@@ -163,7 +164,7 @@ _vfp_not_enabled:
 	/* requested idle duration, in ticks */
 	ldr r0, [r2, #_kernel_offset_to_idle]
 	cmp r0, #0
-
+	it eq
 	beq _idle_state_cleared
 	movs r1, #0
 	/* clear kernel idle state */
