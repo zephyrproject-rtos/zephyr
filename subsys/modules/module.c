@@ -216,14 +216,11 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		module_seek(ms, ms->sects[sect_idx].sh_offset);
 		module_read(ms, m->mem[mem_idx], ms->sects[sect_idx].sh_size);
 
-		m->mem_size += ms->sects[sect_idx].sh_size;
+		m->mem_size += shdr.sh_size;
 
 		LOG_DBG("Copied section %s (idx: %d, size: %d, addr %x) to mem %d, module size %d",
-			name, i,
-			ms->sects[sect_idx].sh_size,
-			ms->sects[sect_idx].sh_addr,
-			mem_idx,
-			m->mem_size);
+			name, i, shdr.sh_size, shdr.sh_addr,
+			mem_idx, m->mem_size);
 	}
 
 	/* Iterate all symbols in symtab and update its st_value,
