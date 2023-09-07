@@ -332,7 +332,7 @@ Samples
 *******
 
 We have two ready-to-build samples demonstrating use of the Zephyr CAN API:
-:ref:`Zephyr CAN counter sample <can-counter-sample>` and
+:zephyr:code-sample:`Zephyr CAN counter sample <can-counter-sample>` and
 :zephyr:code-sample:`SocketCAN sample <socket-can>`.
 
 

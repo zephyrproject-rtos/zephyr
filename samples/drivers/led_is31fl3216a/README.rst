@@ -1,7 +1,8 @@
-.. _is31fl3216a:
+.. zephyr:code-sample:: is31fl3216a
+   :name: IS31FL3216A LED
+   :relevant-api: led_interface
 
-is31fl3216a: 16 channels PWD LEDs controller
-############################################
+   Control up to 16 PWM LEDs connected to an IS31FL3216A driver chip.
 
 Overview
 ********
@@ -12,12 +13,13 @@ Each LED is gradually pulsed until it reach 100% of luminosity and gradually
 turned off again.
 
 Once each LED was pulsed, multiple LEDs are pulse simultaneously using the
-``write_channels`` LED API.
+:c:func:`led_write_channels` API.
 
 Test pattern
 ============
 
 For each LED:
+
 - Increase the luminosity until 100% is reached
 - Decrease the luminosity until completely turned off
 
