@@ -16,3 +16,4 @@ testing:
     - kernel
     - tfm
     - userspace
+    - trusted-firmware-m
