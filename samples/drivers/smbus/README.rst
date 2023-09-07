@@ -2,7 +2,7 @@
    :name: SMBus shell
    :relevant-api: smbus_interface
 
-   SMBus Shell Sample
+   Interact with SMBus peripherals using shell commands.
 
 Overview
 ********
@@ -33,7 +33,7 @@ Output from console when application started::
    Start SMBUS shell sample qemu_x86_64
    uart:~$
 
-List avaibalbe SMBus shell commands with::
+List available SMBus shell commands with::
 
    uart:~$ smbus
    smbus - smbus commands

@@ -1,7 +1,8 @@
-.. _maxim-ds3231-sample:
+.. zephyr:code-sample:: ds3231
+   :name: DS3231 TCXO RTC
+   :relevant-api: counter_interface
 
-Maxim DS3231 TCXO RTC Sample Application
-########################################
+   Interact with a DS3231 real-time clock using the counter API and dedicated driver API.
 
 Overview
 ********

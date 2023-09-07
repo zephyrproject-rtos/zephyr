@@ -1,5 +1,8 @@
-IPM over IVSHMEM Driver sample
-################################
+.. zephyr:code-sample:: ipm-ivshmem
+   :name: IPM over IVSHMEM
+   :relevant-api: ipm_interface
+
+   Implement inter-processor mailbox (IPM) over IVSHMEM (Inter-VM shared memory)
 
 Prerequisites
 *************

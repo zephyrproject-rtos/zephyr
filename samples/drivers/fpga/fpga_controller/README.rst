@@ -1,7 +1,7 @@
-.. _samples_fpga_controller:
+.. zephyr:code-sample:: fpga-controller
+   :name: FPGA Controller
 
-Zephyr FPGA controller
-######################
+   Load a bitstream into an FPGA and perform basic operations on it.
 
 Overview
 ********

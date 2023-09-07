@@ -466,7 +466,7 @@ Interaction with serial ports can be configured in several different ways:
 
 Multiple instances of such uart drivers are supported.
 
-The :ref:`sample-uart-native-tty` sample app provides a working example of the
+The :zephyr:code-sample:`uart-native-tty` sample app provides a working example of the
 driver.
 
 This driver only supports poll mode. Interrupt and async mode are not supported.
