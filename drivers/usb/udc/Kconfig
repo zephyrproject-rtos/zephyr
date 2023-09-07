@@ -47,6 +47,7 @@ module = UDC_DRIVER
 module-str = usb drv
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/usb/udc/Kconfig.dwc2"
 source "drivers/usb/udc/Kconfig.nrf"
 source "drivers/usb/udc/Kconfig.kinetis"
 source "drivers/usb/udc/Kconfig.skeleton"
