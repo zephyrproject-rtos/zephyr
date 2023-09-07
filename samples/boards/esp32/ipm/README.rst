@@ -24,8 +24,8 @@ Building and Running the Zephyr Code
 Build the ESP32 IPM sample code as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/ipm/ipm_esp32
-   :board: esp32
+   :zephyr-app: samples/boards/esp32/ipm/ipm_esp32
+   :board: esp32_devkitc_wroom
    :goals: build
    :compact:
 
