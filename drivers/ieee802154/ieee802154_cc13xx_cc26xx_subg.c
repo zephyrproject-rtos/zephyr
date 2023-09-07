@@ -923,6 +923,7 @@ static struct ieee802154_radio_api
 static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
+	uint16_t freq, fract;
 	RF_Params rf_params;
 	RF_EventMask events;
 
@@ -944,11 +945,13 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Run CMD_FS with frequency 0 to ensure RF_currClient is not NULL.
-	 * RF_currClient is a static variable in the TI RF Driver library.
-	 * If this is not done, then even CMD_ABORT fails.
+	/* Run CMD_FS for channel 0 to place a valid CMD_FS command in the
+	 * driver's internal state which it requires for proper operation.
 	 */
+	(void)drv_channel_frequency(0, &freq, &fract);
 	drv_data->cmd_fs.status = IDLE;
+	drv_data->cmd_fs.frequency = freq;
+	drv_data->cmd_fs.fractFreq = fract;
 	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
 	if (events != RF_EventLastCmdDone) {
