@@ -159,17 +159,6 @@ static int gpio_axp192_port_toggle_bits(const struct device *dev, gpio_port_pins
 	return ret;
 }
 
-static int gpio_axp192_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
-					       enum gpio_int_mode mode, enum gpio_int_trig trig)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-}
-
 #ifdef CONFIG_GPIO_GET_CONFIG
 static int gpio_axp192_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *out_flags)
 {
@@ -276,7 +265,6 @@ static const struct gpio_driver_api gpio_axp192_api = {
 	.port_set_bits_raw = gpio_axp192_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_axp192_port_clear_bits_raw,
 	.port_toggle_bits = gpio_axp192_port_toggle_bits,
-	.pin_interrupt_configure = gpio_axp192_pin_interrupt_configure,
 	.manage_callback = gpio_axp192_manage_callback,
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	.port_get_direction = gpio_axp192_port_get_direction,
