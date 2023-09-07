@@ -28,5 +28,6 @@ tests:
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_wl55jc
+      - lpcxpresso55s36
     integration_platforms:
       - nucleo_f207zg
