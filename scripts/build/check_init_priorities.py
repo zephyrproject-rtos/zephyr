@@ -286,23 +286,12 @@ class Validator():
             self.log.info(
                     f"{dev_node.path} {dev_prio} > {dep_node.path} {dep_prio}")
 
-    def _check_edt_r(self, dev_ord, dev):
-        """Recursively check for dependencies of a device."""
-        for dep in dev.depends_on:
-            self._check_dep(dev_ord, dep.dep_ordinal)
-        if dev._binding and dev._binding.child_binding:
-            for child in dev.children.values():
-                if "compatible" in child.props:
-                    continue
-                if dev._binding.path != child._binding.path:
-                    continue
-                self._check_edt_r(dev_ord, child)
-
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
         for dev_ord in self._obj.devices:
             dev = self._ord2node[dev_ord]
-            self._check_edt_r(dev_ord, dev)
+            for dep in dev.depends_on:
+                self._check_dep(dev_ord, dep.dep_ordinal)
 
     def print_initlevels(self):
         for level, calls in self._obj.initlevels.items():
