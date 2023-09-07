@@ -20,6 +20,7 @@ tests:
     platform_exclude:
       - s32z270dc2_rtu0_r52
       - s32z270dc2_rtu1_r52
+      - mr_canhubk3
   sample.drivers.watchdog.stm32_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")

@@ -208,20 +208,35 @@ ADC is provided through ADC SAR controller with 3 instances. ADC channels are di
 FS26 SBC Watchdog
 =================
 
-On normal operation after the board is powered on, there is a window of 256 ms
-on which the FS26 watchdog must be serviced with a good token refresh, otherwise
-the watchdog will signal a reset to the MCU. This board configuration enables
-the FS26 watchdog driver that handles this initialization.
+This board configuration requires the FS26 to be started in debug mode (watchdog
+disabled) following these steps:
+
+1. Power off the board.
+2. Remove the jumper ``JP1`` (pins 1-2 open), which is connected by default.
+3. Power on the board.
+4. Reconnect the jumper ``JP1`` (pins 1-2 shorted).
+
+To use the board with the FS26 in normal mode, enable the FS26 watchdog node in
+your devicetree overlay:
+
+.. code-block:: DTS
+
+   &fs26_wdt {
+      status = "okay";
+   };
+
+And enable the watchdog driver in your ``prj.conf``:
+
+.. code-block:: console
+
+   CONFIG_WATCHDOG=y
 
 .. note::
 
-   The FS26 can also be started in debug mode (watchdog disabled) following
-   these steps:
-
-   1. Power off the board.
-   2. Remove the jumper ``JP1`` (pins 1-2 open), which is connected by default.
-   3. Power on the board.
-   4. Reconnect the jumper ``JP1`` (pins 1-2 shorted).
+   On FS26 normal operation after the board is powered on, there is a window of
+   256 ms on which the FS26 watchdog must be serviced with a good token refresh,
+   otherwise the FS26 will signal a reset to the MCU. Enabling the FS26 watchdog
+   driver handles this initialization.
 
 External Flash
 ==============

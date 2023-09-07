@@ -1,0 +1,15 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &fs26_wdt;
+	};
+};
+
+&fs26_wdt {
+	status = "okay";
+};
