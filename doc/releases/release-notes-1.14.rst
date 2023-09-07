@@ -858,7 +858,7 @@ Networking
 * Added support for SOCKS5 proxy in MQTT client.
 * Added support for IPSO Timer object in LWM2M.
 * Added support for receiving gratuitous ARP request.
-* Added :ref:`sample application <google-iot-mqtt-sample>` for Google IoT Cloud.
+* Added sample application for Google IoT Cloud.
 * :ref:`Network interface <net_if_interface>` numbering starts now from 1 for
   POSIX compatibility.
 * :ref:`OpenThread <thread_protocol_interface>` enhancements.
