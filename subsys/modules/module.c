@@ -187,7 +187,6 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 		LOG_DBG("section %d name %s", i, name);
 
-		bool valid = true;
 		enum module_mem mem_idx;
 		enum module_section sect_idx;
 
@@ -205,27 +204,25 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 			sect_idx = MOD_SECT_BSS;
 		} else {
 			LOG_DBG("Not copied section %s", name);
-			valid = false;
+			continue;
 		}
 
-		if (valid) {
-			ms->sects[sect_idx] = shdr;
-			ms->sect_map[i] = sect_idx;
+		ms->sects[sect_idx] = shdr;
+		ms->sect_map[i] = sect_idx;
 
-			m->mem[mem_idx] =
-				k_heap_alloc(&module_heap, ms->sects[sect_idx].sh_size, K_NO_WAIT);
-			module_seek(ms, ms->sects[sect_idx].sh_offset);
-			module_read(ms, m->mem[mem_idx], ms->sects[sect_idx].sh_size);
+		m->mem[mem_idx] =
+			k_heap_alloc(&module_heap, ms->sects[sect_idx].sh_size, K_NO_WAIT);
+		module_seek(ms, ms->sects[sect_idx].sh_offset);
+		module_read(ms, m->mem[mem_idx], ms->sects[sect_idx].sh_size);
 
-			m->mem_size += ms->sects[sect_idx].sh_size;
+		m->mem_size += ms->sects[sect_idx].sh_size;
 
-			LOG_DBG("Copied section %s (idx: %d, size: %d, addr %x)"
-				" to mem %d, module size %d", name, i,
-				ms->sects[sect_idx].sh_size,
-				ms->sects[sect_idx].sh_addr,
-				mem_idx,
-				m->mem_size);
-		}
+		LOG_DBG("Copied section %s (idx: %d, size: %d, addr %x) to mem %d, module size %d",
+			name, i,
+			ms->sects[sect_idx].sh_size,
+			ms->sects[sect_idx].sh_addr,
+			mem_idx,
+			m->mem_size);
 	}
 
 	/* Iterate all symbols in symtab and update its st_value,
@@ -306,90 +303,93 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		module_read(ms, (void *)&shdr, sizeof(elf_shdr_t));
 
 		/* find relocation sections */
-		if ((shdr.sh_type == SHT_REL)
-				|| (shdr.sh_type == SHT_RELA)) {
-			rel_cnt = shdr.sh_size / sizeof(elf_rel_t);
+		if (shdr.sh_type != SHT_REL && shdr.sh_type != SHT_RELA)
+			continue;
 
-			uintptr_t loc = 0;
+		rel_cnt = shdr.sh_size / sizeof(elf_rel_t);
 
-			module_seek(ms, ms->sects[MOD_SECT_SHSTRTAB].sh_offset + shdr.sh_name);
+		uintptr_t loc = 0;
+
+		module_seek(ms, ms->sects[MOD_SECT_SHSTRTAB].sh_offset + shdr.sh_name);
+		module_read(ms, name, sizeof(name));
+
+		if (strncmp(name, ".rel.text", sizeof(name)) == 0 ||
+		    strncmp(name, ".rela.text", sizeof(name)) == 0) {
+			loc = (uintptr_t)m->mem[MOD_MEM_TEXT];
+		} else if (strncmp(name, ".rel.bss", sizeof(name)) == 0) {
+			loc = (uintptr_t)m->mem[MOD_MEM_BSS];
+		} else if (strncmp(name, ".rel.rodata", sizeof(name)) == 0) {
+			loc = (uintptr_t)m->mem[MOD_MEM_RODATA];
+		} else if (strncmp(name, ".rel.data", sizeof(name)) == 0) {
+			loc = (uintptr_t)m->mem[MOD_MEM_DATA];
+		}
+
+		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
+			name, i, shdr.sh_link, rel_cnt);
+
+		for (j = 0; j < rel_cnt; j++) {
+			/* get each relocation entry */
+			module_seek(ms, shdr.sh_offset + j * sizeof(elf_rel_t));
+			module_read(ms, (void *)&rel, sizeof(elf_rel_t));
+
+			/* get corresponding symbol */
+			module_seek(ms, ms->sects[MOD_SECT_SYMTAB].sh_offset
+				    + ELF_R_SYM(rel.r_info) * sizeof(elf_sym_t));
+			module_read(ms, &sym, sizeof(elf_sym_t));
+
+			module_seek(ms, ms->sects[MOD_SECT_STRTAB].sh_offset +
+				    sym.st_name);
 			module_read(ms, name, sizeof(name));
 
-			if (strncmp(name, ".rel.text", sizeof(name)) == 0) {
-				loc = (uintptr_t)m->mem[MOD_MEM_TEXT];
-			} else if (strncmp(name, ".rela.text", sizeof(name)) == 0) {
-				loc = (uintptr_t)m->mem[MOD_MEM_TEXT];
-			} else if (strncmp(name, ".rel.bss", sizeof(name)) == 0) {
-				loc = (uintptr_t)m->mem[MOD_MEM_BSS];
-			} else if (strncmp(name, ".rel.rodata", sizeof(name)) == 0) {
-				loc = (uintptr_t)m->mem[MOD_MEM_RODATA];
-			} else if (strncmp(name, ".rel.data", sizeof(name)) == 0) {
-				loc = (uintptr_t)m->mem[MOD_MEM_DATA];
-			}
+			LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %d sym_name "
+				"%s sym_type %d sym_bind %d sym_ndx %d",
+				i, j, rel.r_info, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+				rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
+				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
-			LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations", name, i, shdr.sh_link, rel_cnt);
+			uintptr_t link_addr = 0, op_loc, op_code = 0;
 
-			for (j = 0; j < rel_cnt; j++) {
-				/* get each relocation entry */
-				module_seek(ms, shdr.sh_offset
-						+ j * sizeof(elf_rel_t));
-				module_read(ms, (void *)&rel, sizeof(elf_rel_t));
+			/* If symbol is undefined, then we need to look it up */
+			if (sym.st_shndx == SHN_UNDEF) {
+				link_addr = (uintptr_t)module_find_sym(&SYMTAB, name);
 
-				/* get corresponding symbol */
-				module_seek(ms, ms->sects[MOD_SECT_SYMTAB].sh_offset
-						+ ELF_R_SYM(rel.r_info)
-						* sizeof(elf_sym_t));
-				module_read(ms, &sym, sizeof(elf_sym_t));
+				if (link_addr == 0) {
+					LOG_ERR("Undefined symbol with no entry in "
+						"symbol table %s, offset %d, link section %d",
+						name, rel.r_offset, shdr.sh_link);
+					/* TODO cleanup and leave */
+					continue;
+				} else {
+					op_code = (uintptr_t)(loc + rel.r_offset);
 
-				module_seek(ms, ms->sects[MOD_SECT_STRTAB].sh_offset +
-							sym.st_name);
-				module_read(ms, name, sizeof(name));
-
-				LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %d sym_name %s sym_type %d sym_bind %d sym_ndx %d",
-					i, j, rel.r_info, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
-					rel.r_offset, name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info), sym.st_shndx);
-
-				uintptr_t link_addr = 0, op_loc = 0, op_code = 0;
-
-				/* If symbol is undefined, then we need to look it up */
-				if (sym.st_shndx == SHN_UNDEF) {
-
-					link_addr = (uintptr_t)(module_find_sym((struct module_symtable *)(&SYMTAB), name));
-
-					if (link_addr == 0) {
-						LOG_ERR("Undefined symbol with no entry in symbol table %s, offset %d, link section %d",
-							name, rel.r_offset, shdr.sh_link);
-						/* TODO cleanup and leave */
-						continue;
-					} else {
-						op_code = (uintptr_t)(loc + rel.r_offset);
-
-						LOG_INF("found symbol %s at 0x%lx, updating op code 0x%lx", name, link_addr, op_code);
-					}
-
-				} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION) {
-					link_addr = (uintptr_t)m->mem[ms->sect_map[sym.st_shndx]];
-
-					LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
+					LOG_INF("found symbol %s at 0x%lx, updating op code 0x%lx",
+						name, link_addr, op_code);
 				}
+			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION) {
+				link_addr = (uintptr_t)m->mem[ms->sect_map[sym.st_shndx]];
 
-				op_loc = loc + rel.r_offset;
-
-				LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset %d link section %d",
-					name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info), sym.st_shndx,
-					rel.r_offset, shdr.sh_link);
-
-				LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx addr 0x%lx",
-					name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info), op_loc, link_addr);
-
-				/* relocation */
-				arch_elf_relocate(&rel, op_loc, link_addr);
-
+				LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
 			}
+
+			op_loc = loc + rel.r_offset;
+
+			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
+				"%d link section %d",
+				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
+				sym.st_shndx, rel.r_offset, shdr.sh_link);
+
+			LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
+				"addr 0x%lx",
+				name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+				op_loc, link_addr);
+
+			/* relocation */
+			arch_elf_relocate(&rel, op_loc, link_addr);
 		}
 	}
 
-	LOG_DBG("loaded module, .text at %p, .rodata at %p", m->mem[MOD_MEM_TEXT], m->mem[MOD_MEM_RODATA]);
+	LOG_DBG("loaded module, .text at %p, .rodata at %p",
+		m->mem[MOD_MEM_TEXT], m->mem[MOD_MEM_RODATA]);
 	return 0;
 }
 
