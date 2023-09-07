@@ -446,6 +446,105 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+/*
+ * Find the section, containing the supplied offset and return file offset for
+ * that value
+ */
+static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
+{
+	unsigned int i;
+
+	for (i = 0; i < LLEXT_SECT_COUNT; i++)
+		if (ldr->sects[i].sh_addr <= offset &&
+		    ldr->sects[i].sh_addr + ldr->sects[i].sh_size > offset)
+			return offset - ldr->sects[i].sh_addr + ldr->sects[i].sh_offset;
+
+	return offset;
+}
+
+static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr)
+{
+	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
+	/*
+	 * CPU address where the .text section is stored, we use .text just as a
+	 * reference point
+	 */
+	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
+
+	LOG_DBG("Found %p in PLT %u size %u cnt %u text %p",
+		(void *)llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name),
+		shdr->sh_type, shdr->sh_entsize, sh_cnt, (void *)text);
+
+	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_SECT_SYMTAB;
+	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
+
+	for (unsigned int i = 0; i < sh_cnt; i++) {
+		elf_rela_t rela;
+
+		int ret = llext_seek(ldr, shdr->sh_offset + i * shdr->sh_entsize);
+
+		if (!ret) {
+			ret = llext_read(ldr, &rela, sizeof(rela));
+		}
+
+		if (ret < 0) {
+			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
+			continue;
+		}
+
+		/* Index in the symbol table */
+		unsigned int j = ELF32_R_SYM(rela.r_info);
+
+		if (j >= sym_cnt) {
+			LOG_WRN("PLT: idx %u >= %u", j, sym_cnt);
+			continue;
+		}
+
+		elf_sym_t sym_tbl;
+
+		ret = llext_seek(ldr, sym_shdr->sh_offset + j * sizeof(elf_sym_t));
+		if (!ret) {
+			ret = llext_read(ldr, &sym_tbl, sizeof(sym_tbl));
+		}
+
+		if (ret < 0) {
+			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
+				j, i);
+			continue;
+		}
+
+		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
+		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
+		/*
+		 * Both r_offset and sh_addr are addresses for which the extension
+		 * has been built.
+		 */
+		size_t got_offset = llext_file_offset(ldr, rela.r_offset) -
+			ldr->sects[LLEXT_SECT_TEXT].sh_offset;
+
+		if (stt == STT_NOTYPE && sym_tbl.st_shndx == SHN_UNDEF && name[0] != '\0') {
+			const void *link_addr = llext_find_sym(NULL, name);
+
+			if (!link_addr) {
+				LOG_WRN("PLT: cannot find idx %u name %s", j, name);
+				continue;
+			}
+
+			if (!rela.r_offset) {
+				LOG_WRN("PLT: zero offset idx %u name %s", j, name);
+				continue;
+			}
+
+			LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x",
+				name, got_offset,
+				rela.r_offset, ldr->sects[LLEXT_SECT_TEXT].sh_offset);
+
+			/* Resolve the symbol */
+			*(const void **)(text + got_offset) = link_addr;
+		}
+	}
+}
+
 __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
 }
@@ -486,12 +585,19 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 		if (strcmp(name, ".rel.text") == 0 ||
 		    strcmp(name, ".rela.text") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
-		} else if (strcmp(name, ".rel.bss") == 0) {
+		} else if (strcmp(name, ".rel.bss") == 0 ||
+			   strcmp(name, ".rela.bss") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_BSS];
-		} else if (strcmp(name, ".rel.rodata") == 0) {
+		} else if (strcmp(name, ".rel.rodata") == 0 ||
+			   strcmp(name, ".rela.rodata") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_RODATA];
-		} else if (strcmp(name, ".rel.data") == 0) {
+		} else if (strcmp(name, ".rel.data") == 0 ||
+			   strcmp(name, ".rela.data") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
+		} else if (strcmp(name, ".rela.plt") == 0 ||
+			   strcmp(name, ".rela.dyn") == 0) {
+			llext_link_plt(ldr, ext, &shdr);
+			continue;
 		}
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
