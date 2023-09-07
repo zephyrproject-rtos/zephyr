@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/clock_control.h>
 
 LOG_MODULE_REGISTER(udc_rpi, CONFIG_USB_DRIVER_LOG_LEVEL);
 
@@ -26,6 +27,8 @@ LOG_MODULE_REGISTER(udc_rpi, CONFIG_USB_DRIVER_LOG_LEVEL);
 #define USB_IRQ DT_INST_IRQ_BY_NAME(0, usbctrl, irq)
 #define USB_IRQ_PRI DT_INST_IRQ_BY_NAME(0, usbctrl, priority)
 #define USB_NUM_BIDIR_ENDPOINTS DT_INST_PROP(0, num_bidir_endpoints)
+#define CLK_DRV DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0))
+#define CLK_ID (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id)
 
 #define DATA_BUFFER_SIZE 64U
 
@@ -987,12 +990,18 @@ static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2)
 
 static int usb_rpi_init(void)
 {
+	int ret;
 
 	k_thread_create(&thread, thread_stack,
 			USBD_THREAD_STACK_SIZE,
 			udc_rpi_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&thread, "usb_rpi");
+
+	ret = clock_control_on(CLK_DRV, CLK_ID);
+	if (ret < 0) {
+		return ret;
+	}
 
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, udc_rpi_isr, 0, 0);
 	irq_enable(USB_IRQ);
