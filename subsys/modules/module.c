@@ -115,7 +115,9 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 	elf_shdr_t shdr;
 	size_t pos;
 
-	ms->sect_map = k_heap_alloc(&module_heap, ms->hdr.e_shnum*sizeof(uint32_t), K_NO_WAIT);
+	ms->sect_map = k_heap_alloc(&module_heap, ms->hdr.e_shnum * sizeof(uint32_t), K_NO_WAIT);
+	if (!ms->sect_map)
+		return -ENOMEM;
 	ms->sect_cnt = ms->hdr.e_shnum;
 
 	/* Find string tables */
