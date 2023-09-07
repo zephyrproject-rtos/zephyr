@@ -363,7 +363,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	if (priority >= NET_MAX_PRIORITIES) {
+	if (!IS_ENABLED(CONFIG_NET_ALLOW_ANY_PRIORITY) &&
+	    priority >= NET_MAX_PRIORITIES) {
 		NET_ERR("Priority %d is too large, maximum allowed is %d",
 			priority, NET_MAX_PRIORITIES - 1);
 		return -EINVAL;
