@@ -58,6 +58,8 @@
 	};
 
 	soc {
+		compatible = "nuvoton,npcx9", "nuvoton,npcx", "simple-bus";
+
 		/* Specific soc devices in npcx9 series */
 		itims: timer@400b0000 {
 			compatible = "nuvoton,npcx-itim-timer";
