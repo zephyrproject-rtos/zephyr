@@ -196,6 +196,9 @@ New Drivers
 
    * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
 
+* Sensors
+
+   * :dtcompatible:`we,wsen-isds-2536030320001`
 
 New Samples
 ***********
