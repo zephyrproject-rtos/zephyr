@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: SEU driver instance on Intel Agilex SOC
+
+compatible: "intel,socfpga-seu"
+
+include: base.yaml
