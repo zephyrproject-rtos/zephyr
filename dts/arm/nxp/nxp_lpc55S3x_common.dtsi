@@ -458,6 +458,7 @@
 		reg = <0x85000 0x1000>;
 		interrupts = <12 0>;
 		status = "disabled";
+		clocks = <&syscon MCUX_SCTIMER_CLK 0 0>;
 		prescaler = <2>;
 		#pwm-cells = <3>;
 	};
