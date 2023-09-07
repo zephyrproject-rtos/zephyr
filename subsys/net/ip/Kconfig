@@ -290,6 +290,12 @@ config NET_RX_DEFAULT_PRIORITY
 	  What is the default network RX packet priority if user has not set
 	  one. The value 0 means lowest priority and 7 is the highest.
 
+config NET_ALLOW_ANY_PRIORITY
+	bool "Allow any network packet priority to be used"
+	help
+	  If this is set, then any user given network packet priority can be used. Otherwise
+	  the network packet priorities are limited to 0-7 range.
+
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
 	default y
