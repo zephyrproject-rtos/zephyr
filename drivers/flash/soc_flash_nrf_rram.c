@@ -133,14 +133,11 @@ static int write_op(void *context)
 	}
 
 	while (w_ctx->len > 0) {
-		if (RRAM_MAX_WRITE_BUFFER < w_ctx->len) {
-			len = (RRAM_MAX_WRITE_BUFFER < w_ctx->len) ? RRAM_MAX_WRITE_BUFFER
-								   : w_ctx->len;
-		}
+		len = (RRAM_MAX_WRITE_BUFFER < w_ctx->len) ? RRAM_MAX_WRITE_BUFFER : w_ctx->len;
 
 		rram_write(w_ctx->flash_addr, (const void *)w_ctx->data_addr, len);
 
-		shift_write_context(sizeof(uint32_t), w_ctx);
+		shift_write_context(len, w_ctx);
 
 		if (w_ctx->len > 0) {
 			i++;
