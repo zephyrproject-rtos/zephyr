@@ -58,10 +58,7 @@ void lvgl_print_heap_info(bool dump_chunks)
 	k_spin_unlock(&lvgl_heap_lock, key);
 }
 
-static int lvgl_heap_init(void)
+void lvgl_heap_init(void)
 {
 	sys_heap_init(&lvgl_heap, &lvgl_heap_mem[0], HEAP_BYTES);
-	return 0;
 }
-
-SYS_INIT(lvgl_heap_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
