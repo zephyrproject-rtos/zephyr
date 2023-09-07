@@ -1,7 +1,8 @@
-.. _lp50xx:
+.. zephyr:code-sample:: lp50xx
+   :name: LP50XX RGB LED
+   :relevant-api: led_interface
 
-LP50XX: up to 12 RGB channels
-###############################
+   Control up to 12 RGB LEDs connected to an LP50xx driver chip.
 
 Overview
 ********
@@ -11,8 +12,8 @@ This sample controls up to 12 LEDs connected to a LP50xx driver.
 First, for each LED information is retrieved using the led_get_info syscall
 and printed in the log messages. Next, from an infinite loop, a test pattern
 (described below) is applied to all the LEDs simultaneously (using the
-led_write_channels syscall) and then to each LED one by one (using the
-led_set_{brightness,color} syscalls).
+:c:func:`led_write_channels` syscall) and then to each LED one by one (using the
+:c:func:`led_set_brightness` and :c:func:`led_set_color` syscalls).
 
 Test pattern
 ============

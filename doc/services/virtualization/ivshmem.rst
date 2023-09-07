@@ -46,7 +46,7 @@ Zephyr also supports ivshmem-v2:
 https://github.com/siemens/jailhouse/blob/master/Documentation/ivshmem-v2-specification.md
 
 This is primarily used for IPC in the Jailhouse hypervisor
-(e.g. :ref:`eth_ivshmem_sample`). It is also possible to use ivshmem-v2 without
+(e.g. :zephyr:code-sample:`eth-ivshmem`). It is also possible to use ivshmem-v2 without
 Jailhouse by building the Siemens fork of QEMU, and modifying the QEMU launch flags:
 
 https://github.com/siemens/qemu/tree/wip/ivshmem2

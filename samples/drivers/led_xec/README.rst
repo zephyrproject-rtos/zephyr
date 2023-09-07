@@ -1,7 +1,8 @@
-.. _led:
+.. zephyr:code-sample:: led-xec
+   :name: Breathing-blinking LED (BBLED)
+   :relevant-api: led_interface
 
-LED sample application
-##########################
+   Control a BBLED (Breathing-Blinking LED) using Microchip XEC driver.
 
 Overview
 ********
