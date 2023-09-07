@@ -1105,3 +1105,18 @@ test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@94 {
 	reg = <0x94>;
 	precision = "High";
 };
+
+test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@95 {
+	compatible = "we,wsen-isds-2536030320001";
+	reg = <0x95>;
+	accel-odr = "416";
+	gyro-odr = "416";
+	tap-threshold = < 9 >;
+	tap-latency = < 5 >;
+	tap-shock = < 2 >;
+	tap-quiet = < 1 >;
+	tap-mode = < 1 >;
+	tap-axis-enable = < 0 0 1 >;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
