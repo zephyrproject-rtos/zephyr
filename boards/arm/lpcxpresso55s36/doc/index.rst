@@ -81,6 +81,8 @@ already supported, which can also be re-used on this lpcxpresso55s36 board:
 +-----------+------------+-------------------------------------+
 | USB FS    | on-chip    | USB Full Speed device               |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
