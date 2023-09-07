@@ -67,7 +67,7 @@ static int sbs_charger_emul_transfer_i2c(const struct emul *target, struct i2c_m
 
 	data = target->data;
 
-	i2c_dump_msgs_rw("emul", msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 	switch (num_msgs) {
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
