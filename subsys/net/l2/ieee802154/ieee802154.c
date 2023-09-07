@@ -655,7 +655,8 @@ void ieee802154_init(struct net_if *iface)
 	memcpy(ctx->linkaddr.addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
 	net_if_set_link_addr(iface, ctx->linkaddr.addr, ctx->linkaddr.len, ctx->linkaddr.type);
 
-	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START) ||
+	    IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
 		LOG_DBG("Interface auto start disabled.");
 		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	}
