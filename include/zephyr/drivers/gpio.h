@@ -1800,6 +1800,7 @@ static inline int gpio_remove_callback_dt(const struct gpio_dt_spec *spec,
  *
  * @retval status != 0 if at least one gpio interrupt is pending.
  * @retval 0 if no gpio interrupt is pending.
+ * @retval -ENOSYS If driver does not implement the operation
  */
 __syscall int gpio_get_pending_int(const struct device *dev);
 
@@ -1809,7 +1810,7 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 		(const struct gpio_driver_api *)dev->api;
 
 	if (api->get_pending_int == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->get_pending_int(dev);
