@@ -184,6 +184,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 		module_seek(ms, ms->sects[MOD_SECT_SHSTRTAB].sh_offset + str_idx);
 		module_read(ms, name, sizeof(name));
+		name[sizeof(name) - 1] = '\0';
 
 		LOG_DBG("section %d name %s", i, name);
 
