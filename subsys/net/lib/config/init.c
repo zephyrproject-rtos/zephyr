@@ -367,6 +367,14 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 		iface = net_if_get_default();
 	}
 
+	if (!iface) {
+		return -ENOENT;
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+		return -ENETDOWN;
+	}
+
 	if (timeout < 0) {
 		count = -1;
 	} else if (timeout == 0) {
@@ -453,7 +461,7 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 		}
 	}
 
-	ret = z_net_config_ieee802154_setup();
+	ret = z_net_config_ieee802154_setup(iface);
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
 	}
@@ -466,6 +474,17 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	}
 #endif
 
+	/* Only try to use a network interface that is auto started */
+	if (iface == NULL) {
+		net_if_foreach(iface_find_cb, &iface);
+	}
+
+	if (!iface) {
+		NET_WARN("No auto-started network interface - "
+			 "network-bound app initialization skipped.");
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IPV6)) {
 		flags |= NET_CONFIG_NEED_IPV6;
 	}
@@ -476,11 +495,6 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 
 	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IPV4)) {
 		flags |= NET_CONFIG_NEED_IPV4;
-	}
-
-	/* Only try to use a network interface that is auto started */
-	if (iface == NULL) {
-		net_if_foreach(iface_find_cb, &iface);
 	}
 
 	/* Initialize the application automatically if needed */
