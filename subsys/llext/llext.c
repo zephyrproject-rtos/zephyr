@@ -403,6 +403,10 @@ out:
 	return ret;
 }
 
+__weak void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
+{
+}
+
 static int llext_link(struct llext_loader *ldr, struct llext *ext)
 {
 	int ret = 0;
