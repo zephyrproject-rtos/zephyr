@@ -100,8 +100,17 @@ _id_ok:
 	 * we are in a interruption we don't want the system
 	 * thinking it is possibly running in user mode.
 	 */
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	movi a0, is_user_mode@tpoff
+	rur.THREADPTR a3
+	add a0, a3, a0
+
+	movi a3, 0
+	s32i a3, a0, 0
+#else
 	movi a0, 0
 	wur.THREADPTR a0
+#endif
 
 	/* Set syscall parameters. We have an initial call4 to set up the
 	 * the stack and then a new call4 for the syscall function itself.
@@ -157,9 +166,17 @@ _syscall_returned:
 	wsr a3, SCOMPARE1
 #endif
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	l32i a3, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
+	movi a0, is_user_mode@tpoff
+	add a0, a3, a0
+	movi a3, 1
+	s32i a3, a0, 0
+#else
 	rsr a3, ZSR_CPU
 	l32i a3, a3, ___cpu_t_current_OFFSET
 	wur.THREADPTR a3
+#endif
 
 	l32i a3, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr.ps a3
@@ -225,9 +242,17 @@ z_xtensa_userspace_enter:
 	l32i a6, a1, 24
 	call4 z_xtensa_swap_update_page_tables
 
-	/* Set threadptr with the thread address, we are going to user mode. */
-	l32i a0, a1, 24
-	wur.THREADPTR a0
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	rur.threadptr a3
+	movi a0, is_user_mode@tpoff
+	add a0, a3, a0
+	movi a3, 1
+	s32i a3, a0, 0
+#else
+	rsr a3, ZSR_CPU
+	l32i a3, a3, ___cpu_t_current_OFFSET
+	wur.THREADPTR a3
+#endif
 
 	/* Set now z_thread_entry parameters, we are simulating a call4
 	 * call, so parameters start at a6, a7, ...
