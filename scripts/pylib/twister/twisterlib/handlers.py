@@ -887,7 +887,7 @@ class QEMUHandler(Handler):
             # line contains a full line of data output from QEMU
             log_out_fp.write(line)
             log_out_fp.flush()
-            line = line.strip()
+            line = line.rstrip()
             logger.debug(f"QEMU ({pid}): {line}")
 
             harness.handle(line)
