@@ -136,6 +136,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 		switch (shdr.sh_type) {
 		case SHT_SYMTAB:
+		case SHT_DYNSYM:
 			LOG_DBG("symtab at %d", i);
 			ms->sects[MOD_SECT_SYMTAB] = shdr;
 			ms->sect_map[i] = MOD_SECT_SYMTAB;
@@ -398,8 +399,10 @@ int module_load(struct module_stream *ms, const char name[16], struct module **m
 		return -EINVAL;
 	}
 
-	if (ehdr.e_type == ET_REL) {
-		LOG_DBG("Loading relocatable elf");
+	switch (ehdr.e_type) {
+	case ET_REL:
+	case ET_DYN:
+		LOG_DBG("Loading relocatable or shared elf");
 		*m = k_heap_alloc(&module_heap, sizeof(struct module), K_NO_WAIT);
 
 		for (int i = 0; i < MOD_MEM_COUNT; i++) {
@@ -413,7 +416,8 @@ int module_load(struct module_stream *ms, const char name[16], struct module **m
 			ms->hdr = ehdr;
 			ret = module_load_rel(ms, *m);
 		}
-	} else {
+		break;
+	default:
 		LOG_ERR("Unsupported elf file type %x", ehdr.e_type);
 		/* unsupported ELF file type */
 		*m = NULL;
