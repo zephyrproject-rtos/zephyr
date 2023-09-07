@@ -3377,6 +3377,16 @@ West:
   labels:
     - "area: OpenThread"
 
+"West project: percepio":
+  status: maintained
+  maintainers:
+    - eriktamlin
+    - aronlander-pe
+  files:
+    - modules/percepio/
+  labels:
+    - "area: Tracing"
+
 "West project: picolibc":
   status: maintained
   maintainers:
@@ -3440,15 +3450,6 @@ West:
     - modules/Kconfig.tinycrypt
   labels:
     - "area: Crypto / RNG"
-
-"West project: TraceRecorderSource":
-  status: maintained
-  maintainers:
-    - eriktamlin
-  files:
-    - modules/TraceRecorder/
-  labels:
-    - "area: Tracing"
 
 "West project: trusted-firmware-m":
   status: maintained
