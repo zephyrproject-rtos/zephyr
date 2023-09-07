@@ -846,6 +846,7 @@ static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
  * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
  *
  * @retval 0 If successful.
+ * @retval -ENOSYS If the operation is not implemented by the driver.
  * @retval -ENOTSUP If any of the configuration options is not supported
  *                  (unless otherwise directed by flag documentation).
  * @retval -EINVAL  Invalid argument.
@@ -870,6 +871,10 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		(const struct gpio_driver_data *)port->data;
 	enum gpio_int_trig trig;
 	enum gpio_int_mode mode;
+
+	if (api->pin_interrupt_configure == NULL) {
+		return -ENOSYS;
+	}
 
 	__ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE))
 		 != (GPIO_INT_DISABLE | GPIO_INT_ENABLE),
