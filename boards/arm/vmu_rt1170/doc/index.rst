@@ -216,10 +216,8 @@ Configuring a Debug Probe
 
 A debug probe is used for both flashing and debugging the board.
 
-.. _Using J-Link RT1170:
-
 Using J-Link
----------------------------------
+------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
