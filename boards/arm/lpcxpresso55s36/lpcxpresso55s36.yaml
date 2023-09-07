@@ -18,3 +18,4 @@ supported:
   - can
   - gpio
   - pwm
+  - dac

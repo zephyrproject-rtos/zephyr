@@ -31,7 +31,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-#if defined(CONFIG_SOC_LPC55S36) && defined(CONFIG_ADC_MCUX_LPADC)
+#if defined(CONFIG_SOC_LPC55S36) && (defined(CONFIG_ADC_MCUX_LPADC) \
+	|| defined(CONFIG_DAC_MCUX_LPDAC))
 #include <fsl_vref.h>
 #endif
 
@@ -322,8 +323,26 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+#else
+	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk,
+			DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
+	CLOCK_AttachClk(MUX_A(CM_ADCASYNCCLKSEL, DT_PROP(DT_NODELABEL(adc0), clk_source)));
 
-#if defined(CONFIG_ADC_MCUX_LPADC)
+	/* Power up the ADC */
+	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
+#endif
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dac0), nxp_lpdac, okay)
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1U, true);
+	CLOCK_AttachClk(kMAIN_CLK_to_DAC0);
+
+	/* Disable DAC0 power down */
+	POWER_DisablePD(kPDRUNCFG_PD_DAC0);
+#endif
+#endif
+#if defined(CONFIG_SOC_LPC55S36)
+#if (defined(CONFIG_ADC_MCUX_LPADC) || defined(CONFIG_DAC_MCUX_LPDAC))
 	/* Vref is required for LPADC reference */
 	POWER_DisablePD(kPDRUNCFG_PD_VREF);
 
@@ -334,14 +353,6 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	vrefConfig.enableInternalVoltageRegulator = true;
 	vrefConfig.enableVrefOut                  = true;
 	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
-#endif
-#else
-	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk,
-			DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
-	CLOCK_AttachClk(MUX_A(CM_ADCASYNCCLKSEL, DT_PROP(DT_NODELABEL(adc0), clk_source)));
-
-	/* Power up the ADC */
-	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
 #endif
 #endif
 }
