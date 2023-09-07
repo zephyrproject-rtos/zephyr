@@ -364,6 +364,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--enable-size-report", action="store_true",
                         help="Enable expensive computation of RAM/ROM segment sizes.")
 
+    parser.add_argument("--create-rom-ram-report", action="store_true",
+                        help="Generate detailed ram/rom json reports for "
+                             "each build, via cmake build calls with the "
+                             "`--target footprint` argument")
+
     parser.add_argument(
         "--filter", choices=['buildable', 'runnable'],
         default='buildable',
