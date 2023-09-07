@@ -336,6 +336,11 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	for (i = 0, pos = ldr->sects[LLEXT_SECT_SYMTAB].sh_offset;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
+		if (!i) {
+			/* A dummy entry */
+			continue;
+		}
+
 		ret = llext_seek(ldr, pos);
 		if (ret != 0) {
 			return ret;
@@ -391,6 +396,11 @@ static inline int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext
 	for (i = 0, pos = ldr->sects[LLEXT_SECT_SYMTAB].sh_offset, j = 0;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
+		if (!i) {
+			/* A dummy entry */
+			continue;
+		}
+
 		ret = llext_seek(ldr, pos);
 		if (ret != 0) {
 			return ret;
