@@ -205,14 +205,12 @@ static void nxp_s32_gpio_isr(uint8_t pin, void *arg)
 
 	gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 }
-#endif /* CONFIG_NXP_S32_EIRQ */
 
 static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev,
 						gpio_pin_t pin,
 						enum gpio_int_mode mode,
 						enum gpio_int_trig trig)
 {
-#ifdef CONFIG_NXP_S32_EIRQ
 	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct eirq_nxp_s32_info *eirq_info = config->eirq_info;
 
@@ -255,35 +253,18 @@ static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev,
 	}
 
 	return 0;
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-#endif
 }
 
 static int nxp_s32_gpio_manage_callback(const struct device *dev,
 					struct gpio_callback *cb, bool set)
 {
-#ifdef CONFIG_NXP_S32_EIRQ
 	struct gpio_nxp_s32_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, cb, set);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(set);
-
-	return -ENOTSUP;
-#endif
 }
 
 static uint32_t nxp_s32_gpio_get_pending_int(const struct device *dev)
 {
-#ifdef CONFIG_NXP_S32_EIRQ
 	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct eirq_nxp_s32_info *eirq_info = config->eirq_info;
 
@@ -300,14 +281,8 @@ static uint32_t nxp_s32_gpio_get_pending_int(const struct device *dev)
 	 * that GPIO port belongs to
 	 */
 	return eirq_nxp_s32_get_pending(eirq_info->eirq_dev);
-
-#else
-	ARG_UNUSED(dev);
-
-	return -ENOTSUP;
-#endif
 }
-
+#endif /* CONFIG_NXP_S32_EIRQ */
 
 #ifdef CONFIG_GPIO_GET_CONFIG
 static int nxp_s32_gpio_pin_get_config(const struct device *dev,
@@ -400,9 +375,11 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	.port_set_bits_raw = nxp_s32_gpio_port_set_bits_raw,
 	.port_clear_bits_raw = nxp_s32_gpio_port_clear_bits_raw,
 	.port_toggle_bits = nxp_s32_gpio_port_toggle_bits,
+#ifdef CONFIG_NXP_S32_EIRQ
 	.pin_interrupt_configure = nxp_s32_gpio_pin_interrupt_configure,
 	.manage_callback = nxp_s32_gpio_manage_callback,
 	.get_pending_int = nxp_s32_gpio_get_pending_int,
+#endif
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = nxp_s32_gpio_pin_get_config,
 #endif
