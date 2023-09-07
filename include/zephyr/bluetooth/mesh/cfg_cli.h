@@ -1690,6 +1690,7 @@ uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx);
  */
 struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_elem *elem, int idx);
 
+/** Composition data page 1 element representation */
 struct bt_mesh_comp_p1_elem {
 	/** The number of SIG models in this element */
 	size_t nsig;
