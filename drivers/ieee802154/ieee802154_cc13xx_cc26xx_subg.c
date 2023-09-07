@@ -35,7 +35,6 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx_subg);
 
 static int drv_start_rx(const struct device *dev);
 static int drv_stop_rx(const struct device *dev);
-static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data);
 
 #ifndef CMD_PROP_RADIO_DIV_SETUP_PA
 /* workaround for older HAL TI SDK (less than 4.40) */
@@ -320,6 +319,78 @@ static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	/* No need for locking as the RX status is volatile and there's no race. */
 	LOG_DBG("ch: %u cmd: %04x cs st: %04x tx st: %04x e: 0x%" PRIx64, ch,
 		op->commandNo, op->status, drv_data->cmd_prop_tx_adv.status, e);
+}
+
+static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
+{
+	int8_t rssi, status;
+	struct net_pkt *pkt;
+	uint8_t len;
+	uint8_t *sdu;
+
+	/* No need for locking as only immutable data is accessed from drv_data.
+	 * The rx queue itself (entries and data) are managed and protected
+	 * internally by TI's RF driver.
+	 */
+
+	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
+		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
+			len = drv_data->rx_data[i][0];
+			sdu = drv_data->rx_data[i] + 1;
+			status = drv_data->rx_data[i][len--];
+			rssi = drv_data->rx_data[i][len--];
+
+			/* TODO: Configure firmware to include CRC in raw mode. */
+			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && len > 0) {
+				/* append CRC-16/CCITT */
+				uint16_t crc = 0;
+
+				crc = crc16_ccitt(0, sdu, len);
+				sdu[len++] = crc;
+				sdu[len++] = crc >> 8;
+			}
+
+			LOG_DBG("Received: len = %u, rssi = %d status = %u",
+				len, rssi, status);
+
+			pkt = net_pkt_rx_alloc_with_buffer(
+				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+			if (!pkt) {
+				LOG_WRN("Cannot allocate packet");
+				continue;
+			}
+
+			if (net_pkt_write(pkt, sdu, len)) {
+				LOG_WRN("Cannot write packet");
+				net_pkt_unref(pkt);
+				continue;
+			}
+
+			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
+
+			/* TODO: Determine LQI in PROP mode. */
+			net_pkt_set_ieee802154_lqi(pkt, 0xff);
+			net_pkt_set_ieee802154_rssi_dbm(pkt,
+							rssi == CC13XX_CC26XX_INVALID_RSSI
+								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
+								: rssi);
+
+			if (ieee802154_handle_ack(drv_data->iface, pkt) == NET_OK) {
+				net_pkt_unref(pkt);
+				continue;
+			}
+
+			if (net_recv_data(drv_data->iface, pkt)) {
+				LOG_WRN("Packet dropped");
+				net_pkt_unref(pkt);
+			}
+
+		} else if (drv_data->rx_entry[i].status ==
+			   DATA_ENTRY_UNFINISHED) {
+			LOG_WRN("Frame not finished");
+			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
+		}
+	}
 }
 
 static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
@@ -670,78 +741,6 @@ static int ieee802154_cc13xx_cc26xx_subg_attr_get(const struct device *dev,
 	return ieee802154_attr_get_channel_page_and_range(
 		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED,
 		&drv_attr.phy_supported_channels, value);
-}
-
-static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
-{
-	int8_t rssi, status;
-	struct net_pkt *pkt;
-	uint8_t len;
-	uint8_t *sdu;
-
-	/* No need for locking as only immutable data is accessed from drv_data.
-	 * The rx queue itself (entries and data) are managed and protected
-	 * internally by TI's RF driver.
-	 */
-
-	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
-		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
-			len = drv_data->rx_data[i][0];
-			sdu = drv_data->rx_data[i] + 1;
-			status = drv_data->rx_data[i][len--];
-			rssi = drv_data->rx_data[i][len--];
-
-			/* TODO: Configure firmware to include CRC in raw mode. */
-			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && len > 0) {
-				/* append CRC-16/CCITT */
-				uint16_t crc = 0;
-
-				crc = crc16_ccitt(0, sdu, len);
-				sdu[len++] = crc;
-				sdu[len++] = crc >> 8;
-			}
-
-			LOG_DBG("Received: len = %u, rssi = %d status = %u",
-				len, rssi, status);
-
-			pkt = net_pkt_rx_alloc_with_buffer(
-				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
-			if (!pkt) {
-				LOG_WRN("Cannot allocate packet");
-				continue;
-			}
-
-			if (net_pkt_write(pkt, sdu, len)) {
-				LOG_WRN("Cannot write packet");
-				net_pkt_unref(pkt);
-				continue;
-			}
-
-			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
-
-			/* TODO: Determine LQI in PROP mode. */
-			net_pkt_set_ieee802154_lqi(pkt, 0xff);
-			net_pkt_set_ieee802154_rssi_dbm(pkt,
-							rssi == CC13XX_CC26XX_INVALID_RSSI
-								? IEEE802154_MAC_RSSI_DBM_UNDEFINED
-								: rssi);
-
-			if (ieee802154_handle_ack(drv_data->iface, pkt) == NET_OK) {
-				net_pkt_unref(pkt);
-				continue;
-			}
-
-			if (net_recv_data(drv_data->iface, pkt)) {
-				LOG_WRN("Packet dropped");
-				net_pkt_unref(pkt);
-			}
-
-		} else if (drv_data->rx_entry[i].status ==
-			   DATA_ENTRY_UNFINISHED) {
-			LOG_WRN("Frame not finished");
-			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
-		}
-	}
 }
 
 static int ieee802154_cc13xx_cc26xx_subg_start(const struct device *dev)
