@@ -1,0 +1,98 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WSEN_ISDS_2536030320001
+	bool "WSEN-ISDS 3D accelerometer and 3D gyroscope sensor"
+	default y
+	depends on DT_HAS_WE_WSEN_ISDS_2536030320001_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ISDS_2536030320001),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ISDS_2536030320001),spi)
+	select HAS_WESENSORS
+	help
+	  Enable driver for the WSEN-ISDS I2C/SPI-based 3D accelerometer and 3D gyroscope sensor
+	  with integrated temperature sensor.
+
+if WSEN_ISDS_2536030320001
+
+config WSEN_ISDS_2536030320001_DISABLE_ACCEL_HIGH_PERFORMANCE_MODE
+	bool "Disable accelerometer high performance mode"
+	help
+	  Disables accelerometer high performance mode. If high performance mode is disabled,
+	  the ODR is used to switch between power modes as follows:
+	  - 1.6 Hz - 52 Hz     Low power mode
+	  - 104 Hz - 208 Hz    Normal power mode
+	  - 416 Hz - 6.66 kHz  High performance mode
+
+config WSEN_ISDS_2536030320001_DISABLE_GYRO_HIGH_PERFORMANCE_MODE
+	bool "Disable gyroscope high performance mode"
+	help
+	  Disables gyroscope high performance mode. If high performance mode is disabled,
+	  the ODR is used to switch between power modes as follows:
+	  - 12.5 Hz - 52 Hz    Low power mode
+	  - 104 Hz - 208 Hz    Normal power mode
+	  - 416 Hz - 6.66 kHz  High performance mode
+
+choice WSEN_ISDS_2536030320001_TRIGGER_MODE
+	prompt "Trigger mode"
+	default WSEN_ISDS_2536030320001_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config WSEN_ISDS_2536030320001_TRIGGER_NONE
+	bool "No trigger"
+
+config WSEN_ISDS_2536030320001_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select WSEN_ISDS_2536030320001_TRIGGER
+
+config WSEN_ISDS_2536030320001_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select WSEN_ISDS_2536030320001_TRIGGER
+
+endchoice # WSEN_ISDS_2536030320001_TRIGGER_MODE
+
+config WSEN_ISDS_2536030320001_TRIGGER
+	bool
+
+config WSEN_ISDS_2536030320001_EVENTS
+	bool
+
+config WSEN_ISDS_2536030320001_THREAD_PRIORITY
+	int "Thread priority"
+	depends on WSEN_ISDS_2536030320001_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config WSEN_ISDS_2536030320001_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on WSEN_ISDS_2536030320001_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config WSEN_ISDS_2536030320001_TAP
+	bool "Tap and double tap detection"
+	depends on WSEN_ISDS_2536030320001_TRIGGER
+	select WSEN_ISDS_2536030320001_EVENTS
+	help
+	  Enable tap (single/double) detection
+	  Note that the recommended ODRs for tap recognition are 416 Hz and 833 Hz.
+
+config WSEN_ISDS_2536030320001_FREEFALL
+	bool "Free-fall detection"
+	depends on WSEN_ISDS_2536030320001_TRIGGER
+	select WSEN_ISDS_2536030320001_EVENTS
+	help
+	  Enable free-fall detection
+
+config WSEN_ISDS_2536030320001_DELTA
+	bool "Wake-up detection (SENSOR_TRIG_DELTA)"
+	depends on WSEN_ISDS_2536030320001_TRIGGER
+	select WSEN_ISDS_2536030320001_EVENTS
+	help
+	  Enable wake-up detection (SENSOR_TRIG_DELTA)
+
+endif # WSEN_ISDS_2536030320001
