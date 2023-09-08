@@ -745,3 +745,9 @@ test_i2c_f75303: f75303@70 {
 	compatible = "fintek,f75303";
 	reg = <0x70>;
 };
+
+test_i2c_tsl2540: tsl2540@71 {
+	compatible = "ams,tsl2540";
+	reg = <0x71>;
+	int-gpios = <&test_gpio 0 0>;
+};
