@@ -1811,8 +1811,7 @@ if(CONFIG_CHECK_INIT_PRIORITIES)
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --build-dir ${PROJECT_BINARY_DIR}/..
-      --edt-pickle ${EDT_PICKLE}
+      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
       ${fail_on_warning}
     )
 endif()
