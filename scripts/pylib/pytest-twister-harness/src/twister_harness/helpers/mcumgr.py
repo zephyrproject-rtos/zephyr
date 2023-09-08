@@ -3,18 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import pytest
 import logging
 import re
 import shlex
 
-from typing import Generator
 from subprocess import check_output, getstatusoutput
 from pathlib import Path
 from dataclasses import dataclass
-
-from twister_harness.device.device_adapter import DeviceAdapter
-
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +103,3 @@ class MCUmgr:
             image_list = self.get_image_list()
             hash = image_list[0].hash
         self.run_command(f'image confirm {hash}')
-
-
-@pytest.fixture(scope='session')
-def is_mcumgr_available() -> None:
-    if not MCUmgr.is_available():
-        pytest.skip('mcumgr not available')
-
-
-@pytest.fixture()
-def mcumgr(is_mcumgr_available: None, dut: DeviceAdapter) -> Generator[MCUmgr, None, None]:
-    yield MCUmgr.create_for_serial(dut.device_config.serial)
