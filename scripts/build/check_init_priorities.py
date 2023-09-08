@@ -6,14 +6,16 @@
 """
 Checks the initialization priorities
 
-This script parses the object files in the specified build directory, creates a
-list of known devices and their effective initialization priorities and
-compares that with the device dependencies inferred from the devicetree
-hierarchy.
+This script parses a Zephyr executable file, creates a list of known devices
+and their effective initialization priorities and compares that with the device
+dependencies inferred from the devicetree hierarchy.
 
 This can be used to detect devices that are initialized in the incorrect order,
 but also devices that are initialized at the same priority but depends on each
 other, which can potentially break if the linking order is changed.
+
+Optionally, it can also produce a human readable list of the initialization
+calls for the various init levels.
 """
 
 import argparse
@@ -24,7 +26,6 @@ import pickle
 import sys
 
 from elftools.elf.elffile import ELFFile
-from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 # This is needed to load edt.pickle files.
@@ -32,23 +33,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
                                 "dts", "python-devicetree", "src"))
 from devicetree import edtlib  # pylint: disable=unused-import
 
-# Prefix used for relocation sections containing initialization data, as in
-# sequence of "struct init_entry".
-_INIT_SECTION_PREFIX = (".rel.z_init_", ".rela.z_init_")
-
 # Prefix used for "struct device" reference initialized based on devicetree
 # entries with a known ordinal.
 _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 
-# File name suffix for object files to be scanned.
-_OBJ_FILE_SUFFIX = ".c.obj"
-
 # Defined init level in order of priority.
 _DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL_1", "PRE_KERNEL_2", "POST_KERNEL",
                       "APPLICATION", "SMP"]
-
-# File name to check for detecting and skiping nested build directories.
-_BUILD_DIR_DETECT_FILE = "CMakeCache.txt"
 
 # List of compatibles for node where the initialization priority should be the
 # opposite of the device tree inferred dependency.
@@ -65,34 +56,28 @@ _IGNORE_COMPATIBLES = frozenset([
 class Priority:
     """Parses and holds a device initialization priority.
 
-    Parses an ELF section name for the corresponding initialization level and
-    priority, for example ".rel.z_init_PRE_KERNEL_155_" for "PRE_KERNEL_1 55".
-
     The object can be used for comparing levels with one another.
 
     Attributes:
         name: the section name
     """
-    def __init__(self, name):
-        for idx, level in enumerate(_DEVICE_INIT_LEVELS):
-            if level in name:
-                _, priority_str = name.strip("_").split(level)
-                priority, sub_priority = priority_str.split("_")
+    def __init__(self, level, priority):
+        for idx, level_name in enumerate(_DEVICE_INIT_LEVELS):
+            if level_name == level:
                 self._level = idx
-                self._priority = int(priority)
-                self._sub_priority = int(sub_priority)
+                self._priority = priority
                 # Tuples compare elementwise in order
-                self._level_priority = (self._level, self._priority, self._sub_priority)
+                self._level_priority = (self._level, self._priority)
                 return
 
-        raise ValueError("Unknown level in %s" % name)
+        raise ValueError("Unknown level in %s" % level)
 
     def __repr__(self):
-        return "<%s %s %d %d>" % (self.__class__.__name__,
-                               _DEVICE_INIT_LEVELS[self._level], self._priority, self._sub_priority)
+        return "<%s %s %d>" % (self.__class__.__name__,
+                               _DEVICE_INIT_LEVELS[self._level], self._priority)
 
     def __str__(self):
-        return "%s %d %d" % (_DEVICE_INIT_LEVELS[self._level], self._priority, self._sub_priority)
+        return "%s %d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
 
     def __lt__(self, other):
         return self._level_priority < other._level_priority
@@ -104,15 +89,15 @@ class Priority:
         return self._level_priority
 
 
-class ZephyrObjectFile:
-    """Load an object file and finds the device defined within it.
+class ZephyrInitLevels:
+    """Load an executable file and find the initialization calls and devices.
 
-    Load an object file and scans the relocation sections looking for the known
-    ones containing initialization callbacks. Then finds what device ordinals
-    are being initialized at which priority and stores the list internally.
+    Load a Zephyr executable file and scan for the list of initialization calls
+    and defined devices.
 
-    A dictionary of {ordinal: Priority} is available in the defined_devices
-    class variable.
+    The list of devices is available in the "devices" class variable in the
+    {ordinal: Priority} format, the list of initilevels is in the "initlevels"
+    class variables in the {"level name": ["call", ...]} format.
 
     Attributes:
         file_path: path of the file to be loaded.
@@ -120,26 +105,49 @@ class ZephyrObjectFile:
     def __init__(self, file_path):
         self.file_path = file_path
         self._elf = ELFFile(open(file_path, "rb"))
-        self._load_symbols()
-        self._find_defined_devices()
+        self._load_objects()
+        self._load_level_addr()
+        self._process_initlevels()
 
-    def _load_symbols(self):
-        """Initialize the symbols table."""
-        self._symbols = {}
+    def _load_objects(self):
+        """Initialize the object table."""
+        self._objects = {}
 
         for section in self._elf.iter_sections():
             if not isinstance(section, SymbolTableSection):
                 continue
 
-            for num, sym in enumerate(section.iter_symbols()):
-                if sym.name:
-                    self._symbols[num] = sym.name
+            for sym in section.iter_symbols():
+                if (sym.name and
+                    sym.entry.st_size > 0 and
+                    sym.entry.st_info.type in ["STT_OBJECT", "STT_FUNC"]):
+                    self._objects[sym.entry.st_value] = (
+                            sym.name, sym.entry.st_size, sym.entry.st_shndx)
 
-    def _device_ord_from_rel(self, rel):
-        """Find a device ordinal from a device symbol name."""
-        sym_id = rel["r_info_sym"]
-        sym_name = self._symbols.get(sym_id, None)
+    def _load_level_addr(self):
+        """Find the address associated with known init levels."""
+        self._init_level_addr = {}
 
+        for section in self._elf.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+
+            for sym in section.iter_symbols():
+                for level in _DEVICE_INIT_LEVELS:
+                    name = f"__init_{level}_start"
+                    if sym.name == name:
+                        self._init_level_addr[level] = sym.entry.st_value
+                    elif sym.name == "__init_end":
+                        self._init_level_end = sym.entry.st_value
+
+        if len(self._init_level_addr) != len(_DEVICE_INIT_LEVELS):
+            raise ValueError(f"Missing init symbols, found: {self._init_level_addr}")
+
+        if not self._init_level_end:
+            raise ValueError(f"Missing init section end symbol")
+
+    def _device_ord_from_name(self, sym_name):
+        """Find a device ordinal from a symbol name."""
         if not sym_name:
             return None
 
@@ -149,35 +157,67 @@ class ZephyrObjectFile:
         _, device_ord = sym_name.split(_DEVICE_ORD_PREFIX)
         return int(device_ord)
 
-    def _find_defined_devices(self):
-        """Find the device structures defined in the object file."""
-        self.defined_devices = {}
+    def _object_name(self, addr):
+        if not addr:
+            return "NULL"
+        elif addr in self._objects:
+            return self._objects[addr][0]
+        else:
+            return "unknown"
 
-        for section in self._elf.iter_sections():
-            if not isinstance(section, RelocationSection):
-                continue
+    def _initlevel_pointer(self, addr, idx, shidx):
+        elfclass = self._elf.elfclass
+        if elfclass == 32:
+            ptrsize = 4
+        elif elfclass == 64:
+            ptrsize = 8
+        else:
+            ValueError(f"Unknown pointer size for ELF class f{elfclass}")
 
-            if not section.name.startswith(_INIT_SECTION_PREFIX):
-                continue
+        section = self._elf.get_section(shidx)
+        start = section.header.sh_addr
+        data = section.data()
 
-            prio = Priority(section.name)
+        offset = addr - start
 
-            for rel in section.iter_relocations():
-                device_ord = self._device_ord_from_rel(rel)
-                if not device_ord:
-                    continue
+        start = offset + ptrsize * idx
+        stop = offset + ptrsize * (idx + 1)
 
-                if device_ord in self.defined_devices:
-                    raise ValueError(
-                            f"Device {device_ord} already defined, stale "
-                            "object files in the build directory? "
-                            "Try running a clean build.")
+        return int.from_bytes(data[start:stop], byteorder="little")
 
-                self.defined_devices[device_ord] = prio
+    def _process_initlevels(self):
+        """Process the init level and find the init functions and devices."""
+        self.devices = {}
+        self.initlevels = {}
 
-    def __repr__(self):
-        return (f"<{self.__class__.__name__} {self.file_path} "
-                f"defined_devices: {self.defined_devices}>")
+        for i, level in enumerate(_DEVICE_INIT_LEVELS):
+            start = self._init_level_addr[level]
+            if i + 1 == len(_DEVICE_INIT_LEVELS):
+                stop = self._init_level_end
+            else:
+                stop = self._init_level_addr[_DEVICE_INIT_LEVELS[i + 1]]
+
+            self.initlevels[level] = []
+
+            priority = 0
+            addr = start
+            while addr < stop:
+                if addr not in self._objects:
+                    raise ValueError(f"no symbol at addr {addr:08x}")
+                obj, size, shidx = self._objects[addr]
+
+                arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
+                arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
+
+                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+
+                ordinal = self._device_ord_from_name(arg1_name)
+                if ordinal:
+                    prio = Priority(level, priority)
+                    self.devices[ordinal] = prio
+
+                addr += size
+                priority += 1
 
 class Validator():
     """Validates the initialization priorities.
@@ -187,51 +227,25 @@ class Validator():
     dependency list and log any found priority issue.
 
     Attributes:
-        build_dir: the build directory to scan
-        edt_pickle_path: path of the EDT pickle file
+        elf_file_path: path of the ELF file
+        edt_pickle: name of the EDT pickle file
         log: a logging.Logger object
     """
-    def __init__(self, build_dir, edt_pickle_path, log):
+    def __init__(self, elf_file_path, edt_pickle, log):
         self.log = log
 
-        edtser = pathlib.Path(build_dir, edt_pickle_path)
-        with open(edtser, "rb") as f:
+        edt_pickle_path = pathlib.Path(
+                pathlib.Path(elf_file_path).parent,
+                edt_pickle)
+        with open(edt_pickle_path, "rb") as f:
             edt = pickle.load(f)
 
         self._ord2node = edt.dep_ord2node
 
-        self._objs = []
-        for file in self._find_build_objfiles(build_dir, is_root=True):
-            obj = ZephyrObjectFile(file)
-            if obj.defined_devices:
-                self._objs.append(obj)
-                for dev, prio in obj.defined_devices.items():
-                    dev_path = self._ord2node[dev].path
-                    self.log.debug(f"{file}: {dev_path} {prio}")
-
-        self._dev_priorities = {}
-        for obj in self._objs:
-            for dev, prio in obj.defined_devices.items():
-                if dev in self._dev_priorities:
-                    dev_path = self._ord2node[dev].path
-                    raise ValueError(
-                            f"ERROR: device {dev} ({dev_path}) already defined")
-                self._dev_priorities[dev] = prio
+        self._obj = ZephyrInitLevels(elf_file_path)
 
         self.warnings = 0
         self.errors = 0
-
-    def _find_build_objfiles(self, build_dir, is_root=False):
-        """Find all project object files, skip sub-build directories."""
-        if not is_root and pathlib.Path(build_dir, _BUILD_DIR_DETECT_FILE).exists():
-            return
-
-        for file in pathlib.Path(build_dir).iterdir():
-            if file.is_file() and file.name.endswith(_OBJ_FILE_SUFFIX):
-                yield file
-            if file.is_dir():
-                for file in self._find_build_objfiles(file.resolve()):
-                    yield file
 
     def _check_dep(self, dev_ord, dep_ord):
         """Validate the priority between two devices."""
@@ -254,8 +268,8 @@ class Validator():
                 self.log.info(f"Swapped priority: {dev_compat}, {dep_compat}")
                 dev_ord, dep_ord = dep_ord, dev_ord
 
-        dev_prio = self._dev_priorities.get(dev_ord, None)
-        dep_prio = self._dev_priorities.get(dep_ord, None)
+        dev_prio = self._obj.devices.get(dev_ord, None)
+        dep_prio = self._obj.devices.get(dep_ord, None)
 
         if not dev_prio or not dep_prio:
             return
@@ -286,9 +300,15 @@ class Validator():
 
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
-        for dev_ord in self._dev_priorities:
+        for dev_ord in self._obj.devices:
             dev = self._ord2node[dev_ord]
             self._check_edt_r(dev_ord, dev)
+
+    def print_initlevels(self):
+        for level, calls in self._obj.initlevels.items():
+            print(level)
+            for call in calls:
+                print(f"  {call}")
 
 def _parse_args(argv):
     """Parse the command line arguments."""
@@ -297,8 +317,8 @@ def _parse_args(argv):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False)
 
-    parser.add_argument("-d", "--build-dir", default="build",
-                        help="build directory to use")
+    parser.add_argument("-f", "--elf-file", default=pathlib.Path("build", "zephyr", "zephyr.elf"),
+                        help="ELF file to use")
     parser.add_argument("-v", "--verbose", action="count",
                         help=("enable verbose output, can be used multiple times "
                               "to increase verbosity level"))
@@ -308,8 +328,10 @@ def _parse_args(argv):
                         help="always exit with a return code of 0, used for testing")
     parser.add_argument("-o", "--output",
                         help="write the output to a file in addition to stdout")
-    parser.add_argument("--edt-pickle", default=pathlib.Path("zephyr", "edt.pickle"),
-                        help="path to read the pickled edtlib.EDT object from",
+    parser.add_argument("-i", "--initlevels", action="store_true",
+                        help="print the initlevel functions instead of checking the device dependencies")
+    parser.add_argument("--edt-pickle", default=pathlib.Path("edt.pickle"),
+                        help="name of the the pickled edtlib.EDT file",
                         type=pathlib.Path)
 
     return parser.parse_args(argv)
@@ -323,7 +345,7 @@ def _init_log(verbose, output):
     log.addHandler(console)
 
     if output:
-        file = logging.FileHandler(output)
+        file = logging.FileHandler(output, mode="w")
         file.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         log.addHandler(file)
 
@@ -341,10 +363,13 @@ def main(argv=None):
 
     log = _init_log(args.verbose, args.output)
 
-    log.info(f"check_init_priorities build_dir: {args.build_dir}")
+    log.info(f"check_init_priorities: {args.elf_file}")
 
-    validator = Validator(args.build_dir, args.edt_pickle, log)
-    validator.check_edt()
+    validator = Validator(args.elf_file, args.edt_pickle, log)
+    if args.initlevels:
+        validator.print_initlevels()
+    else:
+        validator.check_edt()
 
     if args.always_succeed:
         return 0
