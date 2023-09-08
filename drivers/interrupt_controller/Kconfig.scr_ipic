@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Syntacore
+# SPDX-License-Identifier: Apache-2.0
+
+config SCR_IPIC
+	bool "Syntacore Integrated Programmable Interrupt Controller (IPIC)"
+	default y
+	depends on DT_HAS_SYNTACORE_IPIC_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Integrated Programmable Interrupt Controller provides support
+	  for external interrupt lines defined by the Syntacore specification.
+
+config IPIC_STATIC_LINE_MAPPING
+	bool "The given interrupt controller supports static line mapping"
+	default y
+	help
+	  The given interrupt controller external pins are statically
+	  mapped to the corresponding interrupt vectors.
+
+config EXT_IPIC_IRQ_LN_NUM
+	int "The amount of external pins receiving signals"
+	default 16
+	help
+	  The amount of external pins of the given interrupt controller

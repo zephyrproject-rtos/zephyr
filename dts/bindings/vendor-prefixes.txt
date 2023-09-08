@@ -532,6 +532,7 @@ satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics, LLC
 schindler	Schindler
+syntacore	Syntacore
 seagate	Seagate Technology PLC
 segger	SEGGER Microcontroller GmbH
 seeed	Seeed Technology Co., Ltd
