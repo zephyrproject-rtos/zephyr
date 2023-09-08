@@ -84,7 +84,7 @@ void adsp_clock_init(void)
 	if (ACE_DfPMCCU.dfclkctl & ACE_CLKCTL_WOVCRO) {
 		ACE_DfPMCCU.dfclkctl = ACE_DfPMCCU.dfclkctl & ~ACE_CLKCTL_WOVCRO;
 	} else {
-		platform_lowest_freq_idx = ADSP_CPU_CLOCK_FREQ_LPRO;
+		platform_lowest_freq_idx = ADSP_CPU_CLOCK_FREQ_IPLL;
 	}
 #else
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
