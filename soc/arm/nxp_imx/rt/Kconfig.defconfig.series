@@ -75,6 +75,13 @@ config PM_MCUX_PMU
 
 endif # SOC_SERIES_IMX_RT10XX && PM
 
+if ETH_NXP_ENET
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1560
+
+endif # ETH_NXP_ENET
+
 DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_COMPAT_FLEXSPI := nxp,imx-flexspi
 
