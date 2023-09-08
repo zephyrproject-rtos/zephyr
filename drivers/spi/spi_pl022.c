@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/spinlock.h>
@@ -277,6 +278,9 @@ struct spi_pl022_cfg {
 #if IS_ENABLED(CONFIG_CLOCK_CONTROL)
 	const struct device *clk_dev;
 	const clock_control_subsys_t clk_id;
+#endif
+#if IS_ENABLED(CONFIG_RESET)
+	const struct reset_dt_spec reset;
 #endif
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
@@ -912,6 +916,15 @@ static int spi_pl022_init(const struct device *dev)
 	}
 #endif
 
+#if IS_ENABLED(CONFIG_RESET)
+	if (cfg->reset.dev) {
+		ret = reset_line_toggle_dt(&cfg->reset);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -1001,6 +1014,8 @@ static int spi_pl022_init(const struct device *dev)
 		IF_ENABLED(CONFIG_CLOCK_CONTROL, (IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),     \
 			(.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                       \
 			 .clk_id = pl022_clk_id##idx,))))                                          \
+		IF_ENABLED(CONFIG_RESET, (IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),             \
+			   (.reset = RESET_DT_SPEC_INST_GET(idx),))))                              \
 		IF_ENABLED(CONFIG_PINCTRL, (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),))       \
 		IF_ENABLED(CONFIG_SPI_PL022_DMA, (.dma = DMAS_DECL(idx),)) COND_CODE_1(            \
 				CONFIG_SPI_PL022_DMA, (.dma_enabled = DMAS_ENABLED(idx),),         \
