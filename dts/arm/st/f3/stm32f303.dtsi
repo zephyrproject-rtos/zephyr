@@ -153,6 +153,7 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc2: adc@50000100 {
@@ -168,6 +169,7 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 	};
 };
