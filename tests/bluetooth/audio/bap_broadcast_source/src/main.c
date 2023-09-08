@@ -1164,6 +1164,57 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id)
 	fixture->source = NULL;
 }
 
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_source_null)
+{
+	uint32_t broadcast_id;
+	int err;
+
+	err = bt_bap_broadcast_source_get_id(NULL, &broadcast_id);
+	zassert_not_equal(0, err, "Did not fail with null source");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_id_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_get_id(fixture->source, NULL);
+	zassert_not_equal(0, err, "Did not fail with null ID");
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_state)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source *source;
+	uint32_t broadcast_id;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	source = fixture->source;
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+
+	err = bt_bap_broadcast_source_get_id(source, &broadcast_id);
+	zassert_not_equal(0, err, "Did not fail with deleted broadcast source");
+}
+
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_single_bis)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
