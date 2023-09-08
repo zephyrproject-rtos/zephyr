@@ -543,7 +543,7 @@ static void IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
-PM_DEVICE_DEFINE(ioapic, ioapic_pm_action);
+PM_DEVICE_DT_INST_DEFINE(0, ioapic_pm_action);
 
-DEVICE_DEFINE(ioapic, "ioapic", ioapic_init, PM_DEVICE_GET(ioapic), NULL, NULL,
-	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, ioapic_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
