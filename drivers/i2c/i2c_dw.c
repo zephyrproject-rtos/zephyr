@@ -21,6 +21,9 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#if defined(CONFIG_RESET)
+#include <zephyr/drivers/reset.h>
+#endif
 
 #include <errno.h>
 #include <zephyr/sys/sys_io.h>
@@ -847,6 +850,15 @@ static int i2c_dw_initialize(const struct device *dev)
 	union ic_con_register ic_con;
 	int ret = 0;
 
+#if defined(CONFIG_RESET)
+	if (rom->reset.dev) {
+		ret = reset_line_toggle_dt(&rom->reset);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
@@ -922,6 +934,14 @@ static int i2c_dw_initialize(const struct device *dev)
 #define PINCTRL_DW_CONFIG(n)
 #endif
 
+#if defined(CONFIG_RESET)
+#define RESET_DW_CONFIG(n)                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),                          \
+		   (.reset = RESET_DT_SPEC_INST_GET(n),))
+#else
+#define RESET_DW_CONFIG(n)
+#endif
+
 #define I2C_DW_INIT_PCIE0(n)
 #define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n) \
@@ -985,6 +1005,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n)                                        \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
+		RESET_DW_CONFIG(n)                                            \
 		PINCTRL_DW_CONFIG(n)                                          \
 		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \
