@@ -13,3 +13,4 @@ Protocols
    lwm2m
    mqtt
    mqtt_sn
+   tftp
