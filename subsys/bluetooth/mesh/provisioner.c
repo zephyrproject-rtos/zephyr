@@ -20,8 +20,6 @@
 
 #include "common/bt_str.h"
 
-#include "host/long_wq.h"
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
