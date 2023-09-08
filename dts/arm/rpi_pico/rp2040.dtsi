@@ -138,10 +138,11 @@
 		};
 
 		i2c0: i2c@40044000 {
-			compatible = "snps,designware-i2c";
+			compatible = "raspberrypi,pico-i2c", "snps,designware-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40044000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_I2C0>;
 			clocks = <&system_clk>;
 			interrupts = <23 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c0";
@@ -149,10 +150,11 @@
 		};
 
 		i2c1: i2c@40048000 {
-			compatible = "snps,designware-i2c";
+			compatible = "raspberrypi,pico-i2c", "snps,designware-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40048000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_I2C0>;
 			clocks = <&system_clk>;
 			interrupts = <24 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "i2c1";
