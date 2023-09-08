@@ -166,7 +166,7 @@ CDC ACM UART as backend for a subsystem or application:
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
   for example see :ref:`bluetooth-hci-uart-sample`
 * ``zephyr,ot-uart`` used in OpenThread,
-  for example see :ref:`coprocessor-sample`
+  for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
 * ``zephyr,uart-mcumgr`` used by :ref:`smp_svr_sample`
@@ -339,7 +339,7 @@ Ethernet connection between the remote (USB host) and Zephyr network support.
 * CDC EEM class, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_EEM`
 * RNDIS support, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
 
-See :ref:`zperf-sample` or :ref:`sockets-dumb-http-server-sample` for reference.
+See :zephyr:code-sample:`zperf` or :zephyr:code-sample:`socket-dumb-http-server` for reference.
 Typically, users will need to add a configuration file overlay to the build,
 such as :zephyr_file:`samples/net/zperf/overlay-netusb.conf`.
 
@@ -500,7 +500,7 @@ The following Product IDs are currently used:
 +-------------------------------------+--------+
 | :ref:`bluetooth-hci-usb-h4-sample`  | 0x000C |
 +-------------------------------------+--------+
-| :ref:`wpanusb-sample`               | 0x000D |
+| :zephyr:code-sample:`wpan-usb`      | 0x000D |
 +-------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents

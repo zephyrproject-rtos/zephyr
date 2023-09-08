@@ -51,7 +51,7 @@ At the moment only CDC ECM class is implemented and has support for multiple ins
 It provides a virtual Ethernet connection between the remote (USB host) and
 Zephyr network support.
 
-See :ref:`zperf-sample` for reference.
+See :zephyr:code-sample:`zperf` for reference.
 To build the sample for the new device support, set the configuration overlay file
 ``-DDEXTRA_CONF_FILE=overlay-usbd_next_ecm.conf`` and devicetree overlay file
 ``-DDTC_OVERLAY_FILE="usbd_next_ecm.overlay`` either directly or via ``west``.

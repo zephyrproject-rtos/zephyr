@@ -1,7 +1,8 @@
-.. _dhcpv4-client-sample:
+.. zephyr:code-sample:: dhcpv4-client
+   :name: DHCPv4 client
+   :relevant-api: dhcpv4 net_mgmt
 
-Sample DHCPv4 client application
-################################
+   Start a DHCPv4 client to obtain an IPv4 address from a DHCPv4 server.
 
 Overview
 ********

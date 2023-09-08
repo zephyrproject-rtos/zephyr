@@ -37,7 +37,7 @@ function. The VLAN tagging for a given network interface can be disabled by a
 :c:func:`net_eth_vlan_disable` function. The application needs to configure
 the VLAN network interface itself, such as setting the IP address, etc.
 
-See also the :ref:`VLAN sample application <vlan-sample>` for API usage
+See also the :zephyr:code-sample:`VLAN sample application <vlan>` for API usage
 example. The source code for that sample application can be found at
 :zephyr_file:`samples/net/vlan`.
 

@@ -1,7 +1,8 @@
-.. _eth-native-posix-sample:
+.. zephyr:code-sample:: eth-native-posix
+   :name: Native POSIX Ethernet
+   :relevant-api: net_core ethernet
 
-Native Posix Ethernet
-#####################
+   Create a network interface to the host system.
 
 Overview
 ********
