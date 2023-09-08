@@ -7,4 +7,4 @@ USB device support samples
    :maxdepth: 1
    :glob:
 
-   **/*
+   **/README
