@@ -144,7 +144,7 @@ struct modem_chat_script {
 };
 
 #define MODEM_CHAT_SCRIPT_DEFINE(_sym, _script_chats, _abort_matches, _callback, _timeout)         \
-	static struct modem_chat_script _sym = {                                                   \
+	const static struct modem_chat_script _sym = {                                             \
 		.name = #_sym,                                                                     \
 		.script_chats = _script_chats,                                                     \
 		.script_chats_size = ARRAY_SIZE(_script_chats),                                    \
