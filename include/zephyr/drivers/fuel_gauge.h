@@ -60,8 +60,6 @@ enum fuel_gauge_property {
 	FUEL_GAUGE_RUNTIME_TO_EMPTY,
 	/** Remaining time in minutes until battery reaches full charge */
 	FUEL_GAUGE_RUNTIME_TO_FULL,
-	/** Retrieve word from SBS1.1 ManufactuerAccess */
-	FUEL_GAUGE_SBS_MFR_ACCESS,
 	/** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
 	FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
 	/** Relative state of charge (percent, 0-100) - expressed as % of full charge capacity */
@@ -70,8 +68,6 @@ enum fuel_gauge_property {
 	FUEL_GAUGE_TEMPERATURE,
 	/** Battery voltage (uV) */
 	FUEL_GAUGE_VOLTAGE,
-	/** Battery Mode (flags) */
-	FUEL_GAUGE_SBS_MODE,
 	/** Battery desired Max Charging Current (mA) */
 	FUEL_GAUGE_CHARGE_CURRENT,
 	/** Battery desired Max Charging Voltage (mV) */
@@ -82,24 +78,15 @@ enum fuel_gauge_property {
 	FUEL_GAUGE_DESIGN_CAPACITY,
 	/** Design Voltage (mV) */
 	FUEL_GAUGE_DESIGN_VOLTAGE,
-	/** AtRate (mA or 10 mW) */
-	FUEL_GAUGE_SBS_ATRATE,
-	/** AtRateTimeToFull (minutes) */
-	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
-	/** AtRateTimeToEmpty (minutes) */
-	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
-	/** AtRateOK (boolean) */
-	FUEL_GAUGE_SBS_ATRATE_OK,
-	/** Remaining Capacity Alarm (mAh or 10mWh) */
-	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-	/** Remaining Time Alarm (minutes) */
-	FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
 	/** Manufacturer of pack (1 byte length + 20 bytes data) */
 	FUEL_GAUGE_MANUFACTURER_NAME,
 	/** Name of pack (1 byte length + 20 bytes data) */
 	FUEL_GAUGE_DEVICE_NAME,
 	/** Chemistry (1 byte length + 4 bytes data) */
 	FUEL_GAUGE_DEVICE_CHEMISTRY,
+
+	/** Reserved for start of SBS specific properties. See the fuel_gauge_sbs.h header */
+	_FUEL_GAUGE_SBS_START,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -147,8 +134,6 @@ struct fuel_gauge_get_property {
 		uint32_t runtime_to_empty;
 		/** FUEL_GAUGE_RUNTIME_TO_FULL */
 		uint32_t runtime_to_full;
-		/** FUEL_GAUGE_SBS_MFR_ACCESS */
-		uint16_t sbs_mfr_access_word;
 		/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE */
 		uint8_t absolute_state_of_charge;
 		/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE */
@@ -157,8 +142,6 @@ struct fuel_gauge_get_property {
 		uint16_t temperature;
 		/** FUEL_GAUGE_VOLTAGE */
 		int voltage;
-		/** FUEL_GAUGE_SBS_MODE */
-		uint16_t sbs_mode;
 		/** FUEL_GAUGE_CHARGE_CURRENT */
 		uint16_t chg_current;
 		/** FUEL_GAUGE_CHARGE_VOLTAGE */
@@ -169,18 +152,8 @@ struct fuel_gauge_get_property {
 		uint16_t design_cap;
 		/** FUEL_GAUGE_DESIGN_VOLTAGE */
 		uint16_t design_volt;
-		/** FUEL_GAUGE_SBS_ATRATE */
-		int16_t sbs_at_rate;
-		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL */
-		uint16_t sbs_at_rate_time_to_full;
-		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	*/
-		uint16_t sbs_at_rate_time_to_empty;
-		/** FUEL_GAUGE_SBS_ATRATE_OK */
-		bool sbs_at_rate_ok;
-		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
-		uint16_t sbs_remaining_capacity_alarm;
-		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
-		uint16_t sbs_remaining_time_alarm;
+		/** See SBS spec for value interpretation */
+		uint16_t sbs_word;
 	} value;
 };
 
@@ -198,16 +171,8 @@ struct fuel_gauge_set_property {
 		/* type property_field; */
 
 		/* Writable Dynamic Battery Info */
-		/** FUEL_GAUGE_SBS_MFR_ACCESS */
-		uint16_t sbs_mfr_access_word;
-		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
-		uint16_t sbs_remaining_capacity_alarm;
-		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
-		uint16_t sbs_remaining_time_alarm;
-		/** FUEL_GAUGE_SBS_MODE */
-		uint16_t sbs_mode;
-		/** FUEL_GAUGE_SBS_ATRATE */
-		int16_t sbs_at_rate;
+		/** See SBS spec for value interpretation */
+		uint16_t sbs_word;
 	} value;
 };
 
@@ -219,28 +184,6 @@ struct fuel_gauge_get_buffer_property {
 	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
 	int status;
 };
-
-/**
- * Data structures for reading SBS buffer properties
- */
-#define SBS_GAUGE_MANUFACTURER_NAME_MAX_SIZE 20
-#define SBS_GAUGE_DEVICE_NAME_MAX_SIZE       20
-#define SBS_GAUGE_DEVICE_CHEMISTRY_MAX_SIZE  4
-
-struct sbs_gauge_manufacturer_name {
-	uint8_t manufacturer_name_length;
-	char manufacturer_name[SBS_GAUGE_MANUFACTURER_NAME_MAX_SIZE];
-} __packed;
-
-struct sbs_gauge_device_name {
-	uint8_t device_name_length;
-	char device_name[SBS_GAUGE_DEVICE_NAME_MAX_SIZE];
-} __packed;
-
-struct sbs_gauge_device_chemistry {
-	uint8_t device_chemistry_length;
-	char device_chemistry[SBS_GAUGE_DEVICE_CHEMISTRY_MAX_SIZE];
-} __packed;
 
 /**
  * @typedef fuel_gauge_get_property_t

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/emul_fuel_gauge.h>
 #include <zephyr/drivers/fuel_gauge.h>
+#include <zephyr/drivers/fuel_gauge_sbs.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -113,7 +114,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_c
 			/* Valid property */
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 			/* Set Manufacturer's Access to arbitrary word */
-			.value.sbs_mfr_access_word = 1,
+			.value.sbs_word = 1,
 		},
 
 	};
@@ -140,23 +141,23 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 			/* Valid property */
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 			/* Set Manufacturer's Access to 16 bit word */
-			.value.sbs_mfr_access_word = word,
+			.value.sbs_word = word,
 		},
 		{
 			.property_type = FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-			.value.sbs_remaining_capacity_alarm = word,
+			.value.sbs_word = word,
 		},
 		{
 			.property_type = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
-			.value.sbs_remaining_time_alarm = word,
+			.value.sbs_word = word,
 		},
 		{
 			.property_type = FUEL_GAUGE_SBS_MODE,
-			.value.sbs_mode = word,
+			.value.sbs_word = word,
 		},
 		{
 			.property_type = FUEL_GAUGE_SBS_ATRATE,
-			.value.sbs_at_rate = (int16_t)word,
+			.value.sbs_word = word,
 		},
 	};
 
@@ -188,13 +189,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 	for (int i = 0; i < ARRAY_SIZE(get_props); i++) {
 		zassert_ok(get_props[i].status, "Property %d getting %d has a bad status.", i,
 			   get_props[i].property_type);
+		zassert_equal(get_props[i].value.sbs_word, word,
+			      "Property %d set as %d but was get as %d.", i, word,
+			      get_props[i].value.sbs_word);
 	}
-
-	zassert_equal(get_props[0].value.sbs_mfr_access_word, word);
-	zassert_equal(get_props[1].value.sbs_remaining_capacity_alarm, word);
-	zassert_equal(get_props[2].value.sbs_remaining_time_alarm, word);
-	zassert_equal(get_props[3].value.sbs_mode, word);
-	zassert_equal(get_props[4].value.sbs_at_rate, (int16_t)word);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)

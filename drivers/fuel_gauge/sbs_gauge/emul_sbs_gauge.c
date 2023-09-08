@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(sbs_sbs_gauge);
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/emul_fuel_gauge.h>
 #include <zephyr/drivers/fuel_gauge.h>
+#include <zephyr/drivers/fuel_gauge_sbs.h>
 #include <zephyr/sys/util.h>
 
 #include "sbs_gauge.h"

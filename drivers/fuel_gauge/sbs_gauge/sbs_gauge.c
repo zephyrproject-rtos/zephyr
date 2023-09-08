@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/fuel_gauge.h>
+#include <zephyr/drivers/fuel_gauge_sbs.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -102,7 +103,7 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		break;
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
-		prop->value.sbs_mfr_access_word = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &val);
@@ -122,7 +123,7 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		break;
 	case FUEL_GAUGE_SBS_MODE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_BATTERY_MODE, &val);
-		prop->value.sbs_mode = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_CHARGE_CURRENT:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_CURRENT, &val);
@@ -146,27 +147,27 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_pr
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AR, &val);
-		prop->value.sbs_at_rate = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTF, &val);
-		prop->value.sbs_at_rate_time_to_full = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTE, &val);
-		prop->value.sbs_at_rate_time_to_empty = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_OK:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AROK, &val);
-		prop->value.sbs_at_rate_ok = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM, &val);
-		prop->value.sbs_remaining_capacity_alarm = val;
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_TIME_ALARM, &val);
-		prop->value.sbs_remaining_time_alarm = val;
+		prop->value.sbs_word = val;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -205,26 +206,26 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS,
-				       prop->value.sbs_mfr_access_word);
-		prop->value.sbs_mfr_access_word = val;
+				       prop->value.sbs_word);
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM,
-				       prop->value.sbs_remaining_capacity_alarm);
-		prop->value.sbs_remaining_capacity_alarm = val;
+				       prop->value.sbs_word);
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_TIME_ALARM,
-				       prop->value.sbs_remaining_time_alarm);
-		prop->value.sbs_remaining_time_alarm = val;
+				       prop->value.sbs_word);
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
-		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, prop->value.sbs_mode);
-		prop->value.sbs_mode = val;
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, prop->value.sbs_word);
+		prop->value.sbs_word = val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
-		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, prop->value.sbs_at_rate);
-		prop->value.sbs_at_rate = val;
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, prop->value.sbs_word);
+		prop->value.sbs_word = val;
 		break;
 	default:
 		rc = -ENOTSUP;
