@@ -43,6 +43,8 @@ enum charger_property {
 	/** Represents the health of the charger. */
 	/** Value should be of type enum charger_health */
 	CHARGER_PROP_HEALTH,
+	/** Configuration of current sink used for charging in µA */
+	CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -179,6 +181,8 @@ union charger_propval {
 	enum charger_charge_type charge_type;
 	/** CHARGER_PROP_HEALTH */
 	enum charger_health health;
+	/** CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA */
+	uint32_t const_charge_current_ua;
 };
 
 /**
