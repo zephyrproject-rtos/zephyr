@@ -1,7 +1,8 @@
-.. _packet-socket-sample:
+.. zephyr:code-sample:: packet-socket
+   :name: Packet socket
+   :relevant-api: bsd_sockets ethernet
 
-Packet socket sample
-####################
+   Use raw packet sockets over Ethernet.
 
 Overview
 ********

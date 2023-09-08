@@ -10,7 +10,7 @@ Networking with native_posix board
 This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in a native_posix board.
 
-In this example, the :ref:`sockets-echo-server-sample` sample application from
+In this example, the :zephyr:code-sample:`sockets-echo-server` sample application from
 the Zephyr source distribution is run in native_posix board. The Zephyr
 native_posix board instance is connected to a Linux host using a tuntap device
 which is modeled in Linux as an Ethernet network interface.

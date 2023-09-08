@@ -227,7 +227,7 @@ The full list of registered objects and resource IDs can be found in the
 
 Zephyr's LwM2M library lives in the :zephyr_file:`subsys/net/lib/lwm2m`, with a
 client sample in :zephyr_file:`samples/net/lwm2m_client`.  For more information
-about the provided sample see: :ref:`lwm2m-client-sample`  The sample can be
+about the provided sample see: :zephyr:code-sample:`lwm2m-client`. The sample can be
 configured to use normal unsecure network sockets or sockets secured via DTLS.
 
 The Zephyr LwM2M library implements the following items:
@@ -444,7 +444,7 @@ value of 1 is ok here).
 	client.tls_tag = 1; /* <---- */
 	lwm2m_rd_client_start(&client, "endpoint-name", 0, rd_client_event);
 
-For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
+For a more detailed LwM2M client sample see: :zephyr:code-sample:`lwm2m-client`.
 
 Multi-thread usage
 ******************

@@ -1,7 +1,8 @@
-.. _sockets-socketpair-sample:
+.. zephyr:code-sample:: sockets-socketpair
+   :name: Socketpair
+   :relevant-api: bsd_sockets
 
-Socketpair Example
-##################
+   Implement communication between threads using socket pairs.
 
 Overview
 ********

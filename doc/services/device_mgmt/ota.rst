@@ -74,7 +74,7 @@ Lightweight M2M (LWM2M)
 
 The :ref:`lwm2m_interface` protocol includes support for firmware update via
 :kconfig:option:`CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT`. Devices securely
-connect to an LwM2M server using DTLS. An :ref:`lwm2m-client-sample` sample is
+connect to an LwM2M server using DTLS. A :zephyr:code-sample:`lwm2m-client` sample is
 available but it does not demonstrate the firmware update feature.
 
 .. _MCUboot bootloader: https://mcuboot.com/

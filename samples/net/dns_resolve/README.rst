@@ -1,7 +1,8 @@
-.. _dns-resolve-sample:
+.. zephyr:code-sample:: dns-resolve
+   :name: DNS resolve
+   :relevant-api: dns_resolve net_mgmt
 
-DNS Resolve Application
-#######################
+   Resolve an IP address for a given hostname.
 
 Overview
 ********

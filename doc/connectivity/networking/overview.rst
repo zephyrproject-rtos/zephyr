@@ -69,12 +69,12 @@ can be disabled if not needed.
   are provided by mbedTLS library.
 
 * **MQTT** Message Queue Telemetry Transport (ISO/IEC PRF 20922) is supported.
-  A sample :ref:`mqtt-publisher-sample` client application for MQTT v3.1.1 is
+  A sample :zephyr:code-sample:`mqtt-publisher` client application for MQTT v3.1.1 is
   implemented.
 
 * **CoAP** Constrained Application Protocol
   (`RFC 7252 <https://tools.ietf.org/html/rfc7252>`_) is supported.
-  Both :ref:`coap-client-sample` and :ref:`coap-server-sample` sample
+  Both :zephyr:code-sample:`coap-client` and :zephyr:code-sample:`coap-server` sample
   applications are implemented.
 
 * **LWM2M** OMA Lightweight Machine-to-Machine Protocol
@@ -83,7 +83,7 @@ can be disabled if not needed.
   Reporting" interfaces.  The required core LwM2M objects are implemented as
   well as several IPSO Smart Objects. (`LwM2M specification 1.1.1`_) is
   supported in similar manner when enabled with a Kconfig option.
-  :ref:`lwm2m-client-sample` implements the library as an example.
+  :zephyr:code-sample:`lwm2m-client` sample implements the library as an example.
 
 * **DNS** Domain Name Service
   (`RFC 1035 <https://tools.ietf.org/html/rfc1035>`_) client functionality

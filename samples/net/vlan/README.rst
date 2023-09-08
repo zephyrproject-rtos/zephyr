@@ -1,7 +1,8 @@
-.. _vlan-sample:
+.. zephyr:code-sample:: vlan
+   :name: Virtual LAN
+   :relevant-api: vlan_api net_l2 net_if
 
-Virtual LAN Sample Application
-##############################
+   Setup two virtual LAN networks and use net-shell to view the networks' settings.
 
 Overview
 ********

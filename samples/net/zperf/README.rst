@@ -1,7 +1,8 @@
-.. _zperf-sample:
+.. zephyr:code-sample:: zperf
+   :name: zperf: Network Traffic Generator
+   :relevant-api: net_config
 
-zperf: Network Traffic Generator
-################################
+   Use the zperf shell utility to evaluate network bandwidth.
 
 Description
 ***********

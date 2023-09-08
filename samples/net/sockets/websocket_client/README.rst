@@ -1,7 +1,8 @@
-.. _sockets-websocket-client-sample:
+.. zephyr:code-sample:: sockets-websocket-client
+   :name: WebSocket Client
+   :relevant-api: bsd_sockets websocket
 
-Socket Websocket Client
-#######################
+   Implement a Websocket client that connects to a Websocket server.
 
 Overview
 ********

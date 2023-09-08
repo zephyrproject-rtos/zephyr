@@ -1,7 +1,8 @@
-.. _sockets-http-get:
+.. zephyr:code-sample:: sockets-http-get
+   :name: HTTP GET using plain sockets
+   :relevant-api: bsd_sockets tls_credentials secure_sockets_options
 
-Socket HTTP GET Example
-#######################
+   Implement an HTTP(S) client using plain BSD sockets.
 
 Overview
 ********

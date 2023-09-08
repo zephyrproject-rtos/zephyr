@@ -1,7 +1,8 @@
-.. _lwm2m-client-sample:
+.. zephyr:code-sample:: lwm2m-client
+   :name: LwM2M client
+   :relevant-api: lwm2m_api
 
-LwM2M client
-############
+   Implement a LwM2M client that connects to a LwM2M server.
 
 Overview
 ********

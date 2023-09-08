@@ -124,7 +124,7 @@ has no effect on the transport, however. If you want to close the transport (e.g
 the socket), call ``mqtt_sn_client_deinit``, which will deinit the transport as well.
 
 Zephyr provides sample code utilizing the MQTT-SN client API. See
-:ref:`mqtt-sn-publisher-sample` for more information.
+:zephyr:code-sample:`mqtt-sn-publisher-sample` for more information.
 
 Deviations from the standard
 ****************************

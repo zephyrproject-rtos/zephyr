@@ -1,7 +1,8 @@
-.. _coprocessor-sample:
+.. zephyr:code-sample:: coprocessor
+   :name: OpenThread co-processor
+   :relevant-api: openthread
 
-OpenThread Co-Processor
-#######################
+   Build a Thread border-router using OpenThread's co-processor designs.
 
 Overview
 ********
