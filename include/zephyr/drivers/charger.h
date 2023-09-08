@@ -49,6 +49,8 @@ enum charger_property {
 	CHARGER_PROP_PRECHARGE_CURRENT_UA,
 	/** Configuration of charge termination target in µA */
 	CHARGER_PROP_CHARGE_TERM_CURRENT_UA,
+	/** Configuration of charge voltage regulation target in µV */
+	CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -191,6 +193,8 @@ union charger_propval {
 	uint32_t precharge_current_ua;
 	/** CHARGER_PROP_CHARGE_TERM_CURRENT_UA */
 	uint32_t charge_term_current_ua;
+	/** CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV */
+	uint32_t const_charge_voltage_uv;
 };
 
 /**
