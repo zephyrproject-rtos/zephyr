@@ -2797,7 +2797,6 @@
  *
  * @code{.c}
  *     struct gpio_dt_spec specs[] = {
- *     struct gpio_dt_spec specs[] = {
  *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 0),
  *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 1)
  *     };
