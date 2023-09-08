@@ -141,7 +141,14 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_DATE_SetMonth(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mon + 1));
 	LL_RTC_DATE_SetDay(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mday));
 
-	LL_RTC_DATE_SetWeekDay(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_wday) + 1);
+	if (timeptr->tm_wday == 0) {
+		/* sunday (tm_wday = 0) is not represented by the same value in hardware */
+		LL_RTC_DATE_SetWeekDay(RTC, LL_RTC_WEEKDAY_SUNDAY);
+	} else {
+		/* all the other values are consistent with what is expected by hardware */
+		LL_RTC_DATE_SetWeekDay(RTC, timeptr->tm_wday);
+	}
+
 
 	LL_RTC_TIME_SetHour(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_hour));
 	LL_RTC_TIME_SetMinute(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_min));
@@ -170,7 +177,16 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	/* tm_mon allowed values are 0-11 */
 	timeptr->tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	timeptr->tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
-	timeptr->tm_wday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_WEEKDAY(rtc_date)) - 1;
+
+	int hw_wday = __LL_RTC_GET_WEEKDAY(rtc_date);
+
+	if (hw_wday == LL_RTC_WEEKDAY_SUNDAY) {
+		/* LL_RTC_WEEKDAY_SUNDAY = 7 but a 0 is expected in tm_wday for sunday */
+		timeptr->tm_wday = 0;
+	} else {
+		/* all other values are consistent between hardware and rtc_time structure */
+		timeptr->tm_wday = hw_wday;
+	}
 
 	timeptr->tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
 	timeptr->tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
