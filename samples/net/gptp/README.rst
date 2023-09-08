@@ -1,7 +1,8 @@
-.. _gptp-sample:
+.. zephyr:code-sample:: gptp
+   :name: gPTP
+   :relevant-api: gptp ptp_time
 
-gPTP Sample Application
-#######################
+   Enable gPTP support and monitor functionality using net-shell.
 
 Overview
 ********

@@ -1,13 +1,16 @@
-.. _net-capture-sample:
+.. zephyr:code-sample:: net-capture
+   :name: Network packet capture
+   :relevant-api: net_capture
 
-Network Packet Capture
-######################
+   Capture network packets and send them to a remote host via IPIP tunnel.
 
 Overview
 ********
 
 This application will setup the device so that net-shell can be used
-to enable network packet capture. The captured packets are sent to
+to enable network packet capture.
+
+The captured packets are sent to
 remote host via IPIP tunnel. The tunnel can be configured to be in the
 same connection as what we are capturing packets or it can be a separate
 bearer. For example if you are capturing network traffic for interface 1,

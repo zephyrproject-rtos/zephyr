@@ -1,7 +1,8 @@
-.. _tftp-client-sample:
+.. zephyr:code-sample:: tftp-client
+   :name: TFTP client
+   :relevant-api: tftp_client
 
-TFTP client
-############
+   Use the TFTP client library to get/put files from/to a TFTP server.
 
 Overview
 ********

@@ -1,14 +1,15 @@
-.. _sockets-big-http-download:
+.. zephyr:code-sample:: sockets-big-http-download
+   :name: Large HTTP download
+   :relevant-api: bsd_sockets tls_credentials
 
-Socket Big HTTP Download Example
-################################
+   Download a large file from a web server using BSD sockets.
 
 Overview
 ********
 
 The sockets/big_http_download sample application for Zephyr implements
 a simple HTTP GET client using a BSD Sockets compatible API. Unlike
-the :ref:`sockets-http-get` sample application, it downloads a file of
+the :zephyr:code-sample:`sockets-http-get` sample application, it downloads a file of
 several megabytes in size, and verifies its integrity using hashing. It
 also performs download repeatedly, tracking the total number of bytes
 transferred. Thus, it can serve as a "load testing" application for

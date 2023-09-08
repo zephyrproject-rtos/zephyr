@@ -1,7 +1,8 @@
-.. _net-promiscuous-mode-sample:
+.. zephyr:code-sample:: net-promiscuous-mode
+   :name: Promiscuous mode
+   :relevant-api: promiscuous
 
-Promiscuous Mode Sample Application
-###################################
+   Enable promiscuous mode on all interfaces and print information about incoming packets.
 
 Overview
 ********
