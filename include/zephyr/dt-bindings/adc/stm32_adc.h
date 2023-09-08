@@ -74,4 +74,14 @@
 #define ASYNC 2
 /** @} */
 
+/**
+ * @name STM32 ADC sequencer type
+ * This value is to set <st,adc-sequencer>
+ * One or both values may not apply to all series. Refer to the RefMan
+ * @{
+ */
+#define NOT_FULLY_CONFIGURABLE	0
+#define FULLY_CONFIGURABLE	1
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STM32_ADC_H_ */

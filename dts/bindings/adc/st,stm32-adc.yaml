@@ -97,5 +97,16 @@ properties:
     description: |
       Number of sampling time common channels for this ADC instance, if any.
 
+  st,adc-sequencer:
+    type: int
+    required: true
+    enum:
+      - 0 # NOT_FULLY_CONFIGURABLE
+      - 1 # FULLY_CONFIGURABLE
+    description: |
+      Type of ADC sequencer:
+      - <NOT_FULLY_CONFIGURABLE>: Not fully configurable sequencer
+      - <FULLY_CONFIGURABLE>: Fully configurable sequencer
+
 io-channel-cells:
   - input
