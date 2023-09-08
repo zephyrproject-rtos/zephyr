@@ -40,11 +40,31 @@
   - "samples/tfm_integration/**/*"
 
 "CI-ble-test":
-  - "**/*"
+  - any:
+      - "drivers/bluetooth/**/*"
+  - any:
+      - "dts/arm/nordic/nrf5*"
+  - any:
+      - "subsys/bluetooth/**/*"
+      - "!subsys/bluetooth/mesh/**/*"
+      - "!subsys/bluetooth/audio/**/*"
+  - any:
+      - "include/zephyr/bluetooth/**/*"
+      - "!include/zephyr/bluetooth/mesh/**/*"
+  - any:
+      - "samples/bluetooth/**/*"
+      - "!samples/bluetooth/mesh/**/*"
+      - "!samples/bluetooth/mesh_demo/**/*"
+      - "!samples/bluetooth/mesh_provisioner/**/*"
+  - any:
+      - "tests/bluetooth/**/*"
+      - "!tests/bluetooth/mesh/**/*"
+      - "!tests/bluetooth/mesh_shell/**/*"
+      - "!tests/bluetooth/audio/**/*"
 
 "CI-mesh-test":
   - "subsys/bluetooth/mesh/**/*"
-  - "include/bluetooth/mesh/**/*"
+  - "include/zephyr/bluetooth/mesh/**/*"
   - "samples/bluetooth/mesh/**/*"
   - "samples/bluetooth/mesh_demo/**/*"
   - "samples/bluetooth/mesh_provisioner/**/*"
