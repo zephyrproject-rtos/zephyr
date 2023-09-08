@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2022-2023 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -44,4 +44,9 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_I3C_TEST
   i3c_test.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_DW
+  i3c_dw.c
 )

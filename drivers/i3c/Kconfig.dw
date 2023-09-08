@@ -1,0 +1,13 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# This option signifies whether DesignWare I3C compatible HW is
+# available
+
+config I3C_DW
+	bool "DesignWare I3C controller driver support"
+	default y
+	depends on DT_HAS_SNPS_DW_I3C_ENABLED
+	help
+	  Enables DesignWare I3C controller driver.
+	  Required to configure I3C in controller mode.
