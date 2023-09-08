@@ -34,6 +34,7 @@ struct modem_backend_uart_async {
 	struct ring_buf receive_rdb[2];
 	uint8_t *transmit_buf;
 	uint32_t transmit_buf_size;
+	struct k_work rx_disabled_work;
 	atomic_t state;
 };
 
