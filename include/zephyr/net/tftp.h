@@ -6,7 +6,10 @@
 
 /** @file tftp.h
  *
- *  @brief Zephyr TFTP Implementation
+ * @defgroup tftp_client TFTP Client library
+ * @ingroup networking
+ * @{
+ * @brief TFTP Client Implementation
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_TFTP_H_
@@ -36,13 +39,19 @@ extern "C" {
 /* Maximum amount of data that can be sent or received */
 #define TFTPC_MAX_BUF_SIZE       (TFTP_BLOCK_SIZE + TFTP_HEADER_SIZE)
 
-/* TFTP Client Error codes. */
+/**
+ * @name TFTP client error codes.
+ * @{
+ */
 #define TFTPC_SUCCESS             0
 #define TFTPC_DUPLICATE_DATA     -1
 #define TFTPC_BUFFER_OVERFLOW    -2
 #define TFTPC_UNKNOWN_FAILURE    -3
 #define TFTPC_REMOTE_ERROR       -4
 #define TFTPC_RETRIES_EXHAUSTED  -5
+/**
+ * @}
+ */
 
 /**
  * @brief TFTP Asynchronous Events notified to the application from the module
@@ -166,3 +175,5 @@ int tftp_put(struct tftpc *client,
 #endif
 
 #endif /* ZEPHYR_INCLUDE_NET_TFTP_H_ */
+
+/** @} */
