@@ -40,6 +40,9 @@ enum charger_property {
 	/** Represents the charging algo type of the charger. */
 	/** Value should be of type enum charger_charge_type */
 	CHARGER_PROP_CHARGE_TYPE,
+	/** Represents the health of the charger. */
+	/** Value should be of type enum charger_health */
+	CHARGER_PROP_HEALTH,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -121,6 +124,43 @@ enum charger_charge_type {
 };
 
 /**
+ * @brief Charger health conditions
+ *
+ * These conditions determine the ability to, or the rate of, charge
+ */
+enum charger_health {
+	/** Charger health condition is unknown */
+	CHARGER_HEALTH_UNKNOWN = 0,
+	/** Charger health condition is good */
+	CHARGER_HEALTH_GOOD,
+	/** The charger device is overheated */
+	CHARGER_HEALTH_OVERHEAT,
+	/** The battery voltage has exceeded its overvoltage threshold */
+	CHARGER_HEALTH_OVERVOLTAGE,
+	/*
+	 * The battery or charger device is experiencing an unspecified
+	 * failure.
+	 */
+	CHARGER_HEALTH_UNSPEC_FAILURE,
+	/** The battery temperature is below the "cold" threshold */
+	CHARGER_HEALTH_COLD,
+	/** The charger device's watchdog timer has expired */
+	CHARGER_HEALTH_WATCHDOG_TIMER_EXPIRE,
+	/** The charger device's safety timer has expired */
+	CHARGER_HEALTH_SAFETY_TIMER_EXPIRE,
+	/** The charger device requires calibration */
+	CHARGER_HEALTH_CALIBRATION_REQUIRED,
+	/** The battery temperature is in the "warm" range */
+	CHARGER_HEALTH_WARM,
+	/** The battery temperature is in the "cool" range */
+	CHARGER_HEALTH_COOL,
+	/** The battery temperature is below the "hot" threshold */
+	CHARGER_HEALTH_HOT,
+	/** The charger device does not detect a battery */
+	CHARGER_HEALTH_NO_BATTERY,
+};
+
+/**
  * @brief container for a charger_property value
  *
  */
@@ -137,6 +177,8 @@ union charger_propval {
 	enum charger_status status;
 	/** CHARGER_PROP_CHARGE_TYPE */
 	enum charger_charge_type charge_type;
+	/** CHARGER_PROP_HEALTH */
+	enum charger_health health;
 };
 
 /**
