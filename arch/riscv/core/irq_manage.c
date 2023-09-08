@@ -32,9 +32,10 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(const void *parameter),
-			     const void *parameter, uint32_t flags)
+/* Default implementation */
+int __weak z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+				     void (*routine)(const void *parameter),
+				     const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -50,5 +51,12 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	ARG_UNUSED(priority);
 #endif
 	return irq;
+}
+
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
+{
+	return z_soc_irq_connect_dynamic(irq, priority, routine, parameter, flags);
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
