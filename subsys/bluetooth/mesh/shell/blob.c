@@ -271,7 +271,7 @@ static int cmd_flash_stream_unset(const struct shell *sh, size_t argc, char *arg
 
 #if defined(CONFIG_BT_MESH_SHELL_BLOB_CLI)
 
-static struct bt_mesh_model *mod_cli;
+static const struct bt_mesh_model *mod_cli;
 
 static void blob_cli_inputs_prepare(uint16_t group)
 {
@@ -503,7 +503,7 @@ static int cmd_tx_resume(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_MESH_SHELL_BLOB_SRV)
 
-static struct bt_mesh_model *mod_srv;
+static const struct bt_mesh_model *mod_srv;
 
 static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 {

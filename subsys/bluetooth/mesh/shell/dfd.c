@@ -14,7 +14,7 @@
 #include "../dfd_srv_internal.h"
 #include "../access.h"
 
-static struct bt_mesh_model *mod;
+static const struct bt_mesh_model *mod;
 
 static void print_receivers_status(const struct shell *sh, struct bt_mesh_dfd_srv *srv,
 				   enum bt_mesh_dfd_status status)

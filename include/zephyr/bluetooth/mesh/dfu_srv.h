@@ -184,7 +184,7 @@ struct bt_mesh_dfu_srv {
 	size_t img_count;
 
 	/* Runtime state */
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	struct {
 		/* Effect of transfer, @see bt_mesh_dfu_effect. */
 		uint8_t effect;

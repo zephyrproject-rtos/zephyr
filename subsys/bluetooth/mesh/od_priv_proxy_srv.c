@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_od_priv_proxy_srv);
 
-static int proxy_status_rsp(struct bt_mesh_model *mod,
+static int proxy_status_rsp(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx)
 {
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_OD_PRIV_PROXY_STATUS, 1);
@@ -27,7 +27,7 @@ static int proxy_status_rsp(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_proxy_get(struct bt_mesh_model *mod,
+static int handle_proxy_get(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -38,7 +38,7 @@ static int handle_proxy_get(struct bt_mesh_model *mod,
 	return 0;
 }
 
-static int handle_proxy_set(struct bt_mesh_model *mod,
+static int handle_proxy_set(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -62,11 +62,11 @@ const struct bt_mesh_model_op _bt_mesh_od_priv_proxy_srv_op[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
+static int od_priv_proxy_srv_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
+	const struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
 		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_PRIV_BEACON_SRV);
-	struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
+	const struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
 		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV);
 
 	if (priv_beacon_srv == NULL) {
@@ -79,7 +79,7 @@ static int od_priv_proxy_srv_init(struct bt_mesh_model *mod)
 	}
 
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
 		bt_mesh_model_extend(mod, priv_beacon_srv);

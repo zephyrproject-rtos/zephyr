@@ -18,7 +18,7 @@ static struct bt_mesh_priv_beacon_cli *cli;
 
 static int32_t msg_timeout;
 
-static int handle_beacon_status(struct bt_mesh_model *model,
+static int handle_beacon_status(const struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
@@ -56,7 +56,7 @@ static int handle_beacon_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int handle_gatt_proxy_status(struct bt_mesh_model *model,
+static int handle_gatt_proxy_status(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -86,7 +86,7 @@ static int handle_gatt_proxy_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int handle_node_id_status(struct bt_mesh_model *model,
+static int handle_node_id_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -134,7 +134,7 @@ const struct bt_mesh_model_op bt_mesh_priv_beacon_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int priv_beacon_cli_init(struct bt_mesh_model *model)
+static int priv_beacon_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Private Beacon Client only allowed in primary element");
@@ -145,7 +145,7 @@ static int priv_beacon_cli_init(struct bt_mesh_model *model)
 	cli->model = model;
 	msg_timeout = 2 * MSEC_PER_SEC;
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 

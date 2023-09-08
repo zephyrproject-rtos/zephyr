@@ -50,7 +50,7 @@ void bt_mesh_op_agg_ctx_reinit(void)
 	agg_ctx.initialized = true;
 }
 
-int bt_mesh_op_agg_send(struct bt_mesh_model *model,
+int bt_mesh_op_agg_send(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *msg,
 			const struct bt_mesh_send_cb *cb)
 {

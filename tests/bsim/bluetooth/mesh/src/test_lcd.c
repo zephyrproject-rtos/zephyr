@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 	.op = _dummy_op,                            \
 	.cb = NULL,                                 \
 	.user_data = NULL,                          \
+	.ctx = &(struct bt_mesh_model_ctx){ 0 },    \
 	.metadata = _metadata,                      \
 }
 

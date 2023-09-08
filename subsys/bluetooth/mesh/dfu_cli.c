@@ -681,7 +681,7 @@ static void cancelled(struct bt_mesh_blob_cli *b)
  * Message handlers
  ******************************************************************************/
 
-static int handle_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
 	struct bt_mesh_dfu_cli *cli = mod->user_data;
@@ -807,7 +807,7 @@ static int handle_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int handle_info_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_dfu_cli *cli = mod->user_data;
@@ -906,7 +906,7 @@ static int handle_info_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-static int handle_metadata_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_metadata_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	struct bt_mesh_dfu_cli *cli = mod->user_data;
@@ -943,11 +943,11 @@ const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int dfu_cli_init(struct bt_mesh_model *mod)
+static int dfu_cli_init(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_dfu_cli *cli = mod->user_data;
 
-	if (mod->elem_idx != 0) {
+	if (mod->ctx->elem_idx != 0) {
 		LOG_ERR("DFU update client must be instantiated on first elem");
 		return -EINVAL;
 	}
@@ -963,7 +963,7 @@ static int dfu_cli_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static void dfu_cli_reset(struct bt_mesh_model *mod)
+static void dfu_cli_reset(const struct bt_mesh_model *mod)
 {
 	struct bt_mesh_dfu_cli *cli = mod->user_data;
 

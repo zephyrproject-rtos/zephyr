@@ -54,19 +54,19 @@
 #define BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK	BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define BT_MESH_MODEL_OP_GEN_ONOFF_STATUS	BT_MESH_MODEL_OP_2(0x82, 0x04)
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_onoff_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf);
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf);
 
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf);
 
-static int gen_onoff_status(struct bt_mesh_model *model,
+static int gen_onoff_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf);
 
@@ -167,7 +167,7 @@ static struct led_onoff_state led_onoff_states[] = {
  * Element 0 Root Models
  */
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
@@ -181,7 +181,7 @@ static struct bt_mesh_model root_models[] = {
  * Element 1 Models
  */
 
-static struct bt_mesh_model secondary_0_models[] = {
+static const struct bt_mesh_model secondary_0_models[] = {
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op,
 		      &gen_onoff_pub_srv_s_0, &led_onoff_states[1]),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op,
@@ -192,7 +192,7 @@ static struct bt_mesh_model secondary_0_models[] = {
  * Element 2 Models
  */
 
-static struct bt_mesh_model secondary_1_models[] = {
+static const struct bt_mesh_model secondary_1_models[] = {
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op,
 		      &gen_onoff_pub_srv_s_1, &led_onoff_states[2]),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op,
@@ -203,7 +203,7 @@ static struct bt_mesh_model secondary_1_models[] = {
  * Element 3 Models
  */
 
-static struct bt_mesh_model secondary_2_models[] = {
+static const struct bt_mesh_model secondary_2_models[] = {
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op,
 		      &gen_onoff_pub_srv_s_2, &led_onoff_states[3]),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op,
@@ -214,7 +214,7 @@ static struct bt_mesh_model secondary_2_models[] = {
  * Button to Client Model Assignments
  */
 
-struct bt_mesh_model *mod_cli_sw[] = {
+const struct bt_mesh_model *mod_cli_sw[] = {
 		&root_models[4],
 		&secondary_0_models[1],
 		&secondary_1_models[1],
@@ -225,7 +225,7 @@ struct bt_mesh_model *mod_cli_sw[] = {
  * LED to Server Model Assignments
  */
 
-struct bt_mesh_model *mod_srv_sw[] = {
+const struct bt_mesh_model *mod_srv_sw[] = {
 		&root_models[3],
 		&secondary_0_models[0],
 		&secondary_1_models[0],
@@ -281,7 +281,7 @@ static uint16_t primary_net_idx;
  *
  */
 
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -300,7 +300,7 @@ static int gen_onoff_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -340,7 +340,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_onoff_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -352,7 +352,7 @@ static int gen_onoff_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_status(struct bt_mesh_model *model,
+static int gen_onoff_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -465,7 +465,7 @@ static void button_cnt_timer(struct k_timer *work)
 
 static void button_pressed_worker(struct k_work *work)
 {
-	struct bt_mesh_model *mod_cli, *mod_srv;
+	const struct bt_mesh_model *mod_cli, *mod_srv;
 	struct bt_mesh_model_pub *pub_cli, *pub_srv;
 	struct switch_data *button_sw = CONTAINER_OF(work, struct switch_data, button_work);
 	int err;

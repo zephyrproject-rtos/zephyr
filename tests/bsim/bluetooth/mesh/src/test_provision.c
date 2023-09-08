@@ -139,7 +139,7 @@ static const struct bt_mesh_comp rpr_srv_comp = {
 	.elem_count = 1,
 };
 
-static int mock_pdu_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_pdu_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
 	/* Device becomes unresponsive and doesn't communicate with other nodes anymore */
@@ -155,10 +155,10 @@ static const struct bt_mesh_model_op model_rpr_op1[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int mock_model_init(struct bt_mesh_model *mod)
+static int mock_model_init(const struct bt_mesh_model *mod)
 {
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

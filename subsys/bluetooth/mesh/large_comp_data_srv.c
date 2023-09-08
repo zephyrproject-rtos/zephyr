@@ -37,10 +37,11 @@ LOG_MODULE_REGISTER(bt_mesh_large_comp_data_srv);
 /** Mesh Large Composition Data Server Model Context */
 static struct bt_mesh_large_comp_data_srv {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 } srv;
 
-static int handle_large_comp_data_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int handle_large_comp_data_get(const struct bt_mesh_model *model,
+				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, OP_LARGE_COMP_DATA_STATUS,
@@ -86,7 +87,8 @@ static int handle_large_comp_data_get(struct bt_mesh_model *model, struct bt_mes
 	return 0;
 }
 
-static int handle_models_metadata_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int handle_models_metadata_get(const struct bt_mesh_model *model,
+				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, OP_MODELS_METADATA_STATUS,
@@ -151,7 +153,7 @@ const struct bt_mesh_model_op _bt_mesh_large_comp_data_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int large_comp_data_srv_init(struct bt_mesh_model *model)
+static int large_comp_data_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Large Composition Data Server only allowed in primary element");
@@ -160,7 +162,7 @@ static int large_comp_data_srv_init(struct bt_mesh_model *model)
 
 	/* Large Composition Data Server model shall use the device key */
 	model->keys[0] = BT_MESH_KEY_DEV;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->ctx->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	srv.model = model;
 
