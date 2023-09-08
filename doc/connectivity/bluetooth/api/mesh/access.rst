@@ -170,15 +170,15 @@ Composition Data
 
 .. note::
 
-  Currently the implementation of the Bluetooth Mesh Protocol Specification
-  version 1.1 is in an experimental state. In that context we must clarify
-  that for Mesh version 1.0 only composition data page 0 is supported. Users
-  that are developing for Mesh version 1.0 may therefore disregard all
-  entries in the following section mentioning the :ref:`bluetooth_mesh_lcd_srv`
-  model and composition data page 1, 2, 128, 129 and 130.
+  The implementation of the Bluetooth Mesh Protocol Specification version 1.1
+	is currently in an experimental state. For Bluetooth Mesh Profile Specification
+	version 1.0.1, only Composition Data Page 0 is supported. Users that are developing
+	for Bluetooth Mesh Profile Specification version 1.0.1 may therefore disregard all
+	parts of the following section mentioning the :ref:`bluetooth_mesh_lcd_srv`
+	model and Composition Data Pages 1, 2, 128, 129 and 130.
 
-The Composition Data provides information about a Mesh device.
-A device's composition data holds information about the elements on the
+The Composition Data provides information about a mesh device.
+A device's Composition Data holds information about the elements on the
 device, the models that it supports, and other features. The Composition
 Data is split into different pages, where each page contains specific feature
 information about the device. In order to access this information, the user
@@ -201,24 +201,23 @@ Composition Data Page 1 provides information about the relationships between mod
 and is mandatory for all mesh devices. A model may extend and/or correspond to one
 or more models. A model can extend another model by calling :c:func:`bt_mesh_model_extend`,
 or correspond to another model by calling :c:func:`bt_mesh_model_correspond`.
-:kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE` specifies how many models
-relations that can be stored in the composition on a device, and this number should
-reflect the the number of :c:func:`bt_mesh_model_extend` and
-:c:func:`bt_mesh_model_correspond` calls. Composition Data Page 129 mirrors Page 1
-and is used to represent the new content of the Composition Data Page 1 after a
-device firmware update.
+:kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE` specifies how many model
+relations can be stored in the composition on a device, and this number should reflect the
+number of :c:func:`bt_mesh_model_extend` and :c:func:`bt_mesh_model_correspond` calls.
+Composition Data Page 129 mirrors Page 1 and is used to represent the new content of
+the Composition Data Page 1 after a device firmware update.
 
 Composition Data Page 2 and 130
 -------------------------------
 
-Composition Data Page 2 provides information for supported Mesh profiles. Mesh profile
+Composition Data Page 2 provides information for supported mesh profiles. Mesh profile
 specifications define product requirements for devices that want to support a specific
 Bluetooth SIG defined profile. Currently supported profiles can be found in section
 3.12 in `Bluetooth SIG Assigned Numbers
-<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_. Composition Data Page 2 is only mandatory for
-devices that claim support for or more mesh profile(s). Composition Data Page 130
-mirrors Page 2 and is used to represent the new content of the Composition Data Page 2
-after a device firmware update.
+<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+Composition Data Page 2 is only mandatory for devices that claim support for one or more
+mesh profile(s). Composition Data Page 130 mirrors Page 2 and is used to represent the
+new content of the Composition Data Page 2 after a device firmware update.
 
 API reference
 *************
