@@ -1536,7 +1536,7 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
+int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
 				   uint32_t *const broadcast_id);
 
 /**
