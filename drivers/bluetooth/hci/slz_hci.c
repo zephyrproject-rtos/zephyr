@@ -16,11 +16,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_slz);
 
-#define SL_BT_CONFIG_ACCEPT_LIST_SIZE	1
-#define SL_BT_CONFIG_MAX_CONNECTIONS	1
-#define SL_BT_CONFIG_USER_ADVERTISERS	1
-#define SL_BT_CONTROLLER_BUFFER_MEMORY  CONFIG_BT_SILABS_HCI_BUFFER_MEMORY
-#define SL_BT_SILABS_LL_STACK_SIZE	1024
+#define SL_BT_CONFIG_ACCEPT_LIST_SIZE		1
+#define SL_BT_CONFIG_MAX_CONNECTIONS		1
+#define SL_BT_CONFIG_USER_ADVERTISERS		1
+#define SL_BT_CONTROLLER_BUFFER_MEMORY		CONFIG_BT_SILABS_HCI_BUFFER_MEMORY
+#define SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX	CONFIG_BT_BUF_ACL_TX_COUNT
+#define SL_BT_SILABS_LL_STACK_SIZE		1024
 
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, SL_BT_SILABS_LL_STACK_SIZE);
 static struct k_thread slz_ll_thread;
@@ -134,6 +135,8 @@ static int slz_bt_open(void)
 		LOG_ERR("Failed to allocate memory %d", ret);
 		return -ENOMEM;
 	}
+
+	sl_btctrl_configure_le_buffer_size(SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX);
 
 	ret = sl_btctrl_init_ll();
 	if (ret) {
