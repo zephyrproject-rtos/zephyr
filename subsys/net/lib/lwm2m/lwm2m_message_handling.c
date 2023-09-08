@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/hash_function.h>
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <zephyr/net/tls_credentials.h>
@@ -378,6 +379,7 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 {
 	int ret;
 	uint16_t len;
+	const uint8_t *payload;
 
 	/* save the big buffer for later use (splitting blocks) */
 	msg->body_encode_buffer = msg->cpkt;
@@ -387,7 +389,7 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 	msg->cpkt.offset = 0;
 	msg->cpkt.max_len = MAX_PACKET_SIZE;
 
-	coap_packet_get_payload(&msg->body_encode_buffer, &len);
+	payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
 	if (len <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
 
 		/* copy the packet */
@@ -406,6 +408,16 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 		NET_ASSERT(msg->out.block_ctx == NULL, "Expecting to have no context to release");
 	} else {
+		/* Before splitting the content, append Etag option to protect the integrity of
+		 * the payload.
+		 */
+		if (IS_ENABLED(CONFIG_SYS_HASH_FUNC32)) {
+			uint32_t hash = sys_hash32(payload, len);
+
+			coap_packet_append_option(&msg->body_encode_buffer, COAP_OPTION_ETAG,
+						  (const uint8_t *)&hash, sizeof(hash));
+		}
+
 		ret = build_msg_block_for_send(msg, 0);
 		if (ret != 0) {
 			return ret;
