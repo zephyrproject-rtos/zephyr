@@ -6,7 +6,7 @@ import pytest
 import textwrap
 
 from unittest import mock
-from twister_harness.fixtures.mcumgr import MCUmgr, MCUmgrException
+from twister_harness.helpers.mcumgr import MCUmgr, MCUmgrException
 
 
 @pytest.fixture(name='mcumgr')
@@ -14,7 +14,7 @@ def fixture_mcumgr() -> MCUmgr:
     return MCUmgr.create_for_serial('SERIAL_PORT')
 
 
-@mock.patch('twister_harness.fixtures.mcumgr.MCUmgr.run_command', return_value='')
+@mock.patch('twister_harness.helpers.mcumgr.MCUmgr.run_command', return_value='')
 def test_if_mcumgr_fixture_generate_proper_command(
     patched_run_command: mock.Mock, mcumgr: MCUmgr
 ) -> None:
