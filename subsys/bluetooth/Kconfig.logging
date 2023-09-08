@@ -398,6 +398,16 @@ config BT_DEBUG_SERVICE
 	  This option enables debug support for the Bluetooth
 	  Services.
 
+# CONTROLLER (subsys/bluetooth/controller/Kconfig)
+
+config BT_CTLR_DEBUG_ISOAL
+	bool "[DEPRECATED] Bluetooth ISO-AL debug"
+	select DEPRECATED
+	depends on BT_CTLR_ISO
+	help
+	  This option enables debug support for the Bluetooth ISO-AL.
+
+
 endmenu # [DEPRECATED] Others
 
 menu "[DEPRECATED] BR/EDR"
@@ -898,6 +908,13 @@ source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 module = BT_SERVICE
 legacy-debug-sym = BT_DEBUG_SERVICE
 module-str = "Bluetooth Services"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# CONTROLLER (subsys/bluetooth/controller/Kconfig)
+
+module = BT_CTLR_ISOAL
+legacy-debug-sym = BT_CTLR_DEBUG_ISOAL
+module-str = "Bluetooth Controller ISO-AL"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endmenu # Others
