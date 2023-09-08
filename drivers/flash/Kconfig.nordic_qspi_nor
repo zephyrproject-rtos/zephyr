@@ -14,8 +14,8 @@ menuconfig NORDIC_QSPI_NOR
 if NORDIC_QSPI_NOR
 
 config NORDIC_QSPI_NOR_INIT_PRIORITY
-	int
-	default 80
+	int "Init priority"
+	default 41
 	help
 	  Device driver initialization priority.
 
@@ -38,5 +38,15 @@ config NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE
 	  allow the write to proceed. Multiple transfers will be initiated
 	  if the data is larger than the configured size.
 	  Must be a multiple of 4. When set to 0, the feature is disabled.
+
+config NORDIC_QSPI_NOR_XIP
+	bool "XIP (eXecute in place)"
+	depends on SOC_NRF5340_CPUAPP
+	help
+	  Enable setting up the QSPI NOR driver to allow for execution of code
+	  stored in QSPI XIP region. Note that for this functionality to work,
+	  the QSPI NOR init priority must be set so that no XIP code in the
+	  QSPI NOR flash chip is executed until the driver has been setup.
+	  This will also disable power management for the QSPI NOR flash chip.
 
 endif # NORDIC_QSPI_NOR
