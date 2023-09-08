@@ -82,7 +82,7 @@
 		compatible = "intel,adsp-shim-clkctl";
 		adsp-clkctl-clk-wovcro = <0>;
 		adsp-clkctl-clk-lpro = <1>;
-		adsp-clkctl-clk-hpro = <2>;
+		adsp-clkctl-clk-ipll = <2>;
 		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
 		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
 		adsp-clkctl-freq-default = <2>;
