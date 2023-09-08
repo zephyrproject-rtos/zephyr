@@ -956,9 +956,11 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 	return 0;
 }
 
-int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
+int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
 				   uint32_t *const broadcast_id)
 {
+	enum bt_bap_ep_state broadcast_state;
+
 	CHECKIF(source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
@@ -969,6 +971,12 @@ int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
 		return -EINVAL;
 	}
 
+	broadcast_state = broadcast_source_get_state(source);
+	if (broadcast_state == BT_BAP_EP_STATE_IDLE) {
+		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
+		return -EBADMSG;
+	}
+
 	*broadcast_id = source->broadcast_id;
 
 	return 0;
@@ -977,6 +985,8 @@ int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
 int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 				     struct net_buf_simple *base_buf)
 {
+	enum bt_bap_ep_state broadcast_state;
+
 	CHECKIF(source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
@@ -985,6 +995,12 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 	CHECKIF(base_buf == NULL) {
 		LOG_DBG("base_buf is NULL");
 		return -EINVAL;
+	}
+
+	broadcast_state = broadcast_source_get_state(source);
+	if (broadcast_state == BT_BAP_EP_STATE_IDLE) {
+		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
+		return -EBADMSG;
 	}
 
 	if (!encode_base(source, base_buf)) {
