@@ -83,6 +83,8 @@ config LWM2M_COAP_BLOCK_TRANSFER
 	help
 	  LwM2M messages with a big body that exceed the block size will be split
 	  into blocks for sending.
+	  To append CoAP ETag option into outgoing block transfers, CONFIG_SYS_HASH_FUNC32 should
+	  be enabled.
 
 config LWM2M_CANCEL_OBSERVE_BY_PATH
 	bool "Use path matching as fallback for cancel-observe"
