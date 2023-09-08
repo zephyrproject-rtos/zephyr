@@ -45,6 +45,8 @@ enum charger_property {
 	CHARGER_PROP_HEALTH,
 	/** Configuration of current sink used for charging in µA */
 	CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA,
+	/** Configuration of current sink used for conditioning in µA */
+	CHARGER_PROP_PRECHARGE_CURRENT_UA,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -183,6 +185,8 @@ union charger_propval {
 	enum charger_health health;
 	/** CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA */
 	uint32_t const_charge_current_ua;
+	/** CHARGER_PROP_PRECHARGE_CURRENT_UA */
+	uint32_t precharge_current_ua;
 };
 
 /**
