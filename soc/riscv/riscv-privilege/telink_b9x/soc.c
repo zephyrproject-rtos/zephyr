@@ -8,9 +8,16 @@
 #include <clock.h>
 #include <gpio.h>
 #include <ext_driver/ext_pm.h>
+#include "rf.h"
+#include "flash.h"
 #include <watchdog.h>
-#include <zephyr/device.h>
 
+#include <zephyr/device.h>
+#include <zephyr/storage/flash_map.h>
+
+#if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
+#include "b9x_bt_flash.h"
+#endif
 
 /* Software reset defines */
 #define reg_reset                   REG_ADDR8(0x1401ef)
@@ -66,6 +73,42 @@
 	#error "Unsupported clock-frequency. Supported values: 16, 24, 32, 48, 60 and 96 MHz"
 #endif
 
+#if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
+/* SOC Parameters structure */
+_attribute_data_retention_ struct {
+	unsigned char	cap_freq_offset_en;
+	unsigned char	cap_freq_offset_value;
+} soc_nvParam;
+
+/**
+ * @brief Perform SOC calibration at boot time (normal boot)
+ */
+void soc_load_rf_parameters_normal(void)
+{
+	if (!blt_miscParam.ext_cap_en) {
+		unsigned char cap_freq_ofset;
+
+		flash_read_page(FIXED_PARTITION_OFFSET(vendor_partition) +
+		B9X_CALIBRATION_ADDR_OFFSET, 1, &cap_freq_ofset);
+		if (cap_freq_ofset != 0xff) {
+			soc_nvParam.cap_freq_offset_en = 1;
+			soc_nvParam.cap_freq_offset_value = cap_freq_ofset;
+			rf_update_internal_cap(soc_nvParam.cap_freq_offset_value);
+		}
+	}
+}
+
+/**
+ * @brief Perform SOC calibration at boot time (deep retention)
+ */
+void soc_load_rf_parameters_deep_retention(void)
+{
+	if (soc_nvParam.cap_freq_offset_value) {
+		rf_update_internal_cap(soc_nvParam.cap_freq_offset_value);
+	}
+}
+#endif
+
 /**
  * @brief Perform basic initialization at boot.
  *
@@ -90,6 +133,11 @@ static int soc_b9x_init(void)
 #if CONFIG_PM
 	gpio_shutdown(GPIO_ALL);
 #endif /* CONFIG_PM */
+
+#if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
+	soc_load_rf_parameters_normal();
+#endif
+
 
 	/* clocks init: CCLK, HCLK, PCLK */
 	switch (cclk) {
@@ -157,6 +205,10 @@ void soc_b9x_restore(void)
 #if CONFIG_PM
 	gpio_shutdown(GPIO_ALL);
 #endif /* CONFIG_PM */
+
+#if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
+	soc_load_rf_parameters_deep_retention();
+#endif
 
 	/* clocks init: CCLK, HCLK, PCLK */
 	switch (cclk) {
