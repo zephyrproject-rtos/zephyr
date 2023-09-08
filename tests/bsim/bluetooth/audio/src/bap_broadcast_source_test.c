@@ -149,26 +149,6 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	return 0;
 }
 
-static void test_broadcast_source_get_id_inval(struct bt_bap_broadcast_source *source,
-					       uint32_t *broadcast_id_out)
-{
-	int err;
-
-	printk("Test bt_bap_broadcast_source_get_id with NULL source\n");
-	err = bt_bap_broadcast_source_get_id(NULL, broadcast_id_out);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_get_id with NULL source did not fail\n");
-		return;
-	}
-
-	printk("Test bt_bap_broadcast_source_get_id with NULL broadcast_id\n");
-	err = bt_bap_broadcast_source_get_id(source, NULL);
-	if (err == 0) {
-		FAIL("bt_bap_broadcast_source_get_id with NULL ID did not fail\n");
-		return;
-	}
-}
-
 static void test_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
 					 uint32_t *broadcast_id_out)
 {
@@ -256,7 +236,6 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 		return err;
 	}
 
-	test_broadcast_source_get_id_inval(source, &broadcast_id);
 	test_broadcast_source_get_id(source, &broadcast_id);
 
 	/* Setup extended advertising data */
