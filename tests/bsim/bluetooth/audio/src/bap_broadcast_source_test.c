@@ -28,16 +28,16 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 extern enum bst_result_t bst_result;
+static volatile size_t sent_count;
 static struct bt_bap_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_lc3_preset preset_16_2_2 = BT_BAP_LC3_BROADCAST_PRESET_16_2_2(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 CREATE_FLAG(flag_stopping);
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(broadcast_source_streams));
+static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(broadcast_source_streams));
 
 static void started_cb(struct bt_bap_stream *stream)
 {
@@ -53,22 +53,12 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void sent_cb(struct bt_bap_stream *stream)
 {
-	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
-	static bool mock_data_initialized;
 	static uint16_t seq_num;
 	struct net_buf *buf;
 	int ret;
 
 	if (TEST_FLAG(flag_stopping)) {
 		return;
-	}
-
-	if (!mock_data_initialized) {
-		for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
-			/* Initialize mock data */
-			mock_data[i] = (uint8_t)i;
-		}
-		mock_data_initialized = true;
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -80,15 +70,16 @@ static void sent_cb(struct bt_bap_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	/* Use preset_16_2_1 as that is the config we end up using */
-	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++,
-				   BT_ISO_TIMESTAMP_NONE);
+	net_buf_add_mem(buf, mock_iso_data, preset_16_2_1.qos.sdu);
+	ret = bt_bap_stream_send(stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
-		printk("Unable to broadcast data on %p: %d\n", stream, ret);
 		net_buf_unref(buf);
+		FAIL("Unable to broadcast data on %p: %d\n", stream, ret);
 		return;
 	}
+
+	sent_count++;
 }
 
 static struct bt_bap_stream_ops stream_ops = {
@@ -351,7 +342,7 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 
 	/* Wait for all to be started */
 	printk("Waiting for streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		k_sem_take(&sem_started, K_FOREVER);
 	}
 }
@@ -371,7 +362,7 @@ static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 
 	/* Wait for all to be stopped */
 	printk("Waiting for streams to be stopped\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		k_sem_take(&sem_stopped, K_FOREVER);
 	}
 }
@@ -447,14 +438,17 @@ static void test_main(void)
 	test_broadcast_source_start(source, adv);
 
 	/* Initialize sending */
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+	printk("Sending data\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			sent_cb(streams[i]);
+			sent_cb(&broadcast_source_streams[i]);
 		}
 	}
 
-	/* Keeping running for a little while */
-	k_sleep(K_SECONDS(15));
+	/* Keep sending until we reach the minimum expected */
+	while (sent_count < (MIN_SEND_COUNT * ARRAY_SIZE(broadcast_source_streams))) {
+		k_sleep(K_MSEC(100));
+	}
 
 	/* Update metadata while streaming */
 	printk("Updating metadata\n");
