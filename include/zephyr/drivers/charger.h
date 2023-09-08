@@ -37,6 +37,9 @@ enum charger_property {
 	/** Represents the charging status of the charger. */
 	/** Value should be of type enum charger_status */
 	CHARGER_PROP_STATUS,
+	/** Represents the charging algo type of the charger. */
+	/** Value should be of type enum charger_charge_type */
+	CHARGER_PROP_CHARGE_TYPE,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -85,6 +88,39 @@ enum charger_status {
 };
 
 /**
+ * @brief Charge algorithm types
+ */
+enum charger_charge_type {
+	/** Charge type is unknown */
+	CHARGER_CHARGE_TYPE_UNKNOWN = 0,
+	/** Charging is not occurring */
+	CHARGER_CHARGE_TYPE_NONE,
+	/*
+	 * Charging is occurring at the slowest desired charge rate,
+	 * typically for battery detection or preconditioning
+	 */
+	CHARGER_CHARGE_TYPE_TRICKLE,
+	/** Charging is occurring at the fastest desired charge rate */
+	CHARGER_CHARGE_TYPE_FAST,
+	/** Charging is occurring at a moderate charge rate */
+	CHARGER_CHARGE_TYPE_STANDARD,
+	/*
+	 * Charging is being dynamically adjusted by the charger device
+	 */
+	CHARGER_CHARGE_TYPE_ADAPTIVE,
+	/*
+	 * Charging is occurring at a reduced charge rate to preserve
+	 * battery health
+	 */
+	CHARGER_CHARGE_TYPE_LONGLIFE,
+	/*
+	 * The charger device is being bypassed and the power conversion
+	 * is being handled externally, typically by a "smart" wall adaptor
+	 */
+	CHARGER_CHARGE_TYPE_BYPASS,
+};
+
+/**
  * @brief container for a charger_property value
  *
  */
@@ -99,6 +135,8 @@ union charger_propval {
 	bool present;
 	/** CHARGER_PROP_STATUS */
 	enum charger_status status;
+	/** CHARGER_PROP_CHARGE_TYPE */
+	enum charger_charge_type charge_type;
 };
 
 /**
