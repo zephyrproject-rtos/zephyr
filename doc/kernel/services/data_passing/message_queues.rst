@@ -25,11 +25,6 @@ A message queue has the following key properties:
 
 * A **maximum quantity** of data items that can be queued in the ring buffer.
 
-The message queue's ring buffer must be aligned to an N-byte boundary, where
-N is a power of 2 (i.e. 1, 2, 4, 8, ...). To ensure that the messages stored in
-the ring buffer are similarly aligned to this boundary, the data item size
-must also be a multiple of N.
-
 A message queue must be initialized before it can be used.
 This sets its ring buffer to empty.
 
@@ -64,6 +59,11 @@ the size of the receiving area *must* equal the message queue's data item size.
     The kernel does allow an ISR to receive an item from a message queue,
     however the ISR must not attempt to wait if the message queue is empty.
 
+.. note::
+    Alignment of the message queue's ring buffer is not necessary.
+    The underlying implementation uses :c:func:`memcpy` (which is
+    alignment-agnostic) and does not expose any internal pointers.
+
 Implementation
 **************
 
@@ -84,7 +84,7 @@ that is capable of holding 10 items, each of which is 12 bytes long.
 	uint32_t field3;
     };
 
-    char __aligned(4) my_msgq_buffer[10 * sizeof(struct data_item_type)];
+    char my_msgq_buffer[10 * sizeof(struct data_item_type)];
     struct k_msgq my_msgq;
 
     k_msgq_init(&my_msgq, my_msgq_buffer, sizeof(struct data_item_type), 10);
@@ -97,22 +97,7 @@ that the macro defines both the message queue and its buffer.
 
 .. code-block:: c
 
-    K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 4);
-
-The following code demonstrates an alignment implementation for the
-structure defined in the previous example code. ``aligned`` means each
-:c:struct:`data_item_type` will begin on the specified byte boundary.
-``aligned(4)`` means that the structure is aligned to an address that
-is divisible by 4.
-
-.. code-block:: c
-
-    typedef struct {
-        uint32_t field1;
-	uint32_t field2;
-	uint32_t field3;
-    }__attribute__((aligned(4))) data_item_type;
-
+    K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 1);
 
 Writing to a Message Queue
 ==========================
