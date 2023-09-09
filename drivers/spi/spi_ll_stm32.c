@@ -306,20 +306,6 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		/* NOP */
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
-	 * we need to enable the start of the transfer with
-	 * LL_SPI_StartMasterTransfer(spi)
-	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
-		}
-	}
-#endif
-
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
@@ -690,6 +676,20 @@ static int transceive(const struct device *dev,
 #endif
 
 	LL_SPI_Enable(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	/* With the STM32MP1, STM32U5 and the STM32H7,
+	 * if the device is the SPI master,
+	 * we need to enable the start of the transfer with
+	 * LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 #if CONFIG_SOC_SERIES_STM32H7X
 	/*
