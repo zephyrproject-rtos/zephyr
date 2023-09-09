@@ -72,6 +72,7 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 				char ssids[][WIFI_SSID_MAX_LEN + 1]);
 
 
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 /**
  * @brief Convert a string containing a specification of scan channels to an array.
  *
@@ -102,6 +103,7 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			       uint8_t chan[][WIFI_CHANNEL_MAX]);
 
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 /**
  * @}
  */

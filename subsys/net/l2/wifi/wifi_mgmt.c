@@ -104,8 +104,10 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	struct wifi_scan_params *params = data;
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 	bool chan_specified = false;
-	uint8_t i = 0;
+	uint8_t band = 0;
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->scan == NULL) {
 		return -ENOTSUP;
@@ -145,9 +147,9 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 		if (!params->max_bss_cnt) {
 			params->max_bss_cnt = CONFIG_WIFI_MGMT_SCAN_MAX_BSS_CNT;
 		}
-
-		for (i = 0; i <= WIFI_FREQ_BAND_MAX; i++) {
-			if (params->chan[i][0]) {
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
+		for (band = 0; band <= WIFI_FREQ_BAND_MAX; band++) {
+			if (params->chan[band][0]) {
 				chan_specified = true;
 				break;
 			}
@@ -161,6 +163,7 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 				return -EINVAL;
 			}
 		}
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 	}
 
 	return wifi_mgmt_api->scan(dev, params, scan_result_cb);

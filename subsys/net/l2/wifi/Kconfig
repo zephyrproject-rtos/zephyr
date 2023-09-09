@@ -96,9 +96,15 @@ config WIFI_MGMT_SCAN_MAX_BSS_CNT
 	help
 	  Maximum number of scan results to return. 0 represents unlimited number of BSSes.
 
+config WIFI_MGMT_SCAN_CHAN_SUPPORT
+	bool "Scan on specific channels support"
+	help
+	  Enabling the scanning of individual channels. This option consumes a lot of memory.
+
 config WIFI_MGMT_SCAN_CHAN
 	string "Scan on specific channels"
 	default ""
+	depends on WIFI_MGMT_SCAN_CHAN_SUPPORT
 	help
 	 Formatted string which specifies channels to be scanned. The channel string has to be formatted
 	 using the colon (:), comma(,), hyphen (-) and space ( ) delimiters as follows:

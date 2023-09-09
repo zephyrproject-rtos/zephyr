@@ -556,13 +556,17 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'c':
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 			if (wifi_utils_parse_scan_chan(optarg, params->chan)) {
 				shell_fprintf(sh,
 					      SHELL_ERROR,
 					      "Invalid band or channel value(s)\n");
 				return -ENOEXEC;
 			}
-
+#else
+			shell_fprintf(sh, SHELL_ERROR, "This feature isn't enabled\n");
+			return -ENOEXEC;
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 			opt_num++;
 			break;
 		case 'h':
@@ -1653,7 +1657,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
 		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.\n"
 		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.\n"
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44\n"
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 		    "[-h, --help] : Print out the help for the scan command.",
 		  cmd_wifi_scan),
 	SHELL_CMD(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats),

@@ -24,9 +24,11 @@ LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 /* Ensure 'strtok_r' is available even with -std=c99. */
 char *strtok_r(char *str, const char *delim, char **saveptr);
 
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 static const uint16_t valid_5g_chans_20mhz[] = {32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 96, 100,
 	104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 159, 161,
 	163, 165, 167, 169, 171, 173, 175, 177};
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
 
 static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char *band_str)
 {
@@ -43,7 +45,7 @@ static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char *band_str)
 	return band;
 }
 
-
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT
 static bool wifi_utils_validate_chan_2g(uint16_t chan)
 {
 	if ((chan >= 1) && (chan <= 14)) {
@@ -52,7 +54,6 @@ static bool wifi_utils_validate_chan_2g(uint16_t chan)
 
 	return false;
 }
-
 
 static bool wifi_utils_validate_chan_5g(uint16_t chan)
 {
@@ -67,7 +68,6 @@ static bool wifi_utils_validate_chan_5g(uint16_t chan)
 	return false;
 }
 
-
 static bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
 	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
@@ -77,7 +77,6 @@ static bool wifi_utils_validate_chan_6g(uint16_t chan)
 
 	return false;
 }
-
 
 static bool wifi_utils_validate_chan(uint8_t band,
 				     uint16_t chan)
@@ -101,7 +100,6 @@ static bool wifi_utils_validate_chan(uint8_t band,
 
 	return result;
 }
-
 
 static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		uint8_t chan_end,
@@ -192,7 +190,6 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 	return 0;
 }
 
-
 static int wifi_utils_validate_chan_str(char *chan_str)
 {
 	uint8_t i;
@@ -211,103 +208,6 @@ static int wifi_utils_validate_chan_str(char *chan_str)
 
 	return 0;
 }
-
-
-int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
-{
-	char parse_str[WIFI_MGMT_BAND_STR_SIZE_MAX + 1];
-	char *band_str = NULL;
-	char *ctx = NULL;
-	enum wifi_frequency_bands band = WIFI_FREQ_BAND_UNKNOWN;
-	int len;
-
-	if (!scan_bands_str) {
-		return -EINVAL;
-	}
-
-	len = strlen(scan_bands_str);
-
-	if (len > WIFI_MGMT_BAND_STR_SIZE_MAX) {
-		NET_ERR("Band string (%s) size (%d) exceeds maximum allowed value (%d)",
-			scan_bands_str,
-			len,
-			WIFI_MGMT_BAND_STR_SIZE_MAX);
-		return -EINVAL;
-	}
-
-	strncpy(parse_str, scan_bands_str, len);
-	parse_str[len] = '\0';
-
-	band_str = strtok_r(parse_str, ",", &ctx);
-
-	while (band_str) {
-		band = wifi_utils_map_band_str_to_idx(band_str);
-
-		if (band == WIFI_FREQ_BAND_UNKNOWN) {
-			NET_ERR("Invalid band value: %s", band_str);
-			return -EINVAL;
-		}
-
-		*band_map |= (1 << band);
-
-		band_str = strtok_r(NULL, ",", &ctx);
-	}
-
-	return 0;
-}
-
-int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				char ssids[][WIFI_SSID_MAX_LEN + 1])
-{
-	char parse_str[(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)) + 1];
-	char *ssid = NULL;
-	char *ctx = NULL;
-	uint8_t i = 0;
-	int len;
-
-	if (!scan_ssids_str) {
-		return -EINVAL;
-	}
-
-	len = strlen(scan_ssids_str);
-
-	if (len > (WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1))) {
-		NET_ERR("SSID string (%s) size (%d) exceeds maximum allowed value (%d)",
-			scan_ssids_str,
-			len,
-			(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)));
-		return -EINVAL;
-	}
-
-	strncpy(parse_str, scan_ssids_str, len);
-	parse_str[len] = '\0';
-
-	ssid = strtok_r(parse_str, ",", &ctx);
-
-	while (ssid) {
-		if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
-			NET_ERR("SSID length (%zu) exceeds maximum value (%d) for SSID %s",
-				strlen(ssid),
-				WIFI_SSID_MAX_LEN,
-				ssid);
-			return -EINVAL;
-		}
-
-		if (i >= WIFI_MGMT_SCAN_SSID_FILT_MAX) {
-			NET_WARN("Exceeded maximum allowed (%d) SSIDs. Ignoring SSIDs %s onwards",
-				 WIFI_MGMT_SCAN_SSID_FILT_MAX,
-				 ssid);
-			break;
-		}
-
-		strcpy(&ssids[i++][0], ssid);
-
-		ssid = strtok_r(NULL, ",", &ctx);
-	}
-
-	return 0;
-}
-
 
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			       uint8_t chan[][WIFI_CHANNEL_MAX])
@@ -427,6 +327,102 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 	if (!valid_chan) {
 		NET_ERR("No valid channel found");
 		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_SUPPORT */
+
+int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
+{
+	char parse_str[WIFI_MGMT_BAND_STR_SIZE_MAX + 1];
+	char *band_str = NULL;
+	char *ctx = NULL;
+	enum wifi_frequency_bands band = WIFI_FREQ_BAND_UNKNOWN;
+	int len;
+
+	if (!scan_bands_str) {
+		return -EINVAL;
+	}
+
+	len = strlen(scan_bands_str);
+
+	if (len > WIFI_MGMT_BAND_STR_SIZE_MAX) {
+		NET_ERR("Band string (%s) size (%d) exceeds maximum allowed value (%d)",
+			scan_bands_str,
+			len,
+			WIFI_MGMT_BAND_STR_SIZE_MAX);
+		return -EINVAL;
+	}
+
+	strncpy(parse_str, scan_bands_str, len);
+	parse_str[len] = '\0';
+
+	band_str = strtok_r(parse_str, ",", &ctx);
+
+	while (band_str) {
+		band = wifi_utils_map_band_str_to_idx(band_str);
+
+		if (band == WIFI_FREQ_BAND_UNKNOWN) {
+			NET_ERR("Invalid band value: %s", band_str);
+			return -EINVAL;
+		}
+
+		*band_map |= (1 << band);
+
+		band_str = strtok_r(NULL, ",", &ctx);
+	}
+
+	return 0;
+}
+
+int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
+				char ssids[][WIFI_SSID_MAX_LEN + 1])
+{
+	char parse_str[(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)) + 1];
+	char *ssid = NULL;
+	char *ctx = NULL;
+	uint8_t i = 0;
+	int len;
+
+	if (!scan_ssids_str) {
+		return -EINVAL;
+	}
+
+	len = strlen(scan_ssids_str);
+
+	if (len > (WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1))) {
+		NET_ERR("SSID string (%s) size (%d) exceeds maximum allowed value (%d)",
+			scan_ssids_str,
+			len,
+			(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)));
+		return -EINVAL;
+	}
+
+	strncpy(parse_str, scan_ssids_str, len);
+	parse_str[len] = '\0';
+
+	ssid = strtok_r(parse_str, ",", &ctx);
+
+	while (ssid) {
+		if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
+			NET_ERR("SSID length (%zu) exceeds maximum value (%d) for SSID %s",
+				strlen(ssid),
+				WIFI_SSID_MAX_LEN,
+				ssid);
+			return -EINVAL;
+		}
+
+		if (i >= WIFI_MGMT_SCAN_SSID_FILT_MAX) {
+			NET_WARN("Exceeded maximum allowed (%d) SSIDs. Ignoring SSIDs %s onwards",
+				 WIFI_MGMT_SCAN_SSID_FILT_MAX,
+				 ssid);
+			break;
+		}
+
+		strcpy(&ssids[i++][0], ssid);
+
+		ssid = strtok_r(NULL, ",", &ctx);
 	}
 
 	return 0;
