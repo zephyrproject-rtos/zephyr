@@ -302,7 +302,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	uint16_t tx_frame = SPI_STM32_TX_NOP;
 	uint16_t rx_frame;
 
-	while (!ll_func_tx_is_empty(spi)) {
+	while (!ll_func_tx_is_not_full(spi)) {
 		/* NOP */
 	}
 
@@ -344,7 +344,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
+	if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(&data->ctx)) {
 		uint16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
