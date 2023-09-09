@@ -5,7 +5,7 @@ description: Raspberry Pi Pico clock controller node
 
 compatible: "raspberrypi,pico-clock-controller"
 
-include: [base.yaml, clock-controller.yaml]
+include: [base.yaml, clock-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

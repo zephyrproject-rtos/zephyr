@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT raspberrypi_pico_clock_controller
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/dt-bindings/clock/rpi_pico_clock.h>
 
@@ -696,6 +697,11 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			dev, (clock_control_subsys_t)rpi_pico_clkid_rosc_ph);
 	}
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -741,12 +747,15 @@ BUILD_ASSERT(SRC_CLOCK_FREQ(clk_peri) >= CLOCK_FREQ_clk_peri,
 
 BUILD_ASSERT(CLOCK_FREQ(rosc_ph) == CLOCK_FREQ(rosc), "rosc_ph: frequency must be equal to rosc");
 
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct clock_control_rpi_pico_config clock_control_rpi_pico_config = {
 	.clocks_regs = (clocks_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, clocks),
 	.xosc_regs = (xosc_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, xosc),
 	.pll_sys_regs = (pll_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, pll_sys),
 	.pll_usb_regs = (pll_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, pll_usb),
 	.rosc_regs = (rosc_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, rosc),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clocks_data = {
 		[RPI_PICO_CLKID_CLK_GPOUT0] = {
 			.source = 0,
