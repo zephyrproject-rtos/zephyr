@@ -3,7 +3,7 @@
 # Copyright (c) 2017 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_STM32F072XB
+if SOC_STM32F072X8 || SOC_STM32F072XB
 
 config SOC
 	default "stm32f072xb"
@@ -11,4 +11,4 @@ config SOC
 config NUM_IRQS
 	default 32
 
-endif # SOC_STM32F072XB
+endif # SOC_STM32F072X8 || SOC_STM32F072XB
