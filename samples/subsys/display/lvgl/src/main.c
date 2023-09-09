@@ -36,6 +36,13 @@ static void button_isr_callback(const struct device *port,
 }
 #endif
 
+static void lv_btn_click_callback(lv_event_t *e)
+{
+	ARG_UNUSED(e);
+
+	count = 0;
+}
+
 int main(void)
 {
 	char count_str[11] = {0};
@@ -82,6 +89,8 @@ int main(void)
 
 		hello_world_button = lv_btn_create(lv_scr_act());
 		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
+						NULL);
 		hello_world_label = lv_label_create(hello_world_button);
 	} else {
 		hello_world_label = lv_label_create(lv_scr_act());
