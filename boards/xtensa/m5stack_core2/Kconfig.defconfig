@@ -39,11 +39,8 @@ config GPIO_HOGS_INIT_PRIORITY
 config INPUT_FT5336_INTERRUPT
 	default y if INPUT
 
-config KSCAN
-	default y if DISPLAY
-
 config INPUT
-	default y if KSCAN
+	default y
 
 config LV_COLOR_16_SWAP
 	default y if LVGL
