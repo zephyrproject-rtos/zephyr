@@ -4418,10 +4418,8 @@ struct k_msgq_attrs {
  * @brief Statically define and initialize a message queue.
  *
  * The message queue's ring buffer contains space for @a q_max_msgs messages,
- * each of which is @a q_msg_size bytes long. The buffer is aligned to a
- * @a q_align -byte boundary, which must be a power of 2. To ensure that each
- * message is similarly aligned to this boundary, @a q_msg_size must also be
- * a multiple of @a q_align.
+ * each of which is @a q_msg_size bytes long. Alignment of the message queue's
+ * ring buffer is not necessary, setting @a q_align to 1 is sufficient.
  *
  * The message queue can be accessed outside the module where it is defined
  * using:
@@ -4431,7 +4429,7 @@ struct k_msgq_attrs {
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
  * @param q_max_msgs Maximum number of messages that can be queued.
- * @param q_align Alignment of the message queue's ring buffer.
+ * @param q_align Alignment of the message queue's ring buffer (power of 2).
  *
  */
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)		\
@@ -4447,10 +4445,8 @@ struct k_msgq_attrs {
  * This routine initializes a message queue object, prior to its first use.
  *
  * The message queue's ring buffer must contain space for @a max_msgs messages,
- * each of which is @a msg_size bytes long. The buffer must be aligned to an
- * N-byte boundary, where N is a power of 2 (i.e. 1, 2, 4, ...). To ensure
- * that each message is similarly aligned to this boundary, @a q_msg_size
- * must also be a multiple of N.
+ * each of which is @a msg_size bytes long. Alignment of the message queue's
+ * ring buffer is not necessary.
  *
  * @param msgq Address of the message queue.
  * @param buffer Pointer to ring buffer that holds queued messages.
