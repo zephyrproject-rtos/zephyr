@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_loopback);
 #include <zephyr/sys/printk.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/drivers/spi.h>
@@ -442,6 +443,80 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 	return 0;
 }
 
+static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
+{
+	const uint32_t tx_buf_size = 8;
+
+	BUILD_ASSERT(tx_buf_size < BUF_SIZE,
+		"Transmit buffer is expected to be smaller than the receive buffer");
+
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = tx_buf_size,
+		},
+	};
+	const struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+	int ret;
+
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip rx bigger than tx");
+		return 0;
+	}
+
+	LOG_INF("Start rx bigger than tx");
+
+	(void)memset(buffer_rx, 0xff, BUF_SIZE);
+
+	ret = spi_transceive_dt(spec, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, tx_buf_size)) {
+		to_display_format(buffer_tx, tx_buf_size, buffer_print_tx);
+		to_display_format(buffer_rx, tx_buf_size, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	const uint8_t all_zeroes_buf[BUF_SIZE] = {0};
+
+	if (memcmp(all_zeroes_buf, buffer_rx + tx_buf_size, BUF_SIZE - tx_buf_size)) {
+		to_display_format(
+			buffer_rx + tx_buf_size,  BUF_SIZE - tx_buf_size, buffer_print_tx);
+
+		to_display_format(
+			all_zeroes_buf, BUF_SIZE - tx_buf_size, buffer_print_rx);
+
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -574,7 +649,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_null_tx_buf(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
-	    spi_rx_every_4(&spi_slow)
+	    spi_rx_every_4(&spi_slow) ||
+	    spi_rx_bigger_than_tx(&spi_slow)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_slow)
 #endif
@@ -591,7 +667,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_null_tx_buf(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
-	    spi_rx_every_4(&spi_fast)
+	    spi_rx_every_4(&spi_fast) ||
+	    spi_rx_bigger_than_tx(&spi_fast)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_fast)
 #endif
