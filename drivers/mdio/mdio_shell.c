@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT adi_adin2111_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(smsc_lan91c111_mdio)
 #define DT_DRV_COMPAT smsc_lan91c111_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_mdio_gpio)
+#define DT_DRV_COMPAT zephyr_mdio_gpio
 #else
 #error "No known devicetree compatible match for MDIO shell"
 #endif
