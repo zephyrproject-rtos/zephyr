@@ -172,10 +172,17 @@ static int st7735r_set_mem_area(const struct device *dev,
 				const uint16_t x, const uint16_t y,
 				const uint16_t w, const uint16_t h)
 {
+	const struct st7735r_config *config = dev->config;
 	struct st7735r_data *data = dev->data;
 	uint16_t spi_data[2];
 
 	int ret;
+
+	/* ST7735S requires repeating COLMOD for each transfer */
+	ret = st7735r_transmit_hold(dev, ST7735R_CMD_COLMOD, &config->colmod, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	uint16_t ram_x = x + data->x_offset;
 	uint16_t ram_y = y + data->y_offset;
