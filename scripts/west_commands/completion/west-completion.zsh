@@ -205,7 +205,7 @@ _west_help() {
 
 _west_completion() {
 
-  _arguments -S "1:shell:(bash zsh)"
+  _arguments -S "1:shell:(bash zsh fish)"
 }
 
 _west_boards() {
