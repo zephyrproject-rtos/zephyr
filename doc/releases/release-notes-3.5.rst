@@ -140,6 +140,8 @@ Drivers and Sensors
 
 * Display
 
+  * Added support for ST7735S (in ST7735R driver)
+
 * DMA
 
 * EEPROM
