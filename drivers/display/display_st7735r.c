@@ -75,8 +75,8 @@ static void st7735r_set_cmd(const struct device *dev, int is_cmd)
 	gpio_pin_set_dt(&config->cmd_data, is_cmd);
 }
 
-static int st7735r_transmit(const struct device *dev, uint8_t cmd,
-			    const uint8_t *tx_data, size_t tx_count)
+static int st7735r_transmit_hold(const struct device *dev, uint8_t cmd,
+				 const uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7735r_config *config = dev->config;
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
@@ -100,6 +100,17 @@ static int st7735r_transmit(const struct device *dev, uint8_t cmd,
 	}
 
 	return 0;
+}
+
+static int st7735r_transmit(const struct device *dev, uint8_t cmd,
+			    const uint8_t *tx_data, size_t tx_count)
+{
+	const struct st7735r_config *config = dev->config;
+	int ret;
+
+	ret = st7735r_transmit_hold(dev, cmd, tx_data, tx_count);
+	spi_release_dt(&config->bus);
+	return ret;
 }
 
 static int st7735r_exit_sleep(const struct device *dev)
@@ -539,7 +550,8 @@ static const struct display_driver_api st7735r_api = {
 #define ST7735R_INIT(inst)							\
 	const static struct st7735r_config st7735r_config_ ## inst = {		\
 		.bus = SPI_DT_SPEC_INST_GET(					\
-			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),		\
+			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
+			SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),			\
 		.cmd_data = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),	\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
 		.width = DT_INST_PROP(inst, width),				\
