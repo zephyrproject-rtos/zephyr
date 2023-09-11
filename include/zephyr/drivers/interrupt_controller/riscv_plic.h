@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RISCV_PLIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RISCV_PLIC_H_
 
+#include <zephyr/device.h>
+
 /**
  * @brief Enable interrupt
  *
