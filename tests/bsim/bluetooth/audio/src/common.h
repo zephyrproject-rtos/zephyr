@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <zephyr/sys_clock.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -95,5 +96,17 @@ extern atomic_t flag_conn_updated;
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
+
+struct bap_test_stream {
+	struct bt_bap_stream stream;
+
+	uint16_t seq_num;
+	bool tx_active;
+	size_t tx_cnt;
+	uint16_t tx_sdu_size;
+
+	struct bt_iso_recv_info last_info;
+	size_t rx_cnt;
+};
 
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */

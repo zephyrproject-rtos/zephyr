@@ -29,11 +29,7 @@ static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
-static struct broadcast_sink_stream {
-	struct bt_bap_stream stream;
-	struct bt_iso_recv_info last_info;
-	size_t rx_cnt;
-} broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct bap_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
@@ -205,16 +201,17 @@ static void recv_cb(struct bt_bap_stream *stream,
 		    const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
-	struct broadcast_sink_stream *sink_stream =
-		CONTAINER_OF(stream, struct broadcast_sink_stream, stream);
+	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
 
-	if (sink_stream->rx_cnt > 0U && info->ts == sink_stream->last_info.ts) {
-		FAIL("Duplicated timestamp received: %u\n", sink_stream->last_info.ts);
+	printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len, info->ts);
+
+	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
+		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
 		return;
 	}
 
-	if (sink_stream->rx_cnt > 0U && info->seq_num == sink_stream->last_info.seq_num) {
-		FAIL("Duplicated PSN received: %u\n", sink_stream->last_info.seq_num);
+	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
+		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
 		return;
 	}
 
@@ -229,9 +226,9 @@ static void recv_cb(struct bt_bap_stream *stream,
 	}
 
 	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
-		sink_stream->rx_cnt++;
+		test_stream->rx_cnt++;
 
-		if (sink_stream->rx_cnt >= MIN_SEND_COUNT) {
+		if (test_stream->rx_cnt >= MIN_SEND_COUNT) {
 			/* We set the flag is just one stream has received the expected */
 			SET_FLAG(flag_received);
 		}
