@@ -121,7 +121,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_params); i++) {
-		subgroup_params[i].params_count = 1U;
+		subgroup_params[i].params_count = ARRAY_SIZE(stream_params);
 		subgroup_params[i].params = &stream_params[i];
 		subgroup_params[i].codec_cfg = &preset_16_1_1.codec_cfg;
 	}
@@ -178,6 +178,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf,
 			      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
+	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
+		BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_NAME, 0x80, 0x80, NULL);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 	struct bt_data ext_ad;
 	struct bt_data per_ad;
@@ -185,7 +187,7 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(&adv_param, NULL, adv);
 	if (err != 0) {
 		printk("Unable to create extended advertising set: %d\n", err);
 		return err;
