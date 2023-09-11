@@ -42,6 +42,8 @@ static struct modem_pipe *mock_pipe;
 #define MODEM_CHAT_UTEST_ON_APP_RDY_CALLED_BIT		 (7)
 #define MODEM_CHAT_UTEST_ON_NORMAL_POWER_DOWN_CALLED_BIT (8)
 #define MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT		 (9)
+#define MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT	 (10)
+#define MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT	 (11)
 
 static atomic_t callback_called;
 
@@ -119,6 +121,19 @@ static void on_normal_power_down(struct modem_chat *cmd, char **argv, uint16_t a
 	clone_args(argv, argc);
 }
 
+static void on_cmgl_partial(struct modem_chat *cmd, char **argv, uint16_t argc, void *user_data)
+{
+	atomic_set_bit(&callback_called, MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT);
+	clone_args(argv, argc);
+}
+
+static void on_cmgl_any_partial(struct modem_chat *cmd, char **argv, uint16_t argc,
+				void *user_data)
+{
+	atomic_set_bit(&callback_called, MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT);
+	clone_args(argv, argc);
+}
+
 /*************************************************************************************************/
 /*                                       Script callback                                         */
 /*************************************************************************************************/
@@ -162,6 +177,23 @@ MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("NO CARRIER", "", on_n
 MODEM_CHAT_SCRIPT_DEFINE(script, script_cmds, abort_matches, on_script_result, 4);
 
 /*************************************************************************************************/
+/*                             Script implementing partial matches                               */
+/*************************************************************************************************/
+MODEM_CHAT_MATCHES_DEFINE(
+	cmgl_matches,
+	MODEM_CHAT_MATCH_INITIALIZER("+CMGL: ", ",", on_cmgl_partial, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("", "", on_cmgl_any_partial, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("OK", "", NULL, false, false)
+);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	script_partial_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CMGL=4", cmgl_matches),
+);
+
+MODEM_CHAT_SCRIPT_DEFINE(script_partial, script_partial_cmds, abort_matches, on_script_result, 4);
+
+/*************************************************************************************************/
 /*                                      Script responses                                         */
 /*************************************************************************************************/
 static const char at_response[] = "AT\r\n";
@@ -173,6 +205,9 @@ static const char cgreg_response[] = "CGREG: 10,43\r\n";
 static const char qeng_servinc_cell_response[] = "+QENG: \"servingcell\",\"NOCONN\",\"GSM\",260"
 						 ",03,E182,AEAD,52,32,2,-68,255,255,0,38,38,1,,"
 						 ",,,,,,,,\r\n";
+
+static const char cmgl_response_0[] = "+CMGL: 1,1,,50\r\n";
+static const char cmgl_response_1[] = "07911326060032F064A9542954\r\n";
 
 /*************************************************************************************************/
 /*                                         Test setup                                            */
@@ -414,6 +449,74 @@ ZTEST(modem_chat, test_start_script_then_time_out)
 		     "Script result should be TIMEOUT");
 	zassert_true(script_result_user_data == &cmd_user_data,
 		     "Script result callback user data is incorrect");
+}
+
+ZTEST(modem_chat, test_script_with_partial_matches)
+{
+	bool called;
+
+	zassert_true(modem_chat_script_run(&cmd, &script_partial) == 0, "Failed to start script");
+	k_msleep(100);
+
+	/*
+	 * Script sends "AT+CMGL=4\r";
+	 */
+
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT+CMGL=4\r", sizeof("AT+CMGL=4\r") - 1) == 0,
+		     "Request not sent as expected");
+
+	/*
+	 * Modem will return the following sequence 3 times
+	 * "+CMGL: 1,1,,50\r";
+	 * "07911326060032F064A9542954\r"
+	 */
+
+	for (uint8_t i = 0; i < 3; i++) {
+		atomic_set(&callback_called, 0);
+		modem_backend_mock_put(&mock, cmgl_response_0, sizeof(cmgl_response_0) - 1);
+		k_msleep(100);
+
+		called = atomic_test_bit(&callback_called,
+					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT);
+		zassert_equal(called, true, "Match callback not called");
+		zassert_equal(argc_buffers, 5, "Incorrect number of args");
+		zassert_equal(strcmp(argv_buffers[0], "+CMGL: "), 0, "Incorrect argv received");
+		zassert_equal(strcmp(argv_buffers[1], "1"), 0, "Incorrect argv received");
+		zassert_equal(strcmp(argv_buffers[2], "1"), 0, "Incorrect argv received");
+		zassert_equal(strcmp(argv_buffers[3], ""), 0, "Incorrect argv received");
+		zassert_equal(strcmp(argv_buffers[4], "50"), 0, "Incorrect argv received");
+
+		atomic_set(&callback_called, 0);
+		modem_backend_mock_put(&mock, cmgl_response_1, sizeof(cmgl_response_1) - 1);
+		k_msleep(100);
+
+		called = atomic_test_bit(&callback_called,
+					 MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT);
+		zassert_equal(called, true, "Match callback not called");
+		zassert_equal(argc_buffers, 2, "Incorrect number of args");
+		zassert_equal(strcmp(argv_buffers[0], ""), 0, "Incorrect argv received");
+		zassert_equal(strcmp(argv_buffers[1], "07911326060032F064A9542954"), 0,
+			      "Incorrect argv received");
+	}
+
+	atomic_set(&callback_called, 0);
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+
+	/*
+	 * Modem returns "OK\r"
+	 * Script terminates
+	 */
+
+	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT);
+	zassert_true(called == true, "Script callback should have been called");
+	zassert_equal(script_result, MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
+		      "Script should have stopped with success");
+
+	/* Assert no data was sent except the request */
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0,
+		      "Script sent too many requests");
 }
 
 /*************************************************************************************************/
