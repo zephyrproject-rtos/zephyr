@@ -169,6 +169,18 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.2
 
+   * - :ref:`ieee802154_driver_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_l2_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_mgmt_api`
+     - Unstable
+     - 1.0
+
    * - :ref:`input`
      - Experimental
      - 3.4

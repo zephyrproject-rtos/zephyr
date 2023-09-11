@@ -22,9 +22,17 @@ extern "C" {
 #endif
 
 /**
+ * @defgroup ieee802154_mgmt IEEE 802.15.4 Net Management
+ * @ingroup ieee802154
+ *
  * @brief IEEE 802.15.4 net management library
- * @defgroup ieee802154_mgmt IEEE 802.15.4 Net Management Library
- * @ingroup networking
+ *
+ * @details The IEEE 802.15.4 net management library provides runtime
+ * configuration features that applications can interface with directly.
+ *
+ * Most of these commands are also accessible via shell commands. See the
+ * shell's help feature (`shell> ieee802154 help`).
+ *
  * @{
  */
 
