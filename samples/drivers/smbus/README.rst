@@ -1,7 +1,8 @@
-.. _samples_smbus_shell:
+.. zephyr:code-sample:: smbus-shell
+   :name: SMBus shell
+   :relevant-api: smbus_interface
 
-SMBus Shell Sample
-##################
+   SMBus Shell Sample
 
 Overview
 ********

@@ -1,7 +1,8 @@
-.. _samples_edac:
+.. zephyr:code-sample:: edac-sample
+   :name: EDAC shell
+   :relevant-api: edac
 
-EDAC Shell Sample
-#################
+   EDAC Shell Sample
 
 Overview
 ********
