@@ -31,8 +31,6 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_YEAR_REF 2000
 /* struct tm start time:   1st, Jan, 1900 */
 #define TM_YEAR_REF 1900
-/* conversion offset between RTC and tm structure */
-#define TM_TO_RTC_OFFSET (RTC_YEAR_REF - TM_YEAR_REF)
 
 /* Convert part per billion calibration value to a number of clock pulses added or removed each
  * 2^20 clock cycles so it is suitable for the CALR register fields
@@ -214,9 +212,9 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		return err;
 	}
 
-	LL_RTC_DATE_SetYear(RTC, __LL_RTC_CONVERT_BIN2BCD(real_year - RTC_YEAR_REF));
-	LL_RTC_DATE_SetMonth(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mon + 1));
-	LL_RTC_DATE_SetDay(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mday));
+	LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
+	LL_RTC_DATE_SetMonth(RTC, bin2bcd(timeptr->tm_mon + 1));
+	LL_RTC_DATE_SetDay(RTC, bin2bcd(timeptr->tm_mday));
 
 	if (timeptr->tm_wday == 0) {
 		/* sunday (tm_wday = 0) is not represented by the same value in hardware */
@@ -227,9 +225,9 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 
-	LL_RTC_TIME_SetHour(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_hour));
-	LL_RTC_TIME_SetMinute(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_min));
-	LL_RTC_TIME_SetSecond(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_sec));
+	LL_RTC_TIME_SetHour(RTC, bin2bcd(timeptr->tm_hour));
+	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
+	LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
 
 	rtc_stm32_leave_initialization_mode();
 
@@ -269,10 +267,10 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	k_mutex_unlock(&data->lock);
 
-	timeptr->tm_year = TM_TO_RTC_OFFSET + __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
+	timeptr->tm_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + RTC_YEAR_REF - TM_YEAR_REF;
 	/* tm_mon allowed values are 0-11 */
-	timeptr->tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
-	timeptr->tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
+	timeptr->tm_mon = bcd2bin(__LL_RTC_GET_MONTH(rtc_date)) - 1;
+	timeptr->tm_mday = bcd2bin(__LL_RTC_GET_DAY(rtc_date));
 
 	int hw_wday = __LL_RTC_GET_WEEKDAY(rtc_date);
 
@@ -284,9 +282,9 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 		timeptr->tm_wday = hw_wday;
 	}
 
-	timeptr->tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
-	timeptr->tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
-	timeptr->tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
+	timeptr->tm_hour = bcd2bin(__LL_RTC_GET_HOUR(rtc_time));
+	timeptr->tm_min = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
+	timeptr->tm_sec = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
 
 	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
 
