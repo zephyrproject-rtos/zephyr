@@ -23,9 +23,64 @@ extern "C" {
 #endif
 
 /**
- * @brief IEEE 802.15.4 library
- * @defgroup ieee802154 IEEE 802.15.4 Library
- * @ingroup networking
+ * @defgroup ieee802154 IEEE 802.15.4 APIs
+ * @ingroup connectivity
+ *
+ * @brief IEEE 802.15.4 L2, configuration and driver APIs
+ *
+ * @details The IEEE 802.15.4 subsystem API comprises the native IEEE 802.15.4
+ * L2 subsystem ("Soft" MAC), a mostly vendor and protocol agnostic driver API
+ * shared between the OpenThread and native L2 stacks ("Hard" MAC and PHY) as
+ * well as several APIs to configure the subsystem (shell, net management,
+ * Kconfig, devicetree, etc.).
+ *
+ * The IEEE 802.15.4 subsystem APIs are exposed at different levels and address
+ * several audiences:
+ *  - shell (end users, application developers):
+ *    - a set of IEEE 802.15.4 shell commands (see `shell> ieee802154 help`)
+ *  - application API (application developers):
+ *    - IPv6, DGRAM and RAW sockets for actual peer-to-peer, multicast and
+ *      broadcast data exchange between nodes including connection specific
+ *      configuration (sample coming soon, see
+ *      https://github.com/linux-wpan/wpan-tools/tree/master/examples for now
+ *      which inspired our API and therefore has a similar socket API),
+ *    - Kconfig and devicetree configuration options (net config library
+ *      extension, subsystem-wide MAC and PHY Kconfig/DT options, driver/vendor
+ *      specific Kconfig/DT options, watch out for options prefixed with
+ *      IEEE802154/ieee802154),
+ *    - Network Management: runtime configuration of the IEEE 802.15.4
+ *      protocols stack at the MAC (L2) and PHY (L1) levels
+ *      (see @ref ieee802154_mgmt),
+ *  - driver API (driver maintainers/contributors):
+ *    - see @ref ieee802154_driver
+ *    - a basic, mostly PHY-level driver API to be implemented by all drivers,
+ *    - several "hard MAC" (hardware/firmware offloading) extension points for
+ *      performance critical or timing sensitive aspects of the protocol
+ *  - L2 integration (subsystem contributors):
+ *    - see @ref ieee802154_l2
+ *    - implementation of Zephyr's internal L2-level socket and network context
+ *      abstractions (context/socket operations, see @ref net_l2),
+ *    - protocol-specific extension to the interface structure (see @ref net_if)
+ *    - protocol-specific extensions to the network packet structure
+ *      (see @ref net_pkt),
+ */
+
+/**
+ * @defgroup ieee802154_l2 IEEE 802.15.4 L2
+ * @ingroup ieee802154
+ *
+ * @brief IEEE 802.15.4 L2 APIs
+ *
+ * @details This API provides integration with Zephyr's sockets and network
+ * contexts. **Application and driver developers should never interface directly
+ * with this API.** It is of interest to subsystem maintainers only.
+ *
+ * The API implements and extends the following structures:
+ *    - implements Zephyr's internal L2-level socket and network context
+ *      abstractions (context/socket operations, see @ref net_l2),
+ *    - protocol-specific extension to the interface structure (see @ref net_if)
+ *    - protocol-specific extensions to the network packet structure
+ *      (see @ref net_pkt),
  * @{
  */
 
