@@ -17,32 +17,32 @@
  */
 void NVIC_SetPendingIRQ(IRQn_Type IRQn)
 {
-	hw_irq_ctrl_raise_im_from_sw(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
+	hw_irq_ctrl_raise_im_from_sw(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
-	hw_irq_ctrl_clear_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
+	hw_irq_ctrl_clear_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_DisableIRQ(IRQn_Type IRQn)
 {
-	hw_irq_ctrl_disable_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
+	hw_irq_ctrl_disable_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_EnableIRQ(IRQn_Type IRQn)
 {
-	hw_irq_ctrl_enable_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
+	hw_irq_ctrl_enable_irq(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
-	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn, priority);
+	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn, priority);
 }
 
 uint32_t NVIC_GetPriority(IRQn_Type IRQn)
 {
-	return hw_irq_ctrl_get_prio(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
+	return hw_irq_ctrl_get_prio(CONFIG_NATIVE_SIMULATOR_MCU_N, IRQn);
 }
 
 void NVIC_SystemReset(void)
@@ -55,22 +55,22 @@ void NVIC_SystemReset(void)
  */
 void __enable_irq(void)
 {
-	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, false);
+	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_MCU_N, false);
 }
 
 void __disable_irq(void)
 {
-	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, true);
+	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_MCU_N, true);
 }
 
 uint32_t __get_PRIMASK(void)
 {
-	return hw_irq_ctrl_get_current_lock(CONFIG_NATIVE_SIMULATOR_CPU_N);
+	return hw_irq_ctrl_get_current_lock(CONFIG_NATIVE_SIMULATOR_MCU_N);
 }
 
 void __set_PRIMASK(uint32_t primask)
 {
-	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, primask != 0);
+	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_MCU_N, primask != 0);
 }
 
 void __WFE(void)
