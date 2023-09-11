@@ -138,6 +138,11 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		return -EINVAL;
 	}
 
+	if (timeptr->tm_wday == -1) {
+		/* day of the week is expected */
+		return -EINVAL;
+	}
+
 	LOG_INF("Setting clock");
 	LL_RTC_DisableWriteProtection(RTC);
 
