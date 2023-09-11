@@ -5,14 +5,11 @@
  */
 
 #include "bs_bt_utils.h"
+#include "utils.h"
 
 BUILD_ASSERT(CONFIG_BT_MAX_PAIRED >= 2, "CONFIG_BT_MAX_PAIRED is too small.");
 BUILD_ASSERT(CONFIG_BT_ID_MAX >= 3, "CONFIG_BT_ID_MAX is too small.");
 BUILD_ASSERT(CONFIG_BT_MAX_CONN == 2, "CONFIG_BT_MAX_CONN should be equal to two.");
-BUILD_ASSERT(CONFIG_BT_GATT_CLIENT, "CONFIG_BT_GATT_CLIENT is disabled.");
-
-#define BS_SECONDS(dur_sec)    ((bs_time_t)dur_sec * 1000000)
-#define TEST_TIMEOUT_SIMULATED BS_SECONDS(60)
 
 void test_tick(bs_time_t HW_device_time)
 {
@@ -140,35 +137,6 @@ void bs_bt_utils_setup(void)
 	ASSERT(!err, "settings_load failed.\n");
 }
 
-static void scan_connect_to_first_result__device_found(const bt_addr_le_t *addr, int8_t rssi,
-						       uint8_t type, struct net_buf_simple *ad)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	int err;
-
-	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		FAIL("Unexpected advertisement type.");
-	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
-
-	err = bt_le_scan_stop();
-	ASSERT(!err, "Err bt_le_scan_stop %d", err);
-
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &new_conn);
-	ASSERT(!err, "Err bt_conn_le_create %d", err);
-}
-
-void scan_connect_to_first_result(void)
-{
-	int err;
-
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, scan_connect_to_first_result__device_found);
-	ASSERT(!err, "Err bt_le_scan_start %d", err);
-}
-
 void disconnect(struct bt_conn *conn)
 {
 	int err;
@@ -240,37 +208,3 @@ void bas_notify(struct bt_conn *conn)
 }
 
 DEFINE_FLAG(flag_bas_has_notification);
-
-static uint8_t bas_notify_func(struct bt_conn *conn,
-			       struct bt_gatt_subscribe_params *params,
-			       const void *data, uint16_t length)
-{
-	const uint8_t *lvl8 = data;
-
-	if ((length == 1) && (*lvl8 == bas_level)) {
-		printk("BAS notification\n");
-		SET_FLAG(flag_bas_has_notification);
-	}
-
-	return BT_GATT_ITER_CONTINUE;
-}
-
-void wait_bas_notification(void)
-{
-	WAIT_FOR_FLAG(flag_bas_has_notification);
-	UNSET_FLAG(flag_bas_has_notification);
-}
-
-void bas_subscribe(struct bt_conn *conn)
-{
-	int err;
-	static struct bt_gatt_subscribe_params subscribe_params = {0};
-
-	subscribe_params.ccc_handle = bt_gatt_attr_get_handle(&bas.attrs[3]);
-	subscribe_params.value_handle = bt_gatt_attr_get_handle(&bas.attrs[2]);
-	subscribe_params.value = BT_GATT_CCC_NOTIFY;
-	subscribe_params.notify = bas_notify_func;
-
-	err = bt_gatt_subscribe(conn, &subscribe_params);
-	ASSERT(!err, "bt_gatt_subscribe failed (err %d)\n", err);
-}
