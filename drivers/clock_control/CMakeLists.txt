@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC11U6X            clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCHP_XEC            clock_control_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM            clock_control_mcux_ccm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM_REV2       clock_control_mcux_ccm_rev2.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM_REV3       clock_control_mcux_ccm_rev3.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_MCG            clock_control_mcux_mcg.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_PCC            clock_control_mcux_pcc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SCG            clock_control_mcux_scg.c)
@@ -71,3 +72,5 @@ if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)
+
+add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM_REV3 imx)

@@ -80,4 +80,6 @@ source "drivers/clock_control/Kconfig.nxp_s32"
 
 source "drivers/clock_control/Kconfig.agilex5"
 
+source "drivers/clock_control/Kconfig.mcux_ccm_rev3"
+
 endif # CLOCK_CONTROL

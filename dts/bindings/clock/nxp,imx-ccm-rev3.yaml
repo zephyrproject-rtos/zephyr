@@ -1,0 +1,43 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX CCM (Clock Controller Module) Rev 3 IP node
+
+compatible: "nxp,imx-ccm-rev3"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+    description: |
+      Number of clock cells a clock consummer must specify.
+  clocks-assume-on:
+    type: array
+    description: |
+      This property is used to specify an array of clocks that need to be
+      ungated during CCM Rev3's initialization function. Preferably, these
+      clocks should be initialized using the assigned-clock* suite.
+  assigned-clocks:
+    type: array
+    description: |
+      This property is used to initialize an array of clocks.
+  assigned-clock-parents:
+    type: array
+    description: |
+      This property is used to assign parents to the clocks specified through the
+      assigned-clocks property. If this property is not specified, clocks will not
+      be assigned any parents.
+  assigned-clock-rates:
+    type: array
+    description: |
+      This property is used to set the rates of the clocks specified through the
+      assigned-clocks property.
+  clocks-init-on:
+    type: array
+    description: |
+      This property is used to initialize clocks that are assumed to be already
+      configured. The CCM Rev3 will simply update the frequencies and the states
+      of the clocks specified through this property. No configuration will be performed.
+clock-cells:
+  - name
