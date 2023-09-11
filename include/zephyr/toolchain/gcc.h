@@ -30,6 +30,8 @@
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
+#define TOOLCHAIN_HAS_ZLA 1
+
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
  * detected and defined using arch-specific definitions.
