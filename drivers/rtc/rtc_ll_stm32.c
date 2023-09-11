@@ -67,7 +67,7 @@ struct rtc_stm32_config {
 };
 
 struct rtc_stm32_data {
-	/* Currently empty */
+	struct k_mutex lock;
 };
 
 static int rtc_stm32_enter_initialization_mode(void)
@@ -129,6 +129,7 @@ static int rtc_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
+	struct rtc_stm32_data *data = dev->data;
 
 	int err = 0;
 
@@ -142,6 +143,8 @@ static int rtc_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+
+	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -181,6 +184,8 @@ static const struct rtc_stm32_config rtc_config = {
 
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	struct rtc_stm32_data *data = dev->data;
+
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
 
 	int err = 0;
@@ -195,11 +200,17 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 		return -EINVAL;
 	}
 
+	err = k_mutex_lock(&data->lock, K_NO_WAIT);
+	if (err) {
+		return err;
+	}
+
 	LOG_INF("Setting clock");
 	LL_RTC_DisableWriteProtection(RTC);
 
 	err = rtc_stm32_enter_initialization_mode();
 	if (err) {
+		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
@@ -224,14 +235,23 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 	LL_RTC_EnableWriteProtection(RTC);
 
+	k_mutex_unlock(&data->lock);
+
 	return err;
 }
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct rtc_stm32_config *cfg = dev->config;
+	struct rtc_stm32_data *data = dev->data;
 
 	uint32_t rtc_date, rtc_time, rtc_subsecond;
+
+	int err = k_mutex_lock(&data->lock, K_NO_WAIT);
+
+	if (err) {
+		return err;
+	}
 
 	do {
 		/* read date, time and subseconds and relaunch if a day increment occurred
@@ -246,6 +266,8 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 			rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
 		} while (rtc_time != LL_RTC_TIME_Get(RTC));
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
+
+	k_mutex_unlock(&data->lock);
 
 	timeptr->tm_year = TM_TO_RTC_OFFSET + __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
@@ -323,8 +345,10 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 {
 	ARG_UNUSED(dev);
 
-	uint32_t calp_enabled = LL_RTC_CAL_IsPulseInserted(RTC);
-	uint32_t calm = LL_RTC_CAL_GetMinus(RTC);
+	uint32_t calr = sys_read32(&RTC->CALR);
+
+	bool calp_enabled = READ_BIT(calr, RTC_CALR_CALP);
+	uint32_t calm = READ_BIT(calr, RTC_CALR_CALM);
 
 	int32_t nb_pulses = -((int32_t) calm);
 
