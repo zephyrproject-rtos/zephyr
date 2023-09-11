@@ -61,7 +61,8 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_TIMEOUT 1000000
 
 struct rtc_stm32_config {
-	LL_RTC_InitTypeDef ll_rtc_config;
+	uint32_t async_prescaler;
+	uint32_t sync_prescaler;
 	const struct stm32_pclken *pclken;
 };
 
@@ -91,22 +92,37 @@ static int rtc_stm32_configure(const struct device *dev)
 {
 	const struct rtc_stm32_config *cfg = dev->config;
 
+	int err = 0;
+
 	uint32_t hour_format     = LL_RTC_GetHourFormat(RTC);
 	uint32_t sync_prescaler  = LL_RTC_GetSynchPrescaler(RTC);
 	uint32_t async_prescaler = LL_RTC_GetAsynchPrescaler(RTC);
 
+	LL_RTC_DisableWriteProtection(RTC);
+
 	/* configuration process requires to stop the RTC counter so do it
 	 * only if needed to avoid inducing time drift at each reset
 	 */
-	if ((hour_format != cfg->ll_rtc_config.HourFormat) ||
-	    (sync_prescaler != cfg->ll_rtc_config.SynchPrescaler) ||
-	    (async_prescaler != cfg->ll_rtc_config.AsynchPrescaler)) {
-		if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)&cfg->ll_rtc_config)) != SUCCESS) {
-			return -EIO;
+	if ((hour_format != LL_RTC_HOURFORMAT_24HOUR) ||
+	    (sync_prescaler != cfg->sync_prescaler) ||
+	    (async_prescaler != cfg->async_prescaler)) {
+		err = rtc_stm32_enter_initialization_mode();
+		if (err == 0) {
+			LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
+			LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
+			LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
 		}
+
+		rtc_stm32_leave_initialization_mode();
 	}
 
-	return 0;
+#ifdef RTC_CR_BYPSHAD
+	LL_RTC_EnableShadowRegBypass(RTC);
+#endif /* RTC_CR_BYPSHAD */
+
+	LL_RTC_EnableWriteProtection(RTC);
+
+	return err;
 }
 
 static int rtc_stm32_init(const struct device *dev)
@@ -144,15 +160,6 @@ static int rtc_stm32_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 	err = rtc_stm32_configure(dev);
-	if (err) {
-		return err;
-	}
-
-#ifdef RTC_CR_BYPSHAD
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_EnableShadowRegBypass(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
-#endif /* RTC_CR_BYPSHAD */
 
 	return err;
 }
@@ -160,18 +167,15 @@ static int rtc_stm32_init(const struct device *dev)
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct rtc_stm32_config rtc_config = {
-	.ll_rtc_config = {
-			.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
 #if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
-			/* prescaler values for LSI @ 32 KHz */
-			.AsynchPrescaler = 0x7F,
-			.SynchPrescaler = 0x00F9,
+	/* prescaler values for LSI @ 32 KHz */
+	.async_prescaler = 0x7F,
+	.sync_prescaler  = 0x00F9,
 #else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
-			/* prescaler values for LSE @ 32768 Hz */
-			.AsynchPrescaler = 0x7F,
-			.SynchPrescaler = 0x00FF,
+	/* prescaler values for LSE @ 32768 Hz */
+	.async_prescaler = 0x7F,
+	.sync_prescaler  = 0x00FF,
 #endif
-		},
 	.pclken = rtc_clk,
 };
 
@@ -226,7 +230,6 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct rtc_stm32_config *cfg = dev->config;
-	uint32_t sync_prescaler = cfg->ll_rtc_config.SynchPrescaler;
 
 	uint32_t rtc_date, rtc_time, rtc_subsecond;
 
@@ -263,9 +266,9 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	timeptr->tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
 	timeptr->tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
 
-	uint64_t temp = ((uint64_t)(sync_prescaler - rtc_subsecond)) * 1000000000L;
+	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
 
-	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, sync_prescaler + 1);
+	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, cfg->sync_prescaler + 1);
 
 	return 0;
 }
