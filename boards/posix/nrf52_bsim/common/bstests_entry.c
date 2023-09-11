@@ -9,6 +9,7 @@
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bstests.h"
+#include "bs_oswrap.h"
 
 /*
  * Result of the testcase execution.
@@ -38,7 +39,7 @@ struct bst_test_list *bst_add_tests(struct bst_test_list *tests,
 		}
 	} else {
 		if (test_def[idx].test_id != NULL) {
-			head = malloc(sizeof(struct bst_test_list));
+			head = bs_malloc(sizeof(struct bst_test_list));
 			head->next = NULL;
 			head->test_instance = (struct bst_test_instance *)
 						&test_def[idx++];
@@ -47,7 +48,7 @@ struct bst_test_list *bst_add_tests(struct bst_test_list *tests,
 	}
 
 	while (test_def[idx].test_id != NULL) {
-		tail->next = malloc(sizeof(struct bst_test_list));
+		tail->next = bs_malloc(sizeof(struct bst_test_list));
 		tail = tail->next;
 		tail->test_instance = (struct bst_test_instance *)
 					&test_def[idx++];
