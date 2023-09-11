@@ -19,6 +19,11 @@ extern enum bst_result_t bst_result;
 
 #define PREF_CONTEXT (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
+#define ENQUEUE_COUNT    2U
+#define TOTAL_BUF_NEEDED (ENQUEUE_COUNT * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT)
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
 static const struct bt_audio_codec_cap lc3_codec_cap = {
 	.path_id = BT_ISO_DATA_PATH_HCI,
 	.id = BT_HCI_CODING_FORMAT_LC3,
@@ -43,7 +48,7 @@ static const struct bt_audio_codec_cap lc3_codec_cap = {
 		},
 };
 
-static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bap_test_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
@@ -64,7 +69,7 @@ static const struct bt_data unicast_server_ad[] = {
 static struct bt_le_ext_adv *ext_adv;
 
 CREATE_FLAG(flag_stream_configured);
-
+CREATE_FLAG(flag_stream_started);
 static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
@@ -76,7 +81,7 @@ static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 static struct bt_bap_stream *stream_alloc(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i];
+		struct bt_bap_stream *stream = &streams[i].stream;
 
 		if (!stream->conn) {
 			return stream;
@@ -128,9 +133,13 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
+
+	test_stream->tx_sdu_size = qos->sdu;
 
 	return 0;
 }
@@ -173,7 +182,11 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+
 	printk("Disable: stream %p\n", stream);
+
+	test_stream->tx_active = false;
 
 	return 0;
 }
@@ -228,16 +241,152 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 	}
 }
 
-static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
-			struct net_buf *buf)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
-	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+	printk("Started: stream %p\n", stream);
+
+	SET_FLAG(flag_stream_started);
+}
+
+static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
+{
+	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+
+	printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len, info->ts);
+
+	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
+		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
+		return;
+	}
+
+	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
+		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		FAIL("ISO receive error\n");
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_LOST) {
+		FAIL("ISO receive lost\n");
+		return;
+	}
+
+	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
+		test_stream->rx_cnt++;
+	} else {
+		FAIL("Unexpected data received");
+	}
+}
+
+static void stream_sent_cb(struct bt_bap_stream *stream)
+{
+	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct net_buf *buf;
+	int ret;
+
+	if (!test_stream->tx_active) {
+		return;
+	}
+
+	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	if (buf == NULL) {
+		printk("Could not allocate buffer when sending on %p\n", stream);
+		return;
+	}
+
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
+	ret = bt_bap_stream_send(stream, buf, test_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
+	if (ret < 0) {
+		/* This will end broadcasting on this stream. */
+		net_buf_unref(buf);
+
+		/* Only fail if tx is active (may fail if we are disabling the stream) */
+		if (test_stream->tx_active) {
+			FAIL("Unable to send data on %p: %d\n", stream, ret);
+		}
+
+		return;
+	}
+
+	test_stream->tx_cnt++;
 }
 
 static struct bt_bap_stream_ops stream_ops = {
 	.enabled = stream_enabled_cb,
-	.recv = stream_recv
+	.started = stream_started_cb,
+	.recv = stream_recv_cb,
+	.sent = stream_sent_cb,
 };
+
+static void transceive_streams(void)
+{
+	struct bt_bap_stream *source_stream = NULL;
+	struct bt_bap_stream *sink_stream = NULL;
+	struct bt_bap_ep_info info;
+	int err;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		struct bt_bap_stream *stream = &streams[i].stream;
+
+		if (stream->ep == NULL) {
+			break;
+		}
+
+		while (true) {
+			err = bt_bap_ep_get_info(stream->ep, &info);
+			if (err != 0) {
+				FAIL("Failed to get endpoint info for stream[%zu] %p: %d\n", i,
+				     stream, err);
+				return;
+			}
+
+			/* Ensure that all configured streams are in the streaming state before
+			 * starting TX and RX
+			 */
+			if (info.state == BT_BAP_EP_STATE_STREAMING) {
+				break;
+			}
+
+			k_sleep(K_MSEC(100));
+		}
+
+		if (info.dir == BT_AUDIO_DIR_SINK && sink_stream == NULL) {
+			sink_stream = stream;
+		} else if (info.dir == BT_AUDIO_DIR_SOURCE && source_stream == NULL) {
+			source_stream = stream;
+		}
+	}
+
+	if (source_stream != NULL) {
+		struct bap_test_stream *test_stream =
+			CONTAINER_OF(source_stream, struct bap_test_stream, stream);
+
+		test_stream->tx_active = true;
+		for (unsigned int i = 0U; i < ENQUEUE_COUNT; i++) {
+			stream_sent_cb(source_stream);
+		}
+
+		/* Keep sending until we reach the minimum expected */
+		while (test_stream->tx_cnt < MIN_SEND_COUNT) {
+			k_sleep(K_MSEC(100));
+		}
+	}
+
+	if (sink_stream != NULL) {
+		const struct bap_test_stream *test_stream =
+			CONTAINER_OF(sink_stream, struct bap_test_stream, stream);
+
+		/* Keep receiving until we reach the minimum expected */
+		while (test_stream->rx_cnt < MIN_SEND_COUNT) {
+			k_sleep(K_MSEC(100));
+		}
+	}
+}
 
 static void set_location(void)
 {
@@ -333,7 +482,7 @@ static void init(void)
 	set_available_contexts();
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_bap_stream_cb_register(&streams[i], &stream_ops);
+		bt_bap_stream_cb_register(&streams[i].stream, &stream_ops);
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
@@ -367,8 +516,10 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 	WAIT_FOR_FLAG(flag_stream_configured);
 
-	WAIT_FOR_UNSET_FLAG(flag_connected);
 
+	WAIT_FOR_FLAG(flag_stream_started);
+	transceive_streams();
+	WAIT_FOR_UNSET_FLAG(flag_connected);
 	PASS("Unicast server passed\n");
 }
 
@@ -404,6 +555,8 @@ static void test_main_acl_disconnect(void)
 	};
 
 	init();
+
+	stream_ops.recv = NULL; /* We do not care about data in this test */
 
 	/* Create CONFIG_BT_MAX_CONN - 1 dummy advertising sets, to ensure that we only have 1 free
 	 * connection when attempting to restart advertising, which should ensure that the
