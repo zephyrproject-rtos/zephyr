@@ -27,10 +27,12 @@
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
-/* Convert calendar start time */
 /* RTC start time: 1st, Jan, 2000 */
-/* struct tm start:   1st, Jan, 1900 */
-#define TM_TO_RTC_OFFSET 100
+#define RTC_YEAR_REF 2000
+/* struct tm start time:   1st, Jan, 1900 */
+#define TM_YEAR_REF 1900
+/* conversion offset between RTC and tm structure */
+#define TM_TO_RTC_OFFSET (RTC_YEAR_REF - TM_YEAR_REF)
 
 /* Convert part per billion calibration value to a number of clock pulses added or removed each
  * 2^20 clock cycles so it is suitable for the CALR register fields
@@ -129,6 +131,13 @@ static const struct rtc_stm32_config rtc_config = {
 
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
+
+	if (real_year < RTC_YEAR_REF) {
+		/* RTC does not support years before 2000 */
+		return -EINVAL;
+	}
+
 	LOG_INF("Setting clock");
 	LL_RTC_DisableWriteProtection(RTC);
 
@@ -137,7 +146,7 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	while (!LL_RTC_IsActiveFlag_INIT(RTC)) {
 	};
 
-	LL_RTC_DATE_SetYear(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_year - TM_TO_RTC_OFFSET));
+	LL_RTC_DATE_SetYear(RTC, __LL_RTC_CONVERT_BIN2BCD(real_year - RTC_YEAR_REF));
 	LL_RTC_DATE_SetMonth(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mon + 1));
 	LL_RTC_DATE_SetDay(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mday));
 
