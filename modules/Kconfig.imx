@@ -8,6 +8,14 @@ config HAS_IMX_HAL
 	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_IMX
 
+config NXP_HAL_DISABLE_IMPLICIT_CLOCKING
+	bool "Disable implicit clocking on NXP HAL drivers"
+	help
+		Set this to disable implicit clocking in
+		NXP HAL drivers. What this means is that
+		the NXP HAL drivers will not attempt to perform
+		clock-related operations in their functions.
+
 if HAS_IMX_HAL
 
 config HAS_IMX_GPIO
