@@ -459,6 +459,11 @@ static void modem_chat_on_command_received_resp(struct modem_chat *chat)
 		chat->parse_match->callback(chat, (char **)chat->argv, chat->argc, chat->user_data);
 	}
 
+	/* Validate response command is not partial */
+	if (chat->parse_match->partial) {
+		return;
+	}
+
 	/* Advance script */
 	modem_chat_script_next(chat, false);
 }

@@ -44,7 +44,10 @@ struct modem_chat_match {
 	const uint8_t separators_size;
 
 	/* Set if modem chat instance shall use wildcards when matching */
-	const bool wildcards;
+	const uint8_t wildcards : 1;
+
+	/* Set if script shall not continue to next step in case of match */
+	const uint8_t partial : 1;
 
 	/* Type of modem chat instance */
 	const modem_chat_match_callback callback;
@@ -63,6 +66,17 @@ struct modem_chat_match {
 		.match = (uint8_t *)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),         \
 		.separators = (uint8_t *)(_separators),                                            \
 		.separators_size = (uint8_t)(sizeof(_separators) - 1), .wildcards = true,          \
+		.callback = _callback,                                                             \
+	}
+
+#define MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, _wildcards, _partial)         \
+	{                                                                                          \
+		.match = (uint8_t *)(_match),                                                      \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
+		.separators = (uint8_t *)(_separators),                                            \
+		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
+		.wildcards = _wildcards,                                                           \
+		.partial = _partial,                                                               \
 		.callback = _callback,                                                             \
 	}
 
