@@ -12,7 +12,8 @@ properties:
     type: int
     description: Number of external interrupts supported
     required: true
-  riscv,trigger-reg-offset:
-    type: int
-    default: 4224
-    description: Offset of the trigger type register if supported
+
+  support-edge-interrupt:
+    type: boolean
+    description: |
+      Indicates that this controller supports edge interrupt.
