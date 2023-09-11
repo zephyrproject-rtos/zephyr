@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Wind River Systems, Inc.
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -466,11 +467,14 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 {
 	struct k_poll_event *poll_event;
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
 	if (poll_event != NULL) {
 		(void) signal_poll_event(poll_event, state);
 	}
+
+	k_spin_unlock(&lock, key);
 }
 
 void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
