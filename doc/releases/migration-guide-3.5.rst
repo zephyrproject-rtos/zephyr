@@ -90,3 +90,12 @@ there are a few side effects to be aware of when migrating to Picolibc.
   :kconfig:option:`CONFIG_PICOLIBC_IO_FLOAT_EXACT`, which switches Picolibc
   to a smaller, but inexact conversion algorithm. This requires building
   Picolibc as a module.
+
+* The SDK version of Picolibc's printf and scanf functions that exclude
+  floating point support also omit support for long long (where that differs
+  from long). This avoids pulling in soft support for 64-bit division from
+  the toolchain library and saves considerable flash on many targets. If you
+  need long long I/O, you can either switch to the version which includes
+  floating point support along with long long support or you can build
+  Picolibc as a module and enable
+  :kconfig:option:`CONFIG_PICOLIBC_IO_LONG_LONG`.
