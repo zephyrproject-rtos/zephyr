@@ -182,10 +182,19 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	uint32_t rtc_date, rtc_time, rtc_subsecond;
 
-	/* Read subsecond, time and date registers */
-	rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
-	rtc_time      = LL_RTC_TIME_Get(RTC);
-	rtc_date      = LL_RTC_DATE_Get(RTC);
+	do {
+		/* read date, time and subseconds and relaunch if a day increment occurred
+		 * while doing so as it will result in an erroneous result otherwise
+		 */
+		rtc_date = LL_RTC_DATE_Get(RTC);
+		do {
+			/* read time and subseconds and relaunch if a second increment occurred
+			 * while doing so as it will result in an erroneous result otherwise
+			 */
+			rtc_time      = LL_RTC_TIME_Get(RTC);
+			rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
+		} while (rtc_time != LL_RTC_TIME_Get(RTC));
+	} while (rtc_date != LL_RTC_DATE_Get(RTC));
 
 	timeptr->tm_year = TM_TO_RTC_OFFSET + __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
