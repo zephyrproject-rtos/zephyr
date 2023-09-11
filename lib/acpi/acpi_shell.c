@@ -35,23 +35,23 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 			shell_print(sh, "\nACPI_RESOURCE_TYPE_IRQ\n\n");
 			ACPI_RESOURCE_IRQ *irq_res = &res->Data.Irq;
 
-			shell_print(sh,
+			shell_print(
+				sh,
 				"DescriptorLength: %x, Triggering:%x, Polarity:%x, Shareable:%x,",
-			       irq_res->DescriptorLength, irq_res->Triggering, irq_res->Polarity,
-			       irq_res->Shareable);
-			shell_print(sh,
-				"InterruptCount:%d, Interrupts[0]:%x\n", irq_res->InterruptCount,
-			       irq_res->Interrupts[0]);
+				irq_res->DescriptorLength, irq_res->Triggering, irq_res->Polarity,
+				irq_res->Shareable);
+			shell_print(sh, "InterruptCount:%d, Interrupts[0]:%x\n",
+				    irq_res->InterruptCount, irq_res->Interrupts[0]);
 			break;
 		case ACPI_RESOURCE_TYPE_IO:
 			ACPI_RESOURCE_IO * io_res = &res->Data.Io;
 
 			shell_print(sh, "\n ACPI_RESOURCE_TYPE_IO\n");
 			shell_print(sh,
-				"IoDecode: %x, Alignment:%x, AddressLength:%x, Minimum:%x,Maximum:%x\n",
-				   io_res->IoDecode, io_res->Alignment,
-				   io_res->AddressLength, io_res->Minimum,
-				   io_res->Maximum);
+				    "IoDecode: %x, Alignment:%x, AddressLength:%x, "
+				    "Minimum:%x,Maximum:%x\n",
+				    io_res->IoDecode, io_res->Alignment, io_res->AddressLength,
+				    io_res->Minimum, io_res->Maximum);
 			break;
 		case ACPI_RESOURCE_TYPE_DMA:
 			shell_print(sh, "ACPI_RESOURCE_TYPE_DMA\n\n");
@@ -75,8 +75,8 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 			ACPI_RESOURCE_MEMORY32 * mem_res = &res->Data.Memory32;
 
 			shell_print(sh, "\nACPI_RESOURCE_TYPE_MEMORY32\n\n");
-			shell_print(sh, "Minimum:%x, Maximum:%x\n",
-				mem_res->Minimum, mem_res->Maximum);
+			shell_print(sh, "Minimum:%x, Maximum:%x\n", mem_res->Minimum,
+				    mem_res->Maximum);
 			break;
 		case ACPI_RESOURCE_TYPE_FIXED_MEMORY32:
 			ACPI_RESOURCE_FIXED_MEMORY32 * fix_mem_res = &res->Data.FixedMemory32;
@@ -92,15 +92,14 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 
 			shell_print(sh, "\nACPI_RESOURCE_TYPE_ADDRESS32\n\n");
 			shell_print(sh, "Minimum:%x, Maximum:%x\n", add_res->Address.Minimum,
-				add_res->Address.Maximum);
+				    add_res->Address.Maximum);
 			break;
 		case ACPI_RESOURCE_TYPE_ADDRESS64:
 			ACPI_RESOURCE_ADDRESS64 * add_res64 = &res->Data.Address64;
 
 			shell_print(sh, "\nACPI_RESOURCE_TYPE_ADDRESS64\n\n");
-			shell_print(sh,
-					"Minimum:%llx, Maximum:%llx\n", add_res64->Address.Minimum,
-						add_res64->Address.Maximum);
+			shell_print(sh, "Minimum:%llx, Maximum:%llx\n", add_res64->Address.Minimum,
+				    add_res64->Address.Maximum);
 			break;
 		case ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64:
 			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64\n\n");
@@ -130,8 +129,7 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP\n\n");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION:
-			shell_print(sh,
-					"ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION\n\n");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_GROUP_CONFIG:
 			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP_CONFIG\n\n");
@@ -198,8 +196,7 @@ static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	status = acpi_get_irq_routing_table(argv[1],
-						irq_prt_table, sizeof(irq_prt_table));
+	status = acpi_get_irq_routing_table(argv[1], irq_prt_table, sizeof(irq_prt_table));
 	if (status) {
 		return status;
 	}
@@ -207,9 +204,8 @@ static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 	prt = irq_prt_table;
 	for (cnt = 0; prt->Length; cnt++) {
 		shell_print(sh, "[%02X] PCI IRQ Routing Table Package\n", cnt);
-		shell_print(sh,
-			"DevNum: %lld Pin:%d IRQ: %d\n", (prt->Address >> 16) & 0xFFFF, prt->Pin,
-		       prt->SourceIndex);
+		shell_print(sh, "DevNum: %lld Pin:%d IRQ: %d\n", (prt->Address >> 16) & 0xFFFF,
+			    prt->Pin, prt->SourceIndex);
 
 		prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
 	}
@@ -253,8 +249,8 @@ static int read_table(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "ACPI Table Info:\n");
-	shell_print(sh, "Signature: %4s Table Length:%d Revision:%d OemId:%s\n",
-		table->Signature, table->Length, table->Revision, table->OemId);
+	shell_print(sh, "Signature: %4s Table Length:%d Revision:%d OemId:%s\n", table->Signature,
+		    table->Length, table->Revision, table->OemId);
 
 	return 0;
 }
@@ -272,8 +268,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(enum, NULL,
 		  "enumerate device using hid (for enum HPET timer device,eg:acpi enum PNP0103)",
 		  enum_dev),
-	SHELL_CMD(rd_table, NULL,
-		  "read acpi table (for read mad table, eg:acpi read_table APIC)",
+	SHELL_CMD(rd_table, NULL, "read acpi table (for read mad table, eg:acpi read_table APIC)",
 		  read_table),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );

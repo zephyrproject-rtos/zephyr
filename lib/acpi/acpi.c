@@ -223,8 +223,8 @@ static ACPI_STATUS acpi_enable_pic_mode(void)
 	return status;
 }
 
-static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
-				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
+static int acpi_get_irq_table(struct acpi *bus, char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table,
+			      uint32_t rt_size)
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
@@ -492,8 +492,7 @@ int acpi_current_resource_free(ACPI_RESOURCE *res)
 	return 0;
 }
 
-int acpi_get_irq_routing_table(char *bus_name,
-			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
+int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
 {
 	int ret;
 
@@ -721,7 +720,7 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **ta
 }
 
 int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
-	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
+		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
 {
 	uintptr_t offset = sizeof(ACPI_DMAR_HARDWARE_UNIT);
 	uint32_t i = 0;
@@ -755,7 +754,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 		if (scope == subtable->EntryType) {
 			num_path = (subtable->Length - 6u) / 2u;
 			dev_path = ACPI_ADD_PTR(ACPI_DMAR_PCI_PATH, subtable,
-				sizeof(ACPI_DMAR_DEVICE_SCOPE));
+						sizeof(ACPI_DMAR_DEVICE_SCOPE));
 
 			while (num_path--) {
 				if (i >= max_inst) {

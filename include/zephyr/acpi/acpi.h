@@ -10,10 +10,10 @@
 
 #define ACPI_RES_INVALID ACPI_RESOURCE_TYPE_MAX
 
-#define ACPI_DRHD_FLAG_INCLUDE_PCI_ALL			BIT(0)
-#define ACPI_DMAR_FLAG_INTR_REMAP				BIT(0)
-#define ACPI_DMAR_FLAG_X2APIC_OPT_OUT			BIT(1)
-#define ACPI_DMAR_FLAG_DMA_CTRL_PLATFORM_OPT_IN	BIT(2)
+#define ACPI_DRHD_FLAG_INCLUDE_PCI_ALL          BIT(0)
+#define ACPI_DMAR_FLAG_INTR_REMAP               BIT(0)
+#define ACPI_DMAR_FLAG_X2APIC_OPT_OUT           BIT(1)
+#define ACPI_DMAR_FLAG_DMA_CTRL_PLATFORM_OPT_IN BIT(2)
 
 struct acpi_dev {
 	ACPI_HANDLE handle;
@@ -158,8 +158,7 @@ int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num
  * @param tables pointer to the dmar id structure
  * @return return 0 on success or error code
  */
-int acpi_dmar_entry_get(enum AcpiDmarType type,
-	struct acpi_subtable_header **tables);
+int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **tables);
 
 /**
  * @brief retrieve acpi DRHD info for the given scope.
@@ -172,7 +171,7 @@ int acpi_dmar_entry_get(enum AcpiDmarType type,
  * @return return 0 on success or error code
  */
 int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
-	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
+		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
 
 /**
  * @brief Retrieve lapic info for a specific cpu.
