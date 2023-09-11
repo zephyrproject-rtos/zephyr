@@ -12,12 +12,14 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_NXP_S32_EMIOS_LOG_LEVEL);
 
 #include <Emios_Mcl_Ip.h>
+#include <Emios_Mcl_Ip_Irq.h>
 
 #define DT_DRV_COMPAT	nxp_s32_emios
 
 struct nxp_s32_emios_config {
 	uint8_t instance;
 	Emios_Mcl_Ip_ConfigType *mcl_info;
+	void (*irq_config)(void);
 };
 
 static int nxp_s32_emios_init(const struct device *dev)
@@ -28,6 +30,8 @@ static int nxp_s32_emios_init(const struct device *dev)
 		LOG_ERR("Could not initialize eMIOS");
 		return -EINVAL;
 	}
+
+	config->irq_config();
 
 	return 0;
 }
@@ -87,11 +91,42 @@ static int nxp_s32_emios_init(const struct device *dev)
 		.masterBusConfig = &nxp_s32_emios_##n##_master_bus_config			\
 	};
 
+#define EMIOS_INTERRUPT_NAME(name)	DT_CAT3(EMIOS, name, _IRQ)
+
+/*
+ * The real interrupt handlers only defined in some circumstances, just add
+ * weak implementations to avoid populating so many preprocessor directives
+ */
+#define EMIOS_INTERRUPT_DEFINE(node_id, prop, idx)						\
+	__weak void EMIOS_INTERRUPT_NAME(DT_STRING_TOKEN_BY_IDX(node_id, prop, idx))(void) {}
+
+#define NXP_S32_EMIOS_INTERRUPT_DEFINE(n)							\
+	DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, EMIOS_INTERRUPT_DEFINE)
+
+#define EMIOS_INTERRUPT_CONFIG(node_id, prop, idx)						\
+	do {											\
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),					\
+			    DT_IRQ_BY_IDX(node_id, idx, priority),				\
+			    EMIOS_INTERRUPT_NAME(DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)),\
+			    DEVICE_DT_GET(node_id),						\
+			    0);									\
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));					\
+	} while (false);
+
+#define NXP_S32_EMIOS_INTERRUPT_CONFIG(n)							\
+	static void nxp_s32_emios_##n##_interrupt_config(void)					\
+	{											\
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, EMIOS_INTERRUPT_CONFIG)		\
+	}
+
 #define NXP_S32_EMIOS_INIT_DEVICE(n)								\
 	NXP_S32_EMIOS_GENERATE_CONFIG(n)							\
+	NXP_S32_EMIOS_INTERRUPT_DEFINE(n)							\
+	NXP_S32_EMIOS_INTERRUPT_CONFIG(n)							\
 	const struct nxp_s32_emios_config nxp_s32_emios_##n##_config = {			\
 		.instance = NXP_S32_EMIOS_GET_INSTANCE(n),					\
 		.mcl_info = (Emios_Mcl_Ip_ConfigType *)&nxp_s32_emios_##n##_mcl_config,		\
+		.irq_config = nxp_s32_emios_##n##_interrupt_config,				\
 	};											\
 	DEVICE_DT_INST_DEFINE(n,								\
 			&nxp_s32_emios_init,							\
