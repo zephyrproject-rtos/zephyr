@@ -1816,6 +1816,15 @@ if(CONFIG_CHECK_INIT_PRIORITIES)
     )
 endif()
 
+add_custom_target(
+  initlevels
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+    --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+    --initlevels
+  DEPENDS ${logical_target_for_zephyr_elf}
+  USES_TERMINAL
+)
+
 # Generate and use MCUboot related artifacts as needed.
 if(CONFIG_BOOTLOADER_MCUBOOT)
   get_target_property(signing_script zephyr_property_target SIGNING_SCRIPT)
