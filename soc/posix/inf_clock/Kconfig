@@ -10,3 +10,13 @@ config NATIVE_SIMULATOR_CPU_N
 	  Which native simulator embedded CPU number is this image targeting.
 	  This option is only applicable for targets which use the
 	  native simulator as their runner.
+
+config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
+	int "Which CPU is the primary/preferred"
+	default 0
+	depends on NATIVE_LIBRARY
+	help
+	  On a multi MCU device, which MCU is the preferred one.
+	  This MCU will for example have its tests command line parameters presented
+	  without any prefix. Note that an MCU being primary does not imply it will be
+	  the first one to boot.
