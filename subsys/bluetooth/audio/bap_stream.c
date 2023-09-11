@@ -793,7 +793,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	LOG_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		LOG_DBG("Invalid stream");
+		LOG_DBG("Invalid stream (ep %p, conn %p)", stream->ep, (void *)stream->conn);
 		return -EINVAL;
 	}
 

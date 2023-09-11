@@ -75,7 +75,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected to %s\n", addr);
+	printk("Connected to %s (%p)\n", addr, conn);
 	SET_FLAG(flag_connected);
 }
 
