@@ -31,6 +31,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
 #include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
@@ -294,6 +295,8 @@ static inline bool arch_irq_unlocked(unsigned int key);
  */
 void arch_irq_disable(unsigned int irq);
 
+void arch_irq_intc_disable(unsigned int irq, const struct device *dev);
+
 /**
  * Enable the specified interrupt line
  *
@@ -301,12 +304,16 @@ void arch_irq_disable(unsigned int irq);
  */
 void arch_irq_enable(unsigned int irq);
 
+void arch_irq_intc_enable(unsigned int irq, const struct device *dev);
+
 /**
  * Test if an interrupt line is enabled
  *
  * @see irq_is_enabled()
  */
 int arch_irq_is_enabled(unsigned int irq);
+
+int arch_irq_intc_is_enabled(unsigned int irq, const struct device *dev);
 
 /**
  * Arch-specific hook to install a dynamic interrupt.
@@ -322,6 +329,17 @@ int arch_irq_is_enabled(unsigned int irq);
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags);
+
+/**
+ * Arch-specific hook to install a dynamic interrupt to an interrupt
+ * controller. See @ref arch_irq_connect_dynamic for more info.
+ *
+ * @param dev Interrupt controller of the IRQ
+ */
+int arch_irq_intc_connect_dynamic(unsigned int irq, unsigned int priority,
+				  void (*routine)(const void *parameter),
+				  const void *parameter, uint32_t flags,
+				  const struct device *dev);
 
 /**
  * Arch-specific hook to dynamically uninstall a shared interrupt.

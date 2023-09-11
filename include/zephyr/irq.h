@@ -48,6 +48,20 @@ extern "C" {
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
+#ifdef CONFIG_MULTI_INSTANCE_INTC
+/**
+ * @brief Initialize an interrupt handler to an interrupt controller
+ *
+ * For more information, see @ref IRQ_CONNECT
+ *
+ * @param intc_p Interrupt controller node id
+ */
+#define IRQ_INTC_CONNECT(intc_p, irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+	ARCH_IRQ_INTC_CONNECT(intc_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)
+#else
+#define IRQ_INTC_CONNECT(_, ...) IRQ_CONNECT(__VA_ARGS__)
+#endif
+
 /**
  * Configure a dynamic interrupt.
  *
@@ -68,6 +82,24 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 {
 	return arch_irq_connect_dynamic(irq, priority, routine, parameter,
 					flags);
+}
+
+/**
+ * Configure a dynamic interrupt for an instance of the interrupt controller.
+ *
+ * See @ref irq_connect_dynamic for more information.
+ *
+ * @param dev Interrupt controller device
+ *
+ * @return See @ref irq_connect_dynamic
+ */
+static inline int
+irq_intc_connect_dynamic(unsigned int irq, unsigned int priority,
+			 void (*routine)(const void *parameter),
+			 const void *parameter, uint32_t flags,
+			 const struct device *dev)
+{
+	return arch_irq_intc_connect_dynamic(irq, priority, routine, parameter, flags, dev);
 }
 
 /**
@@ -439,6 +471,33 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
  * @return interrupt enable state, true or false
  */
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
+
+/**
+ * @brief Enable an interrupt controller's IRQ.
+ *
+ * See @ref irq_enable for more information.
+ *
+ * @param intc Interrupt controller.
+ */
+#define irq_intc_enable(intc, irq) arch_irq_intc_enable(intc, irq)
+
+/**
+ * @brief Disable an interrupt controller's IRQ.
+ *
+ * See @ref irq_disable for more information.
+ *
+ * @param intc Interrupt controller.
+ */
+#define irq_intc_disable(intc, irq) arch_irq_intc_disable(intc, irq)
+
+/**
+ * @brief Get an interrupt controller's IRQ enable state.
+ *
+ * See @ref irq_is_enabled for more information.
+ *
+ * @param intc interrupt controller.
+ */
+#define irq_intc_is_enabled(intc, irq) arch_irq_intc_is_enabled(intc, irq)
 
 /**
  * @}

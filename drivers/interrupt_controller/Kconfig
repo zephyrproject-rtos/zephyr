@@ -5,6 +5,15 @@
 
 menu "Interrupt controller drivers"
 
+config MULTI_INSTANCE_INTC
+	bool
+
+config HAS_MUTLI_INSTANCE_INTC
+	bool "placeholder"
+	select MULTI_INSTANCE_INTC
+	help
+	  placeholder
+
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y

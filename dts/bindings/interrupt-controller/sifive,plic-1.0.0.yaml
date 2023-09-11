@@ -17,3 +17,10 @@ properties:
     type: boolean
     description: |
       Indicates that this controller supports edge interrupt.
+
+  isr-offset:
+    type: int
+    default: 0
+    description: |
+      Offset for the ISR in multi-instance interrupt controller setup.
+      Increase according to the index in the devicetree.

@@ -147,4 +147,18 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 	return irq;
 }
 
+int __weak arch_irq_intc_connect_dynamic(unsigned int irq,
+					 unsigned int priority,
+					 void (*routine)(const void *),
+					 const void *parameter,
+					 uint32_t flags,
+					 const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	arch_irq_connect_dynamic(irq, priority, routine, parameter, flags);
+
+	return irq;
+}
+
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

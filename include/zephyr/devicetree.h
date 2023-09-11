@@ -4191,6 +4191,13 @@
 	DT_INST_PHA_HAS_CELL_AT_IDX(inst, pha, 0, cell)
 
 /**
+ * @brief `DT_DRV_COMPAT` instance's interrupt-parent property
+ * @param inst instance number
+ * @return interrupt-parent property if available in @p inst, 0 otherwise.
+ */
+#define DT_INST_INTC_PARENT(inst) DT_INST_PROP_OR(inst, interrupt_parent, 0)
+
+/**
  * @brief is index valid for interrupt property on a `DT_DRV_COMPAT` instance?
  * @param inst instance number
  * @param idx logical index into the interrupt specifier array

@@ -29,26 +29,48 @@ extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
+extern void arch_irq_intc_enable(unsigned int irq, const struct device *dev);
+extern void arch_irq_intc_disable(unsigned int irq, const struct device *dev);
+extern int arch_irq_intc_is_enabled(unsigned int irq, const struct device *dev);
+
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC)
 extern void z_riscv_irq_priority_set(unsigned int irq,
 				     unsigned int prio,
 				     uint32_t flags);
+extern void z_riscv_irq_intc_priority_set(unsigned int irq,
+					  unsigned int prio,
+					  uint32_t flags,
+					  const struct device *dev);
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
+#define z_riscv_irq_intc_priority_set(i, p, f, d) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
 
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
-		      0, isr_p, isr_param_p); \
-	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
+#define ARCH_IRQ_INTC_CONNECT(intc_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)              \
+{                                                                                                  \
+	Z_ISR_DECLARE(                                                                             \
+		irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET +                              \
+			COND_CODE_0(DT_NODE_EXISTS(intc_p),                                        \
+				    (0),                                                           \
+				    (DT_PROP_OR(intc_p, isr_offset, 0))),                          \
+		0, isr_p, isr_param_p);                                                            \
+		z_riscv_irq_intc_priority_set(irq_p, priority_p, flags_p,                          \
+			COND_CODE_1(DT_NODE_EXISTS(intc_p), (DEVICE_DT_GET(intc_p)), (NULL)));     \
 }
 
-#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
-		      ISR_FLAG_DIRECT, isr_p, NULL); \
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)                           \
+	ARCH_IRQ_INTC_CONNECT(_, irq_p, priority_p, isr_p, isr_param_p, flags_p)
+
+#define ARCH_IRQ_INTC_DIRECT_CONNECT(intc_p, irq_p, priority_p, isr_p, flags_p)                    \
+{                                                                                                  \
+	Z_ISR_DECLARE(                                                                             \
+		irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET +                              \
+			COND_CODE_0(intc_p, (0), (DT_PROP_OR(intc_p, isr_offset, 0))),             \
+		ISR_FLAG_DIRECT, isr_p, NULL);                                                     \
 }
+
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)                                 \
+	ARCH_IRQ_INTC_DIRECT_CONNECT(_, irq_p, priority_p, isr_p, flags_p)
 
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)

@@ -232,6 +232,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
+#define NS16550_IRQ_CONNECT(n, irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+	IRQ_INTC_CONNECT(DT_INST_INTC_PARENT(n), irq_p, priority_p, isr_p, isr_param_p, flags_p)
+
 /* device config */
 struct uart_ns16550_device_config {
 	union {
@@ -1237,7 +1240,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	static void irq_config_func##n(const struct device *dev)              \
 	{                                                                     \
 		ARG_UNUSED(dev);                                              \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	      \
+		NS16550_IRQ_CONNECT(DT_INST_INTC_PARENT(n), DT_INST_IRQN(n),  \
+				    DT_INST_IRQ(n, priority),                 \
 			    uart_ns16550_isr, DEVICE_DT_INST_GET(n),	      \
 			    UART_NS16550_IRQ_FLAGS(n));			      \
 		irq_enable(DT_INST_IRQN(n));                                  \
