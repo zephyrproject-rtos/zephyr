@@ -324,10 +324,11 @@ void z_log_vprintk(const char *fmt, va_list ap);
  * is enabled, override level is set or module specific level is set (not off).
  */
 #define Z_DO_LOG_MODULE_REGISTER(...) \
-	Z_LOG_EVAL(CONFIG_LOG_OVERRIDE_LEVEL, \
+	COND_CODE_1(CONFIG_LOG, \
+		(Z_LOG_EVAL(CONFIG_LOG_OVERRIDE_LEVEL, \
 		   (1), \
 		   (Z_LOG_EVAL(_LOG_LEVEL_RESOLVE(__VA_ARGS__), (1), (0))) \
-		  )
+		  )), (0))
 
 /**
  * @brief Create module-specific state and register the module with Logger.
