@@ -1,0 +1,20 @@
+# Adafruit Feather ESP32-S3 N4R2 board configuration
+
+# Copyright (c) 2023 Helmut Lord
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "adafruit_feather_esp32s3_n4r2"
+	depends on BOARD_ADAFRUIT_FEATHER_ESP32S3_N4R2
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice

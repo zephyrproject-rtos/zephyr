@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 2023 Helmut Lord
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_mini_n4r2.dtsi>
+#include "adafruit_feather_esp32s3_n4r2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	model = "adafruit_feather_esp32s3_n4r2";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		led0 = &red_led;
+		sw0 = &button0;
+		led-strip = &led_strip;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+	/* This enables the onboard neopixel (WS2812B-2020). */
+	neopixel_enable: neopixel_enable {
+		gpio-hog;
+		gpios = <21 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	/* Because the on-board pull ups of the ESP32S3
+	   are somewhat weak, we must enable the external pull ups
+	   in order to access the fuel gauge
+	*/
+	vsensor_enable: vsensor_enable {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	max17048: max17048@36 {
+		status = "okay";
+		compatible = "maxim,max17048";
+		reg = < 0x36 >;
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	line-idle-low;
+        led_strip: ws2812@0 {
+                compatible = "worldsemi,ws2812-spi";
+
+		status = "okay";
+                /* SPI */
+                reg = <0>; /* ignored, but necessary for SPI bindings */
+                spi-max-frequency = <6400000>;
+
+                /* WS2812 */
+                chain-length = <1>; /* arbitrary; change at will */
+                spi-cpha;
+                spi-one-frame = <0xf0>; /* 11110000: 625 ns high and 625 ns low */
+                spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
+                color-mapping = <LED_COLOR_ID_GREEN
+                                 LED_COLOR_ID_RED
+                                 LED_COLOR_ID_BLUE>;
+        };
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&twai {
+	status = "disabled";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 64kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			   label = "image-scratch";
+			   reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};

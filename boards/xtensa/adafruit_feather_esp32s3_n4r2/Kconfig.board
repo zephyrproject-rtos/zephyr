@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Helmut Lord
+# SPDX-License-Identifier: Apache-2.0
+
+# Adafruit Feather ESP32-S3 N4R2 board configuration
+config BOARD_ADAFRUIT_FEATHER_ESP32S3_N4R2
+	bool "Adafruit Feather ESP32S3 N4R2 Board"
+	depends on SOC_SERIES_ESP32S3
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32S3_MINI_N4R2
+endchoice
