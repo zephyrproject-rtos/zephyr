@@ -28,6 +28,8 @@
 /* Buffers must be 128 byte aligned, this mask enforces that */
 #define HDA_ALIGN_MASK 0xFFFFFF80
 
+/* Buffer size must match the mask of BS field in DGBS register */
+#define HDA_BUFFER_SIZE_MASK 0x00FFFFF0
 
 /* Calculate base address of the stream registers */
 #define HDA_ADDR(base, regblock_size, stream) ((base) + (stream)*(regblock_size))
@@ -159,14 +161,14 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 	 */
 	uint32_t addr = (uint32_t)arch_xtensa_cached_ptr(buf);
 	uint32_t aligned_addr = addr & HDA_ALIGN_MASK;
-	uint32_t aligned_size = buf_size & HDA_ALIGN_MASK;
+	uint32_t aligned_size = buf_size & HDA_BUFFER_SIZE_MASK;
 
 	__ASSERT(aligned_addr == addr, "Buffer must be 128 byte aligned");
 	__ASSERT(aligned_addr >= L2_SRAM_BASE
 		 && aligned_addr < L2_SRAM_BASE + L2_SRAM_SIZE,
 		 "Buffer must be in L2 address space");
 	__ASSERT(aligned_size == buf_size,
-		 "Buffer must be 128 byte aligned in size");
+		 "Buffer must be 16 byte aligned in size");
 
 	__ASSERT(aligned_addr + aligned_size < L2_SRAM_BASE + L2_SRAM_SIZE,
 		 "Buffer must end in L2 address space");
