@@ -143,7 +143,7 @@
 #define REGION_RAM_ATTR							\
 	{								\
 		/* AP, XN, SH */					\
-		.rbar = NOT_EXEC | P_RW_U_NA_Msk | INNER_SHAREABLE_Msk, \
+		.rbar = NOT_EXEC | P_RW_U_NA_Msk | OUTER_SHAREABLE_Msk, \
 		/* Cache-ability */					\
 		.mair_idx = MPU_MAIR_INDEX_SRAM,			\
 	}
