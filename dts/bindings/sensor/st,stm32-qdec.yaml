@@ -79,7 +79,7 @@ properties:
       MODE_X2_TI2  Counter counts up/down on TI1FP1 edge depending on TI2FP2 level
       MODE_X4_TI12 Counter counts up/down on both TI1FP1 and TI2FP2 edges
       depending on the level of the other input
-    default: 0
+    required: true
     enum:
       - 0 # MODE_X2_TI1
       - 1 # MODE_X2_TI2

@@ -34,6 +34,10 @@ Required changes
   SMP version 2 error code defines for in-tree modules have been updated to
   replace the ``*_RET_RC_*`` parts with ``*_ERR_*``.
 
+* Quadrature decoder STM32 driver (:dtcompatible:`st,stm32-qdec` ) now has a
+  new property :dtcompatible:`st,encoder-mode` which is required.
+  The old behavior is the same as setting the property as :c:enumerator:`MODE_X2_TI1`.
+
 Recommended Changes
 *******************
 
