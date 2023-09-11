@@ -27,7 +27,33 @@ extern "C" {
 #endif
 
 /**
- * @addtogroup ieee802154
+ * @defgroup ieee802154_driver IEEE 802.15.4 Drivers
+ * @ingroup ieee802154
+ *
+ * @brief IEEE 802.15.4 driver API
+ *
+ * @details This API provides a common representation of vendor-specific
+ * hardware and firmware to the native IEEE 802.15.4 L2 and OpenThread stacks.
+ * **Application developers should never interface directly with this API.** It
+ * is of interest to driver maintainers only.
+ *
+ * The IEEE 802.15.4 driver API consists of two separate parts:
+ *    - a basic, mostly PHY-level driver API to be implemented by all drivers,
+ *    - several optional MAC-level extension points to offload performance
+ *      critical or timing sensitive aspects at MAC level to the driver hardware
+ *      or firmware ("hard" MAC).
+ *
+ * Implementing the basic driver API will ensure integration with the native L2
+ * stack as well as basic support for OpenThread. Depending on the hardware,
+ * offloading to vendor-specific hardware or firmware features may be required
+ * to achieve full compliance with the Thread protocol or IEEE 802.15.4
+ * subprotocols (e.g. fast enough ACK packages, precise timing of timed TX/RX in
+ * the TSCH or CSL subprotocols).
+ *
+ * Whether or not MAC-level offloading extension points need to be implemented
+ * is to be decided by individual driver maintainers. Upper layers SHOULD
+ * provide a "soft" MAC fallback whenever possible.
+ *
  * @{
  */
 
