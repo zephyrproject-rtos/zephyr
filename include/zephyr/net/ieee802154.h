@@ -6,7 +6,9 @@
 
 /**
  * @file
- * @brief IEEE 802.15.4 L2 stack public header
+ * @brief IEEE 802.15.4 native L2 stack public header
+ *
+ * @note All references to the standard in this file cite IEEE 802.15.4-2020.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_H_
@@ -88,41 +90,118 @@ extern "C" {
  *    - protocol-specific extension to the interface structure (see @ref net_if)
  *    - protocol-specific extensions to the network packet structure
  *      (see @ref net_pkt),
+ *
+ * @note All section, table and figure references are to the IEEE 802.15.4-2020
+ * standard.
+ *
  * @{
  */
 
-/* References are to the IEEE 802.15.4-2020 standard */
-#define IEEE802154_MAX_PHY_PACKET_SIZE	127 /* see section 11.3, aMaxPhyPacketSize */
-#define IEEE802154_FCS_LENGTH		2   /* see section 7.2.1.1 */
+#define IEEE802154_MAX_PHY_PACKET_SIZE	127 /**< see section 11.3, aMaxPhyPacketSize */
+#define IEEE802154_FCS_LENGTH		2   /**< see section 7.2.1.1 */
+
+/**
+ * @brief IEEE 802.15.4 "hardware" MTU (not to be confused with L3/IP MTU), i.e.
+ * the actual payload available to the next higher layer.
+ *
+ * @details This is equivalent to the IEEE 802.15.4 MAC frame length minus
+ * checksum bytes which is again equivalent to the PHY payload aka PSDU length
+ * minus checksum bytes. This definition exists for compatibility with the same
+ * concept in Linux and Zephyr's L3. It is not a concept from the IEEE 802.15.4
+ * standard.
+ *
+ * @note Currently we only support the original frame size from the 2006
+ * standard version and earlier. The 2015+ standard introduced PHYs with larger
+ * PHY payload. These are not (yet) supported in Zephyr.
+ */
 #define IEEE802154_MTU			(IEEE802154_MAX_PHY_PACKET_SIZE - IEEE802154_FCS_LENGTH)
+
 /* TODO: Support flexible MTU and FCS lengths for IEEE 802.15.4-2015ff */
 
+/** IEEE 802.15.4 short address length. */
 #define IEEE802154_SHORT_ADDR_LENGTH	2
+
+/** IEEE 802.15.4 extended address length. */
 #define IEEE802154_EXT_ADDR_LENGTH	8
+
+/** IEEE 802.15.4 maximum address length. */
 #define IEEE802154_MAX_ADDR_LENGTH	IEEE802154_EXT_ADDR_LENGTH
 
+/**
+ * A special channel value that symbolizes "all" channels or "any" channel -
+ * depending on context.
+ */
 #define IEEE802154_NO_CHANNEL		USHRT_MAX
 
-/* See IEEE 802.15.4-2020, sections 6.1 and 7.3.5 */
+/**
+ * @{
+ * See sections 6.1 and 7.3.5
+ */
 #define IEEE802154_BROADCAST_ADDRESS	     0xffff
 #define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xfffe
+/** @} */
 
-/* See IEEE 802.15.4-2020, section 6.1 */
+/* See section 6.1 */
 #define IEEE802154_BROADCAST_PAN_ID 0xffff
 
-/* See IEEE 802.15.4-2020, section 7.3.5 */
+/* See section 7.3.5 */
 #define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED IEEE802154_BROADCAST_ADDRESS
 #define IEEE802154_PAN_ID_NOT_ASSOCIATED	IEEE802154_BROADCAST_PAN_ID
 
+/** interface-level security attributes, see section 9.5. */
 struct ieee802154_security_ctx {
+	/** section 9.5, secFrameCounter */
 	uint32_t frame_counter;
+
+	/** @cond INTERNAL_HIDDEN */
 	struct cipher_ctx enc;
 	struct cipher_ctx dec;
+	/** INTERNAL_HIDDEN @endcond */
+
+	/**
+	 * @brief frame-level security key material
+	 *
+	 * @details Currently native L2 only supports a single secKeySource, see
+	 * section 9.5, table 9-9, in combination with secKeyMode zero (implicit
+	 * key mode), see section 9.4.2.3, table 9-7.
+	 *
+	 * @warning This is no longer in accordance with the current version of
+	 * the standard and needs to be extended in the future for full security
+	 * procedure compliance.
+	 */
 	uint8_t key[16];
+
+	/** frame-level security key material */
 	uint8_t key_len;
+
+	/**
+	 * @brief security level
+	 *
+	 * @details Currently native L2 supports a single security level for all
+	 * frame types, commands and information elements, see section 9.4.2.2,
+	 * table 9-6 and ieee802154_security_level.
+	 *
+	 * @warning This is no longer in accordance with the current version of
+	 * the standard and needs to be extended in the future for full security
+	 * procedure compliance.
+	 */
 	uint8_t level	: 3;
+
+	/**
+	 * @brief key_mode
+	 *
+	 * @details Currently only implicit key mode is partially supported, see
+	 * section 9.4.2.3, table 9-7, secKeyMode.
+	 *
+	 * @warning This is no longer in accordance with the current version of
+	 * the standard and needs to be extended in the future for full security
+	 * procedure compliance.
+	 */
 	uint8_t key_mode	: 2;
+
+	/** @cond INTERNAL_HIDDEN */
 	uint8_t _unused	: 3;
+	/** INTERNAL_HIDDEN @endcond */
 };
 
 enum ieee802154_device_role {
@@ -131,63 +210,77 @@ enum ieee802154_device_role {
 	IEEE802154_DEVICE_ROLE_PAN_COORDINATOR,
 };
 
-/* This not meant to be used by any code but the IEEE 802.15.4 L2 stack */
+/** IEEE 802.15.4 L2 context. */
 struct ieee802154_context {
-	/* PAN ID
+	/**
+	 * @brief PAN ID
 	 *
-	 * The identifier of the PAN on which the device is operating. If this
-	 * value is 0xffff, the device is not associated. See section 8.4.3.1,
-	 * table 8-94, macPanId.
+	 * @details The identifier of the PAN on which the device is operating.
+	 * If this value is 0xffff, the device is not associated. See section
+	 * 8.4.3.1, table 8-94, macPanId.
 	 *
 	 * in CPU byte order
 	 */
 	uint16_t pan_id;
 
-	/* Channel Number
+	/**
+	 * @brief Channel Number
 	 *
-	 * The RF channel to use for all transmissions and receptions, see
-	 * section 11.3, table 11-2, phyCurrentChannel. The allowable range
+	 * @details The RF channel to use for all transmissions and receptions,
+	 * see section 11.3, table 11-2, phyCurrentChannel. The allowable range
 	 * of values is PHY dependent as defined in section 10.1.3.
 	 *
 	 * in CPU byte order
 	 */
 	uint16_t channel;
 
-	/* Short Address
+	/**
+	 * @brief Short Address (in CPU byte order)
 	 *
-	 * Range:
+	 * @details Range:
 	 *  * 0x0000–0xfffd: associated, short address was assigned
 	 *  * 0xfffe: associated but no short address assigned
 	 *  * 0xffff: not associated (default),
 	 *
 	 * See section 6.4.1, table 6-4 (Usage of the shart address) and
 	 * section 8.4.3.1, table 8-94, macShortAddress.
-	 *
-	 * in CPU byte order
 	 */
 	uint16_t short_addr;
 
-	/* Extended Address
+	/**
+	 * @brief Extended Address (in little endian)
 	 *
-	 * The extended address is device specific, usually permanently stored
-	 * on the device and immutable.
+	 * @details The extended address is device specific, usually permanently
+	 * stored on the device and immutable.
 	 *
 	 * See section 8.4.3.1, table 8-94, macExtendedAddress.
-	 *
-	 * in little endian
 	 */
 	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
 
-	struct net_linkaddr_storage linkaddr; /* in big endian */
+	/** Link layer address (in big endian) */
+	struct net_linkaddr_storage linkaddr;
+
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	/** Security context */
 	struct ieee802154_security_ctx sec_ctx;
 #endif
+
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
-	struct ieee802154_req_params *scan_ctx; /* guarded by scan_ctx_lock */
+	/** Pointer to scanning parameters and results, guarded by scan_ctx_lock */
+	struct ieee802154_req_params *scan_ctx;
+
+	/**
+	 * Used to maintain integrity of data for all fields in this struct
+	 * unless otherwise documented on field level.
+	 */
 	struct k_sem scan_ctx_lock;
 
-	/* see section 8.4.3.1, table 8-94, macCoordExtendedAddress, the address
-	 * of the coordinator through which the device is associated.
+	/**
+	 * @brief Coordinator extended address
+	 *
+	 * @details see section 8.4.3.1, table 8-94, macCoordExtendedAddress,
+	 * the address of the coordinator through which the device is
+	 * associated.
 	 *
 	 * A value of zero indicates that a coordinator extended address is
 	 * unknown (default).
@@ -196,8 +289,11 @@ struct ieee802154_context {
 	 */
 	uint8_t coord_ext_addr[IEEE802154_MAX_ADDR_LENGTH];
 
-	/* see section 8.4.3.1, table 8-94, macCoordShortAddress, the short
-	 * address assigned to the coordinator through which the device is
+	/**
+	 * @brief Coordinator short address
+	 *
+	 * @details see section 8.4.3.1, table 8-94, macCoordShortAddress, the
+	 * short address assigned to the coordinator through which the device is
 	 * associated.
 	 *
 	 * A value of 0xfffe indicates that the coordinator is only using its
@@ -208,35 +304,63 @@ struct ieee802154_context {
 	 */
 	uint16_t coord_short_addr;
 #endif
+
+	/** transmission power */
 	int16_t tx_power;
+
+	/** L2 flags */
 	enum net_l2_flags flags;
 
-	/* The sequence number added to the transmitted Data frame or MAC
-	 * command, see section 8.4.3.1, table 8-94, macDsn.
+	/**
+	 * @brief DSN
+	 *
+	 * @details The sequence number added to the transmitted Data frame or
+	 * MAC command, see section 8.4.3.1, table 8-94, macDsn.
 	 */
 	uint8_t sequence;
 
-	/* See section 6.1: A device may be operating as end device
-	 * (0 - default), coordinator (1), or PAN coordinator (2).
+	/**
+	 * @brief Device Role
+	 *
+	 * @details See section 6.1: A device may be operating as end device (0
+	 * - default), coordinator (1), or PAN coordinator (2).
 	 *
 	 * A value of 3 is undefined.
 	 *
-	 * Can be read/set via enum ieee802154_device_role.
+	 * Can be read/set via @ref ieee802154_device_role.
 	 */
 	uint8_t device_role : 2;
 
+	/** @cond INTERNAL_HIDDEN */
 	uint8_t _unused : 5;
+	/** INTERNAL_HIDDEN @endcond */
 
-	uint8_t ack_requested : 1; /* guarded by ack_lock */
-	uint8_t ack_seq;	   /* guarded by ack_lock */
+	/**
+	 * ACK requested flag, guarded by ack_lock
+	 */
+	uint8_t ack_requested: 1;
+
+	/** ACK expected sequence number, guarded by ack_lock */
+	uint8_t ack_seq;
+
+	/** ACK lock, guards ack_* fields */
 	struct k_sem ack_lock;
 
-	struct k_sem ctx_lock; /* guards all mutable context attributes unless
-				* otherwise mentioned on attribute level
-				*/
+	/**
+	 * @brief Context lock
+	 *
+	 * @details guards all mutable context attributes unless otherwise
+	 * mentioned on attribute level
+	 */
+	struct k_sem ctx_lock;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/* L2 context type to be used with NET_L2_GET_CTX_TYPE */
 #define IEEE802154_L2_CTX_TYPE	struct ieee802154_context
+
+/** INTERNAL_HIDDEN @endcond */
 
 #ifdef __cplusplus
 }
