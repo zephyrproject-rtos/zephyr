@@ -116,6 +116,14 @@
 #endif
 
 /**
+ * @def TOOLCHAIN_HAS_ZLA
+ * @brief Indicate if toolchain supports Zero Length Arrays.
+ */
+#ifndef TOOLCHAIN_HAS_ZLA
+#define TOOLCHAIN_HAS_ZLA 0
+#endif
+
+/**
  * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
  * @brief Begin of block to ignore -Wshadow.
  *
