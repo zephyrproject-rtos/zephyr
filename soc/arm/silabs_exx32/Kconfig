@@ -340,4 +340,13 @@ config SOC_GECKO_USE_RAIL
 	  hardware. This option enable the proper set of features to allow to properly compile
 	  with the RAIL blob.
 
+config SOC_GECKO_CUSTOM_RADIO_PHY
+	bool "Use RAIL for custom radio phy packet sending and receiving"
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	help
+	  If enabled, RAIL can be used for user generated custom radio phy
+	  management, sending and receiving packets on radio phy. User has
+	  to provide the radio_config.c and radio_config.h files for the phy.
+
 endif # SOC_FAMILY_EXX32
