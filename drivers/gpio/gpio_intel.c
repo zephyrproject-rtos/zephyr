@@ -32,65 +32,62 @@
 
 BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 
-#define REG_MISCCFG			0x0010
-#define MISCCFG_IRQ_ROUTE_POS		3
+#define REG_MISCCFG           0x0010
+#define MISCCFG_IRQ_ROUTE_POS 3
 
-#define PAD_OWN_MASK			0x03
-#define PAD_OWN_HOST			0
-#define PAD_OWN_CSME			1
-#define PAD_OWN_ISH			2
-#define PAD_OWN_IE			3
+#define PAD_OWN_MASK 0x03
+#define PAD_OWN_HOST 0
+#define PAD_OWN_CSME 1
+#define PAD_OWN_ISH  2
+#define PAD_OWN_IE   3
 
-#define PAD_HOST_SW_OWN_GPIO		1
-#define PAD_HOST_SW_OWN_ACPI		0
+#define PAD_HOST_SW_OWN_GPIO 1
+#define PAD_HOST_SW_OWN_ACPI 0
 
+#define PAD_CFG0_RXPADSTSEL BIT(29)
+#define PAD_CFG0_RXRAW1     BIT(28)
 
-#define PAD_CFG0_RXPADSTSEL		BIT(29)
-#define PAD_CFG0_RXRAW1			BIT(28)
+#define PAD_CFG0_RXEVCFG_POS    25
+#define PAD_CFG0_RXEVCFG_MASK   (0x03 << PAD_CFG0_RXEVCFG_POS)
+#define PAD_CFG0_RXEVCFG_LEVEL  (0 << PAD_CFG0_RXEVCFG_POS)
+#define PAD_CFG0_RXEVCFG_EDGE   (1 << PAD_CFG0_RXEVCFG_POS)
+#define PAD_CFG0_RXEVCFG_DRIVE0 (2 << PAD_CFG0_RXEVCFG_POS)
 
+#define PAD_CFG0_PREGFRXSEL BIT(24)
+#define PAD_CFG0_RXINV      BIT(23)
 
-#define PAD_CFG0_RXEVCFG_POS		25
-#define PAD_CFG0_RXEVCFG_MASK		(0x03 << PAD_CFG0_RXEVCFG_POS)
-#define PAD_CFG0_RXEVCFG_LEVEL		(0 << PAD_CFG0_RXEVCFG_POS)
-#define PAD_CFG0_RXEVCFG_EDGE		(1 << PAD_CFG0_RXEVCFG_POS)
-#define PAD_CFG0_RXEVCFG_DRIVE0		(2 << PAD_CFG0_RXEVCFG_POS)
+#define PAD_CFG0_RXDIS       BIT(9)
+#define PAD_CFG0_TXDIS       BIT(8)
+#define PAD_CFG0_RXSTATE     BIT(1)
+#define PAD_CFG0_RXSTATE_POS 1
+#define PAD_CFG0_TXSTATE     BIT(0)
+#define PAD_CFG0_TXSTATE_POS 0
 
-#define PAD_CFG0_PREGFRXSEL		BIT(24)
-#define PAD_CFG0_RXINV			BIT(23)
+#define PAD_CFG1_IOSTERM_POS    8
+#define PAD_CFG1_IOSTERM_MASK   (0x03 << PAD_CFG1_IOSTERM_POS)
+#define PAD_CFG1_IOSTERM_FUNC   (0 << PAD_CFG1_IOSTERM_POS)
+#define PAD_CFG1_IOSTERM_DISPUD (1 << PAD_CFG1_IOSTERM_POS)
+#define PAD_CFG1_IOSTERM_PU     (2 << PAD_CFG1_IOSTERM_POS)
+#define PAD_CFG1_IOSTERM_PD     (3 << PAD_CFG1_IOSTERM_POS)
 
-#define PAD_CFG0_RXDIS			BIT(9)
-#define PAD_CFG0_TXDIS			BIT(8)
-#define PAD_CFG0_RXSTATE		BIT(1)
-#define PAD_CFG0_RXSTATE_POS		1
-#define PAD_CFG0_TXSTATE		BIT(0)
-#define PAD_CFG0_TXSTATE_POS		0
+#define PAD_CFG1_TERM_POS      10
+#define PAD_CFG1_TERM_MASK     (0x0F << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_NONE     (0x00 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PD_5K    (0x02 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PD_20K   (0x04 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_NONE2    (0x08 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_1K    (0x09 << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_5K    (0x0A << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_2K    (0x0B << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_20K   (0x0C << PAD_CFG1_TERM_POS)
+#define PAD_CFG1_TERM_PU_1K_2K (0x0D << PAD_CFG1_TERM_POS)
 
-#define PAD_CFG1_IOSTERM_POS		8
-#define PAD_CFG1_IOSTERM_MASK		(0x03 << PAD_CFG1_IOSTERM_POS)
-#define PAD_CFG1_IOSTERM_FUNC		(0 << PAD_CFG1_IOSTERM_POS)
-#define PAD_CFG1_IOSTERM_DISPUD		(1 << PAD_CFG1_IOSTERM_POS)
-#define PAD_CFG1_IOSTERM_PU		(2 << PAD_CFG1_IOSTERM_POS)
-#define PAD_CFG1_IOSTERM_PD		(3 << PAD_CFG1_IOSTERM_POS)
-
-#define PAD_CFG1_TERM_POS		10
-#define PAD_CFG1_TERM_MASK		(0x0F << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_NONE		(0x00 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PD_5K		(0x02 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PD_20K		(0x04 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_NONE2		(0x08 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU_1K		(0x09 << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU_5K		(0x0A << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU_2K		(0x0B << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU_20K		(0x0C << PAD_CFG1_TERM_POS)
-#define PAD_CFG1_TERM_PU_1K_2K		(0x0D << PAD_CFG1_TERM_POS)
-
-#define PAD_CFG1_IOSSTATE_POS		14
-#define PAD_CFG1_IOSSTATE_MASK		(0x0F << PAD_CFG1_IOSSTATE_POS)
-#define PAD_CFG1_IOSSTATE_IGNORE	(0x0F << PAD_CFG1_IOSSTATE_POS)
+#define PAD_CFG1_IOSSTATE_POS    14
+#define PAD_CFG1_IOSSTATE_MASK   (0x0F << PAD_CFG1_IOSSTATE_POS)
+#define PAD_CFG1_IOSSTATE_IGNORE (0x0F << PAD_CFG1_IOSSTATE_POS)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
-#define DEV_CFG(_dev) \
-	((const struct gpio_intel_config *)(_dev)->config)
+#define DEV_CFG(_dev)  ((const struct gpio_intel_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct gpio_intel_data *)(_dev)->data)
 
 struct gpio_intel_config {
@@ -99,9 +96,9 @@ struct gpio_intel_config {
 
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 
-	uint8_t	pin_offset;
+	uint8_t pin_offset;
 	uint8_t group_index;
-	uint8_t	num_pins;
+	uint8_t num_pins;
 };
 
 struct gpio_intel_data {
@@ -192,8 +189,7 @@ static void gpio_intel_isr(const struct device *dev)
 		cfg = dev->config;
 		data = dev->data;
 
-		reg = regs(dev) + REG_GPI_INT_STS_BASE
-		      + GPIO_INTERRUPT_BASE(cfg);
+		reg = regs(dev) + REG_GPI_INT_STS_BASE + GPIO_INTERRUPT_BASE(cfg);
 		int_sts = sys_read32(reg);
 		acc_mask = 0U;
 
@@ -211,8 +207,7 @@ static void gpio_intel_isr(const struct device *dev)
 	}
 }
 
-static int gpio_intel_config(const struct device *dev,
-			     gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_intel_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
@@ -285,10 +280,8 @@ static int gpio_intel_config(const struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_pin_interrupt_configure(const struct device *dev,
-					      gpio_pin_t pin,
-					      enum gpio_int_mode mode,
-					      enum gpio_int_trig trig)
+static int gpio_intel_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
@@ -377,8 +370,7 @@ static int gpio_intel_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_manage_callback(const struct device *dev,
-				      struct gpio_callback *callback,
+static int gpio_intel_manage_callback(const struct device *dev, struct gpio_callback *callback,
 				      bool set)
 {
 	struct gpio_intel_data *data = dev->data;
@@ -386,9 +378,7 @@ static int gpio_intel_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int port_get_raw(const struct device *dev, uint32_t mask,
-			uint32_t *value,
-			bool read_tx)
+static int port_get_raw(const struct device *dev, uint32_t mask, uint32_t *value, bool read_tx)
 {
 	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
@@ -427,8 +417,7 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 	return 0;
 }
 
-static int port_set_raw(const struct device *dev, uint32_t mask,
-			uint32_t value)
+static int port_set_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
@@ -464,9 +453,7 @@ static int port_set_raw(const struct device *dev, uint32_t mask,
 	return 0;
 }
 
-static int gpio_intel_port_set_masked_raw(const struct device *dev,
-					  uint32_t mask,
-					  uint32_t value)
+static int gpio_intel_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	uint32_t port_val;
 
@@ -479,20 +466,17 @@ static int gpio_intel_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_port_set_bits_raw(const struct device *dev,
-					uint32_t mask)
+static int gpio_intel_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	return gpio_intel_port_set_masked_raw(dev, mask, mask);
 }
 
-static int gpio_intel_port_clear_bits_raw(const struct device *dev,
-					  uint32_t mask)
+static int gpio_intel_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	return gpio_intel_port_set_masked_raw(dev, mask, 0);
 }
 
-static int gpio_intel_port_toggle_bits(const struct device *dev,
-				       uint32_t mask)
+static int gpio_intel_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	uint32_t port_val;
 
@@ -505,8 +489,7 @@ static int gpio_intel_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_port_get_raw(const struct device *dev,
-				   uint32_t *value)
+static int gpio_intel_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	return port_get_raw(dev, 0xFFFFFFFF, value, false);
 }
@@ -542,9 +525,7 @@ int gpio_intel_init(const struct device *dev)
 
 	const struct gpio_intel_config *cfg = dev->config;
 
-	device_map(&data->reg_base,
-		   cfg->reg_base.phys_addr & ~0xFFU,
-		   cfg->reg_base.size,
+	device_map(&data->reg_base, cfg->reg_base.phys_addr & ~0xFFU, cfg->reg_base.size,
 		   K_MEM_CACHE_NONE);
 #else
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
@@ -557,9 +538,7 @@ int gpio_intel_init(const struct device *dev)
 		/* Note that all controllers are using the same IRQ line.
 		 * So we can just use the values from the first instance.
 		 */
-		IRQ_CONNECT(DT_INST_IRQN(0),
-			    DT_INST_IRQ(0, priority),
-			    gpio_intel_isr, NULL,
+		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), gpio_intel_isr, NULL,
 			    DT_INST_IRQ(0, sense));
 
 		irq_enable(DT_INST_IRQN(0));
@@ -569,33 +548,27 @@ int gpio_intel_init(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_SOC_APOLLO_LAKE)) {
 		/* route to IRQ 14 */
-		sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG,
-				       MISCCFG_IRQ_ROUTE_POS);
+		sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG, MISCCFG_IRQ_ROUTE_POS);
 	}
 	return 0;
 }
 
-#define GPIO_INTEL_DEV_CFG_DATA(n)					       \
-	static const struct gpio_intel_config				       \
-		gpio_intel_cfg_##n = {					       \
-		.common = {						       \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
-		},							       \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	       \
-		.pin_offset = DT_INST_PROP(n, pin_offset),		       \
-		.group_index = DT_INST_PROP_OR(n, group_index, 0),	       \
-		.num_pins = DT_INST_PROP(n, ngpios),			       \
-	};								       \
-									       \
-	static struct gpio_intel_data gpio_intel_data_##n;		       \
-									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
-			      gpio_intel_init,				       \
-			      NULL,					       \
-			      &gpio_intel_data_##n,			       \
-			      &gpio_intel_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,	       \
-			      &gpio_intel_api);
+#define GPIO_INTEL_DEV_CFG_DATA(n)                                                                 \
+	static const struct gpio_intel_config gpio_intel_cfg_##n = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
+		.pin_offset = DT_INST_PROP(n, pin_offset),                                         \
+		.group_index = DT_INST_PROP_OR(n, group_index, 0),                                 \
+		.num_pins = DT_INST_PROP(n, ngpios),                                               \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_intel_data gpio_intel_data_##n;                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_intel_init, NULL, &gpio_intel_data_##n, &gpio_intel_cfg_##n, \
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_INTEL_DEV_CFG_DATA)
