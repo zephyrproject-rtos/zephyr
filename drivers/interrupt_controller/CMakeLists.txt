@@ -33,6 +33,7 @@ zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.
 zephyr_library_sources_ifdef(CONFIG_VIM                     intc_vim.c)
 zephyr_library_sources_ifdef(CONFIG_NUCLEI_ECLIC            intc_nuclei_eclic.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_EIRQ            intc_eirq_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_NXP_S32_WKPU            intc_wkpu_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_XMC4XXX_INTC            intc_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_PINT                intc_nxp_pint.c)
 
