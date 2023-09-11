@@ -514,6 +514,8 @@ static void arp_update(struct net_if *iface,
 	sys_slist_prepend(&arp_table, &entry->node);
 
 	while (!k_fifo_is_empty(&entry->pending_queue)) {
+		int ret;
+
 		pkt = k_fifo_get(&entry->pending_queue, K_FOREVER);
 
 		/* Set the dst in the pending packet */
@@ -525,7 +527,17 @@ static void arp_update(struct net_if *iface,
 			net_sprint_ipv4_addr(&entry->ip),
 			pkt, pkt->frags);
 
-		net_if_queue_tx(iface, pkt);
+		/* We directly send the packet without first queueing it.
+		 * The pkt has already been queued for sending, once by
+		 * net_if and second time in the ARP queue. We must not
+		 * queue it twice in net_if so that the statistics of
+		 * the pkt are not counted twice and the packet filter
+		 * callbacks are only called once.
+		 */
+		ret = net_if_l2(iface)->send(iface, pkt);
+		if (ret < 0) {
+			net_pkt_unref(pkt);
+		}
 	}
 
 	k_mutex_unlock(&arp_mutex);
