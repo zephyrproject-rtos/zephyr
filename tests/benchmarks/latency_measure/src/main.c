@@ -45,8 +45,7 @@ struct k_thread  alt_thread;
 int error_count; /* track number of errors */
 
 extern void thread_switch_yield(uint32_t num_iterations, bool is_cooperative);
-extern void int_to_thread(void);
-extern void int_to_thread_evt(void);
+extern void int_to_thread(uint32_t num_iterations);
 extern void sema_test_signal(void);
 extern void mutex_lock_unlock(void);
 extern int sema_context_switch(void);
@@ -81,9 +80,7 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	/* Cooperative threads context switching */
 	thread_switch_yield(NUM_ITERATIONS, true);
 
-	int_to_thread();
-
-	int_to_thread_evt();
+	int_to_thread(NUM_ITERATIONS);
 
 	suspend_resume();
 
