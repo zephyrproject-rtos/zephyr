@@ -9,10 +9,11 @@ bash_source_dir="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 test_name="id_addr_update"
 bsim_bin="${BSIM_OUT_PATH}/bin"
 verbosity_level=2
-BOARD="${BOARD:-nrf52_bsim}"
+board="${BOARD:-nrf52_bsim}"
 simulation_id="$test_name"
-central_exe="${bsim_bin}/bs_${BOARD}_tests_bsim_bluetooth_host_security_${test_name}_prj_conf"
-peripheral_exe="${central_exe}"
+test_path="tests_bsim_bluetooth_host_security_${test_name}"
+central_exe="${bsim_bin}/bs_${board}_${test_path}_central_prj_conf"
+peripheral_exe="${bsim_bin}/bs_${board}_${test_path}_peripheral_prj_conf"
 
 function print_var {
 	# Print a shell-sourceable variable definition.
@@ -24,7 +25,7 @@ function print_var {
 print_var test_name
 print_var bsim_bin
 print_var verbosity_level
-print_var BOARD
+print_var board
 print_var simulation_id
 print_var central_exe
 print_var peripheral_exe
