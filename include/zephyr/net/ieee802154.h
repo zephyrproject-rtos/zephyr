@@ -23,19 +23,24 @@ extern "C" {
 #endif
 
 /**
- * @defgroup ieee802154 IEEE 802.15.4 APIs
+ * @defgroup ieee802154 IEEE 802.15.4 and Thread APIs
  * @ingroup connectivity
  *
- * @brief IEEE 802.15.4 L2, configuration and driver APIs
+ * @brief IEEE 802.15.4 native and OpenThread L2, configuration, management and
+ * driver APIs
  *
- * @details The IEEE 802.15.4 subsystem API comprises the native IEEE 802.15.4
- * L2 subsystem ("Soft" MAC), a mostly vendor and protocol agnostic driver API
- * shared between the OpenThread and native L2 stacks ("Hard" MAC and PHY) as
- * well as several APIs to configure the subsystem (shell, net management,
- * Kconfig, devicetree, etc.).
+ * @details The IEEE 802.15.4 and Thread subsystems comprise the OpenThread L2
+ * subsystem, the native IEEE 802.15.4 L2 subsystem ("Soft" MAC), a mostly
+ * vendor and protocol agnostic driver API shared between the OpenThread and
+ * native L2 stacks ("Hard" MAC and PHY) as well as several APIs to configure
+ * the subsystem (shell, net management, Kconfig, devicetree, etc.).
  *
- * The IEEE 802.15.4 subsystem APIs are exposed at different levels and address
- * several audiences:
+ * The **OpenThread subsystem API** integrates the external <a
+ * href="https://openthread.io">OpenThread</a> stack into Zephyr. It builds upon
+ * Zephyr's native IEEE 802.15.4 driver API.
+ *
+ * The **native IEEE 802.15.4 subsystem APIs** are exposed at different levels
+ * and address several audiences:
  *  - shell (end users, application developers):
  *    - a set of IEEE 802.15.4 shell commands (see `shell> ieee802154 help`)
  *  - application API (application developers):
@@ -51,11 +56,6 @@ extern "C" {
  *    - Network Management: runtime configuration of the IEEE 802.15.4
  *      protocols stack at the MAC (L2) and PHY (L1) levels
  *      (see @ref ieee802154_mgmt),
- *  - driver API (driver maintainers/contributors):
- *    - see @ref ieee802154_driver
- *    - a basic, mostly PHY-level driver API to be implemented by all drivers,
- *    - several "hard MAC" (hardware/firmware offloading) extension points for
- *      performance critical or timing sensitive aspects of the protocol
  *  - L2 integration (subsystem contributors):
  *    - see @ref ieee802154_l2
  *    - implementation of Zephyr's internal L2-level socket and network context
@@ -63,6 +63,13 @@ extern "C" {
  *    - protocol-specific extension to the interface structure (see @ref net_if)
  *    - protocol-specific extensions to the network packet structure
  *      (see @ref net_pkt),
+ *
+ *  - OpenThread and native IEEE 802.15.4 share a common **driver API** (driver
+ *    maintainers/contributors):
+ *    - see @ref ieee802154_driver
+ *    - a basic, mostly PHY-level driver API to be implemented by all drivers,
+ *    - several "hard MAC" (hardware/firmware offloading) extension points for
+ *      performance critical or timing sensitive aspects of the protocol
  */
 
 /**

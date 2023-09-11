@@ -40,3 +40,25 @@ which provide out-of-the-box configuration for OpenThread. To enable OpenThread
 support in these samples, build them with ``overlay-ot.conf`` overlay config file.
 See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-echo-client`
 samples for details.
+
+Thread related APIs
+*******************
+
+OpenThread Driver API
+========================
+
+OpenThread L2 uses Zephyr's protocol agnostic IEEE 802.15.4 driver API
+internally. This API is of interest to **driver developers** that want to
+support OpenThread.
+
+The driver API is part of the :ref:`ieee802154_driver_api` subsystem and
+documented there.
+
+OpenThread L2 Adaptation Layer API
+==================================
+
+Zephyr's OpenThread L2 platform adaptation layer glues the external OpenThread
+stack together with Zephyr's IEEE 802.15.4 protocol agnostic driver API. This
+API is of interest to OpenThread L2 **subsystem contributors** only.
+
+.. doxygengroup:: openthread
