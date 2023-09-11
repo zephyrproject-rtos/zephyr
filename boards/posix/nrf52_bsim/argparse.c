@@ -14,7 +14,7 @@
 #include "nsi_tracing.h"
 #include "nsi_main.h"
 
-static const char exe_name[] = "nrf52_bsim options:";
+static const char exe_name[] = "nrf_bsim options:";
 
 static char *testid;
 
@@ -33,7 +33,7 @@ static void nrfbsim_register_args(void)
 {
 	static bs_args_struct_t args_struct_toadd[] = {
 		{
-		.option = "testid",
+		.option = "cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_testid",
 		.name = "testid",
 		.type = 's',
 		.dest = (void *)&testid,
@@ -42,11 +42,28 @@ static void nrfbsim_register_args(void)
 		},
 		{
 		.is_switch = true,
-		.option = "testslist",
+		.option = "cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_testslist",
 		.type = 'b',
 		.call_when_found = cmd_testlist_found,
 		.descript = "Print information about the available bs application tests"
 		},
+#if (CONFIG_NATIVE_SIMULATOR_MCU_N == CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX)
+		{
+		.option = "testid",
+		.name = "testid",
+		.type = 's',
+		.dest = (void *)&testid,
+		.call_when_found = cmd_testid_found,
+		.descript = "Alias of cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_testid"
+		},
+		{
+		.is_switch = true,
+		.option = "testslist",
+		.type = 'b',
+		.call_when_found = cmd_testlist_found,
+		.descript = "Alias of cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_testslist"
+		},
+#endif
 		ARG_TABLE_ENDMARKER
 	};
 
