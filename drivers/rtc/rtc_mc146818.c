@@ -16,102 +16,102 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/sys/sys_io.h>
 
-#define RTC_STD_INDEX (DT_INST_REG_ADDR_BY_IDX(0, 0))
+#define RTC_STD_INDEX  (DT_INST_REG_ADDR_BY_IDX(0, 0))
 #define RTC_STD_TARGET (DT_INST_REG_ADDR_BY_IDX(0, 1))
 
 /* Time indices in RTC RAM */
-#define RTC_SEC		0x00
-#define RTC_MIN		0x02
-#define RTC_HOUR	0x04
+#define RTC_SEC  0x00
+#define RTC_MIN  0x02
+#define RTC_HOUR 0x04
 
 /* Day of week index in RTC RAM */
-#define RTC_WDAY	0x06
+#define RTC_WDAY 0x06
 
 /* Day of month index in RTC RAM */
-#define RTC_MDAY	0x07
+#define RTC_MDAY 0x07
 
 /* Month and year index in RTC RAM */
-#define RTC_MONTH	0x08
-#define RTC_YEAR	0x09
+#define RTC_MONTH 0x08
+#define RTC_YEAR  0x09
 
 /* Y2K Bugfix */
-#define RTC_CENTURY	0x32
+#define RTC_CENTURY 0x32
 
 /* Alarm time indices in RTC RAM */
-#define RTC_ALARM_SEC	0x01
-#define RTC_ALARM_MIN	0x03
-#define RTC_ALARM_HOUR	0x05
+#define RTC_ALARM_SEC  0x01
+#define RTC_ALARM_MIN  0x03
+#define RTC_ALARM_HOUR 0x05
 
 /* Registers A-D indeces in RTC RAM */
-#define RTC_REG_A	0x0A
-#define RTC_REG_B	0x0B
-#define RTC_REG_C	0x0C
-#define RTC_REG_D	0x0D
+#define RTC_REG_A 0x0A
+#define RTC_REG_B 0x0B
+#define RTC_REG_C 0x0C
+#define RTC_REG_D 0x0D
 
-#define RTC_UIP		RTC_REG_A
-#define RTC_DATA	RTC_REG_B
-#define RTC_FLAG	RTC_REG_C
+#define RTC_UIP  RTC_REG_A
+#define RTC_DATA RTC_REG_B
+#define RTC_FLAG RTC_REG_C
 
 /* Alarm don't case state */
-#define RTC_ALARM_DC	0xFF
+#define RTC_ALARM_DC 0xFF
 
 /* Update In Progress bit in REG_A */
-#define RTC_UIP_BIT	BIT(7)
+#define RTC_UIP_BIT BIT(7)
 
 /* Update Cycle Inhibit bit in REG_B */
-#define RTC_UCI_BIT	BIT(7)
+#define RTC_UCI_BIT BIT(7)
 
 /* Periodic Interrupt Enable bit in REG_B */
-#define RTC_PIE_BIT	BIT(6)
+#define RTC_PIE_BIT BIT(6)
 
 /* Alarm Interrupt Enable bit in REG_B */
-#define RTC_AIE_BIT	BIT(5)
+#define RTC_AIE_BIT BIT(5)
 
 /* Update-ended Interrupt Enable bit in REG_B */
-#define RTC_UIE_BIT	BIT(4)
+#define RTC_UIE_BIT BIT(4)
 
 /* Data mode bit in  REG_B */
-#define RTC_DMODE_BIT	BIT(2)
+#define RTC_DMODE_BIT BIT(2)
 
 /* Hour Format bit in REG_B */
-#define RTC_HFORMAT_BIT	BIT(1)
+#define RTC_HFORMAT_BIT BIT(1)
 
 /* Daylight Savings Enable Format bit in REG_B */
-#define RTC_DSE_BIT	BIT(0)
+#define RTC_DSE_BIT BIT(0)
 
 /* Interrupt Request Flag bit in REG_C */
-#define RTC_IRF_BIT	BIT(7)
+#define RTC_IRF_BIT BIT(7)
 
 /* Periodic Flag bit in REG_C */
-#define RTC_PF_BIT	BIT(6)
+#define RTC_PF_BIT BIT(6)
 
 /* Alarm Flag bit in REG_C */
-#define RTC_AF_BIT	BIT(5)
+#define RTC_AF_BIT BIT(5)
 
 /* Update-end Flag bit in REG_C */
-#define RTC_UEF_BIT	BIT(4)
+#define RTC_UEF_BIT BIT(4)
 
 /* VRT bit in REG_D */
-#define RTC_VRT_BIT	BIT(7)
+#define RTC_VRT_BIT BIT(7)
 
 /* Month day Alarm bits in REG_D */
-#define RTC_MDAY_ALARM	BIT_MASK(5)
+#define RTC_MDAY_ALARM BIT_MASK(5)
 
 /* Maximum and Minimum values of time */
-#define MIN_SEC		0
-#define MAX_SEC		59
-#define MIN_MIN		0
-#define MAX_MIN		59
-#define MIN_HOUR	0
-#define MAX_HOUR	23
-#define MAX_WDAY	7
-#define MIN_WDAY	1
-#define MAX_MDAY	31
-#define MIN_MDAY	1
-#define MAX_MON		12
-#define MIN_MON		1
-#define MIN_YEAR_DIFF	0 /* YEAR - 1900 */
-#define MAX_YEAR_DIFF	99 /* YEAR - 1999 */
+#define MIN_SEC       0
+#define MAX_SEC       59
+#define MIN_MIN       0
+#define MAX_MIN       59
+#define MIN_HOUR      0
+#define MAX_HOUR      23
+#define MAX_WDAY      7
+#define MIN_WDAY      1
+#define MAX_MDAY      31
+#define MIN_MDAY      1
+#define MAX_MON       12
+#define MIN_MON       1
+#define MIN_YEAR_DIFF 0  /* YEAR - 1900 */
+#define MAX_YEAR_DIFF 99 /* YEAR - 1999 */
 
 /* Input clock frequency mapped to divider bits */
 #define RTC_IN_CLK_DIV_BITS_4194304 (0)
@@ -171,7 +171,7 @@ static bool rtc_mc146818_validate_time(const struct rtc_time *timeptr)
 
 static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	uint8_t value;
 	int year;
 	int cent;
@@ -213,9 +213,9 @@ out:
 	return ret;
 }
 
-static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *timeptr)
+static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	int ret;
 	uint8_t cent;
 	uint8_t year;
@@ -294,9 +294,8 @@ static int rtc_mc146818_alarm_get_supported_fields(const struct device *dev, uin
 		return -EINVAL;
 	}
 
-	(*mask) = (RTC_ALARM_TIME_MASK_SECOND
-		   | RTC_ALARM_TIME_MASK_MINUTE
-		   | RTC_ALARM_TIME_MASK_HOUR);
+	(*mask) = (RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE |
+		   RTC_ALARM_TIME_MASK_HOUR);
 
 	return 0;
 }
@@ -304,7 +303,7 @@ static int rtc_mc146818_alarm_get_supported_fields(const struct device *dev, uin
 static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 				       const struct rtc_time *timeptr)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -350,9 +349,9 @@ out:
 }
 
 static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
-				   struct rtc_time *timeptr)
+				       struct rtc_time *timeptr)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	uint8_t value;
 	int ret;
 
@@ -395,9 +394,9 @@ out:
 }
 
 static int rtc_mc146818_alarm_set_callback(const struct device *dev, uint16_t id,
-				       rtc_alarm_callback callback, void *user_data)
+					   rtc_alarm_callback callback, void *user_data)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 
 	if (id != 0) {
 		return -EINVAL;
@@ -422,7 +421,7 @@ static int rtc_mc146818_alarm_set_callback(const struct device *dev, uint16_t id
 
 static int rtc_mc146818_alarm_is_pending(const struct device *dev, uint16_t id)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	int ret;
 
 	if (id != 0) {
@@ -440,10 +439,10 @@ static int rtc_mc146818_alarm_is_pending(const struct device *dev, uint16_t id)
 #endif /* CONFIG_RTC_ALARM */
 
 #if defined(CONFIG_RTC_UPDATE)
-static int rtc_mc146818_update_set_callback(const struct device *dev,
-					rtc_update_callback callback, void *user_data)
+static int rtc_mc146818_update_set_callback(const struct device *dev, rtc_update_callback callback,
+					    void *user_data)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
@@ -458,7 +457,6 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 		rtc_write(RTC_DATA, (rtc_read(RTC_DATA) & (~RTC_UIE_BIT)));
 	}
 
-
 	k_spin_unlock(&dev_data->lock, key);
 	return 0;
 }
@@ -467,7 +465,7 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 
 static void rtc_mc146818_isr(const struct device *dev)
 {
-	struct rtc_mc146818_data * const dev_data = dev->data;
+	struct rtc_mc146818_data *const dev_data = dev->data;
 	uint8_t regc;
 
 	ARG_UNUSED(dev_data);
@@ -511,33 +509,29 @@ struct rtc_driver_api rtc_mc146818_driver_api = {
 #endif /* CONFIG_RTC_UPDATE */
 };
 
-#define RTC_MC146818_INIT_FN_DEFINE(n)						\
-	static int rtc_mc146818_init##n(const struct device *dev)		\
-	{									\
-		rtc_write(RTC_REG_A,						\
-			  _CONCAT(RTC_IN_CLK_DIV_BITS_,				\
-				  DT_INST_PROP(n, clock_frequency)));		\
-										\
-		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);		\
-										\
-		IRQ_CONNECT(DT_INST_IRQN(0),					\
-				DT_INST_IRQ(0, priority),			\
-				rtc_mc146818_isr, DEVICE_DT_INST_GET(n),	\
-				DT_INST_IRQ(0, sense));				\
-										\
-		irq_enable(DT_INST_IRQN(0));					\
-										\
-		return 0;							\
+#define RTC_MC146818_INIT_FN_DEFINE(n)                                                             \
+	static int rtc_mc146818_init##n(const struct device *dev)                                  \
+	{                                                                                          \
+		rtc_write(RTC_REG_A,                                                               \
+			  _CONCAT(RTC_IN_CLK_DIV_BITS_, DT_INST_PROP(n, clock_frequency)));        \
+                                                                                                   \
+		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);                             \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_mc146818_isr,           \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(0, sense));                         \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(0));                                                       \
+                                                                                                   \
+		return 0;                                                                          \
 	}
 
-#define RTC_MC146818_DEV_CFG(inst)						\
-	struct rtc_mc146818_data rtc_mc146818_data##inst;			\
-										\
-	RTC_MC146818_INIT_FN_DEFINE(inst)					\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL,		\
-			      &rtc_mc146818_data##inst, NULL, POST_KERNEL,	\
-			      CONFIG_RTC_INIT_PRIORITY,				\
-			      &rtc_mc146818_driver_api);			\
+#define RTC_MC146818_DEV_CFG(inst)                                                                 \
+	struct rtc_mc146818_data rtc_mc146818_data##inst;                                          \
+                                                                                                   \
+	RTC_MC146818_INIT_FN_DEFINE(inst)                                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL, &rtc_mc146818_data##inst,      \
+			      NULL, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,                         \
+			      &rtc_mc146818_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_MC146818_DEV_CFG)
