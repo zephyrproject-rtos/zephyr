@@ -120,6 +120,10 @@ Build system and infrastructure
   be used to include a snippet when a test is ran (and exclude any boards from
   running that the snippet cannot be applied to).
 
+* Interrupts
+
+  * Added support for shared interrupts
+
 Drivers and Sensors
 *******************
 
