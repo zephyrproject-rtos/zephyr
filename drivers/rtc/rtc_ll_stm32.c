@@ -66,10 +66,34 @@ struct rtc_stm32_data {
 	/* Currently empty */
 };
 
+static int rtc_stm32_configure(const struct device *dev)
+{
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	uint32_t hour_format     = LL_RTC_GetHourFormat(RTC);
+	uint32_t sync_prescaler  = LL_RTC_GetSynchPrescaler(RTC);
+	uint32_t async_prescaler = LL_RTC_GetAsynchPrescaler(RTC);
+
+	/* configuration process requires to stop the RTC counter so do it
+	 * only if needed to avoid inducing time drift at each reset
+	 */
+	if ((hour_format != cfg->ll_rtc_config.HourFormat) ||
+	    (sync_prescaler != cfg->ll_rtc_config.SynchPrescaler) ||
+	    (async_prescaler != cfg->ll_rtc_config.AsynchPrescaler)) {
+		if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)&cfg->ll_rtc_config)) != SUCCESS) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
 static int rtc_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
+
+	int err = 0;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
@@ -98,8 +122,9 @@ static int rtc_stm32_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)&cfg->ll_rtc_config)) != SUCCESS) {
-		return -EIO;
+	err = rtc_stm32_configure(dev);
+	if (err) {
+		return err;
 	}
 
 #ifdef RTC_CR_BYPSHAD
@@ -108,7 +133,7 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_RTC_EnableWriteProtection(RTC);
 #endif /* RTC_CR_BYPSHAD */
 
-	return 0;
+	return err;
 }
 
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
