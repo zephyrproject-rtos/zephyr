@@ -290,6 +290,10 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 
 	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, cfg->sync_prescaler + 1);
 
+	/* unknown values */
+	timeptr->tm_yday  = -1;
+	timeptr->tm_isdst = -1;
+
 	return 0;
 }
 
