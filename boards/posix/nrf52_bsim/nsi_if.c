@@ -14,7 +14,27 @@
 #include "phy_sync_ctrl.h"
 #include "nsi_hw_scheduler.h"
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_pre_cmdline_hooks(void)
+/*
+ * These hooks are to be named nsif_cpu<cpu_number>_<hook_name>, for example nsif_cpu0_boot
+ */
+#define nsif_cpun_pre_cmdline_hooks  _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _pre_cmdline_hooks)
+#define nsif_cpun_save_test_arg      _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _save_test_arg)
+#define nsif_cpun_pre_hw_init_hooks  _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _pre_hw_init_hooks)
+#define nsif_cpun_boot               _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _boot)
+#define nsif_cpun_cleanup            _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _cleanup)
+#define nsif_cpun_irq_raised         _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _irq_raised)
+#define nsif_cpun_test_hook          _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _test_hook)
+#define nsif_cpun_irq_raised_from_sw _CONCAT(_CONCAT(nsif_cpu, CONFIG_NATIVE_SIMULATOR_MCU_N),\
+					     _irq_raised_from_sw)
+
+NATIVE_SIMULATOR_IF void nsif_cpun_pre_cmdline_hooks(void)
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 }
@@ -27,7 +47,7 @@ static struct {
 	int allocated_size;
 } test_args;
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_save_test_arg(char *argv)
+NATIVE_SIMULATOR_IF void nsif_cpun_save_test_arg(char *argv)
 {
 	if (test_args.test_case_argc >= test_args.allocated_size) {
 		test_args.allocated_size += TESTCASAE_ARGV_ALLOCSIZE;
@@ -53,7 +73,7 @@ static void test_args_free(void)
 
 NATIVE_TASK(test_args_free, ON_EXIT_PRE, 100);
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_pre_hw_init_hooks(void)
+NATIVE_SIMULATOR_IF void nsif_cpun_pre_hw_init_hooks(void)
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
 	phy_sync_ctrl_connect_to_2G4_phy();
@@ -63,7 +83,7 @@ NATIVE_SIMULATOR_IF void nsif_cpu0_pre_hw_init_hooks(void)
 	phy_sync_ctrl_pre_boot2();
 }
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_boot(void)
+NATIVE_SIMULATOR_IF void nsif_cpun_boot(void)
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 	bst_pre_init();
@@ -73,11 +93,11 @@ NATIVE_SIMULATOR_IF void nsif_cpu0_boot(void)
 	bst_post_init();
 }
 
-NATIVE_SIMULATOR_IF int nsif_cpu0_cleanup(void)
+NATIVE_SIMULATOR_IF int nsif_cpun_cleanup(void)
 {
 	/*
 	 * Note posix_soc_clean_up() may not return, but in that case,
-	 * nsif_cpu0_cleanup() will be called again
+	 * nsif_cpun_cleanup() will be called again
 	 */
 	posix_soc_clean_up();
 
@@ -85,19 +105,19 @@ NATIVE_SIMULATOR_IF int nsif_cpu0_cleanup(void)
 	return bst_result;
 }
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised(void)
+NATIVE_SIMULATOR_IF void nsif_cpun_irq_raised(void)
 {
 	posix_interrupt_raised();
 }
 
-NATIVE_SIMULATOR_IF int nsif_cpu0_test_hook(void *p)
+NATIVE_SIMULATOR_IF int nsif_cpun_test_hook(void *p)
 {
 	(void) p;
 	bst_tick(nsi_hws_get_time());
 	return 0;
 }
 
-NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised_from_sw(void)
+NATIVE_SIMULATOR_IF void nsif_cpun_irq_raised_from_sw(void)
 {
 	void posix_irq_handler_im_from_sw(void);
 	posix_irq_handler_im_from_sw();
