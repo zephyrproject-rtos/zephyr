@@ -1,5 +1,5 @@
 /**
- * Common functions and helpers for BSIM GATT tests
+ * Common functions and helpers for this test
  *
  * Copyright (c) 2023 Nordic Semiconductor ASA
  *
@@ -26,6 +26,9 @@
 #include <zephyr/types.h>
 
 extern enum bst_result_t bst_result;
+
+#define BS_SECONDS(dur_sec)    ((bs_time_t)dur_sec * 1000000)
+#define TEST_TIMEOUT_SIMULATED BS_SECONDS(60)
 
 #define DECLARE_FLAG(flag) extern atomic_t flag
 #define DEFINE_FLAG(flag)  atomic_t flag = (atomic_t) false

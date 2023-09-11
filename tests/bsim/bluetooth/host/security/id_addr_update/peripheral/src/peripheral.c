@@ -5,6 +5,7 @@
  */
 
 #include "bs_bt_utils.h"
+#include "utils.h"
 #include "zephyr/bluetooth/addr.h"
 #include "zephyr/bluetooth/bluetooth.h"
 #include "zephyr/bluetooth/conn.h"
@@ -12,6 +13,9 @@
 
 #include <stdint.h>
 #include <string.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);
 
 static void verify_equal_address(struct bt_conn *conn_a, struct bt_conn *conn_b)
 {
@@ -47,7 +51,9 @@ void peripheral(void)
 	ASSERT(id_b >= 0, "bt_id_create id_b failed (err %d)\n", id_b);
 
 	/* Connect with the first identity. */
+	LOG_INF("adv");
 	advertise_connectable(id_a);
+	LOG_INF("wait conn");
 	wait_connected(&conn_a);
 
 	/* Send battery notification on the first connection. */
@@ -55,6 +61,7 @@ void peripheral(void)
 	bas_notify(conn_a);
 
 	/* Connect with the second identity. */
+	LOG_INF("adv id 2");
 	advertise_connectable(id_b);
 	wait_connected(&conn_b);
 
@@ -76,4 +83,27 @@ void peripheral(void)
 	clear_conn(conn_b);
 
 	PASS("PASS\n");
+}
+
+static const struct bst_test_instance test_to_add[] = {
+	{
+		.test_id = "peripheral",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = peripheral,
+	},
+	BSTEST_END_MARKER,
+};
+
+static struct bst_test_list *install(struct bst_test_list *tests)
+{
+	return bst_add_tests(tests, test_to_add);
+};
+
+bst_test_install_t test_installers[] = {install, NULL};
+
+int main(void)
+{
+	bst_main();
+	return 0;
 }
