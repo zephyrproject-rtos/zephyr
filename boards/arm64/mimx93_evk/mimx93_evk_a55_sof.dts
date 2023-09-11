@@ -85,4 +85,7 @@
 	/* clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>; */
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	assigned-clocks = <IMX93_CCM_LPUART2_ROOT>;
+	assigned-clock-parents = <IMX93_CCM_OSC_24M>;
+	assigned-clock-rates = <24000000>;
 };

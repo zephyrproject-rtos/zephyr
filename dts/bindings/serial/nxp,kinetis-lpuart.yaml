@@ -11,6 +11,21 @@ properties:
   interrupts:
     required: true
 
+  assigned-clocks:
+    type: array
+    description: |
+      Details on this property can be found in nxp,imx-ccm-rev3.yaml.
+
+  assigned-clock-parents:
+    type: array
+    description: |
+      Details on this property can be found in nxp,imx-ccm-rev3.yaml.
+
+  assigned-clock-rates:
+    type: array
+    description: |
+      Details on this property can be found in nxp,imx-ccm-rev3.yaml.
+
   nxp,loopback:
     type: boolean
     description: |

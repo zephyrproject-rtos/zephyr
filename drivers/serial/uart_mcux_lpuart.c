@@ -905,6 +905,10 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		return -EINVAL;
 	}
 
+	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
+		return -EINVAL;
+	}
+
 	lpuart_config_t uart_config;
 	LPUART_GetDefaultConfig(&uart_config);
 
