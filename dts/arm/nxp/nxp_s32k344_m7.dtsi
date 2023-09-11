@@ -624,6 +624,8 @@
 			clocks = <&clock NXP_S32_EMIOS0_CLK>;
 			interrupts = <61 0>, <62 0>, <63 0>,
 					<64 0>, <65 0>, <66 0>;
+			interrupt-names = "0_0", "0_1", "0_2",
+					"0_3", "0_4", "0_5";
 			status = "disabled";
 
 			master_bus {
@@ -676,6 +678,8 @@
 			clocks = <&clock NXP_S32_EMIOS1_CLK>;
 			interrupts = <69 0>, <70 0>, <71 0>,
 					<72 0>, <73 0>, <74 0>;
+			interrupt-names = "1_0", "1_1", "1_2",
+					"1_3", "1_4", "1_5";
 			status = "disabled";
 
 			master_bus {
@@ -728,6 +732,8 @@
 			clocks = <&clock NXP_S32_EMIOS2_CLK>;
 			interrupts = <77 0>, <78 0>, <79 0>,
 					<80 0>, <81 0>, <82 0>;
+			interrupt-names = "2_0", "2_1", "2_2",
+					"2_3", "2_4", "2_5";
 			status = "disabled";
 
 			master_bus {
