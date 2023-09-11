@@ -11,50 +11,50 @@
 
 LOG_MODULE_REGISTER(wdt_tco, CONFIG_WDT_LOG_LEVEL);
 
-#define TCO_WDT_NODE           DT_NODELABEL(tco_wdt)
+#define TCO_WDT_NODE DT_NODELABEL(tco_wdt)
 
-#define BASE(d)                ((struct tco_config *)(d)->config)->base
+#define BASE(d) ((struct tco_config *)(d)->config)->base
 
-#define TCO_RLD(d)             (BASE(d) + 0x00) /* TCO Timer Reload/Curr. Value */
-#define TCO_DAT_IN(d)          (BASE(d) + 0x02) /* TCO Data In Register */
-#define TCO_DAT_OUT(d)         (BASE(d) + 0x03) /* TCO Data Out Register */
-#define TCO1_STS(d)            (BASE(d) + 0x04) /* TCO1 Status Register */
-#define TCO2_STS(d)            (BASE(d) + 0x06) /* TCO2 Status Register */
-#define TCO1_CNT(d)            (BASE(d) + 0x08) /* TCO1 Control Register */
-#define TCO2_CNT(d)            (BASE(d) + 0x0a) /* TCO2 Control Register */
-#define TCO_MSG(d)             (BASE(d) + 0x0c) /* TCO Message Registers */
-#define TCO_WDSTATUS(d)        (BASE(d) + 0x0e) /* TCO Watchdog Status Register */
-#define TCO_TMR(d)             (BASE(d) + 0x12) /* TCO Timer Register */
+#define TCO_RLD(d)      (BASE(d) + 0x00) /* TCO Timer Reload/Curr. Value */
+#define TCO_DAT_IN(d)   (BASE(d) + 0x02) /* TCO Data In Register */
+#define TCO_DAT_OUT(d)  (BASE(d) + 0x03) /* TCO Data Out Register */
+#define TCO1_STS(d)     (BASE(d) + 0x04) /* TCO1 Status Register */
+#define TCO2_STS(d)     (BASE(d) + 0x06) /* TCO2 Status Register */
+#define TCO1_CNT(d)     (BASE(d) + 0x08) /* TCO1 Control Register */
+#define TCO2_CNT(d)     (BASE(d) + 0x0a) /* TCO2 Control Register */
+#define TCO_MSG(d)      (BASE(d) + 0x0c) /* TCO Message Registers */
+#define TCO_WDSTATUS(d) (BASE(d) + 0x0e) /* TCO Watchdog Status Register */
+#define TCO_TMR(d)      (BASE(d) + 0x12) /* TCO Timer Register */
 
 /* TCO1_STS bits */
-#define STS_NMI2SMI            BIT(0)
-#define STS_OS_TCO_SMI         BIT(1)
-#define STS_TCO_INT            BIT(2)
-#define STS_TIMEOUT            BIT(3)
-#define STS_NEWCENTURY         BIT(7)
-#define STS_BIOSWR             BIT(8)
-#define STS_CPUSCI             BIT(9)
-#define STS_CPUSMI             BIT(10)
-#define STS_CPUSERR            BIT(12)
-#define STS_SLVSEL             BIT(13)
+#define STS_NMI2SMI    BIT(0)
+#define STS_OS_TCO_SMI BIT(1)
+#define STS_TCO_INT    BIT(2)
+#define STS_TIMEOUT    BIT(3)
+#define STS_NEWCENTURY BIT(7)
+#define STS_BIOSWR     BIT(8)
+#define STS_CPUSCI     BIT(9)
+#define STS_CPUSMI     BIT(10)
+#define STS_CPUSERR    BIT(12)
+#define STS_SLVSEL     BIT(13)
 
 /* TCO2_STS bits */
-#define STS_INTRD_DET          BIT(0)
-#define STS_SECOND_TO          BIT(1)
-#define STS_NRSTRAP            BIT(2)
-#define STS_SMLINK_SLAVE_SMI   BIT(3)
+#define STS_INTRD_DET        BIT(0)
+#define STS_SECOND_TO        BIT(1)
+#define STS_NRSTRAP          BIT(2)
+#define STS_SMLINK_SLAVE_SMI BIT(3)
 
 /* TCO1_CNT bits */
-#define CNT_NR_MSUS            BIT(0)
-#define CNT_NMI_NOW            BIT(8)
-#define CNT_NMI2SMI_EN         BIT(9)
-#define CNT_TCO_TMR_HALT       BIT(11)
-#define CNT_TCO_LOCK           BIT(12)
+#define CNT_NR_MSUS      BIT(0)
+#define CNT_NMI_NOW      BIT(8)
+#define CNT_NMI2SMI_EN   BIT(9)
+#define CNT_TCO_TMR_HALT BIT(11)
+#define CNT_TCO_LOCK     BIT(12)
 
 /* TCO_TMR bits */
-#define TMR_TCOTMR             BIT_MASK(10)
-#define TMR_MIN                0x04
-#define TMR_MAX                0x3f
+#define TMR_TCOTMR BIT_MASK(10)
+#define TMR_MIN    0x04
+#define TMR_MAX    0x3f
 
 struct tco_data {
 	struct k_spinlock lock;
@@ -154,8 +154,7 @@ static uint16_t msec_to_ticks(uint32_t msec)
 	return ((msec / MSEC_PER_SEC) * 10) / 6;
 }
 
-static int tco_install_timeout(const struct device *dev,
-			       const struct wdt_timeout_cfg *cfg)
+static int tco_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct tco_data *data = dev->data;
 	k_spinlock_key_t key;
@@ -249,7 +248,7 @@ static int wdt_init(const struct device *dev)
 
 	key = k_spin_lock(&data->lock);
 
-	sys_out16(STS_TIMEOUT, TCO1_STS(dev)); /* Clear the Time Out Status bit */
+	sys_out16(STS_TIMEOUT, TCO1_STS(dev));   /* Clear the Time Out Status bit */
 	sys_out16(STS_SECOND_TO, TCO2_STS(dev)); /* Clear SECOND_TO_STS bit */
 
 	set_no_reboot(dev, data->no_reboot);
@@ -263,13 +262,11 @@ static int wdt_init(const struct device *dev)
 	return 0;
 }
 
-static struct tco_data wdt_data = {
-};
+static struct tco_data wdt_data = {};
 
 static const struct tco_config wdt_config = {
 	.base = DT_REG_ADDR(TCO_WDT_NODE),
 };
 
-DEVICE_DT_DEFINE(TCO_WDT_NODE, wdt_init, NULL, &wdt_data, &wdt_config,
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		 &tco_driver_api);
+DEVICE_DT_DEFINE(TCO_WDT_NODE, wdt_init, NULL, &wdt_data, &wdt_config, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &tco_driver_api);
