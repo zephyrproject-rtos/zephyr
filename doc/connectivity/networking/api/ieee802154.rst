@@ -32,10 +32,10 @@ Whenever sections from the standard are cited in the documentation, they refer
 to IEEE 802.15.4-2020 section, table and figure numbering - unless otherwise
 specified.
 
-Zephyr supports bot native IEEE 802.15.4 and Thread with 6LoWPAN. The Thread
-implementation is based on `OpenThread <https://openthread.io/>`_. The IPv6
-header compression in 6LoWPAN is shared among native IEEE 802.15.4, OpenThread
-and the Bluetooth IPSP (IP support profile).
+Zephyr supports both, native IEEE 802.15.4 and Thread, with 6LoWPAN. Zephyr's
+:ref:`thread_protocol_interface` implementation is based on `OpenThread
+<https://openthread.io/>`_. The IPv6 header compression in 6LoWPAN is shared
+among native IEEE 802.15.4 and the Bluetooth IPSP (IP support profile).
 
 API Reference
 *************
@@ -85,3 +85,13 @@ network layers (L3+), its socket and network context abstractions. This API is
 therefore of interest to IEEE 802.15.4 **subsystem contributors** only.
 
 .. doxygengroup:: ieee802154_l2
+
+OpenThread L2 Adaptation Layer API
+==================================
+
+Zephyr's OpenThread L2 platform adaptation layer glues the external OpenThread
+stack together with Zephyr's IEEE 802.15.4 protocol agnostic driver API. This
+API is of interest to OpenThread L2 **subsystem contributors** only.
+
+The OpenThread API is part of the :ref:`thread_protocol_interface` subsystem and
+documented there.
