@@ -57,6 +57,9 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define MAX_PPB NB_PULSES_TO_PPB(MAX_CALP)
 #define MIN_PPB -NB_PULSES_TO_PPB(MAX_CALM)
 
+/* Timeout in microseconds used to wait for flags */
+#define RTC_TIMEOUT 1000000
+
 struct rtc_stm32_config {
 	LL_RTC_InitTypeDef ll_rtc_config;
 	const struct stm32_pclken *pclken;
@@ -65,6 +68,24 @@ struct rtc_stm32_config {
 struct rtc_stm32_data {
 	/* Currently empty */
 };
+
+static int rtc_stm32_enter_initialization_mode(void)
+{
+	LL_RTC_EnableInitMode(RTC);
+
+	bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
+
+	if (!success) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static inline void rtc_stm32_leave_initialization_mode(void)
+{
+	LL_RTC_DisableInitMode(RTC);
+}
 
 static int rtc_stm32_configure(const struct device *dev)
 {
@@ -158,6 +179,8 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 {
 	uint32_t real_year = timeptr->tm_year + TM_YEAR_REF;
 
+	int err = 0;
+
 	if (real_year < RTC_YEAR_REF) {
 		/* RTC does not support years before 2000 */
 		return -EINVAL;
@@ -171,10 +194,10 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LOG_INF("Setting clock");
 	LL_RTC_DisableWriteProtection(RTC);
 
-	LL_RTC_EnableInitMode(RTC);
-
-	while (!LL_RTC_IsActiveFlag_INIT(RTC)) {
-	};
+	err = rtc_stm32_enter_initialization_mode();
+	if (err) {
+		return err;
+	}
 
 	LL_RTC_DATE_SetYear(RTC, __LL_RTC_CONVERT_BIN2BCD(real_year - RTC_YEAR_REF));
 	LL_RTC_DATE_SetMonth(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_mon + 1));
@@ -193,11 +216,11 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_TIME_SetMinute(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_min));
 	LL_RTC_TIME_SetSecond(RTC, __LL_RTC_CONVERT_BIN2BCD(timeptr->tm_sec));
 
-	LL_RTC_DisableInitMode(RTC);
+	rtc_stm32_leave_initialization_mode();
 
 	LL_RTC_EnableWriteProtection(RTC);
 
-	return 0;
+	return err;
 }
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
