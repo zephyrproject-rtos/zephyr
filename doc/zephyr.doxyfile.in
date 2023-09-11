@@ -2368,6 +2368,8 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_HEAP_MEM_POOL_SIZE \
                          CONFIG_MMU \
                          CONFIG_NET_L2_ETHERNET_MGMT \
+                         CONFIG_NET_L2_IEEE802154_MGMT \
+                         CONFIG_NET_L2_IEEE802154_SECURITY \
                          CONFIG_NET_MGMT_EVENT \
                          CONFIG_NET_SOCKETS_POSIX_NAMES \
                          CONFIG_NET_TCP \

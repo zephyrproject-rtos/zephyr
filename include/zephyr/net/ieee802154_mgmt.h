@@ -8,7 +8,7 @@
  * @file
  * @brief IEEE 802.15.4 Management interface public header
  *
- * All references to the standard in this file cite IEEE 802.15.4-2020.
+ * @note All references to the standard in this file cite IEEE 802.15.4-2020.
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
@@ -33,9 +33,15 @@ extern "C" {
  * Most of these commands are also accessible via shell commands. See the
  * shell's help feature (`shell> ieee802154 help`).
  *
+ * @note All section, table and figure references are to the IEEE 802.15.4-2020
+ * standard.
+ *
  * @{
  */
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define _NET_IEEE802154_LAYER	NET_MGMT_LAYER_L2
 #define _NET_IEEE802154_CODE	0x154
@@ -44,176 +50,245 @@ extern "C" {
 				 NET_MGMT_LAYER_CODE(_NET_IEEE802154_CODE))
 #define _NET_IEEE802154_EVENT	(_NET_IEEE802154_BASE | NET_MGMT_EVENT_BIT)
 
-/* All attributes and parameters are given in CPU byte order
- * (scalars) or big endian (byte arrays) unless otherwise
- * specified.
+enum net_request_ieee802154_cmd {
+	NET_REQUEST_IEEE802154_CMD_SET_ACK = 1,
+	NET_REQUEST_IEEE802154_CMD_UNSET_ACK,
+	NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN,
+	NET_REQUEST_IEEE802154_CMD_ACTIVE_SCAN,
+	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,
+	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,
+	NET_REQUEST_IEEE802154_CMD_DISASSOCIATE,
+	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL,
+	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL,
+	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID,
+	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID,
+	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR,
+	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR,
+	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR,
+	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR,
+	NET_REQUEST_IEEE802154_CMD_GET_TX_POWER,
+	NET_REQUEST_IEEE802154_CMD_SET_TX_POWER,
+	NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS,
+	NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS,
+};
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @name Command Macros
  *
- * The following IEEE 802.15.4 MAC management service primitives
- * are referenced below:
+ * @brief IEEE 802.15.4 net management commands.
+ *
+ * @details These IEEE 802.15.4 subsystem net management commands can be called
+ * by applications via @ref net_mgmt macro.
+ *
+ * All attributes and parameters are given in CPU byte order (scalars) or big
+ * endian (byte arrays) unless otherwise specified.
+ *
+ * The following IEEE 802.15.4 MAC management service primitives are referenced
+ * in this enumeration:
  *  - MLME-ASSOCIATE.request, see section 8.2.3
  *  - MLME-DISASSOCIATE.request, see section 8.2.4
  *  - MLME-SET/GET.request, see section 8.2.6
  *  - MLME-SCAN.request, see section 8.2.11
  *
- * The following IEEE 802.15.4 MAC data service primitives
- * are referenced below:
+ * The following IEEE 802.15.4 MAC data service primitives are referenced in
+ * this enumeration:
  *  - MLME-DATA.request, see section 8.3.2
  *
  * MAC PIB attributes (mac.../sec...): see sections 8.4.3 and 9.5.
  * PHY PIB attributes (phy...): see section 11.3.
  * Both are accessed through MLME-SET/GET primitives.
+ *
+ * @{
  */
-enum net_request_ieee802154_cmd {
-	NET_REQUEST_IEEE802154_CMD_SET_ACK = 1,	   /* sets AckTx for all subsequent
-						    * MLME-DATA (aka TX) requests
-						    */
-	NET_REQUEST_IEEE802154_CMD_UNSET_ACK,	   /* unsets AckTx for all subsequent
-						    * MLME-DATA requests
-						    */
-	NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN,   /* MLME-SCAN(PASSIVE, ...) request */
-	NET_REQUEST_IEEE802154_CMD_ACTIVE_SCAN,	   /* MLME-SCAN(ACTIVE, ...) request */
-	NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN,	   /* not-standard */
-	NET_REQUEST_IEEE802154_CMD_ASSOCIATE,	   /* MLME-ASSOCIATE(...) request */
-	NET_REQUEST_IEEE802154_CMD_DISASSOCIATE,   /* MLME-DISASSOCIATE(...) request */
-	NET_REQUEST_IEEE802154_CMD_SET_CHANNEL,	   /* MLME-SET(phyCurrentChannel) request */
-	NET_REQUEST_IEEE802154_CMD_GET_CHANNEL,	   /* MLME-GET(phyCurrentChannel) request */
-	NET_REQUEST_IEEE802154_CMD_SET_PAN_ID,	   /* MLME-SET(macPanId) request */
-	NET_REQUEST_IEEE802154_CMD_GET_PAN_ID,	   /* MLME-GET(macPanId) request */
-	NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR,   /* non-standard, see chapters 7.1 and 8.4.3.1, in
-						    * big endian byte order
-						    */
-	NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR,   /* like MLME-GET(macExtendedAddress) but in big
-						    * endian byte order
-						    */
-	NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR, /* MLME-SET(macShortAddress) request, only
-						    * allowed for co-ordinators
-						    */
-	NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR, /* MLME-GET(macShortAddress) request */
-	NET_REQUEST_IEEE802154_CMD_GET_TX_POWER, /* MLME-SET(phyUnicastTxPower/phyBroadcastTxPower)
-						  * request (currently not distinguished)
-						  */
-	NET_REQUEST_IEEE802154_CMD_SET_TX_POWER, /* MLME-GET(phyUnicastTxPower/phyBroadcastTxPower)
-						  * request
-						  */
 
-	NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS, /* implies macSecurityEnabled=true,
-							   * configures basic sec* MAC PIB
-							   * attributes
-							   */
-	NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS, /* gets the configured sec* attributes */
-};
-
-
-#define NET_REQUEST_IEEE802154_SET_ACK					\
-	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_ACK)
+/** Sets AckTx for all subsequent MLME-DATA (aka TX) requests. */
+#define NET_REQUEST_IEEE802154_SET_ACK (_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_ACK)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_ACK);
 
-#define NET_REQUEST_IEEE802154_UNSET_ACK				\
+/** Unsets AckTx for all subsequent MLME-DATA requests. */
+#define NET_REQUEST_IEEE802154_UNSET_ACK                                                           \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_UNSET_ACK)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_UNSET_ACK);
 
-#define NET_REQUEST_IEEE802154_PASSIVE_SCAN				\
+/**
+ * MLME-SCAN(PASSIVE, ...) request
+ *
+ * See @ref ieee802154_req_params for associated command parameters.
+ */
+#define NET_REQUEST_IEEE802154_PASSIVE_SCAN                                                        \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_PASSIVE_SCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_PASSIVE_SCAN);
 
-#define NET_REQUEST_IEEE802154_ACTIVE_SCAN				\
+/**
+ * MLME-SCAN(ACTIVE, ...) request
+ *
+ * See @ref ieee802154_req_params for associated command parameters.
+ */
+#define NET_REQUEST_IEEE802154_ACTIVE_SCAN                                                         \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_ACTIVE_SCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ACTIVE_SCAN);
 
-#define NET_REQUEST_IEEE802154_CANCEL_SCAN				\
+/** Cancels an ongoing MLME-SCAN(...) command (non-standard). */
+#define NET_REQUEST_IEEE802154_CANCEL_SCAN                                                         \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_CANCEL_SCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_CANCEL_SCAN);
 
-#define NET_REQUEST_IEEE802154_ASSOCIATE				\
+/** MLME-ASSOCIATE(...) request */
+#define NET_REQUEST_IEEE802154_ASSOCIATE                                                           \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_ASSOCIATE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_ASSOCIATE);
 
-#define NET_REQUEST_IEEE802154_DISASSOCIATE				\
+/** MLME-DISASSOCIATE(...) request */
+#define NET_REQUEST_IEEE802154_DISASSOCIATE                                                        \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_DISASSOCIATE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_DISASSOCIATE);
 
-#define NET_REQUEST_IEEE802154_SET_CHANNEL				\
+/** MLME-SET(phyCurrentChannel) request */
+#define NET_REQUEST_IEEE802154_SET_CHANNEL                                                         \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_CHANNEL)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHANNEL);
 
-#define NET_REQUEST_IEEE802154_GET_CHANNEL				\
+/** MLME-GET(phyCurrentChannel) request */
+#define NET_REQUEST_IEEE802154_GET_CHANNEL                                                         \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_CHANNEL)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHANNEL);
 
-#define NET_REQUEST_IEEE802154_SET_PAN_ID				\
+/** MLME-SET(macPanId) request */
+#define NET_REQUEST_IEEE802154_SET_PAN_ID                                                          \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_PAN_ID)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_PAN_ID);
 
-#define NET_REQUEST_IEEE802154_GET_PAN_ID				\
+/** MLME-GET(macPanId) request */
+#define NET_REQUEST_IEEE802154_GET_PAN_ID                                                          \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_PAN_ID)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_PAN_ID);
 
-#define NET_REQUEST_IEEE802154_SET_EXT_ADDR				\
+/**
+ * Sets the extended interface address (non-standard), see sections 7.1
+ * and 8.4.3.1, in big endian byte order
+ */
+#define NET_REQUEST_IEEE802154_SET_EXT_ADDR                                                        \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_EXT_ADDR)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_EXT_ADDR);
 
-#define NET_REQUEST_IEEE802154_GET_EXT_ADDR				\
+/** like MLME-GET(macExtendedAddress) but in big endian byte order */
+#define NET_REQUEST_IEEE802154_GET_EXT_ADDR                                                        \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_EXT_ADDR)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR);
 
-#define NET_REQUEST_IEEE802154_SET_SHORT_ADDR				\
+/** MLME-SET(macShortAddress) request, only allowed for co-ordinators */
+#define NET_REQUEST_IEEE802154_SET_SHORT_ADDR                                                      \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_SHORT_ADDR)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR);
 
-#define NET_REQUEST_IEEE802154_GET_SHORT_ADDR				\
+/** MLME-GET(macShortAddress) request */
+#define NET_REQUEST_IEEE802154_GET_SHORT_ADDR                                                      \
 	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_SHORT_ADDR)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR);
 
-#define NET_REQUEST_IEEE802154_GET_TX_POWER				\
-	(_NET_IEEE802154_BASE |						\
-	 NET_REQUEST_IEEE802154_CMD_GET_TX_POWER)
+/**
+ * MLME-SET(phyUnicastTxPower/phyBroadcastTxPower) request (currently
+ * not distinguished)
+ */
+#define NET_REQUEST_IEEE802154_GET_TX_POWER                                                        \
+	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_TX_POWER)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_TX_POWER);
 
-#define NET_REQUEST_IEEE802154_SET_TX_POWER				\
-	(_NET_IEEE802154_BASE |						\
-	 NET_REQUEST_IEEE802154_CMD_SET_TX_POWER)
+/** MLME-GET(phyUnicastTxPower/phyBroadcastTxPower) request */
+#define NET_REQUEST_IEEE802154_SET_TX_POWER                                                        \
+	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_TX_POWER)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_TX_POWER);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 
-#define NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS			\
-	(_NET_IEEE802154_BASE |						\
-	 NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS)
+/**
+ * Configures basic sec* MAC PIB attributes, implies
+ * macSecurityEnabled=true.
+ *
+ * See @ref ieee802154_security_params for associated command parameters.
+ */
+#define NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS                                               \
+	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_SET_SECURITY_SETTINGS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS);
 
-#define NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS			\
-	(_NET_IEEE802154_BASE |						\
-	 NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS)
+/**
+ * Gets the configured sec* attributes.
+ *
+ * See @ref ieee802154_security_params for associated command parameters.
+ */
+#define NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS                                               \
+	(_NET_IEEE802154_BASE | NET_REQUEST_IEEE802154_CMD_GET_SECURITY_SETTINGS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS);
 
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
+/**
+ * @}
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 enum net_event_ieee802154_cmd {
 	NET_EVENT_IEEE802154_CMD_SCAN_RESULT = 1,
 };
 
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @name Event Macros
+ *
+ * @brief IEEE 802.15.4 net management events.
+ *
+ * @details These IEEE 802.15.4 subsystem net management events can be
+ * subscribed to by applications via @ref net_mgmt_init_event_callback, @ref
+ * net_mgmt_add_event_callback and @ref net_mgmt_del_event_callback.
+ *
+ * @{
+ */
+
+/**
+ * Signals the result of the @ref NET_REQUEST_IEEE802154_ACTIVE_SCAN or @ref
+ * NET_REQUEST_IEEE802154_PASSIVE_SCAN net management commands.
+ *
+ * See @ref ieee802154_req_params for associated event parameters.
+ */
 #define NET_EVENT_IEEE802154_SCAN_RESULT				\
 	(_NET_IEEE802154_EVENT | NET_EVENT_IEEE802154_CMD_SCAN_RESULT)
 
+/**
+ * @}
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define IEEE802154_IS_CHAN_SCANNED(_channel_set, _chan)	\
 	(_channel_set & BIT(_chan - 1))
@@ -221,6 +296,10 @@ enum net_event_ieee802154_cmd {
 	(!IEEE802154_IS_CHAN_SCANNED(_channel_set, _chan))
 
 #define IEEE802154_ALL_CHANNELS	UINT32_MAX
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Scanning parameters
