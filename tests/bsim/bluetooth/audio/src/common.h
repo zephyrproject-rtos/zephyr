@@ -65,13 +65,12 @@
 #define SYNC_RETRY_COUNT     6 /* similar to retries for connections */
 #define PA_SYNC_SKIP         5
 
+extern struct bt_le_scan_cb common_scan_cb;
 extern const struct bt_data ad[AD_SIZE];
 extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
 extern atomic_t flag_conn_updated;
 
-void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-		  struct net_buf_simple *ad);
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);

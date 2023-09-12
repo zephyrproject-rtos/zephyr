@@ -16,8 +16,7 @@ const struct bt_data ad[AD_SIZE] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
 };
 
-void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 struct net_buf_simple *ad)
+static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -27,15 +26,15 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 
 	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0) {
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -70) {
+	if (info->rssi < -70) {
 		FAIL("RSSI too low");
 		return;
 	}
@@ -46,12 +45,16 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+				&default_conn);
 	if (err) {
 		FAIL("Could not connect to peer: %d", err);
 	}
 }
+
+struct bt_le_scan_cb common_scan_cb = {
+	.recv = device_found,
+};
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
