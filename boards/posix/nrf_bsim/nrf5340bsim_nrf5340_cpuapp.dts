@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/nordic/nrf5340_cpuapp.dtsi>
+
+/ {
+	model = "Nordic NRF5340 BSIM NRF5340 Application";
+	compatible = "bsim,nrf5340-bsim-nrf5340-cpuapp","bsim,nrf53";
+
+	/* We need to remove aliases to nodes we delete */
+	aliases {
+		/delete-property/ sram-0;
+		/delete-property/ i2c-0;
+		/delete-property/ spi-0;
+		/delete-property/ uart-0;
+		/delete-property/ i2c-1;
+		/delete-property/ spi-1;
+		/delete-property/ uart-1;
+		/delete-property/ spi-4;
+		/delete-property/ i2c-2;
+		/delete-property/ spi-2;
+		/delete-property/ uart-2;
+		/delete-property/ i2c-3;
+		/delete-property/ spi-3;
+		/delete-property/ uart-3;
+		/delete-property/ wdt-0;
+		/delete-property/ wdt-1;
+		/delete-property/ pwm-0;
+		/delete-property/ pwm-1;
+		/delete-property/ pwm-2;
+		/delete-property/ pwm-3;
+		/delete-property/ pdm-0;
+		/delete-property/ i2s-0;
+		/delete-property/ qdec-0;
+		/delete-property/ qdec-1;
+		/delete-property/ gpio-0;
+		/delete-property/ gpio-1;
+		/delete-property/ gpiote-0;
+	};
+
+	chosen {
+		zephyr,flash = &flash0;
+	};
+
+	soc {
+		/delete-node/ memory@20000000;
+		peripheral@50000000 {
+			/delete-node/ dcnf@0;
+			/delete-node/ oscillator@4000;
+			/delete-node/ regulator@4000;
+			/delete-node/ ctrlap@6000;
+			/delete-node/ i2c@8000;
+			/delete-node/ spi@8000;
+			/delete-node/ uart@8000;
+			/delete-node/ i2c@9000;
+			/delete-node/ spi@9000;
+			/delete-node/ uart@9000;
+			/delete-node/ spi@a000;
+			/delete-node/ i2c@b000;
+			/delete-node/ spi@b000;
+			/delete-node/ uart@b000;
+			/delete-node/ i2c@c000;
+			/delete-node/ spi@c000;
+			/delete-node/ uart@c000;
+			/delete-node/ adc@e000;
+			/delete-node/ watchdog@18000;
+			/delete-node/ watchdog@19000;
+			/delete-node/ comparator@1a000;
+			/delete-node/ pwm@21000;
+			/delete-node/ pwm@22000;
+			/delete-node/ pwm@23000;
+			/delete-node/ pwm@24000;
+			/delete-node/ pdm@26000;
+			/delete-node/ i2s@28000;
+			/delete-node/ mbox@2a000;
+			/delete-node/ qspi@2b000;
+			/delete-node/ nfct@2d000;
+			/delete-node/ mutex@30000;
+			/delete-node/ qdec@33000;
+			/delete-node/ qdec@34000;
+			/delete-node/ usbd@36000;
+			/delete-node/ regulator@37000;
+			/delete-node/ kmu@39000;
+			/delete-node/ vmc@81000;
+			/delete-node/ gpio@842500;
+			/delete-node/ gpio@842800;
+		};
+		/delete-node/ spu@50003000;
+		/delete-node/ gpiote@5000d000;
+		/delete-node/ crypto@50844000;
+	};
+
+	/delete-node/ cpus;
+	/delete-node/ ipc;
+	/delete-node/ sw-pwm;
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 DT_SIZE_K(1024)>;
+		};
+	};
+};
