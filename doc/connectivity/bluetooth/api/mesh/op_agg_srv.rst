@@ -13,8 +13,7 @@ a sequence of access layer messages.
 The Opcodes Aggregator Server model accepts messages encrypted with the node's device key
 or the application keys.
 
-The Opcodes Aggregator Server model can only be instantiated on the
-node's primary element.
+If present, the Opcodes Aggregator Server model must only be instantiated on the primary element.
 
 The targeted server models should be bound to the same application key that is used
 to encrypt the sequence of access layer messages sent to the Opcodes Aggregator Server.

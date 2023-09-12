@@ -15,8 +15,7 @@ The Remote Provisioning Server does not have an API of its own, but relies on a
 :ref:`bluetooth_mesh_models_rpr_cli` to control it. The Remote Provisioning Server
 model only accepts messages encrypted with the node's device key.
 
-If present, the Remote Provisioning Server model must be instantiated on the primary
-element.
+If present, the Remote Provisioning Server model must be instantiated on the primary element.
 
 Note that after refreshing the device key, node address or Composition Data through a Node Provisioning Protocol
 Interface (NPPI) procedure, the :c:member:`bt_mesh_prov.reprovisioned` callback is triggered. See section
