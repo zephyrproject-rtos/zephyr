@@ -1,4 +1,4 @@
-.. _samples_eeprom:
+.. _samples_eeprom_boot_counter:
 
 EEPROM Sample
 #############
