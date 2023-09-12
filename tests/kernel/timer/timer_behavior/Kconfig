@@ -41,3 +41,32 @@ config TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT
 	default 10
 	help
 	  A value of 10 means 10%.
+
+config TIMER_EXTERNAL_TEST
+	bool "Perform test using an external tool"
+	help
+	  Toggles a GPIO pin, on every period, that can be used by an external
+	  tool (such as a logic analyzer) to gather timing data. A pytest harness
+	  is used to get the data collected by the tool and evaluate it.
+
+if TIMER_EXTERNAL_TEST
+
+config TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM
+	int "Maximum drift in PPM for tests using external tool"
+	default 4500
+	help
+	  Parts Per Million of allowed drift when using an external tool
+	  connected to a GPIO pin is used to measure time behaviour.
+
+config TIMER_EXTERNAL_TEST_PERIOD_MAX_DRIFT_PPM
+	int "Maximum timer period drift in PPM for tests using external tool"
+	default 100000
+	help
+	  Parts Per Million of allowed period drift when using an external tool
+	  connected to a GPIO pin is used to measure time behaviour.
+
+config TIMER_EXTERNAL_TEST_SYNC_DELAY
+	int "Delay, in seconds, between tests, so that external tool can be ready"
+	default 3
+
+endif # TIMER_EXTERNAL_TEST

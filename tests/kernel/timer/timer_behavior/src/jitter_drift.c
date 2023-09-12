@@ -9,9 +9,16 @@
 #include <stdlib.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
+
+#ifdef CONFIG_TIMER_EXTERNAL_TEST
+#define TIMER_OUT_NODE DT_INST(0, test_kernel_timer_behavior_external)
+static const struct gpio_dt_spec timer_out = GPIO_DT_SPEC_GET(TIMER_OUT_NODE,
+		timerout_gpios);
+#endif
 
 static uint32_t periodic_idx;
 static uint64_t periodic_data[CONFIG_TIMER_TEST_SAMPLES + 1];
@@ -27,6 +34,10 @@ static struct k_sem periodic_sem;
 static void timer_period_fn(struct k_timer *t)
 {
 	uint64_t curr_cycle;
+
+#ifdef CONFIG_TIMER_EXTERNAL_TEST
+	gpio_pin_toggle_dt(&timer_out);
+#endif
 
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 	curr_cycle = k_cycle_get_64();
@@ -61,6 +72,10 @@ static void collect_timer_period_time_samples(void)
 static void timer_startdelay_fn(struct k_timer *t)
 {
 	uint64_t curr_cycle;
+
+#ifdef CONFIG_TIMER_EXTERNAL_TEST
+	gpio_pin_toggle_dt(&timer_out);
+#endif
 
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 	curr_cycle = k_cycle_get_64();
@@ -266,12 +281,28 @@ static void do_test_using(void (*sample_collection_fn)(void))
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
 {
 	TC_PRINT("periodic timer behavior test using built-in restart mechanism\n");
+#ifdef CONFIG_TIMER_EXTERNAL_TEST
+	TC_PRINT("===== External Tool Sync Point =====\n");
+	TC_PRINT("===== builtin =====\n");
+	TC_PRINT("===== Waiting %d seconds =====\n",
+		 CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY);
+	k_sleep(K_SECONDS(CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY));
+	gpio_pin_configure_dt(&timer_out, GPIO_OUTPUT_LOW);
+#endif
 	do_test_using(collect_timer_period_time_samples);
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_startdelay)
 {
 	TC_PRINT("periodic timer behavior test using explicit start with delay\n");
+#ifdef CONFIG_TIMER_EXTERNAL_TEST
+	TC_PRINT("===== External Tool Sync Point =====\n");
+	TC_PRINT("===== startdelay =====\n");
+	TC_PRINT("===== Waiting %d seconds =====\n",
+		 CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY);
+	k_sleep(K_SECONDS(CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY));
+	gpio_pin_configure_dt(&timer_out, GPIO_OUTPUT_LOW);
+#endif
 	do_test_using(collect_timer_startdelay_time_samples);
 }
 
