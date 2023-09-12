@@ -187,5 +187,18 @@
 
 			status = "disabled";
 		};
+
+		dma0: dma@10100000 {
+			compatible = "intel,sedi_dma";
+			#dma-cells = <2>;
+			dma-channels = <8>;
+			peripheral-id = <0>;
+			reg = <0x10100000 0x1000>;
+			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
+			status = "okay";
+		};
 	};
 };
