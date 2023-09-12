@@ -355,7 +355,7 @@ class DeviceHandler(Handler):
         super().__init__(instance, type_str)
 
     def monitor_serial(self, ser, halt_event, harness):
-        log_out_fp = open(self.log, "wt")
+        log_out_fp = open(self.log, "wb")
 
         if self.options.coverage:
             # Set capture_coverage to True to indicate that right after
@@ -407,7 +407,7 @@ class DeviceHandler(Handler):
                 sl = serial_line.decode('utf-8', 'ignore').lstrip()
                 logger.debug("DEVICE: {0}".format(sl.rstrip()))
 
-                log_out_fp.write(sl)
+                log_out_fp.write(sl.encode('utf-8'))
                 log_out_fp.flush()
                 harness.handle(sl.rstrip())
 
