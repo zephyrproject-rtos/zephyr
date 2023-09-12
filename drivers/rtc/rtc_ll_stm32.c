@@ -298,6 +298,8 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 }
 
 #ifdef CONFIG_RTC_CALIBRATION
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
 static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibration)
 {
 	ARG_UNUSED(dev);
@@ -362,6 +364,7 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 
 	return 0;
 }
+#endif
 #endif /* CONFIG_RTC_CALIBRATION */
 
 struct rtc_driver_api rtc_stm32_driver_api = {
@@ -370,8 +373,13 @@ struct rtc_driver_api rtc_stm32_driver_api = {
 	/* RTC_ALARM not supported */
 	/* RTC_UPDATE not supported */
 #ifdef CONFIG_RTC_CALIBRATION
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
 	.set_calibration = rtc_stm32_set_calibration,
 	.get_calibration = rtc_stm32_get_calibration,
+#else
+#error RTC calibration for devices without smooth calibration feature is not supported yet
+#endif
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
