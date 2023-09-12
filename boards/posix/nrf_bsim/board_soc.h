@@ -16,8 +16,8 @@
  * to define that kind of SOC related snippets
  */
 
-#ifndef _POSIX_NRF52_BOARD_SOC_H
-#define _POSIX_NRF52_BOARD_SOC_H
+#ifndef BOARDS_POSIX_NRF_BSIM_BOARD_SOC_H
+#define BOARDS_POSIX_NRF_BSIM_BOARD_SOC_H
 
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
@@ -30,7 +30,13 @@
 #include <nrfx.h>
 #include "cmsis.h"
 
+#if defined(CONFIG_BOARD_NRF52_BSIM)
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
+#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
+#define OFFLOAD_SW_IRQ EGU0_IRQn
+#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
+#define OFFLOAD_SW_IRQ SWI0_IRQn
+#endif
 
 #define FLASH_PAGE_ERASE_MAX_TIME_US	89700UL
 #define FLASH_PAGE_MAX_CNT		256UL
@@ -43,4 +49,4 @@ extern "C" {
 }
 #endif
 
-#endif /* _POSIX_NRF52_BOARD_SOC_H */
+#endif /* BOARDS_POSIX_NRF_BSIM_BOARD_SOC_H */
