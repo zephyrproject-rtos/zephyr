@@ -490,8 +490,10 @@ static void test_main(void)
 		return;
 	}
 
+	bt_le_scan_cb_register(&common_scan_cb);
+
 	printk("Starting scan\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Could not start scanning (err %d)\n", err);
 		return;
@@ -536,7 +538,7 @@ static void test_main(void)
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	printk("Starting scan\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Could not start scanning (err %d)\n", err);
 		return;
