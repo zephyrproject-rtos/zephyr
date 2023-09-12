@@ -1,0 +1,8 @@
+# Copyright 2023 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments family of BQ24190 of charging ICs
+
+include: [battery.yaml, i2c-device.yaml]
+
+compatible: "ti,bq24190"
