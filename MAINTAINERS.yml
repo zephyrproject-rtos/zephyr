@@ -2070,18 +2070,18 @@ NIOS-2 arch:
   labels:
     - "area: NIOS2"
 
-nRF52 BSIM:
+nRF BSIM:
   status: maintained
   maintainers:
     - aescolar
   files:
-    - boards/posix/nrf52_bsim/
+    - boards/posix/nrf_bsim/
     - tests/boards/nrf52_bsim/
     - tests/bsim/
   files-exclude:
     - tests/bsim/*/
   labels:
-    - "platform: nRF52 BSIM"
+    - "platform: nRF BSIM"
 
 POSIX API layer:
   status: maintained
