@@ -26,3 +26,9 @@ config SOC_SERIES_BSIM_NRF52X
 	depends on SOC_SERIES_BSIM_NRFXX
 	help
 	  Any NRF52 simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF53X
+	bool
+	depends on SOC_SERIES_BSIM_NRFXX
+	help
+	  Any NRF53 simulated SOC with BabbleSim, based on the POSIX arch
