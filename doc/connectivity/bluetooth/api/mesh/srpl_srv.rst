@@ -14,8 +14,8 @@ successfully processed by a node, the SSRC field and SSEQ field of the message a
 The Solicitation PDU RPL Configuration Server does not have an API of its own, and relies on a :ref:`bluetooth_mesh_srpl_cli` to control it.
 The model only accepts messages encrypted with an application key as configured by the Configuration Client.
 
-If present, the Solicitation PDU RPL Configuration Server model must be instantiated on the primary
-element.
+If present, the Solicitation PDU RPL Configuration Server model must only be instantiated on the
+primary element.
 
 Configurations
 **************

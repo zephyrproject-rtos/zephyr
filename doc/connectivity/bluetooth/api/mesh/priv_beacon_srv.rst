@@ -28,8 +28,7 @@ Server model through the :c:struct:`bt_mesh_priv_beacon_srv` instance passed to
 changes to this configuration in the settings subsystem, the initial values may
 be overwritten upon loading.
 
-The Private Beacon Server model is optional, and can only be instantiated in the
-node's primary element.
+If present, the Private Beacon Server model must only be instantiated on the primary element.
 
 API reference
 *************

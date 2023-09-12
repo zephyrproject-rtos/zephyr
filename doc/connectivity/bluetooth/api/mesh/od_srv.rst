@@ -17,7 +17,7 @@ The On-Demand Private Proxy Server does not have an API of its own, and relies o
 :ref:`bluetooth_mesh_od_cli` to control it. The On-Demand Private Proxy Server
 model only accepts messages encrypted with the node's device key.
 
-If present, the On-Demand Private Proxy Server model must be instantiated on the primary
+If present, the On-Demand Private Proxy Server model must only be instantiated on the primary
 element.
 
 API reference

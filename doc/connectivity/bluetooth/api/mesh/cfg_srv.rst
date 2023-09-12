@@ -15,7 +15,7 @@ mesh node. It does not have an API of its own, but relies on a
    controlled through the :ref:`bluetooth_mesh_heartbeat` API.
 
 The Configuration Server model is mandatory on all Bluetooth mesh nodes, and
-should be instantiated in the first element.
+must only be instantiated on the primary element.
 
 API reference
 *************

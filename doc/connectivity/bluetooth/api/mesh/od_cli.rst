@@ -13,6 +13,9 @@ how long a node will advertise Mesh Proxy Service with Private Network Identity 
 The On-Demand Private Proxy Client model communicates with an On-Demand Private Proxy Server model
 using the device key of the node containing the target On-Demand Private Proxy Server model instance.
 
+If present, the On-Demand Private Proxy Client model must only be instantiated on the primary
+element.
+
 Configurations
 **************
 
