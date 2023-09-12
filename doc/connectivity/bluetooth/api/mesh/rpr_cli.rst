@@ -9,7 +9,9 @@ mesh specification. It is enabled with the
 
 The Remote Provisioning Client model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1.
-This model provides functionality to remotely provision devices into a mesh network, and perform Node Provisioning Protocol Interface procedures by interacting with mesh nodes that support the :ref:`bluetooth_mesh_models_rpr_srv` model.
+This model provides functionality to remotely provision devices into a mesh network, and perform
+Node Provisioning Protocol Interface procedures by interacting with mesh nodes that support the
+:ref:`bluetooth_mesh_models_rpr_srv` model.
 
 The Remote Provisioning Client model communicates with a Remote Provisioning Server model
 using the device key of the node containing the target Remote Provisioning Server model instance.
@@ -20,7 +22,9 @@ element.
 Scanning
 ********
 
-The scanning procedure is used to scan for unprovisioned devices located nearby the Remote Provisioning Server. The Remote Provisioning Client starts a scan procedure by using the :c:func:`bt_mesh_rpr_scan_start` call:
+The scanning procedure is used to scan for unprovisioned devices located nearby the Remote
+Provisioning Server. The Remote Provisioning Client starts a scan procedure by using the
+:c:func:`bt_mesh_rpr_scan_start` call:
 
 .. code-block:: C
 
@@ -49,21 +53,24 @@ The scanning procedure is used to scan for unprovisioned devices located nearby 
 
       bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, timeout, max_devs, &status);
 
-The above example shows pseudo code for starting a scan procedure on the target Remote Provisioning Server node. This
-procedure will start a ten-second, multiple-device scanning where the generated scan report will contain
-a maximum of three unprovisioned devices. If the UUID argument was specified, the same procedure would
-only scan for the device with the corresponding UUID. After the procedure completes, the
-server sends the scan report that will be handled in the client's :c:member:`bt_mesh_rpr_cli.scan_report` callback.
+The above example shows pseudo code for starting a scan procedure on the target Remote Provisioning
+Server node. This procedure will start a ten-second, multiple-device scanning where the generated
+scan report will contain a maximum of three unprovisioned devices. If the UUID argument was
+specified, the same procedure would only scan for the device with the corresponding UUID. After the
+procedure completes, the server sends the scan report that will be handled in the client's
+:c:member:`bt_mesh_rpr_cli.scan_report` callback.
 
 Additionally, the Remote Provisioning Client model also supports extended scanning with the
-:c:func:`bt_mesh_rpr_scan_start_ext` call. Extended scanning supplements regular scanning by allowing the
-Remote Provisioning Server to report additional data for a specific device. The Remote Provisioning Server will use active scanning to request
-a scan response from the unprovisioned device if it is supported by the unprovisioned device.
+:c:func:`bt_mesh_rpr_scan_start_ext` call. Extended scanning supplements regular scanning by
+allowing the Remote Provisioning Server to report additional data for a specific device. The Remote
+Provisioning Server will use active scanning to request a scan response from the unprovisioned
+device if it is supported by the unprovisioned device.
 
 Provisioning
 ************
 
-The Remote Provisioning Client starts a provisioning procedure by using the :c:func:`bt_mesh_provision_remote` call:
+The Remote Provisioning Client starts a provisioning procedure by using the
+:c:func:`bt_mesh_provision_remote` call:
 
 .. code-block:: C
 
@@ -81,25 +88,27 @@ The Remote Provisioning Client starts a provisioning procedure by using the :c:f
 
       bt_mesh_provision_remote(&rpr_cli, &srv, uuid, net_idx, addr);
 
-The above example shows pseudo code for remotely provisioning a device through a Remote Provisioning Server node. This
-procedure will attempt to provision the device with the corresponding UUID, and assign the address 0x0006
-to its primary element using the network key located at index zero.
+The above example shows pseudo code for remotely provisioning a device through a Remote Provisioning
+Server node. This procedure will attempt to provision the device with the corresponding UUID, and
+assign the address 0x0006 to its primary element using the network key located at index zero.
 
 .. note::
-   During the remote provisioning, the same :c:struct:`bt_mesh_prov` callbacks are triggered as for ordinary
-   provisioning. See section :ref:`bluetooth_mesh_provisioning` for further details.
+   During the remote provisioning, the same :c:struct:`bt_mesh_prov` callbacks are triggered as for
+   ordinary provisioning. See section :ref:`bluetooth_mesh_provisioning` for further details.
 
 Re-provisioning
 ***************
 
-In addition to scanning and provisioning functionality, the Remote Provisioning Client also provides means to
-reconfigure node addresses, device keys and Composition Data on devices that support the
-:ref:`bluetooth_mesh_models_rpr_srv` model. This is provided through the Node Provisioning Protocol Interface
-(NPPI) which supports the following three procedures:
+In addition to scanning and provisioning functionality, the Remote Provisioning Client also provides
+means to reconfigure node addresses, device keys and Composition Data on devices that support the
+:ref:`bluetooth_mesh_models_rpr_srv` model. This is provided through the Node Provisioning Protocol
+Interface (NPPI) which supports the following three procedures:
 
-* Device Key Refresh procedure: Used to change the device key of the Target node without a need to reconfigure the node.
+* Device Key Refresh procedure: Used to change the device key of the Target node without a need to
+  reconfigure the node.
 * Node Address Refresh procedure: Used to change the node’s device key and unicast address.
-* Node Composition Refresh procedure: Used to change the device key of the node, and to add or delete models or features of the node.
+* Node Composition Refresh procedure: Used to change the device key of the node, and to add or
+  delete models or features of the node.
 
 The three NPPI procedures can be initiated with the :c:func:`bt_mesh_reprovision_remote` call:
 
@@ -117,12 +126,13 @@ The three NPPI procedures can be initiated with the :c:func:`bt_mesh_reprovision
 
       bt_mesh_reprovision_remote(&rpr_cli, &srv, new_addr, composition_changed);
 
-The above example shows pseudo code for triggering a Node Address Refresh procedure on the Target node.
-The specific procedure is not chosen directly, but rather through the other parameters that are inputted.
-In the example we can see that the current unicast address of the Target is 0x0006, while the new address is
-set to 0x0009. If the two addresses were the same, and the ``composition_changed`` flag was set to true, this code
-would instead trigger a Node Composition Refresh procedure. If the two addresses were the same, and
-the ``composition_changed`` flag was set to false, this code would trigger a Device Key Refresh procedure.
+The above example shows pseudo code for triggering a Node Address Refresh procedure on the Target
+node. The specific procedure is not chosen directly, but rather through the other parameters that
+are inputted. In the example we can see that the current unicast address of the Target is 0x0006,
+while the new address is set to 0x0009. If the two addresses were the same, and the
+``composition_changed`` flag was set to true, this code would instead trigger a Node Composition
+Refresh procedure. If the two addresses were the same, and the ``composition_changed`` flag was set
+to false, this code would trigger a Device Key Refresh procedure.
 
 API reference
 *************
