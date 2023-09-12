@@ -33,9 +33,23 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 #include "spi_ll_stm32.h"
+
+/*
+ * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
+ * e.g. nucleo_f746zg
+ */
+#if defined(CONFIG_CPU_HAS_DCACHE) &&                       \
+	defined(CONFIG_DCACHE) &&                               \
+	!defined(CONFIG_NOCACHE_MEMORY)
+#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	1
+#else
+#define  SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	0
+#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
 #define WAIT_1US	1U
 
@@ -60,11 +74,30 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #ifdef CONFIG_SPI_STM32_DMA
+static uint32_t bits2bytes(uint32_t bits)
+{
+	return bits / 8;
+}
 
 /* dummy value used for transferring NOP when tx buf is null
- * and use as dummy sink for when rx buf is null
+ * and use as dummy sink for when rx buf is null.
  */
-uint32_t dummy_rx_tx_buffer;
+#ifdef CONFIG_NOCACHE_MEMORY
+/*
+ * If a nocache area is available, place it there to avoid potential DMA
+ * cache-coherency problems.
+ */
+static __aligned(32) uint32_t dummy_rx_tx_buffer
+	__attribute__((__section__(".nocache")));
+
+#else /* CONFIG_NOCACHE_MEMORY */
+
+/*
+ * If nocache areas are not available, cache coherency might need to be kept
+ * manually. See SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED.
+ */
+static __aligned(32) uint32_t dummy_rx_tx_buffer;
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device *dev, void *arg,
@@ -113,8 +146,11 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	/* tx direction has memory as source and periph as dest. */
 	if (buf == NULL) {
-		dummy_rx_tx_buffer = 0;
 		/* if tx buff is null, then sends NOP on the line. */
+		dummy_rx_tx_buffer = 0;
+#if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
+		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
+#endif /* CONFIG_CPU_HAS_DCACHE && !defined(CONFIG_NOCACHE_MEMORY) */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
@@ -876,8 +912,11 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_DisableDMAReq_RX(spi);
 #endif /* ! st_stm32h7_spi */
 
-		spi_context_update_tx(&data->ctx, 1, dma_len);
-		spi_context_update_rx(&data->ctx, 1, dma_len);
+		uint8_t frame_size_bytes = bits2bytes(
+			SPI_WORD_SIZE_GET(config->operation));
+
+		spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
+		spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
 	}
 
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
