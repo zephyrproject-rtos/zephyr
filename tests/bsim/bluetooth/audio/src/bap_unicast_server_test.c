@@ -21,7 +21,7 @@ extern enum bst_result_t bst_result;
 
 static const struct bt_audio_codec_cap lc3_codec_cap = {
 	.path_id = BT_ISO_DATA_PATH_HCI,
-	.id = BT_AUDIO_CODEC_LC3_ID,
+	.id = BT_HCI_CODING_FORMAT_LC3,
 	.cid = 0x0000U,
 	.vid = 0x0000U,
 	.data_len = (3 + 1) + (2 + 1) + (2 + 1) + (5 + 1) + (2 + 1),
