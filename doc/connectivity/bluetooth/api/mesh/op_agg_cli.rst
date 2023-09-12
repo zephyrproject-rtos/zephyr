@@ -13,11 +13,11 @@ a sequence of access layer messages to nodes supporting the :ref:`bluetooth_mesh
 The Opcodes Aggregator Client model communicates with an Opcodes Aggregator Server model
 using the device key of the target node or the application keys configured by the Configuration Client.
 
-The Opcodes Aggregator Client model must only be instantiated on the primary
-element, and it is implicitly bound to the device key on initialization.
+If present, the Opcodes Aggregator Client model must only be instantiated on the primary element.
 
-The Opcodes Aggregator Client model should be bound to the same application keys that the client models,
-used to produce the sequence of messages, are bound to.
+The Opcodes Aggregator Client model is implicitly bound to the device key on initialization. It
+should be bound to the same application keys as the client models that are used to produce the sequence of
+messages.
 
 To be able to aggregate a message from a client model, it should support an asynchronous
 API, for example through callbacks.

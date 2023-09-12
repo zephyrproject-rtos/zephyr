@@ -13,8 +13,8 @@ replay protection list (SRPL) of a node that supports the :ref:`bluetooth_mesh_s
 The Solicitation PDU RPL Configuration Client model communicates with a Solicitation PDU RPL Configuration Server model
 using the application keys configured by the Configuration Client.
 
-If present, the Solicitation PDU RPL Configuration Client model must be instantiated on the primary
-element.
+If present, the Solicitation PDU RPL Configuration Client model must only be instantiated on the
+primary element.
 
 Configurations
 **************

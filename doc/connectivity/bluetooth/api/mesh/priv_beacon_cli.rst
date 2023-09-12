@@ -25,8 +25,7 @@ All configuration functions in the Private Beacon Client API have ``net_idx``
 and ``addr`` as their first parameters. These should be set to the network
 index and the primary unicast address the target node was provisioned with.
 
-The Private Beacon Client model is optional, and can be instantiated on any
-element.
+If present, the Private Beacon Client model must only be instantiated on the primary element.
 
 API reference
 *************
