@@ -317,9 +317,10 @@ int i3c_attach_i3c_device(struct i3c_device_desc *target)
 
 	if (api->attach_i3c_device != NULL) {
 		status = api->attach_i3c_device(target->bus, target, addr);
+		if (status == 0) {
+			i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, addr);
+		}
 	}
-
-	i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, addr);
 
 	return status;
 }
