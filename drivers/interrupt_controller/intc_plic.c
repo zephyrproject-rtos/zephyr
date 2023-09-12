@@ -29,7 +29,7 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
-#define PLIC_EDGE_TRIG_TYPE   (PLIC_MAX_PRIO + DT_INST_PROP(0, riscv_trigger_reg_offset))
+#define PLIC_EDGE_TRIG_TYPE (DT_INST_REG_ADDR(0) + DT_INST_PROP(0, riscv_trigger_reg_offset))
 #define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
