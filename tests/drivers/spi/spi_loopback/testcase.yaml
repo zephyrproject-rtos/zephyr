@@ -32,6 +32,13 @@ tests:
       - tdk_robokit1
     integration_platforms:
       - sam_e70_xplained
+  drivers.spi.stm32_spi_16bits_frames.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
@@ -48,6 +55,29 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma_no_nocache.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-dma-no-nocache.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+  drivers.spi.stm32_spi_16bits_frames_dma.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+  drivers.spi.stm32_spi_16bits_frames_dma_no_nocache.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-no-nocache.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
     platform_allow:
