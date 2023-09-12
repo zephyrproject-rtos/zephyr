@@ -1,0 +1,7 @@
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PING
+	bool "Ping Support"
+	help
+	  This option enables ICMP Echo/ping
