@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -423,12 +424,12 @@ static void zsock_received_cb(struct net_context *ctx,
 	k_fifo_put(&ctx->recv_q, pkt);
 
 unlock:
+	/* Wake reader if it was sleeping */
+	(void)k_condvar_signal(&ctx->cond.recv);
+
 	if (ctx->cond.lock) {
 		(void)k_mutex_unlock(ctx->cond.lock);
 	}
-
-	/* Wake reader if it was sleeping */
-	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
 int zsock_shutdown_ctx(struct net_context *ctx, int how)
