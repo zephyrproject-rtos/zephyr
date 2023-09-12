@@ -73,6 +73,12 @@ enum fs_mgmt_err_code_t {
 
 	/** The requested checksum or hash type was not found or is not supported by this build. */
 	FS_MGMT_ERR_CHECKSUM_HASH_NOT_FOUND,
+
+	/** The specified mount point was not found or is not mounted. */
+	FS_MGMT_ERR_MOUNT_POINT_NOT_FOUND,
+
+	/** The specified mount point is that of a read-only filesystem. */
+	FS_MGMT_ERR_READ_ONLY_FILESYSTEM,
 };
 
 #ifdef __cplusplus
