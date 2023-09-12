@@ -8,6 +8,9 @@ common:
     - nrf9160dk_nrf9160_ns
     - nrf9161dk_nrf9161_ns
     - v2m_musca_s1_ns
+  modules:
+    - psa-arch-tests
+    - tf-m-tests
   integration_platforms:
     - mps2_an521_ns
   harness: console
