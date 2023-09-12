@@ -345,6 +345,17 @@ static OSPI_RegularCmdTypeDef ospi_prepare_cmd(uint8_t transfer_mode, uint8_t tr
 	return cmd_tmp;
 }
 
+static uint32_t stm32_ospi_hal_address_size(const struct device *dev)
+{
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+
+	if (dev_data->address_width == 4U) {
+		return HAL_OSPI_ADDRESS_32_BITS;
+	}
+
+	return HAL_OSPI_ADDRESS_24_BITS;
+}
+
 #if defined(CONFIG_FLASH_JESD216_API)
 /*
  * Read the JEDEC ID data from the octoFlash at init or DTS
@@ -367,7 +378,8 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(OSPI_SPI_MODE, OSPI_STR_TRANSFER);
 
 	cmd.Instruction = JESD216_CMD_READ_ID;
-	cmd.AddressSize = HAL_OSPI_ADDRESS_NONE;
+	cmd.AddressSize = stm32_ospi_hal_address_size(dev);
+	cmd.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	cmd.NbData = JESD216_READ_ID_LEN; /* 3 bytes in the READ ID */
 
 	HAL_StatusTypeDef hal_ret;
@@ -941,17 +953,6 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	k_msleep(STM32_OSPI_RESET_MAX_TIME);
 
 	return 0;
-}
-
-static uint32_t stm32_ospi_hal_address_size(const struct device *dev)
-{
-	struct flash_stm32_ospi_data *dev_data = dev->data;
-
-	if (dev_data->address_width == 4U) {
-		return HAL_OSPI_ADDRESS_32_BITS;
-	}
-
-	return HAL_OSPI_ADDRESS_24_BITS;
 }
 
 /*
