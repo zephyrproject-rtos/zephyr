@@ -9,3 +9,11 @@ config DMA_SAM0
 	depends on DT_HAS_ATMEL_SAM0_DMAC_ENABLED
 	help
 	  DMA driver for Atmel SAM0 series MCUs.
+
+config DMA_SAM0_DESC_POOL_SIZE
+	int "number of DmacDescriptor structs in an allocation pool"
+	default 2
+	help
+	  The number of DmacDescriptor structs in a statically allocated pool. Each channel
+	  has its own DmacDescriptor struct pool. If during dma_config() a log notes there
+	  are not enough DmacDescriptor structs then this should be increased to match the need.
