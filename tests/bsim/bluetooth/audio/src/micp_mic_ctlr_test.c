@@ -357,11 +357,13 @@ static void test_main(void)
 		return;
 	}
 
+	bt_le_scan_cb_register(&common_scan_cb);
+
 	bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
 
 	WAIT_FOR_COND(g_bt_init);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
