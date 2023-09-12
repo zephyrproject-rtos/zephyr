@@ -21,6 +21,7 @@
 #include "bs_tracing.h"
 #include "bs_dump_files.h"
 #include "bs_rand_main.h"
+#include "nsi_cpu_if.h"
 #include "nsi_tasks.h"
 #include "nsi_main.h"
 #include "NRF_HWLowL.h"
@@ -86,8 +87,17 @@ static void bsim_register_basic_args(void)
 		.name = "arg",
 		.type = 'l',
 		.descript = "The arguments that follow will be passed straight to the testcase "
-			"init function. (Note: If more than 1 MCU is present, argtest corresponds "
-			"to argtestmcu0)"
+			"init function (Note: If more than 1 MCU is present, argtest corresponds "
+			"to argstests" NSI_STRINGIFY(NSI_PRIMARY_MCU_N) " )"
+		},
+		{
+		.manual = true,
+		.option = "argstest<n>",
+		.name = "arg",
+		.type = 'l',
+		.descript = "The arguments that follow will be passed straight to cpu<n>'s "
+			"testcase init function), where 0 <= n < " NSI_STRINGIFY(NSI_N_CPUS)
+			" is the cpu number"
 		},
 		{
 		.manual = true,
@@ -117,6 +127,17 @@ void bs_add_extra_dynargs(bs_args_struct_t *args_struct_toadd)
 	bs_add_dynargs(&args_struct, args_struct_toadd);
 }
 
+static void nsif_cpun_save_test_arg(int n, char *c)
+{
+	F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _save_test_arg(char *argv))
+
+	void(*fptrs[])(char *) = {
+		F_TRAMP_TABLE(nsif_cpu, _save_test_arg)
+	};
+
+	fptrs[n](c);
+}
+
 /**
  * Check the arguments provided in the command line: set args based on it or
  * defaults, and check they are correct
@@ -132,9 +153,14 @@ void nsi_handle_cmd_line(int argc, char *argv[])
 	static const char default_phy[] = "2G4";
 
 	enum {Main = 0, Test = 1} parsing = Main;
+	uint test_cpu_n;
 
 	for (int i = 1; i < argc; i++) {
 		if (bs_is_option(argv[i], "argstest", 0)) {
+			parsing = Test;
+			test_cpu_n = NSI_PRIMARY_MCU_N;
+			continue;
+		} else if (bs_is_multi_opt(argv[i], "argstest", &test_cpu_n, 0)) {
 			parsing = Test;
 			continue;
 		} else if (bs_is_option(argv[i], "argsmain", 0)) {
@@ -149,8 +175,7 @@ void nsi_handle_cmd_line(int argc, char *argv[])
 						    argv[i]);
 			}
 		} else if (parsing == Test) {
-			void nsif_cpu0_save_test_arg(char *argv);
-			nsif_cpu0_save_test_arg(argv[i]);
+			nsif_cpun_save_test_arg(test_cpu_n, argv[i]);
 		} else {
 			bs_trace_error_line("Bad error\n");
 		}

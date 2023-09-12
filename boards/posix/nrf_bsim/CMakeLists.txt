@@ -27,6 +27,7 @@ zephyr_library_sources(
 
 target_sources(native_simulator INTERFACE
 	common/bsim_args_runner.c
+	common/bsim_extra_cpu_if_stubs.c
 	common/phy_sync_ctrl.c
 	common/runner_hooks.c
 	common/posix_arch_if.c
@@ -56,5 +57,8 @@ set_property(TARGET native_simulator APPEND PROPERTY RUNNER_LINK_LIBRARIES
 	${libpath}/lib2G4PhyComv1.32.a
 	${libpath}/libRandv2.32.a
 )
+
+target_compile_options(native_simulator INTERFACE
+                       "-DNSI_PRIMARY_MCU_N=${CONFIG_NATIVE_SIMULATOR_PRIMARY_MCU_INDEX}")
 
 include(../common/natsim_config.cmake)
