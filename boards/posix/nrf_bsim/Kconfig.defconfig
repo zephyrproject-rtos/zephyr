@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_BSIM
+if SOC_SERIES_BSIM_NRFXX
 
 config BUILD_OUTPUT_BIN
 	default n
@@ -12,9 +12,16 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
 config BOARD
-	default "nrf52_bsim"
+	default "nrf52_bsim" if BOARD_NRF52_BSIM
+	default "nrf5340bsim_nrf5340_cpunet" if BOARD_NRF5340BSIM_NRF5340_CPUNET
+	default "nrf5340bsim_nrf5340_cpuapp" if BOARD_NRF5340BSIM_NRF5340_CPUAPP
+
+config NATIVE_SIMULATOR_NUMBER_MCUS
+	default 2 if BOARD_NRF5340BSIM_NRF5340_CPUNET || BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 1
 
 config NATIVE_SIMULATOR_MCU_N
+	default 1 if BOARD_NRF5340BSIM_NRF5340_CPUNET
 	default 0
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -25,7 +32,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
 config BT_CTLR
-	default y
+	default y if BOARD_NRF52_BSIM || BOARD_NRF5340BSIM_NRF5340_CPUNET
 	depends on BT
 
 # The 15.4 driver Tx encryption is currently not functional with this
@@ -54,4 +61,4 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-endif # BOARD_NRF52_BSIM
+endif # SOC_SERIES_BSIM_NRFXX
