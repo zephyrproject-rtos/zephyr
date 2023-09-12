@@ -1333,8 +1333,7 @@ struct k_condvar condvar;
 static void entry_error_perm(void *p1, void *p2, void *p3)
 {
 	set_fault_valid(true);
-	k_object_access_grant(p2, k_current_get());
-
+	k_object_access_grant(p1, k_current_get());
 }
 
 /**
@@ -1350,7 +1349,9 @@ static void entry_error_perm(void *p1, void *p2, void *p3)
  */
 ZTEST(mem_protect_kobj, test_kobject_perm_error)
 {
-	void *kobj[16];
+#define NUM_KOBJS 13
+
+	void *kobj[NUM_KOBJS];
 
 	kobj[0] = &ms;
 	kobj[1] = &mq;
@@ -1366,16 +1367,18 @@ ZTEST(mem_protect_kobj, test_kobject_perm_error)
 	kobj[11] = &f;
 	kobj[12] = &condvar;
 
-	for (int i = 0; i < 12 ; i++) {
+	for (int i = 0; i < NUM_KOBJS; i++) {
 
 		k_tid_t tid = k_thread_create(&child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack),
 			(k_thread_entry_t)entry_error_perm,
-			(void *)&tid, kobj[i], NULL,
+			kobj[i], NULL, NULL,
 			1, K_USER, K_NO_WAIT);
 
 		k_thread_join(tid, K_FOREVER);
 	}
+
+#undef NUM_KOBJS
 }
 
 extern const char *otype_to_str(enum k_objects otype);
