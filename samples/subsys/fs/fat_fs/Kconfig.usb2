@@ -11,16 +11,18 @@ menuconfig USB2_FAT_FS
 if USB2_FAT_FS
 
 config DISK_DRIVE_NAME
-	string "Disk drive name to be used by application"
 	default "USB2"
-	help
-	  Name of the disk drive to be used by sample application.
 
 config DEV_CONNECTION_WAIT
-	int "Device connection wait value"
 	default 10
-	help
-	  Before using devices like USB wait for the enumeration process to
-	  complete. The wait value configured is in seconds.
+
+config USB_HOST_CLASS_DRIVER
+	default y
+
+config USB_HOST_MSC_DRIVER
+	default y
+
+config DISK_DRIVER_USB2
+	default y
 
 endif # USB2_FAT_FS
