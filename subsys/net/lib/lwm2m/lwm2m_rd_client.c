@@ -89,12 +89,10 @@ static void set_sm_state(uint8_t sm_state);
 enum sm_engine_state {
 	ENGINE_IDLE,
 	ENGINE_INIT,
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	ENGINE_DO_BOOTSTRAP_REG,
 	ENGINE_BOOTSTRAP_REG_SENT,
 	ENGINE_BOOTSTRAP_REG_DONE,
 	ENGINE_BOOTSTRAP_TRANS_DONE,
-#endif
 	ENGINE_DO_REGISTRATION,
 	ENGINE_SEND_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
@@ -355,14 +353,20 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 static void socket_fault_cb(int error)
 {
 	LOG_ERR("RD Client socket error: %d", error);
+	lwm2m_socket_close(client.ctx);
 
-	if (sm_is_bootstrap()) {
+	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) && sm_is_bootstrap()) {
 		client.ctx->sec_obj_inst = -1;
 		/* force full registration */
 		client.last_update = 0;
-	}
 
-	lwm2m_socket_close(client.ctx);
+		if (get_sm_state() == ENGINE_BOOTSTRAP_TRANS_DONE) {
+			/* Ignore the error, some servers close the connection immediately
+			 * after receiving Ack to Bootstrap-Finish command.
+			 */
+			return;
+		}
+	}
 
 	/* Network error state causes engine to re-register,
 	 * so only trigger that state if we are not stopping the
