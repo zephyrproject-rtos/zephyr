@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_BSIM
+if SOC_SERIES_BSIM_NRFXX
 
 # The following file is normally parsed only for the ARM architecture, which is
 # used by Nordic SoCs, so to make the symbols defined in this file available for
-# the simulated nrf52_bsim board, which uses the POSIX architecture, the file
+# the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
 # must be read also from here.
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 
-endif # BOARD_NRF52_BSIM
+endif # SOC_SERIES_BSIM_NRFXX
 
 
 # This would eventually be shared by a possible family of simulated NRF boards
