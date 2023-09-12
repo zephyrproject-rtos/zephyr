@@ -3012,10 +3012,9 @@ West:
   status: maintained
   maintainers:
     - sylvioalves
-    - glaubermaroto
-    - uLipe
   collaborators:
     - LucasTambor
+    - marekmatej
   files: []
   labels:
     - "platform: ESP32"
