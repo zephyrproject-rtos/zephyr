@@ -52,7 +52,7 @@
 		uart0: serial@90078 {
 			compatible = "altr,jtag-uart";
 			interrupts = <16>;
-			status = "disable";
+			status = "disabled";
 		};
 	};
 };
