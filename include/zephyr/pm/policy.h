@@ -64,14 +64,16 @@ struct pm_policy_event {
 	uint32_t value_cyc;
 };
 
-/** @cond INTERNAL_HIDDEN */
-
 /**
  * @brief Function to get the next PM state
  *
  * This function is called by the power subsystem when the system is
  * idle and returns the most appropriate state based on the number of
  * ticks to the next event.
+ *
+ * When :kconfig:option:`CONFIG_PM_POLICY_DEFAULT` is not set, the application
+ * or SoC implementation can implement this function to provide a custom
+ * policy.
  *
  * @param cpu CPU index.
  * @param ticks The number of ticks to the next scheduled event.
@@ -95,8 +97,6 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
  * will return NULL if system should remain into PM_STATE_ACTIVE.
  */
 const struct pm_state_info *pm_policy_default_next_state(uint8_t cpu, int32_t ticks);
-
-/** @endcond */
 
 /** Special value for 'all substates'. */
 #define PM_ALL_SUBSTATES (UINT8_MAX)
