@@ -129,8 +129,7 @@ static void update_next_event(uint32_t cyc)
 	next_event_cyc = new_next_event_cyc;
 }
 
-#ifdef CONFIG_PM_POLICY_DEFAULT
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_default_next_state(uint8_t cpu, int32_t ticks)
 {
 	int64_t cyc = -1;
 	uint8_t num_cpu_states;
@@ -188,6 +187,13 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 
 	return NULL;
+}
+
+#ifdef CONFIG_PM_POLICY_DEFAULT
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+{
+
+	return pm_policy_default_next_state(cpu, ticks);
 }
 #endif
 

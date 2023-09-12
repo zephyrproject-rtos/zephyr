@@ -81,6 +81,21 @@ struct pm_policy_event {
  */
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
+/**
+ * @brief Function to get the next PM state (Default policy)
+ *
+ * This function is called by the power subsystem when the system is
+ * idle and returns the most appropriate state based on the number of
+ * ticks to the next event.
+ *
+ * @param cpu CPU index.
+ * @param ticks The number of ticks to the next scheduled event.
+ *
+ * @return The power state the system should use for the given cpu. The function
+ * will return NULL if system should remain into PM_STATE_ACTIVE.
+ */
+const struct pm_state_info *pm_policy_default_next_state(uint8_t cpu, int32_t ticks);
+
 /** @endcond */
 
 /** Special value for 'all substates'. */
