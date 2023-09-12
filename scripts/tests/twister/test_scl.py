@@ -162,7 +162,7 @@ def test_yaml_load(caplog, fail_parsing):
         with pytest.raises(ScannerError) if fail_parsing else nullcontext():
             result = scl.yaml_load(filename)
 
-    mock_file.assert_called_with('dummy/file.yaml', 'r')
+    mock_file.assert_called_with('dummy/file.yaml', 'r', encoding='utf-8')
 
     if not fail_parsing:
         assert result == result_mock
