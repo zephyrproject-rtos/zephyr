@@ -185,7 +185,7 @@ static inline void print_codec_cap(const struct shell *sh,
 		    codec_cap->cid, codec_cap->vid, codec_cap->data_len);
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
-	if (codec_cap->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		print_ltv_array(sh, "data", codec_cap->data, codec_cap->data_len);
 	} else { /* If not LC3, we cannot assume it's LTV */
 		shell_hexdump(sh, codec_cap->data, codec_cap->data_len);
@@ -204,7 +204,7 @@ static inline void print_codec_cfg(const struct shell *sh,
 		    codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		print_ltv_array(sh, "data", codec_cfg->data, codec_cfg->data_len);
 	} else { /* If not LC3, we cannot assume it's LTV */
 		shell_hexdump(sh, codec_cfg->data, codec_cfg->data_len);

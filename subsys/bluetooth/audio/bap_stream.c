@@ -195,7 +195,7 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		return false;
 	}
 
-	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		if (codec_cfg->cid != 0U) {
 			LOG_DBG("codec_cfg->cid (%u) is invalid", codec_cfg->cid);
 			return false;
