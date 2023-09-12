@@ -145,11 +145,6 @@ enum bt_audio_codec_capability_type {
 #define BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(...)                                                 \
 	((uint8_t)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
 
-struct BT_AUDIO_CODEC_LC3_frame_len {
-	uint16_t min;
-	uint16_t max;
-};
-
 /**
  * @brief Codec configuration type IDs
  *
