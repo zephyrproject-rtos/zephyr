@@ -75,7 +75,7 @@ jobs:
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
-          west config manifest.group-filter -- +ci
+          west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
@@ -174,6 +174,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
           west init -l . || true
+          west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
