@@ -891,10 +891,6 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		return err;
 	}
 
-	if ((reg & CAN_MCAN_PSR_BO) != 0U) {
-		return -ENETUNREACH;
-	}
-
 	err = k_sem_take(&data->tx_sem, timeout);
 	if (err != 0) {
 		return -EAGAIN;
