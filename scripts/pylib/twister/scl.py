@@ -41,7 +41,7 @@ def yaml_load(filename):
     :return: dictionary representing the YAML document
     """
     try:
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return yaml.load(f, Loader=SafeLoader)
     except yaml.scanner.ScannerError as e:	# For errors parsing schema.yaml
         mark = e.problem_mark
