@@ -749,6 +749,8 @@ struct bt_hci_rp_read_bd_addr {
 #define BT_HCI_CODING_FORMAT_TRANSPARENT 0x03
 #define BT_HCI_CODING_FORMAT_LINEAR_PCM  0x04
 #define BT_HCI_CODING_FORMAT_MSBC        0x05
+#define BT_HCI_CODING_FORMAT_LC3         0x06
+#define BT_HCI_CODING_FORMAT_G729A       0x07
 #define BT_HCI_CODING_FORMAT_VS          0xFF
 
 

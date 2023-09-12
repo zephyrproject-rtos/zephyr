@@ -134,7 +134,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	printk("codec_cfg 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cfg->id, codec_cfg->cid,
 	       codec_cfg->vid, codec_cfg->data_len);
 
-	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
 		enum bt_audio_location chan_allocation;

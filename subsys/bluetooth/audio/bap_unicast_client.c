@@ -1212,7 +1212,7 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 		/* If codec is LC3, then it shall be LTV encoded - We verify this before storing the
 		 * data For any non-LC3 codecs, we cannot verify anything
 		 */
-		if (id == BT_AUDIO_CODEC_LC3_ID) {
+		if (id == BT_HCI_CODING_FORMAT_LC3) {
 			bt_data_parse(&buf, valid_ltv_cb, NULL);
 
 			/* Check if all entries could be parsed */

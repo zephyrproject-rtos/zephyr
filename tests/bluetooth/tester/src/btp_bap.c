@@ -110,7 +110,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	LOG_DBG("codec_cfg 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cfg->id, codec_cfg->cid,
 		codec_cfg->vid, codec_cfg->data_len);
 
-	if (codec_cfg->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		/* LC3 uses the generic LTV format - other codecs might do as well */
 
 		enum bt_audio_location chan_allocation;
@@ -140,7 +140,7 @@ static void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 	LOG_DBG("codec_cap 0x%02x cid 0x%04x vid 0x%04x count %zu", codec_cap->id, codec_cap->cid,
 		codec_cap->vid, codec_cap->data_len);
 
-	if (codec_cap->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		bt_audio_data_parse(codec_cap->data, codec_cap->data_len, print_cb, "data");
 	} else {
 		LOG_HEXDUMP_DBG(codec_cap->data, codec_cap->data_len, "data");
