@@ -78,6 +78,8 @@
 		pwm-led3 = &blue_pwm_led;
 		magn0 = &lsm303agr_magn;
 		accel0 = &lsm303agr_accel;
+		mcuboot-button0 = &user_button;
+		mcuboot-led0 = &orange_led_3;
 	};
 };
 
