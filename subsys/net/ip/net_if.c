@@ -2890,9 +2890,15 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv6_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			STRUCT_SECTION_FOREACH(net_if, iface) {
-				struct in6_addr *addr;
+			struct in6_addr *addr;
 
+			addr = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
+			if (addr) {
+				src = addr;
+				goto out;
+			}
+
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				addr = net_if_ipv6_get_ll(iface,
 							  NET_ADDR_PREFERRED);
 				if (addr) {
@@ -2905,7 +2911,6 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 
 	if (!src) {
 		src = net_ipv6_unspecified_address();
-		goto out;
 	}
 
 out:
@@ -3427,9 +3432,15 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			STRUCT_SECTION_FOREACH(net_if, iface) {
-				struct in_addr *addr;
+			struct in_addr *addr;
 
+			addr = net_if_ipv4_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
+			if (addr) {
+				src = addr;
+				goto out;
+			}
+
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				addr = net_if_ipv4_get_ll(iface,
 							  NET_ADDR_PREFERRED);
 				if (addr) {
@@ -3454,8 +3465,6 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		if (!src) {
 			src = net_ipv4_unspecified_address();
 		}
-
-		goto out;
 	}
 
 out:
