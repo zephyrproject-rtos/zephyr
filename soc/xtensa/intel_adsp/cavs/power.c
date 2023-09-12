@@ -54,6 +54,9 @@ LOG_MODULE_REGISTER(soc);
 extern void rom_entry(void);
 
 struct core_state {
+	uint32_t a0;
+	uint32_t a1;
+	uint32_t excsave2;
 	uint32_t intenable;
 };
 
@@ -76,6 +79,51 @@ static inline void __sparse_cache *uncache_to_cache(void *address)
 	return (void __sparse_cache *)((uintptr_t)(address) | SRAM_ALIAS_OFFSET);
 }
 
+static ALWAYS_INLINE void _save_core_context(void)
+{
+	uint32_t core_id = arch_proc_id();
+
+	core_desc[core_id].excsave2 = XTENSA_RSR(ZSR_CPU_STR);
+	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
+	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
+	sys_cache_data_flush_range(&core_desc[core_id], sizeof(struct core_state));
+}
+
+static ALWAYS_INLINE void _restore_core_context(void)
+{
+	uint32_t core_id = arch_proc_id();
+
+	XTENSA_WSR(ZSR_CPU_STR, core_desc[core_id].excsave2);
+	__asm__ volatile("mov a0, %0" :: "r"(core_desc[core_id].a0));
+	__asm__ volatile("mov a1, %0" :: "r"(core_desc[core_id].a1));
+	__asm__ volatile("rsync");
+}
+
+void power_gate_exit(void)
+{
+	cpu_early_init();
+	sys_cache_data_flush_and_invd_all();
+	_restore_core_context();
+}
+
+__asm__(".align 4\n\t"
+	".global dsp_restore_vector\n\t"
+	"dsp_restore_vector:\n\t"
+	"  movi  a0, 0\n\t"
+	"  movi  a1, 1\n\t"
+	"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+	"  wsr   a2, PS\n\t"
+	"  wsr   a1, WINDOWSTART\n\t"
+	"  wsr   a0, WINDOWBASE\n\t"
+	"  rsync\n\t"
+	"  movi  a1, z_interrupt_stacks\n\t"
+	"  rsr   a2, PRID\n\t"
+	"  movi  a3, " STRINGIFY(CONFIG_ISR_STACK_SIZE) "\n\t"
+	"  mull  a2, a2, a3\n\t"
+	"  add   a2, a2, a3\n\t"
+	"  add   a1, a1, a2\n\t"
+	"  call0 power_gate_exit\n\t");
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
@@ -84,6 +132,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
+		xthal_window_spill();
+		_save_core_context();
 		soc_cpus_active[cpu] = false;
 		sys_cache_data_flush_and_invd_all();
 		if (cpu == 0) {
