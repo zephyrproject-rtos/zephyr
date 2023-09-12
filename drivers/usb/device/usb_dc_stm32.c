@@ -127,14 +127,18 @@ static const struct gpio_dt_spec ulpi_reset =
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
 #endif
 
-/* We need one RX FIFO and n TX-IN FIFOs */
-#define FIFO_NUM (1 + USB_NUM_BIDIR_ENDPOINTS)
+/* We need n TX IN FIFOs */
+#define TX_FIFO_NUM USB_NUM_BIDIR_ENDPOINTS
 
-/* 4-byte words FIFO */
-#define FIFO_WORDS (USB_RAM_SIZE / 4)
+/* We need a minimum size for RX FIFO */
+#define USB_FIFO_RX_MIN 160
 
-/* Allocate FIFO memory evenly between the FIFOs */
-#define FIFO_EP_WORDS (FIFO_WORDS / FIFO_NUM)
+/* 4-byte words TX FIFO */
+#define TX_FIFO_WORDS ((USB_RAM_SIZE - USB_FIFO_RX_MIN - 64) / 4)
+
+/* Allocate FIFO memory evenly between the TX FIFOs */
+/* except the first TX endpoint need only 64 bytes */
+#define TX_FIFO_EP_WORDS (TX_FIFO_WORDS / (TX_FIFO_NUM - 1))
 
 #endif /* USB */
 
@@ -436,11 +440,17 @@ static int usb_dc_stm32_init(void)
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #else /* USB_OTG_FS */
+
 	/* TODO: make this dynamic (depending usage) */
-	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
+	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, USB_FIFO_RX_MIN);
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
-				    FIFO_EP_WORDS);
+		if (i == 0) {
+			/* first endpoint need only 64 byte for EP_TYPE_CTRL */
+			HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,	16);
+		} else {
+			HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
+					TX_FIFO_EP_WORDS);
+		}
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #endif /* USB */
