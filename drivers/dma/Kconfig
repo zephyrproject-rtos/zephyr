@@ -66,4 +66,6 @@ source "drivers/dma/Kconfig.mcux_smartdma"
 
 source "drivers/dma/Kconfig.andes_atcdmac300"
 
+source "drivers/dma/Kconfig.sedi"
+
 endif # DMA
