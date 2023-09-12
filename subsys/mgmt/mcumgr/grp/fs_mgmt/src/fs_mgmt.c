@@ -425,7 +425,9 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 			if (rc == -EINVAL) {
 				rc = FS_MGMT_ERR_FILE_INVALID_NAME;
 			} else if (rc == -ENOENT) {
-				rc = FS_MGMT_ERR_FILE_NOT_FOUND;
+				rc = FS_MGMT_ERR_MOUNT_POINT_NOT_FOUND;
+			} else if (rc == -EROFS) {
+				rc = FS_MGMT_ERR_READ_ONLY_FILESYSTEM;
 			} else {
 				rc = FS_MGMT_ERR_UNKNOWN;
 			}
@@ -909,7 +911,18 @@ static int fs_mgmt_translate_error_code(uint16_t err)
 	int rc;
 
 	switch (err) {
+	case FS_MGMT_ERR_FILE_INVALID_NAME:
+	case FS_MGMT_ERR_CHECKSUM_HASH_NOT_FOUND:
+		rc = MGMT_ERR_EINVAL;
+		break;
+
+	case FS_MGMT_ERR_FILE_NOT_FOUND:
+	case FS_MGMT_ERR_MOUNT_POINT_NOT_FOUND:
+		rc = MGMT_ERR_ENOENT;
+		break;
+
 	case FS_MGMT_ERR_UNKNOWN:
+	case FS_MGMT_ERR_FILE_IS_DIRECTORY:
 	case FS_MGMT_ERR_FILE_OPEN_FAILED:
 	case FS_MGMT_ERR_FILE_SEEK_FAILED:
 	case FS_MGMT_ERR_FILE_READ_FAILED:
@@ -918,6 +931,7 @@ static int fs_mgmt_translate_error_code(uint16_t err)
 	case FS_MGMT_ERR_FILE_WRITE_FAILED:
 	case FS_MGMT_ERR_FILE_OFFSET_NOT_VALID:
 	case FS_MGMT_ERR_FILE_OFFSET_LARGER_THAN_FILE:
+	case FS_MGMT_ERR_READ_ONLY_FILESYSTEM:
 	default:
 		rc = MGMT_ERR_EUNKNOWN;
 	}
