@@ -9,14 +9,14 @@
 
 /* Kernel objects */
 
-K_THREAD_STACK_DEFINE(child_stack, KOBJECT_STACK_SIZE);
+K_THREAD_STACK_DECLARE(child_stack, KOBJECT_STACK_SIZE);
 K_THREAD_STACK_DEFINE(extra_stack, KOBJECT_STACK_SIZE);
 
 K_SEM_DEFINE(kobject_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_SEM_DEFINE(kobject_public_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_MUTEX_DEFINE(kobject_mutex);
 
-struct k_thread child_thread;
+extern struct k_thread child_thread;
 struct k_thread extra_thread;
 
 struct k_sem *random_sem_type;
