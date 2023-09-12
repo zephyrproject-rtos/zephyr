@@ -46,6 +46,9 @@ Note that the collection may need to go a bit after the "seconds" parameter,
 to account for expected drift in the test and between the DUT and the external
 tool.
 
+One can check `pytest/saleae_logic2.py` file as a sample of external tool
+helper module.
+
 Twister
 
 For Twister execute the external tool testing, the fixture "gpio_timerout"
@@ -53,6 +56,8 @@ must be available on the device. Also, testcase.yaml
 "harness_config/pytest_args" from "kernel.timer.timer_behavior_external" must
 have parameters "tool", with the name of a loadable Python module and
 "tool-options", a string with options passed to the Python module helper.
+
+Check testcase.yaml for an example using the saleae_logic2 module.
 
 Configuration options
 
@@ -69,3 +74,11 @@ for the hardware in question.
 
 Also, CONFIG_TIMER_EXTERNAL_TEST_SYNC_DELAY is used to set a delay before a
 test cycle starts, so that the external tool can be set up.
+
+Dependencies
+
+The external tool interface may have its own dependencies. For instance,
+the saleae_logic2 module ones are listed at pytest/requirements-saleae.txt.
+One can install them with pip (possibly in some virtual environment):
+
+    pip install -r pytest/requirements-saleae.txt
