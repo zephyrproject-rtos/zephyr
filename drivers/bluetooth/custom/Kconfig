@@ -1,0 +1,22 @@
+# Bluetooth custom driver configuration options
+
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Bluetooth Custom Driver Options"
+
+choice BT_CUSTOM_TYPE
+	prompt "Bluetooth custom driver"
+
+config BT_RS9116W
+	bool "RS9116W Bluetooth driver support"
+	select WISECONNECT
+	select WISECONNECT_BT
+	select POLL
+	help
+	  Enables support for the Silicon Labs RS9116W combined WiFi Bluetooth
+	  module utilizing the the WiSeConnect SAPI.
+
+endchoice
+
+source "drivers/bluetooth/custom/rs9116w/Kconfig.rs9116w"

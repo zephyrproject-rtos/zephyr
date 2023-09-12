@@ -1,0 +1,190 @@
+# RS9116 bluetooth configuration options
+
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_RS9116W
+
+module = BT
+module-str = bt
+source "subsys/logging/Kconfig.template.log_config"
+
+config BT_PERIPHERAL
+	bool "Peripheral Role support"
+	select BT_CONN
+	help
+		Select this for LE Peripheral role support.
+
+config BT_CONN
+	bool
+
+config BT_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BT_CONN
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported.
+
+config BT_WHITELIST
+	  bool "Whitelist support"
+	  help
+	  This option enables the whitelist API. This takes advantage of the
+	  whitelisting feature of a BLE controller.
+	  The whitelist is a global list and the same whitelist is used
+	  by both scanner and advertiser. The whitelist cannot be modified while
+	  it is in use.
+
+	  An Advertiser can whitelist which peers can connect or request scan
+	  response data.
+	  A scanner can whitelist advertiser for which it will generate
+	  advertising reports.
+	  Connections can be established automatically for whitelisted peers.
+
+	  This options deprecates the bt_le_set_auto_conn API in favor of the
+	  bt_conn_create_aute_le API.
+
+config BT_DEVICE_NAME_DYNAMIC
+	bool "Allow to set Bluetooth device name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of Bluetooth
+	  device name.
+
+config BT_DEVICE_NAME_MAX
+	int "Maximum size in bytes for device name"
+	depends on BT_DEVICE_NAME_DYNAMIC
+	default 28
+	range 2 248
+	help
+	  Bluetooth device name storage size. Storage can be up to 248 bytes
+	  long (excluding NULL termination).
+
+config BT_DEVICE_NAME
+	string "Bluetooth device name"
+	default "Zephyr"
+	help
+	  Bluetooth device name. Name can be up to 248 bytes long (excluding
+	  NULL termination). Can be empty string.
+
+if BT_CONN
+
+config RSI_BLE_SHELL
+	bool "Bluetooth shell commands for the RS9116"
+	depends on SHELL
+	default n
+
+config BT_CONN_PARAM_UPDATE_TIMEOUT
+	int "Peripheral connection parameter update timeout in milliseconds"
+	default 5000
+	range 0 65535
+
+	help
+	  The value is a timeout used by peripheral device to wait until it
+	  starts the first connection parameters update procedure after a
+	  connection has been established.
+	  The connection parameters requested will be the parameters set by the
+	  application, or the peripheral preferred connection parameters if
+	  configured.
+	  The default value is set to 5 seconds, to comply with the Bluetooth
+	  Core specification: Core 4.2 Vol 3, Part C, 9.3.12.2:
+	  "The Peripheral device should not perform a Connection Parameter
+	  Update procedure within 5 seconds after establishing a connection."
+
+config BT_ATT_PREPARE_COUNT
+	int "Number of ATT prepare write buffers"
+	default 0
+	range 0 64
+	help
+	  Number of buffers available for ATT prepare write, setting
+	  this to 0 disables GATT long/reliable writes.
+
+config RSI_BT_EVENT_QUEUE_SIZE
+	int "Size of event queue"
+	default 2
+	range 2 8
+	help
+	  Number of slots for BLE request events
+
+config BT_SMP
+	bool "BLE Security Manager Protocol (SMP) features"
+	default n
+
+config BT_MAX_PAIRED
+	int "Maximum number of paired devices"
+	default 0 if !BT_SMP
+	default 1
+	range 0 128
+	help
+	  Maximum number of paired Bluetooth devices. The minimum (and
+	  default) number is 1.
+
+if BT_SMP
+
+config BT_BONDABLE
+	bool "Bondable Mode"
+	default y
+	help
+	  This option enables support for Bondable Mode. In this mode,
+	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
+	  indicating the support for this mode.
+
+config BT_ENFORCE_MITM
+	bool "Enforce MITM protection"
+	default y
+	help
+	  With this option enabled, the Security Manager will set MITM option in
+	  the Authentication Requirements Flags whenever local IO Capabilities
+	  allow the generated key to be authenticated.
+
+# config BT_FIXED_PASSKEY
+# 	bool "Use a fixed passkey for pairing"
+# 	help
+# 	  With this option enabled, the application will be able to call the
+# 	  bt_passkey_set() API to set a fixed passkey. If set, the
+# 	  pairing_confim() callback will be called for all incoming pairings.
+
+config BT_SMP_SC_PAIR_ONLY
+	bool "Disable legacy pairing"
+	help
+	  This option disables LE legacy pairing and forces LE secure connection
+	  pairing. All Security Mode 1 levels can be used with legacy pairing
+	  disabled, but pairing with devices that do not support secure
+	  connections pairing will not be supported.
+	  To force a higher security level use "Secure Connections Only Mode"
+
+endif # BT_SMP
+
+menu "GATT Services"
+
+source "subsys/bluetooth/services/Kconfig.dis"
+
+source "subsys/bluetooth/services/Kconfig.bas"
+
+source "subsys/bluetooth/services/Kconfig.hrs"
+
+source "subsys/bluetooth/services/Kconfig.tps"
+
+source "subsys/bluetooth/services/ias/Kconfig.ias"
+
+endmenu
+
+endif # BT_CONN
+
+config BT_DEVICE_APPEARANCE
+	int "Bluetooth device appearance"
+	range 0 65535
+	default 0
+	help
+	  Bluetooth device appearance. For the list of possible values please
+	  consult the following link:
+	  https://www.bluetooth.com/specifications/assigned-numbers
+
+config BT_DEBUG
+	bool "Bluetooth driver debug"
+	default n
+	help
+	  This option enables debug support for the RS9116W
+	  Bluetooth driver.
+
+endif # BT_RS9116W

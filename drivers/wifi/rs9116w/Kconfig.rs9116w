@@ -1,0 +1,85 @@
+# RS9116W WiFi driver options
+
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_RS9116W
+	bool "RS9116W WiFi driver support"
+	select WISECONNECT
+	select WISECONNECT_WIFI
+	select NET_L2_WIFI_MGMT
+	select WIFI_OFFLOAD
+	select NET_OFFLOAD
+	select NET_SOCKETS
+	imply NET_SOCKETS_OFFLOAD
+	help
+	  Enables WiFi support for the Redpine Signals RS9116W combined
+	  WiFi Bluetooth module utilizing the the WiSeConnect SAPI
+
+if WIFI_RS9116W
+
+config RSI_WIFI_DEBUG
+	bool "WiFi driver debug"
+	default y
+	help
+	  WiFi driver debug
+
+config RS9116W_OVERRIDE_DEFAULT_PRIO
+	bool "Override default socket priority"
+	depends on NET_SOCKETS_OFFLOAD
+	default n
+
+if RS9116W_OVERRIDE_DEFAULT_PRIO
+
+config RS9116W_SOCKET_PRIO
+	int "RS9116W Sockets Priority"
+	default 50
+
+endif # RS9116W_OVERRIDE_DEFAULT_PRIO
+
+if  NET_SOCKETS_OFFLOAD
+config RS9116W_TLS_OFFLOAD
+	bool "Allow the builtin TLS stack on the RS9116W to be utilized"
+	select BASE64
+	default n
+
+if RS9116W_TLS_OFFLOAD
+
+config RS9116W_TLS_PEM_BUF_SZ
+	int "Buffer size to allocate for PEM conversion"
+	default 2000
+
+endif # RS9116W_TLS_OFFLOAD
+
+config RS9116_DNS_SERVER_IP_ADDRESSES
+	bool "Manually set DNS server to be used by the RS9116W"
+	default n
+
+if RS9116_DNS_SERVER_IP_ADDRESSES
+
+config RS9116_IPV4_DNS_SERVER1
+	string "RS9116W IPV4 DNS server 1"
+	default ""
+
+config RS9116_IPV4_DNS_SERVER2
+	string "RS9116W IPV4 DNS server 2"
+	default ""
+
+config RS9116_IPV6_DNS_SERVER1
+	string "RS9116W IPV6 DNS server 1"
+	default ""
+
+config RS9116_IPV6_DNS_SERVER2
+	string "RS9116W IPV6 DNS server 2"
+	default ""
+
+endif # RS9116_DNS_SERVER_IP_ADDRESSES
+
+endif # NET_SOCKETS_OFFLOAD
+
+config RS9116W_ICMP
+	bool
+	select WISECONNECT_ICMP
+	default y if PING
+
+endif # WIFI_RS9116W
