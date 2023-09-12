@@ -12,6 +12,8 @@ common:
     type: one_line
     regex:
       - "Validation done. (.*)"
+  modules:
+    - lz4
 tests:
   sample.compression.lz4:
     integration_platforms:
