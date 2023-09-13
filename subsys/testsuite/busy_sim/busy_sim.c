@@ -204,5 +204,5 @@ static int busy_sim_init(const struct device *dev)
 
 DEVICE_DT_DEFINE(DT_BUSY_SIM, busy_sim_init, NULL,
 	      &sim_data, &sim_config,
-	      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,
+	      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 	      NULL);
