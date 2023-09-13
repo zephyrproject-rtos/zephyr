@@ -80,7 +80,7 @@ static int lvgl_button_input_init(const struct device *dev)
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
 	DEVICE_DT_INST_DEFINE(inst, lvgl_button_input_init, NULL, &lvgl_common_input_data_##inst,  \
-			      &lvgl_button_input_config_##inst, APPLICATION,                       \
+			      &lvgl_button_input_config_##inst, POST_KERNEL,                       \
 			      CONFIG_LV_Z_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_BUTTON_INPUT_DEFINE)
