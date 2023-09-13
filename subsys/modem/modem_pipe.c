@@ -20,6 +20,7 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
 	pipe->callback = NULL;
 	pipe->user_data = NULL;
 	pipe->state = MODEM_PIPE_STATE_CLOSED;
+	pipe->receive_ready_pending = false;
 
 	k_mutex_init(&pipe->lock);
 	k_condvar_init(&pipe->condvar);
@@ -63,6 +64,11 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 	pipe->callback = callback;
 	pipe->user_data = user_data;
+
+	if (pipe->receive_ready_pending && (pipe->callback != NULL)) {
+		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);
+	}
+
 	k_mutex_unlock(&pipe->lock);
 }
 
@@ -94,6 +100,7 @@ int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
 	}
 
 	ret = pipe->api->receive(pipe->data, buf, size);
+	pipe->receive_ready_pending = false;
 	k_mutex_unlock(&pipe->lock);
 	return ret;
 }
@@ -155,6 +162,7 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe)
 {
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 	pipe->state = MODEM_PIPE_STATE_CLOSED;
+	pipe->receive_ready_pending = false;
 
 	if (pipe->callback != NULL) {
 		pipe->callback(pipe, MODEM_PIPE_EVENT_CLOSED, pipe->user_data);
@@ -167,6 +175,8 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe)
 void modem_pipe_notify_receive_ready(struct modem_pipe *pipe)
 {
 	k_mutex_lock(&pipe->lock, K_FOREVER);
+
+	pipe->receive_ready_pending = true;
 
 	if (pipe->callback != NULL) {
 		pipe->callback(pipe, MODEM_PIPE_EVENT_RECEIVE_READY, pipe->user_data);

@@ -265,32 +265,26 @@ static void *test_modem_cmux_setup(void)
 	};
 
 	bus_mock_pipe = modem_backend_mock_init(&bus_mock, &bus_mock_config);
-	__ASSERT_NO_MSG(modem_pipe_open_async(bus_mock_pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(bus_mock_pipe) == 0);
 
 	/* Connect CMUX */
 	__ASSERT_NO_MSG(modem_cmux_attach(&cmux, bus_mock_pipe) == 0);
+	modem_backend_mock_prime(&bus_mock, &transaction_control_sabm);
 	__ASSERT_NO_MSG(modem_cmux_connect_async(&cmux) == 0);
-	modem_backend_mock_put(&bus_mock, cmux_frame_control_sabm_ack,
-			       sizeof(cmux_frame_control_sabm_ack));
-
 	events = k_event_wait(&cmux_event, EVENT_CMUX_CONNECTED, false, K_MSEC(100));
 	__ASSERT_NO_MSG(events == EVENT_CMUX_CONNECTED);
 
 	/* Open DLCI channels */
 	modem_pipe_attach(dlci1_pipe, test_modem_dlci1_pipe_callback, NULL);
-	modem_pipe_attach(dlci2_pipe, test_modem_dlci2_pipe_callback, NULL);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci1_sabm);
 	__ASSERT_NO_MSG(modem_pipe_open_async(dlci1_pipe) == 0);
-	__ASSERT_NO_MSG(modem_pipe_open_async(dlci2_pipe) == 0);
-	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_sabm_ack,
-			       sizeof(cmux_frame_dlci1_sabm_ack));
-
-	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_sabm_ack,
-			       sizeof(cmux_frame_dlci2_sabm_ack));
-
-	events = k_event_wait_all(&cmux_event, (EVENT_CMUX_DLCI1_OPEN | EVENT_CMUX_DLCI2_OPEN),
-				  false, K_MSEC(100));
-
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI1_OPEN, false, K_MSEC(100));
 	__ASSERT_NO_MSG((events & EVENT_CMUX_DLCI1_OPEN));
+
+	modem_pipe_attach(dlci2_pipe, test_modem_dlci2_pipe_callback, NULL);
+	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
+	__ASSERT_NO_MSG(modem_pipe_open_async(dlci2_pipe) == 0);
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DLCI2_OPEN, false, K_MSEC(100));
 	__ASSERT_NO_MSG((events & EVENT_CMUX_DLCI2_OPEN));
 
 	return NULL;
