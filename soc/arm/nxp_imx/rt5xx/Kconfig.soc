@@ -141,4 +141,16 @@ config FLEXCOMM0_CLK_SRC_FRO
 
 endchoice
 
+choice MIPI_DPHY_CLK_SRC
+	prompt "Clock source for MIPI DPHY"
+	default MIPI_DPHY_CLK_SRC_AUX1_PLL
+
+config MIPI_DPHY_CLK_SRC_AUX1_PLL
+	bool "AUX1_PLL is source of MIPI_DPHY clock"
+
+config MIPI_DPHY_CLK_SRC_FRO
+	bool "FRO 192/96M is source of MIPI_DPHY clock"
+
+endchoice
+
 endif # SOC_SERIES_IMX_RT5XX
