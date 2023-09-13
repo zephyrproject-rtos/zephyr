@@ -11,6 +11,14 @@ config NATIVE_SIMULATOR_CPU_N
 	  This option is only applicable for targets which use the
 	  native simulator as their runner.
 
+config NATIVE_SIMULATOR_NUMBER_MCUS
+	int "Total number of MCUs this target has"
+	range 1 16
+	default 1
+	depends on NATIVE_LIBRARY
+	help
+	  How many AMP MCUs does this target have in total.
+
 config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	int "Which CPU is the primary/preferred"
 	default 0
