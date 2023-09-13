@@ -471,6 +471,10 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 {
 	struct k_poll_event *poll_event;
 
+	if (!events) {
+		return;
+	}
+
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
 	if (poll_event != NULL) {
 		(void) signal_poll_event(poll_event, state);
