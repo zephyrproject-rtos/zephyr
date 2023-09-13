@@ -31,7 +31,7 @@ choice CBPRINTF_INTEGRAL_CONV
 # 01: 0% / 0 B (01 / 00)
 config CBPRINTF_FULL_INTEGRAL
 	bool "Convert the full range of integer values"
-	select PICOLIBC_IO_LONG_LONG if PICOLIBC
+	select PICOLIBC_IO_LONG_LONG if PICOLIBC && !CBPRINTF_NANO
 	help
 	  Build cbprintf with buffers sized to support converting the full
 	  range of all integral and pointer values.
