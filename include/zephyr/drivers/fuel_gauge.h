@@ -28,7 +28,7 @@ extern "C" {
 
 /* Keep these alphabetized wrt property name */
 
-enum fuel_gauge_property {
+enum fuel_gauge_prop_type {
 	/** Runtime Dynamic Battery Parameters */
 	/**
 	 * Provide a 1 minute average of the current on the battery.
@@ -115,7 +115,7 @@ enum fuel_gauge_property {
 
 typedef uint16_t fuel_gauge_prop_t;
 
-struct fuel_gauge_get_property {
+struct fuel_gauge_property {
 	/** Battery fuel gauge property to get */
 	fuel_gauge_prop_t property_type;
 
@@ -184,35 +184,8 @@ struct fuel_gauge_get_property {
 	} value;
 };
 
-struct fuel_gauge_set_property {
-	/** Battery fuel gauge property to set */
-	fuel_gauge_prop_t property_type;
-
-	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
-	int status;
-
-	/** Property field for setting */
-	union {
-		/* Fields have the format: */
-		/* FUEL_GAUGE_PROPERTY_FIELD */
-		/* type property_field; */
-
-		/* Writable Dynamic Battery Info */
-		/** FUEL_GAUGE_SBS_MFR_ACCESS */
-		uint16_t sbs_mfr_access_word;
-		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
-		uint16_t sbs_remaining_capacity_alarm;
-		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
-		uint16_t sbs_remaining_time_alarm;
-		/** FUEL_GAUGE_SBS_MODE */
-		uint16_t sbs_mode;
-		/** FUEL_GAUGE_SBS_ATRATE */
-		int16_t sbs_at_rate;
-	} value;
-};
-
 /** Buffer properties are separated due to size */
-struct fuel_gauge_get_buffer_property {
+struct fuel_gauge_buffer_property {
 	/** Battery fuel gauge property to get */
 	fuel_gauge_prop_t property_type;
 
@@ -249,7 +222,7 @@ struct sbs_gauge_device_chemistry {
  * See fuel_gauge_get_property() for argument description
  */
 typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
-					 struct fuel_gauge_get_property *props, size_t props_len);
+					 struct fuel_gauge_property *props, size_t props_len);
 
 /**
  * @typedef fuel_gauge_set_property_t
@@ -258,7 +231,7 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
  * See fuel_gauge_set_property() for argument description
  */
 typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
-					 struct fuel_gauge_set_property *props, size_t props_len);
+					 struct fuel_gauge_property *props, size_t props_len);
 
 /**
  * @typedef fuel_gauge_get_buffer_property_t
@@ -267,7 +240,7 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
  * See fuel_gauge_get_buffer_property() for argument description
  */
 typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
-					       struct fuel_gauge_get_buffer_property *prop,
+					       struct fuel_gauge_buffer_property *prop,
 					       void *dst, size_t dst_len);
 
 /**
@@ -291,20 +264,20 @@ __subsystem struct fuel_gauge_driver_api {
  * @brief Fetch a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param props pointer to array of fuel_gauge_get_property struct where the property struct
+ * @param props pointer to array of fuel_gauge_property struct where the property struct
  * field is set by the caller to determine what property is read from the
- * fuel gauge device into the fuel_gauge_get_property struct's value field. The props array
+ * fuel gauge device into the fuel_gauge_property struct's value field. The props array
  * maintains the same order of properties as it was given.
  * @param props_len number of properties in props array
  *
  * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
  * properties failed where return=number of failing properties.
  */
-__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *props,
+__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *props,
 				  size_t props_len);
 
 static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
-					     struct fuel_gauge_get_property *props,
+					     struct fuel_gauge_property *props,
 					     size_t props_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
@@ -320,19 +293,19 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
  * @brief Set a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param props pointer to array of fuel_gauge_set_property struct where the property struct
+ * @param props pointer to array of fuel_gauge_property struct where the property struct
  * field is set by the caller to determine what property is written to the fuel gauge device from
- * the fuel_gauge_get_property struct's value field.
+ * the fuel_gauge_property struct's value field.
  * @param props_len number of properties in props array
  *
  * @return return=0 if successful, return < 0 if setting all properties failed, return > 0 if some
  * properties failed where return=number of failing properties.
  */
-__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *props,
+__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *props,
 				  size_t props_len);
 
 static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
-					     struct fuel_gauge_set_property *props,
+					     struct fuel_gauge_property *props,
 					     size_t props_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
@@ -357,11 +330,11 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
  * @return return=0 if successful, return < 0 if getting property failed, return 0 on success
  */
 __syscall int fuel_gauge_get_buffer_prop(const struct device *dev,
-					struct fuel_gauge_get_buffer_property *prop, void *dst,
+					struct fuel_gauge_buffer_property *prop, void *dst,
 					size_t dst_len);
 
 static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
-						   struct fuel_gauge_get_buffer_property *prop,
+						   struct fuel_gauge_buffer_property *prop,
 						   void *dst, size_t dst_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
