@@ -53,6 +53,7 @@ struct modem_pipe {
 	enum modem_pipe_state state;
 	struct k_mutex lock;
 	struct k_condvar condvar;
+	bool receive_ready_pending;
 };
 
 /**
