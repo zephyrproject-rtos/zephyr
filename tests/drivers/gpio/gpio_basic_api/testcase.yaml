@@ -16,3 +16,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840 nrf52_bsim
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
+
+  drivers.gpio.mr_canhubk3_wkpu:
+    platform_allow: mr_canhubk3
+    extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
