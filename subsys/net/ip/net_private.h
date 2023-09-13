@@ -141,7 +141,25 @@ static inline void net_coap_init(void)
 }
 #endif
 
+#if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
+struct sock_obj_type_raw_stats {
+	uint64_t sent;
+	uint64_t received;
+};
 
+struct sock_obj {
+	struct net_socket_register *reg;
+	uint64_t create_time; /* in ticks */
+	k_tid_t creator;
+	int fd;
+	int socket_family;
+	int socket_type;
+	int socket_proto;
+	bool init_done;
+	struct k_obj_core obj_core;
+	struct sock_obj_type_raw_stats stats;
+};
+#endif /* CONFIG_NET_SOCKETS_OBJ_CORE */
 
 #if defined(CONFIG_NET_GPTP)
 /**
