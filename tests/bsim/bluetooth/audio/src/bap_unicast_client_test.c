@@ -306,6 +306,92 @@ static struct bt_gatt_cb gatt_callbacks = {
 	.att_mtu_updated = att_mtu_updated,
 };
 
+static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
+{
+	const struct bt_le_scan_recv_info *info = user_data;
+	uint16_t available_source_context;
+	uint16_t available_sink_context;
+	struct net_buf_simple net_buf;
+	struct bt_uuid_16 adv_uuid;
+	uint8_t announcement_type;
+	void *uuid;
+	int err;
+
+	const size_t min_data_len = BT_UUID_SIZE_16 + sizeof(announcement_type) +
+				    sizeof(available_sink_context) +
+				    sizeof(available_source_context);
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < min_data_len) {
+
+		return true;
+	}
+
+	net_buf_simple_init_with_data(&net_buf, (void *)data->data, data->data_len);
+
+	uuid = net_buf_simple_pull_mem(&net_buf, BT_UUID_SIZE_16);
+	if (!bt_uuid_create(&adv_uuid.uuid, uuid, BT_UUID_SIZE_16)) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_ASCS)) {
+		return true;
+	}
+
+	announcement_type = net_buf_simple_pull_u8(&net_buf);
+	available_sink_context = net_buf_simple_pull_le16(&net_buf);
+	available_source_context = net_buf_simple_pull_le16(&net_buf);
+
+	printk("Found ASCS with announcement type 0x%02X, sink ctx 0x%04X, source ctx 0x%04X\n",
+	       announcement_type, available_sink_context, available_source_context);
+
+	printk("Stopping scan\n");
+	if (bt_le_scan_stop()) {
+		FAIL("Could not stop scan");
+		return false;
+	}
+
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+				&default_conn);
+	if (err) {
+		FAIL("Could not connect to peer: %d", err);
+		return false;
+	}
+
+	/* Stop parsing */
+	return false;
+}
+
+static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	if (default_conn) {
+		return;
+	}
+
+	/* We're only interested in connectable events */
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0) {
+		return;
+	}
+	/* connect only to devices in close proximity */
+	if (info->rssi < -70) {
+		return;
+	}
+
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+
+	bt_data_parse(ad, parse_ascs_ad_data, (void *)info);
+}
+
+static struct bt_le_scan_cb bap_scan_cb = {
+	.recv = broadcast_scan_recv,
+};
+
 static void init(void)
 {
 	int err;
@@ -320,7 +406,7 @@ static void init(void)
 		g_streams[i].ops = &stream_ops;
 	}
 
-	bt_le_scan_cb_register(&common_scan_cb);
+	bt_le_scan_cb_register(&bap_scan_cb);
 	bt_gatt_cb_register(&gatt_callbacks);
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
@@ -767,14 +853,71 @@ static void test_main(void)
 	PASS("Unicast client passed\n");
 }
 
+static void test_main_acl_disconnect(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+	size_t stream_cnt;
+
+	init();
+
+	scan_and_connect();
+
+	exchange_mtu();
+
+	discover_sinks();
+
+	discover_sources();
+
+	/* Run the stream setup multiple time to ensure states are properly
+	 * set and reset
+	 */
+
+	printk("Creating unicast group\n");
+	stream_cnt = create_unicast_group(&unicast_group);
+
+	printk("Codec configuring streams\n");
+	codec_configure_streams(stream_cnt);
+
+	printk("QoS configuring streams\n");
+	qos_configure_streams(unicast_group, stream_cnt);
+
+	printk("Enabling streams\n");
+	enable_streams(stream_cnt);
+
+	printk("Metadata update streams\n");
+	metadata_update_streams(stream_cnt);
+
+	printk("Starting streams\n");
+	start_streams();
+
+	disconnect_acl();
+
+	printk("Deleting unicast group\n");
+	delete_unicast_group(unicast_group);
+	unicast_group = NULL;
+
+	/* Reconnect */
+	scan_and_connect();
+
+	disconnect_acl();
+
+	PASS("Unicast client ACL disconnect passed\n");
+}
+
 static const struct bst_test_instance test_unicast_client[] = {
 	{
 		.test_id = "unicast_client",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main,
 	},
-	BSTEST_END_MARKER
+	{
+		.test_id = "unicast_client_acl_disconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_acl_disconnect,
+	},
+	BSTEST_END_MARKER,
 };
 
 struct bst_test_list *test_unicast_client_install(struct bst_test_list *tests)
