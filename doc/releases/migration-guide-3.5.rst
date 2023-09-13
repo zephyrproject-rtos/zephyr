@@ -57,6 +57,12 @@ Required changes
   If the Kconfig option is set to ``y`` (current default), then the network
   interface name is used by the ``SO_BINDTODEVICE`` socket option.
 
+* On all STM32 ADC, it is no longer possible to read sensor channels (Vref,
+  Vbat or temperature) using the ADC driver. The dedicated sensor driver should
+  be used instead. This change is due to a limitation on STM32F4 where the
+  channels for temperature and Vbat are identical, and the impossibility of
+  determining what we want to measure using solely the ADC API.
+
 Recommended Changes
 *******************
 
