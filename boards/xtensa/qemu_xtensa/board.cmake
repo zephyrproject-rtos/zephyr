@@ -8,7 +8,7 @@ if(CONFIG_BOARD_QEMU_XTENSA)
   set(QEMU_FLAGS_${ARCH}
     -machine sim -semihosting -nographic -cpu sample_controller
   )
-elseif(CONFIG_BOARD_QEMU_XTENSA_DC233C)
+elseif(CONFIG_BOARD_QEMU_XTENSA_MMU)
   set(QEMU_CPU_TYPE_${ARCH} dc233c)
 
   set(QEMU_FLAGS_${ARCH}
