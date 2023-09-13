@@ -125,4 +125,13 @@ int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
  */
 int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter);
 
+/**
+ * @brief Set Wi-Fi channel for monitor or TX injection mode
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param channel Channel settings to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
+
 #endif /* ZEPHYR_SUPP_MGMT_H */
