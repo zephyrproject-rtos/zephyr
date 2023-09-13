@@ -51,6 +51,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.reg_domain = supplicant_reg_domain,
 	.mode = supplicant_mode,
 	.filter = supplicant_filter,
+	.channel = supplicant_channel,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
