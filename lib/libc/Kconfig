@@ -12,7 +12,6 @@ config REQUIRES_FULL_LIBC
 
 config REQUIRES_FLOAT_PRINTF
 	bool "Requires floating point support in printf"
-	select PICOLIBC_IO_FLOAT if PICOLIBC
 	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
 	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
 	help
