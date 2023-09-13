@@ -23,7 +23,7 @@
 
 static struct {
 	double start_offset;
-	double max_resync_offset;
+	bs_time_t max_resync_offset;
 	bool delay_init;
 	bool sync_preinit;
 	bool sync_preboot;
