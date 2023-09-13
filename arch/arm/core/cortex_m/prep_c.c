@@ -20,6 +20,7 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/platform/hooks.h>
 
 #if defined(__GNUC__)
 /*
@@ -181,6 +182,10 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
+
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
