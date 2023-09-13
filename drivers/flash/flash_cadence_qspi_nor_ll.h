@@ -6,7 +6,7 @@
 
 #ifndef CAD_QSPI_NOR_LL_H
 #define CAD_QSPI_NOR_LL_H
-
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #define CAD_QSPI_MICRON_N25Q_SUPPORT CONFIG_CAD_QSPI_MICRON_N25Q_SUPPORT
@@ -83,6 +83,8 @@
 
 #define CAD_QSPI_REMAPADDR                   0x24
 #define CAD_QSPI_REMAPADDR_VALUE_SET(x)      (FIELD_GET(0xffffffff, (x)) << 0)
+#define CAD_QSPI_TXFIFOTHR                   0x30
+#define CAD_QSPI_RXFIFOTHR                   0x34
 
 #define CAD_QSPI_SRAMPART                    0x18
 #define CAD_QSPI_SRAMFILL                    0x2c
@@ -118,19 +120,33 @@
 #define CAD_QSPI_INST_DUAL                   1
 #define CAD_QSPI_INST_QUAD                   2
 
+#define CAD_QSPI_INTRSTREG                   0x40
+#define CAD_QSPI_INTRMSKREG                  0x44
+#define CQSPI_IRQ_STATUS_MASK                0x1FFFF
+#define CAD_QSPI_INDOPDONE                   0x04
+#define CAD_QSPI_INDXFRLVL                   0x40
+#define CAD_QSPI_INDSRAMFULL                 0x1000
+#define CAD_QSPI_INDRDWATER                  0x64
 #define CAD_QSPI_INDRDSTADDR                 0x68
 #define CAD_QSPI_INDRDCNT                    0x6c
 #define CAD_QSPI_INDRD                       0x60
 #define CAD_QSPI_INDRD_RD_STAT(x)            (FIELD_GET(1, ((x) >> 2)))
 #define CAD_QSPI_INDRD_START                 1
 #define CAD_QSPI_INDRD_IND_OPS_DONE          0x20
+#define CAD_QSPI_INDRDWATERLVLBRCH           0x40
+#define CAD_QSPI_INDRDOPRCMP                 0x04
+#define CAD_QSPI_INDRDMULTIOPSCOMP           0x60
 #define CAD_QSPI_INDWR                       0x70
 #define CAD_QSPI_INDWR_RDSTAT(x)             (FIELD_GET(1, ((x) >> 2)))
+#define CAD_QSPI_INDWRWATER                  0x74
 #define CAD_QSPI_INDWRSTADDR                 0x78
 #define CAD_QSPI_INDWRCNT                    0x7c
 #define CAD_QSPI_INDWR                       0x70
 #define CAD_QSPI_INDWR_START                 0x1
 #define CAD_QSPI_INDWR_INDDONE               0x20
+#define CAD_QSPI_INDWR_NUMOFOPRCOMP          0x40
+#define CAD_QSPI_INDWRMULTIOPSCOMP           0x60
+#define CAD_QSPI_INDWROPRCMP                 0x04
 #define CAD_QSPI_INT_STATUS_ALL              0x0000ffff
 #define CAD_QSPI_N25Q_DIE_SIZE               0x02000000
 #define CAD_QSPI_BANK_SIZE                   0x01000000
@@ -159,6 +175,9 @@ struct cad_qspi_params {
 	uint32_t qspi_device_address_byte;
 	uint32_t qspi_device_page_size;
 	uint32_t qspi_device_bytes_per_block;
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+	struct k_sem qspi_intr_sem;
+#endif
 };
 
 int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32_t clk_pol,
@@ -167,10 +186,12 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 void cad_qspi_set_chip_select(struct cad_qspi_params *cad_params, int cs);
 int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t size);
 int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
-		   uint32_t size);
+		uint32_t size);
 int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
-		  uint32_t size);
+		uint32_t size);
 int cad_qspi_update(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset,
-		    uint32_t size);
-
+		uint32_t size);
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+void cad_qspi_irq_handler_ll(struct cad_qspi_params *params);
+#endif
 #endif
