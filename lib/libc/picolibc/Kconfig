@@ -88,6 +88,15 @@ config PICOLIBC_FAST_STRCMP
 	  This provides a faster strcmp version even when libc is
 	  built in space-optimized mode
 
+config PICOLIBC_ASSERT_VERBOSE
+	bool "assert provides verbose information"
+	help
+	  The usual picolibc assert helper, __assert_func, takes file, line,
+	  function and expression information to make the presented message
+	  more helpful. These all require storage in the image. Unselecting
+	  this option eliminates all of that information, making the results
+	  less helpful but also making them consume less memory.
+
 config PICOLIBC_IO_C99_FORMATS
 	bool "support C99 format additions in printf/scanf"
 	default y

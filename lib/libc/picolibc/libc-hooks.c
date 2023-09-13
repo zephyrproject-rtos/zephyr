@@ -206,6 +206,27 @@ void __retarget_lock_release(_LOCK_T lock)
 
 #endif /* CONFIG_MULTITHREADING */
 
+#ifdef CONFIG_PICOLIBC_ASSERT_VERBOSE
+
+FUNC_NORETURN void __assert_func(const char *file, int line,
+				 const char *function, const char *expression)
+{
+	__ASSERT(0, "assertion \"%s\" failed: file \"%s\", line %d%s%s\n",
+		 expression, file, line,
+		 function ? ", function: " : "", function ? function : "");
+	CODE_UNREACHABLE;
+}
+
+#else
+
+FUNC_NORETURN void __assert_no_args(void)
+{
+	__ASSERT_NO_MSG(0);
+	CODE_UNREACHABLE;
+}
+
+#endif
+
 /* This function gets called if static buffer overflow detection is enabled on
  * stdlib side (Picolibc here), in case such an overflow is detected. Picolibc
  * provides an implementation not suitable for us, so we override it here.
