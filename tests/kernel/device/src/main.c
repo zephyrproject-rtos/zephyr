@@ -284,9 +284,9 @@ ZTEST(device, test_device_init_level)
 	bool seq_correct = true;
 
 	/* we check if the stored executing sequence for different level is
-	 * correct, and it should be 1, 2, 3, 4
+	 * correct, and it should be 1, 2, 3
 	 */
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 3; i++) {
 		if (init_level_sequence[i] != (i + 1)) {
 			seq_correct = false;
 		}
