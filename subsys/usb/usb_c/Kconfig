@@ -14,6 +14,12 @@ menuconfig USBC_STACK
 
 if USBC_STACK
 
+config USBC_INIT_PRIORITY
+	int "USB-C initialization priority"
+	default 90
+	help
+	  Initialization priority of the USB-C connector driver in POST_KERNEL.
+
 config USBC_THREAD_PRIORITY
 	int "USB-C thread priority"
 	default 0
