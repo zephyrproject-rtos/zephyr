@@ -49,6 +49,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.set_twt = supplicant_set_twt,
 	.get_power_save_config = supplicant_get_power_save_config,
 	.reg_domain = supplicant_reg_domain,
+	.mode = supplicant_mode,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);

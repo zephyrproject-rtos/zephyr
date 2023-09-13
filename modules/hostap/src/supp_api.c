@@ -633,3 +633,15 @@ int supplicant_reg_domain(const struct device *dev,
 
 	return wifi_mgmt_api->reg_domain(dev, reg_domain);
 }
+
+int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->mode) {
+		wpa_printf(MSG_ERROR, "Setting mode not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->mode(dev, mode);
+}
