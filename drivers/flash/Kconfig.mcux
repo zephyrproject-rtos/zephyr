@@ -77,6 +77,9 @@ config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR
 
 config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
 	bool "DTR"
+	# DTR requires writes be aligned to even addresses and even sizes,
+	# so a write buffer is required.
+	select FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 
 endchoice
 

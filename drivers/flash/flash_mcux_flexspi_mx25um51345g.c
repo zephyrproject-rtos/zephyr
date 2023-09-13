@@ -91,7 +91,7 @@ static const uint32_t flash_flexspi_nor_lut[][4] = {
 				kFLEXSPI_Command_STOP,		kFLEXSPI_1PAD, 0),
 	},
 
-#if (NOR_FLASH_ENABLE_OCTAL_CMD == 0x1)
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR
 	[READ_STATUS_REG] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0x05,
 				kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0xFA),
@@ -395,8 +395,29 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 * be wrapped around within the same page
 		 */
 		i = MIN(SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE), len);
+		/* Save off the amount of data to be written and the end position before the offset
+		 * and i values are changed for alignment in the OPI DTR case.
+		 */
+		size_t processed_length = i;
+		off_t data_end = offset + processed_length;
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
-		memcpy(nor_write_buf, src, i);
+		uint8_t *data_start = nor_write_buf;
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
+		/* Check if start address is even and pad one byte before the data if it is not. */
+		if (offset % 2) {
+			offset--;
+			flash_flexspi_nor_read(dev, offset, data_start, 1);
+			data_start++;
+			i++;
+		}
+		/* Check that bytes written is even and pad one byte after the data if it is not. */
+		if (i % 2) {
+			flash_flexspi_nor_read(dev, data_end, (nor_write_buf + i), 1);
+			i++;
+		}
+#endif
+		/* Copy the data to be written (potentially between padded bytes). */
+		memcpy(data_start, src, processed_length);
 #endif
 		flash_flexspi_nor_write_enable(dev, true);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -406,9 +427,9 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 #endif
 		flash_flexspi_nor_wait_bus_busy(dev);
 		memc_flexspi_reset(data->controller);
-		src += i;
-		offset += i;
-		len -= i;
+		src += processed_length;
+		offset = data_end;
+		len -= processed_length;
 	}
 
 	if (memc_flexspi_is_running_xip(data->controller)) {
