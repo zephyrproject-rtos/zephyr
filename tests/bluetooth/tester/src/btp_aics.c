@@ -557,7 +557,7 @@ uint8_t tester_init_aics(void)
 	tester_register_command_handlers(BTP_SERVICE_ID_AICS, aics_handlers,
 					 ARRAY_SIZE(aics_handlers));
 
-	return tester_init_vcs();
+	return BTP_STATUS_SUCCESS;
 }
 
 uint8_t tester_unregister_aics(void)
