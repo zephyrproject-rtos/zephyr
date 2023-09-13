@@ -53,6 +53,11 @@
 #define IROM_SEG_ALIGN 0x10000
 #endif
 
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+
 MEMORY
 {
   mcuboot_hdr (RX): org = 0x0, len = 0x20
@@ -181,18 +186,12 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
