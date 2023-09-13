@@ -142,7 +142,7 @@ static const struct display_driver_api dummy_display_api = {
 	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL,		\
 			      &dd_data_##n,				\
 			      &dd_config_##n,				\
-			      APPLICATION,				\
+			      POST_KERNEL,				\
 			      CONFIG_DISPLAY_INIT_PRIORITY,		\
 			      &dummy_display_api);			\
 
