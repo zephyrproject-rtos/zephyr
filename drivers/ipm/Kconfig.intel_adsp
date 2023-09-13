@@ -1,14 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2022, Intel Corporation
 
-config IPM_CAVS_IDC
-	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
-	default y if MP_NUM_CPUS > 1 && SMP
-	depends on CAVS_ICTL && DT_HAS_INTEL_ADSP_IDC_ENABLED
-	help
-	  Driver for the Intra-DSP Communication (IDC) channel for
-	  cross SoC communications.
-
 config IPM_CALLBACK_ASYNC
 	bool "Deliver callbacks asynchronously"
 	default y if IPM_CAVS_HOST
