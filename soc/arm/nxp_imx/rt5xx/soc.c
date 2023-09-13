@@ -462,12 +462,21 @@ void __weak imxrt_pre_init_display_interface(void)
 	 * We set the divider of the PFD3 output of the SYSPLL, which has a
 	 * fixed multiplied of 18, and use this output frequency for the DPHY.
 	 */
+
+#ifdef CONFIG_MIPI_DPHY_CLK_SRC_AUX1_PLL
+	/* Note: AUX1 PLL clock is system pll clock * 18 / pfd.
+	 * system pll clock is configured at 528MHz by default.
+	 */
 	CLOCK_AttachClk(kAUX1_PLL_to_MIPI_DPHY_CLK);
 	CLOCK_InitSysPfd(kCLOCK_Pfd3,
 		((CLOCK_GetSysPllFreq() * 18ull) /
 		((unsigned long long)(DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)))));
 	CLOCK_SetClkDiv(kCLOCK_DivDphyClk, 1);
-
+#elif defined(CONFIG_MIPI_DPHY_CLK_SRC_FRO)
+	CLOCK_AttachClk(kFRO_DIV1_to_MIPI_DPHY_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivDphyClk,
+		(CLK_FRO_CLK / DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)));
+#endif
 	/* Clear DSI control reset (Note that DPHY reset is cleared later)*/
 	RESET_ClearPeripheralReset(kMIPI_DSI_CTRL_RST_SHIFT_RSTn);
 }
