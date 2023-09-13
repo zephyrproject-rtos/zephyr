@@ -837,36 +837,73 @@ static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
 	}
 }
 
-/* empty SSP receive FIFO */
-static void dai_ssp_empty_rx_fifo(struct dai_intel_ssp *dp)
+static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 {
-	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
-	uint32_t entries;
-	uint32_t i;
+	uint32_t i, sssr;
 
-	/*
-	 * To make sure all the RX FIFO entries are read out for the flushing,
-	 * we need to wait a minimal SSP port delay after entries are all read,
-	 * and then re-check to see if there is any subsequent entries written
-	 * to the FIFO. This will help to make sure there is no sample mismatched
-	 * issue for the next run with the SSP RX.
-	 */
-	while ((sys_read32(dai_base(dp) + SSSR) & SSSR_RNE) && retry--) {
-		entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
-		LOG_DBG("%s before flushing, entries %d", __func__, entries);
-		for (i = 0; i < entries + 1; i++) {
-			/* read to try empty fifo */
+	sssr = sys_read32(dai_base(dp) + SSSR);
+
+	if (sssr & SSSR_ROR) {
+		/* The RX FIFO is in overflow condition, empty it */
+		for (i = 0; i < DAI_INTEL_SSP_FIFO_DEPTH; i++)
 			sys_read32(dai_base(dp) + SSDR);
-		}
 
-		/* wait to get valid fifo status and re-check */
-		k_busy_wait(ssp->params.fsync_rate ? 1000000 / ssp->params.fsync_rate : 0);
-		entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
-		LOG_DBG("%s after flushing, entries %d", __func__, entries);
+		/* Clear the overflow status */
+		dai_ssp_update_bits(dp, SSSR, SSSR_ROR, SSSR_ROR);
+		/* Re-read the SSSR register */
+		sssr = sys_read32(dai_base(dp) + SSSR);
 	}
 
-	/* clear interrupt */
+	while ((sssr & SSSR_RNE) && retry--) {
+		uint32_t entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
+
+		/* Empty the RX FIFO (the DMA is not running at this point) */
+		for (i = 0; i < entries + 1; i++)
+			sys_read32(dai_base(dp) + SSDR);
+
+		sssr = sys_read32(dai_base(dp) + SSSR);
+	}
+}
+
+static void ssp_empty_rx_fifo_on_stop(struct dai_intel_ssp *dp)
+{
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+	uint64_t sample_ticks = ssp->params.fsync_rate ? 1000000 / ssp->params.fsync_rate : 0;
+	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
+	uint32_t entries[2];
+	uint32_t i, sssr;
+
+	sssr = sys_read32(dai_base(dp) + SSSR);
+	entries[0] = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
+
+	while ((sssr & SSSR_RNE) && retry--) {
+		/* Wait one sample time */
+		k_busy_wait(sample_ticks);
+
+		entries[1] = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
+		sssr = sys_read32(dai_base(dp) + SSSR);
+
+		if (entries[0] > entries[1]) {
+			/*
+			 * The DMA is reading the FIFO, check the status in the
+			 * next loop
+			 */
+			entries[0] = entries[1];
+		} else if (!(sssr & SSSR_RFS)) {
+			/*
+			 * The DMA request is not asserted, read the FIFO
+			 * directly, otherwise let the next loop iteration to
+			 * check the status
+			 */
+			for (i = 0; i < entries[1] + 1; i++)
+				sys_read32(dai_base(dp) + SSDR);
+		}
+
+		sssr = sys_read32(dai_base(dp) + SSSR);
+	}
+
+	/* Just in case clear the overflow status */
 	dai_ssp_update_bits(dp, SSSR, SSSR_ROR, SSSR_ROR);
 }
 
@@ -1911,6 +1948,10 @@ static void dai_ssp_early_start(struct dai_intel_ssp *dp, int direction)
 
 	key = k_spin_lock(&dp->lock);
 
+	/* RX fifo must be cleared before start */
+	if (direction == DAI_DIR_CAPTURE)
+		ssp_empty_rx_fifo_on_start(dp);
+
 	/* request mclk/bclk */
 	dai_ssp_pre_start(dp);
 
@@ -1991,7 +2032,7 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	if (direction == DAI_DIR_CAPTURE &&
 	    ssp->state[DAI_DIR_CAPTURE] != DAI_STATE_PRE_RUNNING) {
 		dai_ssp_update_bits(dp, SSRSA, SSRSA_RXEN, 0);
-		dai_ssp_empty_rx_fifo(dp);
+		ssp_empty_rx_fifo_on_stop(dp);
 		ssp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
 		LOG_INF("%s RX stop", __func__);
 	}
@@ -2168,8 +2209,6 @@ static int dai_ssp_probe(struct dai_intel_ssp *dp)
 
 	/* Disable dynamic clock gating before touching any register */
 	dai_ssp_pm_runtime_dis_ssp_clk_gating(dp, dp->index);
-
-	dai_ssp_empty_rx_fifo(dp);
 
 	return 0;
 }
