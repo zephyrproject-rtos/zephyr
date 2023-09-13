@@ -45,8 +45,8 @@ static void before(void *args)
 	iodev_read_config.sensor = NULL;
 
 	/* Wipe the mempool by marking every block free */
-	zassert_ok(sys_bitarray_clear_region(sensor_read_rtio_ctx_block_pool.mempool->bitmap,
-					     sensor_read_rtio_ctx_block_pool.mempool->num_blocks,
+	zassert_ok(sys_bitarray_clear_region(sensor_read_rtio_ctx.block_pool->bitmap,
+					     sensor_read_rtio_ctx.block_pool->num_blocks,
 					     0));
 
 	/* Flush the SQ and CQ */
