@@ -24,7 +24,9 @@
 #include "nsi_cpu_if.h"
 #include "nsi_tasks.h"
 #include "nsi_main.h"
+#include "nsi_cpu_ctrl.h"
 #include "NRF_HWLowL.h"
+#include "NHW_misc.h"
 
 static bs_args_struct_t *args_struct;
 /* Direct use of this global is deprecated, use bsim_args_get_global_device_nbr() instead */
@@ -57,6 +59,18 @@ static void print_no_sim_warning(void)
 			"--help how to set them\n");
 	bs_trace_raw(3, "setting sim_id to 'bogus', device number to 0 "
 			"and nosim\n");
+}
+
+static void print_mcus_info(char *argv, int offset)
+{
+	(void) argv;
+	(void) offset;
+	bs_trace_raw(0, "CPU  #,       Name  , Autostart\n");
+	bs_trace_raw(0, "-------------------------------\n");
+	for (int i = 0; i < NSI_N_CPUS; i++) {
+		bs_trace_raw(0, "CPU %2i, %12s,    %i\n",
+			     i, nhw_get_core_name(i), nsi_cpu_get_auto_start(i));
+	}
 }
 
 static void bsim_register_basic_args(void)
@@ -105,6 +119,13 @@ static void bsim_register_basic_args(void)
 		.name = "arg",
 		.type = 'l',
 		.descript = "The arguments that follow will be passed to main (default)"
+		},
+		{
+		.is_switch = true,
+		.option = "cpu_print_info",
+		.call_when_found = print_mcus_info,
+		.type = 'b',
+		.descript = "Print information about each MCUs",
 		},
 		ARG_TABLE_ENDMARKER
 	};

@@ -13,10 +13,12 @@
 #include "posix_native_task.h"
 #include "nsi_tracing.h"
 #include "nsi_main.h"
+#include "nsi_cpu_ctrl.h"
 
 static const char exe_name[] = "nrf_bsim options:";
 
 static char *testid;
+static bool cpu_autostart;
 
 static void cmd_testid_found(char *argv, int offset)
 {
@@ -27,6 +29,11 @@ static void cmd_testlist_found(char *argv, int offset)
 {
 	bst_print_testslist();
 	nsi_exit(0);
+}
+
+static void cmd_autostart_found(char *argv, int offset)
+{
+	nsi_cpu_set_auto_start(CONFIG_NATIVE_SIMULATOR_MCU_N, cpu_autostart);
 }
 
 static void nrfbsim_register_args(void)
@@ -64,6 +71,14 @@ static void nrfbsim_register_args(void)
 		.descript = "Alias of cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_testslist"
 		},
 #endif
+		{
+		.option = "cpu" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) "_autostart",
+		.name = "autostart",
+		.type = 'b',
+		.dest = (void *)&cpu_autostart,
+		.call_when_found = cmd_autostart_found,
+		.descript = "Automatically start CPU" STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N)
+		},
 		ARG_TABLE_ENDMARKER
 	};
 
