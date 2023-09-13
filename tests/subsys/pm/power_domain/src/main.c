@@ -105,8 +105,7 @@ DEVICE_DT_DEFINE(TEST_DEVB, NULL, PM_DEVICE_DT_GET(TEST_DEVB),
 
 PM_DEVICE_DEFINE(devc, deva_pm_action);
 DEVICE_DEFINE(devc, "devc", NULL, PM_DEVICE_GET(devc),
-	      NULL, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+	      NULL, NULL, POST_KERNEL, 40, NULL);
 
 /**
  * @brief Test the power domain behavior
