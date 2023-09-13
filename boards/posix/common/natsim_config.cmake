@@ -19,6 +19,7 @@ set(nsi_config_content
   "NSI_LINK_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_LINK_OPTIONS>,\ >"
   "NSI_EXTRA_LIBS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,RUNNER_LINK_LIBRARIES>,\ >"
   "NSI_PATH:=${NSI_DIR}/"
+  "NSI_N_CPUS:=${CONFIG_NATIVE_SIMULATOR_NUMBER_MCUS}"
 )
 
 string(REPLACE ";" "\n" nsi_config_content "${nsi_config_content}")
