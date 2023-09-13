@@ -13,6 +13,7 @@
 #include "bs_tracing.h"
 #include "phy_sync_ctrl.h"
 #include "nsi_hw_scheduler.h"
+#include "nsi_cpu_ctrl.h"
 
 /*
  * These hooks are to be named nsif_cpu<cpu_number>_<hook_name>, for example nsif_cpu0_boot
@@ -37,6 +38,9 @@
 NATIVE_SIMULATOR_IF void nsif_cpun_pre_cmdline_hooks(void)
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
+#if defined(CONFIG_NATIVE_SIMULATOR_AUTOSTART_MCU)
+	nsi_cpu_set_auto_start(CONFIG_NATIVE_SIMULATOR_MCU_N, true);
+#endif
 }
 
 #define TESTCASAE_ARGV_ALLOCSIZE 128
