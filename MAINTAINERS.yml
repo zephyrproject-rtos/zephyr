@@ -2115,6 +2115,7 @@ RISCV arch:
     - arch/riscv/
     - boards/riscv/
     - dts/bindings/riscv/
+    - dts/riscv/
     - include/zephyr/arch/riscv/
     - soc/riscv/
     - tests/arch/riscv/
