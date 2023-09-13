@@ -11,6 +11,7 @@
 
 #include <kernel_internal.h>
 #include <zephyr/irq.h>
+#include <zephyr/platform/hooks.h>
 
 static void interrupt_init(void)
 {
@@ -44,6 +45,9 @@ static void interrupt_init(void)
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_PLATFORM_PREP_HOOK)
+	platform_prep();
+#endif
 	z_bss_zero();
 
 	interrupt_init();

@@ -10,6 +10,7 @@
  */
 
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
 
 /**
  * @brief Prepare to and run C code
@@ -19,6 +20,9 @@
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_PLATFORM_PREP_HOOK)
+	platform_prep();
+#endif
 	z_data_copy();
 	z_cstart();
 	CODE_UNREACHABLE;

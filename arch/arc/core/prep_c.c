@@ -23,6 +23,7 @@
 #include <zephyr/arch/arc/cluster.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
 
 /* XXX - keep for future use in full-featured cache APIs */
 #if 0
@@ -121,6 +122,10 @@ extern FUNC_NORETURN void z_cstart(void);
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_PLATFORM_PREP_HOOK)
+	platform_prep();
+#endif
+
 #ifdef CONFIG_ISA_ARCV3
 	arc_cluster_scm_enable();
 #endif

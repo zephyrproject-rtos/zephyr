@@ -19,6 +19,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);
@@ -33,6 +34,10 @@ void soc_interrupt_init(void);
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_PLATFORM_PREP_HOOK)
+	platform_prep();
+#endif
+
 	z_bss_zero();
 	z_data_copy();
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
