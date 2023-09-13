@@ -19,7 +19,6 @@
 #define MY_DRIVER_LV_1    "my_driver_level_1"
 #define MY_DRIVER_LV_2    "my_driver_level_2"
 #define MY_DRIVER_LV_3    "my_driver_level_3"
-#define MY_DRIVER_LV_4    "my_driver_level_4"
 #define MY_DRIVER_PRI_1    "my_driver_priority_1"
 #define MY_DRIVER_PRI_2    "my_driver_priority_2"
 #define MY_DRIVER_PRI_3    "my_driver_priority_3"
@@ -28,7 +27,6 @@
 #define LEVEL_PRE_KERNEL_1	1
 #define LEVEL_PRE_KERNEL_2	2
 #define LEVEL_POST_KERNEL	3
-#define LEVEL_APPLICATION	4
 
 #define PRIORITY_1	1
 #define PRIORITY_2	2
@@ -37,7 +35,7 @@
 
 
 /* this is for storing sequence during initialization */
-__pinned_bss int init_level_sequence[4] = {0};
+__pinned_bss int init_level_sequence[3] = {0};
 __pinned_bss int init_priority_sequence[4] = {0};
 __pinned_bss int init_sub_priority_sequence[3] = {0};
 __pinned_bss unsigned int seq_level_cnt;
@@ -82,14 +80,6 @@ static int my_driver_lv_2_init(const struct device *dev)
 static int my_driver_lv_3_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_POST_KERNEL;
-	seq_level_cnt++;
-
-	return 0;
-}
-
-static int my_driver_lv_4_init(const struct device *dev)
-{
-	init_level_sequence[seq_level_cnt] = LEVEL_APPLICATION;
 	seq_level_cnt++;
 
 	return 0;
@@ -173,10 +163,6 @@ DEVICE_DEFINE(my_driver_level_3, MY_DRIVER_LV_3, &my_driver_lv_3_init,
 		NULL, NULL, NULL, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_level_4, MY_DRIVER_LV_4, &my_driver_lv_4_init,
-		NULL, NULL, NULL, APPLICATION,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
-
 /* We use priority value of 20 to create a possible sorting conflict with
  * priority value of 2.  So if the linker sorting isn't working correctly
  * we'll find out.
@@ -201,8 +187,8 @@ DEVICE_DEFINE(my_driver_priority_3, MY_DRIVER_PRI_3,
  * other in devicetree so that we can validate linker sorting.
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_0), my_driver_sub_pri_0_init,
-		NULL, NULL, NULL, APPLICATION, 33, NULL);
+		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
 DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_1), my_driver_sub_pri_1_init,
-		NULL, NULL, NULL, APPLICATION, 33, NULL);
+		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
 DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_2), my_driver_sub_pri_2_init,
-		NULL, NULL, NULL, APPLICATION, 33, NULL);
+		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
