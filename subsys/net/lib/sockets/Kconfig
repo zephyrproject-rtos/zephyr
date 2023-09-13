@@ -311,4 +311,15 @@ module-str = Log level for BSD sockets compatible API calls
 module-help = Enables logging for sockets code.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config NET_SOCKETS_OBJ_CORE
+	bool "Object core socket support [EXPERIMENTAL]"
+	depends on OBJ_CORE
+	select OBJ_CORE_STATS
+	select EXPERIMENTAL
+	help
+	  Select this if you want to use object core with socket API to get
+	  network socket information and statistics via object core.
+	  The net-shell "net sockets" command will use this functionality
+	  to show the socket information.
+
 endif # NET_SOCKETS
