@@ -66,7 +66,7 @@ static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char 
 	return 0;
 }
 
-static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
+static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
 {
 	int rc = 0;
 	uint16_t val = 0;
@@ -196,7 +196,7 @@ static int sbs_gauge_do_battery_cutoff(const struct device *dev)
 	return rc;
 }
 
-static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_property *prop)
+static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *prop)
 {
 	int rc = 0;
 	uint16_t val = 0;
@@ -236,7 +236,7 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_set_pr
 }
 
 static int sbs_gauge_get_buffer_prop(const struct device *dev,
-				    struct fuel_gauge_get_buffer_property *prop, void *dst,
+				    struct fuel_gauge_buffer_property *prop, void *dst,
 				    size_t dst_len)
 {
 	int rc = 0;
@@ -274,7 +274,7 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	return rc;
 }
 
-static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_get_property *props,
+static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_property *props,
 			       size_t len)
 {
 	int err_count = 0;
@@ -290,7 +290,7 @@ static int sbs_gauge_get_props(const struct device *dev, struct fuel_gauge_get_p
 	return err_count;
 }
 
-static int sbs_gauge_set_props(const struct device *dev, struct fuel_gauge_set_property *props,
+static int sbs_gauge_set_props(const struct device *dev, struct fuel_gauge_property *props,
 			       size_t len)
 {
 	int err_count = 0;

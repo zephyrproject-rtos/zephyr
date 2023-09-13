@@ -175,7 +175,7 @@ static int max17048_init(const struct device *dev)
 /**
  * Get a single property from the fuel gauge
  */
-static int max17048_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
+static int max17048_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
 {
 	struct max17048_data *data = dev->data;
 	int rc = 0;
@@ -205,7 +205,7 @@ static int max17048_get_prop(const struct device *dev, struct fuel_gauge_get_pro
 /**
  * Get all possible properties from the fuel gague
  */
-static int max17048_get_props(const struct device *dev, struct fuel_gauge_get_property *props,
+static int max17048_get_props(const struct device *dev, struct fuel_gauge_property *props,
 			      size_t len)
 {
 	int err_count = 0;

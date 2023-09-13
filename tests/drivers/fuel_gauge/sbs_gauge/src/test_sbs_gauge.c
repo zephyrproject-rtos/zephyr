@@ -34,7 +34,7 @@ static void *sbs_gauge_new_api_setup(void)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* Invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -51,7 +51,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* First invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -83,7 +83,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_c
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 {
-	struct fuel_gauge_set_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* Invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -100,7 +100,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
 {
-	struct fuel_gauge_set_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* First invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -135,7 +135,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_c
 ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 {
 	uint16_t word = BIT(15) | BIT(0);
-	struct fuel_gauge_set_property set_props[] = {
+	struct fuel_gauge_property set_props[] = {
 		{
 			/* Valid property */
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
@@ -160,7 +160,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 		},
 	};
 
-	struct fuel_gauge_get_property get_props[] = {
+	struct fuel_gauge_property get_props[] = {
 		{
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
@@ -201,7 +201,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_VOLTAGE,
 		},
@@ -290,7 +290,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
-	struct fuel_gauge_set_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
 		},
@@ -322,7 +322,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 {
 	/* Validate what properties are supported by the driver */
-	struct fuel_gauge_get_buffer_property prop;
+	struct fuel_gauge_buffer_property prop;
 	struct sbs_gauge_manufacturer_name mfg_name;
 	struct sbs_gauge_device_name dev_name;
 	struct sbs_gauge_device_chemistry chem;
@@ -350,7 +350,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 	uint32_t expected_uV = 5000 * 1000;
 	uint32_t expected_uA = 3000 * 1000;
 
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_VOLTAGE,
 		},
