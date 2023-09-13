@@ -48,11 +48,20 @@ static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASC
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
-/* TODO: Expand with BAP data */
+static uint8_t unicast_server_addata[] = {
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
+	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
+	BT_BYTES_LIST_LE16(PREF_CONTEXT),
+	BT_BYTES_LIST_LE16(PREF_CONTEXT),
+	0x00, /* Metadata length */
+};
+
 static const struct bt_data unicast_server_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
+static struct bt_le_ext_adv *ext_adv;
 
 CREATE_FLAG(flag_stream_configured);
 
@@ -230,47 +239,6 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv
 };
 
-static void init(void)
-{
-	static struct bt_pacs_cap cap = {
-		.codec_cap = &lc3_codec_cap,
-	};
-	int err;
-
-	err = bt_enable(NULL);
-	if (err != 0) {
-		FAIL("Bluetooth enable failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
-
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err != 0) {
-		FAIL("Failed to register capabilities: %d", err);
-		return;
-	}
-
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
-	if (err != 0) {
-		FAIL("Failed to register capabilities: %d", err);
-		return;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_bap_stream_cb_register(&streams[i], &stream_ops);
-	}
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
-			      NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-}
-
 static void set_location(void)
 {
 	int err;
@@ -332,25 +300,160 @@ static void set_available_contexts(void)
 	printk("Available contexts successfully set\n");
 }
 
-static void test_main(void)
+static void init(void)
 {
-	init();
+	static struct bt_pacs_cap cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
 
 	set_location();
 	set_available_contexts();
+
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		bt_bap_stream_cb_register(&streams[i], &stream_ops);
+	}
+
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &ext_adv);
+	if (err != 0) {
+		FAIL("Failed to create advertising set (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_set_data(ext_adv, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
+				     NULL, 0);
+	if (err != 0) {
+		FAIL("Failed to set advertising data (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+		return;
+	}
+	printk("Advertising started\n");
+}
+
+static void test_main(void)
+{
+	init();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 
 	WAIT_FOR_FLAG(flag_connected);
 	WAIT_FOR_FLAG(flag_stream_configured);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
 	PASS("Unicast server passed\n");
 }
 
-static const struct bst_test_instance test_unicast_server[] = {{.test_id = "unicast_server",
-								.test_post_init_f = test_init,
-								.test_tick_f = test_tick,
-								.test_main_f = test_main},
-							       BSTEST_END_MARKER};
+static void restart_adv_cb(struct k_work *work)
+{
+	int err;
+
+	printk("Restarting ext_adv after disconnect\n");
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+		return;
+	}
+}
+
+static K_WORK_DEFINE(restart_adv_work, restart_adv_cb);
+
+static void acl_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	if (conn != default_conn) {
+		return;
+	}
+
+	k_work_submit(&restart_adv_work);
+}
+
+static void test_main_acl_disconnect(void)
+{
+	struct bt_le_ext_adv *dummy_ext_adv[CONFIG_BT_MAX_CONN - 1];
+	static struct bt_conn_cb conn_callbacks = {
+		.disconnected = acl_disconnected,
+	};
+
+	init();
+
+	/* Create CONFIG_BT_MAX_CONN - 1 dummy advertising sets, to ensure that we only have 1 free
+	 * connection when attempting to restart advertising, which should ensure that the
+	 * bt_conn object is properly unref'ed by the stack
+	 */
+	for (size_t i = 0U; i < ARRAY_SIZE(dummy_ext_adv); i++) {
+		const struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(
+			(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONNECTABLE),
+			BT_GAP_ADV_SLOW_INT_MAX, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+		int err;
+
+		err = bt_le_ext_adv_create(&param, NULL, &dummy_ext_adv[i]);
+		if (err != 0) {
+			FAIL("Failed to create advertising set[%zu] (err %d)\n", i, err);
+			return;
+		}
+
+		err = bt_le_ext_adv_start(dummy_ext_adv[i], BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start advertising set[%zu] (err %d)\n", i, err);
+			return;
+		}
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_stream_configured);
+
+	/* The client will reconnect */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_connected);
+	PASS("Unicast server ACL disconnect  passed\n");
+}
+
+static const struct bst_test_instance test_unicast_server[] = {
+	{
+		.test_id = "unicast_server",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main,
+	},
+	{
+		.test_id = "unicast_server_acl_disconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_acl_disconnect,
+	},
+	BSTEST_END_MARKER,
+};
 
 struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 {
