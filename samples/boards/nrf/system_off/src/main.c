@@ -18,9 +18,6 @@
 
 static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
-#define BUSY_WAIT_S 2U
-#define SLEEP_S 2U
-
 int main(void)
 {
 	int rc;
@@ -55,22 +52,6 @@ int main(void)
 		return 0;
 	}
 
-	printf("Busy-wait %u s\n", BUSY_WAIT_S);
-	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
-
-	printf("Busy-wait %u s with UART off\n", BUSY_WAIT_S);
-	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
-	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
-	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
-
-	printf("Sleep %u s\n", SLEEP_S);
-	k_sleep(K_SECONDS(SLEEP_S));
-
-	printf("Sleep %u s with UART off\n", SLEEP_S);
-	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
-	k_sleep(K_SECONDS(SLEEP_S));
-	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
-
 	rc = gpio_pin_interrupt_configure_dt(&sw0, GPIO_INT_LEVEL_ACTIVE);
 	if (rc < 0) {
 		printf("Could not configure sw0 GPIO interrupt (%d)\n", rc);
@@ -78,6 +59,12 @@ int main(void)
 	}
 
 	printf("Entering system off; press sw0 to restart\n");
+
+	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
+	if (rc < 0) {
+		printf("Could not suspend console (%d)\n", rc);
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
 		/* Update the retained state */
