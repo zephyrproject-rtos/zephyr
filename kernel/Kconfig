@@ -1027,3 +1027,4 @@ endmenu
 
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
+rsource "Kconfig.init"
