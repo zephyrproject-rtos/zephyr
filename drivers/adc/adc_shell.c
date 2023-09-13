@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(adc_shell);
 	"Configure channel id\n"		\
 	"Usage: id <channel_id>\n"
 
+#define CMD_HELP_DIFF				\
+	"Configure differential\n"		\
+	"Usage: differential <0||1>\n"
+
 #define CMD_HELP_CH_NEG				\
 	"Configure channel negative input\n"	\
 	"Usage: negative <negative_input_id>\n"
@@ -132,6 +136,33 @@ static int cmd_adc_ch_id(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	adc->channel_config.channel_id = (uint8_t)strtol(argv[1], NULL, 10);
+	retval = adc_channel_setup(adc->dev, &adc->channel_config);
+	LOG_DBG("Channel setup returned %i", retval);
+
+	return retval;
+}
+
+static int cmd_adc_ch_diff(const struct shell *sh, size_t argc, char **argv)
+{
+	/* -2: index of ADC label name */
+	struct adc_hdl *adc = get_adc(argv[-2]);
+	int retval = 0;
+	char *endptr;
+	long diff;
+
+	if (!device_is_ready(adc->dev)) {
+		shell_error(sh, "ADC device not ready");
+		return -ENODEV;
+	}
+
+	endptr = argv[1];
+	diff = strtol(argv[1], &endptr, 10);
+	if ((endptr == argv[1]) || ((diff != 0) && (diff != 1))) {
+		shell_error(sh, "<differential> must be 0 or 1");
+		return -EINVAL;
+	}
+
+	adc->channel_config.differential = (uint8_t)diff;
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
 	LOG_DBG("Channel setup returned %i", retval);
 
@@ -339,13 +370,23 @@ static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
 			   "Reference: %s\n"
 			   "Acquisition Time: %u\n"
 			   "Channel ID: %u\n"
+			   "Differential: %u\n"
 			   "Resolution: %u",
 			   adc->dev->name,
 			   chosen_gain,
 			   chosen_reference,
 			   adc->channel_config.acquisition_time,
 			   adc->channel_config.channel_id,
+			   adc->channel_config.differential,
 			   adc->resolution);
+#if CONFIG_ADC_CONFIGURABLE_INPUTS
+	shell_print(sh, "Input positive: %u",
+		    adc->channel_config.input_positive);
+	if (adc->channel_config.differential != 0) {
+		shell_print(sh, "Input negative: %u",
+			    adc->channel_config.input_negative);
+	}
+#endif
 	return 0;
 }
 
@@ -378,6 +419,7 @@ SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel_cmds,
 	SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
+	SHELL_CMD_ARG(differential, NULL, CMD_HELP_DIFF, cmd_adc_ch_diff, 2, 0),
 	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
 		negative, NULL, CMD_HELP_CH_NEG, cmd_adc_ch_neg, 2, 0),
 	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
