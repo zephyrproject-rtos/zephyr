@@ -25,6 +25,8 @@
 
 #include <zephyr/logging/log.h>
 
+#include <stdbool.h>
+
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
 /* RTC start time: 1st, Jan, 2000 */
@@ -68,14 +70,24 @@ struct rtc_stm32_data {
 	struct k_mutex lock;
 };
 
-static int rtc_stm32_enter_initialization_mode(void)
+static int rtc_stm32_enter_initialization_mode(bool kernel_available)
 {
-	LL_RTC_EnableInitMode(RTC);
+	if (kernel_available) {
+		LL_RTC_EnableInitMode(RTC);
+		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
 
-	bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
+		if (!success) {
+			return -EIO;
+		}
+	} else {
+		/* kernel is not available so use the blocking but otherwise equivalent function
+		 * provided by LL
+		 */
+		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
 
-	if (!success) {
-		return -EIO;
+		if (status != SUCCESS) {
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -104,7 +116,7 @@ static int rtc_stm32_configure(const struct device *dev)
 	if ((hour_format != LL_RTC_HOURFORMAT_24HOUR) ||
 	    (sync_prescaler != cfg->sync_prescaler) ||
 	    (async_prescaler != cfg->async_prescaler)) {
-		err = rtc_stm32_enter_initialization_mode();
+		err = rtc_stm32_enter_initialization_mode(false);
 		if (err == 0) {
 			LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
 			LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
@@ -191,7 +203,7 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LOG_INF("Setting clock");
 	LL_RTC_DisableWriteProtection(RTC);
 
-	err = rtc_stm32_enter_initialization_mode();
+	err = rtc_stm32_enter_initialization_mode(true);
 	if (err) {
 		k_mutex_unlock(&data->lock);
 		return err;
@@ -387,5 +399,5 @@ static const struct rtc_stm32_config rtc_config = {
 
 static struct rtc_stm32_data rtc_data;
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
 		      CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
