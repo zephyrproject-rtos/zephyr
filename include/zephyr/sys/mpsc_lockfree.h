@@ -48,8 +48,7 @@ extern "C" {
  * by the compiler generated op codes is enough.
  *
  * On SMP atomics *must* be used to ensure the pointers
- * are updated in the correct order and the values are
- * updated core caches correctly.
+ * are updated in the correct order.
  */
 #if IS_ENABLED(CONFIG_SMP)
 
