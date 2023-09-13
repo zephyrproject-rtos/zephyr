@@ -370,6 +370,9 @@ struct rtio {
 
 	/* Completion queue */
 	struct rtio_mpsc cq;
+
+	/* iodev poll queue head */
+	struct rtio_mpsc iodev_poll_q;
 };
 
 /** The memory partition associated with all RTIO context information */
@@ -424,6 +427,24 @@ struct rtio_iodev_api {
 	 * @param iodev_sqe Submission queue entry
 	 */
 	void (*submit)(struct rtio_iodev_sqe *iodev_sqe);
+
+	/**
+	 * @brief Poll the iodev
+	 *
+	 * Upon submit, if blocking incremental work is needed the iodev
+	 * may request from the RTIO context to be polled when the next poll
+	 * iteration occurs.
+	 *
+	 * This may be used for short blocking work or polling hardware for
+	 * completion in the future. Using poll ensures the call stack remains
+	 * relatively shallow while also batching the blocking work to some other
+	 * call context as submit may be called in high priority ISR context.
+	 *
+	 * @param iodev IODev to poll
+	 * @retval true Poll again, more polling required.
+	 * @retval false Do not poll again, polling complete.
+	 */
+	bool (*poll)(struct rtio_iodev *iodev);
 };
 
 /**
@@ -433,7 +454,10 @@ struct rtio_iodev {
 	/* Function pointer table */
 	const struct rtio_iodev_api *api;
 
-	/* Queue of RTIO contexts with requests */
+	/* Queue member of iodevs awaiting polling */
+	struct rtio_mpsc_node iodev_poll_q;
+
+	/* Queue of submissions for this iodev */
 	struct rtio_mpsc iodev_sq;
 
 	/* Data associated with this iodev */
@@ -1436,6 +1460,54 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 #endif
 
 	return res;
+}
+
+/**
+ * @brief Add the iodev to the poll queue
+ *
+ * At any point if an iodev wishes to be polled to move work forward it may
+ * add an iodev to the poll queue. Polling may be used to check on hardware
+ * registers for work completion when interrupts are unwanted *or* in the case
+ * where the iodev represents a state machine and poll may be used to push the
+ * state machine forward avoiding deeply nested calls.
+ *
+ * @note This should only be called by the iodev when it wishes to be polled.
+ *
+ * @param r RTIO context
+ * @param iodev RTIO iodev to be polled
+ */
+static inline void rtio_poll_q_push(struct rtio *r, struct rtio_iodev *iodev)
+{
+	rtio_mpsc_push(&r->iodev_poll_q, &iodev->iodev_poll_q);
+}
+
+/**
+ * @brief Attempt to poll the next iodev in the queue
+ *
+ * When iodevs are enqueued to be polled, rtio_poll will pop the next awaiting
+ * iodev and call its poll function. This function may automatically re-add
+ * the iodev to the queue if its not yet done.
+ *
+ * @param r RTIO context to poll on
+ * @retval iodev Pointer to the iodev that was polled
+ * @retval NULL If no iodev was polled
+ */
+static inline struct rtio_iodev *rtio_poll_one(struct rtio *r)
+{
+	struct rtio_mpsc_node *next = rtio_mpsc_pop(&r->iodev_poll_q);
+
+	if (next == NULL) {
+		return NULL;
+	}
+
+	struct rtio_iodev *iodev = CONTAINER_OF(next, struct rtio_iodev, iodev_poll_q);
+	bool poll_again = iodev->api->poll(iodev);
+
+	if (poll_again) {
+		rtio_poll_q_push(r, iodev);
+	}
+
+	return iodev;
 }
 
 /**
