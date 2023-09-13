@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
+#include "hal/cpu.h"
 #include "hal/cntr.h"
 #include "hal/ticker.h"
 
@@ -3137,6 +3138,7 @@ void ticker_job(void *param)
 	instance->job_guard = 0U;
 
 	/* trigger worker if deferred */
+	cpu_dmb();
 	if (instance->worker_trigger || compare_trigger) {
 		instance->sched_cb(TICKER_CALL_ID_JOB, TICKER_CALL_ID_WORKER, 1,
 				   instance);
