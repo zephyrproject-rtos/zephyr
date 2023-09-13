@@ -25,6 +25,7 @@ zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET             sockets_packet.c)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS        sockets_tls.c)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD            socket_offload.c)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER socket_dispatcher.c)
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OBJ_CORE           socket_obj_core.c)
 
 if(CONFIG_NET_SOCKETS_NET_MGMT)
   zephyr_sources(sockets_net_mgmt.c)
