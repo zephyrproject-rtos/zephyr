@@ -94,6 +94,13 @@ Recommended Changes
   marked as deprecated as well. The new modem subsystem :kconfig:option:`CONFIG_MODEM_CMUX`
   and :kconfig:option:`CONFIG_MODEM_PPP`` should be used instead.
 
+* Device drivers should now be restricted to ``PRE_KERNEL_1``, ``PRE_KERNEL_2``
+  and ``POST_KERNEL`` initialization levels. Other device initialization levels,
+  including ``EARLY``, ``APPLICATION``, and ``SMP``, have been deprecated and
+  will be removed in future releases. Note that these changes do not apply to
+  initialization levels used in the context of the ``init.h`` API,
+  e.g. :c:macro:`SYS_INIT`.
+
 Picolibc-related Changes
 ************************
 

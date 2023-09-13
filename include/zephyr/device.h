@@ -118,8 +118,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config.
- * @param level The device's initialization level. See @ref sys_init for
- * details.
+ * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
+ * POST_KERNEL).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -169,7 +169,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config field.
- * @param level The device's initialization level. See SYS_INIT() for details.
+ * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
+ * POST_KERNEL).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -931,6 +932,25 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		DEVICE_NAME_GET(dev_id)) =                                     \
 		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
 
+/* deprecated device initialization levels */
+#define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
+	__WARN("EARLY device driver level is deprecated")
+#define Z_DEVICE_LEVEL_DEPRECATED_PRE_KERNEL_1
+#define Z_DEVICE_LEVEL_DEPRECATED_PRE_KERNEL_2
+#define Z_DEVICE_LEVEL_DEPRECATED_POST_KERNEL
+#define Z_DEVICE_LEVEL_DEPRECATED_APPLICATION                                  \
+	__WARN("APPLICATION device driver level is deprecated")
+#define Z_DEVICE_LEVEL_DEPRECATED_SMP                                          \
+	__WARN("SMP device driver level is deprecated")
+
+/**
+ * @brief Issue a warning if the given init level is deprecated.
+ *
+ * @param level Init level
+ */
+#define Z_DEVICE_LEVEL_CHECK_DEPRECATED_LEVEL(level)                           \
+	Z_DEVICE_LEVEL_DEPRECATED_##level
+
 /**
  * @brief Define the init entry for a device.
  *
@@ -942,6 +962,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param prio Initialization priority.
  */
 #define Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn_, level, prio)     \
+	Z_DEVICE_LEVEL_CHECK_DEPRECATED_LEVEL(level)                           \
+                                                                               \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan           \
 		Z_INIT_ENTRY_SECTION(level, prio,                              \
 				     Z_DEVICE_INIT_SUB_PRIO(node_id))          \
