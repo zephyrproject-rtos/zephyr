@@ -4747,7 +4747,8 @@ int net_if_get_name(struct net_if *iface, char *buf, int len)
 		return -ERANGE;
 	}
 
-	strncpy(buf, net_if_get_config(iface)->name, name_len);
+	/* Copy string and null terminator */
+	memcpy(buf, net_if_get_config(iface)->name, name_len + 1);
 
 	return name_len;
 #else
@@ -4769,7 +4770,8 @@ int net_if_set_name(struct net_if *iface, const char *buf)
 		return -ENAMETOOLONG;
 	}
 
-	strncpy(net_if_get_config(iface)->name, buf, name_len);
+	/* Copy string and null terminator */
+	memcpy(net_if_get_config(iface)->name, buf, name_len + 1);
 
 	return 0;
 #else
