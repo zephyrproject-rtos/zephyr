@@ -27,7 +27,7 @@ config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	  On a multi MCU device, which MCU is the preferred one.
 	  This MCU will for example have its tests command line parameters presented
 	  without any prefix. Note that an MCU being primary does not imply it will be
-	  the first one to boot.
+	  the first one to boot, or even that it will boot automatically.
 
 config NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS
 	string "Other cores images to include"
@@ -37,3 +37,13 @@ config NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS
 	  been produced by either other Zephyr builds or different OS builds.
 	  So you can, for ex., use this application build produce one core image, and at the same time
 	  have it produce the final link with the native simulator runner and the other MCU images.
+
+config NATIVE_SIMULATOR_AUTOSTART_MCU
+	bool "Auto-start this MCU"
+	depends on NATIVE_LIBRARY
+	help
+	  Automatically start the MCU this Zephyr image is built for during HW boot,
+	  even if in other circumstances this MCU would not start automatically (for ex. because
+	  another core is meant to release its reset).
+	  If that MCU was, by HW design, going to start at HW boot anyhow, this option does nothing.
+	  This option is meant to facilitate development.
