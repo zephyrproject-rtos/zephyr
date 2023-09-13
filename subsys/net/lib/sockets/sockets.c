@@ -33,12 +33,13 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 #include "../../ip/tcp_internal.h"
+#include "../../ip/net_private.h"
 
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
 #define VTABLE_CALL(fn, sock, ...)			     \
-	do {						     \
+	({						     \
 		const struct socket_op_vtable *vtable;	     \
 		struct k_mutex *lock;			     \
 		void *obj;				     \
@@ -61,8 +62,8 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 							     \
 		k_mutex_unlock(lock);                        \
 							     \
-		return ret;				     \
-	} while (0)
+		ret;					     \
+	})
 
 const struct socket_op_vtable sock_fd_op_vtable;
 
@@ -217,6 +218,8 @@ static int zsock_socket_internal(int family, int type, int proto)
 int z_impl_zsock_socket(int family, int type, int proto)
 {
 	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
+		int ret;
+
 		if (sock_family->family != family &&
 		    sock_family->family != AF_UNSPEC) {
 			continue;
@@ -228,7 +231,11 @@ int z_impl_zsock_socket(int family, int type, int proto)
 			continue;
 		}
 
-		return sock_family->handler(family, type, proto);
+		ret = sock_family->handler(family, type, proto);
+
+		(void)sock_obj_core_alloc(ret, sock_family, family, type, proto);
+
+		return ret;
 	}
 
 	errno = EAFNOSUPPORT;
@@ -291,6 +298,8 @@ int z_impl_zsock_close(int sock)
 	k_mutex_unlock(lock);
 
 	z_free_fd(sock);
+
+	(void)sock_obj_core_dealloc(sock);
 
 	return ret;
 }
@@ -464,7 +473,7 @@ int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 
 int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	VTABLE_CALL(bind, sock, addr, addrlen);
+	return VTABLE_CALL(bind, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -543,7 +552,7 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 int z_impl_zsock_connect(int sock, const struct sockaddr *addr,
 			socklen_t addrlen)
 {
-	VTABLE_CALL(connect, sock, addr, addrlen);
+	return VTABLE_CALL(connect, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -571,7 +580,7 @@ int zsock_listen_ctx(struct net_context *ctx, int backlog)
 
 int z_impl_zsock_listen(int sock, int backlog)
 {
-	VTABLE_CALL(listen, sock, backlog);
+	return VTABLE_CALL(listen, sock, backlog);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -668,7 +677,13 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 
 int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
-	VTABLE_CALL(accept, sock, addr, addrlen);
+	int new_sock;
+
+	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
+
+	(void)sock_obj_core_alloc_find(sock, new_sock, addr->sa_family, SOCK_STREAM);
+
+	return new_sock;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -832,7 +847,13 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+	int ret;
+
+	ret = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+
+	sock_obj_core_update_send_stats(sock, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -911,7 +932,13 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 
 ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 {
-	VTABLE_CALL(sendmsg, sock, msg, flags);
+	int ret;
+
+	ret = VTABLE_CALL(sendmsg, sock, msg, flags);
+
+	sock_obj_core_update_send_stats(sock, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1471,7 +1498,13 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			     struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+	int ret;
+
+	ret = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+
+	sock_obj_core_update_recv_stats(sock, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2124,7 +2157,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 int z_impl_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, socklen_t *optlen)
 {
-	VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
+	return VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2474,7 +2507,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 int z_impl_zsock_setsockopt(int sock, int level, int optname,
 			    const void *optval, socklen_t optlen)
 {
-	VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
+	return VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2548,7 +2581,7 @@ int zsock_getpeername_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getpeername(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
-	VTABLE_CALL(getpeername, sock, addr, addrlen);
+	return VTABLE_CALL(getpeername, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2627,7 +2660,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
-	VTABLE_CALL(getsockname, sock, addr, addrlen);
+	return VTABLE_CALL(getsockname, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -1105,12 +1105,27 @@ struct net_socket_register {
 	bool is_offloaded;
 	bool (*is_supported)(int family, int type, int proto);
 	int (*handler)(int family, int type, int proto);
+#if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
+	/* Store also the name of the socket type in order to be able to
+	 * print it later.
+	 */
+	const char * const name;
+#endif
 };
 
 #define NET_SOCKET_DEFAULT_PRIO CONFIG_NET_SOCKETS_PRIORITY_DEFAULT
 
 #define NET_SOCKET_GET_NAME(socket_name, prio)	\
 	__net_socket_register_##prio##_##socket_name
+
+#if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
+#define K_OBJ_TYPE_SOCK  K_OBJ_TYPE_ID_GEN("SOCK")
+
+#define NET_SOCKET_REGISTER_NAME(_name)		\
+	.name = STRINGIFY(_name),
+#else
+#define NET_SOCKET_REGISTER_NAME(_name)
+#endif
 
 #define _NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, _is_offloaded) \
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
@@ -1119,6 +1134,7 @@ struct net_socket_register {
 		.is_offloaded = _is_offloaded,				\
 		.is_supported = _is_supported,				\
 		.handler = _handler,					\
+		NET_SOCKET_REGISTER_NAME(socket_name)			\
 	}
 
 #define NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
