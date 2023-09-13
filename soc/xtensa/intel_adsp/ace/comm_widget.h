@@ -7,6 +7,7 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
 
 #define CW_DT_NODE			DT_NODELABEL(ace_comm_widget)
 #define CW_BASE				DT_REG_ADDR(CW_DT_NODE)

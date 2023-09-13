@@ -10,6 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/ztest.h>
 
 #define FAKE_EEPROM_NAME DEVICE_DT_NAME(DT_NODELABEL(fake_eeprom))

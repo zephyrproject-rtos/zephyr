@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/kernel.h>
 
 /**
- * @addtogroup sys_util_tests
+ * @addtogroup time_units_tests
  * @{
  */
 
@@ -19,7 +19,7 @@
  * @see WAIT_FOR()
  */
 
-ZTEST(sys_util, test_wait_for)
+ZTEST(time_units, test_wait_for)
 {
 	uint32_t start, end, expected;
 
@@ -43,10 +43,10 @@ ZTEST(sys_util, test_wait_for)
 
 
 /**
- * @defgroup sys_util_tests Sys Util Tests
+ * @defgroup time_units_tests Sys Util Tests
  * @ingroup all_tests
  * @{
  * @}
  */
 
-ZTEST_SUITE(sys_util, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(time_units, NULL, NULL, NULL, NULL, NULL);

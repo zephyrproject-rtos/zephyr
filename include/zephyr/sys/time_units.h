@@ -1434,6 +1434,32 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_cyc_ceil64(uint64_t t)
 #undef TIME_CONSTEXPR
 
 /**
+ * @brief Wait for an expression to return true with a timeout
+ *
+ * Spin on an expression with a timeout and optional delay between iterations
+ *
+ * Commonly needed when waiting on hardware to complete an asynchronous
+ * request to read/write/initialize/reset, but useful for any expression.
+ *
+ * @param expr Truth expression upon which to poll, e.g.: XYZREG & XYZREG_EN
+ * @param timeout Timeout to wait for in microseconds, e.g.: 1000 (1ms)
+ * @param delay_stmt Delay statement to perform each poll iteration
+ *                   e.g.: NULL, k_yield(), k_msleep(1) or k_busy_wait(1)
+ *
+ * @retval expr As a boolean return, if false then it has timed out.
+ */
+#define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
+	({                                                                                         \
+		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
+		uint32_t _wf_start = k_cycle_get_32();                                             \
+		while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {            \
+			delay_stmt;                                                                \
+			Z_SPIN_DELAY(10);                                                          \
+		}                                                                                  \
+		(expr);                                                                            \
+	})
+
+/**
  * @}
  */
 

@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/time_units.h>
 #include <soc.h>
 #include "dma_dw_common.h"
 

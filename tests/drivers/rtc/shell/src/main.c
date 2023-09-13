@@ -11,6 +11,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/ztest.h>
 
 /**

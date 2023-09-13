@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 
 #include "hal/cntr.h"
 

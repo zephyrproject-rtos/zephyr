@@ -4,6 +4,7 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/ztest.h>
 #include <intel_adsp_ipc.h>
 #include <zephyr/devicetree.h>

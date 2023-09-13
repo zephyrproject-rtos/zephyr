@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/time_units.h>
 
 #include <zephyr/drivers/dai.h>
 #include <zephyr/irq.h>

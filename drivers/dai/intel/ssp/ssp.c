@@ -12,6 +12,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/time_units.h>
 #define LOG_DOMAIN dai_intel_ssp
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/time_units.h>
 #include <adsp_shim.h>
 
 #include <zephyr/logging/log.h>

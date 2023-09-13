@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell.h>

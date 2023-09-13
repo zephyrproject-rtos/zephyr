@@ -6,6 +6,7 @@
 
 #include <adsp_interrupt.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/cache.h>
 
 #define DT_DRV_COMPAT intel_adsp_gpdma

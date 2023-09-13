@@ -7,6 +7,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/cache.h>
 #include <cpu_init.h>
 #include <soc_util.h>

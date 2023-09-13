@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 
 #include <adsp_clk.h>
 #include <adsp_shim.h>
