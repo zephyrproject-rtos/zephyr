@@ -305,7 +305,7 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	uint8_t adc_channel_id = strtol(argv[1], NULL, 10);
 	/* -1 index of adc label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
-	uint16_t m_sample_buffer[BUFFER_SIZE];
+	int16_t m_sample_buffer[BUFFER_SIZE];
 	int retval;
 
 	if (!device_is_ready(adc->dev)) {
