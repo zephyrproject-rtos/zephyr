@@ -374,7 +374,7 @@ static const struct display_driver_api sdl_display_api = {
 	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL,		\
 			      &sdl_data_##n,				\
 			      &sdl_config_##n,				\
-			      APPLICATION,				\
+			      POST_KERNEL,				\
 			      CONFIG_DISPLAY_INIT_PRIORITY,		\
 			      &sdl_display_api);			\
 									\
