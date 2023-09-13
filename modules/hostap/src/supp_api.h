@@ -107,4 +107,13 @@ int supplicant_get_power_save_config(const struct device *dev, struct wifi_ps_co
  */
 int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain);
 
+/**
+ * @brief Set Wi-Fi mode of operation
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param mode Mode setting to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
+
 #endif /* ZEPHYR_SUPP_MGMT_H */
