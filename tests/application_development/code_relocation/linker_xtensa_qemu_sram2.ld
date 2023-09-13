@@ -26,4 +26,4 @@ PHDRS
 #define MPU_ALIGN(region_size) \
     . = ALIGN(4)
 
-#include <xtensa-sample-controller.ld>
+#include <xtensa-dc233c.ld>
