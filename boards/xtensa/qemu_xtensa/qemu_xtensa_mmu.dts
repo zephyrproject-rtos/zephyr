@@ -9,7 +9,7 @@
 #include "dc233c.dtsi"
 
 / {
-	model = "qemu_xtensa_dc233c";
+	model = "qemu_xtensa_mmu";
 	compatible = "cdns,xtensa-dc233c";
 
 	chosen {
