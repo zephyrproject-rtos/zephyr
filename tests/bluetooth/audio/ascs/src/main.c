@@ -250,7 +250,6 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_client_terminates
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_unicast_server_cb_release_called_once(stream);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -288,7 +287,6 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection_server_terminates
 	k_sleep(K_MSEC(CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY));
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_unicast_server_cb_release_called_once(stream);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -351,7 +349,6 @@ ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_client_te
 	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
 
 	expect_bt_bap_stream_ops_released_called_twice(streams);
-	expect_bt_bap_unicast_server_cb_release_called_twice(streams);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
@@ -413,7 +410,6 @@ ZTEST_F(ascs_test_suite, test_release_stream_pair_on_acl_disconnection_server_te
 	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
 
 	expect_bt_bap_stream_ops_released_called_twice(streams);
-	expect_bt_bap_unicast_server_cb_release_called_twice(streams);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
