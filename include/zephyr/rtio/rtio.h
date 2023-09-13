@@ -211,7 +211,6 @@ struct rtio_cqe;
 struct rtio_sqe;
 struct rtio_sqe_pool;
 struct rtio_cqe_pool;
-struct rtio_block_pool;
 struct rtio_iodev;
 struct rtio_iodev_sqe;
 /** @endcond */
@@ -310,13 +309,6 @@ struct rtio_cqe_pool {
 	struct rtio_cqe *pool;
 };
 
-struct rtio_block_pool {
-	/* Memory pool associated with this RTIO context. */
-	struct sys_mem_blocks *mempool;
-	/* The size (in bytes) of a single block in the mempool */
-	const uint32_t blk_size;
-};
-
 /**
  * @brief An RTIO context containing what can be viewed as a pair of queues.
  *
@@ -362,7 +354,7 @@ struct rtio {
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	/* Mem block pool */
-	struct rtio_block_pool *block_pool;
+	struct sys_mem_blocks *block_pool;
 #endif
 
 	/* Submission queue */
@@ -376,6 +368,26 @@ struct rtio {
 extern struct k_mem_partition rtio_partition;
 
 /**
+ * @brief Get the mempool block size of the RTIO context
+ *
+ * @param[in] r The RTIO context
+ * @return The size of each block in the context's mempool
+ * @return 0 if the context doesn't have a mempool
+ */
+static inline size_t rtio_mempool_block_size(const struct rtio *r)
+{
+#ifndef CONFIG_RTIO_SYS_MEM_BLOCKS
+	ARG_UNUSED(r);
+	return 0;
+#else
+	if (r == NULL || r->block_pool == NULL) {
+		return 0;
+	}
+	return BIT(r->block_pool->blk_sz_shift);
+#endif
+}
+
+/**
  * @brief Compute the mempool block index for a given pointer
  *
  * @param[in] r RTIO context
@@ -386,8 +398,8 @@ extern struct k_mem_partition rtio_partition;
 static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, const void *ptr)
 {
 	uintptr_t addr = (uintptr_t)ptr;
-	struct sys_mem_blocks *mem_pool = r->block_pool->mempool;
-	uint32_t block_size = r->block_pool->blk_size;
+	struct sys_mem_blocks *mem_pool = r->block_pool;
+	uint32_t block_size = rtio_mempool_block_size(r);
 
 	uintptr_t buff = (uintptr_t)mem_pool->buffer;
 	uint32_t buff_size = mem_pool->num_blocks * block_size;
@@ -648,31 +660,43 @@ static inline void rtio_cqe_pool_free(struct rtio_cqe_pool *pool, struct rtio_cq
 	pool->pool_free++;
 }
 
-static inline int rtio_block_pool_alloc(struct rtio_block_pool *pool, size_t min_sz,
+static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 					  size_t max_sz, uint8_t **buf, uint32_t *buf_len)
 {
+#ifndef CONFIG_RTIO_SYS_MEM_BLOCKS
+	ARG_UNUSED(r);
+	ARG_UNUSED(min_sz);
+	ARG_UNUSED(max_sz);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(buf_len);
+	return -ENOTSUP;
+#else
+	const uint32_t block_size = rtio_mempool_block_size(r);
 	uint32_t bytes = max_sz;
 
 	do {
-		size_t num_blks = DIV_ROUND_UP(bytes, pool->blk_size);
-		int rc = sys_mem_blocks_alloc_contiguous(pool->mempool, num_blks, (void **)buf);
+		size_t num_blks = DIV_ROUND_UP(bytes, block_size);
+		int rc = sys_mem_blocks_alloc_contiguous(r->block_pool, num_blks, (void **)buf);
 
 		if (rc == 0) {
-			*buf_len = num_blks * pool->blk_size;
+			*buf_len = num_blks * block_size;
 			return 0;
 		}
 
-		bytes -= pool->blk_size;
+		bytes -= block_size;
 	} while (bytes >= min_sz);
 
 	return -ENOMEM;
+#endif
 }
 
-static inline void rtio_block_pool_free(struct rtio_block_pool *pool, void *buf, uint32_t buf_len)
+static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_len)
 {
-	size_t num_blks = buf_len / pool->blk_size;
+#ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
+	size_t num_blks = buf_len >> r->block_pool->blk_sz_shift;
 
-	sys_mem_blocks_free_contiguous(pool->mempool, buf, num_blks);
+	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
+#endif
 }
 
 /* Do not try and reformat the macros */
@@ -733,16 +757,11 @@ static inline void rtio_block_pool_free(struct rtio_block_pool *pool, void *buf,
  */
 #define RTIO_DMEM COND_CODE_1(CONFIG_USERSPACE, (K_APP_DMEM(rtio_partition) static), (static))
 
-#define Z_RTIO_BLOCK_POOL_DEFINE(name, blk_sz, blk_cnt, blk_align)				\
-	RTIO_BMEM uint8_t __aligned(WB_UP(blk_align))						\
-	_block_pool_##name[blk_cnt*WB_UP(blk_sz)];						\
-	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(_sys_blocks_##name, WB_UP(blk_sz),			\
-					    blk_cnt, _block_pool_##name,			\
-					    RTIO_DMEM);						\
-	static struct rtio_block_pool name = {							\
-		.mempool = &_sys_blocks_##name,							\
-		.blk_size = blk_sz,								\
-	}
+#define Z_RTIO_BLOCK_POOL_DEFINE(name, blk_sz, blk_cnt, blk_align)                                 \
+	RTIO_BMEM uint8_t __aligned(WB_UP(blk_align))                                              \
+	_block_pool_##name[blk_cnt*WB_UP(blk_sz)];                                                 \
+	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, WB_UP(blk_sz), blk_cnt, _block_pool_##name,      \
+					    RTIO_DMEM)
 
 #define Z_RTIO_DEFINE(name, _sqe_pool, _cqe_pool, _block_pool)                                     \
 	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,                                                         \
@@ -999,10 +1018,9 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (iodev_sqe->sqe.op == RTIO_OP_RX && iodev_sqe->sqe.flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
-		struct sys_mem_blocks *mem_pool = r->block_pool->mempool;
-		uint32_t block_size = r->block_pool->blk_size;
-		int blk_index = (iodev_sqe->sqe.buf - mem_pool->buffer) / block_size;
-		int blk_count = iodev_sqe->sqe.buf_len / block_size;
+		struct sys_mem_blocks *mem_pool = r->block_pool;
+		int blk_index = (iodev_sqe->sqe.buf - mem_pool->buffer) >> mem_pool->blk_sz_shift;
+		int blk_count = iodev_sqe->sqe.buf_len >> mem_pool->blk_sz_shift;
 
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
@@ -1038,13 +1056,13 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 	if (RTIO_CQE_FLAG_GET(cqe->flags) == RTIO_CQE_FLAG_MEMPOOL_BUFFER) {
 		int blk_idx = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_IDX(cqe->flags);
 		int blk_count = RTIO_CQE_FLAG_MEMPOOL_GET_BLK_CNT(cqe->flags);
+		uint32_t blk_size = rtio_mempool_block_size(r);
 
-		*buff = r->block_pool->mempool->buffer + blk_idx * r->block_pool->blk_size;
-		*buff_len = blk_count * r->block_pool->blk_size;
-		__ASSERT_NO_MSG(*buff >= r->block_pool->mempool->buffer);
+		*buff = r->block_pool->buffer + blk_idx * blk_size;
+		*buff_len = blk_count * blk_size;
+		__ASSERT_NO_MSG(*buff >= r->block_pool->buffer);
 		__ASSERT_NO_MSG(*buff <
-				r->block_pool->mempool->buffer +
-				r->block_pool->blk_size * r->block_pool->mempool->num_blocks);
+				r->block_pool->buffer + blk_size * r->block_pool->num_blocks);
 		return 0;
 	}
 	return -EINVAL;
@@ -1176,8 +1194,7 @@ static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32
 			return 0;
 		}
 
-		int rc = rtio_block_pool_alloc(r->block_pool, min_buf_len, max_buf_len,
-					       buf, buf_len);
+		int rc = rtio_block_pool_alloc(r, min_buf_len, max_buf_len, buf, buf_len);
 		if (rc == 0) {
 			sqe->buf = *buf;
 			sqe->buf_len = *buf_len;
@@ -1222,7 +1239,7 @@ static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff, uint32
 		return;
 	}
 
-	rtio_block_pool_free(r->block_pool, buff, buff_len);
+	rtio_block_pool_free(r, buff, buff_len);
 #else
 	ARG_UNUSED(r);
 	ARG_UNUSED(buff);
