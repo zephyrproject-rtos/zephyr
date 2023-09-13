@@ -931,7 +931,7 @@ void usb_audio_register(const struct device *dev,
 			    &usb_audio_device_init,			  \
 			    NULL,					  \
 			    &dev##_audio_dev_data_##i,			  \
-			    &dev##_audio_config_##i, APPLICATION,	  \
+			    &dev##_audio_config_##i, POST_KERNEL,	  \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
 			    DUMMY_API)
 
