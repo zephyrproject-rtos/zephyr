@@ -317,6 +317,25 @@ struct bt_bap_scan_delegator_recv_state {
 };
 
 struct bt_bap_scan_delegator_cb {
+
+	/**
+	 * @brief Attempt to add a new source to a receive state failed
+	 *
+	 * An attempt to add a new broadcast source to a receive state
+	 * failed.
+	 *
+	 * @param conn        Pointer to the connection to a remote device if
+	 *                    the change was caused by it, otherwise NULL.
+	 * @param state_info  Pointer to the receive state that was
+	 *                    attempted to be added.
+	 * @param err         errno explaining why adding the source failed
+	 *
+	 * return true if operation was successful, or false if unsuccessful
+	 *
+	 */
+	bool (*recv_state_add_failed)(struct bt_conn *conn,
+					      const struct bt_bap_scan_delegator_recv_state *state_info,
+					      int err);
 	/**
 	 * @brief Receive state updated
 	 *
@@ -1664,6 +1683,15 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
+
+/**
+ * @brief Find a broadcast sink by its BASS Source ID
+ *
+ * @param src_id which comes from of the @ref bt_bap_scan_delegator_recv_state
+ *
+ * @return Pointer to the broadcast sink found
+ */
+struct bt_bap_broadcast_sink *bt_bap_broadcast_sink_get_by_src_id(uint8_t src_id);
 
 /** @} */ /* End of group bt_bap_broadcast_sink */
 

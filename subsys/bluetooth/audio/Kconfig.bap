@@ -235,6 +235,14 @@ config BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
 	help
 	  The maximum number of BIS subgroups supported.
 
+config BT_BAP_SCAN_DELEGATOR_OVERWRITE_OLDEST
+	bool "Overwrite oldest inactive receive state"
+	help
+	  If enabled, if there are no available free receive states,
+	  the oldest inactive receive state will be overwritten. An
+	  inactive receive state is a receive state that has neither a
+	  Periodic Advertising or Broadcast Isochronous Group (BIG) sync.
+
 endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT

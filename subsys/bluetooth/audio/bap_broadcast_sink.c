@@ -1116,6 +1116,17 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 	return 0;
 }
 
+struct bt_bap_broadcast_sink *bt_bap_broadcast_sink_get_by_src_id(uint8_t bass_src_id)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].bass_src_id == bass_src_id) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
 static int broadcast_sink_init(void)
 {
 	static struct bt_le_per_adv_sync_cb cb = {
