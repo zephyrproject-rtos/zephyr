@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 2019 Intel Corporation.
+ * Copyright (c) 2019, 2023 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include "sample_controller.dtsi"
+#include "dc233c.dtsi"
 
 / {
 	model = "qemu_xtensa";
-	compatible = "cdns,xtensa-sample-controller";
+	compatible = "cdns,xtensa-dc233c";
 
 	chosen {
 		zephyr,sram = &sram0;
