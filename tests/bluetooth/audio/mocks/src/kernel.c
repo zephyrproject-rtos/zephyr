@@ -56,6 +56,13 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 	return 0;
 }
 
+int k_work_cancel(struct k_work *work)
+{
+	(void)sys_slist_find_and_remove(&work_pending, &work->node);
+
+	return 0;
+}
+
 void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
 	work->handler = handler;
