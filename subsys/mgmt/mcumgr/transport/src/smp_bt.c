@@ -675,7 +675,7 @@ static void smp_bt_setup(void)
 	if (rc == 0) {
 		smp_client_transport.smpt = &smp_bt_transport;
 		smp_client_transport.smpt_type = SMP_BLUETOOTH_TRANSPORT;
-		rc = smp_client_transport_register(&smp_client_transport);
+		smp_client_transport_register(&smp_client_transport);
 	}
 #endif
 
