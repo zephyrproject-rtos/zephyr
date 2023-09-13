@@ -12,7 +12,6 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/device.h>
 #include <zephyr/init.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -1030,7 +1029,7 @@ BT_GATT_SERVICE_DEFINE(bass_svc,
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
 );
 
-static int bt_bap_scan_delegator_init(const struct device *unused)
+static int bt_bap_scan_delegator_init(void)
 {
 	/* Store the pointer to the first characteristic in each receive state */
 	scan_delegator.recv_states[0].attr = &bass_svc.attrs[3];
@@ -1049,9 +1048,7 @@ static int bt_bap_scan_delegator_init(const struct device *unused)
 	return 0;
 }
 
-DEVICE_DEFINE(bt_bap_scan_delegator, "bt_bap_scan_delegator",
-	      &bt_bap_scan_delegator_init, NULL, NULL, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+SYS_INIT(bt_bap_scan_delegator_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /****************************** PUBLIC API ******************************/
 void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
