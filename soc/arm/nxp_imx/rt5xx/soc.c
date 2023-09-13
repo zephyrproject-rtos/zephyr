@@ -281,8 +281,12 @@ void __weak rt5xx_clock_init(void)
 	/* Switch SYSTICK_CLK to MAIN_CLK_DIV */
 	CLOCK_AttachClk(kMAIN_CLK_DIV_to_SYSTICK_CLK);
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
-	/* Switch FLEXCOMM0 to FRG */
-	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
+	#ifdef CONFIG_FLEXCOMM0_CLK_SRC_FRG
+		/* Switch FLEXCOMM0 to FRG */
+		CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
+	#elif defined(CONFIG_FLEXCOMM0_CLK_SRC_FRO)
+		CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM0);
+	#endif
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 	usb_device_clock_init();
