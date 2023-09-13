@@ -347,19 +347,21 @@ void z_vrfy_sys_clock_tick_set(uint64_t tick)
 k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
 {
 	k_timepoint_t timepoint;
+	k_ticks_t dt;
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		timepoint.tick = UINT64_MAX;
-	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		timepoint.tick = 0;
-	} else {
-		k_ticks_t dt = timeout.ticks;
+		return K_TIMEPOINT_NEVER;
+	}
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		return K_TIMEPOINT_ZERO;
+	}
 
-		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
-			timepoint.tick = Z_TICK_ABS(dt);
-		} else {
-			timepoint.tick = sys_clock_tick_get() + MAX(1, dt);
-		}
+	dt = timeout.ticks;
+
+	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
+		timepoint.tick = Z_TICK_ABS(dt);
+	} else {
+		timepoint.tick = sys_clock_tick_get() + MAX(1, dt);
 	}
 
 	return timepoint;

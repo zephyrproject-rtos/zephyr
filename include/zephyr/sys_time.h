@@ -329,11 +329,30 @@ typedef struct {
  * Absolute timepoints are stored in this opaque type.
  * It is best not to inspect its content directly.
  *
+ * Timepoints always represent a specific kernel tick or counter value. Their
+ * precision therefore depends on the underlying counter's resolution.
+ *
  * @see sys_timepoint_calc()
  * @see sys_timepoint_timeout()
  * @see sys_timepoint_expired()
  */
 typedef struct { uint64_t tick; } k_timepoint_t;
+
+/**
+ * @brief A timepoint representing zero uptime.
+ *
+ * This macro generates a timepoint that represents the point in time at which
+ * uptime was zero.
+ */
+#define K_TIMEPOINT_ZERO ((k_timepoint_t) {0})
+
+/**
+ * @brief A timepoint that will never occur.
+ *
+ * This macro generates a timepoint that represents a point in time that the
+ * uptime will never reach.
+ */
+#define K_TIMEPOINT_NEVER ((k_timepoint_t) {UINT64_MAX})
 
 /**
  * @brief Calculate a timepoint value
