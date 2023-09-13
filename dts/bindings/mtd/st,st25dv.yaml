@@ -9,7 +9,7 @@ compatible: "st,st25dv"
 include: eeprom-base.yaml
 
 properties:
-    reg:
-      required: true
-    size:
-      required: true
+  reg:
+    required: true
+  size:
+    required: true

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_ST25DV
+	bool "ST25DV NFC as EEPROM"
+	default y
+	depends on DT_HAS_ST_ST25DV_ENABLED
+	select I2C
+	help
+	  Enable support for ST25DV NFC tag for use as an EEPROM.
