@@ -38,7 +38,7 @@ int main(void)
 
 	while (1) {
 
-		struct fuel_gauge_get_property props[] = {
+		struct fuel_gauge_property props[] = {
 			{
 				.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
 			},

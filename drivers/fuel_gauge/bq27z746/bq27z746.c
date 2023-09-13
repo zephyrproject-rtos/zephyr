@@ -109,7 +109,7 @@ static int bq27z746_read_mac(const struct device *dev, uint16_t cmd, uint8_t *da
 	return ret;
 }
 
-static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_get_property *prop)
+static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
 {
 	int rc = 0;
 	uint16_t val = 0;
@@ -198,7 +198,7 @@ static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_get_pro
 }
 
 static int bq27z746_get_buffer_prop(const struct device *dev,
-				    struct fuel_gauge_get_buffer_property *prop, void *dst,
+				    struct fuel_gauge_buffer_property *prop, void *dst,
 				    size_t dst_len)
 {
 	int rc = 0;
@@ -236,7 +236,7 @@ static int bq27z746_get_buffer_prop(const struct device *dev,
 	return rc;
 }
 
-static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_set_property *prop)
+static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_property *prop)
 {
 	int rc = 0;
 	uint16_t val = 0;
@@ -260,7 +260,7 @@ static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_set_pro
 	return rc;
 }
 
-static int bq27z746_get_props(const struct device *dev, struct fuel_gauge_get_property *props,
+static int bq27z746_get_props(const struct device *dev, struct fuel_gauge_property *props,
 			      size_t len)
 {
 	int err_count = 0;
@@ -276,7 +276,7 @@ static int bq27z746_get_props(const struct device *dev, struct fuel_gauge_get_pr
 	return err_count;
 }
 
-static int bq27z746_set_props(const struct device *dev, struct fuel_gauge_set_property *props,
+static int bq27z746_set_props(const struct device *dev, struct fuel_gauge_property *props,
 			      size_t len)
 {
 	int err_count = 0;

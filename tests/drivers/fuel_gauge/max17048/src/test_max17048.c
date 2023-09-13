@@ -34,7 +34,7 @@ static void *max17048_setup(void)
 
 ZTEST_USER_F(max17048, test_get_all_props_failed_returns_negative)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* Invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -51,7 +51,7 @@ ZTEST_USER_F(max17048, test_get_all_props_failed_returns_negative)
 
 ZTEST_USER_F(max17048, test_get_some_props_failed_returns_failed_prop_count)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* First invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -86,7 +86,7 @@ ZTEST_USER_F(max17048, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
 		},
@@ -115,7 +115,7 @@ ZTEST_USER_F(max17048, test_current_rate_zero)
 {
 	/* Test when crate is 0, which is a special case */
 
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
 		},

@@ -33,7 +33,7 @@ static void *bq27z746_setup(void)
 
 ZTEST_USER_F(bq27z746, test_get_all_props_failed_returns_negative)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* Invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -50,7 +50,7 @@ ZTEST_USER_F(bq27z746, test_get_all_props_failed_returns_negative)
 
 ZTEST_USER_F(bq27z746, test_get_some_props_failed_returns_failed_prop_count)
 {
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			/* First invalid property */
 			.property_type = FUEL_GAUGE_PROP_MAX,
@@ -82,7 +82,7 @@ ZTEST_USER_F(bq27z746, test_get_some_props_failed_returns_failed_prop_count)
 
 ZTEST_USER_F(bq27z746, test_get_buffer_prop)
 {
-	struct fuel_gauge_get_buffer_property prop;
+	struct fuel_gauge_buffer_property prop;
 	int ret;
 
 	{
@@ -137,7 +137,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
-	struct fuel_gauge_get_property props[] = {
+	struct fuel_gauge_property props[] = {
 		{
 			.property_type = FUEL_GAUGE_AVG_CURRENT,
 		},
