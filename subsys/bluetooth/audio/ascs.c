@@ -123,6 +123,8 @@ static void ase_free(struct bt_ascs_ase *ase)
 
 	bt_conn_unref(ase->conn);
 	ase->conn = NULL;
+
+	(void)k_work_cancel(&ase->state_transition_work);
 }
 
 static void ase_status_changed(struct bt_ascs_ase *ase, uint8_t state)
@@ -1101,7 +1103,17 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (ase->ep.status.state != BT_BAP_EP_STATE_IDLE) {
-			ase_release(ase, reason, BT_BAP_ASCS_RSP_NULL);
+			/* We must set the state to idle when the ACL is disconnected immediately,
+			 * as when the ACL disconnect callbacks have been called, the application
+			 * should expect there to be only a single reference to the bt_conn pointer
+			 * from the stack.
+			 * We trigger the work handler directly rather than e.g. calling
+			 * ase_set_state_idle to trigger "regular" state change behavior (such) as
+			 * calling stream->stopped when leaving the streaming state.
+			 */
+			ase->ep.reason = reason;
+			ase->state_pending = BT_BAP_EP_STATE_IDLE;
+			state_transition_work_handler(&ase->state_transition_work);
 			/* At this point, `ase` object have been free'd */
 		}
 	}
