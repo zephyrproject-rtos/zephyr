@@ -49,7 +49,8 @@ extern void int_to_thread(uint32_t num_iterations);
 extern void sema_test_signal(void);
 extern void mutex_lock_unlock(void);
 extern int sema_context_switch(void);
-extern int suspend_resume(void);
+extern int thread_ops(uint32_t num_iterations, uint32_t start_options,
+		      uint32_t alt_options);
 extern void heap_malloc_free(void);
 
 static void test_thread(void *arg1, void *arg2, void *arg3)
@@ -82,7 +83,14 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 
 	int_to_thread(NUM_ITERATIONS);
 
-	suspend_resume();
+	/* Thread creation, starting, suspending, resuming and aborting. */
+
+	thread_ops(NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	thread_ops(NUM_ITERATIONS, 0, K_USER);
+	thread_ops(NUM_ITERATIONS, K_USER, K_USER);
+	thread_ops(NUM_ITERATIONS, K_USER, 0);
+#endif
 
 	sema_test_signal();
 
