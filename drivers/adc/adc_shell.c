@@ -124,7 +124,7 @@ static int cmd_adc_ch_id(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.channel_id = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -148,7 +148,7 @@ static int cmd_adc_ch_neg(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.input_negative = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 #else
@@ -175,7 +175,7 @@ static int cmd_adc_ch_pos(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.input_positive = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 #else
@@ -202,7 +202,7 @@ static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
 	memcpy(chosen_gain, argv[0], len);
 	chosen_gain[len] = '\0';
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -239,7 +239,7 @@ static int cmd_adc_acq(const struct shell *sh, size_t argc, char **argv)
 			ADC_ACQ_TIME_DEFAULT;
 	}
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -285,7 +285,7 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 
 	adc->channel_config.reference = reference;
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
