@@ -112,11 +112,12 @@ tests:
       - longan_nano
     integration_platforms:
       - gd32e103v_eval
-  drivers.watchdog.s32z270dc2_r52:
+  drivers.watchdog.nxp_s32:
     build_only: true
     platform_allow:
       - s32z270dc2_rtu0_r52
       - s32z270dc2_rtu1_r52
+      - mr_canhubk3
   drivers.watchdog.mimxrt1050_evk_ti_tps382x:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk
