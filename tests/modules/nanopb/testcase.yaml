@@ -1,0 +1,9 @@
+tests:
+  libraries.nanopb:
+    modules:
+      - nanopb
+    tags:
+      - nanopb
+    integration_platforms:
+      - native_posix
+      - native_posix_64
