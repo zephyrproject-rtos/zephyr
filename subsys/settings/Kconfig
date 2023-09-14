@@ -30,6 +30,32 @@ config SETTINGS_DYNAMIC_HANDLERS
 config SETTINGS_ENCODE_LEN
 	bool
 
+config SETTINGS_MAX_DIR_DEPTH
+	int "Maximum depth of settings tree"
+	default 8
+	help
+	  Maximum depth of settings tree. This is used to allocate memory
+	  for settings lookup.
+
+config SETTINGS_MAX_VAL_LEN
+	int "Maximum length of settings value"
+	default 128
+	help
+	  Maximum length of settings value. This is used to allocate memory
+	  for settings lookup.
+
+config SETTINGS_NAME_SEPARATOR
+	hex "Settings name separator"
+	default 0x2f
+	help
+	  Separator used in settings name. This is used for settings lookup.
+
+config SETTINGS_NAME_END
+	hex "Settings name end"
+	default 0x2e
+	help
+	  End of settings name. This is used for settings lookup.
+
 choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS
