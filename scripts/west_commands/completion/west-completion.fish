@@ -162,7 +162,7 @@ function __zephyr_west_complete_help
                         "list" "print information about projects" \
                         "manifest" "manage the west manifest" \
                         "diff" '"git diff" for one or more projects' \
-                        "statue" '"git status" for one or more projects' \
+                        "status" '"git status" for one or more projects' \
                         "forall" "run a command in one or more local projects" \
                         "config" "get or set config file values" \
                         "topdir" "print the top level directory of the workspace" \
