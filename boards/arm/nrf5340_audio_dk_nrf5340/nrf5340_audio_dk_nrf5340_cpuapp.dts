@@ -20,3 +20,7 @@
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
 };
+
+&uicr {
+	nfct-pins-as-gpios;
+};
