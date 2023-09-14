@@ -25,7 +25,9 @@
 #define DEV_IN DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), in_gpios)
 #define DEV DEV_OUT /* DEV_OUT should equal DEV_IN, we test for this */
 #define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
+#define PIN_OUT_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
+#define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
 
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_0), okay)
 #define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_0))
