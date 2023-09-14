@@ -1042,8 +1042,8 @@ static void mfy_cis_lazy_fill(void *param)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t remainder;
+	uint16_t lazy = 0U;
 	uint8_t ticker_id;
-	uint16_t lazy;
 	uint8_t retry;
 	uint8_t id;
 
