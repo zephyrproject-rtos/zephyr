@@ -602,7 +602,7 @@ static int tls_session_save(const struct sockaddr *peer_addr,
 	ret = mbedtls_ssl_session_save(session, entry->session, session_len,
 				       &session_len);
 	if (ret < 0) {
-		NET_ERR("Failed to serialize session, err: 0x%x.", -ret);
+		NET_ERR("Failed to serialize session, err: -0x%x.", -ret);
 		mbedtls_free(entry->session);
 		entry->session = NULL;
 		return -ENOMEM;
@@ -1231,7 +1231,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			/* MbedTLS API documentation requires session to
 			 * be reset in other error cases
 			 */
-			NET_ERR("TLS handshake error: -%x", -ret);
+			NET_ERR("TLS handshake error: -0x%x", -ret);
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
 				ret = -ECONNABORTED;
@@ -1240,7 +1240,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 		}
 
 		/* Avoid constant loop if tls_mbedtls_reset fails */
-		NET_ERR("TLS reset error: -%x", -ret);
+		NET_ERR("TLS reset error: -0x%x", -ret);
 		ret = -ECONNABORTED;
 		break;
 	}
