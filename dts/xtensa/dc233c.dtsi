@@ -29,13 +29,13 @@
 	};
 
 	/*
-	 * Although ROM is of size 32MB (0x02000000), limit this to 8KB so
+	 * Although ROM is of size 32MB (0x02000000), limit this to 16KB so
 	 * fewer L2 page table entries are needed when MMU is enabled.
 	 */
 	rom0: memory@fe000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xfe000000 0x00002000>;
+		reg = <0xfe000000 0x00004000>;
 	};
 
 	soc {
