@@ -7,3 +7,15 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  nfct-pins-as-gpios:
+    type: boolean
+    description: |
+      When enabled this property will configure pins dedicated to NFCT
+      peripheral as regular GPIOs.
+
+      NFC pins in nRF52 series: P0.09 and P0.10
+      NFC pins in nRF5340: P0.02 and P0.03
+
+      This setting, once applied, can only be unset by erasing the UICR
+      registers. Refer to the reference manual for more details.
