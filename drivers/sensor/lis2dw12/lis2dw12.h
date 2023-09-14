@@ -58,6 +58,11 @@
 #define LIS2DW12_SHIFT_PM1		4
 #define LIS2DW12_SHIFT_PMOTHER		2
 
+/* shift value for 12 bit resolution */
+#define LIS2DW12_SHIFT_TEMP 4
+/* Temperature 12 bit scale factor */
+#define LIS2DW12_TEMP_SCALE_FACTOR 0.0625
+
 /**
  * struct lis2dw12_device_config - lis2dw12 hw configuration
  * @bus_name: Pointer to bus master identifier.

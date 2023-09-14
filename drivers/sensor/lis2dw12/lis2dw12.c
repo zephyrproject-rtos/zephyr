@@ -93,6 +93,21 @@ static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
+static inline void lis2dw12_temperature_convert(struct sensor_value *val)
+{
+	int64_t dval;
+
+	/* Temperature output is returned in 12 bit resolution with 16LSB/degrees C scaling. */
+	float deltaT = (((int16_t)val->val1 >> LIS2DW12_SHIFT_TEMP) * LIS2DW12_TEMP_SCALE_FACTOR);
+
+	/* a value of 0 is biased at 25 degrees C. */
+	float temperature12bit = (25.0 + deltaT);
+
+	dval = ((float)temperature12bit * 10);
+	val->val1 = dval / 10LL;
+	val->val2 = (dval % 10LL) * 100000;
+}
+
 static inline void lis2dw12_channel_get_acc(const struct device *dev,
 					     enum sensor_channel chan,
 					     struct sensor_value *val)
@@ -122,6 +137,24 @@ static inline void lis2dw12_channel_get_acc(const struct device *dev,
 	}
 }
 
+static int lis2dw12_get_die_temp(const struct device *dev, enum sensor_channel chan,
+				     struct sensor_value *val)
+{
+	int rc;
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	rc = lis2dw12_temperature_raw_get(ctx, (int16_t *)val);
+	if (rc != 0) {
+		LOG_ERR("Failed to get die temp");
+		return -EIO;
+	}
+
+	lis2dw12_temperature_convert(val);
+
+	return rc;
+}
+
 static int lis2dw12_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val)
@@ -132,6 +165,9 @@ static int lis2dw12_channel_get(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		lis2dw12_channel_get_acc(dev, chan, val);
+		return 0;
+	case SENSOR_CHAN_DIE_TEMP:
+		lis2dw12_get_die_temp(dev, chan, val);
 		return 0;
 	default:
 		LOG_DBG("Channel not supported");
