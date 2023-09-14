@@ -7,7 +7,7 @@
 #include <stdint.h>
 #ifdef CONFIG_BT_IAS_CLIENT
 
-#include "zephyr/bluetooth/services/ias.h"
+#include <zephyr/bluetooth/services/ias.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

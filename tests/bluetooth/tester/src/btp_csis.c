@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/audio/csip.h>
 
 #include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_csis

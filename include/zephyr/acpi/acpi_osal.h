@@ -8,7 +8,7 @@
 #define ZEPHYR_ARCH_X86_INCLUDE_ACPI_OSAL_H_
 
 #if defined(CONFIG_X86 || CONFIG_X86_64)
-#include "zephyr/acpi/x86_acpi_osal.h"
+#include <zephyr/acpi/x86_acpi_osal.h>
 #else
 #error "Currently only x86 Architecture support ACPI !!"
 #endif

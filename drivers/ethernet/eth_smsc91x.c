@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/net/ethernet.h>
-#include "zephyr/net/phy.h"
+#include <zephyr/net/phy.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/drivers/mdio.h>

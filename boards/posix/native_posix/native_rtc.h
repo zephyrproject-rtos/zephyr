@@ -15,7 +15,7 @@
 
 #include "hw_models_top.h"
 #include <stdbool.h>
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

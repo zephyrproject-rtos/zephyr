@@ -6,10 +6,10 @@
 
 #include "bs_bt_utils.h"
 #include "utils.h"
-#include "zephyr/bluetooth/addr.h"
-#include "zephyr/bluetooth/bluetooth.h"
-#include "zephyr/bluetooth/conn.h"
-#include "zephyr/toolchain/gcc.h"
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/toolchain/gcc.h>
 
 #include <stdint.h>
 #include <string.h>

@@ -11,7 +11,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include "errno.h"
 #include "argparse.h"
 

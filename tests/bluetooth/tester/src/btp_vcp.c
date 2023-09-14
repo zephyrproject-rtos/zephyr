@@ -12,8 +12,8 @@
 #include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/aics.h>
-#include "zephyr/bluetooth/audio/vocs.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/sys/util.h>
 
 #include <../../subsys/bluetooth/audio/micp_internal.h>
 #include <../../subsys/bluetooth/audio/aics_internal.h>
