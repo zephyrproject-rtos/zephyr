@@ -5767,11 +5767,6 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
 
-/**
- * @internal
- */
-extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
-
 /** @} */
 
 /**
