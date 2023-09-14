@@ -99,6 +99,10 @@
 	status = "okay";
 };
 
+&uicr {
+	nfct-pins-as-gpios;
+};
+
 &gpio0 {
 	status = "okay";
 };
