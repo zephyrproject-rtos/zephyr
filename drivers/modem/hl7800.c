@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
@@ -1762,9 +1763,9 @@ done:
  */
 static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 {
-	int ret;
 	char value[MDM_CCID_RESP_MAX_SIZE];
 	char *delim;
+	int iccid_len;
 	size_t out_len;
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
@@ -1783,9 +1784,13 @@ static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 		LOG_INF("EID: %s", delim + 1);
 	}
 
-	ret = snprintk(iface_ctx.mdm_iccid, sizeof(iface_ctx.mdm_iccid), "%s", value);
-	if (ret > MDM_HL7800_ICCID_MAX_STRLEN) {
-		LOG_WRN("ICCID too long: %d", ret);
+	iccid_len = strlen(value);
+	strncpy(iface_ctx.mdm_iccid, value, sizeof(iface_ctx.mdm_iccid));
+	len = MIN(iccid_len, sizeof(iface_ctx.mdm_iccid) - 1);
+	iface_ctx.mdm_iccid[len] = '\0';
+
+	if (iccid_len > len) {
+		LOG_WRN("ICCID too long: %d (max %d)", iccid_len, len);
 	}
 
 	LOG_INF("ICCID: %s", iface_ctx.mdm_iccid);
