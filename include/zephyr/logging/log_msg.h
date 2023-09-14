@@ -669,6 +669,7 @@ static inline void *log_msg_get_tid(struct log_msg *msg)
 #if CONFIG_LOG_THREAD_ID_PREFIX
 	return msg->hdr.tid;
 #else
+	ARG_UNUSED(msg);
 	return NULL;
 #endif
 }
