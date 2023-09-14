@@ -440,7 +440,7 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 /**
  * @brief Assign the system heap as a thread's resource pool
  *
- * Similar to z_thread_heap_assign(), but the thread will use
+ * Similar to k_thread_heap_assign(), but the thread will use
  * the kernel heap to draw memory.
  *
  * Use with caution, as a malicious thread could perform DoS attacks on the
