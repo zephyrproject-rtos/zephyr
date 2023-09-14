@@ -1819,10 +1819,6 @@ static inline uint64_t k_cycle_get_64(void)
  * @}
  */
 
-/**
- * @cond INTERNAL_HIDDEN
- */
-
 struct k_queue {
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
@@ -1832,6 +1828,10 @@ struct k_queue {
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
