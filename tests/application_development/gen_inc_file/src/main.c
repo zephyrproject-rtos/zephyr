@@ -13,9 +13,14 @@
  * @cond INTERNAL_HIDDEN
  */
 
-/* The file.inc contains characters from 0 to 255 */
+/* The file.bin.inc contains characters from 0 to 255 */
 static const unsigned char inc_file[] = {
 #include <file.bin.inc>
+};
+
+/* The file.bin.partial.inc contains characters from 100 to 141 */
+static const unsigned char partial_inc_file[] = {
+#include <file.bin.partial.inc>
 };
 
 static const unsigned char no_mtime_gz_inc_file[] = {
@@ -24,6 +29,10 @@ static const unsigned char no_mtime_gz_inc_file[] = {
 
 static const unsigned char mtime_gz_inc_file[] = {
 #include <file.bin.mtime.gz.inc>
+};
+
+static const unsigned char partial_gz_inc_file[] = {
+#include <file.bin.partial.gz.inc>
 };
 
 /**
@@ -74,6 +83,17 @@ static const unsigned char compressed_inc_file[] = {
 	0x8c, 0x05, 0x29, 0x00, 0x01, 0x00, 0x00,
 };
 
+static const unsigned char compressed_partial_inc_file[] = {
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x02, 0xff, 0x4b, 0x49, 0x4d, 0x4b, 0xcf, 0xc8,
+	0xcc, 0xca, 0xce, 0xc9, 0xcd, 0xcb, 0x2f, 0x28,
+	0x2c, 0x2a, 0x2e, 0x29, 0x2d, 0x2b, 0xaf, 0xa8,
+	0xac, 0xaa, 0xae, 0xa9, 0xad, 0xab, 0x6f, 0x68,
+	0x6c, 0x6a, 0x6e, 0x69, 0x6d, 0x6b, 0xef, 0xe8,
+	0xec, 0xea, 0xee, 0xe9, 0x05, 0x00, 0xe7, 0xa1,
+	0xc1, 0x22, 0x2a, 0x00, 0x00, 0x00,
+};
+
 ZTEST(gen_inc_file, test_gen_inc_file)
 {
 	int i;
@@ -85,13 +105,24 @@ ZTEST(gen_inc_file, test_gen_inc_file)
 	}
 }
 
+ZTEST(gen_inc_file, test_gen_partial_inc_file)
+{
+	int i;
+
+	zassert_equal(sizeof(partial_inc_file), 42, "Invalid partial size file");
+
+	for (i = 0; i < sizeof(partial_inc_file); i++) {
+		zassert_equal(partial_inc_file[i], i + 100, "Invalid value in partial inc file");
+	}
+}
 
 static void do_test_gen_gz_inc_file(const unsigned char gz_inc_file[],
+				    const unsigned char ref_file[], int ref_size,
 				    const unsigned char mtime[4])
 {
 	int i;
 
-	for (i = 0; i < sizeof(inc_file); i++) {
+	for (i = 0; i < ref_size; i++) {
 		if (4 <= i && i < 8) {
 			/* Modification time field (4 bytes) in
 			 * the gzip header.
@@ -104,7 +135,7 @@ static void do_test_gen_gz_inc_file(const unsigned char gz_inc_file[],
 			continue;
 		}
 
-		zassert_equal(gz_inc_file[i], compressed_inc_file[i],
+		zassert_equal(gz_inc_file[i], ref_file[i],
 			      "Invalid value in inc file");
 	}
 }
@@ -114,7 +145,8 @@ ZTEST(gen_inc_file, test_gen_gz_inc_file_no_mtime)
 	zassert_equal(sizeof(no_mtime_gz_inc_file), sizeof(compressed_inc_file),
 		      "Invalid compressed file size");
 
-	do_test_gen_gz_inc_file(no_mtime_gz_inc_file, mtime_zero);
+	do_test_gen_gz_inc_file(no_mtime_gz_inc_file, compressed_inc_file,
+				sizeof(compressed_inc_file), mtime_zero);
 }
 
 ZTEST(gen_inc_file, test_gen_gz_inc_file_mtime_arg)
@@ -122,7 +154,17 @@ ZTEST(gen_inc_file, test_gen_gz_inc_file_mtime_arg)
 	zassert_equal(sizeof(mtime_gz_inc_file), sizeof(compressed_inc_file),
 		      "Invalid compressed file size");
 
-	do_test_gen_gz_inc_file(mtime_gz_inc_file, mtime_test_val);
+	do_test_gen_gz_inc_file(mtime_gz_inc_file, compressed_inc_file,
+				sizeof(compressed_inc_file), mtime_test_val);
+}
+
+ZTEST(gen_inc_file, test_gen_gz_inc_partial_file)
+{
+	zassert_equal(sizeof(partial_gz_inc_file), sizeof(compressed_partial_inc_file),
+		      "Invalid partial compressed file size");
+
+	do_test_gen_gz_inc_file(partial_gz_inc_file, compressed_partial_inc_file,
+				sizeof(compressed_partial_inc_file), NULL);
 }
 
 

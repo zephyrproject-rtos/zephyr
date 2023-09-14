@@ -13,6 +13,10 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 set(source_file src/file.bin)
 
 generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.inc)
+generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.partial.inc
+  --offset=100 --length=42)
 generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.gz.inc --gzip)
 generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.mtime.gz.inc
   --gzip --gzip-mtime=42)
+generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.partial.gz.inc
+  --gzip --offset=100 --length=42)
