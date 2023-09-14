@@ -85,13 +85,6 @@ static int stm32_power_init(void)
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-	/* keep in mind that debugging draws a lot of power */
-#ifdef CONFIG_DEBUG
-	LL_DBGMCU_EnableDBGStopMode();
-#else
-	LL_DBGMCU_DisableDBGStopMode();
-#endif
-
 	return 0;
 }
 

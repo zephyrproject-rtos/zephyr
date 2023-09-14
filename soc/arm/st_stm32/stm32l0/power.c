@@ -80,13 +80,6 @@ static int stm32_power_init(void)
 	/* Enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during STOP mode */
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-	LL_DBGMCU_EnableDBGStopMode();
-	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-#endif /* CONFIG_DEBUG */
-
 	return 0;
 }
 
