@@ -220,6 +220,7 @@
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
+/doc/connectivity/networking/conn_mgr     @carlescufi @glarsennordic
 /doc/build/dts/                          @galak @mbolivar-ampere
 /doc/build/sysbuild/                      @tejlmand @nordicjm
 /doc/hardware/peripherals/canbus/                    @alexanderwachter @henrikbrixandersen
