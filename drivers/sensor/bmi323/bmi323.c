@@ -1142,7 +1142,7 @@ static int bosch_bmi323_init_irq(const struct device *dev)
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 }
 
 static int bosch_bmi323_init_int1(const struct device *dev)
@@ -1172,6 +1172,7 @@ static void bosch_bmi323_irq_callback_handler(struct k_work *item)
 
 static int bosch_bmi323_pm_resume(const struct device *dev)
 {
+	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
 	int ret;
 
 	ret = bosch_bmi323_bus_init(dev);
@@ -1218,6 +1219,12 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 
 	if (ret < 0) {
 		LOG_WRN("Failed to enable INT1");
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		LOG_WRN("Failed to configure int");
 	}
 
 	return ret;
@@ -1226,6 +1233,14 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int bosch_bmi323_pm_suspend(const struct device *dev)
 {
+	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	int ret;
+
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_WRN("Failed to disable int");
+	}
+
 	/* Soft reset device to put it into suspend */
 	return bosch_bmi323_soft_reset(dev);
 }
