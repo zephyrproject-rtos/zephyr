@@ -53,8 +53,7 @@ ZTEST(settings_config_fcb, test_config_compress_reset)
 
 		rc = settings_load();
 		zassert_true(rc == 0, "fcb read error");
-		zassert_true(!memcmp(val_string, test_ref_value,
-				     SETTINGS_MAX_VAL_LEN),
+		zassert_true(!memcmp(val_string, test_ref_value, CONFIG_SETTINGS_MAX_VAL_LEN),
 			     "bad value read");
 	}
 

@@ -61,8 +61,7 @@ int c4_handle_export(int (*cb)(const char *name, const void *value, size_t val_l
 
 static int check_compressed_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
+	char buf[SETTINGS_MAX_NAME_LEN + CONFIG_SETTINGS_MAX_VAL_LEN + SETTINGS_EXTRA_LEN];
 	int rc;
 	int len;
 

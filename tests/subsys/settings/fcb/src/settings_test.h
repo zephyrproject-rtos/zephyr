@@ -37,8 +37,8 @@ extern int c2_var_count;
 
 extern struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT];
 
-extern char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
-extern char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
+extern char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN];
+extern char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN];
 
 extern struct settings_handler c_test_handlers[];
 
@@ -49,8 +49,7 @@ void config_wipe_srcs(void);
 void config_wipe_fcb(struct flash_sector *fs, int cnt);
 
 void test_config_fill_area(
-	char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN],
-		int iteration);
+	char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN], int iteration);
 
 void *settings_config_setup(void);
 void settings_config_teardown(void *fixture);

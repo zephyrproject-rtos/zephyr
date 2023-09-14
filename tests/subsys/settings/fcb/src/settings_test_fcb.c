@@ -69,8 +69,8 @@ struct settings_handler c_test_handlers[] = {
 	}
 };
 
-char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
-char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
+char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN];
+char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN];
 
 int c1_handle_get(const char *name, char *val, int val_len_max)
 {
@@ -198,15 +198,13 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 	}
 }
 
-void
-test_config_fill_area(char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT]
-				     [SETTINGS_MAX_VAL_LEN],
-		      int iteration)
+void test_config_fill_area(
+	char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT][CONFIG_SETTINGS_MAX_VAL_LEN], int iteration)
 {
 	int i, j;
 
 	for (j = 0; j < 64; j++) {
-		for (i = 0; i < SETTINGS_MAX_VAL_LEN; i++) {
+		for (i = 0; i < CONFIG_SETTINGS_MAX_VAL_LEN; i++) {
 			test_value[j][i] = ((j * 2) + i + iteration) % 10 + '0';
 		}
 		test_value[j][sizeof(test_value[j]) - 1] = '\0';
