@@ -8,11 +8,19 @@ if BOARD_AZ3166_DEVKIT
 config BOARD
 	default "az3166_devkit"
 
+if HTS221
+
 choice HTS221_TRIGGER_MODE
 	default HTS221_TRIGGER_NONE
 endchoice
 
+endif # HTS221
+
+if SSD1306
+
 config SSD1306_REVERSE_MODE
 	default y
+
+endif # SSD1306
 
 endif # BOARD_AZ3166_DEVKIT
