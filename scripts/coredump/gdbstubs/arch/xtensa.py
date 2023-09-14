@@ -25,6 +25,7 @@ class XtensaSoc(Enum):
     INTEL_ADSP_CAVS = 3
     ESP32S2 = 4
     ESP32S3 = 5
+    DC233C = 6
 
 
 # The previous version of this script didn't need to know
@@ -68,6 +69,8 @@ def get_gdb_reg_definition(soc, toolchain):
         return GdbRegDef_ESP32S2
     elif soc == XtensaSoc.ESP32S3:
         return GdbRegDef_ESP32S3
+    elif soc == XtensaSoc.DC233C:
+        return GdbRegDef_DC233C
     else:
         raise NotImplementedError
 
@@ -476,3 +479,38 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
         LCOUNT = 514
         WINDOWBASE = 584
         WINDOWSTART = 585
+
+# sdk-ng -> overlays/xtensa_dc233c/gdb/gdb/xtensa-config.c
+class GdbRegDef_DC233C:
+    ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
+
+    SOC_GDB_GPKT_BIN_SIZE = 568
+
+    class RegNum(Enum):
+        PC = 0
+        EXCCAUSE = 93
+        EXCVADDR = 99
+        SAR = 36
+        PS = 42
+        SCOMPARE1 = 44
+        A0 = 105
+        A1 = 106
+        A2 = 107
+        A3 = 108
+        A4 = 109
+        A5 = 110
+        A6 = 111
+        A7 = 112
+        A8 = 113
+        A9 = 114
+        A10 = 115
+        A11 = 116
+        A12 = 117
+        A13 = 118
+        A14 = 119
+        A15 = 120
+        LBEG = 33
+        LEND = 34
+        LCOUNT = 35
+        WINDOWBASE = 38
+        WINDOWSTART = 39
