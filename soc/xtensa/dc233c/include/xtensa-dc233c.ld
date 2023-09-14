@@ -397,6 +397,8 @@ SECTIONS
 
 #include <zephyr/linker/common-rom.ld>
 
+#include <zephyr/linker/thread-local-storage.ld>
+
 #include <zephyr/linker/cplusplus-rom.ld>
 
 #include <snippets-sections.ld>
