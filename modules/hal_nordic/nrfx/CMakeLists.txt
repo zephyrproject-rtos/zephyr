@@ -109,3 +109,16 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_WDT     ${SRC_DIR}/nrfx_wdt.c)
 if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
 endif()
+
+# Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
+# configure the NFCT pins as GPIOS. This way, the HAL will take care of doing
+# the proper configuration sequence during system init
+
+dt_nodelabel(uicr_path NODELABEL "uicr")
+if(${uicr_path})
+  dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
+
+  if(${nfct_pins_as_gpios})
+    zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
+  endif()
+endif()
