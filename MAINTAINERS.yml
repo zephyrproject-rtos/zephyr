@@ -3323,12 +3323,13 @@ West:
     - "area: Tracing"
 
 "West project: nanopb":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - pdgendt
   files:
     - modules/nanopb/
     - samples/modules/nanopb/
+    - tests/modules/nanopb/
   labels:
     - "area: Serialization"
 
