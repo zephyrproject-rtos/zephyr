@@ -286,7 +286,10 @@ def process_modules(gh, maintainers_file):
             log(f"No maintainers for: {area}")
             continue
 
-        log(f"Found {area}, maintainers={maintainers}")
+        collaborators = maintainers_file.areas[area].collaborators
+
+        log(f"Found {area}, maintainers={maintainers}, collaborators={collaborators}")
+
         repo_name = f"{args.org}/{project.name}"
         repos[repo_name] = maintainers_file.areas[area]
 
@@ -309,9 +312,15 @@ def process_modules(gh, maintainers_file):
         area = repos[repo_name]
 
         for maintainer in area.maintainers:
-            log(f"Adding {maintainer} to {pull.html_url}")
+            log(f"Assigning {maintainer} to {pull.html_url}")
             if not args.dry_run:
                 pull.add_to_assignees(maintainer)
+                pull.create_review_request(maintainer)
+
+        for collaborator in area.collaborators:
+            log(f"Adding {collaborator} to {pull.html_url}")
+            if not args.dry_run:
+                pull.create_review_request(collaborator)
 
 
 def main():
