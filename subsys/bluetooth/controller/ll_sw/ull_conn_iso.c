@@ -851,6 +851,10 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	 */
 	if (cig->state == CIG_STATE_ACTIVE) {
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		/* Initialize CIS event lazy at CIS create */
+		cis->lll.lazy_active = 0U;
+
+		/* Deferred fill CIS event lazy value at CIS create */
 		cis_lazy_fill(cis);
 #else /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 		/* Set CIS active in already active CIG */
@@ -996,6 +1000,9 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	}
 
 	ticks_slot = cig->ull.ticks_slot + ticks_slot_overhead;
+
+	/* Initialize CIS event lazy at CIS create */
+	cis->lll.lazy_active = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Start CIS peripheral CIG ticker */
@@ -1014,11 +1021,6 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	/* Set CIG and the first CIS state as active */
 	cig->state = CIG_STATE_ACTIVE;
 	cis->lll.active = 1U;
-
-#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	/* CIS event lazy at CIS create */
-	cis->lll.lazy_active = 0U;
-#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
