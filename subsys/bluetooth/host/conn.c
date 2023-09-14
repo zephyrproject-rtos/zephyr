@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/att.h>
 
 #include "common/assert.h"
+#include "common/bt_str.h"
 
 #include "addr_internal.h"
 #include "hci_core.h"
@@ -2367,7 +2368,8 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 		 * still has valid references. The last reference of the stack
 		 * is released after the disconnected callback.
 		 */
-		LOG_WRN("Found valid connection in %s state", state2str(conn->state));
+		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
+			bt_addr_le_str(peer), state2str(conn->state));
 		bt_conn_unref(conn);
 		return true;
 	}
