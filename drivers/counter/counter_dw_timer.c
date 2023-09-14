@@ -86,15 +86,12 @@ static void counter_dw_timer_irq_handler(const struct device *timer_dev)
 	uint32_t ticks = 0;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(timer_dev, timer_mmio);
 	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
-	k_spinlock_key_t key;
 	counter_alarm_callback_t alarm_cb = data->alarm_cb;
 
 	/* read EOI register to clear interrupt flag */
 	sys_read32(reg_base + EOI_OFST);
 
 	counter_dw_timer_get_value(timer_dev, &ticks);
-
-	key = k_spin_lock(&data->lock);
 
 	/* In case of alarm, mask interrupt and disable the callback. User
 	 * can configure the alarm in same context within callback function.
@@ -108,8 +105,6 @@ static void counter_dw_timer_irq_handler(const struct device *timer_dev)
 	} else if (data->top_cb) {
 		data->top_cb(timer_dev, data->prv_data);
 	}
-
-	k_spin_unlock(&data->lock, key);
 }
 
 static int counter_dw_timer_start(const struct device *dev)
