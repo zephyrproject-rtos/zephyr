@@ -284,6 +284,8 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	zephyr_wpa_ctrl_deinit(wpa_s);
+
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
 		LOG_ERR("Failed to remove interface %s", ifname);
@@ -509,7 +511,6 @@ static void handler(void)
 
 	eloop_unregister_read_sock(ctx->event_socketpair[0]);
 
-	zephyr_wpa_ctrl_deinit(ctx->supplicant);
 	zephyr_global_wpa_ctrl_deinit();
 
 	fst_global_deinit();
