@@ -245,19 +245,20 @@ class Pytest(Harness):
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
-        pytest_root = config.get('pytest_root', 'pytest') if config else 'pytest'
+        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
         pytest_args = config.get('pytest_args', []) if config else []
         command = [
             'pytest',
             '--twister-harness',
             '-s', '-v',
-            os.path.join(self.source_dir, pytest_root),
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
             '--log-file-level=DEBUG',
             '--log-file-format=%(asctime)s.%(msecs)d:%(levelname)s:%(name)s: %(message)s',
             f'--log-file={self.pytest_log_file_path}'
         ]
+        command.extend([os.path.normpath(os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
         command.extend(pytest_args)
 
         handler: Handler = self.instance.handler
