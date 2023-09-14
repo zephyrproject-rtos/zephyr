@@ -230,15 +230,11 @@ arduino_spi: &spi3 {
 		slot0_ns_partition: partition@50000 {
 			label = "image-0-nonsecure";
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@85000 {
 			label = "image-1";
 		};
-		slot1_ns_partition: partition@c0000 {
+		slot1_ns_partition: partition@c5000 {
 			label = "image-1-nonsecure";
-		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
 		};
 		storage_partition: partition@fa000 {
 			label = "storage";
