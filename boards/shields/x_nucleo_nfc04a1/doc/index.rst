@@ -17,7 +17,7 @@ different devices operating together with the dynamic NFC tag. The board
 also features an antenna with a 54 mm ISO 24.2 diameter, single layer,
 copper etched on PCB.
 
-.. image:: img/x-nucleo-nfc04a1.webp
+.. figure:: img/x-nucleo-nfc04a1.webp
      :align: center
      :alt: X-NUCLEO-NFC04A1
 

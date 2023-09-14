@@ -1,0 +1,10 @@
+sample:
+  name: X-NUCLEO-NFC04A1 shield
+common:
+  min_ram: 16
+tests:
+  sample.shields.x_nucleo_nfc04a1.standard:
+    harness: shield
+    tags: shield
+    depends_on:
+      - arduino_i2c
