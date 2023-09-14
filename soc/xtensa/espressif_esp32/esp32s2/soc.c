@@ -15,7 +15,7 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "esp_private/system_internal.h"

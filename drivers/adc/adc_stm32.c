@@ -27,7 +27,7 @@
 #ifdef CONFIG_ADC_STM32_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 #include <stm32_ll_dma.h>
 #endif
 

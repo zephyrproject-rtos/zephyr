@@ -7,7 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
