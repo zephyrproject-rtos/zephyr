@@ -1905,11 +1905,11 @@ static int ptp_stm32_init(const struct device *port)
 
 	/* Query ethernet clock rate */
 	ret = clock_control_get_rate(eth_dev_data->clock,
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
 		(clock_control_subsys_t)&eth_cfg->pclken,
 #else
 		(clock_control_subsys_t)&eth_cfg->pclken_ptp,
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 		&ptp_hclk_rate);
 	if (ret) {
 		LOG_ERR("Failed to query ethernet clock");
