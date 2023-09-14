@@ -3023,6 +3023,7 @@ West:
   maintainers:
     - kristofer-jonsson-arm
   files:
+    - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
   labels:
     - manifest-hal_ethos_u
