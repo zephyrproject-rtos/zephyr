@@ -40,6 +40,8 @@ struct udc_device_caps {
 	uint32_t rwup : 1;
 	/** Controller performs status OUT stage automatically */
 	uint32_t out_ack : 1;
+	/** Controller expects device address to be set before status stage */
+	uint32_t addr_before_status : 1;
 	/** Maximum packet size for control endpoint */
 	enum udc_mps0 mps0 : 2;
 };
