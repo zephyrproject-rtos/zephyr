@@ -47,8 +47,9 @@ config NRF_ACL_FLASH_REGION_SIZE
 	  FLASH region size for the NRF_ACL peripheral.
 
 config NFCT_PINS_AS_GPIOS
-	bool "NFCT pins as GPIOs"
+	bool "[DEPRECATED] NFCT pins as GPIOs"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
+	select DEPRECATED
 	help
 	  Two pins are usually reserved for NFC in SoCs that implement the
 	  NFCT peripheral. This option switches them to normal GPIO mode.
@@ -59,6 +60,13 @@ config NFCT_PINS_AS_GPIOS
 
 	  NFC pins in nRF52 series: P0.09 and P0.10
 	  NFC pins in nRF5340: P0.02 and P0.03
+
+	  This option is deprecated, please use devicetree to configure NFCT
+	  pins as GPIOS like this:
+
+	  &uicr {
+	      nfct-pins-as-gpios;
+	  };
 
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"
