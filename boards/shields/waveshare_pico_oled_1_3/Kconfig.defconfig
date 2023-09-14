@@ -1,0 +1,24 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WAVESHARE_PICO_OLED_1_3
+
+if DISPLAY
+
+if LVGL
+
+config LV_DPI_DEF
+	default 110
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_WAVESHARE_PICO_OLED_1_3
