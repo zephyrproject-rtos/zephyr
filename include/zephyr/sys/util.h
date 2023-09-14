@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_SYS_UTIL_H_
 
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 
 /* needs to be outside _ASMLANGUAGE so 'true' and 'false' can turn
  * into '1' and '0' for asm or linker scripts
