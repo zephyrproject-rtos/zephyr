@@ -13,6 +13,10 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
 #define ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
 
+#ifndef ZEPHYR_INCLUDE_KERNEL_H_
+#error  Please do not include kernel-specific headers directly, use <zephyr/kernel.h> instead
+#endif
+
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <limits.h>
