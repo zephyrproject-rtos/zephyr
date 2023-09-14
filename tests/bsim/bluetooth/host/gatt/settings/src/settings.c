@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(settings_backend, 3);
 
 #define ENTRY_LEN_SIZE (4)
 #define ENTRY_NAME_MAX_LEN (SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN)
-#define ENTRY_VAL_MAX_LEN (SETTINGS_MAX_VAL_LEN * 2)
+#define ENTRY_VAL_MAX_LEN (CONFIG_SETTINGS_MAX_VAL_LEN * 2)
 #define READ_LEN_MAX (ENTRY_VAL_MAX_LEN + ENTRY_NAME_MAX_LEN + 2)
 
 struct line_read_ctx {
@@ -146,7 +146,7 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 		return -1;
 	}
 
-	if (strlen(name) > ENTRY_NAME_MAX_LEN || val_len > SETTINGS_MAX_VAL_LEN) {
+	if (strlen(name) > ENTRY_NAME_MAX_LEN || val_len > CONFIG_SETTINGS_MAX_VAL_LEN) {
 		return -1;
 	}
 
