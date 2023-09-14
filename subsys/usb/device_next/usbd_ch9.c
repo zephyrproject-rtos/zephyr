@@ -46,7 +46,7 @@ static int ch9_get_ctrl_type(struct usbd_contex *const uds_ctx)
 	return uds_ctx->ch9_data.ctrl_type;
 }
 
-static int set_address_after_status_stage(struct usbd_contex *const uds_ctx)
+static int post_status_stage(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	int ret;
@@ -65,6 +65,7 @@ static int set_address_after_status_stage(struct usbd_contex *const uds_ctx)
 static int sreq_set_address(struct usbd_contex *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wValue > 127 || setup->wLength) {
@@ -82,7 +83,18 @@ static int sreq_set_address(struct usbd_contex *const uds_ctx)
 		return 0;
 	}
 
-	uds_ctx->ch9_data.new_address = true;
+	if (caps.addr_before_status) {
+		int ret;
+
+		ret = udc_set_address(uds_ctx->dev, setup->wValue);
+		if (ret) {
+			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
+			return ret;
+		}
+	} else {
+		uds_ctx->ch9_data.new_address = true;
+	}
+
 	if (usbd_state_is_address(uds_ctx) && setup->wValue == 0) {
 		uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
 	} else {
@@ -825,7 +837,7 @@ int usbd_handle_ctrl_xfer(struct usbd_contex *const uds_ctx,
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
 			LOG_INF("s-(out)-status finished");
 			if (unlikely(uds_ctx->ch9_data.new_address)) {
-				return set_address_after_status_stage(uds_ctx);
+				return post_status_stage(uds_ctx);
 			}
 		} else {
 			LOG_WRN("Awaited s-(out)-status not finished");
