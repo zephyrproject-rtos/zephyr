@@ -18,3 +18,11 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
     platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
+  net.socket.socketpair.high_mem:
+    min_ram: 64
+    extra_configs:
+      # Low buffer sizes (e.g., 8192) will verify the crash fix, but tests will still
+      # fail due to insufficient memory. So, use high buffer sizes.
+      - CONFIG_NET_SOCKETPAIR_BUFFER_SIZE=4096
+      - CONFIG_HEAP_MEM_POOL_SIZE=32768
+    platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246

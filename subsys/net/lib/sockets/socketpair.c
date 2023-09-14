@@ -191,6 +191,10 @@ static void spair_delete(struct spair *spair)
 	res = k_poll_signal_raise(&spair->writeable, SPAIR_SIG_CANCEL);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
+	if (remote != NULL && have_remote_sem) {
+		k_sem_give(&remote->sem);
+	}
+
 	/* ensure no private information is released to the memory pool */
 	memset(spair, 0, sizeof(*spair));
 #ifdef CONFIG_NET_SOCKETPAIR_STATIC
@@ -200,10 +204,6 @@ static void spair_delete(struct spair *spair)
 #else
 	k_free(spair);
 #endif
-
-	if (remote != NULL && have_remote_sem) {
-		k_sem_give(&remote->sem);
-	}
 }
 
 /**
