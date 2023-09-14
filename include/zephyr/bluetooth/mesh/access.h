@@ -1033,7 +1033,7 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
  *  @param mod      Mesh model.
  *  @param vnd      This is a vendor model.
  *  @param name     Name/key of the settings item. Only
- *                  @ref SETTINGS_MAX_DIR_DEPTH bytes will be used at most.
+ *                  @ref CONFIG_SETTINGS_MAX_DIR_DEPTH bytes will be used at most.
  *  @param data     Model data to store, or NULL to delete any model data.
  *  @param data_len Length of the model data.
  *
