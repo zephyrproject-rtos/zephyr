@@ -9,3 +9,9 @@ tests:
     depends_on:
       - arduino_i2c
       - arduino_gpio
+    platform_exclude:
+      - hifive1
+      - mimxrt1010_evk
+      - hifive1_revb
+      - rv32m1_vega_zero_riscy
+      - rv32m1_vega_ri5cy
