@@ -144,22 +144,94 @@ int lis2dw12_trigger_set(const struct device *dev,
 
 		/* Set single TAP trigger  */
 		if (trig->type == SENSOR_TRIG_TAP) {
+#ifdef CONFIG_LIS2DW12_TAP_3D
+			switch (trig->chan) {
+			case SENSOR_CHAN_ACCEL_XYZ:
+			case SENSOR_CHAN_ALL:
+				lis2dw12->tap_handler = handler;
+				lis2dw12->tap_trig = trig;
+				break;
+			case SENSOR_CHAN_ACCEL_X:
+				lis2dw12->tap_handler_x = handler;
+				lis2dw12->tap_trig_x = trig;
+				break;
+			case SENSOR_CHAN_ACCEL_Y:
+				lis2dw12->tap_handler_y = handler;
+				lis2dw12->tap_trig_y = trig;
+				break;
+			case SENSOR_CHAN_ACCEL_Z:
+				lis2dw12->tap_handler_z = handler;
+				lis2dw12->tap_trig_z = trig;
+				break;
+			default:
+				return -EINVAL;
+			}
+#else
 			lis2dw12->tap_handler = handler;
 			lis2dw12->tap_trig = trig;
+#endif /* CONFIG_LIS2DW12_TAP_3D */
 			return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
 		}
 
+#ifdef CONFIG_LIS2DW12_TAP_3D
+		switch (trig->chan) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_ALL:
+			lis2dw12->double_tap_handler = handler;
+			lis2dw12->double_tap_trig = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_X:
+			lis2dw12->double_tap_handler_x = handler;
+			lis2dw12->double_tap_trig_x = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_Y:
+			lis2dw12->double_tap_handler_y = handler;
+			lis2dw12->double_tap_trig_y = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_Z:
+			lis2dw12->double_tap_handler_z = handler;
+			lis2dw12->double_tap_trig_z = trig;
+			break;
+		default:
+			return -EINVAL;
+		}
+#else
 		/* Set double TAP trigger  */
 		lis2dw12->double_tap_handler = handler;
 		lis2dw12->double_tap_trig = trig;
+#endif /* CONFIG_LIS2DW12_TAP_3D */
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_LIS2DW12_TAP */
 #ifdef CONFIG_LIS2DW12_THRESHOLD
 	case SENSOR_TRIG_THRESHOLD:
 	{
 		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
+#ifdef CONFIG_LIS2DW12_THRESHOLD_3D
+		switch (trig->chan) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_ALL:
+			lis2dw12->threshold_handler = handler;
+			lis2dw12->threshold_trig = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_X:
+			lis2dw12->threshold_handler_x = handler;
+			lis2dw12->threshold_trig_x = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_Y:
+			lis2dw12->threshold_handler_y = handler;
+			lis2dw12->threshold_trig_y = trig;
+			break;
+		case SENSOR_CHAN_ACCEL_Z:
+			lis2dw12->threshold_handler_z = handler;
+			lis2dw12->threshold_trig_z = trig;
+			break;
+		default:
+			return -EINVAL;
+		}
+#else
 		lis2dw12->threshold_handler = handler;
 		lis2dw12->threshold_trig = trig;
+#endif /* CONFIG_LIS2DW12_THRESHOLD_3D */
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
 	}
 #endif
@@ -189,7 +261,7 @@ static int lis2dw12_handle_drdy_int(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS2DW12_TAP
-static int lis2dw12_handle_single_tap_int(const struct device *dev)
+static int lis2dw12_handle_single_tap_int(const struct device *dev, lis2dw12_tap_src_t *tap_src)
 {
 	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
@@ -198,10 +270,30 @@ static int lis2dw12_handle_single_tap_int(const struct device *dev)
 		handler(dev, data->tap_trig);
 	}
 
+#ifdef CONFIG_LIS2DW12_TAP_3D
+	if (tap_src->x_tap) {
+		if (data->tap_handler_x) {
+			data->tap_handler_x(dev, data->tap_trig_x);
+		}
+	}
+
+	if (tap_src->y_tap) {
+		if (data->tap_handler_y) {
+			data->tap_handler_y(dev, data->tap_trig_y);
+		}
+	}
+
+	if (tap_src->z_tap) {
+		if (data->tap_handler_z) {
+			data->tap_handler_z(dev, data->tap_trig_z);
+		}
+	}
+#endif
+
 	return 0;
 }
 
-static int lis2dw12_handle_double_tap_int(const struct device *dev)
+static int lis2dw12_handle_double_tap_int(const struct device *dev, lis2dw12_tap_src_t *tap_src)
 {
 	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
@@ -210,12 +302,32 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
 		handler(dev, data->double_tap_trig);
 	}
 
+#ifdef CONFIG_LIS2DW12_TAP_3D
+	if (tap_src->x_tap) {
+		if (data->double_tap_handler_x) {
+			data->double_tap_handler_x(dev, data->double_tap_trig_x);
+		}
+	}
+
+	if (tap_src->y_tap) {
+		if (data->double_tap_handler_y) {
+			data->double_tap_handler_y(dev, data->double_tap_trig_y);
+		}
+	}
+
+	if (tap_src->z_tap) {
+		if (data->double_tap_handler_z) {
+			data->double_tap_handler_z(dev, data->double_tap_trig_z);
+		}
+	}
+#endif
+
 	return 0;
 }
 #endif /* CONFIG_LIS2DW12_TAP */
 
 #ifdef CONFIG_LIS2DW12_THRESHOLD
-static int lis2dw12_handle_wu_ia_int(const struct device *dev)
+static int lis2dw12_handle_wu_ia_int(const struct device *dev, lis2dw12_wake_up_src_t *wup_src)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	sensor_trigger_handler_t handler = lis2dw12->threshold_handler;
@@ -223,6 +335,26 @@ static int lis2dw12_handle_wu_ia_int(const struct device *dev)
 	if (handler) {
 		handler(dev, lis2dw12->threshold_trig);
 	}
+
+#ifdef CONFIG_LIS2DW12_THRESHOLD_3D
+	if (wup_src->x_wu) {
+		if (data->threshold_handler_x) {
+			data->threshold_handler_x(dev, data->threshold_trig_x);
+		}
+	}
+
+	if (wup_src->y_wu) {
+		if (data->threshold_handler_y) {
+			data->threshold_handler_y(dev, data->threshold_trig_y);
+		}
+	}
+
+	if (wup_src->z_wu) {
+		if (data->threshold_handler_z) {
+			data->threshold_handler_z(dev, data->threshold_trig_z);
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -259,15 +391,15 @@ static void lis2dw12_handle_interrupt(const struct device *dev)
 	}
 #ifdef CONFIG_LIS2DW12_TAP
 	if (sources.status_dup.single_tap) {
-		lis2dw12_handle_single_tap_int(dev);
+		lis2dw12_handle_single_tap_int(dev, &sources.tap_src);
 	}
 	if (sources.status_dup.double_tap) {
-		lis2dw12_handle_double_tap_int(dev);
+		lis2dw12_handle_double_tap_int(dev, &sources.tap_src);
 	}
 #endif /* CONFIG_LIS2DW12_TAP */
 #ifdef CONFIG_LIS2DW12_THRESHOLD
 	if (sources.all_int_src.wu_ia) {
-		lis2dw12_handle_wu_ia_int(dev);
+		lis2dw12_handle_wu_ia_int(dev, &sources.wake_up_src);
 	}
 #endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
@@ -432,7 +564,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
-	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
+	if (!device_is_ready(cfg->gpio_int.port)) {
 		if (cfg->gpio_int.port) {
 			LOG_ERR("%s: device %s is not ready", dev->name,
 						cfg->gpio_int.port->name);

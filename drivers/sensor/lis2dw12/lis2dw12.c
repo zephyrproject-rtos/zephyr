@@ -483,11 +483,57 @@ static int lis2dw12_init(const struct device *dev)
 #warning "LIS2DW12 driver enabled without any devices"
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+
+static int lis2dw12_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	int ret = 0;
+	struct lis2dw12_data *data = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = lis2dw12_set_power_mode(dev, cfg->pm);
+		if (ret) {
+			return ret;
+		}
+		ret = lis2dw12_set_odr(dev, data->odr);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = lis2dw12_set_power_mode(dev, LIS2DW12_CONT_LOW_PWR_12bit);
+		if (ret) {
+			return ret;
+		}
+		ret = lis2dw12_set_odr(dev, LIS2DW12_XL_ODR_OFF);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
 /*
  * Device creation macro, shared by LIS2DW12_DEFINE_SPI() and
  * LIS2DW12_DEFINE_I2C().
  */
-
+#define LIS2DW12_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dw12_pm_action);  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+			    lis2dw12_init,				\
+			    PM_DEVICE_DT_INST_GET(inst),	\
+			    &lis2dw12_data_##inst,			\
+			    &lis2dw12_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2dw12_driver_api);
+#else
+/*
+ * Device creation macro, shared by LIS2DW12_DEFINE_SPI() and
+ * LIS2DW12_DEFINE_I2C().
+ */
 #define LIS2DW12_DEVICE_INIT(inst)					\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lis2dw12_init,				\
@@ -497,6 +543,7 @@ static int lis2dw12_init(const struct device *dev)
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2dw12_driver_api);
+#endif /* CONFIG_PM_DEVICE */
 
 /*
  * Instantiation macros used when a device is on a SPI bus.

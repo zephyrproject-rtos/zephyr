@@ -60,6 +60,12 @@ config LIS2DW12_TAP
 	help
 	  Enable tap (single/double) detection
 
+config LIS2DW12_TAP_3D
+	bool "Directional Tap and Tap-Tap detection"
+	depends on LIS2DW12_TAP
+	help
+	  Enable directional tap (single/double) detection
+
 endif # LIS2DW12_TRIGGER
 
 config LIS2DW12_THRESHOLD
@@ -72,6 +78,12 @@ config LIS2DW12_THRESHOLD
 	  a wake-up interrupt generation at least one of the three axes must
 	  be bigger than the threshold. See ST AN5038 for more details about
 	  the feature.
+
+config LIS2DW12_THRESHOLD_3D
+	bool "Directional threshold trigger"
+	depends on LIS2DW12_THRESHOLD
+	help
+	  Enable directional triggers for the wakeup threshold
 
 config LIS2DW12_FREEFALL
 	bool "Free Fall detection (via interrupt)"
