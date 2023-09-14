@@ -23,6 +23,7 @@ zephyr_library_sources(
 	soc/nrfx_coredep.c
 	common/bstests_entry.c
 	common/cmsis/cmsis.c
+	common/trace_hook.c
 )
 
 target_sources(native_simulator INTERFACE
