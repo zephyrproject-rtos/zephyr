@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/bluetooth/services/ias.h"
+#include <zephyr/bluetooth/services/ias.h>
 #include <stdint.h>
 
 /* events */

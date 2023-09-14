@@ -10,7 +10,7 @@
 #include "bs_types.h"
 #include "bstests.h"
 #include "time_machine.h"
-#include "zephyr/sys/__assert.h"
+#include <zephyr/sys/__assert.h>
 
 #include <errno.h>
 #include <stddef.h>

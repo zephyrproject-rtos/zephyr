@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/spinlock.h"
+#include <zephyr/spinlock.h>
 #define DT_DRV_COMPAT atmel_sam_i2c_twihs
 
 /** @file

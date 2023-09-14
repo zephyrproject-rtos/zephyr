@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/rtio/rtio.h"
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/sys/__assert.h>

@@ -8,7 +8,7 @@
 
 #include "bs_types.h"
 #include "time_machine_if.h"
-#include "zephyr/toolchain.h"
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

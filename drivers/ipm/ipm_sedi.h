@@ -11,7 +11,7 @@ extern "C" {
 #endif
 #include "sedi_driver_common.h"
 #include "sedi_driver_ipc.h"
-#include "zephyr/sys/atomic.h"
+#include <zephyr/sys/atomic.h>
 
 /*
  * bit 31 indicates whether message is valid, and could generate interrupt
