@@ -56,6 +56,17 @@ Recommended Changes
   The GIC version should now be specified by adding the appropriate compatible, for
   example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
 
+* Nordic nRF based boards using :kconfig:option:`CONFIG_NFCT_PINS_AS_GPIOS`
+  to configure NFCT pins as GPIOs, should instead set the new UICR
+  ``nfct-pins-as-gpios`` property in devicetree. It can be set like this in the
+  board devicetree files:
+
+  .. code-block:: devicetree
+
+     &uicr {
+         nfct-pins-as-gpios;
+     };
+
 Picolibc-related Changes
 ************************
 
