@@ -1924,6 +1924,7 @@ Networking:
     - subsys/net/conn_mgr/
     - tests/net/conn_mgr_monitor/
     - tests/net/conn_mgr_conn/
+    - doc/connectivity/networking/conn_mgr/
   labels:
     - "area: Networking"
 
