@@ -465,10 +465,12 @@
 			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
 			interrupts = <106 0>;
-			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
+			clock-names = "stmmaceth", "mac-clk-tx",
+				      "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00080000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00400000>;
 			status = "disabled";
 		};
 
