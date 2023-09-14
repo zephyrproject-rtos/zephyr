@@ -1,8 +1,8 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <title>WebUSB Serial Sample Application</title>
   </head>
-
 
 <body>
   <script>
@@ -109,17 +109,18 @@ window.onload = _ => {
   }
 
   document.querySelector("#submit").onclick = () => {
-    let source = document.querySelector("#editor").value;
+    let source = document.querySelector("#input").value;
     send(source);
   }
 }
 
 </script>
  <button id="connect" style="visibility: initial">Connect To WebUSB Device</button>
- <br><br><label for="title">Sender: </label> <br>
- <textarea id="editor", rows="25" cols="80" id="source">WebUSB!</textarea>
+ <br><br><label for="input">Sender: </label> <br>
+ <textarea id="input" rows="25" cols="80">WebUSB!</textarea>
  <br><button id="submit">Send</button>
  <br><br>
- <label for="title">Receiver: </label> </br>
- <textarea id="output", rows="25" cols="80" id="source"></textarea>
+ <label for="output">Receiver: </label> <br>
+ <textarea id="output" rows="25" cols="80"></textarea>
 </body>
+</html>
