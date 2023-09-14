@@ -28,3 +28,12 @@ config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	  This MCU will for example have its tests command line parameters presented
 	  without any prefix. Note that an MCU being primary does not imply it will be
 	  the first one to boot.
+
+config NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS
+	string "Other cores images to include"
+	depends on NATIVE_LIBRARY
+	help
+	  This option can be used to provide the native simulator with other MCUs/Cores images which have
+	  been produced by either other Zephyr builds or different OS builds.
+	  So you can, for ex., use this application build produce one core image, and at the same time
+	  have it produce the final link with the native simulator runner and the other MCU images.
