@@ -141,12 +141,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 /* Initialize STM32 Power */
 static int stm32_power_init(void)
 {
-
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during STOP mode */
-	LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
-
 	return 0;
 }
 
