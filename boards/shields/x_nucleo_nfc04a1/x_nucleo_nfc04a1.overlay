@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2019 STMicroelectronics
+ * Copyright (c) 2023 Kickmaker
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	aliases {
-		eeprom-0 = &eeprom0;
+		eeprom-0 = &st25dv_x_nucleo_nfc04a1;
 		shield-green-led1 = &shield_green_led1;
 		shield-blue-led2 = &shield_blue_led2;
 		shield-yellow-led3 = &shield_yellow_led3;
@@ -15,31 +15,24 @@
 	leds: leds {
 		compatible = "gpio-leds";
 		shield_green_led1: shield_green_led_1 {
-			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&arduino_header 11 GPIO_ACTIVE_HIGH>;	/* D5 */
 			label = "Shield LED1";
 		};
 		shield_blue_led2: shield_blue_led_2 {
-			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
 			label = "Shield LED2";
 		};
 		shield_yellow_led3: shield_yellow_led_3 {
-			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;	/* D2 */
 			label = "Shield LED3";
 		};
 	};
 };
 
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
-};
-
 &arduino_i2c {
 	status="okay";
 
-	eeprom0: eeprom@53 {
+	st25dv_x_nucleo_nfc04a1: eeprom@53 {
 		compatible = "st,st25dv";
 		reg = <0x53>;
 		status = "okay";

@@ -8,3 +8,4 @@ tests:
     tags: shield
     depends_on:
       - arduino_i2c
+      - arduino_gpio
