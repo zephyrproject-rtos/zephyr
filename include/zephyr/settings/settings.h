@@ -32,16 +32,12 @@ extern "C" {
  * @{
  */
 
-#define SETTINGS_MAX_DIR_DEPTH	8	/* max depth of settings tree */
-#define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
-#define SETTINGS_MAX_VAL_LEN	256
-#define SETTINGS_NAME_SEPARATOR	'/'
-#define SETTINGS_NAME_END '='
+#define SETTINGS_MAX_NAME_LEN          (8 * CONFIG_SETTINGS_MAX_DIR_DEPTH)
 
 /* place for settings additions:
  * up to 7 separators, '=', '\0'
  */
-#define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
+#define SETTINGS_EXTRA_LEN ((CONFIG_SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
 /**
  * Function used to read the data from the settings storage in
