@@ -78,8 +78,8 @@ int settings_name_steq(const char *name, const char *key, const char **next)
 	 * limited to what can be read
 	 */
 
-	while ((*key != '\0') && (*key == *name) &&
-	       (*name != '\0') && (*name != SETTINGS_NAME_END)) {
+	while ((*key != '\0') && (*key == *name) && (*name != '\0') &&
+	       (*name != CONFIG_SETTINGS_NAME_END)) {
 		key++;
 		name++;
 	}
@@ -88,14 +88,14 @@ int settings_name_steq(const char *name, const char *key, const char **next)
 		return 0;
 	}
 
-	if (*name == SETTINGS_NAME_SEPARATOR) {
+	if (*name == CONFIG_SETTINGS_NAME_SEPARATOR) {
 		if (next) {
 			*next = name + 1;
 		}
 		return 1;
 	}
 
-	if ((*name == SETTINGS_NAME_END) || (*name == '\0')) {
+	if ((*name == CONFIG_SETTINGS_NAME_END) || (*name == '\0')) {
 		return 1;
 	}
 
@@ -118,13 +118,13 @@ int settings_name_next(const char *name, const char **next)
 	 * with '=' or '\0' depending how storage is done. Flash reading is
 	 * limited to what can be read
 	 */
-	while ((*name != '\0') && (*name != SETTINGS_NAME_END) &&
-	       (*name != SETTINGS_NAME_SEPARATOR)) {
+	while ((*name != '\0') && (*name != CONFIG_SETTINGS_NAME_END) &&
+	       (*name != CONFIG_SETTINGS_NAME_SEPARATOR)) {
 		rc++;
 		name++;
 	}
 
-	if (*name == SETTINGS_NAME_SEPARATOR) {
+	if (*name == CONFIG_SETTINGS_NAME_SEPARATOR) {
 		if (next) {
 			*next = name + 1;
 		}

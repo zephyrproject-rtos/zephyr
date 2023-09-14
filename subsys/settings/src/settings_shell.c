@@ -67,8 +67,8 @@ static int settings_read_callback(const char *key,
 				  void            *cb_arg,
 				  void            *param)
 {
-	uint8_t buffer[SETTINGS_MAX_VAL_LEN];
-	ssize_t num_read_bytes = MIN(len, SETTINGS_MAX_VAL_LEN);
+	uint8_t buffer[CONFIG_SETTINGS_MAX_VAL_LEN];
+	ssize_t num_read_bytes = MIN(len, CONFIG_SETTINGS_MAX_VAL_LEN);
 	struct settings_read_callback_params *params = param;
 
 	/* Process only the exact match and ignore descendants of the searched name */
@@ -86,7 +86,7 @@ static int settings_read_callback(const char *key,
 
 	shell_hexdump(params->shell_ptr, buffer, num_read_bytes);
 
-	if (len > SETTINGS_MAX_VAL_LEN) {
+	if (len > CONFIG_SETTINGS_MAX_VAL_LEN) {
 		shell_print(params->shell_ptr, "(The output has been truncated)");
 	}
 
