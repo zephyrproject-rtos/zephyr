@@ -172,6 +172,7 @@
 		segment-remap;
 		com-invdir;
 		prechargep = <0x22>;
+		inversion-on;
 
 		reset-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	};
