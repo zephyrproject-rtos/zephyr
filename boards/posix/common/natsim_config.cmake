@@ -13,7 +13,7 @@ set(nsi_config_content
   "NSI_BUILD_PATH:=${zephyr_build_path}/NSI"
   "NSI_CC:=${CCACHE} ${CMAKE_C_COMPILER}"
   "NSI_OBJCOPY:=${CMAKE_OBJCOPY}"
-  "NSI_EMBEDDED_CPU_SW:=${zephyr_build_path}/${KERNEL_ELF_NAME}"
+  "NSI_EMBEDDED_CPU_SW:=${zephyr_build_path}/${KERNEL_ELF_NAME} ${CONFIG_NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS}"
   "NSI_EXE:=${zephyr_build_path}/${KERNEL_EXE_NAME}"
   "NSI_EXTRA_SRCS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_SOURCES>,\ >"
   "NSI_LINK_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_LINK_OPTIONS>,\ >"
