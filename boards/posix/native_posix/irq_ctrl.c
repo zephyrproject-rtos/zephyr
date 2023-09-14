@@ -14,7 +14,7 @@
 #include <zephyr/arch/posix/arch.h> /* for find_lsb_set() */
 #include "board_soc.h"
 #include "posix_soc.h"
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 
 uint64_t irq_ctrl_timer = NEVER;
 

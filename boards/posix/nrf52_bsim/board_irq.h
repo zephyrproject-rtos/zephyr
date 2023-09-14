@@ -7,7 +7,7 @@
 #ifndef BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 #define BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include "../common/irq/board_irq.h"
 
 #ifdef __cplusplus
