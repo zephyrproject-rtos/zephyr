@@ -1841,8 +1841,6 @@ struct k_queue {
 	_POLL_EVENT_OBJ_INIT(obj)		\
 	}
 
-extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
