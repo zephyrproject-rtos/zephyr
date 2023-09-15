@@ -29,7 +29,7 @@ static void print_dfd_status(const struct shell *sh, struct bt_mesh_dfd_srv *srv
 		      srv->phase);
 
 	if (srv->phase != BT_MESH_DFD_PHASE_IDLE && srv->dfu.xfer.slot) {
-		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": 0x%04x, \"app_idx\": %d, "
+		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": %d, \"app_idx\": %d, "
 			      "\"ttl\": %d, \"timeout_base\": %d, \"xfer_mode\": %d, "
 			      "\"apply\": %d, \"slot_idx\": %d", srv->inputs.group,
 			      srv->inputs.app_idx, srv->inputs.ttl, srv->inputs.timeout_base,
@@ -165,7 +165,7 @@ static int cmd_dfd_receivers_get(const struct shell *sh, size_t argc, char *argv
 	for (int i = 0; i < cnt; i++) {
 		const struct bt_mesh_dfu_target *t = &dfd_srv->targets[i + first];
 
-		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": 0x%04x, \"phase\": %d, "
+		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": %d, \"phase\": %d, "
 			    "\"status\": %d, \"blob_status\": %d, \"progress\": %d, "
 			    "\"img_idx\": %d }%s", i + first, t->blob.addr, t->phase, t->status,
 			    t->blob.status, progress, t->img_idx, (i == cnt - 1) ? "" : ",");
