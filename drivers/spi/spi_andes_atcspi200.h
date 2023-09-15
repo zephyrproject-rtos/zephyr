@@ -11,6 +11,10 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
+#ifdef CONFIG_ANDES_SPI_DMA_MODE
+#include <zephyr/drivers/dma.h>
+#endif
+
 #define REG_TFMAT		0x10
 #define REG_TCTRL		0x20
 #define REG_CMD			0x24
@@ -22,16 +26,16 @@ LOG_MODULE_REGISTER(spi_atcspi200);
 #define REG_TIMIN		0x40
 #define REG_CONFIG		0x7c
 
-#define SPI_TFMAT(base)		(base + 0x10)
-#define SPI_TCTRL(base)		(base + 0x20)
-#define SPI_CMD(base)		(base + 0x24)
-#define SPI_DATA(base)		(base + 0x2c)
-#define SPI_CTRL(base)		(base + 0x30)
-#define SPI_STAT(base)		(base + 0x34)
-#define SPI_INTEN(base)		(base + 0x38)
-#define SPI_INTST(base)		(base + 0x3c)
-#define SPI_TIMIN(base)		(base + 0x40)
-#define SPI_CONFIG(base)	(base + 0x7c)
+#define SPI_TFMAT(base)		(base + REG_TFMAT)
+#define SPI_TCTRL(base)		(base + REG_TCTRL)
+#define SPI_CMD(base)		(base + REG_CMD)
+#define SPI_DATA(base)		(base + REG_DATA)
+#define SPI_CTRL(base)		(base + REG_CTRL)
+#define SPI_STAT(base)		(base + REG_STAT)
+#define SPI_INTEN(base)		(base + REG_INTEN)
+#define SPI_INTST(base)		(base + REG_INTST)
+#define SPI_TIMIN(base)		(base + REG_TIMIN)
+#define SPI_CONFIG(base)	(base + REG_CONFIG)
 
 /* Field mask of SPI transfer format register */
 #define TFMAT_DATA_LEN_OFFSET		(8)
