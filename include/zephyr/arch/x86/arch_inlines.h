@@ -10,6 +10,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/arch/x86/x86_acpi.h>
+
 #if defined(CONFIG_X86_64)
 
 #include <zephyr/arch/x86/intel64/thread.h>
