@@ -2391,6 +2391,7 @@ PREDEFINED             = __DOXYGEN__ \
                          NET_MGMT_DEFINE_REQUEST_HANDLER(x)= \
                          DEVICE_DEFINE()= \
                          BUILD_ASSERT()= \
+			 XEN_GUEST_HANDLE_64(x)= \
                          _LINKER \
                          __deprecated= \
                          __packed= \
