@@ -566,6 +566,51 @@ ZTEST(modem_chat, test_script_run_sync_abort)
 		      "Echo script should time out and return -EAGAIN");
 }
 
+ZTEST(modem_chat, test_script_run_dynamic_script_sync)
+{
+	char match[] = "AT";
+	char separators[] = ",";
+	char request[] = "AT";
+	char name[] = "Dynamic";
+
+	struct modem_chat_match stack_response_match = {
+		.match = NULL,
+		.match_size = 0,
+		.separators = NULL,
+		.separators_size = 0,
+		.wildcards = false,
+		.partial = false,
+		.callback = NULL,
+	};
+
+	struct modem_chat_script_chat stack_script_chat = {
+		.request = NULL,
+		.response_matches = &stack_response_match,
+		.response_matches_size = 1,
+		.timeout = 0,
+	};
+
+	struct modem_chat_script stack_script = {
+		.name = name,
+		.script_chats = &stack_script_chat,
+		.script_chats_size = 1,
+		.abort_matches = NULL,
+		.abort_matches_size = 0,
+		.callback = NULL,
+		.timeout = 1,
+	};
+
+	stack_response_match.match = match;
+	stack_response_match.match_size = strlen(match);
+	stack_response_match.separators = separators;
+	stack_response_match.separators_size = strlen(match);
+	stack_script_chat.request = request;
+	stack_script_chat.request_size = strlen(request);
+
+	modem_backend_mock_prime(&mock, &at_echo_transaction);
+	zassert_ok(modem_chat_run_script(&cmd, &stack_script), "Failed to run script");
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
