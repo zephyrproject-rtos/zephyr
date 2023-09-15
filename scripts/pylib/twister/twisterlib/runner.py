@@ -40,7 +40,7 @@ if sys.platform == 'linux':
 
 from twisterlib.log_helper import log_command
 from twisterlib.testinstance import TestInstance
-from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.testplan import change_skip_to_error_on_integration_and_allow_platforms
 from twisterlib.harness import HarnessImporter, Pytest
 
 logger = logging.getLogger('twister')
@@ -298,11 +298,11 @@ class CMake:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(overflow_found[0])
-                    change_skip_to_error_if_integration(self.options, self.instance)
+                    change_skip_to_error_on_integration_and_allow_platforms(self.options, self.instance)
                 elif imgtool_overflow_found and not self.options.overflow_as_errors:
                     self.instance.status = "skipped"
                     self.instance.reason = "imgtool overflow"
-                    change_skip_to_error_if_integration(self.options, self.instance)
+                    change_skip_to_error_on_integration_and_allow_platforms(self.options, self.instance)
                 else:
                     self.instance.status = "error"
                     self.instance.reason = "Build failure"

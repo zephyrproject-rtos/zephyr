@@ -939,7 +939,7 @@ class TestPlan:
 
         filtered_instances = list(filter(lambda item:  item.status == "filtered", self.instances.values()))
         for filtered_instance in filtered_instances:
-            change_skip_to_error_if_integration(self.options, filtered_instance)
+            change_skip_to_error_on_integration_and_allow_platforms(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
@@ -1015,9 +1015,10 @@ class TestPlan:
         self.link_dir_counter += 1
 
 
-def change_skip_to_error_if_integration(options, instance):
-    ''' If integration mode is on all skips on integration_platforms are treated as errors.'''
-    if options.integration and instance.platform.name in instance.testsuite.integration_platforms \
+def change_skip_to_error_on_integration_and_allow_platforms(options, instance):
+    ''' All skips on platforms from integration_platforms and platform_allow are treated as errors.'''
+    if (instance.platform.name in instance.testsuite.integration_platforms \
+        or instance.platform.name in instance.testsuite.platform_allow) \
         and "quarantine" not in instance.reason.lower():
         # Do not treat this as error if filter type is command line
         filters = {t['type'] for t in instance.filters}
