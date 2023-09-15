@@ -676,9 +676,6 @@ static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
  * @cond INTERNAL_HIDDEN
  */
 
-/* timeout has timed out and is not on _timeout_q anymore */
-#define _EXPIRED (-2)
-
 struct _static_thread_data {
 	struct k_thread *init_thread;
 	k_thread_stack_t *init_stack;
