@@ -11,7 +11,9 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
+#ifdef CONFIG_ACPI
 #include <zephyr/acpi/acpi.h>
+#endif
 
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 4, "Only supports max 4 CPUs");
 
@@ -142,14 +144,14 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	uint8_t apic_id;
 
-	if (IS_ENABLED(CONFIG_ACPI)) {
-		struct acpi_madt_local_apic *lapic = acpi_local_apic_get(cpu_num);
+#ifdef CONFIG_ACPI
+	struct acpi_madt_local_apic *lapic = acpi_local_apic_get(cpu_num);
 
-		if (lapic != NULL) {
-			/* We update the apic_id, __start will need it. */
-			x86_cpu_loapics[cpu_num] = lapic->Id;
-		}
+	if (lapic != NULL) {
+		/* We update the apic_id, __start will need it. */
+		x86_cpu_loapics[cpu_num] = lapic->Id;
 	}
+#endif
 
 	apic_id = x86_cpu_loapics[cpu_num];
 
