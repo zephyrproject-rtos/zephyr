@@ -6,7 +6,7 @@
 
 /* Based on STM32 EXTI driver, which is (c) 2016 Open-RnD Sp. z o.o. */
 
-#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
@@ -15,9 +15,7 @@
 
 #define DT_DRV_COMPAT nxp_pint
 
-#define PINT_NODE DT_INST(0, DT_DRV_COMPAT)
-
-static PINT_Type *pint_base = (PINT_Type *)DT_REG_ADDR(PINT_NODE);
+static PINT_Type *pint_base = (PINT_Type *)DT_INST_REG_ADDR(0);
 
 /* Describes configuration of PINT IRQ slot */
 struct pint_irq_slot {
@@ -30,9 +28,9 @@ struct pint_irq_slot {
 #define NO_PINT_ID 0xFF
 
 /* Tracks IRQ configuration for each pint interrupt source */
-static struct pint_irq_slot pint_irq_cfg[DT_PROP(PINT_NODE, num_lines)];
+static struct pint_irq_slot pint_irq_cfg[DT_INST_PROP(0, num_lines)];
 /* Tracks pint interrupt source selected for each pin */
-static uint8_t pin_pint_id[DT_PROP(PINT_NODE, num_inputs)];
+static uint8_t pin_pint_id[DT_INST_PROP(0, num_inputs)];
 
 #define PIN_TO_INPUT_MUX_CONNECTION(pin) \
 	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (pin))
@@ -188,17 +186,17 @@ static void nxp_pint_isr(uint8_t *slot)
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
 	} while (false)))
 
-static int intc_nxp_pint_init(void)
+static int intc_nxp_pint_init(const struct device *dev)
 {
 	/* First, connect IRQs for each interrupt.
 	 * The IRQ handler will receive the PINT slot as a
 	 * parameter.
 	 */
-	LISTIFY(8, NXP_PINT_IRQ, (;), PINT_NODE);
+	LISTIFY(8, NXP_PINT_IRQ, (;), DT_INST(0, DT_DRV_COMPAT));
 	PINT_Init(pint_base);
 	memset(pin_pint_id, NO_PINT_ID, ARRAY_SIZE(pin_pint_id));
 	return 0;
 }
 
-SYS_INIT(intc_nxp_pint_init, PRE_KERNEL_1,
-	CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
