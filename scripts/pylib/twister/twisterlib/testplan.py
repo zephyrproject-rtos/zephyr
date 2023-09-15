@@ -194,8 +194,11 @@ class TestPlan:
             raise TwisterRuntimeError("No quarantine list given to be verified")
         if ql:
             for quarantine_file in ql:
-                # validate quarantine yaml file against the provided schema
-                scl.yaml_load_verify(quarantine_file, self.quarantine_schema)
+                try:
+                    # validate quarantine yaml file against the provided schema
+                    scl.yaml_load_verify(quarantine_file, self.quarantine_schema)
+                except scl.EmptyYamlFileException:
+                    logger.debug(f'Quarantine file {quarantine_file} is empty')
             self.quarantine = Quarantine(ql)
 
     def load(self):
@@ -454,7 +457,7 @@ class TestPlan:
                     # if there is already an existed <board>_<revision>.yaml, then use it to
                     # load platform directly, otherwise, iterate the directory to
                     # get all valid board revision based on each <board>_<revision>.conf.
-                    if not "@" in platform.name:
+                    if '@' not in platform.name:
                         tmp_dir = os.listdir(os.path.dirname(file))
                         for item in tmp_dir:
                             # Need to make sure the revision matches
