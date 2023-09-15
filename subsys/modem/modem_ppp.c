@@ -285,6 +285,9 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			net_pkt_unref(ppp->rx_pkt);
 			ppp->rx_pkt = NULL;
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+			ppp->stats.drop++;
+#endif
 		}
 
 		break;
@@ -295,6 +298,9 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			net_pkt_unref(ppp->rx_pkt);
 			ppp->rx_pkt = NULL;
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+#if defined(CONFIG_NET_STATISTICS_PPP)
+			ppp->stats.drop++;
+#endif
 			break;
 		}
 
@@ -433,11 +439,23 @@ static int modem_ppp_ppp_api_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_PPP)
+static struct net_stats_ppp *modem_ppp_ppp_get_stats(const struct device *dev)
+{
+	struct modem_ppp *ppp = (struct modem_ppp *)dev->data;
+
+	return &ppp->stats;
+}
+#endif
+
 const struct ppp_api modem_ppp_ppp_api = {
 	.iface_api.init = modem_ppp_ppp_api_init,
 	.start = modem_ppp_ppp_api_start,
 	.stop = modem_ppp_ppp_api_stop,
 	.send = modem_ppp_ppp_api_send,
+#if defined(CONFIG_NET_STATISTICS_PPP)
+	.get_stats = modem_ppp_ppp_get_stats,
+#endif
 };
 
 int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)

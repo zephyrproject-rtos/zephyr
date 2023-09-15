@@ -97,6 +97,10 @@ struct modem_ppp {
 	/* Work */
 	struct k_work send_work;
 	struct k_work process_work;
+
+#if defined(CONFIG_NET_STATISTICS_PPP)
+	struct net_stats_ppp stats;
+#endif
 };
 
 /**
