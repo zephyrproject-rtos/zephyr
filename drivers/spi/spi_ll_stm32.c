@@ -27,6 +27,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif
+
 #ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
 #endif /* CONFIG_NOCACHE_MEMORY */
@@ -56,35 +60,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #ifdef CONFIG_SPI_STM32_DMA
-
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-
-#define IS_NOCACHE_MEM_REGION(node_id)                                          \
-	COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, zephyr_memory_attr, RAM_NOCACHE),    \
-			(1),                                                                \
-			(0))
-
-#define GET_MEM_REGION(node_id)                                                 \
-	{                                                                           \
-		.start = DT_REG_ADDR(node_id),                                          \
-		.end = (DT_REG_ADDR(node_id) + DT_REG_SIZE(node_id)) - 1,               \
-	},
-
-#define GET_MEM_REGION_IF_NOCACHE(node_id)                                      \
-	COND_CODE_1(IS_NOCACHE_MEM_REGION(node_id),                                 \
-	(                                                                           \
-		GET_MEM_REGION(node_id)                                                 \
-	), ())
-
-struct mem_region {
-	uintptr_t start;
-	uintptr_t end;
-};
-
-static const struct mem_region nocache_mem_regions[] = {
-	DT_MEMORY_ATTR_FOREACH_STATUS_OKAY_NODE(GET_MEM_REGION_IF_NOCACHE)
-};
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 /* dummy value used for transferring NOP when tx buf is null
  * and use as dummy sink for when rx buf is null
@@ -771,16 +746,10 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-	for (size_t i = 0; i < ARRAY_SIZE(nocache_mem_regions); i++) {
-		const struct mem_region *mem_reg = &nocache_mem_regions[i];
+	buf_within_nocache = mem_attr_check_buf(
+		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
 
-		buf_within_nocache =
-			(buf >= mem_reg->start) && ((buf + len_bytes - 1) <= mem_reg->end);
-		if (buf_within_nocache) {
-			return true;
-		}
-	}
-	return false;
+	return buf_within_nocache;
 }
 
 static bool is_dummy_buffer(const struct spi_buf *buf)
