@@ -119,7 +119,7 @@
 		      <0x10900000 0x100000>;
 		reg-names = "qspi_reg", "qspi_data";
 		interrupt-parent = <&gic>;
-		interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL
+		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <400000000>;
 		status = "disabled";
