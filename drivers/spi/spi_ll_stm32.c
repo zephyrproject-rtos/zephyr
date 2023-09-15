@@ -1038,7 +1038,7 @@ static int spi_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_INF(" SPI with DMA transfer");
+	LOG_DBG("SPI with DMA transfer");
 
 #endif /* CONFIG_SPI_STM32_DMA */
 
