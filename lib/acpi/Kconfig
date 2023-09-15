@@ -16,12 +16,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 if PCIE_PRT
 
-config ACPI_PRT_BUS_NAME
-	string "ACPI name of PCI bus"
-	default "_SB.PCI0"
-	help
-	  ACPI name of PCI bus.
-
 config ACPI_MAX_PRT_ENTRY
 	int "Size of PRT buffer"
 	default 4096
@@ -46,10 +40,16 @@ config ACPI_DEV_MAX
 	help
 	  maximum acpi child devices.
 
-endif # ACPI
-
-config ACPI_HID_LEN_MAX
-	int "Size of HID name"
-	default 12
+config ACPI_IRQ_VECTOR_MAX
+	int "Interrupt vectors per device"
+	default 32
 	help
-	  Size of HID string.
+	  Maximum interrupt vectors per device.
+
+config ACPI_MMIO_ENTRIES_MAX
+	int "MMIO entries per device"
+	default 32
+	help
+	  Maximum MMIO entries per device.
+
+endif # ACPI
