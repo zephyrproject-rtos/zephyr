@@ -15,10 +15,30 @@
 #define ACPI_DMAR_FLAG_X2APIC_OPT_OUT			BIT(1)
 #define ACPI_DMAR_FLAG_DMA_CTRL_PLATFORM_OPT_IN	BIT(2)
 
+#define ACPI_MMIO_GET(res) (res)->reg_base[0].mmio
+#define ACPI_IO_GET(res) (res)->reg_base[0].port
+#define ACPI_RESOURCE_SIZE_GET(res) (res)->reg_base[0].length
+#define ACPI_RESOURCE_TYPE_GET(res) (res)->reg_base[0].type
+
+#define ACPI_MULTI_MMIO_GET(res, idx) (res)->reg_base[idx].mmio
+#define ACPI_MULTI_IO_GET(res, idx) (res)->reg_base[idx].port
+#define ACPI_MULTI_RESOURCE_SIZE_GET(res, idx) (res)->reg_base[idx].length
+#define ACPI_MULTI_RESOURCE_TYPE_GET(res, idx) (res)->reg_base[idx].type
+
+#define ACPI_RESOURCE_COUNT_GET(res) (res)->mmio_max
+
+enum acpi_res_type {
+	/** IO mapped Resource type */
+	ACPI_RES_TYPE_IO,
+	/** Memory mapped Resource type */
+	ACPI_RES_TYPE_MEM,
+	/** Unknown Resource type */
+	ACPI_RES_TYPE_UNKNOWN,
+};
+
 struct acpi_dev {
 	ACPI_HANDLE handle;
 	char *path;
-	char hid[CONFIG_ACPI_HID_LEN_MAX];
 	ACPI_RESOURCE *res_lst;
 	int res_type;
 	ACPI_DEVICE_INFO *dev_info;
@@ -39,6 +59,72 @@ struct acpi_mcfg {
 	uint64_t _reserved;
 	ACPI_MCFG_ALLOCATION pci_segs[];
 } __packed;
+
+struct acpi_irq_resource {
+	uint32_t flags;
+	union {
+		uint16_t irq;
+		uint16_t irqs[CONFIG_ACPI_IRQ_VECTOR_MAX];
+	};
+	uint8_t irq_vector_max;
+};
+
+struct acpi_reg_base {
+	enum acpi_res_type type;
+	union {
+		uintptr_t mmio;
+		uintptr_t port;
+	};
+	uint32_t length;
+};
+
+struct acpi_mmio_resource {
+	struct acpi_reg_base reg_base[CONFIG_ACPI_MMIO_ENTRIES_MAX];
+	uint8_t mmio_max;
+};
+
+/**
+ * @brief Get the ACPI HID for a node
+ *
+ * @param node_id DTS node identifier
+ * @return The HID of the ACPI node
+ */
+#define ACPI_DT_HID(node_id) DT_PROP(node_id, acpi_hid)
+
+/**
+ * @brief Get the ACPI UID for a node if one exist
+ *
+ * @param node_id DTS node identifier
+ * @return The UID of the ACPI node else NULL if does not exist
+ */
+#define ACPI_DT_UID(node_id) DT_PROP_OR(node_id, acpi_uid, NULL)
+
+/**
+ * @brief check whether the node has ACPI HID property or not
+ *
+ * @param node_id DTS node identifier
+ * @return 1 if the node has the HID, 0 otherwise.
+ */
+#define ACPI_DT_HAS_HID(node_id) DT_NODE_HAS_PROP(node_id, acpi_hid)
+
+/**
+ * @brief check whether the node has ACPI UID property or not
+ *
+ * @param node_id DTS node identifier
+ * @return 1 if the node has the UID, 0 otherwise.
+ */
+#define ACPI_DT_HAS_UID(node_id) DT_NODE_HAS_PROP(node_id, acpi_uid)
+
+/**
+ * @brief Init legacy interrupt routing table information from ACPI.
+ * Currently assume platform have only one PCI bus.
+ *
+ * @param hid the hardware id of the ACPI child device
+ * @param uid the unique id of the ACPI child device. The uid can be
+ * NULL if only one device with given hid present in the platform.
+ * @return return 0 on success or error code
+ */
+int acpi_legacy_irq_init(const char *hid, const char *uid);
 
 /**
  * @brief Retrieve a legacy interrupt number for a PCI device.
@@ -76,16 +162,6 @@ int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res);
 int acpi_current_resource_free(ACPI_RESOURCE *res);
 
 /**
- * @brief Retrieve IRQ routing table of a bus.
- *
- * @param bus_name the name of the bus
- * @param rt_table the IRQ routing table
- * @param rt_size number of elements in the IRQ routing table
- * @return return 0 on success or error code
- */
-int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size);
-
-/**
  * @brief Parse resource table for a given resource type.
  *
  * @param res the list of acpi resource list
@@ -95,13 +171,14 @@ int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table,
 ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type);
 
 /**
- * @brief Retrieve acpi device info for given hardware id and unique id.
+ * @brief Retrieve ACPI device info for given hardware id and unique id.
  *
- * @param hid the hardware id of the acpi child device
- * @param inst the unique id of the acpi child device
- * @return acpi child device info on success or NULL
+ * @param hid the hardware id of the ACPI child device
+ * @param uid the unique id of the ACPI child device. The uid can be
+ * NULL if only one device with given HID present in the platform.
+ * @return ACPI child device info on success or NULL
  */
-struct acpi_dev *acpi_device_get(char *hid, int inst);
+struct acpi_dev *acpi_device_get(const char *hid, const char *uid);
 
 /**
  * @brief Retrieve acpi device info from the index.
@@ -123,6 +200,24 @@ static inline ACPI_RESOURCE_IRQ *acpi_irq_res_get(ACPI_RESOURCE *res_lst)
 
 	return res ? &res->Data.Irq : NULL;
 }
+
+/**
+ * @brief Parse resource table for irq info.
+ *
+ * @param child_dev the device object of the ACPI node
+ * @param irq_res irq resource info
+ * @return return 0 on success or error code
+ */
+int acpi_device_irq_get(struct acpi_dev *child_dev, struct acpi_irq_resource *irq_res);
+
+/**
+ * @brief Parse resource table for MMIO info.
+ *
+ * @param child_dev the device object of the ACPI node
+ * @param mmio_res MMIO resource info
+ * @return return 0 on success or error code
+ */
+int acpi_device_mmio_get(struct acpi_dev *child_dev, struct acpi_mmio_resource *mmio_res);
 
 /**
  * @brief Parse resource table for identify resource type.
@@ -196,4 +291,15 @@ int acpi_dmar_ioapic_get(uint16_t *ioapic_id);
  * @return local apic info on success or NULL otherwise
  */
 ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num);
+
+/**
+ * @brief invoke an ACPI method and return the result.
+ *
+ * @param path the path name of the ACPI object
+ * @param arg_list the list of arguments to be pass down
+ * @param ret_obj the ACPI result to be return
+ * @return return 0 on success or error code
+ */
+int acpi_invoke_method(char *path, ACPI_OBJECT_LIST *arg_list, ACPI_OBJECT *ret_obj);
+
 #endif
