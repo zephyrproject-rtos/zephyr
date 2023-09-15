@@ -666,6 +666,12 @@ __unused
 static int set_up_plls(void)
 {
 #if defined(STM32_PLL_ENABLED) || defined(STM32_PLL2_ENABLED) || defined(STM32_PLL3_ENABLED)
+
+	/* Skip if PLL1 is already configured */
+	if (LL_RCC_PLL1_IsReady()) {
+		return 0;
+	}
+
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
