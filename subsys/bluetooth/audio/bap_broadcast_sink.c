@@ -360,25 +360,24 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_IDLE);
 
+	sink = broadcast_sink_lookup_iso_chan(chan);
+	if (sink == NULL) {
+		LOG_ERR("Could not lookup sink by iso %p", chan);
+	} else {
+		if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
+			LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);
+		}
+
+		/* Clear sink->big if not already cleared */
+		if (sys_slist_is_empty(&sink->streams) && sink->big) {
+			broadcast_sink_clear_big(sink, reason);
+		}
+	}
+
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
-	}
-
-	sink = broadcast_sink_lookup_iso_chan(chan);
-	if (sink == NULL) {
-		LOG_ERR("Could not lookup sink by iso %p", chan);
-		return;
-	}
-
-	if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
-		LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);
-	}
-
-	/* Clear sink->big if not already cleared */
-	if (sys_slist_is_empty(&sink->streams) && sink->big) {
-		broadcast_sink_clear_big(sink, reason);
 	}
 }
 
