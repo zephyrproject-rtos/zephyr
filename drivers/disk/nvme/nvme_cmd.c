@@ -591,9 +591,9 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 			request->cmd.dptr.prp1 =
 				(uint64_t)sys_cpu_to_le64(request->payload);
 			if ((uintptr_t)request->payload & NVME_PBAO_MASK) {
-				request->cmd.dptr.prp2 =
+				request->cmd.dptr.prp2 = (uint64_t)sys_cpu_to_le64(
 					NVME_PRP_NEXT_PAGE(
-						(uintptr_t)request->payload);
+						(uintptr_t)request->payload));
 			} else {
 				request->cmd.dptr.prp2 = 0;
 			}
