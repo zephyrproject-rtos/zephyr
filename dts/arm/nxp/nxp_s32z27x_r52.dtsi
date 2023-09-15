@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,25 @@
 
 	soc {
 		interrupt-parent = <&gic>;
+
+		clock: clock-controller@40030000 {
+			compatible = "nxp,s32-clock";
+			reg = <0x40030000 0x10000>,
+				<0x40200000 0x10000>,
+				<0x40210000 0x10000>,
+				<0x40220000 0x10000>,
+				<0x40260000 0x10000>,
+				<0x40270000 0x10000>,
+				<0x40830000 0x10000>,
+				<0x41030000 0x10000>,
+				<0x41830000 0x10000>,
+				<0x42030000 0x10000>,
+				<0x42830000 0x10000>,
+				<0x44030000 0x10000>,
+				<0x440a0000 0x10000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
 
 		gic: interrupt-controller@47800000 {
 			compatible = "arm,gic-v3", "arm,gic";
