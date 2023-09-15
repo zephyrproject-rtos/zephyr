@@ -21,6 +21,8 @@
 #include "usb.h"
 #endif
 
+#include "memc_nxp_flexram.h"
+
 #include <cmsis_core.h>
 
 #define CCM_NODE	DT_INST(0, nxp_imx_ccm)
@@ -345,6 +347,11 @@ void z_arm_platform_init(void)
 {
 	/* Call CMSIS SystemInit */
 	SystemInit();
+
+#if defined(FLEXRAM_RUNTIME_BANKS_USED)
+	/* Configure flexram if not running from RAM */
+	memc_flexram_dt_partition();
+#endif
 }
 #endif
 
