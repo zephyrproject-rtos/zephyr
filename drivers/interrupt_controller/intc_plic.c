@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
@@ -210,7 +210,7 @@ static void plic_irq_handler(const void *arg)
  *
  * @retval 0 on success.
  */
-static int plic_init(void)
+static int plic_init(const struct device *dev)
 {
 
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
@@ -247,4 +247,5 @@ static int plic_init(void)
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, plic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
