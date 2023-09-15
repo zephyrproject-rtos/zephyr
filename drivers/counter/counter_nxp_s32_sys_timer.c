@@ -1,10 +1,11 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <soc.h>
@@ -35,6 +36,8 @@ struct nxp_s32_sys_timer_config {
 	Stm_Ip_InstanceConfigType hw_cfg;
 	Stm_Ip_ChannelConfigType ch_cfg[SYS_TIMER_NUM_CHANNELS];
 	uint8_t instance;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 static int nxp_s32_sys_timer_start(const struct device *dev)
@@ -145,8 +148,14 @@ static uint32_t nxp_s32_sys_timer_get_top_value(const struct device *dev)
 static uint32_t nxp_s32_sys_timer_get_frequency(const struct device *dev)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
+	uint32_t clock_rate;
 
-	return config->info.freq / (config->hw_cfg.clockPrescaler + 1U);
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate)) {
+		LOG_ERR("Failed to get clock frequency");
+		return 0;
+	}
+
+	return clock_rate / (config->hw_cfg.clockPrescaler + 1U);
 }
 
 static int nxp_s32_sys_timer_init(const struct device *dev)
@@ -155,6 +164,18 @@ static int nxp_s32_sys_timer_init(const struct device *dev)
 	struct nxp_s32_sys_timer_data *data = dev->data;
 	struct nxp_s32_sys_timer_chan_data *ch_data;
 	int i;
+	int err;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("Clock control device not ready");
+		return -ENODEV;
+	}
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("Failed to enable clock");
+		return err;
+	}
 
 	Stm_Ip_Init(config->instance, &config->hw_cfg);
 
@@ -227,7 +248,6 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 	static const struct nxp_s32_sys_timer_config nxp_s32_sys_timer_config_##n = {	\
 		.info = {								\
 			.max_top_value = SYS_TIMER_MAX_VALUE,				\
-			.freq = (DT_PROP(SYS_TIMER_NODE(n), clock_frequency)),		\
 			.channels = SYS_TIMER_NUM_CHANNELS,				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,				\
 		},									\
@@ -239,6 +259,9 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 			LISTIFY(SYS_TIMER_NUM_CHANNELS, SYS_TIMER_CHANNEL_CFG, (,), n)	\
 		},									\
 		.instance = SYS_TIMER_INSTANCE_ID(n),					\
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(SYS_TIMER_NODE(n))),		\
+		.clock_subsys = (clock_control_subsys_t)				\
+				DT_CLOCKS_CELL(SYS_TIMER_NODE(n), name),		\
 	};										\
 											\
 	DEVICE_DT_DEFINE(SYS_TIMER_NODE(n),						\

@@ -20,6 +20,7 @@
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76a00000 0x10000>;
 			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
 			status = "disabled";
 		};
 
@@ -27,6 +28,7 @@
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76a10000 0x10000>;
 			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
 			status = "disabled";
 		};
 
@@ -34,6 +36,7 @@
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76820000 0x10000>;
 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
 			status = "disabled";
 		};
 
@@ -41,6 +44,7 @@
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76830000 0x10000>;
 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_RTU1_REG_INTF_CLK>;
 			status = "disabled";
 		};
 
