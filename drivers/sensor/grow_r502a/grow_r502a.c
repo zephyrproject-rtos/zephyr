@@ -193,7 +193,7 @@ static int fps_get_template_count(const struct device *dev)
 	return 0;
 }
 
-static int fps_read_template_table(const struct device *dev)
+static int fps_read_template_table(const struct device *dev, uint32_t *free_idx)
 {
 	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
@@ -232,7 +232,7 @@ static int fps_read_template_table(const struct device *dev)
 			continue;
 		}
 
-		drv_data->free_idx = (group_idx * 8) + find_lsb_set(~group) - 1;
+		*free_idx = (group_idx * 8) + find_lsb_set(~group) - 1;
 		goto unlock;
 	}
 
@@ -672,8 +672,7 @@ static int grow_r502a_attr_get(const struct device *dev, enum sensor_channel cha
 		ret = fps_match(dev, val);
 		break;
 	case SENSOR_ATTR_R502A_RECORD_FREE_IDX:
-		ret = fps_read_template_table(dev);
-		val->val1 = drv_data->free_idx;
+		ret = fps_read_template_table(dev, &val->val1);
 		break;
 	default:
 		LOG_ERR("Sensor attribute not supported");
