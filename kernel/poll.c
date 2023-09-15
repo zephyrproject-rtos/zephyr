@@ -271,10 +271,6 @@ static int signal_poller(struct k_poll_event *event, uint32_t state)
 		return 0;
 	}
 
-	if (z_is_thread_timeout_expired(thread)) {
-		return -EAGAIN;
-	}
-
 	z_unpend_thread(thread);
 	arch_thread_return_value_set(thread,
 		state == K_POLL_STATE_CANCELLED ? -EINTR : 0);
