@@ -216,11 +216,16 @@ class TestPlan:
             # in cases where no platform was specified when running the tests.
             # If the platform does not exist in the hardware map, just skip it.
             connected_list = []
-            if not self.options.platform:
+            if self.options.platform:
+                connected_list = self.options.platform
+            else:
                 for connected in self.hwm.duts:
                     if connected['connected']:
                         connected_list.append(connected['platform'])
-
+            if self.options.exclude_platform:
+                for excluded in self.options.exclude_platform:
+                    if excluded in connected_list:
+                        connected_list.remove(excluded)
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
