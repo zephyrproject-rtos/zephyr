@@ -217,6 +217,9 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 	}
 
 	child_dev = (struct acpi_dev *)&acpi.child_dev[acpi.num_dev++];
+	if (!dev_info->HardwareId.String) {
+		goto exit;
+	}
 	child_dev->handle = obj_handle;
 	child_dev->dev_info = dev_info;
 
@@ -241,7 +244,7 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 
 exit:
 
-	return status;
+	return 0;
 }
 
 static int acpi_enum_devices(void)
@@ -345,7 +348,8 @@ int acpi_current_resource_free(ACPI_RESOURCE *res)
 }
 
 #ifdef CONFIG_PCIE_PRT
-static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
+static int acpi_get_irq_table(char *bus_name,
+				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
@@ -368,18 +372,15 @@ static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, 
 		return -EIO;
 	}
 
-	return 0;
-}
-
-static int acpi_retrieve_legacy_irq(void)
-{
-	int ret;
-
-	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	ret = acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
-				 acpi.pci_prt_table, ARRAY_SIZE(acpi.pci_prt_table));
-	if (ret) {
-		return ret;
+	if (rt_table->Source[0]) {
+		/*
+		 * If Name path exist then PCI interrupts are configurable and are not hardwired to
+		 * any specific interrupt inputs on the interrupt controller. OSPM can uses
+		 * _PRS/_CRS/_SRS to configure interrupts. But currently leave existing PCI bus
+		 * driver with arch_irq_allocate() menthod for allocate and configure interrupts
+		 * without conflicting.
+		 */
+		return -ENOENT;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(acpi.pci_prt_table); i++) {
@@ -393,20 +394,6 @@ static int acpi_retrieve_legacy_irq(void)
 	}
 
 	return 0;
-
-}
-
-int acpi_get_irq_routing_table(char *bus_name,
-			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
-{
-	int ret;
-
-	ret = check_init_status();
-	if (ret) {
-		return ret;
-	}
-
-	return acpi_get_irq_table(bus_name, rt_table, rt_size);
 }
 
 uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
@@ -434,6 +421,20 @@ uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
 
 	return UINT_MAX;
 }
+
+int acpi_legacy_irq_init(const char *hid, const char *uid)
+{
+	struct acpi_dev *child_dev = acpi_device_get(hid, uid);
+
+	if (!child_dev) {
+		LOG_ERR("no such PCI bus device %s %s", hid, uid);
+		return -ENODEV;
+	}
+
+	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
+	return acpi_get_irq_table(child_dev->path, acpi.pci_prt_table,
+							  ARRAY_SIZE(acpi.pci_prt_table));
+}
 #endif /* CONFIG_PCIE_PRT */
 
 ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type)
@@ -453,6 +454,107 @@ ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type)
 	}
 
 	return res;
+}
+
+int acpi_device_irq_get(struct acpi_dev *child_dev, struct acpi_irq_resource *irq_res)
+{
+	ACPI_RESOURCE *res = acpi_resource_parse(child_dev->res_lst, ACPI_RESOURCE_TYPE_IRQ);
+
+	if (!res) {
+		res = acpi_resource_parse(child_dev->res_lst, ACPI_RESOURCE_TYPE_EXTENDED_IRQ);
+		if (!res) {
+			return -ENODEV;
+		}
+
+		if (res->Data.ExtendedIrq.InterruptCount > CONFIG_ACPI_IRQ_VECTOR_MAX) {
+			return -ENOMEM;
+		}
+
+		memset(irq_res, 0, sizeof(struct acpi_irq_resource));
+		irq_res->irq_vector_max = res->Data.ExtendedIrq.InterruptCount;
+		for (int i = 0; i < irq_res->irq_vector_max; i++) {
+			irq_res->irqs[i] = (uint16_t)res->Data.ExtendedIrq.Interrupts[i];
+		}
+
+		irq_res->flags = arch_acpi_encode_irq_flags(res->Data.ExtendedIrq.Polarity,
+							    res->Data.ExtendedIrq.Triggering);
+	} else {
+		if (res->Data.Irq.InterruptCount > CONFIG_ACPI_IRQ_VECTOR_MAX) {
+			return -ENOMEM;
+		}
+
+		irq_res->irq_vector_max = res->Data.Irq.InterruptCount;
+		for (int i = 0; i < irq_res->irq_vector_max; i++) {
+			irq_res->irqs[i] = (uint16_t)res->Data.Irq.Interrupts[i];
+		}
+
+		irq_res->flags = arch_acpi_encode_irq_flags(res->Data.ExtendedIrq.Polarity,
+							    res->Data.ExtendedIrq.Triggering);
+	}
+
+	return 0;
+}
+
+int acpi_device_mmio_get(struct acpi_dev *child_dev, struct acpi_mmio_resource *mmio_res)
+{
+	ACPI_RESOURCE *res = child_dev->res_lst;
+	struct acpi_reg_base *reg_base = mmio_res->reg_base;
+	int mmio_cnt = 0;
+
+	memset(mmio_res, 0, sizeof(*mmio_res));
+
+	do {
+		if (!res->Length) {
+			LOG_DBG("Error: zero length found!");
+			break;
+		}
+
+		switch (res->Type) {
+		case ACPI_RESOURCE_TYPE_IO:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_IO;
+			reg_base[mmio_cnt].port = (uint32_t)res->Data.Io.Minimum;
+			reg_base[mmio_cnt++].length = res->Data.Io.AddressLength;
+			break;
+
+		case ACPI_RESOURCE_TYPE_FIXED_IO:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_IO;
+			reg_base[mmio_cnt].port = (uint32_t)res->Data.FixedIo.Address;
+			reg_base[mmio_cnt++].length = res->Data.FixedIo.AddressLength;
+			break;
+
+		case ACPI_RESOURCE_TYPE_MEMORY24:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_MEM;
+			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.Memory24.Minimum;
+			reg_base[mmio_cnt++].length = res->Data.Memory24.AddressLength;
+			break;
+
+		case ACPI_RESOURCE_TYPE_MEMORY32:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_MEM;
+			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.Memory32.Minimum;
+			reg_base[mmio_cnt++].length = res->Data.Memory32.AddressLength;
+			break;
+
+		case ACPI_RESOURCE_TYPE_FIXED_MEMORY32:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_MEM;
+			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.FixedMemory32.Address;
+			reg_base[mmio_cnt++].length = res->Data.FixedMemory32.AddressLength;
+			break;
+		}
+
+		res = ACPI_NEXT_RESOURCE(res);
+		if (mmio_cnt >= CONFIG_ACPI_MMIO_ENTRIES_MAX &&
+			 res->Type != ACPI_RESOURCE_TYPE_END_TAG) {
+			return -ENOMEM;
+		}
+	} while (res->Type != ACPI_RESOURCE_TYPE_END_TAG);
+
+	if (!mmio_cnt) {
+		return -ENODEV;
+	}
+
+	mmio_res->mmio_max = mmio_cnt;
+
+	return 0;
 }
 
 static int acpi_res_type(ACPI_RESOURCE *res)
@@ -513,10 +615,10 @@ int acpi_device_type_get(ACPI_RESOURCE *res)
 	return type;
 }
 
-struct acpi_dev *acpi_device_get(char *hid, int inst)
+struct acpi_dev *acpi_device_get(const char *hid, const char *uid)
 {
 	struct acpi_dev *child_dev;
-	int i = 0, inst_id;
+	int i = 0;
 
 	LOG_DBG("");
 
@@ -537,9 +639,8 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 		}
 
 		if (!strcmp(hid, child_dev->dev_info->HardwareId.String)) {
-			if (child_dev->dev_info->UniqueId.Length) {
-				inst_id = atoi(child_dev->dev_info->UniqueId.String);
-				if (inst_id == inst) {
+			if (uid && child_dev->dev_info->UniqueId.Length) {
+				if (!strcmp(child_dev->dev_info->UniqueId.String, uid)) {
 					return child_dev;
 				}
 			} else {
@@ -749,6 +850,23 @@ ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num)
 	return NULL;
 }
 
+int acpi_invoke_method(char *path, ACPI_OBJECT_LIST *arg_list, ACPI_OBJECT *ret_obj)
+{
+	ACPI_STATUS status;
+	ACPI_BUFFER ret_buff;
+
+	ret_buff.Length = sizeof(*ret_obj);
+	ret_buff.Pointer = ret_obj;
+
+	status = AcpiEvaluateObject(NULL, path, arg_list, &ret_buff);
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("error While executing %s method: %d", path, status);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int acpi_init(void)
 {
 	ACPI_STATUS status;
@@ -769,16 +887,6 @@ static int acpi_init(void)
 	if (ACPI_FAILURE(status)) {
 		LOG_WRN("Error in enable pic mode acpi method:%d", status);
 	}
-
-#ifdef CONFIG_PCIE_PRT
-	int ret = acpi_retrieve_legacy_irq();
-
-	if (ret) {
-		LOG_ERR("Error in retrieve legacy interrupt info:%d", ret);
-		status = AE_ERROR;
-		goto exit;
-	}
-#endif
 
 	acpi_enum_devices();
 
