@@ -1024,8 +1024,8 @@ class TestPlan:
 
 
 def change_skip_to_error_if_integration(options, instance):
-    ''' If integration mode is on all skips on integration_platforms are treated as errors.'''
-    if options.integration and instance.platform.name in instance.testsuite.integration_platforms \
+    ''' All skips on integration_platforms are treated as errors.'''
+    if instance.platform.name in instance.testsuite.integration_platforms \
         and "quarantine" not in instance.reason.lower():
         # Do not treat this as error if filter type is command line
         filters = {t['type'] for t in instance.filters}
