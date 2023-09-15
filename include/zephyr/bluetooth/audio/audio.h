@@ -566,30 +566,14 @@ struct bt_audio_codec_qos_pref {
  * @{
  */
 
-/**
- * @brief Codec parser error codes for @ref bt_audio_codec_cfg.
- */
-enum bt_audio_codec_cfg_parse_err {
-
-	/** @brief The requested type is not present in the data set. */
-	BT_AUDIO_CODEC_PARSE_ERR_SUCCESS               = 0,
-
-	/** @brief The requested type is not present in the data set. */
-	BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND        = -1,
-
-	/** @brief The value found is invalid. */
-	BT_AUDIO_CODEC_PARSE_ERR_INVALID_VALUE_FOUND   = -2,
-
-	/** @brief The parameters specified to the function call are not valid. */
-	BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM         = -3,
-};
-
 /**@brief Extract the frequency from a codec configuration.
  *
  * @param codec_cfg The codec configuration to extract data from.
  *
- * @return The frequency in Hz if found else a negative value of type
- *         @ref bt_audio_codec_cfg_parse_err.
+ *  @retval The frequency in Hz
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
+ *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg);
 
@@ -597,8 +581,10 @@ int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg);
  *
  *  @param codec_cfg The codec configuration to extract data from.
  *
- *  @return Frame duration in microseconds if value is found else a negative value
- *          of type @ref bt_audio_codec_cfg_parse_err.
+ *  @retval Frame duration in microseconds
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
+ *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *codec_cfg);
 
@@ -613,8 +599,10 @@ int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *co
  *  @param codec_cfg The codec configuration to extract data from.
  *  @param chan_allocation Pointer to the variable to store the extracted value in.
  *
- *  @return BT_AUDIO_CODEC_PARSE_SUCCESS if value is found and stored in the pointer provided
- *          else a negative value of type @ref bt_audio_codec_cfg_parse_err.
+ *  @retval 0 if value is found and stored in the pointer provided
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
+ *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *codec_cfg,
 					       enum bt_audio_location *chan_allocation);
@@ -632,8 +620,10 @@ int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *
  *
  *  @param codec_cfg The codec configuration to extract data from.
  *
- *  @return Frame length in octets if value is found else a negative value
- *          of type @ref bt_audio_codec_cfg_parse_err.
+ *  @retval Frame length in octets
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
+ *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *codec_cfg);
 
@@ -652,9 +642,11 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
  *         if the type is not found. In this case the function will only fail if a NULL
  *         pointer is provided.
  *
- *  @return The count of codec frames in each SDU if value is found else a negative value
- *          of type @ref bt_audio_codec_cfg_parse_err - unless when \p fallback_to_default is true
- *          then the value 1 is returned if frames per sdu is not found.
+ *  @retval The count of codec frames in each SDU if value is found else of @p fallback_to_default
+ *          is true then the value 1 is returned if frames per sdu is not found.
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
+ *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default);
