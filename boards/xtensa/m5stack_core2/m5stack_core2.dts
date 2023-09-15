@@ -93,10 +93,9 @@
 	pinctrl-names = "default";
 
 	pfc8563_rtc: pfc8563@51 {
-		compatible = "nxp,pcf8523";
+		compatible = "nxp,pcf8563";
 		reg = <0x51>;
 		status = "okay";
-		battery-switch-over = "disabled";
 	};
 
 	axp192_pmic: axp192@34 {
