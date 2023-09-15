@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <hci_core.h>
 
 #include "bap_endpoint.h"
 #include <zephyr/logging/log.h>
@@ -118,7 +119,15 @@ static struct bt_bap_stream *sink_streams[MAX_STREAMS_COUNT];
 /* A mask for the maximum BIS we can sync to. +1 since the BIS indexes start from 1. */
 static const uint32_t bis_index_mask = BIT_MASK(MAX_STREAMS_COUNT + 1);
 static uint32_t bis_index_bitfield;
+static uint32_t requested_bis_sync;
 #define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
+#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
+#define PA_SYNC_SKIP              5
+/* Sample assumes that we only have a single Scan Delegator receive state */
+static const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
+static const struct bt_bap_scan_delegator_recv_state *broadcast_recv_state;
+static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+static struct bt_bap_scan_delegator_subgroup delegator_subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 
 static bool print_cb(struct bt_data *data, void *user_data)
 {
@@ -237,10 +246,8 @@ static void btp_send_ascs_operation_completed_ev(struct bt_conn *conn, uint8_t a
 						 uint8_t opcode, uint8_t status)
 {
 	struct btp_ascs_operation_completed_ev ev;
-	struct bt_conn_info info;
 
-	(void)bt_conn_get_info(conn, &info);
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.ase_id = ase_id;
 	ev.opcode = opcode;
 	ev.status = status;
@@ -252,10 +259,8 @@ static void btp_send_ascs_operation_completed_ev(struct bt_conn *conn, uint8_t a
 static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id, uint8_t state)
 {
 	struct btp_ascs_ase_state_changed_ev ev;
-	struct bt_conn_info info;
 
-	(void)bt_conn_get_info(conn, &info);
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.ase_id = ase_id;
 	ev.state = state;
 
@@ -487,18 +492,15 @@ static void btp_send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *
 					uint8_t data_len, uint8_t *data)
 {
 	struct btp_bap_stream_received_ev *ev;
-	struct bt_conn_info info;
 
 	LOG_DBG("Stream received, ep %d, dir %d, len %d", ep->status.id, ep->dir,
 		data_len);
-
-	(void)bt_conn_get_info(conn, &info);
 
 	net_buf_simple_init(rx_ev_buf, 0);
 
 	ev = net_buf_simple_add(rx_ev_buf, sizeof(*ev));
 
-	bt_addr_le_copy(&ev->address, info.le.dst);
+	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
 	ev->ase_id = ep->status.id;
 	ev->data_len = data_len;
@@ -680,6 +682,7 @@ static void stream_started(struct bt_bap_stream *stream)
 	}
 
 	if (a_stream->broadcast) {
+		a_stream->bis_synced = true;
 		btp_send_bis_syced_ev(&broadcaster_addr, broadcaster_broadcast_id,
 				      a_stream->bis_id);
 	} else {
@@ -701,6 +704,8 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 	if (!a_stream->broadcast) {
 		btp_send_ascs_operation_completed_ev(stream->conn, a_stream->ase_id,
 						     BT_ASCS_STOP_OP, BTP_STATUS_SUCCESS);
+	} else {
+		a_stream->bis_synced = false;
 	}
 }
 
@@ -747,10 +752,8 @@ static struct bt_bap_stream_ops stream_ops = {
 static void btp_send_discovery_completed_ev(struct bt_conn *conn, uint8_t status)
 {
 	struct btp_bap_discovery_completed_ev ev;
-	struct bt_conn_info info;
 
-	(void) bt_conn_get_info(conn, &info);
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.status = status;
 
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_DISCOVERY_COMPLETED, &ev, sizeof(ev));
@@ -807,11 +810,9 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 					enum bt_audio_dir dir)
 {
 	struct btp_bap_codec_cap_found_ev ev;
-	struct bt_conn_info info;
 	const uint8_t *data;
 
-	(void)bt_conn_get_info(conn, &info);
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.dir = dir;
 	ev.coding_format = codec_cap->id;
@@ -838,10 +839,8 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	struct btp_ascs_ase_found_ev ev;
-	struct bt_conn_info info;
 
-	(void)bt_conn_get_info(conn, &info);
-	bt_addr_le_copy(&ev.address, info.le.dst);
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.ase_id = ep->status.id;
 	ev.dir = ep->dir;
@@ -1418,6 +1417,8 @@ static uint8_t broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 static int broadcast_sink_reset(void)
 {
 	bis_index_bitfield = 0U;
+	sink_recv_state = NULL;
+	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
 	(void)memset(broadcaster, 0, sizeof(*broadcaster));
 	broadcaster_broadcast_id = INVALID_BROADCAST_ID;
@@ -1433,17 +1434,19 @@ static void btp_send_baa_found_ev(const bt_addr_le_t *address, uint32_t broadcas
 	bt_addr_le_copy(&ev.address, address);
 	sys_put_le24(broadcast_id, ev.broadcast_id);
 	ev.advertiser_sid = sid;
-	ev.padv_interval = interval;
+	ev.padv_interval = sys_cpu_to_le16(interval);
 
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BAA_FOUND, &ev, sizeof(ev));
 }
 
-static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
+static bool baa_check(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
+
+	/* Parse the scanned Broadcast Audio Announcement */
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true;
@@ -1465,8 +1468,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	LOG_DBG("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X", broadcast_id,
-		le_addr, info->sid);
+	LOG_DBG("Found BAA with ID 0x%06X, addr %s, sid 0x%02X, interval 0x%04X",
+		broadcast_id, le_addr, info->sid, info->interval);
 
 	btp_send_baa_found_ev(info->addr, broadcast_id, info->sid, info->interval);
 
@@ -1478,7 +1481,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 {
 	/* If 0 there is no periodic advertising. */
 	if (info->interval != 0U) {
-		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
+		bt_data_parse(ad, baa_check, (void *)info);
 	}
 }
 
@@ -1526,8 +1529,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	LOG_DBG("Received BASE with %u subgroups from broadcast sink %p", base->subgroup_count,
-		sink);
+	LOG_DBG("Received BASE: broadcast sink %p subgroups %u", sink, base->subgroup_count);
 
 	for (size_t i = 0U; i < base->subgroup_count; i++) {
 		for (size_t j = 0U; j < base->subgroups[i].bis_count; j++) {
@@ -1546,15 +1548,29 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	LOG_DBG("bis_index_bitfield 0x%08x", bis_index_bitfield);
 }
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 {
 	int err;
+	uint32_t index_bitfield;
 
-	LOG_DBG("");
+	LOG_DBG("PA found, encrypted %d, requested_bis_sync %d", encrypted, requested_bis_sync);
 
-	err = bt_bap_broadcast_sink_sync(broadcast_sink, bis_index_bitfield, sink_streams, NULL);
+	if (encrypted) {
+		/* Wait for Set Broadcast Code and start sync at broadcast_code_cb */
+		return;
+	}
+
+	if (!requested_bis_sync) {
+		/* No sync with any BIS was requested yet */
+		return;
+	}
+
+	index_bitfield = bis_index_bitfield & requested_bis_sync;
+	err = bt_bap_broadcast_sink_sync(broadcast_sink, index_bitfield, sink_streams,
+					 sink_broadcast_code);
 	if (err != 0) {
 		LOG_DBG("Unable to sync to broadcast source: %d", err);
 	}
@@ -1565,21 +1581,36 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.syncable = syncable_cb,
 };
 
+static void pa_timer_handler(struct k_work *work)
+{
+	if (broadcast_recv_state != NULL) {
+		enum bt_bap_pa_state pa_state;
+
+		if (broadcast_recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+			pa_state = BT_BAP_PA_STATE_NO_PAST;
+		} else {
+			pa_state = BT_BAP_PA_STATE_FAILED;
+		}
+
+		bt_bap_scan_delegator_set_pa_state(broadcast_recv_state->src_id,
+						   pa_state);
+	}
+
+	LOG_DBG("PA timeout");
+}
+
+static K_WORK_DELAYABLE_DEFINE(pa_timer, pa_timer_handler);
+
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
 	int err;
-	struct bt_le_per_adv_sync *pa_sync;
 
-	LOG_DBG("");
+	LOG_DBG("Sync info: service_data 0x%04X", info->service_data);
 
-	pa_sync = tester_gap_padv_get();
+	k_work_cancel_delayable(&pa_timer);
 
-	if (sync != pa_sync) {
-		return;
-	}
-
-	err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &broadcast_sink);
+	err = bt_bap_broadcast_sink_create(sync, broadcaster_broadcast_id, &broadcast_sink);
 	if (err != 0) {
 		LOG_DBG("Failed to create broadcast sink: ID 0x%06X, err %d",
 			broadcaster_broadcast_id, err);
@@ -1588,6 +1619,203 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 
 static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.synced = bap_pa_sync_synced_cb,
+};
+
+static void btp_send_pas_sync_req_ev(struct bt_conn *conn, uint8_t src_id,
+				     uint8_t advertiser_sid, uint32_t broadcast_id,
+				     bool past_avail, uint16_t pa_interval)
+{
+	struct btp_bap_pa_sync_req_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+	ev.src_id = src_id;
+	ev.advertiser_sid = advertiser_sid;
+	sys_put_le24(broadcast_id, ev.broadcast_id);
+	ev.past_avail = past_avail;
+	ev.pa_interval = sys_cpu_to_le16(pa_interval);
+
+	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_PA_SYNC_REQ, &ev, sizeof(ev));
+}
+
+static void btp_send_scan_delegator_found_ev(struct bt_conn *conn)
+{
+	struct btp_bap_scan_delegator_found_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+
+	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_SCAN_DELEGATOR_FOUND, &ev, sizeof(ev));
+}
+
+static void btp_send_broadcast_receive_state_ev(struct bt_conn *conn,
+	const struct bt_bap_scan_delegator_recv_state *state)
+{
+	struct btp_bap_broadcast_receive_state_ev *ev;
+	size_t len;
+	uint8_t *ptr;
+
+	tester_rsp_buffer_lock();
+	tester_rsp_buffer_allocate(sizeof(*ev) + BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS *
+		sizeof(struct bt_bap_scan_delegator_subgroup), (uint8_t **)&ev);
+
+	if (conn) {
+		bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
+	} else {
+		(void)memset(&ev->address, 0, sizeof(ev->address));
+	}
+
+	ev->src_id = state->src_id;
+	bt_addr_le_copy(&ev->broadcaster_address, &state->addr);
+	ev->advertiser_sid = state->adv_sid;
+	sys_put_le24(state->broadcast_id, ev->broadcast_id);
+	ev->pa_sync_state = state->pa_sync_state;
+	ev->big_encryption = state->encrypt_state;
+	ev->num_subgroups = state->num_subgroups;
+
+	ptr = ev->subgroups;
+	for (uint8_t i = 0; i < ev->num_subgroups; i++) {
+		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
+
+		sys_put_le32(subgroup->bis_sync >> 1, ptr);
+		ptr += sizeof(subgroup->bis_sync);
+		*ptr = subgroup->metadata_len;
+		ptr += sizeof(subgroup->metadata_len);
+		memcpy(ptr, subgroup->metadata, subgroup->metadata_len);
+		ptr += subgroup->metadata_len;
+	}
+
+	len = sizeof(*ev) + ptr - ev->subgroups;
+	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_BROADCAST_RECEIVE_STATE, ev, len);
+
+	tester_rsp_buffer_free();
+	tester_rsp_buffer_unlock();
+}
+
+static int pa_sync_past(struct bt_conn *conn, uint16_t sync_timeout)
+{
+	struct bt_le_per_adv_sync_transfer_param param = { 0 };
+	int err;
+
+	param.skip = PA_SYNC_SKIP;
+	param.timeout = sync_timeout;
+
+	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
+	if (err != 0) {
+		LOG_DBG("Could not do PAST subscribe: %d", err);
+	} else {
+		LOG_DBG("Syncing with PAST: %d", err);
+		(void)k_work_reschedule(&pa_timer, K_MSEC(param.timeout * 10));
+	}
+
+	return err;
+}
+
+static int pa_sync_req_cb(struct bt_conn *conn,
+			  const struct bt_bap_scan_delegator_recv_state *recv_state,
+			  bool past_avail, uint16_t pa_interval)
+{
+	LOG_DBG("sync state %d ", recv_state->pa_sync_state);
+
+	sink_recv_state = recv_state;
+	broadcast_recv_state = recv_state;
+
+	btp_send_pas_sync_req_ev(conn, recv_state->src_id, recv_state->adv_sid,
+				 recv_state->broadcast_id, past_avail, pa_interval);
+
+	return 0;
+}
+
+static int pa_sync_term_req_cb(struct bt_conn *conn,
+			       const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	LOG_DBG("");
+
+	sink_recv_state = recv_state;
+
+	tester_gap_padv_stop_sync();
+
+	return 0;
+}
+
+static void broadcast_code_cb(struct bt_conn *conn,
+			      const struct bt_bap_scan_delegator_recv_state *recv_state,
+			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+{
+	int err;
+	uint32_t index_bitfield;
+
+	LOG_DBG("Broadcast code received for %p", recv_state);
+
+	sink_recv_state = recv_state;
+
+	(void)memcpy(sink_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+
+	if (!requested_bis_sync) {
+		return;
+	}
+
+	index_bitfield = bis_index_bitfield & requested_bis_sync;
+	err = bt_bap_broadcast_sink_sync(broadcast_sink, index_bitfield, sink_streams,
+					 sink_broadcast_code);
+	if (err != 0) {
+		LOG_DBG("Unable to sync to broadcast source: %d", err);
+	}
+}
+
+static int bis_sync_req_cb(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   const uint32_t bis_sync_req[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS])
+{
+	bool bis_synced = false;
+
+	LOG_DBG("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
+
+	for (int i = 0; i < MAX_STREAMS_COUNT; i++) {
+		if (broadcaster->streams[i].bis_synced) {
+			bis_synced = true;
+			break;
+		}
+	}
+
+	/* We only care about a single subgroup in this sample */
+	if (bis_synced) {
+		/* If the BIS sync request is received while we are already
+		 * synced, it means that the requested BIS sync has changed.
+		 */
+		int err;
+
+		/* The stream stopped callback will be called as part of this,
+		 * and we do not need to wait for any events from the
+		 * controller. Thus, when this returns, the `bis_synced`
+		 * is back to false.
+		 */
+		err = bt_bap_broadcast_sink_stop(broadcast_sink);
+		if (err != 0) {
+			LOG_DBG("Failed to stop Broadcast Sink: %d", err);
+
+			return err;
+		}
+	}
+
+	requested_bis_sync = bis_sync_req[0];
+	broadcaster_broadcast_id = recv_state->broadcast_id;
+
+	return 0;
+}
+
+static void recv_state_updated_cb(struct bt_conn *conn,
+				  const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	LOG_DBG("Receive state with ID %u updated", recv_state->src_id);
+
+	btp_send_broadcast_receive_state_ev(conn, recv_state);
+}
+
+static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.recv_state_updated = recv_state_updated_cb,
+	.pa_sync_req = pa_sync_req_cb,
+	.pa_sync_term_req = pa_sync_term_req_cb,
+	.broadcast_code = broadcast_code_cb,
+	.bis_sync_req = bis_sync_req_cb,
 };
 
 static uint8_t broadcast_sink_setup(const void *cmd, uint16_t cmd_len,
@@ -1608,8 +1836,14 @@ static uint8_t broadcast_sink_setup(const void *cmd, uint16_t cmd_len,
 		sink_streams[i]->ops = &stream_ops;
 	}
 
+	/* For Scan Delegator role */
+	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
+
+	/* For Broadcast Sink role */
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
+
+	/* For Broadcast Sink or Broadcast Assistant role */
 	bt_le_scan_cb_register(&bap_scan_cb);
 
 	return BTP_STATUS_SUCCESS;
@@ -1668,35 +1902,36 @@ static uint8_t broadcast_sink_sync(const void *cmd, uint16_t cmd_len,
 				   void *rsp, uint16_t *rsp_len)
 {
 	int err;
+	struct bt_conn *conn;
 	const struct btp_bap_broadcast_sink_sync_cmd *cp = cmd;
 	struct bt_le_per_adv_sync_param create_params = {0};
 
 	LOG_DBG("");
 
-	/* Sink Sync steps:
-	 * 1. bt_le_per_adv_sync_create()
-	 * 2. bap_pa_sync_synced_cb()
-	 * 3. bt_bap_broadcast_sink_create()
-	 * 4. - base_recv_cb()
-	 *    - syncable_cb()
-	 *    - broadcast_code_cb() <- only with scan delegator
-	 *    - bis_sync_req_cb() <- only for scan delegator
-	 * 5. bt_bap_broadcast_sink_sync()
-	 * 6. stream_started()
-	 * 7. stream_recv_cb()
-	 * 8. bap_pa_sync_terminated_cb()
-	 * 9. stream_stopped_cb()
-	 */
-
 	broadcaster_broadcast_id = sys_get_le24(cp->broadcast_id);
 	bt_addr_le_copy(&broadcaster_addr, &cp->address);
-	bt_addr_le_copy(&create_params.addr, &cp->address);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
-	create_params.sid = cp->advertiser_sid;
-	create_params.skip = cp->skip;
-	create_params.timeout = cp->sync_timeout;
 
-	err = tester_padv_create_sync(&create_params);
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER) && cp->past_avail) {
+		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+		if (!conn) {
+			return BTP_STATUS_FAILED;
+		}
+
+		err = bt_bap_scan_delegator_set_pa_state(cp->src_id, BT_BAP_PA_STATE_INFO_REQ);
+		if (err != 0) {
+			LOG_DBG("Failed to set INFO_REQ state: %d", err);
+		}
+
+		err = pa_sync_past(conn, cp->sync_timeout);
+	} else {
+		bt_addr_le_copy(&create_params.addr, &cp->address);
+		create_params.options = 0;
+		create_params.sid = cp->advertiser_sid;
+		create_params.skip = cp->skip;
+		create_params.timeout = cp->sync_timeout;
+		err = tester_gap_padv_create_sync(&create_params);
+	}
+
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1711,9 +1946,373 @@ static uint8_t broadcast_sink_stop(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
+	requested_bis_sync = 0;
+
 	err = bt_bap_broadcast_sink_stop(broadcast_sink);
 	if (err != 0) {
 		LOG_DBG("Unable to sync to broadcast source: %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	err = tester_gap_padv_stop_sync();
+	if (err != 0) {
+		LOG_DBG("Failed to stop PA sync, %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const struct btp_bap_broadcast_sink_bis_sync_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	if (cp->requested_bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+		requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
+	} else {
+		/* For semantic purposes Zephyr API uses BIS Index bitfield
+		 * where BIT(1) means BIS Index 1
+		 */
+		requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync) << 1;
+	}
+
+	err = bt_bap_broadcast_sink_sync(broadcast_sink, requested_bis_sync, sink_streams,
+					 sink_broadcast_code);
+	if (err != 0) {
+		LOG_DBG("Unable to sync to BISes, req_bis_sync %d, err %d", requested_bis_sync,
+			err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
+						uint8_t recv_state_count)
+{
+	LOG_DBG("err %d", err);
+
+	if (err != 0) {
+		LOG_DBG("BASS discover failed (%d)", err);
+	} else {
+		LOG_DBG("BASS discover done with %u recv states", recv_state_count);
+
+		btp_send_scan_delegator_found_ev(conn);
+	}
+}
+
+static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
+					    uint32_t broadcast_id)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	LOG_DBG("[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u), SID 0x%x, RSSI %i", le_addr,
+		broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval), info->sid, info->rssi);
+}
+
+static void bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
+	const struct bt_bap_scan_delegator_recv_state *state)
+{
+	LOG_DBG("err: %d", err);
+
+	if (err != 0 || state == NULL) {
+		return;
+	}
+
+	btp_send_broadcast_receive_state_ev(conn, state);
+}
+
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, int err,
+							  uint8_t src_id)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
+{
+	LOG_DBG("err: %d", err);
+}
+
+static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cb = {
+	.discover = bap_broadcast_assistant_discover_cb,
+	.scan = bap_broadcast_assistant_scan_cb,
+	.recv_state = bap_broadcast_assistant_recv_state_cb,
+	.recv_state_removed = bap_broadcast_assistant_recv_state_removed_cb,
+	.scan_start = bap_broadcast_assistant_scan_start_cb,
+	.scan_stop = bap_broadcast_assistant_scan_stop_cb,
+	.add_src = bap_broadcast_assistant_add_src_cb,
+	.mod_src = bap_broadcast_assistant_mod_src_cb,
+	.broadcast_code = bap_broadcast_assistant_broadcast_code_cb,
+	.rem_src = bap_broadcast_assistant_rem_src_cb,
+};
+
+static uint8_t broadcast_discover_scan_delegators(const void *cmd, uint16_t cmd_len,
+						  void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct bt_conn *conn;
+	const struct btp_bap_discover_scan_delegators_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_assistant_discover(conn);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_scan_start(const void *cmd, uint16_t cmd_len,
+					      void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct bt_conn *conn;
+	const struct btp_bap_broadcast_assistant_scan_start_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_assistant_scan_start(conn, true);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_scan_stop(const void *cmd, uint16_t cmd_len,
+					     void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct bt_conn *conn;
+	const struct btp_bap_broadcast_assistant_scan_stop_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_assistant_scan_stop(conn);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len,
+					   void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const uint8_t *ptr;
+	struct bt_conn *conn;
+	const struct btp_bap_add_broadcast_src_cmd *cp = cmd;
+	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
+	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
+	param.adv_sid = cp->advertiser_sid;
+	param.pa_sync = cp->padv_sync > 0 ? true : false;
+	param.broadcast_id = sys_get_le24(cp->broadcast_id);
+	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
+	param.num_subgroups = MIN(cp->num_subgroups, BROADCAST_SNK_SUBGROUP_CNT);
+	param.subgroups = delegator_subgroups;
+
+	ptr = cp->subgroups;
+	for (uint8_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup = &delegator_subgroups[i];
+
+		subgroup->bis_sync = sys_get_le32(ptr);
+		ptr += sizeof(subgroup->bis_sync);
+		subgroup->metadata_len = *ptr;
+		ptr += sizeof(subgroup->metadata_len);
+		memcpy(subgroup->metadata, ptr, subgroup->metadata_len);
+		ptr += subgroup->metadata_len;
+	}
+
+	err = bt_bap_broadcast_assistant_add_src(conn, &param);
+	if (err != 0) {
+		LOG_DBG("err %d", err);
+
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_remove_src(const void *cmd, uint16_t cmd_len,
+					      void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct bt_conn *conn;
+	const struct btp_bap_remove_broadcast_src_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_assistant_rem_src(conn, cp->src_id);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len,
+					      void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const uint8_t *ptr;
+	struct bt_conn *conn;
+	const struct btp_bap_modify_broadcast_src_cmd *cp = cmd;
+	struct bt_bap_broadcast_assistant_mod_src_param param = { 0 };
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
+	param.src_id = cp->src_id;
+	param.pa_sync = cp->padv_sync > 0 ? true : false;
+	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
+	param.num_subgroups = MIN(cp->num_subgroups, BROADCAST_SNK_SUBGROUP_CNT);
+	param.subgroups = delegator_subgroups;
+
+	ptr = cp->subgroups;
+	for (uint8_t i = 0; i < param.num_subgroups; i++) {
+		struct bt_bap_scan_delegator_subgroup *subgroup = &delegator_subgroups[i];
+
+		subgroup->bis_sync = sys_get_le32(ptr);
+		ptr += sizeof(subgroup->bis_sync);
+		subgroup->metadata_len = *ptr;
+		ptr += sizeof(subgroup->metadata_len);
+		memcpy(subgroup->metadata, ptr, subgroup->metadata_len);
+		ptr += subgroup->metadata_len;
+	}
+
+	err = bt_bap_broadcast_assistant_mod_src(conn, &param);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_set_broadcast_code(const void *cmd, uint16_t cmd_len,
+						      void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	struct bt_conn *conn;
+	const struct btp_bap_set_broadcast_code_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_bap_broadcast_assistant_set_broadcast_code(conn, cp->src_id, cp->broadcast_code);
+	if (err != 0) {
+		LOG_DBG("err %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
+					     void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	uint16_t service_data;
+	struct bt_conn *conn;
+	struct bt_le_per_adv_sync *pa_sync;
+	const struct btp_bap_send_past_cmd *cp = cmd;
+
+	LOG_DBG("");
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	pa_sync = tester_gap_padv_get();
+	if (!pa_sync) {
+		LOG_DBG("Could not send PAST to Scan Delegator");
+
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Sending PAST");
+
+	/* If octet 0 is set to 0, it means AdvA in PAST matches AdvA in ADV_EXT_IND.
+	 * Octet 1 shall be set to Source_ID.
+	 */
+	service_data = cp->src_id << 8;
+
+	err = bt_le_per_adv_sync_transfer(pa_sync, conn, service_data);
+	if (err != 0) {
+		LOG_DBG("Could not transfer periodic adv sync: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -2698,6 +3297,51 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = sizeof(struct btp_bap_broadcast_sink_stop_cmd),
 		.func = broadcast_sink_stop,
 	},
+	{
+		.opcode = BTP_BAP_BROADCAST_SINK_BIS_SYNC,
+		.expect_len = sizeof(struct btp_bap_broadcast_sink_bis_sync_cmd),
+		.func = broadcast_sink_bis_sync,
+	},
+	{
+		.opcode = BTP_BAP_DISCOVER_SCAN_DELEGATORS,
+		.expect_len = sizeof(struct btp_bap_discover_scan_delegators_cmd),
+		.func = broadcast_discover_scan_delegators,
+	},
+	{
+		.opcode = BTP_BAP_BROADCAST_ASSISTANT_SCAN_START,
+		.expect_len = sizeof(struct btp_bap_broadcast_assistant_scan_start_cmd),
+		.func = broadcast_assistant_scan_start,
+	},
+	{
+		.opcode = BTP_BAP_BROADCAST_ASSISTANT_SCAN_STOP,
+		.expect_len = sizeof(struct btp_bap_broadcast_assistant_scan_stop_cmd),
+		.func = broadcast_assistant_scan_stop,
+	},
+	{
+		.opcode = BTP_BAP_ADD_BROADCAST_SRC,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = broadcast_assistant_add_src,
+	},
+	{
+		.opcode = BTP_BAP_REMOVE_BROADCAST_SRC,
+		.expect_len = sizeof(struct btp_bap_remove_broadcast_src_cmd),
+		.func = broadcast_assistant_remove_src,
+	},
+	{
+		.opcode = BTP_BAP_MODIFY_BROADCAST_SRC,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = broadcast_assistant_modify_src,
+	},
+	{
+		.opcode = BTP_BAP_SET_BROADCAST_CODE,
+		.expect_len = sizeof(struct btp_bap_set_broadcast_code_cmd),
+		.func = broadcast_assistant_set_broadcast_code,
+	},
+	{
+		.opcode = BTP_BAP_SEND_PAST,
+		.expect_len = sizeof(struct btp_bap_send_past_cmd),
+		.func = broadcast_assistant_send_past,
+	},
 };
 
 uint8_t tester_init_pacs(void)
@@ -2766,6 +3410,9 @@ uint8_t tester_init_bap(void)
 		LOG_DBG("Failed to register client callbacks: %d", err);
 		return BTP_STATUS_FAILED;
 	}
+
+	/* For Broadcast Assistant role */
+	bt_bap_broadcast_assistant_register_cb(&broadcast_assistant_cb);
 
 	k_work_queue_init(&iso_data_work_q);
 	k_work_queue_start(&iso_data_work_q, iso_data_thread_stack_area,

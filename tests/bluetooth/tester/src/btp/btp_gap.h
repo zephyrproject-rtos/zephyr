@@ -456,5 +456,6 @@ int tester_gap_padv_configure(const struct bt_le_per_adv_param *param);
 int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len);
 int tester_gap_padv_start(void);
 int tester_gap_padv_stop(void);
-int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
+int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
+int tester_gap_padv_stop_sync(void);
 #endif /* defined(CONFIG_BT_EXT_ADV) */

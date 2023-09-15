@@ -1,4 +1,4 @@
-/* btp_bap.h - Bluetooth tester headers */
+/* btp_ascs.h - Bluetooth tester headers */
 
 /*
  * Copyright (c) 2023 Codecoup
