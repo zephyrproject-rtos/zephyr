@@ -457,6 +457,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x40130000 0x10000>;
 			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI0_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -467,6 +468,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x40140000 0x10000>;
 			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI1_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -477,6 +479,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x40930000 0x10000>;
 			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI2_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -487,6 +490,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x40940000 0x10000>;
 			interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI3_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -497,6 +501,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x40950000 0x10000>;
 			interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI4_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -507,6 +512,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x42130000 0x10000>;
 			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI5_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -517,6 +523,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x42140000 0x10000>;
 			interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI6_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -527,6 +534,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x42150000 0x10000>;
 			interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI7_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -537,6 +545,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x42930000 0x10000>;
 			interrupts = <GIC_SPI 199 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI8_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -547,6 +556,7 @@
 			compatible = "nxp,s32-spi";
 			reg = <0x42940000 0x10000>;
 			interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI9_CLK>;
 			num-cs = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
