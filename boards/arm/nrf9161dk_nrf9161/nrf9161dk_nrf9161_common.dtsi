@@ -128,7 +128,7 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
-		spi-flash0 = &gd25lb256;
+		spi-flash0 = &gd25wb256;
 	};
 };
 
@@ -195,22 +195,22 @@ arduino_spi: &spi3 {
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 
-	gd25lb256: gd25lb256e3ir@1 {
+	gd25wb256: gd25wb256e3ir@1 {
 		compatible = "jedec,spi-nor";
 		status = "disabled";
 		reg = <1>;
-		spi-max-frequency = <60000000>;
-		jedec-id = [c8 67 19];
-		sfdp-bfp = [
-			e5 20 ea ff  ff ff ff 0f  44 eb 08 6b  00 3b 00 bb
-			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
-			10 d8 00 ff  d5 31 b1 fe  82 e4 14 4c  ec 60 06 33
-			7a 75 7a 75  04 bd d5 5c  29 06 74 00  08 50 00 01
-		];
+		spi-max-frequency = <8000000>;
 		size = <268435456>;
 		has-dpd;
 		t-enter-dpd = <3000>;
-		t-exit-dpd = <30000>;
+		t-exit-dpd = <40000>;
+		sfdp-bfp = [
+			e5 20 f3 ff  ff ff ff 0f  44 eb 08 6b  08 3b 42 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  44 7a c9 fe  83 67 26 62  ec 82 18 44
+			7a 75 7a 75  04 c4 d5 5c  00 06 74 00  08 50 00 01
+			];
+		jedec-id = [c8 65 19];
 	};
 };
 
