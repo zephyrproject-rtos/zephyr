@@ -591,7 +591,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_script_run(&data->chat, config->init_chat_script);
+		modem_chat_run_script_async(&data->chat, config->init_chat_script);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -740,7 +740,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_chat_attach(&data->chat, data->dlci1_pipe);
-		modem_chat_script_run(&data->chat, config->dial_chat_script);
+		modem_chat_run_script_async(&data->chat, config->dial_chat_script);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
