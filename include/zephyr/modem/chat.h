@@ -38,17 +38,17 @@ struct modem_chat_match {
 	/** Match array */
 	const uint8_t *match;
 	/** Size of match */
-	const uint8_t match_size;
+	uint8_t match_size;
 	/** Separators array */
 	const uint8_t *separators;
 	/** Size of separators array */
-	const uint8_t separators_size;
+	uint8_t separators_size;
 	/** Set if modem chat instance shall use wildcards when matching */
-	const uint8_t wildcards : 1;
+	uint8_t wildcards : 1;
 	/** Set if script shall not continue to next step in case of match */
-	const uint8_t partial : 1;
+	uint8_t partial : 1;
 	/** Type of modem chat instance */
-	const modem_chat_match_callback callback;
+	modem_chat_match_callback callback;
 };
 
 #define MODEM_CHAT_MATCH(_match, _separators, _callback)                                           \
@@ -92,10 +92,10 @@ struct modem_chat_script_chat {
 	const uint8_t *request;
 	/** Size of request */
 	uint8_t request_size;
-	/** Array of expected responses to request */
-	const struct modem_chat_match *const response_matches;
+	/** Expected responses to request */
+	const struct modem_chat_match *response_matches;
 	/** Number of elements in expected responses */
-	const uint16_t response_matches_size;
+	uint16_t response_matches_size;
 	/** Timeout before chat script may continue to next step in milliseconds */
 	uint16_t timeout;
 };
@@ -128,7 +128,7 @@ struct modem_chat_script_chat {
 	}
 
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                                                   \
-	const static struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
+	const struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
 
 enum modem_chat_script_result {
 	MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
@@ -155,15 +155,15 @@ struct modem_chat_script {
 	/** Array of script chats */
 	const struct modem_chat_script_chat *script_chats;
 	/** Elements in array of script chats */
-	const uint16_t script_chats_size;
+	uint16_t script_chats_size;
 	/** Array of abort matches */
-	const struct modem_chat_match *const abort_matches;
+	const struct modem_chat_match *abort_matches;
 	/** Number of elements in array of abort matches */
-	const uint16_t abort_matches_size;
+	uint16_t abort_matches_size;
 	/** Callback called when script execution terminates */
 	modem_chat_script_callback callback;
 	/** Timeout in seconds within which the script execution must terminate */
-	const uint32_t timeout;
+	uint32_t timeout;
 };
 
 #define MODEM_CHAT_SCRIPT_DEFINE(_sym, _script_chats, _abort_matches, _callback, _timeout)         \
