@@ -12,11 +12,6 @@
 
 #include <OsIf.h>
 
-#ifdef CONFIG_INIT_CLOCK_AT_BOOT_TIME
-#include <Clock_Ip.h>
-#include <Clock_Ip_Cfg.h>
-#endif
-
 void z_arm_platform_init(void)
 {
 	/* enable peripheral port access at EL1 and EL0 */
@@ -46,11 +41,6 @@ void z_arm_platform_init(void)
 static int soc_init(void)
 {
 	OsIf_Init(NULL);
-
-#ifdef CONFIG_INIT_CLOCK_AT_BOOT_TIME
-	/* Initialize clocks with tool generated code */
-	Clock_Ip_Init(Clock_Ip_aClockConfig);
-#endif
 
 	return 0;
 }
