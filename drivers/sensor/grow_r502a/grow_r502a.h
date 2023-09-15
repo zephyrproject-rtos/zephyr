@@ -190,7 +190,6 @@ struct grow_r502a_data {
 	uint16_t finger_id;
 	uint16_t matching_score;
 	uint16_t template_count;
-	int8_t free_idx;
 };
 
 struct grow_r502a_config {
