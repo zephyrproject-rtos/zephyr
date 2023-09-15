@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samr21.dtsi>
+#include <atmel/samx2xx18.dtsi>
 #include "atsamr21_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
