@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP S32 SPI controller
@@ -20,11 +20,8 @@ properties:
     description: |
       The number of the Chip Select signals.
 
-  clock-frequency:
-    type: int
+  clocks:
     required: true
-    description: |
-      Module clock frequency in Hz.
 
   pinctrl-0:
     required: true

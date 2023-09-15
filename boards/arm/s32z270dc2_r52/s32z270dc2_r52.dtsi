@@ -7,46 +7,6 @@
 #include <arm/nxp/nxp_s32z27x_r52.dtsi>
 #include "s32z270dc2_r52-pinctrl-common.dtsi"
 
-&spi0 {
-	clock-frequency = <100000000>;
-};
-
-&spi1 {
-	clock-frequency = <100000000>;
-};
-
-&spi2 {
-	clock-frequency = <100000000>;
-};
-
-&spi3 {
-	clock-frequency = <120000000>;
-};
-
-&spi4 {
-	clock-frequency = <120000000>;
-};
-
-&spi5 {
-	clock-frequency = <120000000>;
-};
-
-&spi6 {
-	clock-frequency = <120000000>;
-};
-
-&spi7 {
-	clock-frequency = <100000000>;
-};
-
-&spi8 {
-	clock-frequency = <100000000>;
-};
-
-&spi9 {
-	clock-frequency = <100000000>;
-};
-
 &stm0 {
 	clock-frequency = <133333333>;
 };
