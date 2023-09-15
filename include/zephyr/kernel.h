@@ -5814,6 +5814,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 
 /**
+ * @cond INTERNAL_HIDDEN
  * @internal
  */
 #ifdef ARCH_EXCEPT
@@ -5840,6 +5841,9 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 	} while (false)
 
 #endif /* _ARCH__EXCEPT */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Fatally terminate a thread
@@ -5863,6 +5867,10 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  * will be called will reason code K_ERR_KERNEL_PANIC.
  */
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 /*
  * private APIs that are utilized by one or more public APIs
@@ -5901,6 +5909,9 @@ void z_smp_thread_swap(void);
  * @internal
  */
 extern void z_timer_expiration_handler(struct _timeout *t);
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 #ifdef CONFIG_PRINTK
 /**
