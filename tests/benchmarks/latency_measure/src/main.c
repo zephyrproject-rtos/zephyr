@@ -46,9 +46,10 @@ int error_count; /* track number of errors */
 
 extern void thread_switch_yield(uint32_t num_iterations, bool is_cooperative);
 extern void int_to_thread(uint32_t num_iterations);
-extern void sema_test_signal(void);
+extern void sema_test_signal(uint32_t num_iterations, uint32_t options);
 extern void mutex_lock_unlock(void);
-extern int sema_context_switch(void);
+extern void sema_context_switch(uint32_t num_iterations,
+				uint32_t start_options, uint32_t alt_options);
 extern int thread_ops(uint32_t num_iterations, uint32_t start_options,
 		      uint32_t alt_options);
 extern void heap_malloc_free(void);
@@ -92,9 +93,17 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	thread_ops(NUM_ITERATIONS, K_USER, 0);
 #endif
 
-	sema_test_signal();
+	sema_test_signal(NUM_ITERATIONS, 0);
+#ifdef CONFIG_USERSPACE
+	sema_test_signal(NUM_ITERATIONS, K_USER);
+#endif
 
-	sema_context_switch();
+	sema_context_switch(NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	sema_context_switch(NUM_ITERATIONS, 0, K_USER);
+	sema_context_switch(NUM_ITERATIONS, K_USER, 0);
+	sema_context_switch(NUM_ITERATIONS, K_USER, K_USER);
+#endif
 
 	mutex_lock_unlock();
 
