@@ -227,6 +227,8 @@ struct modem_chat {
 	struct k_work script_abort_work;
 	uint16_t script_chat_it;
 	atomic_t script_state;
+	enum modem_chat_script_result script_result;
+	struct k_sem script_stopped_sem;
 
 	/* Script sending */
 	uint16_t script_send_request_pos;
@@ -294,6 +296,18 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe);
 
 /**
+ * @brief Run script asynchronously
+ * @param chat Chat instance
+ * @param script Script to run
+ * @returns 0 if script successfully started
+ * @returns -EBUSY if a script is currently running
+ * @returns -EPERM if modem pipe is not attached
+ * @returns -EINVAL if arguments or script is invalid
+ * @note Script runs asynchronously until complete or aborted.
+ */
+int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script);
+
+/**
  * @brief Run script
  * @param chat Chat instance
  * @param script Script to run
@@ -301,9 +315,25 @@ int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe);
  * @returns -EBUSY if a script is currently running
  * @returns -EPERM if modem pipe is not attached
  * @returns -EINVAL if arguments or script is invalid
- * @note Script runs asynchronously until complete or aborted.
+ * @note Script runs until complete or aborted.
  */
-int modem_chat_script_run(struct modem_chat *chat, const struct modem_chat_script *script);
+int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_script *script);
+
+/**
+ * @brief Run script asynchronously
+ * @note Function exists for backwards compatibility and should be deprecated
+ * @param chat Chat instance
+ * @param script Script to run
+ * @returns 0 if script successfully started
+ * @returns -EBUSY if a script is currently running
+ * @returns -EPERM if modem pipe is not attached
+ * @returns -EINVAL if arguments or script is invalid
+ */
+static inline int modem_chat_script_run(struct modem_chat *chat,
+					const struct modem_chat_script *script)
+{
+	return modem_chat_run_script_async(chat, script);
+}
 
 /**
  * @brief Abort script
