@@ -183,6 +183,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 	if (nvme_cpl_status_is_error(&status)) {
 		LOG_ERR("Could not set IO num queues to %u",
 			nvme_ctrlr->num_io_queues);
+		nvme_completion_print(&status.cpl);
 		return -EIO;
 	}
 
@@ -225,6 +226,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 		nvme_completion_poll(&status);
 		if (nvme_cpl_status_is_error(&status)) {
 			LOG_ERR("IO CQ creation failed");
+			nvme_completion_print(&status.cpl);
 			return -EIO;
 		}
 
@@ -240,6 +242,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 		nvme_completion_poll(&status);
 		if (nvme_cpl_status_is_error(&status)) {
 			LOG_ERR("IO CQ creation failed");
+			nvme_completion_print(&status.cpl);
 			return -EIO;
 		}
 	}
@@ -372,9 +375,9 @@ static int nvme_controller_identify(struct nvme_controller *nvme_ctrlr)
 	nvme_ctrlr_cmd_identify_controller(nvme_ctrlr,
 					   nvme_completion_poll_cb, &status);
 	nvme_completion_poll(&status);
-
 	if (nvme_cpl_status_is_error(&status)) {
 		LOG_ERR("Could not identify the controller");
+		nvme_completion_print(&status.cpl);
 		return -EIO;
 	}
 

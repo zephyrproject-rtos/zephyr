@@ -197,7 +197,7 @@ enum nvme_path_related_status_code {
 	NVME_SC_ASYMMETRIC_ACCESS_TRANSITION	= 0x03,
 	NVME_SC_CONTROLLER_PATHING_ERROR	= 0x60,
 	NVME_SC_HOST_PATHING_ERROR		= 0x70,
-	NVME_SC_COMMAND_ABOTHED_BY_HOST		= 0x71,
+	NVME_SC_COMMAND_ABORTED_BY_HOST		= 0x71,
 };
 
 /* admin opcodes */
@@ -376,6 +376,12 @@ struct nvme_request {
 void nvme_cmd_init(void);
 
 void nvme_completion_poll_cb(void *arg, const struct nvme_completion *cpl);
+
+#ifdef CONFIG_NVME_LOG_LEVEL_DBG
+void nvme_completion_print(const struct nvme_completion *cpl);
+#else
+#define nvme_completion_print(...)
+#endif /* CONFIG_NVME_LOG_LEVEL_DBG */
 
 void nvme_cmd_request_free(struct nvme_request *request);
 
