@@ -206,7 +206,7 @@ extern "C" {
  * @brief Validate if two entities have a compatible type
  *
  * @param a the first entity to be compared
- * @param a the second entity to be compared
+ * @param b the second entity to be compared
  * @return 1 if the two elements are compatible, 0 if they are not
  */
 #define SAME_TYPE(a, b) __builtin_types_compatible_p(__typeof__(a), __typeof__(b))
