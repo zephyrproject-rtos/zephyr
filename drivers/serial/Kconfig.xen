@@ -10,19 +10,22 @@ config UART_XEN_HVC
 	depends on DT_HAS_XEN_HVC_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on XEN && !XEN_DOM0
+	depends on XEN && !XEN_DOM0 && !XEN_DOM0LESS
 	help
 	  Enable Xen ring buffer based hypervisor console driver. Used
 	  for Zephyr as unprivileged domain.
 
 config UART_XEN_HVC_CONSOLEIO
-	bool "Xen hypervisor Dom0 console UART driver"
+	bool "Xen hypervisor consoleio UART driver"
 	select SERIAL_HAS_DRIVER
-	depends on XEN_DOM0
+	depends on XEN_DOM0 || XEN_DOM0LESS
 	default y
 	help
 	  Enable Xen hypervisor console driver. Used for Zephyr as
-	  privileged domain (Dom0).
+	  privileged domain (Dom0) or for Zephyr DomU in Dom0less
+	  configuration. Dom0less configuration does not have
+	  privileged domain. Thus, there is no console daemon and Xen
+	  manages all domain outputs through the consoleio interface.
 
 config XEN_HVC_INIT_PRIORITY
 	int "Xen hypervisor console init priority"
