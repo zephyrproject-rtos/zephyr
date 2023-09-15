@@ -1539,7 +1539,7 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
+int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
 {
 	int err;
 
@@ -1551,6 +1551,22 @@ int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
 
 	if (err != 0) {
 		LOG_DBG("Unable to sync to PA: %d", err);
+	}
+
+	return err;
+}
+
+int tester_gap_padv_stop_sync(void)
+{
+	int err;
+
+	if (pa_sync == NULL) {
+		return -EALREADY;
+	}
+
+	err = bt_le_per_adv_sync_delete(pa_sync);
+	if (err != 0) {
+		LOG_DBG("Unable to stop sync to PA: %d", err);
 	}
 
 	return err;
@@ -1569,7 +1585,7 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	create_params.skip = cp->skip;
 	create_params.timeout = cp->sync_timeout;
 
-	err = tester_padv_create_sync(&create_params);
+	err = tester_gap_padv_create_sync(&create_params);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
