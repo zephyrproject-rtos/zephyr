@@ -477,7 +477,7 @@ static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
-	return pkt->forwarding;
+	return !!(pkt->forwarding);
 }
 
 static inline void net_pkt_set_forwarding(struct net_pkt *pkt, bool forward)
@@ -1117,7 +1117,7 @@ static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
 #if defined(CONFIG_NET_IPV4_AUTO)
 static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
 {
-	return pkt->ipv4_auto_arp_msg;
+	return !!(pkt->ipv4_auto_arp_msg);
 }
 
 static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
@@ -1144,7 +1144,7 @@ static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
 #if defined(CONFIG_NET_LLDP)
 static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
 {
-	return pkt->lldp_pkt;
+	return !!(pkt->lldp_pkt);
 }
 
 static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
@@ -1169,7 +1169,7 @@ static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
 {
-	return pkt->ppp_msg;
+	return !!(pkt->ppp_msg);
 }
 
 static inline void net_pkt_set_ppp(struct net_pkt *pkt,
@@ -1224,7 +1224,7 @@ static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
 
 static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 {
-	return pkt->overwrite;
+	return !!(pkt->overwrite);
 }
 
 #ifdef CONFIG_NET_PKT_FILTER
