@@ -197,8 +197,6 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
 
-	printk("in RTC Shell Get\n");
-
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
