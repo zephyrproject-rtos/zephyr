@@ -247,3 +247,10 @@ def test_yaml_validate(schema_exists, validate, expected_error):
         core_mock.assert_called_once()
     else:
         core_mock.assert_not_called()
+
+
+def test_yaml_load_empty_file(tmp_path):
+    quarantine_file = tmp_path / 'empty_quarantine.yml'
+    quarantine_file.write_text("# yaml file without data")
+    with pytest.raises(scl.EmptyYamlFileException):
+        scl.yaml_load_verify(quarantine_file, None)
