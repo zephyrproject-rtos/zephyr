@@ -21,6 +21,11 @@ except ImportError:
 
 log = logging.getLogger("scl")
 
+
+class EmptyYamlFileException(Exception):
+    pass
+
+
 #
 #
 def yaml_load(filename):
@@ -78,5 +83,7 @@ def yaml_load_verify(filename, schema):
     """
     # 'document.yaml' contains a single YAML document.
     y = yaml_load(filename)
+    if not y:
+        raise EmptyYamlFileException('No data in YAML file: %s' % filename)
     _yaml_validate(y, schema)
     return y
