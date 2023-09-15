@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+#include "memc_nxp_flexram.h"
 
 #include <cmsis_core.h>
 
@@ -689,6 +690,11 @@ static int imxrt_init(void)
 void z_arm_platform_init(void)
 {
 	SystemInit();
+
+#if defined(FLEXRAM_RUNTIME_BANKS_USED)
+	/* Configure flexram if not running from RAM */
+	memc_flexram_dt_partition();
+#endif
 }
 #endif
 

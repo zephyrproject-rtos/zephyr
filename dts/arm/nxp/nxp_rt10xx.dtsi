@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 
 / {
 	chosen {
@@ -87,12 +88,16 @@
 
 	soc {
 		flexram: flexram@400b0000 {
-			compatible = "nxp,imx-flexram";
+			compatible = "nxp,flexram";
 			reg = <0x400b0000 0x4000>;
 			interrupts = <38 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			status = "okay";
+
+			flexram,bank-size = <32>;
 
 			itcm: itcm@0 {
 				compatible = "zephyr,memory-region", "nxp,imx-itcm";

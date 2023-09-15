@@ -7,6 +7,19 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <8>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };
