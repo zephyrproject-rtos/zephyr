@@ -103,13 +103,13 @@ static bool wifi_utils_validate_chan(uint8_t band,
 }
 
 
-static int wifi_utils_get_all_chans_in_range(uint16_t chan_start,
-		uint16_t chan_end,
-		uint16_t chan[][WIFI_CHANNEL_MAX],
+static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
+		uint8_t chan_end,
+		uint8_t chan[][WIFI_CHANNEL_MAX],
 		uint8_t band_idx,
 		uint8_t *chan_idx)
 {
-	uint16_t i;
+	uint8_t i;
 	bool start = false;
 	bool end = false;
 	uint8_t idx;
@@ -310,7 +310,7 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 
 
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       uint16_t chan[][WIFI_CHANNEL_MAX])
+			       uint8_t chan[][WIFI_CHANNEL_MAX])
 {
 	char band_str[WIFI_UTILS_MAX_BAND_STR_LEN] = {0};
 	char chan_str[WIFI_UTILS_MAX_CHAN_STR_LEN] = {0};
@@ -318,8 +318,8 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 	uint16_t band_str_start_idx = 0;
 	uint16_t chan_str_start_idx = 0;
 	uint8_t chan_idx = 0;
-	uint16_t chan_start = 0;
-	uint16_t chan_val = 0;
+	uint8_t chan_start = 0;
+	uint8_t chan_val = 0;
 	uint16_t i = 0;
 	bool valid_band = false;
 	bool valid_chan = false;
