@@ -167,6 +167,8 @@ static int rtc_stm32_init(const struct device *dev)
 
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
+BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the device tree");
+
 static const struct rtc_stm32_config rtc_config = {
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 	/* prescaler values for LSI @ 32 KHz */
