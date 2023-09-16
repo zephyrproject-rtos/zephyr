@@ -165,23 +165,6 @@ static int rtc_stm32_init(const struct device *dev)
 	return err;
 }
 
-static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
-
-BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the device tree");
-
-static const struct rtc_stm32_config rtc_config = {
-#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
-	/* prescaler values for LSI @ 32 KHz */
-	.async_prescaler = 0x7F,
-	.sync_prescaler  = 0x00F9,
-#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
-	/* prescaler values for LSE @ 32768 Hz */
-	.async_prescaler = 0x7F,
-	.sync_prescaler  = 0x00FF,
-#endif
-	.pclken = rtc_clk,
-};
-
 static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	struct rtc_stm32_data *data = dev->data;
@@ -385,10 +368,24 @@ struct rtc_driver_api rtc_stm32_driver_api = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-#define RTC_STM32_DEV_CFG(n)                                                                       \
-	static struct rtc_stm32_data rtc_data_##n = {};                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &rtc_stm32_init, NULL, &rtc_data_##n, &rtc_config, POST_KERNEL,   \
-			      CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
+static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
-DT_INST_FOREACH_STATUS_OKAY(RTC_STM32_DEV_CFG);
+BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the device tree");
+
+static const struct rtc_stm32_config rtc_config = {
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
+	/* prescaler values for LSI @ 32 KHz */
+	.async_prescaler = 0x7F,
+	.sync_prescaler = 0x00F9,
+#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
+	/* prescaler values for LSE @ 32768 Hz */
+	.async_prescaler = 0x7F,
+	.sync_prescaler = 0x00FF,
+#endif
+	.pclken = rtc_clk,
+};
+
+static struct rtc_stm32_data rtc_data;
+
+DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, POST_KERNEL,
+		      CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
