@@ -35,21 +35,19 @@ typedef void (*modem_chat_match_callback)(struct modem_chat *chat, char **argv, 
  * @brief Modem chat match
  */
 struct modem_chat_match {
-	/* Match array */
+	/** Match array */
 	const uint8_t *match;
+	/** Size of match */
 	const uint8_t match_size;
-
-	/* Separators array */
+	/** Separators array */
 	const uint8_t *separators;
+	/** Size of separators array */
 	const uint8_t separators_size;
-
-	/* Set if modem chat instance shall use wildcards when matching */
+	/** Set if modem chat instance shall use wildcards when matching */
 	const uint8_t wildcards : 1;
-
-	/* Set if script shall not continue to next step in case of match */
+	/** Set if script shall not continue to next step in case of match */
 	const uint8_t partial : 1;
-
-	/* Type of modem chat instance */
+	/** Type of modem chat instance */
 	const modem_chat_match_callback callback;
 };
 
@@ -90,9 +88,11 @@ struct modem_chat_match {
  * @brief Modem chat script chat
  */
 struct modem_chat_script_chat {
-	/** Request to send to modem formatted as char string */
-	const char *request;
-	/** Expected responses to request */
+	/** Request to send to modem */
+	const uint8_t *request;
+	/** Size of request */
+	uint8_t request_size;
+	/** Array of expected responses to request */
 	const struct modem_chat_match *const response_matches;
 	/** Number of elements in expected responses */
 	const uint16_t response_matches_size;
@@ -102,19 +102,28 @@ struct modem_chat_script_chat {
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP(_request, _response_match)                                      \
 	{                                                                                          \
-		.request = _request, .response_matches = &_response_match,                         \
-		.response_matches_size = 1, .timeout = 0,                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint8_t)(sizeof(_request) - 1),                                   \
+		.response_matches = &_response_match,                                              \
+		.response_matches_size = 1,                                                        \
+		.timeout = 0,                                                                      \
 	}
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP_MULT(_request, _response_matches)                               \
 	{                                                                                          \
-		.request = _request, .response_matches = _response_matches,                        \
-		.response_matches_size = ARRAY_SIZE(_response_matches), .timeout = 0,              \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint8_t)(sizeof(_request) - 1),                                   \
+		.response_matches = _response_matches,                                             \
+		.response_matches_size = ARRAY_SIZE(_response_matches),                            \
+		.timeout = 0,                                                                      \
 	}
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP_NONE(_request, _timeout)                                        \
 	{                                                                                          \
-		.request = _request, .response_matches = NULL, .response_matches_size = 0,         \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint8_t)(sizeof(_request) - 1),                                   \
+		.response_matches = NULL,                                                          \
+		.response_matches_size = 0,                                                        \
 		.timeout = _timeout,                                                               \
 	}
 
