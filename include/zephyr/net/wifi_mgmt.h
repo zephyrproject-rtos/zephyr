@@ -41,6 +41,12 @@ extern "C" {
 #define WIFI_MGMT_SCAN_SSID_FILT_MAX 1
 #endif /* CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX */
 
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+#else
+#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL 1
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
+
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 
 /** Wi-Fi management commands */
@@ -252,7 +258,7 @@ struct wifi_scan_params {
 	 *  not conforming to regulatory restrictions etc. The invoker of the API should
 	 *  ensure that the channels specified follow regulatory rules.
 	 */
-	uint8_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_CHANNEL_MAX];
+	uint8_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_MGMT_SCAN_CHAN_MAX_MANUAL];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
