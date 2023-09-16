@@ -95,12 +95,14 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
  *
  * @param scan_chan_str List of channels expressed in the format described above.
  * @param chan Pointer to an array where the parsed channels are to be stored.
+ * @param max_channels Maximum number of channels to store
  *
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       uint8_t chan[][WIFI_CHANNEL_MAX]);
+			       struct wifi_band_channel *chan,
+			       uint8_t max_channels);
 
 /**
  * @}

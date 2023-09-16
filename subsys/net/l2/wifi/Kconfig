@@ -48,11 +48,11 @@ config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	  This can be set based on the underlying chipsets limitations.
 
 config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
-	int "Maximum number of channels that can be manually specified per-band"
-	range 1 70
+	int "Maximum number of channels that can be manually specified"
+	range 1 110
 	default 3
 	help
-	  There are currently 60 channels allocated in the largest band (6GHz).
+	  There are approximately 100 channels allocated across the three supported bands.
 	  The default of 3 allows the 3 most common channels (2.4GHz: 1, 6, 11) to be specified.
 
 config WIFI_NM
