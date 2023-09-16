@@ -210,6 +210,16 @@ enum net_event_wifi_cmd {
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
 
 /**
+ * @brief Wi-Fi structure to uniquely identify a band-channel pair
+ */
+struct wifi_band_channel {
+	/** Frequency band */
+	uint8_t band;
+	/** Channel */
+	uint8_t channel;
+};
+
+/**
  * @brief Wi-Fi scan parameters structure.
  * Used to specify parameters which can control how the Wi-Fi scan
  * is performed.
@@ -248,9 +258,9 @@ struct wifi_scan_params {
 	 * band.
 	 * E.g. to scan channel 6 and 11 on the 2.4 GHz band, channel 36 on the 5 GHz band:
 	 * @code{.c}
-	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][0] = 6;
-	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][1] = 11;
-	 *     chan[WIFI_FREQ_BAND_5_GHZ][0] = 36;
+	 *     chan[0] = {WIFI_FREQ_BAND_2_4_GHZ, 6};
+	 *     chan[1] = {WIFI_FREQ_BAND_2_4_GHZ, 11};
+	 *     chan[2] = {WIFI_FREQ_BAND_5_GHZ, 36};
 	 * @endcode
 	 *
 	 *  This list specifies the channels to be __considered for scan__. The underlying
@@ -258,7 +268,7 @@ struct wifi_scan_params {
 	 *  not conforming to regulatory restrictions etc. The invoker of the API should
 	 *  ensure that the channels specified follow regulatory rules.
 	 */
-	uint8_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_MGMT_SCAN_CHAN_MAX_MANUAL];
+	struct wifi_band_channel band_chan[WIFI_MGMT_SCAN_CHAN_MAX_MANUAL];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
