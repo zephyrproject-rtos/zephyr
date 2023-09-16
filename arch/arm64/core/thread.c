@@ -70,6 +70,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	z_arch_esf_t *pInitCtx;
 
 	/*
+	 * Clean the thread->arch to avoid unexpected behavior because the
+	 * thread->arch might be dirty
+	 */
+	memset(&thread->arch, 0, sizeof(thread->arch));
+
+	/*
 	 * The ESF is now hosted at the top of the stack. For user threads this
 	 * is also fine because at this stage they are still running in EL1.
 	 * The context will be relocated by arch_user_mode_enter() before
@@ -100,9 +106,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		pInitCtx->elr = (uint64_t)z_thread_entry;
 	}
 
-#if defined(CONFIG_ARM_MPU)
-	atomic_clear(&thread->arch.flushing);
-#endif
 #else
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
