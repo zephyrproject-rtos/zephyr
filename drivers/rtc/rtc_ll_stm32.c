@@ -168,11 +168,11 @@ static int rtc_stm32_init(const struct device *dev)
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct rtc_stm32_config rtc_config = {
-#if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 	/* prescaler values for LSI @ 32 KHz */
 	.async_prescaler = 0x7F,
 	.sync_prescaler  = 0x00F9,
-#else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
+#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
 	/* prescaler values for LSE @ 32768 Hz */
 	.async_prescaler = 0x7F,
 	.sync_prescaler  = 0x00FF,
