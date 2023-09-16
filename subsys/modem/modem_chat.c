@@ -135,8 +135,8 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = script_chat->response_matches_size;
 
 	/* Check if work must be sent */
-	if (strlen(script_chat->request) > 0) {
-		LOG_DBG("sending: %s", script_chat->request);
+	if (script_chat->request_size > 0) {
+		LOG_DBG("sending: %.*s", script_chat->request_size, script_chat->request);
 		modem_chat_script_send(chat);
 	}
 }
@@ -196,18 +196,17 @@ static bool modem_chat_script_send_request(struct modem_chat *chat)
 	const struct modem_chat_script_chat *script_chat =
 		&chat->script->script_chats[chat->script_chat_it];
 
-	uint16_t script_chat_request_size = strlen(script_chat->request);
 	uint8_t *script_chat_request_start;
 	uint16_t script_chat_request_remaining;
 	int ret;
 
 	/* Validate data to send */
-	if (script_chat_request_size == chat->script_send_request_pos) {
+	if (script_chat->request_size == chat->script_send_request_pos) {
 		return true;
 	}
 
 	script_chat_request_start = (uint8_t *)&script_chat->request[chat->script_send_request_pos];
-	script_chat_request_remaining = script_chat_request_size - chat->script_send_request_pos;
+	script_chat_request_remaining = script_chat->request_size - chat->script_send_request_pos;
 
 	/* Send data through pipe */
 	ret = modem_pipe_transmit(chat->pipe, script_chat_request_start,
@@ -222,7 +221,7 @@ static bool modem_chat_script_send_request(struct modem_chat *chat)
 	chat->script_send_request_pos += (uint16_t)ret;
 
 	/* Check if data remains */
-	if (chat->script_send_request_pos < script_chat_request_size) {
+	if (chat->script_send_request_pos < script_chat->request_size) {
 		return false;
 	}
 
@@ -750,7 +749,7 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 
 	/* Validate script commands */
 	for (uint16_t i = 0; i < script->script_chats_size; i++) {
-		if ((strlen(script->script_chats[i].request) == 0) &&
+		if ((script->script_chats[i].request_size == 0) &&
 		    (script->script_chats[i].response_matches_size == 0)) {
 			return -EINVAL;
 		}
