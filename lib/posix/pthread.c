@@ -601,7 +601,6 @@ void pthread_exit(void *retval)
 	self = to_posix_thread(pthread_self());
 	if (self == NULL) {
 		/* not a valid posix_thread */
-		__ASSERT_NO_MSG(self != NULL);
 		k_thread_abort(k_current_get());
 	}
 
