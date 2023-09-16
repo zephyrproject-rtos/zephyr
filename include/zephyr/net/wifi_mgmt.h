@@ -252,7 +252,7 @@ struct wifi_scan_params {
 	 *  not conforming to regulatory restrictions etc. The invoker of the API should
 	 *  ensure that the channels specified follow regulatory rules.
 	 */
-	uint16_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_CHANNEL_MAX];
+	uint8_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_CHANNEL_MAX];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
