@@ -5,3 +5,16 @@
 
 source "drivers/usb_c/tcpc/Kconfig"
 source "drivers/usb_c/vbus/Kconfig"
+
+config USBC_INIT_PRIORITY
+	int "USBC driver init priority"
+	default 80
+	help
+	  USB-C device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the USBC stack
+	  so that it can start before the USBC sub-system.
+
+module = USBC
+module-str = usbc
+source "subsys/logging/Kconfig.template.log_config"
