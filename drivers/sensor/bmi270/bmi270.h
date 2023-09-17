@@ -19,6 +19,22 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 
+// from https://github.com/boschsensortec/BMI270-Sensor-API/blob/master/bmi2_defs.h
+#define BMI2_SELECT_CRT                               UINT8_C(1)
+#define BMI2_OK                                       INT8_C(0)
+
+#define BMI2_CRT_RTOSK_ENABLE                         UINT8_C(0x01)
+
+#define BMI2_ENABLE                                   UINT8_C(1)
+#define BMI2_DISABLE                                  UINT8_C(0)
+
+#define BMI2_E_ST_ALREADY_RUNNING                     INT8_C(-23)
+
+#define BMI2_SELECT_GYRO_SELF_TEST                    UINT8_C(0)
+
+#define BMI2_SELECT_CRT                               UINT8_C(1)
+// ----
+
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
 #define BMI270_REG_STATUS          0x03
@@ -366,5 +382,7 @@ int bmi270_trigger_set(const struct device *dev,
 
 int bmi270_init_interrupts(const struct device *dev);
 #endif
+
+int8_t bmi2_do_crt(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

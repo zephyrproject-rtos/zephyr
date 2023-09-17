@@ -792,6 +792,89 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.anymo_2 = &(struct bmi270_feature_reg){ .page = 1, .addr = 0x3E },
 };
 
+int8_t bmi2_do_crt(const struct device *dev)
+{
+    int8_t rslt;
+
+    rslt = do_gtrigger_test(BMI2_SELECT_CRT, dev);
+
+    return rslt;
+}
+
+/*!
+ * @brief This API is to run the crt process for both max burst length 0 and non zero condition.
+ */
+static int8_t do_gtrigger_test(uint8_t gyro_st_crt, const struct device *dev)
+{
+    int8_t rslt;
+    uint8_t st_status = 0;
+    uint8_t max_burst_length = 0;
+    struct bmi2_gyro_self_test_status gyro_st_result = { 0 };
+
+    /* Variable to get the status of advance power save */
+    uint8_t aps_stat = 0;
+
+    rslt = null_ptr_check(dev);
+    if (rslt == BMI2_OK)
+    {
+        /* Check if the variant supports this feature */
+        if (dev->variant_feature & BMI2_CRT_RTOSK_ENABLE)
+        {
+            /* Get status of advance power save mode */
+            aps_stat = dev->aps_status;
+            if (aps_stat == BMI2_ENABLE)
+            {
+                /* Disable advance power save if enabled */
+                rslt = bmi2_set_adv_power_save(BMI2_DISABLE, dev);
+            }
+
+            /* Get max burst length */
+            if (rslt == BMI2_OK)
+            {
+                rslt = get_maxburst_len(&max_burst_length, dev);
+            }
+
+            /* Checking for CRT running status */
+            if (rslt == BMI2_OK)
+            {
+                rslt = get_st_running(&st_status, dev);
+            }
+
+            /* CRT is not running and Max burst length is zero */
+            if (st_status == 0)
+            {
+                rslt = gyro_crt_test(max_burst_length, gyro_st_crt, dev);
+            }
+            else
+            {
+                rslt = BMI2_E_ST_ALREADY_RUNNING;
+            }
+
+            if (rslt == BMI2_OK)
+            {
+                if (gyro_st_crt == BMI2_SELECT_GYRO_SELF_TEST)
+                {
+                    rslt = gyro_self_test_completed(&gyro_st_result, dev);
+                }
+            }
+
+            /* Enable Advance power save if disabled while configuring and
+             * not when already disabled
+             */
+            if ((aps_stat == BMI2_ENABLE) && (rslt == BMI2_OK))
+            {
+                rslt = bmi2_set_adv_power_save(BMI2_ENABLE, dev);
+            }
+        }
+        else
+        {
+            rslt = BMI2_E_INVALID_SENSOR;
+        }
+    }
+
+    return rslt;
+}
+
 #define BMI270_FEATURE(inst) (						\
 	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), bosch_bmi270_base) ?	\
 		&bmi270_feature_base :					\
