@@ -1,0 +1,25 @@
+# Copyright (c) 2021, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: IO96B ECC
+
+compatible: "intel,io96b"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  max-ecc-buff-entries:
+    type: int
+    default: 16
+    description: |
+      Maximum number ecc error entires in IO96B ECC buffer. If more
+      than maximum buffer entries an overflow flag will be set.
+
+  producer-counter-cap:
+    type: int
+    default: 0x80000000
+    description: |
+      The producer counter will reset to 0 upon reaching to this value.

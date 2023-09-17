@@ -1,0 +1,20 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+          Intel SoC FPGA ECC (Error checking and correction) block is integrated
+          around a memory wrapper to provide protection and detection of single bit
+          and double bit errors.
+
+compatible: "intel,socfpga-ecc"
+
+include: base.yaml
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  dual-port:
+    type: boolean
+    description: RAM port type dual/single port

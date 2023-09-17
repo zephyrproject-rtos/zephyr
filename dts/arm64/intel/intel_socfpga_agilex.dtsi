@@ -184,4 +184,39 @@
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
 		status = "disabled";
 	};
+
+	hps_ecc: hps-ecc{
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "intel,socfpga-hps-ecc";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+
+		emac0_rx_ecc: ecc-block@FF8C0000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0xFF8C0000 0x400>;
+		};
+
+		emac0_tx_ecc: ecc-block@FF8C0400 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0xFF8C0400 0x400>;
+		};
+
+		usb0_ram0_ecc: ecc-block@FF8C4000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0xFF8C4000 0x400>;
+		};
+
+		usb1_ram0_ecc: ecc-block@FF8C4400 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0xFF8C4400 0x400>;
+		};
+
+		ocram_ecc: ecc-block@FF8CC000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0xFF8CC000 0x400>;
+		};
+	};
 };

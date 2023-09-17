@@ -219,4 +219,96 @@
 		status = "disabled";
 		zephyr,num-clients = <2>;
 	};
+
+	io96b0: io96b@18400000 {
+		compatible = "intel,io96b";
+		reg = <0x18400000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 95 IRQ_TYPE_EDGE
+					 IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	io96b1: io96b@18800000 {
+		compatible = "intel,io96b";
+		reg = <0x18800000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 120 IRQ_TYPE_EDGE
+					 IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	hps_ecc: hps-ecc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "intel,socfpga-hps-ecc";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+				  <GIC_SPI 8 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+				    <GIC_SPI 9 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+
+		qspi_ecc: ecc-block@10a22000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x10a22000 0x100>;
+		};
+
+		emac0_rx_ecc: ecc-block@108C0000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C0000 0x100>;
+		};
+
+		emac0_tx_ecc: ecc-block@108C0400 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C0400 0x100>;
+		};
+
+		emac1_rx_ecc: ecc-block@108C0800 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C0800 0x100>;
+		};
+
+		emac1_tx_ecc: ecc-block@108C0C00 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C0C00 0x100>;
+		};
+
+		emac2_rx_ecc: ecc-block@108C1000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C1000 0x100>;
+		};
+
+		emac2_tx_ecc: ecc-block@108C1400 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C1400 0x100>;
+		};
+
+		usb0_ram0_ecc: ecc-block@108C4000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C4000 0x100>;
+		};
+
+		usb1_ram0_ecc: ecc-block@108C4400 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C4400 0x100>;
+		};
+
+		usb1_ram1_ecc: ecc-block@108C4800 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C4800 0x100>;
+		};
+
+		usb1_ram2_ecc: ecc-block@108C4C00 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108C4C00 0x100>;
+		};
+
+		ocram_ecc: ecc-block@108CC000 {
+			compatible = "intel,socfpga-ecc";
+			reg = <0x108CC000 0x100>;
+		};
+	};
 };

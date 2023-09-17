@@ -1,0 +1,12 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: EDAC for Intel SoC FPGA HPS ECC manager
+
+compatible: "intel,socfpga-hps-ecc"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
