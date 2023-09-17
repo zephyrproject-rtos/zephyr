@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "lib/posix/Kconfig.template.with_url"
+source "lib/posix/Kconfig.template.with_logging"
 
 # This is mainly for TIMER currently.
 config $(TYPE)
