@@ -1,0 +1,17 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HPS_ECC_INTEL_SOCFPGA
+	bool "Intel SoC FPGA HPS ECC driver"
+	depends on (DT_HAS_INTEL_SOCFPGA_HPS_ECC_ENABLED && EDAC_INTEL_SOCFPGA)
+	default y
+	help
+	 Enable the HPS ECC driver for Intel SoC FPGA device
+
+config HPS_ECC_INIT_PRIORITY
+	int "HPS ECC init function priority. This value must be more than SIP SVC subsystem init priority"
+	default 56
+
+module = HPS_ECC
+module-str = hps_ecc
+source "subsys/logging/Kconfig.template.log_config"

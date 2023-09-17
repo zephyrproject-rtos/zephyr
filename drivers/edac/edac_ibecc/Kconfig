@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+config EDAC_IBECC
+	bool "In-Band ECC (IBECC)"
+	depends on X86 && PCIE
+	help
+	  This option selects In-Band ECC (IBECC) IP support.
+
+if EDAC_IBECC
+
+config EDAC_SHELL_IBECC
+	bool "EDAC Shell"
+	depends on SHELL
+	default y if SHELL
+	help
+	  Enable EDAC shell for debugging EDAC.
+
+endif #EDAC_IBECC

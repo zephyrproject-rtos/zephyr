@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# IO96B configuration options
+
+menuconfig IO96B_INTEL_SOCFPGA
+	bool "in/out subsystem manager"
+	depends on (DT_HAS_INTEL_IO96B_ENABLED && EDAC_INTEL_SOCFPGA)
+	help
+	  Enable IO96B driver.
+
+if IO96B_INTEL_SOCFPGA
+
+config SHELL_IO96B_INTEL_SOCFPGA
+	bool "IO96B Shell"
+	depends on SHELL
+	default n
+	help
+	  Enable IO96B shell for debugging IO96B driver.
+
+module = IO96B
+module-str = io96b
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #IO96B

@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# EDAC (Error Detection And Correction) Agilex5 configuration options
+config EDAC_INTEL_SOCFPGA
+	bool "Intel SoC FPGA EDAC module"
+	default n
+	help
+	 Enable the EDAC module for Intel SoC FPGA device
+
+config EDAC_SHELL_INTEL_SOCFPGA
+	bool "EDAC Shell"
+	default y if (SHELL && EDAC_INTEL_SOCFPGA)
+	help
+	  Enable EDAC shell for debugging EDAC.
+
+config EDAC_INTEL_SOC_FPGA_INIT_PRIORITY
+	int "EDAC init function priority. This value must be more than HPS ECC and IO96B drivers init priority"
+	default 57
+
+module = EDAC_INTEL_SOCFPGA
+module-str = edac_intel_socfpga
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/edac/edac_intel_socfpga/Kconfig.hps_ecc"
+source "drivers/edac/edac_intel_socfpga/Kconfig.io96b_ecc"
