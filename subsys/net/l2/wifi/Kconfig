@@ -39,40 +39,6 @@ config WIFI_MGMT_TWT_CHECK_IP
 	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
 	  interface has a valid IP address might be desirable in most scenarios.
 
-config WIFI_MGMT_FORCED_PASSIVE_SCAN
-	bool "Force Passive scan"
-	help
-	  Force passive scan (typically used to reduce power consumption),
-	  the scan type is always sent as passive.
-	  This doesn't guarantee that passive scan will be used, it depends
-	  on the underlying chip implementation to support and honour scan type.
-
-config WIFI_MGMT_SCAN_BANDS
-	string "Frequency bands to scan"
-	default ""
-	help
-	  Specifies the frequency bands to scan, as follows:
-	  2 - 2.4 GHz
-	  5 - 5 GHz
-	  6 - 6 GHz
-	  "" - All bands allowed by the regulatory domain.
-	  Multiple bands can be specified as comma separated band values.
-	  Only regulatory domain permitted values are allowed.
-
-config WIFI_MGMT_SCAN_DWELL_TIME_ACTIVE
-	int "Active scan dwell time"
-	default 50
-	range 5 1000
-	help
-	  Active scan dwell time (in ms) per channel.
-
-config WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE
-	int "Passive scan dwell time"
-	default 130
-	range 10 1000
-	help
-	  Passive scan dwell time (in ms) per channel.
-
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	int "Maximum number of SSIDs that can be specified for SSID filtering"
 	default 1
@@ -80,39 +46,6 @@ config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	help
 	  Maximum number of SSIDs that can be specified for SSID filtering.
 	  This can be set based on the underlying chipsets limitations.
-
-config WIFI_MGMT_SCAN_SSID_FILT
-	string "Scan for specific SSIDs"
-	default ""
-	help
-	  String of comma separated SSID values to scan for. The number of SSID’s
-	  that can be specified depends on WIFI_MGMT_SCAN_MAX_SSIDS.
-	  Use "" to disable SSID filtering.
-
-config WIFI_MGMT_SCAN_MAX_BSS_CNT
-	int "Maximum number of scan results to return."
-	default 0
-	range 0 65535
-	help
-	  Maximum number of scan results to return. 0 represents unlimited number of BSSes.
-
-config WIFI_MGMT_SCAN_CHAN
-	string "Scan on specific channels"
-	default ""
-	help
-	 Formatted string which specifies channels to be scanned. The channel string has to be formatted
-	 using the colon (:), comma(,), hyphen (-) and space ( ) delimiters as follows:
-	 - A colon identifies the value preceding it as a band. A band value
-	   (2: 2.4 GHz, 5: 5 GHz 6: 6 GHz) has to precede the channels in that band (e.g. 2: etc)
-	 - Hyphens are used to identify channel ranges (e.g. 2-7, 32-48 etc)
-	 - Commas are used to separate channel values within a band. Channels can be specified
-	   as individual values (2,6,48 etc) or channel ranges using hyphens (1-14, 32-48 etc)
-	 - Spaces are used to specify multiple band-channel sets (e.g. 2:1,2 5:36,40 etc)
-	 - No spaces should be used anywhere else, i.e. before/after commas,
-	   before/after hyphens.
-	   An example channel specification specifying channels in the 2.4 GHz and 5 GHz bands is
-	   as below:
-	   2:1,5,7,9-11_5:36-48,100,163-167
 
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
