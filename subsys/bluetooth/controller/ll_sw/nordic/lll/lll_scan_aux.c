@@ -1510,7 +1510,7 @@ static void isr_rx_connect_rsp(void *param)
 
 		rx = ftr->extra;
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
-		goto isr_rx_do_close;
+		goto isr_rx_connect_rsp_do_close;
 	}
 
 	/* Update the max Tx and Rx time; and connection PHY based on the
@@ -1548,7 +1548,7 @@ static void isr_rx_connect_rsp(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-isr_rx_do_close:
+isr_rx_connect_rsp_do_close:
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
