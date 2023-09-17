@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
-#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -104,63 +103,9 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	struct wifi_scan_params *params = data;
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-	bool chan_specified = false;
-	uint8_t i = 0;
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->scan == NULL) {
 		return -ENOTSUP;
-	}
-
-	if (data && (len == sizeof(*params))) {
-#ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
-		params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
-#endif /* CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN */
-
-		if (!params->bands) {
-			if (wifi_utils_parse_scan_bands(CONFIG_WIFI_MGMT_SCAN_BANDS,
-							&params->bands)) {
-				NET_ERR("Incorrect value(s) in CONFIG_WIFI_MGMT_SCAN_BANDS: %s",
-						CONFIG_WIFI_MGMT_SCAN_BANDS);
-				return -EINVAL;
-			}
-		}
-
-		if (!params->dwell_time_active) {
-			params->dwell_time_active = CONFIG_WIFI_MGMT_SCAN_DWELL_TIME_ACTIVE;
-		}
-
-		if (!params->dwell_time_passive) {
-			params->dwell_time_passive = CONFIG_WIFI_MGMT_SCAN_DWELL_TIME_PASSIVE;
-		}
-
-		if (!strlen(params->ssids[0])) {
-			if (wifi_utils_parse_scan_ssids(CONFIG_WIFI_MGMT_SCAN_SSID_FILT,
-							params->ssids)) {
-				NET_ERR("Incorrect value(s) in CONFIG_WIFI_MGMT_SCAN_SSID_FILT: %s",
-						CONFIG_WIFI_MGMT_SCAN_SSID_FILT);
-				return -EINVAL;
-			}
-		}
-
-		if (!params->max_bss_cnt) {
-			params->max_bss_cnt = CONFIG_WIFI_MGMT_SCAN_MAX_BSS_CNT;
-		}
-
-		for (i = 0; i <= WIFI_FREQ_BAND_MAX; i++) {
-			if (params->chan[i][0]) {
-				chan_specified = true;
-				break;
-			}
-		}
-
-		if ((!chan_specified) && strlen(CONFIG_WIFI_MGMT_SCAN_CHAN))  {
-			if (wifi_utils_parse_scan_chan(CONFIG_WIFI_MGMT_SCAN_CHAN,
-						       params->chan)) {
-				NET_ERR("Incorrect value(s) in CONFIG_WIFI_MGMT_SCAN_CHAN: %s",
-					CONFIG_WIFI_MGMT_SCAN_CHAN);
-				return -EINVAL;
-			}
-		}
 	}
 
 	return wifi_mgmt_api->scan(dev, params, scan_result_cb);
