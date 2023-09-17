@@ -24,3 +24,5 @@ CONFIG_CLOCK_CONTROL=y
 
 # For Misc Register Map
 CONFIG_SYSCON=y
+# Enable EDAC
+CONFIG_EDAC=y
