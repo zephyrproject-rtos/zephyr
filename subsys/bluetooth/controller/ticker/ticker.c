@@ -55,9 +55,11 @@ struct ticker_node {
 	uint8_t  force:1;		    /* If non-zero, node timeout should
 					     * be forced at next expiration
 					     */
+#if defined(CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP)
 	uint8_t  start_pending:1;	    /* If non-zero, start is pending for
 					     * bottom half of ticker_job.
 					     */
+#endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
 	uint32_t ticks_periodic;	    /* If non-zero, interval
 					     * between expirations
 					     */
@@ -1907,12 +1909,15 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 
 			/* if op is start, then skip update and stop ops */
 			if (user_op->op < TICKER_USER_OP_TYPE_UPDATE) {
+#if defined(CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP)
 				if (user_op->op == TICKER_USER_OP_TYPE_START) {
 					/* Set start pending to validate a
 					 * successive, inline stop operation.
 					 */
 					ticker->start_pending = 1U;
 				}
+#endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
+
 				continue;
 			}
 
@@ -1923,7 +1928,10 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 			 * set status and continue.
 			 */
 			if ((user_op->op > TICKER_USER_OP_TYPE_STOP_ABS) ||
-			    (((state == 0U) && !ticker->start_pending) &&
+			    ((state == 0U) &&
+#if defined(CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP)
+			     !ticker->start_pending &&
+#endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
 			     (user_op->op != TICKER_USER_OP_TYPE_YIELD_ABS)) ||
 			    ((user_op->op == TICKER_USER_OP_TYPE_UPDATE) &&
 			     (user_op->params.update.ticks_drift_plus == 0U) &&
@@ -2731,7 +2739,9 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 					continue;
 				}
 
+#if defined(CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP)
 				ticker->start_pending = 0U;
+#endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
 
 				if (((ticker->req -
 				      ticker->ack) & 0xff) != 0U) {

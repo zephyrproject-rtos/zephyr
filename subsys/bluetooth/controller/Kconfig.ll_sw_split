@@ -55,6 +55,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC || BT_CTLR_CENTRAL_ISO
 
+	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -1035,6 +1037,21 @@ config BT_TICKER_SLOT_AGNOSTIC
 	  This option enables slot agnostic ticker mode, which ignores slot
 	  reservations and collision handling, and operates as a simple
 	  multi-instance programmable timer.
+
+config BT_TICKER_PREFER_START_BEFORE_STOP
+	bool "Ticker prefer start before stop request"
+	help
+	  Under race conditions wherein for a given ticker node if a number of
+	  start and stop operations are enqueued towards ticker_job by a said
+	  user execution context, then start operations is preferred to be
+	  processed before stop operations.
+
+	  Without this option, the default behavior is to defer all start
+	  requests after all stop requests enqueued by all user context having
+	  been processed. The rationale for default behavior being that under
+	  race conditions, start followed by stop requests, or start before stop
+	  requests, the said ticker node is always scheduled and at timeout the
+	  execution context can take decision based on its execution state.
 
 config BT_CTLR_JIT_SCHEDULING
 	bool "Just-in-Time Scheduling"
