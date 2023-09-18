@@ -23,6 +23,7 @@ struct lvgl_common_input_data {
 	lv_indev_drv_t indev_drv;
 	lv_indev_t *indev;
 	lv_indev_data_t pending_event;
+	lv_indev_data_t previous_event;
 };
 
 int lvgl_input_register_driver(lv_indev_type_t indev_type, const struct device *dev);
