@@ -4,10 +4,6 @@
 
 menu "Input device settings"
 
-config LV_Z_INPUT_INIT_PRIORITY
-	int
-	default 91
-
 config LV_Z_POINTER_KSCAN
 	bool "Keyboard scan pointer input"
 	depends on KSCAN
