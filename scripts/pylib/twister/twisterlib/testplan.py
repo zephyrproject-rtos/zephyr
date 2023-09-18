@@ -936,7 +936,7 @@ class TestPlan:
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
-                    instance.add_filter("Not an emulated platform", Filters.PLATFORM)
+                    instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
             else:
                 self.add_instances(instance_list)
 
