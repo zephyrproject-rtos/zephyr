@@ -14,6 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/barrier.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
@@ -42,8 +43,11 @@
 #define PIN_XL1 0
 #define PIN_XL2 1
 
-#define RTC1_PRETICK_CC_CHAN 1
-#define RTC1_PRETICK_OVERFLOW_CHAN 2
+#define RTC1_PRETICK_CC_CHAN (RTC1_CC_NUM - 1)
+
+/* Mask of CC channels capable of generating interrupts, see nrf_rtc_timer.c */
+#define RTC1_PRETICK_SELECTED_CC_MASK   BIT_MASK(CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT + 1U)
+#define RTC0_PRETICK_SELECTED_CC_MASK	BIT_MASK(NRF_RTC_CC_COUNT_MAX)
 
 #if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
 #define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
@@ -130,38 +134,239 @@ static bool nrf53_anomaly_160_check(void)
 	return true;
 }
 
-bool z_arm_on_enter_cpu_idle(void)
-{
-	bool ok_to_sleep = nrf53_anomaly_160_check();
-
-#if (LOG_LEVEL >= LOG_LEVEL_DBG)
-	static bool suppress_message;
-
-	if (ok_to_sleep) {
-		suppress_message = false;
-	} else if (!suppress_message) {
-		LOG_DBG("Anomaly 160 trigger conditions detected.");
-		suppress_message = true;
-	}
-#endif
 #if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_WDT_NRFX),
+	     "For CONFIG_SOC_NRF53_RTC_PRETICK watchdog is used internally for the pre-tick workaround on nRF5340 cpunet. Application cannot use the watchdog.");
+
+static inline uint32_t rtc_counter_sub(uint32_t a, uint32_t b)
+{
+	return (a - b) & NRF_RTC_COUNTER_MAX;
+}
+
+static bool rtc_ticks_to_next_event_get(NRF_RTC_Type *rtc, uint32_t selected_cc_mask, uint32_t cntr,
+					uint32_t *ticks_to_next_event)
+{
+	bool result = false;
+
+	/* Let's preload register to speed-up. */
+	uint32_t reg_intenset = rtc->INTENSET;
+
+	/* Note: TICK event not handled. */
+
+	if (reg_intenset & NRF_RTC_INT_OVERFLOW_MASK) {
+		/* Overflow can generate an interrupt. */
+		*ticks_to_next_event = NRF_RTC_COUNTER_MAX + 1U - cntr;
+		result = true;
+	}
+
+	for (uint32_t chan = 0; chan < NRF_RTC_CC_COUNT_MAX; chan++) {
+		if ((selected_cc_mask & (1U << chan)) &&
+		    (reg_intenset & NRF_RTC_CHANNEL_INT_MASK(chan))) {
+			/* The CC is in selected mask and is can generate an interrupt. */
+			uint32_t cc = nrf_rtc_cc_get(rtc, chan);
+			uint32_t ticks_to_fire = rtc_counter_sub(cc, cntr);
+
+			if (ticks_to_fire == 0U) {
+				/* When ticks_to_fire == 0, the event should have been just
+				 * generated the interrupt can be already handled or be pending.
+				 * However the next event is expected to be after counter wraps.
+				 */
+				ticks_to_fire = NRF_RTC_COUNTER_MAX + 1U;
+			}
+
+			if (!result) {
+				*ticks_to_next_event = ticks_to_fire;
+				result = true;
+			} else if (ticks_to_fire < *ticks_to_next_event) {
+				*ticks_to_next_event = ticks_to_fire;
+				result = true;
+			} else {
+				/* CC that fires no earlier than already found. */
+			}
+		}
+	}
+
+	return result;
+}
+
+static void rtc_counter_synchronized_get(NRF_RTC_Type *rtc_a, NRF_RTC_Type *rtc_b,
+					 uint32_t *counter_a, uint32_t *counter_b)
+{
+	do {
+		*counter_a = nrf_rtc_counter_get(rtc_a);
+		barrier_dmem_fence_full();
+		*counter_b = nrf_rtc_counter_get(rtc_b);
+		barrier_dmem_fence_full();
+	} while (*counter_a != nrf_rtc_counter_get(rtc_a));
+}
+
+static uint8_t cpu_idle_prepare_monitor_dummy;
+static bool cpu_idle_prepare_allows_sleep;
+
+static void cpu_idle_prepare_monitor_begin(void)
+{
+	__LDREXB(&cpu_idle_prepare_monitor_dummy);
+}
+
+/* Returns 0 if no exception preempted since the last call to cpu_idle_prepare_monitor_begin. */
+static bool cpu_idle_prepare_monitor_end(void)
+{
+	/* The value stored is irrelevant. If any exception took place after
+	 * cpu_idle_prepare_monitor_begin, the the local monitor is cleared and
+	 * the store fails returning 1.
+	 * See Arm v8-M Architecture Reference Manual:
+	 *   Chapter B9.2 The local monitors
+	 *   Chapter B9.4 Exclusive access instructions and the monitors
+	 * See Arm Cortex-M33 Processor Technical Reference Manual
+	 *   Chapter 3.5 Exclusive monitor
+	 */
+	return __STREXB(0U, &cpu_idle_prepare_monitor_dummy);
+}
+
+void z_arm_on_enter_cpu_idle_prepare(void)
+{
+	bool ok_to_sleep = true;
+
+	cpu_idle_prepare_monitor_begin();
+
+	uint32_t rtc_counter = 0U;
+	uint32_t rtc_ticks_to_next_event = 0U;
+	uint32_t rtc0_counter = 0U;
+	uint32_t rtc0_ticks_to_next_event = 0U;
+
+	rtc_counter_synchronized_get(NRF_RTC1, NRF_RTC0, &rtc_counter, &rtc0_counter);
+
+	bool rtc_scheduled = rtc_ticks_to_next_event_get(NRF_RTC1, RTC1_PRETICK_SELECTED_CC_MASK,
+							 rtc_counter, &rtc_ticks_to_next_event);
+
+	if (rtc_ticks_to_next_event_get(NRF_RTC0, RTC0_PRETICK_SELECTED_CC_MASK, rtc0_counter,
+					&rtc0_ticks_to_next_event)) {
+		/* An event is scheduled on RTC0. */
+		if (!rtc_scheduled) {
+			rtc_ticks_to_next_event = rtc0_ticks_to_next_event;
+			rtc_scheduled = true;
+		} else if (rtc0_ticks_to_next_event < rtc_ticks_to_next_event) {
+			rtc_ticks_to_next_event = rtc0_ticks_to_next_event;
+		} else {
+			/* Event on RTC0 will not happen earlier than already found. */
+		}
+	}
+
+	if (rtc_scheduled) {
+		static bool rtc_pretick_cc_set_on_time;
+		/* The pretick should happen 1 tick before the earliest scheduled event
+		 * that can trigger an interrupt.
+		 */
+		uint32_t rtc_pretick_cc_val = (rtc_counter + rtc_ticks_to_next_event - 1U)
+						& NRF_RTC_COUNTER_MAX;
+
+		if (rtc_pretick_cc_val != nrf_rtc_cc_get(NRF_RTC1, RTC1_PRETICK_CC_CHAN)) {
+			/* The CC for pretick needs to be updated. */
+			nrf_rtc_cc_set(NRF_RTC1, RTC1_PRETICK_CC_CHAN, rtc_pretick_cc_val);
+
+			if (rtc_ticks_to_next_event >= NRF_RTC_COUNTER_MAX/2) {
+				/* Pretick is scheduled so far in the future, assumed on time. */
+				rtc_pretick_cc_set_on_time = true;
+			} else {
+				/* Let's check if we updated CC on time, so that the CC can
+				 * take effect.
+				 */
+				barrier_dmem_fence_full();
+				rtc_counter = nrf_rtc_counter_get(NRF_RTC1);
+				uint32_t pretick_cc_to_counter =
+						rtc_counter_sub(rtc_pretick_cc_val, rtc_counter);
+
+				if ((pretick_cc_to_counter < 3) ||
+				    (pretick_cc_to_counter >= NRF_RTC_COUNTER_MAX/2)) {
+					/* The COUNTER value is close enough to the expected
+					 * pretick CC or has just expired, so the pretick event
+					 * generation is not guaranteed.
+					 */
+					rtc_pretick_cc_set_on_time = false;
+				} else {
+					/* The written rtc_pretick_cc is guaranteed to to trigger
+					 * compare event.
+					 */
+					rtc_pretick_cc_set_on_time = true;
+				}
+			}
+		} else {
+			/* The CC for pretick doesn't need to be updated, however
+			 * rtc_pretick_cc_set_on_time still holds if we managed to set it on time.
+			 */
+		}
+
+		/* If the CC for pretick is set on time, so the pretick CC event can be reliably
+		 * generated then allow to sleep. Otherwise (the CC for pretick cannot be reliably
+		 * generated, because CC was set very short to it's fire time) sleep not at all.
+		 */
+		ok_to_sleep = rtc_pretick_cc_set_on_time;
+	} else {
+		/* No events on any RTC timers are scheduled. */
+	}
+
 	if (ok_to_sleep) {
 		NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] |=
 			IPC_PUBLISH_RECEIVE_EN_Msk;
-		if (!nrf_rtc_event_check(NRF_RTC0, NRF_RTC_CHANNEL_EVENT_ADDR(3)) &&
-		    !nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN)) &&
-		    !nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN))) {
+		if (!nrf_rtc_event_check(NRF_RTC1,
+				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN))) {
 			NRF_WDT->TASKS_STOP = 1;
 			/* Check if any event did not occur after we checked for
 			 * stopping condition. If yes, we might have stopped WDT
 			 * when it should be running. Restart it.
 			 */
-			if (nrf_rtc_event_check(NRF_RTC0, NRF_RTC_CHANNEL_EVENT_ADDR(3)) ||
-			    nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN)) ||
-			    nrf_rtc_event_check(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN))) {
+			if (nrf_rtc_event_check(NRF_RTC1,
+					NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN))) {
 				NRF_WDT->TASKS_START = 1;
 			}
 		}
+	}
+
+	cpu_idle_prepare_allows_sleep = ok_to_sleep;
+}
+#endif /* CONFIG_SOC_NRF53_RTC_PRETICK && CONFIG_SOC_NRF5340_CPUNET */
+
+bool z_arm_on_enter_cpu_idle(void)
+{
+	bool ok_to_sleep = true;
+
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
+	if (cpu_idle_prepare_monitor_end() == 0) {
+		/* No exception happened since cpu_idle_prepare_monitor_begin.
+		 * We can trust the outcome of. z_arm_on_enter_cpu_idle_prepare
+		 */
+		ok_to_sleep = cpu_idle_prepare_allows_sleep;
+	} else {
+		/* Exception happened since cpu_idle_prepare_monitor_begin.
+		 * The values which z_arm_on_enter_cpu_idle_prepare could be changed
+		 * by the exception, so we can not trust to it's outcome.
+		 * Do not sleep at all, let's try in the next iteration of idle loop.
+		 */
+		ok_to_sleep = false;
+	}
+#endif
+
+	if (ok_to_sleep) {
+		ok_to_sleep = nrf53_anomaly_160_check();
+
+#if (LOG_LEVEL >= LOG_LEVEL_DBG)
+		static bool suppress_message;
+
+		if (ok_to_sleep) {
+			suppress_message = false;
+		} else if (!suppress_message) {
+			LOG_DBG("Anomaly 160 trigger conditions detected.");
+			suppress_message = true;
+		}
+#endif
+	}
+
+#if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
+	if (!ok_to_sleep) {
+		NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] &=
+			~IPC_PUBLISH_RECEIVE_EN_Msk;
+		NRF_WDT->TASKS_STOP = 1;
 	}
 #endif
 
@@ -212,25 +417,12 @@ void rtc_pretick_rtc0_isr_hook(void)
 	rtc_pretick_rtc_isr_hook();
 }
 
-void rtc_pretick_rtc1_cc0_set_hook(uint32_t val)
-{
-	nrf_rtc_cc_set(NRF_RTC1, RTC1_PRETICK_CC_CHAN, val - 1);
-}
-
 void rtc_pretick_rtc1_isr_hook(void)
 {
 	rtc_pretick_rtc_isr_hook();
 
-	if (nrf_rtc_event_check(NRF_RTC1, NRF_RTC_EVENT_OVERFLOW)) {
-		if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
-			nrf_rtc_event_clear(NRF_RTC1,
-					    NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
-		}
-	}
-	if (nrf_rtc_event_check(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0)) {
-		if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
-			nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
-		}
+	if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
+		nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
 	}
 }
 
@@ -244,11 +436,8 @@ static int rtc_pretick_cpunet_init(void)
 	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
 	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
 	uint32_t task_wdt = nrf_wdt_task_address_get(NRF_WDT, NRF_WDT_TASK_START);
-	uint32_t evt_mpsl_cc = nrf_rtc_event_address_get(NRF_RTC0, NRF_RTC_EVENT_COMPARE_3);
 	uint32_t evt_cc = nrf_rtc_event_address_get(NRF_RTC1,
 				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
-	uint32_t evt_overflow = nrf_rtc_event_address_get(NRF_RTC1,
-				NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
 
 	/* Configure Watchdog to allow stopping. */
 	nrf_wdt_behaviour_set(NRF_WDT, WDT_CONFIG_STOPEN_Msk | BIT(4));
@@ -267,24 +456,14 @@ static int rtc_pretick_cpunet_init(void)
 		return -ENOMEM;
 	}
 
-	/* Setup a PPI connection between RTC "pretick" events and IPC task. */
-	if (IS_ENABLED(CONFIG_BT_LL_SOFTDEVICE)) {
-		nrfx_gppi_event_endpoint_setup(ppi_ch, evt_mpsl_cc);
-	}
 	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_cc);
-	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_overflow);
 	nrfx_gppi_task_endpoint_setup(ppi_ch, task_ipc);
 	nrfx_gppi_event_endpoint_setup(ppi_ch, evt_ipc);
 	nrfx_gppi_task_endpoint_setup(ppi_ch, task_wdt);
 	nrfx_gppi_channels_enable(BIT(ppi_ch));
 
 	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_CC_CHAN));
-	nrf_rtc_event_enable(NRF_RTC1, NRF_RTC_CHANNEL_INT_MASK(RTC1_PRETICK_OVERFLOW_CHAN));
-
 	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
-	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_OVERFLOW_CHAN));
-	/* Set event 1 tick before overflow. */
-	nrf_rtc_cc_set(NRF_RTC1, RTC1_PRETICK_OVERFLOW_CHAN, 0x00FFFFFF);
 
 	return 0;
 }
@@ -292,7 +471,6 @@ static int rtc_pretick_cpunet_init(void)
 
 static int rtc_pretick_init(void)
 {
-	ARG_UNUSED(unused);
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
 	return rtc_pretick_cpuapp_init();
 #else
