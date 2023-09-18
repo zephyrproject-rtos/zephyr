@@ -108,8 +108,7 @@ static int lis2dw12_set_range(const struct device *dev, uint8_t fs)
 
 	if (!err) {
 		/* save internally gain for optimization */
-		lis2dw12->gain =
-			LIS2DW12_FS_TO_GAIN(fs, shift_gain);
+		lis2dw12->gain = LIS2DW12_FS_TO_GAIN(fs, shift_gain);
 	}
 
 	return err;
@@ -132,7 +131,7 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 		return lis2dw12_data_rate_set(ctx, LIS2DW12_XL_ODR_OFF);
 	}
 
-	val =  LIS2DW12_ODR_TO_REG(odr);
+	val = LIS2DW12_ODR_TO_REG(odr);
 	if (val > LIS2DW12_XL_ODR_1k6Hz) {
 		LOG_ERR("ODR too high");
 		return -ENOTSUP;
@@ -141,8 +140,7 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 	return lis2dw12_data_rate_set(ctx, val);
 }
 
-static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
-				    float gain)
+static inline void lis2dw12_convert(struct sensor_value *val, int raw_val, float gain)
 {
 	int64_t dval;
 
@@ -153,9 +151,8 @@ static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline void lis2dw12_channel_get_acc(const struct device *dev,
-					     enum sensor_channel chan,
-					     struct sensor_value *val)
+static inline void lis2dw12_channel_get_acc(const struct device *dev, enum sensor_channel chan,
+					    struct sensor_value *val)
 {
 	int i;
 	uint8_t ofs_start, ofs_stop;
@@ -173,18 +170,18 @@ static inline void lis2dw12_channel_get_acc(const struct device *dev,
 		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0U; ofs_stop = 2U;
+		ofs_start = 0U;
+		ofs_stop = 2U;
 		break;
 	}
 
-	for (i = ofs_start; i <= ofs_stop ; i++) {
+	for (i = ofs_start; i <= ofs_stop; i++) {
 		lis2dw12_convert(pval++, lis2dw12->acc[i], lis2dw12->gain);
 	}
 }
 
-static int lis2dw12_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
-				 struct sensor_value *val)
+static int lis2dw12_channel_get(const struct device *dev, enum sensor_channel chan,
+				struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -202,13 +199,11 @@ static int lis2dw12_channel_get(const struct device *dev,
 }
 
 static int lis2dw12_config(const struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2dw12_set_range(dev,
-				LIS2DW12_FS_TO_REG(sensor_ms2_to_g(val)));
+		return lis2dw12_set_range(dev, LIS2DW12_FS_TO_REG(sensor_ms2_to_g(val)));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lis2dw12_set_odr(dev, val->val1);
 	default:
@@ -218,7 +213,6 @@ static int lis2dw12_config(const struct device *dev, enum sensor_channel chan,
 
 	return -ENOTSUP;
 }
-
 
 static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 {
@@ -236,25 +230,22 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 /* Converts a lis2dw12_fs_t range to its value in milli-g
  * Range can be 2/4/8/16G
  */
-#define FS_RANGE_TO_MG(fs_range)	((2U << fs_range) * 1000U)
+#define FS_RANGE_TO_MG(fs_range) ((2U << fs_range) * 1000U)
 
 /* Converts a range in mg to the lsb value for the WK_THS register
  * For the reg value: 1 LSB = 1/64 of FS
  * Range can be 2/4/8/16G
  */
-#define MG_TO_WK_THS_LSB(range_mg)	(range_mg / 64)
+#define MG_TO_WK_THS_LSB(range_mg) (range_mg / 64)
 
 /* Calculates the WK_THS reg value
  * from the threshold in mg and the lsb value in mg
  * with correct integer rounding
  */
-#define THRESHOLD_MG_TO_WK_THS_REG(thr_mg, lsb_mg) \
-	((thr_mg + (lsb_mg / 2)) / lsb_mg)
+#define THRESHOLD_MG_TO_WK_THS_REG(thr_mg, lsb_mg) ((thr_mg + (lsb_mg / 2)) / lsb_mg)
 
-static int lis2dw12_attr_set_thresh(const struct device *dev,
-					enum sensor_channel chan,
-					enum sensor_attribute attr,
-					const struct sensor_value *val)
+static int lis2dw12_attr_set_thresh(const struct device *dev, enum sensor_channel chan,
+				    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	uint8_t reg;
 	size_t ret;
@@ -291,19 +282,17 @@ static int lis2dw12_attr_set_thresh(const struct device *dev,
 	lsb_mg = MG_TO_WK_THS_LSB(FS_RANGE_TO_MG(range));
 	reg = THRESHOLD_MG_TO_WK_THS_REG(thr_mg, lsb_mg);
 
-	LOG_DBG("Threshold %d mg -> fs: %u mg -> reg = %d LSBs",
-			thr_mg, FS_RANGE_TO_MG(range), reg);
+	LOG_DBG("Threshold %d mg -> fs: %u mg -> reg = %d LSBs", thr_mg, FS_RANGE_TO_MG(range),
+		reg);
 	ret = 0;
 
 	return lis2dw12_wkup_threshold_set(ctx, reg);
 }
-#endif
+#endif /* CONFIG_LIS2DW12_THRESHOLD */
 
 #ifdef CONFIG_LIS2DW12_FREEFALL
-static int lis2dw12_attr_set_ff_dur(const struct device *dev,
-					enum sensor_channel chan,
-					enum sensor_attribute attr,
-					const struct sensor_value *val)
+static int lis2dw12_attr_set_ff_dur(const struct device *dev, enum sensor_channel chan,
+				    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int rc;
 	uint16_t duration;
@@ -332,12 +321,10 @@ static int lis2dw12_attr_set_ff_dur(const struct device *dev,
 	}
 	return rc;
 }
-#endif
+#endif /* CONFIG_LIS2DW12_FREEFALL */
 
-static int lis2dw12_attr_set(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val)
+static int lis2dw12_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 
@@ -373,7 +360,7 @@ static int lis2dw12_attr_set(const struct device *dev,
 	if (attr == SENSOR_ATTR_FF_DUR) {
 		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
 	}
-#endif
+#endif /* CONFIG_LIS2DW12_FREEFALL */
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -389,8 +376,7 @@ static int lis2dw12_attr_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int lis2dw12_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int lis2dw12_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
@@ -446,8 +432,7 @@ static const struct sensor_driver_api lis2dw12_driver_api = {
 	.channel_get = lis2dw12_channel_get,
 };
 
-static int lis2dw12_set_power_mode(const struct device *dev,
-				    lis2dw12_mode_t pm)
+static int lis2dw12_set_power_mode(const struct device *dev, lis2dw12_mode_t pm)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -468,8 +453,7 @@ static int lis2dw12_set_power_mode(const struct device *dev,
 	return lis2dw12_write_reg(ctx, LIS2DW12_CTRL1, &regval, 1);
 }
 
-static int lis2dw12_set_low_noise(const struct device *dev,
-				  bool low_noise)
+static int lis2dw12_set_low_noise(const struct device *dev, bool low_noise)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -566,8 +550,7 @@ static int lis2dw12_init(const struct device *dev)
 	}
 
 	LOG_DBG("high pass filter path is %d", (int)cfg->hp_filter_path);
-	lis2dw12_fds_t fds = cfg->hp_filter_path ?
-		LIS2DW12_HIGH_PASS_ON_OUT : LIS2DW12_LPF_ON_OUT;
+	lis2dw12_fds_t fds = cfg->hp_filter_path ? LIS2DW12_HIGH_PASS_ON_OUT : LIS2DW12_LPF_ON_OUT;
 	ret = lis2dw12_filter_path_set(ctx, fds);
 	if (ret < 0) {
 		LOG_ERR("filter path config error %d", (int)cfg->hp_filter_path);
@@ -636,36 +619,35 @@ static int lis2dw12_pm_device_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LIS2DW12_TAP
-#define LIS2DW12_CONFIG_TAP(inst)					\
-	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
-	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
-	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
-	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+#define LIS2DW12_CONFIG_TAP(inst)                                                                  \
+	.tap_mode = DT_INST_PROP(inst, tap_mode),                                                  \
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),                                        \
+	.tap_shock = DT_INST_PROP(inst, tap_shock),                                                \
+	.tap_latency = DT_INST_PROP(inst, tap_latency),                                            \
 	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
 #else
 #define LIS2DW12_CONFIG_TAP(inst)
 #endif /* CONFIG_LIS2DW12_TAP */
 
 #ifdef CONFIG_LIS2DW12_FREEFALL
-#define LIS2DW12_CONFIG_FREEFALL(inst)					\
-	.freefall_duration = DT_INST_PROP(inst, ff_duration),	\
+#define LIS2DW12_CONFIG_FREEFALL(inst)                                                             \
+	.freefall_duration = DT_INST_PROP(inst, ff_duration),                                      \
 	.freefall_threshold = DT_INST_PROP(inst, ff_threshold),
 #else
 #define LIS2DW12_CONFIG_FREEFALL(inst)
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
-#define LIS2DW12_CFG_IRQ(inst) \
-	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
-	.int_pin = DT_INST_PROP(inst, int_pin),
+#define LIS2DW12_CFG_IRQ(inst)                                                                     \
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios), .int_pin = DT_INST_PROP(inst, int_pin),
 #else
 #define LIS2DW12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
 #define LIS2DW12_CONFIG_COMMON(inst)                                                               \
-	.pm = DT_INST_PROP(inst, power_mode),                                                      \
-	.odr = DT_INST_PROP_OR(inst, odr, 12), .range = DT_INST_PROP(inst, range),                 \
-	.bw_filt = DT_INST_PROP(inst, bw_filt), .low_noise = DT_INST_PROP(inst, low_noise),        \
+	.pm = DT_INST_PROP(inst, power_mode), .odr = DT_INST_PROP_OR(inst, odr, 12),               \
+	.range = DT_INST_PROP(inst, range), .bw_filt = DT_INST_PROP(inst, bw_filt),                \
+	.low_noise = DT_INST_PROP(inst, low_noise),                                                \
 	.hp_filter_path = DT_INST_PROP(inst, hp_filter_path),                                      \
 	.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode),                                            \
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                                            \
@@ -690,13 +672,14 @@ static int lis2dw12_pm_device_init(const struct device *dev)
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DW12_CONFIG_I2C(inst)					\
-	{								\
-		STMEMSC_CTX_I2C(&lis2dw12_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
-		},							\
-		LIS2DW12_CONFIG_COMMON(inst)				\
+#define LIS2DW12_CONFIG_I2C(inst)                                                                  \
+	{                                                                                          \
+		STMEMSC_CTX_I2C(&lis2dw12_config_##inst.stmemsc_cfg),                              \
+			.stmemsc_cfg =                                                             \
+				{                                                                  \
+					.i2c = I2C_DT_SPEC_INST_GET(inst),                         \
+				},                                                                 \
+			LIS2DW12_CONFIG_COMMON(inst)                                               \
 	}
 
 /*
@@ -704,12 +687,11 @@ static int lis2dw12_pm_device_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DW12_DEFINE(inst)						\
-	static struct lis2dw12_data lis2dw12_data_##inst;		\
-	static const struct lis2dw12_device_config lis2dw12_config_##inst =	\
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
-		    (LIS2DW12_CONFIG_SPI(inst)),			\
-		    (LIS2DW12_CONFIG_I2C(inst)));			\
+#define LIS2DW12_DEFINE(inst)                                                                      \
+	static struct lis2dw12_data lis2dw12_data_##inst;                                          \
+	static const struct lis2dw12_device_config lis2dw12_config_##inst =                        \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (LIS2DW12_CONFIG_SPI(inst)),                \
+			    (LIS2DW12_CONFIG_I2C(inst)));                                          \
 	LIS2DW12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DW12_DEFINE)
