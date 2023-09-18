@@ -2377,7 +2377,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_SCHED_DEADLINE \
                          CONFIG_SETTINGS_RUNTIME \
                          CONFIG_SMP \
-                         CONFIG_SPI_ASYNC \
                          CONFIG_SYS_CLOCK_EXISTS \
                          CONFIG_THREAD_CUSTOM_DATA \
                          CONFIG_THREAD_MONITOR \
