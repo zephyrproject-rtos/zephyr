@@ -18,7 +18,7 @@ config SOC_NRF5340_CPUNET
 	select ARM_ON_EXIT_CPU_IDLE
 	select SOC_COMPATIBLE_NRF5340_CPUNET
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
-	imply SOC_NRF53_RTC_PRETICK
+	imply SOC_NRF53_RTC_PRETICK if !WDT_NRFX
 
 choice
 	prompt "nRF53x MCU Selection"
@@ -52,9 +52,14 @@ config SOC_NRF53_ANOMALY_160_WORKAROUND
 	select ARM_ON_ENTER_CPU_IDLE_HOOK
 
 config SOC_NRF53_RTC_PRETICK
-	bool
+	bool "Pre-tick workaround for nRF5340 anomaly 165"
 	depends on !NRF_802154_RADIO_DRIVER
 	select NRFX_DPPI
+	select ARM_ON_ENTER_CPU_IDLE_HOOK if SOC_NRF5340_CPUNET
+	select ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK if SOC_NRF5340_CPUNET
+	help
+	  Indicates that the pre-tick workaround for the anomaly 165 that affects
+	  the nRF5340 SoC should be applied.
 
 if SOC_NRF53_RTC_PRETICK
 
