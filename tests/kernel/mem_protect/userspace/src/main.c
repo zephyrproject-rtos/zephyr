@@ -327,7 +327,7 @@ ZTEST_USER(userspace, test_write_kerntext)
 	/* Try to write to kernel text. */
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	memset(&z_is_thread_essential, 0, 4);
+	memset(&k_current_get, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
 }
 

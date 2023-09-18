@@ -13,6 +13,8 @@
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
+bool z_is_thread_essential(void);
+
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
 
