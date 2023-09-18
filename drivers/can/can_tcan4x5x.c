@@ -789,8 +789,8 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 	static struct can_mcan_data can_mcan_data_##inst =                                         \
 		CAN_MCAN_DATA_INITIALIZER(&tcan4x5x_data_##inst);                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &tcan4x5x_init, NULL, &can_mcan_data_##inst,                   \
-			      &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,      \
-			      &tcan4x5x_driver_api);
+	CAN_DEVICE_DT_INST_DEFINE(inst, tcan4x5x_init, NULL, &can_mcan_data_##inst,                \
+				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+				  &tcan4x5x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCAN4X5X_INIT)

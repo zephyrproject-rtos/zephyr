@@ -317,6 +317,9 @@ int can_mcan_start(const struct device *dev)
 		}
 	}
 
+	/* Reset statistics */
+	CAN_STATS_RESET(dev);
+
 	err = can_mcan_leave_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT_MS));
 	if (err != 0) {
 		LOG_ERR("failed to leave init mode");
@@ -524,11 +527,67 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 	}
 }
 
+#ifdef CONFIG_CAN_STATS
+static void can_mcan_lec_update_stats(const struct device *dev, enum can_mcan_psr_lec lec)
+{
+	switch (lec) {
+	case CAN_MCAN_PSR_LEC_STUFF_ERROR:
+		CAN_STATS_STUFF_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_FORM_ERROR:
+		CAN_STATS_FORM_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_ACK_ERROR:
+		CAN_STATS_ACK_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_BIT1_ERROR:
+		CAN_STATS_BIT1_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_BIT0_ERROR:
+		CAN_STATS_BIT0_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_CRC_ERROR:
+		CAN_STATS_CRC_ERROR_INC(dev);
+		break;
+	case CAN_MCAN_PSR_LEC_NO_ERROR:
+	case CAN_MCAN_PSR_LEC_NO_CHANGE:
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_CAN_STATS */
+
+static int can_mcan_read_psr(const struct device *dev, uint32_t *val)
+{
+	/* Reading the lower byte of the PSR register clears the protocol last
+	 * error codes (LEC). To avoid missing errors, this function should be
+	 * used whenever the PSR register is read.
+	 */
+	int err = can_mcan_read_reg(dev, CAN_MCAN_PSR, val);
+
+	if (err != 0) {
+		return err;
+	}
+
+#ifdef CONFIG_CAN_STATS
+	enum can_mcan_psr_lec lec;
+
+	lec = FIELD_GET(CAN_MCAN_PSR_LEC, *val);
+	can_mcan_lec_update_stats(dev, lec);
+#ifdef CONFIG_CAN_FD_MODE
+	lec = FIELD_GET(CAN_MCAN_PSR_DLEC, *val);
+	can_mcan_lec_update_stats(dev, lec);
+#endif
+#endif /* CONFIG_CAN_STATS */
+
+	return 0;
+}
+
 void can_mcan_line_0_isr(const struct device *dev)
 {
 	const uint32_t events = CAN_MCAN_IR_BO | CAN_MCAN_IR_EP | CAN_MCAN_IR_EW |
 				CAN_MCAN_IR_TEFN | CAN_MCAN_IR_TEFL | CAN_MCAN_IR_ARA |
-				CAN_MCAN_IR_MRAF;
+				CAN_MCAN_IR_MRAF | CAN_MCAN_IR_PEA | CAN_MCAN_IR_PED;
 	struct can_mcan_data *data = dev->data;
 	uint32_t ir;
 	int err;
@@ -562,9 +621,17 @@ void can_mcan_line_0_isr(const struct device *dev)
 			LOG_ERR("Access to reserved address");
 		}
 
-		if (ir & CAN_MCAN_IR_MRAF) {
+		if ((ir & CAN_MCAN_IR_MRAF) != 0U) {
 			LOG_ERR("Message RAM access failure");
 		}
+
+#ifdef CONFIG_CAN_STATS
+		if ((ir & (CAN_MCAN_IR_PEA | CAN_MCAN_IR_PED)) != 0U) {
+			uint32_t reg;
+			/* This function automatically updates protocol error stats */
+			can_mcan_read_psr(dev, &reg);
+		}
+#endif
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
 		if (err != 0) {
@@ -739,10 +806,12 @@ void can_mcan_line_1_isr(const struct device *dev)
 
 		if ((ir & CAN_MCAN_IR_RF0L) != 0U) {
 			LOG_ERR("Message lost on FIFO0");
+			CAN_STATS_RX_OVERRUN_INC(dev);
 		}
 
 		if ((ir & CAN_MCAN_IR_RF1L) != 0U) {
 			LOG_ERR("Message lost on FIFO1");
+			CAN_STATS_RX_OVERRUN_INC(dev);
 		}
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
@@ -760,7 +829,7 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 	int err;
 
 	if (state != NULL) {
-		err = can_mcan_read_reg(dev, CAN_MCAN_PSR, &reg);
+		err = can_mcan_read_psr(dev, &reg);
 		if (err != 0) {
 			return err;
 		}
@@ -877,7 +946,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		return -ENETDOWN;
 	}
 
-	err = can_mcan_read_reg(dev, CAN_MCAN_PSR, &reg);
+	err = can_mcan_read_psr(dev, &reg);
 	if (err != 0) {
 		return err;
 	}
@@ -1456,6 +1525,12 @@ int can_mcan_init(const struct device *dev)
 	reg = CAN_MCAN_IE_BOE | CAN_MCAN_IE_EWE | CAN_MCAN_IE_EPE | CAN_MCAN_IE_MRAFE |
 	      CAN_MCAN_IE_TEFLE | CAN_MCAN_IE_TEFNE | CAN_MCAN_IE_RF0NE | CAN_MCAN_IE_RF1NE |
 	      CAN_MCAN_IE_RF0LE | CAN_MCAN_IE_RF1LE;
+#ifdef CONFIG_CAN_STATS
+	/* These ISRs are only enabled/used for statistics, they are otherwise
+	 * disabled as they may produce a significant amount of frequent ISRs.
+	 */
+	reg |= CAN_MCAN_IE_PEAE | CAN_MCAN_IE_PEDE;
+#endif
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_IE, reg);
 	if (err != 0) {
