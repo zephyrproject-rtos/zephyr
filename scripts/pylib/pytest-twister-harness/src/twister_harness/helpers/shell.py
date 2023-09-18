@@ -66,3 +66,15 @@ class Shell:
         # wait for device command execution
         lines.extend(self._device.readlines_until(regex=regex_prompt, timeout=timeout, print_output=print_output))
         return lines
+
+    def get_filtered_output(self, command_lines: list[str]) -> list[str]:
+        regex_filter = re.compile(
+            '|'.join([
+                re.escape(self.prompt),
+                '<dbg>',
+                '<inf>',
+                '<wrn>',
+                '<err>'
+            ])
+        )
+        return list(filter(lambda l: not regex_filter.search(l), command_lines))
