@@ -1301,11 +1301,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_PCIE_DECLARE(n) \
 	COND_CODE_1(DT_INST_ON_BUS(n, pcie), (DEVICE_PCIE_INST_DECLARE(n)), ())
 
-#define DEV_DATA_FLOW_CTRL0 UART_CFG_FLOW_CTRL_NONE
-#define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
-#define DEV_DATA_FLOW_CTRL(n) \
-	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_PROP_OR(n, hw_flow_control, 0))
-
 #ifdef CONFIG_UART_NS16550_PARENT_INIT_LEVEL
 #define BOOT_LEVEL(n) \
 	COND_CODE_1(DT_INST_ON_BUS(n, pcie), (POST_KERNEL), (PRE_KERNEL_1))
@@ -1348,7 +1343,10 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.uart_config.parity = UART_CFG_PARITY_NONE,                          \
 		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                       \
 		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                       \
-		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
+		.uart_config.flow_ctrl =                                             \
+			COND_CODE_1(DT_INST_PROP_OR(n, hw_flow_control, 0),          \
+				    (UART_CFG_FLOW_CTRL_RTS_CTS),                    \
+				    (UART_CFG_FLOW_CTRL_NONE)),                      \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dlf),                            \
 			(.dlf = DT_INST_PROP_OR(n, dlf, 0),))                        \
 	};                                                                           \
