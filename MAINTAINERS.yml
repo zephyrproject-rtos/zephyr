@@ -3525,6 +3525,15 @@ West:
   labels:
     - "area: Sensors"
 
+"West project: hostap":
+  status: maintained
+  maintainers:
+    - krish2718
+    - jukkar
+  files: []
+  labels:
+    - "area: Wi-Fi"
+
 Xtensa arch:
   status: maintained
   maintainers:

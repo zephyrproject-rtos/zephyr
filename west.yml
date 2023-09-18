@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: krish2718
+      url-base: https://github.com/krish2718
 
   group-filter: [-babblesim]
 
@@ -362,6 +364,11 @@ manifest:
     - name: thrift
       path: modules/lib/thrift
       revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
+    - name: hostap
+      remote: krish2718
+      repo-path: hostap
+      path: modules/lib/hostap
+      revision: add_to_zephyr
 
   self:
     path: zephyr
