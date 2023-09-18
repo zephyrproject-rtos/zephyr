@@ -1,10 +1,11 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <Swt_Ip.h>
 #include <Swt_Ip_Irq.h>
@@ -16,8 +17,9 @@ LOG_MODULE_REGISTER(swt_nxp_s32);
 #define PARAM_UNUSED	0
 
 struct swt_nxp_s32_config {
-	uint32_t clock_freq;
 	uint8_t instance;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct swt_nxp_s32_data {
@@ -76,18 +78,26 @@ static int swt_nxp_s32_install_timeout(const struct device *dev,
 {
 	const struct swt_nxp_s32_config *config = dev->config;
 	struct swt_nxp_s32_data *data = dev->data;
+	uint32_t clock_rate;
+	int err;
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
-	data->swt_config.u32TimeoutValue = config->clock_freq / 1000U * cfg->window.max;
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate);
+	if (err) {
+		LOG_ERR("Failed to get module clock frequency");
+		return err;
+	}
+
+	data->swt_config.u32TimeoutValue = clock_rate / 1000U * cfg->window.max;
 
 	if (cfg->window.min) {
 		data->swt_config.bEnWindow = true;
 		data->swt_config.u32WindowValue =
-			config->clock_freq / 1000U * (cfg->window.max - cfg->window.min);
+			clock_rate / 1000U * (cfg->window.max - cfg->window.min);
 	} else {
 		data->swt_config.bEnWindow = false;
 		data->swt_config.u32WindowValue = 0;
@@ -161,12 +171,26 @@ static const struct wdt_driver_api swt_nxp_s32_driver_api = {
 		},								\
 	};									\
 	static const struct swt_nxp_s32_config swt_nxp_s32_config_##n = {	\
-		.clock_freq = DT_PROP(SWT_NODE(n), clock_frequency),		\
 		.instance = (uint8_t)(RTU_SWT(n)),				\
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(SWT_NODE(n))),	\
+		.clock_subsys = (clock_control_subsys_t)			\
+				DT_CLOCKS_CELL(SWT_NODE(n), name),		\
 	};									\
 										\
 	static int swt_nxp_s32_##n##_init(const struct device *dev)		\
 	{									\
+		const struct swt_nxp_s32_config *config = dev->config;		\
+		int err;							\
+										\
+		if (!device_is_ready(config->clock_dev)) {			\
+			return -ENODEV;						\
+		}								\
+										\
+		err = clock_control_on(config->clock_dev, config->clock_subsys);\
+		if (err) {							\
+			return err;						\
+		}								\
+										\
 		IRQ_CONNECT(DT_IRQN(SWT_NODE(n)),				\
 			    DT_IRQ(SWT_NODE(n), priority),			\
 			    Swt_Ip_IrqHandler,					\
