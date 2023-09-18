@@ -111,14 +111,19 @@ if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
 endif()
 
 # Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
-# configure the NFCT pins as GPIOS. This way, the HAL will take care of doing
-# the proper configuration sequence during system init
+# configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
+# to configure the reset GPIO as nRESET. This way, the HAL will take care of
+# doing the proper configuration sequence during system init
 
 dt_nodelabel(uicr_path NODELABEL "uicr")
 if(${uicr_path})
   dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
-
   if(${nfct_pins_as_gpios})
     zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
+  endif()
+
+  dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
+  if(${gpio_as_nreset})
+    zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
   endif()
 endif()
