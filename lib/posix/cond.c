@@ -9,8 +9,11 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
+
+LOG_MODULE_DECLARE(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
@@ -42,16 +45,19 @@ static struct k_condvar *get_posix_cond(pthread_cond_t cond)
 
 	/* if the provided cond does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(cond)) {
+		LOG_ERR("Cond is uninitialized (%x)", cond);
 		return NULL;
 	}
 
 	/* Mask off the MSB to get the actual bit index */
 	if (sys_bitarray_test_bit(&posix_cond_bitarray, bit, &actually_initialized) < 0) {
+		LOG_ERR("Cond is invalid (%x)", cond);
 		return NULL;
 	}
 
 	if (actually_initialized == 0) {
 		/* The cond claims to be initialized but is actually not */
+		LOG_ERR("Cond claims to be initialized (%x)", cond);
 		return NULL;
 	}
 
@@ -70,6 +76,7 @@ static struct k_condvar *to_posix_cond(pthread_cond_t *cvar)
 	/* Try and automatically associate a posix_cond */
 	if (sys_bitarray_alloc(&posix_cond_bitarray, 1, &bit) < 0) {
 		/* No conds left to allocate */
+		LOG_ERR("Unable to allocate pthread_cond_t");
 		return NULL;
 	}
 
@@ -92,13 +99,17 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, k_timeout_t time
 		return EINVAL;
 	}
 
+	LOG_DBG("Waiting on cond %p with timeout %llx", cv, timeout.ticks);
 	ret = k_condvar_wait(cv, m, timeout);
 	if (ret == -EAGAIN) {
+		LOG_ERR("Timeout waiting on cond %p", cv);
 		ret = ETIMEDOUT;
 	} else if (ret < 0) {
+		LOG_ERR("k_condvar_wait() failed: %d", ret);
 		ret = -ret;
 	} else {
 		__ASSERT_NO_MSG(ret == 0);
+		LOG_DBG("Cond %p received signal", cv);
 	}
 
 	return ret;
@@ -114,8 +125,10 @@ int pthread_cond_signal(pthread_cond_t *cvar)
 		return EINVAL;
 	}
 
+	LOG_DBG("Signaling cond %p", cv);
 	ret = k_condvar_signal(cv);
 	if (ret < 0) {
+		LOG_ERR("k_condvar_signal() failed: %d", ret);
 		return -ret;
 	}
 
@@ -134,8 +147,10 @@ int pthread_cond_broadcast(pthread_cond_t *cvar)
 		return EINVAL;
 	}
 
+	LOG_DBG("Broadcasting on cond %p", cv);
 	ret = k_condvar_broadcast(cv);
 	if (ret < 0) {
+		LOG_ERR("k_condvar_broadcast() failed: %d", ret);
 		return -ret;
 	}
 
@@ -167,6 +182,8 @@ int pthread_cond_init(pthread_cond_t *cvar, const pthread_condattr_t *att)
 		return ENOMEM;
 	}
 
+	LOG_DBG("Initialized cond %p", cv);
+
 	return 0;
 }
 
@@ -186,6 +203,8 @@ int pthread_cond_destroy(pthread_cond_t *cvar)
 	__ASSERT_NO_MSG(err == 0);
 
 	*cvar = -1;
+
+	LOG_DBG("Destroyed cond %p", cv);
 
 	return 0;
 }
