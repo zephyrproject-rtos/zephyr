@@ -109,7 +109,6 @@
 &can0 {
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
-	clock-frequency = <80000000>;
 	bus-speed = <125000>;
 	sample-point = <875>;
 	sjw = <1>;
@@ -122,7 +121,6 @@
 &can1 {
 	pinctrl-0 = <&can1_default>;
 	pinctrl-names = "default";
-	clock-frequency = <80000000>;
 	bus-speed = <125000>;
 	sample-point = <875>;
 	sjw = <1>;
