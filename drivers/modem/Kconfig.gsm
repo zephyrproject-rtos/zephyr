@@ -2,14 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_GSM_PPP
-	bool "Support GSM modems"
+	bool "[DEPRECATED] Support GSM modems"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select DEPRECATED
 	help
-	  Enable GSM modems that support standard AT commands and PPP.
+	  This driver is deprecated, use the MODEM_CELLULAR driver instead.
 
 if MODEM_GSM_PPP
 
