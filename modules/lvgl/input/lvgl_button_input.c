@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT zephyr_lvgl_button_input
 
 #include "lvgl_common_input.h"
+#include "lvgl_button_input.h"
 
 #include <zephyr/logging/log.h>
 
@@ -44,7 +45,7 @@ static void lvgl_button_process_event(const struct device *dev, struct input_eve
 	}
 }
 
-static int lvgl_button_input_init(const struct device *dev)
+int lvgl_button_input_init(const struct device *dev)
 {
 	struct lvgl_common_input_data *data = dev->data;
 	const struct lvgl_button_input_config *cfg = dev->config;
@@ -79,8 +80,8 @@ static int lvgl_button_input_init(const struct device *dev)
 		.coordinates = lvgl_button_coordinates_##inst,                                     \
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, lvgl_button_input_init, NULL, &lvgl_common_input_data_##inst,  \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_common_input_data_##inst,                    \
 			      &lvgl_button_input_config_##inst, POST_KERNEL,                       \
-			      CONFIG_LV_Z_INPUT_INIT_PRIORITY, NULL);
+			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_BUTTON_INPUT_DEFINE)

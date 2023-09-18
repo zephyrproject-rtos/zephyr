@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT zephyr_lvgl_encoder_input
 
 #include "lvgl_common_input.h"
+#include "lvgl_encoder_input.h"
 
 #include <zephyr/logging/log.h>
 
@@ -37,7 +38,7 @@ static void lvgl_encoder_process_event(const struct device *dev, struct input_ev
 	}
 }
 
-static int lvgl_encoder_input_init(const struct device *dev)
+int lvgl_encoder_input_init(const struct device *dev)
 {
 	return lvgl_input_register_driver(LV_INDEV_TYPE_ENCODER, dev);
 }
@@ -64,8 +65,8 @@ static int lvgl_encoder_input_init(const struct device *dev)
 		.button_input_code = BUTTON_CODE(inst),                                            \
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, lvgl_encoder_input_init, NULL, &lvgl_common_input_data_##inst, \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_common_input_data_##inst,                    \
 			      &lvgl_encoder_input_config_##inst, POST_KERNEL,                      \
-			      CONFIG_LV_Z_INPUT_INIT_PRIORITY, NULL);
+			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_ENCODER_INPUT_DEFINE)

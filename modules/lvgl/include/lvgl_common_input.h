@@ -26,6 +26,7 @@ struct lvgl_common_input_data {
 };
 
 int lvgl_input_register_driver(lv_indev_type_t indev_type, const struct device *dev);
+int lvgl_init_input_devices(void);
 
 #define LVGL_INPUT_EVENT_MSGQ(inst, type) lvgl_input_msgq_##type##_##inst
 #define LVGL_INPUT_DEVICE(inst)           DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input))

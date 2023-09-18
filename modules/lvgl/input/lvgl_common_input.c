@@ -9,6 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <lvgl_input_device.h>
+#include "lvgl_pointer_input.h"
+#include "lvgl_button_input.h"
+#include "lvgl_encoder_input.h"
 
 LOG_MODULE_DECLARE(lvgl);
 
@@ -49,6 +52,33 @@ int lvgl_input_register_driver(lv_indev_type_t indev_type, const struct device *
 	if (common_data->indev == NULL) {
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+#define LV_DEV_INIT(node_id, init_fn)                                                              \
+	do {                                                                                       \
+		int ret = init_fn(DEVICE_DT_GET(node_id));                                         \
+		if (ret) {                                                                         \
+			return ret;                                                                \
+		}                                                                                  \
+	} while (0)
+
+int lvgl_init_input_devices(void)
+{
+#ifdef CONFIG_LV_Z_POINTER_INPUT
+	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_pointer_input, LV_DEV_INIT,
+				     lvgl_pointer_input_init);
+#endif /* CONFIG_LV_Z_POINTER_INPUT */
+
+#ifdef CONFIG_LV_Z_BUTTON_INPUT
+	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_button_input, LV_DEV_INIT, lvgl_button_input_init);
+#endif /* CONFIG_LV_Z_BUTTON_INPUT */
+
+#ifdef CONFIG_LV_Z_ENCODER_INPUT
+	DT_FOREACH_STATUS_OKAY_VARGS(zephyr_lvgl_encoder_input, LV_DEV_INIT,
+				     lvgl_encoder_input_init);
+#endif /* CONFIG_LV_Z_ENCODER_INPUT */
 
 	return 0;
 }

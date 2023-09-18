@@ -146,4 +146,4 @@ static int lvgl_kscan_pointer_init(void)
 	return 0;
 }
 
-SYS_INIT(lvgl_kscan_pointer_init, APPLICATION, CONFIG_LV_Z_INPUT_INIT_PRIORITY);
+SYS_INIT(lvgl_kscan_pointer_init, APPLICATION, CONFIG_INPUT_INIT_PRIORITY);
