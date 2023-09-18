@@ -367,8 +367,6 @@ static inline uint8_t reg_interval(const struct device *dev)
 	return config->reg_interval;
 }
 
-static const struct uart_driver_api uart_ns16550_driver_api;
-
 static inline uintptr_t get_port(const struct device *dev)
 {
 	uintptr_t port;
