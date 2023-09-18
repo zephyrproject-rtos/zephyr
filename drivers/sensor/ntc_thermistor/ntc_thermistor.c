@@ -39,7 +39,7 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 
 	adc_sequence_init_dt(&cfg->adc_channel, &sequence);
 	res = adc_read(cfg->adc_channel.dev, &sequence);
-	if (res) {
+	if (!res) {
 		val_mv = data->raw;
 		res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
 		data->sample_val = val_mv;
