@@ -23,7 +23,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
-#include <zephyr/kernel/sched_priq.h>
+#include <zephyr/kernel/internal/sched_priq.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_heap.h>
