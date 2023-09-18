@@ -104,4 +104,6 @@ source "drivers/interrupt_controller/Kconfig.vim"
 
 source "drivers/interrupt_controller/Kconfig.ra"
 
+source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
+
 endmenu

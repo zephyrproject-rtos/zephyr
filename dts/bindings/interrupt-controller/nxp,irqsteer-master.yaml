@@ -1,0 +1,15 @@
+description: i.MX IRQ_STEER master
+
+compatible: "nxp,irqsteer-master"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+  reg:
+    required: true
+
+interrupt-cells:
+  - irq
