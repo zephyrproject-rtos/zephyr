@@ -105,7 +105,7 @@
 	apa102: apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;
-		spi-max-frequency = <5250000>;
+		spi-max-frequency = <DT_FREQ_K(5250)>;
 	};
 };
 

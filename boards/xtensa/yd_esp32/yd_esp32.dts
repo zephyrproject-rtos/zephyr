@@ -103,7 +103,7 @@
 
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */
-		spi-max-frequency = <6400000>;
+		spi-max-frequency = <DT_FREQ_K(6400)>;
 
 		/* XL-5050RGBC-WS2812B */
 		chain-length = <1>;

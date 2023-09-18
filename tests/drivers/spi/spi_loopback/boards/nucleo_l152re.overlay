@@ -15,12 +15,12 @@
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
-		spi-max-frequency = <150000>;
+		spi-max-frequency = <DT_FREQ_K(150)>;
 	};
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
-		spi-max-frequency = <500000>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
 	};
 };
 

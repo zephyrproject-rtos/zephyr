@@ -214,7 +214,7 @@ test_spi_max31855: max31855@1b {
 test_spi_max31865: max31865@1c {
 	compatible = "maxim,max31865";
 	reg = <0x1c>;
-	spi-max-frequency = <125000>;
+	spi-max-frequency = <DT_FREQ_K(125)>;
 	resistance-at-zero = <100>;
 	resistance-reference = <430>;
 	low-threshold = <6579>;

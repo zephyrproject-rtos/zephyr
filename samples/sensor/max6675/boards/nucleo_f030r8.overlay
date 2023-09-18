@@ -8,6 +8,6 @@
 	max6675@0 {
 		compatible = "maxim,max6675";
 		reg = <0>;
-		spi-max-frequency = <4300000>;
+		spi-max-frequency = <DT_FREQ_K(4300)>;
 	};
 };

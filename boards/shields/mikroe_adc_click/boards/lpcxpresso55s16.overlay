@@ -13,7 +13,7 @@
 	mcp3204_mikroe_adc_click: mcp3204@1 {
 		compatible = "microchip,mcp3204";
 		reg = <0x1>;
-		spi-max-frequency = <100000>;
+		spi-max-frequency = <DT_FREQ_K(100)>;
 		#io-channel-cells = <1>;
 	};
 };

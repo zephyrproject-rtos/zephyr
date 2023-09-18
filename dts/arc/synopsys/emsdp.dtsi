@@ -119,7 +119,7 @@
 				compatible = "spansion,s25fl256s", "jedec,spi-nor";
 				reg = <0>;
 				size = <0x10000000>;
-				spi-max-frequency = <100000>;
+				spi-max-frequency = <DT_FREQ_K(100)>;
 				status = "okay";
 				jedec-id = [01 02 19];
 			};

@@ -15,7 +15,7 @@
 
                 /* SPI */
                 reg = <0>; /* ignored, but necessary for SPI bindings */
-                spi-max-frequency = <6400000>;
+                spi-max-frequency = <DT_FREQ_K(6400)>;
 
                 /* WS2812 */
                 chain-length = <1>; /* arbitrary; change at will */

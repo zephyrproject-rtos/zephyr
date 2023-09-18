@@ -27,13 +27,13 @@ spi: &scb1 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
-		spi-max-frequency = <200000>;
+		spi-max-frequency = <DT_FREQ_K(200)>;
 	};
 
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
-		spi-max-frequency = <1500000>;
+		spi-max-frequency = <DT_FREQ_K(1500)>;
 	};
 };
 
