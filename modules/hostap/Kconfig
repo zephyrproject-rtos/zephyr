@@ -8,7 +8,11 @@
 config WIFI_NM_WPA_SUPPLICANT
 	bool "WPA Suplicant from hostap project [EXPERIMENTAL]"
 	select POSIX_CLOCK
+	select POSIX_SIGNAL
+	select POSIX_API
+#	depends on !POSIX_API
 	select NET_SOCKETS
+#	select NET_SOCKETS_POSIX_NAMES
 	select NET_SOCKETS_PACKET
 	select NET_SOCKETPAIR
 	select NET_L2_WIFI_MGMT
@@ -20,6 +24,10 @@ config WIFI_NM_WPA_SUPPLICANT
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
 	default 8192
+
+config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
+	int "Stack size for wpa_supplicant iface workqueue"
+	default 4096
 
 # Currently we default POSIX_MAX_FDS to 16 in lib/posix/Kconfig
 # l2_packet - 1
@@ -51,6 +59,114 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 
 if WIFI_NM_WPA_SUPPLICANT
 
+config WIFI_NM_WPA_SUPPLICANT_WEP
+	bool "WEP (Legacy crypto) support"
+
+choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
+	prompt "WPA supplicant crypto implementation"
+	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_PSA if BUILD_WITH_TFM
+	default WIFI_NM_WPA_SUPPLICANT_CRYPTO if !BUILD_WITH_TFM
+	help
+	  Select the crypto implementation to use for WPA supplicant.
+
+# To easily manage the crypto dependencies we separate the crypto
+# implementations into two Kconfig options. One for the legacy crypto
+# and one for the PSA crypto.
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_PSA
+	bool "PSA Crypto support for WiFi"
+	select WIFI_NM_WPA_SUPPLICANT_WEP
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CMAC
+	select PSA_WANT_ALG_CBC_PKCS7
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_GENERATE_RANDOM
+	select PSA_WANT_ALG_RSA_PSS
+	select PSA_WANT_ALG_DETERMINISTIC_ECDSA
+	select PSA_WANT_ALG_SHA_512
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_ECC_SECP_R1_256
+	# Legacy crypto, still needed
+	#select MBEDTLS
+	#select MBEDTLS_CMAC_C
+	#select MBEDTLS_GCM_C
+	#select MBEDTLS_TLS_LIBRARY
+	#select MBEDTLS_PK_WRITE_C
+	#select MBEDTLS_X509_LIBRARY
+	#select MBEDTLS_X509_CRT_PARSE_C
+	#select MBEDTLS_CIPHER_C
+	#select MBEDTLS_CIPHER_MODE_CTR
+	#select MBEDTLS_CIPHER_MODE_CBC
+	#select MBEDTLS_SSL_TLS_C
+	#select MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	#select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	#select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO
+	bool "Legacy Crypto support for WiFi"
+	select WIFI_NM_WPA_SUPPLICANT_WEP
+	#select MBEDTLS
+	#select MBEDTLS_CIPHER_MODE_CBC
+	#select MBEDTLS_CIPHER_MODE_CTR
+	#select MBEDTLS_LEGACY_CRYPTO_C
+	#select MBEDTLS_ECP_C
+	#select MBEDTLS_CTR_DRBG_C
+	#select MBEDTLS_PK_WRITE_C
+	#select MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	#select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	#select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	bool "No Crypto support for WiFi"
+
+endchoice
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	bool "Enterprise Crypto support for WiFi"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3
+	bool "WPA3 support"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_AP
+	bool "AP mode support"
+
+config WIFI_NM_WPA_SUPPLICANT_WPS
+	bool "WPS support"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
+config WIFI_NM_WPA_SUPPLICANT_P2P
+	bool "P2P mode support"
+	select WIFI_NM_WPA_SUPPLICANT_AP
+	select WIFI_NM_WPA_SUPPLICANT_WPS
+
+config WIFI_NM_WPA_SUPPLICANT_EAPOL
+	bool "Enable EAPoL supplicant"
+
+config WIFI_NM_WPA_SUPPLICANT_CLI
+	bool "CLI support for wpa_supplicant"
+	default n
+
+config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
+	int "BSS max idle timeout in seconds"
+	range 0 64000
+	default 300
+	help
+	  BSS max idle timeout is the period for which AP may keep a client
+	  in associated state while there is no traffic from that particular
+	  client. Set 0 to disable inclusion of BSS max idle time tag in
+	  association request. If a non-zero value is set, STA can suggest a
+	  timeout by including BSS max idle period in the association request.
+	  AP may choose to consider or ignore the STA's preferred value.
+	  Ref: Sec 11.21.13 of IEEE Std 802.11™-2020
+
+config WIFI_NM_WPA_SUPPLICANT_NO_DEBUG
+	bool "Disable printing of debug messages, saves code size significantly"
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
@@ -71,19 +187,22 @@ config CTRL_IFACE
 	bool
 	default y
 
+config CTRL_IFACE_ZEPHYR
+	bool
+	default y
+
 config NO_RANDOM_POOL
 	bool
 	default y
 
+config WNM
+	bool
+
 config NO_WPA
 	bool
-	default y
+	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
 config NO_PBKDF2
-	bool
-	default y
-
-config ZEPHYR
 	bool
 	default y
 
