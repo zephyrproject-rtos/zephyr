@@ -1307,10 +1307,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_PROP_OR(n, hw_flow_control, 0))
 
 #ifdef CONFIG_UART_NS16550_PARENT_INIT_LEVEL
-#define NS16550_BOOT_LEVEL0 PRE_KERNEL_1
-#define NS16550_BOOT_LEVEL1 POST_KERNEL
 #define BOOT_LEVEL(n) \
-	_CONCAT(NS16550_BOOT_LEVEL, DT_INST_ON_BUS(n, pcie))
+	COND_CODE_1(DT_INST_ON_BUS(n, pcie), (POST_KERNEL), (PRE_KERNEL_1))
 #else
 #define BOOT_LEVEL(n) PRE_KERNEL_1
 #endif
