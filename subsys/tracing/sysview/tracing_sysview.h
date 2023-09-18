@@ -530,8 +530,6 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_pipe_get_enter(pipe, timeout)
 #define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
-#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)
-#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)
