@@ -26,8 +26,18 @@ static void lvgl_input_read_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
 	const struct device *dev = drv->user_data;
 	const struct lvgl_common_input_config *cfg = dev->config;
+	struct lvgl_common_input_data *common_data = dev->data;
 
-	k_msgq_get(cfg->event_msgq, data, K_NO_WAIT);
+	if (k_msgq_get(cfg->event_msgq, data, K_NO_WAIT) != 0) {
+		memcpy(data, &common_data->previous_event, sizeof(lv_indev_data_t));
+		if (drv->type == LV_INDEV_TYPE_ENCODER) {
+			data->enc_diff = 0; /* For encoders, clear last movement */
+		}
+		data->continue_reading = false;
+		return;
+	}
+
+	memcpy(&common_data->previous_event, data, sizeof(lv_indev_data_t));
 	data->continue_reading = k_msgq_num_used_get(cfg->event_msgq) > 0;
 }
 
