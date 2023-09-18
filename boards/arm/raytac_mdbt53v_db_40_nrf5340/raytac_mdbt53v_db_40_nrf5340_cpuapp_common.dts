@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "raytac_mdbt53v_db_40_nrf5340_cpuapp_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 
@@ -38,14 +39,17 @@
 		button0: button_0 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 3";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 
