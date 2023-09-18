@@ -484,23 +484,23 @@ static const struct rtc_stm32_config rtc_config = {
 	.ll_rtc_config = {
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-#if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 		/* prescaler values for LSI @ 32 KHz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00F9,
-#else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
+#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00FF,
 #endif
 #else /* CONFIG_SOC_SERIES_STM32F1X */
-#if DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSI
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 		/* prescaler values for LSI @ 40 KHz */
 		.AsynchPrescaler = 0x9C3F,
-#else /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
+#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7FFF,
-#endif /* DT_INST_CLOCKS_CELL(1, bus) == STM32_SRC_LSE */
+#endif
 		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 	},
