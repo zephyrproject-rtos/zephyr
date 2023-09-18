@@ -65,7 +65,14 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
  */
 static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 {
-	return DEVICE_DT_INST_GET(0);
+	uint32_t instance_id = irq_get_instance_id(irq);
+	const struct device *dev = z_get_instance_dev_from_id(instance_id);
+
+	if (dev == NULL) {
+		return DEVICE_DT_INST_GET(0);
+	}
+
+	return dev;
 }
 
 /**
@@ -83,6 +90,8 @@ static int riscv_plic_is_edge_irq(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
+
+	irq = irq_strip_instance_id(irq);
 
 	if (config->trig != 0) {
 		volatile uint32_t *trig = (volatile uint32_t *) config->trig;
@@ -110,6 +119,8 @@ void riscv_plic_irq_enable(uint32_t irq)
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	uint32_t key;
 
+	irq = irq_strip_instance_id(irq);
+
 	key = irq_lock();
 	en += (irq >> 5);
 	*en |= (1 << (irq & 31));
@@ -133,6 +144,8 @@ void riscv_plic_irq_disable(uint32_t irq)
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	uint32_t key;
 
+	irq = irq_strip_instance_id(irq);
+
 	key = irq_lock();
 	en += (irq >> 5);
 	*en &= ~(1 << (irq & 31));
@@ -153,6 +166,8 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 
+	irq = irq_strip_instance_id(irq);
+
 	en += (irq >> 5);
 	return !!(*en & (1 << (irq & 31)));
 }
@@ -172,6 +187,8 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
+
+	irq = irq_strip_instance_id(irq);
 
 	if (priority > config->max_prio)
 		priority = config->max_prio;
@@ -200,6 +217,7 @@ static void plic_irq_handler(const struct device *dev)
 	uint32_t irq;
 	struct _isr_table_entry *ite;
 	int edge_irq;
+	uint32_t isr_offset;
 
 	/* Get the IRQ number generating the interrupt */
 	irq = regs->claim_complete;
@@ -210,7 +228,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * as IRQ number held by the claim_complete register is
 	 * cleared upon read.
 	 */
-	save_irq = irq;
+	save_irq = irq_enc_instance_id(irq, z_get_instance_id_from_dev(dev));
 
 	/*
 	 * If the IRQ is out of range, call z_irq_spurious.
@@ -227,12 +245,13 @@ static void plic_irq_handler(const struct device *dev)
 	 * for edge triggered interrupts.
 	 */
 	if (edge_irq)
-		regs->claim_complete = save_irq;
+		regs->claim_complete = irq;
 
 	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
+	isr_offset = z_get_instance_isr_offset_from_dev(dev);
+	ite = (struct _isr_table_entry *)&_sw_isr_table[irq + isr_offset];
 	ite->isr(ite->arg);
 
 	/*
@@ -241,7 +260,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * for level triggered interrupts.
 	 */
 	if (!edge_irq)
-		regs->claim_complete = save_irq;
+		regs->claim_complete = irq;
 }
 
 /**
