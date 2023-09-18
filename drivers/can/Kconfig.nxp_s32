@@ -1,10 +1,11 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_NXP_S32_CANXL
 	bool "NXP S32 CANXL driver"
 	default y
 	depends on DT_HAS_NXP_S32_CANXL_ENABLED
+	select CLOCK_CONTROL
 	help
 	  Enable support for NXP S32 CANXL driver.
 

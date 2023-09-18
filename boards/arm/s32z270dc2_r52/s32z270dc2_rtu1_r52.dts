@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/clock/nxp_s32z2_clock.h>
 #include <arm/nxp/nxp_s32z27x_rtu1_r52.dtsi>
 #include "s32z270dc2_r52.dtsi"
 
