@@ -24,8 +24,11 @@
 extern "C" {
 #endif
 
-/* Early boot functions */
+/* Initialize a thread */
+void z_init_thread_base(struct _thread_base *thread_base, int priority,
+			uint32_t initial_state, unsigned int options);
 
+/* Early boot functions */
 void z_early_memset(void *dst, int c, size_t n);
 void z_early_memcpy(void *dst, const void *src, size_t n);
 
