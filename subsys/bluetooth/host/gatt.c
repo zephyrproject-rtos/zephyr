@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -4621,8 +4622,11 @@ static void gatt_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	 * If the Characteristic Value is greater than (ATT_MTU - 1) octets
 	 * in length, the Read Long Characteristic Value procedure may be used
 	 * if the rest of the Characteristic Value is required.
+	 *
+	 * Note: Both BT_ATT_OP_READ_RSP and BT_ATT_OP_READ_BLOB_RSP
+	 * have an overhead of one octet.
 	 */
-	if (length < (bt_att_get_mtu(conn) - 1)) {
+	if (length < (params->_att_mtu - 1)) {
 		params->func(conn, 0, params, NULL, 0);
 		return;
 	}
@@ -6276,4 +6280,23 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CACHING)
 	remove_cf_cfg(conn);
 #endif
+}
+
+void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
+{
+	IF_ENABLED(CONFIG_BT_GATT_CLIENT, ({
+		if (req->func == gatt_read_rsp) {
+			struct bt_gatt_read_params *params = req->user_data;
+
+			__ASSERT_NO_MSG(params);
+			params->_att_mtu = mtu;
+			return;
+		}
+	}));
+
+	/* Otherwise: This request type does not have an `_att_mtu`
+	 * params field or any other method to get this value, so we can
+	 * just drop it here. Feel free to add this capability to other
+	 * request types if needed.
+	 */
 }

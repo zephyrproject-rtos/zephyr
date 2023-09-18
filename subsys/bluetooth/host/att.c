@@ -447,12 +447,19 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	buf = req->buf;
 	req->buf = NULL;
 
+	/* This lock makes sure the value of `bt_att_mtu(chan)` does not
+	 * change.
+	 */
+	k_sched_lock();
 	err = bt_att_chan_send(chan, buf);
 	if (err) {
 		/* We still have the ownership of the buffer */
 		req->buf = buf;
 		chan->req = NULL;
+	} else {
+		bt_gatt_req_set_mtu(req, bt_att_mtu(chan));
 	}
+	k_sched_unlock();
 
 	return err;
 }
