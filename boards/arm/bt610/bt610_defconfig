@@ -17,9 +17,6 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Additional board options
-CONFIG_GPIO_AS_PINRESET=y
-
 # Enable hardware stack protection
 CONFIG_HW_STACK_PROTECTION=y
 

@@ -17,7 +17,6 @@ CONFIG_USB_DEVICE_STACK=y
 
 # additional board options
 CONFIG_GPIO=y
-CONFIG_GPIO_AS_PINRESET=y
 
 # required to enable 3V3 power rail and Vin1 monitor
 CONFIG_REGULATOR=y
