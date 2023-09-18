@@ -29,6 +29,13 @@
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
+#if defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)
+/* subsecond counting is not supported by some STM32L1x MCUs */
+#define HW_SUBSECOND_SUPPORT (0)
+#else
+#define HW_SUBSECOND_SUPPORT (1)
+#endif
+
 /* RTC start time: 1st, Jan, 2000 */
 #define RTC_YEAR_REF 2000
 /* struct tm start time:   1st, Jan, 1900 */
@@ -237,10 +244,14 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
-	const struct rtc_stm32_config *cfg = dev->config;
 	struct rtc_stm32_data *data = dev->data;
 
-	uint32_t rtc_date, rtc_time, rtc_subsecond;
+	uint32_t rtc_date, rtc_time;
+
+#if HW_SUBSECOND_SUPPORT
+	const struct rtc_stm32_config *cfg = dev->config;
+	uint32_t rtc_subsecond;
+#endif
 
 	int err = k_mutex_lock(&data->lock, K_NO_WAIT);
 
@@ -258,7 +269,9 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 			 * while doing so as it will result in an erroneous result otherwise
 			 */
 			rtc_time      = LL_RTC_TIME_Get(RTC);
+#if HW_SUBSECOND_SUPPORT
 			rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
+#endif
 		} while (rtc_time != LL_RTC_TIME_Get(RTC));
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
 
@@ -283,9 +296,13 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 	timeptr->tm_min = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
 	timeptr->tm_sec = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
 
+#if HW_SUBSECOND_SUPPORT
 	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
 
 	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, cfg->sync_prescaler + 1);
+#else
+	timeptr->tm_nsec = 0;
+#endif
 
 	/* unknown values */
 	timeptr->tm_yday  = -1;
