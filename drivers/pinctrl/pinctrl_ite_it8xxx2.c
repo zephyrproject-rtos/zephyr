@@ -24,6 +24,10 @@ struct pinctrl_it8xxx2_gpio {
 	uintptr_t func3_gcr[GPIO_GROUP_MEMBERS];
 	/* function 3 enable mask */
 	uint8_t func3_en_mask[GPIO_GROUP_MEMBERS];
+	/* function 3 external control register */
+	uintptr_t func3_ext[GPIO_GROUP_MEMBERS];
+	/* function 3 external mask */
+	uint8_t func3_ext_mask[GPIO_GROUP_MEMBERS];
 	/* function 4 general control register */
 	uintptr_t func4_gcr[GPIO_GROUP_MEMBERS];
 	/* function 4 enable mask */
@@ -132,6 +136,7 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	volatile uint8_t *reg_gpcr = (uint8_t *)gpio->reg_gpcr + pin;
 	volatile uint8_t *reg_func3_gcr = (uint8_t *)(gpio->func3_gcr[pin]);
 	volatile uint8_t *reg_func4_gcr = (uint8_t *)(gpio->func4_gcr[pin]);
+	volatile uint8_t *reg_func3_ext = (uint8_t *)(gpio->func3_ext[pin]);
 
 	/* Handle PIN configuration. */
 	if (pinctrl_it8xxx2_set(pins)) {
@@ -155,6 +160,11 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	/* Common settings for alternate function. */
 	*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_INPUT |
 		       GPCR_PORT_PIN_MODE_OUTPUT);
+	/* Ensure that func3-ext setting is in default state. */
+	if (reg_func3_ext != NULL) {
+		*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
+	}
+
 	switch (pins->alt_func) {
 	case IT8XXX2_ALT_FUNC_1:
 		/* Func1: Alternate function has been set above. */
@@ -169,6 +179,11 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		 *        Func3 also need to set the general control.
 		 */
 		*reg_func3_gcr |= gpio->func3_en_mask[pin];
+
+		/* Func3-external: Some pins require external setting. */
+		if (reg_func3_ext != NULL) {
+			*reg_func3_ext |= gpio->func3_ext_mask[pin];
+		}
 		break;
 	case IT8XXX2_ALT_FUNC_4:
 		/*
@@ -327,11 +342,6 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	 */
 	gpio_base->GPIO_GCR &= ~IT8XXX2_GPIO_LPCRSTEN;
 
-	/*
-	 * TODO: If UART2 swaps from bit2:1 to bit6:5 in H group, we
-	 * have to set UART1PSEL = 1 in UART1PMR register.
-	 */
-
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
 	/*
 	 * Swap the default I2C2 SMCLK2/SMDAT2 pins from GPC7/GPD0 to GPF6/GPF7,
@@ -345,23 +355,25 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define INIT_UNION_CONFIG(inst)                                                    \
-	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                \
-		(.gpio = {                                                         \
-			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),  \
-			 .func3_gcr = DT_INST_PROP(inst, func3_gcr),               \
-			 .func3_en_mask = DT_INST_PROP(inst, func3_en_mask),       \
-			 .func4_gcr = DT_INST_PROP(inst, func4_gcr),               \
-			 .func4_en_mask = DT_INST_PROP(inst, func4_en_mask),       \
-			 .volt_sel = DT_INST_PROP(inst, volt_sel),                 \
-			 .volt_sel_mask = DT_INST_PROP(inst, volt_sel_mask),       \
-		}),                                                                \
-		(.ksi_kso = {                                                      \
-			 .reg_gctrl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0), \
-			 .reg_ctrl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),  \
-			 .pp_od_mask = (uint8_t)DT_INST_PROP(inst, pp_od_mask),    \
-			 .pullup_mask = (uint8_t)DT_INST_PROP(inst, pullup_mask),  \
-		})                                                                 \
+#define INIT_UNION_CONFIG(inst)                                                        \
+	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                    \
+		(.gpio = {                                                             \
+			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),      \
+			 .func3_gcr = DT_INST_PROP(inst, func3_gcr),                   \
+			 .func3_en_mask = DT_INST_PROP(inst, func3_en_mask),           \
+			 .func3_ext = DT_INST_PROP_OR(inst, func3_ext, {0}),           \
+			 .func3_ext_mask = DT_INST_PROP_OR(inst, func3_ext_mask, {0}), \
+			 .func4_gcr = DT_INST_PROP(inst, func4_gcr),                   \
+			 .func4_en_mask = DT_INST_PROP(inst, func4_en_mask),           \
+			 .volt_sel = DT_INST_PROP(inst, volt_sel),                     \
+			 .volt_sel_mask = DT_INST_PROP(inst, volt_sel_mask),           \
+		}),                                                                    \
+		(.ksi_kso = {                                                          \
+			 .reg_gctrl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),     \
+			 .reg_ctrl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),      \
+			 .pp_od_mask = (uint8_t)DT_INST_PROP(inst, pp_od_mask),        \
+			 .pullup_mask = (uint8_t)DT_INST_PROP(inst, pullup_mask),      \
+		})                                                                     \
 	)
 
 #define PINCTRL_ITE_INIT(inst)                                                     \
