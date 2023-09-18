@@ -596,7 +596,8 @@ __syscall k_tid_t k_sched_current_thread_query(void);
 __attribute_const__
 static inline k_tid_t k_current_get(void)
 {
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#ifdef CONFIG_CURRENT_THREAD_USE_TLS
+
 	/* Thread-local cache of current thread ID, set in z_thread_entry() */
 	extern __thread k_tid_t z_tls_current;
 
