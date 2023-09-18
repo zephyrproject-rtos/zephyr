@@ -215,16 +215,10 @@ class TestPlan:
             self.load_from_file(self.options.load_tests)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         elif self.options.test_only:
-            # Get list of connected hardware and filter tests to only be run on connected hardware
-            # in cases where no platform was specified when running the tests.
-            # If the platform does not exist in the hardware map, just skip it.
-            connected_list = []
-            if self.options.platform:
-                connected_list = self.options.platform
-            else:
-                for connected in self.hwm.duts:
-                    if connected['connected']:
-                        connected_list.append(connected['platform'])
+            # Get list of connected hardware and filter tests to only be run on connected hardware.
+            # If the platform does not exist in the hardware map or was not specified by --platform,
+            # just skip it.
+            connected_list = self.options.platform
             if self.options.exclude_platform:
                 for excluded in self.options.exclude_platform:
                     if excluded in connected_list:
