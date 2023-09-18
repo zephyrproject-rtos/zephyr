@@ -288,6 +288,20 @@ config ERRNO_IN_TLS
 	  Use thread local storage to store errno instead of storing it in
 	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
+config CURRENT_THREAD_USE_NO_TLS
+	bool
+	help
+	  Hidden symbol to not use thread local storage to store current
+	  thread.
+
+config CURRENT_THREAD_USE_TLS
+	bool "Store current thread in thread local storage (TLS)"
+	depends on THREAD_LOCAL_STORAGE && !CURRENT_THREAD_USE_NO_TLS
+	default y
+	help
+	  Use thread local storage to store the current thread. This avoids a
+	  syscall if userspace is enabled.
+
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
 	default SCHED_DUMB
