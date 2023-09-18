@@ -5950,14 +5950,6 @@ extern void z_init_static_threads(void);
 /**
  * @internal
  */
-#ifdef CONFIG_SMP
-void z_smp_thread_init(void *arg, struct k_thread *thread);
-void z_smp_thread_swap(void);
-#endif
-
-/**
- * @internal
- */
 extern void z_timer_expiration_handler(struct _timeout *t);
 /**
  * INTERNAL_HIDDEN @endcond
