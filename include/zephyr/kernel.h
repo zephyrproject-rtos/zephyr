@@ -5950,8 +5950,6 @@ extern void z_init_static_threads(void);
 /**
  * @internal
  */
-extern bool z_is_thread_essential(void);
-
 #ifdef CONFIG_SMP
 void z_smp_thread_init(void *arg, struct k_thread *thread);
 void z_smp_thread_swap(void);
