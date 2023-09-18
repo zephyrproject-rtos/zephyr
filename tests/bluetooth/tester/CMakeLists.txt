@@ -55,3 +55,7 @@ endif()
 if (CONFIG_BT_TBS_CLIENT)
     target_sources(app PRIVATE src/btp_ccp.c)
 endif()
+
+if (CONFIG_BT_CAP_ACCEPTOR)
+    target_sources(app PRIVATE src/btp_cas.c)
+endif()
