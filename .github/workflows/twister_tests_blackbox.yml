@@ -4,14 +4,6 @@
 name: Twister BlackBox TestSuite
 
 on:
-  push:
-    branches:
-    - main
-    paths:
-    - 'scripts/pylib/twister/**'
-    - 'scripts/twister'
-    - 'scripts/tests/twister_blackbox/**'
-    - '.github/workflows/blackbox_tests.yml'
   pull_request:
     branches:
     - main
@@ -19,7 +11,7 @@ on:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister_blackbox/**'
-    - '.github/workflows/blackbox_tests.yml'
+    - '.github/workflows/twister_tests_blackbox.yml'
 
 jobs:
   twister-tests:
