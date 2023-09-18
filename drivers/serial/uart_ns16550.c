@@ -1220,10 +1220,10 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif
 };
 
-#define UART_NS16550_IRQ_FLAGS_SENSE0(n) 0
-#define UART_NS16550_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define UART_NS16550_IRQ_FLAGS(n) \
-	_CONCAT(UART_NS16550_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                           \
+		    (DT_INST_IRQ(n, sense)),                                  \
+		    (0))
 
 /* not PCI(e) */
 #define UART_NS16550_IRQ_CONFIG_PCIE0(n)                                      \
