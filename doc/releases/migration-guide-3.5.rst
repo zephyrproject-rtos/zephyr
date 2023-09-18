@@ -53,3 +53,14 @@ Recommended Changes
      &uicr {
          nfct-pins-as-gpios;
      };
+
+* Nordic nRF based boards using :kconfig:option:`CONFIG_GPIO_AS_PINRESET`
+  to configure reset GPIO as nRESET, should instead set the new UICR
+  ``gpio-as-nreset`` property in devicetree. It can be set like this in the
+  board devicetree files:
+
+  .. code-block:: devicetree
+
+     &uicr {
+         gpio-as-nreset;
+     };
