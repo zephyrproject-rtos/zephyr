@@ -198,6 +198,10 @@
 						 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
 				func3-en-mask = <0       0x20     0x20     0
 						 0       0x04     0x08     0      >;
+				func3-ext =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+						 NO_FUNC 0xf03a23 0xf03a23 NO_FUNC>;
+				func3-ext-mask = <0      0        0        0
+						  0      0x01     0x01     0      >;
 				func4-gcr =     <NO_FUNC 0xf016f5 0xf016f5 NO_FUNC
 						 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
 				func4-en-mask = <0       0x04     0x08     0
