@@ -5931,10 +5931,6 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @internal
  */
-extern void z_init_thread_base(struct _thread_base *thread_base,
-			      int priority, uint32_t initial_state,
-			      unsigned int options);
-
 #ifdef CONFIG_MULTITHREADING
 /**
  * @internal
