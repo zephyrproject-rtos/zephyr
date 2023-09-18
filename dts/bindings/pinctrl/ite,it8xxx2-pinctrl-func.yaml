@@ -14,6 +14,15 @@ properties:
   func3-en-mask:
     type: array
 
+  func3-ext:
+    type: array
+    description: |
+      When the alternate setting is configured as func3, in addition to
+      the setting of func3-gcr, some pins require external setting.
+
+  func3-ext-mask:
+    type: array
+
   func4-gcr:
     type: array
 
