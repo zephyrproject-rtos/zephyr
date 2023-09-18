@@ -88,6 +88,12 @@ Recommended Changes
          gpio-as-nreset;
      };
 
+* The :kconfig:option:`CONFIG_MODEM_GSM_PPP` modem driver is obsolete.
+  Instead the new :kconfig:option:`CONFIG_MODEM_CELLULAR` driver should be used.
+  As part of this :kconfig:option:`CONFIG_GSM_MUX` and :kconfig:option:`CONFIG_UART_MUX` are being
+  marked as deprecated as well. The new modem subsystem :kconfig:option:`CONFIG_MODEM_CMUX`
+  and :kconfig:option:`CONFIG_MODEM_PPP`` should be used instead.
+
 Picolibc-related Changes
 ************************
 
