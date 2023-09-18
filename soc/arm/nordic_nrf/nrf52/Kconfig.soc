@@ -94,8 +94,15 @@ config SOC_DCDC_NRF52X_HV
 	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
 
 config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
-	default y
+	bool "[DEPRECATED] GPIO as pin reset (reset button)"
+	select DEPRECATED
+	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &uicr {
+	      gpio-as-nreset;
+	  };
 
 config NRF_ENABLE_ICACHE
 	bool "The instruction cache (I-Cache)"
