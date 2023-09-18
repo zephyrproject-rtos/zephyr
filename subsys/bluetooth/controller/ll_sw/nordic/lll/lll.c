@@ -835,11 +835,17 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(param);
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	LL_ASSERT(preempt_start_req != preempt_start_ack);
-	preempt_start_ack++;
-
+	/* Increase preempt requested count before acknowledging that the
+	 * ticker start operation for the preempt timeout has been handled.
+	 */
 	LL_ASSERT(preempt_req == preempt_ack);
 	preempt_req++;
+
+	/* Increase preempt start ack count, to acknowledge that the ticker
+	 * start operation has been handled.
+	 */
+	LL_ASSERT(preempt_start_req != preempt_start_ack);
+	preempt_start_ack++;
 }
 
 static uint32_t preempt_ticker_start(struct lll_event *first,
@@ -854,7 +860,11 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 	uint32_t preempt_to;
 	uint32_t ret;
 
-	/* Do not request to start preempt timeout if already requested */
+	/* Do not request to start preempt timeout if already requested.
+	 *
+	 * Check if there is pending preempt timeout start requested or if
+	 * preempt timeout ticker has already been scheduled.
+	 */
 	if ((preempt_start_req != preempt_start_ack) ||
 	    (preempt_req != preempt_ack)) {
 		uint32_t diff;
