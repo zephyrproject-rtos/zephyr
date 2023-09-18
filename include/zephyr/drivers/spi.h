@@ -775,7 +775,7 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *
  * @note This function is synchronous.
  *
- * @note This function is an helper function calling spi_transceive.
+ * @note This function is a helper function calling spi_transceive.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -816,7 +816,7 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  *
  * @note This function is synchronous.
  *
- * @note This function is an helper function calling spi_transceive.
+ * @note This function is a helper function calling spi_transceive.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -852,8 +852,7 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
 	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 
-/* Doxygen defines this so documentation is generated. */
-#ifdef CONFIG_SPI_ASYNC
+#if defined(CONFIG_SPI_ASYNC) || defined(__DOXYGEN__)
 
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
@@ -894,7 +893,7 @@ static inline int spi_transceive_cb(const struct device *dev,
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
 }
 
-#ifdef CONFIG_POLL
+#if defined(CONFIG_POLL) || defined(__DOXYGEN__)
 
 /** @cond INTERNAL_HIDDEN */
 void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userdata);
@@ -941,8 +940,7 @@ static inline int spi_transceive_signal(const struct device *dev,
 /**
  * @brief Alias for spi_transceive_signal for backwards compatibility
  *
- * @deprecated
- * @see spi_transceive_signal
+ * @deprecated Use @ref spi_transceive_signal instead.
  */
 __deprecated static inline int spi_transceive_async(const struct device *dev,
 				       const struct spi_config *config,
@@ -958,7 +956,7 @@ __deprecated static inline int spi_transceive_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is an helper function calling spi_transceive_signal.
+ * @note This function is a helper function calling spi_transceive_signal.
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * and @kconfig{CONFIG_POLL} are selected.
@@ -987,8 +985,7 @@ static inline int spi_read_signal(const struct device *dev,
 /**
  * @brief Alias for spi_read_signal for backwards compatibility
  *
- * @deprecated
- * @see spi_read_signal
+ * @deprecated Use @ref spi_read_signal instead.
  */
 __deprecated static inline int spi_read_async(const struct device *dev,
 				 const struct spi_config *config,
@@ -1003,7 +1000,7 @@ __deprecated static inline int spi_read_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is an helper function calling spi_transceive_async.
+ * @note This function is a helper function calling spi_transceive_async.
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * and @kconfig{CONFIG_POLL} are selected.
@@ -1030,10 +1027,9 @@ static inline int spi_write_signal(const struct device *dev,
 }
 
 /**
- * @brief Alias for spi_read_signal for backwards compatibility
+ * @brief Alias for spi_write_signal for backwards compatibility
  *
- * @deprecated
- * @see spi_read_signal
+ * @deprecated Use @ref spi_write_signal instead.
  */
 __deprecated static inline int spi_write_async(const struct device *dev,
 				 const struct spi_config *config,
@@ -1048,18 +1044,14 @@ __deprecated static inline int spi_write_async(const struct device *dev,
 #endif /* CONFIG_SPI_ASYNC */
 
 
-#if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
+#if defined(CONFIG_SPI_RTIO) || defined(__DOXYGEN__)
 
 /**
  * @brief Submit a SPI device with a request
  *
- * @param dev SPI device
  * @param iodev_sqe Prepared submissions queue entry connected to an iodev
  *                  defined by SPI_IODEV_DEFINE.
  *                  Must live as long as the request is in flight.
- *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
  */
 static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -1078,7 +1070,10 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * These do not need to be shared globally but doing so
  * will save a small amount of memory.
  *
- * @param node DT_NODE
+ * @param name Symbolic name to use for defining the iodev
+ * @param node_id Devicetree node identifier
+ * @param operation_ SPI operational mode
+ * @param delay_ Chip select delay in microseconds
  */
 #define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)			\
 	const struct spi_dt_spec _spi_dt_spec_##name =				\
@@ -1103,11 +1098,11 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 /**
  * @brief Copy the tx_bufs and rx_bufs into a set of RTIO requests
  *
- * @param r rtio context
- * @param iodev iodev to transceive with
- * @param tx_bufs transmit buffer set
- * @param rx_bufs receive buffer set
- * @param sqe[out] Last sqe submitted, NULL if not enough memory
+ * @param[in] r rtio context
+ * @param[in] iodev iodev to transceive with
+ * @param[in] tx_bufs transmit buffer set
+ * @param[in] rx_bufs receive buffer set
+ * @param[out] last_sqe last sqe submitted, NULL if not enough memory
  *
  * @retval Number of submission queue entries
  * @retval -ENOMEM out of memory
