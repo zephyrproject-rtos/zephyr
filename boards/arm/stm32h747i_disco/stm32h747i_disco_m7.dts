@@ -221,7 +221,7 @@ zephyr_udc0: &usbotg_hs {
 	mt25ql512ab1: qspi-nor-flash-1@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <72000000>;
+		qspi-max-frequency = <DT_FREQ_M(72)>;
 		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		spi-bus-width = <4>;
 		status = "okay";
@@ -240,7 +240,7 @@ zephyr_udc0: &usbotg_hs {
 	mt25ql512ab2: qspi-nor-flash-2@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <72000000>;
+		qspi-max-frequency = <DT_FREQ_M(72)>;
 		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		status = "okay";
 	};

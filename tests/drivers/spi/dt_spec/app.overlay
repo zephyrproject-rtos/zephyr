@@ -32,7 +32,7 @@
 			test_spi_dev_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device";
 				reg = <0>;
-				spi-max-frequency = <2000000>;
+				spi-max-frequency = <DT_FREQ_M(2)>;
 			};
 		};
 
@@ -47,7 +47,7 @@
 			test_spi_dev_no_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device";
 				reg = <0>;
-				spi-max-frequency = <2000000>;
+				spi-max-frequency = <DT_FREQ_M(2)>;
 			};
 		};
 	};

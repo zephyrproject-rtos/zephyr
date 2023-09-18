@@ -110,7 +110,7 @@
 		size = <134217728>;
 		jedec-id = [96 60 18];
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 	};
 };
 

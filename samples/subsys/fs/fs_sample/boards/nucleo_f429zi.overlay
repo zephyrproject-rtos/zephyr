@@ -13,7 +13,7 @@
                     compatible = "zephyr,sdmmc-disk";
                     status = "okay";
                 };
-                spi-max-frequency = <25000000>;
+                spi-max-frequency = <DT_FREQ_M(25)>;
                 spi-clock-mode-cpol;
                 spi-clock-mode-cpha;
         };

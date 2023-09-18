@@ -103,7 +103,7 @@
 		compatible = "invensense,icm42688";
 		reg = <0>;
 		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		accel-hz = <32000>;
 		accel-fs = <16>;
 		gyro-hz = <32000>;
@@ -115,7 +115,7 @@
 		#io-channel-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		channel@0 {
 			reg = <0>;
 			zephyr,gain = "ADC_GAIN_1";

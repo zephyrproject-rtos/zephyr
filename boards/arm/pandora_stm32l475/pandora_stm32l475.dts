@@ -82,7 +82,7 @@
 	w25q128jv: qspi-nor-flash@0 {
 			compatible = "st,stm32-qspi-nor";
 			reg = <0>;
-			qspi-max-frequency = <80000000>;
+			qspi-max-frequency = <DT_FREQ_M(80)>;
 			size = <0x8000000>;
 			jedec-id = [ef 40 18];
 			spi-bus-width = <4>;

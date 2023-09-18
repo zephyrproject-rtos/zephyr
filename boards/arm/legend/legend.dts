@@ -93,7 +93,7 @@
 		status = "okay";
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		size = <1048576>;
 		/*
 		 * Main flash source

@@ -9,7 +9,7 @@ description: |
         mx25r6435f: qspi-nor-flash@0 {
                 compatible = "st,stm32-qspi-nor";
                 reg = <0>;
-                qspi-max-frequency = <80000000>;
+                qspi-max-frequency = <DT_FREQ_M(80)>;
                 size = <0x4000000>;
                 reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
                 reset-gpios-duration = <1>;

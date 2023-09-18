@@ -169,7 +169,7 @@
 	mx25u16: qspi-nor-flash@0 {
 		compatible = "jedec,spi-nor", "andestech,qspi-nor";
 		size = <16777216>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		jedec-id = [c2 25 35];
 		status = "okay";
 		reg = <0>;

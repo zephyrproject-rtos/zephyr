@@ -11,7 +11,7 @@ test_spi_fpga_ice40_gpio: ice40@0 {
 	compatible = "lattice,ice40-fpga";
 
 	reg = <0>;
-	spi-max-frequency = <1000000>;
+	spi-max-frequency = <DT_FREQ_M(1)>;
 
 	load-mode = <0>;
 	cdone-gpios = <&test_gpio 0 0>;
@@ -24,7 +24,7 @@ test_spi_fpga_ice40_spi: ice40@1 {
 	compatible = "lattice,ice40-fpga";
 
 	reg = <1>;
-	spi-max-frequency = <1000000>;
+	spi-max-frequency = <DT_FREQ_M(1)>;
 
 	load-mode = <1>;
 	cdone-gpios = <&test_gpio 0 0>;

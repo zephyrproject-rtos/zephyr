@@ -76,7 +76,7 @@
 	nina_w102@0 {
 		compatible = "u-blox,nina";
 		reg = <0>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		ready-gpios = <&porta 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&porta 27 GPIO_PULL_DOWN>;

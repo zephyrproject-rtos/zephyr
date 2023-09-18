@@ -22,7 +22,7 @@ description: |
               my_spi_if: nrf21540-spi@0 {
                       compatible = "nordic,nrf21540-fem-spi";
                       reg = <0>;
-                      spi-max-frequency = <8000000>;
+                      spi-max-frequency = <DT_FREQ_M(8)>;
               };
       };
 

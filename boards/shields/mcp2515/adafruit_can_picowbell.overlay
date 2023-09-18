@@ -10,7 +10,7 @@
 
 	mcp2515_adafruit_can_picowbell: can@0 {
 		compatible = "microchip,mcp2515";
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		int-gpios = <&pico_header 21 GPIO_ACTIVE_LOW>;
 		status = "okay";
 		reg = <0x0>;

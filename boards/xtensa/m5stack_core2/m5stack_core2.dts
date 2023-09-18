@@ -185,7 +185,7 @@
 
 	ili9342c: ili9342c@0 {
 		compatible = "ilitek,ili9342c";
-		spi-max-frequency = <30000000>;
+		spi-max-frequency = <DT_FREQ_M(30)>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		vin-supply = <&lcd_bg>;

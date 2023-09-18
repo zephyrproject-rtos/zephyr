@@ -56,7 +56,7 @@
 				compatible ="jedec,spi-nor";
 				size = <0x8000000>;
 				reg = <0>;
-				spi-max-frequency = <20000000>;
+				spi-max-frequency = <DT_FREQ_M(20)>;
 				status = "okay";
 				jedec-id = [ef 40 18];
 			};

@@ -9,7 +9,7 @@ description: |
       tcan4x5x: can@0 {
         compatible = ti,tcan4x5x";
         reg = <0>;
-        spi-max-frequency = <18000000>;
+        spi-max-frequency = <DT_FREQ_M(18)>;
         clock-frequency = <40000000>;
         device-state-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
         device-wake-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;

@@ -29,7 +29,7 @@
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <DT_FREQ_M(80)>;
 		jedec-id = [ef 40 17];
 		size = <0x4000000>;
 		has-dpd;

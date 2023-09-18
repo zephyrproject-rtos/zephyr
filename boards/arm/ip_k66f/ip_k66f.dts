@@ -126,7 +126,7 @@
 		compatible = "microchip,ksz8794";
 		reg = <0>;
 
-		spi-max-frequency = <44000000>;
+		spi-max-frequency = <DT_FREQ_M(44)>;
 		reset-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
 
 		spi-cpol;

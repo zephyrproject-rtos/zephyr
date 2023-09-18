@@ -10,7 +10,7 @@
 
 	mcp2515_keyestudio_can_bus_ks0411: can@0 {
 		compatible = "microchip,mcp2515";
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		int-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
 		status = "okay";
 		reg = <0x0>;

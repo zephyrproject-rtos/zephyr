@@ -10,7 +10,7 @@
 	lmp90100_lmp90100_evb: lmp90100@0 {
 		compatible = "ti,lmp90100";
 		reg = <0x0>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		/* Uncomment to use IRQ instead of polling: */
 		/* drdyb-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; */
 		#io-channel-cells = <2>;

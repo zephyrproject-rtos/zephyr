@@ -129,7 +129,7 @@ arduino_i2c: &i2c1 {};
 		pa-boost-enable-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 		tcxo-power-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 		tcxo-power-startup-delay-ms = <5>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 	};
 };
 

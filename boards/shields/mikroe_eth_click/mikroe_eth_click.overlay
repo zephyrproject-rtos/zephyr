@@ -11,7 +11,7 @@
 		full-duplex;
 		local-mac-address = [00 00 00 01 02 03];
 		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
 	};
 };

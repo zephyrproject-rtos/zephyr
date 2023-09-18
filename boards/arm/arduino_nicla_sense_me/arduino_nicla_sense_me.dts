@@ -107,7 +107,7 @@
 	mx25r1635f: mx25r1635f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <DT_FREQ_M(80)>;
 		jedec-id = [c2 28 15];
 		size = <DT_SIZE_M(16)>;
 		has-dpd;

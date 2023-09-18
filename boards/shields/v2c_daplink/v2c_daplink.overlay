@@ -26,7 +26,7 @@
 	daplink_flash0_v2c_daplink: flash@0 {
 		compatible = "spansion,s25fl128s", "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <DT_FREQ_M(80)>;
 		size = <DT_SIZE_M(128)>;
 		jedec-id = [01 20 18];
 	};
@@ -38,7 +38,7 @@
 	sdhc0_v2c_daplink: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";

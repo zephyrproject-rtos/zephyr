@@ -45,7 +45,7 @@
 		compatible = "jedec,spi-nor";
 		status = "okay";
 		reg = <0>;
-		spi-max-frequency = <8000000>;  // chip supports 80Mhz, SPI0 supports 8MHz
+		spi-max-frequency = <DT_FREQ_M(8)>;  // chip supports 80Mhz, SPI0 supports 8MHz
 		size = <0x1000000>;  // bits
 		hold-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		wp-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;

@@ -16,7 +16,7 @@
 	ieee802154_frdm_cr20a: mcr20a@0 {
 		compatible = "nxp,mcr20a";
 		reg = <0x0>;
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 		irqb-gpios = <&arduino_header 8
 				(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;	/* D2 */
 		reset-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;	/* D5 */

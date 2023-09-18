@@ -242,7 +242,7 @@ fem_spi: &spi3 {
 		compatible = "nordic,nrf21540-fem-spi";
 		status = "okay";
 		reg = <0>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

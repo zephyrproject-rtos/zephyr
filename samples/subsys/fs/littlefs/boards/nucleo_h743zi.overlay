@@ -26,7 +26,7 @@
 	mx25l25645g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <50000000>;
+		qspi-max-frequency = <DT_FREQ_M(50)>;
 		size = <DT_SIZE_M(32*8)>;
 		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		reset-gpios-duration = <1>;

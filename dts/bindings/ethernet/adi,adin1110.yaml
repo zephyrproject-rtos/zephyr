@@ -9,7 +9,7 @@ description: |
   adin1110: adin1110@0 {
           compatible = "adi,adin1110";
           reg = <0x0>;
-          spi-max-frequency = <25000000>;
+          spi-max-frequency = <DT_FREQ_M(25)>;
           int-gpios   = <&gpioe 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
           reset-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
           port1 {

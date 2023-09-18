@@ -33,6 +33,6 @@
 	i3g4250d@0 {
 		compatible = "st,i3g4250d";
 		reg = <0>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 	};
 };

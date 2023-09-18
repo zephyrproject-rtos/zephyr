@@ -142,7 +142,7 @@
 		caset = [00 01 00 a0];
 		raset = [00 1a 00 69];
 
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
 };
 
@@ -157,7 +157,7 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";

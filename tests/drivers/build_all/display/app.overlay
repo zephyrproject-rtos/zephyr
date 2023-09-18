@@ -37,7 +37,7 @@
 			test_spi_ili9342c: ili9342c@0 {
 				compatible = "ilitek,ili9342c";
 				reg = <0>;
-				spi-max-frequency = <25000000>;
+				spi-max-frequency = <DT_FREQ_M(25)>;
 				cmd-data-gpios = <&test_gpio 0 0>;
 				pixel-format = <0>;
 				rotation = <270>;

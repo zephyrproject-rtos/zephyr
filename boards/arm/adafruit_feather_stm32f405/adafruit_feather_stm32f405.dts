@@ -86,7 +86,7 @@
 	gd25q16: gd25q16c@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <DT_FREQ_M(80)>;
 		size = <0x200000>;
 		has-dpd;
 		t-enter-dpd = <20000>;

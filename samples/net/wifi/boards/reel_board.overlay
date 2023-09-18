@@ -34,7 +34,7 @@
 		status = "ok";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 		irq-gpios = <&gpio1 7 1>;
 		reset-gpios = <&gpio1 8 1>;
 		enable-gpios = <&gpio1 12 0>;

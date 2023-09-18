@@ -30,7 +30,7 @@
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
 		reg = <0>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		jedec-id = [ef 40 18];
 		status = "okay";
 	};

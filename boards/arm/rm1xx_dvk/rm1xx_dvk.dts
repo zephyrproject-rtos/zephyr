@@ -79,7 +79,7 @@
 	at25: at25df041b@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		jedec-id = [1f 44 02];
 		size = <0x400000>;
 		has-lock = <0xbc>;
@@ -100,7 +100,7 @@
 			    <&gpio0 1 GPIO_ACTIVE_HIGH>;
 		rfi-enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		rfo-enable-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 	};
 };
 

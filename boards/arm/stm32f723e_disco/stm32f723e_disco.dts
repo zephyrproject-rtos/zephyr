@@ -127,7 +127,7 @@
 	mx25r512: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <8000000>;
+		qspi-max-frequency = <DT_FREQ_M(8)>;
 		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		status = "okay";
 		spi-bus-width = <4>;

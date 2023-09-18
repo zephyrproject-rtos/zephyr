@@ -207,7 +207,7 @@
 	pinctrl-names = "default", "sleep";
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		reg = <0>;
 		int1-gpios = <&gpio0 19 0>;
 	};
@@ -215,7 +215,7 @@
 	bmi270: spi-dev-bmi270@1 {
 		compatible = "bosch,bmi270";
 		status = "disabled";
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		reg = <1>;
 	};
 
@@ -223,7 +223,7 @@
 		compatible = "nordic,nrf21540-fem-spi";
 		status = "disabled";
 		reg = <2>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

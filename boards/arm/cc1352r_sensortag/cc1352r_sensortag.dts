@@ -156,7 +156,7 @@
 		compatible = "adi,adxl362";
 		reg = <0>;
 		int1-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 
 	/* TODO: "jedec,spi-nor" for the mx25r8035 */

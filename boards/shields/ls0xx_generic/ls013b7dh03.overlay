@@ -16,7 +16,7 @@
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		reg = <0>;
 		width = <128>;
 		height = <128>;

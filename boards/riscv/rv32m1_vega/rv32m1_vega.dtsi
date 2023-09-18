@@ -163,7 +163,7 @@ arduino_spi: &lpspi0 {
 	mx25r32: mx25r3235f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <DT_FREQ_M(80)>;
 		jedec-id = [c2 28 16];
 		size = <33554432>;
 	};

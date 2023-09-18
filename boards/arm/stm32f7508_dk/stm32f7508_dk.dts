@@ -186,7 +186,7 @@ zephyr_udc0: &usbotg_fs {
 	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <72000000>;
+		qspi-max-frequency = <DT_FREQ_M(72)>;
 		size = <DT_SIZE_M(16*8)>;
 		status = "okay";
 

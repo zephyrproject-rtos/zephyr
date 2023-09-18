@@ -199,7 +199,7 @@ arduino_spi: &spi3 {
 		compatible = "jedec,spi-nor";
 		status = "disabled";
 		reg = <1>;
-		spi-max-frequency = <60000000>;
+		spi-max-frequency = <DT_FREQ_M(60)>;
 		jedec-id = [c8 67 19];
 		sfdp-bfp = [
 			e5 20 ea ff  ff ff ff 0f  44 eb 08 6b  00 3b 00 bb

@@ -16,7 +16,7 @@
 	ieee802154_atmel_rf2xx_legacy: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		spi-max-frequency = <6000000>;
+		spi-max-frequency = <DT_FREQ_M(6)>;
 		irq-gpios = <&ext1_header 10
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		reset-gpios = <&ext1_header 8 GPIO_ACTIVE_LOW>;

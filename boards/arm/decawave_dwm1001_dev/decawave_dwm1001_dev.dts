@@ -139,7 +139,7 @@
 	pinctrl-names = "default", "sleep";
 	ieee802154: dw1000@0 {
 		compatible = "decawave,dw1000";
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
 		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
 		status = "okay";

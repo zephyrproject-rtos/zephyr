@@ -156,7 +156,7 @@
 	xt25fb32: xt25fb32@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <8000000>; /* 8MHz */
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		jedec-id = [0b 40 16];
 		size = <DT_SIZE_M(32)>;
 
@@ -183,7 +183,7 @@
 	st7789v: st7789v@1 {
 		compatible = "sitronix,st7789v";
 		reg = <1>;
-		spi-max-frequency = <8000000>; /* 8MHz */
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		cmd-data-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;	/* DET */
 		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
 		width = <240>;

@@ -119,7 +119,7 @@
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 	};
 };
 

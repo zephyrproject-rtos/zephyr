@@ -6,7 +6,7 @@
 	icm42688: icm42688@3 {
 		compatible = "invensense,icm42688";
 		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <50000000>;
+		spi-max-frequency = <DT_FREQ_M(50)>;
 		reg = <3>;
 	};
 };

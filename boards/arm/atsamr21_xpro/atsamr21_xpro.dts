@@ -157,7 +157,7 @@
 	ieee802154: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		spi-max-frequency = <6000000>;
+		spi-max-frequency = <DT_FREQ_M(6)>;
 		irq-gpios = <&portb 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
 		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;

@@ -19,7 +19,7 @@
 	ieee802154_atmel_rf2xx_mikrobus: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		spi-max-frequency = <6000000>;
+		spi-max-frequency = <DT_FREQ_M(6)>;
 		/* INT */
 		irq-gpios = <&mikrobus_header 7
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;

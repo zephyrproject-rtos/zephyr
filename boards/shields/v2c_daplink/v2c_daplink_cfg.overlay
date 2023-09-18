@@ -30,7 +30,7 @@
 	sdhc0_v2c_daplink_cfg: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";

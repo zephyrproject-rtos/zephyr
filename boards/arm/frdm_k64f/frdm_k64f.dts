@@ -163,7 +163,7 @@ arduino_spi: &spi0 {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
 		};
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 	};
 };
 

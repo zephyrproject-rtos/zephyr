@@ -16,7 +16,7 @@
 	ieee802154_atmel_rf2xx_xplained: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		spi-max-frequency = <6000000>;
+		spi-max-frequency = <DT_FREQ_M(6)>;
 		irq-gpios = <&xplained1_header 2
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		reset-gpios = <&xplained1_header 0 GPIO_ACTIVE_LOW>;

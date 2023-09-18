@@ -13,7 +13,7 @@
 	wifi0_inventek_eswifi_arduino_spi: iwin@0 {
 		status = "okay";
 		compatible = "inventek,eswifi";
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		reg = <0>;
 
 		/* D9 */

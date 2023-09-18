@@ -127,7 +127,7 @@
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;

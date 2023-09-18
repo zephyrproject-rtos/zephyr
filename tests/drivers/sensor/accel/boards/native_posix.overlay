@@ -12,7 +12,7 @@
 &spi0 {
 	bmi_spi: bmi@3 {
 		compatible = "bosch,bmi160";
-		spi-max-frequency = <50000000>;
+		spi-max-frequency = <DT_FREQ_M(50)>;
 		reg = <3>;
 	};
 };

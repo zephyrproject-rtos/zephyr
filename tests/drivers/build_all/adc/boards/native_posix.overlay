@@ -194,7 +194,7 @@
 			test_spi_ads7052: ads7052@9 {
 				compatible = "ti,ads7052";
 				reg = <0x9>;
-				spi-max-frequency = <12000000>;
+				spi-max-frequency = <DT_FREQ_M(12)>;
 				#io-channel-cells = <1>;
 			};
 

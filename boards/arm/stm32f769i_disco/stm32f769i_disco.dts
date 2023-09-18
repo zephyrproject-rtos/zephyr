@@ -175,7 +175,7 @@ arduino_serial: &usart6 {};
 	mx25l51245g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <72000000>;
+		qspi-max-frequency = <DT_FREQ_M(72)>;
 		size = <DT_SIZE_M(64*8)>;
 		status = "okay";
 

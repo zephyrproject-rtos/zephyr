@@ -20,7 +20,7 @@
 		compatible = "ti,tcan4x5x";
 		reg = <0>;
 		/* reduced spi-max-frequency to accommodate flywire connections */
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		status = "okay";
 		clock-frequency = <40000000>;
 		device-state-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 */

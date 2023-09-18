@@ -161,7 +161,7 @@
 	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <40000000>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
 		wp-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;

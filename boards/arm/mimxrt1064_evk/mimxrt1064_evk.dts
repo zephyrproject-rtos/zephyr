@@ -180,7 +180,7 @@ arduino_i2c: &lpi2c1 {};
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [9d 70 17];
 

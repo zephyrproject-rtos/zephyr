@@ -264,7 +264,7 @@
 			flash0: flash@0 {
 				compatible = "micron,n25q128a","jedec,spi-nor";
 				reg = <0>;
-				spi-max-frequency = <108000000>;
+				spi-max-frequency = <DT_FREQ_M(108)>;
 				size = <DT_SIZE_M(128)>;
 				jedec-id = [20 ba 18];
 

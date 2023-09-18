@@ -198,7 +198,7 @@ test_spi_bme680: bme680@19 {
 test_spi_icm426888: icm42688@1a {
 	compatible = "invensense,icm42688";
 	reg = <0x1a>;
-	spi-max-frequency = <24000000>;
+	spi-max-frequency = <DT_FREQ_M(24)>;
 	accel-hz = <32000>;
 	accel-fs = <16>;
 	gyro-hz = <32000>;
@@ -246,7 +246,7 @@ test_spi_adt7310: adt7310@1f {
 test_spi_bmi323: bmi323@20 {
 	compatible = "bosch,bmi323";
 	reg = <0x20>;
-	spi-max-frequency = <8000000>;
+	spi-max-frequency = <DT_FREQ_M(8)>;
 	int-gpios = <&test_gpio 0 0>;
 };
 

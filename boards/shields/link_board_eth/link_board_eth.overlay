@@ -10,7 +10,7 @@
 
 	enc424j600_link_board_eth: enc424j600@0 {
 		compatible = "microchip,enc424j600";
-		spi-max-frequency = <14000000>;
+		spi-max-frequency = <DT_FREQ_M(14)>;
 		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		status = "okay";
 		reg = <0>;

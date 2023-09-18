@@ -16,7 +16,7 @@
 
 	st7789v_st7789v_tl019fqv01: st7789v@0 {
 		compatible = "sitronix,st7789v";
-		spi-max-frequency = <20000000>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */

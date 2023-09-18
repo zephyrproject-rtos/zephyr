@@ -280,7 +280,7 @@
 			ieee802154: mcr20a@0 {
 				compatible = "nxp,mcr20a";
 				reg = <0x0>;
-				spi-max-frequency = <8000000>;
+				spi-max-frequency = <DT_FREQ_M(8)>;
 				irqb-gpios = <&gpiob 3 0>;
 				reset-gpios = <&gpiob 19 0>;
 				status = "okay";

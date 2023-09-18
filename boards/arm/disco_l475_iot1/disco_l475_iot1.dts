@@ -195,12 +195,12 @@
 		reg = <0>;
 		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 	};
 
 	wifi0: ism43362@1 {
 		compatible = "inventek,eswifi";
-		spi-max-frequency = <2000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
 		reg = <1>;
 		resetn-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
 		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
@@ -324,7 +324,7 @@ zephyr_udc0: &usbotg_fs {
 	mx25r6435f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		qspi-max-frequency = <50000000>;
+		qspi-max-frequency = <DT_FREQ_M(50)>;
 		/* 64 Megabits = 8 Megabytes */
 		size = <0x4000000>;
 		status = "okay";
