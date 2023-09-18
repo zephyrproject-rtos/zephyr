@@ -132,25 +132,24 @@
   - "**/*"
 
 "CI-homekit-test":
-  - "include/dfu/**/*"
-  - "include/mgmt/mcumgr/**/*"
-  - "soc/arm/nordic_nrf/**/*"
-  - "subsys/dfu/**/*"
-  - "subsys/settings/**/*"
-  - "subsys/net/lib/openthread/**/*"
-  - "subsys/mgmt/mcumgr/**/*"
+  - "modules/openthread/**/*"
   - "samples/bluetooth/hci_rpmsg/**/*"
-  - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/net/**/*"
+  - "subsys/settings/**/*"
   - any:
       - "subsys/bluetooth/**/*"
       - "!subsys/bluetooth/mesh/**/*"
+      - "!subsys/bluetooth/audio/**/*"
 
 "CI-thread-test":
-  - "subsys/net/**/*"
-  - "modules/mbedtls/**/*"
   - "include/zephyr/net/**/*"
+  - "modules/mbedtls/**/*"
   - "modules/openthread/**/*"
   - "samples/net/openthread/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/net/**/*"
+  - "subsys/settings/**/*"
 
 "CI-nfc-test":
   - "**/*"
