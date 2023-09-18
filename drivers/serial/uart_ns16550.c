@@ -43,13 +43,8 @@
 
 LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 
-#define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
-#define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
-
-#define UART_NS16550_PCP_ENABLED \
-	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PCP_HELPER) 0)
-#define UART_NS16550_DLF_ENABLED \
-	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_DLF_HELPER) 0)
+#define UART_NS16550_PCP_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pcp)
+#define UART_NS16550_DLF_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dlf)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
@@ -1300,12 +1295,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_IRQ_FUNC_DEFINE(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#if UART_NS16550_PCP_ENABLED
-#define DEV_CONFIG_PCP_INIT(n) .pcp = DT_INST_PROP_OR(n, pcp, 0),
-#else
-#define DEV_CONFIG_PCP_INIT(n)
-#endif
-
 #define DEV_CONFIG_PCIE0(n)
 #define DEV_CONFIG_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie)
 #define DEV_CONFIG_PCIE_INIT(n) \
@@ -1320,12 +1309,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
 #define DEV_DATA_FLOW_CTRL(n) \
 	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_PROP_OR(n, hw_flow_control, 0))
-
-#define DEV_DATA_DLF0(n)
-#define DEV_DATA_DLF1(n) \
-	.dlf = DT_INST_PROP(n, dlf),
-#define DEV_DATA_DLF_INIT(n) \
-	_CONCAT(DEV_DATA_DLF, DT_INST_NODE_HAS_PROP(n, dlf))(n)
 
 #ifdef CONFIG_UART_NS16550_PARENT_INIT_LEVEL
 #define NS16550_BOOT_LEVEL0 PRE_KERNEL_1
@@ -1357,7 +1340,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 			)                                                            \
 		)                                                                    \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
-		DEV_CONFIG_PCP_INIT(n)                                               \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pcp),                            \
+			(.pcp = DT_INST_PROP_OR(n, pcp, 0),))                        \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
@@ -1371,7 +1355,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                       \
 		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                       \
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
-		DEV_DATA_DLF_INIT(n)                                                 \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dlf),                            \
+			(.dlf = DT_INST_PROP_OR(n, dlf, 0),))                        \
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
