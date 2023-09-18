@@ -12,6 +12,21 @@
  * Common code for arches that use software ISR tables (CONFIG_GEN_ISR_TABLES)
  */
 
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+unsigned int __weak arch_irq_get_instance_isr_offset(unsigned int irq)
+{
+	unsigned int instance_id = irq_get_instance_id(irq);
+
+	for(size_t i = 0; i < CONFIG_INTC_NUM_INSTANCE; i++) {
+		if(z_isr_offset_table[i].instance_id == instance_id) {
+			return z_isr_offset_table[i].isr_offset;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_INTC_MULTI_INSTANCE */
+
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
@@ -73,7 +88,9 @@ unsigned int get_parent_offset(unsigned int parent_irq,
 
 unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 {
-	unsigned int table_idx;
+	unsigned int table_idx = irq_get_instance_isr_offset(irq);
+
+	irq = irq_strip_instance_id(irq);
 
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
 	unsigned int level, parent_irq, parent_offset;
@@ -85,7 +102,7 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 		parent_offset = get_parent_offset(parent_irq,
 						  lvl2_irq_list,
 						  CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
-		table_idx = parent_offset + irq_from_level_2(irq);
+		table_idx += parent_offset + irq_from_level_2(irq);
 	}
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 	else if (level == 3U) {
@@ -93,16 +110,16 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 		parent_offset = get_parent_offset(parent_irq,
 						  lvl3_irq_list,
 						  CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
-		table_idx = parent_offset + irq_from_level_3(irq);
+		table_idx += parent_offset + irq_from_level_3(irq);
 	}
 #endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 	else {
-		table_idx = irq;
+		table_idx += irq;
 	}
 
 	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
 #else
-	table_idx = irq - CONFIG_GEN_IRQ_START_VECTOR;
+	table_idx += irq - CONFIG_GEN_IRQ_START_VECTOR;
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 
 	return table_idx;

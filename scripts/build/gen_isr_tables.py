@@ -280,6 +280,18 @@ def update_masks():
     SECND_LVL_INTERRUPTS = bit_mask(INTERRUPT_BITS[1]) << INTERRUPT_BITS[0]
     THIRD_LVL_INTERRUPTS = bit_mask(INTERRUPT_BITS[2]) << INTERRUPT_BITS[0] + INTERRUPT_BITS[2]
 
+def get_instance_id_from_irq(irq, syms):
+    intc_bits = syms["CONFIG_INTC_MULTI_INSTANCE_BITS"]
+    intc_bits_mask = intc_bits & (bit_mask(intc_bits) << (32 - intc_bits))
+    instance_id = irq >> (32 - intc_bits)
+    return instance_id
+
+def strip_instance_id_from_irq(irq, syms):
+    intc_bits = syms["CONFIG_INTC_MULTI_INSTANCE_BITS"]
+    intc_bits_mask = intc_bits & (bit_mask(intc_bits) << (32 - intc_bits))
+    irq = irq & (~intc_bits_mask)
+    return irq
+
 def main():
     parse_args()
 
@@ -348,6 +360,13 @@ def main():
         swt = None
 
     for irq, flags, func, param in intlist["interrupts"]:
+        if "CONFIG_INTC_MULTI_INSTANCE" in syms:
+            instance_id = get_instance_id_from_irq(irq, syms)
+            irq = strip_instance_id_from_irq(irq, syms)
+            isr_offset = 0
+            if "CONFIG_INTC_ID_{}_OFFSET".format(int(instance_id)) in syms:
+                isr_offset = syms["CONFIG_INTC_ID_{}_OFFSET".format(int(instance_id))]
+
         if flags & ISR_FLAG_DIRECT:
             if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"
@@ -397,6 +416,9 @@ def main():
                     debug('IRQ_Indx = ' + str(irq1))
                     debug('IRQ_Pos  = ' + str(irq1))
                     table_index = irq1 - offset
+
+            if "CONFIG_INTC_MULTI_INSTANCE" in syms:
+                table_index = table_index + isr_offset
 
             if not 0 <= table_index < len(swt):
                 error("IRQ %d (offset=%d) exceeds the maximum of %d" %

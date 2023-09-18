@@ -20,6 +20,7 @@ config MULTI_LEVEL_INTERRUPTS
 
 config 1ST_LEVEL_INTERRUPT_BITS
 	int "Total number of first level interrupt bits"
+	range 1 30 if INTC_MULTI_INSTANCE
 	range 1 32
 	default 8
 	help
@@ -63,6 +64,7 @@ config NUM_2ND_LEVEL_AGGREGATORS
 
 config 2ND_LEVEL_INTERRUPT_BITS
 	int "Total number of second level interrupt bits"
+	range 0 29 if INTC_MULTI_INSTANCE
 	range 0 31
 	default 8
 	help
@@ -117,6 +119,7 @@ config 3RD_LVL_ISR_TBL_OFFSET
 
 config 3RD_LEVEL_INTERRUPT_BITS
 	int "Total number of third level interrupt bits"
+	range 0 28 if INTC_MULTI_INSTANCE
 	range 0 30
 	default 8
 	help

@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_ID_$(instance-id)_OFFSET
+	int "placeholder"
+	default 0
+	help
+	  placeholder

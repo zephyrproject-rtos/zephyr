@@ -86,3 +86,25 @@ struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 struct z_shared_isr_table_entry __shared_sw_isr_table z_shared_sw_isr_table[IRQ_TABLE_SIZE] = {
 };
 #endif
+
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+
+#define MULTI_INTC_ID_OFFSET(i)                                                                    \
+	.instance_id = i, .isr_offset = UTIL_CAT(UTIL_CAT(CONFIG_INTC_ID_, i), _OFFSET)
+
+#define MULTI_INTC_TBL_ENTRY(node_id)                                                              \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+		MULTI_INTC_ID_OFFSET(DT_PROP(node_id, multi_instance_id)),                         \
+	},
+
+#define MULTI_INTC_TBL_FN(node_id)                                                                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, multi_instance_id), (MULTI_INTC_TBL_ENTRY(node_id)), \
+		    ())
+
+const struct z_isr_offset_table_entry z_isr_offset_table[CONFIG_INTC_NUM_INSTANCE] = {
+	// we only interested in interrupt-controllers under /soc/
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(soc), MULTI_INTC_TBL_FN)
+};
+
+#endif /* CONFIG_INTC_MULTI_INSTANCE */

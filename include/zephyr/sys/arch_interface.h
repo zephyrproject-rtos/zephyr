@@ -342,6 +342,15 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 				const void *parameter, uint32_t flags);
 
 /**
+ * Arch-specific hook to get the ISR offset for a IRQ
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return ISR offset for @a irq
+*/
+unsigned int arch_irq_get_instance_isr_offset(unsigned int irq);
+
+/**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
  *
  * @see IRQ_CONNECT()

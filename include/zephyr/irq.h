@@ -281,6 +281,76 @@ void z_smp_global_unlock(unsigned int key);
 #endif
 
 /**
+ * @brief Get the instance_id encoded in @a irq
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return instance id of the @a irq
+ */
+static inline unsigned int irq_get_instance_id(unsigned int irq)
+{
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+	return irq >> (sizeof(irq) * __CHAR_BIT__ - CONFIG_INTC_MULTI_INSTANCE_BITS);
+#else
+	ARG_UNUSED(irq);
+	return 0;
+#endif
+}
+
+/**
+ * @brief Strip the instance_id from in @a irq
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return Stripped IRQ number without the instance id information
+ */
+static inline unsigned int irq_strip_instance_id(unsigned int irq)
+{
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+	return irq & BIT_MASK(sizeof(irq) * __CHAR_BIT__ - CONFIG_INTC_MULTI_INSTANCE_BITS);
+#else
+	return irq;
+#endif
+}
+
+/**
+ * @brief Encode the @a instance_id to @a irq
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param instance_id Instance ID for the irq
+ *
+ * @return IRQ number with instance-id encoded
+ */
+static inline unsigned int irq_enc_instance_id(unsigned int irq, unsigned int instance_id)
+{
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+	irq = irq_strip_instance_id(irq);
+	instance_id &= BIT_MASK(CONFIG_INTC_MULTI_INSTANCE_BITS);
+	return irq | (instance_id << (sizeof(irq) * __CHAR_BIT__ - CONFIG_INTC_MULTI_INSTANCE_BITS));
+#else
+	ARG_UNUSED(instance_id);
+	return irq;
+#endif
+}
+
+/**
+ * @brief Get the ISR offset for @a irq
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return ISR offset of @a irq
+ */
+static inline unsigned int irq_get_instance_isr_offset(unsigned int irq)
+{
+#ifdef CONFIG_INTC_MULTI_INSTANCE
+	return arch_irq_get_instance_isr_offset(irq);
+#else
+	ARG_UNUSED(irq);
+	return 0;
+#endif
+}
+
+/**
  * @brief Return IRQ level
  * This routine returns the interrupt level number of the provided interrupt.
  *

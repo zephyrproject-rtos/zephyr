@@ -1,0 +1,38 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_HAS_MULTI_INSTANCE
+	bool
+
+config INTC_MULTI_INSTANCE
+	bool "Enable multi-instance interrupt controller"
+	depends on INTC_HAS_MULTI_INSTANCE
+	help
+	  Enable the compilation of extra software to support multi-instance
+	  interrupt controller
+
+config INTC_MULTI_INSTANCE_BITS
+	int "Number of bits to represent the interrupt controller"
+	range 1 2
+	depends on INTC_MULTI_INSTANCE
+	help
+	  Number of bits at the end of the `uint32_t` to be used to encode the
+	  index of the interrupt controller instance. 1 bit allows up to 2 controllers,
+	  2 bits allow up to 4 controllers.
+
+config INTC_NUM_INSTANCE
+	int "Number of interrupt controllers"
+	range 1 4
+	depends on INTC_MULTI_INSTANCE
+	help
+	  Number of interrupt controller enabled in the system.
+	  Support up to 4 controllers.
+
+instance-id = 0
+rsource "Kconfig.multi_instance.offset.template"
+instance-id = 1
+rsource "Kconfig.multi_instance.offset.template"
+instance-id = 2
+rsource "Kconfig.multi_instance.offset.template"
+instance-id = 3
+rsource "Kconfig.multi_instance.offset.template"
