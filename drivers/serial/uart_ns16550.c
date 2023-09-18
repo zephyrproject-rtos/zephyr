@@ -1225,8 +1225,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		    (DT_INST_IRQ(n, sense)),                                  \
 		    (0))
 
-/* not PCI(e) */
-#define UART_NS16550_IRQ_CONFIG_PCIE0(n)                                      \
+/* IO-port or MMIO based UART */
+#define UART_NS16550_IRQ_CONFIG(n)                                            \
 	static void irq_config_func##n(const struct device *dev)              \
 	{                                                                     \
 		ARG_UNUSED(dev);                                              \
@@ -1237,7 +1237,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	}
 
 /* PCI(e) with auto IRQ detection */
-#define UART_NS16550_IRQ_CONFIG_PCIE1(n)                                      \
+#define UART_NS16550_IRQ_CONFIG_PCIE(n)                                       \
 	static void irq_config_func##n(const struct device *dev)              \
 	{                                                                     \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
@@ -1287,7 +1287,9 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_IRQ_FUNC_DECLARE(n) \
 	static void irq_config_func##n(const struct device *dev);
 #define UART_NS16550_IRQ_FUNC_DEFINE(n) \
-	_CONCAT(UART_NS16550_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	COND_CODE_1(DT_INST_ON_BUS(n, pcie), \
+		    (UART_NS16550_IRQ_CONFIG_PCIE(n)), \
+		    (UART_NS16550_IRQ_CONFIG(n)))
 #else
 /* !CONFIG_UART_INTERRUPT_DRIVEN */
 #define DEV_CONFIG_IRQ_FUNC_INIT(n)
