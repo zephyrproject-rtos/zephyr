@@ -567,6 +567,32 @@ static int nvme_cmd_qpair_fill_prp_list(struct nvme_cmd_qpair *qpair,
 	return 0;
 }
 
+static int compute_n_prp(uintptr_t addr, uint32_t size)
+{
+	int n_prp;
+
+	/* See Common Command Format, Data Pointer (DPTR) field */
+
+	n_prp = size / CONFIG_MMU_PAGE_SIZE;
+	if (n_prp == 0) {
+		n_prp = 1;
+	}
+
+	if (size != CONFIG_MMU_PAGE_SIZE) {
+		size = size % CONFIG_MMU_PAGE_SIZE;
+	}
+
+	if (n_prp == 1) {
+		if ((addr + (uintptr_t)size) > NVME_PRP_NEXT_PAGE(addr)) {
+			n_prp++;
+		}
+	} else if (size > 0) {
+		n_prp++;
+	}
+
+	return n_prp;
+}
+
 static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 				    struct nvme_request *request)
 {
@@ -581,16 +607,12 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 			return -EINVAL;
 		}
 
-		n_prp = request->payload_size / qpair->ctrlr->page_size;
-		if ((request->payload_size % qpair->ctrlr->page_size) ||
-		    ((uintptr_t)request->payload & NVME_PBAO_MASK)) {
-			n_prp++;
-		}
-
+		n_prp = compute_n_prp((uintptr_t)request->payload,
+				      request->payload_size);
 		if (n_prp <= 2) {
 			request->cmd.dptr.prp1 =
 				(uint64_t)sys_cpu_to_le64(request->payload);
-			if ((uintptr_t)request->payload & NVME_PBAO_MASK) {
+			if (n_prp == 2) {
 				request->cmd.dptr.prp2 = (uint64_t)sys_cpu_to_le64(
 					NVME_PRP_NEXT_PAGE(
 						(uintptr_t)request->payload));
