@@ -631,6 +631,22 @@ static int spi_sam0_release(const struct device *dev,
 			    const struct spi_config *config)
 {
 	struct spi_sam0_data *data = dev->data;
+	const struct spi_sam0_config *cfg = dev->config;
+	SercomSpi *regs = cfg->regs;
+
+#ifdef CONFIG_SPI_ASYNC
+	dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+	dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+	dma_release_channel(cfg->dma_dev, cfg->tx_dma_channel);
+	dma_release_channel(cfg->dma_dev, cfg->rx_dma_channel);
+#endif
+
+	/* Reset the controler */
+	regs->CTRLA.bit.SWRST = 1;
+	wait_synchronization(regs);
+
+	/* Force reconfigure at next transfer */
+	memset(&data->ctx.config, 0, sizeof(data->ctx.config));
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
