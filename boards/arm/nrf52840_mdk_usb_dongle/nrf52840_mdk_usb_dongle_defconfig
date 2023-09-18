@@ -13,7 +13,4 @@ CONFIG_HW_STACK_PROTECTION=y
 # enable GPIO
 CONFIG_GPIO=y
 
-# additional board options
-CONFIG_GPIO_AS_PINRESET=y
-
 CONFIG_PINCTRL=y
