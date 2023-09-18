@@ -765,3 +765,9 @@ test_i2c_adltc2990@72 {
 	pin-v3-voltage-divider-resistors = <100 100>;
 	pin-v4-voltage-divider-resistors = <0 1>;
 };
+
+test_i2c_hm330x@73 {
+	compatible = "seeed,hm330x";
+	reg = <0x73>;
+	status = "okay";
+};
