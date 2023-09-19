@@ -536,6 +536,7 @@
 			pit-channel = <0>;
 			pit-period = <1000000>;
 			clock-frequency = <60000000>;
+			max-load-value = <0xffffffff>;
 		};
 	};
 };
