@@ -24,9 +24,7 @@ struct mcux_pit_config {
 };
 
 struct mcux_pit_data {
-	counter_alarm_callback_t alarm_callback;
 	counter_top_callback_t top_callback;
-	void *alarm_user_data;
 	void *top_user_data;
 };
 
@@ -121,7 +119,6 @@ static void mcux_pit_isr(const struct device *dev)
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
 	uint32_t flags;
-	uint32_t current = 0;
 
 	LOG_DBG("pit counter isr");
 	flags = PIT_GetStatusFlags(config->base, config->pit_channel);
@@ -129,56 +126,6 @@ static void mcux_pit_isr(const struct device *dev)
 	if (data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
-	if (data->alarm_callback) {
-		PIT_StopTimer(config->base, config->pit_channel);
-		mcux_pit_get_value(dev, &current);
-		data->alarm_callback(dev, config->pit_channel, current,
-				     data->alarm_user_data);
-	}
-}
-
-static int mcux_pit_set_alarm(const struct device *dev, uint8_t chan_id,
-			      const struct counter_alarm_cfg *alarm_cfg)
-{
-	const struct mcux_pit_config *config = dev->config;
-	struct mcux_pit_data *data = dev->data;
-
-	uint32_t ticks = alarm_cfg->ticks;
-
-	if (chan_id != config->pit_channel) {
-		LOG_ERR("Invalid channel id");
-		return -EINVAL;
-	}
-
-	if (ticks > mcux_pit_get_top_value(dev)) {
-		LOG_ERR("Invalid ticks");
-		return -EINVAL;
-	}
-
-	PIT_StopTimer(config->base, chan_id);
-	PIT_SetTimerPeriod(config->base, chan_id, ticks);
-	data->alarm_callback = alarm_cfg->callback;
-	data->alarm_user_data = alarm_cfg->user_data;
-	LOG_DBG("set alarm to %d", ticks);
-	PIT_StartTimer(config->base, chan_id);
-	return 0;
-}
-
-static int mcux_pit_cancel_alarm(const struct device *dev, uint8_t chan_id)
-{
-	const struct mcux_pit_config *config = dev->config;
-	struct mcux_pit_data *data = dev->data;
-
-	if (chan_id != config->pit_channel) {
-		LOG_ERR("Invalid channel id");
-		return -EINVAL;
-	}
-
-	PIT_DisableInterrupts(config->base, chan_id, kPIT_TimerInterruptEnable);
-	PIT_StopTimer(config->base, chan_id);
-	data->alarm_callback = NULL;
-
-	return 0;
 }
 
 static int mcux_pit_init(const struct device *dev)
@@ -206,8 +153,6 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	.stop = mcux_pit_stop,
 	.get_value = mcux_pit_get_value,
 	.set_top_value = mcux_pit_set_top_value,
-	.set_alarm = mcux_pit_set_alarm,
-	.cancel_alarm = mcux_pit_cancel_alarm,
 	.get_pending_int = mcux_pit_get_pending_int,
 	.get_top_value = mcux_pit_get_top_value,
 };
@@ -218,7 +163,7 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	static const struct mcux_pit_config mcux_pit_config_##n = {		\
 		.info = {							\
 			.max_top_value = UINT32_MAX,				\
-			.channels = 1,						\
+			.channels = 0,						\
 			.freq = DT_INST_PROP(n, clock_frequency),		\
 		},								\
 		.base = (PIT_Type *)DT_INST_REG_ADDR(n),			\
