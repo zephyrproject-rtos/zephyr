@@ -1621,8 +1621,8 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 
 #ifdef CONFIG_SCHED_CPU_MASK
 # ifdef CONFIG_SMP
-/* Right now we use a single byte for this mask */
-BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 8, "Too many CPUs for mask word");
+/* Right now we use a two byte for this mask */
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 16, "Too many CPUs for mask word");
 # endif
 
 
