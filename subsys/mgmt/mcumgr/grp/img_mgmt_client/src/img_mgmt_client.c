@@ -126,7 +126,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 			goto out;
 		}
 		/* Check that mandatory parameters have decoded */
-		if (hash.len != IMG_MGMT_HASH_LEN || !version.len ||
+		if (hash.len != IMG_MGMT_DATA_SHA_LEN || !version.len ||
 		    !zcbor_map_decode_bulk_key_found(list_res_decode, ARRAY_SIZE(list_res_decode),
 						     "slot")) {
 			LOG_ERR("Missing mandatory parametrs");
@@ -138,7 +138,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 			image_info->image_list[image_info->image_list_length].img_num = img_num;
 			image_info->image_list[image_info->image_list_length].slot_num = slot_num;
 			memcpy(image_info->image_list[image_info->image_list_length].hash,
-			       hash.value, IMG_MGMT_HASH_LEN);
+			       hash.value, IMG_MGMT_DATA_SHA_LEN);
 			if (version.len > IMG_MGMT_VER_MAX_STR_LEN) {
 				LOG_WRN("Version truncated len %d -> %d", version.len,
 					IMG_MGMT_VER_MAX_STR_LEN);
@@ -277,7 +277,7 @@ static size_t upload_message_header_size(struct img_gr_upload *upload_state)
 	/* Write hash when it defined and offset is 0 */
 	if (ok && upload_state->hash_initialized) {
 		ok = zcbor_tstr_put_lit(zse, "sha") &&
-		     zcbor_bstr_encode_ptr(zse, upload_state->sha256, IMG_MGMT_HASH_LEN);
+		     zcbor_bstr_encode_ptr(zse, upload_state->sha256, IMG_MGMT_DATA_SHA_LEN);
 	}
 
 	if (ok) {
@@ -311,7 +311,7 @@ int img_mgmt_client_upload_init(struct img_mgmt_client *client, size_t image_siz
 	client->upload.offset = 0;
 	client->upload.image_num = image_num;
 	if (image_hash) {
-		memcpy(client->upload.sha256, image_hash, IMG_MGMT_HASH_LEN);
+		memcpy(client->upload.sha256, image_hash, IMG_MGMT_DATA_SHA_LEN);
 		client->upload.hash_initialized = true;
 	} else {
 		client->upload.hash_initialized = false;
@@ -395,7 +395,7 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 			if (ok && active_client->upload.hash_initialized) {
 				ok = zcbor_tstr_put_lit(zse, "sha") &&
 				     zcbor_bstr_encode_ptr(zse, active_client->upload.sha256,
-							   IMG_MGMT_HASH_LEN);
+							   IMG_MGMT_DATA_SHA_LEN);
 			}
 		}
 
@@ -485,7 +485,7 @@ int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool
 	/* Write hash data */
 	if (ok && hash) {
 		ok = zcbor_tstr_put_lit(zse, "hash") &&
-		     zcbor_bstr_encode_ptr(zse, hash, IMG_MGMT_HASH_LEN);
+		     zcbor_bstr_encode_ptr(zse, hash, IMG_MGMT_DATA_SHA_LEN);
 	}
 	/* Close map */
 	if (ok) {

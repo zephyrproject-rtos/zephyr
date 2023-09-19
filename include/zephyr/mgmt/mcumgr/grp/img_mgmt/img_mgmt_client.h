@@ -40,7 +40,7 @@ struct mcumgr_image_data {
 	/** Image number */
 	uint32_t img_num;
 	/** Image SHA256 checksum */
-	char hash[IMG_MGMT_HASH_LEN];
+	char hash[IMG_MGMT_DATA_SHA_LEN];
 	/** Image Version */
 	char version[IMG_MGMT_VER_MAX_STR_LEN + 1];
 	/** Image Flags */
@@ -76,7 +76,7 @@ struct mcumgr_image_upload {
  */
 struct img_gr_upload {
 	/** Image 256-bit hash */
-	char sha256[IMG_MGMT_HASH_LEN];
+	char sha256[IMG_MGMT_DATA_SHA_LEN];
 	/** True when Hash is configured, false when not */
 	bool hash_initialized;
 	/** Image size */
