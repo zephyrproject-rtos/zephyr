@@ -218,7 +218,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 			      &drv_data_##inst,						\
 			      &drv_config_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_USBC_INIT_PRIORITY,				\
+			      CONFIG_USBC_VBUS_INIT_PRIORITY,				\
 			      &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)
