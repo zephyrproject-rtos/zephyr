@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 NXP
+ * Copyright 2020,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@ struct mcux_pit_config {
 	PIT_Type *base;
 	bool enableRunInDebug;
 	pit_chnl_t pit_channel;
+	uint32_t pit_period;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -144,7 +145,7 @@ static int mcux_pit_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	uint32_t ticks = alarm_cfg->ticks;
 
-	if (chan_id != DT_INST_PROP(0, pit_channel)) {
+	if (chan_id != config->pit_channel) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
@@ -168,7 +169,7 @@ static int mcux_pit_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
 
-	if (chan_id != DT_INST_PROP(0, pit_channel)) {
+	if (chan_id != config->pit_channel) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
@@ -194,7 +195,7 @@ static int mcux_pit_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	PIT_SetTimerPeriod(config->base, config->pit_channel,
-			   USEC_TO_COUNT(DT_INST_PROP(0, pit_period),
+			   USEC_TO_COUNT(config->pit_period,
 					 CLOCK_GetFreq(kCLOCK_BusClk)));
 
 	return 0;
@@ -211,48 +212,43 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	.get_top_value = mcux_pit_get_top_value,
 };
 
-/*
- * This driver is single-instance. If the devicetree contains multiple
- * instances, this will fail and the driver needs to be revisited.
- */
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
-	     "unsupported pit instance");
+#define COUNTER_MCUX_PIT_DEVICE(n)						\
+	static void mcux_pit_irq_config_##n(const struct device *dev);		\
+	static struct mcux_pit_data mcux_pit_data_##n;				\
+	static const struct mcux_pit_config mcux_pit_config_##n = {		\
+		.info = {							\
+			.max_top_value = UINT32_MAX,				\
+			.channels = 1,						\
+			.freq = DT_INST_PROP(n, clock_frequency),		\
+		},								\
+		.base = (PIT_Type *)DT_INST_REG_ADDR(n),			\
+		.pit_channel = DT_INST_PROP(n, pit_channel),			\
+		.pit_period = DT_INST_PROP(n, pit_period),			\
+		.irq_config_func = mcux_pit_irq_config_##n,			\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n, &mcux_pit_init, NULL,				\
+			&mcux_pit_data_##n, &mcux_pit_config_##n, POST_KERNEL,	\
+			CONFIG_COUNTER_INIT_PRIORITY, &mcux_pit_driver_api);	\
+										\
+	static void mcux_pit_irq_config_##n(const struct device *dev)		\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),			\
+			DT_INST_IRQ_BY_IDX(0, 0, priority), mcux_pit_isr,	\
+			DEVICE_DT_INST_GET(0), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),			\
+			DT_INST_IRQ_BY_IDX(0, 1, priority), mcux_pit_isr,	\
+			DEVICE_DT_INST_GET(0), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),			\
+			DT_INST_IRQ_BY_IDX(0, 2, priority), mcux_pit_isr,	\
+			DEVICE_DT_INST_GET(0), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),			\
+			DT_INST_IRQ_BY_IDX(0, 3, priority), mcux_pit_isr,	\
+			DEVICE_DT_INST_GET(0), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));			\
+	}
 
-static struct mcux_pit_data mcux_pit_data_0;
-
-static void mcux_pit_irq_config_0(const struct device *dev);
-
-static const struct mcux_pit_config mcux_pit_config_0 = {
-	.info = {
-		.max_top_value = UINT32_MAX,
-		.channels = 1,
-		.freq = DT_INST_PROP(0, clock_frequency),
-	},
-	.base = (PIT_Type *)DT_INST_REG_ADDR(0),
-	.pit_channel = DT_INST_PROP(0, pit_channel),
-	.irq_config_func = mcux_pit_irq_config_0,
-};
-
-DEVICE_DT_INST_DEFINE(0, &mcux_pit_init, NULL,
-		    &mcux_pit_data_0, &mcux_pit_config_0, POST_KERNEL,
-		    CONFIG_COUNTER_INIT_PRIORITY, &mcux_pit_driver_api);
-
-static void mcux_pit_irq_config_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
-		    DT_INST_IRQ_BY_IDX(0, 0, priority), mcux_pit_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
-		    DT_INST_IRQ_BY_IDX(0, 1, priority), mcux_pit_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
-		    DT_INST_IRQ_BY_IDX(0, 2, priority), mcux_pit_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),
-		    DT_INST_IRQ_BY_IDX(0, 3, priority), mcux_pit_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));
-}
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_PIT_DEVICE)
