@@ -37,7 +37,8 @@ tests:
         - "Number of devices found on bus: .*"
       fixture: w1_scanner_ds2485
   samples.drivers.w1.scanner.w1_serial:
-    depends_on: arduino_serial
+    depends_on:
+      - arduino_serial
     extra_args: DTC_OVERLAY_FILE=w1_serial.overlay
     platform_allow:
       - nrf52840dk_nrf52840
