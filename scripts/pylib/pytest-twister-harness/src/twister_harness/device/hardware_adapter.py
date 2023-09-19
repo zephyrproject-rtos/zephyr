@@ -250,6 +250,7 @@ class HardwareAdapter(DeviceAdapter):
         super()._clear_internal_resources()
         self._serial_connection = None
         self._serial_pty_proc = None
+        self._serial_buffer.clear()
 
     @staticmethod
     def _run_custom_script(script_path: str | Path, timeout: float) -> None:
