@@ -40,7 +40,7 @@ ZTEST_USER_F(bq27z746, test_get_all_props_failed_returns_negative)
 		},
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -66,7 +66,7 @@ ZTEST_USER_F(bq27z746, test_get_some_props_failed_returns_failed_prop_count)
 
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -191,7 +191,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	/* All props shall have a good status */
 	for (int i = 0; i < ARRAY_SIZE(props); i++) {
