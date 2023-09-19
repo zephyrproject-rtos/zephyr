@@ -172,7 +172,7 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	static struct mcux_pit_data mcux_pit_data_##n;				\
 	static const struct mcux_pit_config mcux_pit_config_##n = {		\
 		.info = {							\
-			.max_top_value = UINT32_MAX,				\
+			.max_top_value = DT_INST_PROP(n, max_load_value),	\
 			.channels = 0,						\
 			.freq = DT_INST_PROP(n, clock_frequency),		\
 		},								\
