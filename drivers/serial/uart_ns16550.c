@@ -1309,8 +1309,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #else
 #define BOOT_LEVEL(n) PRE_KERNEL_1
 #endif
-#define UART_RESET_FUNC_INIT(n) \
-	.reset_spec = RESET_DT_SPEC_INST_GET(n),
 
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
@@ -1338,7 +1336,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
 			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
-			(UART_RESET_FUNC_INIT(n)))                                   \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
