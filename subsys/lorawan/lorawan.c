@@ -369,7 +369,7 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 
 	/* MIB_PUBLIC_NETWORK powers on the radio and does not turn it off */
 	mib_req.Type = MIB_PUBLIC_NETWORK;
-	mib_req.Param.EnablePublicNetwork = true;
+	mib_req.Param.EnablePublicNetwork = IS_ENABLED(CONFIG_LORAWAN_PUBLIC_NETWORK);
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
