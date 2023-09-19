@@ -13,7 +13,7 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
-LOG_MODULE_DECLARE(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
+LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 

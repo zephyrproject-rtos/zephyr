@@ -13,7 +13,7 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
-LOG_MODULE_DECLARE(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
+LOG_MODULE_REGISTER(pthread_mutex, CONFIG_PTHREAD_MUTEX_LOG_LEVEL);
 
 static struct k_spinlock pthread_mutex_spinlock;
 
