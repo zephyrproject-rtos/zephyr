@@ -20,5 +20,3 @@ CONFIG_GPIO=y
 
 # required to enable 3V3 power rail and Vin1 monitor
 CONFIG_REGULATOR=y
-
-CONFIG_PINCTRL=y

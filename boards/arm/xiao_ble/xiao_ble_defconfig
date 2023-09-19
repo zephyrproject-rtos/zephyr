@@ -28,5 +28,3 @@ CONFIG_USB_DEVICE_STACK=y
 # Build UF2 by default, supported by the Adafruit nRF52 Bootloader
 CONFIG_BUILD_OUTPUT_UF2=y
 CONFIG_USE_DT_CODE_PARTITION=y
-
-CONFIG_PINCTRL=y
