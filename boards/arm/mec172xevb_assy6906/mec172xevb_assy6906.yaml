@@ -19,6 +19,7 @@ supported:
   - adc
   - pwm
   - counter
+  - spi
 testing:
   binaries:
     - spi_image.bin
