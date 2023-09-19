@@ -8,6 +8,7 @@ menuconfig I2C_NRFX
 	default y
 	depends on SOC_FAMILY_NRF
 	depends on MULTITHREADING
+	select PINCTRL
 	help
 	  Enable support for nrfx TWI drivers for nRF MCU series.
 
