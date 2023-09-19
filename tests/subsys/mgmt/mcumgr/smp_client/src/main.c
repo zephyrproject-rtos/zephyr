@@ -32,7 +32,7 @@ int smp_client_res_cb(struct net_buf *nb, void *user_data)
 	return 0;
 }
 
-ZTEST(smp_client, buf_alloc)
+ZTEST(smp_client, test_buf_alloc)
 {
 	struct smp_client_object smp_client;
 
@@ -56,7 +56,7 @@ ZTEST(smp_client, buf_alloc)
 	}
 }
 
-ZTEST(smp_client, msg_send_timeout)
+ZTEST(smp_client, test_msg_send_timeout)
 {
 	struct net_buf *nb;
 
@@ -72,7 +72,7 @@ ZTEST(smp_client, msg_send_timeout)
 	zassert_equal_ptr(response_ptr, &testing_user_data, "User data not returned correctly");
 }
 
-ZTEST(smp_client, msg_response_handler)
+ZTEST(smp_client, test_msg_response_handler)
 {
 	struct smp_hdr dst_hdr;
 	int rc;
