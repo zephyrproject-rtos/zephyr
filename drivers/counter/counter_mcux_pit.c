@@ -157,6 +157,16 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	.get_top_value = mcux_pit_get_top_value,
 };
 
+#define COUNTER_MCUX_PIT_IRQ_CONFIG(idx, n)					\
+	do {									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),			\
+			DT_INST_IRQ_BY_IDX(n, idx, priority),			\
+			mcux_pit_isr, DEVICE_DT_INST_GET(n),			\
+			COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, flags),		\
+				(DT_INST_IRQ_BY_IDX(n, idx, flags)), (0)));	\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));			\
+	} while (0)
+
 #define COUNTER_MCUX_PIT_DEVICE(n)						\
 	static void mcux_pit_irq_config_##n(const struct device *dev);		\
 	static struct mcux_pit_data mcux_pit_data_##n;				\
@@ -178,22 +188,8 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 										\
 	static void mcux_pit_irq_config_##n(const struct device *dev)		\
 	{									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),			\
-			DT_INST_IRQ_BY_IDX(0, 0, priority), mcux_pit_isr,	\
-			DEVICE_DT_INST_GET(0), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));			\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),			\
-			DT_INST_IRQ_BY_IDX(0, 1, priority), mcux_pit_isr,	\
-			DEVICE_DT_INST_GET(0), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));			\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),			\
-			DT_INST_IRQ_BY_IDX(0, 2, priority), mcux_pit_isr,	\
-			DEVICE_DT_INST_GET(0), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));			\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),			\
-			DT_INST_IRQ_BY_IDX(0, 3, priority), mcux_pit_isr,	\
-			DEVICE_DT_INST_GET(0), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));			\
+		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),				\
+			COUNTER_MCUX_PIT_IRQ_CONFIG, (;), n);			\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_PIT_DEVICE)
