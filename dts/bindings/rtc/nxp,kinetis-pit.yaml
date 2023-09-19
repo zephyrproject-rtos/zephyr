@@ -11,6 +11,9 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
   pit-channel:
     type: int
     required: true
