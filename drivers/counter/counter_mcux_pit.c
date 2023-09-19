@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_kinetis_pit
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <fsl_pit.h>
 
@@ -21,6 +22,8 @@ struct mcux_pit_config {
 	pit_chnl_t pit_channel;
 	uint32_t pit_period;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct mcux_pit_data {
@@ -114,6 +117,19 @@ static uint32_t mcux_pit_get_pending_int(const struct device *dev)
 	return ((flags & mask) == mask);
 }
 
+static uint32_t mcux_pit_get_frequency(const struct device *dev)
+{
+	const struct mcux_pit_config *config = dev->config;
+	uint32_t clock_rate;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate)) {
+		LOG_ERR("Failed to get clock rate");
+		return 0;
+	}
+
+	return clock_rate;
+}
+
 static void mcux_pit_isr(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
@@ -130,9 +146,14 @@ static void mcux_pit_isr(const struct device *dev)
 
 static int mcux_pit_init(const struct device *dev)
 {
-	const struct mcux_pit_config *config =
-		(struct mcux_pit_config *)dev->config;
+	const struct mcux_pit_config *config = dev->config;
 	pit_config_t pit_config;
+	uint32_t clock_rate;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("Clock control device not ready");
+		return -ENODEV;
+	}
 
 	PIT_GetDefaultConfig(&pit_config);
 	pit_config.enableRunInDebug = config->enableRunInDebug;
@@ -141,9 +162,9 @@ static int mcux_pit_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
+	clock_rate = mcux_pit_get_frequency(dev);
 	PIT_SetTimerPeriod(config->base, config->pit_channel,
-			   USEC_TO_COUNT(config->pit_period,
-					 CLOCK_GetFreq(kCLOCK_BusClk)));
+			   USEC_TO_COUNT(config->pit_period, clock_rate));
 
 	return 0;
 }
@@ -155,6 +176,7 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 	.set_top_value = mcux_pit_set_top_value,
 	.get_pending_int = mcux_pit_get_pending_int,
 	.get_top_value = mcux_pit_get_top_value,
+	.get_freq = mcux_pit_get_frequency,
 };
 
 #define COUNTER_MCUX_PIT_IRQ_CONFIG(idx, n)					\
@@ -174,12 +196,14 @@ static const struct counter_driver_api mcux_pit_driver_api = {
 		.info = {							\
 			.max_top_value = DT_INST_PROP(n, max_load_value),	\
 			.channels = 0,						\
-			.freq = DT_INST_PROP(n, clock_frequency),		\
 		},								\
 		.base = (PIT_Type *)DT_INST_REG_ADDR(n),			\
 		.pit_channel = DT_INST_PROP(n, pit_channel),			\
 		.pit_period = DT_INST_PROP(n, pit_period),			\
 		.irq_config_func = mcux_pit_irq_config_##n,			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		.clock_subsys = (clock_control_subsys_t)			\
+				DT_INST_CLOCKS_CELL(n, name),			\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, &mcux_pit_init, NULL,				\
