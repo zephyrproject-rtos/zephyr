@@ -266,6 +266,8 @@
 };
 
 &lpspi0 {
+	dmas = <&edma 0 14>, <&edma 1 15>;
+	dma-names = "rx", "tx";
 	status = "okay";
 	pinctrl-0 = <&lpspi0_default>;
 	pinctrl-names = "default";
