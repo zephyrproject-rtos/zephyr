@@ -53,7 +53,7 @@ int main(void)
 			}
 		};
 
-		ret = fuel_gauge_get_prop(dev, props, ARRAY_SIZE(props));
+		ret = fuel_gauge_get_props(dev, props, ARRAY_SIZE(props));
 		if (ret < 0) {
 			printk("Error: cannot get properties\n");
 		} else {
