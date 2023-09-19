@@ -8,6 +8,7 @@ menuconfig NORDIC_QSPI_NOR
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_QSPI
 	select FLASH_JESD216
+	select PINCTRL
 	help
 	  Enable support for nrfx QSPI driver with EasyDMA.
 

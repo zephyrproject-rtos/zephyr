@@ -6,6 +6,7 @@ menuconfig SPI_NRFX
 	default y
 	depends on SOC_FAMILY_NRF
 	depends on MULTITHREADING
+	select PINCTRL
 	help
 	  Enable support for nrfx SPI drivers for nRF MCU series.
 
