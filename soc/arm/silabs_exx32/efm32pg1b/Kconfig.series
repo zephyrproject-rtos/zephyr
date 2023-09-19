@@ -19,5 +19,6 @@ config SOC_SERIES_EFM32PG1B
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select HAS_PM
+	select SOC_GECKO_SERIES1
 	help
 	  Enable support for EFM32 PearlGecko MCU series

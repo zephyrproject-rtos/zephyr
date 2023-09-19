@@ -21,11 +21,11 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
-config SOC_GECKO_SERIES2
+config SOC_GECKO_SERIES0
 	bool
 	help
-	  Set if we're building for Gecko Series 2 SoC.
-	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
+	  Set if we're building for Gecko Series 0 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_0 definition in HAL
 	  code.
 
 config SOC_GECKO_SERIES1
@@ -33,6 +33,13 @@ config SOC_GECKO_SERIES1
 	help
 	  Set if we're building for Gecko Series 1 SoC.
 	  This is equivalent of _SILICON_LABS_32B_SERIES_1 definition in HAL
+	  code.
+
+config SOC_GECKO_SERIES2
+	bool
+	help
+	  Set if we're building for Gecko Series 2 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
 	  code.
 
 config SOC_GECKO_BURTC
