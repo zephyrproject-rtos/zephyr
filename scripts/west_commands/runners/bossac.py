@@ -149,12 +149,19 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         return None
 
+    def is_gnu_coreutils_stty(self):
+        try:
+            result = subprocess.run(['stty', '--version'], capture_output=True, text=True, check=True)
+            return 'coreutils' in result.stdout
+        except subprocess.CalledProcessError:
+            return False
+
     def set_serial_config(self):
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
             self.require('stty')
 
             # GNU coreutils uses a capital F flag for 'file'
-            flag = '-F' if platform.system() == 'Linux' else '-f'
+            flag = '-F' if self.is_gnu_coreutils_stty() else '-f'
 
             if self.is_extended_samba_protocol():
                 self.speed = '1200'
