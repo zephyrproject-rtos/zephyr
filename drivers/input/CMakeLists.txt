@@ -6,6 +6,7 @@ zephyr_library_property(ALLOW_EMPTY TRUE)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_INPUT_CAP1203 input_cap1203.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_CST816S input_cst816s.c)
+zephyr_library_sources_ifdef(CONFIG_INPUT_ESP32_TOUCH_SENSOR input_esp32_touch_sensor.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_FT5336 input_ft5336.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_GPIO_KBD_MATRIX input_gpio_kbd_matrix.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_GPIO_KEYS input_gpio_keys.c)
