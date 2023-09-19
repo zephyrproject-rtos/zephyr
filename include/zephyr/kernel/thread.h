@@ -121,8 +121,12 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
+#if CONFIG_MP_MAX_NUM_CPUS <= 8
 	uint8_t cpu_mask;
+#else
+	uint16_t cpu_mask;
 #endif
+#endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */
 	void *swap_data;

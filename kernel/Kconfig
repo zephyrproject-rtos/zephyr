@@ -989,7 +989,7 @@ config SMP_BOOT_DELAY
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
 	default MP_MAX_NUM_CPUS
-	range 1 5
+	range 1 12
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
@@ -997,7 +997,7 @@ config MP_NUM_CPUS
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 5
+	range 1 12
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
