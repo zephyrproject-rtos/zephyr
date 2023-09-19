@@ -20,8 +20,6 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-CONFIG_PINCTRL=y
-
 # Fix the priority to enable the modem line's serial buffer
 # before the modem driver starts (gsm_ppp or ublox-sara-r4).
 CONFIG_REGULATOR=y
