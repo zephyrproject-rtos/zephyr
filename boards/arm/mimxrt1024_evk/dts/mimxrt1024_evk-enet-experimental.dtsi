@@ -1,0 +1,135 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * Experimental ENET binding overlay
+ */
+
+
+/ {
+	soc {
+		/delete-node/ ethernet@402d8000;
+
+		enet: enet@402d8000 {
+			compatible = "nxp,enet";
+			reg = <0x402D8000 0x628>;
+			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+			enet_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <114 0>;
+				interrupt-names = "COMMON";
+				nxp,mdio = <&enet_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				phy-connection-type = "rmii";
+				status = "disabled";
+			};
+			enet_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
+				interrupts = <115 0>;
+				status = "disabled";
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
+			};
+		};
+	};
+};
+
+&enet_mac {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0>;
+		status = "okay";
+		mc,reset-gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		mc,interrupt-gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		mc,interface-type = "rmii";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+	pinctrl-0 = <&pinmux_ptp>;
+	pinctrl-names = "default";
+};
+
+
+
+&pinctrl {
+	/delete-node/ pinmux_ptp;
+	/delete-node/ pinmux_enet;
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_08_enet_ref_clk>;
+			bias-disable;
+			drive-strength = "r0-6";
+			slew-rate = "fast";
+			nxp,speed = "50-mhz";
+			input-enable;
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_b0_09_enet_rx_data1>,
+				<&iomuxc_gpio_ad_b0_11_enet_rx_en>,
+				<&iomuxc_gpio_ad_b0_14_enet_tx_data0>,
+				<&iomuxc_gpio_ad_b0_15_enet_tx_data1>,
+				<&iomuxc_gpio_ad_b0_13_enet_tx_en>,
+				<&iomuxc_gpio_ad_b0_12_enet_rx_er>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "200-mhz";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_b0_10_enet_rx_data0>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_40_enet_mdio>,
+				<&iomuxc_gpio_emc_41_enet_mdc>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "200-mhz";
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_b1_06_gpio1_io22>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
+			drive-strength = "r0-5";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "fast";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_ptp: pinmux_ptp {
+		/* Intentionally empty */
+	};
+};
