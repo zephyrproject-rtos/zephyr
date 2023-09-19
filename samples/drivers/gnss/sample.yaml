@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: GNSS sample
+tests:
+  sample.drivers.gnss:
+    tags:
+      - drivers
+      - gnss
+    filter: dt_alias_exists("gnss")
+    depends_on: gnss
