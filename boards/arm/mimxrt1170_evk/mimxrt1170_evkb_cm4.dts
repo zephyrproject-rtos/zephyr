@@ -71,6 +71,8 @@
 };
 
 &lpspi1 {
+	dmas = <&edma_lpsr0 0 36>, <&edma_lpsr0 1 37>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
