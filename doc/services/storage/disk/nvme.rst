@@ -67,3 +67,14 @@ Options
 Note that NVME requires the target to support PCIe multi-vector MSI-X in order to function.
 
 * :kconfig:option:`CONFIG_NVME_MAX_NAMESPACES`
+
+Important note for users
+************************
+
+NVMe specifications mandate the data buffer to be placed in a dword (4 bytes) aligned address.
+While this is not a problem for advanced OS managing virtual memory and dynamic allocations
+below the user processes, this can become an issue in Zephyr as soon as buffer addresses
+map directly to physical memory.
+
+At this stage then, it is up to the user to make sure the buffer address being provided to
+:c:func:`disk_access_read` and :c:func:`disk_access_write` are dword aligned.
