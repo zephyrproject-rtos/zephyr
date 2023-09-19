@@ -1168,14 +1168,14 @@ config SMP_BOOT_DELAY
 config MP_NUM_CPUS
 	int "Number of CPUs/cores [DEPRECATED]"
 	default MP_MAX_NUM_CPUS
-	range 1 12
+	range 1 32
 	help
 	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
 
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 12
+	range 1 32
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.

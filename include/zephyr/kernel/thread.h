@@ -124,7 +124,7 @@ struct _thread_base {
 #if CONFIG_MP_MAX_NUM_CPUS <= 8
 	uint8_t cpu_mask;
 #else
-	uint16_t cpu_mask;
+	uint32_t cpu_mask;
 #endif
 #endif /* CONFIG_SCHED_CPU_MASK */
 
