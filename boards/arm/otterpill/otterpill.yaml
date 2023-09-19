@@ -1,0 +1,16 @@
+identifier: otterpill
+name: OtterPill
+type: mcu
+arch: arm
+ram: 16
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - spi
+  - usb_device

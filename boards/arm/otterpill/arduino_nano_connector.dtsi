@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Jonas Otto
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_nano_header: connector {
+		compatible = "arduino-nano-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpioa 10 0>,  /* D0 / UART1-RX */
+			<1 0 &gpioa 9 0>,   /* D1 / UART1-TX */
+			<2 0 &gpioa 1 0>,   /* D2 */
+			<3 0 &gpioa 2 0>,   /* D3 */
+			<4 0 &gpioa 3  0>,  /* D4 */
+			<5 0 &gpioa 4 0>,   /* D5 */
+			<6 0 &gpioa 5 0>,   /* D6 */
+			<7 0 &gpioa 6 0>,   /* D7 */
+			<8 0 &gpioa 7 0>,   /* D8 */
+			<9 0 &gpiob 12 0>,  /* D9 */
+			<10 0 &gpiob 0 0>,  /* D10 */
+			<11 0 &gpiob 15 0>, /* D11 / SPI2-MOSI */
+			<12 0 &gpiob 14 0>, /* D12 / SPI2-MISO */
+			<13 0 &gpiob 13 0>, /* D13 / SPI2-SCK */
+			<14 0 &gpiob 1 0>,  /* D14 */
+			<15 0 &gpiob 8 0>,  /* D15 */
+			<16 0 &gpioa 15 0>, /* D16 */
+			<17 0 &gpiob 2 0>,  /* D17 */
+			<18 0 &gpiob 7 0>,  /* D18 / I2C1-SDA */
+			<19 0 &gpiob 6 0>,  /* D19 / I2C1-SCL */
+			<20 0 &gpiob 3 0>,  /* D20 */
+			<21 0 &gpiob 4 0>;  /* D21 */
+	};
+};
+
+arduino_nano_i2c: &i2c1 {};
+arduino_nano_spi: &spi2 {};
+arduino_nano_serial: &usart1 {};
