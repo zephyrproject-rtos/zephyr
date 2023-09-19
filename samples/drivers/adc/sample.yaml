@@ -9,6 +9,7 @@ tests:
       - disco_l475_iot1
       - cc3220sf_launchxl
       - cc3235sf_launchxl
+      - cy8cproto_063_ble
       - stm32l496g_disco
       - stm32h735g_disco
       - nrf51dk_nrf51422
