@@ -27,6 +27,13 @@ config LORAWAN_SYSTEM_MAX_RX_ERROR
 	  System Max Rx timing error value in ms to be used by LoRaWAN stack
 	  for calculating the RX1/RX2 window timing.
 
+config LORAWAN_PUBLIC_NETWORK
+	bool "LoRaWAN Public Network"
+	default y
+	help
+	  Enable this option to use a public LoRaWAN network.
+	  Disable for private LoRaWAN networks.
+
 config LORAMAC_REGION_AS923
 	bool "Asia 923MHz Frequency band"
 
