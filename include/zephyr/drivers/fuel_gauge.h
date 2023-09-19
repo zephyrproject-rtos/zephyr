@@ -222,7 +222,7 @@ struct sbs_gauge_device_chemistry {
  * See fuel_gauge_get_property() for argument description
  */
 typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
-					 struct fuel_gauge_property *props, size_t props_len);
+					 struct fuel_gauge_property *prop);
 
 /**
  * @typedef fuel_gauge_set_property_t
@@ -254,6 +254,12 @@ typedef int (*fuel_gauge_battery_cutoff_t)(const struct device *dev);
 /* Caching is entirely on the onus of the client */
 
 __subsystem struct fuel_gauge_driver_api {
+	/**
+	 * Note: Historically this API allowed drivers to implement a custom multi-get/set property
+	 * function, this was added so drivers could potentially optimize batch read with their
+	 * specific chip. However, it was removed because of no existing concrete case upstream.
+	 * If this need is demonstrated, we can add this back in as an API field.
+	 */
 	fuel_gauge_get_property_t get_property;
 	fuel_gauge_set_property_t set_property;
 	fuel_gauge_get_buffer_property_t get_buffer_property;
@@ -264,21 +270,17 @@ __subsystem struct fuel_gauge_driver_api {
  * @brief Fetch a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param props pointer to array of fuel_gauge_property struct where the property struct
+ * @param prop pointer to a fuel_gauge_property struct where the property struct
  * field is set by the caller to determine what property is read from the
  * fuel gauge device into the fuel_gauge_property struct's value field. The props array
  * maintains the same order of properties as it was given.
- * @param props_len number of properties in props array
  *
- * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
- * properties failed where return=number of failing properties.
+ * @return 0 if successful, negative errno code if failure.
  */
-__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *props,
-				  size_t props_len);
+__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *prop);
 
 static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
-					     struct fuel_gauge_property *props,
-					     size_t props_len)
+					     struct fuel_gauge_property *prop)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
@@ -286,7 +288,41 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->get_property(dev, props, props_len);
+	return api->get_property(dev, prop);
+}
+
+/**
+ * @brief Fetch multiple battery fuel-gauge properies. The default implementation is the same as
+ * calling fuel_gauge_get_prop() multiple times. A driver may implement the `get_properties` field
+ * of the fuel gauge driver APIs struct to override this implementation.
+ *
+ * @param dev Pointer to the battery fuel-gauge device
+ * @param props pointer to array of fuel_gauge_property struct where the property struct
+ * field is set by the caller to determine what property is read from the
+ * fuel gauge device into the fuel_gauge_property struct's value field. The props array
+ * maintains the same order of properties as it was given.
+ * @param len number of properties in props array
+ *
+ * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
+ * properties failed where return=number of failing properties.
+ */
+__syscall int fuel_gauge_get_props(const struct device *dev, struct fuel_gauge_property *props,
+				   size_t len);
+static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
+					      struct fuel_gauge_property *props, size_t len)
+{
+	int err_count = 0;
+	const struct fuel_gauge_driver_api *api = dev->api;
+
+	for (int i = 0; i < len; i++) {
+		int ret = api->get_property(dev, props + i);
+
+		err_count += ret ? 1 : 0;
+	}
+
+	err_count = (err_count == len) ? -1 : err_count;
+
+	return err_count;
 }
 
 /**

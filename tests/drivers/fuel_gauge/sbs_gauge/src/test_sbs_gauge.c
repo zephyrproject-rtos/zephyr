@@ -41,7 +41,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
 		},
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -67,7 +67,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_c
 
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
 		      props[0].property_type);
@@ -184,7 +184,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 			   set_props[i].property_type);
 	}
 
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, get_props, ARRAY_SIZE(get_props)));
+	zassert_ok(fuel_gauge_get_props(fixture->dev, get_props, ARRAY_SIZE(get_props)));
 	for (int i = 0; i < ARRAY_SIZE(get_props); i++) {
 		zassert_ok(get_props[i].status, "Property %d getting %d has a bad status.", i,
 			   get_props[i].property_type);
@@ -276,7 +276,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	for (int i = 0; i < ARRAY_SIZE(props); i++) {
 		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
@@ -350,26 +350,25 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 	uint32_t expected_uV = 5000 * 1000;
 	uint32_t expected_uA = 3000 * 1000;
 
-	struct fuel_gauge_property props[] = {
-		{
-			.property_type = FUEL_GAUGE_VOLTAGE,
-		},
-		{
-			.property_type = FUEL_GAUGE_CURRENT,
-		},
+	struct fuel_gauge_property voltage = {
+		.property_type = FUEL_GAUGE_VOLTAGE,
+	};
+	struct fuel_gauge_property current = {
+		.property_type = FUEL_GAUGE_CURRENT,
 	};
 
 	zassume_ok(emul_fuel_gauge_set_battery_charging(fixture->sbs_fuel_gauge, expected_uV,
 							expected_uA));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, props, ARRAY_SIZE(props)));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, &voltage));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, &current));
 
-	zassert_ok(props[0].status);
-	zassert_equal(props[0].value.voltage, expected_uV, "Got %d instead of %d",
-		      props[0].value.voltage, expected_uV);
+	zassert_ok(voltage.status);
+	zassert_equal(voltage.value.voltage, expected_uV, "Got %d instead of %d",
+		      voltage.value.voltage, expected_uV);
 
-	zassert_ok(props[1].status);
-	zassert_equal(props[1].value.current, expected_uA, "Got %d instead of %d",
-		      props[1].value.current, expected_uA);
+	zassert_ok(current.status);
+	zassert_equal(current.value.current, expected_uA, "Got %d instead of %d",
+		      current.value.current, expected_uA);
 }
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);
