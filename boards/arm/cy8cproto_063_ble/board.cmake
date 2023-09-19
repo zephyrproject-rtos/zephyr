@@ -5,3 +5,6 @@
 #***************************************************************************
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
+board_runner_args(pyocd "--target=cy8c6xx7_nosmif")
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
