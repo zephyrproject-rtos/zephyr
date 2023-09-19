@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"-sX\tWrite value as intX_t\n" \
 	"-f \tWrite value as float\n" \
 	"-t \tWrite value as time_t\n"
+#define LWM2M_HELP_CREATE "Create object instance\ncreate PATH\n"
 #define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
 	"start EP_NAME [BOOTSTRAP FLAG]\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
@@ -372,6 +373,40 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_create(const struct shell *sh, size_t argc, char **argv)
+{
+	struct lwm2m_obj_path path;
+	struct lwm2m_engine_obj_inst *obj_inst;
+	int ret;
+
+	if (argc < 2) {
+		shell_error(sh, "No object ID given\n");
+		shell_help(sh);
+		return -EINVAL;
+	}
+
+	ret = lwm2m_string_to_path(argv[1], &path, '/');
+	if (ret < 0) {
+		shell_error(sh, "failed to read path (%d)\n", ret);
+		return -ENOEXEC;
+	}
+
+	if (path.level != LWM2M_PATH_LEVEL_OBJECT_INST) {
+		shell_error(sh, "path is not an object instance\n");
+		shell_help(sh);
+		return -EINVAL;
+	}
+
+	ret = lwm2m_create_obj_inst(path.obj_id, path.obj_inst_id, &obj_inst);
+	if (ret < 0) {
+		shell_error(sh, "Failed to create object instance %d/%d, ret=%d", path.obj_id,
+			    path.obj_inst_id, ret);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_start(const struct shell *sh, size_t argc, char **argv)
 {
 	struct lwm2m_ctx *ctx = lwm2m_rd_client_ctx();
@@ -561,6 +596,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(exec, NULL, LWM2M_HELP_EXEC, cmd_exec, 2, 1),
 	SHELL_CMD_ARG(read, NULL, LWM2M_HELP_READ, cmd_read, 2, 1),
 	SHELL_CMD_ARG(write, NULL, LWM2M_HELP_WRITE, cmd_write, 3, 1),
+	SHELL_CMD_ARG(create, NULL, LWM2M_HELP_CREATE, cmd_create, 2, 0),
 	SHELL_CMD_ARG(start, NULL, LWM2M_HELP_START, cmd_start, 2, 2),
 	SHELL_CMD_ARG(stop, NULL, LWM2M_HELP_STOP, cmd_stop, 1, 1),
 	SHELL_CMD_ARG(update, NULL, LWM2M_HELP_UPDATE, cmd_update, 1, 0),
