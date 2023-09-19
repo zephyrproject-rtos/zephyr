@@ -10,8 +10,8 @@ menuconfig USBC_TCPC_DRIVER
 
 if USBC_TCPC_DRIVER
 
-config USBC_INIT_PRIORITY
-	int "USBC driver init priority"
+config USBC_TCPC_INIT_PRIORITY
+	int "USB-C TCPC driver init priority"
 	default 80
 	help
 	  USB-C device driver initialization priority.
