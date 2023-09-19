@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Jonas Otto
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OTTERPILL
+
+config BOARD
+	default "otterpill"
+
+endif # BOARD_OTTERPILL

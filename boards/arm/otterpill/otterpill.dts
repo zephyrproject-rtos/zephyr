@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2023 Jonas Otto
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f072X8.dtsi>
+#include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_nano_connector.dtsi"
+
+/ {
+	model = "OtterPill";
+	compatible = "otterpill";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_status: led_status {
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		dfu_button: button {
+			label = "DFU";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led_status;
+		sw0 = &dfu_button;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hsi>;
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	status = "okay";
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <921600>;
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	/*
+	 * Board-internal I2C bus, connects to FUSB302B
+	 * (for which there exists no Zephyr driver yet)
+	 */
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	/* Timing configuration generated with STM32CubeMX */
+	timings = <DT_FREQ_M(48) I2C_BITRATE_FAST_PLUS 0x20000209>;
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+};
