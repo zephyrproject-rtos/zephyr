@@ -69,4 +69,4 @@ tests:
     platform_allow: frdm_k64f
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
-      - TraceRecorderSource
+      - percepio
