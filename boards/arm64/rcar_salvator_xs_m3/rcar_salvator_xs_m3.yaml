@@ -10,7 +10,6 @@ supported:
   - clock_control
   - uart
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth
