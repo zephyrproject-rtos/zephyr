@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2023 Endress+Hauser AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "DISK0";
+		sector-size = <512>;
+		sector-count = <2>;
+	};
+
+	disk_flash: disk_flash {
+		compatible = "zephyr,disk-flash";
+		status = "okay";
+		size = <4096>;
+		page-size = <1024>;
+		disk-name = "DISK0";
+		disk-sector-size = <512>;
+		disk-offset = <512>;
+	};
+};

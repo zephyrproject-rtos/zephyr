@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulates a flash using the disk access subsystem
+
+compatible: "zephyr,disk-flash"
+
+include: base.yaml
+
+properties:
+  size:
+    type: int
+    description: emulated flash capacity in bits
+    required: true
+  page-size:
+    type: int
+    description: emulated flash page size
+    required: true
+  write-block-size:
+    type: int
+    description: >
+      emulated write block size of the flash. If this value is set to 0 the
+      disk-sector-size will be used as write block size.
+    default: 0
+  disk-name:
+    type: string
+    description: the name of the underlying disk to be used
+    required: true
+  disk-sector-size:
+    type: int
+    description: the sector size in byte of the underlying disk to be used
+    required: true
+  disk-offset:
+    type: int
+    description: >
+      offset on the disk in bytes. If the offset is 10 the 10th byte will
+      be the first one used.
+    default: 0
+  init-level:
+    type: string
+    description: >
+      The initialization level of this driver. It is important, that the underlying disk has
+      already been initialized.
+    default: "POST_KERNEL"

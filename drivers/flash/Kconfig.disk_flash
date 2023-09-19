@@ -1,0 +1,14 @@
+# Disk flash emulator config
+
+# Copyright (c) 2023 Endress+Hauser AG
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_FLASH_DRIVER
+	bool "Use the flash on disk emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_DISK_FLASH_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  This option enables the flash on disk emulator
+	  which can be used to emulate a flash on a disk
+	  device like sd-card or ramdisk.
