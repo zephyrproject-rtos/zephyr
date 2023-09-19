@@ -61,7 +61,7 @@ class Filters:
     # filters realted to platform definition
     PLATFORM = 'Platform related filter'
     # in case a test suite was quarantined.
-    QUARENTINE = 'Quarantine filter'
+    QUARANTINE = 'Quarantine filter'
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
     # in case of incompatibility between selected and allowed toolchains.
@@ -849,9 +849,9 @@ class TestPlan:
                         instance.testsuite.id, plat.name, plat.arch, plat.simulation
                     )
                     if matched_quarantine and not self.options.quarantine_verify:
-                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
+                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
                     if not matched_quarantine and self.options.quarantine_verify:
-                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
+                        instance.add_filter("Not under quarantine", Filters.QUARANTINE)
 
 
                 # platform_key is a list of unique platform attributes that form a unique key a test
