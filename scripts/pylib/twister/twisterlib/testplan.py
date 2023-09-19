@@ -50,6 +50,8 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
 import scl
 class Filters:
+    # platform keys
+    PLATFORM_KEY = 'platform key filter'
     # filters provided on command line by the user/tester
     CMD_LINE = 'command line filter'
     # filters in the testsuite yaml definition
@@ -884,7 +886,7 @@ class TestPlan:
                         keyed_test = keyed_tests.get(test_key)
                         if keyed_test is not None:
                             plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
-                            instance.add_filter(f"Excluded test already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.TESTSUITE)
+                            instance.add_filter(f"Excluded test already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
                         else:
                             keyed_tests[test_key] = {'plat': plat, 'ts': ts}
                     else:
@@ -1023,7 +1025,8 @@ def change_skip_to_error_if_integration(options, instance):
         and "quarantine" not in instance.reason.lower():
         # Do not treat this as error if filter type is command line
         filters = {t['type'] for t in instance.filters}
-        if Filters.CMD_LINE in filters or Filters.SKIP in filters:
+        ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY}
+        if filters.intersection(ignore_filters):
             return
         instance.status = "error"
         instance.reason += " but is one of the integration platforms"
