@@ -170,8 +170,8 @@ struct ec_host_cmd_handler {
  */
 #define EC_HOST_CMD_HANDLER(_id, _function, _version_mask, _request_type, _response_type)          \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
-		.id = _id,                                                                         \
 		.handler = _function,                                                              \
+		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
 		.min_rqt_size = sizeof(_request_type),                                             \
 		.min_rsp_size = sizeof(_response_type),                                            \
@@ -190,8 +190,8 @@ struct ec_host_cmd_handler {
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_id, _function, _version_mask)                                 \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
-		.id = _id,                                                                         \
 		.handler = _function,                                                              \
+		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
 		.min_rqt_size = 0,                                                                 \
 		.min_rsp_size = 0,                                                                 \
