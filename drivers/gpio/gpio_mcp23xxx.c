@@ -412,8 +412,13 @@ static void mcp23xxx_work_handler(struct k_work *work)
 	}
 
 	if (!intf) {
-		/* Probable cause: REG_GPIO was read from somewhere else before the interrupt
-		 * handler had a chance to run
+		/* Probable causes:
+		 * - REG_GPIO was read from somewhere else before the interrupt handler had a chance
+		 *   to run
+		 * - Even though the datasheet says differently, reading INTCAP while a level
+		 *   interrupt is active briefly (~2ns) causes the interrupt line to go high and
+		 *   low again. This causes a second ISR to be scheduled, which then won't
+		 *   find any active interrupts if the callback has disabled the level interrupt.
 		 */
 		LOG_ERR("Spurious interrupt");
 		goto fail;
