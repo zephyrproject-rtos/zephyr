@@ -159,7 +159,7 @@ externally connected SPI devices.
 +-------------+------------------------------------------------------------------------------------------+
 
 Zephyr provide several samples that can use this technology. You can check
-:zephyr:code-sample:`wpanusb` and :zephyr:code-sample:`wpan-serial` examples as starting
+:zephyr:code-sample:`wpan-usb` and :zephyr:code-sample:`wpan-serial` examples as starting
 points. Another good test can be done with IPv6 by using the server/client
 echo demo. More information at :zephyr:code-sample:`sockets-echo-server` and
 :zephyr:code-sample:`sockets-echo-client`.
