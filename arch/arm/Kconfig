@@ -16,23 +16,23 @@ config CPU_CORTEX
 
 config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	bool
-	depends on !CPU_CORTEX_M
 	help
 	  This option indicates that the ARM CPU is connected to a custom (i.e.
-	  non-GIC) interrupt controller.
+	  non-GIC or NVIC) interrupt controller.
 
 	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
 	  allow interfacing to a custom external interrupt controller and this
 	  option must be selected when such cores are connected to an interrupt
-	  controller that is not the ARM Generic Interrupt Controller (GIC).
+	  controller that is not the ARM Generic Interrupt Controller (GIC) or
+	  the Cortex-M ARM Nested Vectored Interrupt Controller (NVIC).
 
 	  When this option is selected, the architecture interrupt control
 	  functions are mapped to the SoC interrupt control interface, which is
 	  implemented at the SoC level.
 
-	  N.B. This option is only applicable to the Cortex-A and Cortex-R
-	       family cores. The Cortex-M family cores are always equipped with
-	       the ARM Nested Vectored Interrupt Controller (NVIC).
+	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
+	  is assumed that the custom interrupt control interface implementation
+	  assumes responsibility for handling the NVIC.
 
 config CODE_DATA_RELOCATION_SRAM
 	bool "Relocate code/data sections to SRAM"
