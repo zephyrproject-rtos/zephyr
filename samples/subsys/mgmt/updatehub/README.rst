@@ -203,7 +203,7 @@ Step 4.3: Build for Modem
 
 Modem needs add ``overlay-modem.conf``.  Now, a DTC overlay file is used to
 configure the glue between the modem and an arduino headers.  The modem config
-uses PPP over GSM modem, see :zephyr:code-sample:`gsm-modem-sample` sample application.
+uses PPP over GSM modem, see :zephyr:code-sample:`gsm-modem` sample application.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
