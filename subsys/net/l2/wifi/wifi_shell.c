@@ -97,6 +97,224 @@ static bool parse_number(const struct shell *sh, long *param, char *str, long mi
 	return true;
 }
 
+const char * const wifi_security_txt(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		return "OPEN";
+	case WIFI_SECURITY_TYPE_WEP:
+		return "WEP";
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		return "WPA-PSK";
+	case WIFI_SECURITY_TYPE_PSK:
+		return "WPA2-PSK";
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		return "WPA2-PSK-SHA256";
+	case WIFI_SECURITY_TYPE_SAE:
+		return "WPA3-SAE";
+	case WIFI_SECURITY_TYPE_WAPI:
+		return "WAPI";
+	case WIFI_SECURITY_TYPE_EAP:
+		return "EAP";
+	case WIFI_SECURITY_TYPE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
+{
+	switch (mfp) {
+	case WIFI_MFP_DISABLE:
+		return "Disable";
+	case WIFI_MFP_OPTIONAL:
+		return "Optional";
+	case WIFI_MFP_REQUIRED:
+		return "Required";
+	case WIFI_MFP_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_band_txt(enum wifi_frequency_bands band)
+{
+	switch (band) {
+	case WIFI_FREQ_BAND_2_4_GHZ:
+		return "2.4GHz";
+	case WIFI_FREQ_BAND_5_GHZ:
+		return "5GHz";
+	case WIFI_FREQ_BAND_6_GHZ:
+		return "6GHz";
+	case WIFI_FREQ_BAND_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_state_txt(enum wifi_iface_state state)
+{
+	switch (state) {
+	case WIFI_STATE_DISCONNECTED:
+		return "DISCONNECTED";
+	case WIFI_STATE_INACTIVE:
+		return "INACTIVE";
+	case WIFI_STATE_INTERFACE_DISABLED:
+		return "INTERFACE_DISABLED";
+	case WIFI_STATE_SCANNING:
+		return "SCANNING";
+	case WIFI_STATE_AUTHENTICATING:
+		return "AUTHENTICATING";
+	case WIFI_STATE_ASSOCIATING:
+		return "ASSOCIATING";
+	case WIFI_STATE_ASSOCIATED:
+		return "ASSOCIATED";
+	case WIFI_STATE_4WAY_HANDSHAKE:
+		return "4WAY_HANDSHAKE";
+	case WIFI_STATE_GROUP_HANDSHAKE:
+		return "GROUP_HANDSHAKE";
+	case WIFI_STATE_COMPLETED:
+		return "COMPLETED";
+	case WIFI_STATE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_mode_txt(enum wifi_iface_mode mode)
+{
+	switch (mode) {
+	case WIFI_MODE_INFRA:
+		return "STATION";
+	case WIFI_MODE_IBSS:
+		return "ADHOC";
+	case WIFI_MODE_AP:
+		return "ACCESS POINT";
+	case WIFI_MODE_P2P_GO:
+		return "P2P GROUP OWNER";
+	case WIFI_MODE_P2P_GROUP_FORMATION:
+		return "P2P GROUP FORMATION";
+	case WIFI_MODE_MESH:
+		return "MESH";
+	case WIFI_MODE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
+{
+	switch (link_mode) {
+	case WIFI_0:
+		return "WIFI 0 (802.11)";
+	case WIFI_1:
+		return "WIFI 1 (802.11b)";
+	case WIFI_2:
+		return "WIFI 2 (802.11a)";
+	case WIFI_3:
+		return "WIFI 3 (802.11g)";
+	case WIFI_4:
+		return "WIFI 4 (802.11n/HT)";
+	case WIFI_5:
+		return "WIFI 5 (802.11ac/VHT)";
+	case WIFI_6:
+		return "WIFI 6 (802.11ax/HE)";
+	case WIFI_6E:
+		return "WIFI 6E (802.11ax 6GHz/HE)";
+	case WIFI_7:
+		return "WIFI 7 (802.11be/EHT)";
+	case WIFI_LINK_MODE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_ps_txt(enum wifi_ps ps_name)
+{
+	switch (ps_name) {
+	case WIFI_PS_DISABLED:
+		return "Power save disabled";
+	case WIFI_PS_ENABLED:
+		return "Power save enabled";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
+{
+	switch (ps_mode) {
+	case WIFI_PS_MODE_LEGACY:
+		return "Legacy power save";
+	case WIFI_PS_MODE_WMM:
+		return "WMM power save";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
+{
+	switch (twt_operation) {
+	case WIFI_TWT_SETUP:
+		return "TWT setup";
+	case WIFI_TWT_TEARDOWN:
+		return "TWT teardown";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
+{
+	switch (twt_negotiation) {
+	case WIFI_TWT_INDIVIDUAL:
+		return "TWT individual negotiation";
+	case WIFI_TWT_BROADCAST:
+		return "TWT broadcast negotiation";
+	case WIFI_TWT_WAKE_TBTT:
+		return "TWT wake TBTT negotiation";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
+{
+	switch (twt_setup) {
+	case WIFI_TWT_SETUP_CMD_REQUEST:
+		return "TWT request";
+	case WIFI_TWT_SETUP_CMD_SUGGEST:
+		return "TWT suggest";
+	case WIFI_TWT_SETUP_CMD_DEMAND:
+		return "TWT demand";
+	case WIFI_TWT_SETUP_CMD_GROUPING:
+		return "TWT grouping";
+	case WIFI_TWT_SETUP_CMD_ACCEPT:
+		return "TWT accept";
+	case WIFI_TWT_SETUP_CMD_ALTERNATE:
+		return "TWT alternate";
+	case WIFI_TWT_SETUP_CMD_DICTATE:
+		return "TWT dictate";
+	case WIFI_TWT_SETUP_CMD_REJECT:
+		return "TWT reject";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
+{
+	switch (ps_wakeup_mode) {
+	case WIFI_PS_WAKEUP_MODE_DTIM:
+		return "PS wakeup mode DTIM";
+	case WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL:
+		return "PS wakeup mode listen interval";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_scan_result *entry =
@@ -257,7 +475,7 @@ static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
 	print(context.sh, SHELL_NORMAL, "TWT flow ID: %d\n",
 	      flow_id);
 	print(context.sh, SHELL_NORMAL, "TWT negotiation type: %s\n",
-	      wifi_twt_negotiation_type2str[negotiation_type]);
+	      wifi_twt_negotiation_type_txt(negotiation_type));
 	print(context.sh, SHELL_NORMAL, "TWT responder: %s\n",
 	       responder ? "true" : "false");
 	print(context.sh, SHELL_NORMAL, "TWT implicit: %s\n",
@@ -286,7 +504,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 
 	if (resp->resp_status == WIFI_TWT_RESP_RECEIVED) {
 		print(context.sh, SHELL_NORMAL, "TWT response: %s\n",
-		      wifi_twt_setup_cmd2str[resp->setup_cmd]);
+		      wifi_twt_setup_cmd_txt(resp->setup_cmd));
 		print(context.sh, SHELL_NORMAL, "== TWT negotiated parameters ==\n");
 		print_twt_params(resp->dialog_token,
 				 resp->flow_id,
@@ -736,10 +954,10 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS status: %s\n",
-				wifi_ps2str[config.ps_params.enabled]);
+				wifi_ps_txt(config.ps_params.enabled));
 		if (config.ps_params.enabled) {
 			shell_fprintf(sh, SHELL_NORMAL, "PS mode: %s\n",
-					wifi_ps_mode2str[config.ps_params.mode]);
+					wifi_ps_mode_txt(config.ps_params.mode));
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "PS listen_interval: %d\n",
@@ -794,7 +1012,7 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps2str[params.enabled]);
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_txt(params.enabled));
 
 	return 0;
 }
@@ -819,12 +1037,12 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s failed Reason : %s\n",
-			      wifi_ps_mode2str[params.mode],
+			      wifi_ps_mode_txt(params.mode),
 			      wifi_ps_get_config_err_code_str(params.fail_reason));
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_mode2str[params.mode]);
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n", wifi_ps_mode_txt(params.mode));
 
 	return 0;
 }
@@ -903,15 +1121,15 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
-			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type],
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
 			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
-		wifi_twt_operation2str[params.operation],
+		wifi_twt_operation_txt(params.operation),
 		params.dialog_token, params.flow_id);
 
 	return 0;
@@ -990,15 +1208,15 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed. reason : %s\n",
-			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type],
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
 			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d requested\n",
-		wifi_twt_operation2str[params.operation],
+		wifi_twt_operation_txt(params.operation),
 		params.dialog_token, params.flow_id);
 
 	return 0;
@@ -1046,15 +1264,15 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
-			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type],
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
 			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s with dg: %d, flow_id: %d success\n",
-		wifi_twt_operation2str[params.operation],
+		wifi_twt_operation_txt(params.operation),
 		params.dialog_token, params.flow_id);
 
 	return 0;
@@ -1073,15 +1291,15 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		shell_fprintf(sh, SHELL_WARNING, "%s with %s failed, reason : %s\n",
-			wifi_twt_operation2str[params.operation],
-			wifi_twt_negotiation_type2str[params.negotiation_type],
+			wifi_twt_operation_txt(params.operation),
+			wifi_twt_negotiation_type_txt(params.negotiation_type),
 			wifi_twt_get_err_code_str(params.fail_reason));
 
 		return -ENOEXEC;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "TWT operation %s all flows success\n",
-		wifi_twt_operation2str[params.operation]);
+		wifi_twt_operation_txt(params.operation));
 
 	return 0;
 }
@@ -1258,7 +1476,7 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "%s\n",
-		      wifi_ps_wakeup_mode2str[params.wakeup_mode]);
+		      wifi_ps_wakeup_mode_txt(params.wakeup_mode));
 
 	return 0;
 }
