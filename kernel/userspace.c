@@ -51,19 +51,19 @@ static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* On ARM MPU we may have two different alignment requirement
+/* On ARM & ARC MPU we may have two different alignment requirement
  * when dynamically allocating thread stacks, one for the privileged
  * stack and other for the user stack, so we need to account the
  * worst alignment scenario and reserve space for that.
  */
-#ifdef CONFIG_ARM_MPU
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
 #define STACK_ELEMENT_DATA_SIZE(size) \
 	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
 	Z_THREAD_STACK_OBJ_ALIGN(size) + Z_THREAD_STACK_SIZE_ADJUST(size))
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
 	Z_THREAD_STACK_SIZE_ADJUST(size))
-#endif /* CONFIG_ARM_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) Z_THREAD_STACK_SIZE_ADJUST(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
@@ -342,7 +342,7 @@ static struct z_object *dynamic_object_create(enum k_objects otype, size_t align
 			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
 		stack_data->priv = (uint8_t *)dyn->data;
 		dyn->kobj.data.stack_data = stack_data;
-#ifdef CONFIG_ARM_MPU
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
 		dyn->kobj.name = (void *)ROUND_UP(
 			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
