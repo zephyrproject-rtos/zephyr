@@ -38,9 +38,6 @@
 /* System clock frequency */
 extern uint32_t SystemCoreClock;
 
-/*Should be in the range of 12MHz to 32MHz */
-static uint32_t ExternalClockFrequency;
-
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
@@ -72,13 +69,18 @@ const pll_setup_t pll1Setup = {
 };
 #endif
 
+#ifndef CONFIG_NXP_DTS_CLOCKING
+
+/*Should be in the range of 12MHz to 32MHz */
+static uint32_t ExternalClockFrequency;
+
 /**
  *
  * @brief Initialize the system clock
  *
  */
 
-static ALWAYS_INLINE void clock_init(void)
+static ALWAYS_INLINE int clock_init(void)
 {
 	ExternalClockFrequency = 0;
 
@@ -347,7 +349,15 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* DAC */
 
+	return 0;
 }
+
+#else
+
+/* Clock initialization is implemented in external file */
+extern int clock_init(void);
+
+#endif
 
 /**
  *
@@ -361,10 +371,14 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 static int nxp_lpc55xxx_init(void)
 {
+	int ret;
 	z_arm_clear_faults();
 
 	/* Initialize FRO/system clock to 96 MHz */
-	clock_init();
+	ret = clock_init();
+	if (ret < 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_GPIO_MCUX_LPC
 	/* Turn on PINT device*/

@@ -19,4 +19,9 @@ config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_LPC11U6X if SOC_SERIES_LPC11U6X
 	default SOC_PART_NUMBER_LPC51U68 if SOC_SERIES_LPC51U68
 
+config NXP_DTS_CLOCKING
+	bool "Use devicetree based clocking to configure clocks"
+	help
+	  Configure SOC to use devicetree definition for clock setup
+
 endif # SOC_FAMILY_LPC
