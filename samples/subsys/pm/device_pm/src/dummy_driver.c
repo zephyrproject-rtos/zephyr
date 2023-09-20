@@ -116,4 +116,4 @@ PM_DEVICE_DEFINE(dummy_driver, dummy_device_pm_action);
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
 		    PM_DEVICE_GET(dummy_driver), NULL, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &funcs);
