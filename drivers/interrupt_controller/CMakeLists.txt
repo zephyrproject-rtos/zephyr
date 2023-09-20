@@ -41,3 +41,5 @@ zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_ICU          intc_ra_icu.c)
 if(CONFIG_INTEL_VTD_ICTL)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
 endif()
+
+zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
