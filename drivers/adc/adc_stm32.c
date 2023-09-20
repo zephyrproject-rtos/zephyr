@@ -43,7 +43,16 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -285,13 +294,22 @@ static int adc_stm32_dma_start(const struct device *dev,
  *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
  *	};
  */
-static bool address_in_non_cacheable_sram(const uint16_t *buffer, const uint16_t size)
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 {
-	if (mem_attr_check_buf((void *) buffer, (size_t) size, DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
 		return true;
 	}
+#endif /* CONFIG_NOCACHE_MEMORY */
 
-	return false;
+	buf_within_nocache = mem_attr_check_buf(
+		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
 }
 #endif /* defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X) */
 
@@ -314,7 +332,7 @@ static int check_buffer(const struct adc_sequence *sequence,
 
 #if defined(CONFIG_ADC_STM32_DMA) && defined(CONFIG_SOC_SERIES_STM32H7X)
 	/* Buffer is forced to be in non-cacheable SRAM region to avoid cache maintenance */
-	if (!address_in_non_cacheable_sram(sequence->buffer, needed_buffer_size)) {
+	if (!buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
 		LOG_ERR("Supplied buffer is not in a non-cacheable region according to DTS.");
 		return -EINVAL;
 	}
