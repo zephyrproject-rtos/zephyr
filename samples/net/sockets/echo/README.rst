@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: socket-echo
+.. zephyr:code-sample:: sockets-echo
    :name: Echo server (simple)
    :relevant-api: bsd_sockets
 
