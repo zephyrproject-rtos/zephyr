@@ -97,13 +97,24 @@ _idle_state_cleared:
 
 #endif /* CONFIG_PM */
 
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	bl z_soc_irq_get_active
+#else
 	mrs r0, IPSR	/* get exception number */
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	ldr r1, =16
 	subs r0, r1	/* get IRQ number */
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	push {r0}
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	lsls r0, #3	/* table is 8-byte wide */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	sub r0, r0, #16	/* get IRQ number */
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	push {r0}
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	lsl r0, r0, #3	/* table is 8-byte wide */
 #else
 #error Unknown ARM architecture
@@ -115,6 +126,11 @@ _idle_state_cleared:
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 	blx r3		/* call ISR */
+
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	pop {r0}
+	bl z_soc_irq_eoi
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit

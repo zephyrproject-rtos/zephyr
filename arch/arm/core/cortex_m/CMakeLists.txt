@@ -7,7 +7,6 @@ zephyr_library_sources(
   fault.c
   fault_s.S
   fpu.c
-  irq_init.c
   reset.S
   scb.c
   thread_abort.c
@@ -20,6 +19,7 @@ zephyr_library_sources(
   cpu_idle.S
   )
 
+zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
