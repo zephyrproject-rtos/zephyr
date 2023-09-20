@@ -2330,6 +2330,11 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 			goto error;
 		}
 #endif
+		if (msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
+			r = -EACCES;
+			goto error;
+		}
+
 		switch (msg->operation) {
 
 		case LWM2M_OP_READ:
