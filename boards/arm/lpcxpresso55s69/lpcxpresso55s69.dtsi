@@ -5,6 +5,7 @@
  */
 
 #include "lpcxpresso55s69-pinctrl.dtsi"
+#include "lpcxpresso55s69-clocks.dtsi"
 
 / {
 	aliases{

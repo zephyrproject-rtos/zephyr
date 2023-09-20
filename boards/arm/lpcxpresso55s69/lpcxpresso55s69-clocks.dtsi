@@ -1,0 +1,54 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure clock tree for 150Mhz operation */
+&syscon {
+	/* Enable FRO 12m as input for PLL0 */
+	fro-12m {
+		status = "okay";
+	};
+
+	/* PLL0 should clock from FRO12m */
+	pll0clksel {
+		status = "okay";
+		sel = <&fro_12m>;
+		/* Raw PLL0 output frequency of 300MHz */
+		pll0 {
+			status = "okay";
+			mult = <25>;
+			div = <1>;
+			pll0-pdec {
+				status = "okay";
+				div = <2>;
+			};
+		};
+	};
+	/* Route PLL0 output through PDEC, which divides to 150MHz */
+	pll0-directo {
+		status = "okay";
+		sel = <&pll0_pdec>;
+	};
+	pll0-bypass {
+		status = "okay";
+		sel = <&pll0_directo>;
+	};
+	/* Route PLL0 main clock through mainclkselb */
+	mainclkselb {
+		status = "okay";
+		sel = <&pll0_bypass>;
+		/* AHB clk div sets main system clock, which will be 150MHz */
+		ahbclkdiv {
+			status = "okay";
+			div = <1>;
+		};
+	};
+
+	/* Clock Flexcomm0 from FRO12m */
+	fcclksel0 {
+		status = "okay";
+		sel = <&fro_12m>;
+	};
+};
