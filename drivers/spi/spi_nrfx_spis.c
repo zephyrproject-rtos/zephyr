@@ -170,6 +170,8 @@ static int transceive(const struct device *dev,
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
+	const struct spi_buf *tx_buf = tx_bufs ? tx_bufs->buffers : NULL;
+	const struct spi_buf *rx_buf = rx_bufs ? rx_bufs->buffers : NULL;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -181,8 +183,7 @@ static int transceive(const struct device *dev,
 		   (rx_bufs && rx_bufs->count > 1)) {
 		LOG_ERR("Scattered buffers are not supported");
 		error = -ENOTSUP;
-	} else if (tx_bufs && tx_bufs->buffers[0].len &&
-		   !nrfx_is_in_ram(tx_bufs->buffers[0].buf)) {
+	} else if (tx_buf && tx_buf->len && !nrfx_is_in_ram(tx_buf->buf)) {
 		LOG_ERR("Only buffers located in RAM are supported");
 		error = -ENOTSUP;
 	} else {
@@ -193,10 +194,10 @@ static int transceive(const struct device *dev,
 		}
 
 		error = prepare_for_transfer(dev,
-				tx_bufs ? tx_bufs->buffers[0].buf : NULL,
-				tx_bufs ? tx_bufs->buffers[0].len : 0,
-				rx_bufs ? rx_bufs->buffers[0].buf : NULL,
-				rx_bufs ? rx_bufs->buffers[0].len : 0);
+					     tx_buf ? tx_buf->buf : NULL,
+					     tx_buf ? tx_buf->len : 0,
+					     rx_buf ? rx_buf->buf : NULL,
+					     rx_buf ? rx_buf->len : 0);
 		if (error == 0) {
 			if (dev_config->wake_gpio.port) {
 				/* Set the WAKE line low (tie it to ground)
