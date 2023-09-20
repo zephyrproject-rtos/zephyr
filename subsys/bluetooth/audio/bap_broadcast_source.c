@@ -839,7 +839,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			struct bt_bap_stream *subgroup_stream;
 			struct bt_iso_chan_io_qos *iso_qos;
 			struct bt_bap_stream *stream;
-			bool stream_in_subgroup;
 			size_t stream_idx;
 
 			stream_param = &subgroup_param->params[j];
@@ -848,7 +847,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			stream_idx = 0U;
 			SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, subgroup_stream, _node) {
 				if (subgroup_stream == stream) {
-					stream_in_subgroup = true;
 					break;
 				}
 
