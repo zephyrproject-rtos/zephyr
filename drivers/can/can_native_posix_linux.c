@@ -488,9 +488,9 @@ static const struct can_npl_config can_npl_cfg_##inst = {			\
 										\
 static struct can_npl_data can_npl_data_##inst;					\
 										\
-DEVICE_DT_INST_DEFINE(inst, &can_npl_init, NULL,				\
-		      &can_npl_data_##inst, &can_npl_cfg_##inst,		\
-		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,			\
-		      &can_npl_driver_api);
+CAN_DEVICE_DT_INST_DEFINE(inst, can_npl_init, NULL,				\
+			  &can_npl_data_##inst, &can_npl_cfg_##inst,		\
+			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,		\
+			  &can_npl_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_POSIX_LINUX_INIT)
