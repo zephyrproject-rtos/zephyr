@@ -169,7 +169,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetDcPixelClkFreq();
 		break;
 #endif
+	case MCUX_CORE_CLK:
+		*rate = CLOCK_GetCoreSysClkFreq();
+		break;
 	}
+
 
 	return 0;
 }
