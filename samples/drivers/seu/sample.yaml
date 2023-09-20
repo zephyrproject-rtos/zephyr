@@ -1,0 +1,43 @@
+sample:
+  description: SEU subsystem sample application.
+  name: seu_subsystem
+tests:
+  sample.subsys.seu:
+    platform_allow:
+      - intel_socfpga_agilex_socdk
+      - intel_socfpga_agilex5_socdk
+    integration_platforms:
+      - intel_socfpga_agilex_socdk
+      - intel_socfpga_agilex5_socdk
+    tags:
+      - seu
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "SEU Test Started"
+        - "The Client No is [0-9]"
+        - "The Client No is [0-9]"
+        - "SEU Safe Error insert Test Started"
+        - "The SEU Error Type: [0-9a-f]"
+        - "The Sector Address: [0-9a-f]"
+        - "The Correction status: [0-9a-f]"
+        - "The bit position: [0-9a-f][0-9a-f]"
+        - "SEU Safe Error insert Test Completed"
+        - "The value of t_seu_cycle : [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]
+           [0-9a-f]"
+        - "The value of t_seu_detect : [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
+        - "The value of t_seu_correct : [0-9a-f][0-9a-f][0-9a-f]"
+        - "The value of t_seu_inject_detect : [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]
+                [0-9a-f][0-9a-f]"
+        - "The value of t_sdm_seu_poll_interval : [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
+        - "The value of t_sdm_seu_pin_toggle_overhead : [0-9a-f][0-9a-f][0-9a-f][0-9a-f]"
+        - "Read SEU Statistics Test Completed"
+        - "Read ECC Error Test Started"
+        - "The ECC Error Type: [0-9a-f]"
+        - "The Sector Address: [0-9a-f][0-9a-f][0-9a-f]"
+        - "The Correction status: [0-9a-f]"
+        - "Ram Id: [0-9a-f]"
+        - "Read ECC Error Test Completed"
+        - "SEU Test Completed"
