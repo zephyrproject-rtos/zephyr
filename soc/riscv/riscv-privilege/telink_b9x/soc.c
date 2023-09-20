@@ -156,11 +156,11 @@ static int soc_b9x_init(void)
 	case CLK_48MHZ:
 		CCLK_48M_HCLK_48M_PCLK_24M;
 		break;
-
+#if CONFIG_SOC_RISCV_TELINK_B91
 	case CLK_60MHZ:
 		CCLK_60M_HCLK_30M_PCLK_15M;
 		break;
-
+#endif
 	case CLK_96MHZ:
 		CCLK_96M_HCLK_48M_PCLK_24M;
 		break;
@@ -227,11 +227,11 @@ void soc_b9x_restore(void)
 	case CLK_48MHZ:
 		CCLK_48M_HCLK_48M_PCLK_24M;
 		break;
-
+#if CONFIG_SOC_RISCV_TELINK_B91
 	case CLK_60MHZ:
 		CCLK_60M_HCLK_30M_PCLK_15M;
 		break;
-
+#endif
 	case CLK_96MHZ:
 		CCLK_96M_HCLK_48M_PCLK_24M;
 		break;
