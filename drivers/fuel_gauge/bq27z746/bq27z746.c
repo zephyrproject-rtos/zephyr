@@ -260,22 +260,6 @@ static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_propert
 	return rc;
 }
 
-static int bq27z746_set_props(const struct device *dev, struct fuel_gauge_property *props,
-			      size_t len)
-{
-	int err_count = 0;
-
-	for (int i = 0; i < len; i++) {
-		int ret = bq27z746_set_prop(dev, props + i);
-
-		err_count += ret ? 1 : 0;
-	}
-
-	err_count = (err_count == len) ? -1 : err_count;
-
-	return err_count;
-}
-
 static int bq27z746_init(const struct device *dev)
 {
 	const struct bq27z746_config *cfg;
@@ -292,7 +276,7 @@ static int bq27z746_init(const struct device *dev)
 
 static const struct fuel_gauge_driver_api bq27z746_driver_api = {
 	.get_property = &bq27z746_get_prop,
-	.set_property = &bq27z746_set_props,
+	.set_property = &bq27z746_set_prop,
 	.get_buffer_property = &bq27z746_get_buffer_prop,
 };
 
