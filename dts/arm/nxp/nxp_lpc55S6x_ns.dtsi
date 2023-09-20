@@ -17,3 +17,4 @@
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
+#include "nxp_lpc55Sxx_clocks.dtsi"
