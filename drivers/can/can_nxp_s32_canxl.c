@@ -1092,14 +1092,14 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	{										\
 		return can_nxp_s32_init(dev);						\
 	}										\
-	DEVICE_DT_DEFINE(CAN_NXP_S32_NODE(n),						\
-			&can_nxp_s32_##n##_init,					\
-			NULL,								\
-			&can_nxp_s32_data_##n,						\
-			&can_nxp_s32_config_##n,					\
-			POST_KERNEL,							\
-			CONFIG_CAN_INIT_PRIORITY,					\
-			&can_nxp_s32_driver_api);
+	CAN_DEVICE_DT_DEFINE(CAN_NXP_S32_NODE(n),					\
+			     can_nxp_s32_##n##_init,					\
+			     NULL,							\
+			     &can_nxp_s32_data_##n,					\
+			     &can_nxp_s32_config_##n,					\
+			     POST_KERNEL,						\
+			     CONFIG_CAN_INIT_PRIORITY,					\
+			     &can_nxp_s32_driver_api);
 
 #if DT_NODE_HAS_STATUS(CAN_NXP_S32_NODE(0), okay)
 CAN_NXP_S32_INIT_DEVICE(0)
