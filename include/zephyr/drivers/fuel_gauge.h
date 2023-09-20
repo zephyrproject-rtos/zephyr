@@ -231,7 +231,7 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
  * See fuel_gauge_set_property() for argument description
  */
 typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
-					 struct fuel_gauge_property *props, size_t props_len);
+					 struct fuel_gauge_property *prop);
 
 /**
  * @typedef fuel_gauge_get_buffer_property_t
@@ -329,6 +329,30 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
  * @brief Set a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
+ * @param prop pointer to fuel_gauge_property struct where the property struct
+ * field is set by the caller to determine what property is written to the fuel gauge device from
+ * the fuel_gauge_property struct's value field.
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *prop);
+
+static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
+					     struct fuel_gauge_property *prop)
+{
+	const struct fuel_gauge_driver_api *api = dev->api;
+
+	if (api->set_property == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_property(dev, prop);
+}
+
+/**
+ * @brief Set a battery fuel-gauge property
+ *
+ * @param dev Pointer to the battery fuel-gauge device
  * @param props pointer to array of fuel_gauge_property struct where the property struct
  * field is set by the caller to determine what property is written to the fuel gauge device from
  * the fuel_gauge_property struct's value field.
@@ -337,20 +361,23 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
  * @return return=0 if successful, return < 0 if setting all properties failed, return > 0 if some
  * properties failed where return=number of failing properties.
  */
-__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *props,
-				  size_t props_len);
+__syscall int fuel_gauge_set_props(const struct device *dev, struct fuel_gauge_property *props,
+				   size_t props_len);
 
-static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
-					     struct fuel_gauge_property *props,
-					     size_t props_len)
+static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
+					      struct fuel_gauge_property *props, size_t props_len)
 {
-	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
+	int err_count = 0;
 
-	if (api->set_property == NULL) {
-		return -ENOSYS;
+	for (int i = 0; i < props_len; i++) {
+		int ret = fuel_gauge_set_prop(dev, props + i);
+
+		err_count += ret ? 1 : 0;
 	}
 
-	return api->set_property(dev, props, props_len);
+	err_count = (err_count == props_len) ? -1 : err_count;
+
+	return err_count;
 }
 
 /**

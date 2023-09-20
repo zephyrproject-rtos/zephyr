@@ -90,7 +90,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 		},
 	};
 
-	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
 		      props[0].property_type);
@@ -118,7 +118,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_c
 
 	};
 
-	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
 		      props[0].property_type);
@@ -178,7 +178,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 		},
 	};
 
-	zassert_ok(fuel_gauge_set_prop(fixture->dev, set_props, ARRAY_SIZE(set_props)));
+	zassert_ok(fuel_gauge_set_props(fixture->dev, set_props, ARRAY_SIZE(set_props)));
 	for (int i = 0; i < ARRAY_SIZE(set_props); i++) {
 		zassert_ok(set_props[i].status, "Property %d writing %d has a bad status.", i,
 			   set_props[i].property_type);
@@ -308,7 +308,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_set_prop(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
 
 	for (int i = 0; i < ARRAY_SIZE(props); i++) {
 		zassert_ok(props[i].status, "Property %d writing %d has a bad status.", i,
@@ -369,6 +369,25 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 	zassert_ok(current.status);
 	zassert_equal(current.value.current, expected_uA, "Got %d instead of %d",
 		      current.value.current, expected_uA);
+}
+
+ZTEST_USER_F(sbs_gauge_new_api, test_set_get_single_prop)
+{
+	/* Validate what props are supported by the driver */
+
+	uint16_t test_value = 0x1001;
+
+	struct fuel_gauge_property mfr_acc_set = {
+		.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+		.value.sbs_mfr_access_word = test_value,
+	};
+	struct fuel_gauge_property mfr_acc_get = {
+		.property_type = FUEL_GAUGE_SBS_MFR_ACCESS,
+	};
+
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, &mfr_acc_set));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, &mfr_acc_get));
+	zassert_equal(mfr_acc_get.value.sbs_mfr_access_word, test_value);
 }
 
 ZTEST_SUITE(sbs_gauge_new_api, NULL, sbs_gauge_new_api_setup, NULL, NULL, NULL);

@@ -274,22 +274,6 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 	return rc;
 }
 
-static int sbs_gauge_set_props(const struct device *dev, struct fuel_gauge_property *props,
-			       size_t len)
-{
-	int err_count = 0;
-
-	for (int i = 0; i < len; i++) {
-		int ret = sbs_gauge_set_prop(dev, props + i);
-
-		err_count += ret ? 1 : 0;
-	}
-
-	err_count = (err_count == len) ? -1 : err_count;
-
-	return err_count;
-}
-
 /**
  * @brief initialize the fuel gauge
  *
@@ -311,7 +295,7 @@ static int sbs_gauge_init(const struct device *dev)
 
 static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 	.get_property = &sbs_gauge_get_prop,
-	.set_property = &sbs_gauge_set_props,
+	.set_property = &sbs_gauge_set_prop,
 	.get_buffer_property = &sbs_gauge_get_buffer_prop,
 	.battery_cutoff = &sbs_gauge_do_battery_cutoff,
 };
