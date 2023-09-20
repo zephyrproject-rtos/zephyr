@@ -12,6 +12,8 @@
  *        for RISC-V processors
  */
 
+#include "sw_isr_common.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
@@ -55,6 +57,7 @@ struct plic_config {
 };
 
 static uint32_t save_irq;
+static const struct device *save_dev;
 
 static inline uint32_t get_plic_enabled_size(const struct device *dev)
 {
@@ -66,15 +69,16 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 /**
  * @brief Determine the PLIC device from the IRQ
  *
- * FIXME: This function is currently hardcoded to return the first instance.
- *
  * @param irq IRQ number
  *
  * @return PLIC device of that IRQ
  */
 static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 {
-	return DEVICE_DT_INST_GET(0);
+	const struct device *dev = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+					       (z_get_sw_isr_device_from_irq(irq)), (NULL));
+
+	return dev == NULL ? DEVICE_DT_INST_GET(0) : dev;
 }
 
 /**
@@ -113,11 +117,12 @@ void riscv_plic_irq_enable(uint32_t irq)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
+	const uint32_t local_irq = irq_from_level_2(irq);
 	uint32_t key;
 
 	key = irq_lock();
-	en += (irq >> 5);
-	*en |= (1 << (irq & 31));
+	en += (local_irq >> 5);
+	*en |= (1 << (local_irq & 31));
 	irq_unlock(key);
 }
 
@@ -136,11 +141,12 @@ void riscv_plic_irq_disable(uint32_t irq)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
+	const uint32_t local_irq = irq_from_level_2(irq);
 	uint32_t key;
 
 	key = irq_lock();
-	en += (irq >> 5);
-	*en &= ~(1 << (irq & 31));
+	en += (local_irq >> 5);
+	*en &= ~(1 << (local_irq & 31));
 	irq_unlock(key);
 }
 
@@ -157,9 +163,10 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
+	const uint32_t local_irq = irq_from_level_2(irq);
 
-	en += (irq >> 5);
-	return !!(*en & (1 << (irq & 31)));
+	en += (local_irq >> 5);
+	return !!(*en & (1 << (local_irq & 31)));
 }
 
 /**
@@ -177,11 +184,12 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
+	const uint32_t local_irq = irq_from_level_2(irq);
 
 	if (priority > config->max_prio)
 		priority = config->max_prio;
 
-	prio += irq;
+	prio += local_irq;
 	*prio = priority;
 }
 
@@ -191,23 +199,29 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
  * This routine returns the RISCV PLIC-specific interrupt line causing an
  * interrupt.
  *
+ * @param dev Optional device pointer to get the interrupt line's controller
+ *
  * @return PLIC-specific interrupt line causing an interrupt.
  */
-int riscv_plic_get_irq(void)
+unsigned int riscv_plic_get_irq(void)
 {
 	return save_irq;
+}
+
+const struct device *riscv_plic_get_dev(void)
+{
+	return save_dev;
 }
 
 static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *) config->reg;
-	uint32_t irq;
 	struct _isr_table_entry *ite;
 	int edge_irq;
 
 	/* Get the IRQ number generating the interrupt */
-	irq = regs->claim_complete;
+	const uint32_t local_irq = regs->claim_complete;
 
 	/*
 	 * Save IRQ in save_irq. To be used, if need be, by
@@ -215,16 +229,17 @@ static void plic_irq_handler(const struct device *dev)
 	 * as IRQ number held by the claim_complete register is
 	 * cleared upon read.
 	 */
-	save_irq = irq;
+	save_irq = local_irq;
+	save_dev = dev;
 
 	/*
 	 * If the IRQ is out of range, call z_irq_spurious.
 	 * A call to z_irq_spurious will not return.
 	 */
-	if (irq == 0U || irq >= config->num_irqs)
+	if (local_irq == 0U || local_irq >= config->num_irqs)
 		z_irq_spurious(NULL);
 
-	edge_irq = riscv_plic_is_edge_irq(dev, irq);
+	edge_irq = riscv_plic_is_edge_irq(dev, local_irq);
 
 	/*
 	 * For edge triggered interrupts, write to the claim_complete register
@@ -232,12 +247,17 @@ static void plic_irq_handler(const struct device *dev)
 	 * for edge triggered interrupts.
 	 */
 	if (edge_irq)
-		regs->claim_complete = save_irq;
+		regs->claim_complete = local_irq;
 
-	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+	const uint32_t parent_irq = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+						(z_get_sw_isr_irq_from_device(dev)), (0U));
+	const uint32_t irq = irq_to_level_2(local_irq) | parent_irq;
+	const unsigned int isr_offset =
+		COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS), (z_get_sw_isr_table_idx(irq)),
+			    (irq_from_level_2(irq) + CONFIG_2ND_LVL_ISR_TBL_OFFSET));
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
+	ite = (struct _isr_table_entry *)&_sw_isr_table[isr_offset];
 	ite->isr(ite->arg);
 
 	/*
@@ -246,7 +266,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * for level triggered interrupts.
 	 */
 	if (!edge_irq)
-		regs->claim_complete = save_irq;
+		regs->claim_complete = local_irq;
 }
 
 /**
