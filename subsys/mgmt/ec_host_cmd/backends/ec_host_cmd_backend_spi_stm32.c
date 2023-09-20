@@ -136,8 +136,8 @@ struct dma_stream {
 struct ec_host_cmd_spi_cfg {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
-	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 };
 
 struct ec_host_cmd_spi_ctx {
@@ -189,9 +189,9 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
                                                                                                    \
 	static struct ec_host_cmd_spi_cfg ec_host_cmd_spi_cfg = {                                  \
 		.spi = (SPI_TypeDef *)DT_REG_ADDR(id),                                             \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
 		.pclken = pclken,                                                                  \
 		.pclk_len = DT_NUM_CLOCKS(id),                                                     \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
 	};                                                                                         \
                                                                                                    \
 	static struct dma_stream dma_rx = {SPI_DMA_CHANNEL_INIT(id, rx, RX, PERIPHERAL, MEMORY)};  \
