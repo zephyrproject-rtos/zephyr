@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: _wpanusb
+.. zephyr:code-sample:: wpan-usb
    :name: 802.15.4 USB
    :relevant-api: ieee802154 _usb_device_core_api
 
