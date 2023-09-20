@@ -34,6 +34,11 @@ static int nvme_disk_read(struct disk_info *disk,
 	uint32_t payload_size;
 	int ret = 0;
 
+	if (!NVME_IS_BUFFER_DWORD_ALIGNED(data_buf)) {
+		LOG_WRN("Data buffer pointer needs to be 4-bytes aligned");
+		return -EINVAL;
+	}
+
 	nvme_lock(disk->dev);
 
 	payload_size = num_sector * nvme_namespace_get_sector_size(ns);
@@ -77,6 +82,11 @@ static int nvme_disk_write(struct disk_info *disk,
 	struct nvme_request *request;
 	uint32_t payload_size;
 	int ret = 0;
+
+	if (!NVME_IS_BUFFER_DWORD_ALIGNED(data_buf)) {
+		LOG_WRN("Data buffer pointer needs to be 4-bytes aligned");
+		return -EINVAL;
+	}
 
 	nvme_lock(disk->dev);
 
