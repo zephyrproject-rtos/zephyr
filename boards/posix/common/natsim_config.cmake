@@ -4,6 +4,9 @@
 set(zephyr_build_path ${CMAKE_BINARY_DIR}/zephyr)
 get_property(CCACHE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 
+target_link_options(native_simulator INTERFACE
+  "-T ${ZEPHYR_BASE}/boards/posix/common/natsim_linker_script.ld")
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_BUILD_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_COMPILE_OPTIONS>,\ >"
