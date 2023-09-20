@@ -2928,7 +2928,7 @@ class Kconfig(object):
                 node = MenuNode()
                 node.kconfig = self
                 node.item = sym
-                node.is_menuconfig = (t0 is _T_MENUCONFIG)
+                node.is_menuconfig = t0 is _T_MENUCONFIG
                 node.prompt = node.help = node.list = None
                 node.parent = parent
                 node.filename = self.filename
@@ -4307,7 +4307,7 @@ class Symbol(object):
         # function call (property magic)
         vis = self.visibility
 
-        self._write_to_conf = (vis != 0)
+        self._write_to_conf = vis != 0
 
         if self.orig_type in _INT_HEX:
             # The C implementation checks the user value against the range in a
@@ -4445,7 +4445,7 @@ class Symbol(object):
         # Warning: See Symbol._rec_invalidate(), and note that this is a hidden
         # function call (property magic)
         vis = self.visibility
-        self._write_to_conf = (vis != 0)
+        self._write_to_conf = vis != 0
 
         val = 0
 
