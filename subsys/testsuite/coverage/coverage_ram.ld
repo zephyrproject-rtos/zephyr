@@ -77,3 +77,18 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 __gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
 __gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
 #endif
+
+#if CONFIG_RISCV
+SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
+{
+	MPU_MIN_SIZE_ALIGN
+	__gcov_bss_start = .;
+	*(".bss.__gcov0.*");
+	. = ALIGN(4);
+	MPU_MIN_SIZE_ALIGN
+	__gcov_bss_end = .;
+} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+__gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
+__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
+#endif
