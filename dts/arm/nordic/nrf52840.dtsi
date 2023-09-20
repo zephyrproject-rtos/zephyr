@@ -537,16 +537,11 @@
 		};
 
 		cryptocell: crypto@5002a000 {
-			compatible = "nordic,nrf-cc310";
-			reg = <0x5002A000 0x1000>;
-			status = "okay";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			cryptocell310: crypto@5002b000 {
-				compatible = "arm,cryptocell-310";
-				reg = <0x5002B000 0x1000>;
-				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
-			};
+			compatible = "nordic,cryptocell", "arm,cryptocell-310";
+			reg = <0x5002a000 0x1000>, <0x5002b000 0x1000>;
+			reg-names = "wrapper", "core";
+			interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
 		};
 	};
 };
