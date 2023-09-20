@@ -664,7 +664,6 @@ static void unicast_audio_start(struct bt_bap_unicast_group *unicast_group, bool
 	stream_param[1].stream = &unicast_client_source_streams[0];
 	stream_param[1].ep = unicast_source_eps[bt_conn_index(default_conn)][0];
 	stream_param[1].codec_cfg = &unicast_preset_16_2_1.codec_cfg;
-	stream_param[1].qos = &unicast_preset_16_2_1.qos;
 
 	UNSET_FLAG(flag_started);
 
