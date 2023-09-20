@@ -1234,29 +1234,42 @@ void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacF
 otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShortAddress aShortAddr,
 			     const otExtAddress *aExtAddr)
 {
+	struct ieee802154_config config = {
+		.ack_ie.short_addr = aShortAddr,
+		.ack_ie.ext_addr = aExtAddr->m8,
+	};
 	int result;
-	uint8_t ie_header[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE];
-	struct ieee802154_config config;
 
 	ARG_UNUSED(aInstance);
 
-	ie_header[0] = CSL_IE_HEADER_BYTES_LO;
-	ie_header[1] = CSL_IE_HEADER_BYTES_HI;
-	/* Leave CSL Phase empty intentionally */
-	sys_put_le16(aCslPeriod, &ie_header[OT_IE_HEADER_SIZE + 2]);
-	config.ack_ie.data = ie_header;
-	config.ack_ie.short_addr = aShortAddr;
-	config.ack_ie.ext_addr = aExtAddr->m8;
-
-	if (aCslPeriod > 0) {
-		config.ack_ie.data_len = OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE;
-	} else {
-		config.ack_ie.data_len = 0;
-	}
-	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
-
+	/* Configure the CSL period first to give drivers a chance to validate
+	 * the IE for consistency if they wish to.
+	 */
 	config.csl_period = aCslPeriod;
-	result += radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
+	if (result) {
+		return OT_ERROR_FAILED;
+	}
+
+	/* Configure the CSL IE. */
+	if (aCslPeriod > 0) {
+		uint8_t header_ie_buf[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE] = {
+			CSL_IE_HEADER_BYTES_LO,
+			CSL_IE_HEADER_BYTES_HI,
+		};
+		struct ieee802154_header_ie *header_ie =
+			(struct ieee802154_header_ie *)header_ie_buf;
+
+		/* Write CSL period and leave CSL phase empty as it will be
+		 * injected on-the-fly by the driver.
+		 */
+		header_ie->content.csl.reduced.csl_period = sys_cpu_to_le16(aCslPeriod);
+		config.ack_ie.header_ie = header_ie;
+	} else {
+		config.ack_ie.header_ie = NULL;
+	}
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
@@ -1384,20 +1397,19 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 					  const otShortAddress aShortAddress,
 					  const otExtAddress *aExtAddress)
 {
-	int result;
-	uint8_t ie_header[OT_ACK_IE_MAX_SIZE];
-	uint16_t ie_header_len;
 	struct ieee802154_config config = {
 		.ack_ie.short_addr = aShortAddress,
 		.ack_ie.ext_addr = aExtAddress->m8,
 	};
+	uint8_t header_ie_buf[OT_ACK_IE_MAX_SIZE];
+	uint16_t header_ie_len;
+	int result;
 
 	ARG_UNUSED(aInstance);
 
-	ie_header_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
-						aLinkMetrics.mRssi, ie_header);
-	config.ack_ie.data = ie_header;
-	config.ack_ie.data_len = ie_header_len;
+	header_ie_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
+						aLinkMetrics.mRssi, header_ie_buf);
+	config.ack_ie.header_ie = (struct ieee802154_ie_header *)header_ie_buf;
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
