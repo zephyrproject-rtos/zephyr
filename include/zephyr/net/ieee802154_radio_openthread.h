@@ -79,6 +79,17 @@ enum ieee802154_openthread_config_type {
 	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START
 };
 
+/**
+ * Thread vendor OUI for vendor specific header or nested information elements,
+ * see IEEE 802.15.4-2020, sections 7.4.2.2 and 7.4.4.30.
+ *
+ * in little endian
+ */
+#define IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI { 0x9b, 0xb8, 0xea }
+
+/** length of IEEE 802.15.4-2020 vendor OUIs */
+#define IEEE802154_OPENTHREAD_VENDOR_OUI_LEN 3
+
 /** OpenThread specific configuration data of ieee802154 driver. */
 struct ieee802154_openthread_config {
 	union {
