@@ -1,0 +1,6 @@
+tests:
+  drivers.clock.clock_control.nxp_external:
+    tags:
+      - drivers
+      - clock
+    filter: CONFIG_NXP_DTS_CLOCKING
