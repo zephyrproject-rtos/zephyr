@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/x86/arch.h>
 #include <zephyr/kernel.h>
+#include <zephyr/arch/x86/arch.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/app_memory/app_memdomain.h>

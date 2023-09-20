@@ -151,4 +151,16 @@ struct x86_ssf {
  */
 #define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 
+#ifndef _ASMLANGUAGE
+
+#ifndef _ASMLANGUAGE
+unsigned int z_x86_cpu_num_cpus(void);
+
+struct x86_cpu_info *z_x86_cpu_info_get(uint8_t cpu_id);
+
+int x86_update_cpu_info(uint8_t cpu_id);
+#endif
+
+#endif
+
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

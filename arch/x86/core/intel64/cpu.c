@@ -18,6 +18,9 @@
 #include <zephyr/acpi/acpi.h>
 #endif
 
+#define CPUID_MASK_WORD  0xFF
+#define CPUID_MASK_NIBLE 0x0F
+
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,
  * we assume this simple identity mapping, as found in QEMU.
@@ -31,6 +34,7 @@ __weak uint8_t x86_cpu_loapics[CONFIG_MP_MAX_NUM_CPUS];
 __weak uint8_t x86_cpu_loapics[] = {
 	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, INIT_CPUID, (,)),};
 #endif
+static struct x86_cpu_info *cpu_info[CONFIG_MP_MAX_NUM_CPUS];
 extern char x86_ap_start[]; /* AP entry point in locore.S */
 
 LISTIFY(CONFIG_MP_MAX_NUM_CPUS, ACPI_CPU_INIT, (;));
@@ -41,6 +45,42 @@ x86_boot_arg_t x86_cpu_boot_arg;
 struct x86_cpuboot x86_cpuboot[] = {
 	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_CPU_BOOT_INIT, (,)),
 };
+
+int x86_update_cpu_info(uint8_t cpu_id)
+{
+	uint32_t eax, ebx, ecx, edx;
+	struct _cpu *cpu;
+	struct x86_cpu_info *info;
+
+	__asm__ volatile("movq %%gs:(%c1), %0"
+			 : "=r" (cpu)
+			 : "i" (offsetof(x86_tss64_t, cpu)));
+
+	info = &cpu->arch.info;
+
+	if (!__get_cpuid(0x01, &eax, &ebx, &ecx, &edx)) {
+		return -EIO;
+	}
+	info->family = (((eax >> 20u) & CPUID_MASK_WORD) << 4u) | ((eax >> 8u) & CPUID_MASK_NIBLE);
+	info->model = (((eax >> 16u) & CPUID_MASK_NIBLE) << 4u) | ((eax >> 4u) & CPUID_MASK_NIBLE);
+	info->stepping = eax & CPUID_MASK_NIBLE;
+	info->apic_id = (ebx >> 24u) & CPUID_MASK_WORD;
+	info->cpu_id = cpu_id;
+
+	if (__get_cpuid(0x1A, &eax, &ebx, &ecx, &edx)) {
+		info->type = (enum x86_cpu_type)(eax >> 24);
+	} else {
+		info->type = CPU_TYPE_UNKNOWN;
+	}
+
+	if (__get_cpuid_count(0x07, 0, &eax, &ebx, &ecx, &edx)) {
+		info->hybrid = (edx >> 15) & 0x01;
+	}
+
+	cpu_info[cpu_id] = info;
+
+	return 0;
+}
 
 /*
  * Send the INIT/STARTUP IPI sequence required to start up CPU 'cpu_num', which
@@ -122,7 +162,21 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	z_x86_msr_write(X86_FMASK_MSR, EFLAGS_SYSCALL);
 #endif
 
+	/* Cache AP info. */
+	if (x86_update_cpu_info(cpuboot->cpu_id)) {
+		__ASSERT(false, "Get AP CPU info failed");
+	}
+
 	/* Enter kernel, never return */
 	cpuboot->ready++;
 	cpuboot->fn(cpuboot->arg);
+}
+
+struct x86_cpu_info *z_x86_cpu_info_get(uint8_t cpu_id)
+{
+	if (cpu_id >= CONFIG_MP_MAX_NUM_CPUS) {
+		return NULL;
+	}
+
+	return cpu_info[cpu_id];
 }
