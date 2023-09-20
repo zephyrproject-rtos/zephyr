@@ -1,0 +1,22 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP clock multipler. The parent node of a multipler will be the clock source
+  this multipler applies to.
+
+
+compatible: "nxp,clock-multiplier"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  mult:
+    type: int
+    required: true
+    description: |
+      Multiplier for clock source. A value of 1 indicates the clock will not be
+      multiplied.
+
+  "#clock-cells":
+    const: 0

@@ -1,0 +1,26 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP clock multiplexor definition
+
+compatible: "nxp,clock-mux"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  input-sources:
+    type: phandles
+    required: true
+    description: |
+      MUX input source options. Each of the input sources may be a div node,
+      mux node, or fixed clock node.
+  sel:
+    type: phandle
+    required: true
+    description: |
+      MUX source selection. This should be set to one of the phandles within
+      the "input-sources" property, and determines which clock source this mux
+      will use.
+
+  "#clock-cells":
+    const: 0

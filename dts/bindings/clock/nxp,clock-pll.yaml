@@ -1,0 +1,24 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PLL Definition
+
+compatible: "nxp,clock-pll"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  mult:
+    type: int
+    description: |
+      PLL multiplier factor. The PLL output frequency
+      will be multiplied by this value
+
+  div:
+    type: int
+    description: |
+      PLL division factor. The PLL output frequency
+      will be divided by this value
+
+  "#clock-cells":
+    const: 0

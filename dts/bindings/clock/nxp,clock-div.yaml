@@ -1,0 +1,22 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP clock divider. The parent node of a divider will be the clock source
+  this divider applies to.
+
+
+compatible: "nxp,clock-div"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  div:
+    type: int
+    required: true
+    description: |
+      Divider for clock source. A value of 1 indicates the clock will not be
+      divided.
+
+  "#clock-cells":
+    const: 0
