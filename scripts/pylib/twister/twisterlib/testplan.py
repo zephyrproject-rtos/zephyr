@@ -62,6 +62,8 @@ class Filters:
     QUARENTINE = 'Quarantine filter'
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
+    # in case of incompatibility between selected and allowed toolchains.
+    TOOLCHAIN = 'Toolchain filter'
 
 
 class TestLevel:
@@ -779,7 +781,7 @@ class TestPlan:
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
-                    instance.add_filter("In test case toolchain exclude", Filters.TESTSUITE)
+                    instance.add_filter("In test case toolchain exclude", Filters.TOOLCHAIN)
 
                 if platform_filter and plat.name not in platform_filter:
                     instance.add_filter("Command line platform filter", Filters.CMD_LINE)
@@ -793,7 +795,7 @@ class TestPlan:
                     instance.add_filter("Not in testsuite platform type list", Filters.TESTSUITE)
 
                 if ts.toolchain_allow and toolchain not in ts.toolchain_allow:
-                    instance.add_filter("Not in testsuite toolchain allow list", Filters.TESTSUITE)
+                    instance.add_filter("Not in testsuite toolchain allow list", Filters.TOOLCHAIN)
 
                 if not plat.env_satisfied:
                     instance.add_filter("Environment ({}) not satisfied".format(", ".join(plat.env)), Filters.PLATFORM)
@@ -1025,7 +1027,8 @@ def change_skip_to_error_if_integration(options, instance):
         and "quarantine" not in instance.reason.lower():
         # Do not treat this as error if filter type is command line
         filters = {t['type'] for t in instance.filters}
-        ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY}
+        ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
+                         Filters.TOOLCHAIN}
         if filters.intersection(ignore_filters):
             return
         instance.status = "error"
