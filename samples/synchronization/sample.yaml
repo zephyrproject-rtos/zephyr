@@ -5,6 +5,7 @@ sample:
 tests:
   sample.kernel.synchronization:
     tags: synchronization
+    build_on_all: true
     harness: console
     harness_config:
       type: multi_line
