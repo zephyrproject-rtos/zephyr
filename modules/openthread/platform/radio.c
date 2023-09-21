@@ -58,6 +58,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
 
+/* PHY header duration in us (i.e. 2 symbol periods @ 62.5k symbol rate), see
+ * IEEE 802.15.4, sections 12.1.3.1, 12.2.5 and 12.3.3.
+ */
+#define PHR_DURATION_US 32U
+
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
@@ -1278,10 +1283,15 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 {
 	ARG_UNUSED(aInstance);
 
+	/* CSL sample time points to "start of MAC" while the expected RX time
+	 * refers to "end of SFD".
+	 */
 	struct ieee802154_config config = {
-		.csl_rx_time = convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime)};
+		.expected_rx_time =
+			convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime - PHR_DURATION_US),
+	};
 
-	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_EXPECTED_RX_TIME, &config);
 }
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
 

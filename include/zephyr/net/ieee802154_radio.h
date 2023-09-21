@@ -781,61 +781,184 @@ enum ieee802154_config_type {
 	IEEE802154_CONFIG_RX_SLOT,
 
 	/**
-	 * Configure CSL receiver (Endpoint) period.
+	 * Enables or disables a device as a CSL receiver and configures its CSL
+	 * period.
 	 *
-	 * @details In order to configure a CSL receiver the upper layer should combine several
-	 * configuration options in the following way:
-	 * 1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once to inform the driver of the
-	 *    short and extended addresses of the peer to which it should inject CSL IEs.
-	 * 2. Use @ref IEEE802154_CONFIG_CSL_RX_TIME periodically, before each use of
-	 *    @ref IEEE802154_CONFIG_CSL_PERIOD setting parameters of the nearest CSL RX window,
-	 *    and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
-	 *    the nearest one) CSL RX window, to allow the driver to calculate the proper
-	 *    CSL phase to the nearest CSL window to inject in the CSL IEs for both transmitted
-	 *    data and ACK frames.
-	 * 3. Use @ref IEEE802154_CONFIG_CSL_PERIOD on each value change to update the current
-	 *    CSL period value which will be injected in the CSL IEs together with the CSL phase
-	 *    based on @ref IEEE802154_CONFIG_CSL_RX_TIME.
-	 * 4. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule the immediate receive
-	 *    window early enough before the expected window start time, taking into account
-	 *    possible clock drifts and scheduling uncertainties.
+	 * @details Configures the CSL period in units of 10 symbol periods.
+	 * Values greater than zero enable CSL if the driver supports it and the
+	 * device starts to operate as a CSL receiver. Setting this to zero
+	 * disables CSL on the device. If the driver does not support CSL, the
+	 * configuration call SHALL return -ENOTSUP.
 	 *
-	 * This diagram shows the usage of the four options over time:
+	 * See section 7.4.2.3 and section 8.4.3.6, table 8-104, macCslPeriod.
 	 *
-	 *         Start CSL                                  Schedule CSL window
+	 * @note Confusingly the standard calls the CSL receiver "CSL
+	 * coordinator" (i.e. "coordinating the CSL protocol timing", see
+	 * section 6.12.2.2), although, typically, a CSL coordinator is NOT also
+	 * an IEEE 802.15.4 FFD coordinator or PAN coordintor but a simple RFD
+	 * end device (compare the device roles outlined in sections 5.1, 5.3,
+	 * 5.5 and 6.1). To avoid confusion we therefore prefer calling CSL
+	 * coordinators (typically an RFD end device) "CSL receivers" and CSL
+	 * peer devices (typically FFD coordinators or PAN coordinators) "CSL
+	 * transmitters". Also note that at this time, we do NOT support
+	 * unsynchronized transmission with CSL wake up frames as specified in
+	 * section 6.12.2.4.4.
 	 *
-	 *     ENH_ACK_HEADER_IE                        CSL_RX_TIME (following window)
-	 *          |                                        |
-	 *          | CSL_RX_TIME (nearest window)           | RX_SLOT (nearest window)
-	 *          |    |                                   |   |
-	 *          |    | CSL_PERIOD                        |   |
-	 *          |    |    |                              |   |
-	 *          v    v    v                              v   v
-	 *     ----------------------------------------------------------[ CSL window ]-----+
-	 *                                             ^                                    |
-	 *                                             |                                    |
-	 *                                             +--------------------- loop ---------+
+	 * To offload CSL receiver timing to the driver the upper layer SHALL
+	 * combine several configuration options in the following way:
+	 *
+	 * 1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once with an
+	 *    appropriate pre-filled CSL IE and the CSL phase set to an
+	 *    arbitrary value or left uninitialized. The CSL phase SHALL be
+	 *    injected on-the-fly by the driver at runtime as outlined in 2.
+	 *    below. Adding a short and extended address will inform the driver
+	 *    of the specific CSL receiver to which it SHALL inject CSL IEs. If
+	 *    no addresses are given then the CSL IE will be injected into all
+	 *    enhanced ACK frames as soon as CSL is enabled.  This configuration
+	 *    SHALL be done before enabling CSL by setting a CSL period greater
+	 *    than zero.
+	 *
+	 * 2. Configure @ref IEEE802154_CONFIG_EXPECTED_RX_TIME immediately
+	 *    followed by @ref IEEE802154_CONFIG_CSL_PERIOD. To prevent race
+	 *    conditions, the upper layer SHALL ensure that the receiver is not
+	 *    enabled during or between the two calls (e.g. by a previously
+	 *    configured RX slot) nor SHALL a frame be transmitted concurrently.
+	 *
+	 *    The expected RX time SHALL point to the end of SFD of an ideally
+	 *    timed RX frame in an arbitrary past or future CSL channel sample,
+	 *    i.e.  whose "end of SFD" arrives exactly at the locally predicted
+	 *    time inside the CSL channel sample.
+	 *
+	 *    The driver SHALL derive CSL anchor points and the CSL phase from
+	 *    the given expected RX time as follows:
+	 *
+	 *        cslAnchorPointNs = last expected RX time
+	 *                           + PHY-specific PHR duration in ns
+	 *
+	 *        startOfMhrNs = start of MHR of the frame containing the
+	 *                       CSL IE relative to the local network clock
+	 *
+	 *        cslPhase = (startOfMhrNs - cslAnchorPointNs)
+	 *                   / (10 * PHY specific symbol period in ns)
+	 *                   % cslPeriod
+	 *
+	 *    The driver SHALL set the CSL phase in the IE configured in 1.  and
+	 *    inject that IE on-the-fly into outgoing enhanced ACK frames if the
+	 *    destination address conforms to the IE's address filter.
+	 *
+	 * 3. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule
+	 *    each CSL channel sample early enough before its start time. The
+	 *    size of the CSL channel sample SHALL take relative clock drift and
+	 *    scheduling uncertainties with respect to CSL transmitters into
+	 *    account as specified by the standard such that at least the full
+	 *    SHR of a legitimate RX frame is guaranteed to land inside the
+	 *    channel sample.
+	 *
+	 *    To this avail, the last configured expected RX time plus an
+	 *    integer number of CSL periods SHALL point to a fixed offset of the
+	 *    RX slot (not necessarily its center):
+	 *
+	 *        expectedRxTimeNs_N = last expected RX time
+	 *            + N * (cslPeriod * 10 * PHY-specific symbol period in ns)
+	 *
+	 *        expectedRxTimeNs_N - rxSlot_N.start == const for all N
+	 *
+	 *    While the configured CSL period is greater than zero, drivers
+	 *    SHOULD validate the offset of the expected RX time inside each RX
+	 *    slot accordingly. If the driver finds that the offset varies from
+	 *    slot to slot, drivers SHOULD log the difference but SHALL
+	 *    nevertheless accept and schedule the RX slot with a zero success
+	 *    value to work around minor implementation or rounding errors in
+	 *    upper layers.
+	 *
+	 * Configure and start a CSL receiver:
+	 *
+	 *     ENH_ACK_HEADER_IE
+	 *        |
+	 *        | EXPECTED_RX_TIME (end of SFD of a perfectly timed RX frame
+	 *        |    |              in any past or future channel sample)
+	 *        |    |
+	 *        |    | CSL_PERIOD (>0)            RX_SLOT
+	 *        |    |    |                          |
+	 *        v    v    v                          v
+	 *     -----------------------------------------------[-CSL channel sample ]----+
+	 *                                         ^                                    |
+	 *                                         |                                    |
+	 *                                         +--------------------- loop ---------+
+	 *
+	 * Disable CSL on the receiver:
+	 *
+	 *     CSL_PERIOD (=0)
+	 *        |
+	 *        v
+	 *     ---------------------
+	 *
+	 * Update the CSL period to a new value:
+	 *
+	 *     EXPECTED_RX_TIME (based on updated period)
+	 *        |
+	 *        |  CSL_PERIOD (>0, updated)       RX_SLOT
+	 *        |     |                              |
+	 *        v     v                              v
+	 *     -----------------------------------------------[-CSL channel sample ]----+
+	 *                                         ^                                    |
+	 *                                         |                                    |
+	 *                                         +--------------------- loop ---------+
 	 *
 	 * @note Available in any interface operational state.
-	 *
-	 * @warning This configuration option does not conform to the
-	 * requirements specified in #61227 as it is incompatible with standard
-	 * primitives and may therefore be deprecated in the future.
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/**
-	 * @brief Configure the next CSL receive window (i.e. "channel sample")
-	 * center, in units of nanoseconds relative to the network subsystem's
-	 * local clock.
+	 * Configure a timepoint at which an RX frame is expected to arrive.
+	 *
+	 * @details Configure the nanosecond resolution timepoint relative to
+	 * the network subsystem's local clock at which an RX frame's end of SFD
+	 * (i.e. equivalently its end of SHR, start of PHR, or in the case of
+	 * PHYs with RDEV or ERDEV capability the RMARKER) is expected to arrive
+	 * at the local antenna assuming perfectly synchronized local and remote
+	 * network clocks and zero distance between antennas.
+	 *
+	 * This parameter MAY be used to offload parts of timing sensitive TDMA
+	 * (e.g.  TSCH, beacon-enabled PAN including DSME), low-energy (e.g.
+	 * CSL, RIT) or ranging (TDoA) protocols to the driver. In these
+	 * protocols, medium access is tightly controlled such that the expected
+	 * arrival time of a frame can be predicted within a well-defined time
+	 * window. This feature will typically be combined with @ref
+	 * IEEE802154_CONFIG_RX_SLOT although this is not a hard requirement.
+	 *
+	 * The "expected RX time" MAY be interpreted slightly differently
+	 * depending on the protocol context:
+	 * - CSL phase (i.e. time to the next expected CSL transmission) or anchor
+	 *   time (i.e. any arbitrary timepoint with "zero CSL phase") SHALL be
+	 *   derived by adding the PHY header duration to the expected RX time
+	 *   to calculate the "start of MHR" ("first symbol of MAC", see section
+	 *   6.12.2.1) required by the CSL protocol, compare @ref
+	 *   IEEE802154_CONFIG_CSL_PERIOD.
+	 * - In TSCH the expected RX time MAY be set to macTsRxOffset +
+	 *   macTsRxWait / 2. Then the time correction SHALL be calculated as
+	 *   the expected RX time minus actual arrival timestamp, see section
+	 *   6.5.4.3.
+	 * - In ranging applications, time difference of arrival (TDOA) MAY be
+	 *   calculated inside the driver comparing actual RMARKER timestamps
+	 *   against the assumed synchronized time at which the ranging frame
+	 *   was sent, see IEEE 802.15.4z.
+	 *
+	 * In case of periodic protocols (e.g. CSL channel samples, periodic
+	 * beacons of a single PAN, periodic ranging "blinks"), a single
+	 * timestamp at any time in the past or in the future may be given from
+	 * which other expected timestamps can be derived by adding or
+	 * substracting multiples of the RX period. See e.g. the CSL
+	 * documentation in this API.
+	 *
+	 * Additionally this parameter MAY be used by drivers to discipline
+	 * their local representation of a distributed network clock by deriving
+	 * synchronization instants related to a remote representation of the
+	 * same clock (as in PTP).
 	 *
 	 * @note Available in any interface operational state.
-	 *
-	 * @warning This configuration option does not conform to the
-	 * requirements specified in #61227 as it is incompatible with standard
-	 * primitives and may therefore be deprecated in the future.
 	 */
-	IEEE802154_CONFIG_CSL_RX_TIME,
+	IEEE802154_CONFIG_EXPECTED_RX_TIME,
 
 	/**
 	 * Adds a header information element (IE) to be injected into enhanced
@@ -1014,22 +1137,14 @@ struct ieee802154_config {
 		/**
 		 * see @ref IEEE802154_CONFIG_CSL_PERIOD
 		 *
-		 * The CSL period in units of 10 symbol periods,
-		 * see section 7.4.2.3.
-		 *
 		 * in CPU byte order
 		 */
 		uint32_t csl_period;
 
 		/**
-		 * see @ref IEEE802154_CONFIG_CSL_RX_TIME
-		 *
-		 * Nanosecond resolution timestamp relative to the network
-		 * subsystem's local clock defining the center of the CSL RX window
-		 * at which the receiver is expected to be fully started up
-		 * (i.e. not including any startup times).
+		 * see @ref IEEE802154_CONFIG_EXPECTED_RX_TIME
 		 */
-		net_time_t csl_rx_time;
+		net_time_t expected_rx_time;
 
 		/** see @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE */
 		struct {
