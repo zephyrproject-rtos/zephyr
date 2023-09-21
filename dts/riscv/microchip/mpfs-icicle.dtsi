@@ -121,10 +121,7 @@
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
 						&hlic1 11>;
-			reg = <0x0c000000 0x00002000
-					0x0c002000 0x001fe000
-					0x0c200000 0x3e000000>;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <187>;
 		};
