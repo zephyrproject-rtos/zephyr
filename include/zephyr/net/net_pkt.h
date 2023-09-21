@@ -477,7 +477,6 @@ static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 }
 #endif
 
-#if defined(CONFIG_NET_ROUTE)
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
 	return pkt->forwarding;
@@ -487,12 +486,6 @@ static inline void net_pkt_set_forwarding(struct net_pkt *pkt, bool forward)
 {
 	pkt->forwarding = forward;
 }
-#else
-static inline bool net_pkt_forwarding(struct net_pkt *pkt)
-{
-	return false;
-}
-#endif
 
 #if defined(CONFIG_NET_IPV4)
 static inline uint8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
