@@ -1,0 +1,5 @@
+project(usb-cdc-perf C)
+cmake_minimum_required(VERSION 2.6)
+add_executable(usb-cdc-perf main.c)
+target_link_libraries(usb-cdc-perf rt)
+install(TARGETS usb-cdc-perf DESTINATION bin)
