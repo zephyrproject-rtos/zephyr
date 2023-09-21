@@ -197,8 +197,6 @@ static int max17048_get_single_prop_impl(const struct device *dev, struct fuel_g
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
-
 	return rc;
 }
 

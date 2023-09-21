@@ -32,24 +32,7 @@ static void *sbs_gauge_new_api_setup(void)
 	return &fixture;
 }
 
-ZTEST_USER_F(sbs_gauge_new_api, test_get_all_props_failed_returns_negative)
-{
-	struct fuel_gauge_property props[] = {
-		{
-			/* Invalid property */
-			.property_type = FUEL_GAUGE_PROP_MAX,
-		},
-	};
-
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_true(ret < 0);
-}
-
-ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_count)
+ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_bad_status)
 {
 	struct fuel_gauge_property props[] = {
 		{
@@ -69,19 +52,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_failed_prop_c
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_equal(props[1].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[1].property_type);
-
-	zassert_ok(props[2].status, "Property %d getting %d has a bad status.", 2,
-		   props[2].property_type);
-
-	zassert_equal(ret, 2);
+	zassert_equal(ret, -ENOTSUP, "Getting bad property has a good status.");
 }
 
-ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_err)
 {
 	struct fuel_gauge_property props[] = {
 		{
@@ -92,13 +66,10 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_all_props_failed_returns_negative)
 
 	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_true(ret < 0);
+	zassert_equal(ret, -ENOTSUP);
 }
 
-ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_count)
+ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_err)
 {
 	struct fuel_gauge_property props[] = {
 		{
@@ -120,16 +91,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_some_props_failed_returns_failed_prop_c
 
 	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Setting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_equal(props[1].status, -ENOTSUP, "Setting bad property %d has a good status.",
-		      props[1].property_type);
-
-	zassert_ok(props[2].status, "Property %d setting %d has a bad status.", 2,
-		   props[2].property_type);
-
-	zassert_equal(ret, 2);
+	zassert_equal(ret, -ENOTSUP);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
@@ -179,16 +141,8 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 	};
 
 	zassert_ok(fuel_gauge_set_props(fixture->dev, set_props, ARRAY_SIZE(set_props)));
-	for (int i = 0; i < ARRAY_SIZE(set_props); i++) {
-		zassert_ok(set_props[i].status, "Property %d writing %d has a bad status.", i,
-			   set_props[i].property_type);
-	}
 
 	zassert_ok(fuel_gauge_get_props(fixture->dev, get_props, ARRAY_SIZE(get_props)));
-	for (int i = 0; i < ARRAY_SIZE(get_props); i++) {
-		zassert_ok(get_props[i].status, "Property %d getting %d has a bad status.", i,
-			   get_props[i].property_type);
-	}
 
 	zassert_equal(get_props[0].value.sbs_mfr_access_word, word);
 	zassert_equal(get_props[1].value.sbs_remaining_capacity_alarm, word);
@@ -276,14 +230,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	for (int i = 0; i < ARRAY_SIZE(props); i++) {
-		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
-			   props[i].property_type);
-	}
-
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props)));
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
@@ -308,14 +255,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	for (int i = 0; i < ARRAY_SIZE(props); i++) {
-		zassert_ok(props[i].status, "Property %d writing %d has a bad status.", i,
-			   props[i].property_type);
-	}
-
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_set_props(fixture->dev, props, ARRAY_SIZE(props)));
 }
 
 
@@ -326,22 +266,15 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 	struct sbs_gauge_manufacturer_name mfg_name;
 	struct sbs_gauge_device_name dev_name;
 	struct sbs_gauge_device_chemistry chem;
-	int ret;
 
 	prop.property_type = FUEL_GAUGE_MANUFACTURER_NAME;
-	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &mfg_name, sizeof(mfg_name));
-	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_get_buffer_prop(fixture->dev, &prop, &mfg_name, sizeof(mfg_name)));
 
 	prop.property_type = FUEL_GAUGE_DEVICE_NAME;
-	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &dev_name, sizeof(dev_name));
-	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_get_buffer_prop(fixture->dev, &prop, &dev_name, sizeof(dev_name)));
 
 	prop.property_type = FUEL_GAUGE_DEVICE_CHEMISTRY;
-	ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &chem, sizeof(chem));
-	zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_get_buffer_prop(fixture->dev, &prop, &chem, sizeof(chem)));
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
@@ -362,11 +295,9 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, &voltage));
 	zassert_ok(fuel_gauge_get_prop(fixture->dev, &current));
 
-	zassert_ok(voltage.status);
 	zassert_equal(voltage.value.voltage, expected_uV, "Got %d instead of %d",
 		      voltage.value.voltage, expected_uV);
 
-	zassert_ok(current.status);
 	zassert_equal(current.value.current, expected_uA, "Got %d instead of %d",
 		      current.value.current, expected_uA);
 }

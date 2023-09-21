@@ -172,8 +172,6 @@ static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_proper
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
-
 	return rc;
 }
 
@@ -230,8 +228,6 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_proper
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
-
 	return rc;
 }
 
@@ -270,7 +266,6 @@ static int sbs_gauge_get_buffer_prop(const struct device *dev,
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
 	return rc;
 }
 

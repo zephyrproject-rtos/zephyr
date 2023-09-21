@@ -50,54 +50,20 @@ int main(void)
 			},
 			{
 				.property_type = FUEL_GAUGE_VOLTAGE,
-			}
-		};
+			}};
 
 		ret = fuel_gauge_get_props(dev, props, ARRAY_SIZE(props));
 		if (ret < 0) {
 			printk("Error: cannot get properties\n");
 		} else {
-			if (ret != 0) {
-				printk("Warning: Some properties failed\n");
-			}
+			printk("Time to empty %d\n", props[0].value.runtime_to_empty);
 
-			if (props[0].status == 0) {
-				printk("Time to empty %d\n", props[0].value.runtime_to_empty);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_RUNTIME_TO_EMPTY failed with error %d\n",
-				props[0].status
-				);
-			}
+			printk("Time to full %d\n", props[1].value.runtime_to_full);
 
-			if (props[1].status == 0) {
-				printk("Time to full %d\n", props[1].value.runtime_to_full);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_RUNTIME_TO_FULL failed with error %d\n",
-				props[1].status
-				);
-			}
+			printk("Charge %d%%\n", props[2].value.relative_state_of_charge);
 
-			if (props[2].status == 0) {
-				printk("Charge %d%%\n", props[2].value.relative_state_of_charge);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_STATE_OF_CHARGE failed with error %d\n",
-				props[2].status
-				);
-			}
-
-			if (props[3].status == 0) {
-				printk("Voltage %d\n", props[3].value.voltage);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_VOLTAGE failed with error %d\n",
-				props[3].status
-				);
-			}
+			printk("Voltage %d\n", props[3].value.voltage);
 		}
-
 
 		k_sleep(K_MSEC(5000));
 	}

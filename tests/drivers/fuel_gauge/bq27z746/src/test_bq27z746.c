@@ -42,10 +42,7 @@ ZTEST_USER_F(bq27z746, test_get_all_props_failed_returns_negative)
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_true(ret < 0);
+	zassert_equal(ret, -ENOTSUP);
 }
 
 ZTEST_USER_F(bq27z746, test_get_some_props_failed_returns_failed_prop_count)
@@ -68,16 +65,7 @@ ZTEST_USER_F(bq27z746, test_get_some_props_failed_returns_failed_prop_count)
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_equal(props[1].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[1].property_type);
-
-	zassert_ok(props[2].status, "Property %d getting %d has a bad status.", 2,
-		   props[2].property_type);
-
-	zassert_equal(ret, 2);
+	zassert_equal(ret, -ENOTSUP);
 }
 
 ZTEST_USER_F(bq27z746, test_get_buffer_prop)
@@ -91,7 +79,6 @@ ZTEST_USER_F(bq27z746, test_get_buffer_prop)
 		prop.property_type = FUEL_GAUGE_MANUFACTURER_NAME;
 		ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &mfg_name, sizeof(mfg_name));
 		zassert_ok(ret);
-		zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
 #if CONFIG_EMUL
 		/* Only test for fixed values in emulation since the real device might be */
 		/* reprogrammed and respond with different values */
@@ -107,7 +94,6 @@ ZTEST_USER_F(bq27z746, test_get_buffer_prop)
 		prop.property_type = FUEL_GAUGE_DEVICE_NAME;
 		ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &dev_name, sizeof(dev_name));
 		zassert_ok(ret);
-		zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
 #if CONFIG_EMUL
 		/* Only test for fixed values in emulation since the real device might be */
 		/* reprogrammed and respond with different values */
@@ -122,7 +108,6 @@ ZTEST_USER_F(bq27z746, test_get_buffer_prop)
 		ret = fuel_gauge_get_buffer_prop(fixture->dev, &prop, &device_chemistry,
 						 sizeof(device_chemistry));
 		zassert_ok(ret);
-		zassert_ok(prop.status, "Property %d has a bad status.", prop.property_type);
 #if CONFIG_EMUL
 		/* Only test for fixed values in emulation since the real device might be */
 		/* reprogrammed and respond with different values */
@@ -191,13 +176,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 		},
 	};
 
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	/* All props shall have a good status */
-	for (int i = 0; i < ARRAY_SIZE(props); i++) {
-		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
-			   props[i].property_type);
-	}
+	zassert_ok(fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props)));
 
 	/* Check properties for valid ranges */
 #if CONFIG_EMUL
@@ -239,8 +218,6 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	/* Not testing props[15]. This property is the status and only has only status bits */
 	zassert_between_inclusive(props[16].value.design_cap, 0, 32767);
 #endif
-
-	zassert_ok(ret);
 }
 
 ZTEST_SUITE(bq27z746, NULL, bq27z746_setup, NULL, NULL, NULL);
