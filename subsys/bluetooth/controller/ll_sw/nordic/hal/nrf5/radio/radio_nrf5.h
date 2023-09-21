@@ -15,8 +15,8 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 /* SoC specific defines */
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-#include "radio_sim_nrfxx.h"
+#if defined(CONFIG_BOARD_NRF52_BSIM)
+#include "radio_sim_nrf52.h"
 #elif defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
