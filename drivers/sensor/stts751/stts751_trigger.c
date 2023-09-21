@@ -96,8 +96,13 @@ static void stts751_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_STTS751_TRIGGER_OWN_THREAD
-static void stts751_thread(struct stts751_data *stts751)
+static void stts751_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct stts751_data *stts751 = p1;
+
 	while (1) {
 		k_sem_take(&stts751->gpio_sem, K_FOREVER);
 		stts751_handle_interrupt(stts751->dev);
@@ -131,7 +136,7 @@ int stts751_init_interrupt(const struct device *dev)
 
 	k_thread_create(&stts751->thread, stts751->thread_stack,
 			CONFIG_STTS751_THREAD_STACK_SIZE,
-			(k_thread_entry_t)stts751_thread, stts751,
+			stts751_thread, stts751,
 			NULL, NULL, K_PRIO_COOP(CONFIG_STTS751_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_STTS751_TRIGGER_GLOBAL_THREAD)

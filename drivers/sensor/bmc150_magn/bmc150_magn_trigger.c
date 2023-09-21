@@ -81,8 +81,12 @@ static void bmc150_magn_gpio_drdy_callback(const struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
+static void bmc150_magn_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct bmc150_magn_data *data = p1;
 	const struct bmc150_magn_config *config = data->dev->config;
 	uint8_t reg_val;
 
@@ -145,7 +149,7 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
-			(k_thread_entry_t)bmc150_magn_thread_main,
+			bmc150_magn_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 

@@ -256,8 +256,13 @@ static void lsm6dso16is_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER_OWN_THREAD
-static void lsm6dso16is_thread(struct lsm6dso16is_data *lsm6dso16is)
+static void lsm6dso16is_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lsm6dso16is_data *lsm6dso16is = p1;
+
 	while (1) {
 		k_sem_take(&lsm6dso16is->gpio_sem, K_FOREVER);
 		lsm6dso16is_handle_interrupt(lsm6dso16is->dev);
@@ -293,7 +298,7 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 
 	k_thread_create(&lsm6dso16is->thread, lsm6dso16is->thread_stack,
 			CONFIG_LSM6DSO16IS_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dso16is_thread, lsm6dso16is,
+			lsm6dso16is_thread, lsm6dso16is,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO16IS_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 	k_thread_name_set(&lsm6dso16is->thread, "lsm6dso16is");

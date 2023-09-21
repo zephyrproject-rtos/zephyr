@@ -60,8 +60,13 @@ static void fdc2x1x_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_FDC2X1X_TRIGGER_OWN_THREAD
-static void fdc2x1x_thread(struct fdc2x1x_data *drv_data)
+static void fdc2x1x_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct fdc2x1x_data *drv_data = p1;
+
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		fdc2x1x_thread_cb(drv_data->dev);
@@ -158,7 +163,7 @@ int fdc2x1x_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_FDC2X1X_THREAD_STACK_SIZE,
-			(k_thread_entry_t)fdc2x1x_thread,
+			fdc2x1x_thread,
 			drv_data, 0, NULL,
 			K_PRIO_COOP(CONFIG_FDC2X1X_THREAD_PRIORITY),
 			0, K_NO_WAIT);

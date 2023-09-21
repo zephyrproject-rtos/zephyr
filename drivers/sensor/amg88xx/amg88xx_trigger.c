@@ -113,8 +113,13 @@ static void amg88xx_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
-static void amg88xx_thread(struct amg88xx_data *drv_data)
+static void amg88xx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct amg88xx_data *drv_data = p1;
+
 	while (42) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		amg88xx_thread_cb(drv_data->dev);
@@ -196,7 +201,7 @@ int amg88xx_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_AMG88XX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)amg88xx_thread, drv_data,
+			amg88xx_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)

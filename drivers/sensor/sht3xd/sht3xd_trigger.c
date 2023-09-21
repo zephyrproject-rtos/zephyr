@@ -162,8 +162,13 @@ static void sht3xd_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_SHT3XD_TRIGGER_OWN_THREAD
-static void sht3xd_thread(struct sht3xd_data *data)
+static void sht3xd_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct sht3xd_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->gpio_sem, K_FOREVER);
 		sht3xd_thread_cb(data->dev);
@@ -238,7 +243,7 @@ int sht3xd_init_interrupt(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_SHT3XD_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sht3xd_thread, data,
+			sht3xd_thread, data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)

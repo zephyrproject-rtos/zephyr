@@ -81,8 +81,13 @@ static void tsl2540_process_int(const struct device *dev)
 }
 
 #ifdef CONFIG_TSL2540_TRIGGER_OWN_THREAD
-static void tsl2540_thread_main(struct tsl2540_data *data)
+static void tsl2540_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct tsl2540_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		tsl2540_process_int(data->dev);
@@ -189,7 +194,7 @@ int tsl2540_trigger_init(const struct device *dev)
 #if defined(CONFIG_TSL2540_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack, CONFIG_TSL2540_THREAD_STACK_SIZE,
-			(k_thread_entry_t)tsl2540_thread_main, data, NULL, NULL,
+			tsl2540_thread_main, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_TSL2540_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&data->thread, "TSL2540 trigger");
 #elif defined(CONFIG_TSL2540_TRIGGER_GLOBAL_THREAD)

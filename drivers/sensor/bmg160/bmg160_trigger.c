@@ -181,8 +181,13 @@ static void bmg160_handle_int(const struct device *dev)
 static K_KERNEL_STACK_DEFINE(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE);
 static struct k_thread bmg160_thread;
 
-static void bmg160_thread_main(struct bmg160_device_data *bmg160)
+static void bmg160_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct bmg160_device_data *bmg160 = p1;
+
 	while (true) {
 		k_sem_take(&bmg160->trig_sem, K_FOREVER);
 
@@ -245,7 +250,7 @@ int bmg160_trigger_init(const struct device *dev)
 	k_sem_init(&bmg160->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&bmg160_thread, bmg160_thread_stack,
 			CONFIG_BMG160_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bmg160_thread_main,
+			bmg160_thread_main,
 			bmg160, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMG160_THREAD_PRIORITY), 0,
 			K_NO_WAIT);

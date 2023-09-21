@@ -149,8 +149,13 @@ static void tcn75a_gpio_callback(const struct device *dev, struct gpio_callback 
 }
 
 #ifdef CONFIG_TCN75A_TRIGGER_OWN_THREAD
-static void tcn75a_thread_main(struct tcn75a_data *data)
+static void tcn75a_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct tcn75a_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		tcn75a_handle_int(data->dev);
@@ -193,7 +198,7 @@ int tcn75a_trigger_init(const struct device *dev)
 #if defined(CONFIG_TCN75A_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack, CONFIG_TCN75A_THREAD_STACK_SIZE,
-			(k_thread_entry_t)tcn75a_thread_main, data, NULL, NULL,
+			tcn75a_thread_main, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_TCN75A_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_TCN75A_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = tcn75a_work_handler;

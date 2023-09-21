@@ -123,8 +123,13 @@ static void lps22hh_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_LPS22HH_TRIGGER_OWN_THREAD
-static void lps22hh_thread(struct lps22hh_data *lps22hh)
+static void lps22hh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lps22hh_data *lps22hh = p1;
+
 	while (1) {
 		k_sem_take(&lps22hh->intr_sem, K_FOREVER);
 		lps22hh_handle_interrupt(lps22hh->dev);
@@ -187,7 +192,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 
 	k_thread_create(&lps22hh->thread, lps22hh->thread_stack,
 		       CONFIG_LPS22HH_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)lps22hh_thread, lps22hh,
+		       lps22hh_thread, lps22hh,
 		       NULL, NULL, K_PRIO_COOP(CONFIG_LPS22HH_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)

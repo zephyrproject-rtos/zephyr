@@ -226,8 +226,13 @@ static void ism330dhcx_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD
-static void ism330dhcx_thread(struct ism330dhcx_data *ism330dhcx)
+static void ism330dhcx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct ism330dhcx_data *ism330dhcx = p1;
+
 	while (1) {
 		k_sem_take(&ism330dhcx->gpio_sem, K_FOREVER);
 		ism330dhcx_handle_interrupt(ism330dhcx->dev);
@@ -261,7 +266,7 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 
 	k_thread_create(&ism330dhcx->thread, ism330dhcx->thread_stack,
 			CONFIG_ISM330DHCX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ism330dhcx_thread,
+			ism330dhcx_thread,
 			ism330dhcx, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ISM330DHCX_THREAD_PRIORITY),
 			0, K_NO_WAIT);

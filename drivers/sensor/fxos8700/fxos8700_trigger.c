@@ -168,8 +168,13 @@ static void fxos8700_handle_int(const struct device *dev)
 }
 
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
-static void fxos8700_thread_main(struct fxos8700_data *data)
+static void fxos8700_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct fxos8700_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		fxos8700_handle_int(data->dev);
@@ -395,7 +400,7 @@ int fxos8700_trigger_init(const struct device *dev)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_FXOS8700_THREAD_STACK_SIZE,
-			(k_thread_entry_t)fxos8700_thread_main,
+			fxos8700_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY),
 			0, K_NO_WAIT);
