@@ -901,8 +901,8 @@ static int custom_configure_csl_rx_time(const struct device *dev,
 					     const struct ieee802154_config *config)
 {
 	zassert_equal(dev, radio, "Device handle incorrect.");
-	zassert_equal(type, IEEE802154_CONFIG_CSL_RX_TIME, "Config type incorrect.");
-	custom_configure_csl_rx_time_mock_csl_rx_time = config->csl_rx_time;
+	zassert_equal(type, IEEE802154_CONFIG_EXPECTED_RX_TIME, "Config type incorrect.");
+	custom_configure_csl_rx_time_mock_csl_rx_time = config->expected_rx_time;
 
 	return 0;
 }
@@ -910,11 +910,13 @@ static int custom_configure_csl_rx_time(const struct device *dev,
 ZTEST(openthread_radio, test_csl_receiver_sample_time)
 {
 	uint32_t sample_time = 50U;
+	uint32_t phr_duration = 32U;
 
 	configure_mock_fake.custom_fake = custom_configure_csl_rx_time;
 	otPlatRadioUpdateCslSampleTime(NULL, sample_time);
 	zassert_equal(1, configure_mock_fake.call_count);
-	zassert_equal(sample_time * NSEC_PER_USEC, custom_configure_csl_rx_time_mock_csl_rx_time);
+	zassert_equal((sample_time - phr_duration) * NSEC_PER_USEC,
+		      custom_configure_csl_rx_time_mock_csl_rx_time);
 }
 
 

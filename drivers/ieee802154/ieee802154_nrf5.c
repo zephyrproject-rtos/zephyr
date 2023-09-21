@@ -924,8 +924,9 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	case IEEE802154_CONFIG_CSL_RX_TIME: {
-		nrf_802154_csl_writer_anchor_time_set(config->csl_rx_time / NSEC_PER_USEC);
+	case IEEE802154_CONFIG_EXPECTED_RX_TIME: {
+		nrf_802154_csl_writer_anchor_time_set(nrf_802154_timestamp_phr_to_mhr_convert(
+			config->expected_rx_time / NSEC_PER_USEC));
 	} break;
 
 	case IEEE802154_CONFIG_RX_SLOT: {
