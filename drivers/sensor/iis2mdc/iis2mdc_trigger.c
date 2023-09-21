@@ -83,8 +83,13 @@ static void iis2mdc_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2MDC_TRIGGER_OWN_THREAD
-static void iis2mdc_thread(struct iis2mdc_data *iis2mdc)
+static void iis2mdc_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct iis2mdc_data *iis2mdc = p1;
+
 	while (1) {
 		k_sem_take(&iis2mdc->gpio_sem, K_FOREVER);
 		iis2mdc_handle_interrupt(iis2mdc->dev);
@@ -118,7 +123,7 @@ int iis2mdc_init_interrupt(const struct device *dev)
 	k_sem_init(&iis2mdc->gpio_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&iis2mdc->thread, iis2mdc->thread_stack,
 			CONFIG_IIS2MDC_THREAD_STACK_SIZE,
-			(k_thread_entry_t)iis2mdc_thread, iis2mdc,
+			iis2mdc_thread, iis2mdc,
 			NULL, NULL, K_PRIO_COOP(CONFIG_IIS2MDC_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD)

@@ -67,8 +67,13 @@ static void lis2ds12_handle_int(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
-static void lis2ds12_thread(struct lis2ds12_data *data)
+static void lis2ds12_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis2ds12_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		lis2ds12_handle_int(data->dev);
@@ -159,7 +164,7 @@ int lis2ds12_trigger_init(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LIS2DS12_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2ds12_thread,
+			lis2ds12_thread,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
 			0, K_NO_WAIT);

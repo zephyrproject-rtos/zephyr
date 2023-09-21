@@ -96,8 +96,13 @@ static void lis2mdl_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_LIS2MDL_TRIGGER_OWN_THREAD
-static void lis2mdl_thread(struct lis2mdl_data *lis2mdl)
+static void lis2mdl_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis2mdl_data *lis2mdl = p1;
+
 	while (1) {
 		k_sem_take(&lis2mdl->gpio_sem, K_FOREVER);
 		lis2mdl_handle_interrupt(lis2mdl->dev);
@@ -131,7 +136,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 	k_sem_init(&lis2mdl->gpio_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
 			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2mdl_thread, lis2mdl,
+			lis2mdl_thread, lis2mdl,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LIS2MDL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)

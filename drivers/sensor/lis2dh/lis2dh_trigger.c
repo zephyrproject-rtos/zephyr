@@ -506,8 +506,13 @@ static void lis2dh_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD
-static void lis2dh_thread(struct lis2dh_data *lis2dh)
+static void lis2dh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis2dh_data *lis2dh = p1;
+
 	while (1) {
 		k_sem_take(&lis2dh->gpio_sem, K_FOREVER);
 		lis2dh_thread_cb(lis2dh->dev);
@@ -538,7 +543,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	k_sem_init(&lis2dh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2dh_thread, lis2dh, NULL, NULL,
+			lis2dh_thread, lis2dh, NULL, NULL,
 			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;

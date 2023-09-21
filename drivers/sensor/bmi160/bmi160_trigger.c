@@ -71,8 +71,10 @@ static void bmi160_handle_interrupts(const struct device *dev)
 static K_KERNEL_STACK_DEFINE(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE);
 static struct k_thread bmi160_thread;
 
-static void bmi160_thread_main(struct bmi160_data *data)
+static void bmi160_thread_main(void *p1, void *p2, void *p3)
 {
+	struct bmi160_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 		bmi160_handle_interrupts(data->dev);
@@ -276,7 +278,7 @@ int bmi160_trigger_mode_init(const struct device *dev)
 
 	k_thread_create(&bmi160_thread, bmi160_thread_stack,
 			CONFIG_BMI160_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bmi160_thread_main,
+			bmi160_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY),
 			0, K_NO_WAIT);
