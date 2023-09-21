@@ -163,7 +163,7 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 	for (size_t idx = 0; idx < num_regions; idx++) {
 		struct nxp_mpu_region region_conf;
 
-		switch (DT_MEM_ARM_MASK(region[idx].dt_attr)) {
+		switch (DT_MEM_ARM_GET(region[idx].dt_attr)) {
 		case DT_MEM_ARM_MPU_RAM:
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
 			break;

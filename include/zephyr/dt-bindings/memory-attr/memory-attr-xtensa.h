@@ -12,7 +12,8 @@
 /*
  * Architecture specific Xtensa related attributes.
  */
-#define DT_MEM_XTENSA_MASK(x)		((x) & DT_MEM_ARCH_ATTR_MASK)
+#define DT_MEM_XTENSA_MASK		DT_MEM_ARCH_ATTR_MASK
+#define DT_MEM_XTENSA_GET(x)		((x) & DT_MEM_XTENSA_MASK)
 #define DT_MEM_XTENSA(x)		((x) << DT_MEM_ARCH_ATTR_SHIFT)
 
 #define  ATTR_XTENSA_INSTR_ROM		BIT(0)

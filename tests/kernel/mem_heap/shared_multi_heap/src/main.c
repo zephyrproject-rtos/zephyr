@@ -83,7 +83,7 @@ static inline enum shared_multi_heap_attr mpu_to_reg_attr(uint32_t dt_attr)
 	 * RAM          -> SMH_REG_ATTR_CACHEABLE
 	 * RAM_NOCACHE  -> SMH_REG_ATTR_NON_CACHEABLE
 	 */
-	switch (DT_MEM_ARM_MASK(dt_attr)) {
+	switch (DT_MEM_ARM_GET(dt_attr)) {
 	case DT_MEM_ARM_MPU_RAM:
 		return SMH_REG_ATTR_CACHEABLE;
 	case DT_MEM_ARM_MPU_RAM_NOCACHE:
