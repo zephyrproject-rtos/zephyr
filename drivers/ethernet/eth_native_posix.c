@@ -364,8 +364,12 @@ static int read_data(struct eth_context *ctx, int fd)
 	return 0;
 }
 
-static void eth_rx(struct eth_context *ctx)
+static void eth_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct eth_context *ctx = p1;
 	LOG_DBG("Starting ZETH RX thread");
 
 	while (1) {
@@ -391,7 +395,7 @@ static void create_rx_handler(struct eth_context *ctx)
 	k_thread_create(ctx->rx_thread,
 			ctx->rx_stack,
 			ctx->rx_stack_size,
-			(k_thread_entry_t)eth_rx,
+			eth_rx,
 			ctx, NULL, NULL, K_PRIO_COOP(14),
 			0, K_NO_WAIT);
 
