@@ -1,8 +1,4 @@
 /**
- * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
- * Copyright (c) 2019 Nordic Semiconductor ASA
- * Copyright (c) 2020 Teslabs Engineering S.L.
- * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
  * Copyright (c) 2023 Mr Beam Lasers GmbH.
  * Copyright (c) 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
  * SPDX-License-Identifier: Apache-2.0
@@ -38,7 +34,7 @@ int gc9a01a_regs_init(const struct device *dev)
 	const struct gc9a01a_config *config = dev->config;
 	const struct gc9a01a_regs *regs = config->regs;
 
-	// https://github.com/jakkra/ZSWatch init logic updated from this repo
+	/* https://github.com/jakkra/ZSWatch init logic updated from this repo */
 	const uint8_t *addr = regs->reg_arr;
 	uint8_t cmd, x, numArgs;
 	while ((cmd = *addr++) > 0) {
@@ -48,8 +44,8 @@ int gc9a01a_regs_init(const struct device *dev)
 		addr += numArgs;
 		if (x & 0x80) {
 			k_msleep(GC9A01A_SLEEP_OUT_TIME +
-				 30); // 30ms on top of the 120ms sleepout time to account for any
-				      // manufacturing defects.
+				 30); /* 30ms on top of the 120ms sleepout time to account for any
+				       manufacturing defects. */
 		}
 	}
 	return 0;
@@ -69,14 +65,13 @@ int gc9a01a_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 	const struct gc9a01a_config *config = dev->config;
 
 	int r;
-	struct spi_buf tx_buf;
+	struct spi_buf tx_buf = {.buf = &cmd, len = 1U};
 	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1U};
 
-	/* send command */
-	tx_buf.buf = &cmd;
-	tx_buf.len = 1U;
-
-	gpio_pin_set_dt(&config->cmd_data, GC9A01A_CMD);
+	r = gpio_pin_set_dt(&config->cmd_data, GC9A01A_CMD);
+	if (r < 0) {
+		return r;
+	}
 	r = spi_write_dt(&config->spi, &tx_bufs);
 	if (r < 0) {
 		return r;
@@ -87,7 +82,10 @@ int gc9a01a_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		tx_buf.buf = (void *)tx_data;
 		tx_buf.len = tx_len;
 
-		gpio_pin_set_dt(&config->cmd_data, GC9A01A_DATA);
+		r = gpio_pin_set_dt(&config->cmd_data, GC9A01A_DATA);
+		if (r < 0) {
+			return r;
+		}
 		r = spi_write_dt(&config->spi, &tx_bufs);
 		if (r < 0) {
 			return r;
@@ -217,13 +215,13 @@ static int gc9a01a_set_orientation(const struct device *dev,
 	int r;
 	uint8_t tx_data = GC9A01A_MADCTL_BGR;
 
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) { // works 0
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) { /* works 0° */
 		tx_data |= 0;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) { // works CW 90
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) { /* works CW 90° */
 		tx_data |= GC9A01A_MADCTL_MV | GC9A01A_MADCTL_MY;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) { // works CW 180
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) { /* works CW 180° */
 		tx_data |= GC9A01A_MADCTL_MY | GC9A01A_MADCTL_MX | GC9A01A_MADCTL_MH;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) { // works CW 270
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) { /* works CW 270° */
 		tx_data |= GC9A01A_MADCTL_MV | GC9A01A_MADCTL_MX;
 	}
 
@@ -258,7 +256,7 @@ static int gc9a01a_configure(const struct device *dev)
 		pixel_format = PIXEL_FORMAT_RGB_888;
 	}
 
-	r = gc9a01a_set_pixel_format(dev, pixel_format); // Set pixel format.
+	r = gc9a01a_set_pixel_format(dev, pixel_format); /* Set pixel format. */
 	if (r < 0) {
 		return r;
 	}
@@ -274,19 +272,19 @@ static int gc9a01a_configure(const struct device *dev)
 		orientation = DISPLAY_ORIENTATION_ROTATED_270;
 	}
 
-	r = gc9a01a_set_orientation(dev, orientation); // Set display orientation.
+	r = gc9a01a_set_orientation(dev, orientation); /* Set display orientation. */
 	if (r < 0) {
 		return r;
 	}
 
 	if (config->inversion) {
-		r = gc9a01a_transmit(dev, GC9A01A_INVON, NULL, 0U); // Display inversion mode.
+		r = gc9a01a_transmit(dev, GC9A01A_INVON, NULL, 0U); /* Display inversion mode. */
 		if (r < 0) {
 			return r;
 		}
 	}
 
-	r = config->regs_init_fn(dev); // Set all the required registers.
+	r = config->regs_init_fn(dev); /* Set all the required registers. */
 	if (r < 0) {
 		return r;
 	}
@@ -331,7 +329,7 @@ static int gc9a01a_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(config->cmd_data.port)) {
+	if (!gpio_is_ready_dt(&config->cmd_data)) {
 		LOG_ERR("Command/Data GPIO device not ready");
 		return -ENODEV;
 	}
