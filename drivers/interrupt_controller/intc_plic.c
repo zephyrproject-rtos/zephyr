@@ -16,7 +16,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 #include <soc.h>
-
+#include <zephyr/device.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
@@ -27,15 +27,6 @@
 #define PLIC_REG_IRQ_EN_OFFSET 0x2000
 #define PLIC_REG_REGS_OFFSET 0x200000
 
-#define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
-#define PLIC_PRIO	(PLIC_BASE_ADDR(0) + PLIC_REG_PRIO_OFFSET)
-#define PLIC_IRQ_EN	(PLIC_BASE_ADDR(0) + PLIC_REG_IRQ_EN_OFFSET)
-#define PLIC_REG	(PLIC_BASE_ADDR(0) + PLIC_REG_REGS_OFFSET)
-
-#define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
-#define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
-
-#define PLIC_EDGE_TRIG_TYPE (PLIC_BASE_ADDR(0) + PLIC_REG_TRIG_TYPE_OFFSET)
 #define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
@@ -43,7 +34,39 @@ struct plic_regs_t {
 	uint32_t claim_complete;
 };
 
-static int save_irq;
+typedef void (*riscv_plic_irq_config_func_t)(void);
+struct plic_config {
+	mem_addr_t prio;
+	mem_addr_t irq_en;
+	mem_addr_t reg;
+	mem_addr_t trig;
+	uint32_t max_prio;
+	uint32_t num_irqs;
+	riscv_plic_irq_config_func_t irq_config_func;
+};
+
+static uint32_t save_irq;
+
+static inline uint32_t get_plic_enabled_size(const struct device *dev)
+{
+	const struct plic_config *config = dev->config;
+
+	return (config->num_irqs >> 5) + 1;
+}
+
+/**
+ * @brief Determine the PLIC device from the IRQ
+ *
+ * FIXME: This function is currently hardcoded to return the first instance.
+ *
+ * @param irq IRQ number
+ *
+ * @return PLIC device of that IRQ
+ */
+static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
+{
+	return DEVICE_DT_INST_GET(0);
+}
 
 /**
  * @brief return edge irq value or zero
@@ -52,17 +75,20 @@ static int save_irq;
  * value of the irq. In the event edge irq is not supported this
  * routine will return 0
  *
- * @param irq IRQ number to add to the trigger
+ * @param dev PLIC-instance device
+ * @param local_irq PLIC-instance IRQ number to add to the trigger
  *
  * @return irq value when enabled 0 otherwise
  */
-static int riscv_plic_is_edge_irq(uint32_t irq)
+static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
 {
-	if (DT_INST_NODE_HAS_PROP(0, support_edge_interrupt)) {
-		volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
+	const struct plic_config *config = dev->config;
 
-		trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
-		return *trig & BIT(irq);
+	if (config->trig != 0) {
+		volatile uint32_t *trig = (volatile uint32_t *) config->trig;
+
+		trig += (local_irq >> PLIC_EDGE_TRIG_SHIFT);
+		return *trig & BIT(local_irq);
 	}
 	return 0;
 }
@@ -79,8 +105,10 @@ static int riscv_plic_is_edge_irq(uint32_t irq)
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const struct plic_config *config = dev->config;
+	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	uint32_t key;
-	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -100,8 +128,10 @@ void riscv_plic_irq_enable(uint32_t irq)
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const struct plic_config *config = dev->config;
+	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	uint32_t key;
-	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
 	key = irq_lock();
 	en += (irq >> 5);
@@ -119,7 +149,9 @@ void riscv_plic_irq_disable(uint32_t irq)
  */
 int riscv_plic_irq_is_enabled(uint32_t irq)
 {
-	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const struct plic_config *config = dev->config;
+	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 
 	en += (irq >> 5);
 	return !!(*en & (1 << (irq & 31)));
@@ -137,10 +169,12 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
  */
 void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 {
-	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const struct plic_config *config = dev->config;
+	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
 
-	if (priority > PLIC_MAX_PRIO)
-		priority = PLIC_MAX_PRIO;
+	if (priority > config->max_prio)
+		priority = config->max_prio;
 
 	prio += irq;
 	*prio = priority;
@@ -159,11 +193,10 @@ int riscv_plic_get_irq(void)
 	return save_irq;
 }
 
-static void plic_irq_handler(const void *arg)
+static void plic_irq_handler(const struct device *dev)
 {
-	volatile struct plic_regs_t *regs =
-	    (volatile struct plic_regs_t *) PLIC_REG;
-
+	const struct plic_config *config = dev->config;
+	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *) config->reg;
 	uint32_t irq;
 	struct _isr_table_entry *ite;
 	int edge_irq;
@@ -183,10 +216,10 @@ static void plic_irq_handler(const void *arg)
 	 * If the IRQ is out of range, call z_irq_spurious.
 	 * A call to z_irq_spurious will not return.
 	 */
-	if (irq == 0U || irq >= PLIC_IRQS)
+	if (irq == 0U || irq >= config->num_irqs)
 		z_irq_spurious(NULL);
 
-	edge_irq = riscv_plic_is_edge_irq(irq);
+	edge_irq = riscv_plic_is_edge_irq(dev, irq);
 
 	/*
 	 * For edge triggered interrupts, write to the claim_complete register
@@ -214,25 +247,25 @@ static void plic_irq_handler(const void *arg)
 /**
  * @brief Initialize the Platform Level Interrupt Controller
  *
+ * @param dev PLIC device struct
+ *
  * @retval 0 on success.
  */
-static int plic_init(void)
+static int plic_init(const struct device *dev)
 {
-
-	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
-	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
-	volatile struct plic_regs_t *regs =
-	    (volatile struct plic_regs_t *)PLIC_REG;
-	int i;
+	const struct plic_config *config = dev->config;
+	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
+	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
+	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *) config->reg;
 
 	/* Ensure that all interrupts are disabled initially */
-	for (i = 0; i < PLIC_EN_SIZE; i++) {
+	for (uint32_t i = 0; i < get_plic_enabled_size(dev); i++) {
 		*en = 0U;
 		en++;
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
-	for (i = 0; i < PLIC_IRQS; i++) {
+	for (uint32_t i = 0; i < config->num_irqs; i++) {
 		*prio = 0U;
 		prio++;
 	}
@@ -240,17 +273,40 @@ static int plic_init(void)
 	/* Set threshold priority to 0 */
 	regs->threshold_prio = 0U;
 
-	/* Setup IRQ handler for PLIC driver */
-	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ,
-		    0,
-		    plic_irq_handler,
-		    NULL,
-		    0);
-
-	/* Enable IRQ for PLIC driver */
-	irq_enable(RISCV_MACHINE_EXT_IRQ);
+	/* Configure IRQ for PLIC driver */
+	config->irq_config_func();
 
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+#define PLIC_INTC_IRQ_FUNC_DECLARE(n) static void plic_irq_config_func_##n(void)
+
+#define PLIC_INTC_IRQ_FUNC_DEFINE(n)                                                               \
+	static void plic_irq_config_func_##n(void)                                                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+
+#define PLIC_INTC_CONFIG_INIT(n)                                                                   \
+	PLIC_INTC_IRQ_FUNC_DECLARE(n);                                                             \
+	static const struct plic_config plic_config_##n = {                                        \
+		.prio = PLIC_BASE_ADDR(n) + PLIC_REG_PRIO_OFFSET,                                  \
+		.irq_en = PLIC_BASE_ADDR(n) + PLIC_REG_IRQ_EN_OFFSET,                              \
+		.reg = PLIC_BASE_ADDR(n) + PLIC_REG_REGS_OFFSET,                                   \
+		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
+		.trig = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, support_edge_interrupt),              \
+				    (PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET), (0)),         \
+		.num_irqs = DT_INST_PROP(n, riscv_ndev),                                           \
+		.irq_config_func = plic_irq_config_func_##n,                                       \
+	};                                                                                         \
+	PLIC_INTC_IRQ_FUNC_DEFINE(n)
+
+#define PLIC_INTC_DEVICE_INIT(n)                                                                   \
+	PLIC_INTC_CONFIG_INIT(n)                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &plic_init, NULL,                                                 \
+			      NULL, &plic_config_##n,                                              \
+			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,                             \
+			      NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(PLIC_INTC_DEVICE_INIT)
