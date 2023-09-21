@@ -163,6 +163,7 @@ Property entries in ``properties:`` are written in this syntax:
             phandle | phandles | phandle-array | path | compound>
      deprecated: <true | false>
      default: <default>
+     pattern: <true | false>
      description: <description of the property>
      enum:
        - <item1>
@@ -437,6 +438,47 @@ can write this property as follows:
      mboxes:
        type: phandle-array
        specifier-space: mbox
+
+pattern
+=======
+
+A property with ``pattern: true`` indicates that the property name is a regular
+expression. This can be used to match an arbitrary number of properties
+following the same naming convention. For example:
+
+.. code-block:: YAML
+
+   # base.yaml
+
+   properties:
+     ".*-supply$":
+        type: phandle
+        pattern: true
+
+This will match any property name ending in ``-supply``. For example:
+
+.. code-block:: devicetree
+
+   my-node {
+           foo-supply = <&foo_regulator>;
+           bar-supply = <&bar_regulator>;
+   };
+
+Properties with a name matching another pattern property can be used to set
+constraints or override certain options. For example:
+
+.. code-block:: YAML
+
+   include: base.yaml
+
+   properties:
+     # matches '.*-supply$' from base.yaml, will be required.
+     vin-supply:
+       required: true
+
+This is allowed for the ``required``, ``const``, ``enum`` and
+``specifier-space`` options. The ``deprecated`` and ``type`` options will be
+taken from the pattern property, and so they can not be overridden.
 
 .. _dt-bindings-child:
 
