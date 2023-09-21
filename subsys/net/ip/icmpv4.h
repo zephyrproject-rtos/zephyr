@@ -19,8 +19,6 @@
 #include <zephyr/net/net_pkt.h>
 
 #define NET_ICMPV4_DST_UNREACH  3	/* Destination unreachable */
-#define NET_ICMPV4_ECHO_REQUEST 8
-#define NET_ICMPV4_ECHO_REPLY   0
 #define NET_ICMPV4_TIME_EXCEEDED 11	/* Time exceeded */
 #define NET_ICMPV4_BAD_IP_HEADER 12	/* Bad IP header */
 
