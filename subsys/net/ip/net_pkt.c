@@ -1809,6 +1809,9 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
 	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
+	net_pkt_set_eof(clone_pkt, net_pkt_eof(pkt));
+	net_pkt_set_ptp(clone_pkt, net_pkt_is_ptp(pkt));
+	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
 
 	net_pkt_set_l2_bridged(clone_pkt, net_pkt_is_l2_bridged(pkt));
 	net_pkt_set_l2_processed(clone_pkt, net_pkt_is_l2_processed(pkt));

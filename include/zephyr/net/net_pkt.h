@@ -465,7 +465,6 @@ static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
 #endif
 }
 
-#if defined(CONFIG_NET_SOCKETS)
 static inline uint8_t net_pkt_eof(struct net_pkt *pkt)
 {
 	return pkt->eof;
@@ -475,7 +474,6 @@ static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 {
 	pkt->eof = eof;
 }
-#endif
 
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
