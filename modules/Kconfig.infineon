@@ -50,4 +50,9 @@ config HAS_XMCLIB_CCU
 	help
 	  Enable XMCLIB CCU4/CCU8
 
+config HAS_XMCLIB_WDT
+	bool
+	help
+	  Enable XMCLIB WDT
+
 endif # HAS_XMCLIB

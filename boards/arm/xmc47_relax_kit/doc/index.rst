@@ -58,6 +58,8 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 | PWM       | on-chip    | pwm                   |
 +-----------+------------+-----------------------+
+| WATCHDOG  | on-chip    | watchdog              |
++-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4700 TRM`_
 Other hardware features are not currently supported by the Zephyr kernel.
