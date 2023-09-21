@@ -249,11 +249,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context = net_pkt_context(pkt);
 
 	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
-		if (IS_ENABLED(CONFIG_NET_TCP) &&
-		    net_pkt_family(pkt) != AF_UNSPEC) {
-			net_pkt_set_queued(pkt, false);
-		}
-
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			pkt_priority = net_pkt_priority(pkt);
 

@@ -807,16 +807,6 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 				}
 			}
 
-			/* We "fake" the sending of the packet here so that
-			 * tcp.c:tcp_retry_expired() will increase the ref
-			 * count when re-sending the packet. This is crucial
-			 * thing to do here and will cause free memory access
-			 * if not done.
-			 */
-			if (IS_ENABLED(CONFIG_NET_TCP)) {
-				net_pkt_set_sent(pkt, true);
-			}
-
 			/* We need to unref here because we simulate the packet
 			 * sending.
 			 */
