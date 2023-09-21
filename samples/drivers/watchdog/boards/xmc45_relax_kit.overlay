@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 SLB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wdt0 {
+	status = "okay";
+};

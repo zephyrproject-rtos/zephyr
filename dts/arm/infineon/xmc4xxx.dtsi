@@ -229,6 +229,13 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		wdt0: watchdog@50008000 {
+			compatible = "infineon,xmc4xxx-watchdog";
+			reg = <0x50008000 0x4000>;
+			interrupts = <0 1>;
+			status = "disabled";
+		};
 	};
 };
 
