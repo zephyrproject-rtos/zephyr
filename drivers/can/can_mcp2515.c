@@ -889,8 +889,12 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 	}
 }
 
-static void mcp2515_int_thread(const struct device *dev)
+static void mcp2515_int_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct mcp2515_data *dev_data = dev->data;
 
 	while (1) {
@@ -998,7 +1002,7 @@ static int mcp2515_init(const struct device *dev)
 
 	tid = k_thread_create(&dev_data->int_thread, dev_data->int_thread_stack,
 			      dev_cfg->int_thread_stack_size,
-			      (k_thread_entry_t) mcp2515_int_thread, (void *)dev,
+			      mcp2515_int_thread, (void *)dev,
 			      NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
 			      0, K_NO_WAIT);
 	(void)k_thread_name_set(tid, "mcp2515");
