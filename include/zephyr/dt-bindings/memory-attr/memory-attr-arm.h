@@ -18,7 +18,8 @@
  * This is legacy and it should NOT be extended further. If new MPU region
  * types must be added, these must rely on the generic memory attributes.
  */
-#define DT_MEM_ARM_MASK(x)		((x) & DT_MEM_ARCH_ATTR_MASK)
+#define DT_MEM_ARM_MASK			DT_MEM_ARCH_ATTR_MASK
+#define DT_MEM_ARM_GET(x)		((x) & DT_MEM_ARM_MASK)
 #define DT_MEM_ARM(x)			((x) << DT_MEM_ARCH_ATTR_SHIFT)
 
 #define  ATTR_MPU_RAM			BIT(0)

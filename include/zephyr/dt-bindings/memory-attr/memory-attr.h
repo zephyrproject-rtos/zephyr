@@ -14,6 +14,7 @@
  * Generic memory attributes that should be common to all architectures.
  */
 #define DT_MEM_ATTR_MASK		GENMASK(15, 0)
+#define DT_MEM_ATTR_GET(x)		((x) & DT_MEM_ATTR_MASK)
 #define DT_MEM_ATTR_SHIFT		(0)
 
 #define  DT_MEM_CACHEABLE		BIT(0)  /* cacheable */
@@ -30,6 +31,7 @@
  * provided mask.
  */
 #define DT_MEM_SW_ATTR_MASK		GENMASK(19, 16)
+#define DT_MEM_SW_ATTR_GET(x)		((x) & DT_MEM_SW_ATTR_MASK)
 #define DT_MEM_SW_ATTR_SHIFT		(16)
 #define DT_MEM_SW_ATTR_UNKNOWN		BIT(19)
 
@@ -42,6 +44,7 @@
  * See for example `include/zephyr/dt-bindings/memory-attr/memory-attr-arm.h`
  */
 #define DT_MEM_ARCH_ATTR_MASK		GENMASK(31, 20)
+#define DT_MEM_ARCH_ATTR_GET(x)		((x) & DT_MEM_ARCH_ATTR_MASK)
 #define DT_MEM_ARCH_ATTR_SHIFT		(20)
 #define DT_MEM_ARCH_ATTR_UNKNOWN	BIT(31)
 

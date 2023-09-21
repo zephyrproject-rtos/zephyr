@@ -12,7 +12,8 @@
 /*
  * Architecture specific RISCV related attributes.
  */
-#define DT_MEM_RISCV_MASK(x)			((x) & DT_MEM_ARCH_ATTR_MASK)
+#define DT_MEM_RISCV_MASK			DT_MEM_ARCH_ATTR_MASK
+#define DT_MEM_RISCV_GET(x)			((x) & DT_MEM_RISCV_MASK)
 #define DT_MEM_RISCV(x)				((x) << DT_MEM_ARCH_ATTR_SHIFT)
 
 #define  ATTR_RISCV_TYPE_MAIN			BIT(0)
