@@ -7,7 +7,7 @@ The Bluetooth mesh profile adds secure wireless multi-hop communication for
 Bluetooth Low Energy. This module implements the
 `Bluetooth Mesh Profile Specification v1.0.1 <https://www.bluetooth.com/specifications/specs/mesh-profile-1-0-1/>`_.
 
-Implementation of the draft `Bluetooth Mesh Protocol Specification v1.1 <https://www.bluetooth.com/specifications/specs/mesh-protocol-1-1/>`_
+Implementation of the `Bluetooth Mesh Protocol Specification v1.1 <https://www.bluetooth.com/specifications/specs/mesh-protocol-1-1/>`_
 is in experimental state.
 
 Read more about Bluetooth mesh on the
