@@ -1,0 +1,15 @@
+# Copyright (c) 2023, SLB
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon XMC4xxx watchdog
+
+compatible: "infineon,xmc4xxx-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
