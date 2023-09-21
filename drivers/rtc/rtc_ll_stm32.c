@@ -81,7 +81,7 @@ static int rtc_stm32_enter_initialization_mode(bool kernel_available)
 {
 	if (kernel_available) {
 		LL_RTC_EnableInitMode(RTC);
-		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
+		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_busy_wait(1));
 
 		if (!success) {
 			return -EIO;
@@ -171,15 +171,19 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 		LOG_ERR("clock configure failed\n");
 		return -EIO;
 	}
 
 	LL_RCC_EnableRTC();
 
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
 	err = rtc_stm32_configure(dev);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 	return err;
 }
@@ -208,10 +212,18 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	LOG_INF("Setting clock");
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	LL_RTC_DisableWriteProtection(RTC);
 
 	err = rtc_stm32_enter_initialization_mode(true);
 	if (err) {
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+		LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 		k_mutex_unlock(&data->lock);
 		return err;
 	}
@@ -236,6 +248,10 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	rtc_stm32_leave_initialization_mode();
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	k_mutex_unlock(&data->lock);
 
@@ -346,15 +362,23 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 	}
 
 	/* wait for recalibration to be ok if a previous recalibration occurred */
-	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RECALP(RTC) == 0, 100000, k_msleep(1))) {
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RECALP(RTC) == 0, 100000, k_busy_wait(1))) {
 		return -EIO;
 	}
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	LL_RTC_DisableWriteProtection(RTC);
 
 	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	return 0;
 }
