@@ -790,9 +790,9 @@ void z_init_static_threads(void)
 	 */
 	k_sched_lock();
 	_FOREACH_STATIC_THREAD(thread_data) {
-		if (thread_data->init_delay != K_TICKS_FOREVER) {
+		if (!K_TIMEOUT_EQ(thread_data->init_delay, K_FOREVER)) {
 			schedule_new_thread(thread_data->init_thread,
-					    K_MSEC(thread_data->init_delay));
+					    thread_data->init_delay);
 		}
 	}
 	k_sched_unlock();
