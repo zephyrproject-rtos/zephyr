@@ -169,8 +169,12 @@ static int modem_atoi(const char *s, const int err_value,
 }
 #endif
 
-static void gsm_rx(struct gsm_modem *gsm)
+static void gsm_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct gsm_modem *gsm = p1;
 	LOG_DBG("starting");
 
 	while (true) {
@@ -1323,7 +1327,7 @@ static int gsm_init(const struct device *dev)
 
 	(void)k_thread_create(&gsm->rx_thread, gsm_rx_stack,
 			      K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
-			      (k_thread_entry_t) gsm_rx,
+			      gsm_rx,
 			      gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	(void)k_thread_name_set(&gsm->rx_thread, "gsm_rx");
 
