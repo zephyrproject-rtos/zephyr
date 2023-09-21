@@ -2458,6 +2458,7 @@ NXP Platforms:
     - bperseghetti
     - dbaluta
     - iuliana-prodan
+    - Dat-NguyenDuy
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
