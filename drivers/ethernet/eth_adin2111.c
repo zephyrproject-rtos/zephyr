@@ -264,8 +264,12 @@ static inline void adin2111_port_on_phyint(const struct device *dev)
 	}
 }
 
-static void adin2111_offload_thread(const struct device *dev)
+static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct adin2111_data *ctx = dev->data;
 	const struct adin2111_config *adin_cfg = dev->config;
 	bool is_adin2111 = (adin_cfg->id == ADIN2111_MAC);
@@ -669,7 +673,7 @@ static void adin2111_port_iface_init(struct net_if *iface)
 		/* all ifaces are done, start INT processing */
 		k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
 				CONFIG_ETH_ADIN2111_IRQ_THREAD_STACK_SIZE,
-				(k_thread_entry_t)adin2111_offload_thread,
+				adin2111_offload_thread,
 				(void *)adin, NULL, NULL,
 				CONFIG_ETH_ADIN2111_IRQ_THREAD_PRIO,
 				K_ESSENTIAL, K_NO_WAIT);
