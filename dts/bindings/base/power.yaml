@@ -14,18 +14,3 @@ properties:
       entirely the responsibility of the device driver.
 
       Contrast with vin-supply.
-
-  vin-supply:
-    type: phandle
-    description: |
-      Reference to the regulator that controls power to the device.
-      The referenced devicetree node must have a regulator compatible.
-
-      This property should be provided when device power is supplied
-      by a shared regulator.  The supply state is dependent on the
-      request status of all devices fed by the regulator.
-
-      Contrast with supply-gpios.  If both properties are provided
-      then the regulator must be requested before the supply GPIOS is
-      set to an active state, and the supply GPIOS must be set to an
-      inactive state before releasing the regulator.
