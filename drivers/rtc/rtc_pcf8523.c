@@ -254,8 +254,12 @@ static int pcf8523_int1_enable_unlocked(const struct device *dev, bool enable)
 	return 0;
 }
 
-static void pcf8523_int1_thread(const struct device *dev)
+static void pcf8523_int1_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct pcf8523_data *data = dev->data;
 	rtc_alarm_callback alarm_callback = NULL;
 	void *alarm_user_data = NULL;
@@ -791,7 +795,7 @@ static int pcf8523_init(const struct device *dev)
 
 		tid = k_thread_create(&data->int1_thread, data->int1_stack,
 				      K_THREAD_STACK_SIZEOF(data->int1_stack),
-				      (k_thread_entry_t)pcf8523_int1_thread, (void *)dev, NULL,
+				      pcf8523_int1_thread, (void *)dev, NULL,
 				      NULL, CONFIG_RTC_PCF8523_THREAD_PRIO, 0, K_NO_WAIT);
 		k_thread_name_set(tid, "pcf8523");
 
