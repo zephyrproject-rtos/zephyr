@@ -192,8 +192,6 @@ static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_propert
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
-
 	return rc;
 }
 
@@ -232,7 +230,6 @@ static int bq27z746_get_buffer_prop(const struct device *dev,
 		rc = -ENOTSUP;
 	}
 
-	prop->status = rc;
 	return rc;
 }
 
@@ -254,8 +251,6 @@ static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_propert
 	default:
 		rc = -ENOTSUP;
 	}
-
-	prop->status = rc;
 
 	return rc;
 }
