@@ -10,3 +10,7 @@ zephyr_sources_ifdef(CONFIG_COAP
 zephyr_sources_ifdef(CONFIG_COAP_CLIENT
   coap_client.c
 )
+
+zephyr_sources_ifdef(CONFIG_COAP_SERVER
+  coap_server.c
+)
