@@ -102,7 +102,7 @@ static int ivshmem_ipm_init(const struct device *dev)
 	k_thread_create(&ivshmem_ev_loop_thread,
 		ivshmem_ev_loop_stack,
 		CONFIG_IPM_IVSHMEM_EVENT_LOOP_STACK_SIZE,
-		(k_thread_entry_t)ivshmem_ipm_event_loop_thread,
+		ivshmem_ipm_event_loop_thread,
 		(void *)dev, NULL, NULL,
 		CONFIG_IPM_IVSHMEM_EVENT_LOOP_PRIO,
 		0, K_NO_WAIT);

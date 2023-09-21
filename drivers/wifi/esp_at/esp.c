@@ -199,8 +199,13 @@ MODEM_CMD_DEFINE(on_cmd_error)
 }
 
 /* RX thread */
-static void esp_rx(struct esp_data *data)
+static void esp_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct esp_data *data = p1;
+
 	while (true) {
 		/* wait for incoming data */
 		modem_iface_uart_rx_wait(&data->mctx.iface, K_FOREVER);
@@ -1366,7 +1371,7 @@ static int esp_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&esp_rx_thread, esp_rx_stack,
 			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
-			(k_thread_entry_t)esp_rx,
+			esp_rx,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_ESP_AT_RX_THREAD_PRIORITY), 0,
 			K_NO_WAIT);

@@ -348,8 +348,13 @@ static int udc_event_xfer_setup(const struct device *dev)
 	return err;
 }
 
-static void udc_nrf_thread(const struct device *dev)
+static void udc_nrf_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
+
 	while (true) {
 		bool start_xfer = false;
 		struct udc_nrf_evt evt;
@@ -733,7 +738,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 	k_thread_create(&drv_stack_data, drv_stack,
 			K_KERNEL_STACK_SIZEOF(drv_stack),
-			(k_thread_entry_t)udc_nrf_thread,
+			udc_nrf_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
