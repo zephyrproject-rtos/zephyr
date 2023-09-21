@@ -117,6 +117,15 @@ done:
 	return rv;
 }
 
+static void slz_thread_func(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	slz_ll_thread_func();
+}
+
 static int slz_bt_open(void)
 {
 	int ret;
@@ -124,7 +133,7 @@ static int slz_bt_open(void)
 	/* Start RX thread */
 	k_thread_create(&slz_ll_thread, slz_ll_stack,
 			K_KERNEL_STACK_SIZEOF(slz_ll_stack),
-			(k_thread_entry_t)slz_ll_thread_func, NULL, NULL, NULL,
+			slz_thread_func, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0,
 			K_NO_WAIT);
 
