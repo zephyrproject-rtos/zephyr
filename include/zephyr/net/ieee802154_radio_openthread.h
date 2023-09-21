@@ -34,7 +34,7 @@ enum ieee802154_openthread_tx_mode {
 	 * This mode is a non-standard experimental OpenThread feature. It allows transmission
 	 * of a packet within a certain time window.
 	 * The earliest transmission time is specified as in the other TXTIME modes:
-	 * When the first CCA reports an idle channel then the first symbol of the packet's SHR
+	 * When the first CCA reports an idle channel then the first symbol of the packet's PHR
 	 * SHALL be present at the local antenna at the time represented by the scheduled
 	 * TX timestamp (referred to as T_tx below).
 	 *
@@ -48,7 +48,7 @@ enum ieee802154_openthread_tx_mode {
 	 * (see @ref IEEE802154_OPENTHREAD_ATTR_T_RECCA and
 	 * @ref IEEE802154_OPENTHREAD_ATTR_T_CCATX). Based on these attributes the upper layer
 	 * can calculate the latest point in time (T_txmax) that the first symbol of the scheduled
-	 * packet's SHR SHALL be present at the local antenna:
+	 * packet's PHR SHALL be present at the local antenna:
 	 *
 	 * T_maxtxdelay = max_extra_cca_attempts * (aCcaTime + T_recca) - T_recca + T_ccatx
 	 * T_txmax = T_tx + T_maxtxdelay
