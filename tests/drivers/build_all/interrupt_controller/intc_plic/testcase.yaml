@@ -1,0 +1,17 @@
+common:
+  build_only: true
+  filter: CONFIG_PLIC
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv64
+  tags:
+    - drivers
+    - interrupt
+    - plic
+tests:
+  drivers.interrupt_controller.intc_plic.build: {}
+  drivers.interrupt_controller.intc_plic.edge_interrupt.build:
+    extra_args:
+      DTC_OVERLAY_FILE="./app.edge_interrupt.overlay"
+    extra_configs:
+      - CONFIG_PLIC_SUPPORTS_EDGE_IRQ=y
