@@ -15,8 +15,7 @@ into an USB disk.  This sample can be found under
 Requirements
 ************
 
-This project requires a USB device driver, and either 32KiB (96KiB optional)
-of RAM or a FLASH device.
+This project requires a USB device driver, and either 96KiB of RAM or a FLASH device.
 
 Building and Running
 ********************
@@ -30,12 +29,13 @@ RAM-disk Example without any file system
 ========================================
 
 The default configurations selects RAM-based disk without any file system.
-This example only needs additional 32KiB RAM for the RAM-disk and is intended
+This example only needs additional 96KiB RAM for the RAM-disk and is intended
 for testing USB mass storage class implementation.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: reel_board
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
    :goals: build
    :compact:
 
@@ -50,7 +50,7 @@ In this example we will build the sample with a RAM-based disk:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: reel_board
-   :gen-args: -DCONFIG_APP_MSC_STORAGE_RAM=y
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="ramdisk.overlay" -DCONFIG_APP_MSC_STORAGE_RAM=y
    :goals: build
    :compact:
 
