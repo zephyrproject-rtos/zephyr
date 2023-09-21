@@ -857,13 +857,19 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	cis->offset = cis_offset;
 
 #else /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
-	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_SPACING) && (CONFIG_BT_CTLR_CENTRAL_SPACING > 0)) {
+
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_SPACING)
+	} else if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0) {
 		uint32_t cis_offset;
 
 		cis_offset = MAX((HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
 				  (EVENT_TICKER_RES_MARGIN_US << 1U) + cig->sync_delay -
 				  cis->sync_delay), *cis_offset_min);
 		cis->offset = cis_offset;
+#endif /* CONFIG_BT_CTLR_CENTRAL_SPACING */
+
 	} else {
 		cis->offset = *cis_offset_min;
 	}
