@@ -408,8 +408,12 @@ static void tcan4x5x_int_gpio_callback_handler(const struct device *port, struct
 	k_sem_give(&tcan_data->int_sem);
 }
 
-static void tcan4x5x_int_thread(const struct device *dev)
+static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct can_mcan_data *mcan_data = dev->data;
 	struct tcan4x5x_data *tcan_data = mcan_data->custom;
 	uint32_t status;
@@ -637,7 +641,7 @@ static int tcan4x5x_init(const struct device *dev)
 
 	tid = k_thread_create(&tcan_data->int_thread, tcan_data->int_stack,
 			      K_KERNEL_STACK_SIZEOF(tcan_data->int_stack),
-			      (k_thread_entry_t)tcan4x5x_int_thread, (void *)dev, NULL, NULL,
+			      tcan4x5x_int_thread, (void *)dev, NULL, NULL,
 			      CONFIG_CAN_TCAN4X5X_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "tcan4x5x");
 
