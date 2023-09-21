@@ -651,12 +651,7 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default);
 
-/** @brief Lookup a specific codec configuration value based on type
- * *
- *  Typically types used are:
- *  @ref bt_audio_codec_capability_type
- *  @ref bt_audio_codec_config_type
- *  @ref bt_audio_metadata_type
+/** @brief Lookup a specific codec configuration value
  *
  *  @param[in] codec_cfg The codec data to search in.
  *  @param[in] type The type id to look for
@@ -853,6 +848,94 @@ int bt_audio_codec_meta_get_vendor(const uint8_t meta[], size_t meta_len,
 				   const uint8_t **vendor_meta);
 
 /** @} */ /* End of bt_audio_codec_meta */
+
+/**
+ * @brief Audio codec capabilities APIs
+ * @defgroup bt_audio_codec_cap Codec capability parsing APIs
+ *
+ * Functions to parse codec capability data when formatted as LTV wrapped into @ref
+ * bt_audio_codec_cap.
+ *
+ * @{
+ */
+
+/**
+ * @brief Lookup a specific value based on type
+ *
+ * @param[in] codec_cap The codec data to search in.
+ * @param[in] type The type id to look for
+ * @param[out] data Pointer to the data-pointer to update when item is found
+ *
+ * @return Length of found @p data or 0 if not found
+ */
+uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, uint8_t type,
+				   const uint8_t **data);
+
+/**
+ * @brief Extract the frequency from a codec capability.
+ *
+ * @param codec_cap The codec configuration to extract data from.
+ *
+ * @retval Bitfield of supported frequencies if 0 or positive
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
+ */
+int bt_audio_codec_cap_get_freq(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Extract the frequency from a codec capability.
+ *
+ * @param codec_cap The codec configuration to extract data from.
+ *
+ * @retval Bitfield of supported frame durations if 0 or positive
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
+ */
+int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Extract the frequency from a codec capability.
+ *
+ * @param codec_cap The codec configuration to extract data from.
+ *
+ * @retval Bitfield of supported channel counts if 0 or positive
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
+ */
+int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Extract the frequency from a codec capability.
+ *
+ * @param[in]  codec_cap   The codec configuration to extract data from.
+ * @param[out] codec_frame Struct to place the resulting values in
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
+ */
+int bt_audio_codec_cap_get_octets_per_frame(
+	const struct bt_audio_codec_cap *codec_cap,
+	struct bt_audio_codec_octets_per_codec_frame *codec_frame);
+
+/**
+ * @brief Extract the frequency from a codec capability.
+ *
+ * @param codec_cap The codec configuration to extract data from.
+ *
+ * @retval Maximum number of codec frames per SDU supported
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size or value
+ */
+int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap);
+
+/** @} */ /* End of bt_audio_codec_cap */
+
 #ifdef __cplusplus
 }
 #endif
