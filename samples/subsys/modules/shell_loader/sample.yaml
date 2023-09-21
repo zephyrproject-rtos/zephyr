@@ -1,0 +1,7 @@
+sample:
+  description: Loadable modules with shell sample
+  name: Module loader shell
+tests:
+  sample.modules.shell:
+    tags: shell filesystem modules
+    harness: keyboard

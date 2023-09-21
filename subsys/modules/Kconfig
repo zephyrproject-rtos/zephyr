@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODULES
+	bool "Dynamic module loading"
+	help
+	  Enable dynamic module loading
+
+if MODULES
+
+config MODULES_HEAP_SIZE
+	int "Module loading heap memory size in kilobytes"
+	default 8
+	help
+	  Memory size used to load dynamic modules
+
+config MODULES_SHELL
+	bool "Modules shell commands"
+	depends on SHELL
+	help
+	  Manage modules with shell commands
+
+module = MODULES
+module-str = modules
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

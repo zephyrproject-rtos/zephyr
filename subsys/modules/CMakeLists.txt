@@ -1,0 +1,5 @@
+if(CONFIG_MODULES)
+  zephyr_library()
+  zephyr_library_sources(module.c)
+  zephyr_library_sources_ifdef(CONFIG_MODULES_SHELL shell.c)
+endif()
