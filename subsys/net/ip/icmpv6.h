@@ -144,8 +144,6 @@ struct net_icmpv6_mld_mcast_record {
 #define NET_ICMPV6_PACKET_TOO_BIG 2	/* Packet too big */
 #define NET_ICMPV6_TIME_EXCEEDED  3	/* Time exceeded */
 #define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
-#define NET_ICMPV6_ECHO_REQUEST 128
-#define NET_ICMPV6_ECHO_REPLY   129
 #define NET_ICMPV6_MLD_QUERY    130	/* Multicast Listener Query */
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
