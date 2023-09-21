@@ -159,8 +159,12 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 	k_fifo_put(&ipm_rx_events_fifo, hcievt);
 }
 
-static void bt_ipm_rx_thread(void)
+static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		bool discardable = false;
 		k_timeout_t timeout = K_FOREVER;
@@ -554,7 +558,7 @@ static int bt_ipm_open(void)
 	/* Start RX thread */
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
 			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
-			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
+			bt_ipm_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
