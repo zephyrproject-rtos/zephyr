@@ -702,6 +702,8 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		i2c_setup_time_min = 500U;
 		break;
 	default:
+		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
+				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
