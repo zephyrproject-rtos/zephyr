@@ -43,13 +43,10 @@ ZTEST_USER_F(max17048, test_get_all_props_failed_returns_negative)
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_true(ret < 0);
+	zassert_equal(-ENOTSUP, ret);
 }
 
-ZTEST_USER_F(max17048, test_get_some_props_failed_returns_failed_prop_count)
+ZTEST_USER_F(max17048, test_get_some_props_failed_returns_errno)
 {
 	struct fuel_gauge_property props[] = {
 		{
@@ -69,16 +66,7 @@ ZTEST_USER_F(max17048, test_get_some_props_failed_returns_failed_prop_count)
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[0].property_type);
-
-	zassert_equal(props[1].status, -ENOTSUP, "Getting bad property %d has a good status.",
-		      props[1].property_type);
-
-	zassert_ok(props[2].status, "Property %d getting %d has a bad status.", 2,
-		   props[2].property_type);
-
-	zassert_equal(ret, 2);
+	zassert_equal(ret, -ENOTSUP);
 }
 
 
@@ -101,14 +89,7 @@ ZTEST_USER_F(max17048, test_get_props__returns_ok)
 		}
 	};
 
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	for (int i = 0; i < ARRAY_SIZE(props); i++) {
-		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
-			   props[i].property_type);
-	}
-
-	zassert_ok(ret);
+	zassert_ok(fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props)));
 }
 
 ZTEST_USER_F(max17048, test_current_rate_zero)
@@ -130,10 +111,6 @@ ZTEST_USER_F(max17048, test_current_rate_zero)
 	emul_max17048_set_crate_status(0);
 	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
 
-	for (int i = 0; i < ARRAY_SIZE(props); i++) {
-		zassert_ok(props[i].status, "Property %d getting %d has a bad status.", i,
-			   props[i].property_type);
-	}
 	zassert_equal(props[0].value.runtime_to_empty, 0,
 		"Runtime to empty is %d but it should be 0.",
 		props[0].value.runtime_to_full
