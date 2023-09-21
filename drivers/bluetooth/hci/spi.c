@@ -344,8 +344,12 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 	return buf;
 }
 
-static void bt_spi_rx_thread(void)
+static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
 	struct net_buf *buf;
@@ -528,7 +532,7 @@ static int bt_spi_open(void)
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
-			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
+			bt_spi_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
