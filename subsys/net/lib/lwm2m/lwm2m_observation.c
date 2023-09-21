@@ -529,7 +529,7 @@ struct observe_node *engine_observe_node_discover(sys_slist_t *observe_node_list
 						  const uint8_t *token, uint8_t tkl)
 {
 	struct observe_node *obs;
-	int obs_list_size, path_list_size;
+	int obs_list_size, path_list_size = 0;
 
 	if (lwm2m_path_list) {
 		path_list_size = engine_path_list_size(lwm2m_path_list);
