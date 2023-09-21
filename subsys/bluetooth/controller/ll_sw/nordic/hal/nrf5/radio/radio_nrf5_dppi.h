@@ -317,6 +317,20 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
 	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
+/*
+ * Convert a dppi channel group number into the *enable* task enumerate value
+ * the nrfx hal accepts
+ */
+#define HAL_SW_DPPI_TASK_EN_FROM_IDX(index) \
+	(NRF_DPPI_TASK_CHG0_EN + ((index) * (NRF_DPPI_TASK_CHG1_EN - NRF_DPPI_TASK_CHG0_EN)))
+
+/*
+ * Convert a dppi channel group number into the *disable* task enumerate value
+ * the nrfx hal accepts
+ */
+#define HAL_SW_DPPI_TASK_DIS_FROM_IDX(index) \
+	(NRF_DPPI_TASK_CHG0_DIS + ((index) * (NRF_DPPI_TASK_CHG1_EN - NRF_DPPI_TASK_CHG0_EN)))
+
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
  * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
@@ -332,14 +346,10 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		& TIMER_PUBLISH_COMPARE_CHIDX_Msk) | \
 	((TIMER_PUBLISH_COMPARE_EN_Enabled << TIMER_PUBLISH_COMPARE_EN_Pos) \
 		& TIMER_PUBLISH_COMPARE_EN_Msk))
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(index) \
-	NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].DIS
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(chan) \
-	(((chan << DPPIC_SUBSCRIBE_CHG_DIS_CHIDX_Pos) \
-		& DPPIC_SUBSCRIBE_CHG_DIS_CHIDX_Msk) | \
-	((DPPIC_SUBSCRIBE_CHG_DIS_EN_Enabled << \
-			DPPIC_SUBSCRIBE_CHG_DIS_EN_Pos) \
-		& DPPIC_SUBSCRIBE_CHG_DIS_EN_Msk))
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(index, channel) \
+	nrf_dppi_subscribe_set(NRF_DPPIC, \
+		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(index)), \
+		channel);
 
 /* Enable the SW Switch PPI Group on RADIO END Event.
  *
@@ -353,15 +363,6 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		&	RADIO_PUBLISH_END_CHIDX_Msk) | \
 	((RADIO_PUBLISH_END_EN_Enabled << RADIO_PUBLISH_END_EN_Pos) \
 		& RADIO_PUBLISH_END_EN_Msk))
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(index) \
-	(NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].EN)
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK \
-	(((HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI << \
-			DPPIC_SUBSCRIBE_CHG_EN_CHIDX_Pos) \
-		&	DPPIC_SUBSCRIBE_CHG_EN_CHIDX_Msk) | \
-	((DPPIC_SUBSCRIBE_CHG_EN_EN_Enabled << \
-		DPPIC_SUBSCRIBE_CHG_EN_EN_Pos) \
-		& DPPIC_SUBSCRIBE_CHG_EN_EN_Msk))
 
 /* Enable Radio on SW Switch timer event.
  * Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
@@ -473,12 +474,15 @@ static inline void hal_radio_sw_switch_setup(
 	 */
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT =
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT;
-	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(ppi_group_index) =
-	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK;
+	nrf_dppi_subscribe_set(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(ppi_group_index)),
+		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI);
 
 	/* We need to un-subscribe the other group from the PPI channel. */
-	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(
-		(ppi_group_index + 1) & 0x01) = 0;
+	uint8_t other_grp = (ppi_group_index + 1) & 0x01;
+
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(other_grp)));
 
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
@@ -537,8 +541,10 @@ static inline void hal_radio_sw_switch_disable(void)
 	 * So we simply cancel the task subscription.
 	 */
 	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
-	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(0) = 0;
-	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1) = 0;
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
 }
 
 static inline void hal_radio_sw_switch_cleanup(void)
@@ -567,8 +573,8 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_s2) =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(ppi_dis);
 
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(group_index) =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(ppi_dis);
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(group_index,
+			ppi_dis);
 
 	/* Capture CC to cancel the timer that has assumed
 	 * S8 reception, if packet will be received in S2.
@@ -609,9 +615,7 @@ static inline void hal_radio_sw_switch_disable_group_clear(uint8_t ppi_dis, uint
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
 			ppi_dis);
 	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
-		group_index) =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
-			ppi_dis);
+		group_index, ppi_dis);
 }
 #endif /* defined(CONFIG_BT_CTLR_PHY_CODED) */
 
@@ -624,21 +628,33 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	 * registers are written, therefore, we clear the task registers
 	 * here.
 	 */
-	NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(0)].EN = 0;
-	NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(0)].DIS = 0;
-	NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(1)].EN = 0;
-	NRF_DPPIC->SUBSCRIBE_CHG[SW_SWITCH_TIMER_TASK_GROUP(1)].DIS = 0;
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
+	nrf_dppi_subscribe_clear(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
 
-	NRF_DPPIC->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(0)].DIS = 1;
-	NRF_DPPIC->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(1)].DIS = 1;
+	nrf_dppi_task_trigger(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
+	nrf_dppi_task_trigger(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_DIS_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
 
 	/* Include the appropriate PPI channels in the two PPI Groups. */
-	NRF_DPPIC->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
+	nrf_dppi_group_clear(NRF_DPPIC,
+		SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_dppi_channels_include_in_group(NRF_DPPIC,
 		BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0)) |
-		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(0));
-	NRF_DPPIC->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(0)),
+		SW_SWITCH_TIMER_TASK_GROUP(0));
+	nrf_dppi_group_clear(NRF_DPPIC,
+		SW_SWITCH_TIMER_TASK_GROUP(1));
+	nrf_dppi_channels_include_in_group(NRF_DPPIC,
 		BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1)) |
-		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1));
+		BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1)),
+		SW_SWITCH_TIMER_TASK_GROUP(1));
 
 	/* Sanity build-time check that RADIO Enable and Group Disable
 	 * tasks are going to be subscribed on the same PPIs.
@@ -663,8 +679,7 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 		SW_SWITCH_TIMER_EVTS_COMP(0)) =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0));
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(0) =
-			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(0,
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0));
 
 	/* Wire SW SWITCH TIMER event <compare index-1> to
@@ -674,9 +689,8 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 		SW_SWITCH_TIMER_EVTS_COMP(1)) =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1));
-	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(1) =
-			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
-				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1));
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(1,
+			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1));
 }
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
