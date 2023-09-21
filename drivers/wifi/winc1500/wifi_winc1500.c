@@ -966,8 +966,12 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 #endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 }
 
-static void winc1500_thread(void)
+static void winc1500_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (1) {
 		while (m2m_wifi_handle_events(NULL) != 0) {
 		}
@@ -1168,7 +1172,7 @@ static int winc1500_init(const struct device *dev)
 	/* monitoring thread for winc wifi callbacks */
 	k_thread_create(&winc1500_thread_data, winc1500_stack,
 			CONFIG_WIFI_WINC1500_THREAD_STACK_SIZE,
-			(k_thread_entry_t)winc1500_thread, NULL, NULL, NULL,
+			winc1500_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_WINC1500_THREAD_PRIO),
 			0, K_NO_WAIT);
 	k_thread_name_set(&winc1500_thread_data, "WINC1500");

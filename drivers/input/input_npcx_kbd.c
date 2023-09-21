@@ -367,8 +367,9 @@ static void kbd_matrix_poll(const struct device *dev)
 	}
 }
 
-static void kbd_matrix_polling_thread(const struct device *dev, void *dummy2, void *dummy3)
+static void kbd_matrix_polling_thread(void *dummy1, void *dummy2, void *dummy3)
 {
+	const struct device *dev = dummy1;
 	struct input_npcx_kbd_data *const data = dev->data;
 
 	ARG_UNUSED(dummy2);
@@ -475,7 +476,7 @@ static int input_npcx_kbd_init(const struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_INPUT_NPCX_KBD_THREAD_STACK_SIZE,
-			(k_thread_entry_t)kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
+			kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(4), 0, K_NO_WAIT);
 
 	k_thread_name_set(&data->thread, "npcx-kbd");

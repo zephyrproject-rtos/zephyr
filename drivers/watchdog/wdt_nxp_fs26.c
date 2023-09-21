@@ -580,8 +580,12 @@ static int wdt_nxp_fs26_disable(const struct device *dev)
 	return 0;
 }
 
-static void wdt_nxp_fs26_int_thread(const struct device *dev)
+static void wdt_nxp_fs26_int_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	const struct wdt_nxp_fs26_config *config = dev->config;
 	struct wdt_nxp_fs26_data *data = dev->data;
 	struct fs26_spi_rx_frame rx_frame;
@@ -661,7 +665,7 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 
 	k_thread_create(&data->int_thread, data->int_thread_stack,
 			CONFIG_WDT_NXP_FS26_INT_THREAD_STACK_SIZE,
-			(k_thread_entry_t)wdt_nxp_fs26_int_thread,
+			wdt_nxp_fs26_int_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WDT_NXP_FS26_INT_THREAD_PRIO),
 			0, K_NO_WAIT);
