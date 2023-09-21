@@ -70,6 +70,16 @@ C Library
     compiler will now warn about declarations of `main` which don't conform to
     the Zephyr required type -- ``int main(void)``.
 
+  * Picolibc has four different printf/scanf variants supported in Zephyr,
+    'double', 'long long', 'integer', and 'minimal. 'double' offers a
+    complete printf implementation with exact floating point in decimal and
+    hexidecimal formats, full integer support including long long, C99
+    integer size specifiers (j, z, t) and POSIX positional arguments. 'long
+    long' mode removes float support, 'integer' removes long long support
+    while 'minimal' mode also removes support for format modifiers and
+    positional arguments. Building the library as a module allows finer
+    control over the feature set provided at each level.
+
   * Picolibc's default floating point input/output code is larger than the
     minimal C library version (this is necessary to conform with the C
     language "round trip" requirements for these operations). If you use
