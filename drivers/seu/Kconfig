@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+# Single Event Upset(SEU) configuration options
+
+menuconfig SEU
+	bool "Single Event Upset"
+	depends on ARM_SIP_SVC_SUBSYS
+	help
+	  SEU is the change in state of a storage element inside a device or system.
+
+if SEU
+
+module = SEU
+module-str = seu
+source "subsys/logging/Kconfig.template.log_config"
+
+config SEU_INIT_PRIORITY
+	int "SEU Initialization priority"
+	default 55
+	help
+	  Set the priority for the SEU driver initialization
+
+source "drivers/seu/Kconfig.seu_intel_socfpga"
+
+endif # SEU
