@@ -105,8 +105,14 @@ class ZephyrInitLevels:
     def __init__(self, file_path):
         self.file_path = file_path
         self._elf = ELFFile(open(file_path, "rb"))
+
+        self.initlevels = {}
+        for level in _DEVICE_INIT_LEVELS:
+            self.initlevels[level] = []
+
         self._load_objects()
         self._load_level_addr()
+        self._process_devices()
         self._process_initlevels()
 
     def _load_objects(self):
@@ -124,27 +130,37 @@ class ZephyrInitLevels:
                     self._objects[sym.entry.st_value] = (
                             sym.name, sym.entry.st_size, sym.entry.st_shndx)
 
-    def _load_level_addr(self):
+    def _find_level_addr(self, prefix, levels):
         """Find the address associated with known init levels."""
-        self._init_level_addr = {}
+        addrs = {}
+        end = None
 
         for section in self._elf.iter_sections():
             if not isinstance(section, SymbolTableSection):
                 continue
 
             for sym in section.iter_symbols():
-                for level in _DEVICE_INIT_LEVELS:
-                    name = f"__init_{level}_start"
+                for level in levels:
+                    name = f"{prefix}_{level}_start"
                     if sym.name == name:
-                        self._init_level_addr[level] = sym.entry.st_value
-                    elif sym.name == "__init_end":
-                        self._init_level_end = sym.entry.st_value
+                        addrs[level] = sym.entry.st_value
+                    elif sym.name == f"{prefix}_end":
+                        end = sym.entry.st_value
 
-        if len(self._init_level_addr) != len(_DEVICE_INIT_LEVELS):
-            raise ValueError(f"Missing init symbols, found: {self._init_level_addr}")
+        if len(addrs) != len(levels):
+            raise ValueError(f"Missing level symbols, found: {addrs}")
 
-        if not self._init_level_end:
-            raise ValueError(f"Missing init section end symbol")
+        if not end:
+            raise ValueError(f"Missing level section end symbol")
+
+        return addrs, end
+
+    def _load_level_addr(self):
+        """Load the address level for both init and device sections."""
+        self._init_level_addr, self._init_level_end = self._find_level_addr(
+                "__init", _DEVICE_INIT_LEVELS)
+        self._device_level_addr, self._device_level_end = self._find_level_addr(
+                "_device_list", _DEVICE_INIT_LEVELS)
 
     def _device_ord_from_name(self, sym_name):
         """Find a device ordinal from a symbol name."""
@@ -185,19 +201,16 @@ class ZephyrInitLevels:
 
         return int.from_bytes(data[start:stop], byteorder="little")
 
-    def _process_initlevels(self):
-        """Process the init level and find the init functions and devices."""
+    def _process_devices(self):
+        """Process the init level and find the devices."""
         self.devices = {}
-        self.initlevels = {}
 
         for i, level in enumerate(_DEVICE_INIT_LEVELS):
-            start = self._init_level_addr[level]
+            start = self._device_level_addr[level]
             if i + 1 == len(_DEVICE_INIT_LEVELS):
-                stop = self._init_level_end
+                stop = self._device_level_end
             else:
-                stop = self._init_level_addr[_DEVICE_INIT_LEVELS[i + 1]]
-
-            self.initlevels[level] = []
+                stop = self._device_level_addr[_DEVICE_INIT_LEVELS[i + 1]]
 
             priority = 0
             addr = start
@@ -206,18 +219,38 @@ class ZephyrInitLevels:
                     raise ValueError(f"no symbol at addr {addr:08x}")
                 obj, size, shidx = self._objects[addr]
 
-                arg0_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
-                arg1_name = self._object_name(self._initlevel_pointer(addr, 1, shidx))
+                init_name = self._object_name(self._initlevel_pointer(addr, 5, shidx))
 
-                self.initlevels[level].append(f"{obj}: {arg0_name}({arg1_name})")
+                self.initlevels[level].append(f"DEVICE   {init_name}({obj})")
 
-                ordinal = self._device_ord_from_name(arg1_name)
+                ordinal = self._device_ord_from_name(obj)
                 if ordinal:
                     prio = Priority(level, priority)
                     self.devices[ordinal] = prio
 
                 addr += size
                 priority += 1
+
+    def _process_initlevels(self):
+        """Process the init level and find the init functions."""
+        for i, level in enumerate(_DEVICE_INIT_LEVELS):
+            start = self._init_level_addr[level]
+            if i + 1 == len(_DEVICE_INIT_LEVELS):
+                stop = self._init_level_end
+            else:
+                stop = self._init_level_addr[_DEVICE_INIT_LEVELS[i + 1]]
+
+            addr = start
+            while addr < stop:
+                if addr not in self._objects:
+                    raise ValueError(f"no symbol at addr {addr:08x}")
+                obj, size, shidx = self._objects[addr]
+
+                init_name = self._object_name(self._initlevel_pointer(addr, 0, shidx))
+
+                self.initlevels[level].append(f"SYS_INIT {init_name}()")
+
+                addr += size
 
 class Validator():
     """Validates the initialization priorities.
