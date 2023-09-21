@@ -27,6 +27,11 @@ extern "C" {
 #endif
 
 /**
+ *  @brief LC3 codec ID
+ */
+#define BT_HCI_CODING_FORMAT_LC3 0x06
+
+/**
  * @brief Codec capability type id's
  *
  * Used to build and parse codec capabilities as specified in the PAC specification.
@@ -144,6 +149,18 @@ enum bt_audio_codec_capability_type {
  */
 #define BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(...)                                                 \
 	((uint8_t)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
+
+struct BT_AUDIO_CODEC_LC3_frame_len {
+	uint16_t min;
+	uint16_t max;
+};
+
+struct bt_audio_codec_octets_per_codec_frame {
+	/** Minimum number of octets supported per codec frame */
+	uint16_t min;
+	/** Maximum number of octets supported per codec frame */
+	uint16_t max;
+};
 
 /**
  * @brief Codec configuration type IDs
