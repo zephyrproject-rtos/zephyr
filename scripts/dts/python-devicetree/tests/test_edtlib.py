@@ -471,19 +471,19 @@ def test_props():
                   'array', 'uint8-array',
                   'string', 'string-array',
                   'phandle-ref', 'phandle-refs',
-                  'path'],
+                  'path', 'foo-pattern', 'bar-pattern', 'baz-pattern'],
                  ['int',
                   'boolean', 'boolean',
                   'array', 'uint8-array',
                   'string', 'string-array',
                   'phandle', 'phandles',
-                  'path'],
+                  'path', 'string', 'string'],
                  [1,
                   True, False,
                   [1,2,3], b'\x124',
                   'foo', ['foo','bar','baz'],
                   ctrl_1, [ctrl_1,ctrl_2],
-                  ctrl_1])
+                  ctrl_1, 'foo', 'bar', 'baz'])
 
     verify_phandle_array_prop(props_node,
                               'phandle-array-foos',

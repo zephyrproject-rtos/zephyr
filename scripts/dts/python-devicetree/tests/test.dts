@@ -359,6 +359,9 @@
 		phandle-array-foos = < &{/ctrl-1} 1 &{/ctrl-2} 2 3 >;
 		foo-gpios = < &{/ctrl-1} 1 >;
 		path = &{/ctrl-1};
+		foo-pattern = "foo";
+		bar-pattern = "bar";
+		baz-pattern = "baz";
 	};
 
 	ctrl-1 {
@@ -376,6 +379,7 @@
 		compatible = "props";
 		phandle-array-foos = < &{/ctrl-0-1} 0 &{/ctrl-0-2} >;
 		phandle-array-foo-names = "a", "missing", "b";
+		foo-pattern = "foo";
 	};
 
 	ctrl-0-1 {

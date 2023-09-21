@@ -4,6 +4,8 @@ description: Device.props test
 
 compatible: "props"
 
+include: pattern-props.yaml
+
 properties:
   nonexistent-boolean:
     type: boolean
@@ -49,3 +51,6 @@ properties:
 
   path:
     type: path
+
+  foo-pattern:
+    required: true
