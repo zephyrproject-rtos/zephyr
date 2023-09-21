@@ -7,7 +7,7 @@
  /{
 	soc {
 		plic: interrupt-controller@c000000 {
-			riscv,trigger-reg-offset = < 0x00001080 >;
+			support-edge-interrupt;
 		};
 	};
 };
