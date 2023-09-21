@@ -34,7 +34,7 @@ static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fi
 ZTEST_RULE(mock_rule, mock_init_rule_before, mock_destroy_rule_after);
 
 struct bap_broadcast_source_test_suite_fixture {
-	struct bt_bap_broadcast_source_create_param *create_param;
+	struct bt_bap_broadcast_source_param *param;
 	size_t stream_cnt;
 	struct bt_bap_broadcast_source *source;
 };
@@ -59,7 +59,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	zassert_true(streams_per_subgroup > 0U);
 
 	/* Allocate memory for everything */
-	fixture->create_param = malloc(sizeof(struct bt_bap_broadcast_source_create_param));
+	fixture->param = malloc(sizeof(struct bt_bap_broadcast_source_param));
 	subgroup_param = malloc(sizeof(struct bt_bap_broadcast_source_subgroup_param) *
 				CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT);
 	zassert_not_null(subgroup_param);
@@ -74,7 +74,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	zassert_not_null(streams);
 
 	/* Memset everything to 0 */
-	memset(fixture->create_param, 0, sizeof(*fixture->create_param));
+	memset(fixture->param, 0, sizeof(*fixture->param));
 	memset(subgroup_param, 0,
 	       sizeof(struct bt_bap_broadcast_source_subgroup_param) *
 		       CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT);
@@ -102,15 +102,14 @@ static void bap_broadcast_source_test_suite_fixture_init(
 		bt_bap_stream_cb_register(stream_params[i].stream, &mock_bap_stream_ops);
 	}
 
-	fixture->create_param->params_count = CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT;
-	fixture->create_param->params = subgroup_param;
-	fixture->create_param->qos = codec_qos;
-	fixture->create_param->encryption = false;
-	memset(fixture->create_param->broadcast_code, 0,
-	       sizeof(fixture->create_param->broadcast_code));
-	fixture->create_param->packing = BT_ISO_PACKING_SEQUENTIAL;
+	fixture->param->params_count = CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT;
+	fixture->param->params = subgroup_param;
+	fixture->param->qos = codec_qos;
+	fixture->param->encryption = false;
+	memset(fixture->param->broadcast_code, 0, sizeof(fixture->param->broadcast_code));
+	fixture->param->packing = BT_ISO_PACKING_SEQUENTIAL;
 
-	fixture->stream_cnt = fixture->create_param->params_count * streams_per_subgroup;
+	fixture->stream_cnt = fixture->param->params_count * streams_per_subgroup;
 }
 
 static void *bap_broadcast_source_test_suite_setup(void)
@@ -143,12 +142,12 @@ static void bap_broadcast_source_test_suite_after(void *f)
 		fixture->source = NULL;
 	}
 
-	free(fixture->create_param->params[0].params[0].stream);
-	free(fixture->create_param->params[0].params);
-	free(fixture->create_param->params[0].codec_cfg);
-	free(fixture->create_param->params);
-	free(fixture->create_param->qos);
-	free(fixture->create_param);
+	free(fixture->param->params[0].params[0].stream);
+	free(fixture->param->params[0].params);
+	free(fixture->param->params[0].codec_cfg);
+	free(fixture->param->params);
+	free(fixture->param->qos);
+	free(fixture->param);
 }
 
 static void bap_broadcast_source_test_suite_teardown(void *f)
@@ -162,7 +161,7 @@ ZTEST_SUITE(bap_broadcast_source_test_suite, NULL, bap_broadcast_source_test_sui
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_delete)
 {
-	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -178,7 +177,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_delete)
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send_stop_delete)
 {
-	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	struct bt_le_ext_adv ext_adv = {0};
 	int err;
 
@@ -222,7 +221,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_source_null)
 {
-	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	struct bt_le_ext_adv ext_adv = {0};
 	int err;
 
@@ -238,7 +237,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_sourc
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_ext_adv_null)
 {
-	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -253,7 +252,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_ext_a
 
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_double_start)
 {
-	struct bt_bap_broadcast_source_create_param *create_param = fixture->create_param;
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	struct bt_le_ext_adv ext_adv = {0};
 	int err;
 
