@@ -311,7 +311,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 void radio_tx_power_set(int8_t power)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	uint32_t value;
 
 	/* NOTE: TXPOWER register only accepts upto 0dBm, hence use the HAL
@@ -322,12 +322,12 @@ void radio_tx_power_set(int8_t power)
 	NRF_RADIO->TXPOWER = value;
 	hal_radio_tx_power_high_voltage_set(power);
 
-#else /* !CONFIG_SOC_SERIES_NRF53X */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 
 	/* NOTE: valid value range is passed by Kconfig define. */
 	NRF_RADIO->TXPOWER = (uint32_t)power;
 
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 void radio_tx_power_max_set(void)
@@ -345,25 +345,25 @@ int8_t radio_tx_power_min_get(void)
 
 int8_t radio_tx_power_max_get(void)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	return RADIO_TXPOWER_TXPOWER_Pos3dBm;
 
-#else /* !CONFIG_SOC_SERIES_NRF53X */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 	return (int8_t)hal_radio_tx_power_max_get();
 
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 int8_t radio_tx_power_floor(int8_t power)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* NOTE: TXPOWER register only accepts upto 0dBm, +3dBm permitted by
 	 * use of high voltage being set for radio when TXPOWER register is set.
 	 */
 	if (power >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
 	}
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 
 	return (int8_t)hal_radio_tx_power_floor(power);
 }
@@ -413,7 +413,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	bits_s1 = RADIO_PKT_CONF_LENGTH_8BIT - bits_len;
 
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
-	defined(CONFIG_SOC_SERIES_NRF53X)
+	defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	extra = 0U;
 
 	phy = RADIO_PKT_CONF_PHY_GET(flags);
@@ -510,7 +510,7 @@ uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 void radio_rx_enable(void)
 {
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -523,7 +523,7 @@ void radio_rx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
@@ -532,7 +532,7 @@ void radio_rx_enable(void)
 void radio_tx_enable(void)
 {
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -545,7 +545,7 @@ void radio_tx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
@@ -891,13 +891,13 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 *       time-stamp.
 	 */
 	hal_radio_end_time_capture_ppi_config();
-#if !defined(CONFIG_SOC_SERIES_NRF53X)
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* The function is not called for nRF5340 single timer configuration because
 	 * HAL_SW_SWITCH_TIMER_CLEAR_PPI is equal to HAL_RADIO_END_TIME_CAPTURE_PPI,
 	 * so channel is already enabled.
 	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
@@ -1186,38 +1186,38 @@ void radio_tmr_rx_status_reset(void)
 
 void radio_tmr_tx_enable(void)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
-#else /* !CONFIG_SOC_SERIES_NRF53X */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(1U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 void radio_tmr_rx_enable(void)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
-#else /* !CONFIG_SOC_SERIES_NRF53X */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 void radio_tmr_tx_disable(void)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
-#else /* !CONFIG_SOC_SERIES_NRF53X */
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 void radio_tmr_rx_disable(void)
 {
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
-#else /* !CONFIG_SOC_SERIES_NRF53X */
-#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF53X */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X */
 }
 
 void radio_tmr_tifs_set(uint32_t tifs)
@@ -1304,7 +1304,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	last_pdu_end_us = 0U;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -1317,7 +1317,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder_us;
@@ -1331,7 +1331,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	last_pdu_end_us = 0U;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#if defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -1344,7 +1344,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	/* start_us could be the current count in the timer */
@@ -1464,12 +1464,12 @@ void radio_tmr_end_capture(void)
 	 *       hal_sw_switch_timer_clear_ppi_config() and sw_switch(). There is no need to
 	 *       configure the channel again in this function.
 	 */
-#if !defined(CONFIG_SOC_SERIES_NRF53X) ||                                                          \
-	(defined(CONFIG_SOC_SERIES_NRF53X) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF53X) ||                                                      \
+	(defined(CONFIG_SOC_COMPATIBLE_NRF53X) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_SERIES_NRF53X ||
-	* (CONFIG_SOC_SERIES_NRF53X && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF53X ||
+	* (CONFIG_SOC_COMPATIBLE_NRF53X && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	*/
 }
 
@@ -1776,7 +1776,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
 	mode = (CCM_MODE_MODE_Encryption << CCM_MODE_MODE_Pos) &
 	       CCM_MODE_MODE_Msk;
-#if defined(CONFIG_SOC_COMPATIBLE_NRF52X) || defined(CONFIG_SOC_SERIES_NRF53X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52X) || defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* Enable CCM support for 8-bit length field PDUs. */
 	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
 		CCM_MODE_LENGTH_Msk;
