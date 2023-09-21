@@ -708,8 +708,12 @@ static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
 	return 0;
 }
 
-static void eth_enc28j60_rx_thread(const struct device *dev)
+static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint8_t int_stat;
@@ -850,7 +854,7 @@ static int eth_enc28j60_init(const struct device *dev)
 	/* Start interruption-poll thread */
 	k_thread_create(&context->thread, context->thread_stack,
 			CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)eth_enc28j60_rx_thread,
+			eth_enc28j60_rx_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
 			0, K_NO_WAIT);

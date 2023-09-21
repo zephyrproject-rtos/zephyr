@@ -275,8 +275,12 @@ static void w5500_rx(const struct device *dev)
 	w5500_command(dev, S0_CR_RECV);
 }
 
-static void w5500_thread(const struct device *dev)
+static void w5500_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	uint8_t ir;
 	struct w5500_runtime *ctx = dev->data;
 	const struct w5500_config *config = dev->config;
@@ -557,7 +561,7 @@ static int w5500_init(const struct device *dev)
 
 	k_thread_create(&ctx->thread, ctx->thread_stack,
 			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)w5500_thread,
+			w5500_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
