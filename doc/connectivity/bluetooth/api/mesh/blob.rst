@@ -3,7 +3,7 @@
 BLOB Transfer models
 ####################
 
-The Binary Large Object (BLOB) Transfer models provide functionality for sending large binary objects from a single source to many Target nodes over the Bluetooth mesh network. It is the underlying transport method for the :ref:`bluetooth_mesh_dfu`, but may be used for other object transfer purposes.
+The Binary Large Object (BLOB) Transfer models implement the Bluetooth Mesh Binary Large Object Transfer Model specification version 1.0 and provide functionality for sending large binary objects from a single source to many Target nodes over the Bluetooth mesh network. It is the underlying transport method for the :ref:`bluetooth_mesh_dfu`, but may be used for other object transfer purposes. The implementation is in experimental state.
 
 The BLOB Transfer models support transfers of continuous binary objects of up to 4 GB (2 \ :sup:`32` bytes). The BLOB transfer protocol has built-in recovery procedures for packet losses, and sets up checkpoints to ensure that all targets have received all the data before moving on. Data transfer order is not guaranteed.
 
