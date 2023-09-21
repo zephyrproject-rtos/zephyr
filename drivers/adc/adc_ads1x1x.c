@@ -537,8 +537,12 @@ static int ads1x1x_read(const struct device *dev, const struct adc_sequence *seq
 	return ads1x1x_adc_read_async(dev, sequence, NULL);
 }
 
-static void ads1x1x_acquisition_thread(const struct device *dev)
+static void ads1x1x_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct ads1x1x_data *data = dev->data;
 	int rc;
 
@@ -572,7 +576,7 @@ static int ads1x1x_init(const struct device *dev)
 
 	k_tid_t tid =
 		k_thread_create(&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
-				(k_thread_entry_t)ads1x1x_acquisition_thread, (void *)dev, NULL,
+				ads1x1x_acquisition_thread, (void *)dev, NULL,
 				NULL, CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads1x1x");
 
