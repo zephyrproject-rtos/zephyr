@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - v*-branch
+      - collab-*
   pull_request_target:
     branches:
       - main
       - v*-branch
+      - collab-*
   schedule:
     # Run at 03:00 UTC on every Sunday
     - cron: '0 3 * * 0'
