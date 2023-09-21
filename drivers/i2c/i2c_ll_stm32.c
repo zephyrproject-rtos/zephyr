@@ -146,11 +146,6 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		return ret;
 	}
 
-	ret = pm_device_runtime_get(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Send out messages */
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
