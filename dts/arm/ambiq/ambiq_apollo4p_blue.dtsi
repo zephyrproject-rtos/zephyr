@@ -1,0 +1,122 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+
+/ {
+	clocks {
+		uartclk: apb-pclk {
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			#clock-cells = <0>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	/* MRAM region */
+	flash0: flash@18000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00018000 0x1e8000>;
+	};
+
+	/* TCM */
+	tcm: tcm@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 0x10000>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	/* SRAM */
+	sram0: memory@10010000 {
+		compatible = "mmio-sram";
+		reg = <0x10010000 0x2B0000>;
+	};
+
+	soc {
+		pwrcfg: pwrcfg@40021000 {
+			compatible = "ambiq,pwrctrl";
+			reg = <0x40021000 0x400>;
+			#pwrcfg-cells = <2>;
+		};
+
+		stimer0: stimer@40008800 {
+			compatible = "ambiq,stimer";
+			reg = <0x40008800 0x80>;
+			interrupts = <32 0>;
+			status = "okay";
+		};
+
+		counter0: counter@40008000 {
+			compatible = "ambiq,counter";
+			reg = <0x40008000 0x80>;
+			interrupts = <67 0>;
+			status = "disabled";
+		};
+
+		uart0: uart@4001c000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4001c000 0x1000>;
+			interrupts = <15 0>;
+			interrupt-names = "UART0";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x200>;
+		};
+		uart1: uart@4001d000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4001d000 0x1000>;
+			interrupts = <16 0>;
+			interrupt-names = "UART1";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x400>;
+		};
+
+		uart2: uart@4001e000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4001e000 0x1000>;
+			interrupts = <17 0>;
+			interrupt-names = "UART2";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x800>;
+		};
+
+		uart3: uart@4001f000 {
+			compatible = "ambiq,uart", "arm,pl011";
+			reg = <0x4001f000 0x1000>;
+			interrupts = <18 0>;
+			interrupt-names = "UART3";
+			status = "disabled";
+			clocks = <&uartclk>;
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x1000>;
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo4-pinctrl";
+			reg = <0x40010000 0x800>;
+		};
+
+		wdt0: watchdog@40024000 {
+			compatible = "ambiq,watchdog";
+			reg = <0x40024000 0x400>;
+			interrupts = <1 0>;
+			clock-frequency = <16>;
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
