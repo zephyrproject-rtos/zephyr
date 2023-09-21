@@ -6,3 +6,6 @@
 config BOARD
 	default "wio_terminal"
 	depends on BOARD_WIO_TERMINAL
+
+config LV_COLOR_16_SWAP
+	default y if LVGL
