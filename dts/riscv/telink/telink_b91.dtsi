@@ -132,10 +132,7 @@
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			interrupt-parent = <&cpu0>;
-			reg = < 0xe4000000 0x00001000
-					0xe4002000 0x00000800
-					0xe4200000 0x00010000 >;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0xe4000000 0x00210000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <63>;
 		};

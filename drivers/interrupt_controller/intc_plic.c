@@ -23,6 +23,13 @@
 
 #define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
 /*
+ * These registers' offset are defined in the RISCV PLIC specs, see:
+ * https://github.com/riscv/riscv-plic-spec
+ */
+#define PLIC_REG_PRIO_OFFSET 0x0
+#define PLIC_REG_IRQ_EN_OFFSET 0x2000
+#define PLIC_REG_REGS_OFFSET 0x200000
+/*
  * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
  * in Linux's SiFive PLIC driver
@@ -30,9 +37,9 @@
 #define PLIC_REG_TRIG_TYPE_OFFSET 0x1080
 
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
-#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME_U64(0, prio)
-#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME_U64(0, irq_en)
-#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME_U64(0, reg)
+#define PLIC_PRIO	(PLIC_BASE_ADDR(0) + PLIC_REG_PRIO_OFFSET)
+#define PLIC_IRQ_EN	(PLIC_BASE_ADDR(0) + PLIC_REG_IRQ_EN_OFFSET)
+#define PLIC_REG	(PLIC_BASE_ADDR(0) + PLIC_REG_REGS_OFFSET)
 
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)

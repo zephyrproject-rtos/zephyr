@@ -171,10 +171,7 @@
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <	0xe4000000 0x00001000
-				0xe4002000 0x00000800
-				0xe4200000 0x00010000 >;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0xe4000000 0x04000000>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&CPU0_intc 11 &CPU1_intc 11
