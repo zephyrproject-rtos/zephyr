@@ -686,8 +686,8 @@ struct _static_thread_data {
 	void *init_p3;
 	int init_prio;
 	uint32_t init_options;
-	int32_t init_delay;
 	const char *init_name;
+	k_timeout_t init_delay;
 };
 
 #define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
@@ -703,7 +703,7 @@ struct _static_thread_data {
 	.init_p3 = (void *)p3,                                   \
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
-	.init_delay = (delay),                                   \
+	.init_delay = SYS_TIMEOUT_MS(delay),			 \
 	.init_name = STRINGIFY(tname),                           \
 	}
 
