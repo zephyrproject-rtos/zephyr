@@ -119,9 +119,6 @@ struct fuel_gauge_property {
 	/** Battery fuel gauge property to get */
 	fuel_gauge_prop_t property_type;
 
-	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
-	int status;
-
 	/** Property field for getting */
 	union {
 		/* Fields have the format: */
@@ -188,9 +185,6 @@ struct fuel_gauge_property {
 struct fuel_gauge_buffer_property {
 	/** Battery fuel gauge property to get */
 	fuel_gauge_prop_t property_type;
-
-	/** Negative error status set by callee e.g. -ENOTSUP for an unsupported property */
-	int status;
 };
 
 /**
@@ -303,26 +297,24 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
  * maintains the same order of properties as it was given.
  * @param len number of properties in props array
  *
- * @return return=0 if successful, return < 0 if getting all properties failed, return > 0 if some
- * properties failed where return=number of failing properties.
+ * @return 0 if successful, negative errno code of first failing property
  */
 __syscall int fuel_gauge_get_props(const struct device *dev, struct fuel_gauge_property *props,
 				   size_t len);
 static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
 					      struct fuel_gauge_property *props, size_t len)
 {
-	int err_count = 0;
 	const struct fuel_gauge_driver_api *api = dev->api;
 
 	for (int i = 0; i < len; i++) {
 		int ret = api->get_property(dev, props + i);
 
-		err_count += ret ? 1 : 0;
+		if (ret) {
+			return ret;
+		}
 	}
 
-	err_count = (err_count == len) ? -1 : err_count;
-
-	return err_count;
+	return 0;
 }
 
 /**
@@ -333,7 +325,7 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
  * field is set by the caller to determine what property is written to the fuel gauge device from
  * the fuel_gauge_property struct's value field.
  *
- * @return 0 if successful, negative errno code if failure.
+ * @return 0 if successful, negative errno code of first failing property
  */
 __syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *prop);
 
@@ -358,8 +350,7 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
  * the fuel_gauge_property struct's value field.
  * @param props_len number of properties in props array
  *
- * @return return=0 if successful, return < 0 if setting all properties failed, return > 0 if some
- * properties failed where return=number of failing properties.
+ * @return return=0 if successful. Otherwise, return array index of failing property.
  */
 __syscall int fuel_gauge_set_props(const struct device *dev, struct fuel_gauge_property *props,
 				   size_t props_len);
@@ -367,17 +358,15 @@ __syscall int fuel_gauge_set_props(const struct device *dev, struct fuel_gauge_p
 static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
 					      struct fuel_gauge_property *props, size_t props_len)
 {
-	int err_count = 0;
-
 	for (int i = 0; i < props_len; i++) {
 		int ret = fuel_gauge_set_prop(dev, props + i);
 
-		err_count += ret ? 1 : 0;
+		if (ret) {
+			return ret;
+		}
 	}
 
-	err_count = (err_count == props_len) ? -1 : err_count;
-
-	return err_count;
+	return 0;
 }
 
 /**
