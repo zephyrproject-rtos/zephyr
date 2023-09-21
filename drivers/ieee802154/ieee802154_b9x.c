@@ -8,6 +8,7 @@
 
 #include "rf.h"
 #include "stimer.h"
+#include "b9x_rf_power.h"
 
 #define LOG_MODULE_NAME ieee802154_b9x
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
