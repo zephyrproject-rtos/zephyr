@@ -89,7 +89,7 @@ class testZephyrInitLevels(unittest.TestCase):
         self.assertDictEqual(obj._objects, {0xaa: ("a", 4, 1), 0xbb: ("b", 8, 2)})
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
-    def test_load_level_addr(self, mock_zilinit):
+    def test_find_level_addr(self, mock_zilinit):
         mock_elf = mock.Mock()
 
         sts = mock.Mock(spec=SymbolTableSection)
@@ -97,40 +97,40 @@ class testZephyrInitLevels(unittest.TestCase):
         mock_elf.iter_sections.return_value = [sts, rel]
 
         s0 = mock.Mock()
-        s0.name = "__init_EARLY_start"
+        s0.name = "prefix_EARLY_start"
         s0.entry.st_value = 0x00
 
         s1 = mock.Mock()
-        s1.name = "__init_PRE_KERNEL_1_start"
+        s1.name = "prefix_PRE_KERNEL_1_start"
         s1.entry.st_value = 0x11
 
         s2 = mock.Mock()
-        s2.name = "__init_PRE_KERNEL_2_start"
+        s2.name = "prefix_PRE_KERNEL_2_start"
         s2.entry.st_value = 0x22
 
         s3 = mock.Mock()
-        s3.name = "__init_POST_KERNEL_start"
+        s3.name = "prefix_POST_KERNEL_start"
         s3.entry.st_value = 0x33
 
         s4 = mock.Mock()
-        s4.name = "__init_APPLICATION_start"
+        s4.name = "prefix_APPLICATION_start"
         s4.entry.st_value = 0x44
 
         s5 = mock.Mock()
-        s5.name = "__init_SMP_start"
+        s5.name = "prefix_SMP_start"
         s5.entry.st_value = 0x55
 
         s6 = mock.Mock()
-        s6.name = "__init_end"
+        s6.name = "prefix_end"
         s6.entry.st_value = 0x66
 
         sts.iter_symbols.return_value = [s0, s1, s2, s3, s4, s5, s6]
 
         obj = check_init_priorities.ZephyrInitLevels("")
         obj._elf = mock_elf
-        obj._load_level_addr()
+        addrs, end = obj._find_level_addr("prefix", check_init_priorities._DEVICE_INIT_LEVELS)
 
-        self.assertDictEqual(obj._init_level_addr, {
+        self.assertDictEqual(addrs, {
             "EARLY": 0x00,
             "PRE_KERNEL_1": 0x11,
             "PRE_KERNEL_2": 0x22,
@@ -138,7 +138,7 @@ class testZephyrInitLevels(unittest.TestCase):
             "APPLICATION": 0x44,
             "SMP": 0x55,
             })
-        self.assertEqual(obj._init_level_end, 0x66)
+        self.assertEqual(end, 0x66)
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_device_ord_from_name(self, mock_zilinit):
@@ -194,8 +194,56 @@ class testZephyrInitLevels(unittest.TestCase):
     @mock.patch("check_init_priorities.ZephyrInitLevels._object_name")
     @mock.patch("check_init_priorities.ZephyrInitLevels._initlevel_pointer")
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_process_devices(self, mock_zilinit, mock_ip, mock_on):
+        obj = check_init_priorities.ZephyrInitLevels("")
+        obj.initlevels = {
+                "PRE_KERNEL_2": [],
+                "POST_KERNEL": [],
+                }
+        obj._device_level_addr = {
+            "EARLY": 0x00,
+            "PRE_KERNEL_1": 0x00,
+            "PRE_KERNEL_2": 0x00,
+            "POST_KERNEL": 0x08,
+            "APPLICATION": 0x0c,
+            "SMP": 0x0c,
+            }
+        obj._device_level_end = 0x0c
+        obj._objects = {
+                0x00: ("__device_dts_ord_11", 4, 0),
+                0x04: ("__device_dts_ord_22", 4, 0),
+                0x08: ("__device_dts_ord_33", 4, 0),
+                }
+
+        mock_ip.side_effect = lambda *args: args
+        mock_on.side_effect = lambda *args: f"dev_init_fn_{args[0][0]}"
+
+        obj._process_devices()
+
+        self.assertDictEqual(obj.initlevels, {
+            "PRE_KERNEL_2": [
+                "DEVICE   dev_init_fn_0(__device_dts_ord_11)",
+                "DEVICE   dev_init_fn_4(__device_dts_ord_22)",
+                ],
+            "POST_KERNEL": [
+                "DEVICE   dev_init_fn_8(__device_dts_ord_33)",
+                ],
+            })
+        self.assertDictEqual(obj.devices, {
+            11: check_init_priorities.Priority("PRE_KERNEL_2", 0),
+            22: check_init_priorities.Priority("PRE_KERNEL_2", 1),
+            33: check_init_priorities.Priority("POST_KERNEL", 0),
+            })
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels._object_name")
+    @mock.patch("check_init_priorities.ZephyrInitLevels._initlevel_pointer")
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels(self, mock_zilinit, mock_ip, mock_on):
         obj = check_init_priorities.ZephyrInitLevels("")
+        obj.initlevels = {
+                "PRE_KERNEL_2": [],
+                "POST_KERNEL": [],
+                }
         obj._init_level_addr = {
             "EARLY": 0x00,
             "PRE_KERNEL_1": 0x00,
@@ -212,32 +260,18 @@ class testZephyrInitLevels(unittest.TestCase):
                 }
 
         mock_ip.side_effect = lambda *args: args
-
-        def mock_obj_name(*args):
-            if args[0] == (0, 0, 0):
-                return "i0"
-            elif args[0] == (0, 1, 0):
-                return "__device_dts_ord_11"
-            elif args[0] == (4, 0, 0):
-                return "i1"
-            elif args[0] == (4, 1, 0):
-                return "__device_dts_ord_22"
-            return f"name_{args[0][0]}_{args[0][1]}"
-        mock_on.side_effect = mock_obj_name
+        mock_on.side_effect = lambda *args: f"init_fn_{args[0][0]}"
 
         obj._process_initlevels()
 
         self.assertDictEqual(obj.initlevels, {
-            "EARLY": [],
-            "PRE_KERNEL_1": [],
-            "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
-            "POST_KERNEL": ["c: name_8_0(name_8_1)"],
-            "APPLICATION": [],
-            "SMP": [],
-            })
-        self.assertDictEqual(obj.devices, {
-            11: check_init_priorities.Priority("PRE_KERNEL_2", 0),
-            22: check_init_priorities.Priority("PRE_KERNEL_2", 1),
+            "PRE_KERNEL_2": [
+                "SYS_INIT init_fn_0()",
+                "SYS_INIT init_fn_4()",
+                ],
+            "POST_KERNEL": [
+                "SYS_INIT init_fn_8()",
+                ],
             })
 
 class testValidator(unittest.TestCase):
