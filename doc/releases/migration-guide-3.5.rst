@@ -152,6 +152,24 @@ Required changes
   adding a new ``server`` parameter pointing to the :c:struct:`bt_l2cap_server`
   structure instance the callback relates to. :github:`60536`
 
+* The RAM disk driver has been changed to support multiple instances and instantiation
+  using devicetree. As a result, Kconfig option :kconfig:option:`CONFIG_DISK_RAM_VOLUME_SIZE`
+  and Kconfig option :kconfig:option:`CONFIG_DISK_RAM_VOLUME_NAME` are removed,
+  and the application using the RAM disk must instantiate it using devicetree,
+  as in the following example:
+
+  .. code-block:: devicetree
+
+    / {
+        ramdisk0 {
+            compatible = "zephyr,ram-disk";
+            disk-name = "RAM";
+            sector-size = <512>;
+            sector-count = <192>;
+        };
+    };
+
+
 Recommended Changes
 *******************
 
