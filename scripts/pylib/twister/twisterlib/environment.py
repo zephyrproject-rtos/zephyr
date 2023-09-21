@@ -196,6 +196,11 @@ Artificially long but functional example:
         help="""Only run device tests with current artifacts, do not build
              the code""")
 
+    parser.add_argument("--timeout-multiplier", type=float, default=1,
+        help="""Globally adjust tests timeouts by specified multiplier. The resulting test
+        timeout would be multiplication of test timeout value, board-level timeout multiplier
+        and global timeout multiplier (this parameter)""")
+
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified testsuite scenario. These are named by "
