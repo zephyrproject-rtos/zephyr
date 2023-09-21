@@ -307,12 +307,13 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 		/* reuse message for next block. Copy token from the new query to allow
 		 * CoAP clients to use new token for every query of ongoing transaction
 		 */
-		tkl = coap_header_get_token(msg->in.in_cpkt, token);
 		lwm2m_reset_message(msg, false);
 		if (msg->type == COAP_TYPE_ACK) {
 			msg->mid = coap_header_get_id(msg->in.in_cpkt);
+			tkl = coap_header_get_token(msg->in.in_cpkt, token);
 		} else {
 			msg->mid = coap_next_id();
+			tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
 		}
 		msg->token = token;
 		msg->tkl = tkl;
