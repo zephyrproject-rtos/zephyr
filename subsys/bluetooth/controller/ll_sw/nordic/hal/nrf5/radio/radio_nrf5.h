@@ -17,6 +17,8 @@
 /* SoC specific defines */
 #if defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"
+#elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
+#include "radio_sim_nrf5340.h"
 #elif defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52805)
