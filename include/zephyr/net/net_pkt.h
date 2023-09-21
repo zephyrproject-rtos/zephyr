@@ -151,16 +151,7 @@ struct net_pkt {
 #endif
 
 	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
-	uint8_t sent_or_eof : 1; /* For outgoing packet: is this sent or not
-				  * For incoming packet of a socket: last
-				  * packet before EOF
-				  * Used only if defined(CONFIG_NET_TCP)
-				  */
-	uint8_t pkt_queued : 1;	 /* For outgoing packet: is this packet
-				  * queued to be sent but has not reached
-				  * the driver yet.
-				  * Used only if defined(CONFIG_NET_TCP)
-				  */
+	uint8_t eof : 1;	 /* Last packet before EOF */
 	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
 				  * a L2 PTP packet.
 				  * Used only if defined (CONFIG_NET_L2_PTP)
@@ -455,26 +446,6 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 #endif
 }
 
-static inline uint8_t net_pkt_sent(struct net_pkt *pkt)
-{
-	return pkt->sent_or_eof;
-}
-
-static inline void net_pkt_set_sent(struct net_pkt *pkt, bool sent)
-{
-	pkt->sent_or_eof = sent;
-}
-
-static inline uint8_t net_pkt_queued(struct net_pkt *pkt)
-{
-	return pkt->pkt_queued;
-}
-
-static inline void net_pkt_set_queued(struct net_pkt *pkt, bool send)
-{
-	pkt->pkt_queued = send;
-}
-
 static inline uint8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_TCP)
@@ -497,12 +468,12 @@ static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
 #if defined(CONFIG_NET_SOCKETS)
 static inline uint8_t net_pkt_eof(struct net_pkt *pkt)
 {
-	return pkt->sent_or_eof;
+	return pkt->eof;
 }
 
 static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 {
-	pkt->sent_or_eof = eof;
+	pkt->eof = eof;
 }
 #endif
 
