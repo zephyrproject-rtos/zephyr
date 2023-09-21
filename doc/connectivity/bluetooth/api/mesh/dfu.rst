@@ -3,7 +3,7 @@
 Device Firmware Update (DFU)
 ############################
 
-Bluetooth mesh supports the distribution of firmware images across a mesh network. The Bluetooth mesh DFU subsystem implements the Firmware update section of the Bluetooth Mesh Model Specification v1.1.
+Bluetooth mesh supports the distribution of firmware images across a mesh network. The Bluetooth mesh DFU subsystem implements the Bluetooth Mesh Device Firmware Update Model specification version 1.0. The implementation is in experimental state.
 
 Bluetooth mesh DFU implements a distribution mechanism for firmware images, and does not put any restrictions on the size, format or usage of the images. The primary design goal of the subsystem is to provide the qualifiable parts of the Bluetooth mesh DFU specification, and leave the usage, firmware validation and deployment to the application.
 
