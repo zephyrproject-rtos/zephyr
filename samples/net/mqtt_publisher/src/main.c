@@ -501,7 +501,7 @@ static int start_app(void)
 #if defined(CONFIG_USERSPACE)
 #define STACK_SIZE 2048
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(8)
@@ -514,7 +514,7 @@ K_THREAD_DEFINE(app_thread, STACK_SIZE,
 static K_HEAP_DEFINE(app_mem_pool, 1024 * 2);
 #endif
 
-void main(void)
+int main(void)
 {
 #if defined(CONFIG_MQTT_LIB_TLS)
 	int rc;
@@ -545,4 +545,5 @@ void main(void)
 #else
 	exit(start_app());
 #endif
+	return 0;
 }

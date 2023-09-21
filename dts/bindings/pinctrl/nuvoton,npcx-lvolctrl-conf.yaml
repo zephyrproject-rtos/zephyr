@@ -9,9 +9,9 @@ description: |
 compatible: "nuvoton,npcx-lvolctrl-conf"
 
 child-binding:
-    description: Child node to present the mapping between GPIO pad and its low-voltage support
-    properties:
-       lvols:
-          type: phandle-array
-          required: true
-          description: list of configurations map between io and low-voltage controllers
+  description: Child node to present the mapping between GPIO pad and its low-voltage support
+  properties:
+    lvols:
+      type: phandle-array
+      required: true
+      description: list of configurations map between io and low-voltage controllers

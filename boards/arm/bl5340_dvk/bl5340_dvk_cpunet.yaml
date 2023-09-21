@@ -9,7 +9,9 @@ toolchain:
 ram: 64
 flash: 256
 supported:
+  - counter
   - gpio
   - i2c
   - spi
+  - uart
   - watchdog

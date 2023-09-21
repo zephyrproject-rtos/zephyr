@@ -26,8 +26,6 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #define SETTINGS_FCB_VERS		1
 
 int settings_backend_init(void);
-void settings_mount_fcb_backend(struct settings_fcb *cf);
-static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
@@ -160,13 +158,13 @@ static int settings_fcb_load_priv(struct settings_store *cs,
 	while ((rc = fcb_getnext(&cf->cf_fcb, &entry_ctx.loc)) == 0) {
 		char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 		size_t name_len;
-		int rc;
+		int rc2;
 		bool pass_entry = true;
 
-		rc = settings_line_name_read(name, sizeof(name), &name_len,
+		rc2 = settings_line_name_read(name, sizeof(name), &name_len,
 					     (void *)&entry_ctx);
-		if (rc) {
-			LOG_ERR("Failed to load line name: %d", rc);
+		if (rc2) {
+			LOG_ERR("Failed to load line name: %d", rc2);
 			continue;
 		}
 		name[name_len] = '\0';
@@ -331,13 +329,11 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	int len;
 	int rc = -EINVAL;
 	int i;
-	uint8_t wbs;
 
 	if (!name) {
 		return -EINVAL;
 	}
 
-	wbs = cf->cf_fcb.f_align;
 	len = settings_line_len_calc(name, val_len);
 
 	for (i = 0; i < cf->cf_fcb.f_sector_cnt; i++) {
@@ -388,7 +384,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
-	return settings_fcb_save_priv(cs, name, (char *)value, val_len);
+	return settings_fcb_save_priv(cs, name, value, val_len);
 }
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)
@@ -415,39 +411,35 @@ int settings_backend_init(void)
 
 	rc = flash_area_get_sectors(settings_fcb_get_flash_area(), &cnt,
 				    settings_fcb_area);
-	if (rc == -ENODEV) {
+	if (rc != 0 && rc != -ENOMEM) {
 		return rc;
-	} else if (rc != 0 && rc != -ENOMEM) {
-		k_panic();
 	}
 
 	config_init_settings_fcb.cf_fcb.f_sector_cnt = cnt;
 
 	rc = settings_fcb_src(&config_init_settings_fcb);
-
 	if (rc != 0) {
 		rc = flash_area_open(settings_fcb_get_flash_area(), &fap);
-
-		if (rc == 0) {
-			rc = flash_area_erase(fap, 0, fap->fa_size);
-			flash_area_close(fap);
+		if (rc != 0) {
+			return rc;
 		}
+
+		rc = flash_area_erase(fap, 0, fap->fa_size);
+		flash_area_close(fap);
 
 		if (rc != 0) {
-			k_panic();
-		} else {
-			rc = settings_fcb_src(&config_init_settings_fcb);
+			return rc;
 		}
-	}
 
-	if (rc != 0) {
-		k_panic();
+		rc = settings_fcb_src(&config_init_settings_fcb);
+		if (rc != 0) {
+			return rc;
+		}
 	}
 
 	rc = settings_fcb_dst(&config_init_settings_fcb);
-
 	if (rc != 0) {
-		k_panic();
+		return rc;
 	}
 
 	settings_mount_fcb_backend(&config_init_settings_fcb);

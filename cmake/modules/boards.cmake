@@ -5,7 +5,9 @@
 # Validate board and setup boards target.
 #
 # This CMake module will validate the BOARD argument as well as splitting the
-# BOARD argument into <BOARD> and <BOARD_REVISION>.
+# BOARD argument into <BOARD> and <BOARD_REVISION>. When BOARD_EXTENSIONS option
+# is enabled (default) this module will also take care of finding board
+# extension directories.
 #
 # If a board implementation is not found for the specified board an error will
 # be raised and list of valid boards will be printed.
@@ -19,14 +21,16 @@
 # Outcome:
 # The following variables will be defined when this CMake module completes:
 #
-# - BOARD:          Board, without revision field.
-# - BOARD_REVISION: Board revision
-# - BOARD_DIR:      Board directory with the implementation for selected board
-# - ARCH_DIR:       Arch dir for extracted from selected board
-# - BOARD_ROOT:     BOARD_ROOT with ZEPHYR_BASE appended
+# - BOARD:                Board, without revision field.
+# - BOARD_REVISION:       Board revision
+# - BOARD_DIR:            Board directory with the implementation for selected board
+# - ARCH_DIR:             Arch dir for extracted from selected board
+# - BOARD_ROOT:           BOARD_ROOT with ZEPHYR_BASE appended
+# - BOARD_EXTENSION_DIRS: List of board extension directories (If
+#                         BOARD_EXTENSIONS is not explicitly disabled)
 #
 # The following targets will be defined when this CMake module completes:
-# - board  : when invoked a list of valid boards will be printed
+# - board: when invoked, a list of valid boards will be printed
 #
 # Required variables:
 # - BOARD: Board name, including any optional revision field, for example: `foo` or `foo@1.0.0`
@@ -39,8 +43,8 @@
 # - ZEPHYR_BOARD_ALIASES: Environment setting pointing to a CMake file
 #                         containing board aliases.
 #
-# Variables set by this module and not mentioned above are considered internal
-# use only and may be removed, renamed, or re-purposed without prior notice.
+# Variables set by this module and not mentioned above are for internal
+# use only, and may be removed, renamed, or re-purposed without prior notice.
 
 include_guard(GLOBAL)
 
@@ -164,3 +168,21 @@ if(NOT BOARD_DIR)
 endif()
 
 add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
+
+# Board extensions are enabled by default
+set(BOARD_EXTENSIONS ON CACHE BOOL "Support board extensions")
+zephyr_get(BOARD_EXTENSIONS)
+
+# Process board extensions
+if(BOARD_EXTENSIONS)
+  get_filename_component(board_dir_name ${BOARD_DIR} NAME)
+
+  foreach(root ${BOARD_ROOT})
+    set(board_extension_dir ${root}/boards/extensions/${board_dir_name})
+    if(NOT EXISTS ${board_extension_dir})
+      continue()
+    endif()
+
+    list(APPEND BOARD_EXTENSION_DIRS ${board_extension_dir})
+  endforeach()
+endif()

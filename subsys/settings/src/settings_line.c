@@ -21,15 +21,13 @@ struct settings_io_cb_s {
 	uint8_t rwbs;
 } static settings_io_cb;
 
-#define MAX_ENC_BLOCK_SIZE 4
-
 int settings_line_write(const char *name, const char *value, size_t val_len,
 			off_t w_loc, void *cb_arg)
 {
 	size_t w_size, rem, add;
 
 	bool done;
-	char w_buf[16]; /* write buff, must be aligned either to minimal */
+	char w_buf[32]; /* write buff, must be aligned either to minimal */
 			/* base64 encoding size and write-block-size */
 	int rc;
 	uint8_t wbs = settings_io_cb.rwbs;
@@ -128,7 +126,7 @@ int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 	uint16_t readout;
 	int rc;
 
-	entry_ctx->seek += entry_ctx->len; /* to begin of nex line */
+	entry_ctx->seek += entry_ctx->len; /* to begin of next line */
 
 	entry_ctx->len = 0; /* ask read handler to ignore len */
 
@@ -151,21 +149,15 @@ int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 
 int settings_line_len_calc(const char *name, size_t val_len)
 {
-	int len;
-
-	/* <evalue> */
-	len = val_len;
-	/* <name>=<enc(value)> */
-	len += strlen(name) + 1;
-
-	return len;
+	/* <name>=<value> */
+	return strlen(name) + 1 + val_len;
 }
 
 
 /**
  * Read RAW settings line entry data until a char from the storage.
  *
- * @param seek offset form the line beginning.
+ * @param seek offset from the line beginning.
  * @param[out] out buffer for name
  * @param[in] len_req size of <p>out</p> buffer
  * @param[out] len_read length of read name
@@ -182,7 +174,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 				 void *cb_arg)
 {
 	size_t rem_size, len;
-	char temp_buf[16]; /* buffer for fit read-block-size requirements */
+	char temp_buf[32]; /* buffer for fit read-block-size requirements */
 	size_t exp_size, read_size;
 	uint8_t rbs = settings_io_cb.rwbs;
 	off_t off;

@@ -36,7 +36,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2022 Zephyr Project members and individual contributors"
+copyright = "2015-2023 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -72,6 +72,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
+    "sphinxcontrib.jquery",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
@@ -83,7 +84,9 @@ extensions = [
     "zephyr.vcs_link",
     "notfound.extension",
     "sphinx_copybutton",
+    "sphinx_togglebutton",
     "zephyr.external_content",
+    "zephyr.domain",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -102,8 +105,6 @@ else:
 pygments_style = "sphinx"
 
 todo_include_todos = False
-
-numfig = True
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -137,6 +138,7 @@ html_theme_options = {
     "logo_only": True,
     "prev_next_buttons_location": None
 }
+html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
 html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
 html_favicon = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "favicon.png")
@@ -160,15 +162,9 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
-        ("3.2.0", "/3.2.0/"),
-        ("3.1.0", "/3.1.0/"),
-        ("3.0.0", "/3.0.0/"),
-        ("2.7.0", "/2.7.0/"),
-        ("2.6.0", "/2.6.0/"),
-        ("2.5.0", "/2.5.0/"),
-        ("2.4.0", "/2.4.0/"),
-        ("2.3.0", "/2.3.0/"),
-        ("1.14.1", "/1.14.1/"),
+        ("3.4.0", "/3.4.0/"),
+        ("3.3.0", "/3.3.0/"),
+        ("2.7.5 (LTS)", "/2.7.5/"),
     ),
     "display_vcs_link": True,
     "reference_links": {
@@ -230,6 +226,7 @@ breathe_default_members = ("members", )
 
 cpp_id_attributes = [
     "__syscall",
+    "__syscall_always_inline",
     "__deprecated",
     "__may_alias",
     "__used",
@@ -267,6 +264,7 @@ vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_lin
 vcs_link_prefixes = {
     "samples/.*": "",
     "boards/.*": "",
+    "snippets/.*": "",
     ".*": "doc",
 }
 vcs_link_exclude = [
@@ -288,6 +286,8 @@ external_content_contents = [
     (ZEPHYR_BASE, "boards/**/doc"),
     (ZEPHYR_BASE, "samples/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/doc"),
+    (ZEPHYR_BASE, "snippets/**/*.rst"),
+    (ZEPHYR_BASE, "snippets/**/doc"),
 ]
 external_content_keep = [
     "reference/kconfig/*",
@@ -324,6 +324,3 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
-
-    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
-    app.add_js_file("js/ga-tracker.js")

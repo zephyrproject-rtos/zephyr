@@ -7,13 +7,13 @@ description: |
 compatible: "vnd,busy-sim"
 
 properties:
-    counter:
-      type: phandle
-      required: true
-      description: |
-        Counter device used for generating intervals.
+  counter:
+    type: phandle
+    required: true
+    description: |
+      Counter device used for generating intervals.
 
-    active-gpios:
-      type: phandle-array
-      description: |
-        Debug pin is set to active state when cpu load is active.
+  active-gpios:
+    type: phandle-array
+    description: |
+      Debug pin is set to active state when cpu load is active.

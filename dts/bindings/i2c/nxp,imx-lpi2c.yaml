@@ -8,22 +8,24 @@ compatible: "nxp,imx-lpi2c"
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    bus-idle-timeout:
-      type: int
-      description: Bus idle timeout in nanoseconds
+  bus-idle-timeout:
+    type: int
+    description: Bus idle timeout in nanoseconds
 
-    scl-gpios:
-      type: phandle-array
-      description: |
-        GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery support.
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for I2C bus recovery
+      support.
 
-    sda-gpios:
-      type: phandle-array
-      description: |
-        GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery support.
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
+      support.

@@ -7,6 +7,7 @@
 
 #include <gigadevice/gd32f403/gd32f403zet6.dtsi>
 #include "gd32f403z_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "GigaDevice GD32F403Z Evaluation Kit";
@@ -45,18 +46,22 @@
 		wakeup_key: wakeup_key {
 			label = "WAKEUP_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
 		tamper_key: tamper_key {
 			label = "TAMPER_KEY";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_key1: user_key1 {
 			label = "USER_KEY1";
 			gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		user_key2: user_key2 {
 			label = "USER_KEY2";
 			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 

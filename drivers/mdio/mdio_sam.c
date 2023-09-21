@@ -132,7 +132,7 @@ static const struct mdio_driver_api mdio_sam_driver_api = {
 
 #define MDIO_SAM_CONFIG(n)						\
 static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
-	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
+	.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.protocol = DT_INST_ENUM_IDX(n, protocol),			\
 };

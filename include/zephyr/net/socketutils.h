@@ -7,11 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
 #define ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
 
-#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <zephyr/net/socket.h>
-#else
-#include <zephyr/posix/netdb.h>
-#endif
 
 /**
  * @brief Find port in addr:port string.
@@ -38,7 +34,7 @@ const char *net_addr_str_find_port(const char *addr_str);
  * @return Result of getaddrinfo() call.
  */
 int net_getaddrinfo_addr_str(const char *addr_str, const char *def_port,
-			     const struct addrinfo *hints,
-			     struct addrinfo **res);
+			     const struct zsock_addrinfo *hints,
+			     struct zsock_addrinfo **res);
 
 #endif /* ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_ */

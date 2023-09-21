@@ -38,7 +38,7 @@ static void hids_process_drdy_interrupt(const struct device *dev)
 	struct hids_data *data = dev->data;
 
 	if (data->data_ready_handler != NULL) {
-		data->data_ready_handler(dev, &data->data_ready_trigger);
+		data->data_ready_handler(dev, data->data_ready_trigger);
 	}
 
 	if (data->data_ready_handler != NULL) {
@@ -64,7 +64,7 @@ int hids_trigger_set(const struct device *dev, const struct sensor_trigger *trig
 		return 0;
 	}
 
-	data->data_ready_trigger = *trig;
+	data->data_ready_trigger = trig;
 
 	hids_setup_drdy_interrupt(dev, true);
 
@@ -120,7 +120,7 @@ int hids_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(cfg->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
 		LOG_ERR("Device %s is not ready", cfg->gpio_drdy.port->name);
 		return -ENODEV;
 	}

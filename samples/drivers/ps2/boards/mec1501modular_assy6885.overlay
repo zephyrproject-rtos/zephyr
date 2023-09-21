@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ps2_0 { /* PS2DAT0B */
+	wakerx-gpios = <MCHP_GPIO_DECODE_010 GPIO_ACTIVE_HIGH>;
+	wakeup-source;
+};
+
+&ps2_1 { /* PS2DAT1B */
+	wakerx-gpios = <MCHP_GPIO_DECODE_155 GPIO_ACTIVE_HIGH>;
+	wakeup-source;
+};
+
+/ {
+	aliases {
+		ps2-port0 = &ps2_0;
+	};
+};

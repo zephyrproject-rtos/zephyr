@@ -30,7 +30,7 @@ Description:
 
    This module is intended to be used inside the shell command handler
    by the abstraction layer "SHELL_GETOPT". For example:
-   while ((char c = shell_getopt(shell, argc, argv, "abhc:")) != -1) {
+   while ((char c = shell_getopt(sh, argc, argv, "abhc:")) != -1) {
       /* some code */
    }
    ]

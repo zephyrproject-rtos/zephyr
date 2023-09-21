@@ -1,0 +1,25 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sensing subsystem sensor common properties bindings.
+
+include: sensor-device.yaml
+
+properties:
+  sensor-type:
+    type: int
+    required: true
+    description: sensor type id (follow HID spec definition)
+
+  friendly-name:
+    required: true
+
+  minimal-interval:
+    type: int
+    required: true
+    description: sensor minimal report interval
+
+  reporters:
+    type: phandles
+    description: sensor reporters

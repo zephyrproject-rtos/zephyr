@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRFX_IPC
+	bool "MBOX NRF IPC driver"
+	depends on HAS_HW_NRF_IPC
+	select NRFX_IPC
+	help
+	  Driver for Nordic nRF messaging unit, based
+	  on nRF IPC peripheral HW.

@@ -26,7 +26,7 @@ target hardware in the early phases of development.
 
    The POSIX architecture is not related and should not be confused with the
    :ref:`POSIX OS abstraction<posix_support>`.
-   The later provides an adapatation shim that enables running applications
+   The latter provides an adaptation shim that enables running applications
    which require POSIX APIs on Zephyr.
 
 
@@ -49,13 +49,17 @@ simulation and framework, while being fully decoupled of the host.
 Host system dependencies
 ========================
 
-This port is designed to run in POSIX compatible operating systems,
-but it has only been tested on Linux.
+This port is designed and tested to run in Linux.
 
 .. note::
 
    You must have the 32-bit C library installed in your system
    (in Ubuntu 16.04 install the gcc-multilib package)
+
+.. note::
+
+   The POSIX architecture is known to **not** work on macOS due to
+   fundamental differences between macOS and other typical Unixes.
 
 .. note::
 
@@ -350,10 +354,10 @@ and this thread will check what is the next
 scheduled HW event, advance simulated time until that point, and call the
 corresponding HW model event function.
 
-Eventually one of these HW models will raise an interrupt to the simulated CPU.
-When the IRQ controller wants to wake the simulated CPU, the HW thread is
-blocked, and the simulated CPU is awaken by letting the last SW thread continue
-executing.
+Eventually one of these HW models will raise an interrupt to the
+simulated CPU. When the IRQ controller wants to wake the simulated
+CPU, the HW thread is blocked, and the simulated CPU is awakened by
+letting the last SW thread continue executing.
 
 This process of getting the CPU to sleep, letting the HW models run,
 and raising an interrupt which wake the CPU again is repeated until the end

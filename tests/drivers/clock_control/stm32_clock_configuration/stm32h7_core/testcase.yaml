@@ -35,6 +35,8 @@ tests:
       - nucleo_h743zi
   drivers.stm32_clock_configuration.h7_core.sysclksrc_pll_hse_550:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_550.overlay"
-    platform_allow: nucleo_h723zg stm32h735g_disco
+    platform_allow:
+      - nucleo_h723zg
+      - stm32h735g_disco
     integration_platforms:
       - nucleo_h723zg

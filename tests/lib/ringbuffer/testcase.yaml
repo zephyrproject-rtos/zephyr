@@ -1,6 +1,8 @@
 common:
-    tags: ring_buffer circular_buffer
-    timeout: 150
+  tags:
+    - ring_buffer
+    - circular_buffer
+  timeout: 150
 
 tests:
   libraries.ring_buffer:

@@ -270,10 +270,10 @@ ZTEST(net_buf_tests, test_net_buf_4)
 	removed = 0;
 
 	while (buf->frags) {
-		struct net_buf *frag = buf->frags;
+		struct net_buf *frag2 = buf->frags;
 
-		net_buf_frag_del(buf, frag);
-		net_buf_unref(frag);
+		net_buf_frag_del(buf, frag2);
+		net_buf_unref(frag2);
 		removed++;
 	}
 
@@ -573,7 +573,7 @@ ZTEST(net_buf_tests, test_net_buf_byte_order)
 	zassert_mem_equal(le64, net_buf_pull_mem(buf, sizeof(le64)),
 			  sizeof(le64), "Invalid 64 bits byte order");
 	zassert_mem_equal(be64, net_buf_pull_mem(buf, sizeof(be64)),
-			  sizeof(be48), "Invalid 64 bits byte order");
+			  sizeof(be64), "Invalid 64 bits byte order");
 
 	/* push/remove byte order */
 	net_buf_reset(buf);

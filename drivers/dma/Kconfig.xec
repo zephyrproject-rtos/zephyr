@@ -1,0 +1,11 @@
+# Microchip XEC DMAC configuration options
+
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCHP_XEC
+	bool "Microchip XEC series DMAC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_DMAC_ENABLED
+	help
+	  DMA driver for Microchip XEC series MCUs.

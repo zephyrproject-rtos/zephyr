@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSING
+	bool "Sensing Subsystem"
+	default y
+	depends on DT_HAS_ZEPHYR_SENSING_ENABLED
+	help
+	  Enable Sensing Subsystem.
+
+if SENSING
+
+module = SENSING
+module-str = sensing
+source "subsys/logging/Kconfig.template.log_config"
+
+config SENSING_MAX_SENSITIVITY_COUNT
+	int "maximum sensitivity count one sensor could support"
+	depends on SENSING
+	default 6
+	help
+	  This is the maximum sensitivity count one sensor could support,
+	  some sensors such as ALS sensor could define different sensitivity for each data filed,
+	  So, maximum sensitivity count is needed for sensors
+	  Typical values are 6
+
+source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
+
+endif # SENSING

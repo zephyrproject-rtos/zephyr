@@ -158,11 +158,11 @@ struct winc1500_data {
 static struct winc1500_data w1500_data;
 
 #if LOG_LEVEL > LOG_LEVEL_OFF
-
 static void stack_stats(void)
 {
 	log_stack_usage(&winc1500_thread_data);
 }
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 
 static char *socket_error_string(int8_t err)
 {
@@ -284,8 +284,6 @@ static char *socket_message_to_string(uint8_t message)
 		return "UNKNOWN.";
 	}
 }
-
-#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 
 /**
  * This function is called when the socket is to be opened.
@@ -773,8 +771,9 @@ static void winc1500_wifi_cb(uint8_t message_type, void *pvMsg)
 	default:
 		break;
 	}
-
+#if LOG_LEVEL > LOG_LEVEL_OFF
 	stack_stats();
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 }
 
 static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
@@ -962,8 +961,9 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 
 		break;
 	}
-
+#if LOG_LEVEL > LOG_LEVEL_OFF
 	stack_stats();
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 }
 
 static void winc1500_thread(void)
@@ -976,8 +976,12 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev,
+			      struct wifi_scan_params *params,
+			      scan_result_cb_t cb)
 {
+	ARG_UNUSED(params);
+
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
 	}
@@ -1099,13 +1103,22 @@ static void winc1500_iface_init(struct net_if *iface)
 	w1500_data.iface = iface;
 }
 
-static const struct net_wifi_mgmt_offload winc1500_api = {
-	.wifi_iface.init = winc1500_iface_init,
+static enum offloaded_net_if_types winc1500_get_wifi_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
+static const struct wifi_mgmt_ops winc1500_mgmt_ops = {
 	.scan		= winc1500_mgmt_scan,
 	.connect	= winc1500_mgmt_connect,
 	.disconnect	= winc1500_mgmt_disconnect,
 	.ap_enable	= winc1500_mgmt_ap_enable,
 	.ap_disable	= winc1500_mgmt_ap_disable,
+};
+static const struct net_wifi_mgmt_offload winc1500_api = {
+	.wifi_iface.iface_api.init = winc1500_iface_init,
+	.wifi_iface.get_type = winc1500_get_wifi_type,
+	.wifi_mgmt_api = &winc1500_mgmt_ops,
 };
 
 static int winc1500_init(const struct device *dev)

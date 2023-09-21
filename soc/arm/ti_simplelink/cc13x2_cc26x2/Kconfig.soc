@@ -10,13 +10,30 @@ choice
 config SOC_CC2652R
 	bool "CC2652R"
 
+config SOC_CC2652P
+	bool "CC2652P"
+
 config SOC_CC1352R
 	bool "CC1352R"
+
+config SOC_CC1352P
+	bool "CC1352P"
 
 endchoice
 
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC13X2_CC26X2
+
+config CC13X2_CC26X2_BOOST_MODE
+	bool "Radio boost mode (VDDR_HH)"
+	help
+	  Enable the radio boost mode +14dBm (sets CCFG_FORCE_VDDR_HH to 1).
+
+config CC13X2_CC26X2_HAS_CUSTOM_RF_HWATTRS
+	bool "Board defines custom RFCC26XX hwAttrs structure"
+	help
+	  The board defines its own RFCC26XX_hwAttrs structure (e.g., for
+	  custom antenna switching callback).
 
 config CC13X2_CC26X2_BOOTLOADER_ENABLE
 	bool "ROM bootloader"

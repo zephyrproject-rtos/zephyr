@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(bme680, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bme680_bus_check_spi(const union bme680_bus *bus)
 {
-	return spi_is_ready(&bus->spi) ? 0 : -ENODEV;
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
 static inline int bme680_set_mem_page(const struct device *dev, uint8_t addr)

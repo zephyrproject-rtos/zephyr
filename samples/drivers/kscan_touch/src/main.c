@@ -26,15 +26,16 @@ static void k_callback(const struct device *dev, uint32_t row, uint32_t col,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	printk("Kscan touch panel sample application\n");
 
 	if (!device_is_ready(kscan_dev)) {
 		LOG_ERR("kscan device %s not ready", kscan_dev->name);
-		return;
+		return 0;
 	}
 
 	kscan_config(kscan_dev, k_callback);
 	kscan_enable_callback(kscan_dev);
+	return 0;
 }

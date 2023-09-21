@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(webusb);
 #include "webusb.h"
 
 /* Max packet size for Bulk endpoints */
-#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#if defined(CONFIG_USB_DC_HAS_HS_SUPPORT)
 #define WEBUSB_BULK_EP_MPS		512
 #else
 #define WEBUSB_BULK_EP_MPS		64

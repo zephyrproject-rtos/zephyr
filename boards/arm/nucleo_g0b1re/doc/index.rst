@@ -168,7 +168,7 @@ following pyocd command:
 Flashing an application to Nucleo G0B1RE
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

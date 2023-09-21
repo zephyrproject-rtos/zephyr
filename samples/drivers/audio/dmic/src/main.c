@@ -52,7 +52,6 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 	for (int i = 0; i < block_count; ++i) {
 		void *buffer;
 		uint32_t size;
-		int ret;
 
 		ret = dmic_read(dmic_dev, 0, &buffer, &size, READ_TIMEOUT);
 		if (ret < 0) {
@@ -62,7 +61,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 		LOG_INF("%d - got buffer %p of %u bytes", i, buffer, size);
 
-		k_mem_slab_free(&mem_slab, &buffer);
+		k_mem_slab_free(&mem_slab, buffer);
 	}
 
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_STOP);
@@ -74,7 +73,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
 	int ret;
@@ -83,7 +82,7 @@ void main(void)
 
 	if (!device_is_ready(dmic_dev)) {
 		LOG_ERR("%s is not ready", dmic_dev->name);
-		return;
+		return 0;
 	}
 
 	struct pcm_stream_cfg stream = {
@@ -116,7 +115,7 @@ void main(void)
 
 	ret = do_pdm_transfer(dmic_dev, &cfg, 2 * BLOCK_COUNT);
 	if (ret < 0) {
-		return;
+		return 0;
 	}
 
 	cfg.channel.req_num_chan = 2;
@@ -129,8 +128,9 @@ void main(void)
 
 	ret = do_pdm_transfer(dmic_dev, &cfg, 2 * BLOCK_COUNT);
 	if (ret < 0) {
-		return;
+		return 0;
 	}
 
 	LOG_INF("Exiting");
+	return 0;
 }

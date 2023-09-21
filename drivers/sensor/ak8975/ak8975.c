@@ -77,8 +77,10 @@ static int ak8975_channel_get(const struct device *dev,
 		ak8975_convert(val, drv_data->x_sample, drv_data->x_adj);
 	} else if (chan == SENSOR_CHAN_MAGN_Y) {
 		ak8975_convert(val, drv_data->y_sample, drv_data->y_adj);
-	} else { /* chan == SENSOR_CHAN_MAGN_Z */
+	} else if (chan == SENSOR_CHAN_MAGN_Z) {
 		ak8975_convert(val, drv_data->z_sample, drv_data->z_adj);
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;

@@ -29,7 +29,7 @@
 	};
 
 	chosen {
-		zephyr,entropy = &rng_hci;
+		zephyr,entropy = &psa_rng;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -53,6 +53,11 @@
 	/* Default IPC description */
 	ipc {
 		#include "nrf5340_cpuapp_ipc.dtsi"
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
 	};
 };
 

@@ -23,6 +23,18 @@ properties:
     required: true
     description: Flash sector size in bytes.
 
+  sector-0a-pages:
+    type: int
+    default: 8
+    description: |
+      Most available AT45 flash chips have their first two sectors shorter
+      than the consecutive ones. Usually, the first sector is marked as 0a
+      and has its size equal to eight pages (one block) and the second one
+      (usually 0b) is the complement to the size of a regular sector.
+      This property allows specifying the size (in pages) of that first sector
+      and defaults to the commonly used value of eight pages.
+      Value of zero means that the flash chip has all sectors of equal size.
+
   block-size:
     type: int
     required: true
@@ -32,6 +44,16 @@ properties:
     type: int
     required: true
     description: Flash page size in bytes.
+
+  no-chip-erase:
+    type: boolean
+    description: |
+      If set, indicates that the chip does not support the chip erase command.
+
+  no-sector-erase:
+    type: boolean
+    description: |
+      If set, indicates that the chip does not support the sector erase command.
 
   use-udpd:
     type: boolean

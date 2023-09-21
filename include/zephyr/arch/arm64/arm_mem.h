@@ -19,4 +19,7 @@
 /** ARM64 Specific flags: device memory with GRE */
 #define K_MEM_ARM_DEVICE_GRE	4
 
+/** ARM64 Specific flags: normal memory with Non-cacheable */
+#define K_MEM_ARM_NORMAL_NC	5
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MEM_H_ */

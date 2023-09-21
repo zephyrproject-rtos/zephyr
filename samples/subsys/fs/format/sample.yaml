@@ -1,0 +1,18 @@
+sample:
+  name: format filesystem sample
+tests:
+  sample.filesystem.format.littlefs:
+    platform_allow:
+      - native_posix
+      - nrf52dk_nrf52832
+    build_only: true
+    tags: filesystem
+  sample.filesystem.format.fat_fs:
+    platform_allow:
+      - native_posix
+      - mimxrt1064_evk
+    build_only: true
+    extra_args:
+      - CONF_FILE="prj_ram.conf"
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+    tags: filesystem

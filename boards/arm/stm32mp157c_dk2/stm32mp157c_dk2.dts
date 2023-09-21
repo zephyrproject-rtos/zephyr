@@ -8,6 +8,7 @@
 #include <st/mp1/stm32mp157.dtsi>
 #include <st/mp1/stm32mp157cacx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
@@ -39,6 +40,7 @@
 		user_button: button {
 			label = "User 1";
 			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

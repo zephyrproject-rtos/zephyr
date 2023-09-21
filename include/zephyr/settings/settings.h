@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -20,6 +21,7 @@ extern "C" {
 
 /**
  * @defgroup file_system_storage File System Storage
+ * @ingroup os_services
  * @{
  * @}
  */

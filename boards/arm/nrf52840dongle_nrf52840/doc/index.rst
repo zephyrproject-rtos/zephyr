@@ -140,7 +140,7 @@ device. Make sure ``nrfutil`` is installed before proceeding.
    The red LED should start a fade pattern, signalling the bootloader is
    running.
 
-#. Compile a Zephyr application; we'll use :ref:`blinky <blinky-sample>`.
+#. Compile a Zephyr application; we'll use :zephyr:code-sample:`blinky`.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
@@ -210,7 +210,7 @@ to the zephyr repository on your computer.
       nrfutil dfu usb-serial -pkg mcuboot.zip -p /dev/ttyACM0
 
 You can now flash a Zephyr application to the board using MCUboot's serial
-recovery mode. We'll use the :ref:`smp_svr_sample` since it's ready to be
+recovery mode. We'll use the :zephyr:code-sample:`smp-svr` sample since it's ready to be
 compiled for chain-loading by MCUboot (and itself supports firmware updates
 over Bluetooth).
 
@@ -298,7 +298,7 @@ flashed with an offset.
 Then build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -321,7 +321,7 @@ Testing the LEDs and buttons on the nRF52840 Dongle
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-* :ref:`blinky-sample`
+* :zephyr:code-sample:`blinky`
 
 You can build and program the examples to make sure Zephyr is running correctly
 on your board.

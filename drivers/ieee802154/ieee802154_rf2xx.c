@@ -217,7 +217,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	memcpy(pkt->buffer->data, rx_buf + RX2XX_FRAME_HEADER_SIZE, pkt_len);
 	net_buf_add(pkt->buffer, pkt_len);
 	net_pkt_set_ieee802154_lqi(pkt, ctx->pkt_lqi);
-	net_pkt_set_ieee802154_rssi(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
 
 	LOG_DBG("Caught a packet (%02X) (LQI: %02X, RSSI: %d, ED: %02X)",
 		pkt_len, ctx->pkt_lqi, ctx->trx_rssi_base + ctx->pkt_ed,
@@ -267,7 +267,7 @@ static void rf2xx_process_tx_frame(const struct device *dev)
 	struct rf2xx_context *ctx = dev->data;
 
 	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
-			 RF2XX_TRAC_STATUS) & 7;
+			 RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
 	k_sem_give(&ctx->trx_tx_sync);
 	rf2xx_trx_set_rx_state(dev);
 }
@@ -326,7 +326,8 @@ static void rf2xx_thread_main(void *arg)
 				rf2xx_iface_sram_read(ctx->dev, 0,
 						      &ctx->rx_phr, 1);
 			}
-		} else if (isr_status & (1 << RF2XX_TRX_END)) {
+		}
+		if (isr_status & (1 << RF2XX_TRX_END)) {
 			rf2xx_process_trx_end(ctx->dev);
 		}
 	}
@@ -364,7 +365,9 @@ static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_PROMISC |
 	       IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA |
+	       IEEE802154_HW_RETRANSMISSION |
 	       IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK |
 	       (ctx->trx_model == RF2XX_TRX_MODEL_212
 				? IEEE802154_HW_SUB_GHZ
 				: IEEE802154_HW_2_4_GHZ);
@@ -431,7 +434,7 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
 		if ((ctx->cc_page == RF2XX_TRX_CC_PAGE_0
-		     && ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
+		     || ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
 		    && channel > 10) {
 			LOG_ERR("Unsupported channel %u", channel);
 			return -EINVAL;
@@ -485,34 +488,34 @@ static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 
 	min = conf->tx_pwr_min[1];
 	if (conf->tx_pwr_min[0] == 0x01) {
-		min *= -1.0;
+		min *= -1.0f;
 	}
 
 	max = conf->tx_pwr_max[1];
 	if (conf->tx_pwr_max[0] == 0x01) {
-		min *= -1.0;
+		min *= -1.0f;
 	}
 
-	step = (max - min) / ((float)conf->tx_pwr_table_size - 1.0);
+	step = (max - min) / ((float)conf->tx_pwr_table_size - 1.0f);
 
-	if (step == 0.0) {
-		step = 1.0;
+	if (step == 0.0f) {
+		step = 1.0f;
 	}
 
 	LOG_DBG("Tx-power values: min %f, max %f, step %f, entries %d",
-		min, max, step, conf->tx_pwr_table_size);
+		(double)min, (double)max, (double)step, conf->tx_pwr_table_size);
 
 	if (dbm < min) {
 		LOG_INF("TX-power %d dBm below min of %f dBm, using %f dBm",
-			dbm, min, max);
+			dbm, (double)min, (double)max);
 		dbm = min;
 	} else if (dbm > max) {
 		LOG_INF("TX-power %d dBm above max of %f dBm, using %f dBm",
-			dbm, min, max);
+			dbm, (double)min, (double)max);
 		dbm = max;
 	}
 
-	idx = abs(((float)(dbm - max) / step));
+	idx = abs((int) (((float)(dbm - max) / step)));
 	LOG_DBG("Tx-power idx: %d", idx);
 
 	if (idx >= conf->tx_pwr_table_size) {
@@ -628,7 +631,7 @@ static void rf2xx_handle_ack(struct rf2xx_context *ctx, struct net_buf *frag)
 
 	net_pkt_cursor_init(&rf2xx_ack_pkt);
 
-	if (ieee802154_radio_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled.");
 	}
 }
@@ -901,7 +904,11 @@ static int power_on_and_setup(const struct device *dev)
 
 	gpio_init_callback(&ctx->irq_cb, trx_isr_handler,
 			   BIT(conf->irq_gpio.pin));
-	gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb);
+
+	if (gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb) < 0) {
+		LOG_ERR("Could not set IRQ callback.");
+		return -ENXIO;
+	}
 
 	return 0;
 }
@@ -911,7 +918,7 @@ static inline int configure_gpios(const struct device *dev)
 	const struct rf2xx_config *conf = dev->config;
 
 	/* Chip IRQ line */
-	if (!device_is_ready(conf->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->irq_gpio)) {
 		LOG_ERR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
@@ -920,14 +927,14 @@ static inline int configure_gpios(const struct device *dev)
 					GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Chip RESET line */
-	if (!device_is_ready(conf->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->reset_gpio)) {
 		LOG_ERR("RESET GPIO device not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
 	/* Chip SLPTR line */
-	if (!device_is_ready(conf->slptr_gpio.port)) {
+	if (!gpio_is_ready_dt(&conf->slptr_gpio)) {
 		LOG_ERR("SLPTR GPIO device not ready");
 		return -ENODEV;
 	}
@@ -935,7 +942,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip DIG2 line (Optional feature) */
 	if (conf->dig2_gpio.port != NULL) {
-		if (!device_is_ready(conf->dig2_gpio.port)) {
+		if (!gpio_is_ready_dt(&conf->dig2_gpio)) {
 			LOG_ERR("DIG2 GPIO device not ready");
 			return -ENODEV;
 		}
@@ -948,7 +955,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip CLKM line (Optional feature) */
 	if (conf->clkm_gpio.port != NULL) {
-		if (!device_is_ready(conf->clkm_gpio.port)) {
+		if (!gpio_is_ready_dt(&conf->clkm_gpio)) {
 			LOG_ERR("CLKM GPIO device not ready");
 			return -ENODEV;
 		}
@@ -964,7 +971,7 @@ static inline int configure_spi(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
 
-	if (!spi_is_ready(&conf->spi)) {
+	if (!spi_is_ready_dt(&conf->spi)) {
 		LOG_ERR("SPI bus %s is not ready",
 			conf->spi.bus->name);
 		return -ENODEV;

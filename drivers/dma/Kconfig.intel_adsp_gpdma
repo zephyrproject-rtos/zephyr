@@ -14,7 +14,7 @@ if DMA_INTEL_ADSP_GPDMA
 
 config DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
 	bool
-	default y if !SOC_INTEL_CAVS_V15
+	default y
 	help
 	  Hidden option to indicate that the driver needs to request
 	  dma controller ownership from the host.
@@ -25,6 +25,11 @@ config DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	help
 	  Intel ADSP GPDMA may optionally have a linear link position
 	  feature.
+
+config DMA_INTEL_ADSP_GPDMA_DEBUG
+	bool "Debug dump for IP registers"
+	help
+	  Dump Intel ADSP GPDMA registers for debug
 
 source "drivers/dma/Kconfig.dw_common"
 

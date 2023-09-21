@@ -24,8 +24,7 @@
 #define STM32_SRC_HSE		0x00A
 #define STM32_SRC_LSE		0x00B
 #define STM32_SRC_LSI		0x00C
-/** Oscillators not yet supported */
-/* #define STM32_SRC_HSI48	0x00D */
+#define STM32_SRC_HSI48		0x00D
 #define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
 #define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
 /** Core clock */
@@ -130,5 +129,7 @@
 #define SPI6_SEL(val)		STM32_CLOCK(val, 7, 28, D3CCIPR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specifier when no selection is possible, value may not occur in used RCC regs */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

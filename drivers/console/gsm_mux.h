@@ -6,7 +6,7 @@
 
 #define DLCI_CONTROL 0
 
-#if IS_ENABLED(CONFIG_GSM_MUX)
+#if defined(CONFIG_GSM_MUX)
 #define DLCI_AT      CONFIG_GSM_MUX_DLCI_AT
 #define DLCI_PPP     CONFIG_GSM_MUX_DLCI_PPP
 #else

@@ -1,0 +1,59 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV_TELINK_B91
+
+config SOC_SERIES
+	string
+	default "telink_b91"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	bool
+	default y
+
+config RISCV_HAS_PLIC
+	bool
+	default y
+
+config RISCV_GP
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 64
+
+config PINCTRL
+	default y
+
+config XIP
+	bool
+	default n
+
+config MAIN_STACK_SIZE
+	int
+	default 2048
+
+config IDLE_STACK_SIZE
+	int
+	default 1536
+
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config HAS_FLASH_LOAD_OFFSET
+	default y if BOOTLOADER_MCUBOOT
+
+endif # SOC_SERIES_RISCV_TELINK_B91

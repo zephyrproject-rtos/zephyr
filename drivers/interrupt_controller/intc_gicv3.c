@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/barrier.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
@@ -79,7 +82,7 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 		*cfg &= ~BIT(0);
 	}
 
-	dsb();
+	barrier_dsync_fence_full();
 
 	its_rdist_invall();
 }
@@ -91,7 +94,7 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
 
-	dsb();
+	barrier_dsync_fence_full();
 
 	its_rdist_invall();
 }
@@ -211,6 +214,25 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 	return (val & mask) != 0;
 }
 
+bool arm_gic_irq_is_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t val;
+
+	val = sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
+
+	return (val & mask) != 0;
+}
+
+void arm_gic_irq_clear_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+
+	sys_write32(mask, ICPENDR(GET_DIST_BASE(intid), idx));
+}
+
 unsigned int arm_gic_get_active(void)
 {
 	int intid;
@@ -234,7 +256,7 @@ void arm_gic_eoi(unsigned int intid)
 	 * The dsb will also ensure *completion* of previous writes with
 	 * DEVICE nGnRnE attribute.
 	 */
-	__DSB();
+	barrier_dsync_fence_full();
 
 	/* (AP -> Pending) Or (Active -> Inactive) or (AP to AP) nested case */
 	write_sysreg(intid, ICC_EOIR1_EL1);
@@ -260,9 +282,9 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
 				   SGIR_IRM_TO_AFF, target_list);
 
-	__DSB();
+	barrier_dsync_fence_full();
 	write_sysreg(sgi_val, ICC_SGI1R);
-	__ISB();
+	barrier_isync_fence_full();
 }
 
 /*
@@ -275,6 +297,16 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
 {
 	if (!(sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))) {
 		return;
+	}
+
+	if (GICR_IIDR_PRODUCT_ID_GET(sys_read32(rdist + GICR_IIDR)) >= 0x2) {
+		if (sys_read32(rdist + GICR_PWRR) & BIT(GICR_PWRR_RDPD)) {
+			sys_set_bit(rdist + GICR_PWRR, GICR_PWRR_RDAG);
+			sys_clear_bit(rdist + GICR_PWRR, GICR_PWRR_RDPD);
+			while (sys_read32(rdist + GICR_PWRR) & BIT(GICR_PWRR_RDPD)) {
+				;
+			}
+		}
 	}
 
 	sys_clear_bit(rdist + GICR_WAKER, GICR_WAKER_PS);
@@ -331,7 +363,7 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	ctlr |= GICR_CTLR_ENABLE_LPIS;
 	sys_write32(ctlr, rdist + GICR_CTLR);
 
-	dsb();
+	barrier_dsync_fence_full();
 }
 #endif
 
@@ -564,9 +596,8 @@ static void __arm_gic_init(void)
 	gicv3_cpuif_init();
 }
 
-int arm_gic_init(const struct device *unused)
+int arm_gic_init(void)
 {
-	ARG_UNUSED(unused);
 
 	gicv3_dist_init();
 

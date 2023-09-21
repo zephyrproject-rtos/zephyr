@@ -5,7 +5,7 @@
 #ifndef ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
 #define ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <adsp_shim.h>
@@ -37,7 +37,7 @@
 #define DGCS_SCS BIT(31) /* Sample container size */
 #define DGCS_GEN BIT(26) /* Gateway Enable */
 #define DGCS_L1ETP BIT(25) /* L1 Enter Prevent */
-#define DGCS_L1EXP BIT(25) /* L1 Exit Prevent */
+#define DGCS_L1EXP BIT(24) /* L1 Exit Prevent */
 #define DGCS_FWCB BIT(23) /* Firmware Control Buffer */
 #define DGCS_GBUSY BIT(15) /* Gateway Busy */
 #define DGCS_TE BIT(14) /* Transfer Error */
@@ -118,7 +118,7 @@
 /**
  * @brief Initialize an HDA stream for use with the firmware
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param sid Stream ID
  */
 static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, uint32_t sid)
@@ -136,7 +136,7 @@ static inline void intel_adsp_hda_init(uint32_t base, uint32_t regblock_size, ui
  * that is required. It must be set *after* the host has configured its own buffers.
  *
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  * @param buf Buffer address to use for the shared FIFO. Must be in L2 and 128 byte aligned.
@@ -187,7 +187,7 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 /**
  * @brief Get the buffer size
  *
- * @param hda Stream set to work with
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
@@ -197,32 +197,48 @@ static inline uint32_t intel_adsp_hda_get_buffer_size(uint32_t base,
 					    uint32_t regblock_size,
 					    uint32_t sid)
 {
-
 	return *DGBS(base, regblock_size, sid);
 }
 
 /**
  * @brief Enable the stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
-static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size, uint32_t sid)
+static inline void intel_adsp_hda_enable(uint32_t base, uint32_t regblock_size,
+					 uint32_t sid, bool set_fifordy)
 {
-	*DGCS(base, regblock_size, sid) |= DGCS_GEN | DGCS_FIFORDY;
+	*DGCS(base, regblock_size, sid) |= DGCS_GEN;
+
+	if (set_fifordy) {
+		*DGCS(base, regblock_size, sid) |= DGCS_FIFORDY;
+	}
 }
 
 /**
  * @brief Disable stream
  *
- * @param hda HDA stream set
+ * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID
  */
 static inline void intel_adsp_hda_disable(uint32_t base, uint32_t regblock_size, uint32_t sid)
 {
 	*DGCS(base, regblock_size, sid) &= ~(DGCS_GEN | DGCS_FIFORDY);
+}
+
+/**
+ * @brief Check if stream is enabled
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_size, uint32_t sid)
+{
+	return *DGCS(base, regblock_size, sid) & (DGCS_GEN | DGCS_FIFORDY);
 }
 
 /**
@@ -344,6 +360,113 @@ static inline bool intel_adsp_hda_buf_full(uint32_t base, uint32_t regblock_size
 static inline bool intel_adsp_hda_wp_rp_eq(uint32_t base, uint32_t regblock_size, uint32_t sid)
 {
 	return *DGBWP(base, regblock_size, sid) == *DGBRP(base, regblock_size, sid);
+}
+
+static inline bool intel_adsp_hda_is_buffer_overrun(uint32_t base, uint32_t regblock_size,
+						    uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BOR) == DGCS_BOR ? 1 : 0;
+}
+
+static inline bool intel_adsp_hda_is_buffer_underrun(uint32_t base, uint32_t regblock_size,
+						     uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BUR) == DGCS_BUR ? 1 : 0;
+}
+
+static inline void intel_adsp_hda_overrun_clear(uint32_t base, uint32_t regblock_size,
+						uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BOR;
+}
+
+static inline void intel_adsp_hda_underrun_clear(uint32_t base, uint32_t regblock_size,
+						 uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BUR;
+}
+
+/**
+ * @brief Set the buffer segment ptr
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ * @param size
+ */
+static inline void intel_adsp_hda_set_buffer_segment_ptr(uint32_t base, uint32_t regblock_size,
+							 uint32_t sid, uint32_t size)
+{
+	*DGBSP(base, regblock_size, sid) = size;
+}
+
+/**
+ * @brief Get the buffer segment ptr
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ *
+ * @retval buffer segment ptr
+ */
+static inline uint32_t intel_adsp_hda_get_buffer_segment_ptr(uint32_t base, uint32_t regblock_size,
+							     uint32_t sid)
+{
+	return *DGBSP(base, regblock_size, sid);
+}
+
+/**
+ * @brief Enable BSC interrupt
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline void intel_adsp_hda_enable_buffer_interrupt(uint32_t base, uint32_t regblock_size,
+							  uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BSCIE;
+}
+
+/**
+ * @brief Disable BSC interrupt
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline void intel_adsp_hda_disable_buffer_interrupt(uint32_t base, uint32_t regblock_size,
+							   uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) &= ~DGCS_BSCIE;
+}
+
+/**
+ * @brief Clear BSC interrupt
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ */
+static inline void intel_adsp_hda_clear_buffer_interrupt(uint32_t base, uint32_t regblock_size,
+							 uint32_t sid)
+{
+	*DGCS(base, regblock_size, sid) |= DGCS_BSC;
+}
+
+/**
+ * @brief Get status of BSC interrupt
+ *
+ * @param base Base address of the IP register block
+ * @param regblock_size Register block size
+ * @param sid Stream ID
+ *
+ * @retval interrupt status
+ */
+static inline uint32_t intel_adsp_hda_check_buffer_interrupt(uint32_t base, uint32_t regblock_size,
+							     uint32_t sid)
+{
+	return (*DGCS(base, regblock_size, sid) & DGCS_BSC) == DGCS_BSC;
 }
 
 #endif /* ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H */

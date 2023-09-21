@@ -121,7 +121,9 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	case BT_BUF_H4:
 		if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
 		    raw_mode == BT_HCI_RAW_MODE_H4) {
-			switch (((uint8_t *)data)[0]) {
+			uint8_t h4_type = ((uint8_t *)data)[0];
+
+			switch (h4_type) {
 			case H4_CMD:
 				type = BT_BUF_CMD;
 				pool = &hci_cmd_pool;
@@ -137,7 +139,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 				break;
 #endif /* CONFIG_BT_ISO */
 			default:
-				LOG_ERR("Unknown H4 type %u", type);
+				LOG_ERR("Unknown H4 type %u", h4_type);
 				return NULL;
 			}
 

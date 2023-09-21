@@ -85,6 +85,7 @@ static int i3g4250d_spi_write(const struct device *dev, uint8_t reg,
 stmdev_ctx_t i3g4250d_spi_ctx = {
 	.read_reg = (stmdev_read_ptr) i3g4250d_spi_read,
 	.write_reg = (stmdev_write_ptr) i3g4250d_spi_write,
+	.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
 };
 
 int i3g4250d_spi_init(const struct device *dev)
@@ -92,7 +93,7 @@ int i3g4250d_spi_init(const struct device *dev)
 	struct i3g4250d_data *i3g4250d = dev->data;
 	const struct i3g4250d_device_config *cfg = dev->config;
 
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("spi not ready");
 		return -ENODEV;
 	}

@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32gg12b810f1024gm64.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Silicon Labs EFM32GG SLTB009A board";
+	compatible = "silabs,efm32gg_sltb009a";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	location-rx = <GECKO_LOCATION(1) GECKO_PORT_E GECKO_PIN(6)>;
+	location-tx = <GECKO_LOCATION(1) GECKO_PORT_E GECKO_PIN(7)>;
+	status = "okay";
+};
+
+&usart4 {
+	current-speed = <115200>;
+	location-rx = <GECKO_LOCATION(0) GECKO_PORT_B GECKO_PIN(8)>;
+	location-tx = <GECKO_LOCATION(0) GECKO_PORT_B GECKO_PIN(7)>;
+	status = "okay";
+};
+
+&leuart0 {
+	current-speed = <9600>;
+	location-rx = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(14)>;
+	location-tx = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(13)>;
+	status = "okay";
+};
+
+&i2c0 {
+	location-sda = <GECKO_LOCATION(4) GECKO_PORT_C GECKO_PIN(0)>;
+	location-scl = <GECKO_LOCATION(4) GECKO_PORT_C GECKO_PIN(1)>;
+	status = "okay";
+};
+
+&i2c1 {
+	location-sda = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(4)>;
+	location-scl = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(5)>;
+	status = "okay";
+};
+
+&rtcc0 {
+	prescaler = <1>;
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+	board-controller-enable {
+		// VCOM Isolation. Set PA15 to HIGH to enable VCOM_{RX,TX}.
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpio {
+	location-swo = <0>;
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 12Kb of storage at the end of the 2048Kb of flash */
+		storage_partition: partition@1fd000 {
+			label = "storage";
+			reg = <0x001fd000 0x00003000>;
+		};
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&cpu0 {
+	clock-frequency = <72000000>;
+};

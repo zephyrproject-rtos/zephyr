@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
@@ -381,11 +381,10 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
 	int ret;
 
-	ARG_UNUSED(dev);
 
 	/* Enable 32-bit free run timer overflow interrupt */
 	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL,

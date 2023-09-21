@@ -8,6 +8,7 @@
 /dts-v1/;
 
 #include <cypress/psoc6_cm0.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "cy8ckit_062_wifi_bt_m0 with a Cypress PSoC6 SoC";
@@ -40,6 +41,7 @@
 		user_bt: button_0 {
 			label = "SW_0";
 			gpios = <&gpio_prt0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

@@ -1,0 +1,20 @@
+# Copyright (c) 2020,2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: FT3267/FT5XX6/FT6XX6 capacitive touch panels
+
+compatible: "focaltech,ft5336"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO. Used to reset the controller during initialization, and
+      to wake it from hibernation mode. Active low.

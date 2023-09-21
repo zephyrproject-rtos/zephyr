@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC13xx/CC26xx Timer Node
+
+compatible: "ti,cc13xx-cc26xx-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,7 +1,7 @@
 .. _gna_api:
 
-GNA
-###
+Gaussian & Neural Accelerator (GNA)
+###################################
 
 Overview
 ********

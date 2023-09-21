@@ -22,7 +22,7 @@
 
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
-/* #define STM32_SRC_HSI48	0x002 */
+#define STM32_SRC_HSI48		0x002
 #define STM32_SRC_LSE		0x003
 #define STM32_SRC_LSI		0x004
 #define STM32_SRC_MSI		0x005
@@ -101,5 +101,7 @@
 #define OSPI_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR2_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4_CLOCK_H_ */

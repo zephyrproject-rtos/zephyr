@@ -9,5 +9,7 @@ toolchain:
 testing:
   default: true
   only_tags:
-     - kernel
-     - userspace
+    - kernel
+    - userspace
+  ignore_tags:
+    - benchmark

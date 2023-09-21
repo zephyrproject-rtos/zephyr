@@ -169,16 +169,17 @@ static void process(const struct device *dev)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(adi_adt7420);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printf("device is %p, name is %s\n", dev, dev->name);
 
 	process(dev);
+	return 0;
 }

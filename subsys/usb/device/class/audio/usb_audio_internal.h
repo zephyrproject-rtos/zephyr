@@ -328,13 +328,8 @@ struct dev##_feature_unit_descriptor_##i {	\
 	.iFunction = 0,						\
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 #define USB_AUDIO_IAD_DECLARE struct usb_association_descriptor iad;
 #define USB_AUDIO_IAD(if_cnt)  .iad = INIT_IAD(USB_AUDIO_AUDIOCONTROL, if_cnt),
-#else
-#define USB_AUDIO_IAD_DECLARE
-#define USB_AUDIO_IAD(if_cnt)
-#endif
 
 #define DECLARE_DESCRIPTOR(dev, i, ifaces)				\
 DECLARE_HEADER(dev, i, ifaces);						\
@@ -473,7 +468,7 @@ struct dev##_descriptor_##i {						\
 	.bDescriptorType = USB_DESC_CS_INTERFACE,	\
 	.bDescriptorSubtype = USB_AUDIO_AS_GENERAL,	\
 	.bTerminalLink = link,				\
-	.bDelay = 0,					\
+	.bDelay = 1,					\
 	.wFormatTag = sys_cpu_to_le16(0x0001),		\
 }
 

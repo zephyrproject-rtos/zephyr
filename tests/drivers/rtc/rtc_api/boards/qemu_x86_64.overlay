@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Bjarki Arge Andreasen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The RTC IRQ is not routed to the IOAPIC if the legacy
+ * IRQ bit is set. The IRQ is required for alarm
+ * operation and the update callback.
+ */
+&hpet {
+        no-legacy-irq;
+};
+
+&rtc {
+        status = "okay";
+};

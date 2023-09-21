@@ -13,3 +13,13 @@ config ADC_ITE_IT8XXX2
 	  Voltage range 0 to 3000mV.
 	  Support 10-bit resolution.
 	  Support 8 channels: ch0~ch7.
+
+if ADC_ITE_IT8XXX2
+
+config ADC_IT8XXX2_VOL_FULL_SCALE
+	bool "ADC internal voltage as full-scale"
+	help
+	  This option enables ADC internal reference
+	  voltage as full-scale 3300mV.
+
+endif # ADC_ITE_IT8XXX2

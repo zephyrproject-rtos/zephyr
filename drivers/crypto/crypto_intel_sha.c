@@ -284,7 +284,6 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_ctx *ctx,
 					  enum hash_algo algo)
 {
-	int ret;
 	int ctx_idx;
 	struct sha_container *self = (struct sha_container *const)(dev)->data;
 
@@ -305,7 +304,7 @@ static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_
 	sha_sessions[ctx_idx].algo = algo;
 
 	ctx->hash_hndlr = intel_sha_compute;
-	return ret;
+	return 0;
 }
 
 static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
@@ -318,11 +317,6 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	(void)memset(&session->state, 0, sizeof(union sha_state));
 	session->in_use = 0;
 	session->algo = 0;
-	return 0;
-}
-
-static int intel_sha_device_init(const struct device *dev)
-{
 	return 0;
 }
 
@@ -342,7 +336,7 @@ static struct crypto_driver_api hash_enc_funcs = {
 static struct sha_container sha_data_##inst  = {                                  \
 	.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)  \
 };                                                                                \
-DEVICE_DT_INST_DEFINE(inst, intel_sha_device_init, NULL, &sha_data_##inst, NULL,  \
+DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL,                   \
 	POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_SHA_DEVICE_INIT)

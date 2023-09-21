@@ -4,6 +4,7 @@
 config MCUX_GPT_TIMER
 	bool "MCUX GPT Event timer"
 	default y
+	depends on PM
 	depends on DT_HAS_NXP_GPT_HW_TIMER_ENABLED
 	select TICKLESS_CAPABLE
 	help

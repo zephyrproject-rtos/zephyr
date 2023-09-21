@@ -28,7 +28,6 @@ set_compiler_property(PROPERTY warning_base
                       -Wformat
                       -Wformat-security
                       -Wno-format-zero-length
-                      -Wno-main-return-type
                       -Wno-unaligned-pointer-conversion
                       -Wno-incompatible-pointer-types-discards-qualifiers
                       -Wno-typedef-redefinition
@@ -134,6 +133,10 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 
+# Flags for set extra warnigs (ARCMWDT asm can't recognize --fatal-warnings. Skip it)
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET asm PROPERTY warnings_as_errors -Werror)
+
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
@@ -185,6 +188,8 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 # but it has PIE disabled by default - so no extra flags are required here.
 set_compiler_property(PROPERTY no_position_independent "")
 
+set_compiler_property(PROPERTY no_global_merge "")
+
 #################################
 # This section covers asm flags #
 #################################
@@ -198,3 +203,6 @@ if(CONFIG_ARCMWDT_LIBC)
   # to ASM builds (which may use 'stdbool.h').
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
+
+# Remove after testing that -Wshadow works
+set_compiler_property(PROPERTY warning_shadow_variables)

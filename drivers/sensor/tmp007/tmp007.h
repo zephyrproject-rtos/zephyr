@@ -47,10 +47,10 @@ struct tmp007_data {
 	const struct device *dev;
 
 	sensor_trigger_handler_t drdy_handler;
-	struct sensor_trigger drdy_trigger;
+	const struct sensor_trigger *drdy_trigger;
 
 	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	const struct sensor_trigger *th_trigger;
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_TMP007_THREAD_STACK_SIZE);

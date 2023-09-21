@@ -7,14 +7,13 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-static int board_init(const struct device *dev)
+static int board_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Set led1 inactive since the Arduino bootloader leaves it active */
 	const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 
-	if (!device_is_ready(led1.port)) {
+	if (!gpio_is_ready_dt(&led1)) {
 		return -ENODEV;
 	}
 

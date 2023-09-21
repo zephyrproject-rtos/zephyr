@@ -954,8 +954,8 @@ end:
 static void schedule_next_retransmission(void)
 {
 	struct coap_pending *pending;
-	int32_t remaining;
-	uint32_t now = k_uptime_get_32();
+	int64_t remaining;
+	int64_t now = k_uptime_get();
 
 	/* Get the first pending retransmission to expire after cycling. */
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
@@ -1262,7 +1262,7 @@ static const char * const core_2_attributes[] = {
 	"rt=core1",
 	NULL };
 
-static struct coap_resource resources[] = {
+static struct coap_resource coap_resources[] = {
 	{ .get = well_known_core_get,
 	  .path = COAP_WELL_KNOWN_CORE_PATH,
 	},
@@ -1348,7 +1348,7 @@ static void remove_observer(struct sockaddr *addr)
 		return;
 	}
 
-	r = find_resource_by_observer(resources, o);
+	r = find_resource_by_observer(coap_resources, o);
 	if (!r) {
 		LOG_ERR("Observer found but Resource not found\n");
 		return;
@@ -1397,7 +1397,7 @@ static void process_coap_request(uint8_t *data, uint16_t data_len,
 	return;
 
 not_found:
-	r = coap_handle_request(&request, resources, options, opt_num,
+	r = coap_handle_request(&request, coap_resources, options, opt_num,
 				client_addr, client_addr_len);
 	if (r < 0) {
 		LOG_WRN("No handler for such request (%d)\n", r);
@@ -1427,7 +1427,7 @@ static int process_client_request(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int r;
 
@@ -1458,8 +1458,9 @@ void main(void)
 	}
 
 	LOG_DBG("Done");
-	return;
+	return 0;
 
 quit:
 	LOG_ERR("Quit");
+	return 0;
 }

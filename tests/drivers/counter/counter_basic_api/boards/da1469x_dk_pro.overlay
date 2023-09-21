@@ -1,0 +1,23 @@
+&timer1 {
+	clock-src = <&lp_clk>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+&timer2 {
+	clock-src = <&divn_clk>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+&timer3 {
+	clock-src = <&lp_clk>;
+	prescaler = <2>;
+	status = "okay";
+};
+
+&timer4 {
+	clock-src = <&divn_clk>;
+	prescaler = <32>;
+	status = "okay";
+};

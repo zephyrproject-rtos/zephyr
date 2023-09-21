@@ -18,10 +18,10 @@
 LOG_MODULE_REGISTER(disk);
 
 /* list of mounted file systems */
-static sys_dlist_t disk_access_list;
+static sys_dlist_t disk_access_list = SYS_DLIST_STATIC_INIT(&disk_access_list);
 
 /* lock to protect storage layer registration */
-static struct k_mutex mutex;
+static K_MUTEX_DEFINE(mutex);
 
 struct disk_info *disk_access_get_di(const char *name)
 {
@@ -168,14 +168,3 @@ unreg_err:
 	k_mutex_unlock(&mutex);
 	return rc;
 }
-
-static int disk_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	k_mutex_init(&mutex);
-	sys_dlist_init(&disk_access_list);
-	return 0;
-}
-
-SYS_INIT(disk_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -29,7 +29,7 @@ something like this:
 The ``git fetch`` command example in the last line above is what needs to
 succeed.
 
-One strategy is to go to ``/some/directory``, copy/paste and run the entire
+One strategy is to go to ``/path/to/your/project``, copy/paste and run the entire
 ``git fetch`` command, then debug from there using the documentation for your
 credential storage helper.
 

@@ -161,7 +161,7 @@ built and flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

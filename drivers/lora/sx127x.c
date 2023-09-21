@@ -362,7 +362,7 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 			continue;
 		}
 
-		if (!device_is_ready(sx127x_dios[i].port)) {
+		if (!gpio_is_ready_dt(&sx127x_dios[i])) {
 			LOG_ERR("GPIO port %s not ready",
 				sx127x_dios[i].port->name);
 			return;
@@ -582,7 +582,7 @@ static int sx127x_lora_init(const struct device *dev)
 	int ret;
 	uint8_t regval;
 
-	if (!spi_is_ready(&dev_config.bus)) {
+	if (!spi_is_ready_dt(&dev_config.bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}

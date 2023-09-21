@@ -46,10 +46,10 @@ properties:
     type: string
     required: true
     enum:
-     - "extern"
-     - "500"
-     - "1000"
-     - "333"
+      - "extern"
+      - "500"
+      - "1000"
+      - "333"
     description: |
       Default 1-Wire Weak Pullup Resistance in ohms.
       For most configurations with a single slave "1000" ohms are recommended,

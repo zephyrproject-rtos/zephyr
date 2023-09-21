@@ -29,7 +29,6 @@ class SizeCalculator:
         "datas",
         "initlevel",
         "exceptions",
-        "initshell",
         "_static_thread_data_area",
         "k_timer_area",
         "k_mem_slab_area",
@@ -64,7 +63,6 @@ class SizeCalculator:
         "app_smem",
         'shell_root_cmds_sections',
         'log_const_sections',
-        "font_entry_sections",
         "priv_stacks_noinit",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
@@ -220,7 +218,7 @@ class SizeCalculator:
             print(str(e))
             sys.exit(2)
 
-        self.is_xip = (len(is_xip_output) != 0)
+        self.is_xip = len(is_xip_output) != 0
 
     def _get_info_elf_sections(self) -> None:
         """Calculate RAM and ROM usage and information about issues by section"""

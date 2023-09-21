@@ -8,32 +8,32 @@ compatible: "nuvoton,nct38xx-gpio-port"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    pin_mask:
-      type: int
-      required: true
-      description: |
-        Not every GPIOs are usable for different NCT38XX series. This property
-        indicates the usable GPIO mask.
+  pin_mask:
+    type: int
+    required: true
+    description: |
+      Not every GPIOs are usable for different NCT38XX series. This property
+      indicates the usable GPIO mask.
 
-        NCT3808: <0xdc>
-        others: <0xff>
+      NCT3808: <0xdc>
+      others: <0xff>
 
-    pinmux_mask:
-      type: int
-      description: |
-        NCT38XX series port 0 has Pin Multiplexing functionality. However, not
-        every GPIOs have pinmux controller functionality. This property
-        indicates the usable GPIO pinmux mask. For port 1, this property is
-        ignored.
+  pinmux_mask:
+    type: int
+    description: |
+      NCT38XX series port 0 has Pin Multiplexing functionality. However, not
+      every GPIOs have pinmux controller functionality. This property
+      indicates the usable GPIO pinmux mask. For port 1, this property is
+      ignored.
 
-        NCT3807 port 0: <0xf7>
-        others: <0xff>
+      NCT3807 port 0: <0xf7>
+      others: <0xff>
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

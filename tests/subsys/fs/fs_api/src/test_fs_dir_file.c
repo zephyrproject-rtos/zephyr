@@ -19,59 +19,72 @@
 #include <string.h>
 
 struct fs_file_system_t null_fs = {NULL};
-static struct test_fs_data test_data;
 
+static struct test_fs_data test_data;
 static struct fs_mount_t test_fs_mnt_1 = {
 		.type = TEST_FS_1,
 		.mnt_point = TEST_FS_MNTP,
 		.fs_data = &test_data,
 };
 
+static struct fs_mount_t test_fs_mnt_already_mounted_same_data = {
+		.type = TEST_FS_2,
+		.mnt_point = "/OTHER",
+		.fs_data = &test_data,
+};
+
+static struct test_fs_data test_data1;
 static struct fs_mount_t test_fs_mnt_unsupported_fs = {
 		.type = FS_TYPE_EXTERNAL_BASE,
 		.mnt_point = "/MMCBLOCK:",
-		.fs_data = &test_data,
+		.fs_data = &test_data1,
 };
 
 /* invalid name of mount point, not start with '/' */
+static struct test_fs_data test_data2;
 static struct fs_mount_t test_fs_mnt_invalid_root_1 = {
 		.type = TEST_FS_2,
 		.mnt_point = "SDA:",
-		.fs_data = &test_data,
+		.fs_data = &test_data2,
 };
 
 /* length of the name of mount point is too short */
+static struct test_fs_data test_data3;
 static struct fs_mount_t test_fs_mnt_invalid_root_2 = {
 		.type = TEST_FS_2,
 		.mnt_point = "/",
-		.fs_data = &test_data,
+		.fs_data = &test_data3,
 };
 
 /* NULL mount point */
+static struct test_fs_data test_data4;
 static struct fs_mount_t test_fs_mnt_invalid_root_3 = {
 		.type = TEST_FS_2,
 		.mnt_point = NULL,
-		.fs_data = &test_data,
+		.fs_data = &test_data4,
 };
 
+static struct test_fs_data test_data5;
 static struct fs_mount_t test_fs_mnt_already_mounted = {
 		.type = TEST_FS_2,
 		.mnt_point = TEST_FS_MNTP,
-		.fs_data = &test_data,
+		.fs_data = &test_data5,
 };
 
 /* for test_fs, name of mount point must end with ':' */
+static struct test_fs_data test_data6;
 static struct fs_mount_t test_fs_mnt_invalid_mntp = {
 		.type = TEST_FS_2,
 		.mnt_point = "/SDA",
-		.fs_data = &test_data,
+		.fs_data = &test_data6,
 };
 
 #define NOOP_MNTP "/SDCD:"
+static struct test_fs_data test_data7;
 static struct fs_mount_t test_fs_mnt_no_op = {
 		.type = TEST_FS_2,
 		.mnt_point = NOOP_MNTP,
-		.fs_data = &test_data,
+		.fs_data = &test_data7,
 };
 
 static struct fs_file_t filep;
@@ -147,6 +160,10 @@ void test_mount(void)
 	TC_PRINT("Mount to a directory that has file system mounted already\n");
 	ret = fs_mount(&test_fs_mnt_already_mounted);
 	zassert_not_equal(ret, 0, "Mount to a mounted dir");
+
+	TC_PRINT("Mount using same private data as already mounted system\n");
+	ret = fs_mount(&test_fs_mnt_already_mounted_same_data);
+	zassert_equal(ret, -EBUSY, "Re-mount using same data should have failed");
 
 	fs_unregister(TEST_FS_2, &temp_fs);
 	memset(&null_fs, 0, sizeof(null_fs));

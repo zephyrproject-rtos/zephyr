@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+#
+description: STM32F4 SoC series OTG_FS DWC2 compatible controller
+
+compatible: "st,stm32f4-fsotg"
+
+include: ["snps,dwc2.yaml", pinctrl-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

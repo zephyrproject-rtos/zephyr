@@ -8,9 +8,9 @@ compatible: "renesas,rcar-i2c"
 include: i2c-controller.yaml
 
 properties:
-    reg:
-      required: true
-    interrupts:
-      required: true
-    clocks:
-      required: true
+  reg:
+    required: true
+  interrupts:
+    required: true
+  clocks:
+    required: true

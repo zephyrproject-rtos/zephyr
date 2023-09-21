@@ -22,12 +22,15 @@
 #include <zephyr/irq.h>
 
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
-#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
-#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME(0, irq_en)
-#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME(0, reg)
+#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME_U64(0, prio)
+#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME_U64(0, irq_en)
+#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME_U64(0, reg)
 
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
+
+#define PLIC_EDGE_TRIG_TYPE (DT_INST_REG_ADDR(0) + DT_INST_PROP(0, riscv_trigger_reg_offset))
+#define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
 	uint32_t threshold_prio;
@@ -37,10 +40,32 @@ struct plic_regs_t {
 static int save_irq;
 
 /**
+ * @brief return edge irq value or zero
+ *
+ * In the event edge irq is enable this will return the trigger
+ * value of the irq. In the event edge irq is not supported this
+ * routine will return 0
+ *
+ * @param irq IRQ number to add to the trigger
+ *
+ * @return irq value when enabled 0 otherwise
+ */
+static int riscv_plic_is_edge_irq(uint32_t irq)
+{
+	if (IS_ENABLED(CONFIG_PLIC_SUPPORTS_EDGE_IRQ)) {
+		volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
+
+		trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
+		return *trig & BIT(irq);
+	}
+	return 0;
+}
+
+/**
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_enable function to enable external interrupts for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *
@@ -61,7 +86,7 @@ void riscv_plic_irq_enable(uint32_t irq)
  * @brief Disable a riscv PLIC-specific interrupt line
  *
  * This routine disables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_disable function to disable external interrupts, for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *
@@ -135,6 +160,7 @@ static void plic_irq_handler(const void *arg)
 
 	uint32_t irq;
 	struct _isr_table_entry *ite;
+	int edge_irq;
 
 	/* Get the IRQ number generating the interrupt */
 	irq = regs->claim_complete;
@@ -154,6 +180,16 @@ static void plic_irq_handler(const void *arg)
 	if (irq == 0U || irq >= PLIC_IRQS)
 		z_irq_spurious(NULL);
 
+	edge_irq = riscv_plic_is_edge_irq(irq);
+
+	/*
+	 * For edge triggered interrupts, write to the claim_complete register
+	 * to indicate to the PLIC controller that the IRQ has been handled
+	 * for edge triggered interrupts.
+	 */
+	if (edge_irq)
+		regs->claim_complete = save_irq;
+
 	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
@@ -162,9 +198,11 @@ static void plic_irq_handler(const void *arg)
 
 	/*
 	 * Write to claim_complete register to indicate to
-	 * PLIC controller that the IRQ has been handled.
+	 * PLIC controller that the IRQ has been handled
+	 * for level triggered interrupts.
 	 */
-	regs->claim_complete = save_irq;
+	if (!edge_irq)
+		regs->claim_complete = save_irq;
 }
 
 /**
@@ -172,9 +210,8 @@ static void plic_irq_handler(const void *arg)
  *
  * @retval 0 on success.
  */
-static int plic_init(const struct device *dev)
+static int plic_init(void)
 {
-	ARG_UNUSED(dev);
 
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;

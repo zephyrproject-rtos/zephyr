@@ -1,0 +1,34 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_G1120B0MIPI
+
+if LVGL
+# Enable input subsystem for FT5336 driver
+config INPUT
+	default y
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+# Swap 16 bit color setting for LVGL, to send high byte first
+config LV_COLOR_16_SWAP
+	default y
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_DPI_DEF
+	default 128
+
+# Use offloaded render thread
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
+
+endif # SHIELD_G1120B0MIPI

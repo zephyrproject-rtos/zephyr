@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_ecm);
+LOG_MODULE_REGISTER(usb_ecm, CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL);
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
@@ -32,9 +31,7 @@ LOG_MODULE_REGISTER(usb_ecm);
 static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE], rx_buf[NET_ETH_MAX_FRAME_SIZE];
 
 struct usb_cdc_ecm_config {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor iad;
-#endif
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_union_descriptor if0_union;
@@ -49,7 +46,6 @@ struct usb_cdc_ecm_config {
 } __packed;
 
 USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	.iad = {
 		.bLength = sizeof(struct usb_association_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,
@@ -60,7 +56,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 		.bFunctionProtocol = 0,
 		.iFunction = 0,
 	},
-#endif
 	/* Interface descriptor 0 */
 	/* CDC Communication interface */
 	.if0 = {
@@ -423,9 +418,7 @@ static void ecm_interface_config(struct usb_desc_header *head,
 	cdc_ecm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
 	cdc_ecm_cfg.if1_0.bInterfaceNumber = bInterfaceNumber + 1;
 	cdc_ecm_cfg.if1_1.bInterfaceNumber = bInterfaceNumber + 1;
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	cdc_ecm_cfg.iad.bFirstInterface = bInterfaceNumber;
-#endif
 }
 
 USBD_DEFINE_CFG_DATA(cdc_ecm_config) = {

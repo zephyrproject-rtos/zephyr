@@ -366,10 +366,6 @@
 	sys_trace_k_pipe_get_blocking(pipe, data, bytes_to_read, bytes_read, min_xfer, timeout)
 #define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)                                         \
 	sys_trace_k_pipe_get_exit(pipe, data, bytes_to_read, bytes_read, min_xfer, timeout, ret)
-#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)                                           \
-	sys_trace_k_pipe_block_put_enter(pipe, block, bytes_to_write, sem)
-#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)                                            \
-	sys_trace_k_pipe_block_put_exit(pipe, block, bytes_to_write, sem)
 
 #define sys_port_trace_k_heap_init(h) sys_trace_k_heap_init(h, mem, bytes)
 #define sys_port_trace_k_heap_aligned_alloc_enter(h, timeout)                                      \
@@ -634,10 +630,6 @@ void sys_trace_k_pipe_get_blocking(struct k_pipe *pipe, void *data, size_t bytes
 				   size_t *bytes_read, size_t min_xfer, k_timeout_t timeout);
 void sys_trace_k_pipe_get_exit(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 			       size_t *bytes_read, size_t min_xfer, k_timeout_t timeout, int ret);
-void sys_trace_k_pipe_block_put_enter(struct k_pipe *pipe, struct k_mem_block *block, size_t size,
-				      struct k_sem *sem);
-void sys_trace_k_pipe_block_put_exit(struct k_pipe *pipe, struct k_mem_block *block, size_t size,
-				     struct k_sem *sem);
 
 void sys_trace_k_msgq_init(struct k_msgq *msgq);
 void sys_trace_k_msgq_alloc_init_enter(struct k_msgq *msgq, size_t msg_size, uint32_t max_msgs);
@@ -678,7 +670,7 @@ void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, void **mem, k_tim
 void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, void **mem, k_timeout_t timeout);
 void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_timeout_t timeout,
 				     int ret);
-void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem);
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void *mem);
 
 void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 			    k_timer_expiry_t stop_fn);

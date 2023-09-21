@@ -8,19 +8,9 @@ compatible: "nordic,nrf-spis"
 include: nordic,nrf-spi-common.yaml
 
 properties:
-    csn-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The CSN pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
-
-    def-char:
-      type: int
-      required: true
-      description: |
-          Default character. Character clocked out when the slave was not
-          provided with buffers and is ignoring the transaction.
+  def-char:
+    type: int
+    required: true
+    description: |
+        Default character. Character clocked out when the slave was not
+        provided with buffers and is ignoring the transaction.

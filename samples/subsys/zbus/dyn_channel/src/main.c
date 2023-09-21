@@ -72,9 +72,10 @@ static void filter_cb(const struct zbus_channel *chan)
 
 ZBUS_LISTENER_DEFINE(filter_lis, filter_cb);
 
-void main(void)
+int main(void)
 {
 	const struct version_msg *v = zbus_chan_const_msg(&version_chan);
 
 	LOG_DBG(" -> Dynamic channel sample version %u.%u-%u\n\n", v->major, v->minor, v->build);
+	return 0;
 }

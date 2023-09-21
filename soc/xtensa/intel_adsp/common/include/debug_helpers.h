@@ -7,9 +7,8 @@
 #define ZEPHYR_SOC_INTEL_ADSP_DEBUG_HELPERS_H_
 
 #include <adsp_memory.h>
+#include <zephyr/linker/linker-defs.h>
 
-extern char _text_start[];
-extern char _text_end[];
 extern char _imr_start[];
 extern char _imr_end[];
 extern char _end[];
@@ -19,7 +18,7 @@ extern char _cached_end[];
 
 static inline bool intel_adsp_ptr_executable(const void *p)
 {
-	return (p >= (void *)_text_start && p <= (void *)_text_end) ||
+	return (p >= (void *)__text_region_start && p <= (void *)__text_region_end) ||
 		(p >= (void *)_imr_start && p <= (void *)_imr_end);
 }
 

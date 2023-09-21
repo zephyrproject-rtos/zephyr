@@ -10,6 +10,15 @@ documentation.
 Additional information that is only relevant to Bluetooth applications can be
 found in this page.
 
+Thread safety
+*************
+
+Calling into the Bluetooth API is intended to be thread safe, unless otherwise
+noted in the documentation of the API function. The effort to ensure that this
+is the case for all API calls is an ongoing one, but the overall goal is
+formally stated in this paragraph. Bug reports and Pull Requests that move the
+subsystem in the direction of such goal are welcome.
+
 .. _bluetooth-hw-setup:
 
 Hardware setup
@@ -83,10 +92,11 @@ which is comprised of the following devices:
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
    :ref:`QEMU <application_run_qemu>` emulator or the ``native_posix`` native
    port of Zephyr
-#. A Controller, which can be one of two types:
+#. A Controller, which can be one of the following types:
 
    * A commercially available Controller
    * A :ref:`Controller-only <bluetooth-build-types>` build of Zephyr
+   * A Virtual controller
 
 .. warning::
    Certain external Controllers are either unable to accept the Host to
@@ -97,7 +107,7 @@ which is comprised of the following devices:
      <wrn> bt_hci_core: opcode 0x0c33 status 0x12
 
    when booting your sample of choice (make sure you have enabled
-   :kconfig:option:`CONFIG_BT_DEBUG_LOG` in your :file:`prj.conf` before running the
+   :kconfig:option:`CONFIG_LOG` in your :file:`prj.conf` before running the
    sample), or if there is no data flowing from the Controller to the Host, then
    you need to disable Host to Controller flow control. To do so, set
    ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n`` in your :file:`prj.conf`.
@@ -120,11 +130,12 @@ The :ref:`Native POSIX <native_posix>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 This executable is a normal Linux program, which can be debugged and
-instrumented like any other, and it communicates with a physical external
-Controller.
+instrumented like any other, and it communicates with a physical or virtual
+external Controller.
 
 Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
-run an application in this setup.
+run an application with a physical controller. For the virtual controller refer
+to :ref:`bluetooth_virtual_posix`.
 
 Simulated nRF52 with BabbleSim
 ==============================

@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -128,6 +129,11 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <EXP_WDT 0>;
 			status = "disabled";
+		};
+
+		pinctrl: pin-controller@4402e0a0 {
+			compatible = "ti,cc32xx-pinctrl";
+			reg = <0x4402e0a0 0x80>;
 		};
 	};
 };

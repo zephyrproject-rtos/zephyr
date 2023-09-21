@@ -2,17 +2,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/init.h>
 #include <errno.h>
 #include <soc.h>
 
 #include <mem_window.h>
 
-int boot_complete(const struct device *d)
+int boot_complete(void)
 {
-	ARG_UNUSED(d);
 	uint32_t *win;
 	const struct mem_win_config *config;
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(mem_window0));

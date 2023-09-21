@@ -34,7 +34,7 @@
 
 struct ina230_data {
 	const struct device *dev;
-	uint16_t current;
+	int16_t current;
 	uint16_t bus_voltage;
 	uint16_t power;
 #ifdef CONFIG_INA230_TRIGGER
@@ -42,6 +42,7 @@ struct ina230_data {
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	sensor_trigger_handler_t handler_alert;
+	const struct sensor_trigger *trig_alert;
 #endif  /* CONFIG_INA230_TRIGGER */
 };
 
@@ -49,7 +50,7 @@ struct ina230_config {
 	struct i2c_dt_spec bus;
 	uint16_t config;
 	uint32_t current_lsb;
-	uint16_t rshunt;
+	uint16_t cal;
 #ifdef CONFIG_INA230_TRIGGER
 	bool trig_enabled;
 	uint16_t mask;

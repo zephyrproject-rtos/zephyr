@@ -6,5 +6,11 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - adc
+  - dma
+  - gpio
+  - spi
+  - uart
 ram: 160
 flash: 1024

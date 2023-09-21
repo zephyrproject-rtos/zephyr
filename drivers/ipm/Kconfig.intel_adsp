@@ -1,14 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2022, Intel Corporation
 
-config IPM_CAVS_IDC
-	bool "CAVS DSP Intra-DSP Communication (IDC) driver"
-	default y if MP_NUM_CPUS > 1 && SMP
-	depends on CAVS_ICTL && DT_HAS_INTEL_ADSP_IDC_ENABLED
-	help
-	  Driver for the Intra-DSP Communication (IDC) channel for
-	  cross SoC communications.
-
 config IPM_CALLBACK_ASYNC
 	bool "Deliver callbacks asynchronously"
 	default y if IPM_CAVS_HOST
@@ -51,7 +43,6 @@ config IPM_CAVS_HOST_OUTBOX_OFFSET
 config IPM_CAVS_HOST_REGWORD
 	bool "Store first 4 bytes in IPC register"
 	depends on INTEL_ADSP_IPC
-	depends on !SOC_INTEL_CAVS_V15
 	help
 	  Protocol variant.  When true, the first four bytes of a
 	  message are passed in the cAVS IDR/TDR register pair instead

@@ -168,7 +168,7 @@ The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool int
 Flashing an application to the STM32G081B_EVAL
 ----------------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

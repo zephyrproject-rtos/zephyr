@@ -46,7 +46,7 @@ API Changes
 
 * The :c:func:`lwm2m_rd_client_start` function now accepts an additional
   ``flags`` parameter, which allows to configure current LwM2M client session,
-  for instance enable bootstrap procedure in the curent session.
+  for instance enable bootstrap procedure in the current session.
 
 * LwM2M execute now supports arguments. The execute callback
   :c:type:`lwm2m_engine_execute_cb_t` is extended with an ``args`` parameter

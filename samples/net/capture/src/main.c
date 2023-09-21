@@ -9,7 +9,8 @@ LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Starting network capture sample");
+	return 0;
 }

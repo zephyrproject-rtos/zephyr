@@ -1,0 +1,28 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NXP_S32_LINFLEXD
+	bool "LINFlexD UART driver for NXP S32 family processors"
+	default y
+	depends on DT_HAS_NXP_S32_LINFLEXD_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select NOCACHE_MEMORY
+	help
+	  Enable the LINFlexD UART driver for NXP S32 family processors.
+
+if UART_NXP_S32_LINFLEXD
+
+config UART_NXP_S32_POLL_OUT_TIMEOUT
+	int "The maximum duration to transfer a byte data in blocking mode"
+	default 10000
+	help
+	  Maximum duration in micro-seconds to transfer a byte data in blocking mode.
+
+config UART_NXP_S32_POLL_IN_TIMEOUT
+	int "The maximum duration to receive a byte data in blocking mode"
+	default 10000
+	help
+	  Maximum duration in micro-seconds to receive a byte data in blocking mode.
+
+endif # UART_NXP_S32_LINFLEXD

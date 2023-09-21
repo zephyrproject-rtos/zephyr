@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NPM1300_CHARGER
+	bool "NPM1300 Charger"
+	default y
+	depends on DT_HAS_NORDIC_NPM1300_CHARGER_ENABLED
+	select I2C
+	select MFD
+	select REQUIRES_FULL_LIBC
+	help
+	  Enable NPM1300 charger driver.

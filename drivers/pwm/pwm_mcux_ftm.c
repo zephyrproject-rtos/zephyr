@@ -46,6 +46,8 @@ struct mcux_ftm_capture_data {
 	pwm_capture_callback_handler_t callback;
 	void *user_data;
 	uint32_t first_edge_overflows;
+	uint16_t first_edge_cnt;
+	bool first_edge_overflow;
 	bool pulse_capture;
 };
 
@@ -271,8 +273,8 @@ static int mcux_ftm_disable_capture(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static void mcux_ftm_capture_first_edge(const struct device *dev,
-					uint32_t channel)
+static void mcux_ftm_capture_first_edge(const struct device *dev, uint32_t channel,
+					uint16_t cnt, bool overflow)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -283,11 +285,17 @@ static void mcux_ftm_capture_first_edge(const struct device *dev,
 	capture = &data->capture[pair];
 
 	FTM_DisableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
+
+	capture->first_edge_cnt = cnt;
 	capture->first_edge_overflows = data->overflows;
+	capture->first_edge_overflow = overflow;
+
+	LOG_DBG("pair = %d, 1st cnt = %u, 1st ovf = %d", pair, cnt, overflow);
 }
 
-static void mcux_ftm_capture_second_edge(const struct device *dev,
-					 uint32_t channel)
+static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t channel,
+					 uint16_t cnt, bool overflow)
+
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -306,13 +314,27 @@ static void mcux_ftm_capture_second_edge(const struct device *dev,
 	first_cnv = config->base->CONTROLS[PAIR_1ST_CH(pair)].CnV;
 	second_cnv = config->base->CONTROLS[PAIR_2ND_CH(pair)].CnV;
 
-	/* Prepare for next capture */
-	if (capture->param.mode == kFTM_Continuous) {
+	if (capture->pulse_capture) {
+		/* Clear both edge flags for pulse capture to capture first edge overflow counter */
+		FTM_ClearStatusFlags(config->base, BIT(PAIR_1ST_CH(pair)) | BIT(PAIR_2ND_CH(pair)));
+	} else {
+		/* Only clear second edge flag for period capture as next first edge is this edge */
 		FTM_ClearStatusFlags(config->base, BIT(PAIR_2ND_CH(pair)));
 	}
 
-	/* Calculate cycles, check for overflows */
+	if (unlikely(capture->first_edge_overflow && first_cnv > capture->first_edge_cnt)) {
+		/* Compensate for the overflow registered in the same IRQ */
+		capture->first_edge_overflows--;
+	}
+
+	if (unlikely(overflow && second_cnv > cnt)) {
+		/* Compensate for the overflow registered in the same IRQ */
+		second_edge_overflows--;
+	}
+
 	overflows = second_edge_overflows - capture->first_edge_overflows;
+
+	/* Calculate cycles, check for overflows */
 	if (overflows > 0) {
 		if (u32_mul_overflow(overflows, config->base->MOD, &cycles)) {
 			LOG_ERR("overflow while calculating cycles");
@@ -329,8 +351,10 @@ static void mcux_ftm_capture_second_edge(const struct device *dev,
 		cycles = second_cnv - first_cnv;
 	}
 
-	LOG_DBG("pair = %d, overflows = %u, cycles = %u", pair, overflows,
-		cycles);
+	LOG_DBG("pair = %d, 1st ovfs = %u, 2nd ovfs = %u, ovfs = %u, 1st cnv = %u, "
+		"2nd cnv = %u, cycles = %u, 2nd cnt = %u, 2nd ovf = %d",
+		pair, capture->first_edge_overflows, second_edge_overflows, overflows, first_cnv,
+		second_cnv, cycles, cnt, overflow);
 
 	if (capture->pulse_capture) {
 		capture->callback(dev, pair, 0, cycles, status,
@@ -341,9 +365,16 @@ static void mcux_ftm_capture_second_edge(const struct device *dev,
 	}
 
 	if (capture->param.mode == kFTM_OneShot) {
+		/* One-shot capture done */
 		FTM_DisableInterrupts(config->base, BIT(PAIR_2ND_CH(pair)));
-	} else {
+	} else if (capture->pulse_capture) {
+		/* Prepare for first edge of next pulse capture */
 		FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
+	} else {
+		/* First edge of next period capture is second edge of this capture (this edge) */
+		capture->first_edge_cnt = cnt;
+		capture->first_edge_overflows = second_edge_overflows;
+		capture->first_edge_overflow = false;
 	}
 }
 
@@ -351,24 +382,28 @@ static void mcux_ftm_isr(const struct device *dev)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
+	bool overflow = false;
 	uint32_t flags;
 	uint32_t irqs;
+	uint16_t cnt;
 	uint32_t ch;
 
 	flags = FTM_GetStatusFlags(config->base);
 	irqs = FTM_GetEnabledInterrupts(config->base);
+	cnt = config->base->CNT;
 
 	if (flags & kFTM_TimeOverflowFlag) {
 		data->overflows++;
+		overflow = true;
 		FTM_ClearStatusFlags(config->base, kFTM_TimeOverflowFlag);
 	}
 
 	for (ch = 0; ch < MAX_CHANNELS; ch++) {
 		if ((flags & BIT(ch)) && (irqs & BIT(ch))) {
 			if (ch & 1) {
-				mcux_ftm_capture_second_edge(dev, ch);
+				mcux_ftm_capture_second_edge(dev, ch, cnt, overflow);
 			} else {
-				mcux_ftm_capture_first_edge(dev, ch);
+				mcux_ftm_capture_first_edge(dev, ch, cnt, overflow);
 			}
 		}
 	}

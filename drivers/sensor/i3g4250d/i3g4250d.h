@@ -16,6 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
+#include <stmemsc.h>
 #include "i3g4250d_reg.h"
 
 struct i3g4250d_device_config {

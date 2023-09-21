@@ -23,5 +23,5 @@ supported:
   - watchdog
   - usb_device
   - can
-  - canfd
   - dac
+  - dma

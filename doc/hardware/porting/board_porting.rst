@@ -129,6 +129,15 @@ board directory in the zephyr repository, but it's the easiest way to get
 started. See :ref:`custom_board_definition` for documentation on moving your
 board directory to a separate repository once it's working.)
 
+.. note::
+
+  The board directory name does not need to match the name of the board.
+  Multiple boards can even defined be in one directory.
+  For example, for boards with multi-core SoC, a logical board might be created
+  for each core following the naming scheme `<board>_<soc-core>`, with definitions
+  for all of these different boards defined inside the same directory. This and
+  similar schemes are common for upstream vendor boards.
+
 Your board directory should look like this:
 
 .. code-block:: none
@@ -232,6 +241,37 @@ If you're in a hurry, simple hardware can usually be supported by copy/paste
 followed by trial and error. If you want to understand details, you will need
 to read the rest of the devicetree documentation and the devicetree
 specification.
+
+Board extensions
+****************
+
+Board extensions are board fragments that can be present in a board root
+folder, under ``${BOARD_ROOT}/boards/extensions``. The extension folder must
+follow the naming structure of the original board to extend. The board extension
+directory may contain Kconfig fragments and/or devicetree overlays. Board
+extensions are, by default, automatically loaded and applied on top of board
+files, before anything else. There is no guarantee on which order extensions are
+applied, in case multiple exist. This feature shall be disabled by passing
+``-DBOARD_EXTENSIONS=OFF`` when building.
+
+Board extensions are designed for downstream users, for example,
+``example-application`` or vendor SDKs. In some situations, certain hardware
+description or `choices <devicetree-chosen-nodes>`_ can not be added in the
+upstream Zephyr repository, but they can be in a downstream project, where
+custom bindings or driver classes can also be created. This feature may also be
+useful in development phases, when the board skeleton lives upstream, but other
+features are developed in a downstream module.
+
+Note that board extensions need to follow the
+:ref:`same guidelines <porting-general-recommendations>` as regular boards. For
+example, it is wrong to enable extra peripherals or subsystems in a board
+extension.
+
+.. warning::
+
+   Board extensions are not allowed in any module referenced in Zephyr's
+   ``west.yml`` manifest file. Any board changes are required to be submitted to
+   the main Zephyr repository.
 
 .. _dt_k6x_example:
 
@@ -465,6 +505,18 @@ This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
    runner wraps Segger's J-Link tools, and so on. But the runner command line
    options like ``--speed`` etc. are specific to the Python scripts.
 
+.. note::
+
+   Runners and board configuration should be created without being targeted to
+   a single operating system if the tool supports multiple operating systems,
+   nor should it rely upon special system setup/configuration. For example; do
+   not assume that a user will have prior knowledge/configuration or (if using
+   Linux) special udev rules installed, do not assume one specific ``/dev/X``
+   device for all platforms as this will not be compatible with Windows or
+   macOS, and allow for overriding of the selected device so that multiple
+   boards can be connected to a single system and flashed/debugged at the
+   choice of the user.
+
 For more details:
 
 - Run ``west flash --context`` to see a list of available runners which support
@@ -674,7 +726,7 @@ board_check_revision() details
 .. code-block:: cmake
 
    board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
-                        [EXACT]
+                        [OPTIONAL EXACT]
                         [DEFAULT_REVISION <revision>]
                         [HIGHEST_REVISION <revision>]
                         [VALID_REVISIONS <revision> [<revision> ...]]
@@ -690,6 +742,12 @@ This function supports the following arguments:
   Kconfig fragment and devicetree overlay files must use full numbering to avoid
   ambiguity, so only :file:`<board>_1_0_0.conf` and
   :file:`<board>_1_0_0.overlay` are allowed.
+
+* ``OPTIONAL``: if given, a revision is not required to be specified.
+  If the revision is not supplied, the base board is used with no overlays.
+  Can be combined with ``EXACT``, in which case providing the revision is
+  optional, but if given the ``EXACT`` rules apply. Mutually exclusive with
+  ``DEFAULT_REVISION``.
 
 * ``EXACT``: if given, the revision is required to be an exact match.
   Otherwise, the closest matching revision not greater than the user's choice

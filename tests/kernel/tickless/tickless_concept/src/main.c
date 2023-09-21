@@ -27,21 +27,13 @@ static struct k_thread tdata[NUM_THREAD];
 #define SLICE_SIZE_LIMIT k_ticks_to_ms_floor64((IDLE_THRESH >> 1) + 1)
 
 /*align to millisecond boundary*/
-#if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
 		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
-			k_busy_wait(50);       \
+			Z_SPIN_DELAY(50);       \
 	} while (0)
-#else
-#define ALIGN_MS_BOUNDARY()		       \
-	do {				       \
-		uint32_t t = k_uptime_get_32();   \
-		while (t == k_uptime_get_32()) \
-			;		       \
-	} while (0)
-#endif
+
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 static int64_t elapsed_slice;
 

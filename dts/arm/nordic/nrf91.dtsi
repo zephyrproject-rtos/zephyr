@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include "nrf_common.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <16>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			/* Common nRF91 peripherals description. */
+			#include "nrf91_peripherals.dtsi"
+		};
+
+		/* Additional Secure peripherals */
+		cryptocell: crypto@50840000 {
+			compatible = "nordic,cryptocell", "arm,cryptocell-310";
+			reg = <0x50840000 0x1000>, <0x50841000 0x1000>;
+			reg-names = "wrapper", "core";
+			interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+		};
+
+		ctrlap: ctrlap@50006000 {
+			compatible = "nordic,nrf-ctrlapperi";
+			reg = <0x50006000 0x1000>;
+			status = "okay";
+		};
+
+		gpiote: gpiote@5000d000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x5000d000 0x1000>;
+			interrupts = <13 5>;
+			status = "disabled";
+		};
+
+		spu: spu@50003000 {
+			compatible = "nordic,nrf-spu";
+			reg = <0x50003000 0x1000>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		ficr: ficr@ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xff0000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,6 +1,7 @@
 /*
  * Copyright 2019-2020 Peter Bigot Consulting, LLC
  * Copyright 2022 Nordic Semiconductor ASA
+ * Copyright 2023 EPAM Systems
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,16 +16,11 @@
 
 LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
-#define OPTION_ALWAYS_ON_POS 0
-#define OPTION_ALWAYS_ON BIT(OPTION_ALWAYS_ON_POS)
-#define OPTION_BOOT_ON_POS 1
-#define OPTION_BOOT_ON BIT(OPTION_BOOT_ON_POS)
-
 struct regulator_fixed_config {
+	struct regulator_common_config common;
 	uint32_t startup_delay_us;
 	uint32_t off_on_delay_us;
 	struct gpio_dt_spec enable;
-	uint8_t options;
 };
 
 struct regulator_fixed_data {
@@ -36,8 +32,8 @@ static int regulator_fixed_enable(const struct device *dev)
 	const struct regulator_fixed_config *cfg = dev->config;
 	int ret;
 
-	if ((cfg->options & OPTION_ALWAYS_ON) != 0) {
-		return 0;
+	if (!cfg->enable.port) {
+		return -ENOTSUP;
 	}
 
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
@@ -56,63 +52,92 @@ static int regulator_fixed_disable(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
 
-	if  ((cfg->options & OPTION_ALWAYS_ON) != 0) {
-		return 0;
+	if (!cfg->enable.port) {
+		return -ENOTSUP;
 	}
 
 	return gpio_pin_set_dt(&cfg->enable, 0);
 }
 
-static const struct regulator_driver_api regulator_fixed_api = {
-	.enable = regulator_fixed_enable,
-	.disable = regulator_fixed_disable,
-};
-
-static int regulator_fixed_init(const struct device *dev)
+static unsigned int regulator_fixed_count_voltages(const struct device *dev)
 {
-	const struct regulator_fixed_config *cfg = dev->config;
-	int ret;
+	int32_t min_uv;
 
-	regulator_common_data_init(dev);
+	return (regulator_common_get_min_voltage(dev, &min_uv) < 0) ? 0U : 1U;
+}
 
-	if (!device_is_ready(cfg->enable.port)) {
-		LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
-		return -ENODEV;
+static int regulator_fixed_list_voltage(const struct device *dev,
+					unsigned int idx,
+					int32_t *volt_uv)
+{
+	if (idx != 0) {
+		return -EINVAL;
 	}
 
-	if ((cfg->options & (OPTION_ALWAYS_ON | OPTION_BOOT_ON)) != 0U) {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-
-		k_busy_wait(cfg->startup_delay_us);
-	} else {
-		ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
+	if (regulator_common_get_min_voltage(dev, volt_uv) < 0) {
+		return -EINVAL;
 	}
 
 	return 0;
 }
 
-#define REGULATOR_FIXED_DEFINE(inst)                                           \
-	static struct regulator_fixed_data data##inst;                         \
-                                                                               \
-	static const struct regulator_fixed_config config##inst = {            \
-		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),      \
-		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),        \
-		.enable = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),           \
-		.options = (DT_INST_PROP(inst, regulator_boot_on)              \
-			    << OPTION_BOOT_ON_POS) |                           \
-			   (DT_INST_PROP(inst, regulator_always_on)            \
-			    << OPTION_ALWAYS_ON_POS),                          \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,   \
-			      &config##inst, POST_KERNEL,                      \
-			      CONFIG_REGULATOR_FIXED_INIT_PRIORITY,            \
+static const struct regulator_driver_api regulator_fixed_api = {
+	.enable = regulator_fixed_enable,
+	.disable = regulator_fixed_disable,
+	.count_voltages = regulator_fixed_count_voltages,
+	.list_voltage = regulator_fixed_list_voltage,
+};
+
+static int regulator_fixed_init(const struct device *dev)
+{
+	const struct regulator_fixed_config *cfg = dev->config;
+	bool init_enabled;
+	int ret;
+
+	regulator_common_data_init(dev);
+
+	init_enabled = regulator_common_is_init_enabled(dev);
+
+	if (cfg->enable.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->enable)) {
+			LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
+			return -ENODEV;
+		}
+
+		if (init_enabled) {
+			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
+			if (ret < 0) {
+				return ret;
+			}
+
+			k_busy_wait(cfg->startup_delay_us);
+		} else {
+			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return regulator_common_init(dev, init_enabled);
+}
+
+#define REGULATOR_FIXED_DEFINE(inst)                                              \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==         \
+		     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),           \
+		     "Regulator requires fixed voltages");                        \
+	static struct regulator_fixed_data data##inst;                            \
+                                                                                  \
+	static const struct regulator_fixed_config config##inst = {               \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),             \
+		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),         \
+		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),           \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
+	};                                                                        \
+                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,      \
+			      &config##inst, POST_KERNEL,                         \
+			      CONFIG_REGULATOR_FIXED_INIT_PRIORITY,               \
 			      &regulator_fixed_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_DEFINE)

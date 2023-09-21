@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Tokita, Hiroshi <tokita.hiroshi@gfujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_RPI_PICO
+	bool "Raspberry Pi Pico DMA driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_DMA_ENABLED
+	select PICOSDK_USE_DMA
+	select PICOSDK_USE_CLAIM
+	depends on RESET
+	help
+	  DMA driver for RaspberryPi Pico.

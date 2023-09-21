@@ -26,6 +26,7 @@
  *
  */
 
+#include <stdio.h>
 #include <soc.h>
 #include "hw_models_top.h"
 #include <stdlib.h>
@@ -57,6 +58,15 @@ void posix_exit(int exit_code)
  */
 void posix_init(int argc, char *argv[])
 {
+	/*
+	 * Let's ensure that even if we are redirecting to a file, we get stdout
+	 * and stderr line buffered (default for console)
+	 * Note that glibc ignores size. But just in case we set a reasonable
+	 * number in case somebody tries to compile against a different library
+	 */
+	setvbuf(stdout, NULL, _IOLBF, 512);
+	setvbuf(stderr, NULL, _IOLBF, 512);
+
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
 	native_handle_cmd_line(argc, argv);
@@ -110,6 +120,9 @@ int main(int argc, char *argv[])
 
 #else /* CONFIG_ARCH_POSIX_LIBFUZZER */
 
+const uint8_t *posix_fuzz_buf;
+size_t posix_fuzz_sz;
+
 /**
  * Entry point for fuzzing (when enabled). Works by placing the data
  * into two known symbols, triggering an app-visible interrupt, and
@@ -117,8 +130,6 @@ int main(int argc, char *argv[])
  * "long enough" to handle the event and reach a quiescent state
  * again)
  */
-uint8_t *posix_fuzz_buf, posix_fuzz_sz;
-
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
 {
 	static bool posix_initialized;
@@ -131,7 +142,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
 	/* Provide the fuzz data to Zephyr as an interrupt, with
 	 * "DMA-like" data placed into posix_fuzz_buf/sz
 	 */
-	posix_fuzz_buf = (void *)data;
+	posix_fuzz_buf = data;
 	posix_fuzz_sz = sz;
 	hw_irq_ctrl_set_irq(CONFIG_ARCH_POSIX_FUZZ_IRQ);
 

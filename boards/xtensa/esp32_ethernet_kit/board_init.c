@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
 #define IP101GRI_RESET_N_PIN	5
 
-static int board_esp32_ethernet_kit_init(const struct device *dev)
+static int board_esp32_ethernet_kit_init(void)
 {
-	ARG_UNUSED(dev);
 	const struct device *gpio = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
 	if (!device_is_ready(gpio)) {

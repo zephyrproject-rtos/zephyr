@@ -10,4 +10,6 @@ toolchain:
 testing:
   default: true
   only_tags:
-     - kernel
+    - kernel
+  ignore_tags:
+    - benchmark

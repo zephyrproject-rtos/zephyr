@@ -72,3 +72,15 @@ config SOC_ATMEL_SAML_OSC16M_AS_MAIN
 endchoice
 
 endif # SOC_SERIES_SAML21 || SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
+
+config SOC_ATMEL_SAMR3X_RADIO_OFF_SETUP
+	bool "Configure LoRa radio pins if not in use"
+	default y if !LORA
+	depends on SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
+	help
+	  As detailed in DS70005356C, LoRa radio SPI pins do not have pull-ups,
+	  so when the radio is not in use, it's important that CS is kept high,
+	  to avoid unexpected behavior and increased current consumption. To
+	  further reduce power consumption, radio can be kept in reset state by
+	  keeping nRST pin low. When enabling this option, both CS and nRST will
+	  be configured high and low, respectively.

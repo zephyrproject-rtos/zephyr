@@ -28,9 +28,10 @@
 #include "../host/hci_core.h"
 #include "../host/keys.h"
 
-#define BT_CSIP_SIH_PRAND_SIZE          3
-#define BT_CSIP_SIH_HASH_SIZE           3
 #define CSIP_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
+
+#define CSIS_CHAR_ATTR_COUNT	  3 /* declaration + value + cccd */
+#define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
 
 #include "common/bt_str.h"
 
@@ -48,7 +49,7 @@ struct bt_csip_set_member_svc_inst {
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
 	struct csip_pending_notifications pend_notify[CONFIG_BT_MAX_PAIRED];
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
@@ -173,27 +174,29 @@ static int sirk_encrypt(struct bt_conn *conn,
 	return 0;
 }
 
-static int generate_prand(uint32_t *dest)
+static int generate_prand(uint8_t dest[BT_CSIP_CRYPTO_PRAND_SIZE])
 {
 	bool valid = false;
 
 	do {
 		int res;
+		uint32_t prand;
 
 		*dest = 0;
-		res = bt_rand(dest, BT_CSIP_SIH_PRAND_SIZE);
+		res = bt_rand(dest, BT_CSIP_CRYPTO_PRAND_SIZE);
 		if (res != 0) {
 			return res;
 		}
 
 		/* Validate Prand: Must contain both a 1 and a 0 */
-		if (*dest != 0 && *dest != 0x3FFFFF) {
+		prand = sys_get_le24(dest);
+		if (prand != 0 && prand != 0x3FFFFF) {
 			valid = true;
 		}
 	} while (!valid);
 
-	*dest &= 0x3FFFFF;
-	*dest |= BIT(22); /* bit 23 shall be 0, and bit 22 shall be 1 */
+	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] &= 0x3F;
+	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] |= BIT(6);
 
 	return 0;
 }
@@ -202,14 +205,14 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 				    uint8_t rsi[BT_CSIP_RSI_SIZE])
 {
 	int res = 0;
-	uint32_t prand;
-	uint32_t hash;
+	uint8_t prand[BT_CSIP_CRYPTO_PRAND_SIZE];
+	uint8_t hash[BT_CSIP_CRYPTO_HASH_SIZE];
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* prand is from the sample data from A.2 in the CSIS spec */
-		prand = 0x69f563;
+		sys_put_le24(0x69f563, prand);
 	} else {
-		res = generate_prand(&prand);
+		res = generate_prand(prand);
 
 		if (res != 0) {
 			LOG_WRN("Could not generate new prand");
@@ -217,14 +220,14 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 		}
 	}
 
-	res = bt_csip_sih(svc_inst->set_sirk.value, prand, &hash);
+	res = bt_csip_sih(svc_inst->set_sirk.value, prand, hash);
 	if (res != 0) {
 		LOG_WRN("Could not generate new RSI");
 		return res;
 	}
 
-	(void)memcpy(rsi, &hash, BT_CSIP_SIH_HASH_SIZE);
-	(void)memcpy(rsi + BT_CSIP_SIH_HASH_SIZE, &prand, BT_CSIP_SIH_PRAND_SIZE);
+	(void)memcpy(rsi, hash, BT_CSIP_CRYPTO_HASH_SIZE);
+	(void)memcpy(rsi + BT_CSIP_CRYPTO_HASH_SIZE, prand, BT_CSIP_CRYPTO_PRAND_SIZE);
 
 	return res;
 }
@@ -442,7 +445,7 @@ static void set_lock_timer_handler(struct k_work *work)
 	struct k_work_delayable *delayable;
 	struct bt_csip_set_member_svc_inst *svc_inst;
 
-	delayable = CONTAINER_OF(work, struct k_work_delayable, work);
+	delayable = k_work_delayable_from_work(work);
 	svc_inst = CONTAINER_OF(delayable, struct bt_csip_set_member_svc_inst,
 				set_lock_timer);
 
@@ -522,8 +525,10 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
-	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-		handle_csip_disconnect(&svc_insts[i], conn);
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+			handle_csip_disconnect(&svc_insts[i], conn);
+		}
 	}
 }
 
@@ -538,7 +543,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 		if (pend_notify->active &&
 		    bt_addr_le_eq(bt_conn_get_dst(conn), &pend_notify->addr)) {
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
@@ -555,14 +560,14 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 			bt_addr_le_copy(&pend_notify->addr,
 					bt_conn_get_dst(conn));
 			pend_notify->active = true;
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 			pend_notify->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	struct csip_pending_notifications *oldest;
 
 	oldest = &svc_inst->pend_notify[0];
@@ -681,9 +686,9 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 		return false;
 	}
 
-	if (param->rank > 0 && param->rank > param->set_size) {
-		LOG_DBG("Invalid rank: %u (shall be less than set_size: %u)", param->set_size,
-			param->set_size);
+	if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
+		LOG_DBG("Invalid rank: %u (shall be less than or equal to set_size: %u)",
+			param->rank, param->set_size);
 		return false;
 	}
 
@@ -697,14 +702,60 @@ static bool valid_register_param(const struct bt_csip_set_member_register_param 
 	return true;
 }
 
+static void remove_csis_char(const struct bt_uuid *uuid, struct bt_gatt_service *svc)
+{
+	size_t attrs_to_rem;
+
+	/* Rank does not have any CCCD */
+	if (bt_uuid_cmp(uuid, BT_UUID_CSIS_RANK) == 0) {
+		attrs_to_rem = CSIS_RANK_CHAR_ATTR_COUNT;
+	} else {
+		attrs_to_rem = CSIS_CHAR_ATTR_COUNT;
+	}
+
+	/* Start at index 4 as the first 4 attributes are mandatory */
+	for (size_t i = 4U; i < svc->attr_count; i++) {
+		if (bt_uuid_cmp(svc->attrs[i].uuid, uuid) == 0) {
+			/* Remove the characteristic declaration, the characteristic value and
+			 * potentially the CCCD. The value declaration will be a i - 1, the
+			 * characteristic value at i and the CCCD is potentially at i + 1
+			 */
+
+			/* We use attrs_to_rem to determine whether there is a CCCD after the
+			 * characteristic value or not, which then determines if this is the last
+			 * characteristic or not
+			 */
+			if (i == (svc->attr_count - (attrs_to_rem - 1))) {
+				/* This is the last characteristic in the service: just decrement
+				 * the attr_count by number of attributes to remove
+				 * (CSIS_CHAR_ATTR_COUNT)
+				 */
+			} else {
+				/* Move all following attributes attrs_to_rem locations "up" */
+				for (size_t j = i - 1U; j < svc->attr_count - attrs_to_rem; j++) {
+					svc->attrs[j] = svc->attrs[j + attrs_to_rem];
+				}
+			}
+
+			svc->attr_count -= attrs_to_rem;
+
+			return;
+		}
+	}
+
+	__ASSERT(false, "Failed to remove CSIS char %s", bt_uuid_str(uuid));
+}
+
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
+	static bool callbacks_registered;
 	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
 
 	if (instance_cnt == ARRAY_SIZE(svc_insts)) {
+		LOG_DBG("Too many set member registrations");
 		return -ENOMEM;
 	}
 
@@ -722,8 +773,28 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->service_p = &csip_set_member_service_list[instance_cnt];
 	instance_cnt++;
 
-	bt_conn_cb_register(&conn_callbacks);
-	bt_conn_auth_info_cb_register(&auth_callbacks);
+	if (!callbacks_registered) {
+		bt_conn_cb_register(&conn_callbacks);
+		bt_conn_auth_info_cb_register(&auth_callbacks);
+
+		callbacks_registered = true;
+	}
+
+	/* The removal of the optional characteristics should be done in reverse order of the order
+	 * in BT_CSIP_SERVICE_DEFINITION, as that improves the performance of remove_csis_char,
+	 * since it's easier to remove the last characteristic
+	 */
+	if (param->rank == 0U) {
+		remove_csis_char(BT_UUID_CSIS_RANK, inst->service_p);
+	}
+
+	if (param->set_size == 0U) {
+		remove_csis_char(BT_UUID_CSIS_SET_SIZE, inst->service_p);
+	}
+
+	if (!param->lockable) {
+		remove_csis_char(BT_UUID_CSIS_SET_LOCK, inst->service_p);
+	}
 
 	err = bt_gatt_service_register(inst->service_p);
 	if (err != 0) {

@@ -337,6 +337,9 @@ ZTEST(atomic, test_threads_access_atomic)
 	zassert_true(total_atomic == (TEST_CYCLE * THREADS_NUM),
 		"atomic counting failure");
 }
+
+extern void *common_setup(void);
+ZTEST_SUITE(atomic, NULL, common_setup, NULL, NULL, NULL);
 /**
  * @}
  */

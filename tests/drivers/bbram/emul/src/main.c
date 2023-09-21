@@ -109,4 +109,5 @@ static void before(void *data)
 	bbram_emul_set_standby_power_state(dev, false);
 	bbram_emul_set_power_state(dev, false);
 }
+
 ZTEST_SUITE(bbram, NULL, NULL, before, NULL, NULL);

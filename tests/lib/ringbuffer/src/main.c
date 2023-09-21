@@ -168,7 +168,7 @@ static struct {
 	uint8_t value;
 	uint16_t type;
 	uint32_t buffer[DATA_MAX_SIZE];
-} data[] = {
+} static_data[] = {
 	{ 0, 32, 1, {} },
 	{ 1, 76, 54, { 0x89ab } },
 	{ 3, 0xff, 0xffff, { 0x0f0f, 0xf0f0, 0xff00 } }
@@ -179,8 +179,8 @@ static void tringbuf_put(const void *p)
 {
 	int index = POINTER_TO_INT(p);
 	/**TESTPOINT: ring buffer put*/
-	int ret = ring_buf_item_put(pbuf, data[index].type, data[index].value,
-				   data[index].buffer, data[index].length);
+	int ret = ring_buf_item_put(pbuf, static_data[index].type, static_data[index].value,
+				    static_data[index].buffer, static_data[index].length);
 
 	zassert_equal(ret, 0);
 }
@@ -195,10 +195,10 @@ static void tringbuf_get(const void *p)
 	/**TESTPOINT: ring buffer get*/
 	ret = ring_buf_item_get(pbuf, &type, &value, rx_data, &size32);
 	zassert_equal(ret, 0);
-	zassert_equal(type, data[index].type);
-	zassert_equal(value, data[index].value);
-	zassert_equal(size32, data[index].length);
-	zassert_equal(memcmp(rx_data, data[index].buffer, size32), 0);
+	zassert_equal(type, static_data[index].type);
+	zassert_equal(value, static_data[index].value);
+	zassert_equal(size32, static_data[index].length);
+	zassert_equal(memcmp(rx_data, static_data[index].buffer, size32), 0);
 }
 
 static void tringbuf_get_discard(const void *p)
@@ -210,9 +210,9 @@ static void tringbuf_get_discard(const void *p)
 	/**TESTPOINT: ring buffer get*/
 	ret = ring_buf_item_get(pbuf, &type, &value, NULL, &size32);
 	zassert_equal(ret, 0);
-	zassert_equal(type, data[index].type);
-	zassert_equal(value, data[index].value);
-	zassert_equal(size32, data[index].length);
+	zassert_equal(type, static_data[index].type);
+	zassert_equal(value, static_data[index].value);
+	zassert_equal(size32, static_data[index].length);
 }
 
 /*test cases*/

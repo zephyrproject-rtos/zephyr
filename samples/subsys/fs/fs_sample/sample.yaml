@@ -1,0 +1,47 @@
+sample:
+  name: Filesystems sample
+common:
+  tags: filesystem
+  modules:
+    - fatfs
+tests:
+  sample.filesystem.fat_fs:
+    depends_on: sdhc
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+  sample.filesystem.fat_fs.overlay:
+    platform_allow: nrf52840_blip
+  sample.filesystem.fat_fs.adafruit_2_8_tft_touch_v2:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+      - arduino_i2c
+    platform_exclude:
+      - stm32f769i_disco
+      - pan1781_evb
+      - pan1782_evb
+      - frdm_k64f
+      - mimxrt1010_evk
+    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
+    tags: shield
+    harness: console
+    harness_config:
+      fixture: fixture_shield_adafruit_2_8_tft_touch_v2
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+  sample.filesystem.fat_fs.nrf52840dk_nrf52840.qspi:
+    build_only: true
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
+  sample.filesystem.fat_fs.has_sdmmc_disk:
+    build_only: true
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    integration_platforms:
+      - frdm_k64f
+  sample.filesystem.ext2:
+    extra_args: CONF_FILE="prj_ext.conf"
+    platform_allow: hifive_unmatched bl5340_dvk_cpuapp

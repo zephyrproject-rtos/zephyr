@@ -7,7 +7,6 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -20,12 +19,14 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -43,9 +44,9 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void)
+static void term_setup(void *data)
 {
 	test_setup(&conn);
 }
@@ -81,21 +82,21 @@ static void test_terminate_rem(uint8_t role)
 	ut_rx_q_is_empty();
 
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
-void test_terminate_central_rem(void)
+ZTEST(term_central, test_terminate_central_rem)
 {
 	test_terminate_rem(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_terminate_periph_rem(void)
+ZTEST(term_periph, test_terminate_periph_rem)
 {
 	test_terminate_rem(BT_HCI_ROLE_PERIPHERAL);
 }
 
-void test_terminate_loc(uint8_t role)
+static void test_terminate_loc(uint8_t role)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -133,28 +134,19 @@ void test_terminate_loc(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
-void test_terminate_central_loc(void)
+ZTEST(term_central, test_terminate_central_loc)
 {
 	test_terminate_loc(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_terminate_periph_loc(void)
+ZTEST(term_periph, test_terminate_periph_loc)
 {
 	test_terminate_loc(BT_HCI_ROLE_PERIPHERAL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		term,
-		ztest_unit_test_setup_teardown(test_terminate_central_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_periph_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_central_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_periph_loc, setup, unit_test_noop));
-
-	ztest_run_test_suite(term);
-}
+ZTEST_SUITE(term_central, NULL, NULL, term_setup, NULL, NULL);
+ZTEST_SUITE(term_periph, NULL, NULL, term_setup, NULL, NULL);

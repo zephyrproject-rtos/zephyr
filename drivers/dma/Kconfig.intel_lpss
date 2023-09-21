@@ -1,0 +1,17 @@
+# LPSS DMA configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INTEL_LPSS
+	bool "INTEL LPSS DMA driver"
+	default n
+	depends on DT_HAS_INTEL_LPSS_ENABLED
+	help
+	  INTEL LPSS DMA driver.
+
+if DMA_INTEL_LPSS
+
+source "drivers/dma/Kconfig.dw_common"
+
+endif # DMA_INTEL_LPSS

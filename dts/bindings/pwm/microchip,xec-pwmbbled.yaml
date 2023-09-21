@@ -1,0 +1,63 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC PWM using BBLED hardware
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+compatible: "microchip,xec-pwmbbled"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
+
+  pcrs:
+    type: array
+    required: true
+    description: BBLED PCR register index and bit position
+
+  clock-select:
+    type: string
+    required: true
+    description: |
+      Clock source selection: 32 KHz is available in deep sleep.
+      - PWM_BBLED_CLK_AHB: Clock source is the PLL based AHB clock
+      - PWM_BBLED_CLK_SLOW: Clock source is the PLL based PCR slow clock
+      - PWM_BBLED_CLK_32K: Clock source is the 32KHz domain
+    enum:
+      - "PWM_BBLED_CLK_32K"
+      - "PWM_BBLED_CLK_SLOW"
+      - "PWM_BBLED_CLK_48M"
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 2
+
+  enable-low-power-32k:
+    type: boolean
+    description: |
+      BBLED has two clock inputs.
+      - Main system clock (48MHz)
+      - 32KHz Core clock (32.768KHz)
+      When BBLED enter into Suspend state, 48MHz clock will be switched off by
+      PCR(Power, Clock and Reset) block. But 32KHz Core clock will be available to BBLED.
+      There may be a product requirement, either to blink (or) not blink LED in Suspend state.
+      Flag "enable-low-power-32k" shall be used along with 32KHz clock to blink (or) not blink
+      the LED in Suspend state.
+
+pwm-cells:
+  - channel
+  - period

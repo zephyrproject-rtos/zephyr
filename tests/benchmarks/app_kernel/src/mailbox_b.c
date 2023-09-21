@@ -14,46 +14,44 @@ static struct k_mbox_msg message;
 
 #ifdef FLOAT
 #define PRINT_HEADER()                                                       \
-	(PRINT_STRING                                         \
+	(PRINT_STRING                                                        \
 	   ("|   size(B) |       time/packet (usec)       |          MB/sec" \
-	    "                |\n", output_file))
+	    "                |\n"))
 #define PRINT_ONE_RESULT()                                                   \
-	PRINT_F(output_file, "|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,\
-	     (1000.0 * putsize) / SAFE_DIVISOR(puttime))
+	PRINT_F("|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,           \
+		(1000.0 * putsize) / SAFE_DIVISOR(puttime))
 
 #define PRINT_OVERHEAD()                                                     \
-	PRINT_F(output_file,						\
-	     "| message overhead:  %10.3f     usec/packet                   "\
-	     "            |\n", empty_msg_put_time / 1000.0)
+	PRINT_F("| message overhead:  %10.3f     usec/packet               " \
+		"                |\n", empty_msg_put_time / 1000.0)
 
 #define PRINT_XFER_RATE()                                                     \
 	double netto_transfer_rate;                                           \
 	netto_transfer_rate = 1000.0 * \
 		(putsize >> 1) / SAFE_DIVISOR(puttime - empty_msg_put_time);  \
-	PRINT_F(output_file,						\
-	     "| raw transfer rate:     %10.3f MB/sec (without"		\
-	     " overhead)                 |\n", netto_transfer_rate)
+	PRINT_F("| raw transfer rate:     %10.3f MB/sec (without"             \
+		" overhead)                 |\n", netto_transfer_rate)
 
 #else
 #define PRINT_HEADER()                                                       \
-	(PRINT_STRING                                                         \
+	(PRINT_STRING                                                        \
 	   ("|   size(B) |       time/packet (nsec)       |          KB/sec" \
-	    "                |\n", output_file))
+	    "                |\n"))
 
 #define PRINT_ONE_RESULT()                                                   \
-	PRINT_F(output_file, "|%11u|%32u|%32u|\n", putsize, puttime,	     \
-	     (uint32_t)(((uint64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime)))
+	PRINT_F("|%11u|%32u|%32u|\n", putsize, puttime,	                     \
+		(uint32_t)                                                   \
+		(((uint64_t)putsize * 1000000U) / SAFE_DIVISOR(puttime)))
 
 #define PRINT_OVERHEAD()                                                     \
-	PRINT_F(output_file,						\
-	     "| message overhead:  %10u     nsec/packet                     "\
-	     "          |\n", empty_msg_put_time)
+	PRINT_F("| message overhead:  %10u     nsec/packet                 " \
+	     "              |\n", empty_msg_put_time)
 
 #define PRINT_XFER_RATE()                                                    \
-	PRINT_F(output_file, "| raw transfer rate:     %10u KB/sec (without" \
-	     " overhead)                 |\n",                               \
-	     (uint32_t)((uint64_t)(putsize >> 1) * 1000000U                   \
-	     / SAFE_DIVISOR(puttime - empty_msg_put_time)))
+	PRINT_F("| raw transfer rate:     %10u KB/sec (without"              \
+		" overhead)                 |\n",                            \
+		(uint32_t)((uint64_t)(putsize >> 1) * 1000000U /             \
+			   SAFE_DIVISOR(puttime - empty_msg_put_time)))
 
 #endif
 
@@ -80,19 +78,19 @@ void mailbox_test(void)
 	unsigned int empty_msg_put_time;
 	struct getinfo getinfo;
 
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	PRINT_STRING("|                "
-				 "M A I L B O X   M E A S U R E M E N T S"
-				 "                      |\n", output_file);
-	PRINT_STRING(dashline, output_file);
+		     "M A I L B O X   M E A S U R E M E N T S"
+		     "                      |\n");
+	PRINT_STRING(dashline);
 	PRINT_STRING("| Send mailbox message to waiting high "
-		 "priority task and wait                 |\n", output_file);
-	PRINT_F(output_file, "| repeat for %4d times and take the "
-			"average                                  |\n",
-			NR_OF_MBOX_RUNS);
-	PRINT_STRING(dashline, output_file);
+		     "priority task and wait                 |\n");
+	PRINT_F("| repeat for %4d times and take the "
+		"average                                  |\n",
+		NR_OF_MBOX_RUNS);
+	PRINT_STRING(dashline);
 	PRINT_HEADER();
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	k_sem_reset(&SEM0);
 	k_sem_give(&STARTRCV);
 
@@ -110,7 +108,7 @@ void mailbox_test(void)
 		k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);
 		PRINT_ONE_RESULT();
 	}
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline);
 	PRINT_OVERHEAD();
 	PRINT_XFER_RATE();
 }

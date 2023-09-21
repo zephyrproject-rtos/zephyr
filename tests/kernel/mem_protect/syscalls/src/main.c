@@ -25,6 +25,8 @@
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif defined(CONFIG_BOARD_QEMU_CORTEX_R5)
 #define FAULTY_ADDRESS 0xBFFFFFFF
+#elif defined(CONFIG_SOC_SERIES_S32ZE_R52)
+#define FAULTY_ADDRESS ((uintptr_t)(&_image_ram_end))
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
 #define FAULTY_ADDRESS Z_FREE_VM_START
@@ -35,6 +37,14 @@
 char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
+
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	printk("Caught system error -- reason %d\n", reason);
+	printk("Unexpected fault during test\n");
+	printk("PROJECT EXECUTION FAILED\n");
+	k_fatal_halt(reason);
+}
 
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {

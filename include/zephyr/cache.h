@@ -21,97 +21,27 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_EXTERNAL_CACHE)
+#include <zephyr/drivers/cache.h>
 
-/*
- * External cache API driver interface mirrored in
- * include/zephyr/drivers/cache.h
+#elif defined(CONFIG_ARCH_CACHE)
+#include <zephyr/arch/cache.h>
+
+#endif
+
+/**
+ * @defgroup cache_interface Cache Interface
+ * @ingroup os_services
+ * @{
  */
 
-#if defined(CONFIG_DCACHE)
-
-extern void cache_data_enable(void);
-extern void cache_data_disable(void);
-
-extern int cache_data_flush_all(void);
-extern int cache_data_invd_all(void);
-extern int cache_data_flush_and_invd_all(void);
-
-extern int cache_data_flush_range(void *addr, size_t size);
-extern int cache_data_invd_range(void *addr, size_t size);
-extern int cache_data_flush_and_invd_range(void *addr, size_t size);
-
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
-extern size_t cache_data_line_size_get(void);
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-
-extern void cache_instr_enable(void);
-extern void cache_instr_disable(void);
-
-extern int cache_instr_flush_all(void);
-extern int cache_instr_invd_all(void);
-extern int cache_instr_flush_and_invd_all(void);
-
-extern int cache_instr_flush_range(void *addr, size_t size);
-extern int cache_instr_invd_range(void *addr, size_t size);
-extern int cache_instr_flush_and_invd_range(void *addr, size_t size);
-
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
-extern size_t cache_instr_line_size_get(void);
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_ICACHE */
-
-#else /* CONFIG_ARCH_CACHE */
-
-/*
- * Arch cache API interface mirrored in
- * include/zephyr/sys/arch_interface.h
+/**
+ * @cond INTERNAL_HIDDEN
+ *
  */
 
-#if defined(CONFIG_DCACHE)
+#define _CPU DT_PATH(cpus, cpu_0)
 
-#define cache_data_enable			arch_dcache_enable
-#define cache_data_disable			arch_dcache_disable
-
-#define cache_data_flush_all			arch_dcache_flush_all
-#define cache_data_invd_all			arch_dcache_invd_all
-#define cache_data_flush_and_invd_all		arch_dcache_flush_and_invd_all
-
-#define cache_data_flush_range(addr, size)	arch_dcache_flush_range(addr, size)
-#define cache_data_invd_range(addr, size)	arch_dcache_invd_range(addr, size)
-#define cache_data_flush_and_invd_range(addr, size)	\
-						arch_dcache_flush_and_invd_range(addr, size)
-
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
-#define cache_data_line_size_get		arch_dcache_line_size_get
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-
-#define cache_instr_enable			arch_icache_enable
-#define cache_instr_disable			arch_icache_disable
-
-#define cache_instr_flush_all			arch_icache_flush_all
-#define cache_instr_invd_all			arch_icache_invd_all
-#define cache_instr_flush_and_invd_all		arch_icache_flush_and_invd_all
-
-#define cache_instr_flush_range(addr, size)	arch_icache_flush_range(addr, size)
-#define cache_instr_invd_range(addr, size)	arch_icache_invd_range(addr, size)
-#define cache_instr_flush_and_invd_range(addr, size)	\
-						arch_icache_flush_and_invd_range(addr, size)
-
-#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
-#define cache_instr_line_size_get		arch_icache_line_size_get
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_ICACHE */
-#endif /* CONFIG_EXTERNAL_CACHE */
+/** @endcond */
 
 /**
  * @brief Enable the d-cache
@@ -119,9 +49,9 @@ extern size_t cache_instr_line_size_get(void);
  * Enable the data cache
  *
  */
-static inline void sys_cache_data_enable(void)
+static ALWAYS_INLINE void sys_cache_data_enable(void)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	cache_data_enable();
 #endif
 }
@@ -132,9 +62,9 @@ static inline void sys_cache_data_enable(void)
  * Disable the data cache
  *
  */
-static inline void sys_cache_data_disable(void)
+static ALWAYS_INLINE void sys_cache_data_disable(void)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	cache_data_disable();
 #endif
 }
@@ -145,7 +75,7 @@ static inline void sys_cache_data_disable(void)
  * Enable the instruction cache
  *
  */
-static inline void sys_cache_instr_enable(void)
+static ALWAYS_INLINE void sys_cache_instr_enable(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	cache_instr_enable();
@@ -158,7 +88,7 @@ static inline void sys_cache_instr_enable(void)
  * Disable the instruction cache
  *
  */
-static inline void sys_cache_instr_disable(void)
+static ALWAYS_INLINE void sys_cache_instr_disable(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	cache_instr_disable();
@@ -174,7 +104,7 @@ static inline void sys_cache_instr_disable(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_data_flush_all(void)
+static ALWAYS_INLINE int sys_cache_data_flush_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_flush_all();
@@ -191,7 +121,7 @@ static inline int sys_cache_data_flush_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_flush_all(void)
+static ALWAYS_INLINE int sys_cache_instr_flush_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_flush_all();
@@ -208,7 +138,7 @@ static inline int sys_cache_instr_flush_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_data_invd_all(void)
+static ALWAYS_INLINE int sys_cache_data_invd_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_invd_all();
@@ -225,7 +155,7 @@ static inline int sys_cache_data_invd_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_invd_all(void)
+static ALWAYS_INLINE int sys_cache_instr_invd_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_invd_all();
@@ -242,7 +172,7 @@ static inline int sys_cache_instr_invd_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_data_flush_and_invd_all(void)
+static ALWAYS_INLINE int sys_cache_data_flush_and_invd_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_flush_and_invd_all();
@@ -259,7 +189,7 @@ static inline int sys_cache_data_flush_and_invd_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_flush_and_invd_all(void)
+static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_flush_and_invd_all();
@@ -272,6 +202,13 @@ static inline int sys_cache_instr_flush_and_invd_all(void)
  *
  * Flush the specified address range of the data cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being flushed, all the portions of the
+ *       data structures sharing the same line will be flushed. This is usually
+ *       not a problem because writing back is a non-destructive process that
+ *       could be triggered by hardware at any time, so having an aligned
+ *       @p addr or a padded @p size is not strictly necessary.
+ *
  * @param addr Starting address to flush.
  * @param size Range size.
  *
@@ -279,8 +216,9 @@ static inline int sys_cache_instr_flush_and_invd_all(void)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-__syscall int sys_cache_data_flush_range(void *addr, size_t size);
-static inline int z_impl_sys_cache_data_flush_range(void *addr, size_t size)
+__syscall_always_inline int sys_cache_data_flush_range(void *addr, size_t size);
+
+static ALWAYS_INLINE int z_impl_sys_cache_data_flush_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_flush_range(addr, size);
@@ -296,6 +234,13 @@ static inline int z_impl_sys_cache_data_flush_range(void *addr, size_t size)
  *
  * Flush the specified address range of the instruction cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being flushed, all the portions of the
+ *       data structures sharing the same line will be flushed. This is usually
+ *       not a problem because writing back is a non-destructive process that
+ *       could be triggered by hardware at any time, so having an aligned
+ *       @p addr or a padded @p size is not strictly necessary.
+ *
  * @param addr Starting address to flush.
  * @param size Range size.
  *
@@ -303,7 +248,7 @@ static inline int z_impl_sys_cache_data_flush_range(void *addr, size_t size)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_flush_range(void *addr, size_t size)
+static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_flush_range(addr, size);
@@ -319,6 +264,14 @@ static inline int sys_cache_instr_flush_range(void *addr, size_t size)
  *
  * Invalidate the specified address range of the data cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being invalidated, all the portions of the
+ *       non-read-only data structures sharing the same line will be
+ *       invalidated as well. This is a destructive process that could lead to
+ *       data loss and/or corruption. When @p addr is not aligned to the cache
+ *       line and/or @p size is not a multiple of the cache line size the
+ *       behaviour is undefined.
+ *
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
@@ -326,8 +279,9 @@ static inline int sys_cache_instr_flush_range(void *addr, size_t size)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-__syscall int sys_cache_data_invd_range(void *addr, size_t size);
-static inline int z_impl_sys_cache_data_invd_range(void *addr, size_t size)
+__syscall_always_inline int sys_cache_data_invd_range(void *addr, size_t size);
+
+static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_invd_range(addr, size);
@@ -343,6 +297,14 @@ static inline int z_impl_sys_cache_data_invd_range(void *addr, size_t size)
  *
  * Invalidate the specified address range of the instruction cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being invalidated, all the portions of the
+ *       non-read-only data structures sharing the same line will be
+ *       invalidated as well. This is a destructive process that could lead to
+ *       data loss and/or corruption. When @p addr is not aligned to the cache
+ *       line and/or @p size is not a multiple of the cache line size the
+ *       behaviour is undefined.
+ *
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
@@ -350,7 +312,7 @@ static inline int z_impl_sys_cache_data_invd_range(void *addr, size_t size)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_invd_range(void *addr, size_t size)
+static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_invd_range(addr, size);
@@ -366,6 +328,14 @@ static inline int sys_cache_instr_invd_range(void *addr, size_t size)
  *
  * Flush and Invalidate the specified address range of the data cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being flushed, all the portions of the
+ *       data structures sharing the same line will be flushed before being
+ *       invalidated. This is usually not a problem because writing back is a
+ *       non-destructive process that could be triggered by hardware at any
+ *       time, so having an aligned @p addr or a padded @p size is not strictly
+ *       necessary.
+ *
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
@@ -373,8 +343,9 @@ static inline int sys_cache_instr_invd_range(void *addr, size_t size)
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-__syscall int sys_cache_data_flush_and_invd_range(void *addr, size_t size);
-static inline int z_impl_sys_cache_data_flush_and_invd_range(void *addr, size_t size)
+__syscall_always_inline int sys_cache_data_flush_and_invd_range(void *addr, size_t size);
+
+static ALWAYS_INLINE int z_impl_sys_cache_data_flush_and_invd_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
 	return cache_data_flush_and_invd_range(addr, size);
@@ -390,6 +361,14 @@ static inline int z_impl_sys_cache_data_flush_and_invd_range(void *addr, size_t 
  *
  * Flush and Invalidate the specified address range of the instruction cache.
  *
+ * @note the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being flushed, all the portions of the
+ *       data structures sharing the same line will be flushed before being
+ *       invalidated. This is usually not a problem because writing back is a
+ *       non-destructive process that could be triggered by hardware at any
+ *       time, so having an aligned @p addr or a padded @p size is not strictly
+ *       necessary.
+ *
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
@@ -397,7 +376,7 @@ static inline int z_impl_sys_cache_data_flush_and_invd_range(void *addr, size_t 
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-static inline int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
+static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_ICACHE)
 	return cache_instr_flush_and_invd_range(addr, size);
@@ -408,8 +387,6 @@ static inline int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 	return -ENOTSUP;
 }
 
-#define CPU DT_PATH(cpus, cpu_0)
-
 /**
  *
  * @brief Get the the d-cache line size.
@@ -418,22 +395,22 @@ static inline int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
  *
  * The cache line size is calculated (in order of priority):
  *
- * - At run-time when CONFIG_DCACHE_LINE_SIZE_DETECT is set.
- * - At compile time using the value set in CONFIG_DCACHE_LINE_SIZE.
+ * - At run-time when @kconfig{CONFIG_DCACHE_LINE_SIZE_DETECT} is set.
+ * - At compile time using the value set in @kconfig{CONFIG_DCACHE_LINE_SIZE}.
  * - At compile time using the `d-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
  */
-static inline size_t sys_cache_data_line_size_get(void)
+static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 	return cache_data_line_size_get();
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(CPU, d_cache_line_size, 0);
+	return DT_PROP_OR(_CPU, d_cache_line_size, 0);
 #endif
 }
 
@@ -445,27 +422,27 @@ static inline size_t sys_cache_data_line_size_get(void)
  *
  * The cache line size is calculated (in order of priority):
  *
- * - At run-time when CONFIG_ICACHE_LINE_SIZE_DETECT is set.
- * - At compile time using the value set in CONFIG_ICACHE_LINE_SIZE.
+ * - At run-time when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is set.
+ * - At compile time using the value set in @kconfig{CONFIG_ICACHE_LINE_SIZE}.
  * - At compile time using the `i-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
  */
-static inline size_t sys_cache_instr_line_size_get(void)
+static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 	return cache_instr_line_size_get();
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(CPU, i_cache_line_size, 0);
+	return DT_PROP_OR(_CPU, i_cache_line_size, 0);
 #endif
 }
 
 #ifdef CONFIG_LIBMETAL
-static inline void sys_cache_flush(void *addr, size_t size)
+static ALWAYS_INLINE void sys_cache_flush(void *addr, size_t size)
 {
 	sys_cache_data_flush_range(addr, size);
 }
@@ -475,5 +452,9 @@ static inline void sys_cache_flush(void *addr, size_t size)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_CACHE_H_ */

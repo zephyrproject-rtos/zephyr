@@ -169,7 +169,7 @@ static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
 	lqi = b91_convert_rssi_to_lqi(rssi);
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
-	net_pkt_set_ieee802154_rssi(pkt, rssi);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, rssi);
 }
 
 /* Prepare TX buffer */
@@ -227,7 +227,7 @@ static void b91_handle_ack(void)
 	net_pkt_cursor_init(ack_pkt);
 
 	/* handle ack */
-	if (ieee802154_radio_handle_ack(data.iface, ack_pkt) != NET_OK) {
+	if (ieee802154_handle_ack(data.iface, ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled - releasing.");
 	}
 
@@ -403,8 +403,8 @@ static enum ieee802154_hw_caps b91_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK;
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
 }
 
 /* API implementation: cca */

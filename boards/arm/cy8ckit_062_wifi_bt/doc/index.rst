@@ -1,7 +1,7 @@
 .. _cy8ckit_062_wifi_bt:
 
-PSoC6 WiFi-BT Pioneer Kit
-#########################
+INFINEON PSoC6 WiFi-BT Pioneer Kit
+##################################
 
 Overview
 ********
@@ -99,7 +99,7 @@ The board configuration supports the following hardware features:
 
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062_wifi_bt_m0/cy8ckit_062_wifi_bt_m0_defconfig`.
+:zephyr_file:`boards/arm/cy8ckit_062_wifi_bt/cy8ckit_062_wifi_bt_m0_defconfig`.
 
 
 System Clock
@@ -117,6 +117,19 @@ interfaces for serial communication. At the moment UART5 on SCB5 and UART6 on
 SCB6 are configured. SCB5 is connected to the onboard KitProg2's USB-UART
 Bridge, SCB6 to P12_0, P12_1 pins on the J3 of the Arduino Uno R3 compatible
 PSoC6 I/O header.
+
+OpenOCD Installation
+====================
+
+To get the OpenOCD package, it is required that you
+
+1. Download the software ModusToolbox 3.1. https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolbox
+2. Once downloaded add the path to access the Scripts folder provided by ModusToolbox
+   export PATH=$PATH:/path/to/ModusToolbox/tools_3.1/openocd/scripts
+3. Add the OpenOCD executable file's path to west flash/debug.
+4. Flash using: west flash --openocd path/to/infineon/openocd/bin/openocd
+5. Debug using: west debug --openocd path/to/infineon/openocd/bin/openocd
+
 
 Programming and Debugging
 *************************

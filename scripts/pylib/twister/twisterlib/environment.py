@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import pkg_resources
 import sys
 from pathlib import Path
 import json
@@ -26,18 +27,9 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
 
-try:
-    subproc = subprocess.run(['west', 'topdir'], check = True, stdout=subprocess.PIPE)
-    if subproc.returncode == 0:
-        topdir = subproc.stdout.strip().decode()
-        logger.debug(f"Project's top directory: {topdir}")
-except FileNotFoundError:
-    topdir = ZEPHYR_BASE
-    logger.warning(f"West is not installed. Using ZEPHYR_BASE {ZEPHYR_BASE} as project's top directory")
-except subprocess.CalledProcessError as e:
-    topdir = ZEPHYR_BASE
-    logger.warning(e)
-    logger.warning(f"Using ZEPHYR_BASE {ZEPHYR_BASE} as project's top directory")
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
+
+import zephyr_module
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
@@ -46,12 +38,17 @@ except subprocess.CalledProcessError as e:
 # components directly.
 # Note "normalization" is different from canonicalization, see os.path.
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
-canonical_topdir = os.path.realpath(topdir)
 
-def parse_arguments(args):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
+PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
+
+
+def add_parse_arguments(parser = None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            allow_abbrev=False)
     parser.fromfile_prefix_chars = "+"
 
     case_select = parser.add_argument_group("Test case selection",
@@ -120,10 +117,6 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    case_select.add_argument("--list-test-duplicates", action="store_true",
-                             help="""List tests with duplicate identifiers.
-        """)
-
     case_select.add_argument("--test-tree", action="store_true",
                              help="""Output the test plan in a tree form""")
 
@@ -175,6 +168,15 @@ Artificially long but functional example:
                         for testing on hardware that is listed in the file.
                         """)
 
+    parser.add_argument("--device-flash-timeout", type=int, default=60,
+                        help="""Set timeout for the device flash operation in seconds.
+                        """)
+
+    parser.add_argument("--device-flash-with-test", action="store_true",
+                        help="""Add a test case timeout to the flash operation timeout
+                        when flash operation also executes test case on the platform.
+                        """)
+
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
@@ -183,6 +185,11 @@ Artificially long but functional example:
         "--prep-artifacts-for-testing", action="store_true",
         help="Generate artifacts for testing, do not attempt to run the"
               "code on targets.")
+
+    parser.add_argument(
+        "--package-artifacts",
+        help="Package artifacts needed for flashing in a file to be used with --test-only"
+        )
 
     test_or_build.add_argument(
         "--test-only", action="store_true",
@@ -225,11 +232,22 @@ Artificially long but functional example:
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
 
+    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+    for module in modules:
+        board_root = module.meta.get("build", {}).get("settings", {}).get("board_root")
+        if board_root:
+            board_root_list.append(os.path.join(module.project, board_root, "boards"))
+
     parser.add_argument(
         "-A", "--board-root", action="append", default=board_root_list,
         help="""Directory to search for board configuration files. All .yaml
 files in the directory will be processed. The directory should have the same
 structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
+
+    parser.add_argument(
+        "--allow-installed-plugin", action="store_true", default=None,
+        help="Allow to use pytest plugin installed by pip for pytest tests."
+    )
 
     parser.add_argument(
         "-a", "--arch", action="append",
@@ -243,6 +261,17 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "3/5 means run the 3rd fifth of the total. "
              "This option is useful when running a large number of tests on "
              "different hosts to speed up execution time.")
+
+    parser.add_argument(
+        "--shuffle-tests", action="store_true", default=None,
+        help="""Shuffle test execution order to get randomly distributed tests across subsets.
+                Used only when --subset is provided.""")
+
+    parser.add_argument(
+        "--shuffle-tests-seed", action="store", default=None,
+        help="""Seed value for random generator used to shuffle tests.
+                If not provided, seed in generated by system.
+                Used only when --shuffle-tests is provided.""")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
@@ -270,9 +299,15 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in run_coverage
                         help="Output formats to use for generated coverage reports, as a comma-separated list. "
-                             "Only used in conjunction with gcovr. "
                              "Default to html. "
-                             "Valid options are html, xml, csv, txt, coveralls, sonarqube.")
+                             "Valid options are html, xml, csv, txt, coveralls, sonarqube, lcov.")
+
+    parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
+        help="Path to file with plans and test configurations.")
+
+    parser.add_argument("--level", action="store",
+        help="Test level to be used. By default, no levels are used for filtering"
+             "and do the selection based on existing filters.")
 
     parser.add_argument(
         "-D", "--all-deltas", action="store_true",
@@ -340,7 +375,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
-    parser.add_argument("--gcov-tool", default=None,
+    parser.add_argument("--gcov-tool", type=Path, default=None,
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
 
@@ -355,6 +390,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-i", "--inline-logs", action="store_true",
         help="Upon test failure, print relevant log data to stdout "
              "instead of just a path to it.")
+
+    parser.add_argument("--ignore-platform-key", action="store_true",
+                        help="Do not filter based on platform key")
 
     parser.add_argument(
         "-j", "--jobs", type=int,
@@ -444,7 +482,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         """)
 
     parser.add_argument(
-        "-p", "--platform", action="append",
+        "-p", "--platform", action="append", default=[],
         help="Platform filter for testing. This option may be used multiple "
              "times. Test suites will only be built/run on the platforms "
              "specified. If this option is not used, then platforms marked "
@@ -466,6 +504,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "--quarantine-list",
+        action="append",
         metavar="FILENAME",
         help="Load list of test scenarios under quarantine. The entries in "
              "the file need to correspond to the test scenarios names as in "
@@ -513,8 +552,14 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "-S", "--enable-slow", action="store_true",
+        default="--enable-slow-only" in sys.argv,
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "--enable-slow-only", action="store_true",
+        help="Execute time-consuming test cases that have been marked "
+             "as 'slow' in testcase.yaml only. This also set the option --enable-slow")
 
     parser.add_argument(
         "--seed", type=int,
@@ -626,7 +671,22 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Get information about memory footprint from generated build.log. "
              "Requires using --show-footprint option.")
 
-    options = parser.parse_args(args)
+    parser.add_argument("extra_test_args", nargs=argparse.REMAINDER,
+        help="Additional args following a '--' are passed to the test binary")
+
+    parser.add_argument("--alt-config-root", action="append", default=[],
+        help="Alternative test configuration root/s. When a test is found, "
+             "Twister will check if a test configuration file exist in any of "
+             "the alternative test configuration root folders. For example, "
+             "given $test_root/tests/foo/testcase.yaml, Twister will use "
+             "$alt_config_root/tests/foo/testcase.yaml if it exists")
+
+    return parser
+
+
+def parse_arguments(parser, args, options = None):
+    if options is None:
+        options = parser.parse_args(args)
 
     # Very early error handling
     if options.short_build_path and not options.ninja:
@@ -668,9 +728,16 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         only one platform is allowed""")
         sys.exit(1)
 
-    if options.coverage_formats and (options.coverage_tool != "gcovr"):
-        logger.error("""--coverage-formats can only be used when coverage
-                        tool is set to gcovr""")
+    if options.device_flash_with_test and not options.device_testing:
+        logger.error("--device-flash-with-test requires --device_testing")
+        sys.exit(1)
+
+    if options.shuffle_tests and options.subset is None:
+        logger.error("--shuffle-tests requires --subset")
+        sys.exit(1)
+
+    if options.shuffle_tests_seed and options.shuffle_tests is None:
+        logger.error("--shuffle-tests-seed requires --shuffle-tests")
         sys.exit(1)
 
     if options.size:
@@ -678,7 +745,40 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         for fn in options.size:
             sc = SizeCalculator(fn, [])
             sc.size_report()
+        sys.exit(0)
+
+    if len(options.extra_test_args) > 0:
+        # extra_test_args is a list of CLI args that Twister did not recognize
+        # and are intended to be passed through to the ztest executable. This
+        # list should begin with a "--". If not, there is some extra
+        # unrecognized arg(s) that shouldn't be there. Tell the user there is a
+        # syntax error.
+        if options.extra_test_args[0] != "--":
+            try:
+                double_dash = options.extra_test_args.index("--")
+            except ValueError:
+                double_dash = len(options.extra_test_args)
+            unrecognized = " ".join(options.extra_test_args[0:double_dash])
+
+            logger.error("Unrecognized arguments found: '%s'. Use -- to "
+                         "delineate extra arguments for test binary or pass "
+                         "-h for help.",
+                         unrecognized)
+
+            sys.exit(1)
+
+        # Strip off the initial "--" following validation.
+        options.extra_test_args = options.extra_test_args[1:]
+
+    if not options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
+        logger.error("By default Twister should work without pytest-twister-harness "
+                     "plugin being installed, so please, uninstall it by "
+                     "`pip uninstall pytest-twister-harness` and `git clean "
+                     "-dxf scripts/pylib/pytest-twister-harness`.")
         sys.exit(1)
+    elif options.allow_installed_plugin and PYTEST_PLUGIN_INSTALLED:
+        logger.warning("You work with installed version of "
+                       "pytest-twister-harness plugin.")
 
     return options
 
@@ -686,11 +786,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 class TwisterEnv:
 
     def __init__(self, options=None) -> None:
-        self.version = None
+        self.version = "Unknown"
         self.toolchain = None
-        self.commit_date = None
+        self.commit_date = "Unknown"
         self.run_date = None
         self.options = options
+
         if options and options.ninja:
             self.generator_cmd = "ninja"
             self.generator = "Ninja"
@@ -699,10 +800,8 @@ class TwisterEnv:
             self.generator = "Unix Makefiles"
         logger.info(f"Using {self.generator}..")
 
-        if options:
-            self.test_roots = options.testsuite_root
-        else:
-            self.test_roots = None
+        self.test_roots = options.testsuite_root if options else None
+
         if options:
             if not isinstance(options.board_root, list):
                 self.board_roots = [self.options.board_root]
@@ -714,6 +813,10 @@ class TwisterEnv:
             self.outdir = None
 
         self.hwm = None
+
+        self.test_config = options.test_config if options else None
+
+        self.alt_config_root = options.alt_config_root if options else None
 
     def discover(self):
         self.check_zephyr_version()
@@ -731,20 +834,21 @@ class TwisterEnv:
                 if _version:
                     self.version = _version
                     logger.info(f"Zephyr version: {self.version}")
-                else:
-                    self.version = "Unknown"
-                    logger.error("Coult not determine version")
         except OSError:
-            logger.info("Cannot read zephyr version.")
+            logger.exception("Failure while reading Zephyr version.")
 
-        subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
-                                     stdout=subprocess.PIPE,
-                                     universal_newlines=True,
-                                     cwd=ZEPHYR_BASE)
-        if subproc.returncode == 0:
-            self.commit_date = subproc.stdout.strip()
-        else:
-            self.commit_date = "Unknown"
+        if self.version == "Unknown":
+            logger.warning("Could not determine version")
+
+        try:
+            subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
+                                        stdout=subprocess.PIPE,
+                                        universal_newlines=True,
+                                        cwd=ZEPHYR_BASE)
+            if subproc.returncode == 0:
+                self.commit_date = subproc.stdout.strip()
+        except OSError:
+            logger.exception("Failure while reading head commit date.")
 
     @staticmethod
     def run_cmake_script(args=[]):
@@ -779,7 +883,7 @@ class TwisterEnv:
         out = ansi_escape.sub('', out.decode())
 
         if p.returncode == 0:
-            msg = "Finished running  %s" % (args[0])
+            msg = "Finished running %s" % (args[0])
             logger.debug(msg)
             results = {"returncode": p.returncode, "msg": msg, "stdout": out}
 

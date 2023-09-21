@@ -1,0 +1,10 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_CLOCK
+	bool "POSIX clock, timer, and sleep APIs"
+	default y if POSIX_API
+	help
+	  This enables POSIX clock\_\*(), timer\_\*(), and \*sleep()
+	  functions.

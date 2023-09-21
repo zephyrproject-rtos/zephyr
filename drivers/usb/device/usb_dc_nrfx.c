@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
@@ -386,7 +387,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	k_mem_slab_free(&fifo_elem_slab, (void **)&ev->block.data);
+	k_mem_slab_free(&fifo_elem_slab, (void *)ev->block.data);
 }
 
 /**
@@ -686,7 +687,7 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 	case USBD_POWERED:
 		usbd_enable_endpoints(ctx);
-		nrfx_usbd_start(true);
+		nrfx_usbd_start(IS_ENABLED(CONFIG_USB_DEVICE_SOF));
 		ctx->ready = true;
 
 		LOG_DBG("USB Powered");
@@ -1046,7 +1047,6 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
  */
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
-	struct nrf_usbd_ep_ctx *ep_ctx;
 	struct usbd_event evt = {0};
 	bool put_evt = false;
 
@@ -1080,7 +1080,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		}
 		break;
 
-	case NRFX_USBD_EVT_EPTRANSFER:
+	case NRFX_USBD_EVT_EPTRANSFER: {
+		struct nrf_usbd_ep_ctx *ep_ctx;
+
 		ep_ctx = endpoint_ctx(p_event->data.eptransfer.ep);
 		switch (ep_ctx->cfg.type) {
 		case USB_DC_EP_CONTROL:
@@ -1097,6 +1099,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 			break;
 		}
 		break;
+	}
 
 	case NRFX_USBD_EVT_SETUP: {
 		nrfx_usbd_setup_t drv_setup;
@@ -1264,7 +1267,6 @@ static void usbd_work_handler(struct k_work *item)
 int usb_dc_attach(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
-	nrfx_err_t err;
 	int ret;
 
 	if (ctx->attached) {
@@ -1281,12 +1283,6 @@ int usb_dc_attach(void)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
 
-	err = nrfx_usbd_init(usbd_event_handler);
-
-	if (err != NRFX_SUCCESS) {
-		LOG_DBG("nRF USBD driver init failed. Code: %d", (uint32_t)err);
-		return -EIO;
-	}
 	nrfx_power_usbevt_enable();
 
 	ret = eps_ctx_init();
@@ -1322,10 +1318,6 @@ int usb_dc_detach(void)
 
 	if (nrfx_usbd_is_enabled()) {
 		nrfx_usbd_disable();
-	}
-
-	if (nrfx_usbd_is_initialized()) {
-		nrfx_usbd_uninit();
 	}
 
 	(void)hfxo_stop(ctx);
@@ -1880,9 +1872,10 @@ int usb_dc_wakeup_request(void)
 	return 0;
 }
 
-static int usb_init(const struct device *arg)
+static int usb_init(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
+	nrfx_err_t err;
 
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
@@ -1907,6 +1900,12 @@ static int usb_init(const struct device *arg)
 		.handler = usb_dc_power_event_handler
 	};
 
+	err = nrfx_usbd_init(usbd_event_handler);
+	if (err != NRFX_SUCCESS) {
+		LOG_DBG("nRF USBD driver init failed. Code: %d", (uint32_t)err);
+		return -EIO;
+	}
+
 	/* Ignore the return value, as NRFX_ERROR_ALREADY_INITIALIZED is not
 	 * a problem here.
 	 */
@@ -1918,6 +1917,7 @@ static int usb_init(const struct device *arg)
 			   K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
 
+	k_thread_name_set(&usbd_work_queue.thread, "usbd_workq");
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 
 	return 0;

@@ -110,6 +110,7 @@ struct fxas21002_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trig;
 #endif
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FXAS21002_THREAD_STACK_SIZE);

@@ -1,0 +1,47 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+_process_ids="";
+
+#All user scripts require these variable, let's check for them here already
+: "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
+
+#Give a default value to BOARD if it does not have one yet:
+BOARD="${BOARD:-nrf52_bsim}"
+
+function run_in_background(){
+  $@ & _process_ids="$_process_ids $!"
+}
+
+function wait_for_background_jobs(){
+  exit_code=0
+  for process_id in $_process_ids; do
+    wait $process_id || let "exit_code=$?"
+  done
+  [ $exit_code -eq 0 ] || exit $exit_code
+}
+
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "Aborted by CTRL-C"
+
+  for process_id in $_process_ids; do
+    kill -15 $process_id
+  done
+}
+
+function check_program_exists() {
+  if [ ! -f $1 ]; then
+    echo -e "  \e[91m`pwd`/`basename $1` cannot be found (did you forget to\
+ compile it?)\e[39m"
+    exit 1
+  fi
+}
+
+function Execute() {
+  EXECUTE_TIMEOUT="${EXECUTE_TIMEOUT:-30}"
+
+  check_program_exists $1
+  run_in_background timeout -v ${EXECUTE_TIMEOUT} $@
+}

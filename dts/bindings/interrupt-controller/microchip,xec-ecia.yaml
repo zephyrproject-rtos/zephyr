@@ -5,15 +5,15 @@ compatible: "microchip,xec-ecia"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    direct-capable-girqs:
-      type: array
-      required: true
-      description: |
-        Array of GIRQ numbers in [8, 26] whose result bits can be connected
-        directly to the ARM NVIC.
+  direct-capable-girqs:
+    type: array
+    required: true
+    description: |
+      Array of GIRQ numbers in [8, 26] whose result bits can be connected
+      directly to the ARM NVIC.

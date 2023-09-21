@@ -264,13 +264,13 @@ static int ls0xx_init(const struct device *dev)
 {
 	const struct ls0xx_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, disp_en_gpios)
-	if (!device_is_ready(config->disp_en_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->disp_en_gpio)) {
 		LOG_ERR("DISP port device not ready");
 		return -ENODEV;
 	}
@@ -279,7 +279,7 @@ static int ls0xx_init(const struct device *dev)
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, extcomin_gpios)
-	if (!device_is_ready(config->extcomin_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->extcomin_gpio)) {
 		LOG_ERR("EXTCOMIN port device not ready");
 		return -ENODEV;
 	}

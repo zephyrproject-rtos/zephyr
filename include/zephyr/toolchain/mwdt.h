@@ -8,6 +8,10 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_MWDT_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_MWDT_H_
 
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
+#endif
+
 #ifndef _LINKER
 #if defined(_ASMLANGUAGE)
 
@@ -89,8 +93,11 @@
 #include <zephyr/toolchain/gcc.h>
 
 #undef BUILD_ASSERT
-#ifdef __cplusplus
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#elif defined(__cplusplus)
+/* For cpp98 */
+#define BUILD_ASSERT(EXPR, MSG...)
 #else
 #define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
 #endif

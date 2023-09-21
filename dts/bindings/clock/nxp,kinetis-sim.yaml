@@ -8,30 +8,30 @@ compatible: "nxp,kinetis-sim"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    pllfll-select:
-      type: int
-      required: true
-      description: pll/fll selection for clock system
+  pllfll-select:
+    type: int
+    required: true
+    description: pll/fll selection for clock system
 
-    er32k-select:
-      type: int
-      required: true
-      description: er32k selection for clock system
+  er32k-select:
+    type: int
+    required: true
+    description: er32k selection for clock system
 
-    clkout-source:
-      type: int
-      description: clkout clock source
+  clkout-source:
+    type: int
+    description: clkout clock source
 
-    clkout-divider:
-      type: int
-      description: clkout divider
+  clkout-divider:
+    type: int
+    description: clkout divider
 
-    "#clock-cells":
-      type: int
-      const: 3
+  "#clock-cells":
+    type: int
+    const: 3
 
 clock-cells:
   - name

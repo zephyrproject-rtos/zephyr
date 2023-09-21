@@ -1386,6 +1386,8 @@ Libraries / Subsystems
   * Added cash used to reduce the NVS data lookup time, see
     :kconfig:option:`CONFIG_NVS_LOOKUP_CACHE` option.
   * Changing mkfs options to create FAT32 on larger storage when FAT16 fails.
+  * Added :kconfig:option:`CONFIG_FS_FATFS_MIN_SS` that allows to set
+    minimal expected sector size to be supported.
 
 * Management
 

@@ -1,0 +1,15 @@
+identifier: beagleconnect_freedom
+name: BeagleConnect Freedom
+type: mcu
+arch: arm
+ram: 144
+flash: 704
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart

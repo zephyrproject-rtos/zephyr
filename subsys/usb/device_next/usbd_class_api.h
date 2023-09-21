@@ -107,6 +107,31 @@ static inline int usbd_class_control_to_dev(struct usbd_class_node *const node,
 }
 
 /**
+ * @brief Feature endpoint halt update handler
+ *
+ * Called when an endpoint of the interface belonging
+ * to the instance has been halted or cleared by either
+ * a Set Feature Endpoint Halt or Clear Feature Endpoint Halt request.
+ *
+ * The execution of the handler must not block.
+ *
+ * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] ep Endpoint
+ * @param[in] halted True if the endpoint has been halted and false if
+ *                   the endpoint halt has been cleared by a Feature request.
+ */
+static inline void usbd_class_feature_halt(struct usbd_class_node *const node,
+					   const uint8_t ep,
+					   const bool halted)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->feature_halt != NULL) {
+		api->feature_halt(node, ep, halted);
+	}
+}
+
+/**
  * @brief Configuration update handler
  *
  * Called when the configuration of the interface belonging
@@ -165,7 +190,7 @@ static inline void usbd_class_resumed(struct usbd_class_node *const node)
 }
 
 /**
- * @brief Class associated configuration activ handler
+ * @brief Class associated configuration active handler
  *
  * @note The execution of the handler must not block.
  *
@@ -181,7 +206,7 @@ static inline void usbd_class_enable(struct usbd_class_node *const node)
 }
 
 /**
- * @brief Class associated configuration shutdown handler
+ * @brief Class associated configuration disable handler
  *
  * @note The execution of the handler must not block.
  *
@@ -222,5 +247,22 @@ static inline int usbd_class_init(struct usbd_class_node *const node)
 	return -ENOTSUP;
 }
 
+/**
+ * @brief Shutdown of the class implementation
+ *
+ * This is called for each instance during the shutdown phase.
+ *
+ * @note The execution of the handler must not block.
+ *
+ * @param[in] dev Pointer to device struct of the class instance
+ */
+static inline void usbd_class_shutdown(struct usbd_class_node *const node)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->shutdown != NULL) {
+		api->shutdown(node);
+	}
+}
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_API_H */

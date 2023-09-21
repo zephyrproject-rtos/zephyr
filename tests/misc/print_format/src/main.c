@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 
-void main(void)
+int main(void)
 {
 	printk("d%" PRId8 "\n", INT8_C(8));
 	printk("d%" PRId16 "\n", INT16_C(16));
@@ -37,4 +37,5 @@ void main(void)
 	printk("X%" PRIX16 "\n", UINT16_C(16));
 	printk("X%" PRIX32 "\n", UINT32_C(32));
 	printk("X%" PRIX64 "\n", UINT64_C(64));
+	return 0;
 }

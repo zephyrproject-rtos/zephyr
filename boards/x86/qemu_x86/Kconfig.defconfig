@@ -24,6 +24,10 @@ config FLASH_SIMULATOR
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
 config MULTIBOOT
 	default y
 
@@ -48,6 +52,10 @@ config BOARD
 
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
+
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
 
 endif # BOARD_QEMU_X86_64
 
@@ -111,7 +119,7 @@ config X86_EXTRA_PAGE_TABLE_PAGES
 	default 2 if DEMAND_PAGING && !LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 config DEMAND_PAGING_PAGE_FRAMES_RESERVE
-	# Need to accommodate the heap for newlib in libc-hook.c
-	default 6 if NEWLIB_LIBC || PICOLIBC
+	# Need to accommodate the heap for newlib or common malloc in libc-hook.c
+	default 6 if NEWLIB_LIBC || (COMMON_LIBC_MALLOC && COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
 
 endif # BOARD_QEMU_X86_TINY

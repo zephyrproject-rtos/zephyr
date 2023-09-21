@@ -34,6 +34,11 @@
 #define COAP_REPLY_STATUS_ERROR 1
 
 #define NUM_BLOCK1_CONTEXT CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+#define NUM_OUTPUT_BLOCK_CONTEXT CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
+#endif
+
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request, struct lwm2m_message *msg);
 /* LwM2M message functions */
@@ -42,7 +47,6 @@ struct lwm2m_message *find_msg(struct coap_pending *pending, struct coap_reply *
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 void lm2m_message_clear_allocations(struct lwm2m_message *msg);
 int lwm2m_init_message(struct lwm2m_message *msg);
-int lwm2m_send_message(struct lwm2m_message *msg);
 int lwm2m_send_message_async(struct lwm2m_message *msg);
 
 int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
@@ -74,4 +78,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
+void lwm2m_clear_block_contexts(void);
+
 #endif /* LWM2M_MESSAGE_HANDLING_H */

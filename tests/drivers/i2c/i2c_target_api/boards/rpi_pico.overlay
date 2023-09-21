@@ -4,24 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P14>, <I2C1_SCL_P15>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+};
+
 &i2c0 {
 	eeprom0: eeprom@54 {
-		compatible = "atmel,at24";
+		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
 		size = <1024>;
-		pagesize = <16>;
-		address-width = <8>;
-		timeout = <5>;
 	};
 };
 
 &i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 	eeprom1: eeprom@56 {
-		compatible = "atmel,at24";
+		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
 		size = <1024>;
-		pagesize = <16>;
-		address-width = <8>;
-		timeout = <5>;
 	};
 };

@@ -1,0 +1,19 @@
+tests:
+  drivers.gpio.hogs:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    platform_allow:
+      - native_posix
+      - native_posix_64
+      - frdm_k64f
+      - nrf52840dk_nrf52840
+      - nucleo_g474re
+      - nrf52_bsim
+      - mr_canhubk3
+      - s32z270dc2_rtu0_r52
+      - s32z270dc2_rtu1_r52
+    integration_platforms:
+      - native_posix
+      - native_posix_64

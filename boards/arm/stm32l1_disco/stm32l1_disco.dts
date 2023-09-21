@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/l1/stm32l151Xb.dtsi>
 #include <st/l1/stm32l152r(6-8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32L1DISCOVERY board";
@@ -36,6 +37,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -44,6 +46,10 @@
 		led1 = &blue_led;
 		sw0 = &user_button;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -113,4 +119,14 @@
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };

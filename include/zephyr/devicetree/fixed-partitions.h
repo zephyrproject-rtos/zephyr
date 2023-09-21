@@ -78,15 +78,60 @@ extern "C" {
 #define DT_FIXED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
 /**
- * @brief Get the node identifier of the flash device for a partition
+ * @brief Get the node identifier of the flash memory for a partition
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the node identifier of the internal memory that contains the
+ * fixed-partitions node, or @ref DT_INVALID_NODE if it doesn't exist.
+ */
+#define DT_MEM_FROM_FIXED_PARTITION(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), (DT_GPARENT(node_id)),  \
+		    (DT_INVALID_NODE))
+
+/**
+ * @brief Get the node identifier of the flash controller for a partition
  * @param node_id node identifier for a fixed-partitions child node
  * @return the node identifier of the memory technology device that
  * contains the fixed-partitions node.
  */
-#define DT_MTD_FROM_FIXED_PARTITION(node_id)				\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), \
-		    (DT_PARENT(DT_GPARENT(node_id))),			\
-		    (DT_GPARENT(node_id)))
+#define DT_MTD_FROM_FIXED_PARTITION(node_id)                                                       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(node_id)),                          \
+		    (DT_PARENT(DT_MEM_FROM_FIXED_PARTITION(node_id))), (DT_GPARENT(node_id)))
+
+/**
+ * @brief Get the absolute address of a fixed partition
+ *
+ * Example devicetree fragment:
+ *
+ *     &flash_controller {
+ *             flash@1000000 {
+ *                     compatible = "soc-nv-flash";
+ *                     partitions {
+ *                             compatible = "fixed-partitions";
+ *                             storage_partition: partition@3a000 {
+ *                                     label = "storage";
+ *                             };
+ *                     };
+ *             };
+ *     };
+ *
+ * Here, the "storage" partition is seen to belong to flash memory
+ * starting at address 0x1000000. The partition's unit address of
+ * 0x3a000 represents an offset inside that flash memory.
+ *
+ * Example usage:
+ *
+ *     DT_FIXED_PARTITION_ADDR(DT_NODELABEL(storage_partition)) // 0x103a000
+ *
+ * This macro can only be used with partitions of internal memory
+ * addressable by the CPU. Otherwise, it may produce a compile-time
+ * error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
+ *
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the partition's offset plus the base address of the flash
+ * node containing it.
+ */
+#define DT_FIXED_PARTITION_ADDR(node_id)                                                           \
+	(DT_REG_ADDR(DT_MEM_FROM_FIXED_PARTITION(node_id)) + DT_REG_ADDR(node_id))
 
 /**
  * @}

@@ -67,27 +67,11 @@ struct gpio_sifive_data {
 #define DEV_GPIO_DATA(dev)				\
 	((struct gpio_sifive_data *)(dev)->data)
 
-/* _irq_level and _level2_irq are copied from
- * soc/riscv/riscv-privileged/common/soc_common_irq.c
- * Ideally this kind of thing should be made available in include/irq.h or
- * somewhere similar since the multi-level IRQ format is generic to
-  Zephyr, and then both this copy and the one in riscv-privileged
- * be removed for the shared implementation
- */
-static inline unsigned int _irq_level(unsigned int irq)
-{
-	return ((irq >> 8) && 0xff) == 0U ? 1 : 2;
-}
-
-static inline unsigned int _level2_irq(unsigned int irq)
-{
-	return (irq >> 8) - 1;
-}
 
 /* Given gpio_irq_base and the pin number, return the IRQ number for the pin */
 static inline unsigned int gpio_sifive_pin_irq(unsigned int base_irq, int pin)
 {
-	unsigned int level = _irq_level(base_irq);
+	unsigned int level = irq_get_level(base_irq);
 	unsigned int pin_irq = 0;
 
 	if (level == 1) {
@@ -104,10 +88,10 @@ static inline unsigned int gpio_sifive_pin_irq(unsigned int base_irq, int pin)
  */
 static inline int gpio_sifive_plic_to_pin(unsigned int base_irq, int plic_irq)
 {
-	unsigned int level = _irq_level(base_irq);
+	unsigned int level = irq_get_level(base_irq);
 
 	if (level == 2) {
-		base_irq = _level2_irq(base_irq);
+		base_irq = irq_from_level_2(base_irq);
 	}
 
 	return (plic_irq - base_irq);
@@ -360,6 +344,8 @@ static int gpio_sifive_init(const struct device *dev)
 	gpio->fall_ie = 0U;
 	gpio->high_ie = 0U;
 	gpio->low_ie  = 0U;
+	gpio->iof_en  = 0U;
+	gpio->iof_sel = 0U;
 	gpio->invert  = 0U;
 
 	/* Setup IRQ handler for each gpio pin */

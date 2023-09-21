@@ -36,8 +36,9 @@
  * as a part of ongoing development.
  */
 
+#include <stdint.h>
 #include <stdbool.h>
-#include <zephyr/types.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 
 /* TODO: Remove dependency on mcs.h */
@@ -1448,6 +1449,23 @@ int media_proxy_pl_init(void);
 struct bt_ots *bt_mcs_get_ots(void);
 
 /* Callbacks from the player to the media proxy */
+/**
+ * @brief Player name changed callback
+ *
+ * To be called when the player's name is changed.
+ *
+ * @param name The name of the player
+ */
+void media_proxy_pl_name_cb(const char *name);
+
+/**
+ * @brief Player icon URL changed callback
+ *
+ * To be called when the player's icon URL is changed.
+ *
+ * @param url The URL of the player's icon
+ */
+void media_proxy_pl_icon_url_cb(const char *url);
 
 /**
  * @brief Track changed callback

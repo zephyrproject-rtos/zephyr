@@ -88,7 +88,7 @@ static void acmp_trigger_handler(const struct device *dev,
 			   SENSOR_TRIG_MCUX_ACMP_OUTPUT_RISING);
 }
 
-void main(void)
+int main(void)
 {
 	struct sensor_trigger trigger;
 	const struct device *const acmp = DEVICE_DT_GET(ACMP_NODE);
@@ -98,7 +98,7 @@ void main(void)
 
 	if (!device_is_ready(acmp)) {
 		printf("ACMP device not ready");
-		return;
+		return 0;
 	}
 
 	/* Set ACMP attributes */
@@ -109,7 +109,7 @@ void main(void)
 				      attrs[i].attr, &val);
 		if (err) {
 			printf("failed to set attribute %d (err %d)", i, err);
-			return;
+			return 0;
 		}
 	}
 
@@ -123,7 +123,7 @@ void main(void)
 		err = sensor_trigger_set(acmp, &trigger, acmp_trigger_handler);
 		if (err) {
 			printf("failed to set trigger %d (err %d)", i, err);
-			return;
+			return 0;
 		}
 	}
 
@@ -133,13 +133,13 @@ void main(void)
 	err = sensor_sample_fetch(acmp);
 	if (err) {
 		printf("failed to fetch sample (err %d)", err);
-		return;
+		return 0;
 	}
 
 	err = sensor_channel_get(acmp, SENSOR_CHAN_MCUX_ACMP_OUTPUT, &val);
 	if (err) {
 		printf("failed to get channel (err %d)", err);
-		return;
+		return 0;
 	}
 
 	acmp_input_handler(val.val1 == 1);
@@ -148,4 +148,5 @@ void main(void)
 	while (true) {
 		k_sleep(K_MSEC(1));
 	}
+	return 0;
 }

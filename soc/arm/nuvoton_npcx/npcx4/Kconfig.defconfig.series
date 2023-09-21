@@ -1,0 +1,23 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NPCX4
+
+config SOC_SERIES
+	default "npcx4"
+
+config NUM_IRQS
+	default 128
+
+config CORTEX_M_SYSTICK
+	default !NPCX_ITIM_TIMER
+
+config ESPI_NPCX
+	default y
+	depends on ESPI
+
+source "soc/arm/nuvoton_npcx/npcx4/Kconfig.defconfig.npcx4*"
+
+endif # SOC_SERIES_NPCX4

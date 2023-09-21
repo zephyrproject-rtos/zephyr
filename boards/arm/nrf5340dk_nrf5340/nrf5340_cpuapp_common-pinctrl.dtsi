@@ -62,6 +62,7 @@
 				<NRF_PSEL(QSPI_IO2, 0, 15)>,
 				<NRF_PSEL(QSPI_IO3, 0, 16)>,
 				<NRF_PSEL(QSPI_CSN, 0, 18)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
 		};
 	};
 

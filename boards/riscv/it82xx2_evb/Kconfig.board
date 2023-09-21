@@ -1,0 +1,6 @@
+# Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IT82XX2_EVB
+	bool "IT82XX2 EV-board"
+	depends on SOC_IT8XXX2

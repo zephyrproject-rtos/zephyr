@@ -8,6 +8,6 @@ compatible: "micron,mt25qu02g"
 include: flash-controller.yaml
 
 properties:
-    size:
-      type: int
-      description: Flash memory size in bit.
+  size:
+    type: int
+    description: Flash memory size in bit.

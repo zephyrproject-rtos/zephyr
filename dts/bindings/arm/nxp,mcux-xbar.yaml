@@ -1,0 +1,20 @@
+# Copyright (c) 2023, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCUX XBAR (Crossbar)
+
+compatible: "nxp,mcux-xbar"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  xbar-maps:
+    type: array
+    description: |
+      Crossbar input and output mappings. Input is followed by the output.
+      Input should match pinctrl mapping in dtsi. The desired values can be
+      found by searching for 'enum _xbar_' in
+      modules/hal/nxp/mcux/mcux-sdk/devices/<device>/<device>.h.

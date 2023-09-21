@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODEM_MODULES
+	bool "Modem modules"
+
+if MODEM_MODULES
+
+config MODEM_CHAT
+	bool "Modem chat module"
+	select RING_BUFFER
+	select MODEM_PIPE
+
+if MODEM_CHAT
+
+config MODEM_CHAT_LOG_BUFFER
+	int "Modem chat log buffer size"
+	default 128
+
+endif
+
+config MODEM_CMUX
+	bool "Modem CMUX module"
+	select MODEM_PIPE
+	select RING_BUFFER
+	select EVENTS
+	select CRC
+
+config MODEM_PIPE
+	bool "Modem pipe module"
+
+config MODEM_PPP
+	bool "Modem PPP module"
+	depends on NET_L2_PPP
+	select MODEM_PIPE
+	select RING_BUFFER
+	select CRC
+
+if MODEM_PPP
+
+config MODEM_PPP_NET_BUF_FRAG_SIZE
+	int "Network buffer fragment size"
+	default NET_BUF_DATA_SIZE if NET_BUF_FIXED_DATA_SIZE
+	default 128
+
+endif
+
+module = MODEM_MODULES
+module-str = modem_modules
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "backends/Kconfig"
+
+endif

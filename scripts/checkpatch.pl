@@ -592,6 +592,20 @@ our @mode_permission_funcs = (
 	["__ATTR", 2],
 );
 
+our $api_defines = qr{(?x:
+	_ATFILE_SOURCE|
+	_BSD_SOURCE|
+	_DEFAULT_SOURCE|
+	_GNU_SOURCE|
+	_ISOC11_SOURCE|
+	_ISOC99_SOURCE|
+	_POSIX_C_SOURCE|
+	_POSIX_SOURCE|
+	_SVID_SOURCE|
+	_XOPEN_SOURCE|
+	_XOPEN_SOURCE_EXTENDED
+)};
+
 my $word_pattern = '\b[A-Z]?[a-z]{2,}\b';
 
 #Create a search pattern for all these functions to speed up a loop below
@@ -2940,6 +2954,7 @@ sub process {
 
 # Check for various typo / spelling mistakes
 		if (defined($misspellings) &&
+		    ($spelling_file !~ /$realfile/) &&
 		    ($in_commit_log || $line =~ /^(?:\+|Subject:)/i)) {
 			while ($rawline =~ /(?:^|[^a-z@])($misspellings)(?:\b|$|[^a-z@])/gi) {
 				my $typo = $1;
@@ -4150,13 +4165,15 @@ sub process {
 
 # check for new typedefs, only function parameters and sparse annotations
 # make sense.
-		if ($line =~ /\btypedef\s/ &&
-		    $line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
-		    $line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
-		    $line !~ /\b$typeTypedefs\b/ &&
-		    $line !~ /\b__bitwise\b/) {
-			WARN("NEW_TYPEDEFS",
-			     "do not add new typedefs\n" . $herecurr);
+		if ($realfile =~ /\/include\/zephyr\/posix\/*.h/) {
+			if ($line =~ /\btypedef\s/ &&
+			$line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
+			$line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
+			$line !~ /\b$typeTypedefs\b/ &&
+			$line !~ /\b__bitwise\b/) {
+				WARN("NEW_TYPEDEFS",
+				"do not add new typedefs\n" . $herecurr);
+			}
 		}
 
 # * goes on variable not on type
@@ -5014,8 +5031,11 @@ sub process {
 		if ($sline =~ /\breturn(?:\s*\(+\s*|\s+)(E[A-Z]+)(?:\s*\)+\s*|\s*)[;:,]/) {
 			my $name = $1;
 			if ($name ne 'EOF' && $name ne 'ERROR') {
-				WARN("USE_NEGATIVE_ERRNO",
-				     "return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
+				# only print this warning if not dealing with 'lib/posix/*.c'
+				if ($realfile =~ /.*\/lib\/posix\/*.c/) {
+					WARN("USE_NEGATIVE_ERRNO",
+						"return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
+				}
 			}
 		}
 
@@ -6522,6 +6542,13 @@ sub process {
 			    $fix) {
 				$fixed[$fixlinenr] =~ s/\(?\s*1\s*[ulUL]*\s*<<\s*(\d+|$Ident)\s*\)?/BIT${ull}($1)/;
 			}
+		}
+
+# check for feature test macros that request C library API extensions, violating rules A.4 and A.5
+
+		if ($line =~ /#\s*define\s+$api_defines/) {
+			ERROR("API_DEFINE",
+			      "do not specify a non-Zephyr API for libc\n" . "$here$rawline\n");
 		}
 
 # check for IS_ENABLED() without CONFIG_<FOO> ($rawline for comments too)

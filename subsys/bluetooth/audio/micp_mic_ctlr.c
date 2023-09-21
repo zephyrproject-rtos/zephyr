@@ -1,4 +1,4 @@
-/*  Bluetooth MICP - Microphone Input Control Profile - Microphone Controller */
+/*  Bluetooth MICP - Microphone Control Profile - Microphone Controller */
 
 /*
  * Copyright (c) 2020 Bose Corporation
@@ -19,8 +19,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/micp.h>
-
 #include <zephyr/logging/log.h>
+
+#include "micp_internal.h"
 
 LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);
 
@@ -28,24 +29,6 @@ LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);
 
 /* Callback functions */
 static struct bt_micp_mic_ctlr_cb *micp_mic_ctlr_cb;
-
-struct bt_micp_mic_ctlr {
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t mute_handle;
-	struct bt_gatt_subscribe_params mute_sub_params;
-	struct bt_gatt_discover_params mute_sub_disc_params;
-
-	bool busy;
-	uint8_t mute_val_buf[1]; /* Mute value is a single octet */
-	struct bt_gatt_write_params write_params;
-	struct bt_gatt_read_params read_params;
-	struct bt_gatt_discover_params discover_params;
-	struct bt_conn *conn;
-
-	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST];
-};
 
 static struct bt_micp_mic_ctlr mic_ctlrs[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *mics_uuid = BT_UUID_MICS;

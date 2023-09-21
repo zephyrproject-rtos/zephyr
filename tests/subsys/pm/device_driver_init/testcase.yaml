@@ -1,0 +1,17 @@
+tests:
+  pm.device_driver_init:
+    tags: pm
+    platform_allow: qemu_cortex_m3
+  pm.device_driver_init.pm:
+    tags: pm
+    platform_allow: qemu_cortex_m3
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_POWER_DOMAIN=y
+  pm.device_driver_init.pm_device_runtime:
+    tags: pm
+    platform_allow: qemu_cortex_m3
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_POWER_DOMAIN=y
+      - CONFIG_PM_DEVICE_RUNTIME=y

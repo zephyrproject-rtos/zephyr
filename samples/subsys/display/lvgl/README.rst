@@ -1,7 +1,8 @@
-.. _lvgl-sample:
+.. zephyr:code-sample:: lvgl
+   :name: LVGL basic sample
+   :relevant-api: display_interface
 
-LittlevGL Basic Sample
-######################
+   Display "Hello World" and a dynamic counter using LVGL.
 
 Overview
 ********
@@ -67,6 +68,6 @@ References
 
 .. target-notes::
 
-.. _LittlevGL Web Page: https://littlevgl.com/
+.. _LVGL Web Page: https://lvgl.io/
 .. _SDL2: https://www.libsdl.org
 .. _RK043FN02H-CT: https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/4.3-lcd-panel:RK043FN02H-CT

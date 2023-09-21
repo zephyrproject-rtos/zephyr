@@ -544,8 +544,26 @@ a.internal:visited code.literal {
     color: var(--admonition-tip-title-color);
 }
 
+/* Admonition tweaks - sphinx_togglebutton */
+
+.rst-content .admonition.toggle {
+    overflow: visible;
+}
+
+.rst-content .admonition.toggle button {
+    display: inline-flex;
+    color: var(--admonition-note-title-color);
+}
+
+.rst-content .admonition.toggle .tb-icon {
+    height: 1em;
+    width: 1em;
+}
+
 /* Keyboard shortcuts tweaks */
-kbd, .kbd {
+kbd, .kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > .kbd {
     background-color: var(--kbd-background-color);
     border: 1px solid var(--kbd-outline-color);
     border-radius: 3px;

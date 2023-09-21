@@ -16,6 +16,7 @@ config UART_STM32
 		   DT_HAS_ST_STM32_DMA_V2BIS_ENABLED || \
 		   DT_HAS_ST_STM32U5_DMA_ENABLED
 	select DMA if UART_ASYNC_API
+	select RESET
 	help
 	  This option enables the UART driver for STM32 family of
 	  processors.

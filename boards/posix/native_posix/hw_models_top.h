@@ -7,7 +7,7 @@
 #ifndef _NATIVE_POSIX_HW_MODELS_H
 #define _NATIVE_POSIX_HW_MODELS_H
 
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include <inttypes.h>
 
 #ifdef __cplusplus

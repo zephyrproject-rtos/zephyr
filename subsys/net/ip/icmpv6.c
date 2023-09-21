@@ -217,7 +217,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 
 		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
 							orig, &icmpv6_access);
-		if (!icmp_hdr || icmp_hdr->code < 128) {
+		if (!icmp_hdr || icmp_hdr->type < 128) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
@@ -341,6 +341,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 uint16_t identifier,
 				 uint16_t sequence,
 				 uint8_t tc,
+				 int priority,
 				 const void *data,
 				 size_t data_size)
 {
@@ -362,8 +363,19 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
-	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
+	if (!IS_ENABLED(CONFIG_NET_ALLOW_ANY_PRIORITY) &&
+	    priority >= NET_MAX_PRIORITIES) {
+		NET_ERR("Priority %d is too large, maximum allowed is %d",
+			priority, NET_MAX_PRIORITIES - 1);
+		return -EINVAL;
+	}
+
+	if (priority < 0) {
+		net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
+		net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
+	} else {
+		net_pkt_set_priority(pkt, priority);
+	}
 
 	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
@@ -429,6 +441,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv6_handler *cb;
+	enum net_verdict res;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -455,7 +468,12 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
 		    (cb->code == icmp_hdr->code || cb->code == 0U)) {
-			return cb->handler(pkt, ip_hdr, icmp_hdr);
+			res = cb->handler(pkt, ip_hdr, icmp_hdr);
+			if (res == NET_CONTINUE) {
+				continue;
+			} else {
+				return res;
+			}
 		}
 	}
 drop:

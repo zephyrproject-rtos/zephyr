@@ -5,12 +5,12 @@
 
 config ARC_MPU_VER
 	int "ARC MPU version"
-	range 2 6
+	range 2 8
 	default 2
 	help
 	  ARC MPU has several versions. For MPU v2, the minimum region is 2048 bytes;
 	  For other versions, the minimum region is 32 bytes; v4 has secure features,
-	  v6 supports up to 32 regions.
+	  v6 supports up to 32 regions. Note: MPU v5 & v7 are not supported.
 
 config ARC_CORE_MPU
 	bool "ARC Core MPU functionalities"
@@ -32,8 +32,8 @@ config ARC_MPU
 	select SRAM_REGION_PERMISSIONS
 	select ARC_CORE_MPU
 	select THREAD_STACK_INFO
-	select GEN_PRIV_STACKS if ARC_MPU_VER != 4
-	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if ARC_MPU_VER !=4
-	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if ARC_MPU_VER = 4
+	select GEN_PRIV_STACKS if !(ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
+	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if (ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
 	help
-	  Target has ARC MPU (currently only works for EMSK 2.2/2.3 ARCEM7D)
+	  Target has ARC MPU

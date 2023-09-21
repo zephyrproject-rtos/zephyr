@@ -16,7 +16,7 @@ linker script to ensure that.
 Building and Running
 ********************
 
-This application can be built and executed on QEMU as follows:
+This application can be built and executed as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

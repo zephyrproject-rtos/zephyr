@@ -8,7 +8,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <soc_pinmap.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 void eos_s3_lock_enable(void)
 {
@@ -18,20 +18,6 @@ void eos_s3_lock_enable(void)
 void eos_s3_lock_disable(void)
 {
 	MISC_CTRL->LOCK_KEY_CTRL = 1;
-}
-
-int eos_s3_io_mux(uint32_t pad_nr, uint32_t pad_cfg)
-{
-	volatile uint32_t *p = (uint32_t *)IO_MUX_BASE;
-
-	if (pad_nr > EOS_S3_MAX_PAD_NR) {
-		return -EINVAL;
-	}
-
-	p += pad_nr;
-	*p = pad_cfg;
-
-	return 0;
 }
 
 static void eos_s3_cru_init(void)
@@ -64,12 +50,8 @@ static void eos_s3_cru_init(void)
 
 
 
-static int eos_s3_init(const struct device *arg)
+static int eos_s3_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
 	/* Clocks setup */
 	eos_s3_lock_enable();
 	eos_s3_cru_init();
@@ -82,12 +64,6 @@ static int eos_s3_init(const struct device *arg)
 
 	/* Enable UART interrupt */
 	INTR_CTRL->OTHER_INTR_EN_M4 = UART_INTR_EN_M4;
-
-	key = irq_lock();
-
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

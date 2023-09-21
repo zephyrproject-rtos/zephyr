@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Victor Chavez
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_BLE
+	bool "Bluetooth Low Energy (BLE) backend"
+	depends on BT
+	depends on LOG_PROCESS_THREAD_STACK_SIZE>=2048
+	select LOG_OUTPUT
+	select EXPERIMENTAL
+	help
+	  Backend that sends log messages over Bluetooth LE Notifications. This
+	  characteristic and its service are compatible with the Nordic UART
+	  Service (NUS), from the nRF Connect SDK.
+	  This allows to use this BLE Logger directly with a compatible app such
+	  as the nRF UART 2.0 or nRF Toolbox app.
+
+if LOG_BACKEND_BLE
+
+backend = BLE
+backend-str = ble
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_BLE

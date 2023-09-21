@@ -8,7 +8,7 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
-      required: true
+    required: true
 
 interrupt-cells:
   - irq

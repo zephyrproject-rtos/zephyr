@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Aurelien Jarno
+ * Copyright (c) 2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <errno.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -165,8 +167,10 @@ static int entropy_sam_init(const struct device *dev)
 	/* Enable the TRNG */
 	trng->CTRLA.bit.ENABLE = 1;
 #else
-	/* Enable the user interface clock */
-	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
+	/* Enable TRNG in PMC */
+	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;

@@ -8,3 +8,10 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog

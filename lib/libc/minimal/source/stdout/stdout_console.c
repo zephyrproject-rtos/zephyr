@@ -53,6 +53,18 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 	return len == ret ? 0 : EOF;
 }
 
+#undef putc
+int putc(int c, FILE *stream)
+{
+	return zephyr_fputc(c, stream);
+}
+
+#undef putchar
+int putchar(int c)
+{
+	return zephyr_fputc(c, stdout);
+}
+
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 			    size_t nitems, FILE *ZRESTRICT stream)
 {

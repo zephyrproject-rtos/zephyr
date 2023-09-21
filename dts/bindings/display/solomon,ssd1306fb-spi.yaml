@@ -8,7 +8,7 @@ compatible: "solomon,ssd1306fb"
 include: ["solomon,ssd1306fb-common.yaml", "spi-device.yaml"]
 
 properties:
-    data_cmd-gpios:
-      type: phandle-array
-      required: true
-      description: D/C# pin.
+  data_cmd-gpios:
+    type: phandle-array
+    required: true
+    description: D/C# pin.

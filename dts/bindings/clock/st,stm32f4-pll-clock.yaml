@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32L4 Main PLL node binding:
+  STM32F4 Main PLL node binding:
 
   Takes one of clk_hse or clk_hsi as input clock, with an
   input frequency from 1 to 2 MHz. PLLM factor is used to set the input clock
@@ -24,40 +24,40 @@ compatible: "st,stm32f4-pll-clock"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 0
+  "#clock-cells":
+    const: 0
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    div-m:
-      type: int
-      required: true
-      description: |
-          Division factor for the PLL input clock
-          Valid range: 2 - 63
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for the PLL input clock
+        Valid range: 2 - 63
 
-    mul-n:
-      type: int
-      required: true
-      description: |
-          Main PLL multiplication factor for VCO
-          Valid range: 50 - 432
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 50 - 432
 
-    div-p:
-      type: int
-      required: true
-      description: |
-          Main PLL division factor for PLLSAI2CLK
-      enum:
-        - 2
-        - 4
-        - 6
-        - 8
+  div-p:
+    type: int
+    required: true
+    description: |
+        Main PLL division factor for PLLSAI2CLK
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
 
-    div-q:
-      type: int
-      description: |
-          Main PLL (PLL) division factor for USB OTG FS, SDMMC and random number
-          generator clocks.
-          Valid range: 2 - 15
+  div-q:
+    type: int
+    description: |
+        Main PLL (PLL) division factor for USB OTG FS, SDMMC and random number
+        generator clocks.
+        Valid range: 2 - 15

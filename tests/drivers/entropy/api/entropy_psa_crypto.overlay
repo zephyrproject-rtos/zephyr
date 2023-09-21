@@ -6,10 +6,10 @@
 
 / {
 	chosen {
-		zephyr,entropy = &rng_psa;
+		zephyr,entropy = &psa_rng;
 	};
 
-	rng_psa: entropy_psa_crypto {
+	psa_rng: psa-rng {
 		compatible = "zephyr,psa-crypto-rng";
 		status = "okay";
 	};

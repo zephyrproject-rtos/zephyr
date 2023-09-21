@@ -5,7 +5,9 @@ arch: x86
 toolchain:
   - zephyr
 ram: 256
+supported:
+  - smp
 testing:
   ignore_tags:
-     - net
-     - bluetooth
+    - net
+    - bluetooth

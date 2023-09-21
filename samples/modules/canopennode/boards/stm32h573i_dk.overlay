@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* do not use the NOR octoflash for nvs can storage */
+&mx25lm51245 {
+	status = "disabled";
+};

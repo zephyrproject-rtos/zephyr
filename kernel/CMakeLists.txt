@@ -3,6 +3,27 @@
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/device.h
+  ${ZEPHYR_BASE}/include/zephyr/kernel.h
+  ${ZEPHYR_BASE}/include/zephyr/sys/kobject.h
+  ${ZEPHYR_BASE}/include/zephyr/sys/time_units.h
+)
+
+if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
+endif()
+
+zephyr_syscall_header_ifdef(
+  CONFIG_ATOMIC_OPERATIONS_C
+  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
+)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_MMU
+  ${ZEPHYR_BASE}/include/zephyr/sys/mem_manage.h
+)
+
 # If a pre-built static library containing kernel code exists in
 # this directory, libkernel.a, link it with the application code
 # instead of building from source.
@@ -17,9 +38,13 @@ target_link_libraries(kernel INTERFACE ${libkernel})
 
 else()
 
+# FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
+add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
+
 list(APPEND kernel_files
   main_weak.c
   banner.c
+  busy_wait.c
   device.c
   errno.c
   fatal.c
@@ -100,6 +125,12 @@ target_sources_ifdef(
   userspace_handler.c
   userspace.c
   )
+
+if(${CONFIG_DYNAMIC_THREAD})
+  target_sources(kernel PRIVATE dynamic.c)
+else()
+  target_sources(kernel PRIVATE dynamic_disabled.c)
+endif()
 
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include

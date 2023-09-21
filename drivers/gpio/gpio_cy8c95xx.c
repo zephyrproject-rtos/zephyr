@@ -214,14 +214,6 @@ static int port_toggle_bits(const struct device *dev,
 	return port_write(dev, 0, 0, pins);
 }
 
-static int pin_interrupt_configure(const struct device *dev,
-				   gpio_pin_t pin,
-				   enum gpio_int_mode mode,
-				   enum gpio_int_trig trig)
-{
-	return -ENOTSUP;
-}
-
 /**
  * @brief Initialization function of CY8C95XX
  *
@@ -277,7 +269,6 @@ static const struct gpio_driver_api api_table = {
 	.port_set_bits_raw = port_set_bits,
 	.port_clear_bits_raw = port_clear_bits,
 	.port_toggle_bits = port_toggle_bits,
-	.pin_interrupt_configure = pin_interrupt_configure,
 };
 
 static struct k_sem cy8c95xx_lock = Z_SEM_INITIALIZER(cy8c95xx_lock, 1, 1);
@@ -287,7 +278,7 @@ static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
 	.common = { \
 		.port_pin_mask = 0xFF, \
 	}, \
-	.i2c = I2C_DT_SPEC_INST_GET(idx), \
+	.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))), \
 	.port_num = DT_INST_REG_ADDR(idx), \
 }; \
 static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = { \

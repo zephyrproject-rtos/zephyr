@@ -201,7 +201,7 @@ static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 					 &message_type,
 					 &remaining,
 					 0);
-		if (ret <= 0) {
+		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				k_sleep(K_MSEC(50));
 				continue;
@@ -318,7 +318,7 @@ static bool send_and_wait_msg(int sock, size_t amount, const char *proto,
 	return true;
 }
 
-void main(void)
+int main(void)
 {
 	/* Just an example how to set extra headers */
 	const char *extra_headers[] = {
@@ -431,9 +431,18 @@ void main(void)
 		close(websock4);
 	}
 
+	if (sock4 >= 0) {
+		close(sock4);
+	}
+
 	if (websock6 >= 0) {
 		close(websock6);
 	}
 
+	if (sock6 >= 0) {
+		close(sock6);
+	}
+
 	k_sleep(K_FOREVER);
+	return 0;
 }

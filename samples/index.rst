@@ -21,11 +21,13 @@ Samples and Demos
    drivers/drivers.rst
    application_development/*
    shields/*
+   cpp/*
    posix/*
    kernel/*
    tfm_integration/tfm_integration.rst
    modules/*
    compression/*
+   fuel_gauge/*
 
 .. comment
    To add a new sample document, please use the template available under

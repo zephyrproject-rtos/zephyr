@@ -7,4 +7,7 @@ common:
 tests:
   net.socket.poll:
     min_ram: 21
-    tags: net socket poll
+    tags:
+      - net
+      - socket
+      - poll

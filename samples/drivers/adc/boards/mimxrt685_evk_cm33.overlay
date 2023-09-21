@@ -2,14 +2,15 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2020 Linaro Limited
+ * Copyright 2023 NXP
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 / {
 	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
-		io-channels = <&lpadc0 0>;
+		io-channels = <&lpadc0 0>, <&lpadc0 1>;
 	};
 };
 
@@ -17,11 +18,30 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	/*
+	 * To use this sample:
+	 * - Connect VREF_L to GND, and VREF_H to 1.8V (connect JP9 and JP10).
+	 * - Connect LPADC0 CH0A signal to voltage between 0~1.8V (J30 pin 1)
+	 * - Connect LPADC0 CH0B signal to voltage between 0~1.8V (J30 pin 2)
+	 */
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
-		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <1800>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <1800>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0B>;
 	};
 };

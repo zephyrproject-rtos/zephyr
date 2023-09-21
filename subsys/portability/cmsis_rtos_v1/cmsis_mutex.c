@@ -111,7 +111,7 @@ osStatus osMutexDelete(osMutexId mutex_id)
 	 * not be deleted) is not supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cmsis_mutex_slab, (void *) &mutex);
+	k_mem_slab_free(&cmsis_mutex_slab, (void *)mutex);
 
 	return osOK;
 }

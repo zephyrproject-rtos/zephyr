@@ -4,9 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+&sram2 {
+	zephyr,memory-attr = < DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) >;
+};
+
 &spi1 {
-	dmas = <&dmamux1 0 38 0x20440
-		&dmamux1 1 37 0x20480>;
+	dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

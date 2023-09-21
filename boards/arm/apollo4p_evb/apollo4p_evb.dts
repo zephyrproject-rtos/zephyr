@@ -1,0 +1,57 @@
+/dts-v1/;
+#include <ambiq/ambiq_apollo4p.dtsi>
+
+#include "apollo4p_evb-pinctrl.dtsi"
+
+/ {
+	model = "Ambiq Apollo4 Plus evaluation board";
+	compatible = "ambiq,apollo4p_evb";
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&iom0 {
+	compatible = "ambiq,i2c";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&iom1 {
+	compatible = "ambiq,spi";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <1000000>;
+	status = "okay";
+};
+
+&mspi0 {
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

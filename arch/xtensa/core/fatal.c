@@ -108,19 +108,21 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 		coredump(reason, esf, IS_ENABLED(CONFIG_MULTITHREADING) ? k_current_get() : NULL);
 
-		arch_irq_unlock(key);
-	}
 #if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
 #if XCHAL_HAVE_WINDOWED
-	z_xtensa_backtrace_print(100, (int *)esf);
+		z_xtensa_backtrace_print(100, (int *)esf);
 #endif
 #endif
+
+		arch_irq_unlock(key);
+	}
+
 	z_fatal_error(reason, esf);
 }
 
+#ifdef XT_SIMULATOR
 void exit(int return_code)
 {
-#ifdef XT_SIMULATOR
 	__asm__ (
 	    "mov a3, %[code]\n\t"
 	    "movi a2, %[call]\n\t"
@@ -128,12 +130,8 @@ void exit(int return_code)
 	    :
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
-#else
-	LOG_ERR("exit(%d)", return_code);
-	k_panic();
-#endif
-	CODE_UNREACHABLE;
 }
+#endif
 
 #ifdef XT_SIMULATOR
 FUNC_NORETURN void z_system_halt(unsigned int reason)

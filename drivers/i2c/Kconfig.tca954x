@@ -13,9 +13,13 @@ if I2C_TCA954X
 config I2C_TCA954X_ROOT_INIT_PRIO
 	int "TCA954x root driver init priority"
 	default I2C_INIT_PRIORITY
+	help
+	  Should be lower than `I2C_TCA954X_CHANNEL_INIT_PRIO`
 
 config I2C_TCA954X_CHANNEL_INIT_PRIO
 	int "TCA954x channel driver init priority"
 	default I2C_INIT_PRIORITY
+	help
+	  Should be higher than `I2C_TCA954X_ROOT_INIT_PRIO`
 
 endif

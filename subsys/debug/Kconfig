@@ -8,6 +8,7 @@ menu "System Monitoring Options"
 
 menuconfig THREAD_ANALYZER
 	bool "Thread analyzer"
+	depends on !ARCH_POSIX
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
@@ -25,6 +26,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Thread analysis print mode"
+	default THREAD_ANALYZER_USE_PRINTK
 
 config THREAD_ANALYZER_USE_LOG
 	bool "Use logger output"
@@ -177,6 +179,7 @@ config STACK_SENTINEL
 	select THREAD_STACK_INFO
 	depends on MULTITHREADING
 	depends on !USERSPACE
+	depends on !MPU_STACK_GUARD
 	help
 	  Store a magic value at the lowest addresses of a thread's stack.
 	  Periodically check that this value is still present and kill the
@@ -421,3 +424,11 @@ config GDBSTUB_BUF_SZ
 	  full GDB packet at a time.
 
 endif
+
+config SEGGER_DEBUGMON
+	bool "Use Segger's J-Link debug monitor implementation"
+	depends on CORTEX_M_DEBUG_MONITOR_HOOK
+	help
+	  This option will enable Segger's implementation of
+	  the debug monitor interrupt, overriding the
+	  default z_arm_debug_monitor symbol.

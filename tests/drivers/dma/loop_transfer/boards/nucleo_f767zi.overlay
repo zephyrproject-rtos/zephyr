@@ -8,6 +8,6 @@
 	status = "okay";
 };
 
-test_dma: &dma2 {
+test_dma0: &dma2 {
 	status = "okay";
 };

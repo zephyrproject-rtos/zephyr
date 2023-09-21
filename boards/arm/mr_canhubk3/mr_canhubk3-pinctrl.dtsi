@@ -1,0 +1,291 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTD15_EIRQ31>, <PTA18_EIRQ0>, <PTA25_EIRQ5>;
+			input-enable;
+		};
+	};
+
+	lpuart0_default: lpuart0_default {
+		group1 {
+			pinmux = <PTA3_LPUART0_TX_O>, <PTA1_LPUART0_RTS>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA2_LPUART0_RX>, <PTA0_LPUART0_CTS>;
+			input-enable;
+		};
+	};
+
+	lpuart1_default: lpuart1_default {
+		group1 {
+			pinmux = <PTC7_LPUART1_TX_O>, <PTE6_LPUART1_RTS>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTC6_LPUART1_RX>, <PTE2_LPUART1_CTS>;
+			input-enable;
+		};
+	};
+
+	lpuart2_default: lpuart2_default {
+		group1 {
+			pinmux = <PTA9_LPUART2_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA8_LPUART2_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart9_default: lpuart9_default {
+		group1 {
+			pinmux = <PTB3_LPUART9_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB2_LPUART9_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart10_default: lpuart10_default {
+		group1 {
+			pinmux = <PTC13_LPUART10_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTC12_LPUART10_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart13_default: lpuart13_default {
+		group1 {
+			pinmux = <PTB18_LPUART13_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB19_LPUART13_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart14_default: lpuart14_default {
+		group1 {
+			pinmux = <PTB20_LPUART14_TX_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB21_LPUART14_RX>;
+			input-enable;
+		};
+	};
+
+	qspi0_default: qspi0_default {
+		group1 {
+			pinmux = <(PTD11_QUADSPI_IOFA0_O | PTD11_QUADSPI_IOFA0_I)>,
+				<(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
+				<(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
+				<(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
+			output-enable;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTD10_QUADSPI_SCKFA_O>;
+			output-enable;
+		};
+		group3 {
+			pinmux = <PTC3_QUADSPI_PCSFA>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan1_default: flexcan1_default {
+		group1 {
+			pinmux = <PTC9_CAN1_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC8_CAN1_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group1 {
+			pinmux = <PTE25_CAN2_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTE24_CAN2_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan3_default: flexcan3_default {
+		group1 {
+			pinmux = <PTC29_CAN3_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC28_CAN3_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan4_default: flexcan4_default {
+		group1 {
+			pinmux = <PTC31_CAN4_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC30_CAN4_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan5_default: flexcan5_default {
+		group1 {
+			pinmux = <PTC11_CAN5_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTC10_CAN5_TX>;
+			output-enable;
+		};
+	};
+
+	lpi2c0_default: lpi2c0_default {
+		group1 {
+			pinmux = <(PTD13_LPI2C0_SDA_I | PTD13_LPI2C0_SDA_O)>,
+				<(PTD14_LPI2C0_SCL_I | PTD14_LPI2C0_SCL_O)>;
+			input-enable;
+			output-enable;
+		};
+	};
+
+	lpi2c1_default: lpi2c1_default {
+		group1 {
+			pinmux = <(PTD8_LPI2C1_SDA_I | PTD8_LPI2C1_SDA_O)>,
+				<(PTD9_LPI2C1_SCL_I | PTD9_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+		};
+	};
+
+	lpspi1_default: lpspi1_default {
+		group1 {
+			pinmux = <PTA28_LPSPI1_SCK_O>, <PTA29_LPSPI1_SIN_O>,
+				<PTA21_LPSPI1_PCS0_O>, <PTE4_LPSPI1_PCS1_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTA30_LPSPI1_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi2_default: lpspi2_default {
+		group1 {
+			pinmux = <PTB29_LPSPI2_SCK_O>, <PTB28_LPSPI2_SIN_O>,
+				<PTB25_LPSPI2_PCS0_O>, <PTC19_LPSPI2_PCS1_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB27_LPSPI2_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi3_default: lpspi3_default {
+		group1 {
+			pinmux = <PTD1_LPSPI3_SCK_O>, <PTE10_LPSPI3_SIN_O>,
+				<PTD17_LPSPI3_PCS0_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTD0_LPSPI3_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi4_default: lpspi4_default {
+		group1 {
+			pinmux = <PTB10_LPSPI4_SCK_O>, <PTB11_LPSPI4_SIN_O>,
+				<PTB8_LPSPI4_PCS0_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTB9_LPSPI4_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	lpspi5_default: lpspi5_default {
+		group1 {
+			pinmux = <PTD26_LPSPI5_SCK_O>, <PTD28_LPSPI5_SIN_O>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTD27_LPSPI5_SOUT_I>;
+			input-enable;
+		};
+	};
+
+	emac0_default: emac0_default {
+		group1 {
+			pinmux = <PTC0_EMAC_MII_RMII_RXD0>,
+				<PTC1_EMAC_MII_RMII_RXD1>,
+				<PTC14_EMAC_MII_RMII_RX_ER>,
+				<PTC15_EMAC_MII_RMII_RX_DV>,
+				<PTD6_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_TXD0>,
+				<PTB4_EMAC_MII_RMII_TXD1>,
+				<PTE9_EMAC_MII_RMII_TX_EN>;
+		};
+	};
+
+	emios0_default: emios0_default {
+		group1 {
+			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
+				<PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
+				<PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>,
+				<PTA17_EMIOS_0_CH6_G_O>, <PTE7_EMIOS_0_CH7_G_O>,
+				<PTE14_EMIOS_0_CH19_Y_O>;
+			output-enable;
+		};
+	};
+
+	emios1_default: emios1_default {
+		group1 {
+			pinmux = <PTA27_EMIOS_1_CH10_H_O>,
+					<PTE12_EMIOS_1_CH5_H_O>;
+			output-enable;
+		};
+	};
+};

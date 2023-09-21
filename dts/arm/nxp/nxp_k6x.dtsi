@@ -2,6 +2,7 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
 #include <zephyr/dt-bindings/clock/kinetis_mcg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -497,7 +498,7 @@
 		};
 
 		flexcan0: can@40024000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x40024000 0x1000>;
 			interrupts = <75 0>, <76 0>, <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning", "wake-up";

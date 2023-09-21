@@ -13,23 +13,28 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
-#define MPU_DYNAMIC_REGION_AREAS_NUM	1
+#define NODE_HAS_PROP_AND_OR(node_id, prop) \
+	DT_NODE_HAS_PROP(node_id, prop) ||
 
-#define _MAX_DYNAMIC_MPU_REGIONS_NUM                                                               \
-	((IS_ENABLED(CONFIG_USERSPACE) ? (CONFIG_MAX_DOMAIN_PARTITIONS + 1) : 0) +                 \
-	 (IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0))
+BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
+	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
+	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
+
+#define MPU_DYNAMIC_REGION_AREAS_NUM	1
 
 #ifdef CONFIG_USERSPACE
 static int dynamic_areas_init(uintptr_t start, size_t size);
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
-#else
-#define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__kernel_ram_start)
+#define MPU_DYNAMIC_REGIONS_AREA_SIZE  ((size_t)((uintptr_t)&__kernel_ram_end - \
+	MPU_DYNAMIC_REGIONS_AREA_START))
 #endif
-#define MPU_DYNAMIC_REGIONS_AREA_SIZE                                                             \
-	((size_t)((uintptr_t)&__kernel_ram_end - MPU_DYNAMIC_REGIONS_AREA_START))
 
 /*
  * AArch64 Memory Model Feature Register 0
@@ -67,16 +72,20 @@ static inline uint8_t get_num_regions(void)
 
 /**
  * @brief enable the MPU
+ *
+ * On the SMP system, The function that enables MPU can not insert stack protector
+ * code because the canary values read by the secondary CPUs before enabling MPU
+ * and after enabling it are not equal due to cache coherence issues.
  */
-void arm_core_mpu_enable(void)
+FUNC_NO_STACK_PROTECTOR void arm_core_mpu_enable(void)
 {
 	uint64_t val;
 
 	val = read_sctlr_el1();
 	val |= SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /**
@@ -87,13 +96,13 @@ void arm_core_mpu_disable(void)
 	uint64_t val;
 
 	/* Force any outstanding transfers to complete before disabling MPU */
-	dmb();
+	barrier_dmem_fence_full();
 
 	val = read_sctlr_el1();
 	val &= ~SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /* ARM MPU Driver Initial Setup
@@ -111,23 +120,48 @@ static void mpu_init(void)
 	uint64_t mair = MPU_MAIR_ATTRS;
 
 	write_mair_el1(mair);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
-static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
+/*
+ * Changing the MPU region may change the cache related attribute and cause
+ * cache coherence issues, so it's necessary to avoid invoking functions in such
+ * critical scope to avoid memory access before the MPU regions are all configured.
+ */
+static ALWAYS_INLINE void mpu_set_region(uint32_t rnr, uint64_t rbar,
 				  uint64_t rlar)
 {
 	write_prselr_el1(rnr);
-	dsb();
+	barrier_dsync_fence_full();
 	write_prbar_el1(rbar);
 	write_prlar_el1(rlar);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
-/* This internal functions performs MPU region initialization. */
-static void region_init(const uint32_t index,
+static inline void mpu_clr_region(uint32_t rnr)
+{
+	write_prselr_el1(rnr);
+	barrier_dsync_fence_full();
+	/*
+	 * Have to set limit register first as the enable/disable bit of the
+	 * region is in the limit register.
+	 */
+	write_prlar_el1(0);
+	write_prbar_el1(0);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
+
+/*
+ * This internal functions performs MPU region initialization.
+ *
+ * Changing the MPU region may change the cache related attribute and cause
+ * cache coherence issues, so it's necessary to avoid invoking functions in such
+ * critical scope to avoid memory access before the MPU regions are all configured.
+ */
+static ALWAYS_INLINE void region_init(const uint32_t index,
 			const struct arm_mpu_region *region_conf)
 {
 	uint64_t rbar = region_conf->base & MPU_RBAR_BASE_Msk;
@@ -142,13 +176,75 @@ static void region_init(const uint32_t index,
 	mpu_set_region(index, rbar, rlar);
 }
 
+#define _BUILD_REGION_CONF(reg, _ATTR)						\
+	(struct arm_mpu_region) { .name  = (reg).dt_name,			\
+				  .base  = (reg).dt_addr,			\
+				  .limit = (reg).dt_addr + (reg).dt_size,	\
+				  .attr  = _ATTR,				\
+				}
+
+/* This internal function programs the MPU regions defined in the DT when using
+ * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
+ */
+static int mpu_configure_regions_from_dt(uint8_t *reg_index)
+{
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; idx++) {
+		struct arm_mpu_region region_conf;
+
+		switch (DT_MEM_ARM_MASK(region[idx].dt_attr)) {
+		case DT_MEM_ARM_MPU_RAM:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
+			break;
+#ifdef REGION_RAM_NOCACHE_ATTR
+		case DT_MEM_ARM_MPU_RAM_NOCACHE:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_NOCACHE_ATTR);
+			__ASSERT(!(region[idx].dt_attr & DT_MEM_CACHEABLE),
+				 "RAM_NOCACHE with DT_MEM_CACHEABLE attribute\n");
+			break;
+#endif
+#ifdef REGION_FLASH_ATTR
+		case DT_MEM_ARM_MPU_FLASH:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
+			break;
+#endif
+#ifdef REGION_IO_ATTR
+		case DT_MEM_ARM_MPU_IO:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_IO_ATTR);
+			break;
+#endif
+		default:
+			/* Either the specified `ATTR_MPU_*` attribute does not
+			 * exists or the `REGION_*_ATTR` macro is not defined
+			 * for that attribute.
+			 */
+			LOG_ERR("Invalid attribute for the region\n");
+			return -EINVAL;
+		}
+
+		region_init((*reg_index), (const struct arm_mpu_region *) &region_conf);
+
+		(*reg_index)++;
+	}
+
+	return 0;
+}
+
 /*
  * @brief MPU default configuration
  *
  * This function here provides the default configuration mechanism
  * for the Memory Protection Unit (MPU).
+ *
+ * On the SMP system, The function that enables MPU can not insert stack protector
+ * code because the canary values read by the secondary CPUs before enabling MPU
+ * and after enabling it are not equal due to cache coherence issues.
  */
-void z_arm64_mm_init(bool is_primary_core)
+FUNC_NO_STACK_PROTECTOR void z_arm64_mm_init(bool is_primary_core)
 {
 	uint64_t val;
 	uint32_t r_index;
@@ -180,8 +276,6 @@ void z_arm64_mm_init(bool is_primary_core)
 		return;
 	}
 
-	LOG_DBG("total region count: %d", get_num_regions());
-
 	arm_core_mpu_disable();
 
 	/* Architecture-specific configuration */
@@ -194,6 +288,12 @@ void z_arm64_mm_init(bool is_primary_core)
 
 	/* Update the number of programmed MPU regions. */
 	static_regions_num = mpu_config.num_regions;
+
+	/* DT-defined MPU regions. */
+	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {
+		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
+		return;
+	}
 
 	arm_core_mpu_enable();
 
@@ -215,13 +315,30 @@ void z_arm64_mm_init(bool is_primary_core)
 
 #ifdef CONFIG_USERSPACE
 
-struct dynamic_region_info {
-	int index;
-	struct arm_mpu_region region_conf;
-};
-
 static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
 static int sys_dyn_regions_num;
+
+static void arm_core_mpu_background_region_enable(void)
+{
+	uint64_t val;
+
+	val = read_sctlr_el1();
+	val |= SCTLR_BR_BIT;
+	write_sctlr_el1(val);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
+
+static void arm_core_mpu_background_region_disable(void)
+{
+	uint64_t val;
+
+	val = read_sctlr_el1();
+	val &= ~SCTLR_BR_BIT;
+	write_sctlr_el1(val);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+}
 
 static int dynamic_areas_init(uintptr_t start, size_t size)
 {
@@ -366,14 +483,21 @@ out:
 static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 					uint8_t region_num)
 {
+	__ASSERT(read_daif() & DAIF_IRQ_BIT, "mpu flushing must be called with IRQs disabled");
+
 	int reg_avail_idx = static_regions_num;
 	int ret = 0;
 
+	arm_core_mpu_background_region_enable();
+
 	/*
 	 * Clean the dynamic regions
+	 * Before cleaning them, we need to flush dyn_regions to memory, because we need to read it
+	 * in updating mpu region.
 	 */
+	sys_cache_data_flush_range(dyn_regions, sizeof(struct dynamic_region_info) * region_num);
 	for (size_t i = reg_avail_idx; i < get_num_regions(); i++) {
-		mpu_set_region(i, 0, 0);
+		mpu_clr_region(i);
 	}
 
 	/*
@@ -403,21 +527,23 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 
 		region_init(region_idx, &(dyn_regions[i].region_conf));
 	}
+	arm_core_mpu_background_region_disable();
 
 	return ret;
 }
 
 static int configure_dynamic_mpu_regions(struct k_thread *thread)
 {
-	/*
-	 * Allocate double space for dyn_regions. Because when split
-	 * the background dynamic regions, it will cause double regions numbers
-	 * generated.
-	 */
-	struct dynamic_region_info dyn_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM * 2];
-	const uint8_t max_region_num = ARRAY_SIZE(dyn_regions);
+	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
+
+	struct dynamic_region_info *dyn_regions = thread->arch.regions;
+	const uint8_t max_region_num = ARM64_MPU_MAX_DYNAMIC_REGIONS;
 	uint8_t region_num;
 	int ret = 0, ret2;
+
+	/* Busy wait if it is flushing somewhere else */
+	while (!atomic_cas(&thread->arch.flushing, 0, 1)) {
+	}
 
 	ret2 = dup_dynamic_regions(dyn_regions, max_region_num);
 	CHECKIF(ret2 < 0) {
@@ -449,8 +575,9 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 					     partition->start,
 					     partition->size,
 					     &partition->attr);
-			CHECKIF(ret2 != 0) {
+			CHECKIF(ret2 < 0) {
 				ret = ret2;
+				goto out;
 			}
 
 			region_num = (uint8_t)ret2;
@@ -466,57 +593,83 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 				     thread->stack_info.start,
 				     thread->stack_info.size,
 				     &K_MEM_PARTITION_P_RW_U_RW);
-		CHECKIF(ret2 != 0) {
+		CHECKIF(ret2 < 0) {
 			ret = ret2;
+			goto out;
 		}
 
 		region_num = (uint8_t)ret2;
 	}
 
-	arm_core_mpu_disable();
-	ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
-	arm_core_mpu_enable();
+	thread->arch.region_num = region_num;
+
+	if (thread == _current) {
+		ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
+	}
 
 out:
+	atomic_clear(&thread->arch.flushing);
 	return ret;
 }
 
 int arch_mem_domain_max_partitions_get(void)
 {
-	int max_parts = get_num_regions() - static_regions_num;
+	int remaining_regions = get_num_regions() - static_regions_num + 1;
 
-	if (max_parts > CONFIG_MAX_DOMAIN_PARTITIONS) {
-		max_parts = CONFIG_MAX_DOMAIN_PARTITIONS;
+	/*
+	 * Check remianing regions, should more than ARM64_MPU_MAX_DYNAMIC_REGIONS
+	 * which equals CONFIG_MAX_DOMAIN_PARTITIONS + necessary regions (stack, guard)
+	 */
+	if (remaining_regions < ARM64_MPU_MAX_DYNAMIC_REGIONS) {
+		LOG_WRN("MPU regions not enough, demand: %d, regions: %d",
+			ARM64_MPU_MAX_DYNAMIC_REGIONS, remaining_regions);
+		return remaining_regions;
 	}
 
-	return max_parts;
+	return CONFIG_MAX_DOMAIN_PARTITIONS;
+}
+
+static int configure_domain_partitions(struct k_mem_domain *domain)
+{
+	struct k_thread *thread;
+	int ret;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&domain->mem_domain_q, thread,
+				     mem_domain_info.mem_domain_q_node) {
+		ret = configure_dynamic_mpu_regions(thread);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#ifdef CONFIG_SMP
+	/* the thread could be running on another CPU right now */
+	z_arm64_mem_cfg_ipi();
+#endif
+
+	return 0;
 }
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(domain);
 	ARG_UNUSED(partition_id);
 
-	return 0;
+	return configure_domain_partitions(domain);
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(domain);
 	ARG_UNUSED(partition_id);
 
-	return 0;
+	return configure_domain_partitions(domain);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	int ret = 0;
 
-	if (thread == _current) {
-		ret = configure_dynamic_mpu_regions(thread);
-	}
+	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	else {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}
@@ -529,11 +682,9 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	int ret = 0;
 
-	if (thread == _current) {
-		ret = configure_dynamic_mpu_regions(thread);
-	}
+	ret = configure_dynamic_mpu_regions(thread);
 #ifdef CONFIG_SMP
-	else {
+	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
 		z_arm64_mem_cfg_ipi();
 	}
@@ -544,12 +695,26 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 {
+	unsigned int key = arch_irq_lock();
+
 	configure_dynamic_mpu_regions(thread);
+	arch_irq_unlock(key);
 }
 
 void z_arm64_swap_mem_domains(struct k_thread *thread)
 {
-	configure_dynamic_mpu_regions(thread);
+
+	/* Busy wait if it is configuring somewhere else */
+	while (!atomic_cas(&thread->arch.flushing, 0, 1)) {
+	}
+
+	if (thread->arch.region_num == 0) {
+		(void)flush_dynamic_regions_to_mpu(sys_dyn_regions, sys_dyn_regions_num);
+	} else {
+		(void)flush_dynamic_regions_to_mpu(thread->arch.regions, thread->arch.region_num);
+	}
+
+	atomic_clear(&thread->arch.flushing);
 }
 
 #endif /* CONFIG_USERSPACE */

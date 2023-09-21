@@ -593,7 +593,7 @@
 #elif CONFIG_LSM6DSL_GYRO_FS == 125
 	#define LSM6DSL_DEFAULT_GYRO_FULLSCALE		4
 	#define LSM6DSL_DEFAULT_GYRO_SENSITIVITY	SENSI_GRAIN_G
-#elif CONFIG_LSM6DSL_GYRO_FS == 245
+#elif CONFIG_LSM6DSL_GYRO_FS == 250
 	#define LSM6DSL_DEFAULT_GYRO_FULLSCALE		0
 	#define LSM6DSL_DEFAULT_GYRO_SENSITIVITY	(2.0 * SENSI_GRAIN_G)
 #elif CONFIG_LSM6DSL_GYRO_FS == 500
@@ -655,7 +655,7 @@ struct lsm6dsl_data {
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	int temp_sample;
 #endif
-#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	int magn_sample_x;
 	int magn_sample_y;
 	int magn_sample_z;
@@ -667,15 +667,12 @@ struct lsm6dsl_data {
 #endif
 	const struct lsm6dsl_transfer_function *hw_tf;
 	uint16_t accel_freq;
-	uint8_t accel_fs;
-	uint16_t gyro_freq;
-	uint8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 
-	struct sensor_trigger data_ready_trigger;
+	const struct sensor_trigger *data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)

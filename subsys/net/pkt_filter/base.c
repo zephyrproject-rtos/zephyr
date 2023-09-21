@@ -25,6 +25,50 @@ struct npf_rule_list npf_recv_rules = {
 	.lock = { },
 };
 
+#ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
+struct npf_rule_list npf_local_in_recv_rules = {
+	.rule_head = SYS_SLIST_STATIC_INIT(&local_in_recv_rules.rule_head),
+	.lock = { },
+};
+#endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
+struct npf_rule_list npf_ipv4_recv_rules = {
+	.rule_head = SYS_SLIST_STATIC_INIT(&ipv4_recv_rules.rule_head),
+	.lock = { },
+};
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK */
+
+#ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
+struct npf_rule_list npf_ipv6_recv_rules = {
+	.rule_head = SYS_SLIST_STATIC_INIT(&ipv6_recv_rules.rule_head),
+	.lock = { },
+};
+#endif /* CONFIG_NET_PKT_FILTER_IPV6_HOOK */
+
+/*
+ * Helper function
+ */
+static struct npf_rule_list *get_ip_rules(uint8_t pf)
+{
+	switch (pf) {
+	case PF_INET:
+#ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
+		return &npf_ipv4_recv_rules;
+#endif
+		break;
+	case PF_INET6:
+#ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
+		return &npf_ipv6_recv_rules;
+#endif
+		break;
+	default:
+		return NULL;
+	}
+
+	return NULL;
+}
+
 /*
  * Rule application
  */
@@ -97,6 +141,31 @@ bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
 
 	return result == NET_OK;
 }
+
+#ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
+bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
+{
+	enum net_verdict result = lock_evaluate(&npf_local_in_recv_rules, pkt);
+
+	return result == NET_OK;
+}
+#endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
+
+#if defined(CONFIG_NET_PKT_FILTER_IPV4_HOOK) || defined(CONFIG_NET_PKT_FILTER_IPV6_HOOK)
+bool net_pkt_filter_ip_recv_ok(struct net_pkt *pkt)
+{
+	struct npf_rule_list *rules = get_ip_rules(net_pkt_family(pkt));
+
+	if (!rules) {
+		NET_DBG("no rules");
+		return true;
+	}
+
+	enum net_verdict result = lock_evaluate(rules, pkt);
+
+	return result == NET_OK;
+}
+#endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK || CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 
 /*
  * Rule management
@@ -198,4 +267,33 @@ bool npf_size_inbounds(struct npf_test *test, struct net_pkt *pkt)
 	size_t pkt_size = net_pkt_get_len(pkt);
 
 	return pkt_size >= bounds->min && pkt_size <= bounds->max;
+}
+
+bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
+{
+	struct npf_test_ip *test_ip =
+			CONTAINER_OF(test, struct npf_test_ip, test);
+	uint8_t pkt_family = net_pkt_family(pkt);
+
+	for (uint32_t ip_it = 0; ip_it < test_ip->ipaddr_num; ip_it++) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
+			struct in_addr *addr = (struct in_addr *)NET_IPV4_HDR(pkt)->src;
+
+			if (net_ipv4_addr_cmp(addr, &((struct in_addr *)test_ip->ipaddr)[ip_it])) {
+				return true;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
+			struct in6_addr *addr = (struct in6_addr *)NET_IPV6_HDR(pkt)->src;
+
+			if (net_ipv6_addr_cmp(addr, &((struct in6_addr *)test_ip->ipaddr)[ip_it])) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool npf_ip_src_addr_unmatch(struct npf_test *test, struct net_pkt *pkt)
+{
+	return !npf_ip_src_addr_match(test, pkt);
 }

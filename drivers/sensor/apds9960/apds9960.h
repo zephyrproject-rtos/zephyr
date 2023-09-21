@@ -230,7 +230,7 @@ struct apds9960_data {
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
-	struct sensor_trigger p_th_trigger;
+	const struct sensor_trigger *p_th_trigger;
 #else
 	struct k_sem data_sem;
 #endif

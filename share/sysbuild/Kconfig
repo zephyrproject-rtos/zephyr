@@ -6,6 +6,12 @@ comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"
 
+menu "Modules"
+
+source "modules/Kconfig.sysbuild"
+
+endmenu
+
 config EXPERIMENTAL
 	bool
 	help
@@ -33,4 +39,4 @@ config WARN_DEPRECATED
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled.
 
-rsource "bootloader/Kconfig"
+rsource "images/Kconfig"

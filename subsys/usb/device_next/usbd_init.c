@@ -211,7 +211,7 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 			return ret;
 		}
 
-		LOG_INF("Init class node %p, descriptor length %u",
+		LOG_INF("Init class node %p, descriptor length %zu",
 			c_nd, usbd_class_desc_len(c_nd));
 		cfg_len += usbd_class_desc_len(c_nd);
 	}
@@ -237,9 +237,32 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 	return 0;
 }
 
+static void usbd_init_update_mps0(struct usbd_contex *const uds_ctx)
+{
+	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+	struct usb_device_descriptor *desc = uds_ctx->desc;
+
+	switch (caps.mps0) {
+	case UDC_MPS0_8:
+		desc->bMaxPacketSize0 = 8;
+		break;
+	case UDC_MPS0_16:
+		desc->bMaxPacketSize0 = 16;
+		break;
+	case UDC_MPS0_32:
+		desc->bMaxPacketSize0 = 32;
+		break;
+	case UDC_MPS0_64:
+		desc->bMaxPacketSize0 = 64;
+		break;
+	}
+}
+
 int usbd_init_configurations(struct usbd_contex *const uds_ctx)
 {
 	struct usbd_config_node *cfg_nd;
+
+	usbd_init_update_mps0(uds_ctx);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
 		int ret;

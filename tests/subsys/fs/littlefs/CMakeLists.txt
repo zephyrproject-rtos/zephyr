@@ -12,4 +12,12 @@ target_compile_definitions(app PRIVATE
 		BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH
 		BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT
 )
-target_sources(app PRIVATE ${app_sources} ../common/test_fs_open_flags.c)
+target_sources(app PRIVATE
+  ${app_sources}
+  ../common/test_fs_util.c
+  ../common/test_fs_open_flags.c
+  ../common/test_fs_dirops.c
+  ../common/test_fs_basic.c
+  ../common/test_fs_mount_flags.c
+  ../common/test_fs_mkfs.c
+)

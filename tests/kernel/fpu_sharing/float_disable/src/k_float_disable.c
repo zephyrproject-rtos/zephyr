@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/barrier.h>
 
 #define STACKSIZE 1024
 
@@ -14,10 +15,10 @@
  */
 #define PRIORITY  K_PRIO_COOP(0)
 
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
-#define K_FP_OPTS K_FP_REGS
-#elif defined(CONFIG_X86)
+#if defined(CONFIG_X86) && defined(CONFIG_X86_SSE)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
+#elif defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_SPARC)
+#define K_FP_OPTS K_FP_REGS
 #else
 #error "Architecture not supported for this test"
 #endif
@@ -25,15 +26,14 @@
 struct k_thread usr_fp_thread;
 K_THREAD_STACK_DEFINE(usr_fp_thread_stack, STACKSIZE);
 
-ZTEST_BMEM static volatile int ret = TC_PASS;
+ZTEST_BMEM static volatile int test_ret = TC_PASS;
 
 static void usr_fp_thread_entry_1(void)
 {
 	k_yield();
 }
 
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
-	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
+#if defined(CONFIG_ARM) || (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL -ENOTSUP
@@ -48,13 +48,13 @@ static void usr_fp_thread_entry_2(void)
 
 		TC_ERROR("k_float_disable() fail - should never see this\n");
 
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
 ZTEST(k_float_disable, test_k_float_disable_common)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	/* Set thread priority level to the one used
 	 * in this test suite for cooperative threads.
@@ -78,7 +78,7 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM)
 	/* Verify FP mode can only be disabled for current thread */
 	zassert_true((k_float_disable(&usr_fp_thread) == -EINVAL),
 		"k_float_disable() successful on thread other than current!");
@@ -105,7 +105,7 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 
 ZTEST(k_float_disable, test_k_float_disable_syscall)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	k_thread_priority_set(k_current_get(), PRIORITY);
 
@@ -130,8 +130,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 	/* Yield will swap-in usr_fp_thread */
 	k_yield();
 
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
-	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
+#if defined(CONFIG_ARM) || (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */
 	zassert_true(
@@ -139,8 +138,8 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-	/* ret is volatile, static analysis says we can't use in assert */
-	bool ok = ret == TC_PASS;
+	/* test_ret is volatile, static analysis says we can't use in assert */
+	bool ok = test_ret == TC_PASS;
 
 	zassert_true(ok, "");
 #else
@@ -152,7 +151,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 
 #include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #else
 #include <zephyr/interrupt_util.h>
 #endif
@@ -168,7 +167,7 @@ void arm_test_isr_handler(const void *args)
 
 		TC_ERROR("k_float_disable() successful in ISR\n");
 
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
@@ -178,7 +177,7 @@ static void sup_fp_thread_entry(void)
 	if ((sup_fp_thread.base.user_options & K_FP_REGS) == 0) {
 
 		TC_ERROR("sup_fp_thread FP options cleared\n");
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
@@ -228,20 +227,20 @@ static void sup_fp_thread_entry(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before program proceeds.
 	 */
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	/* Verify K_FP_REGS flag is still set */
 	if ((sup_fp_thread.base.user_options & K_FP_REGS) == 0) {
 
 		TC_ERROR("sup_fp_thread FP options cleared\n");
-		ret = TC_FAIL;
+		test_ret = TC_FAIL;
 	}
 }
 
 ZTEST(k_float_disable, test_k_float_disable_irq)
 {
-	ret = TC_PASS;
+	test_ret = TC_PASS;
 
 	k_thread_priority_set(k_current_get(), PRIORITY);
 
@@ -257,8 +256,8 @@ ZTEST(k_float_disable, test_k_float_disable_irq)
 	/* Yield will swap-in sup_fp_thread */
 	k_yield();
 
-	/* ret is volatile, static analysis says we can't use in assert */
-	bool ok = ret == TC_PASS;
+	/* test_ret is volatile, static analysis says we can't use in assert */
+	bool ok = test_ret == TC_PASS;
 
 	zassert_true(ok, "");
 }

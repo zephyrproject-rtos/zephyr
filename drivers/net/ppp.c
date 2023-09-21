@@ -232,8 +232,9 @@ static int ppp_async_uart_rx_enable(struct ppp_driver_context *context)
 
 static void uart_recovery(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ppp_driver_context *ppp =
-		CONTAINER_OF(work, struct ppp_driver_context, uart_recovery_work);
+		CONTAINER_OF(dwork, struct ppp_driver_context, uart_recovery_work);
 	int ret;
 
 	ret = ring_buf_space_get(&ppp->rx_ringbuf);
@@ -609,7 +610,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
-		CONTAINER_OF(buf, struct ppp_driver_context, buf);
+		CONTAINER_OF(buf, struct ppp_driver_context, buf[0]);
 	size_t i, len = *off;
 
 	for (i = 0; i < *off; i++) {
@@ -747,21 +748,7 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 			protocol = htons(PPP_IP);
 		} else if (net_pkt_family(pkt) == AF_INET6) {
 			protocol = htons(PPP_IPV6);
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-			   net_pkt_family(pkt) == AF_PACKET) {
-			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
-
-			switch (type) {
-			case 0x60:
-				protocol = htons(PPP_IPV6);
-				break;
-			case 0x40:
-				protocol = htons(PPP_IP);
-				break;
-			default:
-				return -EPROTONOSUPPORT;
-			}
-		} else {
+		}  else {
 			return -EPROTONOSUPPORT;
 		}
 	}
@@ -1023,7 +1010,7 @@ static int ppp_start(const struct device *dev)
 		 * configuration is enabled, and use that. If none are enabled,
 		 * then use our own config.
 		 */
-#if IS_ENABLED(CONFIG_GSM_MUX)
+#if defined(CONFIG_GSM_MUX)
 		const struct device *mux;
 
 		mux = uart_mux_find(CONFIG_GSM_MUX_DLCI_PPP);
@@ -1060,8 +1047,7 @@ static int ppp_start(const struct device *dev)
 	}
 #endif /* !CONFIG_NET_TEST */
 
-	net_ppp_carrier_on(context->iface);
-
+	net_if_carrier_on(context->iface);
 	return 0;
 }
 
@@ -1069,7 +1055,7 @@ static int ppp_stop(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->data;
 
-	net_ppp_carrier_off(context->iface);
+	net_if_carrier_off(context->iface);
 	context->modem_init_done = false;
 	return 0;
 }

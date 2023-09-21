@@ -7,7 +7,13 @@ common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   sample.net.sockets.echo:
-    tags: net socket
+    tags:
+      - net
+      - socket
   sample.net.sockets.echo.offload.simplelink:
     platform_allow: cc3220sf_launchxl
-    tags: net socket offload simplelink
+    tags:
+      - net
+      - socket
+      - offload
+      - simplelink

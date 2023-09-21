@@ -34,5 +34,16 @@ if(CONFIG_NXP_IMX_RT_BOOT_HEADER)
     # is used on your custom board.
     zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
     zephyr_library_sources(${RT1064_BOARD_DIR}/dcd.c)
+  else()
+    if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)
+      message(WARNING "You are using SDRAM as RAM but no device "
+        "configuration data (DCD) is included. This configuration may not boot")
+    endif()
   endif()
+endif()
+
+if(CONFIG_MCUX_GPT_TIMER)
+  message(WARNING "You appear to be using the GPT hardware timer. "
+    "This timer will enable lower power modes, but at the cost of reduced "
+    "hardware timer resolution")
 endif()

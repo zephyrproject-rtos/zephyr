@@ -6,7 +6,10 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "kconfig.h"
+
+#include <zephyr/fff.h>
+
+DEFINE_FFF_GLOBALS;
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -19,12 +22,14 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn_iso.h"
 #include "lll_conn.h"
 
@@ -41,11 +46,16 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+static struct ll_conn conn;
 
-static void setup(void)
+/* struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle); */
+FAKE_VALUE_FUNC(struct ll_conn_iso_stream *, ll_conn_iso_stream_get, uint16_t);
+
+static void cis_create_setup(void *data)
 {
 	test_setup(&conn);
+
+	RESET_FAKE(ll_conn_iso_stream_get);
 }
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -113,7 +123,7 @@ static struct pdu_data_llctrl_cis_ind remote_cis_ind = {
  *    |      LE CIS ESTABLISHED   |                           |
  *    |<--------------------------|                           |
  */
-static void test_cc_create_periph_rem_host_accept(void)
+ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -131,6 +141,10 @@ static void test_cc_create_periph_rem_host_accept(void)
 		.cis_handle = 0x00,
 		.status = 0x00
 	};
+	struct ll_conn_iso_stream cis = { 0 };
+
+	/* Prepare mocked call to ll_conn_iso_stream_get() */
+	ll_conn_iso_stream_get_fake.return_val = &cis;
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -152,10 +166,10 @@ static void test_cc_create_periph_rem_host_accept(void)
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
-	ull_cp_release_ntf(ntf);
+	release_ntf(ntf);
 
 	/* Accept request */
-	ull_cp_cc_accept(&conn);
+	ull_cp_cc_accept(&conn, 0U);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -194,7 +208,15 @@ static void test_cc_create_periph_rem_host_accept(void)
 		ut_rx_q_is_empty();
 	}
 
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
 	/* Emulate CIS becoming established */
+	ull_cp_cc_established(&conn, 0);
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -214,8 +236,11 @@ static void test_cc_create_periph_rem_host_accept(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	/* NODE_CIS_ESTABLISHED carry extra information in header rx footer param field */
+	zassert_equal_ptr(ntf->hdr.rx_ftr.param, &cis);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -239,7 +264,7 @@ static void test_cc_create_periph_rem_host_accept(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-static void test_cc_create_periph_rem_host_reject(void)
+ZTEST(cis_create, test_cc_create_periph_rem_host_reject)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -272,6 +297,9 @@ static void test_cc_create_periph_rem_host_reject(void)
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
+	/* Release Ntf */
+	release_ntf(ntf);
+
 	/* Decline request */
 	ull_cp_cc_reject(&conn, ERROR_CODE);
 
@@ -285,8 +313,8 @@ static void test_cc_create_periph_rem_host_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -313,7 +341,7 @@ static void test_cc_create_periph_rem_host_reject(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-static void test_cc_create_periph_rem_host_accept_to(void)
+ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -325,6 +353,10 @@ static void test_cc_create_periph_rem_host_accept_to(void)
 	struct pdu_data_llctrl_reject_ext_ind local_reject = {
 		.error_code = BT_HCI_ERR_CONN_ACCEPT_TIMEOUT,
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ
+	};
+	struct node_rx_conn_iso_estab cis_estab = {
+		.cis_handle = 0x00,
+		.status = BT_HCI_ERR_CONN_ACCEPT_TIMEOUT
 	};
 
 	/* Role */
@@ -346,6 +378,9 @@ static void test_cc_create_periph_rem_host_accept_to(void)
 	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
 	ut_rx_q_is_empty();
 
+	/* Release Ntf */
+	release_ntf(ntf);
+
 	/* Emulate that time passes real fast re. timeout */
 	conn.connect_accept_to = 0;
 
@@ -365,8 +400,15 @@ static void test_cc_create_periph_rem_host_accept_to(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	/* There should be excactly one host notification */
+	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
 /*
@@ -389,7 +431,7 @@ static void test_cc_create_periph_rem_host_accept_to(void)
  *    |                 |------------------------------>|
  *    |                 |                               |
  */
-static void test_cc_create_periph_rem_invalid_phy(void)
+ZTEST(cis_create, test_cc_create_periph_rem_invalid_phy)
 {
 	static struct pdu_data_llctrl_cis_req remote_cis_req_invalid_phy = {
 		.cig_id           =   0x01,
@@ -444,22 +486,8 @@ static void test_cc_create_periph_rem_invalid_phy(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-		      "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		cis_create,
-		ztest_unit_test_setup_teardown(test_cc_create_periph_rem_host_accept, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cc_create_periph_rem_host_reject, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cc_create_periph_rem_host_accept_to, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cc_create_periph_rem_invalid_phy, setup,
-					       unit_test_noop));
-
-	ztest_run_test_suite(cis_create);
-}
+ZTEST_SUITE(cis_create, NULL, NULL, cis_create_setup, NULL, NULL);

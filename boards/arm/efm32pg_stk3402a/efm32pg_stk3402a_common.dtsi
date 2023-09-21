@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "efm32pg_stk3402a-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	model = "Silicon Labs EFM32PG STK3402A board";
 
@@ -44,11 +47,13 @@
 			/* gpio flags need validation */
 			gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -67,8 +72,8 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -107,6 +112,12 @@
 
 &gpioa {
 	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &gpiob {
@@ -147,5 +158,9 @@
 };
 
 &trng0 {
-		status = "okay";
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
 };

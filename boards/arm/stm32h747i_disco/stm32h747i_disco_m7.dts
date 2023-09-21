@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "stm32h747i_disco.dtsi"
 
 / {
@@ -19,6 +20,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &mt25ql512ab1;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -26,6 +28,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	leds {
@@ -43,15 +46,25 @@
 		};
 	};
 
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		compatible = "usb-ulpi-phy";
+		#phy-cells = <0>;
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		led1 = &orange_led_2;
 		sw0 = &wake_up;
+		spi-flash0 = &mt25ql512ab1;
 	};
 };
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_hsi48 {
 	status = "okay";
 };
 
@@ -165,6 +178,28 @@
 	};
 };
 
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
+			&usb_otg_hs_ulpi_d0_pa3
+			&usb_otg_hs_ulpi_d1_pb0
+			&usb_otg_hs_ulpi_d2_pb1
+			&usb_otg_hs_ulpi_d3_pb10
+			&usb_otg_hs_ulpi_d4_pb11
+			&usb_otg_hs_ulpi_d5_pb12
+			&usb_otg_hs_ulpi_d6_pb13
+			&usb_otg_hs_ulpi_d7_pb5
+			&usb_otg_hs_ulpi_stp_pc0
+			&usb_otg_hs_ulpi_dir_pi11
+			&usb_otg_hs_ulpi_nxt_ph4>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	/* Include the USB1ULPIEN clock enable bit */
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x06000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	phys = <&otghs_ulpi_phy>;
+	status = "okay";
+};
+
 &sdmmc1 {
 	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
@@ -172,6 +207,43 @@
 			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6
+		     &quadspi_bk2_io0_ph2 &quadspi_bk2_io1_ph3
+		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mt25ql512ab1: qspi-nor-flash-1@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		qspi-max-frequency = <72000000>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       reg = <0x0 DT_SIZE_M(64)>;
+			   };
+		};
+	};
+
+	mt25ql512ab2: qspi-nor-flash-2@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		qspi-max-frequency = <72000000>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		status = "okay";
+	};
 };
 
 arduino_spi: &spi5 {};

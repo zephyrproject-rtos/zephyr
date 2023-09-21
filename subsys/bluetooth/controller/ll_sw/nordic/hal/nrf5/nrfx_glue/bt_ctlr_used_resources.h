@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "../radio/radio_nrf5_resources.h"
 #include "../radio/radio_nrf5_fem.h"
 
 #ifdef DPPI_PRESENT

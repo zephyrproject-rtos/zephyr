@@ -14,7 +14,7 @@
  *
  * @param[in] uds_ctx Pointer to device context
  * @param[in] buf     Pointer to UDC request buffer
- * @param[in] err     Trasnfer status
+ * @param[in] err     Transfer status
  *
  * @return usbd_class_request() return value
  */
@@ -92,5 +92,16 @@ struct usbd_class_node *usbd_class_get_by_ep(struct usbd_contex *uds_ctx,
  */
 struct usbd_class_node *usbd_class_get_by_req(struct usbd_contex *uds_ctx,
 					      uint8_t request);
+
+/**
+ * @brief Remove all registered class instances from a configuration
+ *
+ * @param[in] uds_ctx Pointer to device context
+ * @param[in] cfg     Configuration number (bConfigurationValue)
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_class_remove_all(struct usbd_contex *const uds_ctx,
+			  const uint8_t cfg);
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_H */

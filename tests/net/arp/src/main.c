@@ -41,7 +41,7 @@ static struct net_eth_addr *expected_hwaddr;
 
 static struct net_pkt *pending_pkt;
 
-static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
+static struct net_eth_addr eth_hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
 
 static int send_status = -EINVAL;
 
@@ -107,7 +107,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				return -EINVAL;
 			}
 
-			if (!req_test && memcmp(&hdr->dst, &hwaddr,
+			if (!req_test && memcmp(&hdr->dst, &eth_hwaddr,
 						sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 
@@ -118,14 +118,14 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				printk("Invalid dst hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (uint8_t *)&hwaddr,
+					       (uint8_t *)&eth_hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
 			}
 
 		} else if (ntohs(arp_hdr->opcode) == NET_ARP_REQUEST) {
-			if (memcmp(&hdr->src, &hwaddr,
+			if (memcmp(&hdr->src, &eth_hwaddr,
 				   sizeof(struct net_eth_addr))) {
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 
@@ -136,7 +136,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				printk("Invalid src hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (uint8_t *)&hwaddr,
+					       (uint8_t *)&eth_hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
@@ -529,7 +529,7 @@ ZTEST(arp_fn_tests, test_arp)
 	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
 	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&src);
 
-	pkt2 = prepare_arp_reply(iface, pkt, &hwaddr, &eth_hdr);
+	pkt2 = prepare_arp_reply(iface, pkt, &eth_hwaddr, &eth_hdr);
 
 	zassert_not_null(pkt2, "ARP reply generation failed.");
 
@@ -561,7 +561,7 @@ ZTEST(arp_fn_tests, test_arp)
 
 	send_status = -EINVAL;
 
-	setup_eth_header(iface, pkt, &hwaddr, NET_ETH_PTYPE_ARP);
+	setup_eth_header(iface, pkt, &eth_hwaddr, NET_ETH_PTYPE_ARP);
 
 	arp_hdr = (struct net_arp_hdr *)(pkt->buffer->data +
 					 (sizeof(struct net_eth_hdr)));
@@ -570,7 +570,7 @@ ZTEST(arp_fn_tests, test_arp)
 	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&src);
 	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
-	pkt2 = prepare_arp_request(iface, pkt, &hwaddr, &eth_hdr);
+	pkt2 = prepare_arp_request(iface, pkt, &eth_hwaddr, &eth_hdr);
 
 	/**TESTPOINT: Check if ARP request generation failed*/
 	zassert_not_null(pkt2, "ARP request generation failed.");
@@ -602,7 +602,7 @@ ZTEST(arp_fn_tests, test_arp)
 
 		/* First make sure that we have an entry in cache */
 		entry_found = false;
-		expected_hwaddr = &hwaddr;
+		expected_hwaddr = &eth_hwaddr;
 		net_arp_foreach(arp_cb, &dst);
 		zassert_true(entry_found, "Entry not found");
 

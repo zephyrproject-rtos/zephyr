@@ -156,16 +156,15 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 	}
 }
 
-static int chip_change_pll(const struct device *dev)
+static int chip_change_pll(void)
 {
-	ARG_UNUSED(dev);
 
-	if (IS_ENABLED(CONFIG_ITE_IT8XXX2_INTC)) {
+	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_save_and_disable_interrupts();
 	}
 	/* configure PLL/CPU/flash clock */
 	chip_configure_pll(&pll_configuration[0]);
-	if (IS_ENABLED(CONFIG_ITE_IT8XXX2_INTC)) {
+	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
 		ite_intc_restore_interrupts();
 	}
 
@@ -207,6 +206,15 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 */
 	csr_clear(mie, MIP_MEIP);
 	sys_trace_idle();
+#ifdef CONFIG_ESPI
+	/*
+	 * H2RAM feature requires RAM clock to be active. Since the below doze
+	 * mode will disable CPU and RAM clocks, enable eSPI transaction
+	 * interrupt to restore clocks. With this interrupt, EC will not defer
+	 * eSPI bus while transaction is accepted.
+	 */
+	espi_it8xxx2_enable_trans_irq(ESPI_IT8XXX2_SOC_DEV, true);
+#endif
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
 
@@ -223,6 +231,10 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 		 */
 	} while (ite_intc_no_irq());
 
+#ifdef CONFIG_ESPI
+	/* CPU has been woken up, the interrupt is no longer needed */
+	espi_it8xxx2_enable_trans_irq(ESPI_IT8XXX2_SOC_DEV, false);
+#endif
 	/*
 	 * Enable M-mode external interrupt
 	 * An interrupt can not be fired yet until we enable global interrupt
@@ -255,14 +267,8 @@ void arch_cpu_atomic_idle(unsigned int key)
 	riscv_idle(CHIP_PLL_DOZE, key);
 }
 
-void soc_interrupt_init(void)
+static int ite_it8xxx2_init(void)
 {
-	ite_intc_init();
-}
-
-static int ite_it8xxx2_init(const struct device *arg)
-{
-	ARG_UNUSED(arg);
 	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
@@ -271,6 +277,17 @@ static int ite_it8xxx2_init(const struct device *arg)
 	 * an interrupt is pending.
 	 */
 	gctrl_regs->GCTRL_WMCR |= BIT(7);
+
+	/*
+	 * Disable this feature that can detect pre-define hardware
+	 * target A through I2C0. This is for debugging use, so it
+	 * can be disabled to avoid illegal access.
+	 */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	IT8XXX2_SMB_SCLKTS_BRGS &= ~IT8XXX2_SMB_PREDEN;
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	/* UART1 board init */

@@ -1,0 +1,70 @@
+# ICM42688-P Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ICM42688
+	bool "ICM42688 Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM42688_ENABLED
+	select SPI
+	help
+	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
+
+config EMUL_ICM42688
+	bool "Emulator for the ICM42688"
+	default y
+	depends on ICM42688
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ICM42688. Doing so allows exercising
+	  sensor APIs for this IMU in native_posix and qemu.
+
+config ICM42688_DECODER
+	bool "ICM42688 decoder logic"
+	default y if ICM42688
+	select SENSOR_ASYNC_API
+	help
+	  Compile the ICM42688 decoder API which allows decoding raw data returned
+	  from the sensor.
+
+if ICM42688
+
+choice
+	prompt "Trigger mode"
+	default ICM42688_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver
+
+config ICM42688_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM42688_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select ICM42688_TRIGGER
+
+config ICM42688_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select ICM42688_TRIGGER
+
+endchoice
+
+config ICM42688_TRIGGER
+	bool
+
+config ICM42688_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on ICM42688_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config ICM42688_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on ICM42688_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+endif # ICM42688

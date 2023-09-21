@@ -45,22 +45,22 @@ static void nios2_msgdma_callback(void *context)
 {
 	struct nios2_msgdma_dev_data *dev_data =
 		(struct nios2_msgdma_dev_data *)context;
-	int err_code;
+	int dma_status;
 	uint32_t status;
 
 	status = IORD_ALTERA_MSGDMA_CSR_STATUS(dev_data->msgdma_dev->csr_base);
 
 	if (status & ALTERA_MSGDMA_CSR_STOPPED_ON_ERROR_MASK) {
-		err_code = -EIO;
+		dma_status = -EIO;
 	} else if (status & ALTERA_MSGDMA_CSR_BUSY_MASK) {
-		err_code = -EBUSY;
+		dma_status = -EBUSY;
 	} else {
-		err_code = 0;
+		dma_status = DMA_STATUS_COMPLETE;
 	}
 
 	LOG_DBG("msgdma csr status Reg: 0x%x", status);
 
-	dev_data->dma_callback(dev_data->dev, dev_data->user_data, 0, err_code);
+	dev_data->dma_callback(dev_data->dev, dev_data->user_data, 0, dma_status);
 }
 
 static int nios2_msgdma_config(const struct device *dev, uint32_t channel,

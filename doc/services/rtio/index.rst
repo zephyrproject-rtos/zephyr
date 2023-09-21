@@ -16,14 +16,8 @@ driven I/O. This section covers the RTIO API, queues, executor, iodev,
 and common usage patterns with peripheral devices.
 
 RTIO takes a lot of inspiration from Linux's io_uring in its operations and API
-as that API matches up well with hardware DMA transfer queues and descriptions.
-
-A quick sales pitch on why RTIO works well in many scenarios:
-
-1. API is DMA and interrupt friendly
-2. No buffer copying
-3. No callbacks
-4. Blocking or non-blocking operation
+as that API matches up well with hardware transfer queues and descriptions such as
+DMA transfer lists.
 
 Problem
 *******
@@ -60,8 +54,8 @@ sequence of operations in an asynchronous way directly relates
 to the way hardware typically works with interrupt driven state machines
 potentially involving multiple peripheral IPs like bus and DMA controllers.
 
-Submission Queue and Chaining
-*****************************
+Submission Queue
+****************
 
 The submission queue (sq), is the description of the operations
 to perform in concurrent chains.
@@ -105,109 +99,118 @@ sqe. A chain of sqe will however ensure ordering and failure cascading.
 Other potential schemes are possible but a completion queue is a well trod
 idea with io_uring and other similar operating system APIs.
 
-Executor and IODev
-******************
+Executor
+********
+
+The RTIO executor is a low overhead concurrent I/O task scheduler. It ensures
+certain request flags provide the expected behavior. It takes a list of
+submissions working through them in order. Various flags allow for changing the
+behavior of how submissions are worked through. Flags to form in order chains of
+submissions, transactional sets of submissions, or create multi-shot
+(continuously producing) requests are all possible!
+
+IO Device
+*********
 
 Turning submission queue entries (sqe) into completion queue events (cqe) is the
-job of objects implementing the executor and iodev APIs. These APIs enable
-coordination between themselves to enable things like DMA transfers.
-
-The end result of these APIs should be a method to resolve the request by
-deciding some of the following questions with heuristic/constraint
-based decision making.
-
-* Polling, Interrupt, or DMA transfer?
-* If DMA, are the requirements met (peripheral supported by DMAC, etc).
-
-The executor is meant to provide policy for when to use each transfer
-type, and provide the common code for walking through submission queue
-chains by providing calls the iodev may use to signal completion,
-error, or a need to suspend and wait.
-
-Outstanding Questions
-*********************
-
-RTIO is not a complete API and solution, and is currently evolving to best
-fit the nature of an RTOS. The general ideas behind a pair of queues to
-describe requests and completions seems sound and has been proven out in
-other contexts. Questions remain though.
-
-Timeouts and Deadlines
-======================
-
-Timeouts and deadlines are key to being Real-Time. Real-Time in Zephyr means
-being able to do things when an application wants them done. That could mean
-different things from a deadline with best effort attempts or a timeout and
-failure.
-
-These features would surely be useful in many cases, but would likely add some
-significant complexities. It's something to decide upon, and even if enabled
-would likely be a compile time optional feature leading to complex testing.
+job of objects implementing the iodev (IO device) API. This API accepts requests
+in the form of the iodev submit API call. It is the io devices job to work
+through its internal queue of submissions and convert them into completions. In
+effect every io device can be viewed as an independent, event driven actor like
+object, that accepts a never ending queue of I/O like requests. How the iodev
+does this work is up to the author of the iodev, perhaps the entire queue of
+operations can be converted to a set of DMA transfer descriptors, meaning the
+hardware does almost all of the real work.
 
 Cancellation
-============
+************
 
-Canceling an already queued operation could be possible with a small
-API addition to perhaps take both the RTIO context and a pointer to the
-submission queue entry. However, cancellation as an API induces many potential
-complexities that might not be appropriate. It's something to be decided upon.
+Canceling an already queued operation is possible but not guaranteed. If the
+SQE has not yet started, it's likely that a call to :c:func:`rtio_sqe_cancel`
+will remove the SQE and never run it. If, however, the SQE already started
+running, the cancel request will be ignored.
 
-Userspace Support
-=================
+Memory pools
+************
 
-RTIO with userspace is certainly plausible but would require the equivalent of
-a memory map call to map the shared ringbuffers and also potentially dma buffers.
+In some cases requests to read may not know how much data will be produced.
+Alternatively, a reader might be handling data from multiple io devices where
+the frequency of the data is unpredictable. In these cases it may be wasteful
+to bind memory to in flight read requests. Instead with memory pools the memory
+to read into is left to the iodev to allocate from a memory pool associated with
+the RTIO context that the read was associated with. To create such an RTIO
+context the :c:macro:`RTIO_DEFINE_WITH_MEMPOOL` can be used. It allows creating
+an RTIO context with a dedicated pool of "memory blocks" which can be consumed by
+the iodev. Below is a snippet setting up the RTIO context with a memory pool.
+The memory pool has 128 blocks, each block has the size of 16 bytes, and the data
+is 4 byte aligned.
 
-Additionally a DMA buffer interface would likely need to be provided for
-coherence and MMU usage.
+.. code-block:: C
 
-IODev and Executor API
-======================
+  #include <zephyr/rtio/rtio.h>
 
-Lastly the API between an executor and iodev is incomplete.
+  #define SQ_SIZE       4
+  #define CQ_SIZE       4
+  #define MEM_BLK_COUNT 128
+  #define MEM_BLK_SIZE  16
+  #define MEM_BLK_ALIGN 4
 
-There are certain interactions that should be supported. Perhaps things like
-expanding a submission queue entry into multiple submission queue entries in
-order to split up work that can be done by a device and work that can be done
-by a DMA controller.
+  RTIO_DEFINE_WITH_MEMPOOL(rtio_context,
+      SQ_SIZE, CQ_SIZE, MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
 
-In some SoCs only specific DMA channels may be used with specific devices. In
-others there are requirements around needing a DMA handshake or specific
-triggering setups to tell the DMA when to start its operation.
+When a read is needed, the caller simply needs to replace the call
+:c:func:`rtio_sqe_prep_read` (which takes a pointer to a buffer and a length)
+with a call to :c:func:`rtio_sqe_prep_read_with_pool`. The iodev requires
+only a small change which works with both pre-allocated data buffers as well as
+the mempool. When the read is ready, instead of getting the buffers directly
+from the :c:struct:`rtio_iodev_sqe`, the iodev should get the buffer and count
+by calling :c:func:`rtio_sqe_rx_buf` like so:
 
-None of that, from the outward facing API, is an issue.
+.. code-block:: C
 
-It is however an unresolved task and issue from an internal API between the
-executor and iodev. This requires some SoC specifics and enabling those
-generically isn't likely possible. That's ok, an iodev and dma executor should
-be vendor specific, but an API needs to be there between them that is not!
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_sqe_rx_buff(iodev_sqe, MIN_BUF_LEN, DESIRED_BUF_LEN, &buf, &buf_len);
 
+  if (rc != 0) {
+    LOG_ERR("Failed to get buffer of at least %u bytes", MIN_BUF_LEN);
+    return;
+  }
 
-Special Hardware: Intel HDA
-===========================
+Finally, the consumer will be able to access the allocated buffer via
+c:func:`rtio_cqe_get_mempool_buffer`.
 
-In some cases there's a need to always do things in a specific order
-with a specific buffer allocation strategy. Consider a DMA that *requires*
-the usage of a circular buffer segmented into blocks that may only be
-transferred one after another. This is the case of the Intel HDA stream for
-audio.
+.. code-block:: C
 
-In this scenario the above API can still work, but would require an additional
-buffer allocator to work with fixed sized segments.
+  uint8_t *buf;
+  uint32_t buf_len;
+  int rc = rtio_cqe_get_mempool_buffer(&rtio_context, &cqe, &buf, &buf_len);
+
+  if (rc != 0) {
+    LOG_ERR("Failed to get mempool buffer");
+    return rc;
+  }
+
+  /* Release the cqe events (note that the buffer is not released yet */
+  rtio_cqe_release_all(&rtio_context);
+
+  /* Do something with the memory */
+
+  /* Release the mempool buffer */
+  rtio_release_buffer(&rtio_context, buf);
 
 When to Use
 ***********
 
-It's important to understand when DMA like transfers are useful and when they
-are not. It's a poor idea to assume that something made for high throughput will
-work for you. There is a computational, memory, and latency cost to setup the
-description of transfers.
+RTIO is useful in cases where concurrent or batch like I/O flows are useful.
 
-Polling at 1Hz an air sensor will almost certainly result in a net negative
-result compared to ad-hoc sensor (i2c/spi) requests to get the sample.
+From the driver/hardware perspective the API enables batching of I/O requests, potentially in an optimal way.
+Many requests to the same SPI peripheral for example might be translated to hardware command queues or DMA transfer
+descriptors entirely. Meaning the hardware can potentially do more than ever.
 
-Continuous transfers, driven by timer or interrupt, of data from a peripheral's
-on board FIFO over I2C, I3C, SPI, MIPI, I2S, etc... maybe, but not always!
+There is a small cost to each RTIO context and iodev. This cost could be weighed
+against using a thread for each concurrent I/O operation or custom queues and
+threads per peripheral. RTIO is much lower cost than that.
 
 Examples
 ********
@@ -420,12 +423,14 @@ video.
 API Reference
 *************
 
-RTIO API
-========
+.. doxygengroup:: rtio
 
-.. doxygengroup:: rtio_api
+MPSC Lock-free Queue API
+========================
 
-RTIO SPSC API
-=============
+.. doxygengroup:: rtio_mpsc
+
+SPSC Lock-free Queue API
+========================
 
 .. doxygengroup:: rtio_spsc

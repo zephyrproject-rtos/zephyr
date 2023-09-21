@@ -10,8 +10,8 @@ compatible: "semtech,sx9500"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      description: |
-        Connection for the NIRQ signal.  This signal is active-low when
-        produced by the sensor.
+  int-gpios:
+    type: phandle-array
+    description: |
+      Connection for the NIRQ signal.  This signal is active-low when
+      produced by the sensor.

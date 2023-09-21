@@ -114,14 +114,10 @@ struct _cpu {
 	struct _ready_q ready_q;
 #endif
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	/* Coop thread preempted by current metairq, or NULL */
 	struct k_thread *metairq_preempted;
-#endif
-
-#ifdef CONFIG_TIMESLICING
-	/* number of ticks remaining in current time slice */
-	int slice_ticks;
 #endif
 
 	uint8_t id;
@@ -197,6 +193,8 @@ struct z_kernel {
 typedef struct z_kernel _kernel_t;
 
 extern struct z_kernel _kernel;
+
+extern atomic_t _cpus_active;
 
 #ifdef CONFIG_SMP
 

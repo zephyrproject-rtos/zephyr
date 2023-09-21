@@ -57,11 +57,6 @@ static int mcux_pcc_get_rate(const struct device *dev,
 	return 0;
 }
 
-static int mcux_pcc_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api mcux_pcc_api = {
 	.on = mcux_pcc_on,
 	.off = mcux_pcc_off,
@@ -74,7 +69,7 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &mcux_pcc_init,				\
+			    NULL,					\
 			    NULL,					\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\

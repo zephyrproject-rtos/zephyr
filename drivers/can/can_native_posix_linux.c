@@ -17,7 +17,6 @@
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
 
-#include "can_utils.h"
 #include "can_native_posix_linux_socketcan.h"
 
 LOG_MODULE_REGISTER(can_npl, CONFIG_CAN_LOG_LEVEL);
@@ -60,8 +59,7 @@ static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 			continue;
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &data->filters[filter_id].filter)) {
+		if (!can_frame_matches_filter(frame, &data->filters[filter_id].filter)) {
 			continue;
 		}
 
@@ -199,7 +197,12 @@ static int can_npl_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
 		filter->mask);
 
+#ifdef CONFIG_CAN_FD_MODE
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA |
+							CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0) {
+#else
 	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+#endif
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}

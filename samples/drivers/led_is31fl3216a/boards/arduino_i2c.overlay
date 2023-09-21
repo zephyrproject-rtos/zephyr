@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2023 Endor AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a is31fl3216a device on an Arduino I2C bus.
+ *
+ * Device address 0x74 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	is31fl3216a@74 {
+		compatible = "issi,is31fl3216a";
+		reg = <0x74>;
+	};
+};

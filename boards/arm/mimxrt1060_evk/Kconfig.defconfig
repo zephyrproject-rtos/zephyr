@@ -1,6 +1,6 @@
 # MIMXRT1060-EVK board
 
-# Copyright (c) 2018, NXP
+# Copyright 2018,2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH || BOARD_MIMXRT1060_EVKB
@@ -13,6 +13,12 @@ config BOARD
 choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
+
+config DEVICE_CONFIGURATION_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
 
 if FLASH
 
@@ -28,15 +34,15 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH
 
 endif #FLASH
 
-config KSCAN
+config INPUT
 	default y if LVGL
 
-if KSCAN
+if INPUT
 
-config KSCAN_FT5336_INTERRUPT
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 if NETWORKING
 
@@ -50,14 +56,32 @@ endif # NETWORKING
 
 if LVGL
 
-config LV_Z_POINTER_KSCAN
+# LVGL should allocate buffers equal to size of display
+config LV_Z_VDB_SIZE
+	default 100
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
 	default y
 
-config LV_Z_VDB_SIZE
+# Force full refresh. This prevents memory copy associated with partial
+# display refreshes, which is not necessary for the eLCDIF driver
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_DPI_DEF
+	default 128
+
+config LV_Z_BITS_PER_PIXEL
 	default 16
 
-config LV_Z_DPI
-	default 128
+# Force display buffers to be aligned to cache line size (32 bytes)
+config LV_Z_VDB_ALIGN
+	default 32
+
+# Use offloaded render thread
+config LV_Z_FLUSH_THREAD
+	default y
 
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16

@@ -128,13 +128,13 @@ static void test_trigger_mode(const struct device *dev)
 
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const vcnl = DEVICE_DT_GET_ONE(vishay_vcnl4040);
 
 	if (!device_is_ready(vcnl)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	printf("Testing the polling mode.\n");
@@ -144,4 +144,5 @@ void main(void)
 	printf("Testing the trigger mode.\n");
 	test_trigger_mode(vcnl);
 	printf("Trigger mode test finished.\n");
+	return 0;
 }

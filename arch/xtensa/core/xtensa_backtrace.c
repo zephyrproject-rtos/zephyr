@@ -7,7 +7,7 @@
 #include "xtensa/corebits.h"
 #include "xtensa_backtrace.h"
 #include <zephyr/sys/printk.h>
-#if defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 #include "soc/soc_memory_layout.h"
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 #include "debug_helpers.h"
@@ -34,7 +34,7 @@ static inline uint32_t z_xtensa_cpu_process_stack_pc(uint32_t pc)
 
 static inline bool z_xtensa_stack_ptr_is_sane(uint32_t sp)
 {
-#if defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 	return esp_stack_ptr_is_sane(sp);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	return intel_adsp_ptr_is_sane(sp);
@@ -45,7 +45,7 @@ static inline bool z_xtensa_stack_ptr_is_sane(uint32_t sp)
 
 static inline bool z_xtensa_ptr_executable(const void *p)
 {
-#if defined(CONFIG_SOC_ESP32)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 	return esp_ptr_executable(p);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	return intel_adsp_ptr_executable(p);
@@ -108,9 +108,7 @@ int z_xtensa_backtrace_print(int depth, int *interrupted_stack)
 	/* Ignore the first corrupted PC in case of InstrFetchProhibited */
 				cause == EXCCAUSE_INSTR_PROHIBITED));
 
-	uint32_t i = (depth <= 0) ? INT32_MAX : depth;
-
-	while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
+	while (depth-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
 		/* Get previous stack frame */
 		if (!z_xtensa_backtrace_get_next_frame(&stk_frame)) {
 			corrupted = true;

@@ -22,16 +22,26 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include "adc_context.h"
 
 /* ADC internal reference voltage (Unit:mV) */
+#ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
+#define IT8XXX2_ADC_VREF_VOL 3300
+#else
 #define IT8XXX2_ADC_VREF_VOL 3000
+#endif
 /* ADC channels disabled */
 #define IT8XXX2_ADC_CHANNEL_DISABLED 0x1F
 /* ADC sample time delay (Unit:us) */
-#define IT8XXX2_ADC_SAMPLE_TIME_US 200
+#define IT8XXX2_ADC_SAMPLE_TIME_US 500
 /* Wait next clock rising (Clock source 32.768K) */
 #define IT8XXX2_WAIT_NEXT_CLOCK_TIME_US 31
 /* ADC channels offset */
 #define ADC_CHANNEL_SHIFT 5
 #define ADC_CHANNEL_OFFSET(ch) ((ch)-CHIP_ADC_CH13-ADC_CHANNEL_SHIFT)
+
+#ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
+#define ADC_0_7_FULL_SCALE_MASK   GENMASK(7, 0)
+#define ADC_8_10_FULL_SCALE_MASK  GENMASK(2, 0)
+#define ADC_13_16_FULL_SCALE_MASK GENMASK(3, 0)
+#endif
 
 /* List of ADC channels. */
 enum chip_adc_channel {
@@ -407,6 +417,12 @@ static int adc_it8xxx2_init(const struct device *dev)
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 	int status;
 
+#ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
+	/* ADC input voltage 0V ~ AVCC (3.3V) is mapped into 0h-3FFh */
+	adc_regs->ADCIVMFSCS1 = ADC_0_7_FULL_SCALE_MASK;
+	adc_regs->ADCIVMFSCS2 = ADC_8_10_FULL_SCALE_MASK;
+	adc_regs->ADCIVMFSCS3 = ADC_13_16_FULL_SCALE_MASK;
+#endif
 	/* ADC analog accuracy initialization */
 	adc_accuracy_initialization();
 
@@ -422,7 +438,11 @@ static int adc_it8xxx2_init(const struct device *dev)
 	 * (Current setting is 61.6us)
 	 *
 	 * NOTE: A sample time delay (60us) also need to be included in
-	 * conversion time, so the final result is ~= 121.6us.
+	 * conversion time.
+	 * In addition, the ADC has a waiting time of 202.8us for
+	 * voltage stabilization.
+	 *
+	 * So the final ADC sample time result is ~= 324.4us.
 	 */
 	adc_regs->ADCSTS &= ~IT8XXX2_ADC_ADCCTS1;
 	adc_regs->ADCCFG &= ~IT8XXX2_ADC_ADCCTS0;

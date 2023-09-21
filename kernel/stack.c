@@ -13,7 +13,7 @@
 
 #include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/init.h>
 #include <zephyr/syscall_handler.h>

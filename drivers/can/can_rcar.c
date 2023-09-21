@@ -18,8 +18,6 @@
 
 LOG_MODULE_REGISTER(can_rcar, CONFIG_CAN_LOG_LEVEL);
 
-#include "can_utils.h"
-
 /* Control Register */
 #define RCAR_CAN_CTLR             0x0840
 /* Control Register bits */
@@ -219,7 +217,7 @@ static inline void can_rcar_write16(const struct can_rcar_cfg *config,
 	sys_write16(value, config->reg_addr + offs);
 }
 
-static void can_rcar_tx_done(const struct device *dev)
+static void can_rcar_tx_done(const struct device *dev, uint8_t err)
 {
 	struct can_rcar_data *data = dev->data;
 	struct can_rcar_tx_cb *tx_cb;
@@ -231,7 +229,7 @@ static void can_rcar_tx_done(const struct device *dev)
 	}
 
 	data->tx_unsent--;
-	tx_cb->cb(dev, 0, tx_cb->cb_arg);
+	tx_cb->cb(dev, err, tx_cb->cb_arg);
 	k_sem_give(&data->tx_sem);
 }
 
@@ -346,6 +344,7 @@ static void can_rcar_error(const struct device *dev)
 	}
 	if (eifr & RCAR_CAN_EIFR_ORIF) {
 		LOG_DBG("Receive overrun error interrupt\n");
+		CAN_STATS_RX_OVERRUN_INC(dev);
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_ORIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
 	}
@@ -373,8 +372,7 @@ static void can_rcar_rx_filter_isr(const struct device *dev,
 			continue;
 		}
 
-		if (!can_utils_filter_match(frame,
-					    &data->filter[i])) {
+		if (!can_frame_matches_filter(frame, &data->filter[i])) {
 			continue; /* filter did not match */
 		}
 		/* Make a temporary copy in case the user
@@ -455,7 +453,7 @@ static void can_rcar_isr(const struct device *dev)
 			if (data->tx_unsent <= unsent) {
 				break;
 			}
-			can_rcar_tx_done(dev);
+			can_rcar_tx_done(dev, 0);
 		}
 
 		/* Clear the Tx interrupt */
@@ -594,6 +592,8 @@ static int can_rcar_start(const struct device *dev)
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
+	CAN_STATS_RESET(dev);
+
 	ret = can_rcar_enter_operation_mode(config);
 	if (ret != 0) {
 		LOG_ERR("failed to enter operation mode (err %d)", ret);
@@ -640,6 +640,15 @@ static int can_rcar_stop(const struct device *dev)
 			LOG_ERR("failed to disable CAN transceiver (err %d)", ret);
 			return ret;
 		}
+	}
+
+	/* Resetting TX FIFO, emptying it */
+	sys_write8((uint8_t)~RCAR_CAN_TFCR_TFE, config->reg_addr + RCAR_CAN_TFCR);
+	sys_write8(RCAR_CAN_TFCR_TFE, config->reg_addr + RCAR_CAN_TFCR);
+
+	/* Empty TX msgq, returning an error for each message */
+	while (data->tx_unsent) {
+		can_rcar_tx_done(dev, -ENETDOWN);
 	}
 
 	return 0;
@@ -1015,19 +1024,19 @@ static int can_rcar_init(const struct device *dev)
 
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
-				(clock_control_subsys_t *)&config->mod_clk);
+				(clock_control_subsys_t)&config->mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *)&config->mod_clk);
+			       (clock_control_subsys_t)&config->mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *)&config->bus_clk);
+			       (clock_control_subsys_t)&config->bus_clk);
 	if (ret < 0) {
 		return ret;
 	}

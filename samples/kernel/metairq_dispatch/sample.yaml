@@ -3,11 +3,16 @@ sample:
     MetaIRQ thread
   name: MetaIRQ Dispatch
 common:
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "MetaIRQ Test Complete"
+  tags:
+    - kernel
+  integration_platforms:
+    - mps2_an385
+    - qemu_x86
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "MetaIRQ Test Complete"
 
 # Note that native_posix architectures are filtered, they require
 # instrumentation (e.g. a k_busy_wait()) inside the worker threads
@@ -15,5 +20,5 @@ common:
 # sample is designed to demonstrate completely arbitrary CPU work.
 tests:
   sample.kernel.metairq_dispatch:
-    tags: introduction
-    filter: not CONFIG_ARCH_POSIX
+    arch_exclude:
+      - posix

@@ -9,9 +9,6 @@ config BOARD
 	default "stm32h747i_disco_m7" if BOARD_STM32H747I_DISCO_M7
 	default "stm32h747i_disco_m4" if BOARD_STM32H747I_DISCO_M4
 
-config STM32H7_DUAL_CORE
-	default y
-
 if NETWORKING
 
 config NET_L2_ETHERNET

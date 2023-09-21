@@ -1,0 +1,8 @@
+common:
+  platform_allow: native_posix
+tests:
+  drivers.smbus.emul:
+    tags: smbus
+  drivers.smbus.emul.peripheral.interrupt:
+    tags: smbus
+    extra_args: EXTRA_CFLAGS=-DPERIPHERAL_INT=1

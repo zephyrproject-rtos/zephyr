@@ -6,5 +6,5 @@ toolchain:
   - zephyr
 testing:
   only_tags:
-     - kernel
-     - sof
+    - kernel
+    - sof

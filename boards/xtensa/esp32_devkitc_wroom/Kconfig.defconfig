@@ -1,0 +1,20 @@
+# ESP32 board configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32_devkitc_wroom"
+	depends on BOARD_ESP32_DEVKITC_WROOM
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 40960 if BT
+	default 4096
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice

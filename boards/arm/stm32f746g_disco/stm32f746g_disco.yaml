@@ -18,6 +18,5 @@ supported:
   - counter
   - sdhc
   - usb_device
-  - kscan:touch
   - display
   - memc

@@ -32,6 +32,9 @@
 
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
 
+#define FLASH_PAGE_ERASE_MAX_TIME_US	89700UL
+#define FLASH_PAGE_MAX_CNT		256UL
+
 #ifdef __cplusplus
 extern "C" {
 #endif

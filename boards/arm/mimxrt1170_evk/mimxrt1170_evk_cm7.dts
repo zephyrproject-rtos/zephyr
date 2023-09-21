@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1170_cm7.dtsi>
+#include <nxp/nxp_rt11xx_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
 
 / {
@@ -28,8 +28,8 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,cpu1-region = &ocram;
+		zephyr,ipc = &mailbox_a;
 	};
 
 	sdram0: memory@80000000 {
@@ -38,50 +38,33 @@
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
-	en_mipi_display: enable-mipi-display {
-		compatible = "regulator-fixed";
-		regulator-name = "en_mipi_display";
-		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
+	/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J48 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio9 29 0>,	/* Pin 1, LEDK */
+				<21 0 &gpio9 1  0>,	/* Pin 21, RESET */
+				<22 0 &gpio9 4  0>,	/* Pin 22, LPTE */
+				<26 0 &gpio6 4  0>,	/* Pin 26, CTP_I2C SDA */
+				<27 0 &gpio6 5  0>,	/* Pin 27, CTP_I2C SCL */
+				<28 0 &gpio9 0  0>,	/* Pin 28, CTP_RST */
+				<29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
+				<32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
+				<34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
 };
 
-&lcdif {
-	status = "okay";
-	width = <720>;
-	height = <1280>;
-	hsync = <8>;
-	hfp = <32>;
-	hbp = <32>;
-	vsync = <2>;
-	vfp = <16>;
-	vbp = <14>;
-	polarity = <3>;
-	pixel-format = "bgr-565";
-	data-buswidth = "24-bit";
-	backlight-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
-};
+zephyr_lcdif: &lcdif {};
 
-&mipi_dsi {
-	status = "okay";
-	nxp,lcdif = <&lcdif>;
-	dpi-color-coding = "24-bit";
-	dpi-pixel-packet = "24-bit";
-	dpi-video-mode = "burst";
-	dpi-bllp-mode = "low-power";
-	autoinsert-eotp;
+zephyr_mipi_dsi: &mipi_dsi {
 	dphy-ref-frequency = <24000000>;
-
-	rm68200@0 {
-		status = "okay";
-		compatible = "raydium,rm68200";
-		reg = <0x0>;
-		reset-gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
-		data-lanes = <2>;
-		width = <720>;
-		height = <1280>;
-		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
-	};
 };
 
 &lpuart1 {
@@ -92,7 +75,7 @@
 &flexcan3 {
 	status = "okay";
 	bus-speed = <125000>;
-
+	bus-speed-data = <1000000>;
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -102,65 +85,11 @@
 	status = "okay";
 };
 
-&lpi2c5 {
-	status = "okay";
+nxp_mipi_i2c: &lpi2c5 {
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
-
-	touch_controller: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		irq-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio9 0  GPIO_ACTIVE_HIGH>;
-	};
-};
-
-&flexspi {
-	status = "okay";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
-	is25wp128: is25wp128@0 {
-		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
-		reg = <0>;
-		spi-max-frequency = <133000000>;
-		status = "okay";
-		jedec-id = [9d 70 17];
-		erase-block-size = <4096>;
-		write-block-size = <1>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
-			 */
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 0x301000>;
-			};
-			slot1_partition: partition@321000 {
-				label = "image-1";
-				reg = <0x00321000 0x300000>;
-			};
-			scratch_partition: partition@621000 {
-				label = "image-scratch";
-				reg = <0x00621000 DT_SIZE_K(128)>;
-			};
-			storage_partition: partition@641000 {
-				label = "storage";
-				reg = <0x00641000 DT_SIZE_K(1856)>;
-			};
-		};
-	};
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &lpadc0 {
@@ -181,10 +110,15 @@
 	status = "okay";
 };
 
-/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
- * to use systick, change this node from "gpt_hw_timer" to "systick"
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
 	status = "okay";
 };
 
@@ -206,5 +140,9 @@
 };
 
 zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&mailbox_a {
 	status = "okay";
 };

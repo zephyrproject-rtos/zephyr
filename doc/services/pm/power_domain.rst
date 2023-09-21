@@ -20,7 +20,7 @@ power domain to notify all devices using it through their power management
 callback called with
 :c:enumerator:`PM_DEVICE_ACTION_TURN_ON` or
 :c:enumerator:`PM_DEVICE_ACTION_TURN_OFF` respectively. This
-work flow is illustrated in the diagram bellow.
+work flow is illustrated in the diagram below.
 
 .. _pm-domain-work-flow:
 

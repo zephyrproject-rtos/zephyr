@@ -17,8 +17,8 @@ config IPM_IMX
 
 config IPM_IMX_REV2
 	bool "IMX IPM driver (rev 2)"
-	depends on DT_HAS_NXP_IMX_MU_ENABLED
-	depends on !IPM_IMX
+	default y
+	depends on DT_HAS_NXP_IMX_MU_REV2_ENABLED
 	help
 	  Rev 2 driver for NXP i.MX messaging unit (MCUX-based)
 

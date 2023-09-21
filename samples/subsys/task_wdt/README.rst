@@ -1,12 +1,13 @@
-.. _task_wdt_sample:
+.. zephyr:code-sample:: task-wdt
+   :name: Task watchdog
+   :relevant-api: task_wdt_api
 
-Task Watchdog Sample
-####################
+   Monitor a thread using a task watchdog.
 
 Overview
 ********
 
-This sample allows to test the task watchdog subsystem.
+This sample allows to test the :ref:`task watchdog <task_wdt_api>` subsystem.
 
 Building and Running
 ********************

@@ -13,6 +13,7 @@
  * exception) stubs are implemented in this module.  The stubs are invoked when
  * entering and exiting a C interrupt handler.
  */
+#define LOAPIC_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(intc_loapic))
 
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <offsets_short.h>
@@ -180,6 +181,16 @@ alreadyOnIntStack:
 	popl	%eax
 #endif
 
+#if defined(CONFIG_X86_RUNTIME_IRQ_STATS)
+	/*
+	 *  The runtime_irq_stats() function should be implemented
+	 *  by platform with this config.
+	 */
+	pushl	%eax
+	call	runtime_irq_stats
+	popl	%eax
+#endif
+
 	xorl	%eax, %eax
 #if defined(CONFIG_X2APIC)
 	xorl	%edx, %edx
@@ -187,10 +198,10 @@ alreadyOnIntStack:
 	wrmsr
 #else /* xAPIC */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-	movl	z_loapic_regs, %edx
+	movl	Z_TOPLEVEL_RAM_NAME(LOAPIC_REGS_STR), %edx
 	movl	%eax, LOAPIC_EOI(%edx)
 #else
-	movl	%eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
+	movl	%eax, (LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 #endif /* CONFIG_X2APIC */
 

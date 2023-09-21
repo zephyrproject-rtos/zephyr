@@ -19,8 +19,8 @@ static void top_handler(const struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
-struct counter_alarm_cfg alarm_cfg;
-struct counter_alarm_cfg alarm_cfg2;
+struct counter_alarm_cfg cntr_alarm_cfg;
+struct counter_alarm_cfg cntr_alarm_cfg2;
 
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 /* Generate a list of devices for all instances of the "compat" */
@@ -28,29 +28,11 @@ struct counter_alarm_cfg alarm_cfg2;
 	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
 
 static const struct device *const devices[] = {
-#ifdef CONFIG_COUNTER_TIMER0
-	/* Nordic TIMER0 may be reserved for Bluetooth */
-	DEVICE_DT_GET(DT_NODELABEL(timer0)),
+#ifdef CONFIG_COUNTER_NRF_TIMER
+	DEVS_FOR_DT_COMPAT(nordic_nrf_timer)
 #endif
-#ifdef CONFIG_COUNTER_TIMER1
-	DEVICE_DT_GET(DT_NODELABEL(timer1)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER2
-	DEVICE_DT_GET(DT_NODELABEL(timer2)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER3
-	DEVICE_DT_GET(DT_NODELABEL(timer3)),
-#endif
-#ifdef CONFIG_COUNTER_TIMER4
-	DEVICE_DT_GET(DT_NODELABEL(timer4)),
-#endif
-#ifdef CONFIG_COUNTER_RTC0
-	/* Nordic RTC0 may be reserved for Bluetooth */
-	DEVICE_DT_GET(DT_NODELABEL(rtc0)),
-#endif
-	/* Nordic RTC1 is used for the system clock */
-#ifdef CONFIG_COUNTER_RTC2
-	DEVICE_DT_GET(DT_NODELABEL(rtc2)),
+#ifdef CONFIG_COUNTER_NRF_RTC
+	DEVS_FOR_DT_COMPAT(nordic_nrf_rtc)
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
 #define STM32_COUNTER_DEV(idx) \
@@ -63,6 +45,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
 	DEVICE_DT_GET(DT_NODELABEL(counter0)),
 #endif
+#ifdef CONFIG_COUNTER_INFINEON_CAT1
+	DEVICE_DT_GET(DT_NODELABEL(counter0_0)),
+#endif
 	/* NOTE: there is no trailing comma, as the DEVS_FOR_DT_COMPAT
 	 * handles it.
 	 */
@@ -71,6 +56,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
+	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
 #endif
@@ -83,8 +69,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+#endif
+#ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
+#endif
+#ifdef CONFIG_COUNTER_GECKO_STIMER
+	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_PIT
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
 #endif
@@ -96,6 +89,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
+#endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
+#endif
+#ifdef CONFIG_COUNTER_TIMER_RPI_PICO
+	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
 #endif
 };
 
@@ -344,7 +343,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			counter, now, top, processing_limit_us);
 
 	if (user_data) {
-		zassert_true(&alarm_cfg == user_data,
+		zassert_true(&cntr_alarm_cfg == user_data,
 			"%s: Unexpected callback", dev->name);
 	}
 
@@ -373,9 +372,9 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 	top_cfg.ticks = ticks;
 
-	alarm_cfg.flags = 0;
-	alarm_cfg.callback = alarm_handler;
-	alarm_cfg.user_data = &alarm_cfg;
+	cntr_alarm_cfg.flags = 0;
+	cntr_alarm_cfg.callback = alarm_handler;
+	cntr_alarm_cfg.user_data = &cntr_alarm_cfg;
 
 	k_sem_reset(&alarm_cnt_sem);
 	alarm_cnt = 0;
@@ -394,16 +393,16 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		zassert_equal(0, err,
 			     "%s: Counter failed to set top value", dev->name);
 
-		alarm_cfg.ticks = ticks + 1;
-		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
+		cntr_alarm_cfg.ticks = ticks + 1;
+		err = counter_set_channel_alarm(dev, 0, &cntr_alarm_cfg);
 		zassert_equal(-EINVAL, err,
 			      "%s: Counter should return error because ticks"
 			      " exceeded the limit set alarm", dev->name);
-		alarm_cfg.ticks = ticks - 1;
+		cntr_alarm_cfg.ticks = ticks - 1;
 	}
 
-	alarm_cfg.ticks = ticks;
-	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
+	cntr_alarm_cfg.ticks = ticks;
+	err = counter_set_channel_alarm(dev, 0, &cntr_alarm_cfg);
 	zassert_equal(0, err, "%s: Counter set alarm failed (err: %d)",
 			dev->name, err);
 
@@ -513,15 +512,15 @@ static void test_multiple_alarms_instance(const struct device *dev)
 	zassert_equal(0, err, "%s: Counter get value failed", dev->name);
 	top_cfg.ticks += ticks;
 
-	alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
-	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
-	alarm_cfg.callback = alarm_handler2;
-	alarm_cfg.user_data = &alarm_cfg;
+	cntr_alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
+	cntr_alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
+	cntr_alarm_cfg.callback = alarm_handler2;
+	cntr_alarm_cfg.user_data = &cntr_alarm_cfg;
 
-	alarm_cfg2.flags = 0;
-	alarm_cfg2.ticks = counter_us_to_ticks(dev, 2000);
-	alarm_cfg2.callback = alarm_handler2;
-	alarm_cfg2.user_data = &alarm_cfg2;
+	cntr_alarm_cfg2.flags = 0;
+	cntr_alarm_cfg2.ticks = counter_us_to_ticks(dev, 2000);
+	cntr_alarm_cfg2.callback = alarm_handler2;
+	cntr_alarm_cfg2.user_data = &cntr_alarm_cfg2;
 
 	k_sem_reset(&alarm_cnt_sem);
 	alarm_cnt = 0;
@@ -545,12 +544,12 @@ static void test_multiple_alarms_instance(const struct device *dev)
 		return;
 	}
 
-	k_busy_wait(3*(uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
+	k_busy_wait(3*(uint32_t)counter_ticks_to_us(dev, cntr_alarm_cfg.ticks));
 
-	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
+	err = counter_set_channel_alarm(dev, 0, &cntr_alarm_cfg);
 	zassert_equal(0, err, "%s: Counter set alarm failed", dev->name);
 
-	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
+	err = counter_set_channel_alarm(dev, 1, &cntr_alarm_cfg2);
 	zassert_equal(0, err, "%s: Counter set alarm failed", dev->name);
 
 	k_busy_wait(1.2 * counter_ticks_to_us(dev, ticks * 2U));
@@ -561,10 +560,10 @@ static void test_multiple_alarms_instance(const struct device *dev)
 			"%s: Invalid number of callbacks %d (expected: %d)",
 			dev->name, cnt, 2);
 
-	zassert_equal(&alarm_cfg2, clbk_data[0],
+	zassert_equal(&cntr_alarm_cfg2, clbk_data[0],
 			"%s: Expected different order or callbacks",
 			dev->name);
-	zassert_equal(&alarm_cfg, clbk_data[1],
+	zassert_equal(&cntr_alarm_cfg, clbk_data[1],
 			"%s: Expected different order or callbacks",
 			dev->name);
 
@@ -785,6 +784,10 @@ static void test_short_relative_alarm_instance(const struct device *dev)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Unexpected error", dev->name);
 
+	if (IS_ENABLED(CONFIG_COUNTER_NRF_RTC)) {
+		k_busy_wait(1000);
+	}
+
 	alarm_cfg.ticks = 1;
 
 	for (int i = 0; i < 100; ++i) {
@@ -928,49 +931,15 @@ static bool reliable_cancel_capable(const struct device *dev)
 {
 	/* Test performed only for NRF_RTC instances. Other probably will fail.
 	 */
-#ifdef CONFIG_COUNTER_RTC0
-	/* Nordic RTC0 may be reserved for Bluetooth */
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(rtc0))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_RTC2
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(rtc2))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER0
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer0))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER1
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer1))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER2
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer2))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER3
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer3))) {
-		return true;
-	}
-#endif
-
-#ifdef CONFIG_COUNTER_TIMER4
-	if (dev == DEVICE_DT_GET(DT_NODELABEL(timer4))) {
-		return true;
-	}
+#if defined(CONFIG_COUNTER_NRF_RTC) || defined(CONFIG_COUNTER_NRF_TIMER)
+	return true;
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

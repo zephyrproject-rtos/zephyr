@@ -1,0 +1,37 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022, Basalte bv
+ */
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc0 5>, <&adc0 15>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* External ADC(+) */
+	channel@5 {
+ 		reg = <5>;
+ 		zephyr,gain = "ADC_GAIN_1";
+ 		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+ 		zephyr,input-positive = <5>;
+		zephyr,resolution = <12>;
+	};
+
+	/* Internal temperature sensor */
+	channel@f {
+ 		reg = <15>;
+ 		zephyr,gain = "ADC_GAIN_1";
+ 		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+ 		zephyr,input-positive = <15>;
+		zephyr,resolution = <12>;
+	};
+};

@@ -18,6 +18,7 @@
 #include <soc.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(qdec_sam, CONFIG_SENSOR_LOG_LEVEL);
@@ -25,8 +26,8 @@ LOG_MODULE_REGISTER(qdec_sam, CONFIG_SENSOR_LOG_LEVEL);
 /* Device constant configuration parameters */
 struct qdec_sam_dev_cfg {
 	Tc *regs;
+	const struct atmel_sam_pmc_config clock_cfg[TCCHANNEL_NUMBER];
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t periph_id[TCCHANNEL_NUMBER];
 };
 
 /* Device run time data */
@@ -103,9 +104,10 @@ static int qdec_sam_initialize(const struct device *dev)
 		return retval;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(dev_cfg->periph_id); i++) {
-		/* Enable module's clock */
-		soc_pmc_peripheral_enable(dev_cfg->periph_id[i]);
+	for (int i = 0; i < ARRAY_SIZE(dev_cfg->clock_cfg); i++) {
+		/* Enable TC clock in PMC */
+		(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+				       (clock_control_subsys_t)&dev_cfg->clock_cfg[i]);
 	}
 
 	qdec_sam_configure(dev);
@@ -125,7 +127,7 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
 		.regs = (Tc *)DT_INST_REG_ADDR(n),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.clock_cfg = SAM_DT_INST_CLOCKS_PMC_CFG(n),		\
 	};								\
 									\
 	static struct qdec_sam_dev_data qdec##n##_sam_data;		\

@@ -16,6 +16,7 @@
  */
 enum npcx_pinctrl_type {
 	NPCX_PINCTRL_TYPE_PERIPH,
+	NPCX_PINCTRL_TYPE_DEVICE_CTRL,
 	NPCX_PINCTRL_TYPE_PSL_IN,
 	NPCX_PINCTRL_TYPE_RESERVED,
 };
@@ -82,6 +83,23 @@ struct npcx_periph {
 } __packed;
 
 /**
+ * @brief NPCX device control structure
+ *
+ * Used to indicate the device's corresponding register/field for its io
+ * characteristics such as tri-state, power supply type selection, and so on.
+ */
+struct npcx_dev_ctl {
+	/** Related register offset for device configuration. */
+	uint16_t offest: 5;
+	/** Related register field offset for device control. */
+	uint16_t field_offset: 3;
+	/** Related register field size for device control. */
+	uint16_t field_size: 3;
+	/** field value */
+	uint16_t field_value: 5;
+} __packed;
+
+/**
  * @brief NPCX Power Switch Logic (PSL) input pad configuration structure
  *
  * Used to indicate a Power Switch Logic (PSL) input detection configuration
@@ -103,6 +121,7 @@ struct npcx_psl_input {
 struct npcx_pinctrl {
 	union {
 		struct npcx_periph periph;
+		struct npcx_dev_ctl dev_ctl;
 		struct npcx_psl_input psl_in;
 		uint16_t cfg_word;
 	} cfg;
@@ -161,6 +180,21 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 		.cfg.periph.group = DT_PHA(DT_PROP(node_id, prop), alts, group),	\
 		.cfg.periph.bit = DT_PHA(DT_PROP(node_id, prop), alts, bit),		\
 		.cfg.periph.inverted = DT_PHA(DT_PROP(node_id, prop), alts, inv),	\
+	},
+
+/**
+ * @brief Utility macro to initialize a periphral pinmux configuration.
+ *
+ * @param node_id Node identifier.
+ * @param prop Property name for pinmux configuration. (i.e. 'pinmux')
+ */
+#define Z_PINCTRL_NPCX_DEVICE_CONTROL_INIT(node_id, prop)			\
+	{									\
+		.flags.type = NPCX_PINCTRL_TYPE_DEVICE_CTRL,			\
+		.cfg.dev_ctl.offest = DT_PROP_BY_IDX(node_id, prop, 0),		\
+		.cfg.dev_ctl.field_offset = DT_PROP_BY_IDX(node_id, prop, 1),	\
+		.cfg.dev_ctl.field_size = DT_PROP_BY_IDX(node_id, prop, 2),	\
+		.cfg.dev_ctl.field_value = DT_PROP_BY_IDX(node_id, prop, 3),	\
 	},
 
 /**
@@ -227,6 +261,9 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 	COND_CODE_1(Z_PINCTRL_NPCX_HAS_PSL_IN_PROP(DT_PROP_BY_IDX(node_id, prop, idx)),	\
 		(Z_PINCTRL_NPCX_PSL_IN_DETECT_CONF_INIT(				\
 			DT_PROP_BY_IDX(node_id, prop, idx), psl_polarity)), ())		\
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_PROP_BY_IDX(node_id, prop, idx), dev_ctl),	\
+		(Z_PINCTRL_NPCX_DEVICE_CONTROL_INIT(					\
+			DT_PROP_BY_IDX(node_id, prop, idx), dev_ctl)), ())		\
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_PROP_BY_IDX(node_id, prop, idx), pinmux),	\
 		(Z_PINCTRL_NPCX_PERIPH_PINMUX_INIT(					\
 			DT_PROP_BY_IDX(node_id, prop, idx), pinmux)), ())

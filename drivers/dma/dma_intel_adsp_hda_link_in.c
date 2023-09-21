@@ -29,12 +29,16 @@ static const struct dma_driver_api intel_adsp_hda_dma_link_in_api = {
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.regblock_size  = DT_INST_REG_SIZE(inst),					   \
 		.dma_channels = DT_INST_PROP(inst, dma_channels),                                  \
-		.direction = PERIPHERAL_TO_MEMORY						   \
+		.direction = PERIPHERAL_TO_MEMORY,						   \
+		.irq_config = NULL								   \
 	};                                                                                         \
 												   \
 	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = {};                \
 												   \
-	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init, NULL,				   \
+	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);				   \
+												   \
+	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init,					   \
+			      PM_DEVICE_DT_INST_GET(inst),					   \
 			      &intel_adsp_hda_dma##inst##_data,                                    \
 			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,                     \
 			      CONFIG_DMA_INIT_PRIORITY,                                            \

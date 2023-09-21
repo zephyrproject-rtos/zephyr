@@ -7,5 +7,6 @@ config NXP_S32_EIRQ
 	bool "External interrupt controller driver for NXP S32 MCUs"
 	default y
 	depends on DT_HAS_NXP_S32_SIUL2_EIRQ_ENABLED
+	select NOCACHE_MEMORY
 	help
 	  External interrupt controller driver for NXP S32 MCUs

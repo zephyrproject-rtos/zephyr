@@ -2,10 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+sysbuild_images_order(IMAGES_FLASHING_ORDER FLASH IMAGES ${IMAGES})
+
 set(domains_yaml "default: ${DEFAULT_IMAGE}")
 set(domains_yaml "${domains_yaml}\nbuild_dir: ${CMAKE_BINARY_DIR}")
 set(domains_yaml "${domains_yaml}\ndomains:")
-foreach(image ${IMAGES})
+foreach(image ${IMAGES_FLASHING_ORDER})
+  get_target_property(image_is_build_only ${image} BUILD_ONLY)
+  if(image_is_build_only)
+    continue()
+  endif()
   set(domains_yaml "${domains_yaml}\n  - name: ${image}")
   set(domains_yaml "${domains_yaml}\n    build_dir: $<TARGET_PROPERTY:${image},_EP_BINARY_DIR>")
 endforeach()

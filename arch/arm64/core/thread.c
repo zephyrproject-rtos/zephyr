@@ -13,7 +13,6 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/arch/cpu.h>
 
 /*
@@ -100,9 +99,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	} else {
 		pInitCtx->elr = (uint64_t)z_thread_entry;
 	}
+
+#if defined(CONFIG_ARM_MPU)
+	atomic_clear(&thread->arch.flushing);
+#endif
 #else
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
+
 	/* Keep using SP_EL1 */
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ_BIT;
 

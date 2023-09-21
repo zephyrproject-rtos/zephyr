@@ -14,40 +14,40 @@ include:
       - cpu2-prescaler
 
 properties:
-    cpu2-prescaler:
-      type: int
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
-          (A.K.A C2HPRE)
+  cpu2-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
+        (A.K.A C2HPRE)
 
-    ahb3-prescaler:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 4
-        - 8
-        - 16
-        - 32
-        - 64
-        - 128
-        - 256
-        - 512
-      description: |
-          HCLK3 shared prescaler (AHB3, Flash memory, SRAM1 and SRAM2).
-          (A.K.A SHDHPRE)
+  ahb3-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        HCLK3 shared prescaler (AHB3, Flash memory, SRAM1 and SRAM2).
+        (A.K.A SHDHPRE)
 
 clock-cells:
   - bus

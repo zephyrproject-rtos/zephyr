@@ -3,13 +3,14 @@
 if (CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR
     CONFIG_TIMER_RANDOM_GENERATOR OR
     CONFIG_XOSHIRO_RANDOM_GENERATOR)
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/random/rand32.h)
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE           rand32_handlers.c)
 endif()
 
-if (CONFIG_TEST_RANDOM_GENERATOR)
+if (CONFIG_TIMER_RANDOM_GENERATOR)
   message(WARNING "
-    Warning: CONFIG_TEST_RANDOM_GENERATOR is not a truly random generator.
+    Warning: CONFIG_TIMER_RANDOM_GENERATOR is not a truly random generator.
     This capability is not secure and it is provided for testing purposes only.
     Use it carefully.")
 endif()

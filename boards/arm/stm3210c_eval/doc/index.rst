@@ -125,7 +125,7 @@ Flashing an application to STM3210C-EVAL
 Connect the STM3210C-EVAL to your host computer using the USB port, then build
 and flash an application in the usual way.
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

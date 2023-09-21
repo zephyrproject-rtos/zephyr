@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <intel_adsp_ipc.h>
@@ -64,7 +64,7 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 #else
 	/* The buffer is in the cached address range and must be flushed */
 	zassert_false(arch_mem_coherent(dma_buf), "Buffer is unexpectedly coherent!");
-	z_xtensa_cache_flush(dma_buf, DMA_BUF_SIZE);
+	sys_cache_data_flush_range(dma_buf, DMA_BUF_SIZE);
 #endif
 
 	dma = DEVICE_DT_GET(DT_NODELABEL(hda_host_in));
@@ -210,7 +210,7 @@ void test_hda_host_out_dma(void)
 		 * prior to reading.
 		 */
 		zassert_false(arch_mem_coherent(dma_buf), "Buffer is unexpectedly coherent!");
-		z_xtensa_cache_inv(dma_buf, DMA_BUF_SIZE);
+		sys_cache_data_invd_range(dma_buf, DMA_BUF_SIZE);
 #endif
 
 		is_ramp = true;

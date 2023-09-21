@@ -24,3 +24,19 @@ config CORTEX_M_SYSTICK_INSTALL_ISR
 	help
 	  This option should be selected by SysTick-based drivers so that the
 	  sys_clock_isr() function is installed.
+
+config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+	bool "Cortex-M SYSTICK timer with sys_clock_cycle_get_64() support"
+	depends on CORTEX_M_SYSTICK
+	default y if (SYS_CLOCK_HW_CYCLES_PER_SEC > 60000000)
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This driver, due to its limited 24-bits hardware counter, is already
+	  tracking a separate cycle count in software. This option make that
+	  count a 64-bits value to support sys_clock_cycle_get_64().
+	  This is cheap to do as expensive math operations (i.e. divisions)
+	  are performed only on counter interval values that always fit in
+	  32 bits.
+
+	  This is set to y by default when the hardware clock is fast enough
+	  to wrap sys_clock_cycle_get_32() in about a minute or less.

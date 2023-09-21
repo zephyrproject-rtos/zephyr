@@ -51,7 +51,7 @@ To build and flash with device power management enabled:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
    :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG=overlay-pm.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-pm.conf
    :goals: build flash
    :compact:
 
@@ -60,7 +60,7 @@ To build and flash with flash page layout enabled:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
    :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG=overlay-page_layout.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-page_layout.conf
    :goals: build flash
    :compact:
 
@@ -70,7 +70,7 @@ layout enabled:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash_at45
    :board: nrf9160dk_nrf9160
-   :gen-args: -DOVERLAY_CONFIG="overlay-pm.conf overlay-page_layout.conf"
+   :gen-args: -DEXTRA_CONF_FILE="overlay-pm.conf overlay-page_layout.conf"
    :goals: build flash
    :compact:
 

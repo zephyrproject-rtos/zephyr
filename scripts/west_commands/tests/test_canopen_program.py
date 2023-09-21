@@ -22,7 +22,7 @@ TEST_ALT_CONTEXT = 'alternate'
 # Test cases
 #
 
-TEST_CASES = [(n, x, p, c, o, t, r, s)
+TEST_CASES = [(n, x, p, c, o, t, r, s, b)
               for n in range(1, 3)
               for x in (None, TEST_ALT_CONTEXT)
               for p in range(1, 3)
@@ -30,7 +30,8 @@ TEST_CASES = [(n, x, p, c, o, t, r, s)
               for o in (False, True)
               for t in range(1, 3)
               for r in range(1, 3)
-              for s in range(1, 3)]
+              for s in range(1, 3)
+              for b in range(False, True)]
 
 os_path_isfile = os.path.isfile
 
@@ -43,7 +44,7 @@ def os_path_isfile_patch(filename):
 @patch('runners.canopen_program.CANopenProgramDownloader')
 def test_canopen_program_create(cpd, test_case, runner_config):
     '''Test CANopen runner created from command line parameters.'''
-    node_id, context, program_number, confirm, confirm_only, timeout, sdo_retries, sdo_timeout = test_case
+    node_id, context, program_number, confirm, confirm_only, timeout, sdo_retries, sdo_timeout, block_transfer = test_case
 
     args = ['--node-id', str(node_id)]
     if context is not None:
@@ -60,13 +61,15 @@ def test_canopen_program_create(cpd, test_case, runner_config):
         args.extend(['--sdo-retries', str(sdo_retries)])
     if sdo_timeout:
         args.extend(['--sdo-timeout', str(sdo_timeout)])
+    if block_transfer:
+        args.append('--block_transfer')
 
     mock = cpd.return_value
     mock.flash_status.return_value = 0
     mock.wait_for_flash_status_ok.return_value = 0
     mock.swid.return_value = 0
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     CANopenBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = CANopenBinaryRunner.create(runner_config, arg_namespace)
@@ -80,14 +83,16 @@ def test_canopen_program_create(cpd, test_case, runner_config):
                                      logger=runner.logger,
                                      program_number=program_number,
                                      sdo_retries=sdo_retries,
-                                     sdo_timeout=sdo_timeout)
+                                     sdo_timeout=sdo_timeout,
+                                     block_transfer=block_transfer)
     else:
         assert cpd.call_args == call(node_id=node_id,
                                      can_context=TEST_DEF_CONTEXT,
                                      logger=runner.logger,
                                      program_number=program_number,
                                      sdo_retries=sdo_retries,
-                                     sdo_timeout=sdo_timeout)
+                                     sdo_timeout=sdo_timeout,
+                                     block_transfer=block_transfer)
 
     mock.connect.assert_called_once()
 

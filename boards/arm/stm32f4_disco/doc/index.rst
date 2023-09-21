@@ -169,7 +169,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 Run a serial host program to connect with your board:
 
@@ -211,4 +211,4 @@ You can debug an application in the usual way.  Here is an example for the
    http://www.st.com/resource/en/reference_manual/dm00031020.pdf
 
 .. _SK Pang CAN breakout board:
-   http://skpang.co.uk/catalog/canbus-can-fd-breakout-board-5v-p-242.html
+   https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-3-3v-logic

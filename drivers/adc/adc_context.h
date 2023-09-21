@@ -38,6 +38,19 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static void adc_context_enable_timer(struct adc_context *ctx);
 static void adc_context_disable_timer(struct adc_context *ctx);
 
+/*
+ * If a driver needs to do something after a context complete then
+ * then this optional function can be overwritten. This will be called
+ * after a sequence has ended, and *not* when restarted with ADC_ACTION_REPEAT.
+ * To enable this function define ADC_CONTEXT_ENABLE_ON_COMPLETE.
+ */
+#ifdef ADC_CONTEXT_ENABLE_ON_COMPLETE
+static void adc_context_on_complete(struct adc_context *ctx, int status);
+#endif /* ADC_CONTEXT_ENABLE_ON_COMPLETE */
+
+#ifndef ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT K_FOREVER
+#endif
 
 struct adc_context {
 	atomic_t sampling_requested;
@@ -159,12 +172,21 @@ static inline int adc_context_wait_for_completion(struct adc_context *ctx)
 	}
 #endif /* CONFIG_ADC_ASYNC */
 
-	k_sem_take(&ctx->sync, K_FOREVER);
+	int status = k_sem_take(&ctx->sync, ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT);
+
+	if (status != 0) {
+		ctx->status = status;
+	}
+
 	return ctx->status;
 }
 
 static inline void adc_context_complete(struct adc_context *ctx, int status)
 {
+#ifdef ADC_CONTEXT_ENABLE_ON_COMPLETE
+	adc_context_on_complete(ctx, status);
+#endif /* ADC_CONTEXT_ENABLE_ON_COMPLETE */
+
 #ifdef CONFIG_ADC_ASYNC
 	if (ctx->asynchronous) {
 		if (ctx->signal) {

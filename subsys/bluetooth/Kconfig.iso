@@ -96,7 +96,7 @@ config BT_ISO_TX_FRAG_COUNT
 config BT_ISO_TX_MTU
 	int "Maximum supported MTU for Isochronous TX buffers"
 	default 251
-	range 23 4095
+	range 1 4095
 	help
 	  Maximum MTU for Isochronous channels TX buffers.
 
@@ -113,6 +113,14 @@ config BT_ISO_RX_MTU
 	range 23 4095
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
+
+config BT_ISO_ADVANCED
+	bool "Advanced ISO parameters"
+	help
+	  Enabling advanced ISO parameters will allow the use of the ISO test
+	  parameters for creating a CIG or a BIG. These test parameters were
+	  intended for testing, but can be used to allow the host to set more
+	  settings that are otherwise usually controlled by the controller.
 
 if BT_ISO_UNICAST
 

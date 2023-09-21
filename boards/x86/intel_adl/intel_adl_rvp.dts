@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "intel_adl.dts"
+
+/ {
+	chosen {
+		zephyr,console = &uart0_legacy;
+		zephyr,shell-uart = &uart0_legacy;
+	};
+};

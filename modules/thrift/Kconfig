@@ -1,0 +1,31 @@
+# Copyright 2022 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_THRIFT_MODULE
+	bool
+
+menuconfig THRIFT
+	bool "Support for Thrift [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on CPP
+	depends on STD_CPP17
+	depends on CPP_EXCEPTIONS
+	depends on POSIX_API
+	help
+	  Enable this option to support Apache Thrift
+
+if THRIFT
+
+config THRIFT_SSL_SOCKET
+	bool "TSSLSocket support for Thrift"
+	depends on MBEDTLS
+	depends on MBEDTLS_PEM_CERTIFICATE_FORMAT
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this option to support TSSLSocket for Thrift
+
+module = THRIFT
+module-str = THRIFT
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # THRIFT

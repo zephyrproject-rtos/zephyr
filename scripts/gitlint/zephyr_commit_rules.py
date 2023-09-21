@@ -24,15 +24,15 @@ class BodyMinLineCount(CommitRule):
     # A rule MUST have an *unique* id, we recommend starting with UC (for User-defined Commit-rule).
     id = "UC6"
 
-    # A rule MAY have an option_spec if its behavior should be configurable.
-    options_spec = [IntOption('min-line-count', 2, "Minimum body line count excluding Signed-off-by")]
+    # A rule MAY have an options_spec if its behavior should be configurable.
+    options_spec = [IntOption('min-line-count', 1, "Minimum body line count excluding Signed-off-by")]
 
     def validate(self, commit):
         filtered = [x for x in commit.message.body if not x.lower().startswith("signed-off-by") and x != '']
         line_count = len(filtered)
         min_line_count = self.options['min-line-count'].value
         if line_count < min_line_count:
-            message = "Body has no content, should at least have {} line.".format(min_line_count)
+            message = "Commit message body is empty, should at least have {} line(s).".format(min_line_count)
             return [RuleViolation(self.id, message, line_nr=1)]
 
 class BodyMaxLineCount(CommitRule):
@@ -42,14 +42,14 @@ class BodyMaxLineCount(CommitRule):
     # A rule MUST have an *unique* id, we recommend starting with UC (for User-defined Commit-rule).
     id = "UC1"
 
-    # A rule MAY have an option_spec if its behavior should be configurable.
-    options_spec = [IntOption('max-line-count', 3, "Maximum body line count")]
+    # A rule MAY have an options_spec if its behavior should be configurable.
+    options_spec = [IntOption('max-line-count', 200, "Maximum body line count")]
 
     def validate(self, commit):
         line_count = len(commit.message.body)
         max_line_count = self.options['max-line-count'].value
         if line_count > max_line_count:
-            message = "Body contains too many lines ({0} > {1})".format(line_count, max_line_count)
+            message = "Commit message body contains too many lines ({0} > {1})".format(line_count, max_line_count)
             return [RuleViolation(self.id, message, line_nr=1)]
 
 class SignedOffBy(CommitRule):
@@ -72,14 +72,14 @@ class SignedOffBy(CommitRule):
                     return [RuleViolation(self.id, "Signed-off-by: must have a full name", line_nr=1)]
                 else:
                     return
-        return [RuleViolation(self.id, "Body does not contain a 'Signed-off-by:' line", line_nr=1)]
+        return [RuleViolation(self.id, "Commit message does not contain a 'Signed-off-by:' line", line_nr=1)]
 
 class TitleMaxLengthRevert(LineRule):
     name = "title-max-length-no-revert"
     id = "UC5"
     target = CommitMessageTitle
-    options_spec = [IntOption('line-length', 72, "Max line length")]
-    violation_message = "Title exceeds max length ({0}>{1})"
+    options_spec = [IntOption('line-length', 75, "Max line length")]
+    violation_message = "Commit title exceeds max length ({0}>{1})"
 
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
@@ -95,7 +95,7 @@ class TitleStartsWithSubsystem(LineRule):
     def validate(self, title, _commit):
         regex = self.options['regex'].value
         pattern = re.compile(regex, re.UNICODE)
-        violation_message = "Title does not follow [subsystem]: [subject] (and should not start with literal subsys:)"
+        violation_message = "Commit title does not follow [subsystem]: [subject] (and should not start with literal subsys:)"
         if not pattern.search(title):
             return [RuleViolation(self.id, violation_message, title)]
 
@@ -103,8 +103,8 @@ class MaxLineLengthExceptions(LineRule):
     name = "max-line-length-with-exceptions"
     id = "UC4"
     target = CommitMessageBody
-    options_spec = [IntOption('line-length', 80, "Max line length")]
-    violation_message = "Line exceeds max length ({0}>{1})"
+    options_spec = [IntOption('line-length', 75, "Max line length")]
+    violation_message = "Commit message body line exceeds max length ({0}>{1})"
 
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
@@ -128,5 +128,5 @@ class BodyContainsBlockedTags(LineRule):
         flags = re.IGNORECASE
         for tag in self.tags:
             if re.search(rf"^\s*{tag}:", line, flags=flags):
-                return [RuleViolation(self.id, f"Body contains a blocked tag: {tag}")]
+                return [RuleViolation(self.id, f"Commit message contains a blocked tag: {tag}")]
         return

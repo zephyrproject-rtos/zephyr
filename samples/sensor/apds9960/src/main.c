@@ -24,7 +24,7 @@ static void trigger_handler(const struct device *dev,
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	struct sensor_value intensity, pdata;
@@ -33,7 +33,7 @@ void main(void)
 	dev = DEVICE_DT_GET_ONE(avago_apds9960);
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_APDS9960_TRIGGER
@@ -45,7 +45,7 @@ void main(void)
 	if (sensor_attr_set(dev, SENSOR_CHAN_PROX,
 			    SENSOR_ATTR_UPPER_THRESH, &attr)) {
 		printk("Could not set threshold\n");
-		return;
+		return 0;
 	}
 
 	struct sensor_trigger trig = {
@@ -55,7 +55,7 @@ void main(void)
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 		printk("Could not set trigger\n");
-		return;
+		return 0;
 	}
 #endif
 

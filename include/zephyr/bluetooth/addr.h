@@ -10,9 +10,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ADDR_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ADDR_H_
 
+#include <stdint.h>
 #include <string.h>
+
 #include <zephyr/sys/printk.h>
-#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +80,16 @@ extern const bt_addr_le_t bt_addr_le_none;
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 {
 	return memcmp(a, b, sizeof(*a));
+}
+
+/** @brief Determine equality of two Bluetooth device addresses.
+ *
+ *  @retval #true if the two addresses are equal
+ *  @retval #false otherwise
+ */
+static inline bool bt_addr_eq(const bt_addr_t *a, const bt_addr_t *b)
+{
+	return bt_addr_cmp(a, b) == 0;
 }
 
 /** @brief Compare Bluetooth LE device addresses.
@@ -261,7 +272,8 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
  *  @param[in]  str   The string representation of a Bluetooth address.
  *  @param[out] addr  Address of buffer to store the Bluetooth address
  *
- *  @return Zero on success or (negative) error code otherwise.
+ *  @retval 0 Success. The parsed address is stored in @p addr.
+ *  @return -EINVAL Invalid address string. @p str is not a well-formed Bluetooth address.
  */
 int bt_addr_from_str(const char *str, bt_addr_t *addr);
 

@@ -59,6 +59,23 @@ these references:
 - `MIMXRT1020-EVK User Guide`_
 - `MIMXRT1020-EVK Design Files`_
 
+External Memory
+===============
+
+This platform has the following external memories:
+
++----------------+------------+-------------------------------------+
+| Device         | Controller | Status                              |
++================+============+=====================================+
+| MT48LC16M16A2P | SEMC       | Enabled via device configuration    |
+|                |            | data block, which sets up SEMC at   |
+|                |            | boot time                           |
++----------------+------------+-------------------------------------+
+| IS25LP064A     | FLEXSPI    | Enabled via flash configurationn    |
+|                |            | block, which sets up FLEXSPI at     |
+|                |            | boot time                           |
++----------------+------------+-------------------------------------+
+
 Supported Features
 ==================
 
@@ -183,8 +200,14 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1020 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1020 SoC is configured to use SysTick as the system clock source,
+running at 500MHz.
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
+
 
 Serial Port
 ===========

@@ -27,13 +27,13 @@ description: |
 
 compatible: "nordic,nrf-twis"
 
-include: nordic,nrf-twi-common.yaml
+include: ["nordic,nrf-twi-common.yaml", "memory-region.yaml"]
 
 properties:
-    address-0:
-      type: int
-      description: TWI slave address 0
+  address-0:
+    type: int
+    description: TWI slave address 0
 
-    address-1:
-      type: int
-      description: TWI slave address 1
+  address-1:
+    type: int
+    description: TWI slave address 1

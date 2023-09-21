@@ -133,6 +133,25 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
  * by QMSPI driver.
  * Use SAF hardware default TAG map.
  */
+#ifdef CONFIG_ESPI_SAF_XEC_V2
+static const struct espi_saf_cfg saf_cfg1 = {
+	.nflash_devices = 1U,
+	.hwcfg = {
+		.version = 2U, /* TODO */
+		.flags = 0U, /* TODO */
+		.qmspi_cpha = 0U, /* TODO */
+		.qmspi_cs_timing = 0U, /* TODO */
+		.flash_pd_timeout = 0U, /* TODO */
+		.flash_pd_min_interval = 0U, /* TODO */
+		.generic_descr = {
+			MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
+			MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15
+		},
+		.tag_map = { 0U, 0U, 0U }
+	},
+	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128
+};
+#else
 static const struct espi_saf_cfg saf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {
@@ -148,6 +167,7 @@ static const struct espi_saf_cfg saf_cfg1 = {
 	},
 	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128
 };
+#endif
 
 /*
  * Example for SAF driver set protection regions API.
@@ -219,7 +239,10 @@ int spi_saf_init(void)
 	 */
 	jedec_id = 0U;
 	spi_cfg.slave = 0;
-	spi_cfg.cs = NULL;
+	spi_cfg.cs.delay = 0;
+	spi_cfg.cs.gpio.pin = 0;
+	spi_cfg.cs.gpio.dt_flags = 0;
+	spi_cfg.cs.gpio.port = NULL;
 
 	txb.buf = &safbuf;
 	txb.len = 1U;
@@ -1202,11 +1225,11 @@ int espi_test(void)
 	k_sleep(K_SECONDS(1));
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-	if (!device_is_ready(pwrgd_gpio.port)) {
+	if (!gpio_is_ready_dt(&pwrgd_gpio)) {
 		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
 		return -ENODEV;
 	}
-	if (!device_is_ready(rsm_gpio.port)) {
+	if (!gpio_is_ready_dt(&rsm_gpio)) {
 		LOG_ERR("%s: device not ready.", rsm_gpio.port->name);
 		return -ENODEV;
 	}
@@ -1371,7 +1394,8 @@ int espi_test(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	espi_test();
+	return 0;
 }

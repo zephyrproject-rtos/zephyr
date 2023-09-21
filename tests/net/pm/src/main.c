@@ -83,13 +83,6 @@ static void fake_dev_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 }
 
-int fake_dev_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 struct fake_dev_context fake_dev_context_data;
 
 static struct dummy_api fake_dev_if_api = {
@@ -103,7 +96,7 @@ static struct dummy_api fake_dev_if_api = {
 PM_DEVICE_DEFINE(fake_dev, fake_dev_pm_action);
 
 NET_DEVICE_INIT(fake_dev, "fake_dev",
-		fake_dev_init, PM_DEVICE_GET(fake_dev),
+		NULL, PM_DEVICE_GET(fake_dev),
 		&fake_dev_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_dev_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);

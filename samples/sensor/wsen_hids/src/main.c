@@ -46,13 +46,13 @@ static void hids_drdy_interrupt_handler(const struct device *dev, const struct s
 	process_sample(dev);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET_ONE(we_wsen_hids);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	LOG_INF("HIDS device initialized.");
@@ -64,7 +64,7 @@ void main(void)
 		};
 		if (sensor_trigger_set(dev, &trig, hids_drdy_interrupt_handler) < 0) {
 			LOG_ERR("Failed to configure trigger.");
-			return;
+			return 0;
 		}
 	}
 
@@ -74,4 +74,5 @@ void main(void)
 	}
 
 	k_sleep(K_FOREVER);
+	return 0;
 }

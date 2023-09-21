@@ -21,6 +21,9 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#if defined(CONFIG_RESET)
+#include <zephyr/drivers/reset.h>
+#endif
 
 #include <errno.h>
 #include <zephyr/sys/sys_io.h>
@@ -461,17 +464,22 @@ static int i2c_dw_transfer(const struct device *dev,
 		return 0;
 	}
 
+	ret = k_mutex_lock(&dw->bus_mutex, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* First step, check if there is current activity */
 	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
-		return -EIO;
+		ret = -EBUSY;
+		goto error;
 	}
 
 	dw->state |= I2C_DW_BUSY;
 
 	ret = i2c_dw_setup(dev, slave_address);
 	if (ret) {
-		dw->state = I2C_DW_STATE_READY;
-		return ret;
+		goto error;
 	}
 
 	/* Enable controller */
@@ -551,7 +559,9 @@ static int i2c_dw_transfer(const struct device *dev,
 
 	pm_device_busy_clear(dev);
 
+error:
 	dw->state = I2C_DW_STATE_READY;
+	k_mutex_unlock(&dw->bus_mutex);
 
 	return ret;
 }
@@ -840,6 +850,15 @@ static int i2c_dw_initialize(const struct device *dev)
 	union ic_con_register ic_con;
 	int ret = 0;
 
+#if defined(CONFIG_RESET)
+	if (rom->reset.dev) {
+		ret = reset_line_toggle_dt(&rom->reset);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
@@ -867,7 +886,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+	k_mutex_init(&dw->bus_mutex);
+
 	uint32_t reg_base = get_regs(dev);
+	clear_bit_enable_en(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
@@ -910,6 +932,14 @@ static int i2c_dw_initialize(const struct device *dev)
 #else
 #define PINCTRL_DW_DEFINE(n)
 #define PINCTRL_DW_CONFIG(n)
+#endif
+
+#if defined(CONFIG_RESET)
+#define RESET_DW_CONFIG(n)                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),                          \
+		   (.reset = RESET_DT_SPEC_INST_GET(n),))
+#else
+#define RESET_DW_CONFIG(n)
 #endif
 
 #define I2C_DW_INIT_PCIE0(n)
@@ -975,6 +1005,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n)                                        \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
+		RESET_DW_CONFIG(n)                                            \
 		PINCTRL_DW_CONFIG(n)                                          \
 		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \

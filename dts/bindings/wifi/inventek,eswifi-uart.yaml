@@ -9,9 +9,9 @@ compatible: "inventek,eswifi-uart"
 include: uart-device.yaml
 
 properties:
-    resetn-gpios:
-      type: phandle-array
-      required: true
+  resetn-gpios:
+    type: phandle-array
+    required: true
 
-    wakeup-gpios:
-      type: phandle-array
+  wakeup-gpios:
+    type: phandle-array

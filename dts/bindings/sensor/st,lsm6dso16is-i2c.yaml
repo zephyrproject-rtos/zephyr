@@ -1,0 +1,10 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM6DSO16IS 6-axis IMU (Inertial Measurement Unit) sensor
+    accessed through I2C bus
+
+compatible: "st,lsm6dso16is"
+
+include: ["i2c-device.yaml", "st,lsm6dso16is-common.yaml"]

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g081Xb.dtsi>
 #include <st/g0/stm32g081rbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STM32G081B EVAL board";
@@ -44,22 +45,27 @@
 		joy_sel: button0 {
 			label = "JOY_SEL";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joy_left: button1 {
 			label = "JOY_LEFT";
 			gpios = <&gpioc 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joy_down: button2 {
 			label = "JOY_DOWN";
 			gpios = <&gpioc 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joy_right: button3 {
 			label = "JOY_RIGHT";
 			gpios = <&gpioc 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 		joy_up: button4 {
 			label = "JOY_UP";
 			gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 
@@ -74,6 +80,8 @@
 		sw3 = &joy_right;
 		sw4 = &joy_up;
 		watchdog0 = &iwdg;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -105,9 +113,26 @@
 	status = "okay";
 };
 
+&tim15_ch1_pc1 {
+	slew-rate = "very-high-speed";
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&timers15 {
+	status = "okay";
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc1>;
+		pinctrl-names = "default";
+	};
+};
+
 &adc1 {
-	pinctrl-0 = <&adc1_in3_pa3>;
+	pinctrl-0 = <&adc1_in3_pa3 &adc1_in9_pb1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 
 	#address-cells = <1>;
@@ -121,6 +146,46 @@
 		zephyr,resolution = <12>;
 		zephyr,vref-mv = <3300>;
 	};
+
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 9 <--> 18 MHz.
+	 *
+	 *          +-------+ @ 16 MHz +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 16 MHz / 600 kHz = 26.67
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - uSec
+	 *
+	 * hbit_clk = HSI_clk / 27 = 592.6 kHz = 1.687 uSec period
+	 * tTransitionWindow = 1.687 uS * 8 = 13.5 uS
+	 * tInterFrameGap = 1.687 uS * 17 = 28.68 uS
+	 */
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
+	pinctrl-names = "default";
 };
 
 &ucpd2 {
@@ -155,5 +220,13 @@
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

@@ -29,6 +29,25 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,apollo_lake";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,apollo_lake";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+	};
 };
 
 &hpet {

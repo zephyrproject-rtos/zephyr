@@ -11,7 +11,7 @@ compatible: "nxp,flexio"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    pinctrl-0:
-      required: true
-    pinctrl-names:
-      required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true

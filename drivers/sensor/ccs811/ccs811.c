@@ -437,7 +437,7 @@ static int ccs811_init(const struct device *dev)
 	}
 
 	if (config->wake_gpio.port) {
-		if (!device_is_ready(config->wake_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->wake_gpio)) {
 			LOG_ERR("GPIO device not ready");
 			return -ENODEV;
 		}
@@ -454,7 +454,7 @@ static int ccs811_init(const struct device *dev)
 	}
 
 	if (config->reset_gpio.port) {
-		if (!device_is_ready(config->reset_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->reset_gpio)) {
 			LOG_ERR("GPIO device not ready");
 			return -ENODEV;
 		}
@@ -465,7 +465,7 @@ static int ccs811_init(const struct device *dev)
 	}
 
 	if (config->irq_gpio.port) {
-		if (!device_is_ready(config->irq_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->irq_gpio)) {
 			LOG_ERR("GPIO device not ready");
 			return -ENODEV;
 		}

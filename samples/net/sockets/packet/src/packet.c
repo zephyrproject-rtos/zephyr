@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 
 #define STACK_SIZE 1024
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(8)
@@ -34,7 +34,7 @@ struct packet_data {
 	char recv_buffer[RECV_BUFFER_SIZE];
 };
 
-static struct packet_data packet;
+static struct packet_data sock_packet;
 static bool finish;
 static K_SEM_DEFINE(iface_up, 0, 1);
 
@@ -148,13 +148,13 @@ static void recv_packet(void)
 		.tv_usec = 0,
 	};
 
-	ret = start_socket(&packet.recv_sock);
+	ret = start_socket(&sock_packet.recv_sock);
 	if (ret < 0) {
 		quit();
 		return;
 	}
 
-	ret = setsockopt(packet.recv_sock, SOL_SOCKET, SO_RCVTIMEO,
+	ret = setsockopt(sock_packet.recv_sock, SOL_SOCKET, SO_RCVTIMEO,
 			 &timeo_optval, sizeof(timeo_optval));
 	if (ret < 0) {
 		quit();
@@ -162,7 +162,7 @@ static void recv_packet(void)
 	}
 
 	while (ret == 0) {
-		ret = recv_packet_socket(&packet);
+		ret = recv_packet_socket(&sock_packet);
 		if (ret < 0) {
 			quit();
 			return;
@@ -235,14 +235,14 @@ static void send_packet(void)
 {
 	int ret;
 
-	ret = start_socket(&packet.send_sock);
+	ret = start_socket(&sock_packet.send_sock);
 	if (ret < 0) {
 		quit();
 		return;
 	}
 
 	while (ret == 0) {
-		ret = send_packet_socket(&packet);
+		ret = send_packet_socket(&sock_packet);
 		if (ret < 0) {
 			quit();
 			return;
@@ -277,7 +277,7 @@ static void wait_for_interface(void)
 	net_mgmt_del_event_callback(&iface_up_cb);
 }
 
-void main(void)
+int main(void)
 {
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
@@ -297,11 +297,12 @@ void main(void)
 	k_thread_join(receiver_thread_id, K_FOREVER);
 	k_thread_join(sender_thread_id, K_FOREVER);
 
-	if (packet.recv_sock >= 0) {
-		(void)close(packet.recv_sock);
+	if (sock_packet.recv_sock >= 0) {
+		(void)close(sock_packet.recv_sock);
 	}
 
-	if (packet.send_sock >= 0) {
-		(void)close(packet.send_sock);
+	if (sock_packet.send_sock >= 0) {
+		(void)close(sock_packet.send_sock);
 	}
+	return 0;
 }

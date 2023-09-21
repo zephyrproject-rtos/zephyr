@@ -9,6 +9,10 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+#include <zephyr/drivers/gpio.h>
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 typedef void (*irq_config_func_t)(const struct device *port);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
@@ -29,7 +33,12 @@ struct i2c_stm32_config {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	irq_config_func_t irq_config_func;
 #endif
-	struct stm32_pclken pclken;
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+	struct gpio_dt_spec scl;
+	struct gpio_dt_spec sda;
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
@@ -71,12 +80,9 @@ struct i2c_stm32_data {
 #endif
 };
 
-int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
-			    uint8_t *flg,
-			    uint16_t sadr);
-int32_t stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
-			   uint8_t *flg,
-			   uint16_t sadr);
+int32_t stm32_i2c_transaction(const struct device *dev,
+			    struct i2c_msg msg, uint8_t *next_msg_flags,
+			    uint16_t periph);
 int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 

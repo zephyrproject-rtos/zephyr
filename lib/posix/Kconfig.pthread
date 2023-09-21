@@ -1,0 +1,30 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+TYPE = PTHREAD
+type = pthread_t
+type-function = pthread_create
+source "lib/posix/Kconfig.template.pooled_ipc_type"
+
+if PTHREAD
+
+config PTHREAD_RECYCLER_DELAY_MS
+	int "Delay for reclaiming dynamic pthread stacks (ms)"
+	default 100
+	help
+	  Prior to a POSIX thread terminating via k_thread_abort(), scheduled
+	  work is added to the system workqueue (SWQ) so that any resources
+	  allocated by the thread (e.g. thread stack from a pool or the heap)
+	  can be released back to the system. Because resources are also freed
+	  on calls to pthread_create() there is no need to worry about resource
+	  starvation.
+
+	  This option sets the number of milliseconds by which to defer
+	  scheduled work.
+
+	  Note: this option should be considered temporary and will likely be
+	  removed once a more synchronous solution is available.
+
+endif

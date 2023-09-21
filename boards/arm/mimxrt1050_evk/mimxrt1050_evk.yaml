@@ -26,6 +26,5 @@ supported:
   - sdhc
   - spi
   - usb_device
-  - kscan:touch
   - watchdog
   - adc

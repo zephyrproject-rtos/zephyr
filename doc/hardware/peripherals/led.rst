@@ -1,7 +1,7 @@
 .. _led_api:
 
-LED
-###
+Light-Emitting Diode (LED)
+##########################
 
 Overview
 ********

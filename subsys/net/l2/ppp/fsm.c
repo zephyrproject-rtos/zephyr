@@ -391,6 +391,10 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		iface = ppp_fsm_iface(fsm);
 	}
 
+	if (!net_if_is_carrier_ok(iface)) {
+		return -ENETDOWN;
+	}
+
 	if (fsm) {
 		protocol = fsm->protocol;
 	}

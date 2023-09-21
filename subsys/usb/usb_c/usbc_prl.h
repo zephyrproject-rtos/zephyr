@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 The Chromium OS Authors
+ * Copyright (c) 2023 The Chromium OS Authors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/smf.h>
 
-#include "usbc_pe.h"
+#include "usbc_pe_common_internal.h"
 #include "usbc_timer.h"
 
 /**
@@ -63,6 +63,8 @@ struct protocol_layer_tx_t {
 
 	/** tTxTimeout timer */
 	struct usbc_timer_t pd_t_tx_timeout;
+	/** tSinkTx timer */
+	struct usbc_timer_t pd_t_sink_tx;
 };
 
 /**
@@ -96,6 +98,13 @@ void prl_subsys_init(const struct device *dev);
  * @param dev Pointer to the device structure for the driver instance
  */
 void prl_start(const struct device *dev);
+
+/**
+ * @brief Inform the PRL that the first message in an AMS is being sent
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ */
+void prl_first_msg_notificaiton(const struct device *dev);
 
 /**
  * @brief Suspends the PRL Layer state machine. This is only called from the
@@ -134,8 +143,7 @@ void prl_hard_reset_complete(const struct device *dev);
  * @param type SOP* packet sent from port partner
  * @param rev Revision sent from the port partner
  */
-void prl_set_rev(const struct device *dev,
-		 const enum pd_packet_type type,
+void prl_set_rev(const struct device *dev, const enum pd_packet_type type,
 		 const enum pd_rev_type rev);
 
 /**
@@ -146,8 +154,7 @@ void prl_set_rev(const struct device *dev,
  *
  * @retval revsion associated with the packet type
  */
-enum pd_rev_type prl_get_rev(const struct device *dev,
-			     const enum pd_packet_type type);
+enum pd_rev_type prl_get_rev(const struct device *dev, const enum pd_packet_type type);
 
 /**
  * @brief Instructs the Protocol Layer to send a Power Delivery control message
@@ -156,8 +163,7 @@ enum pd_rev_type prl_get_rev(const struct device *dev,
  * @param type The port partner to send this message to
  * @param msg The control message to send
  */
-void prl_send_ctrl_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_ctrl_msg_type msg);
 
 /**
@@ -167,8 +173,7 @@ void prl_send_ctrl_msg(const struct device *dev,
  * @param type The port partner to send this message to
  * @param msg The data message to send
  */
-void prl_send_data_msg(const struct device *dev,
-		       const enum pd_packet_type type,
+void prl_send_data_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_data_msg_type msg);
 
 /**

@@ -73,7 +73,70 @@ With this approach we can:
 * Transfer the application to any board which provides the required features
   (e.g. I2C, enough GPIOs), by adding Kconfig and devicetree fragments.
 
-Available emulators
+Creating a Device Driver Emulator
+=================================
+
+The emulator subsystem is modeled on the :ref:`device_model_api`.  You create
+an emulator instance using one of the :c:func:`EMUL_DT_DEFINE()` or
+:c:func:`EMUL_DT_INST_DEFINE()` APIs.
+
+Emulators for peripheral devices reuse the same devicetree node as the real
+device driver. This means that your emulator defines `DT_DRV_COMPAT` using the
+same ``compat`` value from the real driver.
+
+.. code-block:: C
+
+  /* From drivers/sensor/bm160/bm160.c */
+  #define DT_DRV_COMPAT bosch_bmi160
+
+  /* From subsys/emul/emul_bmi160.c */
+  #define DT_DRV_COMPAT bosch_bmi160
+
+The ``EMUL_DT_DEFINE()`` function accepts two API types:
+
+  #. ``bus_api`` - This points to the API for the upstream bus that the emulator
+     connects to. The ``bus_api`` parameter is required.  The supported
+     emulated bus types include I2C, SPI, and eSPI.
+  #. ``_backend_api`` - This points to the device-class specific backend API for
+     the emulator. The ``_backend_api`` parameter is optional.
+
+The diagram below demonstrates the logical organization of the ``bus_api`` and
+``_backend_api`` using the BC1.2 charging detector driver as the model
+device-class.
+
+.. figure:: img/device_class_emulator.png
+   :align: center
+   :alt: Device class example, demonstrating BC1.2 charging detectors.
+
+The real code is shown in green, while the emulator code is shown in yellow.
+
+The ``bus_api`` connects the BC1.2 emulators to the ``native_posix`` I2C
+controller. The real BC1.2 drivers are unchanged and operate exactly as if there
+was a physical I2C controller present in the system. The ``native_posix`` I2C
+controller uses the ``bus_api`` to initiate register reads and writes to the
+emulator.
+
+The ``_backend_api`` provides a mechanism for tests to manipulate the emulator
+out of band.  Each device class defines it's own API functions.  The backend API
+functions focus on high-level behavior and do not provide hooks for specific
+emulators.
+
+In the case of the BC1.2 charging detector the backend API provides functions
+to simulate connecting and disconnecting a charger to the emulated BC1.2 device.
+Each emulator is responsible for updating the correct vendor specific registers
+and potentially signalling an interrupt.
+
+Example test flow:
+
+  #. Test registers BC1.2 detection callback using the Zephyr BC1.2 driver API.
+  #. Test connects a charger using the BC1.2 emulator backend.
+  #. Test verifies B1.2 detection callback invoked with correct charger type.
+  #. Test disconnects a charger using the BC1.2 emulator backend.
+
+With this architecture, the same test can be used will all supported drivers in
+the same driver class.
+
+Available Emulators
 ===================
 
 Zephyr includes the following emulators:
@@ -118,3 +181,8 @@ Here are some examples present in Zephyr:
       :app: tests/drivers/eeprom
       :board: native_posix
       :goals: build
+
+API Reference
+*************
+
+.. doxygengroup:: io_emulators

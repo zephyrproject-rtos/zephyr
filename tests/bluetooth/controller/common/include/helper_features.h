@@ -177,7 +177,7 @@
 #define FEAT_RPK_VALID 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 #define FEAT_ISO_CENTRAL 0x10000000
 #else
 #define FEAT_ISO_CENTRAL 0x00

@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2023 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description:
+  Microchip MPFS I2C Controller Device Tree Bindings
+
+compatible: "microchip,mpfs-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    description: |
+      Desired I2C bus clock frequency in Hz. As only Standard and Fast
+      modes are supported, possible values are 100000 and 400000.
+    enum: [100000, 400000]

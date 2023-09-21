@@ -23,13 +23,14 @@
  *
  * @return 0
  */
-static int st_stm32_common_config(const struct device *dev)
+static int st_stm32_common_config(void)
 {
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Enable SWO trace asynchronous mode */
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_DBGMCU_EnableTraceClock();
-#else
+#endif
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_DBGMCU_SetTracePinAssignment(LL_DBGMCU_TRACE_ASYNCH);
 #endif
 #endif /* CONFIG_LOG_BACKEND_SWO */
@@ -42,6 +43,8 @@ static int st_stm32_common_config(const struct device *dev)
 	 */
 #if defined(__HAL_RCC_DMA1_CLK_ENABLE)
 	__HAL_RCC_DMA1_CLK_ENABLE();
+#elif defined(__HAL_RCC_GPDMA1_CLK_ENABLE)
+	__HAL_RCC_GPDMA1_CLK_ENABLE();
 #endif /* __HAL_RCC_DMA1_CLK_ENABLE */
 
 	/* On some STM32 boards, for unclear reason,

@@ -1,0 +1,14 @@
+tests:
+  sample.pytest.shell:
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    min_ram: 40
+    harness: pytest
+    extra_configs:
+      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+    integration_platforms:
+      - native_posix
+      - qemu_cortex_m3
+    tags:
+      - test_framework
+      - pytest
+      - shell

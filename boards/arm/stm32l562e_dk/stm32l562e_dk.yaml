@@ -10,6 +10,7 @@ supported:
   - i2c
   - lptim
   - pwm
+  - counter
   - watchdog
   - dac
   - adc

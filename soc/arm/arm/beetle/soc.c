@@ -17,8 +17,6 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-#include <zephyr/arch/cpu.h>
-
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -30,23 +28,10 @@
  *
  * @return 0
  */
-static int arm_beetle_init(const struct device *arg)
+static int arm_beetle_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
 	/* Setup various clocks and wakeup sources */
 	soc_power_init();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

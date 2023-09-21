@@ -5,7 +5,7 @@
 #
 
 identifier: cy8ckit_062_wifi_bt_m0
-name: Cypress PSoC6 WiFi-BT Pioneer Kit
+name: Cypress PSoC6 WiFi-BT Pioneer Kit (M0)
 type: mcu
 arch: arm
 ram: 288

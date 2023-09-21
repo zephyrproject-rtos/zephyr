@@ -1,0 +1,11 @@
+identifier: qemu_xtensa_dc233c
+name: QEMU Emulation for Xtensa (dc233c core)
+type: qemu
+simulation: qemu
+arch: xtensa
+toolchain:
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

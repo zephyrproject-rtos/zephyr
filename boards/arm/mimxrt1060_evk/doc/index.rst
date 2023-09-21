@@ -79,6 +79,24 @@ these references:
 - `MIMXRT1060-EVK Website`_
 - `MIMXRT1060-EVK User Guide`_
 - `MIMXRT1060-EVK Schematics`_
+- `MIMXRT1060-EVK Debug Firmware`_
+
+External Memory
+===============
+
+This platform has the following external memories:
+
++--------------------+------------+-------------------------------------+
+| Device             | Controller | Status                              |
++====================+============+=====================================+
+| IS25WP064AJBLE     | SEMC       | Enabled via device configuration    |
+|                    |            | data block, which sets up SEMC at   |
+|                    |            | boot time                           |
++--------------------+------------+-------------------------------------+
+| IS42S16160J        | FLEXSPI    | Enabled via flash configurationn    |
+|                    |            | block, which sets up FLEXSPI at     |
+|                    |            | boot time.                          |
++--------------------+------------+-------------------------------------+
 
 Supported Features
 ==================
@@ -284,8 +302,14 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1060 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1060 SoC is configured to use SysTick as the system clock source,
+running at 600MHz.
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
+
 
 Serial Port
 ===========
@@ -308,6 +332,11 @@ configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
 however the :ref:`pyocd-debug-host-tools` do not yet support programming the
 external flashes on this board so you must reconfigure the board for one of the
 following debug probes instead.
+
+.. _Using LinkServer:
+
+        1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+        2. To update the debug firmware, please follow the instructions on `MIMXRT1060-EVK Debug Firmware`
 
 .. _Using J-Link RT1060:
 
@@ -422,6 +451,9 @@ connected to the EVK properly. See :ref:`Using J-Link RT1060` for more details.
 
 .. _MIMXRT1060-EVK User Guide:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT10601064EKBHUG
+
+.. _MIMXRT1060-EVK Debug Firmware:
+   https://www.nxp.com/docs/en/application-note/AN13206.pdf
 
 .. _MIMXRT1060-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1060-EVK-DESIGNFILE-A3

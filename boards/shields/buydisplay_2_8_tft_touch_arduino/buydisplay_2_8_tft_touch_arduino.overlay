@@ -10,6 +10,14 @@
 	chosen {
 		zephyr,display = &ili9340_buydisplay_2_8_tft_touch_arduino;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336_buydisplay_2_8_tft_touch_arduino>;
+		swap-xy;
+		invert-x;
+		invert-y;
+	};
 };
 
 &arduino_spi {

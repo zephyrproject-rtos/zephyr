@@ -42,7 +42,7 @@ BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 #define GMAC_ACTIVE_PRIORITY_QUEUE_NUM  (GMAC_ACTIVE_QUEUE_NUM - 1)
 
 /** RX descriptors count for main queue */
-#define MAIN_QUEUE_RX_DESC_COUNT        CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT
+#define MAIN_QUEUE_RX_DESC_COUNT        (CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT + 1)
 /** TX descriptors count for main queue */
 #define MAIN_QUEUE_TX_DESC_COUNT        (CONFIG_NET_BUF_TX_COUNT + 1)
 
@@ -261,10 +261,10 @@ struct gmac_queue {
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
-	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SOC_FAMILY_SAM
-	uint32_t periph_id;
+	const struct atmel_sam_pmc_config clock_cfg;
 #endif
+	const struct pinctrl_dev_config *pcfg;
 	void (*config_func)(void);
 	const struct device *phy_dev;
 };

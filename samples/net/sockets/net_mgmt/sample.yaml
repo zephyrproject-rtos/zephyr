@@ -1,10 +1,13 @@
 common:
   harness: net
   depends_on: netif
-  tags: net socket mgmt
+  min_flash: 210
+  tags:
+    - net
+    - socket
+    - mgmt
 sample:
-  description: Test network management socket
-    sample
+  description: Test network management socket sample
   name: net_mgmt socket
 tests:
   sample.net.sockets.net_mgmt.kernelmode:

@@ -1,0 +1,15 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The overlay file should be used to enable any
+ * dts nodes required by this shell application for this
+ * board.
+ */
+
+&sip_smc {
+	status = "okay";
+	zephyr,num-clients = <2>;
+};

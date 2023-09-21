@@ -1,0 +1,18 @@
+identifier: efr32bg27_brd2602a
+name: EFR32BG27_BRD2602A
+type: mcu
+arch: arm
+ram: 64
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f401Xe.dtsi>
 #include <st/f4/stm32f401c(d-e)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "WeAct Studio Black Pill V3.0 Board";
@@ -32,12 +33,15 @@
 		user_button: button {
 			label = "KEY";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -121,6 +125,8 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <2>;
 	status = "okay";
 };
 
@@ -148,4 +154,12 @@ zephyr_udc0: &usbotg_fs {
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

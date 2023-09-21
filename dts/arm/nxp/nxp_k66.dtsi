@@ -24,7 +24,7 @@
 		};
 
 		flexcan1: can@400a4000 {
-			compatible = "nxp,kinetis-flexcan";
+			compatible = "nxp,flexcan";
 			reg = <0x400a4000 0x1000>;
 			interrupts = <94 0>, <95 0>, <96 0>, <97 0>, <98 0>, <99 0>;
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning",

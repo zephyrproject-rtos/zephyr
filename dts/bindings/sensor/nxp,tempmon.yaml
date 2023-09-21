@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Centralp
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP on-die temperature monitor
+
+compatible: "nxp,tempmon"
+
+include: sensor-device.yaml

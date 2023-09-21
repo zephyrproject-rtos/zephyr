@@ -92,7 +92,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread */
-#ifndef CONFIG_COVERAGE
+#ifndef CONFIG_COVERAGE_GCOV
 	zassert_true(t >= expected_slice_min,
 		     "timeslice too small, expected %u got %u",
 		     expected_slice_min, t);
@@ -101,7 +101,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		     expected_slice_max, t);
 #else
 	(void)t;
-#endif /* CONFIG_COVERAGE */
+#endif /* CONFIG_COVERAGE_GCOV */
 
 	/* Keep the current thread busy for more than one slice, even though,
 	 * when timeslice used up the next thread should be scheduled in.
@@ -177,9 +177,7 @@ ZTEST(threads_scheduling, test_slice_reset)
 		/* current thread (ztest native) consumed a half timeslice */
 		t32 = k_cycle_get_32();
 		while (k_cycle_get_32() - t32 < half_slice_cyc) {
-#if defined(CONFIG_ARCH_POSIX)
-			k_busy_wait(50);
-#endif
+			Z_SPIN_DELAY(50);
 		}
 
 		/* relinquish CPU and wait for each thread to complete */

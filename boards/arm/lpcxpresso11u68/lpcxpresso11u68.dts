@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_lpc11u68.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "lpcxpresso11u68-pinctrl.dtsi"
 
@@ -34,10 +35,12 @@
 		isp_button: button_0 {
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			label = "ISP enable button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		wake_up_button: button_1 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Wake-up button";
+			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
 	};
 

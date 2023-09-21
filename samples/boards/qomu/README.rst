@@ -9,7 +9,7 @@ usbserial driver.
 Requirements
 ************
 * Zephyr RTOS with printk enabled
-* `QuickLogic Qomu board <https://github.com/QuickLogic-Corp/qomu-feather-dev-board>`_
+* `QuickLogic Qomu board <https://www.quicklogic.com/products/eos-s3/quickfeather-development-kit/>`_
 
 Building
 ********

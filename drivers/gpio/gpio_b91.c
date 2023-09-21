@@ -78,7 +78,7 @@ struct gpio_b91_t {
 struct gpio_b91_config {
 	struct gpio_driver_config common;
 	uint32_t gpio_base;
-	uint8_t irq_num;
+	uint32_t irq_num;
 	uint8_t irq_priority;
 	void (*pirq_connect)(void);
 };

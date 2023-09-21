@@ -14,10 +14,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
+#include <hal/nrf_power.h>
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
@@ -33,23 +33,10 @@
 #endif
 #include <soc_secure.h>
 
+#include <cmsis_core.h>
+
 #define PIN_XL1 0
 #define PIN_XL2 1
-
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
-#include <system_nrf5340_application.h>
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
-#include <system_nrf5340_network.h>
-#else
-#error "Unknown nRF53 SoC."
-#endif
 
 #if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
 #define GPIOS_PSEL_BY_IDX(node_id, prop, idx) \
@@ -92,14 +79,71 @@ static void enable_ram_retention(void)
 }
 #endif /* CONFIG_PM_S2RAM */
 
-static int nordicsemi_nrf53_init(const struct device *arg)
+#if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND)
+/* This code prevents the CPU from entering sleep again if it already
+ * entered sleep 5 times within last 200 us.
+ */
+static bool nrf53_anomaly_160_check(void)
 {
-	uint32_t key;
+	/* System clock cycles needed to cover 200 us window. */
+	const uint32_t window_cycles =
+		DIV_ROUND_UP(200 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				 1000000);
+	static uint32_t timestamps[5];
+	static bool timestamps_filled;
+	static uint8_t current;
+	uint8_t oldest = (current + 1) % ARRAY_SIZE(timestamps);
+	uint32_t now = k_cycle_get_32();
 
-	ARG_UNUSED(arg);
+	if (timestamps_filled &&
+	    /* + 1 because only fully elapsed cycles need to be counted. */
+	    (now - timestamps[oldest]) < (window_cycles + 1)) {
+		return false;
+	}
 
-	key = irq_lock();
+	/* Check if the CPU actually entered sleep since the last visit here
+	 * (WFE/WFI could return immediately if the wake-up event was already
+	 * registered).
+	 */
+	if (nrf_power_event_check(NRF_POWER, NRF_POWER_EVENT_SLEEPENTER)) {
+		nrf_power_event_clear(NRF_POWER, NRF_POWER_EVENT_SLEEPENTER);
+		/* If so, update the index at which the current timestamp is
+		 * to be stored so that it replaces the oldest one, otherwise
+		 * (when the CPU did not sleep), the recently stored timestamp
+		 * is updated.
+		 */
+		current = oldest;
+		if (current == 0) {
+			timestamps_filled = true;
+		}
+	}
 
+	timestamps[current] = k_cycle_get_32();
+
+	return true;
+}
+
+bool z_arm_on_enter_cpu_idle(void)
+{
+	bool ok_to_sleep = nrf53_anomaly_160_check();
+
+#if (LOG_LEVEL >= LOG_LEVEL_DBG)
+	static bool suppress_message;
+
+	if (ok_to_sleep) {
+		suppress_message = false;
+	} else if (!suppress_message) {
+		LOG_DBG("Anomaly 160 trigger conditions detected.");
+		suppress_message = true;
+	}
+#endif
+
+	return ok_to_sleep;
+}
+#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
+
+static int nordicsemi_nrf53_init(void)
+{
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
 #if !defined(CONFIG_BUILD_WITH_TFM)
 	/* Enable the instruction & data cache.
@@ -134,16 +178,27 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
 	/* This register is only accessible from secure code. */
 	uint32_t xosc32mtrim = soc_secure_read_xosc32mtrim();
+	/* The SLOPE field is in the two's complement form, hence this special
+	 * handling. Ideally, it would result in just one SBFX instruction for
+	 * extracting the slope value, at least gcc is capable of producing such
+	 * output, but since the compiler apparently tries first to optimize
+	 * additions and subtractions, it generates slightly less than optimal
+	 * code.
+	 */
+	uint32_t slope_field = (xosc32mtrim & FICR_XOSC32MTRIM_SLOPE_Msk)
+			       >> FICR_XOSC32MTRIM_SLOPE_Pos;
+	uint32_t slope_mask = FICR_XOSC32MTRIM_SLOPE_Msk
+			      >> FICR_XOSC32MTRIM_SLOPE_Pos;
+	uint32_t slope_sign = (slope_mask - (slope_mask >> 1));
+	int32_t slope = (int32_t)(slope_field ^ slope_sign) - (int32_t)slope_sign;
+	uint32_t offset = (xosc32mtrim & FICR_XOSC32MTRIM_OFFSET_Msk)
+			  >> FICR_XOSC32MTRIM_OFFSET_Pos;
 	/* As specified in the nRF5340 PS:
 	 * CAPVALUE = (((FICR->XOSC32MTRIM.SLOPE+56)*(CAPACITANCE*2-14))
 	 *            +((FICR->XOSC32MTRIM.OFFSET-8)<<4)+32)>>6;
 	 * where CAPACITANCE is the desired capacitor value in pF, holding any
 	 * value between 7.0 pF and 20.0 pF in 0.5 pF steps.
 	 */
-	uint32_t slope = (xosc32mtrim & FICR_XOSC32MTRIM_SLOPE_Msk)
-			 >> FICR_XOSC32MTRIM_SLOPE_Pos;
-	uint32_t offset = (xosc32mtrim & FICR_XOSC32MTRIM_OFFSET_Msk)
-			  >> FICR_XOSC32MTRIM_OFFSET_Pos;
 	uint32_t capvalue =
 		((slope + 56) * (CONFIG_SOC_HFXO_CAP_INT_VALUE_X2 - 14)
 		 + ((offset - 8) << 4) + 32) >> 6;
@@ -177,13 +232,6 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #if defined(CONFIG_PM_S2RAM)
 	enable_ram_retention();
 #endif /* CONFIG_PM_S2RAM */
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
 
 	return 0;
 }

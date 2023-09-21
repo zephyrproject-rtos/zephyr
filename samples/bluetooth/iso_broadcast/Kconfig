@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: ISO Broadcast"
+
+config ISO_PRINT_INTERVAL
+	int "Interval between each packet report"
+	range 1 360000
+	default 1
+	help
+	  Only print the packet report once in a given interval of ISO packets.

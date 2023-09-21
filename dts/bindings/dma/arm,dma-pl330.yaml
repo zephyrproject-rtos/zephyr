@@ -27,14 +27,14 @@ compatible: "arm,dma-pl330"
 include: dma-controller.yaml
 
 properties:
-    reg:
-      required: true
-    microcode:
-      type: array
-      required: true
-      description: microcode's physical memory address
-    "#dma-cells":
-      const: 1
+  reg:
+    required: true
+  microcode:
+    type: array
+    required: true
+    description: microcode's physical memory address
+  "#dma-cells":
+    const: 1
 
 # Parameter syntax
 dma-cells:

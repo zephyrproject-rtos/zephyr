@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_SIGNAL
+	bool "Support for POSIX signal APIs"
+	default y if POSIX_API
+	help
+	  Enable support for POSIX signal APIs.
+
+if POSIX_SIGNAL
+config POSIX_RTSIG_MAX
+	int "Maximum number of realtime signals"
+	default 31
+	help
+	  Define the maximum number of realtime signals (RTSIG_MAX).
+	  The range of realtime signals is [SIGRTMIN .. (SIGRTMIN+RTSIG_MAX)]
+
+config POSIX_SIGNAL_STRING_DESC
+	bool "Use full description for the strsignal API"
+	default y
+	help
+	  Use full description for the strsignal API.
+	  Will use 256 bytes of ROM.
+
+endif

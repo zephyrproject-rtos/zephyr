@@ -10,7 +10,7 @@
 #include <zephyr/init.h>
 
 SHELL_DUMMY_DEFINE(shell_transport_dummy);
-SHELL_DEFINE(shell_dummy, CONFIG_SHELL_PROMPT_DUMMY, &shell_transport_dummy, 1,
+SHELL_DEFINE(shell_dummy, CONFIG_SHELL_PROMPT_DUMMY, &shell_transport_dummy, 256,
 	     0, SHELL_FLAG_OLF_CRLF);
 
 static int init(const struct shell_transport *transport,
@@ -98,12 +98,16 @@ const struct shell_transport_api shell_dummy_transport_api = {
 	.read = read
 };
 
-static int enable_shell_dummy(const struct device *arg)
+static int enable_shell_dummy(void)
 {
-	ARG_UNUSED(arg);
+	bool log_backend = CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL > 0;
+	uint32_t level = (CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_DUMMY_INIT_LOG_LEVEL;
 	static const struct shell_backend_config_flags cfg_flags =
 					SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
-	shell_init(&shell_dummy, NULL, cfg_flags, true, LOG_LEVEL_INF);
+
+	shell_init(&shell_dummy, NULL, cfg_flags, log_backend, level);
+
 	return 0;
 }
 SYS_INIT(enable_shell_dummy, POST_KERNEL, 0);
@@ -113,10 +117,10 @@ const struct shell *shell_backend_dummy_get_ptr(void)
 	return &shell_dummy;
 }
 
-const char *shell_backend_dummy_get_output(const struct shell *shell,
+const char *shell_backend_dummy_get_output(const struct shell *sh,
 					   size_t *sizep)
 {
-	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
 
 	sh_dummy->buf[sh_dummy->len] = '\0';
 	*sizep = sh_dummy->len;
@@ -125,9 +129,9 @@ const char *shell_backend_dummy_get_output(const struct shell *shell,
 	return sh_dummy->buf;
 }
 
-void shell_backend_dummy_clear_output(const struct shell *shell)
+void shell_backend_dummy_clear_output(const struct shell *sh)
 {
-	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
 
 	sh_dummy->buf[0] = '\0';
 	sh_dummy->len = 0;

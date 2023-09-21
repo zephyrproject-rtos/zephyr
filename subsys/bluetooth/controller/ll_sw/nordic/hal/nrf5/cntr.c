@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/dlist.h>
-
 #include <hal/nrf_rtc.h>
 
 #include "hal/cntr.h"
