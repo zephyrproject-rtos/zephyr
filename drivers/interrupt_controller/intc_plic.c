@@ -21,6 +21,14 @@
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
 
+#define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
+/*
+ * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
+ * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
+ * in Linux's SiFive PLIC driver
+ */
+#define PLIC_REG_TRIG_TYPE_OFFSET 0x1080
+
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
 #define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME_U64(0, prio)
 #define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME_U64(0, irq_en)
@@ -29,7 +37,7 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
-#define PLIC_EDGE_TRIG_TYPE (DT_INST_REG_ADDR(0) + DT_INST_PROP(0, riscv_trigger_reg_offset))
+#define PLIC_EDGE_TRIG_TYPE (PLIC_BASE_ADDR(0) + PLIC_REG_TRIG_TYPE_OFFSET)
 #define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
@@ -52,13 +60,10 @@ static int save_irq;
  */
 static int riscv_plic_is_edge_irq(uint32_t irq)
 {
-	if (IS_ENABLED(CONFIG_PLIC_SUPPORTS_EDGE_IRQ)) {
-		volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
+	volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
 
-		trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
-		return *trig & BIT(irq);
-	}
-	return 0;
+	trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
+	return *trig & BIT(irq);
 }
 
 /**

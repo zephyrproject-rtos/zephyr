@@ -10,8 +10,3 @@ common:
     - plic
 tests:
   drivers.interrupt_controller.intc_plic.build: {}
-  drivers.interrupt_controller.intc_plic.edge_interrupt.build:
-    extra_args:
-      DTC_OVERLAY_FILE="./app.edge_interrupt.overlay"
-    extra_configs:
-      - CONFIG_PLIC_SUPPORTS_EDGE_IRQ=y
