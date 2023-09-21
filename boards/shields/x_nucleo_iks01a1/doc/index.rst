@@ -45,7 +45,7 @@ Programming
 ***********
 
 An example on how to use the ``x-nucleo-iks01a1`` shield is available
-in the :ref:`x-nucleo-iks01a1-sample` application documentation
+in the :zephyr:code-sample:`x-nucleo-iks01a1` sample application documentation
 (see :ref:`shields` for more details).
 
 References

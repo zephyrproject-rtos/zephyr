@@ -1,7 +1,8 @@
-.. _x-nucleo-iks01a1-sample:
+.. zephyr:code-sample:: x-nucleo-iks01a1
+   :name: X-NUCLEO-IKS01A1 shield
+   :relevant-api: sensor_interface
 
-X-NUCLEO-IKS01A1: MEMS inertial and environmental multi-sensor shield
-#####################################################################
+   Interact with all the sensors of an X-NUCLEO-IKS01A1 shield.
 
 Overview
 ********

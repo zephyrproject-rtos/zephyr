@@ -82,9 +82,9 @@ Programming
 
 Two samples are provided as examples for ``x-nucleo-iks01a3`` shield:
 
-- :ref:`x-nucleo-iks01a3-std-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks01a3-std` sample application, to be used when the shield is configured
   in Standard Mode
-- :ref:`x-nucleo-iks01a3-shub-sample` application, to be used when the shield is configured
+- :zephyr:code-sample:`x-nucleo-iks01a3-shub` sample application, to be used when the shield is configured
   in SensorHub Mode
 
 See also :ref:`shields` for more details.
