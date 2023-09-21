@@ -81,7 +81,6 @@ class Handler:
 
         self.name = instance.name
         self.instance = instance
-        self.timeout = math.ceil(instance.testsuite.timeout * instance.platform.timeout_multiplier)
         self.sourcedir = instance.testsuite.source_dir
         self.build_dir = instance.build_dir
         self.log = os.path.join(self.build_dir, "handler.log")
@@ -93,6 +92,11 @@ class Handler:
 
         self.args = []
         self.terminated = False
+
+    def get_test_timeout(self):
+        return math.ceil(self.instance.testsuite.timeout *
+                         self.instance.platform.timeout_multiplier *
+                         self.options.timeout_multiplier)
 
     def record(self, harness):
         if harness.recording:
@@ -189,7 +193,7 @@ class BinaryHandler(Handler):
 
         with open(self.log, "wt") as log_out_fp:
             timeout_extended = False
-            timeout_time = time.time() + self.timeout
+            timeout_time = time.time() + self.get_test_timeout()
             while True:
                 this_timeout = timeout_time - time.time()
                 if this_timeout < 0:
@@ -537,7 +541,8 @@ class DeviceHandler(Handler):
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
-                timeout=max(flash_timeout, self.timeout)  # the worst case of no serial input
+                # the worst case of no serial input
+                timeout=max(flash_timeout, self.get_test_timeout())
             )
         except serial.SerialException as e:
             self.instance.status = "failed"
@@ -623,7 +628,7 @@ class DeviceHandler(Handler):
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
-            flash_timeout += self.timeout
+            flash_timeout += self.get_test_timeout()
 
         try:
             ser = self._create_serial_connection(
@@ -683,7 +688,7 @@ class DeviceHandler(Handler):
 
         if not flash_error:
             # Always wait at most the test timeout here after flashing.
-            t.join(self.timeout)
+            t.join(self.get_test_timeout())
         else:
             # When the flash error is due exceptions,
             # twister tell the monitor serial thread
@@ -966,7 +971,7 @@ class QEMUHandler(Handler):
         self._set_qemu_filenames(sysbuild_build_dir)
 
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
-                                       args=(self, self.timeout, self.build_dir,
+                                       args=(self, self.get_test_timeout(), self.build_dir,
                                              self.log_fn, self.fifo_fn,
                                              self.pid_fn, self.results, harness,
                                              self.ignore_unexpected_eof))
@@ -986,7 +991,7 @@ class QEMUHandler(Handler):
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
 
             try:
-                proc.wait(self.timeout)
+                proc.wait(self.get_test_timeout())
             except subprocess.TimeoutExpired:
                 # sometimes QEMU can't handle SIGTERM signal correctly
                 # in that case kill -9 QEMU process directly and leave
