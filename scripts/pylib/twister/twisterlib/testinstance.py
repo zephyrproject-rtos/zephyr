@@ -185,7 +185,7 @@ class TestInstance:
         self.handler = handler
 
     # Global testsuite parameters
-    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
+    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[], hardware_map=None):
 
         # running on simulators is currently not supported on Windows
         if os.name == 'nt' and self.platform.simulation != 'na':
@@ -217,6 +217,13 @@ class TestInstance:
                 target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
+
+        if hardware_map:
+            for h in hardware_map.duts:
+                if (h.platform == self.platform.name and
+                        self.testsuite_runnable(self.testsuite, h.fixtures)):
+                    testsuite_runnable = True
+                    break
 
         return testsuite_runnable and target_ready
 

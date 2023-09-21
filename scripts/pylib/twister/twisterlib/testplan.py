@@ -576,7 +576,8 @@ class TestPlan:
                 instance.run = instance.check_runnable(
                     self.options.enable_slow,
                     tfilter,
-                    self.options.fixture
+                    self.options.fixture,
+                    self.hwm
                 )
 
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
@@ -726,13 +727,9 @@ class TestPlan:
                 instance.run = instance.check_runnable(
                     self.options.enable_slow,
                     tfilter,
-                    self.options.fixture
+                    self.options.fixture,
+                    self.hwm
                 )
-                if runnable and self.hwm.duts:
-                    for h in self.hwm.duts:
-                        if h.platform == plat.name:
-                            if ts.harness_config.get('fixture') in h.fixtures:
-                                instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
