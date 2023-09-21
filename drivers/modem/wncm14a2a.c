@@ -1057,8 +1057,12 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 }
 
 /* RX thread */
-static void wncm14a2a_rx(void)
+static void wncm14a2a_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i;
@@ -1430,7 +1434,7 @@ static int wncm14a2a_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&wncm14a2a_rx_thread, wncm14a2a_rx_stack,
 			K_KERNEL_STACK_SIZEOF(wncm14a2a_rx_stack),
-			(k_thread_entry_t) wncm14a2a_rx,
+			wncm14a2a_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* init RSSI query */

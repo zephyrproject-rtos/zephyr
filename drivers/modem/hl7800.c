@@ -4482,8 +4482,12 @@ static void process_fw_update_rx(struct net_buf **rx_buf)
 #endif /* CONFIG_MODEM_HL7800_FW_UPDATE */
 
 /* RX thread */
-static void hl7800_rx(void)
+static void hl7800_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i, cmp_res;
@@ -6426,7 +6430,7 @@ static int hl7800_init(const struct device *dev)
 	k_thread_name_set(
 		k_thread_create(&hl7800_rx_thread, hl7800_rx_stack,
 				K_THREAD_STACK_SIZEOF(hl7800_rx_stack),
-				(k_thread_entry_t)hl7800_rx, NULL, NULL, NULL,
+				hl7800_rx, NULL, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT),
 		"hl7800 rx");
 

@@ -802,8 +802,12 @@ static int offload_socket(int family, int type, int proto)
 /*
  * Process all messages received from the modem.
  */
-static void modem_rx(void)
+static void modem_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		/* Wait for incoming data */
 		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
@@ -2414,7 +2418,7 @@ static int modem_init(const struct device *dev)
 	}
 
 	k_thread_create(&modem_rx_thread, modem_rx_stack, K_KERNEL_STACK_SIZEOF(modem_rx_stack),
-			(k_thread_entry_t)modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */
 	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
