@@ -1,7 +1,8 @@
-.. _x-nucleo-iks01a2-shub-sample:
+.. zephyr:code-sample:: x-nucleo-iks01a2-shub
+   :name: X-NUCLEO-IKS01A2 shield - SensorHub (Mode 2)
+   :relevant-api: sensor_interface
 
-X-NUCLEO-IKS01A2: shield SensorHub (Mode 2) sample
-##################################################
+   Interact with all the sensors of an X-NUCLEO-IKS01A2 shield using Sensor Hub mode.
 
 Overview
 ********
