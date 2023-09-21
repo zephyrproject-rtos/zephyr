@@ -551,6 +551,7 @@ static inline void hal_radio_sw_switch_cleanup(void)
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
 }
 
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
 static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	uint8_t ppi_dis, uint8_t cc_s2, uint8_t group_index)
 {
@@ -612,6 +613,7 @@ static inline void hal_radio_sw_switch_disable_group_clear(uint8_t ppi_dis, uint
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
 			ppi_dis);
 }
+#endif /* defined(CONFIG_BT_CTLR_PHY_CODED) */
 
 static inline void hal_radio_sw_switch_ppi_group_setup(void)
 {
