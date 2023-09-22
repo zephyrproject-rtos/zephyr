@@ -373,8 +373,11 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 							       K_NO_WAIT);
 			strncpy(m->sym_tab.syms[j].name, name, name_sz);
 			m->sym_tab.syms[j].addr =
-				(void *)((uintptr_t)m->mem[ms->sect_map[sym.st_shndx]]
-					 + sym.st_value);
+				(void *)((uintptr_t)m->mem[ms->sect_map[sym.st_shndx]] +
+					 sym.st_value -
+					 (ms->hdr.e_type == ET_REL ?
+					  0 :
+					  ms->sects[ms->sect_map[sym.st_shndx]].sh_addr));
 			LOG_DBG("function symbol %d name %s addr %p",
 				j, name, m->sym_tab.syms[j].addr);
 			j++;
