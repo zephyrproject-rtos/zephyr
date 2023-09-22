@@ -34,6 +34,7 @@ extern "C" {
 
 struct net_icmp_ctx;
 struct net_icmp_ip_hdr;
+struct net_icmp_ping_params;
 
 /**
  * @typedef net_icmp_handler_t
@@ -50,6 +51,28 @@ typedef int (*net_icmp_handler_t)(struct net_icmp_ctx *ctx,
 				  struct net_icmp_ip_hdr *ip_hdr,
 				  struct net_icmp_hdr *icmp_hdr,
 				  void *user_data);
+
+/**
+ * @typedef net_icmp_offload_ping_handler_t
+ * @brief Handler function that is called when an Echo-Request is sent
+ *        to offloaded device. This handler is typically setup by the
+ *        device driver so that it can catch the ping request and send
+ *        it to the offloaded device.
+ *
+ * @param ctx ICMP context used in this request.
+ * @param iface Network interface, can be set to NULL in which case the
+ *        interface is selected according to destination address.
+ * @param dst IP address of the target host.
+ * @param params Echo-Request specific parameters. May be NULL in which case
+ *        suitable default parameters are used.
+ * @param user_data User supplied opaque data passed to the handler. May be NULL.
+ *
+ */
+typedef int (*net_icmp_offload_ping_handler_t)(struct net_icmp_ctx *ctx,
+					       struct net_if *iface,
+					       struct sockaddr *dst,
+					       struct net_icmp_ping_params *params,
+					       void *user_data);
 
 /**
  * @brief ICMP context structure.
@@ -164,6 +187,68 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
+
+/**
+ * @brief ICMP offload context structure.
+ */
+struct net_icmp_offload {
+	/** List node */
+	sys_snode_t node;
+
+	/**
+	 * ICMP response handler. Currently there is only one handler.
+	 * This means that one offloaded ping request/response can be going
+	 * on at the same time.
+	 */
+	net_icmp_handler_t handler;
+
+	/** ICMP offloaded ping handler */
+	net_icmp_offload_ping_handler_t ping_handler;
+
+	/** Offloaded network interface */
+	struct net_if *iface;
+};
+
+/**
+ * @brief Register a handler function that is called when an Echo-Request
+ *        is sent to the offloaded device. This function is typically
+ *        called by a device driver so that it can do the actual offloaded
+ *        ping call.
+ *
+ * @param ctx ICMP offload context used for this interface.
+ * @param iface Network interface of the offloaded device.
+ * @param ping_handler Function to be called when offloaded ping request is done.
+ *
+ * @return Return 0 if the register succeed, <0 otherwise.
+ */
+int net_icmp_register_offload_ping(struct net_icmp_offload *ctx,
+				   struct net_if *iface,
+				   net_icmp_offload_ping_handler_t ping_handler);
+
+/**
+ * @brief Unregister the offload handler.
+ *
+ * @param ctx ICMP offload context used for this interface.
+ *
+ * @return Return 0 if the call succeed, <0 otherwise.
+ */
+int net_icmp_unregister_offload_ping(struct net_icmp_offload *ctx);
+
+/**
+ * @brief Get a ICMP response handler function for an offloaded device.
+ *        When a ping response is received by the driver, it should call
+ *        the handler function with proper parameters so that the ICMP response
+ *        is received by the net stack.
+ *
+ * @param ctx ICMP offload context used in this request.
+ * @param resp_handler Function to be called when offloaded ping response
+ *        is received by the offloaded driver. The ICMP response handler
+ *        function is returned and the caller should call it when appropriate.
+ *
+ * @return Return 0 if the call succeed, <0 otherwise.
+ */
+int net_icmp_get_offload_rsp_handler(struct net_icmp_offload *ctx,
+				     net_icmp_handler_t *resp_handler);
 
 #ifdef __cplusplus
 }

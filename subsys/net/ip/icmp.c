@@ -44,6 +44,10 @@ LOG_MODULE_REGISTER(net_icmp, ICMP_LOG_LEVEL);
 static K_MUTEX_DEFINE(lock);
 static sys_slist_t handlers = SYS_SLIST_STATIC_INIT(&handlers);
 
+#if defined(CONFIG_NET_OFFLOADING_SUPPORT)
+static sys_slist_t offload_handlers = SYS_SLIST_STATIC_INIT(&offload_handlers);
+#endif
+
 #define PKT_WAIT_TIME K_SECONDS(1)
 
 int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
@@ -68,6 +72,31 @@ int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
 	return 0;
 }
 
+static void set_offload_handler(struct net_if *iface,
+				net_icmp_handler_t handler)
+{
+	struct net_icmp_offload *offload;
+
+	if (!IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT)) {
+		return;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+#if defined(CONFIG_NET_OFFLOADING_SUPPORT)
+	SYS_SLIST_FOR_EACH_CONTAINER(&offload_handlers, offload, node) {
+		if (offload->iface == iface) {
+			offload->handler = handler;
+			break;
+		}
+	}
+#else
+	ARG_UNUSED(offload);
+#endif
+
+	k_mutex_unlock(&lock);
+}
+
 int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx)
 {
 	if (ctx == NULL) {
@@ -79,6 +108,8 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx)
 	sys_slist_find_and_remove(&handlers, &ctx->node);
 
 	k_mutex_unlock(&lock);
+
+	set_offload_handler(ctx->iface, NULL);
 
 	memset(ctx, 0, sizeof(struct net_icmp_ctx));
 
@@ -98,11 +129,6 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	struct net_icmpv4_echo_req *echo_req;
 	const struct in_addr *src;
 	struct net_pkt *pkt;
-
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
-		/* XXX: fixme so that we can send offloaded messages too */
-		return -ENOTSUP;
-	}
 
 	if (!iface->config.ip.ipv4) {
 		return -ENETUNREACH;
@@ -337,6 +363,45 @@ static struct net_icmp_ping_params *get_default_params(void)
 	return &params;
 }
 
+static int get_offloaded_ping_handler(struct net_if *iface,
+				      net_icmp_offload_ping_handler_t *ping_handler)
+{
+	struct net_icmp_offload *offload;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT)) {
+		return -ENOTSUP;
+	}
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	if (!net_if_is_offloaded(iface)) {
+		return -ENOENT;
+	}
+
+	ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+#if defined(CONFIG_NET_OFFLOADING_SUPPORT)
+	SYS_SLIST_FOR_EACH_CONTAINER(&offload_handlers, offload, node) {
+		if (offload->iface == iface) {
+			*ping_handler = offload->ping_handler;
+			ret = 0;
+			break;
+		}
+	}
+#else
+	ARG_UNUSED(offload);
+#endif
+
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
 int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct net_if *iface,
 			       struct sockaddr *dst,
@@ -357,6 +422,25 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 		if (iface == NULL) {
 			return -ENOENT;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT) && net_if_is_offloaded(iface)) {
+		net_icmp_offload_ping_handler_t ping_handler = NULL;
+		int ret;
+
+		ret = get_offloaded_ping_handler(iface, &ping_handler);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ping_handler == NULL) {
+			NET_ERR("No ping handler set");
+			return -ENOENT;
+		}
+
+		set_offload_handler(iface, ctx->handler);
+
+		return ping_handler(ctx, iface, dst, params, user_data);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && dst->sa_family == AF_INET) {
@@ -435,4 +519,75 @@ int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 	ip_hdr.family = AF_INET6;
 
 	return icmp_call_handlers(pkt, &ip_hdr, icmp_hdr);
+}
+
+int net_icmp_register_offload_ping(struct net_icmp_offload *ctx,
+				   struct net_if *iface,
+				   net_icmp_offload_ping_handler_t ping_handler)
+{
+	if (!IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT)) {
+		return -ENOTSUP;
+	}
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	if (!net_if_is_offloaded(iface)) {
+		return -ENOENT;
+	}
+
+	memset(ctx, 0, sizeof(struct net_icmp_offload));
+
+	ctx->ping_handler = ping_handler;
+	ctx->iface = iface;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+#if defined(CONFIG_NET_OFFLOADING_SUPPORT)
+	sys_slist_prepend(&offload_handlers, &ctx->node);
+#endif
+
+	k_mutex_unlock(&lock);
+
+	return 0;
+}
+
+int net_icmp_unregister_offload_ping(struct net_icmp_offload *ctx)
+{
+	if (!IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT)) {
+		return -ENOTSUP;
+	}
+
+	if (ctx == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+#if defined(CONFIG_NET_OFFLOADING_SUPPORT)
+	sys_slist_find_and_remove(&offload_handlers, &ctx->node);
+#endif
+
+	k_mutex_unlock(&lock);
+
+	memset(ctx, 0, sizeof(struct net_icmp_offload));
+
+	return 0;
+}
+
+int net_icmp_get_offload_rsp_handler(struct net_icmp_offload *ctx,
+				     net_icmp_handler_t *resp_handler)
+{
+	if (!IS_ENABLED(CONFIG_NET_OFFLOADING_SUPPORT)) {
+		return -ENOTSUP;
+	}
+
+	if (ctx == NULL) {
+		return -EINVAL;
+	}
+
+	*resp_handler = ctx->handler;
+
+	return 0;
 }
