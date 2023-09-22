@@ -107,7 +107,7 @@ struct lorawan_join_otaa {
 	 * increasing for each OTAA join with the same EUI. The DevNonce
 	 * should be stored in non-volatile memory by the application.
 	 */
-	uint32_t dev_nonce;
+	uint16_t dev_nonce;
 };
 
 /**
