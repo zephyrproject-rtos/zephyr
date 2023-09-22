@@ -85,7 +85,7 @@ ZTEST(rand32_common, test_rand32)
 		"random numbers returned same value with high probability");
 	}
 
-#if defined(CONFIG_CSPRING_ENABLED)
+#if defined(CONFIG_CSPRNG_ENABLED)
 
 	printk("Generating bulk fill cryptographically secure random numbers\n");
 
@@ -109,7 +109,7 @@ ZTEST(rand32_common, test_rand32)
 
 	printk("Cryptographically secure random number APIs not enabled\n");
 
-#endif /* CONFIG_CSPRING_ENABLED */
+#endif /* CONFIG_CSPRNG_ENABLED */
 }
 
 ZTEST_SUITE(rand32_common, NULL, NULL, NULL, NULL, NULL);
