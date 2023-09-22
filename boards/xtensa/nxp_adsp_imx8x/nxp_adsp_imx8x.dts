@@ -15,5 +15,14 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
 	};
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart2_default>;
+	pinctrl-names = "default";
 };
