@@ -97,8 +97,9 @@ void bounce_once(int id, bool trylock)
 	 */
 	bounce_owner = id;
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 5; i++) {
 		zassert_true(bounce_owner == id, "Locked data changed");
+		k_busy_wait(1);
 	}
 
 	/* Release the lock */
