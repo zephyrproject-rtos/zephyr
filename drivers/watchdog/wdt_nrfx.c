@@ -33,6 +33,10 @@ static int wdt_nrf_setup(const struct device *dev, uint8_t options)
 		.reload_value = data->m_timeout
 	};
 
+#if NRF_WDT_HAS_STOP
+	wdt_config.behaviour |= NRF_WDT_BEHAVIOUR_STOP_ENABLE_MASK;
+#endif
+
 	if (!(options & WDT_OPT_PAUSE_IN_SLEEP)) {
 		wdt_config.behaviour |= NRF_WDT_BEHAVIOUR_RUN_SLEEP_MASK;
 	}
@@ -54,9 +58,21 @@ static int wdt_nrf_setup(const struct device *dev, uint8_t options)
 
 static int wdt_nrf_disable(const struct device *dev)
 {
-	/* Started watchdog cannot be stopped on nRF devices. */
+#if NRFX_WDT_HAS_STOP
+	const struct wdt_nrfx_config *config = dev->config;
+	nrfx_err_t err_code;
+
+	err_code = nrfx_wdt_stop(&config->wdt);
+
+	if (err_code != NRFX_SUCCESS) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+#else
 	ARG_UNUSED(dev);
 	return -EPERM;
+#endif
 }
 
 static int wdt_nrf_install_timeout(const struct device *dev,
