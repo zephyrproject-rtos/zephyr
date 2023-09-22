@@ -80,4 +80,10 @@ config ESPI_PERIPHERAL_ACPI_SHM_REGION
 config ESPI_PERIPHERAL_CUSTOM_OPCODE
 	default y
 
+config ESPI_NPCX_SUPP_VW_GPIO
+	bool "Indicates that the eSPI hardware supports virtual wire GPIOs"
+	default y if SOC_SERIES_NPCX9 || SOC_SERIES_NPCX4
+	help
+	  Selected if NPCX series supports virtual wire GPIOs in eSPI module.
+
 endif #ESPI_NPCX

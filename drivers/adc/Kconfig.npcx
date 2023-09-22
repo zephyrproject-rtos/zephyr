@@ -11,3 +11,19 @@ config ADC_NPCX
 	  This option enables the ADC driver for NPCX family of
 	  processors.
 	  Say y if you wish to use ADC channels on NPCX MCU.
+
+if ADC_NPCX
+
+config ADC_NPCX_CMP_V1
+	bool "ADC comparator version 1 support"
+	default y if SOC_SERIES_NPCX7 || SOC_SERIES_NPCX9
+	help
+	  This option enables ADC comparator V1 support.
+
+config ADC_NPCX_CMP_V2
+	bool "ADC comparator version 2 support"
+	default y if SOC_SERIES_NPCX4
+	help
+	  This option enables ADC comparator V2 support.
+
+endif #ADC_NPCX
