@@ -1,0 +1,23 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config DEVMUX
+	bool "Device Multiplexer (devmux) [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_DEVMUX_ENABLED
+	depends on DEVICE_MUTABLE
+	select EXPERIMENTAL
+	help
+	  Devmux is a pseudo-device that operates as a device switch. It allows
+	  software to select the data, config, and api from a number of linked
+	  devices.
+
+if DEVMUX
+
+config DEVMUX_INIT_PRIORITY
+	int "Devmux init priority"
+	default 51
+	help
+	  Init priority for the devmux driver. It must be
+	  greater than the priority of the initially selected muxed device.
+
+endif
