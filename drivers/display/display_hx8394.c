@@ -31,7 +31,7 @@ struct hx8394_config {
 #define HX8394_MIPI_LP_CD_DIS BIT(5)
 #define HX8394_MIPI_TA_6TL 0x3
 #define HX8394_MIPI_DPHYCMD_LPRX_8NS 0x40
-#define HX8394_MIPI_DPHYCMD_LPRX_66mV 0x10
+#define HX8394_MIPI_DPHYCMD_LPRX_66mV 0x20
 #define HX8394_MIPI_DPHYCMD_LPTX_SRLIM 0x8
 #define HX8394_MIPI_DPHYCMD_LDO_1_55V 0x60
 #define HX8394_MIPI_DPHYCMD_HSRX_7X 0x8
@@ -404,7 +404,7 @@ const uint8_t hx8394_bank0[] = {
 
 const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
-const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK | 0x3};
+const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
 
 static int hx8394_write(const struct device *dev, const uint16_t x,
 			 const uint16_t y,
