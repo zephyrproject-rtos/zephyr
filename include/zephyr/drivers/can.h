@@ -234,11 +234,6 @@ struct can_bus_err_cnt {
 	uint8_t rx_err_cnt;
 };
 
-/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
- * be changed by the timing calculation.
- */
-#define CAN_SJW_NO_CHANGE 0
-
 /**
  * @brief CAN bus timing structure
  *

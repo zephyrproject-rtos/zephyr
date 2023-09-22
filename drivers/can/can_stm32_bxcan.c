@@ -555,15 +555,12 @@ static int can_stm32_set_timing(const struct device *dev,
 		return -EBUSY;
 	}
 
-	can->BTR = (can->BTR & ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
+	can->BTR = (can->BTR & ~(CAN_BTR_SJW_Msk | CAN_BTR_BRP_Msk |
+				 CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
+	     (((timing->sjw        - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk) |
 	     (((timing->phase_seg1 - 1) << CAN_BTR_TS1_Pos) & CAN_BTR_TS1_Msk) |
 	     (((timing->phase_seg2 - 1) << CAN_BTR_TS2_Pos) & CAN_BTR_TS2_Msk) |
 	     (((timing->prescaler  - 1) << CAN_BTR_BRP_Pos) & CAN_BTR_BRP_Msk);
-
-	if (timing->sjw != CAN_SJW_NO_CHANGE) {
-		can->BTR = (can->BTR & ~CAN_BTR_SJW_Msk) |
-			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
-	}
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -614,7 +611,7 @@ static int can_stm32_init(const struct device *dev)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 	const struct device *clock;
 	uint32_t bank_offset;
 	int ret;
@@ -675,7 +672,6 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	timing.sjw = cfg->sjw;
 	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
 				      cfg->sample_point);
@@ -687,6 +683,7 @@ static int can_stm32_init(const struct device *dev)
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", ret);
 	} else {
+		timing.sjw = cfg->sjw;
 		timing.prop_seg = 0;
 		timing.phase_seg1 = cfg->prop_ts1;
 		timing.phase_seg2 = cfg->ts2;
@@ -696,7 +693,7 @@ static int can_stm32_init(const struct device *dev)
 		}
 	}
 
-	ret = can_stm32_set_timing(dev, &timing);
+	ret = can_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}

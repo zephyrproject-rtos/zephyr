@@ -987,7 +987,7 @@ static int can_rcar_init(const struct device *dev)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 	int ret;
 	uint16_t ctlr;
 
@@ -1053,7 +1053,6 @@ static int can_rcar_init(const struct device *dev)
 		return ret;
 	}
 
-	timing.sjw = config->sjw;
 	if (config->sample_point) {
 		ret = can_calc_timing(dev, &timing, config->bus_speed,
 				      config->sample_point);
@@ -1065,6 +1064,7 @@ static int can_rcar_init(const struct device *dev)
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", ret);
 	} else {
+		timing.sjw = config->sjw;
 		timing.prop_seg = config->prop_seg;
 		timing.phase_seg1 = config->phase_seg1;
 		timing.phase_seg2 = config->phase_seg2;
@@ -1074,7 +1074,7 @@ static int can_rcar_init(const struct device *dev)
 		}
 	}
 
-	ret = can_rcar_set_timing(dev, &timing);
+	ret = can_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
