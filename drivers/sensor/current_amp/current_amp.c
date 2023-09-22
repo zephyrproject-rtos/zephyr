@@ -8,7 +8,9 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/current_sense_amplifier.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(current_amp, CONFIG_SENSOR_LOG_LEVEL);
@@ -73,6 +75,40 @@ static const struct sensor_driver_api current_api = {
 	.channel_get = get,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct current_sense_amplifier_dt_spec *config = dev->config;
+	int ret;
+
+	if (config->power_gpio.port == NULL) {
+		LOG_ERR("PM not supported");
+		return -ENOTSUP;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpio_pin_set_dt(&config->power_gpio, 1);
+		if (ret != 0) {
+			LOG_ERR("failed to set GPIO for PM resume");
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = gpio_pin_set_dt(&config->power_gpio, 0);
+		if (ret != 0) {
+			LOG_ERR("failed to set GPIO for PM suspend");
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static int current_init(const struct device *dev)
 {
 	const struct current_sense_amplifier_dt_spec *config = dev->config;
@@ -83,6 +119,21 @@ static int current_init(const struct device *dev)
 		LOG_ERR("ADC is not ready");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_PM_DEVICE
+	if (config->power_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->power_gpio)) {
+			LOG_ERR("Power GPIO is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret != 0) {
+			LOG_ERR("failed to config GPIO: %d", ret);
+			return ret;
+		}
+	}
+#endif
 
 	ret = adc_channel_setup_dt(&config->port);
 	if (ret != 0) {
@@ -108,8 +159,10 @@ static int current_init(const struct device *dev)
 	static const struct current_sense_amplifier_dt_spec current_amp_##inst##_config =          \
 		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(DT_DRV_INST(inst));                            \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, NULL, &current_amp_##inst##_data,        \
-			      &current_amp_##inst##_config, POST_KERNEL,                           \
-			      CONFIG_SENSOR_INIT_PRIORITY, &current_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),             \
+				     &current_amp_##inst##_data, &current_amp_##inst##_config,     \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CURRENT_SENSE_AMPLIFIER_INIT)
