@@ -5,6 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Override EVENT_TIMER_ID from 4 to 0, as nRF5340 does not have 4 timer
+ * instances.
+ */
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#undef EVENT_TIMER_ID
+#define EVENT_TIMER_ID 0
+
+#undef EVENT_TIMER
+#define EVENT_TIMER    _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
+
+#undef SW_SWITCH_TIMER
+#define SW_SWITCH_TIMER EVENT_TIMER
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
  * - based on empirical measurements and sniffer logs
