@@ -1,0 +1,17 @@
+identifier: nsim_hs6x_smp_12cores
+name: Multi-core HS6x nSIM simulator
+type: sim
+simulation: mdb-nsim
+simulation_exec: mdb
+arch: arc
+toolchain:
+  - cross-compile
+  - zephyr
+  - arcmwdt
+supported:
+  - smp
+testing:
+  timeout_multiplier: 4
+  ignore_tags:
+    - net
+    - bluetooth
