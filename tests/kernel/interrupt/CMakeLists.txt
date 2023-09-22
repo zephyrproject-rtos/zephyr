@@ -22,3 +22,7 @@ target_sources_ifdef(CONFIG_SHARED_INTERRUPTS app PRIVATE src/static_shared_irq.
 if (CONFIG_SHARED_INTERRUPTS)
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_shared_irq.c)
 endif()
+
+if(CONFIG_MULTI_LEVEL_INTERRUPTS)
+  target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/sw_isr_table.c)
+endif()
