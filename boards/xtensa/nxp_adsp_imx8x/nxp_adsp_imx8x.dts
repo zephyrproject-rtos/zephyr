@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8.dtsi>
+#include "nxp_adsp_imx8x-pinctrl.dtsi"
 
 / {
 	model = "nxp_adsp_imx8x";
