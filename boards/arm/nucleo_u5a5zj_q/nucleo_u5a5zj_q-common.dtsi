@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5a5Xj.dtsi>
+#include <st/u5/stm32u5a5zjtxq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds: leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led_1: led_2 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led_1: led_3 {
+			gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led_1: green_led_1 {
+			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green led";
+		};
+
+		pwm_led_2: blue_led_1 {
+			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "blue led";
+		};
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in18_pb0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+	pinctrl-0 = <&tim3_ch2_pc7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm4: pwm {
+		pinctrl-0 = <&tim4_ch2_pb7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};
