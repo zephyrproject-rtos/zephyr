@@ -37,3 +37,11 @@ properties:
     default: 1
     description: |
       Amplifier gain divider. The default is <1>.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Control power to the current amplifier.
+
+      If present the corresponding GPIO must be set to an active level
+      to enable the current amplifier.
