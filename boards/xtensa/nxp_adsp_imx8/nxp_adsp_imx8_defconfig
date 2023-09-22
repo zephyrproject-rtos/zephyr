@@ -12,3 +12,6 @@ CONFIG_LOG=y
 # TODO: maybe move this to SOF?
 CONFIG_DYNAMIC_INTERRUPTS=y
 CONFIG_BUILD_OUTPUT_BIN=n
+
+# clock-related configurations
+CONFIG_CLOCK_CONTROL=y
