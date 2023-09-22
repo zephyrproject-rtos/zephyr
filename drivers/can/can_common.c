@@ -170,7 +170,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		   CAN_SYNC_SEG;
 	uint16_t sp_err_min = UINT16_MAX;
 	int sp_err;
-	struct can_timing tmp_res;
+	struct can_timing tmp_res = { 0 };
 
 	if (bitrate == 0 || sp >= 1000) {
 		return -EINVAL;
@@ -208,6 +208,10 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	if (sp_err_min) {
 		LOG_DBG("SP error: %d 1/1000", sp_err_min);
 	}
+
+	/* Calculate default sjw as phase_seg2 / 2 and clamp the result */
+	res->sjw = MIN(res->phase_seg1, res->phase_seg2 / 2);
+	res->sjw = CLAMP(res->sjw, min->sjw, max->sjw);
 
 	return sp_err_min == UINT16_MAX ? -ENOTSUP : (int)sp_err_min;
 }
@@ -300,15 +304,15 @@ static int check_timing_in_range(const struct can_timing *timing,
 				 const struct can_timing *min,
 				 const struct can_timing *max)
 {
-	if (timing->sjw != CAN_SJW_NO_CHANGE &&
-	    !IN_RANGE(timing->sjw, min->sjw, max->sjw)) {
-		return -ENOTSUP;
-	}
-
-	if (!IN_RANGE(timing->prop_seg, min->prop_seg, max->prop_seg) ||
+	if (!IN_RANGE(timing->sjw, min->sjw, max->sjw) ||
+	    !IN_RANGE(timing->prop_seg, min->prop_seg, max->prop_seg) ||
 	    !IN_RANGE(timing->phase_seg1, min->phase_seg1, max->phase_seg1) ||
 	    !IN_RANGE(timing->phase_seg2, min->phase_seg2, max->phase_seg2) ||
 	    !IN_RANGE(timing->prescaler, min->prescaler, max->prescaler)) {
+		return -ENOTSUP;
+	}
+
+	if ((timing->sjw > timing->phase_seg1) || (timing->sjw > timing->phase_seg2)) {
 		return -ENOTSUP;
 	}
 
@@ -333,7 +337,7 @@ int z_impl_can_set_timing(const struct device *dev,
 
 int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 	uint32_t max_bitrate;
 	uint16_t sample_pnt;
 	int ret;
@@ -359,8 +363,6 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 	if (ret > SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
-
-	timing.sjw = CAN_SJW_NO_CHANGE;
 
 	return can_set_timing(dev, &timing);
 }
@@ -388,7 +390,7 @@ int z_impl_can_set_timing_data(const struct device *dev,
 
 int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
-	struct can_timing timing_data;
+	struct can_timing timing_data = { 0 };
 	uint32_t max_bitrate;
 	uint16_t sample_pnt;
 	int ret;
@@ -414,8 +416,6 @@ int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 	if (ret > SAMPLE_POINT_MARGIN) {
 		return -ERANGE;
 	}
-
-	timing_data.sjw = CAN_SJW_NO_CHANGE;
 
 	return can_set_timing_data(dev, &timing_data);
 }
