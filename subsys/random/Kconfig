@@ -57,11 +57,6 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  selected if hardware entropy driver is designed to be a random
 	  number generator source.
 
-config XOROSHIRO_RANDOM_GENERATOR
-	bool "Use Xoroshiro128+ as PRNG (DEPRECATED)"
-	help
-	  This is deprecated, please use XOSHIRO_RANDOM_GENERATOR instead.
-
 config XOSHIRO_RANDOM_GENERATOR
 	bool "Use Xoshiro128++ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
