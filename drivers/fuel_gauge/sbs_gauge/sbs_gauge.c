@@ -66,107 +66,108 @@ static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char 
 	return 0;
 }
 
-static int sbs_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
+static int sbs_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+			      union fuel_gauge_prop_val *val)
 {
 	int rc = 0;
-	uint16_t val = 0;
+	uint16_t tmp_val = 0;
 
-	switch (prop->property_type) {
+	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_CURRENT, &val);
-		prop->value.avg_current = val * 1000;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_CURRENT, &tmp_val);
+		val->avg_current = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_CYCLE_COUNT:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CYCLE_COUNT, &val);
-		prop->value.cycle_count = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CYCLE_COUNT, &tmp_val);
+		val->cycle_count = tmp_val;
 		break;
 	case FUEL_GAUGE_CURRENT:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CURRENT, &val);
-		prop->value.current = val * 1000;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CURRENT, &tmp_val);
+		val->current = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY, &val);
-		prop->value.full_charge_capacity = val * 1000;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY, &tmp_val);
+		val->full_charge_capacity = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_REMAINING_CAPACITY:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY, &val);
-		prop->value.remaining_capacity = val * 1000;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY, &tmp_val);
+		val->remaining_capacity = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RUNTIME2EMPTY, &val);
-		prop->value.runtime_to_empty = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RUNTIME2EMPTY, &tmp_val);
+		val->runtime_to_empty = tmp_val;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &val);
-		prop->value.runtime_to_full = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &tmp_val);
+		val->runtime_to_full = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &val);
-		prop->value.sbs_mfr_access_word = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS, &tmp_val);
+		val->sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &val);
-		prop->value.absolute_state_of_charge = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &tmp_val);
+		val->absolute_state_of_charge = tmp_val;
 		break;
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RSOC, &val);
-		prop->value.relative_state_of_charge = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_RSOC, &tmp_val);
+		val->relative_state_of_charge = tmp_val;
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_TEMP, &val);
-		prop->value.temperature = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_TEMP, &tmp_val);
+		val->temperature = tmp_val;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_VOLTAGE, &val);
-		prop->value.voltage = val * 1000;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_VOLTAGE, &tmp_val);
+		val->voltage = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_BATTERY_MODE, &val);
-		prop->value.sbs_mode = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_BATTERY_MODE, &tmp_val);
+		val->sbs_mode = tmp_val;
 		break;
 	case FUEL_GAUGE_CHARGE_CURRENT:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_CURRENT, &val);
-		prop->value.chg_current = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_CURRENT, &tmp_val);
+		val->chg_current = tmp_val;
 		break;
 	case FUEL_GAUGE_CHARGE_VOLTAGE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_VOLTAGE, &val);
-		prop->value.chg_voltage = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_VOLTAGE, &tmp_val);
+		val->chg_voltage = tmp_val;
 		break;
 	case FUEL_GAUGE_STATUS:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FLAGS, &val);
-		prop->value.fg_status = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FLAGS, &tmp_val);
+		val->fg_status = tmp_val;
 		break;
 	case FUEL_GAUGE_DESIGN_CAPACITY:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_NOM_CAPACITY, &val);
-		prop->value.design_cap = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_NOM_CAPACITY, &tmp_val);
+		val->design_cap = tmp_val;
 		break;
 	case FUEL_GAUGE_DESIGN_VOLTAGE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_DESIGN_VOLTAGE, &val);
-		prop->value.design_volt = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_DESIGN_VOLTAGE, &tmp_val);
+		val->design_volt = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AR, &val);
-		prop->value.sbs_at_rate = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AR, &tmp_val);
+		val->sbs_at_rate = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTF, &val);
-		prop->value.sbs_at_rate_time_to_full = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTF, &tmp_val);
+		val->sbs_at_rate_time_to_full = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTE, &val);
-		prop->value.sbs_at_rate_time_to_empty = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ARTTE, &tmp_val);
+		val->sbs_at_rate_time_to_empty = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_OK:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AROK, &val);
-		prop->value.sbs_at_rate_ok = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AROK, &tmp_val);
+		val->sbs_at_rate_ok = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM, &val);
-		prop->value.sbs_remaining_capacity_alarm = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM, &tmp_val);
+		val->sbs_remaining_capacity_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
-		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_TIME_ALARM, &val);
-		prop->value.sbs_remaining_time_alarm = val;
+		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_TIME_ALARM, &tmp_val);
+		val->sbs_remaining_time_alarm = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -194,35 +195,36 @@ static int sbs_gauge_do_battery_cutoff(const struct device *dev)
 	return rc;
 }
 
-static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *prop)
+static int sbs_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
+			      union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t val = 0;
+	uint16_t tmp_val = 0;
 
-	switch (prop->property_type) {
+	switch (prop) {
 
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS,
-				       prop->value.sbs_mfr_access_word);
-		prop->value.sbs_mfr_access_word = val;
+				       val.sbs_mfr_access_word);
+		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM,
-				       prop->value.sbs_remaining_capacity_alarm);
-		prop->value.sbs_remaining_capacity_alarm = val;
+				       val.sbs_remaining_capacity_alarm);
+		val.sbs_remaining_capacity_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_TIME_ALARM,
-				       prop->value.sbs_remaining_time_alarm);
-		prop->value.sbs_remaining_time_alarm = val;
+				       val.sbs_remaining_time_alarm);
+		val.sbs_remaining_time_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
-		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, prop->value.sbs_mode);
-		prop->value.sbs_mode = val;
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, val.sbs_mode);
+		val.sbs_mode = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
-		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, prop->value.sbs_at_rate);
-		prop->value.sbs_at_rate = val;
+		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, val.sbs_at_rate);
+		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -232,12 +234,12 @@ static int sbs_gauge_set_prop(const struct device *dev, struct fuel_gauge_proper
 }
 
 static int sbs_gauge_get_buffer_prop(const struct device *dev,
-				    struct fuel_gauge_buffer_property *prop, void *dst,
+				    fuel_gauge_prop_t prop_type, void *dst,
 				    size_t dst_len)
 {
 	int rc = 0;
 
-	switch (prop->property_type) {
+	switch (prop_type) {
 	case FUEL_GAUGE_MANUFACTURER_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
 			rc = sbs_cmd_buffer_read(dev, SBS_GAUGE_CMD_MANUFACTURER_NAME, (char *)dst,

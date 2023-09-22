@@ -109,84 +109,85 @@ static int bq27z746_read_mac(const struct device *dev, uint16_t cmd, uint8_t *da
 	return ret;
 }
 
-static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
+static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+			     union fuel_gauge_prop_val *val)
 {
 	int rc = 0;
-	uint16_t val = 0;
+	uint16_t tmp_val = 0;
 
 	/*
 	 * Possibly negative values must be cast from uint16 to int16 first to
 	 * then correctly end up in the wider datatypes of `prop`.
 	 */
 
-	switch (prop->property_type) {
+	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT:
-		rc = bq27z746_read16(dev, BQ27Z746_AVERAGECURRENT, &val);
-		prop->value.avg_current = (int16_t)val * 1000;
+		rc = bq27z746_read16(dev, BQ27Z746_AVERAGECURRENT, &tmp_val);
+		val->avg_current = (int16_t)tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_CYCLE_COUNT:
-		rc = bq27z746_read16(dev, BQ27Z746_CYCLECOUNT, &val);
-		prop->value.cycle_count = val * 100;
+		rc = bq27z746_read16(dev, BQ27Z746_CYCLECOUNT, &tmp_val);
+		val->cycle_count = tmp_val * 100;
 		break;
 	case FUEL_GAUGE_CURRENT:
-		rc = bq27z746_read16(dev, BQ27Z746_CURRENT, &val);
-		prop->value.current = (int16_t)val * 1000;
+		rc = bq27z746_read16(dev, BQ27Z746_CURRENT, &tmp_val);
+		val->current = (int16_t)tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
-		rc = bq27z746_read16(dev, BQ27Z746_FULLCHARGECAPACITY, &val);
-		prop->value.full_charge_capacity = val * 1000;
+		rc = bq27z746_read16(dev, BQ27Z746_FULLCHARGECAPACITY, &tmp_val);
+		val->full_charge_capacity = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_REMAINING_CAPACITY:
-		rc = bq27z746_read16(dev, BQ27Z746_REMAININGCAPACITY, &val);
-		prop->value.remaining_capacity = val * 1000;
+		rc = bq27z746_read16(dev, BQ27Z746_REMAININGCAPACITY, &tmp_val);
+		val->remaining_capacity = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
-		rc = bq27z746_read16(dev, BQ27Z746_AVERAGETIMETOEMPTY, &val);
-		prop->value.runtime_to_empty = val;
+		rc = bq27z746_read16(dev, BQ27Z746_AVERAGETIMETOEMPTY, &tmp_val);
+		val->runtime_to_empty = tmp_val;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
-		rc = bq27z746_read16(dev, BQ27Z746_AVERAGETIMETOFULL, &val);
-		prop->value.runtime_to_full = val;
+		rc = bq27z746_read16(dev, BQ27Z746_AVERAGETIMETOFULL, &tmp_val);
+		val->runtime_to_full = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
-		rc = bq27z746_read16(dev, BQ27Z746_MANUFACTURERACCESS, &val);
-		prop->value.sbs_mfr_access_word = val;
+		rc = bq27z746_read16(dev, BQ27Z746_MANUFACTURERACCESS, &tmp_val);
+		val->sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		rc = bq27z746_read16(dev, BQ27Z746_RELATIVESTATEOFCHARGE, &val);
-		prop->value.relative_state_of_charge = val;
+		rc = bq27z746_read16(dev, BQ27Z746_RELATIVESTATEOFCHARGE, &tmp_val);
+		val->relative_state_of_charge = tmp_val;
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
-		rc = bq27z746_read16(dev, BQ27Z746_TEMPERATURE, &val);
-		prop->value.temperature = val;
+		rc = bq27z746_read16(dev, BQ27Z746_TEMPERATURE, &tmp_val);
+		val->temperature = tmp_val;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		rc = bq27z746_read16(dev, BQ27Z746_VOLTAGE, &val);
-		prop->value.voltage = val * 1000;
+		rc = bq27z746_read16(dev, BQ27Z746_VOLTAGE, &tmp_val);
+		val->voltage = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
-		rc = bq27z746_read16(dev, BQ27Z746_ATRATE, &val);
-		prop->value.sbs_at_rate = (int16_t)val;
+		rc = bq27z746_read16(dev, BQ27Z746_ATRATE, &tmp_val);
+		val->sbs_at_rate = (int16_t)tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
-		rc = bq27z746_read16(dev, BQ27Z746_ATRATETIMETOEMPTY, &val);
-		prop->value.sbs_at_rate_time_to_empty = val;
+		rc = bq27z746_read16(dev, BQ27Z746_ATRATETIMETOEMPTY, &tmp_val);
+		val->sbs_at_rate_time_to_empty = tmp_val;
 		break;
 	case FUEL_GAUGE_CHARGE_VOLTAGE:
-		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGVOLTAGE, &val);
-		prop->value.chg_voltage = val;
+		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGVOLTAGE, &tmp_val);
+		val->chg_voltage = tmp_val;
 		break;
 	case FUEL_GAUGE_CHARGE_CURRENT:
-		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGCURRENT, &val);
-		prop->value.chg_current = val;
+		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGCURRENT, &tmp_val);
+		val->chg_current = tmp_val;
 		break;
 	case FUEL_GAUGE_STATUS:
-		rc = bq27z746_read16(dev, BQ27Z746_BATTERYSTATUS, &val);
-		prop->value.fg_status = val;
+		rc = bq27z746_read16(dev, BQ27Z746_BATTERYSTATUS, &tmp_val);
+		val->fg_status = tmp_val;
 		break;
 	case FUEL_GAUGE_DESIGN_CAPACITY:
-		rc = bq27z746_read16(dev, BQ27Z746_DESIGNCAPACITY, &val);
-		prop->value.design_cap = val;
+		rc = bq27z746_read16(dev, BQ27Z746_DESIGNCAPACITY, &tmp_val);
+		val->design_cap = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -196,12 +197,12 @@ static int bq27z746_get_prop(const struct device *dev, struct fuel_gauge_propert
 }
 
 static int bq27z746_get_buffer_prop(const struct device *dev,
-				    struct fuel_gauge_buffer_property *prop, void *dst,
+				    fuel_gauge_prop_t property_type, void *dst,
 				    size_t dst_len)
 {
 	int rc = 0;
 
-	switch (prop->property_type) {
+	switch (property_type) {
 	case FUEL_GAUGE_MANUFACTURER_NAME:
 		if (dst_len == sizeof(struct sbs_gauge_manufacturer_name)) {
 			rc = bq27z746_read_mac(dev, BQ27Z746_MAC_CMD_MANUFACTURER_NAME,
@@ -233,20 +234,20 @@ static int bq27z746_get_buffer_prop(const struct device *dev,
 	return rc;
 }
 
-static int bq27z746_set_prop(const struct device *dev, struct fuel_gauge_property *prop)
+static int bq27z746_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
+			     union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t val = 0;
+	uint16_t tmp_val = 0;
 
-	switch (prop->property_type) {
+	switch (prop) {
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
-		rc = bq27z746_write16(dev, BQ27Z746_MANUFACTURERACCESS,
-				      prop->value.sbs_mfr_access_word);
-		prop->value.sbs_mfr_access_word = val;
+		rc = bq27z746_write16(dev, BQ27Z746_MANUFACTURERACCESS, val.sbs_mfr_access_word);
+		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
-		rc = bq27z746_write16(dev, BQ27Z746_ATRATE, prop->value.sbs_at_rate);
-		prop->value.sbs_at_rate = val;
+		rc = bq27z746_write16(dev, BQ27Z746_ATRATE, val.sbs_at_rate);
+		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;

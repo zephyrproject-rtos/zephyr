@@ -20,9 +20,11 @@ Fundamentally, a property is a quantity that a fuel gauge device can measure.
 Fuel gauges typically support multiple properties, such as temperature readings of the battery-pack
 or present-time current/voltage.
 
-Properties are fetched one at a time using a client allocated :c:struct:`fuel_gauge_property` or
-fetched all at once using a client allocated array of :c:struct:`fuel_gauge_property`. Each
-:c:struct:`fuel_gauge_property` is populated by values according to its `property_type` field.
+Properties are fetched by the client one at a time using :c:func:`fuel_gauge_get_prop`, or fetched
+in a batch using :c:func:`fuel_gauge_get_props`.
+
+Properties are set by the client one at a time using :c:func:`fuel_gauge_set_prop`, or set in a
+batch using :c:func:`fuel_gauge_set_props`.
 
 Battery Cutoff
 ==============

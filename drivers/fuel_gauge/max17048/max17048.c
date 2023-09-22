@@ -175,23 +175,24 @@ static int max17048_init(const struct device *dev)
 /**
  * Get a single property from the fuel gauge
  */
-static int max17048_get_single_prop_impl(const struct device *dev, struct fuel_gauge_property *prop)
+static int max17048_get_single_prop_impl(const struct device *dev, fuel_gauge_prop_t prop,
+					 union fuel_gauge_prop_val *val)
 {
 	struct max17048_data *data = dev->data;
 	int rc = 0;
 
-	switch (prop->property_type) {
+	switch (prop) {
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
-		prop->value.runtime_to_empty = data->time_to_empty;
+		val->runtime_to_empty = data->time_to_empty;
 		break;
 	case FUEL_GAUGE_RUNTIME_TO_FULL:
-		prop->value.runtime_to_full = data->time_to_full;
+		val->runtime_to_full = data->time_to_full;
 		break;
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		prop->value.relative_state_of_charge = data->charge;
+		val->relative_state_of_charge = data->charge;
 		break;
 	case FUEL_GAUGE_VOLTAGE:
-		prop->value.voltage = data->voltage;
+		val->voltage = data->voltage;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -203,7 +204,8 @@ static int max17048_get_single_prop_impl(const struct device *dev, struct fuel_g
 /**
  * Get properties from the fuel gauge
  */
-static int max17048_get_prop(const struct device *dev, struct fuel_gauge_property *prop)
+static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+			     union fuel_gauge_prop_val *val)
 {
 	struct max17048_data *data = dev->data;
 	int rc = max17048_percent(dev, &data->charge);
@@ -273,7 +275,7 @@ static int max17048_get_prop(const struct device *dev, struct fuel_gauge_propert
 		data->time_to_empty = 0;
 	}
 
-	ret = max17048_get_single_prop_impl(dev, prop);
+	ret = max17048_get_single_prop_impl(dev, prop, val);
 
 	return ret;
 }

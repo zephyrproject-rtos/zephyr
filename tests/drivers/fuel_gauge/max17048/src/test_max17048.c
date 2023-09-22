@@ -32,98 +32,63 @@ static void *max17048_setup(void)
 	return &fixture;
 }
 
-ZTEST_USER_F(max17048, test_get_all_props_failed_returns_negative)
+ZTEST_USER_F(max17048, test_get_some_props_failed_returns_bad_status)
 {
-	struct fuel_gauge_property props[] = {
-		{
-			/* Invalid property */
-			.property_type = FUEL_GAUGE_PROP_MAX,
-		},
+	fuel_gauge_prop_t prop_types[] = {
+		/* First invalid property */
+		FUEL_GAUGE_PROP_MAX,
+		/* Second invalid property */
+		FUEL_GAUGE_PROP_MAX,
+		/* Valid property */
+		FUEL_GAUGE_VOLTAGE,
 	};
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
 
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
 
-	zassert_equal(-ENOTSUP, ret);
+	zassert_equal(ret, -ENOTSUP, "Getting bad property has a good status.");
 }
-
-ZTEST_USER_F(max17048, test_get_some_props_failed_returns_errno)
-{
-	struct fuel_gauge_property props[] = {
-		{
-			/* First invalid property */
-			.property_type = FUEL_GAUGE_PROP_MAX,
-		},
-		{
-			/* Second invalid property */
-			.property_type = FUEL_GAUGE_PROP_MAX,
-		},
-		{
-			/* Valid property */
-			.property_type = FUEL_GAUGE_VOLTAGE,
-		},
-
-	};
-
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
-
-	zassert_equal(ret, -ENOTSUP);
-}
-
 
 ZTEST_USER_F(max17048, test_get_props__returns_ok)
 {
 	/* Validate what props are supported by the driver */
 
-	struct fuel_gauge_property props[] = {
-		{
-			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
-		},
-		{
-			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
-		},
-		{
-			.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-		},
-		{
-			.property_type = FUEL_GAUGE_VOLTAGE,
-		}
+	fuel_gauge_prop_t prop_types[] = {
+		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		FUEL_GAUGE_RUNTIME_TO_FULL,
+		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
 	};
 
-	zassert_ok(fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props)));
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
+
+	zassert_ok(fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props)));
 }
 
 ZTEST_USER_F(max17048, test_current_rate_zero)
 {
 	/* Test when crate is 0, which is a special case */
 
-	struct fuel_gauge_property props[] = {
-		{
-			.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
-		},
-		{
-			.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
-		}
+	fuel_gauge_prop_t prop_types[] = {
+		FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		FUEL_GAUGE_RUNTIME_TO_FULL,
 	};
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
 
 	/** Null value, not charging either discharging. If not handled correctly,
 	 * it will cause a division by zero
 	 */
 	emul_max17048_set_crate_status(0);
-	int ret = fuel_gauge_get_props(fixture->dev, props, ARRAY_SIZE(props));
+	int ret = fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
 
-	zassert_equal(props[0].value.runtime_to_empty, 0,
-		"Runtime to empty is %d but it should be 0.",
-		props[0].value.runtime_to_full
-	);
-	zassert_equal(props[1].value.runtime_to_full, 0,
-		"Runtime to full is %d but it should be 0.",
-		props[1].value.runtime_to_full
-	);
+	zassert_equal(props[0].runtime_to_empty, 0, "Runtime to empty is %d but it should be 0.",
+		      props[0].runtime_to_full);
+	zassert_equal(props[1].runtime_to_full, 0, "Runtime to full is %d but it should be 0.",
+		      props[1].runtime_to_full);
 
 	zassert_ok(ret);
 	/* Return value to the original state */
 	emul_max17048_set_crate_status(0x4000);
 }
-
 
 ZTEST_SUITE(max17048, NULL, max17048_setup, NULL, NULL, NULL);
