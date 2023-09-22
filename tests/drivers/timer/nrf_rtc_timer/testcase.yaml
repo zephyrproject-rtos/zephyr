@@ -19,5 +19,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf52840dk_nrf52840
       - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpuapp
+      - nrf5340bsim_nrf5340_cpunet
     integration_platforms:
       - nrf52dk_nrf52832
