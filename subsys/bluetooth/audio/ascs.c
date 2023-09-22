@@ -115,7 +115,7 @@ static void ase_free(struct bt_ascs_ase *ase)
 {
 	__ASSERT(ase && ase->conn, "Non-existing ASE");
 
-	LOG_DBG("conn %p ase %p id 0x%02x", (void *)ase->conn, ase, ase->ep.status.id);
+	LOG_DBG("ccconn %p ase %p id 0x%02x", (void *)ase->conn, ase, ase->ep.status.id);
 
 	if (ase->ep.iso != NULL) {
 		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
