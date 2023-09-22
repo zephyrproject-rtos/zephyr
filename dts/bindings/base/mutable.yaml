@@ -1,0 +1,13 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties for Mutable devices
+
+properties:
+  zephyr,mutable:
+    type: boolean
+    description: |
+      True iff the device structure may be mutated.
+
+      Inherit this binding for devices that are runtime-modifiable, in-place.
+      This places the device structure into SRAM rather than Flash.
