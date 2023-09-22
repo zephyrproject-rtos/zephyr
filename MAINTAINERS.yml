@@ -1120,24 +1120,6 @@ Release Notes:
   labels:
     - "area: LED"
 
-"Drivers: lora":
-  status: maintained
-  maintainers:
-    - Mani-Sadhasivam
-  collaborators:
-    - mniestroj
-    - JordanYates
-  files:
-    - drivers/lora/
-    - include/zephyr/drivers/lora.h
-    - samples/drivers/lora/
-    - include/zephyr/lorawan/
-    - subsys/lorawan/
-    - samples/subsys/lorawan/
-    - doc/connectivity/lora_lorawan/index.rst
-  labels:
-    - "area: LoRa"
-
 "Drivers: Modem":
   status: maintained
   maintainers:
@@ -1717,6 +1699,24 @@ Logging:
     - doc/services/logging/
   labels:
     - "area: Logging"
+
+LoRa and LoRaWAN:
+  status: maintained
+  maintainers:
+    - Mani-Sadhasivam
+  collaborators:
+    - mniestroj
+    - JordanYates
+  files:
+    - drivers/lora/
+    - include/zephyr/drivers/lora.h
+    - samples/drivers/lora/
+    - include/zephyr/lorawan/
+    - subsys/lorawan/
+    - samples/subsys/lorawan/
+    - doc/connectivity/lora_lorawan/index.rst
+  labels:
+    - "area: LoRa"
 
 MAINTAINERS file:
   status: maintained
