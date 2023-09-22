@@ -1,0 +1,8 @@
+# Watchdog timer configuration
+
+# Copyright (c) 2023 ENE Technology
+
+config WDT_KB1200
+	bool "KB1200 watchdog driver"
+	help
+	  This option enables the KB1200 watchdog driver.

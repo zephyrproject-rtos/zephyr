@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE kb1200 GPIO node
+
+compatible: "ene,kb1200-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    port-num:
+      type: int
+      description: soc block mapping to pin
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

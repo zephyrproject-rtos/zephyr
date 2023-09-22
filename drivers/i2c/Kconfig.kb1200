@@ -1,0 +1,10 @@
+# ENE I2C configuration options
+
+# Copyright (c) 2023 ENE Technology
+
+config I2C_KB1200
+	bool "KB1200 I2C driver"
+	depends on SOC_ENE_KB1200
+	help
+	  Enable the ENE KB1200 I2C driver.
+

@@ -1,0 +1,9 @@
+# ENE KB1200 ADC configuration
+
+# Copyright (c) 2023 ENE Technology
+
+config ADC_KB1200
+	bool "ENE KB1200 ADC driver"
+	depends on SOC_ENE_KB1200
+	help
+	  Enable ADC driver for ENE KB1200.

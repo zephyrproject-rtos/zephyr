@@ -205,5 +205,6 @@ source "drivers/gpio/Kconfig.efinix_sapphire"
 
 source "drivers/gpio/Kconfig.davinci"
 source "drivers/gpio/Kconfig.sedi"
+source "drivers/gpio/Kconfig.kb1200"
 
 endif # GPIO

@@ -1,0 +1,23 @@
+# KB1200 tachometer sensor configuration options
+
+# Copyright (c) 2021 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_KB1200
+	bool "ENE KB1200 Tachometer sensor"
+	default n
+	help
+	  Enable the "ENE KB1200 tachometer sensor.
+
+if TACH_KB1200
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+config SENSOR_INIT_PRIORITY
+	int "Sensor init priority"
+	default 90
+	help
+	  Sensor initialization priority.
+
+endif # BBRAM_KB1200

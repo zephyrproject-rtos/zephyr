@@ -13,6 +13,7 @@ if PECI
 source "drivers/peci/Kconfig.xec"
 source "drivers/peci/Kconfig.it8xxx2"
 source "drivers/peci/Kconfig.npcx"
+source "drivers/peci/Kconfig.kb1200"
 
 module = PECI
 module-str = peci

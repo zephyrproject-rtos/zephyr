@@ -1,0 +1,12 @@
+description: ENE KB1200 UART
+
+compatible: "ene,kb1200-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

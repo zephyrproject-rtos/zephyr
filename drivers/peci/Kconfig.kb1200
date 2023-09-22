@@ -1,0 +1,9 @@
+# ENE KB1200 PECI configuration options
+
+# Copyright (c) 2023 ENE Technology
+
+config PECI_KB1200
+	bool "KB1200 PECI driver"
+	depends on SOC_ENE_KB1200
+	help
+	  Enable the ENE KB1200 PECI IO driver.

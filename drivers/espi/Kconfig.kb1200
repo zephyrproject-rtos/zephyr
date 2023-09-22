@@ -1,0 +1,11 @@
+# eSPI configuration options
+
+# Copyright (c) 2023 ENE Technology
+
+
+config ESPI_KB1200
+	bool "ENE KB106X eSPI Driver"
+	depends on SOC_ENE_KB1200
+	help
+	  Enable support for the kb1200 eSPI controllers.
+

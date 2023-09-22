@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE ESPI controller
+
+compatible: "ene,kb1200-espi"
+
+include: espi-controller.yaml
+
+properties:
+    reg:
+      description: mmio register space
+      required: true
+
+    interrupts:
+      required: true
+
+    interrupt-names:
+      required: true
+

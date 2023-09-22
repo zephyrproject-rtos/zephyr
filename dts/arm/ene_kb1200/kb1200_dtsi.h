@@ -1,0 +1,227 @@
+/**************************************************************************//**
+ * @file     kb1200_dtsi.h
+ * @brief    Header File for KB1200 Device Tree (ene_kb1200.dtsi)
+ *            
+ * @version  V1.0.0
+ * @date     02. July 2021
+ ******************************************************************************/
+
+#ifndef KB1200_DTSI_H
+#define KB1200_DTSI_H
+
+#define SYSTEM_CLOCK 48000000
+
+/* -------------------------  Interrupt Number Definition  ------------------------ */
+#define IRQn_WDT            0  
+#define IRQn_POWERLOST      1  
+#define IRQn_GPIO0x         2  
+#define IRQn_GPIO1x         3  
+#define IRQn_GPIO2x         4  
+#define IRQn_GPIO3x         5  
+#define IRQn_GPIO4x         6  
+#define IRQn_GPIO5x         7  
+#define IRQn_GPIO6x         8  
+#define IRQn_GPIO7x         9  
+#define IRQn_HBNT           10 
+#define IRQn_MTC            11 
+#define IRQn_ITIM           12 
+#define IRQn_GPT            13 
+#define IRQn_OMST           14 
+#define IRQn_TACHO          15 
+#define IRQn_IKB            16 
+#define IRQn_FSMBM          17 
+#define IRQn_I2CS           18 
+#define IRQn_I2CD32ESB      19 
+#define IRQn_SER            20 
+#define IRQn_PS2            21 
+#define IRQn_PECI           22 
+#define IRQn_UART           23 
+#define IRQn_DMA            24 
+#define IRQn_OWMEXTCMD      25 
+#define IRQn_KBC            26 
+#define IRQn_ECI            27 
+#define IRQn_DBI            28 
+#define IRQn_LEGI           29 
+#define IRQn_MBX            30 
+#define IRQn_MEMS_IOS       31 
+#define IRQn_ESPICH1        32 
+#define IRQn_ESPICH2        33 
+#define IRQn_ESPICH3        34 
+#define IRQn_SPIS           35 
+#define IRQn_SA             36 
+
+/* -------------------------  Module Map Definition  ------------------------ */
+/* Flash and SRAM, Peripheral base address */
+#define FLASH_BASE          (0x10000000UL)
+#define FLASH_SIZE          (0x00040000UL)
+#define SRAM_BASE           (0x20040000UL)
+#define SRAM_SIZE           (0x00010000UL)
+#define AHB_P_BASE          (0x50000000UL)  
+#define APB_P_BASE          (0x40000000UL) 
+/* APB Peripherals address */
+#define GCFG_BASE           (0x40000000UL)
+#define PMU_BASE            (0x40010000UL)
+#define AFAN_BASE           (0x40030000UL)
+#define VCC0_BASE           (0x40040000UL)
+#define HBNT_BASE           (0x40040040UL)
+#define VBAT_BASE           (0x40041000UL)
+#define MTC_BASE            (0x400410a0UL)
+#define WDT_BASE            (0x40060000UL)
+#define GPT_BASE            (0x40070000UL)
+#define ITIM_BASE           (0x40080000UL)
+#define OMST_BASE           (0x40090000UL)
+#define TACHO0_BASE         (0x40100000UL)
+#define TACHO1_BASE         (0x40100010UL)
+#define TACHO2_BASE         (0x40100020UL)
+#define TACHO3_BASE         (0x40100030UL)
+#define IKB_BASE            (0x40110000UL)
+#define VC_BASE             (0x40120000UL)
+#define ADC_BASE            (0x40130000UL)
+#define FANPWM_BASE         (0x40200000UL)
+#define PWM0_BASE           (0x40210000UL)
+#define PWM1_BASE           (0x40210010UL)
+#define PWM2_BASE           (0x40210020UL)
+#define PWM3_BASE           (0x40210030UL)
+#define PWM4_BASE           (0x40210040UL)
+#define PWM5_BASE           (0x40210050UL)
+#define PWM6_BASE           (0x40210060UL)
+#define PWM7_BASE           (0x40210070UL)
+#define PWM8_BASE           (0x40210080UL)
+#define PWM9_BASE           (0x40210090UL)
+#define PWMLED_BASE         (0x40220000UL)
+#define PS2_BASE            (0x40300000UL)
+#define SER_BASE            (0x40310000UL)
+#define SER1_BASE           (0x40310000UL)
+#define SER2_BASE           (0x40310020UL)
+#define SER3_BASE           (0x40310040UL)
+#define SPIH_BASE           (0x40320000UL)
+#define PECI_BASE           (0x40330000UL)
+#define FSMBM0_BASE         (0x40340000UL)
+#define FSMBM1_BASE         (0x40341000UL)
+#define FSMBM2_BASE         (0x40342000UL)
+#define FSMBM3_BASE         (0x40343000UL)
+#define FSMBM4_BASE         (0x40344000UL)
+#define FSMBM5_BASE         (0x40345000UL)
+#define FSMBM6_BASE         (0x40346000UL)
+#define FSMBM7_BASE         (0x40347000UL)
+#define FSMBM8_BASE         (0x40348000UL)
+#define FSMBM9_BASE         (0x40349000UL)
+#define I2CS0_BASE          (0x40350000UL)
+#define I2CS1_BASE          (0x40351000UL)
+#define I2CS2_BASE          (0x40352000UL)
+#define I2CS3_BASE          (0x40353000UL)
+#define OTP_BASE            (0x40360000UL)
+
+/* AHB Peripherals address */
+#define GPIO_BASE           (0x50000000UL)
+#define GPTD_BASE           (0x50010000UL)
+#define SA_BASE             (0x50020000UL)
+#define XBI_BASE            (0x50100000UL)
+#define ISPI_BASE           (0x50101000UL)
+#define ISPI_BUF_BASE       (0x50101100UL)
+#define ISPIP_BASE          (0x50101200UL)
+#define DMA_BASE            (0x50110000UL)
+#define EDI32_BASE          (0x50120000UL)
+#define I2CD32_BASE         (0x50130000UL)
+#define SPIS_BASE           (0x50150000UL)
+#define ESPI_BASE           (0x50200000UL)
+#define ESPIPHER_BASE       (0x50201000UL)
+#define ESPIVW_BASE         (0x50202000UL)
+#define ESPIOOB_BASE        (0x50203000UL)
+#define ESPIFA_BASE         (0x50204000UL)
+#define HIF_BASE            (0x50210000UL)
+#define KBC_BASE            (0x50211000UL)
+#define ECI_BASE            (0x50212000UL)
+#define LEGI0_BASE          (0x50213000UL)
+#define LEGI1_BASE          (0x50213020UL)
+#define DBI0_BASE           (0x50214000UL)
+#define DBI1_BASE           (0x50214020UL)
+#define MBX1_BASE           (0x50215000UL)
+#define MBX2_BASE           (0x50215100UL)
+#define UART_BASE           (0x50216000UL)
+
+/* -------------------------  Module address Definition (for module@XXXX)------------------ */
+#define FLASH_ADDR          10000000
+#define SRAM_ADDR           20040000
+#define AHB_P_ADDR          50000000
+#define APB_P_ADDR          40000000
+#define GCFG_ADDR           40000000
+#define PMU_ADDR            40010000
+#define AFAN_ADDR           40030000
+#define VCC0_ADDR           40040000
+#define HBNT_ADDR           40040040
+#define VBAT_ADDR           40041000
+#define MTC_ADDR            400410a0
+#define WDT_ADDR            40060000
+#define GPT_ADDR            40070000
+#define ITIM_ADDR           40080000
+#define OMST_ADDR           40090000
+#define TACHO0_ADDR         40100000
+#define TACHO1_ADDR         40100010
+#define TACHO2_ADDR         40100020
+#define TACHO3_ADDR         40100030
+#define IKB_ADDR            40110000
+#define VC_ADDR             40120000
+#define ADC_ADDR            40130000
+#define FANPWM_ADDR         40200000
+#define PWM0_ADDR           40210000
+#define PWM1_ADDR           40210010
+#define PWM2_ADDR           40210020
+#define PWM3_ADDR           40210030
+#define PWM4_ADDR           40210040
+#define PWM5_ADDR           40210050
+#define PWM6_ADDR           40210060
+#define PWM7_ADDR           40210070
+#define PWM8_ADDR           40210080
+#define PWM9_ADDR           40210090
+#define PWMLED_ADDR         40220000
+#define PS2_ADDR            40300000
+#define SER_ADDR            40310000
+#define SER1_ADDR           40310000
+#define SER2_ADDR           40310020
+#define SER3_ADDR           40310040
+#define SPIH_ADDR           40320000
+#define PECI_ADDR           40330000
+#define FSMBM0_ADDR         40340000
+#define FSMBM1_ADDR         40341000
+#define FSMBM2_ADDR         40342000
+#define FSMBM3_ADDR         40343000
+#define FSMBM4_ADDR         40344000
+#define FSMBM5_ADDR         40345000
+#define FSMBM6_ADDR         40346000
+#define FSMBM7_ADDR         40347000
+#define FSMBM8_ADDR         40348000
+#define FSMBM9_ADDR         40349000
+#define I2CS0_ADDR          40350000
+#define I2CS1_ADDR          40351000
+#define I2CS2_ADDR          40352000
+#define I2CS3_ADDR          40353000
+#define OTP_ADDR            40360000
+#define GPIO_ADDR           50000000
+#define GPTD_ADDR           50010000
+#define SA_ADDR             50020000
+#define XBI_ADDR            50100000
+#define ISPI_ADDR           50101000
+#define ISPI_BUF_ADDR       50101100
+#define ISPIP_ADDR          50101200
+#define DMA_ADDR            50110000
+#define EDI32_ADDR          50120000
+#define I2CD32_ADDR         50130000
+#define SPIS_ADDR           50150000
+#define ESPI_ADDR           50200000
+#define ESPIPHER_ADDR       50201000
+#define ESPIVW_ADDR         50202000
+#define ESPIOOB_ADDR        50203000
+#define ESPIFA_ADDR         50204000
+#define HIF_ADDR            50210000
+#define KBC_ADDR            50211000
+#define ECI_ADDR            50212000
+#define LEGI0_ADDR          50213000
+#define LEGI1_ADDR          50213020
+#define DBI0_ADDR           50214000
+#define DBI1_ADDR           50214020
+#define MBX1_ADDR           50215000
+#define MBX2_ADDR           50215100
+#define UART_ADDR           50216000
+
+#endif  /* KB1200_DTSI_H */

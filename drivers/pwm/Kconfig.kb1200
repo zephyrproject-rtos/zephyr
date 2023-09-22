@@ -1,0 +1,23 @@
+# KB1200 PWM driver configuration options
+
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_KB1200
+	bool "ENE KB1200 PWM driver"
+	depends on DT_HAS_ENE_KB1200_PWM_ENABLED
+	help
+	  This option enables the PWM driver for KB1200 processors.
+
+if PWM_KB1200
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+config PWM_INIT_PRIORITY
+	int "PWM initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for PWM drivers.
+
+endif # PWM_KB1200
