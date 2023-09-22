@@ -137,6 +137,10 @@
 	ITERABLE_SECTION_RAM(zbus_channel_observation_mask, 1)
 #endif /* CONFIG_ZBUS */
 
+#if defined(CONFIG_DEVICE_MUTABLE)
+	ITERABLE_SECTION_RAM(device_mutable, 4)
+#endif
+
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
