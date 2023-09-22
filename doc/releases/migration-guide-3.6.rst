@@ -35,6 +35,24 @@ enable all optional modules, and then run ``west update`` again.
 Device Drivers and Device Tree
 ==============================
 
+* The :dtcompatible:`st,lsm6dsv16x` sensor driver has been changed to support
+  configuration of both int1 and int2 pins. The DT attribute ``irq-gpios`` has been
+  removed and substituted by two new attributes, ``int1-gpios`` and ``int2-gpios``.
+  These attributes must be configured in the Device Tree similarly to the following
+  example:
+
+  .. code-block:: devicetree
+
+    / {
+        lsm6dsv16x@0 {
+            compatible = "st,lsm6dsv16x";
+
+            int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+            int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+            drdy-pin = <2>;
+        };
+    };
+
 Power Management
 ================
 
