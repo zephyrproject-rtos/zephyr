@@ -20,4 +20,7 @@ config SOC_STM32U595XX
 config SOC_STM32U599XX
 	bool "STM32U599XX"
 
+config SOC_STM32U5A5XX
+	bool "STM32U5A5XX"
+
 endchoice
