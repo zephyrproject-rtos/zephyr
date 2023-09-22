@@ -228,49 +228,17 @@ struct scfg_reg {
 	volatile uint8_t LV_GPIO_CTL0[5];
 };
 
-/* SCFG internal inline functions for multi-registers */
-static inline uint32_t npcx_devalt_offset(uint32_t alt_no)
-{
-	return 0x010 + alt_no;
-}
-
-static inline uint32_t npcx_devalt_lk_offset(uint32_t alt_lk_no)
-{
-	return 0x210 + alt_lk_no;
-}
-
-static inline uint32_t npcx_pupd_en_offset(uint32_t pupd_en_no)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
-		return 0x28 + pupd_en_no;
-	} else { /* NPCX4 and later series */
-		return 0x2b + pupd_en_no;
-	}
-}
-
-static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
-		if (ctl_no < 5) {
-			return 0x02a + ctl_no;
-		} else {
-			return 0x026 + ctl_no - 5;
-		}
-	} else { /* NPCX4 and later series */
-		return 0x150 + ctl_no;
-	}
-}
-
 /* Macro functions for SCFG multi-registers */
-#define NPCX_DEV_CTL(base, n) (*(volatile uint8_t *)(base + n))
-#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
-						npcx_devalt_offset(n)))
-#define NPCX_DEVALT_LK(base, n) (*(volatile uint8_t *)(base + \
-						npcx_devalt_lk_offset(n)))
-#define NPCX_PUPD_EN(base, n) (*(volatile uint8_t *)(base + \
-						npcx_pupd_en_offset(n)))
-#define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
-						npcx_lv_gpio_ctl_offset(n)))
+#define NPCX_DEV_CTL(base, n) \
+	(*(volatile uint8_t *)(base + n))
+#define NPCX_DEVALT(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_DEVALT_OFFSET(n)))
+#define NPCX_DEVALT_LK(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_DEVALT_LK_OFFSET(n)))
+#define NPCX_PUPD_EN(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_PUPD_EN_OFFSET(n)))
+#define NPCX_LV_GPIO_CTL(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_LV_GPIO_CTL_OFFSET(n)))
 
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS                6
@@ -413,95 +381,21 @@ struct uart_reg {
 #define NPCX_UFRCTL_RNEMPTY_EN                6
 #define NPCX_UFRCTL_ERR_EN                    7
 
-/*
- * Multi-Input Wake-Up Unit (MIWU) device registers
- */
-
-/* MIWU internal inline functions for multi-registers */
-static inline uint32_t npcx_wkedg_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x000 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
-	} else { /* NPCX9 and later series */
-		return 0x000 + group * 0x10UL;
-	}
-}
-
-static inline uint32_t npcx_wkaedg_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x001 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
-	} else { /* NPCX9 and later series */
-		return 0x001 + group * 0x10ul;
-	}
-}
-
-static inline uint32_t npcx_wkmod_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x070 + group;
-	} else { /* NPCX9 and later series */
-		return 0x002 + group * 0x10ul;
-	}
-}
-
-static inline uint32_t npcx_wkpnd_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x00a + (group * 4ul) + (group < 5 ? 0 : 0x10);
-	} else { /* NPCX9 and later series */
-		return 0x003 + group * 0x10ul;
-	}
-}
-
-static inline uint32_t npcx_wkpcl_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x00c + (group * 4ul) + (group < 5 ? 0 : 0x10);
-	} else { /* NPCX9 and later series */
-		return 0x004 + group * 0x10ul;
-	}
-}
-
-static inline uint32_t npcx_wken_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x01e + (group * 2ul) + (group < 5 ? 0 : 0x12);
-	} else { /* NPCX9 and later series */
-		return 0x005 + group * 0x10ul;
-	}
-}
-
-static inline uint32_t npcx_wkst_offset(uint32_t group)
-{
-	/* NPCX9 and later series only */
-	return 0x006 + group * 0x10ul;
-}
-
-static inline uint32_t npcx_wkinen_offset(uint32_t group)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x01f + (group * 2ul) + (group < 5 ? 0 : 0x12);
-	} else { /* NPCX9 and later series */
-		return 0x007 + group * 0x10ul;
-	}
-}
-
 /* Macro functions for MIWU multi-registers */
 #define NPCX_WKEDG(base, group) \
-	(*(volatile uint8_t *)(base +  npcx_wkedg_offset(group)))
+	(*(volatile uint8_t *)(base +  NPCX_WKEDG_OFFSET(group)))
 #define NPCX_WKAEDG(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wkaedg_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKAEDG_OFFSET(group)))
 #define NPCX_WKPND(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wkpnd_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKPND_OFFSET(group)))
 #define NPCX_WKPCL(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wkpcl_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKPCL_OFFSET(group)))
 #define NPCX_WKEN(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wken_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKEN_OFFSET(group)))
 #define NPCX_WKINEN(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wkinen_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKINEN_OFFSET(group)))
 #define NPCX_WKMOD(base, group) \
-	(*(volatile uint8_t *)(base + npcx_wkmod_offset(group)))
+	(*(volatile uint8_t *)(base + NPCX_WKMOD_OFFSET(group)))
 
 /*
  * General-Purpose I/O (GPIO) device registers
@@ -582,33 +476,10 @@ struct adc_reg {
 };
 
 /* ADC internal inline functions for multi-registers */
-static inline uint32_t npcx_chndat_offset(uint32_t ch)
-{
-	return 0x40 + ch * 2;
-}
-
-static inline uint32_t npcx_thr_base(void)
-{
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		return 0x014;
-	} else if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
-		return 0x060;
-	} else { /* NPCX4 and later series */
-		return 0x080;
-	}
-}
-
-static inline uint32_t npcx_thrctl_offset(uint32_t ctrl)
-{
-	return npcx_thr_base() + ctrl * 2;
-}
-
-#define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
+#define CHNDAT(base, ch) \
+	(*(volatile uint16_t *)((base) + NPCX_CHNDAT_OFFSET(ch)))
 #define THRCTL(base, ctrl) \
-	(*(volatile uint16_t *)(base + npcx_thrctl_offset(ctrl)))
-#ifdef CONFIG_SOC_SERIES_NPCX4
-#define THEN(base) (*(volatile uint16_t *)(base + 0x90))
-#endif
+	(*(volatile uint16_t *)(base + NPCX_THRCTL_OFFSET(ctrl)))
 
 /* ADC register fields */
 #define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)
@@ -628,16 +499,6 @@ static inline uint32_t npcx_thrctl_offset(uint32_t ctrl)
 #define NPCX_ADCCNF_STOP                      11
 #define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
 #define NPCX_CHNDAT_NEW                       15
-#ifdef CONFIG_SOC_SERIES_NPCX4
-#define NPCX_THRCTL_L_H                       15
-#define NPCX_THRCTL_CHNSEL                    FIELD(10, 5)
-#define NPCX_THRCTL_THRVAL                    FIELD(0, 10)
-#else
-#define NPCX_THRCTL_THEN                      15
-#define NPCX_THRCTL_L_H                       14
-#define NPCX_THRCTL_CHNSEL                    FIELD(10, 4)
-#define NPCX_THRCTL_THRVAL                    FIELD(0, 10)
-#endif
 #define NPCX_THRCTS_ADC_WKEN                  15
 #define NPCX_THRCTS_THR3_IEN                  10
 #define NPCX_THRCTS_THR2_IEN                  9
@@ -1598,11 +1459,6 @@ struct fiu_reg {
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS10    6
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS11    7
 #define NPCX_SPI1_DEV_SPI1_LO_DEV_SIZE   FIELD(0, 4)
-#if defined(CONFIG_SOC_SERIES_NPCX9)
-#define NPCX_FIU_EXT_CFG_SPI1_2DEV       7
-#else
-#define NPCX_FIU_EXT_CFG_SPI1_2DEV       6
-#endif
 #define NPCX_FIU_EXT_CFG_SET_DMM_EN      2
 #define NPCX_FIU_EXT_CFG_SET_CMD_EN      1
 #define NPCX_SPI_DEV_NADDRB              FIELD(5, 3)
