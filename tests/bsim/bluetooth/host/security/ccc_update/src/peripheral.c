@@ -194,9 +194,9 @@ static void connect_wait_unsubscribtion(struct bt_le_ext_adv *adv)
 
 	stop_adv(adv);
 
-	/* check that subscribtion is not restored for bad client */
-	if (is_peer_subscribed(default_conn)) {
-		FAIL("Subscribtion has been restored for bad client\n");
+	/* check that subscribtion is restored for bad client */
+	if (!is_peer_subscribed(default_conn)) {
+		FAIL("Subscribtion has not been restored for bad client\n");
 	}
 
 	/* confirm to bad client that the subscribtion had not been restored */
@@ -204,12 +204,12 @@ static void connect_wait_unsubscribtion(struct bt_le_ext_adv *adv)
 	/* wait for confirmation that bad client requested unsubscribtion */
 	backchannel_sync_wait(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
 
-	/* check that unsubscribtion request failed */
-	if (GET_FLAG(ccc_cfg_changed_flag)) {
-		FAIL("Bad client updated CCC config\n");
+	/* check that unsubscribtion request didn't fail */
+	if (!GET_FLAG(ccc_cfg_changed_flag)) {
+		FAIL("Bad client didn't manage to update CCC config\n");
 	}
 
-	/* confirm to bad client that unsubscribtion request has been ignored */
+	/* confirm to bad client that unsubscribtion request has been well registered */
 	backchannel_sync_send(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
 }
 
@@ -225,9 +225,9 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 	/* wait for good client end of security update */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that subscribtion has been restored */
-	if (!is_peer_subscribed(default_conn)) {
-		FAIL("Good client is not subscribed\n");
+	/* check that subscribtion hasn't been restored */
+	if (is_peer_subscribed(default_conn)) {
+		FAIL("Good client is subscribed\n");
 	}
 
 	/* confirm to good client that the subscribtion has been well restored */
@@ -285,6 +285,14 @@ static void check_ccc_handle(void)
 
 void run_peripheral(void)
 {
+	/*
+	 * test goal: demonstrate the expected behavior of the GATT server when
+	 * a non-bonded peer try to unsubscribe from a previously subscription
+	 * done in a bonded context
+	 *
+	 * test pass if the bad client manage to unsubscribe
+	 */
+
 	int err;
 	struct bt_le_ext_adv *adv = NULL;
 
