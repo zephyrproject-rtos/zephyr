@@ -7,25 +7,23 @@ comment "Bluetooth HCI Driver Options"
 
 config BT_UART
 	bool
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
 
 choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
 
 config BT_H4
 	bool "H:4 UART"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
 	select EXPERIMENTAL
-	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
@@ -41,7 +39,7 @@ config BT_RPMSG
 
 config BT_SPI
 	bool "SPI HCI"
-	depends on SPI
+	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
