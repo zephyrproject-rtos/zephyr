@@ -11,10 +11,6 @@ config SOC_TOOLCHAIN_NAME
 	string
 	default "nxp_imx_adsp"
 
-config SOC
-	string
-	default "nxp_imx8"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 666000000 if XTENSA_TIMER
 
@@ -26,5 +22,7 @@ config DYNAMIC_INTERRUPTS
 
 config LOG
 	default y
+
+source "soc/xtensa/nxp_adsp/imx8/Kconfig.defconfig.imx8q*"
 
 endif # SOC_SERIES_NXP_IMX8
