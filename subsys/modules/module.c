@@ -173,7 +173,7 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 	}
 }
 
-__weak void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
+__weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
 }
 
@@ -186,9 +186,10 @@ __weak void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
  */
 static int module_load_rel(struct module_stream *ms, struct module *m)
 {
-	elf_word i, j, sym_cnt, rel_cnt;
-	elf_rel_t rel;
+	elf_word sym_cnt, rel_cnt;
+	elf_rela_t rel;
 	char name[32];
+	unsigned int i, j;
 
 	m->mem_size = 0;
 	m->sym_tab.sym_cnt = 0;
