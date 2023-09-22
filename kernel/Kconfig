@@ -1274,6 +1274,13 @@ config DEVICE_DEPS_DYNAMIC
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
+config DEVICE_MUTABLE
+	bool "Mutable devices [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Support mutable devices. Mutable devices are instantiated in SRAM
+	  instead of Flash and are runtime modifiable in kernel mode.
+
 endmenu
 
 rsource "Kconfig.vm"
