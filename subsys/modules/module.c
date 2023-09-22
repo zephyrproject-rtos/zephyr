@@ -391,7 +391,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 		if (shdr.sh_type != SHT_REL && shdr.sh_type != SHT_RELA)
 			continue;
 
-		rel_cnt = shdr.sh_size / sizeof(elf_rel_t);
+		rel_cnt = shdr.sh_size / shdr.sh_entsize;
 
 		uintptr_t loc;
 
@@ -423,8 +423,8 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 		for (j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
-			module_seek(ms, shdr.sh_offset + j * sizeof(elf_rel_t));
-			module_read(ms, &rel, sizeof(elf_rel_t));
+			module_seek(ms, shdr.sh_offset + j * shdr.sh_entsize);
+			module_read(ms, &rel, shdr.sh_entsize);
 
 			/* get corresponding symbol */
 			module_seek(ms, ms->sects[MOD_SECT_SYMTAB].sh_offset
