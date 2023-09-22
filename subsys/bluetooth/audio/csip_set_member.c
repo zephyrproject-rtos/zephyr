@@ -39,7 +39,7 @@
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
-enum {
+enum csip_pending_notify_flag {
 	FLAG_ACTIVE,
 	FLAG_SET_MEMBER_LOCK,
 	FLAG_NUM,
@@ -78,6 +78,12 @@ struct bt_csip_set_member_svc_inst {
 static struct bt_csip_set_member_svc_inst svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
+static atomic_t notify_in_progress;
+
+static void deferred_nfy_work_handler(struct k_work *work);
+
+static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
+
 struct csip_notify_foreach {
 	struct bt_conn *excluded_client;
 	struct bt_csip_set_member_svc_inst *svc_inst;
@@ -95,13 +101,63 @@ static bool is_last_client_to_write(const struct bt_csip_set_member_svc_inst *sv
 	}
 }
 
-static void notify_lock_value(const struct bt_csip_set_member_svc_inst *svc_inst,
+static void csip_gatt_notify_complete_cb(struct bt_conn *conn, void *user_data)
+{
+	/* Notification done, clear bit and reschedule work */
+	atomic_clear(&notify_in_progress);
+	k_work_submit(&deferred_nfy_work);
+}
+
+static int csip_gatt_notify_set_lock(struct bt_conn *conn,
+				     const struct bt_gatt_attr *attr,
+				     const void *data,
+				     uint16_t len)
+{
+	int err;
+	struct bt_gatt_notify_params params;
+
+	memset(&params, 0, sizeof(params));
+	params.uuid = BT_UUID_CSIS_SET_LOCK;
+	params.attr = attr;
+	params.data = data;
+	params.len  = len;
+	params.func = csip_gatt_notify_complete_cb;
+
+	/* Mark notification in progress */
+	atomic_set(&notify_in_progress, 1);
+
+	err = bt_gatt_notify_cb(conn, &params);
+	if (err != 0) {
+		atomic_clear(&notify_in_progress);
+
+		if (err != -ENOTCONN) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static void csip_set_notify_bit(struct bt_csip_set_member_svc_inst *svc_inst,
+				enum csip_pending_notify_flag flag)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
+		struct csip_client *client;
+
+		client = &svc_inst->clients[i];
+		if (atomic_test_bit(client->flags, FLAG_ACTIVE)) {
+			atomic_set_bit(client->flags, flag);
+		}
+	}
+}
+
+static int notify_lock_value(const struct bt_csip_set_member_svc_inst *svc_inst,
 			      struct bt_conn *conn)
 {
-	bt_gatt_notify_uuid(conn, BT_UUID_CSIS_SET_LOCK,
-			    svc_inst->service_p->attrs,
-			    &svc_inst->set_lock,
-			    sizeof(svc_inst->set_lock));
+	LOG_DBG("");
+	return csip_gatt_notify_set_lock(conn, svc_inst->service_p->attrs,
+					 &svc_inst->set_lock,
+					 sizeof(svc_inst->set_lock));
 }
 
 static void notify_client(struct bt_conn *conn, void *data)
@@ -114,17 +170,26 @@ static void notify_client(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	notify_lock_value(svc_inst, conn);
 
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
 		struct csip_client *client;
 
 		client = &svc_inst->clients[i];
 
 		if (atomic_test_bit(client->flags, FLAG_SET_MEMBER_LOCK) &&
 		    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
-			atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
-			break;
+			/* First try to send the notification directly, and if it fails add it
+			 * to system workqueue for retry. We do it like this here as the client
+			 * wants the lock notification asap to begin ordered access procedure
+			 */
+			if (notify_lock_value(svc_inst, conn) != 0) {
+				csip_set_notify_bit(svc_inst, FLAG_SET_MEMBER_LOCK);
+				k_work_submit(&deferred_nfy_work);
+			} else {
+				atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
+				break;
+			}
 		}
 	}
 }
@@ -140,7 +205,7 @@ static void notify_clients(struct bt_csip_set_member_svc_inst *svc_inst,
 	/* Mark all bonded devices as pending notifications, and clear those
 	 * that are notified in `notify_client`
 	 */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
 		struct csip_client *client;
 
 		client = &svc_inst->clients[i];
@@ -492,18 +557,17 @@ static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 		return;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
-		for (int j = 0; j < ARRAY_SIZE(svc_inst->clients); j++) {
+		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
 			struct csip_client *client;
 
 			client = &svc_inst->clients[i];
 
 			if (atomic_test_bit(client->flags, FLAG_SET_MEMBER_LOCK) &&
 			    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
-				notify_lock_value(svc_inst, conn);
-				atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
+				k_work_submit(&deferred_nfy_work);
 				break;
 			}
 		}
@@ -530,7 +594,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 	/* Check if the disconnected device once was bonded and stored
 	 * here as a bonded device
 	 */
-	for (int i = 0; i < ARRAY_SIZE(svc_inst->clients); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_inst->clients); i++) {
 		struct csip_client *client;
 
 		client = &svc_inst->clients[i];
@@ -547,7 +611,7 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
 	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 			handle_csip_disconnect(&svc_insts[i], conn);
 		}
 	}
@@ -584,6 +648,8 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 			client->age = svc_inst->age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
+			/* Send out all pending notifications */
+			k_work_submit(&deferred_nfy_work);
 			return;
 		}
 	}
@@ -593,7 +659,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 	oldest = &svc_inst->clients[0];
 
-	for (int i = 1; i < ARRAY_SIZE(svc_inst->clients); i++) {
+	for (int i = 1U; i < ARRAY_SIZE(svc_inst->clients); i++) {
 		struct csip_client *client;
 
 		client = &svc_inst->clients[i];
@@ -604,7 +670,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 	}
 	(void)memset(oldest, 0, sizeof(*oldest));
 	bt_addr_le_copy(&oldest->addr, &conn->le.dst);
-	atomic_set_bit(client->flags, FLAG_ACTIVE);
+	atomic_set_bit(oldest->flags, FLAG_ACTIVE);
 	oldest->age = svc_inst->age_counter++;
 #else
 	LOG_WRN("Could not add device to pending notification list");
@@ -632,21 +698,21 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 		return;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		handle_csip_auth_complete(&svc_insts[i], conn);
 	}
 }
 
 static void csip_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 {
-	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
-		for (int j = 0; j < ARRAY_SIZE(svc_inst->clients); j++) {
+		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
 
 			/* Check if match, and if active, if so, reset */
 			if (atomic_test_bit(svc_inst->clients[i].flags, FLAG_ACTIVE) &&
-			bt_addr_le_eq(peer, &svc_inst->clients[i].addr)) {
+			    bt_addr_le_eq(peer, &svc_inst->clients[i].addr)) {
 				atomic_clear(svc_inst->clients[i].flags);
 				(void)memset(&svc_inst->clients[i].addr, 0, sizeof(bt_addr_le_t));
 				break;
@@ -765,10 +831,72 @@ static void remove_csis_char(const struct bt_uuid *uuid, struct bt_gatt_service 
 	__ASSERT(false, "Failed to remove CSIS char %s", bt_uuid_str(uuid));
 }
 
+static void notify_cb(struct bt_conn *conn, void *data)
+{
+	struct bt_conn_info info;
+	int err = 0;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		LOG_DBG("Not connected");
+		return;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
+		struct csip_client *client = &svc_inst->clients[bt_conn_index(conn)];
+
+		if (atomic_test_bit(client->flags, FLAG_SET_MEMBER_LOCK)) {
+			err = notify_lock_value(svc_inst, conn);
+			if (!err) {
+				atomic_clear_bit(client->flags, FLAG_SET_MEMBER_LOCK);
+			}
+		}
+	}
+}
+
+static void deferred_nfy_work_handler(struct k_work *work)
+{
+	/* Check if we have unverified notifications in progress */
+	if (atomic_get(&notify_in_progress)) {
+		return;
+	}
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
+}
+
+static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void *data)
+{
+
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
+
+		for (size_t j = 1U; j < ARRAY_SIZE(svc_inst->clients); i++) {
+			/* Check if device is registered, it not, add it */
+			if (!atomic_test_bit(svc_inst->clients[j].flags, FLAG_ACTIVE)) {
+				char addr_str[BT_ADDR_LE_STR_LEN];
+
+				atomic_set_bit(svc_inst->clients[j].flags, FLAG_ACTIVE);
+				memcpy(&svc_inst->clients[j].addr, &info->addr,
+				       sizeof(bt_addr_le_t));
+				bt_addr_le_to_str(&svc_inst->clients[j].addr, addr_str,
+						  sizeof(addr_str));
+				LOG_DBG("Added %s to bonded list\n", addr_str);
+				return;
+			}
+		}
+	}
+}
+
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst)
 {
-	static bool callbacks_registered;
+	static bool first_register;
 	static uint8_t instance_cnt;
 	struct bt_csip_set_member_svc_inst *inst;
 	int err;
@@ -792,11 +920,14 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	inst->service_p = &csip_set_member_service_list[instance_cnt];
 	instance_cnt++;
 
-	if (!callbacks_registered) {
+	if (!first_register) {
 		bt_conn_cb_register(&conn_callbacks);
 		bt_conn_auth_info_cb_register(&auth_callbacks);
 
-		callbacks_registered = true;
+		/* Restore bonding list */
+		bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
+
+		first_register = true;
 	}
 
 	/* The removal of the optional characteristics should be done in reverse order of the order
