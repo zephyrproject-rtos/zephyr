@@ -65,7 +65,7 @@ int main(void)
 
 			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);
 
-			err = adc_read(adc_channels[i].dev, &sequence);
+			err = adc_read_dt(&adc_channels[i], &sequence);
 			if (err < 0) {
 				printk("Could not read (%d)\n", err);
 				continue;

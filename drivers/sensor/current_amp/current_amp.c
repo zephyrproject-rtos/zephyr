@@ -28,7 +28,7 @@ static int fetch(const struct device *dev, enum sensor_channel chan)
 		return -ENOTSUP;
 	}
 
-	ret = adc_read(config->port.dev, &data->sequence);
+	ret = adc_read_dt(&config->port, &data->sequence);
 	if (ret != 0) {
 		LOG_ERR("adc_read: %d", ret);
 	}
