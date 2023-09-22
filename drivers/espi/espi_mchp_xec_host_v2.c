@@ -826,10 +826,18 @@ static void p80bd0_isr(const struct device *dev)
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION, 0,
 				  ESPI_PERIPHERAL_NODATA };
 	int count = 8; /* limit ISR to 8 bytes */
-	uint32_t dattr = p80regs->EC_DA;
+	uint32_t dattr;
 
-	/* b[7:0]=8-bit value written, b[15:8]=attributes */
-	while ((dattr & MCHP_P80BD_ECDA_NE) && (count--)) { /* Not empty? */
+	while (count--) {
+		/* Excerpt from manual:
+		 *   "Reading from this register byte accepts the value at the top of the FIFO, then advances the FIFO, updating both this"
+		 *   "location and the EC Data Attributes Register."
+		 * -> so ensure the FIFO data is read exactly once on each loop iteration
+		 */
+		/* b[7:0]=8-bit value written, b[15:8]=attributes */
+		dattr = p80regs->EC_DA;
+		if (!(dattr & MCHP_P80BD_ECDA_NE)) /* Not "Not empty"? -> is FIFO empty? */
+			break;
 		/* espi_event protocol No Data value is 0 so pick a bit and
 		 * set it. This depends on the application.
 		 */
