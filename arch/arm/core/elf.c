@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
  * The relocation codes for arm are well documented
  * https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#relocation
  */
-void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval)
+void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
 
