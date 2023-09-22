@@ -1227,9 +1227,9 @@ static int mcux_flexcan_init(const struct device *dev)
 				data->timing_data.phase_seg2);
 			LOG_DBG("Sample-point err : %d", err);
 		} else {
-			data->timing_data.prop_seg = config->prop_seg;
-			data->timing_data.phase_seg1 = config->phase_seg1;
-			data->timing_data.phase_seg2 = config->phase_seg2;
+			data->timing_data.prop_seg = config->prop_seg_data;
+			data->timing_data.phase_seg1 = config->phase_seg1_data;
+			data->timing_data.phase_seg2 = config->phase_seg2_data;
 			err = can_calc_prescaler(dev, &data->timing_data, config->bitrate_data);
 			if (err) {
 				LOG_WRN("Bitrate error: %d", err);
