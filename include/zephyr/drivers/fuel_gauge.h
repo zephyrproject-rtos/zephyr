@@ -115,76 +115,65 @@ enum fuel_gauge_prop_type {
 
 typedef uint16_t fuel_gauge_prop_t;
 
-struct fuel_gauge_property {
-	/** Battery fuel gauge property to get */
-	fuel_gauge_prop_t property_type;
+/** Property field to value/type union */
+union fuel_gauge_prop_val {
+	/* Fields have the format: */
+	/* FUEL_GAUGE_PROPERTY_FIELD */
+	/* type property_field; */
 
-	/** Property field for getting */
-	union {
-		/* Fields have the format: */
-		/* FUEL_GAUGE_PROPERTY_FIELD */
-		/* type property_field; */
-
-		/* Dynamic Battery Info */
-		/** FUEL_GAUGE_AVG_CURRENT */
-		int avg_current;
-		/** FUEL_GAUGE_CHARGE_CUTOFF */
-		bool cutoff;
-		/** FUEL_GAUGE_CURRENT */
-		int current;
-		/** FUEL_GAUGE_CYCLE_COUNT */
-		uint32_t cycle_count;
-		/** FUEL_GAUGE_FLAGS */
-		uint32_t flags;
-		/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
-		uint32_t full_charge_capacity;
-		/** FUEL_GAUGE_REMAINING_CAPACITY */
-		uint32_t remaining_capacity;
-		/** FUEL_GAUGE_RUNTIME_TO_EMPTY */
-		uint32_t runtime_to_empty;
-		/** FUEL_GAUGE_RUNTIME_TO_FULL */
-		uint32_t runtime_to_full;
-		/** FUEL_GAUGE_SBS_MFR_ACCESS */
-		uint16_t sbs_mfr_access_word;
-		/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE */
-		uint8_t absolute_state_of_charge;
-		/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE */
-		uint8_t relative_state_of_charge;
-		/** FUEL_GAUGE_TEMPERATURE */
-		uint16_t temperature;
-		/** FUEL_GAUGE_VOLTAGE */
-		int voltage;
-		/** FUEL_GAUGE_SBS_MODE */
-		uint16_t sbs_mode;
-		/** FUEL_GAUGE_CHARGE_CURRENT */
-		uint16_t chg_current;
-		/** FUEL_GAUGE_CHARGE_VOLTAGE */
-		uint16_t chg_voltage;
-		/** FUEL_GAUGE_STATUS */
-		uint16_t fg_status;
-		/** FUEL_GAUGE_DESIGN_CAPACITY */
-		uint16_t design_cap;
-		/** FUEL_GAUGE_DESIGN_VOLTAGE */
-		uint16_t design_volt;
-		/** FUEL_GAUGE_SBS_ATRATE */
-		int16_t sbs_at_rate;
-		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL */
-		uint16_t sbs_at_rate_time_to_full;
-		/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	*/
-		uint16_t sbs_at_rate_time_to_empty;
-		/** FUEL_GAUGE_SBS_ATRATE_OK */
-		bool sbs_at_rate_ok;
-		/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
-		uint16_t sbs_remaining_capacity_alarm;
-		/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
-		uint16_t sbs_remaining_time_alarm;
-	} value;
-};
-
-/** Buffer properties are separated due to size */
-struct fuel_gauge_buffer_property {
-	/** Battery fuel gauge property to get */
-	fuel_gauge_prop_t property_type;
+	/* Dynamic Battery Info */
+	/** FUEL_GAUGE_AVG_CURRENT */
+	int avg_current;
+	/** FUEL_GAUGE_CHARGE_CUTOFF */
+	bool cutoff;
+	/** FUEL_GAUGE_CURRENT */
+	int current;
+	/** FUEL_GAUGE_CYCLE_COUNT */
+	uint32_t cycle_count;
+	/** FUEL_GAUGE_FLAGS */
+	uint32_t flags;
+	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
+	uint32_t full_charge_capacity;
+	/** FUEL_GAUGE_REMAINING_CAPACITY */
+	uint32_t remaining_capacity;
+	/** FUEL_GAUGE_RUNTIME_TO_EMPTY */
+	uint32_t runtime_to_empty;
+	/** FUEL_GAUGE_RUNTIME_TO_FULL */
+	uint32_t runtime_to_full;
+	/** FUEL_GAUGE_SBS_MFR_ACCESS */
+	uint16_t sbs_mfr_access_word;
+	/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE */
+	uint8_t absolute_state_of_charge;
+	/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE */
+	uint8_t relative_state_of_charge;
+	/** FUEL_GAUGE_TEMPERATURE */
+	uint16_t temperature;
+	/** FUEL_GAUGE_VOLTAGE */
+	int voltage;
+	/** FUEL_GAUGE_SBS_MODE */
+	uint16_t sbs_mode;
+	/** FUEL_GAUGE_CHARGE_CURRENT */
+	uint16_t chg_current;
+	/** FUEL_GAUGE_CHARGE_VOLTAGE */
+	uint16_t chg_voltage;
+	/** FUEL_GAUGE_STATUS */
+	uint16_t fg_status;
+	/** FUEL_GAUGE_DESIGN_CAPACITY */
+	uint16_t design_cap;
+	/** FUEL_GAUGE_DESIGN_VOLTAGE */
+	uint16_t design_volt;
+	/** FUEL_GAUGE_SBS_ATRATE */
+	int16_t sbs_at_rate;
+	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL */
+	uint16_t sbs_at_rate_time_to_full;
+	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	*/
+	uint16_t sbs_at_rate_time_to_empty;
+	/** FUEL_GAUGE_SBS_ATRATE_OK */
+	bool sbs_at_rate_ok;
+	/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
+	uint16_t sbs_remaining_capacity_alarm;
+	/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
+	uint16_t sbs_remaining_time_alarm;
 };
 
 /**
@@ -215,8 +204,8 @@ struct sbs_gauge_device_chemistry {
  *
  * See fuel_gauge_get_property() for argument description
  */
-typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
-					 struct fuel_gauge_property *prop);
+typedef int (*fuel_gauge_get_property_t)(const struct device *dev, fuel_gauge_prop_t prop,
+					 union fuel_gauge_prop_val *val);
 
 /**
  * @typedef fuel_gauge_set_property_t
@@ -224,8 +213,8 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev,
  *
  * See fuel_gauge_set_property() for argument description
  */
-typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
-					 struct fuel_gauge_property *prop);
+typedef int (*fuel_gauge_set_property_t)(const struct device *dev, fuel_gauge_prop_t prop,
+					 union fuel_gauge_prop_val val);
 
 /**
  * @typedef fuel_gauge_get_buffer_property_t
@@ -234,7 +223,7 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev,
  * See fuel_gauge_get_buffer_property() for argument description
  */
 typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
-					       struct fuel_gauge_buffer_property *prop,
+					       fuel_gauge_prop_t prop_type,
 					       void *dst, size_t dst_len);
 
 /**
@@ -264,17 +253,16 @@ __subsystem struct fuel_gauge_driver_api {
  * @brief Fetch a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param prop pointer to a fuel_gauge_property struct where the property struct
- * field is set by the caller to determine what property is read from the
- * fuel gauge device into the fuel_gauge_property struct's value field. The props array
- * maintains the same order of properties as it was given.
- *
+ * @param prop Type of property to be fetched from device
+ * @param val pointer to a union fuel_gauge_prop_val where the property is read into from the
+ * fuel gauge device.
  * @return 0 if successful, negative errno code if failure.
  */
-__syscall int fuel_gauge_get_prop(const struct device *dev, struct fuel_gauge_property *prop);
+__syscall int fuel_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+				  union fuel_gauge_prop_val *val);
 
-static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
-					     struct fuel_gauge_property *prop)
+static inline int z_impl_fuel_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+					     union fuel_gauge_prop_val *val)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
 
@@ -282,7 +270,7 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->get_property(dev, prop);
+	return api->get_property(dev, prop, val);
 }
 
 /**
@@ -291,23 +279,25 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev,
  * of the fuel gauge driver APIs struct to override this implementation.
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param props pointer to array of fuel_gauge_property struct where the property struct
- * field is set by the caller to determine what property is read from the
- * fuel gauge device into the fuel_gauge_property struct's value field. The props array
- * maintains the same order of properties as it was given.
- * @param len number of properties in props array
+ * @param props Array of the type of property to be fetched from device, each index corresponds
+ * to the same index of the vals input array.
+ * @param vals Pointer to array of union fuel_gauge_prop_val where the property is read into from
+ * the fuel gauge device. The vals array is not permuted.
+ * @param len number of properties in props & vals array
  *
  * @return 0 if successful, negative errno code of first failing property
  */
-__syscall int fuel_gauge_get_props(const struct device *dev, struct fuel_gauge_property *props,
-				   size_t len);
+
+__syscall int fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+				   union fuel_gauge_prop_val *vals, size_t len);
 static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
-					      struct fuel_gauge_property *props, size_t len)
+					      fuel_gauge_prop_t *props,
+					      union fuel_gauge_prop_val *vals, size_t len)
 {
 	const struct fuel_gauge_driver_api *api = dev->api;
 
 	for (int i = 0; i < len; i++) {
-		int ret = api->get_property(dev, props + i);
+		int ret = api->get_property(dev, props[i], vals + i);
 
 		if (ret) {
 			return ret;
@@ -321,16 +311,16 @@ static inline int z_impl_fuel_gauge_get_props(const struct device *dev,
  * @brief Set a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param prop pointer to fuel_gauge_property struct where the property struct
- * field is set by the caller to determine what property is written to the fuel gauge device from
- * the fuel_gauge_property struct's value field.
+ * @param prop Type of property that's being set
+ * @param val Value to set associated prop property.
  *
  * @return 0 if successful, negative errno code of first failing property
  */
-__syscall int fuel_gauge_set_prop(const struct device *dev, struct fuel_gauge_property *prop);
+__syscall int fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
+				  union fuel_gauge_prop_val val);
 
-static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
-					     struct fuel_gauge_property *prop)
+static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
+					     union fuel_gauge_prop_val val)
 {
 	const struct fuel_gauge_driver_api *api = dev->api;
 
@@ -338,28 +328,29 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->set_property(dev, prop);
+	return api->set_property(dev, prop, val);
 }
-
 /**
  * @brief Set a battery fuel-gauge property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param props pointer to array of fuel_gauge_property struct where the property struct
- * field is set by the caller to determine what property is written to the fuel gauge device from
- * the fuel_gauge_property struct's value field.
- * @param props_len number of properties in props array
+ * @param props Array of the type of property to be set, each index corresponds
+ * to the same index of the vals input array.
+ * @param vals Pointer to array of union fuel_gauge_prop_val where the property is written
+ * the fuel gauge device. The vals array is not permuted.
+ * @param len number of properties in props array
  *
  * @return return=0 if successful. Otherwise, return array index of failing property.
  */
-__syscall int fuel_gauge_set_props(const struct device *dev, struct fuel_gauge_property *props,
-				   size_t props_len);
+__syscall int fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
+				   union fuel_gauge_prop_val *vals, size_t len);
 
 static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
-					      struct fuel_gauge_property *props, size_t props_len)
+					      fuel_gauge_prop_t *props,
+					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	for (int i = 0; i < props_len; i++) {
-		int ret = fuel_gauge_set_prop(dev, props + i);
+	for (int i = 0; i < len; i++) {
+		int ret = fuel_gauge_set_prop(dev, props[i], vals[i]);
 
 		if (ret) {
 			return ret;
@@ -373,20 +364,18 @@ static inline int z_impl_fuel_gauge_set_props(const struct device *dev,
  * @brief Fetch a battery fuel-gauge buffer property
  *
  * @param dev Pointer to the battery fuel-gauge device
- * @param prop pointer to single fuel_gauge_get_buffer_property struct where the property struct
- * field is set by the caller to determine what property is read from the
- * fuel gauge device into the dst field.
+ * @param prop_type Type of property to be fetched from device
  * @param dst byte array or struct that will hold the buffer data that is read from the fuel gauge
  * @param dst_len the length of the destination array in bytes
  *
  * @return return=0 if successful, return < 0 if getting property failed, return 0 on success
  */
-__syscall int fuel_gauge_get_buffer_prop(const struct device *dev,
-					struct fuel_gauge_buffer_property *prop, void *dst,
-					size_t dst_len);
+
+__syscall int fuel_gauge_get_buffer_prop(const struct device *dev, fuel_gauge_prop_t prop_type,
+					 void *dst, size_t dst_len);
 
 static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
-						   struct fuel_gauge_buffer_property *prop,
+						   fuel_gauge_prop_t prop_type,
 						   void *dst, size_t dst_len)
 {
 	const struct fuel_gauge_driver_api *api = (const struct fuel_gauge_driver_api *)dev->api;
@@ -395,7 +384,7 @@ static inline int z_impl_fuel_gauge_get_buffer_prop(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->get_buffer_property(dev, prop, dst, dst_len);
+	return api->get_buffer_property(dev, prop_type, dst, dst_len);
 }
 
 /**
