@@ -8,72 +8,71 @@
 #include <zephyr/syscall_handler.h>
 #include <zephyr/drivers/fuel_gauge.h>
 
-static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev,
-					     struct fuel_gauge_property *prop)
+static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
+					     union fuel_gauge_prop_val *val)
 {
-	struct fuel_gauge_property k_prop;
+	union fuel_gauge_prop_val k_val;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
 
-	Z_OOPS(z_user_from_copy(&k_prop, prop, sizeof(struct fuel_gauge_property)));
+	Z_OOPS(z_user_from_copy(&k_val, val, sizeof(union fuel_gauge_prop_val)));
 
-	int ret = z_impl_fuel_gauge_get_prop(dev, &k_prop);
+	int ret = z_impl_fuel_gauge_get_prop(dev, prop, &k_val);
 
-	Z_OOPS(z_user_to_copy(prop, &k_prop, sizeof(struct fuel_gauge_property)));
+	Z_OOPS(z_user_to_copy(val, &k_val, sizeof(union fuel_gauge_prop_val)));
 
 	return ret;
 }
 
 #include <syscalls/fuel_gauge_get_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev,
-					      struct fuel_gauge_property *props, size_t props_len)
+static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gauge_prop_t *props,
+					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	struct fuel_gauge_property k_props[props_len];
+	union fuel_gauge_prop_val k_vals[len];
+	fuel_gauge_prop_t k_props[len];
 
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
 
-	Z_OOPS(z_user_from_copy(k_props, props, props_len * sizeof(struct fuel_gauge_property)));
+	Z_OOPS(z_user_from_copy(k_vals, vals, len * sizeof(union fuel_gauge_prop_val)));
+	Z_OOPS(z_user_from_copy(k_props, props, len * sizeof(fuel_gauge_prop_t)));
 
-	int ret = z_impl_fuel_gauge_get_props(dev, k_props, props_len);
+	int ret = z_impl_fuel_gauge_get_props(dev, k_props, k_vals, len);
 
-	Z_OOPS(z_user_to_copy(props, k_props, props_len * sizeof(struct fuel_gauge_property)));
+	Z_OOPS(z_user_to_copy(vals, k_vals, len * sizeof(union fuel_gauge_prop_val)));
 
 	return ret;
 }
 
 #include <syscalls/fuel_gauge_get_props_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev,
-					     struct fuel_gauge_property *prop)
+static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
+					     union fuel_gauge_prop_val val)
 {
-	struct fuel_gauge_property k_prop;
-
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
 
-	Z_OOPS(z_user_from_copy(&k_prop, prop, sizeof(struct fuel_gauge_property)));
-
-	int ret = z_impl_fuel_gauge_set_prop(dev, &k_prop);
-
-	Z_OOPS(z_user_to_copy(prop, &k_prop, sizeof(struct fuel_gauge_property)));
+	int ret = z_impl_fuel_gauge_set_prop(dev, prop, val);
 
 	return ret;
 }
 
 #include <syscalls/fuel_gauge_set_prop_mrsh.c>
 
-static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev,
-					      struct fuel_gauge_property *props, size_t props_len)
+static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev, fuel_gauge_prop_t *props,
+					      union fuel_gauge_prop_val *vals, size_t len)
 {
-	struct fuel_gauge_property k_props[props_len];
+	union fuel_gauge_prop_val k_vals[len];
+	fuel_gauge_prop_t k_props[len];
 
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
 
-	Z_OOPS(z_user_from_copy(k_props, props, props_len * sizeof(struct fuel_gauge_property)));
+	Z_OOPS(z_user_from_copy(k_vals, vals, len * sizeof(union fuel_gauge_prop_val)));
+	Z_OOPS(z_user_from_copy(k_props, props, len * sizeof(fuel_gauge_prop_t)));
 
-	int ret = z_impl_fuel_gauge_set_props(dev, k_props, props_len);
+	int ret = z_impl_fuel_gauge_set_props(dev, k_props, k_vals, len);
 
-	Z_OOPS(z_user_to_copy(props, k_props, props_len * sizeof(struct fuel_gauge_property)));
+	/* We only copy back vals because props will never be modified */
+	Z_OOPS(z_user_to_copy(vals, k_vals, len * sizeof(union fuel_gauge_prop_val)));
 
 	return ret;
 }
@@ -81,22 +80,14 @@ static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev,
 #include <syscalls/fuel_gauge_set_props_mrsh.c>
 
 static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
-						    struct fuel_gauge_buffer_property *prop,
-						    void *dst, size_t dst_len)
+						    fuel_gauge_prop_t prop, void *dst,
+						    size_t dst_len)
 {
-	struct fuel_gauge_buffer_property k_prop;
-
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_buffer_property));
-
-	Z_OOPS(z_user_from_copy(&k_prop, prop,
-				sizeof(struct fuel_gauge_buffer_property)));
 
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, dst_len));
 
-	int ret = z_impl_fuel_gauge_get_buffer_prop(dev, &k_prop, dst, dst_len);
-
-	Z_OOPS(z_user_to_copy(prop, &k_prop,
-			      sizeof(struct fuel_gauge_buffer_property)));
+	int ret = z_impl_fuel_gauge_get_buffer_prop(dev, prop, dst, dst_len);
 
 	return ret;
 }
