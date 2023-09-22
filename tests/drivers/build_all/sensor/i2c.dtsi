@@ -695,7 +695,8 @@ test_i2c_lsm6dso16is: lsm6dso16is@68 {
 test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
 	compatible = "st,lsm6dsv16x";
 	reg = <0x69>;
-	irq-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_mcp9600: mcp9600@6a {
