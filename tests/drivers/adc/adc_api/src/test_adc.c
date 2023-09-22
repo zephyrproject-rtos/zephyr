@@ -93,7 +93,7 @@ static int test_task_one_channel(void)
 	init_adc();
 	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1);
@@ -124,7 +124,7 @@ static int test_task_multiple_channels(void)
 		sequence.channels |= BIT(adc_channels[i].channel_id);
 	}
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -230,7 +230,7 @@ static int test_task_with_interval(void)
 
 	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -310,7 +310,7 @@ static int test_task_repeated_samplings(void)
 		sequence.channels |=  BIT(adc_channels[1].channel_id);
 	}
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -339,7 +339,7 @@ static int test_task_invalid_request(void)
 
 	init_adc();
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
 
 #if defined(CONFIG_ADC_ASYNC)
@@ -352,7 +352,7 @@ static int test_task_invalid_request(void)
 	 */
 	sequence.resolution = adc_channels[0].resolution;
 
-	ret = adc_read(adc_channels[0].dev, &sequence);
+	ret = adc_read_dt(&adc_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1);
