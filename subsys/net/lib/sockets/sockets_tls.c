@@ -272,7 +272,7 @@ static int tls_ctr_drbg_random(void *ctx, unsigned char *buf, size_t len)
 {
 	ARG_UNUSED(ctx);
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+#if defined(CONFIG_CSPRNG_ENABLED)
 	return sys_csrand_get(buf, len);
 #else
 	sys_rand_get(buf, len);
@@ -1681,7 +1681,7 @@ static int tls_opt_dtls_connection_id_set(struct tls_context *context,
 		context->options.dtls_cid.enabled = true;
 		if (context->options.dtls_cid.cid_len == 0) {
 			/* generate random self cid */
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+#if defined(CONFIG_CSPRNG_ENABLED)
 			sys_csrand_get(context->options.dtls_cid.cid,
 				       MBEDTLS_SSL_CID_OUT_LEN_MAX);
 #else
