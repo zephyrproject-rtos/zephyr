@@ -208,23 +208,12 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 	__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 && timing->phase_seg1 > 1U);
 	__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 && timing->phase_seg2 > 1U);
 	__ASSERT_NO_MSG(timing->prescaler <= 0x200 && timing->prescaler > 0U);
-	__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
-			(timing->sjw <= 0x80 && timing->sjw > 0U));
+	__ASSERT_NO_MSG(timing->sjw <= 0x80 && timing->sjw > 0U);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (timing->sjw == CAN_SJW_NO_CHANGE) {
-		err = can_mcan_read_reg(dev, CAN_MCAN_NBTP, &nbtp);
-		if (err != 0) {
-			goto unlock;
-		}
-
-		nbtp &= CAN_MCAN_NBTP_NSJW;
-	} else {
-		nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL);
-	}
-
-	nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
+	nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL) |
+		FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NTSEG2, timing->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NBRP, timing->prescaler - 1UL);
 
@@ -254,23 +243,12 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 	__ASSERT_NO_MSG(timing_data->phase_seg1 <= 0x20 && timing_data->phase_seg1 > 0U);
 	__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 && timing_data->phase_seg2 > 0U);
 	__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 && timing_data->prescaler > 0U);
-	__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
-			(timing_data->sjw <= 0x10 && timing_data->sjw > 0U));
+	__ASSERT_NO_MSG(timing_data->sjw <= 0x10 && timing_data->sjw > 0U);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (timing_data->sjw == CAN_SJW_NO_CHANGE) {
-		err = can_mcan_read_reg(dev, CAN_MCAN_DBTP, &dbtp);
-		if (err != 0) {
-			goto unlock;
-		}
-
-		dbtp &= CAN_MCAN_DBTP_DSJW;
-	} else {
-		dbtp |= FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL);
-	}
-
-	dbtp |= FIELD_PREP(CAN_MCAN_DBTP_DTSEG1, timing_data->phase_seg1 - 1UL) |
+	dbtp |= FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL) |
+		FIELD_PREP(CAN_MCAN_DBTP_DTSEG1, timing_data->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG2, timing_data->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DBRP, timing_data->prescaler - 1UL);
 
@@ -1357,9 +1335,9 @@ int can_mcan_init(const struct device *dev)
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 #ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data;
+	struct can_timing timing_data = { 0 };
 #endif /* CONFIG_CAN_FD_MODE */
 	uint32_t reg;
 	int err;
@@ -1485,6 +1463,7 @@ int can_mcan_init(const struct device *dev)
 			timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", err);
 	} else if (config->prop_ts1) {
+		timing.sjw = config->sjw;
 		timing.prop_seg = 0U;
 		timing.phase_seg1 = config->prop_ts1;
 		timing.phase_seg2 = config->ts2;
@@ -1504,6 +1483,7 @@ int can_mcan_init(const struct device *dev)
 
 		LOG_DBG("Sample-point err data phase: %d", err);
 	} else if (config->prop_ts1_data) {
+		timing_data.sjw = config->sjw_data;
 		timing_data.prop_seg = 0U;
 		timing_data.phase_seg1 = config->prop_ts1_data;
 		timing_data.phase_seg2 = config->ts2_data;
@@ -1514,12 +1494,18 @@ int can_mcan_init(const struct device *dev)
 	}
 #endif /* CONFIG_CAN_FD_MODE */
 
-	timing.sjw = config->sjw;
-	can_mcan_set_timing(dev, &timing);
+	err = can_set_timing(dev, &timing);
+	if (err != 0) {
+		LOG_ERR("failed to set timing (err %d)", err);
+		return -ENODEV;
+	}
 
 #ifdef CONFIG_CAN_FD_MODE
-	timing_data.sjw = config->sjw_data;
-	can_mcan_set_timing_data(dev, &timing_data);
+	err = can_set_timing_data(dev, &timing_data);
+	if (err != 0) {
+		LOG_ERR("failed to set data phase timing (err %d)", err);
+		return -ENODEV;
+	}
 #endif /* CONFIG_CAN_FD_MODE */
 
 	reg = CAN_MCAN_IE_BOE | CAN_MCAN_IE_EWE | CAN_MCAN_IE_EPE | CAN_MCAN_IE_MRAFE |
