@@ -17,6 +17,16 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
 		};
 	};
 
