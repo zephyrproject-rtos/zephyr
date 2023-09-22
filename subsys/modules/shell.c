@@ -115,7 +115,8 @@ static int cmd_module_load_hex(const struct shell *sh, size_t argc, char *argv[]
 	struct module_buf_stream buf_stream = MODULE_BUF_STREAM(module_buf, module_buf_len);
 	struct module_stream *stream = &buf_stream.stream;
 
-	LOG_DBG("hex2bin hex len %d, module buf sz %d, read %d", hex_len, MODULE_MAX_SIZE, module_buf_len);
+	LOG_DBG("hex2bin hex len %d, module buf sz %d, read %d",
+		hex_len, MODULE_MAX_SIZE, module_buf_len);
 	LOG_HEXDUMP_DBG(module_buf, 4, "4 byte MAGIC");
 
 	struct module *m;
