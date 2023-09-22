@@ -1703,10 +1703,10 @@ Logging:
 LoRa and LoRaWAN:
   status: maintained
   maintainers:
-    - Mani-Sadhasivam
-  collaborators:
-    - mniestroj
     - JordanYates
+  collaborators:
+    - Mani-Sadhasivam
+    - mniestroj
   files:
     - drivers/lora/
     - include/zephyr/drivers/lora.h
