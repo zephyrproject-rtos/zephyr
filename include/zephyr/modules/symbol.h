@@ -42,7 +42,7 @@ struct module_symbol {
  */
 #define EXPORT_SYMBOL(x)					 \
 	STRUCT_SECTION_ITERABLE(module_symbol, x ## _sym) = { \
-		.name = STRINGIFY(x), .addr = x,		 \
+		.name = STRINGIFY(x), .addr = &x,		 \
 	}
 
 /**
