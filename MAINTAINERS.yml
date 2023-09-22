@@ -1706,6 +1706,7 @@ LoRa and LoRaWAN:
     - JordanYates
   collaborators:
     - Mani-Sadhasivam
+    - martinjaeger
     - mniestroj
   files:
     - drivers/lora/
