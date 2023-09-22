@@ -464,7 +464,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 			continue;
 		}
 
-		rel_cnt = shdr.sh_size / sizeof(elf_rel_t);
+		rel_cnt = shdr.sh_size / shdr.sh_entsize;
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
@@ -484,12 +484,12 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
-			ret = llext_seek(ldr, shdr.sh_offset + j * sizeof(elf_rel_t));
+			ret = llext_seek(ldr, shdr.sh_offset + j * shdr.sh_entsize);
 			if (ret != 0) {
 				return ret;
 			}
 
-			ret = llext_read(ldr, &rel, sizeof(elf_rel_t));
+			ret = llext_read(ldr, &rel, shdr.sh_entsize);
 			if (ret != 0) {
 				return ret;
 			}
