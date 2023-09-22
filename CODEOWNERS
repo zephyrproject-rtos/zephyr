@@ -361,6 +361,7 @@
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/ptp_clock/                       @tbursztyka @jukkar
+/drivers/seu/                             @nbalabak
 /drivers/spi/*b91*                        @andy-liu-telink
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @sylvioalves
