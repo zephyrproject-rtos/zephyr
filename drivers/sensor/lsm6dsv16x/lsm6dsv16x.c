@@ -919,9 +919,10 @@ static int lsm6dsv16x_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
-#define LSM6DSV16X_CFG_IRQ(inst)						\
+#define LSM6DSV16X_CFG_IRQ(inst)					\
 	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
+	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),	\
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }),	\
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
 #define LSM6DSV16X_CFG_IRQ(inst)
@@ -938,8 +939,7 @@ static int lsm6dsv16x_init(const struct device *dev)
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
-		(LSM6DSV16X_CFG_IRQ(inst)), ())
+	LSM6DSV16X_CFG_IRQ(inst)
 
 #define LSM6DSV16X_CONFIG_SPI(inst)					\
 	{								\
