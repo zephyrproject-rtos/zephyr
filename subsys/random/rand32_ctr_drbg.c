@@ -33,6 +33,7 @@
 static const struct device *entropy_dev;
 static const unsigned char drbg_seed[] = CONFIG_CS_CTR_DRBG_PERSONALIZATION;
 static bool ctr_initialised;
+static struct k_mutex ctr_lock;
 
 #if defined(CONFIG_MBEDTLS)
 
@@ -105,7 +106,8 @@ static int ctr_drbg_initialize(void)
 int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 {
 	int ret;
-	unsigned int key = irq_lock();
+
+	k_mutex_lock(&ctr_lock, K_FOREVER);
 
 	if (unlikely(!ctr_initialised)) {
 		ret = ctr_drbg_initialize();
@@ -151,7 +153,7 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	}
 #endif
 end:
-	irq_unlock(key);
+	k_mutex_unlock(&ctr_lock);
 
 	return ret;
 }
