@@ -127,6 +127,8 @@ target_sources_ifdef(
   userspace.c
   )
 
+target_sources_ifdef(CONFIG_PLATFORM_BUS    kernel PRIVATE platform.c)
+
 if(${CONFIG_DYNAMIC_THREAD})
   target_sources(kernel PRIVATE dynamic.c)
 else()

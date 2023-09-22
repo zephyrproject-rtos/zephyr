@@ -1260,6 +1260,11 @@ config DEVICE_DEPS_DYNAMIC
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
+config PLATFORM_BUS
+	bool "platform bus abstraction support"
+	help
+	  Option to enable platform bus abstraction support for device drivers.
+
 endmenu
 
 rsource "Kconfig.vm"
