@@ -72,8 +72,7 @@ endchoice # RNG_GENERATOR_CHOICE
 # enabling CS generators. ENTROPY_HAS_DRIVER is the flag indicating the
 # CS entropy source.
 #
-config CSPRING_ENABLED
-#	bool "Cryptographically secure RNG functions enabled"
+config CSPRNG_ENABLED
 	bool
 	default y
 	depends on ENTROPY_HAS_DRIVER
