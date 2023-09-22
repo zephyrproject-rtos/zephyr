@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -173,9 +174,10 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	/* Prevent driver from being suspended by PM until I2C transaction is complete */
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_get(dev);
-#else
-	pm_device_busy_set(dev);
 #endif
+
+	/* Prevent the clocks to be stopped during the i2c transaction */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	current = msg;
 
@@ -194,10 +196,10 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		num_msgs--;
 	}
 
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_put(dev);
-#else
-	pm_device_busy_clear(dev);
 #endif
 
 	k_sem_give(&data->bus_mutex);
