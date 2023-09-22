@@ -83,7 +83,7 @@ ZTEST(regulator_voltage, test_output_voltage)
 			}
 
 			for (unsigned int k = 0U; k < adc_avg_count; k++) {
-				ret = adc_read(adc_chs[i].dev, &sequence);
+				ret = adc_read_dt(&adc_chs[i], &sequence);
 				zassert_equal(ret, 0);
 
 				val_mv += buf;
