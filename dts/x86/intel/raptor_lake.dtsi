@@ -373,6 +373,7 @@
 		uart_ec_0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
+			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
