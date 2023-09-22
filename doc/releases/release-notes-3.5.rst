@@ -240,6 +240,12 @@ Drivers and Sensors
 
   * Added support for Nuvoton NuMaker M46x
 
+  * NS16550: Reworked how device initialization macros.
+
+    * CONFIG_UART_NS16550_ACCESS_IOPORT and CONFIG_UART_NS16550_SIMULT_ACCESS
+      are removed. For UART using IO port access, add "io-mapped" property to
+      device tree node.
+
 * SPI
 
   * Remove npcx spi driver implemented by Flash Interface Unit (FIU) module.
