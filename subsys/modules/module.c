@@ -142,6 +142,7 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 		elf_sym_t *sym_tbl = module_peek(ms, sym_shdr->sh_offset +
 						 j * sizeof(elf_sym_t));
 		uint32_t stt = ELF_ST_TYPE(sym_tbl->st_info);
+		uint32_t stb = ELF_ST_BIND(sym_tbl->st_info);
 		char *name = module_peek(ms, ms->sects[MOD_SECT_STRTAB].sh_offset +
 					 sym_tbl->st_name);
 		/*
@@ -150,7 +151,11 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 		 */
 		size_t got_offset = rela->r_offset - ms->sects[MOD_SECT_TEXT].sh_addr;
 
-		if (stt == STT_NOTYPE && sym_tbl->st_shndx == SHN_UNDEF && name[0] != '\0') {
+		if (stt != STT_NOTYPE || sym_tbl->st_shndx != SHN_UNDEF)
+			continue;
+
+		switch (stb) {
+		case STB_GLOBAL:
 			void *link_addr = module_find_sym(&SYMTAB, name);
 
 			if (!link_addr) {
@@ -169,11 +174,18 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 
 			/* Resolve the symbol */
 			*(void **)(text + got_offset) = link_addr;
+			break;
+		case  STB_LOCAL:
+			arch_elf_relocate_local(ms, rela, got_offset);
 		}
 	}
 }
 
 __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
+{
+}
+
+__weak void arch_elf_relocate_local(struct module_stream *ms, elf_rela_t *rel, size_t got_offset)
 {
 }
 
