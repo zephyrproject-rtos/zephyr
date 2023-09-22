@@ -247,7 +247,6 @@ void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
 static int qspi_npcx_fiu_init(const struct device *dev)
 {
 	const struct npcx_qspi_fiu_config *const config = dev->config;
-	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 	struct npcx_qspi_fiu_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
@@ -270,9 +269,11 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 
 	/* Enable direct access for 2 external SPI devices */
 	if (config->en_direct_access_2dev) {
-		if (IS_ENABLED(CONFIG_FLASH_NPCX_FIU_SUPP_DRA_2_DEV)) {
-			inst->FIU_EXT_CFG |= BIT(NPCX_FIU_EXT_CFG_SPI1_2DEV);
-		}
+#if defined(CONFIG_FLASH_NPCX_FIU_SUPP_DRA_2_DEV)
+		struct fiu_reg *const inst = HAL_INSTANCE(dev);
+
+		inst->FIU_EXT_CFG |= BIT(NPCX_FIU_EXT_CFG_SPI1_2DEV);
+#endif
 	}
 
 	return 0;
