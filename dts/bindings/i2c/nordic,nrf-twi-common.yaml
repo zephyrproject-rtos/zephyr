@@ -15,3 +15,10 @@ properties:
 
   pinctrl-0:
     required: true
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.
