@@ -143,6 +143,15 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
 void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
 
 /**
+ * @brief Find an ELF section
+ *
+ * @param loader Extension loader data and context
+ * @param search_name Section name to search for
+ * @retval Section offset or a negative error code
+ */
+ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
+
+/**
  * @brief Architecture specific function for updating addresses via relocation table
  *
  * @param[in] loader Extension loader data and context
