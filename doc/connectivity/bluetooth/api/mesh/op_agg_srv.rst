@@ -6,7 +6,7 @@ Opcodes Aggregator Server
 The Opcodes Aggregator Server model is a foundation model defined by the Bluetooth
 mesh specification. It is an optional model, enabled with the :kconfig:option:`CONFIG_BT_MESH_OP_AGG_SRV` option.
 
-The Opcodes Aggregator Server model is introduced in the Bluetooth Mesh Profile
+The Opcodes Aggregator Server model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1, and is used to support the functionality of processing
 a sequence of access layer messages.
 
