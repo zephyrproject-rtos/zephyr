@@ -168,16 +168,16 @@ static inline void adc_npcx_enable_threshold_detect(const struct device *dev, ui
 	const struct adc_npcx_config *config = dev->config;
 
 	if (enable) {
-#ifdef CONFIG_SOC_SERIES_NPCX4
+#ifdef CONFIG_ADC_NPCX_CMP_V2
 		THEN(config->base) |= BIT(th_sel);
-#else
+#else /* CONFIG_ADC_NPCX_CMP_V1 */
 		THRCTL(config->base, th_sel) |= BIT(NPCX_THRCTL_THEN);
 #endif
 
 	} else {
-#ifdef CONFIG_SOC_SERIES_NPCX4
+#ifdef CONFIG_ADC_NPCX_CMP_V2
 		THEN(config->base) &= ~BIT(th_sel);
-#else
+#else /* CONFIG_ADC_NPCX_CMP_V1 */
 		THRCTL(config->base, th_sel) &= ~BIT(NPCX_THRCTL_THEN);
 #endif
 	}
