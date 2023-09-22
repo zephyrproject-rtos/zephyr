@@ -60,9 +60,9 @@ and :kconfig:option:`CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT`, and is defined
 
 .. math::
    \begin{aligned}
-   \max(&\verb|CONFIG_BT_MESH_SEG_ACK_BASE_TIMEOUT| \\
-   &+ \text{TTL} \times \verb|CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT| \\
-   &+ \text{number of un-acked segments} \times \verb|CONFIG_BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT| , 400)
+   \max(&\mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_BASE\_TIMEOUT} \\
+   &+ \text{TTL} \times \mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_PER\_HOP\_TIMEOUT} \\
+   &+ \text{number of un-acked segments} \times \mathtt{CONFIG\_BT\_MESH\_SEG\_ACK\_PER\_SEGMENT\_TIMEOUT} , 400)
    \end{aligned}
 
 Segmentation and reassembly (SAR) Configuration models
@@ -161,7 +161,7 @@ Segment transmission interval is then calculated using the following formula:
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP| + 1) \times 10~\text{ms}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_TX\_SEG\_INT\_STEP} + 1) \times 10~\text{ms}
 
 
 SAR Unicast Retransmissions Count
@@ -188,7 +188,7 @@ This value is then used to calculate the interval step using the following formu
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP| + 1) \times 25~\text{ms}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_TX\_UNICAST\_RETRANS\_INT\_STEP} + 1) \times 25~\text{ms}
 
 
 SAR Unicast Retransmissions Interval Increment
@@ -202,7 +202,7 @@ The Kconfig option value is used to calculate the increment using the following 
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC| + 1) \times 25~\text{ms}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_TX\_UNICAST\_RETRANS\_INT\_INC} + 1) \times 25~\text{ms}
 
 
 SAR Multicast Retransmissions Count
@@ -222,7 +222,7 @@ using the following formula:
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT| + 1) \times 25~\text{ms}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_TX\_MULTICAST\_RETRANS\_INT} + 1) \times 25~\text{ms}
 
 
 SAR Discard Timeout
@@ -234,7 +234,7 @@ default value. The discard timeout will be calculated using the following formul
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT| + 1) \times 5~\text{seconds}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_RX\_DISCARD\_TIMEOUT} + 1) \times 5~\text{seconds}
 
 
 SAR Acknowledgment Delay Increment
@@ -275,4 +275,4 @@ Use the Kconfig option :kconfig:option:`CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP` to s
 
 .. math::
 
-   (\verb|CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP| + 1) \times 10~\text{ms}
+   (\mathtt{CONFIG\_BT\_MESH\_SAR\_RX\_SEG\_INT\_STEP} + 1) \times 10~\text{ms}
