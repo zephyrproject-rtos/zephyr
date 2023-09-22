@@ -58,6 +58,21 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #include <zephyr/drivers/reset.h>
 #endif
 
+/* If any node has property io-mapped set, we need to support IO port
+ * access in the code and device config struct.
+ *
+ * Note that DT_ANY_INST_HAS_PROP_STATUS_OKAY() always returns true
+ * as io-mapped property is considered always exists and present,
+ * even if its value is zero. Therefore we cannot use it, and has to
+ * resort to the follow helper to see if any okay nodes have io-mapped
+ * as 1.
+ */
+#define UART_NS16550_DT_PROP_IOMAPPED_HELPER(inst, prop, def) \
+	DT_INST_PROP_OR(inst, prop, def) ||
+
+#define UART_NS16550_IOPORT_ENABLED \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_NS16550_DT_PROP_IOMAPPED_HELPER, io_mapped, 0) 0)
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg.       */
@@ -249,7 +264,7 @@ struct uart_ns16550_device_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	bool io_map;
 #endif
 #if UART_NS16550_RESET_ENABLED
@@ -282,7 +297,7 @@ struct uart_ns16550_dev_data {
 static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint8_t val)
 {
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	if (cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			sys_out32(val, port);
@@ -305,7 +320,7 @@ static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	if (cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			return sys_in32(port);
@@ -330,7 +345,7 @@ static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint32_t val)
 {
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	if (cfg->io_map) {
 		sys_out32(val, port);
 	} else {
@@ -345,7 +360,7 @@ static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	if (cfg->io_map) {
 		return sys_in32(port);
 	}
@@ -365,7 +380,7 @@ static inline uint8_t reg_interval(const struct device *dev)
 static inline uintptr_t get_port(const struct device *dev)
 {
 	uintptr_t port;
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 	const struct uart_ns16550_device_config *config = dev->config;
 
 	if (config->io_map) {
@@ -658,7 +673,7 @@ static int uart_ns16550_init(const struct device *dev)
 	} else
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
 	{
-#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+#if UART_NS16550_IOPORT_ENABLED
 		/* Map directly from DTS */
 		if (!dev_cfg->io_map) {
 #else
@@ -1257,30 +1272,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                    \
 	}
 
-#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
-#define REG_INIT(n) \
-	.port = DT_INST_REG_ADDR(n), \
-	.io_map = true,
-#else
-#define REG_INIT_PCIE1(n)
-#define REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
-
-#define DEV_REG_PORT_IO_1(n) \
-	.port = DT_INST_REG_ADDR(n),
-#define DEV_REG_PORT_IO_0(n) \
-	_CONCAT(REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
-#ifdef CONFIG_UART_NS16550_SIMULT_ACCESS
-#define DEV_IO_INIT(n) \
-	.io_map = DT_INST_PROP(n, io_mapped),
-#else
-#define DEV_IO_INIT(n)
-#endif
-
-#define REG_INIT(n) \
-	_CONCAT(DEV_REG_PORT_IO_, DT_INST_PROP(n, io_mapped))(n) \
-	DEV_IO_INIT(n)
-#endif
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define DEV_CONFIG_IRQ_FUNC_INIT(n) \
 	.irq_config_func = irq_config_func##n,
@@ -1316,7 +1307,13 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
 		(PINCTRL_DT_INST_DEFINE(n)));                                        \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
-		REG_INIT(n)							     \
+		COND_CODE_0(DT_INST_ON_BUS(n, pcie),                                 \
+			    (COND_CODE_1(DT_INST_PROP_OR(n, io_mapped, 0),           \
+					 (.port = DT_INST_REG_ADDR(n),),             \
+					 (DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),))),  \
+			    ())                                                      \
+		IF_ENABLED(DT_INST_PROP_OR(n, io_mapped, 0),                         \
+			   (.io_map = true,))                                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (             \
 				.sys_clk_freq = DT_INST_PROP(n, clock_frequency),    \
 				.clock_dev = NULL,                                   \
