@@ -6,3 +6,5 @@ tests:
     arch_allow: arm
     extra_configs:
       - CONFIG_ARM_MPU=n
+  modules.simple.xtensa:
+    arch_allow: xtensa

@@ -9,9 +9,13 @@
 #include <zephyr/modules/module.h>
 #include <zephyr/modules/buf_stream.h>
 
-#ifdef CONFIG_ARM /* ARMV7 */
+#if defined(CONFIG_ARM) /* ARMV7 */
 const static uint8_t hello_world_elf[] = {
 #include "hello_world_armv7_thumb.elf.inc"
+};
+#elif defined(CONFIG_XTENSA)
+const static uint8_t hello_world_elf[] __attribute__((aligned(4))) = {
+#include "hello_world_xtensa.elf.inc"
 };
 #endif
 
@@ -24,7 +28,7 @@ const static uint8_t hello_world_elf[] = {
  */
 ZTEST(modules, test_modules_simple)
 {
-	const char name[16] = {'h', 'e', 'l', 'l', 'o', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	const char name[16] = "hello";
 	struct module_buf_stream buf_stream =
 		MODULE_BUF_STREAM(hello_world_elf, ARRAY_SIZE(hello_world_elf));
 	struct module_stream *stream = &buf_stream.stream;

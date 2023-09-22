@@ -18,6 +18,7 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 # in a required manner.
 foreach(inc_file
     hello_world_armv7_thumb.elf
+    hello_world_xtensa.elf
     )
   generate_inc_file_for_target(
     app
