@@ -439,6 +439,7 @@
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/serial/*intel_lw*                @shilinte
 /drivers/smbus/                           @finikorg
+/drivers/seu/                             @nbalabak
 /drivers/sip_svc/                         @maheshraotm
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
@@ -744,6 +745,7 @@
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/drivers/smbus/                   @finikorg
+/samples/drivers/seu/                     @nbalabak
 /samples/drivers/soc_flash_nand/          @nbalabak
 /samples/drivers/soc_flash_qspi/          @skhadgi
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
