@@ -90,6 +90,7 @@ int main(void)
 	join_cfg.otaa.join_eui = join_eui;
 	join_cfg.otaa.app_key = app_key;
 	join_cfg.otaa.nwk_key = app_key;
+	join_cfg.otaa.dev_nonce = 0u;
 
 	LOG_INF("Joining network over OTAA");
 	ret = lorawan_join(&join_cfg);
