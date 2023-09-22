@@ -7,7 +7,7 @@ The Private Beacon Client model is a foundation model defined by the Bluetooth
 mesh specification. It is enabled with the
 :kconfig:option:`CONFIG_BT_MESH_PRIV_BEACON_CLI` option.
 
-The Private Beacon Client model is introduced in the Bluetooth Mesh Profile
+The Private Beacon Client model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1, and provides functionality for configuring the
 :ref:`bluetooth_mesh_models_priv_beacon_srv` models.
 

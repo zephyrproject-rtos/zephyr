@@ -7,7 +7,7 @@ The Private Beacon Server model is a foundation model defined by the Bluetooth
 mesh specification. It is enabled with
 :kconfig:option:`CONFIG_BT_MESH_PRIV_BEACON_SRV` option.
 
-The Private Beacon Server model is introduced in the Bluetooth Mesh Profile
+The Private Beacon Server model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1, and controls the mesh node's Private Beacon state,
 Private GATT Proxy state and Private Node Identity state.
 
