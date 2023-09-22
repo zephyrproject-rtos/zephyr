@@ -7,6 +7,8 @@ tests:
     integration_platforms:
       - qemu_arc_em
       - qemu_x86_xip
+    platform_exclude:
+      - qemu_riscv32_xip # See issue #62975
   arch.common.xip.minimallibc:
     filter: CONFIG_XIP and CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
@@ -15,5 +17,7 @@ tests:
     integration_platforms:
       - qemu_arc_em
       - qemu_x86_xip
+    platform_exclude:
+      - qemu_riscv32_xip # See issue #62975
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
