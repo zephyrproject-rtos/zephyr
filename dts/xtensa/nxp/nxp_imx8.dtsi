@@ -60,4 +60,21 @@
 			};
 		};
 	};
+
+	lpuart2: serial@5a080000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x5a080000 DT_SIZE_K(4)>;
+		/* TODO: THIS INTID IS JUST A DUMMY ONE UNTIL IRQ_STEER
+		 * DRIVER CAN BE USED ON i.MX8QM/QXP. DO NOT ATTEMPT TO
+		 * ENABLE UART INTERRUPT SUPPORT.
+		 *
+		 * THE CURRENT INTID VALUE IS CHOSEN SUCH THAT gen_isr_tables.py
+		 * WILL BREAK IF YOU ATTEMPT TO IRQ_CONNECT().
+		 */
+		interrupt-parent = <&clic>;
+		interrupts = <259 0 0>;
+		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
+		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
+		status = "disabled";
+	};
 };
