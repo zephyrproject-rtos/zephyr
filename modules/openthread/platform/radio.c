@@ -224,7 +224,7 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 			set_pending_event(PENDING_EVENT_RX_FAILED);
 		}
 		break;
-	case IEEE802154_EVENT_SLEEP:
+	case IEEE802154_EVENT_RX_OFF:
 		set_pending_event(PENDING_EVENT_SLEEP);
 		break;
 	default:

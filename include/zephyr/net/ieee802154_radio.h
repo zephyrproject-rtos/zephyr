@@ -482,7 +482,30 @@ enum ieee802154_hw_caps {
 	/** TX at specified time supported */
 	IEEE802154_HW_TXTIME = BIT(8),
 
-	/** TX directly from sleep supported */
+	/** TX directly from sleep supported
+	 *
+	 *  @note This HW capability does not conform to the requirements
+	 *  specified in #61227 as it closely couples the driver to OpenThread's
+	 *  capability and device model which is different from Zephyr's:
+	 *   - "Sleeping" is a well defined term in Zephyr related to internal
+	 *     power and thread management and different from "RX off" as
+	 *     defined in OT.
+	 *   - Currently all OT-capable drivers have the "sleep to TX"
+	 *     capability anyway plus we expect future drivers to implement it
+	 *     ootb as well, so no information is actually conveyed by this
+	 *     capability.
+	 *   - The `start()`/`stop()` API of a net device controls the
+	 *     interface's operational state. Drivers MUST respond with
+	 *     -ENETDOWN when calling `tx()` while their operational state is
+	 *     "DOWN", only devices in the "UP" state MAY transmit packets (RFC
+	 *     2863).
+	 *   - A migration path has been defined in #63670 for actual removal of
+	 *     this capability in favor of a standard compliant
+	 *     `configure(rx_on/rx_off)` call, see there for details.
+	 *
+	 * @deprecated Drivers and L2 SHALL not introduce additional references
+	 * to this capability and remove existing ones as outlined in #63670.
+	 */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9),
 
 	/** Timed RX window scheduling supported */
@@ -524,7 +547,7 @@ enum ieee802154_event {
 	 * synchronously switched of due to a call to `stop()` or an RX slot
 	 * being configured.
 	 */
-	IEEE802154_EVENT_SLEEP,
+	IEEE802154_EVENT_RX_OFF,
 };
 
 /** RX failed event reasons, see @ref IEEE802154_EVENT_RX_FAILED */

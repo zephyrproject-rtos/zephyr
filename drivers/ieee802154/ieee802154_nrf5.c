@@ -663,7 +663,7 @@ static int nrf5_stop(const struct device *dev)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (nrf_802154_sleep_if_idle() != NRF_802154_SLEEP_ERROR_NONE) {
 		if (nrf5_data.event_handler) {
-			nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+			nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 		} else {
 			LOG_WRN("Transition to radio sleep cannot be handled.");
 		}
@@ -1024,7 +1024,7 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 		 * As a side effect, regular failure notifications would be reported with the
 		 * incorrect ID.
 		 */
-		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+		nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 #endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
