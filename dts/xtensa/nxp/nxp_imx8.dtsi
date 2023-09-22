@@ -6,6 +6,7 @@
 
 #include <xtensa/xtensa.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
 
 / {
 	cpus {
@@ -29,5 +30,17 @@
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x92c00000 DT_SIZE_K(512)>;
+	};
+
+	/* LSIO MU2, used to interact with the SCFW */
+	scu_mu: mailbox@5d1d0000 {
+		reg = <0x5d1d0000 DT_SIZE_K(64)>;
+	};
+
+	scu: system-controller {
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm";
+			#clock-cells = <3>;
+		};
 	};
 };
