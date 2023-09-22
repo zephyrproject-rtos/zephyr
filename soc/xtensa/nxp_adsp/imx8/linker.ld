@@ -15,7 +15,7 @@ OUTPUT_ARCH(xtensa)
 
 #include <zephyr/devicetree.h>
 #include <xtensa/config/core-isa.h>
-#include <soc/memory.h>
+#include <memory.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/linker/linker-defs.h>
