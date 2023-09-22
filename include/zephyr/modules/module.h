@@ -209,6 +209,15 @@ void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
 void arch_elf_relocate_local(struct module_stream *ms, elf_rela_t *rel, size_t got_offset);
 
 /**
+ * @brief Find an ELF section
+ *
+ * @param ms Module stream
+ * @param search_name Section name to search for
+ * @retval Section offset or a negative error code
+ */
+ssize_t module_find_section(struct module_stream *ms, const char *search_name);
+
+/**
  * @}
  */
 

@@ -189,6 +189,29 @@ __weak void arch_elf_relocate_local(struct module_stream *ms, elf_rela_t *rel, s
 {
 }
 
+ssize_t module_find_section(struct module_stream *ms, const char *search_name)
+{
+	elf_shdr_t *shdr;
+	unsigned int i;
+	size_t pos;
+
+	for (i = 0, pos = ms->hdr.e_shoff;
+	     i < ms->hdr.e_shnum;
+	     i++, pos += ms->hdr.e_shentsize) {
+		shdr = module_peek(ms, pos);
+
+		const char *name = module_peek(ms,
+					       ms->sects[MOD_SECT_SHSTRTAB].sh_offset +
+					       shdr->sh_name);
+
+		if (!strcmp(name, search_name)) {
+			return shdr->sh_offset;
+		}
+	}
+
+	return -ENOENT;
+}
+
 /**
  * @brief load a relocatable object file.
  *
