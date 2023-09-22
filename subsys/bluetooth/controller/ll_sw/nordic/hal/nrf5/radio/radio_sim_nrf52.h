@@ -14,7 +14,10 @@
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
- * - based on empirical measurements and sniffer logs
+ * - based on the timings configured in the HW models, which are based
+ *   on the product specification
+ * - Note that this timings are approx. the same as in the real HW,
+ *   but tend to be rounded to the nearest microsecond
  */
 
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
@@ -361,7 +364,7 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 	ARG_UNUSED(phy);
 	ARG_UNUSED(flags);
 
-	return HAL_RADIO_NRF52833_TX_CHAIN_DELAY_US;
+	return HAL_RADIO_NRF52833_TX_CHAIN_DELAY_NS;
 }
 
 static inline uint32_t hal_radio_rx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
