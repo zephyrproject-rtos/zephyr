@@ -42,14 +42,6 @@ struct npcx_clk_cfg {
 #define APB2DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb2_prescaler) - 1)
 /* APB3 clock divider */
 #define APB3DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb3_prescaler) - 1)
-/* APB4 clock divider if supported */
-#if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
-#if !defined(CONFIG_SOC_SERIES_NPCX7) /* Supported in NPCX9 and later series */
-#define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
-#else
-#error "APB4 clock divider is not supported but defined in pcc node!"
-#endif /* !CONFIG_SOC_SERIES_NPCX7 */
-#endif
 
 /* Construct a uint8_t array from 'pwdwn-ctl-val' prop for PWDWN_CTL initialization. */
 #define NPCX_PWDWN_CTL_ITEMS_INIT(node, prop, idx) DT_PROP_BY_IDX(node, prop, idx),
@@ -68,12 +60,6 @@ struct npcx_clk_cfg {
  * - CORE_CLK > MAX_OFMCLK/2, AHB6DIV should be 1, else 0.
  * - CORE_CLK > MAX_OFMCLK/2, FIUDIV should be 1, else 0.
  */
-#if defined(CONFIG_SOC_SERIES_NPCX4)
-#define MAX_OFMCLK 120000000
-#else
-#define MAX_OFMCLK 100000000
-#endif /* CONFIG_SOC_SERIES_NPCX4 */
-
 /* Core domain clock */
 #define CORE_CLK (OFMCLK / DT_PROP(DT_NODELABEL(pcc), core_prescaler))
 /* Low Frequency clock */
@@ -102,14 +88,6 @@ struct npcx_clk_cfg {
 #else
 #define FIUDIV_VAL 0 /* FIU_CLK = CORE_CLK */
 #endif
-
-#if defined(CONFIG_SOC_SERIES_NPCX4)
-#if (CORE_CLK > (MAX_OFMCLK / 2))
-#define FIU1DIV_VAL 1 /* FIU1_CLK = CORE_CLK/2 */
-#else
-#define FIU1DIV_VAL 0 /* FIU1_CLK = CORE_CLK */
-#endif
-#endif /* CONFIG_SOC_SERIES_NPCX4 */
 
 /* Get APB clock freq */
 #define NPCX_APB_CLOCK(no) (APBSRC_CLK / (APB##no##DIV_VAL + 1))
