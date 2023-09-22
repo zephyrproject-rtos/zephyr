@@ -38,6 +38,7 @@ struct i2c_nrfx_twim_config {
 	uint16_t msg_buf_size;
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
+	uint16_t max_transfer_size;
 };
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev);
@@ -123,6 +124,14 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		}
 		cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
 			NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
+
+		if (cur_xfer.primary_length > dev_config->max_transfer_size) {
+			LOG_ERR("Trying to transfer more than the maximum size "
+				"for this device: %d > %d",
+				cur_xfer.primary_length,
+				dev_config->max_transfer_size);
+			return -ENOSPC;
+		}
 
 		nrfx_err_t res = nrfx_twim_xfer(&dev_config->twim,
 						&cur_xfer,
@@ -412,6 +421,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		.msg_buf_size = MSG_BUF_SIZE(idx),			       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
+		.max_transfer_size = BIT_MASK(				       \
+				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
