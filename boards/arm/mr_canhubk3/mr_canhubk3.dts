@@ -272,10 +272,8 @@
 	phys = <&can_phy0>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 	status = "okay";
 };
 
@@ -285,10 +283,8 @@
 	phys = <&can_phy1>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 };
 
 &flexcan2 {
@@ -297,10 +293,8 @@
 	phys = <&can_phy2>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 };
 
 &flexcan3 {
@@ -309,10 +303,8 @@
 	phys = <&can_phy3>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 };
 
 &flexcan4 {
@@ -321,10 +313,8 @@
 	phys = <&can_phy4>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 };
 
 &flexcan5 {
@@ -333,10 +323,8 @@
 	phys = <&can_phy5>;
 	bus-speed = <125000>;
 	sample-point = <875>;
-	sjw = <1>;
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
-	sjw-data = <1>;
 };
 
 &lpi2c0 {

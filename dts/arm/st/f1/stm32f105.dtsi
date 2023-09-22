@@ -40,7 +40,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sjw = <1>;
 			sample-point = <875>;
 		};
 
@@ -52,7 +51,6 @@
 			/* also enabling clock for can1 (master instance) */
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			status = "disabled";
-			sjw = <1>;
 			sample-point = <875>;
 		};
 
