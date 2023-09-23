@@ -63,13 +63,15 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
  * as a comma separated string and convert it to an array.
  *
  * @param scan_ssids_str List of SSIDs expressed as a comma separated list.
- * @param ssids Pointer to an array where the parsed SSIDs are to be stored.
+ * @param ssids Pointer to an array where the SSIDs pointers are to be stored.
+ * @param num_ssids Maximum number of SSIDs that can be stored.
  *
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
 int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				char ssids[][WIFI_SSID_MAX_LEN + 1]);
+				const char *ssids[],
+				uint8_t num_ssids);
 
 
 /**
