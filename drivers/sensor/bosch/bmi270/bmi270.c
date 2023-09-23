@@ -641,51 +641,18 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static int bmi270_init(const struct device *dev)
+/**
+ * @brief This function resets bmi2 sensor.
+ * All registers are overwritten with their default values.
+ */
+int bmi270_soft_reset(const struct device *dev)
 {
 	int ret;
-	struct bmi270_data *data = dev->data;
-	uint8_t chip_id;
+	uint8_t tries;
 	uint8_t soft_reset_cmd;
 	uint8_t init_ctrl;
-	uint8_t msg;
-	uint8_t tries;
 	uint8_t adv_pwr_save;
-
-	ret = bmi270_bus_check(dev);
-	if (ret < 0) {
-		LOG_ERR("Could not initialize bus");
-		return ret;
-	}
-
-#if CONFIG_BMI270_TRIGGER
-	data->dev = dev;
-	k_mutex_init(&data->trigger_mutex);
-#endif
-
-	data->acc_odr = BMI270_ACC_ODR_100_HZ;
-	data->acc_range = 8;
-	data->gyr_odr = BMI270_GYR_ODR_200_HZ;
-	data->gyr_range = 2000;
-
-	k_usleep(BMI270_POWER_ON_TIME);
-
-	ret = bmi270_bus_init(dev);
-	if (ret != 0) {
-		LOG_ERR("Could not initiate bus communication");
-		return ret;
-	}
-
-	ret = bmi270_reg_read(dev, BMI270_REG_CHIP_ID, &chip_id, 1);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (chip_id != BMI270_CHIP_ID) {
-		LOG_ERR("Unexpected chip id (%x). Expected (%x)",
-			chip_id, BMI270_CHIP_ID);
-		return -EIO;
-	}
+	uint8_t msg;
 
 	soft_reset_cmd = BMI270_CMD_SOFT_RESET;
 	ret = bmi270_reg_write(dev, BMI270_REG_CMD, &soft_reset_cmd, 1);
@@ -751,6 +718,59 @@ static int bmi270_init(const struct device *dev)
 		return -EIO;
 	}
 
+	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save, BMI270_PWR_CONF_ADV_PWR_SAVE,
+					     BMI270_PWR_CONF_ADV_PWR_SAVE_EN);
+	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF, &adv_pwr_save, 1,
+					  BMI270_INTER_WRITE_DELAY_US);
+	return ret;
+}
+
+static int bmi270_init(const struct device *dev)
+{
+	int ret;
+	struct bmi270_data *data = dev->data;
+	uint8_t chip_id;
+
+	ret = bmi270_bus_check(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not initialize bus");
+		return ret;
+	}
+
+#if CONFIG_BMI270_TRIGGER
+	data->dev = dev;
+	k_mutex_init(&data->trigger_mutex);
+#endif
+
+	data->acc_odr = BMI270_ACC_ODR_100_HZ;
+	data->acc_range = 8;
+	data->gyr_odr = BMI270_GYR_ODR_200_HZ;
+	data->gyr_range = 2000;
+
+	k_usleep(BMI270_POWER_ON_TIME);
+
+	ret = bmi270_bus_init(dev);
+	if (ret != 0) {
+		LOG_ERR("Could not initiate bus communication");
+		return ret;
+	}
+
+	ret = bmi270_reg_read(dev, BMI270_REG_CHIP_ID, &chip_id, 1);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (chip_id != BMI270_CHIP_ID) {
+		LOG_ERR("Unexpected chip id (%x). Expected (%x)", chip_id, BMI270_CHIP_ID);
+		return -EIO;
+	}
+
+	ret = bmi270_soft_reset(dev);
+	if (ret != 0) {
+		LOG_ERR("Soft reset failed, err: %d", ret);
+		return ret;
+	}
+
 #if CONFIG_BMI270_TRIGGER
 	ret = bmi270_init_interrupts(dev);
 	if (ret) {
@@ -758,14 +778,6 @@ static int bmi270_init(const struct device *dev)
 		return ret;
 	}
 #endif
-
-	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save,
-					     BMI270_PWR_CONF_ADV_PWR_SAVE,
-					     BMI270_PWR_CONF_ADV_PWR_SAVE_EN);
-	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF,
-					  &adv_pwr_save, 1,
-					  BMI270_INTER_WRITE_DELAY_US);
-
 	return ret;
 }
 

@@ -407,6 +407,17 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 				const uint8_t *data,
 				uint16_t length,
 				uint32_t delay_us);
+/**
+ * @brief This function resets bmi270 sensor.
+ * All registers are overwritten with their default values.
+ *
+ * @param[in] dev : Structure instance of bmi270 device.
+ *
+ * @return Result of execution status
+ * @retval 0 -> Success
+ * @retval < 0 -> Fail
+ */
+int bmi270_soft_reset(const struct device *dev);
 
 #ifdef CONFIG_BMI270_TRIGGER
 int bmi270_trigger_set(const struct device *dev,
