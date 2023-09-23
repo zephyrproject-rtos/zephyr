@@ -39,6 +39,15 @@ config WIFI_MGMT_TWT_CHECK_IP
 	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
 	  interface has a valid IP address might be desirable in most scenarios.
 
+config WIFI_MGMT_FORCED_PASSIVE_SCAN
+	bool "Force passive Wi-Fi scanning"
+	help
+	  Always request a passive scan, regardless of the user supplied parameters.
+	  This is typically used when the underlying hardware is not certified for
+	  RF transmissions. This doesn't guarantee that passive scan will be used,
+	  it depends on the underlying chip implementation to support and honour
+	  scan type.
+
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	int "Maximum number of SSIDs that can be specified for SSID filtering"
 	default 1
