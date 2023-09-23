@@ -326,6 +326,15 @@ static int wifi_scan(uint32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN
+	struct wifi_scan_params default_params = {0};
+
+	if (params == NULL) {
+		params = &default_params;
+	}
+	params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
+#endif /* CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN */
+
 	return wifi_mgmt_api->scan(dev, params, scan_result_cb);
 }
 
