@@ -7,8 +7,12 @@ description: |
   some modes only support on channels that have internal counter, some modes
   require to use a reference timebase from a master bus.
 
-  For example to configuring eMIOS instance 0 with channel 0 for mode OPWFMB, channel 1
-  for mode OPWMB and channel 2 for mode OPWMCB with deadtime inserted at leading edge:
+  For example to configuring eMIOS instance 0 with:
+    - Channel 0 for mode OPWFMB
+    - Channel 1 for mode OPWMB
+    - Channel 2 for mode OPWMCB with deadtime inserted at leading edge
+    - Channel 3 for mode SAIC, use internal timebase with input filter = 2 eMIOS clock
+
     emios0_pwm: pwm {
       pwm_0 {
         channel = <0>;
@@ -35,6 +39,13 @@ description: |
         duty-cycle = <32768>;
         dead-time = <100>;
         polarity = "ACTIVE_LOW";
+      };
+
+      pwm_3 {
+        channel = <3>;
+        pwm-mode = "SAIC";
+        prescaler = <8>;
+        input-filter = <2>;
       };
     };
 
@@ -79,7 +90,9 @@ child-binding:
       description: |
         A phandle to master-bus node that will be used as external timebase
         for current channel, this can be bypassed if internal counter is used
-        for PWM operation.
+        for PWM operation. A master bus must be used exclusively, such as if
+        is used as a timebase for a channel in SAIC mode, do not use that
+        master bus as a timebase for generate PWM pulse.
 
     pwm-mode:
       type: string
@@ -100,15 +113,19 @@ child-binding:
                   an external counter driven in MCB Up Down Mode. Changing PWM period
                   at runtime will impact to all channels share the same timebase,
                   The new period and cycle take effect in next period boundary.
+
+        - SAIC: single action input capture mode, the eMIOS captures events as soon as
+                they occur. The value of latest captured event is stored and can be read
+                by software.
       enum:
         - "OPWFMB"
         - "OPWMB"
         - "OPWMCB_TRAIL_EDGE"
         - "OPWMCB_LEAD_EDGE"
+        - "SAIC"
 
     polarity:
       type: string
-      required: true
       description: |
         Output polarity for PWM channel.
       enum:
@@ -117,7 +134,6 @@ child-binding:
 
     duty-cycle:
       type: int
-      required: true
       description: |
         Duty-cycle (in ticks) for PWM channel at boot time.
 
@@ -157,3 +173,13 @@ child-binding:
       default: 0
       description: |
         Phase Shift (in ticks) for PWM channel in OPWMB mode.
+
+    input-filter:
+      type: int
+      default: 0
+      enum: [0, 2, 4, 8, 16]
+      description: |
+        Select the minimim input pulse width, in filter clock cycles that can pass
+        through the input filter. The filter latency - the difference in time between
+        the input and the response is three clock edges. Default 0 means the filter
+        is bypassed. The clock source for programmable input filter is eMIOS clock.
