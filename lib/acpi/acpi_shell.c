@@ -103,9 +103,17 @@ static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 		case ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64:
 			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64");
 			break;
-		case ACPI_RESOURCE_TYPE_EXTENDED_IRQ:
+		case ACPI_RESOURCE_TYPE_EXTENDED_IRQ: {
+			ACPI_RESOURCE_EXTENDED_IRQ *ext_irq_res = &res->Data.ExtendedIrq;
+
 			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_IRQ");
+			shell_print(sh, "\tTriggering: %x", ext_irq_res->Triggering);
+			shell_print(sh, "\tPolarity: %x", ext_irq_res->Polarity);
+			shell_print(sh, "\tShareable: %s", ext_irq_res->Shareable ? "YES":"NO");
+			shell_print(sh, "\tInterruptCount: %d", ext_irq_res->InterruptCount);
+			shell_print(sh, "\tInterrupts[0]: %d", ext_irq_res->Interrupts[0]);
 			break;
+		}
 		case ACPI_RESOURCE_TYPE_GENERIC_REGISTER:
 			shell_print(sh, "ACPI_RESOURCE_TYPE_GENERIC_REGISTER");
 			break;
@@ -148,7 +156,7 @@ static int dump_dev_crs(const struct shell *sh, size_t argc, char **argv)
 	ACPI_RESOURCE *res_lst;
 
 	if (argc < 2) {
-		shell_error(sh, "invalid arugment");
+		shell_error(sh, "invalid argument");
 		return -EINVAL;
 	}
 
@@ -171,7 +179,7 @@ static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 	ACPI_RESOURCE *res_lst;
 
 	if (argc < 2) {
-		shell_error(sh, "invalid arugment");
+		shell_error(sh, "invalid argument");
 		return -EINVAL;
 	}
 
@@ -189,28 +197,26 @@ static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 {
 	IF_ENABLED(CONFIG_PCIE_PRT, ({
-		static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
-		int status, cnt;
-		ACPI_PCI_ROUTING_TABLE *prt;
+		int irq, bus, dev_num, func;
+		pcie_bdf_t bdf;
 
-		if (argc < 2) {
-			shell_error(sh, "invalid arugment");
+		if (argc < 4) {
+			shell_error(sh, "invalid arguments [Eg: acpi prt <bus> <dev> <func>]");
 			return -EINVAL;
 		}
 
-		status = acpi_get_irq_routing_table(argv[1],
-						    irq_prt_table, ARRAY_SIZE(irq_prt_table));
-		if (status) {
-			return status;
-		}
+		bus = atoi(argv[1]);
+		dev_num = atoi(argv[2]);
+		func = atoi(argv[3]);
 
-		prt = irq_prt_table;
-		for (cnt = 0; prt->Length; cnt++) {
-			shell_print(sh, "[%02X] PCI IRQ Routing Table Package", cnt);
-			shell_print(sh, "\tDevNum: %lld Pin: %d IRQ: %d",
-				    (prt->Address >> 16) & 0xFFFF, prt->Pin, prt->SourceIndex);
-
-			prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
+		bdf = PCIE_BDF(bus, dev_num, func);
+		irq = acpi_legacy_irq_get(bdf);
+		if (irq != UINT_MAX) {
+			shell_print(sh, "PCI Legacy IRQ for bus %d dev %d func %d is: %d",
+				 bus, dev_num, func, irq);
+		} else {
+			shell_print(sh, "PCI Legacy IRQ for bus %d dev %d func %d Not found",
+				 bus, dev_num, func);
 		}
 	})); /* IF_ENABLED(CONFIG_PCIE_PRT) */
 
@@ -220,19 +226,93 @@ static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 static int enum_dev(const struct shell *sh, size_t argc, char **argv)
 {
 	struct acpi_dev *dev;
+	ACPI_RESOURCE *res_lst;
 
-	if (argc < 2) {
+	if (argc < 3) {
+		shell_error(sh, "Invalid arguments [Eg: acpi enum PNP0103 0]");
 		return -EINVAL;
 	}
 
-	dev = acpi_device_get(argv[1], 0);
+	dev = acpi_device_get(argv[1], argv[2]);
 	if (!dev || !dev->res_lst) {
 		shell_error(sh, "acpi get device failed for HID: %s", argv[1]);
 		return -EIO;
 	}
 
 	shell_print(sh, "Name: %s", dev->path ? dev->path : "None");
-	dump_dev_res(sh, dev->res_lst);
+
+	if (dev->path) {
+		if (!acpi_current_resource_get(dev->path, &res_lst)) {
+			dump_dev_res(sh, res_lst);
+			acpi_current_resource_free(res_lst);
+		}
+	}
+
+	return 0;
+}
+
+static int enum_all_dev(const struct shell *sh, size_t argc, char **argv)
+{
+	struct acpi_dev *dev;
+
+	for (int i = 0; i < CONFIG_ACPI_DEV_MAX; i++) {
+		dev = acpi_device_by_index_get(i);
+		if (!dev) {
+			shell_print(sh, "No more ACPI device found!");
+			break;
+		}
+
+		if (!dev->dev_info) {
+			continue;
+		}
+
+		shell_print(sh, "%d) Name: %s, HID: %s", i, dev->path ? dev->path : "None",
+			    dev->dev_info->HardwareId.String ? dev->dev_info->HardwareId.String
+							     : "None");
+	}
+
+	return 0;
+}
+
+static int get_acpi_dev_resource(const struct shell *sh, size_t argc, char **argv)
+{
+	struct acpi_dev *dev;
+	struct acpi_irq_resource irq_res;
+	struct acpi_mmio_resource mmio_res;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	dev = acpi_device_get(argv[1], argv[2]);
+	if (!dev) {
+		shell_error(sh, "acpi get device failed for HID: %s", argv[1]);
+		return -EIO;
+	}
+
+	if (dev->path) {
+		shell_print(sh, "Device Path: %s", dev->path);
+
+		if (!acpi_device_mmio_get(dev, &mmio_res)) {
+
+			shell_print(sh, "Device MMIO resources");
+			for (int i = 0; i < ACPI_RESOURCE_COUNT_GET(&mmio_res); i++) {
+				shell_print(sh, "\tType: %x, Address: %p, Size: %d",
+					ACPI_MULTI_RESOURCE_TYPE_GET(&mmio_res, i),
+					(void *)ACPI_MULTI_MMIO_GET(&mmio_res, i),
+						ACPI_MULTI_RESOURCE_SIZE_GET(&mmio_res, i));
+			}
+		}
+
+		if (!acpi_device_irq_get(dev, &irq_res)) {
+
+			shell_print(sh, "Device IRQ resources");
+			for (int i = 0; i < irq_res.irq_vector_max; i++) {
+				shell_print(sh, "\tIRQ Num: %x, Flags: %x", irq_res.irqs[i],
+					    irq_res.flags);
+			}
+		}
+	}
 
 	return 0;
 }
@@ -274,8 +354,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(enum, NULL,
 		  "enumerate device using hid (for enum HPET timer device,eg:acpi enum PNP0103)",
 		  enum_dev),
-	SHELL_CMD(rd_table, NULL,
-		  "read acpi table (for read mad table, eg:acpi read_table APIC)",
+	SHELL_CMD(enum_all, NULL, "enumerate all device in acpi name space (eg:acpi enum_all)",
+		  enum_all_dev),
+	SHELL_CMD(dev_res, NULL, "retrieve device resource (eg: acpi dev_res PNP0501 2)",
+		  get_acpi_dev_resource),
+	SHELL_CMD(rd_table, NULL, "read ACPI table (eg: acpi read_table APIC)",
 		  read_table),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
