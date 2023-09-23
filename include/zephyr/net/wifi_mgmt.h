@@ -245,7 +245,7 @@ struct wifi_scan_params {
 	uint16_t dwell_time_passive;
 	/** Array of SSID strings to scan.
 	 */
-	char ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX][WIFI_SSID_MAX_LEN + 1];
+	const char *ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX];
 	/** Specifies the maximum number of scan results to return. These results would be the
 	 * BSSIDS with the best RSSI values, in all the scanned channels. This should only be
 	 * used to limit the number of returned scan results, and cannot be counted upon to limit
