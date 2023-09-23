@@ -38,7 +38,7 @@ enum sensor_attribute_bmi270 {
 #define BMI270_SENSOR_VALUE_WITH_GAIN(var_name, gain_value) \
 	struct sensor_value var_name = {.val1 = gain_value, .val2 = 0}
 
-#define SENSOR_ATTR_SET_GAIN_COMPENSATION(dev, gain_value) \
+#define BMI270_SENSOR_ATTR_SET_GAIN_COMPENSATION(dev, gain_value) \
 	do { \
 		BMI270_SENSOR_VALUE_WITH_GAIN(_gain_compensation_var, gain_value); \
 		sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ, \
