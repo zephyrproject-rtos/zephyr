@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dht0 = &hs300x;
+	};
+};
+
+ &i2c1 {
+	status = "okay";
+
+	hs300x: hs300x@44 {
+		compatible = "renesas,hs300x";
+		reg = <0x44>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
