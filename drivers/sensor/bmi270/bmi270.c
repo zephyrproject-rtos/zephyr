@@ -802,6 +802,11 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.config_file_len = sizeof(bmi270_config_file_base),
 	.anymo_1 = &(struct bmi270_feature_reg){ .page = 1, .addr = 0x3C },
 	.anymo_2 = &(struct bmi270_feature_reg){ .page = 1, .addr = 0x3E },
+#if defined(CONFIG_BMI270_CRT)
+	.g_trig_1 = &(struct bmi270_feature_reg){.page = 1, .addr = 0x32},
+	.gyr_gain_status = &(struct bmi270_feature_reg){.page = 0, .addr = 0x38},
+	.gen_set_1 = &(struct bmi270_feature_reg){.page = 1, .addr = 0x34},
+#endif
 };
 
 #define BMI270_FEATURE(inst) (						\

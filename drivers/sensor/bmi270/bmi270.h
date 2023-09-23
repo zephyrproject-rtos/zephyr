@@ -329,6 +329,11 @@ struct bmi270_data {
 	struct k_work trig_work;
 #endif
 #endif /* CONFIG_BMI270_TRIGGER */
+#ifdef CONFIG_BMI270_CRT
+	/* CRT test results */
+	struct bmi2_gyr_user_gain_status crt_result_sts;
+	struct bmi2_gyro_user_gain_data crt_gain;
+#endif /* CONFIG_BMI270_CRT */
 };
 
 struct bmi270_feature_reg {
