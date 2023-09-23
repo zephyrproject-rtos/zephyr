@@ -1,3 +1,6 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
 description: |
   NXP S32 eMIOS PWM node for S32 SoCs. Each channel in eMIOS can be configured
   to use for PWM operation. There are several PWM modes supported by this module,
@@ -9,7 +12,7 @@ description: |
     emios0_pwm: pwm {
       pwm_0 {
         channel = <0>;
-        pwm-mode = "MODE_OPWFMB";
+        pwm-mode = "OPWFMB";
         prescaler = <8>;
         period = <65534>;
         duty-cycle = <32768>;
@@ -19,7 +22,7 @@ description: |
       pwm_1 {
         channel = <1>;
         master-bus = <&emios1_bus_a>;
-        pwm-mode = "MODE_OPWMB";
+        pwm-mode = "OPWMB";
         duty-cycle = <32768>;
         phase-shift = <100>;
         polarity = "ACTIVE_LOW";
@@ -28,7 +31,7 @@ description: |
       pwm_2 {
         channel = <2>;
         master-bus = <&emios1_bus_b>;
-        pwm-mode = "MODE_OPWMCB_LEAD_EDGE";
+        pwm-mode = "OPWMCB_LEAD_EDGE";
         duty-cycle = <32768>;
         dead-time = <100>;
         polarity = "ACTIVE_LOW";
@@ -53,12 +56,13 @@ properties:
     required: true
 
   "#pwm-cells":
-    const: 2
+    const: 3
 
 pwm-cells:
   - channel
   # Period in terms of nanoseconds
   - period
+  - flags
 
 child-binding:
   description: |
@@ -97,10 +101,10 @@ child-binding:
                   at runtime will impact to all channels share the same timebase,
                   The new period and cycle take effect in next period boundary.
       enum:
-        - "MODE_OPWFMB"
-        - "MODE_OPWMB"
-        - "MODE_OPWMCB_TRAIL_EDGE"
-        - "MODE_OPWMCB_LEAD_EDGE"
+        - "OPWFMB"
+        - "OPWMB"
+        - "OPWMCB_TRAIL_EDGE"
+        - "OPWMCB_LEAD_EDGE"
 
     polarity:
       type: string
