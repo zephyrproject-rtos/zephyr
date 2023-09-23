@@ -633,6 +633,19 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 		case SENSOR_ATTR_FULL_SCALE:
 			ret = set_gyro_range(dev, val);
 			break;
+#ifdef CONFIG_BMI270_CRT
+		case SENSOR_ATTR_CALIBRATION:
+			ARG_UNUSED(val);
+			ret = bmi270_gyro_crt(dev);
+			break;
+		case BMI270_SENSOR_ATTR_NVM_PROG:
+			ARG_UNUSED(val);
+			ret = bmi270_nvm_prog(dev);
+			break;
+		case BMI270_SENSOR_ATTR_GAIN_COMP:
+			ret = bmi270_set_gyro_gain(dev, val);
+			break;
+#endif /* CONFIG_BMI270_CRT */
 		default:
 			ret = -ENOTSUP;
 		}
