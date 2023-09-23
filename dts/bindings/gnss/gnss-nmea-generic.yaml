@@ -1,0 +1,32 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic GNSS NMEA receiver
+
+  Implement a generic NMEA based GNSS device.
+
+  Example configuration:
+
+  &uart0 {
+          current-speed = <9600>;
+          ...
+          gnss: gnss-nmea-generic {
+                  compatible = "gnss-nmea-generic";
+          };
+  };
+
+compatible: "gnss-nmea-generic"
+
+include:
+  - uart-device.yaml
+
+properties:
+  nmea-timeout-ms:
+    type: int
+    default: 500
+    description: |
+      Synchronization timeout for NMEA sentences. The NMEA parser is expecting
+      to receive a GGA and RMC sentences within this time frame to publish a
+      location data. Set accordingly to the UART datarate and location
+      reporting frequency. Defaults to 500ms if unspecified.

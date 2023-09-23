@@ -64,6 +64,7 @@ module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
 
+rsource "Kconfig.generic"
 rsource "Kconfig.quectel_lcx6g"
 
 endif
