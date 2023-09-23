@@ -807,3 +807,8 @@ test_i2c_lps22df: lps22df@79 {
 	drdy-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_i2c_hs300x: hs300x@79 {
+	compatible = "renesas,hs300x";
+	reg = <0x79>;
+};
