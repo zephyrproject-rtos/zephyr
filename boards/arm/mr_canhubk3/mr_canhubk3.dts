@@ -65,15 +65,15 @@
 		compatible = "pwm-leds";
 
 		user_led1_blue_pwm: user_led1_blue {
-			pwms = <&emios1_pwm 5 PWM_MSEC(20)>;
+			pwms = <&emios1_pwm 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 
 		user_led1_green_pwm: user_led1_green {
-			pwms = <&emios1_pwm 10 PWM_MSEC(20)>;
+			pwms = <&emios1_pwm 10 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 
 		user_led1_red_pwm: user_led1_red {
-			pwms = <&emios0_pwm 19 PWM_MSEC(20)>;
+			pwms = <&emios0_pwm 19 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -441,7 +441,7 @@
 		/* Default clock for internal counter for PWM channel 0-7 is 100Khz */
 		pwm_0 {
 			channel = <0>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -450,7 +450,7 @@
 
 		pwm_1 {
 			channel = <1>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -459,7 +459,7 @@
 
 		pwm_2 {
 			channel = <2>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -468,7 +468,7 @@
 
 		pwm_3 {
 			channel = <3>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -477,7 +477,7 @@
 
 		pwm_4 {
 			channel = <4>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -486,7 +486,7 @@
 
 		pwm_5 {
 			channel = <5>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -495,7 +495,7 @@
 
 		pwm_6 {
 			channel = <6>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -504,7 +504,7 @@
 
 		pwm_7 {
 			channel = <7>;
-			pwm-mode = "MODE_OPWFMB";
+			pwm-mode = "OPWFMB";
 			period = <65535>;
 			duty-cycle = <0>;
 			prescaler = <8>;
@@ -515,7 +515,7 @@
 			channel = <19>;
 			master-bus = <&emios0_bus_a>;
 			duty-cycle = <0>;
-			pwm-mode = "MODE_OPWMB";
+			pwm-mode = "OPWMB";
 			polarity = "ACTIVE_LOW";
 		};
 	};
@@ -554,7 +554,7 @@
 			channel = <10>;
 			master-bus = <&emios1_bus_a>;
 			duty-cycle = <0>;
-			pwm-mode = "MODE_OPWMB";
+			pwm-mode = "OPWMB";
 			polarity = "ACTIVE_LOW";
 		};
 
@@ -562,7 +562,7 @@
 			channel = <5>;
 			master-bus = <&emios1_bus_f>;
 			duty-cycle = <0>;
-			pwm-mode = "MODE_OPWMB";
+			pwm-mode = "OPWMB";
 			polarity = "ACTIVE_LOW";
 		};
 	};

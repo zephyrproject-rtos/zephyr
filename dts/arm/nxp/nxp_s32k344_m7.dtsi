@@ -667,7 +667,7 @@
 
 			pwm {
 				compatible = "nxp,s32-emios-pwm";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
@@ -721,7 +721,7 @@
 
 			pwm {
 				compatible = "nxp,s32-emios-pwm";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
@@ -775,7 +775,7 @@
 
 			pwm {
 				compatible = "nxp,s32-emios-pwm";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
