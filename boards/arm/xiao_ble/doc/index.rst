@@ -112,8 +112,8 @@ necessary software.
 Flashing
 --------
 
-Follow the instructions in the :ref:`jlink-external-debug-probe` page to install
-and configure all the necessary software. Then build and flash applications as
+Setup and connect a supported debug probe (JLink, instructions at :ref:`jlink-external-debug-probe` or
+BlackMagic Probe). Then build and flash applications as
 usual (see :ref:`build_an_application` and :ref:`application_run` for more
 details).
 
@@ -155,6 +155,8 @@ Debugging
 
 Refer to the :ref:`jlink-external-debug-probe` page to learn about debugging
 boards with a Segger IC.
+
+Debugging using a BlackMagic Probe is also supported.
 
 Testing the LEDs in the XIAO BLE (Sense)
 ****************************************
