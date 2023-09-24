@@ -180,7 +180,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	}
 
 	if (pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
-		LOG_ERR("invalid RX frame length");
+		LOG_ERR("Invalid RX frame length");
 		return;
 	}
 
@@ -189,17 +189,25 @@ static void rf2xx_trx_rx(const struct device *dev)
 
 	rf2xx_iface_frame_read(dev, rx_buf, frame_len);
 
-	trac = rx_buf[pkt_len + RX2XX_FRAME_TRAC_INDEX];
-	trac = (trac >> RF2XX_RX_TRAC_STATUS) & RF2XX_RX_TRAC_BIT_MASK;
+	if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
+		trac = rx_buf[pkt_len + RX2XX_FRAME_TRAC_INDEX];
+		trac = (trac >> RF2XX_RX_TRAC_STATUS) & RF2XX_RX_TRAC_BIT_MASK;
+
+		ctx->pkt_ed = rx_buf[pkt_len + RX2XX_FRAME_ED_INDEX];
+	} else {
+		trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG)
+			>> RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
+
+		ctx->pkt_ed = (rf2xx_iface_reg_read(dev, RF2XX_PHY_RSSI_REG)
+			       >> RF2XX_RSSI) & RF2XX_RSSI_MASK;
+	}
+	ctx->pkt_lqi = rx_buf[pkt_len + RX2XX_FRAME_LQI_INDEX];
 
 	if (trac == RF2XX_TRX_PHY_STATE_TRAC_INVALID) {
-		LOG_ERR("invalid RX frame");
+		LOG_ERR("Invalid RX frame");
 
 		return;
 	}
-
-	ctx->pkt_lqi = rx_buf[pkt_len + RX2XX_FRAME_LQI_INDEX];
-	ctx->pkt_ed = rx_buf[pkt_len + RX2XX_FRAME_ED_INDEX];
 
 	if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) &&
 	    !IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
@@ -208,9 +216,8 @@ static void rf2xx_trx_rx(const struct device *dev)
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
 					   AF_UNSPEC, 0, K_NO_WAIT);
-
 	if (!pkt) {
-		LOG_ERR("No buf available");
+		LOG_ERR("No RX buffer available");
 		return;
 	}
 
@@ -224,7 +231,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 		ctx->pkt_ed);
 
 	if (net_recv_data(ctx->iface, pkt) < 0) {
-		LOG_DBG("Packet dropped by NET stack");
+		LOG_DBG("RX Packet dropped by NET stack");
 		net_pkt_unref(pkt);
 		return;
 	}
