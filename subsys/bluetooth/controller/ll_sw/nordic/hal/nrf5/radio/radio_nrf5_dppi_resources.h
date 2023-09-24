@@ -98,7 +98,7 @@
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
- * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
+ * 2 adjacent PPIs (14 & 15) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 14
