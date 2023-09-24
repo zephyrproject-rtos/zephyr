@@ -61,14 +61,20 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
+/* lorawan flags: store lorawan states */
+enum {
+	LORAWAN_FLAG_ADR_ENABLE,
+	LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE,
+	LORAWAN_FLAG_COUNT,
+};
+
 /* We store both the default datarate requested through lorawan_set_datarate
  * and the current datarate so that we can use the default datarate for all
  * join requests, even as the current datarate changes due to ADR.
  */
 static enum lorawan_datarate default_datarate;
 static enum lorawan_datarate current_datarate;
-static bool lorawan_adr_enable;
-static bool lorawan_device_time_updated_once;
+static ATOMIC_DEFINE(lorawan_flags, LORAWAN_FLAG_COUNT);
 
 static sys_slist_t dl_callbacks;
 
@@ -138,7 +144,7 @@ static void mcps_confirm_handler(McpsConfirm_t *mcps_confirm)
 	}
 
 	/* Datarate may have changed due to a missed ADRACK */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		datarate_observe(false);
 	}
 
@@ -160,12 +166,14 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 	}
 
 	/* Datarate can change as result of ADR command from server */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		datarate_observe(false);
 	}
+
 	/* Save time has been updated at least once */
-	if (!lorawan_device_time_updated_once && mcps_indication->DeviceTimeAnsReceived) {
-		lorawan_device_time_updated_once = true;
+	if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE) &&
+	    mcps_indication->DeviceTimeAnsReceived) {
+		atomic_set_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE);
 	}
 
 	/* IsUplinkTxPending also indicates pending downlinks */
@@ -418,13 +426,13 @@ int lorawan_device_time_get(uint32_t *gps_time)
 
 	__ASSERT(gps_time != NULL, "gps_time parameter is required");
 
-	if (lorawan_device_time_updated_once) {
-		local_time = SysTimeGet();
-		*gps_time = local_time.Seconds - UNIX_GPS_EPOCH_OFFSET;
-		return 0;
-	} else {
+	if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_DEVICETIME_UPDATED_ONCE)) {
 		return -EAGAIN;
 	}
+
+	local_time = SysTimeGet();
+	*gps_time = local_time.Seconds - UNIX_GPS_EPOCH_OFFSET;
+	return 0;
 }
 
 int lorawan_join(const struct lorawan_join_config *join_cfg)
@@ -485,7 +493,7 @@ out:
 		 * performed when ADR is disabled as it the network servers
 		 * responsibility to increase datarates when ADR is enabled.
 		 */
-		if (!lorawan_adr_enable) {
+		if (!atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 			MibRequestConfirm_t mib_req2;
 
 			mib_req2.Type = MIB_CHANNELS_DATARATE;
@@ -565,7 +573,7 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 	MibRequestConfirm_t mib_req;
 
 	/* Bail out if using ADR */
-	if (lorawan_adr_enable) {
+	if (atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
 		return -EINVAL;
 	}
 
@@ -609,11 +617,11 @@ void lorawan_enable_adr(bool enable)
 {
 	MibRequestConfirm_t mib_req;
 
-	if (enable != lorawan_adr_enable) {
-		lorawan_adr_enable = enable;
+	if (enable != atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE)) {
+		atomic_set_bit_to(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE, enable);
 
 		mib_req.Type = MIB_ADR;
-		mib_req.Param.AdrEnable = lorawan_adr_enable;
+		mib_req.Param.AdrEnable = atomic_test_bit(lorawan_flags, LORAWAN_FLAG_ADR_ENABLE);
 		LoRaMacMibSetRequestConfirm(&mib_req);
 	}
 }
