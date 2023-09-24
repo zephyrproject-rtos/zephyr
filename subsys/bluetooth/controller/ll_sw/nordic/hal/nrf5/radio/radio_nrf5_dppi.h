@@ -341,7 +341,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
- * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
+ * 2 adjacent PPIs (14 & 15) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
@@ -429,10 +429,10 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	(SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE + (index))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(index) \
 	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index)
+
 /* Cancel the SW switch timer running considering PHYEND delay compensation timing:
  * wire the RADIO EVENTS_CTEPRESENT event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
-#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI 16
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT \
 	NRF_RADIO->PUBLISH_CTEPRESENT
 
