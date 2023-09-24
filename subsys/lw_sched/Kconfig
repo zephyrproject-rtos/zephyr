@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config LW_SCHEDULER
+	bool "Lightweight Scheduler"
+	help
+	  This option enables the use of the lightweight schedulers. Each
+	  active lightweight scheduler is a dedicated thread that runs at
+	  regular intervals to execute a list of tasks in sequence.
