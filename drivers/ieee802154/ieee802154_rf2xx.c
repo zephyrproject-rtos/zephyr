@@ -179,7 +179,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 		pkt_len = rx_buf[RX2XX_FRAME_PHR_INDEX];
 	}
 
-	if (pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
+	if (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
 		LOG_ERR("Invalid RX frame length");
 		return;
 	}
@@ -203,14 +203,14 @@ static void rf2xx_trx_rx(const struct device *dev)
 	}
 	ctx->pkt_lqi = rx_buf[pkt_len + RX2XX_FRAME_LQI_INDEX];
 
-	if (trac == RF2XX_TRX_PHY_STATE_TRAC_INVALID) {
+	if (!ctx->promiscuous && trac == RF2XX_TRX_PHY_STATE_TRAC_INVALID) {
 		LOG_ERR("Invalid RX frame");
-
 		return;
 	}
 
 	if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) &&
-	    !IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+	    !IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
+	    pkt_len >= RX2XX_FRAME_FCS_LENGTH) {
 		pkt_len -= RX2XX_FRAME_FCS_LENGTH;
 	}
 
@@ -775,7 +775,10 @@ static int rf2xx_pan_coord_set(const struct device *dev, bool pan_coordinator)
 
 static int rf2xx_promiscuous_set(const struct device *dev, bool promiscuous)
 {
+	struct rf2xx_context *ctx = dev->data;
 	uint8_t reg;
+
+	ctx->promiscuous = promiscuous;
 
 	if (promiscuous) {
 		reg = rf2xx_iface_reg_read(dev, RF2XX_XAH_CTRL_1_REG);
@@ -903,6 +906,7 @@ static int power_on_and_setup(const struct device *dev)
 	}
 
 	ctx->tx_mode = IEEE802154_TX_MODE_CSMA_CA;
+	ctx->promiscuous = false;
 
 	/* Configure INT behaviour */
 	config = (1 << RF2XX_RX_START) |

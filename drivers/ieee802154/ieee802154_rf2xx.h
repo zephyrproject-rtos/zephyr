@@ -122,6 +122,7 @@ struct rf2xx_context {
 	int8_t trx_rssi_base;
 	uint8_t trx_version;
 	uint8_t rx_phr;
+	bool promiscuous;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_H_ */
