@@ -143,9 +143,6 @@
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 12
 #endif
 
-#if defined(CONFIG_BT_CTLR_PHY_CODED) && \
-	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  */
@@ -155,8 +152,6 @@
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI 19
-
-#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* Wire the SW SWITCH PHYEND delay compensation TIMER EVENTS_COMPARE[<cc_offset>] event to software
