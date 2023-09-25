@@ -205,6 +205,16 @@ static inline void hal_trigger_crypt_ppi_config(void)
 	/* No need to configure anything for the pre-programmed channel. */
 }
 
+/*******************************************************************************
+ * Disable trigger encryption task
+ */
+static inline void hal_trigger_crypt_ppi_disable(void)
+{
+	/* No need to disable anything as ppi channel will be disabled in a
+	 * separate disable ppi call by the caller of this function.
+	 */
+}
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /*******************************************************************************
  * Trigger encryption task on Bit counter match:
