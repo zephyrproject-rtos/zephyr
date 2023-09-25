@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample demonstrates using the `flash API <flash_api>` on a SPI NOR serial flash
+This sample demonstrates using the :ref:`flash API <flash_api>` on a SPI NOR serial flash
 memory device.  While trivial it is an example of direct access and
 allows confirmation that the flash is working and that automatic power
 savings is correctly implemented.
