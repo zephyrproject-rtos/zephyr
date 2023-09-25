@@ -81,9 +81,8 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait,
 {
 	const struct mcux_mailbox_config *config = d->config;
 	MAILBOX_Type *base = config->base;
-	uint32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
-					   * to uint32_t array
-					   */
+	/* Until we change API to uint32_t array */
+	uint32_t data32[MCUX_IPM_DATA_REGS] = {0};
 	unsigned int flags;
 	int i;
 
