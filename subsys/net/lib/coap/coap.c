@@ -1147,29 +1147,28 @@ static bool is_request(const struct coap_packet *cpkt)
 	return !(code & ~COAP_REQUEST_MASK);
 }
 
-int coap_handle_request(struct coap_packet *cpkt,
-			struct coap_resource *resources,
-			struct coap_option *options,
-			uint8_t opt_num,
-			struct sockaddr *addr, socklen_t addr_len)
+int coap_handle_request_len(struct coap_packet *cpkt,
+			    struct coap_resource *resources,
+			    size_t resources_len,
+			    struct coap_option *options,
+			    uint8_t opt_num,
+			    struct sockaddr *addr, socklen_t addr_len)
 {
-	struct coap_resource *resource;
-
 	if (!is_request(cpkt)) {
 		return 0;
 	}
 
 	/* FIXME: deal with hierarchical resources */
-	for (resource = resources; resource && resource->path; resource++) {
+	for (size_t i = 0; i < resources_len; i++) {
 		coap_method_t method;
 		uint8_t code;
 
-		if (!uri_path_eq(cpkt, resource->path, options, opt_num)) {
+		if (!uri_path_eq(cpkt, resources[i].path, options, opt_num)) {
 			continue;
 		}
 
 		code = coap_header_get_code(cpkt);
-		if (method_from_code(resource, code, &method) < 0) {
+		if (method_from_code(&resources[i], code, &method) < 0) {
 			return -ENOTSUP;
 		}
 
@@ -1177,11 +1176,27 @@ int coap_handle_request(struct coap_packet *cpkt,
 			return -EPERM;
 		}
 
-		return method(resource, cpkt, addr, addr_len);
+		return method(&resources[i], cpkt, addr, addr_len);
 	}
 
-	NET_DBG("%d", __LINE__);
 	return -ENOENT;
+}
+
+int coap_handle_request(struct coap_packet *cpkt,
+			struct coap_resource *resources,
+			struct coap_option *options,
+			uint8_t opt_num,
+			struct sockaddr *addr, socklen_t addr_len)
+{
+	size_t resources_len = 0;
+	struct coap_resource *resource;
+
+	for (resource = resources; resource && resource->path; resource++) {
+		resources_len++;
+	}
+
+	return coap_handle_request_len(cpkt, resources, resources_len, options, opt_num, addr,
+				       addr_len);
 }
 
 int coap_block_transfer_init(struct coap_block_context *ctx,

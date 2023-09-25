@@ -583,12 +583,36 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
  *
  * @param cpkt Packet received
  * @param resources Array of known resources
+ * @param resources_len Number of resources in the array
  * @param options Parsed options from coap_packet_parse()
  * @param opt_num Number of options
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval 0 in case of success.
+ * @retval >= 0 in case of success.
+ * @retval -ENOTSUP in case of invalid request code.
+ * @retval -EPERM in case resource handler is not implemented.
+ * @retval -ENOENT in case the resource is not found.
+ */
+int coap_handle_request_len(struct coap_packet *cpkt,
+			    struct coap_resource *resources,
+			    size_t resources_len,
+			    struct coap_option *options,
+			    uint8_t opt_num,
+			    struct sockaddr *addr, socklen_t addr_len);
+
+/**
+ * @brief When a request is received, call the appropriate methods of
+ * the matching resources.
+ *
+ * @param cpkt Packet received
+ * @param resources Array of known resources (terminated with empty resource)
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ * @param addr Peer address
+ * @param addr_len Peer address length
+ *
+ * @retval >= 0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
