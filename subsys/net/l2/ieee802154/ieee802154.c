@@ -360,7 +360,7 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
-	enum net_verdict verdict = NET_DROP;
+	enum net_verdict verdict = NET_CONTINUE;
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_mpdu mpdu;
 	bool is_broadcast;
@@ -387,8 +387,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
 		verdict = ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
-		if (verdict == NET_OK) {
+		if (verdict == NET_CONTINUE) {
 			net_pkt_unref(pkt);
+			return NET_OK;
 		}
 		/* Beacons must not be acknowledged, see section 6.7.4.1. */
 		return verdict;
@@ -400,7 +401,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		verdict = ieee802154_handle_mac_command(iface, &mpdu);
-		if (verdict != NET_OK) {
+		if (verdict == NET_DROP) {
 			return verdict;
 		}
 	}
@@ -427,7 +428,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		net_pkt_unref(pkt);
-		return verdict;
+		return NET_OK;
 	}
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
