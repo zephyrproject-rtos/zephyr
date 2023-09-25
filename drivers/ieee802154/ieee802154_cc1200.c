@@ -543,6 +543,15 @@ static int cc1200_cca(const struct device *dev)
 static int cc1200_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct cc1200_context *cc1200 = dev->data;
+	uint32_t freq;
+
+	/* As SUN FSK provides a host of configurations with extremely different
+	 * channel counts it doesn't make sense to validate (aka -EINVAL) a
+	 * global upper limit on the number of supported channels on this page.
+	 */
+	if (channel > IEEE802154_CC1200_CHANNEL_LIMIT) {
+		return -ENOTSUP;
+	}
 
 	/* Unlike usual 15.4 chips, cc1200 is closer to a bare metal radio modem
 	 * and thus does not provide any means to select a channel directly, but
@@ -552,14 +561,16 @@ static int cc1200_set_channel(const struct device *dev, uint16_t channel)
 	 * See rf_evaluate_freq_setting() above.
 	 */
 
-	if (atomic_get(&cc1200->rx) == 0) {
-		uint32_t freq = rf_evaluate_freq_setting(dev, channel);
+	if (atomic_get(&cc1200->rx) != 0) {
+		return -EIO;
+	}
 
-		if (!write_reg_freq(dev, freq) ||
-		    rf_calibrate(dev)) {
-			LOG_ERR("Could not set channel %u", channel);
-			return -EIO;
-		}
+	freq = rf_evaluate_freq_setting(dev, channel);
+
+	if (!write_reg_freq(dev, freq) ||
+		rf_calibrate(dev)) {
+		LOG_ERR("Could not set channel %u", channel);
+		return -EIO;
 	}
 
 	return 0;
