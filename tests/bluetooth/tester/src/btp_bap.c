@@ -136,13 +136,18 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		codec_cfg->vid, codec_cfg->data_len);
 
 	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
-		/* LC3 uses the generic LTV format - other codecs might do as well */
-
 		enum bt_audio_location chan_allocation;
+		int ret;
+
+		/* LC3 uses the generic LTV format - other codecs might do as well */
 
 		bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, print_cb, "data");
 
-		LOG_DBG("  Frequency: %d Hz", bt_audio_codec_cfg_get_freq(codec_cfg));
+		ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+		if (ret > 0) {
+			LOG_DBG("  Frequency: %d Hz", bt_audio_codec_cfg_freq_to_freq_hz(ret));
+		}
+
 		LOG_DBG("  Frame Duration: %d us",
 			bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
 		if (bt_audio_codec_cfg_get_chan_allocation_val(codec_cfg, &chan_allocation) == 0) {
@@ -255,22 +260,22 @@ static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase
 
 static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	int freq_hz;
 	int frame_duration_us;
 	int frames_per_sdu;
 	int octets_per_frame;
 	int chan_allocation_err;
 	enum bt_audio_location chan_allocation;
+	int ret;
 
-	freq_hz = bt_audio_codec_cfg_get_freq(codec_cfg);
 	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
 	chan_allocation_err =
 		bt_audio_codec_cfg_get_chan_allocation_val(codec_cfg, &chan_allocation);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 
-	if (freq_hz < 0) {
-		LOG_DBG("Error: Invalid codec frequency.");
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		LOG_DBG("Error: Invalid codec frequency: %d", ret);
 		return -EINVAL;
 	}
 
