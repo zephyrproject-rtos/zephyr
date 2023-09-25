@@ -83,7 +83,7 @@ static void test_address(bt_addr_le_t *addr)
 	rpa_timeout_ms = CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC;
 
 	if (abs(diff_ms - rpa_timeout_ms) > (rpa_timeout_ms / 10)) {
-		FAIL("RPA rotation did not occur within +-10% of CONFIG_BT_RPA_TIMEOUT\n");
+		FAIL("RPA rotation did not occur within +-10%% of CONFIG_BT_RPA_TIMEOUT\n");
 	}
 
 	bt_addr_le_copy(&adv_set_data[adv_index].old_addr, addr);
