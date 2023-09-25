@@ -116,7 +116,7 @@ config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	help
 	  When signing (CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty
 	  string) you can use this option to pass extra options to
-	  imgtool.  For example, you could set this to "--version 1.2".
+	  imgtool. For example, you could set this to "--version 1.2".
 
 config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	bool "Generate unsigned binary image bootable with MCUboot"
@@ -136,6 +136,8 @@ config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
+menu "On board MCUboot operation mode"
+
 choice MCUBOOT_BOOTLOADER_MODE
 	prompt "Application assumed MCUboot mode of operation"
 	default MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH # MCUBOOT_BOOTLOADER_MODE
@@ -154,31 +156,43 @@ config MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
 
 config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
 	bool "MCUboot has been configured for swap without scratch operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	help
 	  MCUboot expects slot0_partition and slot1_partition to be present
 	  in DT and application will boot from slot0_partition.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
 
 config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
 	bool "MCUboot has been configured for swap using scratch operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	help
 	  MCUboot expects slot0_partition, slot1_partition and scratch_partition
 	  to be present in DT, and application will boot from slot0_partition.
 	  In this mode scratch_partition is used as temporary storage when
 	  MCUboot swaps application from the secondary slot to the primary
 	  slot.
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
+	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
 
 config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	bool "MCUboot has been configured for DirectXIP operation"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	help
 	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
 	  In this mode MCUboot can boot from either partition and will
 	  select one with higher application image version, which usually
 	  means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER
 	  is also selected that enables comparison of build number.
+	  This option automatically selectes
+	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  to swap back to older version of application.
 
 config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	bool "MCUboot has been configured for DirectXIP with revert"
 	select MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	help
 	  MCUboot expects slot0_partition and slot1_partition to exist in DT.
 	  In this mode MCUboot will boot the application with the higher version
@@ -190,8 +204,29 @@ config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	  This mode does not allow freely switching between application
 	  versions, as, once higher version application is approved, it is
 	  not possible to select lower version for boot.
+	  This mode selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  to downgrade running application, but note that MCUboot may do that
+	  if application with higher version will not get confirmed.
 
 endchoice # MCUBOOT_BOOTLOADER_MODE
+
+config MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	bool
+	help
+	  Selected mode supports downgrade prevention, where you cannot switch to
+	  an application with lower version than the currently running application.
+
+if MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+config MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	bool "MCUboot mode has downgrade prevention enabled"
+	help
+	  Selected MCUboot mode has downgrade prevention enabled, where you are not
+	  able to change back to image with lower version number.
+	  This options should be selected when MCUboot has been built with
+	  MCUBOOT_DOWNGRADE_PREVENTION option enabled.
+endif
+
+endmenu # On board MCUboot operation mode
 
 endif # BOOTLOADER_MCUBOOT
 
