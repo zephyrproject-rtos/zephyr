@@ -16,5 +16,3 @@ tests:
   net.socket.reuseaddr_reuseport.userspace:
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
-    # FIXME: This test fails with an unknown error on qemu_x86
-    platform_exclude: qemu_x86
