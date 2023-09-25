@@ -1170,7 +1170,7 @@ struct can_mcan_tx_callback {
 struct can_mcan_rx_callback {
 	can_rx_callback_t function;
 	void *user_data;
-	uint8_t flags;
+	struct can_filter filter;
 };
 
 /**

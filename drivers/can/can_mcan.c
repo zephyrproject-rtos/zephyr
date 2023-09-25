@@ -715,23 +715,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
 		}
 
-		if (((frame.flags & CAN_FRAME_RTR) == 0U && (cb.flags & CAN_FILTER_DATA) == 0U) ||
-		    ((frame.flags & CAN_FRAME_RTR) != 0U && (cb.flags & CAN_FILTER_RTR) == 0U)) {
-			/* RTR bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
-			goto ack;
-		}
-
-		if (((frame.flags & CAN_FRAME_FDF) != 0U && (cb.flags & CAN_FILTER_FDF) == 0U) ||
-		    ((frame.flags & CAN_FRAME_FDF) == 0U && (cb.flags & CAN_FILTER_FDF) != 0U)) {
-			/* FDF bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
+		if (!can_frame_matches_filter(&frame, &cb.filter)) {
+			/* Frame does not match filter, drop frame */
 			goto ack;
 		}
 
@@ -1079,7 +1064,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	key = k_spin_lock(&data->spinlock);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
-	cbs->std[filter_id].flags = filter->flags;
+	cbs->std[filter_id].filter = *filter;
 	k_spin_unlock(&data->spinlock, key);
 
 	return filter_id;
@@ -1135,7 +1120,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	key = k_spin_lock(&data->spinlock);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
-	cbs->ext[filter_id].flags = filter->flags;
+	cbs->ext[filter_id].filter = *filter;
 	k_spin_unlock(&data->spinlock, key);
 
 	return filter_id;
