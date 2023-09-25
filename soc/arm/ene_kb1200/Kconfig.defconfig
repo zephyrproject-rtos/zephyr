@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright (c) 2020 ENE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ENE_KB1200
+
+config SOC
+	default "ene_kb1200"
+
+config NUM_IRQS
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config CORTEX_M_SYSTICK
+	default y
+
+endif # SOC_ENE_KB1200
