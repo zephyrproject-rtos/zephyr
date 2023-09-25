@@ -367,6 +367,11 @@ HALs
 MCUboot
 *******
 
+  * Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE`
+    that allows to inform application that the on-board MCUboot has been configured
+    with downgrade  prevention enabled. This option is automatically selected for
+    DirectXIP mode and is available for both swap modes.
+
 Storage
 *******
 
