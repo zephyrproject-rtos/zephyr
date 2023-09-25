@@ -830,8 +830,8 @@ static void p80bd0_isr(const struct device *dev)
 
 	while (count--) {
 		/* Excerpt from manual:
-		 *   "Reading from this register byte accepts the value at the top of the FIFO, then advances the FIFO, updating both this"
-		 *   "location and the EC Data Attributes Register."
+		 *   "Reading from this register byte accepts the value at the top of the FIFO, then
+		 *    advances the FIFO, updating both this location and the EC Data Attributes Register."
 		 * -> so ensure the FIFO data is read exactly once on each loop iteration
 		 */
 		/* b[7:0]=8-bit value written, b[15:8]=attributes */
