@@ -38,13 +38,13 @@ enum benchmark_role {
 #define DEFAULT_CIS_COUNT       1U
 #define DEFAULT_CIS_SEC_LEVEL   BT_SECURITY_L1
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 #define DEFAULT_CIS_NSE          BT_ISO_NSE_MIN
 #define DEFAULT_CIS_BN           BT_ISO_BN_MIN
 #define DEFAULT_CIS_PDU_SIZE     CONFIG_BT_ISO_TX_MTU
 #define DEFAULT_CIS_FT           BT_ISO_FT_MIN
 #define DEFAULT_CIS_ISO_INTERVAL DEFAULT_CIS_INTERVAL_US / 1250U /* N * 1.25 ms */
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 #define BUFFERS_ENQUEUED 2 /* Number of buffers enqueue for each channel */
 
@@ -91,28 +91,28 @@ static struct bt_iso_chan_io_qos iso_tx_qos = {
 	.sdu = DEFAULT_CIS_SDU_SIZE, /* bytes */
 	.rtn = DEFAULT_CIS_RTN,
 	.phy = DEFAULT_CIS_PHY,
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	.max_pdu = DEFAULT_CIS_PDU_SIZE,
 	.burst_number = DEFAULT_CIS_BN,
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 static struct bt_iso_chan_io_qos iso_rx_qos = {
 	.sdu = DEFAULT_CIS_SDU_SIZE, /* bytes */
 	.rtn = DEFAULT_CIS_RTN,
 	.phy = DEFAULT_CIS_PHY,
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	.max_pdu = DEFAULT_CIS_PDU_SIZE,
 	.burst_number = DEFAULT_CIS_BN,
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 static struct bt_iso_chan_qos iso_qos = {
 	.tx = &iso_tx_qos,
 	.rx = &iso_rx_qos,
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	.num_subevents = DEFAULT_CIS_NSE,
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 static struct bt_iso_cig_param cig_create_param = {
@@ -123,11 +123,11 @@ static struct bt_iso_cig_param cig_create_param = {
 	.framing = DEFAULT_CIS_FRAMING,
 	.cis_channels = cis,
 	.num_cis = DEFAULT_CIS_COUNT,
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	.c_to_p_ft = DEFAULT_CIS_FT,
 	.p_to_c_ft = DEFAULT_CIS_FT,
 	.iso_interval = DEFAULT_CIS_ISO_INTERVAL,
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 static enum benchmark_role device_role_select(void)
@@ -632,7 +632,7 @@ static int parse_sdu_arg(struct bt_iso_chan_io_qos *qos)
 	return (int)sdu;
 }
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 static int parse_c_to_p_ft_arg(void)
 {
 	char buffer[4];
@@ -778,7 +778,7 @@ static int parse_bn_arg(const struct bt_iso_chan_io_qos *qos)
 
 	return (int)bn;
 }
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 static int parse_cis_count_arg(void)
 {
@@ -808,12 +808,12 @@ static int parse_cig_args(void)
 	int interval;
 	int latency;
 	int cis_count;
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	int c_to_p_ft;
 	int p_to_c_ft;
 	int iso_interval;
 	int num_subevents;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	printk("Follow the prompts. Press enter to use default values.\n");
 
@@ -832,7 +832,7 @@ static int parse_cig_args(void)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	c_to_p_ft = parse_c_to_p_ft_arg();
 	if (c_to_p_ft < 0) {
 		return -EINVAL;
@@ -852,17 +852,17 @@ static int parse_cig_args(void)
 	if (num_subevents < 0) {
 		return -EINVAL;
 	}
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	cig_create_param.interval = interval;
 	cig_create_param.latency = latency;
 	cig_create_param.num_cis = cis_count;
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	cig_create_param.c_to_p_ft = c_to_p_ft;
 	cig_create_param.p_to_c_ft = p_to_c_ft;
 	cig_create_param.iso_interval = iso_interval;
 	iso_qos.num_subevents = num_subevents;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return 0;
 }
@@ -872,10 +872,10 @@ static int parse_cis_args(struct bt_iso_chan_io_qos *qos)
 	int rtn;
 	int phy;
 	int sdu;
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	int max_pdu;
 	int burst_number;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	printk("Follow the prompts. Press enter to use default values.\n");
 
@@ -894,7 +894,7 @@ static int parse_cis_args(struct bt_iso_chan_io_qos *qos)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	max_pdu = parse_pdu_arg(qos);
 	if (max_pdu < 0) {
 		return -EINVAL;
@@ -904,15 +904,15 @@ static int parse_cis_args(struct bt_iso_chan_io_qos *qos)
 	if (burst_number < 0) {
 		return -EINVAL;
 	}
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	qos->rtn = rtn;
 	qos->phy = phy;
 	qos->sdu = sdu;
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	qos->max_pdu = max_pdu;
 	qos->burst_number = burst_number;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return 0;
 }

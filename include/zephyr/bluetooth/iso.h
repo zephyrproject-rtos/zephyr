@@ -200,7 +200,7 @@ struct bt_iso_chan_io_qos {
 	 */
 	struct bt_iso_chan_path		*path;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Maximum PDU size
 	 *
 	 *  Maximum size, in octets, of the payload from link layer to link
@@ -219,7 +219,7 @@ struct bt_iso_chan_io_qos {
 	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
 	 */
 	uint8_t burst_number;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief ISO Channel QoS structure. */
@@ -241,7 +241,7 @@ struct bt_iso_chan_qos {
 	 */
 	struct bt_iso_chan_io_qos	*tx;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Number of subevents
 	 *
 	 *  Maximum number of subevents in each CIS or BIS event.
@@ -249,7 +249,7 @@ struct bt_iso_chan_qos {
 	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
 	 */
 	uint8_t num_subevents;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief ISO Channel Data Path structure. */
@@ -371,7 +371,7 @@ struct bt_iso_cig_param {
 	 */
 	uint8_t framing;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Central to Peripheral flush timeout
 	 *
 	 *  The flush timeout in multiples of ISO_Interval for each payload sent
@@ -398,8 +398,7 @@ struct bt_iso_cig_param {
 	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
 	 */
 	uint16_t iso_interval;
-#endif /* CONFIG_BT_ISO_ADVANCED */
-
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** ISO connection parameters structure */
@@ -470,7 +469,7 @@ struct bt_iso_big_create_param {
 	 */
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Immediate Repetition Count
 	 *
 	 *  The number of times the scheduled payloads are transmitted in a
@@ -496,7 +495,7 @@ struct bt_iso_big_create_param {
 	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
 	 */
 	uint16_t iso_interval;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief Broadcast Isochronous Group (BIG) Sync Parameters */

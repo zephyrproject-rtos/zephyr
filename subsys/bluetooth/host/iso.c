@@ -839,7 +839,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 		return false;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	if (advanced) {
 		if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && is_broadcast) {
 			if (!IN_RANGE(io_qos->max_pdu,
@@ -869,7 +869,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 	}
 #else
 	ARG_UNUSED(advanced);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return true;
 }
@@ -1452,14 +1452,14 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 
 static bool valid_chan_qos(const struct bt_iso_chan_qos *qos, bool advanced)
 {
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	if (advanced &&
 	    !IN_RANGE(qos->num_subevents, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX)) {
 		LOG_DBG("Invalid NSE: %u", qos->num_subevents);
 
 		return false;
 	}
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if (qos->rx != NULL) {
 		if (!valid_chan_io_qos(qos->rx, false, false, advanced)) {
@@ -1586,7 +1586,7 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	return rsp;
 }
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 static struct net_buf *hci_le_set_cig_test_params(const struct bt_iso_cig *cig,
 						  const struct bt_iso_cig_param *param)
 {
@@ -1716,7 +1716,7 @@ static bool is_advanced_cig_param(const struct bt_iso_cig_param *param)
 
 	return false;
 }
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
 {
@@ -1863,7 +1863,7 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
 		return false;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	if (advanced) {
 		if (!IN_RANGE(param->c_to_p_ft, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
 			LOG_DBG("Invalid Central to Peripheral FT %u",
@@ -1887,7 +1887,7 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
 			return false;
 		}
 	}
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return true;
 }
@@ -1926,9 +1926,9 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	advanced = is_advanced_cig_param(param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	CHECKIF(!valid_cig_param(param, advanced)) {
 		LOG_DBG("Invalid CIG params");
@@ -1950,10 +1950,10 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 
 	if (!advanced) {
 		rsp = hci_le_set_cig_params(cig, param);
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	} else {
 		rsp = hci_le_set_cig_test_params(cig, param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	}
 
 	if (rsp == NULL) {
@@ -2031,9 +2031,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	advanced = is_advanced_cig_param(param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	CHECKIF(!valid_cig_param(param, advanced)) {
 		LOG_DBG("Invalid CIG params");
@@ -2063,10 +2063,10 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 
 	if (!advanced) {
 		rsp = hci_le_set_cig_params(cig, param);
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	} else {
 		rsp = hci_le_set_cig_test_params(cig, param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	}
 
 	if (rsp == NULL) {
@@ -2578,7 +2578,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	return err;
 }
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 static int hci_le_create_big_test(const struct bt_le_ext_adv *padv,
 				  struct bt_iso_big *big,
 				  const struct bt_iso_big_create_param *param)
@@ -2670,7 +2670,7 @@ static bool is_advanced_big_param(const struct bt_iso_big_create_param *param)
 
 	return false;
 }
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 static bool valid_big_param(const struct bt_iso_big_create_param *param,
 			    bool advanced)
@@ -2756,7 +2756,7 @@ static bool valid_big_param(const struct bt_iso_big_create_param *param,
 		return false;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	if (advanced) {
 		CHECKIF(!IN_RANGE(param->irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX)) {
 			LOG_DBG("Invalid IRC %u", param->irc);
@@ -2778,7 +2778,7 @@ static bool valid_big_param(const struct bt_iso_big_create_param *param,
 			return false;
 		}
 	}
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	return true;
 }
@@ -2795,9 +2795,9 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	advanced = is_advanced_big_param(param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if (!valid_big_param(param, advanced)) {
 		LOG_DBG("Invalid BIG parameters");
@@ -2821,10 +2821,10 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 
 	if (!advanced) {
 		err = hci_le_create_big(padv, big, param);
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	} else {
 		err = hci_le_create_big_test(padv, big, param);
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	}
 
 	if (err) {
