@@ -990,6 +990,11 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	ARG_UNUSED(status);
 
 	adc_stm32_disable(adc);
+
+	/* Reset acquisition time used for the sequence */
+	data->acq_time_index = -1;
+
+	/* Reset internal channels */
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
 				       LL_ADC_PATH_INTERNAL_NONE);
 
@@ -1119,6 +1124,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 			 * identical acquisition time.
 			 */
 			if (acq_time_index != data->acq_time_index) {
+				LOG_ERR("Multiple sampling times not supported");
 				return -EINVAL;
 			}
 		}
