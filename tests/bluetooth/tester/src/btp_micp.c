@@ -50,12 +50,14 @@ extern struct bt_aics_cb aics_client_cb;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
 /* Microphone Control Profile */
-static void btp_send_micp_found_ev(struct bt_conn *conn, const struct chrc_handles *micp_handles)
+static void btp_send_micp_found_ev(struct bt_conn *conn, uint8_t att_status,
+				   const struct chrc_handles *micp_handles)
 {
 	struct btp_micp_discovered_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.mute_handle = sys_cpu_to_le16(micp_handles->mute_handle);
 	ev.state_handle = sys_cpu_to_le16(micp_handles->state_handle);
 	ev.gain_handle = sys_cpu_to_le16(micp_handles->gain_handle);
@@ -67,12 +69,13 @@ static void btp_send_micp_found_ev(struct bt_conn *conn, const struct chrc_handl
 	tester_event(BTP_SERVICE_ID_MICP, BTP_MICP_DISCOVERED_EV, &ev, sizeof(ev));
 }
 
-static void btp_send_micp_mute_state_ev(struct bt_conn *conn, uint8_t mute)
+static void btp_send_micp_mute_state_ev(struct bt_conn *conn, uint8_t att_status, uint8_t mute)
 {
 	struct btp_micp_mute_state_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.mute = mute;
 
 	tester_event(BTP_SERVICE_ID_MICP, BTP_MICP_MUTE_STATE_EV, &ev, sizeof(ev));
@@ -83,7 +86,7 @@ static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err, ui
 	struct bt_conn *conn;
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, mute);
+	btp_send_micp_mute_state_ev(conn, err, mute);
 
 	LOG_DBG("MICP Mute cb (%d)", err);
 }
@@ -94,7 +97,7 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, int
 	uint8_t mute_state = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, mute_state);
+	btp_send_micp_mute_state_ev(conn, err, mute_state);
 
 	LOG_DBG("MICP Mute Written cb (%d))", err);
 }
@@ -105,7 +108,7 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, i
 	uint8_t mute_state = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, mute_state);
+	btp_send_micp_mute_state_ev(conn, err, mute_state);
 
 	LOG_DBG("MICP Mute Unwritten cb (%d))", err);
 }
@@ -144,7 +147,7 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
 	micp_handles.mute_handle = mic_ctlr->mute_handle;
-	btp_send_micp_found_ev(conn, &micp_handles);
+	btp_send_micp_found_ev(conn, err, &micp_handles);
 }
 
 static struct bt_micp_mic_ctlr_cb micp_cbs = {
