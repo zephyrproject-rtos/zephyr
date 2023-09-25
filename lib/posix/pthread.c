@@ -667,14 +667,12 @@ int pthread_join(pthread_t pthread, void **status)
 	{
 		if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
 			ret = EINVAL;
-			LOG_ERR("Pthread %p is not a joinable", &t->thread);
 			K_SPINLOCK_BREAK;
 		}
 
 		if (t->qid == POSIX_THREAD_READY_Q) {
 			/* in case thread has moved to ready_q between to_posix_thread() and here */
 			ret = ESRCH;
-			LOG_ERR("Pthread %p has already been joined", &t->thread);
 			K_SPINLOCK_BREAK;
 		}
 
@@ -685,8 +683,15 @@ int pthread_join(pthread_t pthread, void **status)
 		t->detachstate = PTHREAD_CREATE_DETACHED;
 	}
 
-	if (ret != 0) {
+	switch (ret) {
+	case ESRCH:
+		LOG_ERR("Pthread %p has already been joined", &t->thread);
 		return ret;
+	case EINVAL:
+		LOG_ERR("Pthread %p is not a joinable", &t->thread);
+		return ret;
+	case 0:
+		break;
 	}
 
 	err = k_thread_join(&t->thread, K_FOREVER);
