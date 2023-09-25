@@ -77,6 +77,12 @@ config UART_NS16550_TI_K3
 	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
 	  set.
 
+config UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+	bool "IT8XXX2 specific baud rate configuration"
+	help
+	  Enable IT8XXX2 specific baud rate configuration.
+	  This applies to high-speed baud rate configuration.
+
 menu "NS16550 Workarounds"
 
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
