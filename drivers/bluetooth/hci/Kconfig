@@ -99,6 +99,7 @@ config BT_PSOC6_BLESS
 
 config BT_NO_DRIVER
 	bool "No default HCI driver"
+	select BT_HAS_HCI_VS
 	help
 	  This is intended for unit tests where no internal driver
 	  should be selected.
