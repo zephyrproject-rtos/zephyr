@@ -242,6 +242,23 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+/* Register definitions (ITE_IT8XXX2) */
+#define REG_ECSPMR 0x08 /* EC Serial port mode reg */
+
+/* Fields for ITE IT8XXX2 UART module */
+#define ECSPMR_ECHS 0x02  /* EC high speed select */
+
+/* IT8XXX2 UART high speed baud rate settings */
+#define UART_BAUDRATE_115200 115200
+#define UART_BAUDRATE_230400 230400
+#define UART_BAUDRATE_460800 460800
+#define IT8XXX2_230400_DIVISOR 32770
+#define IT8XXX2_460800_DIVISOR 32769
+
+#define ECSPMR(dev) (get_port(dev) + REG_ECSPMR * reg_interval(dev))
+#endif
+
 /* device config */
 struct uart_ns16550_device_config {
 	union {
@@ -395,6 +412,50 @@ static inline uintptr_t get_port(const struct device *dev)
 	return port;
 }
 
+static uint32_t get_uart_burdrate_divisor(const struct device *dev,
+					  uint32_t baud_rate,
+					  uint32_t pclk)
+{
+	ARG_UNUSED(dev);
+	/*
+	 * calculate baud rate divisor. a variant of
+	 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
+	 */
+	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
+}
+
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+static uint32_t get_ite_uart_burdrate_divisor(const struct device *dev,
+					      uint32_t baud_rate,
+					      uint32_t pclk)
+{
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	uint32_t divisor = 0;
+
+	if (baud_rate > UART_BAUDRATE_115200) {
+		/* Baud rate divisor for high speed */
+		if (baud_rate == UART_BAUDRATE_230400) {
+			divisor = IT8XXX2_230400_DIVISOR;
+		} else if (baud_rate == UART_BAUDRATE_460800) {
+			divisor = IT8XXX2_460800_DIVISOR;
+		}
+		/*
+		 * This bit indicates that the supported baud rate of
+		 * UART1/UART2 can be up to 230.4k and 460.8k.
+		 * Other bits are reserved and have no setting, so we
+		 * directly write the ECSPMR register.
+		 */
+		ns16550_outbyte(dev_cfg, ECSPMR(dev), ECSPMR_ECHS);
+	} else {
+		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+		/* Set ECSPMR register as default */
+		ns16550_outbyte(dev_cfg, ECSPMR(dev), 0);
+	}
+
+	return divisor;
+}
+#endif
+
 static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t pclk)
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
@@ -403,13 +464,11 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 	uint8_t lcr_cache;
 
 	if ((baud_rate != 0U) && (pclk != 0U)) {
-		/*
-		 * calculate baud rate divisor. a variant of
-		 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
-		 */
-		divisor = ((pclk + (baud_rate << 3))
-					/ baud_rate) >> 4;
-
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+		divisor = get_ite_uart_burdrate_divisor(dev, baud_rate, pclk);
+#else
+		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+#endif
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
 		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
