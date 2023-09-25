@@ -1858,7 +1858,7 @@ TESTDATA_25 = [
     ),
     (
         '1\n2\n3\n4\n5\n'.encode('utf-8'),
-        6,
+        60,
         1,
         [None] * 3 + ['success'] * 7,
         (n for n in [100, 100, 10000]),
@@ -1900,14 +1900,12 @@ def test_qemuhandler_thread(
         else:
             raise ProcessLookupError()
 
+    type(mocked_instance.testsuite).timeout = mock.PropertyMock(return_value=timeout)
     handler = QEMUHandler(mocked_instance, 'build')
     handler.results = {}
     handler.ignore_unexpected_eof = False
     handler.pid_fn = 'pid_fn'
     handler.fifo_fn = 'fifo_fn'
-    type(mocked_instance.testsuite).timeout = mock.PropertyMock(
-        return_value=timeout
-    )
 
     def mocked_open(filename, *args, **kwargs):
         if filename == handler.pid_fn:
