@@ -1064,6 +1064,7 @@ struct can_mcan_data {
 	struct k_mutex lock;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
+	struct k_spinlock spinlock;
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	bool started;

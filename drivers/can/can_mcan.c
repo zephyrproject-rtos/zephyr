@@ -645,11 +645,11 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 {
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
+	struct can_mcan_data *data = dev->data;
 	struct can_mcan_rx_fifo_hdr hdr;
 	struct can_frame frame = {0};
-	can_rx_callback_t cb;
-	void *user_data;
-	uint8_t flags;
+	struct can_mcan_rx_callback cb;
+	k_spinlock_key_t key;
 	uint32_t get_idx;
 	uint32_t filt_idx;
 	int data_length;
@@ -700,14 +700,23 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 		if (hdr.xtd != 0) {
 			frame.id = hdr.ext_id;
 			frame.flags |= CAN_FRAME_IDE;
-			flags = cbs->ext[filt_idx].flags;
+			__ASSERT_NO_MSG(filt_idx <= cbs->num_ext);
+			key = k_spin_lock(&data->spinlock);
+			cb = cbs->ext[filt_idx];
+			k_spin_unlock(&data->spinlock, key);
+			LOG_DBG("Frame on filter %d, ID: 0x%x",
+				filt_idx + cbs->num_std, frame.id);
 		} else {
 			frame.id = hdr.std_id;
-			flags = cbs->std[filt_idx].flags;
+			__ASSERT_NO_MSG(filt_idx <= cbs->num_std);
+			key = k_spin_lock(&data->spinlock);
+			cb = cbs->std[filt_idx];
+			k_spin_unlock(&data->spinlock, key);
+			LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
 		}
 
-		if (((frame.flags & CAN_FRAME_RTR) == 0U && (flags & CAN_FILTER_DATA) == 0U) ||
-		    ((frame.flags & CAN_FRAME_RTR) != 0U && (flags & CAN_FILTER_RTR) == 0U)) {
+		if (((frame.flags & CAN_FRAME_RTR) == 0U && (cb.flags & CAN_FILTER_DATA) == 0U) ||
+		    ((frame.flags & CAN_FRAME_RTR) != 0U && (cb.flags & CAN_FILTER_RTR) == 0U)) {
 			/* RTR bit does not match filter, drop frame */
 			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
 			if (err != 0) {
@@ -716,8 +725,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			goto ack;
 		}
 
-		if (((frame.flags & CAN_FRAME_FDF) != 0U && (flags & CAN_FILTER_FDF) == 0U) ||
-		    ((frame.flags & CAN_FRAME_FDF) == 0U && (flags & CAN_FILTER_FDF) != 0U)) {
+		if (((frame.flags & CAN_FRAME_FDF) != 0U && (cb.flags & CAN_FILTER_FDF) == 0U) ||
+		    ((frame.flags & CAN_FRAME_FDF) == 0U && (cb.flags & CAN_FILTER_FDF) != 0U)) {
 			/* FDF bit does not match filter, drop frame */
 			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
 			if (err != 0) {
@@ -738,21 +747,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 				return;
 			}
 
-			if ((frame.flags & CAN_FRAME_IDE) != 0) {
-				LOG_DBG("Frame on filter %d, ID: 0x%x",
-					filt_idx + cbs->num_std, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_ext);
-				cb = cbs->ext[filt_idx].function;
-				user_data = cbs->ext[filt_idx].user_data;
-			} else {
-				LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_std);
-				cb = cbs->std[filt_idx].function;
-				user_data = cbs->std[filt_idx].user_data;
-			}
-
-			if (cb) {
-				cb(dev, &frame, user_data);
+			if (cb.function) {
+				cb.function(dev, &frame, cb.user_data);
 			} else {
 				LOG_DBG("cb missing");
 			}
@@ -1045,6 +1041,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 		.sft = CAN_MCAN_SFT_CLASSIC
 	};
 	int filter_id = -ENOSPC;
+	k_spinlock_key_t key;
 	int err;
 	int i;
 
@@ -1079,9 +1076,11 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	LOG_DBG("Attached std filter at %d", filter_id);
 
 	__ASSERT_NO_MSG(filter_id <= cbs->num_std);
+	key = k_spin_lock(&data->spinlock);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
 	cbs->std[filter_id].flags = filter->flags;
+	k_spin_unlock(&data->spinlock, key);
 
 	return filter_id;
 }
@@ -1098,6 +1097,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 		.eft = CAN_MCAN_EFT_CLASSIC
 	};
 	int filter_id = -ENOSPC;
+	k_spinlock_key_t key;
 	int err;
 	int i;
 
@@ -1132,9 +1132,11 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	LOG_DBG("Attached ext filter at %d", filter_id);
 
 	__ASSERT_NO_MSG(filter_id <= cbs->num_ext);
+	key = k_spin_lock(&data->spinlock);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
 	cbs->ext[filter_id].flags = filter->flags;
+	k_spin_unlock(&data->spinlock, key);
 
 	return filter_id;
 }
@@ -1177,6 +1179,7 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
+	k_spinlock_key_t key;
 	int err;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -1189,8 +1192,10 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 			return;
 		}
 
+		key = k_spin_lock(&data->spinlock);
 		cbs->ext[filter_id].function = NULL;
 		cbs->ext[filter_id].user_data = NULL;
+		k_spin_unlock(&data->spinlock, key);
 
 		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
 					filter_id * sizeof(struct can_mcan_ext_filter),
@@ -1199,8 +1204,10 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 			LOG_ERR("failed to clear ext filter element (err %d)", err);
 		}
 	} else {
+		key = k_spin_lock(&data->spinlock);
 		cbs->std[filter_id].function = NULL;
 		cbs->std[filter_id].user_data = NULL;
+		k_spin_unlock(&data->spinlock, key);
 
 		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
 					filter_id * sizeof(struct can_mcan_std_filter),
