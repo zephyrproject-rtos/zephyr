@@ -120,8 +120,8 @@ config BT_ISO_RX_MTU
 	  This is the actual data payload. It doesn't include the optional
 	  HCI ISO Data packet fields (e.g. `struct bt_hci_iso_ts_data_hdr`)
 
-config BT_ISO_ADVANCED
-	bool "Advanced ISO parameters"
+config BT_ISO_TEST_PARAMS
+	bool "ISO test parameters support"
 	help
 	  Enabling advanced ISO parameters will allow the use of the ISO test
 	  parameters for creating a CIG or a BIG. These test parameters were
