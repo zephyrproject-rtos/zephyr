@@ -231,6 +231,7 @@ static inline int tcpc_is_cc_only_one_rd(enum tc_cc_voltage_state cc1,
  *
  * @retval 0 on success
  * @retval -EIO on failure
+ * @retval -EAGAIN if initialization should be postponed
  */
 static inline int tcpc_init(const struct device *dev)
 {
