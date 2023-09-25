@@ -477,7 +477,7 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 			return;
 		}
 
-		__ASSERT_NO_MSG(tx_idx <= cbs->num_tx);
+		__ASSERT_NO_MSG(tx_idx < cbs->num_tx);
 		tx_cb = cbs->tx[tx_idx].function;
 		user_data = cbs->tx[tx_idx].user_data;
 		cbs->tx[tx_idx].function = NULL;
@@ -686,12 +686,12 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			if ((frame.flags & CAN_FRAME_IDE) != 0) {
 				LOG_DBG("Frame on filter %d, ID: 0x%x",
 					filt_idx + cbs->num_std, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_ext);
+				__ASSERT_NO_MSG(filt_idx < cbs->num_ext);
 				cb = cbs->ext[filt_idx].function;
 				user_data = cbs->ext[filt_idx].user_data;
 			} else {
 				LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
-				__ASSERT_NO_MSG(filt_idx <= cbs->num_std);
+				__ASSERT_NO_MSG(filt_idx < cbs->num_std);
 				cb = cbs->std[filt_idx].function;
 				user_data = cbs->std[filt_idx].user_data;
 			}
@@ -1025,7 +1025,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 
 	LOG_DBG("Attached std filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id <= cbs->num_std);
+	__ASSERT_NO_MSG(filter_id < cbs->num_std);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
 
@@ -1077,7 +1077,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 
 	LOG_DBG("Attached ext filter at %d", filter_id);
 
-	__ASSERT_NO_MSG(filter_id <= cbs->num_ext);
+	__ASSERT_NO_MSG(filter_id < cbs->num_ext);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
 
