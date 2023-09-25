@@ -68,7 +68,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 
 	k_sem_give(&ctx->scan_ctx_lock);
 
-	return NET_OK;
+	return NET_CONTINUE;
 }
 
 static int ieee802154_cancel_scan(uint32_t mgmt_request, struct net_if *iface,
@@ -367,7 +367,7 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 
 		k_sem_give(&ctx->scan_ctx_lock);
 
-		return NET_OK;
+		return NET_CONTINUE;
 	}
 
 	if (mpdu->command->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
