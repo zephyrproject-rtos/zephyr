@@ -73,7 +73,11 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	(void)pm_device_runtime_get(dev);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
+	if (ret < 0) {
+		LOG_ERR("failure Enabling I2C clock");
+		return ret;
+	}
 #endif
 
 	LL_I2C_Disable(i2c);
@@ -81,7 +85,11 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	ret = stm32_i2c_configure_timing(dev, clock);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	(void)pm_device_runtime_put(dev);
+	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
+	if (ret < 0) {
+		LOG_ERR("failure disabling I2C clock");
+		return ret;
+	}
 #endif
 
 	k_sem_give(&data->bus_mutex);
