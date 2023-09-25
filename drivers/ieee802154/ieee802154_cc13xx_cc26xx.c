@@ -171,26 +171,20 @@ static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
 static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 						uint16_t channel)
 {
-	int r;
+	int ret;
 	RF_CmdHandle cmd_handle;
 	RF_EventMask reason;
 	uint16_t freq, fract;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
-	/* TODO Support sub-GHz for CC13xx */
-	if (channel < 11 || channel > 26) {
-		return -EINVAL;
-	}
-
-	r = ieee802154_cc13xx_cc26xx_channel_to_frequency(
-		channel, &freq, &fract);
-	if (r < 0) {
-		return -EINVAL;
+	ret = ieee802154_cc13xx_cc26xx_channel_to_frequency(channel, &freq, &fract);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Abort FG and BG processes */
 	if (ieee802154_cc13xx_cc26xx_stop(dev) < 0) {
-		r = -EIO;
+		ret = -EIO;
 		goto out;
 	}
 
@@ -205,7 +199,7 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 			   RF_PriorityNormal, NULL, 0);
 	if (reason != RF_EventLastCmdDone) {
 		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
-		r = -EIO;
+		ret = -EIO;
 		goto out;
 	}
 
@@ -217,15 +211,15 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 		cmd_ieee_rx_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
 		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
-		r = -EIO;
+		ret = -EIO;
 		goto out;
 	}
 
-	r = 0;
+	ret = 0;
 
 out:
 	k_mutex_unlock(&drv_data->tx_mutex);
-	return r;
+	return ret;
 }
 
 /* TODO remove when rf driver bugfix is pulled in */
