@@ -39,7 +39,7 @@ extern "C" {
 						 NET_MGMT_EVENT_BIT)
 #define _NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | _NET_MGMT_CONN_BASE)
 
-enum net_event_ethernet_cmd {
+enum net_event_conn_cmd {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR,
 };
