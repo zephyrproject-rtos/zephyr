@@ -569,12 +569,18 @@ You can mark ``my_sample`` as a build-only application in this manner:
    )
 
 As a result, ``my_sample`` will be built as part of the sysbuild build invocation,
-but neither ``west flash`` nor ``west debug`` will be aware of this application.
+but it will be excluded from the default image sequence used by ``west flash``.
 Instead, you may use the outputs of this domain for other purposes - for example,
 to produce a secondary image for DFU, or to merge multiple images together.
 
 You can also replace ``TRUE`` with another boolean constant in CMake, such as
 a Kconfig option, which would make ``my_sample`` conditionally build-only.
+
+.. note::
+
+   Applications marked as build-only can still be flashed manually, using
+   ``west flash --domain my_sample``. As such, the ``BUILD_ONLY`` option only
+   controls the default behavior of ``west flash``.
 
 Zephyr application configuration
 ================================
