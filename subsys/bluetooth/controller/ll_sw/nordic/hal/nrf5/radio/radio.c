@@ -718,7 +718,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	uint32_t delay;
 
-	hal_radio_sw_switch_setup(cc, ppi, sw_tifs_toggle);
+	hal_radio_sw_switch_setup(sw_tifs_toggle);
 
 	/* NOTE: As constants are passed to dir_curr and dir_next, the
 	 *       compiler should optimize out the redundant code path
@@ -736,7 +736,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			    hal_radio_tx_chain_delay_ns_get(phy_curr,
 							    flags_curr));
 
-			hal_radio_b2b_txen_on_sw_switch(ppi);
+			hal_radio_b2b_txen_on_sw_switch(cc, ppi);
 		} else {
 			/* If RX PHY is LE Coded, calculate for S8 coding.
 			 * Assumption being, S8 has higher delay.
@@ -746,7 +746,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 							    flags_next) +
 			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
 
-			hal_radio_txen_on_sw_switch(ppi);
+			hal_radio_txen_on_sw_switch(cc, ppi);
 		}
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
@@ -839,7 +839,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 								flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
-			hal_radio_rxen_on_sw_switch(ppi);
+			hal_radio_rxen_on_sw_switch(cc, ppi);
 		} else {
 			delay = HAL_RADIO_NS2US_CEIL(
 				hal_radio_rx_ready_delay_ns_get(phy_next,
@@ -848,7 +848,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 								flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
-			hal_radio_b2b_rxen_on_sw_switch(ppi);
+			hal_radio_b2b_rxen_on_sw_switch(cc, ppi);
 		}
 
 
@@ -979,6 +979,26 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_tx_disable(void)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+#else /* CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
+	hal_radio_sw_switch_b2b_tx_disable(sw_tifs_toggle);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_rx_disable(void)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+#else /* CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
+	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
