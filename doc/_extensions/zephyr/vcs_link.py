@@ -16,6 +16,7 @@ template to obtain VCS page URLs.
 Configuration options
 =====================
 
+- ``vcs_link_version``: VCS version to use in the URL (e.g. "main")
 - ``vcs_link_base_url``: Base URL used as a prefix for generated URLs.
 - ``vcs_link_prefixes``: Mapping of pages (regex) <> VCS prefix.
 - ``vcs_link_exclude``: List of pages (regex) that will not report a URL. Useful
@@ -33,11 +34,12 @@ from sphinx.application import Sphinx
 __version__ = "0.1.0"
 
 
-def vcs_link_get_url(app: Sphinx, pagename: str) -> Optional[str]:
+def vcs_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[str]:
     """Obtain VCS URL for the given page.
 
     Args:
         app: Sphinx instance.
+        mode: Typically "edit", or "blob".
         pagename: Page name (path).
 
     Returns:
@@ -60,6 +62,8 @@ def vcs_link_get_url(app: Sphinx, pagename: str) -> Optional[str]:
     return "/".join(
         [
             app.config.vcs_link_base_url,
+            mode,
+            app.config.vcs_link_version,
             found_prefix,
             app.env.project.doc2path(pagename, basedir=False),
         ]
@@ -70,12 +74,17 @@ def add_jinja_filter(app: Sphinx):
     if app.builder.name != "html":
         return
 
-    app.builder.templates.environment.filters["vcs_link_get_url"] = partial(
-        vcs_link_get_url, app
+    app.builder.templates.environment.filters["vcs_link_get_blob_url"] = partial(
+        vcs_link_get_url, app, mode="blob"
+    )
+
+    app.builder.templates.environment.filters["vcs_link_get_edit_url"] = partial(
+        vcs_link_get_url, app, mode="edit"
     )
 
 
 def setup(app: Sphinx):
+    app.add_config_value("vcs_link_version", "", "")
     app.add_config_value("vcs_link_base_url", "", "")
     app.add_config_value("vcs_link_prefixes", {}, "")
     app.add_config_value("vcs_link_exclude", [], "")
