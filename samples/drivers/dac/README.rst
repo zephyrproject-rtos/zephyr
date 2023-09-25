@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample demonstrates how to use the `DAC driver API <dac_api>`.
+This sample demonstrates how to use the :ref:`DAC driver API <dac_api>`.
 
 Building and Running
 ********************

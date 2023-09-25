@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample demonstrates the `EEPROM driver API <eeprom_api>` in a simple boot counter
+This sample demonstrates the :ref:`EEPROM driver API <eeprom_api>` in a simple boot counter
 application.
 
 Building and Running
