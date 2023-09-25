@@ -387,8 +387,6 @@ static int i2c_stm32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	i2c_stm32_suspend(dev);
-	pm_device_init_suspended(dev);
 	(void)pm_device_runtime_enable(dev);
 #endif
 
