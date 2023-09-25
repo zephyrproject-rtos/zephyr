@@ -136,8 +136,7 @@ __subsystem struct tcpc_driver_api {
 	int (*set_vconn)(const struct device *dev, bool enable);
 	int (*set_roles)(const struct device *dev, enum tc_power_role power_role,
 			enum tc_data_role data_role);
-	int (*receive_data)(const struct device *dev, struct pd_msg *msg);
-	int (*is_rx_pending_msg)(const struct device *dev, enum pd_packet_type *type);
+	int (*get_rx_pending_msg)(const struct device *dev, struct pd_msg *msg);
 	int (*set_rx_enable)(const struct device *dev, bool enable);
 	int (*set_cc_polarity)(const struct device *dev, enum tc_cc_polarity polarity);
 	int (*transmit_data)(const struct device *dev, struct pd_msg *msg);
@@ -455,50 +454,25 @@ static inline int tcpc_set_roles(const struct device *dev,
 }
 
 /**
- * @brief Tests if a received Power Delivery message is pending
+ * @brief Retrieves the Power Delivery message from the TCPC.
+ * If buf is NULL, then only the status is returned, where 0 means there is a message pending and
+ * -ENODATA means there is no pending message.
  *
- * @param dev  Runtime device structure
- * @param type  pointer to where message type is written. Can be NULL
+ * @param dev Runtime device structure
+ * @param buf pointer where the pd_buf pointer is written, NULL if only checking the status
  *
- * @retval 0 if there is no pending message
- * @retval 1 if there is a pending message
+ * @retval Greater or equal to 0 is the number of bytes received if buf parameter is provided
+ * @retval 0 if there is a message pending and buf parameter is NULL
  * @retval -EIO on failure
- * @retval -ENOSYS if not implemented
+ * @retval -ENODATA if no message is pending
  */
-static inline int tcpc_is_rx_pending_msg(const struct device *dev, enum pd_packet_type *type)
+static inline int tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *buf)
 {
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
 
-	if (api->is_rx_pending_msg == NULL) {
-		return -ENOSYS;
-	}
+	__ASSERT(api->get_rx_pending_msg != NULL, "Callback pointer should not be NULL");
 
-	return api->is_rx_pending_msg(dev, type);
-}
-
-/**
- * @brief Retrieves the Power Delivery message from the TCPC
- *
- * @param dev  Runtime device structure
- * @param buf  pointer where the pd_buf pointer is written
- *
- * @retval Greater or equal to 0 is the number of bytes received
- * @retval -EIO on failure
- * @retval -EFAULT on buf being NULL
- * @retval -ENOSYS if not implemented
- */
-static inline int tcpc_receive_data(const struct device *dev,
-				    struct pd_msg *buf)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	if (api->receive_data == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->receive_data(dev, buf);
+	return api->get_rx_pending_msg(dev, buf);
 }
 
 /**
