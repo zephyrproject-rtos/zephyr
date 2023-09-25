@@ -184,11 +184,7 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 	ack_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi_dbm(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
-
-	/* OpenThread expects the timestamp to point to the end of SFD */
-	ack_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
-					     pkt_time->nanosecond / NSEC_PER_USEC;
+	ack_frame.mInfo.mRxInfo.mTimestamp = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 #endif
 
 	return NET_OK;
@@ -396,9 +392,7 @@ void transmit_message(struct k_work *tx_job)
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
-		struct net_ptp_time timestamp =
-			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
-		net_pkt_set_timestamp(tx_pkt, &timestamp);
+		net_pkt_set_timestamp_ns(tx_pkt, convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 #endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
@@ -476,11 +470,7 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mInfo.mRxInfo.mAckedWithFramePending = net_pkt_ieee802154_ack_fpb(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
-
-	/* OpenThread expects the timestamp to point to the end of SFD */
-	recv_frame.mInfo.mRxInfo.mTimestamp =
-		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+	recv_frame.mInfo.mRxInfo.mTimestamp = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 #endif
 
 	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
