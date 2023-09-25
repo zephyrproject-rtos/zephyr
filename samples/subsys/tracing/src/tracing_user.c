@@ -14,7 +14,7 @@ void sys_trace_thread_switched_in_user(void)
 
 	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
 	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
-	printk("%s: %p\n", __func__, z_current_get());
+	printk("%s: %p\n", __func__, k_sched_current_thread_query());
 
 	irq_unlock(key);
 }
@@ -25,7 +25,7 @@ void sys_trace_thread_switched_out_user(void)
 
 	__ASSERT_NO_MSG(nested_interrupts[_current_cpu->id] == 0);
 	/* Can't use k_current_get as thread base and z_tls_current might be incorrect */
-	printk("%s: %p\n", __func__, z_current_get());
+	printk("%s: %p\n", __func__, k_sched_current_thread_query());
 
 	irq_unlock(key);
 }
