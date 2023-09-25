@@ -48,14 +48,6 @@ enum csip_pending_notify_flag {
 struct csip_client {
 	bt_addr_le_t addr;
 
-/* Since there's a 1-to-1 connection between bonded devices, and devices in
- * the array containing this struct, if the security manager overwrites
- * the oldest keys, we also overwrite the oldest entry
- */
-#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-	uint32_t age;
-#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
-
 	/* Pending notification flags */
 	ATOMIC_DEFINE(flags, FLAG_NUM);
 };
@@ -70,9 +62,6 @@ struct bt_csip_set_member_svc_inst {
 	bt_addr_le_t lock_client_addr;
 	struct bt_gatt_service *service_p;
 	struct csip_client clients[CONFIG_BT_MAX_PAIRED];
-#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-	uint32_t age_counter;
-#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
 static struct bt_csip_set_member_svc_inst svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
@@ -628,9 +617,6 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 		if (atomic_test_bit(client->flags, FLAG_ACTIVE) &&
 		    bt_addr_le_eq(bt_conn_get_dst(conn), &client->addr)) {
-#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			client->age = svc_inst->age_counter++;
-#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
 	}
@@ -644,9 +630,6 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 		if (!atomic_test_bit(client->flags, FLAG_ACTIVE)) {
 			atomic_set_bit(client->flags, FLAG_ACTIVE);
 			memcpy(&client->addr, bt_conn_get_dst(conn), sizeof(bt_addr_le_t));
-#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			client->age = svc_inst->age_counter++;
-#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
 			/* Send out all pending notifications */
 			k_work_submit(&deferred_nfy_work);
@@ -654,28 +637,7 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 		}
 	}
 
-#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-	struct csip_client *oldest;
-
-	oldest = &svc_inst->clients[0];
-
-	for (int i = 1U; i < ARRAY_SIZE(svc_inst->clients); i++) {
-		struct csip_client *client;
-
-		client = &svc_inst->clients[i];
-
-		if (client->age < oldest->age) {
-			oldest = client;
-		}
-	}
-	(void)memset(oldest, 0, sizeof(*oldest));
-	bt_addr_le_copy(&oldest->addr, &conn->le.dst);
-	atomic_set_bit(oldest->flags, FLAG_ACTIVE);
-	oldest->age = svc_inst->age_counter++;
-#else
 	LOG_WRN("Could not add device to pending notification list");
-#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
-
 }
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
