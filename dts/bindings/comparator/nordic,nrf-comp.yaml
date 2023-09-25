@@ -5,7 +5,7 @@ description: Nordic nRF family COMP (Comparator)
 
 compatible: "nordic,nrf-comp"
 
-include: base.yaml
+include: comparator.yaml
 
 properties:
   reg:
@@ -13,11 +13,3 @@ properties:
 
   interrupts:
     required: true
-
-  "#io-channel-cells":
-    type: int
-    const: 1
-    required: true
-
-io-channel-cells:
-  - input

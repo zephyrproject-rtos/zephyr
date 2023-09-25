@@ -327,7 +327,6 @@ comp: comparator@1a000 {
 	reg = <0x1a000 0x1000>;
 	interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	#io-channel-cells = <1>;
 };
 
 egu0: egu@1b000 {
