@@ -228,16 +228,23 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	}
 }
 
-static void init_lc3(const struct bt_bap_stream *stream)
+static int init_lc3(const struct bt_bap_stream *stream)
 {
 	size_t num_samples;
+	int ret;
 
 	if (stream == NULL || stream->codec_cfg == NULL) {
 		shell_error(ctx_shell, "invalid stream to init LC3");
-		return;
+		return -EINVAL;
 	}
 
-	lc3_freq_hz = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	if (ret > 0) {
+		lc3_freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		return ret;
+	}
+
 	lc3_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 	lc3_frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
@@ -245,17 +252,17 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 	if (lc3_freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	lc3_frame_duration_100us = lc3_frame_duration_us / 100;
@@ -274,7 +281,10 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 static void lc3_audio_send_data(struct k_work *work)
@@ -2603,7 +2613,6 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 {
 	int stream_frame_duration_us;
 	struct bt_bap_ep_info info;
-	int stream_freq_hz;
 	int err;
 
 	if (bap_stream == NULL || bap_stream->qos == NULL) {
@@ -2619,8 +2628,12 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	stream_freq_hz = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
-	if (stream_freq_hz != lc3_freq_hz) {
+	err = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
+	if (err > 0) {
+		if (bt_audio_codec_cfg_freq_to_freq_hz(err) != lc3_freq_hz) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 
@@ -2671,7 +2684,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			struct bt_bap_stream *bap_stream = &unicast_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2694,7 +2713,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 				&broadcast_source_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2717,7 +2742,12 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		init_lc3(default_stream);
+		err = init_lc3(default_stream);
+		if (err != 0) {
+			shell_error(sh, "Failed to init LC3 %d", err);
+
+			return -ENOEXEC;
+		}
 
 		err = stream_start_sine(default_stream);
 		if (err != 0) {

@@ -15,6 +15,37 @@ DEFINE_FFF_GLOBALS;
 
 ZTEST_SUITE(audio_codec_test_suite, NULL, NULL, NULL, NULL, NULL);
 
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_freq_to_freq_hz)
+{
+	const struct freq_test_input {
+		enum bt_audio_codec_config_freq freq;
+		uint32_t freq_hz;
+	} freq_test_inputs[] = {
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ, .freq_hz = 8000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_11KHZ, .freq_hz = 11025U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ, .freq_hz = 16000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_22KHZ, .freq_hz = 22050U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ, .freq_hz = 24000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ, .freq_hz = 32000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ, .freq_hz = 44100U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ, .freq_hz = 48000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_88KHZ, .freq_hz = 88200U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_96KHZ, .freq_hz = 96000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_176KHZ, .freq_hz = 176400U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_192KHZ, .freq_hz = 192000U},
+		{.freq = BT_AUDIO_CODEC_CONFIG_LC3_FREQ_384KHZ, .freq_hz = 384000U},
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(freq_test_inputs); i++) {
+		const struct freq_test_input *fti = &freq_test_inputs[i];
+
+		zassert_equal(bt_audio_codec_cfg_freq_to_freq_hz(fti->freq), fti->freq_hz,
+			      "freq %d was not coverted to %u", fti->freq, fti->freq_hz);
+		zassert_equal(bt_audio_codec_cfg_freq_hz_to_freq(fti->freq_hz), fti->freq,
+			      "freq_hz %u was not coverted to %d", fti->freq_hz, fti->freq);
+	}
+}
+
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_freq)
 {
 	const struct bt_bap_lc3_preset preset =
@@ -23,7 +54,23 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_freq)
 	int ret;
 
 	ret = bt_audio_codec_cfg_get_freq(&preset.codec_cfg);
-	zassert_equal(ret, 16000u, "unexpected return value %d", ret);
+	zassert_equal(ret, 0x03, "unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_freq)
+{
+	struct bt_bap_lc3_preset preset = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(&preset.codec_cfg);
+	zassert_equal(ret, 0x03, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_set_freq(&preset.codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_get_freq(&preset.codec_cfg);
+	zassert_equal(ret, 0x06, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_duration_us)
@@ -47,8 +94,8 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_val)
 
 	err = bt_audio_codec_cfg_get_chan_allocation_val(&preset.codec_cfg, &chan_allocation);
 	zassert_false(err, "unexpected error %d", err);
-	zassert_equal(chan_allocation, BT_AUDIO_LOCATION_FRONT_LEFT,
-		      "unexpected return value %d", chan_allocation);
+	zassert_equal(chan_allocation, BT_AUDIO_LOCATION_FRONT_LEFT, "unexpected return value %d",
+		      chan_allocation);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_octets_per_frame)

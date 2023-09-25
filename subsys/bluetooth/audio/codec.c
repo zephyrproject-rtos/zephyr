@@ -10,6 +10,8 @@
  *  Generic Audio.
  */
 
+#include <stdlib.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -17,6 +19,74 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_audio_codec, CONFIG_BT_AUDIO_CODEC_LOG_LEVEL);
+
+int bt_audio_codec_cfg_freq_to_freq_hz(enum bt_audio_codec_config_freq freq)
+{
+	switch (freq) {
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ:
+		return 8000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_11KHZ:
+		return 11025;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ:
+		return 16000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_22KHZ:
+		return 22050;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ:
+		return 24000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ:
+		return 32000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ:
+		return 44100;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ:
+		return 48000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_88KHZ:
+		return 88200;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_96KHZ:
+		return 96000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_176KHZ:
+		return 176400;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_192KHZ:
+		return 192000;
+	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_384KHZ:
+		return 384000;
+	default:
+		return -EINVAL;
+	}
+}
+
+int bt_audio_codec_cfg_freq_hz_to_freq(uint32_t freq_hz)
+{
+	switch (freq_hz) {
+	case 8000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ;
+	case 11025U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_11KHZ;
+	case 16000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ;
+	case 22050U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_22KHZ;
+	case 24000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ;
+	case 32000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ;
+	case 44100U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ;
+	case 48000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ;
+	case 88200U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_88KHZ;
+	case 96000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_96KHZ;
+	case 176400U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_176KHZ;
+	case 192000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_192KHZ;
+	case 384000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_FREQ_384KHZ;
+	default:
+		return -EINVAL;
+	}
+}
 
 struct search_type_param {
 	bool found;
@@ -41,6 +111,15 @@ static bool parse_cb(struct bt_data *data, void *user_data)
 }
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+
+static void init_net_buf_simple_from_codec_cfg(struct net_buf_simple *buf,
+					       struct bt_audio_codec_cfg *codec_cfg)
+{
+	buf->__buf = codec_cfg->data;
+	buf->data = codec_cfg->data;
+	buf->size = sizeof(codec_cfg->data);
+	buf->len = codec_cfg->data_len;
+}
 
 uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
 				   const uint8_t **data)
@@ -79,8 +158,99 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, u
 	return param.data_len;
 }
 
+int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
+			       const uint8_t *data, size_t data_len)
+{
+	CHECKIF(codec_cfg == NULL) {
+		LOG_DBG("codec_cfg is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data == NULL) {
+		LOG_DBG("data is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data_len == 0U || data_len > UINT8_MAX) {
+		LOG_DBG("Invalid data_len %zu", data_len);
+		return -EINVAL;
+	}
+
+	for (uint16_t i = 0U; i < codec_cfg->data_len;) {
+		const uint8_t len = codec_cfg->data[i++];
+		const uint8_t data_type = codec_cfg->data[i++];
+		const uint8_t value_len = len - sizeof(data_type);
+
+		if (data_type == type) {
+			uint8_t *value = &codec_cfg->data[i];
+
+			if (data_len == value_len) {
+				memcpy(value, data, data_len);
+			} else {
+				const uint8_t *old_next_data_start = value + value_len + 1;
+				const uint8_t data_len_to_move =
+					codec_cfg->data_len -
+					(old_next_data_start - codec_cfg->data);
+				uint8_t *new_next_data_start = value + data_len + 1;
+				const int16_t diff = data_len - value_len;
+
+				if (diff < 0) {
+					/* In this case we need to move memory around after the copy
+					 * to fit the new shorter data
+					 */
+
+					memcpy(value, data, data_len);
+					memmove(new_next_data_start, old_next_data_start,
+						data_len_to_move);
+				} else {
+					/* In this case we need to move memory around before
+					 * the copy to fit the new longer data
+					 */
+					if ((codec_cfg->data_len + diff) >
+					    ARRAY_SIZE(codec_cfg->data)) {
+						LOG_DBG("Cannot fit data_len %zu in buf with len "
+							"%u and size %u",
+							data_len, codec_cfg->data_len,
+							ARRAY_SIZE(codec_cfg->data));
+						return -ENOMEM;
+					}
+
+					memmove(new_next_data_start, old_next_data_start,
+						data_len_to_move);
+					memcpy(value, data, data_len);
+				}
+
+				codec_cfg->data_len += diff;
+			}
+
+			return codec_cfg->data_len;
+		}
+
+		i += value_len;
+	}
+
+	/* If we reach here, we did not find the data in the buffer, so we simply add it */
+	if ((codec_cfg->data_len + data_len) <= ARRAY_SIZE(codec_cfg->data)) {
+		struct net_buf_simple buf;
+
+		init_net_buf_simple_from_codec_cfg(&buf, codec_cfg);
+
+		net_buf_simple_add_u8(&buf, data_len + sizeof(type));
+		net_buf_simple_add_u8(&buf, type);
+		net_buf_simple_add_mem(&buf, data, data_len);
+		codec_cfg->data_len = buf.len;
+	} else {
+		LOG_DBG("Cannot fit data_len %zu in codec_cfg with len %u and size %u", data_len,
+			codec_cfg->data_len, ARRAY_SIZE(codec_cfg->data));
+		return -ENOMEM;
+	}
+
+	return codec_cfg->data_len;
+}
+
 int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg)
 {
+	enum bt_audio_codec_config_freq freq;
 	const uint8_t *data;
 	uint8_t data_len;
 
@@ -98,36 +268,29 @@ int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg)
 		return -EBADMSG;
 	}
 
-	switch (data[0]) {
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ:
-		return 8000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_11KHZ:
-		return 11025;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ:
-		return 16000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_22KHZ:
-		return 22050;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ:
-		return 24000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ:
-		return 32000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ:
-		return 44100;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ:
-		return 48000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_88KHZ:
-		return 88200;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_96KHZ:
-		return 96000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_176KHZ:
-		return 176400;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_192KHZ:
-		return 192000;
-	case BT_AUDIO_CODEC_CONFIG_LC3_FREQ_384KHZ:
-		return 384000;
-	default:
+	freq = data[0];
+	if (bt_audio_codec_cfg_freq_to_freq_hz(freq) < 0) {
+		LOG_DBG("Invalid freq value: 0x%02X", freq);
 		return -EBADMSG;
 	}
+
+	return freq;
+}
+
+int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
+				enum bt_audio_codec_config_freq freq)
+{
+	uint8_t freq_u8;
+
+	if (bt_audio_codec_cfg_freq_to_freq_hz(freq) < 0) {
+		LOG_DBG("Invalid freq value: %d", freq);
+		return -EINVAL;
+	}
+
+	freq_u8 = (uint8_t)freq;
+
+	return bt_audio_codec_cfg_set_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &freq_u8,
+					  sizeof(freq_u8));
 }
 
 int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *codec_cfg)
