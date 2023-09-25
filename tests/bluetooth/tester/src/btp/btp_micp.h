@@ -31,6 +31,7 @@ struct btp_micp_mute_cmd {
 #define BTP_MICP_DISCOVERED_EV			0x80
 struct btp_micp_discovered_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	uint16_t mute_handle;
 	uint16_t state_handle;
 	uint16_t gain_handle;
@@ -43,5 +44,6 @@ struct btp_micp_discovered_ev {
 #define BTP_MICP_MUTE_STATE_EV			0x81
 struct btp_micp_mute_state_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	uint8_t mute;
 } __packed;
