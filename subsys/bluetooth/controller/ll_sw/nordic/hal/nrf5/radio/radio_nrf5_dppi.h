@@ -455,10 +455,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
-static inline void hal_radio_sw_switch_setup(
-		uint8_t compare_reg,
-		uint8_t radio_enable_ppi,
-		uint8_t ppi_group_index)
+static inline void hal_radio_sw_switch_setup(uint8_t ppi_group_index)
 {
 	/* Set up software switch mechanism for next Radio switch. */
 
@@ -466,7 +463,7 @@ static inline void hal_radio_sw_switch_setup(
 	 * over PPI[<HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI>]
 	 */
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT =
-	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT;
+		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT;
 	nrf_dppi_subscribe_set(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(ppi_group_index)),
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI);
@@ -476,55 +473,70 @@ static inline void hal_radio_sw_switch_setup(
 
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(other_grp)));
+}
 
+static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
+{
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
 	 * not wire the task; it is done by the caller of
 	 * the function depending on the desired direction
 	 * (TX/RX).
 	 */
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg) =
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
+
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
 }
 
-static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
+						   uint8_t radio_enable_ppi)
 {
-	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
-}
-
-static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
-{
-	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
-	 *       after the radio_switch_complete_and_b2b_tx() call would have
-	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
-	 *       cannot double buffer the subscribe buffer. Hence, lets have
-	 *       both DPPI channel enabled (other one was enabled by the DPPI
-	 *       group when the Radio End occurred) so that when both timer
-	 *       trigger one of the DPPI is correct in the radio tx
-	 *       subscription.
+	/* Wire SW Switch timer event <compare_reg> to the
+	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
+	 * not wire the task; it is done by the caller of
+	 * the function depending on the desired direction
+	 * (TX/RX).
 	 */
-	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
-	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
+
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+
+	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
 }
 
-static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
+static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
 {
-	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
-}
-
-static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t ppi)
-{
-	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
-	 *       after the radio_switch_complete_and_b2b_rx() call would have
-	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
-	 *       cannot double buffer the subscribe buffer. Hence, lets have
-	 *       both DPPI channel enabled (other one was enabled by the DPPI
-	 *       group when the Radio End occurred) so that when both timer
-	 *       trigger one of the DPPI is correct in the radio rx
-	 *       subscription.
+	/* Wire SW Switch timer event <compare_reg> to the
+	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
+	 * not wire the task; it is done by the caller of
+	 * the function depending on the desired direction
+	 * (TX/RX).
 	 */
-	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
-	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
+
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
+}
+
+static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
+						   uint8_t radio_enable_ppi)
+{
+	/* Wire SW Switch timer event <compare_reg> to the
+	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
+	 * not wire the task; it is done by the caller of
+	 * the function depending on the desired direction
+	 * (TX/RX).
+	 */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(compare_reg_index) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
+
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+
+	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
 }
 
 static inline void hal_radio_sw_switch_disable(void)
@@ -538,6 +550,26 @@ static inline void hal_radio_sw_switch_disable(void)
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(1)));
+}
+
+static inline void hal_radio_sw_switch_b2b_tx_disable(uint8_t compare_reg_index)
+{
+	hal_radio_sw_switch_disable();
+
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
+
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
+}
+
+static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
+{
+	hal_radio_sw_switch_disable();
+
+	uint8_t prev_ppi_idx = (compare_reg_index + 0x01) & 0x01;
+	uint8_t radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
+
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
 }
 
 static inline void hal_radio_sw_switch_cleanup(void)
