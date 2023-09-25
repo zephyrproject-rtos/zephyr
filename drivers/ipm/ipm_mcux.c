@@ -93,7 +93,7 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait,
 		return -EINVAL;
 	}
 
-	if (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t)) {
+	if ((size < 0) || (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t))) {
 		return -EMSGSIZE;
 	}
 
