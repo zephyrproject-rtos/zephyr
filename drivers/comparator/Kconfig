@@ -1,0 +1,24 @@
+# Comparator configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig COMPARATOR
+	bool "Comparator drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Include support for analog comparators.
+
+if COMPARATOR
+
+config COMPARATOR_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Comparator driver device initialization priority.
+
+module = COMPARATOR
+module-str = comparator
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # COMPARATOR
