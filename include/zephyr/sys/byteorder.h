@@ -168,6 +168,49 @@
  *  @return 48-bit integer in big-endian format.
  */
 
+/** @def sys_uint16_to_array
+ *  @brief Convert 16-bit unsigned integer to byte array.
+ *
+ *  @details Byte order aware macro to treat an unsigned integer
+ *           as an array, rather than an integer literal. For example,
+ *           `0x0123` would be converted to `{0x01, 0x23}` for big endian
+ *           machines, and `{0x23, 0x01}` for little endian machines.
+ *
+ *  @param val 16-bit unsigned integer.
+ *
+ *  @return 16-bit unsigned integer as byte array.
+ */
+
+/** @def sys_uint32_to_array
+ *  @brief Convert 32-bit unsigned integer to byte array.
+ *
+ *  @details Byte order aware macro to treat an unsigned integer
+ *           as an array, rather than an integer literal. For example,
+ *           `0x01234567` would be converted to `{0x01, 0x23, 0x45, 0x67}`
+ *           for big endian machines, and `{0x67, 0x45, 0x23, 0x01}` for
+ *           little endian machines.
+ *
+ *  @param val 32-bit unsigned integer.
+ *
+ *  @return 32-bit unsigned integer as byte array.
+ */
+
+/** @def sys_uint64_to_array
+ *  @brief Convert 64-bit unsigned integer to byte array.
+ *
+ *  @details Byte order aware macro to treat an unsigned integer
+ *           as an array, rather than an integer literal. For example,
+ *           `0x0123456789abcdef` would be converted to
+ *           `{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}`
+ *           for big endian machines, and
+ *           `{0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01}` for
+ *           little endian machines.
+ *
+ *  @param val 64-bit unsigned integer.
+ *
+ *  @return 64-bit unsigned integer as byte array.
+ */
+
 #ifdef CONFIG_LITTLE_ENDIAN
 #define sys_le16_to_cpu(val) (val)
 #define sys_cpu_to_le16(val) (val)
@@ -189,6 +232,27 @@
 #define sys_cpu_to_be48(val) __bswap_48(val)
 #define sys_be64_to_cpu(val) __bswap_64(val)
 #define sys_cpu_to_be64(val) __bswap_64(val)
+
+#define sys_uint16_to_array(val) {		\
+	((val) & 0xff),				\
+	(((val) >> 8) & 0xff)}
+
+#define sys_uint32_to_array(val) {		\
+	((val) & 0xff),				\
+	(((val) >> 8) & 0xff),			\
+	(((val) >> 16) & 0xff),			\
+	(((val) >> 24) & 0xff)}
+
+#define sys_uint64_to_array(val) {		\
+	((val) & 0xff),				\
+	(((val) >> 8) & 0xff),			\
+	(((val) >> 16) & 0xff),			\
+	(((val) >> 24) & 0xff),			\
+	(((val) >> 32) & 0xff),			\
+	(((val) >> 40) & 0xff),			\
+	(((val) >> 48) & 0xff),			\
+	(((val) >> 56) & 0xff)}
+
 #else
 #define sys_le16_to_cpu(val) __bswap_16(val)
 #define sys_cpu_to_le16(val) __bswap_16(val)
@@ -210,6 +274,27 @@
 #define sys_cpu_to_be48(val) (val)
 #define sys_be64_to_cpu(val) (val)
 #define sys_cpu_to_be64(val) (val)
+
+#define sys_uint16_to_array(val) {		\
+	(((val) >> 8) & 0xff),			\
+	((val) & 0xff)}
+
+#define sys_uint32_to_array(val) {		\
+	(((val) >> 24) & 0xff),			\
+	(((val) >> 16) & 0xff),			\
+	(((val) >> 8) & 0xff),			\
+	((val) & 0xff)}
+
+#define sys_uint64_to_array(val) {		\
+	(((val) >> 56) & 0xff),			\
+	(((val) >> 48) & 0xff),			\
+	(((val) >> 40) & 0xff),			\
+	(((val) >> 32) & 0xff),			\
+	(((val) >> 24) & 0xff),			\
+	(((val) >> 16) & 0xff),			\
+	(((val) >> 8) & 0xff),			\
+	((val) & 0xff)}
+
 #endif
 
 /**
