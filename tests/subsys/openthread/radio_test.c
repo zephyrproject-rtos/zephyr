@@ -320,8 +320,7 @@ ZTEST(openthread_radio, test_tx_test)
 	zassert_equal(power, set_txpower_mock_fake.arg1_val);
 	zassert_equal(1, tx_mock_fake.call_count);
 	zassert_equal_ptr(frm->mPsdu, tx_mock_fake.arg3_val->data, NULL);
-	zassert_equal(expected_target_time,
-		      net_ptp_time_to_ns(net_pkt_timestamp(tx_mock_fake.arg2_val)));
+	zassert_equal(expected_target_time, net_pkt_timestamp_ns(tx_mock_fake.arg2_val));
 	zassert_equal(IS_ENABLED(CONFIG_NET_PKT_TXTIME) ? IEEE802154_TX_MODE_TXTIME_CCA
 							: IEEE802154_TX_MODE_DIRECT,
 		      tx_mock_fake.arg1_val);

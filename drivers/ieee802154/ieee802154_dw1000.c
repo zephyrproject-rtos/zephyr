@@ -452,14 +452,11 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)) {
 		uint8_t ts_buf[sizeof(uint64_t)] = {0};
-		struct net_ptp_time timestamp;
-		uint64_t ts_fsec;
+		uint64_t ts_nsec;
 
 		memcpy(ts_buf, rx_inf_reg.rx_time, DWT_RX_TIME_RX_STAMP_LEN);
-		ts_fsec = sys_get_le64(ts_buf) * DWT_TS_TIME_UNITS_FS;
-		timestamp.second = (ts_fsec / 1000000) / NSEC_PER_SEC;
-		timestamp.nanosecond = (ts_fsec / 1000000) % NSEC_PER_SEC;
-		net_pkt_set_timestamp(pkt, &timestamp);
+		ts_nsec = (sys_get_le64(ts_buf) * DWT_TS_TIME_UNITS_FS) / 1000000U;
+		net_pkt_set_timestamp_ns(pkt, ts_nsec);
 	}
 
 	/* See 4.7.2 Estimating the receive signal power */
@@ -787,7 +784,6 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 	struct dwt_context *ctx = dev->data;
 	size_t len = frag->len;
 	uint32_t tx_time = 0;
-	struct net_ptp_time *txts;
 	uint64_t tmp_fs;
 	uint32_t tx_fctrl;
 	uint8_t sys_ctrl = DWT_SYS_CTRL_TXSTRT;
@@ -808,8 +804,7 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 		 * tx_time is the high 32-bit of the 40-bit system
 		 * time value at which to send the message.
 		 */
-		txts = net_pkt_timestamp(pkt);
-		tmp_fs = txts->second * NSEC_PER_SEC + txts->nanosecond;
+		tmp_fs = net_pkt_timestamp_ns(pkt);
 		tmp_fs *= 1000U * 1000U;
 
 		tx_time = (tmp_fs / DWT_TS_TIME_UNITS_FS) >> 8;
@@ -866,7 +861,6 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 
 	if (IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)) {
 		uint8_t ts_buf[sizeof(uint64_t)] = {0};
-		struct net_ptp_time timestamp;
 
 		k_sem_take(&ctx->dev_lock, K_FOREVER);
 		dwt_register_read(dev, DWT_TX_TIME_ID,
@@ -879,9 +873,7 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 		k_sem_give(&ctx->dev_lock);
 
 		tmp_fs = sys_get_le64(ts_buf) * DWT_TS_TIME_UNITS_FS;
-		timestamp.second = (tmp_fs / 1000000) / NSEC_PER_SEC;
-		timestamp.nanosecond = (tmp_fs / 1000000) % NSEC_PER_SEC;
-		net_pkt_set_timestamp(pkt, &timestamp);
+		net_pkt_set_timestamp_ns(pkt, tmp_fs / 1000000U);
 	}
 
 	atomic_clear_bit(&ctx->state, DWT_STATE_TX);

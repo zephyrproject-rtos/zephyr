@@ -178,13 +178,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		struct net_ptp_time timestamp = {
-			.second = rx_frame->time / USEC_PER_SEC,
-			.nanosecond =
-				(rx_frame->time % USEC_PER_SEC) * NSEC_PER_USEC
-		};
-
-		net_pkt_set_timestamp(pkt, &timestamp);
+		net_pkt_set_timestamp_ns(pkt, rx_frame->time * NSEC_PER_USEC);
 #endif
 
 		LOG_DBG("Caught a packet (%u) (LQI: %u)",
@@ -407,12 +401,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time timestamp = {
-		.second = nrf5_radio->ack_frame.time / USEC_PER_SEC,
-		.nanosecond = (nrf5_radio->ack_frame.time % USEC_PER_SEC) * NSEC_PER_USEC
-	};
-
-	net_pkt_set_timestamp(ack_pkt, &timestamp);
+	net_pkt_set_timestamp_ns(ack_pkt, nrf5_radio->ack_frame.time * NSEC_PER_USEC);
 #endif
 
 	net_pkt_cursor_init(ack_pkt);
@@ -531,7 +520,7 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	 * expects a timestamp pointing to start of SHR.
 	 */
 	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
-		net_ptp_time_to_ns(net_pkt_timestamp(pkt)) / NSEC_PER_USEC);
+		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
 
 	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }

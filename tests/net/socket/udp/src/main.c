@@ -974,7 +974,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 		return 0;
 	}
 
-	txtime = net_ptp_time_to_ns(net_pkt_timestamp(pkt));
+	txtime = net_pkt_timestamp_ns(pkt);
 	if (txtime != TEST_TXTIME) {
 		test_failed = true;
 	} else {

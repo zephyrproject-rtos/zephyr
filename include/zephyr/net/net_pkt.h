@@ -927,6 +927,16 @@ static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 	pkt->timestamp.second = timestamp->second;
 	pkt->timestamp.nanosecond = timestamp->nanosecond;
 }
+
+static inline net_time_t net_pkt_timestamp_ns(struct net_pkt *pkt)
+{
+	return net_ptp_time_to_ns(&pkt->timestamp);
+}
+
+static inline void net_pkt_set_timestamp_ns(struct net_pkt *pkt, net_time_t timestamp)
+{
+	pkt->timestamp = ns_to_net_ptp_time(timestamp);
+}
 #else
 static inline struct net_ptp_time *net_pkt_timestamp(struct net_pkt *pkt)
 {
@@ -937,6 +947,19 @@ static inline struct net_ptp_time *net_pkt_timestamp(struct net_pkt *pkt)
 
 static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 					 struct net_ptp_time *timestamp)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(timestamp);
+}
+
+static inline net_time_t net_pkt_timestamp_ns(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_timestamp_ns(struct net_pkt *pkt, net_time_t timestamp)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(timestamp);
@@ -971,7 +994,7 @@ static inline void net_pkt_set_create_time(struct net_pkt *pkt,
 #endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
 
 /**
- * @deprecated Use @ref net_pkt_timestamp instead.
+ * @deprecated Use @ref net_pkt_timestamp or @ref net_pkt_timestamp_ns instead.
  */
 static inline uint64_t net_pkt_txtime(struct net_pkt *pkt)
 {
@@ -985,7 +1008,8 @@ static inline uint64_t net_pkt_txtime(struct net_pkt *pkt)
 }
 
 /**
- * @deprecated Use @ref net_pkt_set_timestamp instead.
+ * @deprecated Use @ref net_pkt_set_timestamp or @ref net_pkt_set_timestamp_ns
+ * instead.
  */
 static inline void net_pkt_set_txtime(struct net_pkt *pkt, uint64_t txtime)
 {
