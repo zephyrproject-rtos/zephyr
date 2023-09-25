@@ -27,6 +27,10 @@
 #define WIFI_LISTEN_INTERVAL_MIN 0
 #define WIFI_LISTEN_INTERVAL_MAX 65535
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** IEEE 802.11 security types. */
 enum wifi_security_type {
 	/** No security. */
@@ -443,6 +447,10 @@ static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
 
 	return "<unknown>";
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
