@@ -20,16 +20,6 @@ menuconfig ETH_ADIN2111
 
 if ETH_ADIN2111
 
-config ETH_ADIN2111_INIT_PRIORITY
-	int "ADIN2111 driver init priority"
-	default 72
-	help
-	  ADIN2111 device driver initialization priority.
-	  Must be initialized after SPI, but before MDIO
-	  and ports.
-
-	  Both ports use ETH_INIT_PRIORITY initialization priority.
-
 config ETH_ADIN2111_IRQ_THREAD_STACK_SIZE
 	int "Stack size for a thread that processes ADIN IRQ"
 	default 2048

@@ -979,7 +979,7 @@ static const struct ethernet_api adin2111_port_api = {
 	/* adin */										\
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL,				\
 			 &name##_data_##inst, &name##_config_##inst,				\
-			 POST_KERNEL, CONFIG_ETH_ADIN2111_INIT_PRIORITY,			\
+			 POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,					\
 			 NULL);
 
 #define ADIN2111_MAC_INIT(inst)	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)	\
