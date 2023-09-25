@@ -40,8 +40,9 @@ Build and flash Blinky as follows, changing ``reel_board`` for your board:
    :goals: build flash
    :compact:
 
-After flashing, the LED starts to blink. If a runtime error occurs, the sample
-exits without printing to the console.
+After flashing, the LED starts to blink and messages with the current LED state
+are printed on the console. If a runtime error occurs, the sample exits without
+printing to the console.
 
 Build errors
 ************
