@@ -5,6 +5,7 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
+	select FDTABLE
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 

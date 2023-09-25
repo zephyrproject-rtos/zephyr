@@ -3,6 +3,13 @@
 
 menu "OS Support Library"
 
+config FDTABLE
+	bool "File descriptor table"
+	help
+	  This file provides generic file descriptor table implementation, suitable
+	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
+	  aux operations).
+
 config JSON_LIBRARY
 	bool "Build JSON library"
 	help

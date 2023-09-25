@@ -9,7 +9,6 @@ zephyr_sources_ifdef(CONFIG_BASE64 base64.c)
 zephyr_sources(
   cbprintf_packaged.c
   dec.c
-  fdtable.c
   hex.c
   printk.c
   rb.c
@@ -22,6 +21,7 @@ zephyr_sources(
   multi_heap.c
   )
 
+zephyr_sources_ifdef(CONFIG_FDTABLE fdtable.c)
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
 zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
 
