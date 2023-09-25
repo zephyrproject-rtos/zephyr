@@ -29,12 +29,18 @@ jobs:
             Hello @${{ github.event.pull_request.user.login }}, and thank you very much for your
             first pull request to the Zephyr project!
 
-
-            A project maintainer just triggered our CI pipeline to run it against your PR and
-            ensure it's compliant and doesn't cause any issues. You might want to take this
-            opportunity to review the project's [Contributor
+            Our Continuous Integration pipeline will execute a series of checks on your Pull Request
+            commit messages and code, and you are expected to address any failures by updating the PR.
+            Please take a look at [our commit message guidelines](https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-message-guidelines)
+            to find out how to format your commit messages, and at [our contribution workflow](https://docs.zephyrproject.org/latest/contribute/guidelines.html#contribution-workflow)
+            to understand how to update your Pull Request.
+            If you haven't already, please make sure to review the project's [Contributor
             Expectations](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html)
-            and make any updates to your pull request if necessary. 😊
+            and update (by amending and force-pushing the commits) your pull request if necessary.
+
+            If you are stuck or need help please join us on [Discord](https://chat.zephyrproject.org/)
+            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-review-escalation)
+            when applicable. 😊
 
           pr-merged-message: >
             Hi @${{ github.event.pull_request.user.login }}!
