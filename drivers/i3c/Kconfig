@@ -24,6 +24,15 @@ config I3C_USE_GROUP_ADDR
 
 	  Says Y if unsure.
 
+config I3C_SHELL
+	bool "I3C Shell"
+	default y
+	depends on SHELL
+	help
+		Enable I3C Shell.
+		The I3C shell supports- I3C read and write operations and,
+		legacy I2C read/write operations to i2c devices connected on i3c bus.
+
 menuconfig I3C_USE_IBI
 	bool "Use In-Band Interrupt (IBI)"
 	default y

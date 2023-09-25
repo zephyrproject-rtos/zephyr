@@ -33,3 +33,5 @@ zephyr_library_sources_ifdef(
   CONFIG_I3C_DW
   i3c_dw.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_I3C_SHELL		i3c_shell.c)
