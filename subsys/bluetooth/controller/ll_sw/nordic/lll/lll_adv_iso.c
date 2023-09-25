@@ -717,7 +717,7 @@ static void isr_tx_common(void *param,
 					    pkt_flags);
 		}
 
-		radio_switch_complete_and_disable();
+		radio_switch_complete_and_b2b_tx_disable();
 
 		radio_isr_set(isr_done_term, lll);
 	} else {
