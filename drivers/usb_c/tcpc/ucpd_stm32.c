@@ -1025,43 +1025,24 @@ static int ucpd_transmit_data(const struct device *dev,
 }
 
 /**
- * @brief Tests if a received Power Delivery message is pending
- *
- * @retval 0 if message is pending, else -ENODATA
- */
-static int ucpd_is_rx_pending_msg(const struct device *dev, enum pd_packet_type *type)
-{
-	struct tcpc_data *data = dev->data;
-	bool is_pending;
-
-	is_pending = (*(uint32_t *)data->ucpd_rx_buffer > 0);
-
-	if (is_pending & (type != NULL)) {
-		*type = *(uint16_t *)data->ucpd_rx_buffer;
-	}
-
-	return (is_pending) ? 0 : -ENODATA;
-}
-
-/**
  * @brief Retrieves the Power Delivery message from the TCPC
  *
- * @retval number of bytes received
- * @retval -EIO on no message to retrieve
- * @retval -EFAULT on buf being NULL
+ * @retval number of bytes received if msg parameter is provided
+ * @retval 0 if there is a message pending and the msg parameter is NULL
+ * @retval -ENODATA if there is no pending message
  */
-static int ucpd_receive_data(const struct device *dev, struct pd_msg *msg)
+static int ucpd_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 {
 	struct tcpc_data *data = dev->data;
 	int ret = 0;
 
-	if (msg == NULL) {
-		return -EFAULT;
+	/* Make sure we have a message to retrieve */
+	if (*(uint32_t *)data->ucpd_rx_buffer == 0) {
+		return -ENODATA;
 	}
 
-	/* Make sure we have a message to retrieve */
-	if (ucpd_is_rx_pending_msg(dev, NULL) < 0) {
-		return -EIO;
+	if (!msg) {
+		return 0;
 	}
 
 	msg->type = *(uint16_t *)data->ucpd_rx_buffer;
@@ -1442,8 +1423,7 @@ static const struct tcpc_driver_api driver_api = {
 	.set_alert_handler_cb = ucpd_set_alert_handler_cb,
 	.get_cc = ucpd_get_cc,
 	.set_rx_enable = ucpd_set_rx_enable,
-	.is_rx_pending_msg = ucpd_is_rx_pending_msg,
-	.receive_data = ucpd_receive_data,
+	.get_rx_pending_msg = ucpd_get_rx_pending_msg,
 	.transmit_data = ucpd_transmit_data,
 	.select_rp_value = ucpd_select_rp_value,
 	.get_rp_value = ucpd_get_rp_value,

@@ -1187,11 +1187,9 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	int8_t msid;
 	uint8_t num_data_objs;
 	uint8_t power_role;
-	int pending_rx;
 
 	/* Get the message */
-	pending_rx = tcpc_is_rx_pending_msg(tcpc, NULL);
-	if (pending_rx == -ENODATA || tcpc_receive_data(tcpc, rx_emsg) <= 0) {
+	if (tcpc_get_rx_pending_msg(tcpc, rx_emsg) <= 0) {
 		/* No pending message or problem getting the message */
 		return;
 	}
