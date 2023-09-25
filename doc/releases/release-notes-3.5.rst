@@ -13,6 +13,14 @@ The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
 ******************************
+The following CVEs are addressed by this release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2023-4258 `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
+
 
 Kernel
 ******
