@@ -204,6 +204,9 @@ config BT_SETTINGS
 	  which case it's more efficient to load all settings in one go,
 	  instead of each subsystem doing it independently.
 
+	  Warning: The Bluetooth host expects a settings backend that loads
+	  settings items in handle order.
+
 if BT_SETTINGS
 config BT_SETTINGS_CCC_LAZY_LOADING
 	bool "Load CCC values from settings when peer connects"
