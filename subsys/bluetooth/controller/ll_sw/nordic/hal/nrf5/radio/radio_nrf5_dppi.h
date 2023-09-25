@@ -127,6 +127,14 @@ static inline void hal_trigger_crypt_ppi_config(void)
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
 }
 
+/*******************************************************************************
+ * Disable trigger encryption task
+ */
+static inline void hal_trigger_crypt_ppi_disable(void)
+{
+	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_CRYPT);
+}
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /*******************************************************************************
  * Trigger encryption task on Bit counter match:

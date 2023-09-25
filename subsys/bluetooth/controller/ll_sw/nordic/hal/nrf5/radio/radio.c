@@ -1084,6 +1084,8 @@ void radio_tmr_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
+	hal_trigger_crypt_ppi_disable();
+
 	hal_radio_nrf_ppi_channels_disable(
 			BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI) |
 			BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI) |
@@ -1115,6 +1117,8 @@ void radio_tmr_status_reset(void)
 void radio_tmr_tx_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
+
+	hal_trigger_crypt_ppi_disable();
 
 	hal_radio_nrf_ppi_channels_disable(
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
@@ -1151,6 +1155,8 @@ void radio_tmr_tx_status_reset(void)
 void radio_tmr_rx_status_reset(void)
 {
 	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
+
+	hal_trigger_crypt_ppi_disable();
 
 	hal_radio_nrf_ppi_channels_disable(
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI != HAL_RADIO_ENABLE_RX_ON_TICK_PPI) && \
