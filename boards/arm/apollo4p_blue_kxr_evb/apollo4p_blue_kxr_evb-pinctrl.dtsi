@@ -16,4 +16,60 @@
 			input-enable;
 		};
 	};
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <M2SCL_P25>, <M2SDAWIR3_P26>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c3_default: i2c3_default {
+		group1 {
+			pinmux = <M3SCL_P31>, <M3SDAWIR3_P32>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c5_default: i2c5_default {
+		group1 {
+			pinmux = <M5SCL_P47>, <M5SDAWIR3_P48>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c6_default: i2c6_default {
+		group1 {
+			pinmux = <M6SCL_P61>, <M6SDAWIR3_P62>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+	i2c7_default: i2c7_default {
+		group1 {
+			pinmux = <M7SCL_P22>, <M7SDAWIR3_P23>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
 };
