@@ -30,6 +30,14 @@
 	};
 };
 
+&lpuart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	/* clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>; */
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
 &lpuart2 {
 	status = "okay";
 	current-speed = <115200>;
