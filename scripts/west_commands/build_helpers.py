@@ -153,6 +153,7 @@ def load_domains(path):
     if not domains_file.is_file():
         return Domains.from_data({'default': 'app',
                                   'build_dir': path,
-                                  'domains': [{'name': 'app', 'build_dir': path}]})
+                                  'domains': [{'name': 'app', 'build_dir': path}],
+                                  'flash_order': ['app']})
 
     return Domains.from_file(domains_file)
