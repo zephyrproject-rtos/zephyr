@@ -34,3 +34,11 @@
 &wdt0 {
 	status = "okay";
 };
+
+&iom0 {
+	compatible = "ambiq,i2c";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
