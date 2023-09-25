@@ -1,0 +1,22 @@
+# Copyright (c) 2020 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE, Pulse Width Modulator (PWM) node
+
+compatible: "ene,kb1200-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  pwm-channel:
+    type: int
+    description: |
+        A index to indicate PWM module that generates a single PWM signal.
+        Please don't overwrite it in the board-level DT driver.
+
+pwm-cells:
+  - channel
+  - period
+  - flags

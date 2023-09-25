@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE I2C/SMB controller
+
+compatible: "ene,kb1200-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    port-num:
+      type: int
+      description: soc block mapping to pin
+      required: true
