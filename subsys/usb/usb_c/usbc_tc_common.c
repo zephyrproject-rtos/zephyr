@@ -137,10 +137,8 @@ static int tc_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_USBC_CSM_SOURCE_ONLY
-	/* Stop sourcing VBUS */
-	data->policy_cb_src_en(dev, false);
-
-	tcpc_set_src_ctrl(tcpc, false);
+	/* Stop sourcing VBUS by policy callback and/or TCPC */
+	usbc_policy_src_en(dev, tcpc, false);
 
 	/* Stop sourcing VCONN */
 	tcpc_set_vconn(tcpc, false);

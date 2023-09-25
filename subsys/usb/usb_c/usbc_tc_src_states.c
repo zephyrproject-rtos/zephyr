@@ -233,12 +233,7 @@ void tc_attached_src_entry(void *obj)
 	tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 
 	/* Start sourcing VBUS */
-	if (!data->policy_cb_src_en || data->policy_cb_src_en(dev, true) == 0) {
-		ret = tcpc_set_src_ctrl(data->tcpc, true);
-		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Couldn't enable VBUS source");
-		}
-
+	if (usbc_policy_src_en(dev, tcpc, true) == 0) {
 		/* Start sourcing VCONN */
 		if (policy_check(dev, CHECK_VCONN_CONTROL)) {
 			if (tcpc_set_vconn(tcpc, true) == 0) {
