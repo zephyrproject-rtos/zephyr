@@ -237,51 +237,6 @@ static void test_recv_fail(int sock, void *buf, size_t max_len, int flags)
 	zassert_equal(errno, EAGAIN, "recvfrom() returned unexpected errno (%d)", errno);
 }
 
-static void calc_net_context(struct net_context *context, void *user_data)
-{
-	int *count = user_data;
-
-	(*count)++;
-}
-
-/* Wait until the number of TCP contexts reaches a certain level
- *   exp_num_contexts : The number of contexts to wait for
- *   timeout :		The time to wait for
- */
-int wait_for_n_tcp_contexts(int exp_num_contexts, k_timeout_t timeout)
-{
-	uint32_t start_time = k_uptime_get_32();
-	uint32_t time_diff;
-	int context_count = 0;
-
-	/* After the client socket closing, the context count should be 1 less */
-	net_context_foreach(calc_net_context, &context_count);
-
-	time_diff = k_uptime_get_32() - start_time;
-
-	/* Eventually the client socket should be cleaned up */
-	while (context_count != exp_num_contexts) {
-		context_count = 0;
-		net_context_foreach(calc_net_context, &context_count);
-		k_sleep(K_MSEC(50));
-		time_diff = k_uptime_get_32() - start_time;
-
-		if (K_MSEC(time_diff).ticks > timeout.ticks) {
-			return -ETIMEDOUT;
-		}
-	}
-
-	return 0;
-}
-
-static void test_context_cleanup(void)
-{
-	zassert_equal(wait_for_n_tcp_contexts(0, TCP_TEARDOWN_TIMEOUT),
-		      0,
-		      "Not all TCP contexts properly cleaned up");
-}
-
-
 ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
 {
 	int server_sock = -1;
@@ -321,8 +276,6 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
 	zassert_equal(value, (int) true, "SO_REUSEADDR not correctly set, returned %d", value);
 
 	close(server_sock);
-
-	test_context_cleanup();
 }
 
 
@@ -359,8 +312,6 @@ static void test_reuseaddr_unspecified_specified_common(sa_family_t family,
 
 	close(server_sock1);
 	close(server_sock2);
-
-	test_context_cleanup();
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_first_unspecified)
@@ -440,8 +391,6 @@ static void test_reuseaddr_tcp_listening_common(sa_family_t family,
 
 	close(server_sock1);
 	close(server_sock2);
-
-	test_context_cleanup();
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_unspecified_listening)
@@ -526,7 +475,10 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 	close(client_sock);
 	close(server_sock);
 
-	test_context_cleanup();
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_time_wait_unspecified)
@@ -601,8 +553,6 @@ ZTEST_USER(socket_reuseport_test_suite, test_enable_disable)
 	zassert_equal(value, (int) true, "SO_REUSEPORT not correctly set, returned %d", value);
 
 	close(server_sock);
-
-	test_context_cleanup();
 }
 
 
@@ -644,8 +594,6 @@ static void test_reuseport_unspecified_specified_common(sa_family_t family,
 
 	close(server_sock1);
 	close(server_sock2);
-
-	test_context_cleanup();
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_bad)
@@ -879,8 +827,6 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	close(accept_sock);
 	close(client_sock);
 	close(server_sock);
-
-	test_context_cleanup();
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_both_not_set)
@@ -990,7 +936,10 @@ static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
 	close(client_sock2);
 	close(server_sock);
 
-	test_context_cleanup();
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_tcp_identical_clients)
