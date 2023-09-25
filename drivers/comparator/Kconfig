@@ -21,4 +21,6 @@ module = COMPARATOR
 module-str = comparator
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/comparator/Kconfig.nrfx"
+
 endif # COMPARATOR

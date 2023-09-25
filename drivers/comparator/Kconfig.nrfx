@@ -1,0 +1,20 @@
+# Comparator configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NRFX_COMP
+	bool "nRF COMP nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_COMP_ENABLED
+	select NRFX_COMP
+	help
+	  Enable support for nRF COMP peripherals.
+
+config COMPARATOR_NRFX_LPCOMP
+	bool "nRF LPCOMP nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_LPCOMP_ENABLED
+	select NRFX_LPCOMP
+	help
+	  Enable support for nRF LPCOMP peripherals.
