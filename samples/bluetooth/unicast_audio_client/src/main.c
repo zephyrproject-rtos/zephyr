@@ -221,12 +221,19 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	}
 }
 
-static void init_lc3(void)
+static int init_lc3(void)
 {
 	const struct bt_audio_codec_cfg *codec_cfg = &codec_configuration.codec_cfg;
 	unsigned int num_samples;
+	int ret;
 
-	freq_hz = bt_audio_codec_cfg_get_freq(codec_cfg);
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret > 0) {
+		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		return ret;
+	}
+
 	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
@@ -271,7 +278,7 @@ static void init_lc3(void)
 
 #else
 
-#define init_lc3(...)
+#define init_lc3(...) 0
 
 /**
  * @brief Send audio data on timeout
@@ -979,7 +986,11 @@ static int set_stream_qos(void)
 static int enable_streams(void)
 {
 	if (IS_ENABLED(CONFIG_LIBLC3)) {
-		init_lc3();
+		int err = init_lc3();
+
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	for (size_t i = 0U; i < configured_stream_count; i++) {
