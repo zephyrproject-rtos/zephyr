@@ -174,11 +174,17 @@ void tc_attached_snk_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	LOG_INF("Attached.SNK");
 
 	/* Set CC polarity */
-	tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
+	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
 
 	/* Enable PD */
 	tc_pd_enable(dev, true);
@@ -227,6 +233,11 @@ void tc_cc_rd_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
-	tcpc_set_cc(tcpc, TC_CC_RD);
+	ret = tcpc_set_cc(tcpc, TC_CC_RD);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC lines to Rd: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+	}
 }
