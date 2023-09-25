@@ -1,0 +1,12 @@
+comp_dev: &comp {
+	compatible = "nordic,nrf-lpcomp";
+	status = "okay";
+
+	initial-configuration {
+		input-positive = < NRF_LPCOMP_POS_AIN0 >; /* P0.04 */
+		input-negative = < NRF_LPCOMP_NEG_VDD_7_8 >;
+		flags = < (COMPARATOR_FLAG_SIGNAL_BELOW |
+			   COMPARATOR_FLAG_SIGNAL_ABOVE |
+			   NRF_LPCOMP_FLAG_ENABLE_HYSTERESIS) >;
+	};
+};

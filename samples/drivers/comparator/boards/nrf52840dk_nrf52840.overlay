@@ -1,0 +1,13 @@
+comp_dev: &comp {
+	compatible = "nordic,nrf-comp";
+	status = "okay";
+
+	initial-configuration {
+		input-positive = < NRF_COMP_POS_AIN1 >; /* P0.03 */
+		input-negative = < NRF_COMP_NEG_SE_VDD >;
+		flags = < (COMPARATOR_FLAG_SIGNAL_BELOW |
+			   COMPARATOR_FLAG_SIGNAL_ABOVE |
+			   NRF_COMP_FLAG_SE_THDOWN(47) |
+			   NRF_COMP_FLAG_SE_THUP(55)) >;
+	};
+};
