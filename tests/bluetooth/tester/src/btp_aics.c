@@ -65,12 +65,14 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 	return BTP_STATUS_SUCCESS;
 }
 
-void btp_send_aics_state_ev(struct bt_conn *conn, int8_t gain, uint8_t mute, uint8_t mode)
+void btp_send_aics_state_ev(struct bt_conn *conn, uint8_t att_status, int8_t gain, uint8_t mute,
+			    uint8_t mode)
 {
 	struct btp_aics_state_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.gain = gain;
 	ev.mute = mute;
 	ev.mode = mode;
@@ -78,13 +80,14 @@ void btp_send_aics_state_ev(struct bt_conn *conn, int8_t gain, uint8_t mute, uin
 	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_STATE_EV, &ev, sizeof(ev));
 }
 
-void btp_send_gain_setting_properties_ev(struct bt_conn *conn, uint8_t units, int8_t minimum,
-					 int8_t maximum)
+void btp_send_gain_setting_properties_ev(struct bt_conn *conn,  uint8_t att_status, uint8_t units,
+					 int8_t minimum, int8_t maximum)
 {
 	struct btp_gain_setting_properties_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.units = units;
 	ev.minimum = minimum;
 	ev.maximum = maximum;
@@ -92,29 +95,32 @@ void btp_send_gain_setting_properties_ev(struct bt_conn *conn, uint8_t units, in
 	tester_event(BTP_SERVICE_ID_AICS, BTP_GAIN_SETTING_PROPERTIES_EV, &ev, sizeof(ev));
 }
 
-void btp_send_aics_input_type_event(struct bt_conn *conn, uint8_t input_type)
+void btp_send_aics_input_type_event(struct bt_conn *conn, uint8_t att_status, uint8_t input_type)
 {
 	struct btp_aics_input_type_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.input_type = input_type;
 
 	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_INPUT_TYPE_EV, &ev, sizeof(ev));
 }
 
-void btp_send_aics_status_ev(struct bt_conn *conn, bool active)
+void btp_send_aics_status_ev(struct bt_conn *conn, uint8_t att_status, bool active)
 {
 	struct btp_aics_status_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
+	ev.att_status = att_status;
 	ev.active = active;
 
 	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_STATUS_EV, &ev, sizeof(ev));
 }
 
-void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t data_len, char *description)
+void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t att_status, uint8_t data_len,
+				  char *description)
 {
 	struct btp_aics_description_ev *ev;
 
@@ -124,10 +130,23 @@ void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t data_len, char *
 
 	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
+	ev->att_status = att_status;
 	ev->data_len = data_len;
 	memcpy(ev->data, description, data_len);
 
 	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_DESCRIPTION_EV, ev, sizeof(*ev) + data_len);
+}
+
+void btp_send_aics_procedure_ev(struct bt_conn *conn, uint8_t att_status, uint8_t opcode)
+{
+	struct btp_aics_procedure_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+
+	ev.att_status = att_status;
+	ev.opcode = opcode;
+
+	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_PROCEDURE_EV, &ev, sizeof(ev));
 }
 
 static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
@@ -497,7 +516,15 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain, uint8_t mu
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_state_ev(conn, gain, mute, mode);
+
+	if (err) {
+		if (err < 0) {
+			err = BT_ATT_ERR_UNLIKELY;
+		}
+		btp_send_aics_state_ev(conn, err, 0, 0, 0);
+	} else {
+		btp_send_aics_state_ev(conn, 0, gain, mute, mode);
+	}
 
 	LOG_DBG("AICS state callback (%d)", err);
 }
@@ -508,7 +535,7 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units, i
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_gain_setting_properties_ev(conn, units, minimum, maximum);
+	btp_send_gain_setting_properties_ev(conn, err, units, minimum, maximum);
 
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
@@ -518,7 +545,7 @@ static void aics_input_type_cb(struct bt_aics *inst, int err, uint8_t input_type
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_input_type_event(conn, input_type);
+	btp_send_aics_input_type_event(conn, err, input_type);
 
 	LOG_DBG("AICS input type callback (%d)", err);
 }
@@ -528,7 +555,7 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_status_ev(conn, active);
+	btp_send_aics_status_ev(conn, err, active);
 
 	LOG_DBG("AICS status callback (%d)", err);
 }
@@ -539,9 +566,64 @@ static void aics_description_cb(struct bt_aics *inst, int err, char *description
 	uint8_t data_len = strlen(description);
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_description_ev(conn, data_len, description);
+	btp_send_aics_description_ev(conn, err, data_len, description);
 
 	LOG_DBG("AICS description callback (%d)", err);
+}
+
+static void aics_set_gain_cb(struct bt_aics *inst, int err)
+{
+	struct bt_conn *conn;
+
+	bt_aics_client_conn_get(inst, &conn);
+
+	btp_send_aics_procedure_ev(conn, err, BTP_AICS_SET_GAIN);
+
+	LOG_DBG("AICS set gain cb (%d)", err);
+}
+
+static void aics_mute_cb(struct bt_aics *inst, int err)
+{
+	struct bt_conn *conn;
+
+	bt_aics_client_conn_get(inst, &conn);
+
+	btp_send_aics_procedure_ev(conn, err, BTP_AICS_MUTE);
+
+	LOG_DBG("AICS mute cb (%d)", err);
+}
+
+static void aics_unmute_cb(struct bt_aics *inst, int err)
+{
+	struct bt_conn *conn;
+
+	bt_aics_client_conn_get(inst, &conn);
+
+	btp_send_aics_procedure_ev(conn, err, BTP_AICS_UNMUTE);
+
+	LOG_DBG("AICS unmute cb (%d)", err);
+}
+
+static void aics_set_man_gain_cb(struct bt_aics *inst, int err)
+{
+	struct bt_conn *conn;
+
+	bt_aics_client_conn_get(inst, &conn);
+
+	btp_send_aics_procedure_ev(conn, err, BTP_AICS_MAN_GAIN_SET);
+
+	LOG_DBG("AICS set manual gain cb (%d)", err);
+}
+
+static void aics_set_auto_gain_cb(struct bt_aics *inst, int err)
+{
+	struct bt_conn *conn;
+
+	bt_aics_client_conn_get(inst, &conn);
+
+	btp_send_aics_procedure_ev(conn, err, BTP_AICS_AUTO_GAIN_SET);
+
+	LOG_DBG("AICS set automatic gain cb (%d)", err);
 }
 
 struct bt_aics_cb aics_client_cb = {
@@ -550,6 +632,13 @@ struct bt_aics_cb aics_client_cb = {
 	.type = aics_input_type_cb,
 	.status = aics_status_cb,
 	.description = aics_description_cb,
+#if defined(CONFIG_BT_AICS_CLIENT)
+	.set_gain = aics_set_gain_cb,
+	.unmute = aics_unmute_cb,
+	.mute = aics_mute_cb,
+	.set_manual_mode = aics_set_man_gain_cb,
+	.set_auto_mode = aics_set_auto_gain_cb
+#endif /* CONFIG_BT_AICS_CLIENT */
 };
 
 uint8_t tester_init_aics(void)

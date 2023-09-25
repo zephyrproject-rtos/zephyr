@@ -20,13 +20,15 @@ struct btp_aics_instance {
 extern struct bt_aics_cb aics_client_cb;
 extern struct btp_aics_instance aics_client_instance;
 extern struct btp_aics_instance aics_server_instance;
-void btp_send_aics_state_changed_ev(struct bt_conn *conn);
-void btp_send_aics_state_ev(struct bt_conn *conn, int8_t gain, uint8_t mute, uint8_t mode);
-void btp_send_gain_setting_properties_ev(struct bt_conn *conn, uint8_t units, int8_t minimum,
-					 int8_t maximum);
-void btp_send_aics_input_type_event(struct bt_conn *conn, uint8_t input_type);
-void btp_send_aics_status_ev(struct bt_conn *conn, bool active);
-void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t data_len, char *description);
+void btp_send_aics_state_ev(struct bt_conn *conn, uint8_t att_status, int8_t gain, uint8_t mute,
+			    uint8_t mode);
+void btp_send_gain_setting_properties_ev(struct bt_conn *conn, uint8_t att_status, uint8_t units,
+					 int8_t minimum, int8_t maximum);
+void btp_send_aics_input_type_event(struct bt_conn *conn, uint8_t att_status, uint8_t input_type);
+void btp_send_aics_status_ev(struct bt_conn *conn, uint8_t att_status, bool active);
+void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t att_status, uint8_t data_len,
+				  char *description);
+void btp_send_aics_procedure_ev(struct bt_conn *conn, uint8_t att_status, uint8_t opcode);
 
 #define BTP_AICS_READ_SUPPORTED_COMMANDS	0x01
 struct btp_aics_read_supported_commands_rp {
@@ -98,6 +100,7 @@ struct btp_aics_desc_cmd {
 #define BTP_AICS_STATE_EV			0x80
 struct btp_aics_state_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	int8_t gain;
 	uint8_t mute;
 	uint8_t mode;
@@ -106,6 +109,7 @@ struct btp_aics_state_ev {
 #define BTP_GAIN_SETTING_PROPERTIES_EV		0x81
 struct btp_gain_setting_properties_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	uint8_t units;
 	int8_t minimum;
 	int8_t maximum;
@@ -114,18 +118,28 @@ struct btp_gain_setting_properties_ev {
 #define BTP_AICS_INPUT_TYPE_EV			0x82
 struct btp_aics_input_type_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	uint8_t input_type;
 } __packed;
 
 #define BTP_AICS_STATUS_EV			0x83
 struct btp_aics_status_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	bool active;
 } __packed;
 
 #define BTP_AICS_DESCRIPTION_EV			0x84
 struct btp_aics_description_ev {
 	bt_addr_le_t address;
+	uint8_t att_status;
 	uint8_t data_len;
 	char data[0];
+} __packed;
+
+#define BTP_AICS_PROCEDURE_EV			0x85
+struct btp_aics_procedure_ev {
+	bt_addr_le_t address;
+	uint8_t att_status;
+	uint8_t opcode;
 } __packed;
