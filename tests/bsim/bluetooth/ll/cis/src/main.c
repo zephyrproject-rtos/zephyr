@@ -293,7 +293,11 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	iso_print_data(buf->data, buf->len);
 
 	seq_num = sys_get_le32(buf->data);
-	if (info->flags & BT_ISO_FLAGS_VALID) {
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		FAIL("ISO receive error\n");
+	} else if (info->flags & BT_ISO_FLAGS_LOST) {
+		FAIL("ISO receive lost\n");
+	} else if (info->flags & BT_ISO_FLAGS_VALID) {
 		if (seq_num != expected_seq_num[index]) {
 			FAIL("ISO data miss match, expected %u actual %u\n",
 			     expected_seq_num[index], seq_num);
@@ -302,8 +306,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 		expected_seq_num[index]++;
 
-	} else if (expected_seq_num[index] &&
-		   expected_seq_num[index] < SEQ_NUM_MAX) {
+	} else if (expected_seq_num[index] && expected_seq_num[index] < SEQ_NUM_MAX) {
 		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
 		     "Expected %u\n", __func__, expected_seq_num[index]);
 	}
