@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_PCNT_ESP32 pcnt_esp32.c)
+zephyr_library_sources(pcnt_esp32.c)
