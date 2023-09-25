@@ -22,6 +22,19 @@ tests:
       - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
+  drivers.spi.mcux_lpspi_dma.loopback:
+    filter: CONFIG_SPI_MCUX_LPSPI
+    extra_configs:
+      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+    platform_allow:
+      - mimxrt1010_evk
+      - mimxrt1015_evk
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - mimxrt1064_evk
   drivers.spi.sam_spi_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
