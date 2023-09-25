@@ -264,7 +264,7 @@ notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
 # -- Options for zephyr.vcs_link ------------------------------------------
 
 vcs_link_version = f"v{version}" if is_release else "main"
-vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_link_version}"
+vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr"
 vcs_link_prefixes = {
     "samples/.*": "",
     "boards/.*": "",
