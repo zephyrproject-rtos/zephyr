@@ -646,9 +646,8 @@ void pthread_exit(void *retval)
  */
 int pthread_join(pthread_t pthread, void **status)
 {
-	int err;
-	int ret;
 	struct posix_thread *t;
+	int ret;
 
 	if (pthread == pthread_self()) {
 		LOG_ERR("Pthread attempted to join itself (%x)", pthread);
@@ -694,9 +693,9 @@ int pthread_join(pthread_t pthread, void **status)
 		break;
 	}
 
-	err = k_thread_join(&t->thread, K_FOREVER);
+	ret = k_thread_join(&t->thread, K_FOREVER);
 	/* other possibilities? */
-	__ASSERT_NO_MSG(err == 0);
+	__ASSERT_NO_MSG(ret == 0);
 
 	LOG_DBG("Joined pthread %p", &t->thread);
 
