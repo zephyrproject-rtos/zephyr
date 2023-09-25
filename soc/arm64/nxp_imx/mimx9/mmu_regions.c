@@ -30,6 +30,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(ana_pll)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
+	MMU_REGION_FLAT_ENTRY("UART1",
+			      DT_REG_ADDR(DT_NODELABEL(lpuart1)),
+			      DT_REG_SIZE(DT_NODELABEL(lpuart1)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
+
 	MMU_REGION_FLAT_ENTRY("UART2",
 			      DT_REG_ADDR(DT_NODELABEL(lpuart2)),
 			      DT_REG_SIZE(DT_NODELABEL(lpuart2)),
