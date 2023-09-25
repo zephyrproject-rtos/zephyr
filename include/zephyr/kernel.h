@@ -568,14 +568,20 @@ __syscall void k_yield(void);
 __syscall void k_wakeup(k_tid_t thread);
 
 /**
- * @brief Get thread ID of the current thread.
+ * @brief Query thread ID of the current thread.
  *
  * This unconditionally queries the kernel via a system call.
+ *
+ * @note Use k_current_get() unless absolutely sure this is necessary.
+ *       This should only be used directly where the thread local
+ *       variable cannot be used or may contain invalid values
+ *       if thread local storage (TLS) is enabled. If TLS is not
+ *       enabled, this is the same as k_current_get().
  *
  * @return ID of current thread.
  */
 __attribute_const__
-__syscall k_tid_t z_current_get(void);
+__syscall k_tid_t k_sched_current_thread_query(void);
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 /* Thread-local cache of current thread ID, set in z_thread_entry() */
@@ -594,7 +600,7 @@ static inline k_tid_t k_current_get(void)
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	return z_tls_current;
 #else
-	return z_current_get();
+	return k_sched_current_thread_query();
 #endif
 }
 
