@@ -74,8 +74,6 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_get(dev);
-#else
-	pm_device_busy_set(dev);
 #endif
 
 	LL_I2C_Disable(i2c);
@@ -84,8 +82,6 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_put(dev);
-#else
-	pm_device_busy_clear(dev);
 #endif
 
 	k_sem_give(&data->bus_mutex);
