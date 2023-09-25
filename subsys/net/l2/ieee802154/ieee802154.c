@@ -454,12 +454,13 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 #ifdef CONFIG_NET_6LO
 	verdict = ieee802154_6lo_decode_pkt(iface, pkt);
-
-	pkt_hexdump(RX_PKT_TITLE, pkt, true);
-	return verdict;
-#else
-	return NET_CONTINUE;
 #endif /* CONFIG_NET_6LO */
+
+	if (verdict == NET_CONTINUE) {
+		pkt_hexdump(RX_PKT_TITLE, pkt, true);
+	}
+
+	return verdict;
 
 	/* At this point the call amounts to (part of) an
 	 * MCPS-DATA.indication primitive, see section 8.3.3.
