@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV4_LOG_LEVEL);
 #include <zephyr/net/buf.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
+#include <zephyr/net/icmp.h>
 
 #include "net_private.h"
 #include "icmpv4.h"
@@ -114,23 +116,24 @@ static uint8_t current = TEST_ICMPV4_UNKNOWN;
 static struct in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct net_if *net_iface;
 
-static enum net_verdict handle_reply_msg(struct net_pkt *pkt,
-					 struct net_ipv4_hdr *ip_hdr,
-					 struct net_icmp_hdr *icmp_hdr)
+static int handle_reply_msg(struct net_icmp_ctx *ctx,
+			    struct net_pkt *pkt,
+			    struct net_icmp_ip_hdr *hdr,
+			    struct net_icmp_hdr *icmp_hdr,
+			    void *user_data)
 {
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
+
 	if (net_pkt_get_len(pkt) != sizeof(icmpv4_echo_rep)) {
-		return NET_DROP;
+		return -ENOMSG;
 	}
 
 	net_pkt_unref(pkt);
-	return NET_OK;
+	return 0;
 }
-
-static struct net_icmpv4_handler echo_rep_handler = {
-	.type = NET_ICMPV4_ECHO_REPLY,
-	.code = 0,
-	.handler = handle_reply_msg,
-};
 
 struct net_icmpv4_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -458,9 +461,14 @@ static void icmpv4_send_echo_req(void)
 
 static void icmpv4_send_echo_rep(void)
 {
+	static struct net_icmp_ctx ctx;
 	struct net_pkt *pkt;
+	int ret;
 
-	net_icmpv4_register_handler(&echo_rep_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY,
+				0, handle_reply_msg);
+	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
+		      STRINGIFY(NET_ICMPV4_ECHO_REPLY), ret);
 
 	pkt = prepare_echo_reply(net_iface);
 	if (!pkt) {
@@ -471,7 +479,9 @@ static void icmpv4_send_echo_rep(void)
 		net_pkt_unref(pkt);
 		zassert_true(false, "Failed to send");
 	}
-	net_icmpv4_unregister_handler(&echo_rep_handler);
+
+	ret = net_icmp_cleanup_ctx(&ctx);
+	zassert_equal(ret, 0, "Cannot unregister handler (%d)", ret);
 }
 
 ZTEST(net_icmpv4, test_icmpv4_send_echo_req_opt)
