@@ -38,7 +38,9 @@
  */
 #define PLIC_REG_TRIG_TYPE_OFFSET 0x1080
 
-#define PLIC_EDGE_TRIG_SHIFT  5
+/* PLIC registers are 32-bit memory-mapped */
+#define PLIC_REG_SIZE 32
+#define PLIC_REG_MASK BIT_MASK(LOG2(PLIC_REG_SIZE))
 
 struct plic_regs_t {
 	uint32_t threshold_prio;
@@ -59,11 +61,16 @@ struct plic_config {
 static uint32_t save_irq;
 static const struct device *save_dev;
 
+static inline uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+{
+	return local_irq >> LOG2(PLIC_REG_SIZE);
+}
+
 static inline uint32_t get_plic_enabled_size(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
-	return (config->num_irqs >> 5) + 1;
+	return local_irq_to_reg_offset(config->num_irqs) + 1;
 }
 
 /**
@@ -98,7 +105,7 @@ static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
 	const struct plic_config *config = dev->config;
 	volatile uint32_t *trig = (volatile uint32_t *) config->trig;
 
-	trig += (local_irq >> PLIC_EDGE_TRIG_SHIFT);
+	trig += local_irq_to_reg_offset(local_irq);
 	return *trig & BIT(local_irq);
 }
 
@@ -121,8 +128,8 @@ void riscv_plic_irq_enable(uint32_t irq)
 	uint32_t key;
 
 	key = irq_lock();
-	en += (local_irq >> 5);
-	*en |= (1 << (local_irq & 31));
+	en += local_irq_to_reg_offset(local_irq);
+	WRITE_BIT(*en, local_irq & PLIC_REG_MASK, true);
 	irq_unlock(key);
 }
 
@@ -145,8 +152,8 @@ void riscv_plic_irq_disable(uint32_t irq)
 	uint32_t key;
 
 	key = irq_lock();
-	en += (local_irq >> 5);
-	*en &= ~(1 << (local_irq & 31));
+	en += local_irq_to_reg_offset(local_irq);
+	WRITE_BIT(*en, local_irq & PLIC_REG_MASK, false);
 	irq_unlock(key);
 }
 
@@ -165,8 +172,8 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
 	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	const uint32_t local_irq = irq_from_level_2(irq);
 
-	en += (local_irq >> 5);
-	return !!(*en & (1 << (local_irq & 31)));
+	en += local_irq_to_reg_offset(local_irq);
+	return !!(*en & BIT(local_irq & PLIC_REG_MASK));
 }
 
 /**
