@@ -90,6 +90,16 @@ static void stream_recv_cb(struct bt_bap_stream *stream,
 {
 	static uint32_t recv_cnt;
 
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		printk("ISO receive error\n");
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_LOST) {
+		printk("ISO receive lost\n");
+		return;
+	}
+
 	recv_cnt++;
 	if ((recv_cnt % 1000U) == 0U) {
 		printk("Received %u total ISO packets\n", recv_cnt);
