@@ -171,10 +171,10 @@ References
 .. target-notes::
 
 .. _Nucleo F070RB website:
-   http://www.st.com/en/evaluation-tools/nucleo-f070rb.html
+   https://www.st.com/en/evaluation-tools/nucleo-f070rb.html
 
 .. _STM32F070 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031936.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf

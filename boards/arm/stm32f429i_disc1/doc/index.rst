@@ -196,13 +196,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _STM32F429I-DISC1 website:
-   http://www.st.com/en/evaluation-tools/32f429idiscovery.html
+   https://www.st.com/en/evaluation-tools/32f429idiscovery.html
 
 .. _STM32F429I-DISC1 board User Manual:
-   http://www.st.com/web/en/resource/technical/document/user_manual/DM00097320.pdf
+   https://www.st.com/web/en/resource/technical/document/user_manual/DM00097320.pdf
 
 .. _STM32F429ZI on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f429-439.html
+   https://www.st.com/en/microcontrollers/stm32f429-439.html
 
 .. _STM32F429 Reference Manual:
-   http://www.st.com/content/ccc/resource/technical/document/reference_manual/3d/6d/5a/66/b4/99/40/d4/DM00031020.pdf/files/DM00031020.pdf/jcr:content/translations/en.DM00031020.pdf
+   https://www.st.com/content/ccc/resource/technical/document/reference_manual/3d/6d/5a/66/b4/99/40/d4/DM00031020.pdf/files/DM00031020.pdf/jcr:content/translations/en.DM00031020.pdf

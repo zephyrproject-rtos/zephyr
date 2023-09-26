@@ -97,7 +97,7 @@ References
 .. target-notes::
 
 .. _X-NUCLEO-IKS02A1 website:
-   http://www.st.com/en/ecosystems/x-nucleo-iks02a1.html
+   https://www.st.com/en/ecosystems/x-nucleo-iks02a1.html
 
 .. _X-NUCLEO-IKS02A1 user manual:
    https://www.st.com/resource/en/user_manual/DM00651686.pdf
