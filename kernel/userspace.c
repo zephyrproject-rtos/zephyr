@@ -754,7 +754,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 	return 0;
 }
 
-void z_object_init(const void *obj)
+void k_object_init(const void *obj)
 {
 	struct z_object *ko;
 
@@ -794,7 +794,7 @@ void z_object_uninit(const void *obj)
 {
 	struct z_object *ko;
 
-	/* See comments in z_object_init() */
+	/* See comments in k_object_init() */
 	ko = z_object_find(obj);
 	if (ko == NULL) {
 		return;

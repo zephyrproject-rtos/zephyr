@@ -57,7 +57,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 
 	z_waitq_init(&mutex->wait_q);
 
-	z_object_init(mutex);
+	k_object_init(mutex);
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 	k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
