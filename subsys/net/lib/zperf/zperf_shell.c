@@ -501,6 +501,57 @@ static void tcp_upload_cb(enum zperf_status status,
 	}
 }
 
+static int ping_handler(struct net_icmp_ctx *ctx,
+			struct net_pkt *pkt,
+			struct net_icmp_ip_hdr *ip_hdr,
+			struct net_icmp_hdr *icmp_hdr,
+			void *user_data)
+{
+	struct k_sem *sem_wait = user_data;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(icmp_hdr);
+
+	k_sem_give(sem_wait);
+
+	return 0;
+}
+
+static void send_ping(const struct shell *sh,
+		      struct in6_addr *addr,
+		      int timeout_ms)
+{
+	static struct k_sem sem_wait;
+	struct sockaddr_in6 dest_addr = { 0 };
+	struct net_icmp_ctx ctx;
+	int ret;
+
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
+	if (ret < 0) {
+		shell_fprintf(sh, SHELL_WARNING, "Cannot send ping (%d)\n", ret);
+		return;
+	}
+
+	memcpy(&dest_addr.sin6_addr, addr, sizeof(struct in6_addr));
+
+	k_sem_init(&sem_wait, 0, 1);
+
+	(void)net_icmp_send_echo_request(&ctx,
+					 net_if_get_default(),
+					 (struct sockaddr *)&dest_addr,
+					 NULL, &sem_wait);
+
+	ret = k_sem_take(&sem_wait, K_MSEC(timeout_ms));
+	if (ret == -EAGAIN) {
+		shell_fprintf(sh, SHELL_WARNING, "ping %s timeout\n",
+			      net_sprint_ipv6_addr(addr));
+	}
+
+	(void)net_icmp_cleanup_ctx(&ctx);
+}
+
 static int execute_upload(const struct shell *sh,
 			  const struct zperf_upload_params *param,
 			  bool is_udp, bool async)
@@ -525,10 +576,7 @@ static int execute_upload(const struct shell *sh,
 		 * has been done for the peer. So send ping here, wait
 		 * some time and start the test after that.
 		 */
-		net_icmpv6_send_echo_request(net_if_get_default(),
-					     &ipv6->sin6_addr, 0, 0, 0, -1, NULL, 0);
-
-		k_sleep(K_SECONDS(1));
+		send_ping(sh, &ipv6->sin6_addr, MSEC_PER_SEC);
 	}
 
 	if (is_udp && IS_ENABLED(CONFIG_NET_UDP)) {
