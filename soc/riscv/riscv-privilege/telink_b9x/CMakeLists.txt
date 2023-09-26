@@ -14,6 +14,7 @@ zephyr_sources(
 	soc_irq.S
 	soc.c
 	halt.c
+	sys_heap_alloc_wrap.c
 )
 
 if(CONFIG_SOC_RISCV_TELINK_B92)
@@ -34,3 +35,10 @@ zephyr_compile_options_ifdef(CONFIG_TELINK_B9x_HWDSP -mext-dsp)
 zephyr_compile_options_ifndef(CONFIG_RISCV_GP -mno-relax)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0 init.ld)
 zephyr_linker_sources(RAM_SECTIONS SORT_KEY 0x0 ilm.ld)
+
+# Wrap allocator functions
+zephyr_link_libraries(
+	-Wl,--wrap,sys_heap_alloc
+	-Wl,--wrap,sys_heap_aligned_alloc
+	-Wl,--wrap,sys_heap_aligned_realloc
+)

@@ -86,3 +86,10 @@ config TELINK_B9X_2_WIRE_SPI_ENABLE
 	default n
 	help
 		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_B9X_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	depends on SOC_SERIES_RISCV_TELINK_B9X
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
