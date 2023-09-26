@@ -42,7 +42,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant)
 {
 	set_fault_valid(false);
 
-	z_object_init(random_sem_type);
+	k_object_init(random_sem_type);
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
 			      &kobject_mutex,

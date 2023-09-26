@@ -53,7 +53,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&pipe->poll_events);
 #endif
-	z_object_init(pipe);
+	k_object_init(pipe);
 
 #ifdef CONFIG_OBJ_CORE_PIPE
 	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
