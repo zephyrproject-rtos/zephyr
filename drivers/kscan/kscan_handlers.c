@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/kscan.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_kscan_config(const struct device *dev,
 				      kscan_callback_t callback_isr)

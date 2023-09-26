@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/usb/usb_bc12.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_bc12_set_role(const struct device *dev, enum bc12_role role)
 {

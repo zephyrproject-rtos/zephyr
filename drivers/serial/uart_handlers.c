@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #define UART_SIMPLE(op_) \
 	static inline int z_vrfy_uart_##op_(const struct device *dev) \
