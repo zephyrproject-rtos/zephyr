@@ -44,7 +44,7 @@ from sphinx.domains import Domain, ObjType
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import ExtensionError
 from sphinx.roles import XRefRole
-from sphinx.util import progress_message
+from sphinx.util.display import progress_message
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode
 
