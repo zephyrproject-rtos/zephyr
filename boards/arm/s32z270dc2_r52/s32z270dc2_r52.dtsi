@@ -31,9 +31,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	phy0: ethernet-phy {
+	phy0: ethernet-phy@7 {
 		compatible = "ethernet-phy";
-		address = <0x7>;
+		reg = <0x7>;
 		status = "okay";
 	};
 };
