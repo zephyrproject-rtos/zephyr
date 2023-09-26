@@ -878,8 +878,11 @@ static int usb_irq_init(void)
 
 	usbhw_enable_manual_interrupt(FLD_CTRL_EP_AUTO_CFG | FLD_CTRL_EP_AUTO_DESC |
 				FLD_CTRL_EP_AUTO_FEAT | FLD_CTRL_EP_AUTO_STD);
-	core_interrupt_enable();
+	usbhw_set_eps_irq_mask(FLD_USB_EDP5_IRQ | FLD_USB_EDP6_IRQ);
+
+#if CONFIG_SOC_RISCV_TELINK_B91
 	usbhw_set_irq_mask(USB_IRQ_RESET_MASK | USB_IRQ_SUSPEND_MASK);
+#endif
 	usbhw_clr_irq_status(USB_IRQ_RESET_STATUS);
 
 	return 0;
@@ -906,12 +909,7 @@ int usb_dc_attach(void)
 	k_mutex_init(&ctx->drv_lock);
 
 	for (i = USBD_IN_EP1_IDX; i <= USBD_EP_IN_OUT_CNT; i++) {
-
-#if CONFIG_SOC_RISCV_TELINK_B91
-		usbhw_set_ep_en(ep_en_bit[i], 0);
-#elif CONFIG_SOC_RISCV_TELINK_B92
 		usbhw_set_eps_dis(ep_en_bit[i]);
-#endif
 		ep_ctx_reset(i);
 	}
 
@@ -1268,11 +1266,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	if (dev_ready()) {
 		ep_ctx->cfg.stall = false;
-#if CONFIG_SOC_RISCV_TELINK_B91
-		usbhw_set_ep_en(ep_en_bit[USB_EP_GET_IDX(ep)], 1);
-#elif CONFIG_SOC_RISCV_TELINK_B92
 		usbhw_set_eps_en(ep_en_bit[USB_EP_GET_IDX(ep)]);
-#endif
 	}
 	if ((ep_ctx->cfg.type == USB_DC_EP_BULK) && USB_EP_DIR_IS_OUT(ep_ctx->cfg.addr)) {
 		usbhw_data_ep_ack(USB_EP_GET_IDX(ep));
@@ -1310,11 +1304,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	}
 
 	LOG_DBG("EP disable: 0x%02x", ep);
-#if CONFIG_SOC_RISCV_TELINK_B91
-	usbhw_set_ep_en(ep_en_bit[USB_EP_GET_IDX(ep)], 0);
-#elif CONFIG_SOC_RISCV_TELINK_B92
 	usbhw_set_eps_dis(ep_en_bit[USB_EP_GET_IDX(ep)]);
-#endif
 	ep_ctx_reset(USB_EP_GET_IDX(ep));
 	ep_ctx->cfg.stall = true;
 	ep_ctx->cfg.en = false;
