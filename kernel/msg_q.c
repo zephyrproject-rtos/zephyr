@@ -59,7 +59,7 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 
 	SYS_PORT_TRACING_OBJ_INIT(k_msgq, msgq);
 
-	z_object_init(msgq);
+	k_object_init(msgq);
 }
 
 int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,

@@ -591,8 +591,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
 		 "user thread %p with kernel-only stack %p",
 		 new_thread, stack);
-	z_object_init(new_thread);
-	z_object_init(stack);
+	k_object_init(new_thread);
+	k_object_init(stack);
 	new_thread->stack_obj = stack;
 	new_thread->syscall_frame = NULL;
 

@@ -21,7 +21,7 @@
 void z_device_state_init(void)
 {
 	STRUCT_SECTION_FOREACH(device, dev) {
-		z_object_init(dev);
+		k_object_init(dev);
 	}
 }
 
