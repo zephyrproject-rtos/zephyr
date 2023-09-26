@@ -979,13 +979,13 @@ static void test_rx_secure_beacon_interval(void)
 static bool private_beacon_check(const uint8_t *net_id, void *ctx)
 {
 	bool ret;
-	bool same_random = (bool *)ctx;
+	bool same_random = *(bool *)ctx;
 
-	if (memcmp(beacon.adv_addr.a.val, &last_beacon_adv_addr, BT_ADDR_SIZE) == 0) {
+	if (memcmp(beacon.adv_addr.a.val, last_beacon_adv_addr.a.val, BT_ADDR_SIZE) == 0) {
 		return false;
 	}
 
-	memcpy(&last_beacon_adv_addr, beacon.adv_addr.a.val, BT_ADDR_SIZE);
+	memcpy(&last_beacon_adv_addr.a.val, beacon.adv_addr.a.val, BT_ADDR_SIZE);
 
 	if (same_random) {
 		ret = memcmp(beacon.random, last_random, 13) == 0;
@@ -1322,6 +1322,7 @@ static void test_tx_priv_interleave(void)
 static void test_rx_priv_interleave(void)
 {
 	int err;
+	bool same_random = false;
 
 	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
 	bt_mesh_crypto_init();
@@ -1341,10 +1342,10 @@ static void test_rx_priv_interleave(void)
 	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
 
 	expected_beacon = BEACON_TYPE_PRIVATE;
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(private_beacon_check, &same_random));
 
 	/* IVU was started here */
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(private_beacon_check, &same_random));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -1364,7 +1365,7 @@ static void test_rx_priv_interleave(void)
 
 	err = bt_mesh_private_beacon_key(net_key_new, &priv_beacon_key);
 
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(private_beacon_check, &same_random));
 	ASSERT_EQUAL(0x03, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
