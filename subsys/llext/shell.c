@@ -117,8 +117,9 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 		hex_len, CONFIG_LLEXT_SHELL_MAX_SIZE, llext_buf_len);
 	LOG_HEXDUMP_DBG(llext_buf, 4, "4 byte MAGIC");
 
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext;
-	int res = llext_load(ldr, name, &ext);
+	int res = llext_load(ldr, name, &ext, &ldr_parm);
 
 	if (res == 0) {
 		shell_print(sh, "Successfully loaded extension %s, addr %p\n", ext->name, ext);
