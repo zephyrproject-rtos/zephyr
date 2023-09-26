@@ -94,6 +94,14 @@
 		}                                                              \
 	} while (0)
 
+#define ASSERT_IN_RANGE(got, min, max)                                                             \
+	do {                                                                                       \
+		if (!IN_RANGE(got, min, max)) {                                            \
+			bst_result = Failed;                                                       \
+			bs_trace_error_time_line(#got " not in range %d <-> %d, " #got " = %d\n",  \
+						 (min), (max), (got));                             \
+		}                                                                                  \
+	} while (0)
 
 struct bt_mesh_test_cfg {
 	uint16_t addr;
