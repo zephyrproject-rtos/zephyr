@@ -10,9 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/sys_heap.h>
 
-#define HEAP_BYTES (CONFIG_LV_Z_MEM_POOL_MAX_SIZE * CONFIG_LV_Z_MEM_POOL_NUMBER_BLOCKS)
-
-static char lvgl_heap_mem[HEAP_BYTES] __aligned(8);
+static char lvgl_heap_mem[CONFIG_LV_Z_MEM_POOL_SIZE] __aligned(8);
 static struct sys_heap lvgl_heap;
 static struct k_spinlock lvgl_heap_lock;
 
@@ -60,5 +58,5 @@ void lvgl_print_heap_info(bool dump_chunks)
 
 void lvgl_heap_init(void)
 {
-	sys_heap_init(&lvgl_heap, &lvgl_heap_mem[0], HEAP_BYTES);
+	sys_heap_init(&lvgl_heap, &lvgl_heap_mem[0], CONFIG_LV_Z_MEM_POOL_SIZE);
 }

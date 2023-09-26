@@ -31,27 +31,12 @@ choice LV_Z_MEMORY_POOL
 
 endchoice
 
-if LV_Z_MEM_POOL_SYS_HEAP
-
-config LV_Z_MEM_POOL_MIN_SIZE
-	int "Minimum memory pool block size"
-	default 16
-	help
-	  Size of the smallest block in the memory pool in bytes
-
-config LV_Z_MEM_POOL_MAX_SIZE
-	int "Maximum memory pool block size"
+config LV_Z_MEM_POOL_SIZE
+	int "Memory pool size"
 	default 2048
+	depends on LV_Z_MEM_POOL_SYS_HEAP
 	help
-	  Size of the largest block in the memory pool in bytes
-
-config LV_Z_MEM_POOL_NUMBER_BLOCKS
-	int "Number of max size blocks in memory pool"
-	default 1
-	help
-	  Number of maximum sized blocks in the memory pool.
-
-endif
+	  Size of the memory pool in bytes
 
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
