@@ -254,8 +254,7 @@ static void prov_capabilities(const uint8_t *data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
-		(caps.oob_type & BT_MESH_OOB_AUTH_REQUIRED)) {
+	if (caps.oob_type & BT_MESH_OOB_AUTH_REQUIRED) {
 
 		bool oob_availability = caps.output_size > 0 || caps.input_size > 0 ||
 			(caps.oob_type & BT_MESH_STATIC_OOB_AVAILABLE);
@@ -752,18 +751,18 @@ int bt_mesh_auth_method_set_output(bt_mesh_output_action_t action, uint8_t size)
 
 int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size)
 {
-	uint8_t auth_size = bt_mesh_prov_auth_size_get();
+	uint8_t tail_size = size < PROV_AUTH_MAX_LEN ? PROV_AUTH_MAX_LEN - size : 0;
 
-	if (!size || !static_val || size > auth_size) {
+	if (!size || !static_val) {
 		return -EINVAL;
 	}
 
 	prov_set_method(AUTH_METHOD_STATIC, 0, 0);
 
-	memcpy(bt_mesh_prov_link.auth + auth_size - size, static_val, size);
-	if (size < auth_size) {
-		(void)memset(bt_mesh_prov_link.auth, 0, auth_size - size);
-	}
+	memcpy(bt_mesh_prov_link.auth + tail_size, static_val,
+	       tail_size ? size : PROV_AUTH_MAX_LEN);
+	memset(bt_mesh_prov_link.auth, 0, tail_size);
+
 	return 0;
 }
 
