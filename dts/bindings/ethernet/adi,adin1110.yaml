@@ -20,7 +20,7 @@ description: |
                   status = "okay";
                   #address-cells = <1>;
                   #size-cells = <0>;
-                  phy@1 {
+                  ethernet-phy@1 {
                     reg = <0x1>;
                     compatible = "adi,adin2111-phy";
                     status = "okay";
