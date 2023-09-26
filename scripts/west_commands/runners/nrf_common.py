@@ -28,7 +28,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 tool_opt=[], force=False, recover=False):
+                 reset=True, tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         if family and not family.endswith('_FAMILY'):
@@ -37,6 +37,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.softreset = softreset
         self.dev_id = dev_id
         self.erase = bool(erase)
+        self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
 
@@ -47,7 +48,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash'}, dev_id=True, erase=True,
-                          tool_opt=True)
+                          reset=True, tool_opt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -74,6 +75,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             help='''erase all user available non-volatile
                             memory and disable read back protection before
                             flashing (erases flash for both cores on nRF53)''')
+
+        parser.set_defaults(reset=True)
 
     def ensure_snr(self):
         if not self.dev_id or "*" in self.dev_id:
@@ -398,7 +401,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.recover:
             self.recover_target()
         self.program_hex()
-        self.reset_target()
+        if self.reset:
+            self.reset_target()
         # All done, now flush any outstanding ops
         self.flush(force=True)
 
