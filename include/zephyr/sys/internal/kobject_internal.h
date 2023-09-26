@@ -106,7 +106,7 @@ static inline void z_object_init(const void *obj)
  * @return A pointer to the associated z_object that is installed in the
  *	kernel object tables
  */
-struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size);
+struct z_object *k_object_create_dynamic_aligned(size_t align, size_t size);
 
 /**
  * Allocate memory and install as a generic kernel object
@@ -129,13 +129,13 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size);
  */
 static inline struct z_object *k_object_create_dynamic(size_t size)
 {
-	return z_dynamic_object_aligned_create(0, size);
+	return k_object_create_dynamic_aligned(0, size);
 }
 
 #else
 
 /* LCOV_EXCL_START */
-static inline struct z_object *z_dynamic_object_aligned_create(size_t align,
+static inline struct z_object *k_object_create_dynamic_aligned(size_t align,
 							       size_t size)
 {
 	ARG_UNUSED(align);
