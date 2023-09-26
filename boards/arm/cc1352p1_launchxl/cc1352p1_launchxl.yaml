@@ -13,4 +13,5 @@ supported:
   - i2c
   - spi
   - watchdog
+  - hwinfo
 vendor: ti

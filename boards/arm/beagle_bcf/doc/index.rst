@@ -54,6 +54,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| HWINFO    | on-chip    | hwinfo               |
++-----------+------------+----------------------+
 | I2C       | off-chip   | OPT3001              |
 +-----------+------------+----------------------+
 | I2C       | off-chip   | HDC2010              |
