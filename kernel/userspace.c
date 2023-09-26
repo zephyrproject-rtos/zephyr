@@ -373,7 +373,7 @@ static struct z_object *dynamic_object_create(enum k_objects otype, size_t align
 	return &dyn->kobj;
 }
 
-struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
+struct z_object *k_object_create_dynamic_aligned(size_t align, size_t size)
 {
 	struct z_object *obj = dynamic_object_create(K_OBJ_ANY, align, size);
 
