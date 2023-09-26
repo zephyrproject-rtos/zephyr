@@ -22,10 +22,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <lwm2m_util.h>
 
 #define LWM2M_HELP_CMD "LwM2M commands"
-#define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \
-	"Root-level operation is unsupported"
-#define LWM2M_HELP_EXEC "Execute a resource\nexec PATH [PARAM]\n"
-#define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
+#define LWM2M_HELP_SEND "send PATHS\nLwM2M SEND operation\n"
+#define LWM2M_HELP_EXEC "exec PATH [PARAM]\nExecute a resource\n"
+#define LWM2M_HELP_READ "read PATH [OPTIONS]\nRead value from LwM2M resource\n" \
 	"-x \tRead value as hex stream (default)\n" \
 	"-s \tRead value as string\n" \
 	"-b \tRead value as bool (1/0)\n" \
@@ -33,26 +32,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"-sX\tRead value as intX_t\n" \
 	"-f \tRead value as float\n" \
 	"-t \tRead value as time_t\n"
-#define LWM2M_HELP_WRITE "Write into LwM2M resource\nwrite PATH [OPTIONS] VALUE\n" \
+#define LWM2M_HELP_WRITE "write PATH [OPTIONS] VALUE\nWrite into LwM2M resource\n" \
 	"-s \tWrite value as string (default)\n" \
 	"-b \tWrite value as bool\n" \
 	"-uX\tWrite value as uintX_t\n" \
 	"-sX\tWrite value as intX_t\n" \
 	"-f \tWrite value as float\n" \
 	"-t \tWrite value as time_t\n"
-#define LWM2M_HELP_CREATE "Create object instance\ncreate PATH\n"
-#define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
-	"start EP_NAME [BOOTSTRAP FLAG]\n" \
+#define LWM2M_HELP_CREATE "create PATH\nCreate object instance\n"
+#define LWM2M_HELP_START "start EP_NAME [BOOTSTRAP FLAG]\n" \
+	"Start the LwM2M RD (Registration / Discovery) Client\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
-#define LWM2M_HELP_STOP "Stop the LwM2M RD (De-register) Client\nstop [OPTIONS]\n" \
+#define LWM2M_HELP_STOP "stop [OPTIONS]\nStop the LwM2M RD (De-register) Client\n" \
 	"-f \tForce close the connection\n"
 #define LWM2M_HELP_UPDATE "Trigger Registration Update of the LwM2M RD Client\n"
 #define LWM2M_HELP_PAUSE "LwM2M engine thread pause"
 #define LWM2M_HELP_RESUME "LwM2M engine thread resume"
 #define LWM2M_HELP_LOCK "Lock the LwM2M registry"
 #define LWM2M_HELP_UNLOCK "Unlock the LwM2M registry"
-#define LWM2M_HELP_CACHE "Enable data cache for resource\n" \
-	"cache PATH NUM\n" \
+#define LWM2M_HELP_CACHE "cache PATH NUM\nEnable data cache for resource\n" \
 	"PATH is LwM2M path\n" \
 	"NUM how many elements to cache\n" \
 
@@ -597,6 +595,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(read, NULL, LWM2M_HELP_READ, cmd_read, 2, 1),
 	SHELL_CMD_ARG(write, NULL, LWM2M_HELP_WRITE, cmd_write, 3, 1),
 	SHELL_CMD_ARG(create, NULL, LWM2M_HELP_CREATE, cmd_create, 2, 0),
+	SHELL_CMD_ARG(cache, NULL, LWM2M_HELP_CACHE, cmd_cache, 3, 0),
 	SHELL_CMD_ARG(start, NULL, LWM2M_HELP_START, cmd_start, 2, 2),
 	SHELL_CMD_ARG(stop, NULL, LWM2M_HELP_STOP, cmd_stop, 1, 1),
 	SHELL_CMD_ARG(update, NULL, LWM2M_HELP_UPDATE, cmd_update, 1, 0),
@@ -604,7 +603,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
 	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
 	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
-	SHELL_CMD_ARG(cache, NULL, LWM2M_HELP_CACHE, cmd_cache, 3, 0),
 
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
