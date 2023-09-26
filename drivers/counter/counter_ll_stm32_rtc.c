@@ -205,9 +205,9 @@ static int rtc_stm32_stop(const struct device *dev)
 	return 0;
 }
 
+#if !defined(COUNTER_NO_DATE)
 tick_t rtc_stm32_read(const struct device *dev)
 {
-#if !defined(COUNTER_NO_DATE)
 	struct tm now = { 0 };
 	time_t ts;
 	uint32_t rtc_date, rtc_time;
@@ -215,15 +215,11 @@ tick_t rtc_stm32_read(const struct device *dev)
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	uint32_t rtc_subseconds;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-#else
-	uint32_t rtc_time, ticks;
-#endif
 	ARG_UNUSED(dev);
 
 	/* Read time and date registers. Make sure value of the previous register
 	 * hasn't been changed while reading the next one.
 	 */
-#if !defined(COUNTER_NO_DATE)
 	do {
 		rtc_date = LL_RTC_DATE_Get(RTC);
 
@@ -237,11 +233,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 #endif
 
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
-#else
-	rtc_time = LL_RTC_TIME_Get(RTC);
-#endif
 
-#if !defined(COUNTER_NO_DATE)
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time: 1st, Jan, 2000 */
 	/* time_t start:   1st, Jan, 1970 */
@@ -271,12 +263,22 @@ tick_t rtc_stm32_read(const struct device *dev)
 	ticks += RTC_SYNCPRE - rtc_subseconds;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
-#else
+	return ticks;
+}
+#else /* defined(COUNTER_NO_DATE) */
+tick_t rtc_stm32_read(const struct device *dev)
+{
+	uint32_t rtc_time, ticks;
+
+	ARG_UNUSED(dev);
+
+	rtc_time = LL_RTC_TIME_Get(RTC);
+
 	ticks = rtc_time;
-#endif
 
 	return ticks;
 }
+#endif /* !defined(COUNTER_NO_DATE) */
 
 static int rtc_stm32_get_value(const struct device *dev, uint32_t *ticks)
 {
