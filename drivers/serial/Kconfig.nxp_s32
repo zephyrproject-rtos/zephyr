@@ -7,7 +7,7 @@ config UART_NXP_S32_LINFLEXD
 	depends on DT_HAS_NXP_S32_LINFLEXD_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select NOCACHE_MEMORY
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable the LINFlexD UART driver for NXP S32 family processors.
 
