@@ -7,7 +7,7 @@ Overview
 ********
 
 The TLSR9518A Generic Starter Kit is a hardware platform which
-can be used to verify the `Telink TLSR9 series chipset`_ and develop applications
+can be used to verify the `Telink TLSR951x series chipset`_ and develop applications
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
@@ -259,7 +259,7 @@ References
 
 .. target-notes::
 
-.. _Telink TLSR9 series chipset: http://wiki.telink-semi.cn/wiki/chip-series/TLSR9-Series/
+.. _Telink TLSR951x series chipset: http://wiki.telink-semi.cn/wiki/chip-series/TLSR951x-Series/
 .. _Telink B91 Generic Starter Kit Hardware Guide: http://wiki.telink-semi.cn/wiki/Hardware/B91_Generic_Starter_Kit_Hardware_Guide/
 .. _Telink RISC-V Linux Toolchain: http://wiki.telink-semi.cn/tools_and_sdk/Tools/IDE/telink_riscv_linux_toolchain.zip
 .. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
