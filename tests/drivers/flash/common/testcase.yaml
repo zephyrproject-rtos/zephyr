@@ -41,6 +41,7 @@ tests:
       - it8xxx2_evb
       - mimxrt685_evk_cm33
       - mimxrt595_evk_cm33
+      - nrf52_bsim
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
