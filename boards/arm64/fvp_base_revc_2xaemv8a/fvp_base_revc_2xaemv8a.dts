@@ -147,7 +147,7 @@
 				compatible = "smsc,lan91c111-mdio";
 				status = "disabled";
 
-				phy: phy {
+				phy: ethernet-phy {
 					compatible = "ethernet-phy";
 					status = "disabled";
 					address = <0>;
