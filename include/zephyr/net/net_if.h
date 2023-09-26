@@ -844,6 +844,15 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 }
 
 /**
+ * @brief Return offload status of a given network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return True if IP or socket offloading is active, false otherwise.
+ */
+bool net_if_is_offloaded(struct net_if *iface);
+
+/**
  * @brief Return the IP offload plugin
  *
  * @param iface Network interface
