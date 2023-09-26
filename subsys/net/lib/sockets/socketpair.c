@@ -228,7 +228,7 @@ static struct spair *spair_new(void)
 	}
 
 #elif CONFIG_USERSPACE
-	struct z_object *zo = k_object_create_dynamic(sizeof(*spair));
+	struct k_object *zo = k_object_create_dynamic(sizeof(*spair));
 
 	if (zo == NULL) {
 		spair = NULL;
