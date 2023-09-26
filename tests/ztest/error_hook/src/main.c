@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/irq_offload.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_error_hook.h>

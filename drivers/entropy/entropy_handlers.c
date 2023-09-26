@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_entropy_get_entropy(const struct device *dev,
 					     uint8_t *buffer,

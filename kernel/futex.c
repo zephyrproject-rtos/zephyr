@@ -8,7 +8,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 #include <ksched.h>
 

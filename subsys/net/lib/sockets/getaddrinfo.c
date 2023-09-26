@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #if defined(CONFIG_DNS_RESOLVER) || defined(CONFIG_NET_IP)
 #define ANY_RESOLVER

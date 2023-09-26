@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/dac.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/kernel.h>
 
 static inline int z_vrfy_dac_channel_setup(const struct device *dev,

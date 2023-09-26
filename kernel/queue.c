@@ -18,7 +18,7 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 

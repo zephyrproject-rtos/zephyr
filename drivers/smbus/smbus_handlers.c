@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/sys/slist.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/smbus.h>
 
 static inline int z_vrfy_smbus_configure(const struct device *dev,

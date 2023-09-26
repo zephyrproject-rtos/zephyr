@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/i3c.h>
 #include <string.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 				    struct i3c_ccc_payload *payload)

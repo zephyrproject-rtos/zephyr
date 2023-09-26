@@ -12,7 +12,7 @@
 #include <mmu.h>
 #include <zephyr/init.h>
 #include <kernel_internal.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/bitarray.h>

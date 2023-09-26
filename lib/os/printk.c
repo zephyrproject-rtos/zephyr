@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/llext/symbol.h>

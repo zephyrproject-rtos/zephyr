@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <stdbool.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 /**
  * Verify each SQE type operation and its fields ensuring

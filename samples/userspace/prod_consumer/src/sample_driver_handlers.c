@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "sample_driver.h"
 
 int z_vrfy_sample_driver_state_set(const struct device *dev, bool active)

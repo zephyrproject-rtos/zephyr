@@ -13,7 +13,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <ksched.h>
 #include <zephyr/syscall.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stdbool.h>

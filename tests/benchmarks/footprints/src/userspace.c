@@ -11,7 +11,7 @@
  */
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
 #include "footprint.h"

@@ -21,7 +21,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 

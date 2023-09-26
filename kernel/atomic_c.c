@@ -37,7 +37,7 @@ static struct k_spinlock lock;
  * forbidden.
  */
 #ifdef CONFIG_USERSPACE
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #define ATOMIC_SYSCALL_HANDLER_TARGET(name) \
 	static inline atomic_val_t z_vrfy_##name(atomic_t *target) \

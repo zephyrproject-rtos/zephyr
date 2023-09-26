@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/espi.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 
 static inline int z_vrfy_espi_config(const struct device *dev,

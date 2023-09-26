@@ -25,7 +25,7 @@
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
 

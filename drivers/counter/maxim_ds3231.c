@@ -1300,7 +1300,7 @@ DEVICE_DT_INST_DEFINE(0, ds3231_init, NULL, &ds3231_0_data,
 
 #ifdef CONFIG_USERSPACE
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 				      struct maxim_ds3231_syncpoint *syncpoint)

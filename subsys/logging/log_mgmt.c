@@ -5,7 +5,7 @@
  */
 #include <zephyr/logging/log_internal.h>
 #include <zephyr/logging/log_ctrl.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_link.h>

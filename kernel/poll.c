@@ -20,7 +20,7 @@
 #include <kernel_internal.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>

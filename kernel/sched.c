@@ -10,7 +10,7 @@
 #include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <stdbool.h>
 #include <kernel_internal.h>

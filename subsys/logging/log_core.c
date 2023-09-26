@@ -18,7 +18,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <ctype.h>
 #include <zephyr/logging/log_frontend.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>

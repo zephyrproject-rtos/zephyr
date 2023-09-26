@@ -5,8 +5,7 @@
  */
 
 #include <zephyr/random/random.h>
-#include <zephyr/syscall_handler.h>
-
+#include <zephyr/internal/syscall_handler.h>
 
 static inline uint32_t z_vrfy_sys_rand32_get(void)
 {

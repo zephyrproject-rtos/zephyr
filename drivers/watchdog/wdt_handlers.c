@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/watchdog.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_wdt_setup(const struct device *dev, uint8_t options)
 {

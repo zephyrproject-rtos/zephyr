@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/retained_mem.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline ssize_t z_vrfy_retained_mem_size(const struct device *dev)
 {

@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/mem_manage.h>
 

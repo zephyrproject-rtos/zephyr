@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/random/random.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/net/igmp.h>

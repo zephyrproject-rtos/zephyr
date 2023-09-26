@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/dma.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 /* Both of these APIs are assuming that the drive implementations are checking
  * the validity of the channel ID and returning -errno if it's bogus

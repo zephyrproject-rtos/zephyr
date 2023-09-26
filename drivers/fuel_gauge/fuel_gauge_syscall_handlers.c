@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/fuel_gauge.h>
 
 static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,

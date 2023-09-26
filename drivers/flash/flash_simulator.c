@@ -481,7 +481,7 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 
 #ifdef CONFIG_USERSPACE
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)
