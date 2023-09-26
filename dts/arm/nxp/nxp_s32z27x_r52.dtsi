@@ -637,6 +637,8 @@
 				compatible = "nxp,s32-netc-emdio";
 				reg = <0x74b60000 0x1c44>;
 				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			enetc_psi0: ethernet@74b00000 {
