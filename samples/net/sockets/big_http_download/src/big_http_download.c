@@ -274,9 +274,12 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	if (is_tls) {
-		sec_tag_t sec_tag_opt[] = {
-			CA_CERTIFICATE_TAG,
+		sec_tag_t sec_tag_opt[ARRAY_SIZE(ca_certificates)];
+
+		for (int i = 0; i < ARRAY_SIZE(ca_certificates); i++) {
+			sec_tag_opt[i] = CA_CERTIFICATE_TAG + i;
 		};
+
 		CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
 				 sec_tag_opt, sizeof(sec_tag_opt)));
 
@@ -369,8 +372,12 @@ int main(void)
 	bool redirect = false;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
-			   ca_certificate, sizeof(ca_certificate));
+	for (int i = 0; i < ARRAY_SIZE(ca_certificates); i++) {
+		tls_credential_add(CA_CERTIFICATE_TAG + i,
+				   TLS_CREDENTIAL_CA_CERTIFICATE,
+				   ca_certificates[i],
+				   strlen(ca_certificates[i]) + 1);
+	}
 #endif
 
 	setbuf(stdout, NULL);
