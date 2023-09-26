@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_SOC_ARM64_TI_K3_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM64_TI_K3_PINCTRL_SOC_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
