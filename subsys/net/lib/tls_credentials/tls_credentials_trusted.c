@@ -12,6 +12,7 @@
 #include <psa/protected_storage.h>
 
 #include "tls_internal.h"
+#include "tls_credentials_digest_raw.h"
 
 LOG_MODULE_REGISTER(tls_credentials_trusted,
 		    CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
@@ -260,6 +261,11 @@ struct tls_credential *credential_next_get(sec_tag_t tag,
 	}
 
 	return NULL;
+}
+
+int credential_digest(struct tls_credential *credential, void *dest, size_t *len)
+{
+	return credential_digest_raw(credential, dest, len);
 }
 
 void credentials_lock(void)
