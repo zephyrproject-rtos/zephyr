@@ -192,6 +192,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-net.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
+  #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
@@ -362,8 +363,6 @@ SECTIONS
     *(.noinit.*)
     . = ALIGN(8);
   } GROUP_LINK_IN(RAMABLE_REGION)
-
-#include <snippets-sections.ld>
 
   .dram0.data :
   {
