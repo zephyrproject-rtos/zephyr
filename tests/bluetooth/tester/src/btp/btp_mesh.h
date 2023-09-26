@@ -30,9 +30,15 @@ struct btp_mesh_read_supported_commands_rp {
 
 #define BTP_MESH_CONFIG_PROVISIONING		0x02
 
+#if IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)
+#define BTP_MESH_PROV_AUTH_MAX_LEN   32
+#else
+#define BTP_MESH_PROV_AUTH_MAX_LEN   16
+#endif
+
 struct btp_mesh_config_provisioning_cmd {
 	uint8_t uuid[16];
-	uint8_t static_auth[16];
+	uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
 	uint8_t out_size;
 	uint16_t out_actions;
 	uint8_t in_size;
@@ -41,7 +47,7 @@ struct btp_mesh_config_provisioning_cmd {
 } __packed;
 struct btp_mesh_config_provisioning_cmd_v2 {
 	uint8_t uuid[16];
-	uint8_t static_auth[16];
+	uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
 	uint8_t out_size;
 	uint16_t out_actions;
 	uint8_t in_size;
