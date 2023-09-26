@@ -47,7 +47,18 @@ static struct k_sem sem_lock;
 #endif
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
-#define FLASH_SLOT_WRITE 5000
+
+#if (WRITE_BUFFER_SIZE < 2)
+#define FLASH_SLOT_WRITE 500
+#elif (WRITE_BUFFER_SIZE < 4)
+#define FLASH_SLOT_WRITE 1000
+#elif (WRITE_BUFFER_SIZE < 9)
+#define FLASH_SLOT_WRITE 2000
+#elif (WRITE_BUFFER_SIZE < 17)
+#define FLASH_SLOT_WRITE 4000
+#else
+#define FLASH_SLOT_WRITE 8000 /* longest write takes 7107 us */
+#endif
 
 #if WRITE_BUFFER_ENABLE
 #define RRAM_MAX_WRITE_BUFFER (WRITE_BUFFER_SIZE * WRITE_LINE_SIZE)
