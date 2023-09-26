@@ -1551,7 +1551,6 @@ class Node:
             # Allow a few special properties to not be declared in the binding
             if prop_name.endswith("-controller") or \
                prop_name.startswith("#") or \
-               prop_name.startswith("pinctrl-") or \
                prop_name in {
                    "compatible", "status", "ranges", "phandle",
                    "interrupt-parent", "interrupts-extended", "device_type"}:
