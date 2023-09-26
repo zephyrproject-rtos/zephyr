@@ -179,7 +179,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 
 .. _STM32F072VB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f072vb.html
+   https://www.st.com/en/microcontrollers/stm32f072vb.html
 
 .. _STM32F072 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031936.pdf

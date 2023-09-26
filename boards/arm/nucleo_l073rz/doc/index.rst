@@ -181,10 +181,10 @@ References
 .. target-notes::
 
 .. _Nucleo L073RZ website:
-   http://www.st.com/en/evaluation-tools/nucleo-l073rz.html
+   https://www.st.com/en/evaluation-tools/nucleo-l073rz.html
 
 .. _STM32L0x3 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00095744.pdf
+   https://www.st.com/resource/en/reference_manual/dm00095744.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf

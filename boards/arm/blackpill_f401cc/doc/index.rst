@@ -168,7 +168,7 @@ References
    http://dfu-util.sourceforge.net/build.html
 
 .. _STM32F401CC website:
-   http://www.st.com/en/microcontrollers/stm32f401cc.html
+   https://www.st.com/en/microcontrollers/stm32f401cc.html
 
 .. _STM32F401x reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00096844.pdf
+   https://www.st.com/resource/en/reference_manual/dm00096844.pdf

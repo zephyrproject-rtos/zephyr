@@ -204,4 +204,4 @@ References
    https://www.st.com/resource/en/user_manual/um2403-evaluation-board-with-stm32g081rb-mcu-stmicroelectronics.pdf
 
 .. _G081RB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32g081rb.html
+   https://www.st.com/en/microcontrollers/stm32g081rb.html

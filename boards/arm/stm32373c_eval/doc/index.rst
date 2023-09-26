@@ -153,7 +153,7 @@ References
 .. target-notes::
 
 .. _STM32373C-EVAL website:
-   http://www.st.com/en/evaluation-tools/stm32373c-eval.html
+   https://www.st.com/en/evaluation-tools/stm32373c-eval.html
 
 .. _STM32F373VCT6 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00041563.pdf
+   https://www.st.com/resource/en/reference_manual/dm00041563.pdf

@@ -458,7 +458,7 @@ serial adapter is required. This tutorial uses the
    https://www.olimex.com/Products/Duino/STM32/OLIMEXINO-STM32/resources/OLIMEXINO-STM32.pdf
 
 .. _ST STM32F103xB Datasheet:
-   http://www.st.com/resource/en/datasheet/stm32f103tb.pdf
+   https://www.st.com/resource/en/datasheet/stm32f103tb.pdf
 
 .. _stm32flash tool:
    https://sourceforge.net/p/stm32flash/wiki/Home/

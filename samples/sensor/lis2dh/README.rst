@@ -20,7 +20,7 @@ References
 **********
 
 For more information about the LIS2DH motion sensor see
-http://www.st.com/en/mems-and-sensors/lis2dh.html.
+https://www.st.com/en/mems-and-sensors/lis2dh.html.
 
 Building and Running
 ********************

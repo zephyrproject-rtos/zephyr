@@ -159,7 +159,7 @@ References
 .. target-notes::
 
 .. _STM3210C-EVAL website:
-   http://www.st.com/en/evaluation-tools/stm3210c-eval.html
+   https://www.st.com/en/evaluation-tools/stm3210c-eval.html
 
 .. _STM32F107VCT reference manual:
-   http://www.st.com/resource/en/reference_manual/CD00171190.pdf
+   https://www.st.com/resource/en/reference_manual/CD00171190.pdf
