@@ -54,4 +54,6 @@ config TLS_CREDENTIAL_FILENAMES
 	  This option is currently only available for secure
 	  socket offload devices.
 
+source "subsys/net/lib/tls_credentials/Kconfig.shell"
+
 endif # TLS_CREDENTIALS
