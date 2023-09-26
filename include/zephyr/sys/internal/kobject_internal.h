@@ -74,11 +74,11 @@ struct z_object_assignment {
  *
  * @param obj Address of the kernel object
  */
-void z_object_init(const void *obj);
+void k_object_init(const void *obj);
 
 
 #else
-static inline void z_object_init(const void *obj)
+static inline void k_object_init(const void *obj)
 {
 	ARG_UNUSED(obj);
 }
