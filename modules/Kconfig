@@ -108,6 +108,12 @@ comment "Segger module not available."
 comment "LVGL module not available."
 	depends on !ZEPHYR_LVGL_MODULE
 
+comment "cmsis-dsp module not available."
+	depends on !ZEPHYR_CMSIS_DSP_MODULE
+
+comment "cmsis-nn module not available."
+	depends on !ZEPHYR_CMSIS_NN_MODULE
+
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
 # modules are not present in the workspace
