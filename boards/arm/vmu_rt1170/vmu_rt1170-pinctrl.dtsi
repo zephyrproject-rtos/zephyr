@@ -9,24 +9,6 @@
 #include <nxp/nxp_imx/rt/mimxrt1176dvmaa-pinctrl.dtsi>
 
 &pinctrl {
-
-
-	pinmux_regulator: pinmux_regulator {
-		group0	{
-			pinmux = <&iomuxc_gpio_emc_b1_34_gpio_mux2_io02>,
-				<&iomuxc_gpio_emc_b1_37_gpio_mux2_io05>,
-				<&iomuxc_gpio_emc_b1_33_gpio_mux2_io01>,
-				<&iomuxc_gpio_emc_b1_22_gpio_mux1_io22>,
-				<&iomuxc_gpio_emc_b1_14_gpio_mux1_io14>,
-				<&iomuxc_gpio_emc_b1_36_gpio_mux2_io04>,
-				<&iomuxc_gpio_emc_b1_38_gpio_mux2_io06>,
-				<&iomuxc_gpio_emc_b1_01_gpio_mux1_io01>,
-				<&iomuxc_gpio_disp_b2_08_gpio_mux5_io09>;
-			bias-pull-up;
-			slew-rate = "fast";
-		};
-	};
-
 	pinmux_enet: pinmux_enet {
 		group0 {
 			pinmux = <&iomuxc_gpio_disp_b2_09_gpio_mux5_io10>,
