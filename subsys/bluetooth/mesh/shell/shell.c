@@ -611,7 +611,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer)
 	shell_print_ctx("Provisioning link closed on %s", bearer2str(bearer));
 }
 
-static uint8_t static_val[16];
+static uint8_t static_val[32];
 
 struct bt_mesh_prov bt_mesh_shell_prov = {
 	.uuid = dev_uuid,
@@ -645,7 +645,7 @@ static int cmd_static_oob(const struct shell *sh, size_t argc, char *argv[])
 		bt_mesh_shell_prov.static_val_len = 0U;
 	} else {
 		bt_mesh_shell_prov.static_val_len = hex2bin(argv[1], strlen(argv[1]),
-					      static_val, 16);
+					      static_val, 32);
 		if (bt_mesh_shell_prov.static_val_len) {
 			bt_mesh_shell_prov.static_val = static_val;
 		} else {
@@ -886,7 +886,7 @@ static int cmd_auth_method_set_output(const struct shell *sh, size_t argc, char 
 static int cmd_auth_method_set_static(const struct shell *sh, size_t argc, char *argv[])
 {
 	size_t len;
-	uint8_t static_oob_auth[16];
+	uint8_t static_oob_auth[32];
 	int err = 0;
 
 	len = hex2bin(argv[1], strlen(argv[1]), static_oob_auth, sizeof(static_oob_auth));
