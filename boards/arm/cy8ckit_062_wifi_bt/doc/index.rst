@@ -187,22 +187,22 @@ References
 **********
 
 .. _PSoC 62 MCU SoC Website:
-	http://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
+	https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
 
 .. _PSoC 62 MCU Datasheet:
-	http://www.cypress.com/documentation/datasheets/psoc-6-mcu-psoc-62-datasheet-programmable-system-chip-psoc-preliminary
+	https://www.cypress.com/documentation/datasheets/psoc-6-mcu-psoc-62-datasheet-programmable-system-chip-psoc-preliminary
 
 .. _PSoC 62 MCU Architecture Reference Manual:
-	http://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual
+	https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual
 
 .. _PSoC 62 MCU Register Reference Manual:
-	http://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-register-technical-reference-manual-trm
+	https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-register-technical-reference-manual-trm
 
 .. _CY8CKIT-062-WiFi-BT Website:
-   http://www.cypress.com/documentation/development-kitsboards/psoc-6-wifi-bt-pioneer-kit
+   https://www.cypress.com/documentation/development-kitsboards/psoc-6-wifi-bt-pioneer-kit
 
 .. _CY8CKIT-062-WiFi-BT User Guide:
-   http://www.cypress.com/file/407731/download
+   https://www.cypress.com/file/407731/download
 
 .. _CY8CKIT-062-WiFi-BT Schematics:
-   http://www.cypress.com/file/420846/download
+   https://www.cypress.com/file/420846/download
