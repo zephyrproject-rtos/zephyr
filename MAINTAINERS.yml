@@ -424,7 +424,7 @@ CMSIS-DSP integration:
     - galak
     - XenuIsWatching
   files:
-    - modules/cmsis_dsp/
+    - modules/cmsis-dsp/
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
   labels:
@@ -438,7 +438,7 @@ CMSIS-NN integration:
     - stephanosio
     - XenuIsWatching
   files:
-    - modules/cmsis_nn/
+    - modules/cmsis-nn/
     - tests/lib/cmsis_nn/
   labels:
     - "area: CMSIS-NN"
@@ -2952,7 +2952,7 @@ West:
   collaborators:
     - stephanosio
   files:
-    - modules/cmsis_dsp/
+    - modules/cmsis-dsp/
   labels:
     - "area: ARM"
 
@@ -2963,7 +2963,7 @@ West:
   collaborators:
     - stephanosio
   files:
-    - modules/cmsis_nn/
+    - modules/cmsis-nn/
   labels:
     - "area: ARM"
 
