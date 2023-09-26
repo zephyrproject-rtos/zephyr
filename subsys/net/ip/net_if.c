@@ -2864,6 +2864,8 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	const struct in6_addr *src = NULL;
 	uint8_t best_match = 0U;
 
+	NET_ASSERT(dst);
+
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
@@ -3404,6 +3406,8 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 {
 	const struct in_addr *src = NULL;
 	uint8_t best_match = 0U;
+
+	NET_ASSERT(dst);
 
 	if (!net_ipv4_is_ll_addr(dst)) {
 
