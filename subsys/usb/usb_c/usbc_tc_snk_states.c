@@ -180,7 +180,14 @@ void tc_attached_snk_entry(void *obj)
 	/* Set CC polarity */
 	tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 
-	/* Enable PD */
+	/* Enable PD and VBUS sinking */
+	ret = tcpc_set_snk_ctrl(data->tcpc, true);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Couldn't enable vbus sinking: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
+
 	tc_pd_enable(dev, true);
 }
 
@@ -213,8 +220,17 @@ void tc_attached_snk_exit(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	int ret;
 
-	/* Disable PD */
+	/* Disable PD and VBUS sinking */
+	ret = tcpc_set_snk_ctrl(data->tcpc, false);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Couldn't disable vbus sinking: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
+
 	tc_pd_enable(dev, false);
 }
 
