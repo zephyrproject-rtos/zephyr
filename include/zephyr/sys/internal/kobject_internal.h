@@ -127,7 +127,7 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size);
  * @return A pointer to the associated z_object that is installed in the
  *	kernel object tables
  */
-static inline struct z_object *z_dynamic_object_create(size_t size)
+static inline struct z_object *k_object_create_dynamic(size_t size)
 {
 	return z_dynamic_object_aligned_create(0, size);
 }
@@ -144,7 +144,7 @@ static inline struct z_object *z_dynamic_object_aligned_create(size_t align,
 	return NULL;
 }
 
-static inline struct z_object *z_dynamic_object_create(size_t size)
+static inline struct z_object *k_object_create_dynamic(size_t size)
 {
 	ARG_UNUSED(size);
 
