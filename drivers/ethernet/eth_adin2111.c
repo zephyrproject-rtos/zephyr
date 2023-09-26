@@ -938,7 +938,7 @@ static const struct ethernet_api adin2111_port_api = {
 #define ADIN2111_XSTR(x)	ADIN2111_STR(x)
 
 #define ADIN2111_MDIO_PHY_BY_ADDR(adin_n, phy_addr)						\
-	DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(adin_n, mdio), phy_##phy_addr))
+	DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(adin_n, mdio), ethernet_phy_##phy_addr))
 
 #define ADIN2111_PORT_MAC(adin_n, port_n)							\
 	DT_PROP(DT_CHILD(DT_DRV_INST(adin_n), port##port_n), local_mac_address)

@@ -119,7 +119,7 @@
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 
-	phy: phy {
+	phy: ethernet-phy {
 		compatible = "ethernet-phy";
 		status = "disabled";
 		address = <1>;
