@@ -1358,6 +1358,16 @@ This has been fixed in main for v3.5.0
 - `PR 60079 fix for 3.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/60079>`_
 
+CVE-2023-4262
+-------------
+
+Potential buffer overflow vulnerabilities in the Zephyr Mgmt subsystem
+
+- `Zephyr project bug tracker GHSA-56p9-5p3v-hhrc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-56p9-5p3v-hhrc>`_
+
+- This issue has not been fixed.
+
 CVE-2023-4265
 -------------
 
