@@ -1,0 +1,27 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c0 {
+	status = "okay";
+
+	lps22hh0: lps22hh@FB1122330001 { /* i3c device */
+		compatible = "st,lps22hh";
+		reg = <0x00 0xFB11 0x22330001>;
+		status = "okay";
+	};
+
+	lps22hh1: lps22hh@FB1122330002 { /* i3c device */
+		compatible = "st,lps22hh";
+		reg = <0x00 0xFB11 0x22330002>;
+		status = "okay";
+	};
+
+	lps22hh2: lps22hh@500000000000000050 { /* i2c device */
+	compatible = "st,lps22hh";
+	reg = <0x50 0x0 0x50>;
+	status = "okay";
+	};
+};

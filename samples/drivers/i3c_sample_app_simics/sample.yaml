@@ -1,0 +1,8 @@
+sample:
+  name: Demo for (I3C)
+tests:
+  sample.drivers.i3c.sample_app_simics:
+    tags: drivers i3c
+    depends_on: i3c
+    filter: dt_nodelabel_enabled("i3c0")
+    harness: console
