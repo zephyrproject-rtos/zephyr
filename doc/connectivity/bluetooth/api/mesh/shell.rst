@@ -297,7 +297,7 @@ To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT
 	* ``String``: Unquoted alphanumeric authentication string.
 
 
-``mesh prov static-oob [Val(1-16 hex)]``
+``mesh prov static-oob [Val(1-32 hex)]``
 ----------------------------------------
 
 	Set or clear the static OOB authentication value. The static OOB authentication value must be set before provisioning starts to have any effect. The static OOB value must be same on both participants in the provisioning. To enable this command, the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
@@ -358,7 +358,7 @@ To allow a device to provision devices over GATT, the :kconfig:option:`CONFIG_BT
 ------------------------------------------------
 	From the provisioner device, instruct the unprovisioned device to use static OOB authentication, and use the given static authentication value when provisioning.
 
-	* ``Val`` - Static OOB value. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest.
+	* ``Val`` - Static OOB value. Providing a hex-string shorter than 32 bytes will populate the N most significant bytes of the array and zero-pad the rest.
 
 ``mesh prov auth-method none``
 ------------------------------
