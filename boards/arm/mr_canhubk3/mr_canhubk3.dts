@@ -197,38 +197,62 @@
 &lpuart0 {
 	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
+	dmas = <&edma0 0 37>, <&edma0 1 38>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	dmas = <&edma0 2 39>, <&edma0 3 40>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart2 {
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	dmas = <&edma0 16 38>, <&edma0 17 39>;
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
 &lpuart9 {
 	pinctrl-0 = <&lpuart9_default>;
 	pinctrl-names = "default";
+	/*
+	 * LPUART 1 and 9 share the same DMA source for TX
+	 * and RX, using UART async API for both instances
+	 * should be careful.
+	 */
+	dmas = <&edma0 4 39>, <&edma0 5 40>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart10 {
 	pinctrl-0 = <&lpuart10_default>;
 	pinctrl-names = "default";
+	/*
+	 * LPUART 2 and 10 share the same DMA source for TX
+	 * and RX, using UART async API for both instances
+	 * should be careful.
+	 */
+	dmas = <&edma0 18 38>, <&edma0 19 39>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart13 {
 	pinctrl-0 = <&lpuart13_default>;
 	pinctrl-names = "default";
+	dmas = <&edma0 20 44>, <&edma0 21 45>;
+	dma-names = "tx", "rx";
 };
 
 &lpuart14 {
 	pinctrl-0 = <&lpuart14_default>;
 	pinctrl-names = "default";
+	dmas = <&edma0 22 46>, <&edma0 23 47>;
+	dma-names = "tx", "rx";
 };
 
 &qspi0 {
