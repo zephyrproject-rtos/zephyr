@@ -27,7 +27,7 @@
 	zassert_equal(rc, 0, "Device state retrieval failed"); \
 	zassert_equal(state, value, "Unexpected device state");
 
-ZTEST(device_driver_init, test_demo)
+ZTEST(device_driver_init, test_device_driver_init)
 {
 #if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
 	enum pm_device_state state;
