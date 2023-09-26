@@ -20,7 +20,7 @@ on :ref:`mimxrt685_evk`.
 References
 **********
 
-- LSM6DSO http://www.st.com/en/mems-and-sensors/lsm6dso.html
+- LSM6DSO https://www.st.com/en/mems-and-sensors/lsm6dso.html
 
 Building and Running
 ********************

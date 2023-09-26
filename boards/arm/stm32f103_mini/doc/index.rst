@@ -160,7 +160,7 @@ References
 .. target-notes::
 
 .. _STM32F103 reference manual:
-   http://www.st.com/resource/en/reference_manual/cd00171190.pdf
+   https://www.st.com/resource/en/reference_manual/cd00171190.pdf
 
 .. _STM32F103 data sheet:
-   http://www.st.com/resource/en/datasheet/stm32f103rc.pdf
+   https://www.st.com/resource/en/datasheet/stm32f103rc.pdf
