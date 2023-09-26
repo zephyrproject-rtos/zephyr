@@ -15,10 +15,6 @@ properties:
     type: array
     description: IPI control and status register space
 
-  reg-names:
-    type: string-array
-    description: host_ipi_reg
-
   local-ipi-id:
     type: int
     description: Host Xilinx IPI agent ID of which the mailbox is connected to.

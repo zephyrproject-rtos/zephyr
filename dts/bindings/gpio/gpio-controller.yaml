@@ -3,6 +3,8 @@
 
 # Common fields for GPIO controllers
 
+include: base.yaml
+
 properties:
   "gpio-controller":
     type: boolean
@@ -36,7 +38,6 @@ properties:
         For example, setting "gpio-reserved-ranges = <3 2>, <10 1>;" means that
         GPIO offsets 3, 4, and 10 are not usable, even if ngpios = <18>.
   gpio-line-names:
-    type: string-array
     description: |
         This is an array of strings defining the names of the GPIO lines
         going out of the GPIO controller

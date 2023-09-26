@@ -8,7 +8,3 @@ properties:
   memory-regions:
     type: phandle-array
     description: List of memory region phandles
-
-  memory-region-names:
-    type: string-array
-    description: A list of names, one for each corresponding phandle in memory-region

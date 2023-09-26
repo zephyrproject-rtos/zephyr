@@ -35,9 +35,3 @@ properties:
     type: phandles
     description: |
       Pin configuration/s for the fifth state. See pinctrl-0.
-
-  pinctrl-names:
-    type: string-array
-    description: |
-      Names for the provided states. The number of names needs to match the
-      number of states.

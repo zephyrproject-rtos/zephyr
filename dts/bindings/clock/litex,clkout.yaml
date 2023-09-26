@@ -21,9 +21,6 @@ properties:
 
   clock-output-names:
     required: true
-    type: string
-    description: |
-      string of clock output signal name.
 
   litex,clock-frequency:
     required: true

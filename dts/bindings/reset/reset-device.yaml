@@ -7,7 +7,3 @@ properties:
   resets:
     type: phandle-array
     description: Reset information
-
-  reset-names:
-    type: string-array
-    description: Name of each reset

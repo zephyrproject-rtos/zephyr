@@ -48,10 +48,6 @@ properties:
     description: pll settings
     specifier-space: pll-clock
 
-  pll-clock-names:
-    type: string-array
-    description: Provided names of pll-clock specifiers
-
   pinmuxes:
     type: phandle-array
     specifier-space: pinmux

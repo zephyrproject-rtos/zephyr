@@ -14,10 +14,7 @@ properties:
   pha-gpios: {type: "phandle-array"}
   gpios: {type: "phandle-array"}
   foos: {type: "phandle-array"}
-  foo-names: {type: "string-array"}
   pwms: {type: "phandle-array"}
-  pwm-names: {type: "string-array"}
   bar:
     type: "phandle-array"
     specifier-space: baz
-  baz-names: {type: "string-array"}

@@ -25,10 +25,6 @@ properties:
 
   clock-output-names:
     required: true
-    type: string-array
-    description: |
-      List of strings of clock output signal names indexed
-      by the first cell in the clock specifier.
 
   litex,lock-timeout:
     required: true
