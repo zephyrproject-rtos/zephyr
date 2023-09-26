@@ -151,7 +151,7 @@ Building
 .. important::
 
    These instructions assume you've set up a development environment as
-   described in the `Zephyr Getting Started Guide`_.
+   described in the :ref:`getting_started`.
 
 To build applications using the default RISC-V toolchain from Zephyr SDK, just run the west build command.
 Here is an example for the "hello_world" application.
@@ -265,4 +265,3 @@ References
 .. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for TLSR9 Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/
 .. _Burning and Debugging Tools for TLSR9 Series in Linux: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/BDT_for_TLSR9_Series_in_Linux/
-.. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html
