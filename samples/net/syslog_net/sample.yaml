@@ -31,3 +31,9 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_LOG_BACKEND_NET_AUTOSTART=n
+  sample.net.syslog.runtime_srv_addr:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_LOG_BACKEND_NET_AUTOSTART=n
+      - CONFIG_LOG_BACKEND_NET_SERVER=""
+      - CONFIG_NET_SAMPLE_SERVER_RUNTIME="192.0.2.2:514"
