@@ -16,4 +16,8 @@ config MMU_PAGE_SIZE
 	hex
 	default 0x10000
 
+config SOC_WIFI_SUPPORTED
+	bool
+	default y
+
 endif # SOC_FAMILY_ESP32

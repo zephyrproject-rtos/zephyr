@@ -82,7 +82,7 @@ config ESP32_PHY_MAX_WIFI_TX_POWER
 	  Set maximum transmit power for WiFi radio. Actual transmit power for high
 	  data rates may be lower than this setting.
 
-config ESP32_PHY_MAX_TX_POWER
+config ESP_PHY_MAX_TX_POWER
 	int
 	default ESP32_PHY_MAX_WIFI_TX_POWER
 

@@ -262,12 +262,12 @@ SECTIONS
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
 
-#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+#if defined(CONFIG_ESP_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
 #endif
 
-#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+#if defined(CONFIG_ESP_WIFI_RX_IRAM_OPT)
     *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif
@@ -414,12 +414,12 @@ SECTIONS
     _stext = .;
     _text_start = ABSOLUTE(.);
 
-#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+#if !defined(CONFIG_ESP_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
 #endif
 
-#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+#if !defined(CONFIG_ESP_WIFI_RX_IRAM_OPT)
     *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif
