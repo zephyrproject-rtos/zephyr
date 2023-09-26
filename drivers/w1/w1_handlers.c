@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/w1.h>
 
 static inline int z_vrfy_w1_reset_bus(const struct device *dev)

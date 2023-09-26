@@ -9,7 +9,7 @@
 #include <zephyr/toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR

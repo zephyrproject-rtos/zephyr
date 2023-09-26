@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/kobject.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

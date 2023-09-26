@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/console/uart_mux.h>

@@ -8,7 +8,7 @@
 #include <zephyr/spinlock.h>
 #include <ksched.h>
 #include <timeout_q.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 

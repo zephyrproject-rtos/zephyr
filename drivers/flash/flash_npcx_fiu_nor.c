@@ -14,7 +14,7 @@
 #include <soc.h>
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #endif
 
 #include "flash_npcx_fiu_qspi.h"

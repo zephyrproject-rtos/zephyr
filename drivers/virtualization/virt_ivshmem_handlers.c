@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/virtualization/ivshmem.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 static inline size_t z_vrfy_ivshmem_get_mem(const struct device *dev,

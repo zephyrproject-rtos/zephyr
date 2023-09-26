@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <string.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_i2c_configure(const struct device *dev,
 				       uint32_t dev_config)

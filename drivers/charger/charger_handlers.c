@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/charger.h>
 
 static inline int z_vrfy_charger_get_prop(const struct device *dev, const charger_prop_t prop,

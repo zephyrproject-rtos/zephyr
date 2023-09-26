@@ -14,7 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sem.h>
