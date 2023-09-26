@@ -245,10 +245,10 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 
-	phy: ethernet-phy {
+	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		status = "okay";
-		address = <0>;
+		reg = <0>;
 	};
 };
 

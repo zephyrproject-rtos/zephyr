@@ -22,6 +22,8 @@
 			compatible = "atmel,sam-mdio";
 			reg = <0x42000800 0x400>;
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

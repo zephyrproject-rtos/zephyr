@@ -71,6 +71,8 @@
 		compatible = "espressif,esp32-mdio";
 		clocks = <&rtc ESP32_EMAC_MODULE>;
 		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	pinctrl: pin-controller {
