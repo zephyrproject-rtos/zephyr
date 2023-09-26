@@ -149,13 +149,19 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 	uintptr_t addr = (uintptr_t)virt;
 
 #ifdef CONFIG_MMU
-	__ASSERT((addr >= CONFIG_KERNEL_VM_BASE) &&
+	__ASSERT(
+#if CONFIG_KERNEL_VM_BASE != 0
+		 (addr >= CONFIG_KERNEL_VM_BASE) &&
+#endif
 		 (addr < (CONFIG_KERNEL_VM_BASE +
 			  (CONFIG_KERNEL_VM_SIZE))),
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
-	__ASSERT((addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+	__ASSERT(
+#if CONFIG_SRAM_BASE_ADDRESS != 0
+		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+#endif
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 		 "physical address 0x%lx not in RAM",
@@ -172,7 +178,10 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 /* Just like Z_MEM_VIRT_ADDR() but with type safety and assertions */
 static inline void *z_mem_virt_addr(uintptr_t phys)
 {
-	__ASSERT((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+	__ASSERT(
+#if CONFIG_SRAM_BASE_ADDRESS != 0
+		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+#endif
 		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);
