@@ -14,4 +14,5 @@ supported:
   - spi
   - watchdog
   - adc
+  - hwinfo
 vendor: ti
