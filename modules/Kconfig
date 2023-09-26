@@ -17,7 +17,6 @@ comment "Optional modules. Make sure they're installed, via the project manifest
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
 source "modules/Kconfig.chre"
-source "modules/cmsis/Kconfig"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
@@ -107,6 +106,9 @@ comment "Segger module not available."
 
 comment "LVGL module not available."
 	depends on !ZEPHYR_LVGL_MODULE
+
+comment "cmsis module not available."
+	depends on !ZEPHYR_CMSIS_MODULE
 
 comment "cmsis-dsp module not available."
 	depends on !ZEPHYR_CMSIS_DSP_MODULE
