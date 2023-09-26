@@ -46,6 +46,12 @@ elseif(CONFIG_BT_MESH_GATT_PROXY)
   src/test_advertiser.c
  )
 
+ if(CONFIG_BT_MESH_V1d1)
+  target_sources(app PRIVATE
+  src/test_beacon.c
+  )
+  endif()
+
 elseif(CONFIG_BT_CTLR_LOW_LAT)
 
  target_sources(app PRIVATE
