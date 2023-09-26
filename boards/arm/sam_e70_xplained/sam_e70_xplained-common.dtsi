@@ -136,7 +136,7 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 
-	phy: phy {
+	phy: ethernet-phy {
 		compatible = "ethernet-phy";
 		status = "okay";
 		address = <0>;
