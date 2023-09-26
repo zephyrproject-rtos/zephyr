@@ -345,4 +345,17 @@
 		compatible = "snps,dwcxgmac-mdio";
 		status = "disabled";
 	};
+
+	i3c0: i3c@10DA0000 {
+		compatible = "snps,dw-i3c";
+		reg = <0x10DA0000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		resets = <&reset RSTMGR_I3C0_RSTLINE>;
+		core-clk = <200000000>;
+		status = "disabled";
+	};
 };

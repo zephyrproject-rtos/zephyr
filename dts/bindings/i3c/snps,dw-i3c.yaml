@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare I3C node
+
+compatible: "snps,dw-i3c"
+
+include: [i3c-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  core-clk:
+    required: true
+    type: int
