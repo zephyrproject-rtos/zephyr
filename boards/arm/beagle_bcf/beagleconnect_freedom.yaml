@@ -13,4 +13,5 @@ supported:
   - i2c
   - spi
   - uart
+  - hwinfo
 vendor: beagle
