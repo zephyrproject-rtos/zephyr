@@ -494,7 +494,8 @@ __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 {
 }
 
-static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr)
+static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
+			   elf_shdr_t *shdr, bool do_local)
 {
 	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
 	/*
@@ -547,6 +548,11 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 
 		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
 		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
+
+		if (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF) {
+			continue;
+		}
+
 		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
@@ -554,9 +560,6 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		 */
 		size_t got_offset = llext_file_offset(ldr, rela.r_offset) -
 			ldr->sects[LLEXT_SECT_TEXT].sh_offset;
-
-		if (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)
-			continue;
 
 		const void *link_addr;
 
@@ -574,16 +577,18 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 				continue;
 			}
 
-			LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x",
-				name, got_offset,
-				rela.r_offset, ldr->sects[LLEXT_SECT_TEXT].sh_offset);
-
 			/* Resolve the symbol */
 			*(const void **)(text + got_offset) = link_addr;
 			break;
 		case  STB_LOCAL:
-			arch_elf_relocate_local(ldr, ext, &rela, got_offset);
+			if (do_local) {
+				arch_elf_relocate_local(ldr, ext, &rela, got_offset);
+			}
 		}
+
+		LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x stb %u",
+			name, got_offset,
+			rela.r_offset, ldr->sects[LLEXT_SECT_TEXT].sh_offset, stb);
 	}
 }
 
@@ -591,7 +596,7 @@ __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval
 {
 }
 
-static int llext_link(struct llext_loader *ldr, struct llext *ext)
+static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 {
 	uintptr_t loc = 0;
 	elf_shdr_t shdr;
@@ -638,7 +643,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
 		} else if (strcmp(name, ".rela.plt") == 0 ||
 			   strcmp(name, ".rela.dyn") == 0) {
-			llext_link_plt(ldr, ext, &shdr);
+			llext_link_plt(ldr, ext, &shdr, do_local);
 			continue;
 		}
 
@@ -724,7 +729,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 /*
  * Load a valid ELF as an extension
  */
-static int do_llext_load(struct llext_loader *ldr, struct llext *ext)
+static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
+			 struct llext_load_param *ldr_parm)
 {
 	int ret = 0;
 
@@ -793,7 +799,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext)
 	}
 
 	LOG_DBG("Linking ELF...");
-	ret = llext_link(ldr, ext);
+	ret = llext_link(ldr, ext, ldr_parm ? ldr_parm->relocate_local : true);
 	if (ret != 0) {
 		LOG_ERR("Failed to link, ret %d", ret);
 		goto out;
@@ -818,7 +824,8 @@ out:
 	return ret;
 }
 
-int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext)
+int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
+	       struct llext_load_param *ldr_parm)
 {
 	int ret;
 	elf_ehdr_t ehdr;
@@ -857,7 +864,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext)
 		}
 
 		ldr->hdr = ehdr;
-		ret = do_llext_load(ldr, *ext);
+		ret = do_llext_load(ldr, *ext, ldr_parm);
 		break;
 	default:
 		LOG_ERR("Unsupported elf file type %x", ehdr.e_type);

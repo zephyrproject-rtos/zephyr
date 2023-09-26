@@ -28,12 +28,13 @@ ZTEST(llext, test_llext_simple)
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(hello_world_elf, ARRAY_SIZE(hello_world_elf));
 	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext;
 	const void * const printk_fn = llext_find_sym(NULL, "printk");
 
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
 
-	int res = llext_load(loader, name, &ext);
+	int res = llext_load(loader, name, &ext, &ldr_parm);
 
 	zassert_ok(res, "load should succeed");
 
