@@ -14,7 +14,7 @@
 
 / {
 	model = "Alder Lake";
-	compatible = "intel,alder_lake";
+	compatible = "intel,alder-lake";
 
 	chosen {
 		zephyr,sram = &dram0;
