@@ -118,6 +118,27 @@ Required changes
   :c:func:`can_set_bitrate` and :c:func:`can_set_bitrate_data` now also automatically calculate a
   suitable SJW, but their SJW cannot be overwritten by the caller.
 
+* Ethernet PHY devicetree bindings were updated to use the standard ``reg``
+  property for the PHY address instead of a custom ``address`` property. As a
+  result, MDIO controller nodes now require ``#address-cells`` and
+  ``#size-cells`` properties. Similarly, Ethernet PHY devicetree nodes and
+  corresponding driver were updated to consistently use the node name
+  ``ethernet-phy`` instead of ``phy``. Devicetrees and overlays must be updated
+  accordingly:
+
+  .. code-block:: devicetree
+
+     mdio {
+         compatible = "mdio-controller";
+         #address-cells = <1>;
+         #size-cells = <0>;
+
+         ethernet-phy@0 {
+             compatible = "ethernet-phy";
+             reg = <0>;
+         };
+     };
+
 Recommended Changes
 *******************
 

@@ -29,6 +29,8 @@
 			mdc-gpios = <&test_gpio 0 0>;
 			mdio-gpios = <&test_gpio 0 0>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		test_mdio1: mdio@33334444 {
@@ -37,6 +39,8 @@
 			mdc-gpios = <&test_gpio 0 0>;
 			mdio-gpios = <&test_gpio 0 0>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

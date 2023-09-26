@@ -146,11 +146,13 @@
 			mdio: mdio {
 				compatible = "smsc,lan91c111-mdio";
 				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-				phy: ethernet-phy {
+				phy: ethernet-phy@0 {
 					compatible = "ethernet-phy";
 					status = "disabled";
-					address = <0>;
+					reg = <0>;
 				};
 			};
 		};
