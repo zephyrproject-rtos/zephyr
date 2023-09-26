@@ -34,7 +34,7 @@ ZTEST(modules, test_modules_simple)
 	struct module_stream *stream = &buf_stream.stream;
 	struct module *m;
 
-	int res = module_load(stream, name, &m);
+	int res = module_load(stream, name, &m, true);
 
 	zassert_ok(res, "Load should succeed");
 

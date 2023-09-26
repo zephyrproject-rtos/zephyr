@@ -113,7 +113,8 @@ void *module_find_sym(const struct module_symtable *sym_table, const char *sym_n
 	return NULL;
 }
 
-static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr_t *shdr)
+static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr_t *shdr,
+			    bool do_local)
 {
 	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
 	/*
@@ -143,6 +144,11 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 						 j * sizeof(elf_sym_t));
 		uint32_t stt = ELF_ST_TYPE(sym_tbl->st_info);
 		uint32_t stb = ELF_ST_BIND(sym_tbl->st_info);
+
+		if (stt != STT_NOTYPE || sym_tbl->st_shndx != SHN_UNDEF) {
+			continue;
+		}
+
 		char *name = module_peek(ms, ms->sects[MOD_SECT_STRTAB].sh_offset +
 					 sym_tbl->st_name);
 		/*
@@ -150,9 +156,6 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 		 * has been built.
 		 */
 		size_t got_offset = rela->r_offset - ms->sects[MOD_SECT_TEXT].sh_addr;
-
-		if (stt != STT_NOTYPE || sym_tbl->st_shndx != SHN_UNDEF)
-			continue;
 
 		switch (stb) {
 		case STB_GLOBAL:
@@ -168,16 +171,18 @@ static void module_link_plt(struct module_stream *ms, struct module *m, elf_shdr
 				continue;
 			}
 
-			LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x",
-				name, got_offset,
-				rela->r_offset, ms->sects[MOD_SECT_TEXT].sh_addr);
-
 			/* Resolve the symbol */
 			*(void **)(text + got_offset) = link_addr;
 			break;
 		case  STB_LOCAL:
-			arch_elf_relocate_local(ms, rela, got_offset);
+			if (do_local) {
+				arch_elf_relocate_local(ms, rela, got_offset);
+			}
 		}
+
+		LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x stb %u",
+			name, got_offset,
+			rela->r_offset, ms->sects[MOD_SECT_TEXT].sh_addr, stb);
 	}
 }
 
@@ -221,10 +226,8 @@ ssize_t module_find_section(struct module_stream *ms, const char *search_name)
  */
 static int module_load_rel(struct module_stream *ms, struct module *m)
 {
-	elf_word sym_cnt, rel_cnt;
-	elf_rela_t rel;
 	char name[32];
-	unsigned int i, j;
+	unsigned int i;
 
 	m->mem_size = 0;
 	m->sym_tab.sym_cnt = 0;
@@ -336,6 +339,18 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 			name, i, shdr.sh_size, shdr.sh_addr,
 			mem_idx, m->mem_size);
 	}
+
+	return 0;
+}
+
+static int module_relocate(struct module_stream *ms, struct module *m, bool do_local)
+{
+	unsigned int sym_cnt, rel_cnt;
+	elf_rela_t rel;
+	unsigned int i, j;
+	elf_shdr_t shdr;
+	char name[32];
+	size_t pos;
 
 	/* Iterate all symbols in symtab and update its st_value,
 	 * for sections, using its loading address,
@@ -451,7 +466,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 			loc = (uintptr_t)m->mem[MOD_MEM_DATA];
 		} else if (strncmp(name, ".rela.plt", sizeof(name)) == 0 ||
 			   strncmp(name, ".rela.dyn", sizeof(name)) == 0) {
-			module_link_plt(ms, m, &shdr);
+			module_link_plt(ms, m, &shdr, do_local);
 			continue;
 		} else {
 			continue;
@@ -528,7 +543,7 @@ static int module_load_rel(struct module_stream *ms, struct module *m)
 
 STRUCT_SECTION_START_EXTERN(module_symbol);
 
-int module_load(struct module_stream *ms, const char *name, struct module **m)
+int module_load(struct module_stream *ms, const char *name, struct module **m, bool do_local)
 {
 	int ret = 0;
 	elf_ehdr_t ehdr;
@@ -563,6 +578,9 @@ int module_load(struct module_stream *ms, const char *name, struct module **m)
 		} else {
 			ms->hdr = ehdr;
 			ret = module_load_rel(ms, *m);
+			if (!ret) {
+				ret = module_relocate(ms, *m, do_local);
+			}
 		}
 		break;
 	default:

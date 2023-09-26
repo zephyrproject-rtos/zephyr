@@ -145,12 +145,13 @@ struct module *module_from_name(const char *name);
  * @param[in] ms A byte stream like object that provides a source for loadable code
  * @param[in] name A string identifier for the module
  * @param[out] m A pointer to a statically allocated module struct
+ * @param[in] do_local Perform local relocations in addition to external linking
  *
  * @retval 0 Success
  * @retval -ENOMEM Not enough memory
  * @retval -EINVAL Invalid ELF stream
  */
-int module_load(struct module_stream *ms, const char *name, struct module **m);
+int module_load(struct module_stream *ms, const char *name, struct module **m, bool do_local);
 
 /**
  * @brief Unload a module
