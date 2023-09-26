@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 /* This assumes that bufs and buf_copy are copies from the values passed

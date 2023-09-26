@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 					    gpio_pin_t pin,
