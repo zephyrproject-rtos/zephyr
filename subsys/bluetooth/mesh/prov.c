@@ -181,12 +181,6 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
-	    (method == AUTH_METHOD_NO_OOB ||
-	    bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) {
-		return -EINVAL;
-	}
-
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:
 		if (action || size) {
