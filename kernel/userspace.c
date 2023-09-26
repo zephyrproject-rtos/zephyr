@@ -77,7 +77,7 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 #endif
 
-static void clear_perms_cb(struct z_object *ko, void *ctx_ptr);
+static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 
 const char *otype_to_str(enum k_objects otype)
 {
@@ -119,7 +119,7 @@ struct perm_ctx {
  */
 uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
-	struct z_object *obj = z_object_find(stack);
+	struct k_object *obj = z_object_find(stack);
 
 	__ASSERT(obj != NULL, "stack object not found");
 	__ASSERT(obj->type == K_OBJ_THREAD_STACK_ELEMENT,
@@ -166,14 +166,14 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 	MAX(DYN_OBJ_DATA_ALIGN_K_THREAD, (sizeof(void *)))
 
 struct dyn_obj {
-	struct z_object kobj;
+	struct k_object kobj;
 	sys_dnode_t dobj_list;
 
 	/* The object itself */
 	void *data;
 };
 
-extern struct z_object *z_object_gperf_find(const void *obj);
+extern struct k_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
@@ -311,7 +311,7 @@ static void thread_idx_free(uintptr_t tidx)
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
 
-static struct z_object *dynamic_object_create(enum k_objects otype, size_t align,
+static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
 					      size_t size)
 {
 	struct dyn_obj *dyn;
@@ -373,9 +373,9 @@ static struct z_object *dynamic_object_create(enum k_objects otype, size_t align
 	return &dyn->kobj;
 }
 
-struct z_object *k_object_create_dynamic_aligned(size_t align, size_t size)
+struct k_object *k_object_create_dynamic_aligned(size_t align, size_t size)
 {
-	struct z_object *obj = dynamic_object_create(K_OBJ_ANY, align, size);
+	struct k_object *obj = dynamic_object_create(K_OBJ_ANY, align, size);
 
 	if (obj == NULL) {
 		LOG_ERR("could not allocate kernel object, out of memory");
@@ -386,7 +386,7 @@ struct z_object *k_object_create_dynamic_aligned(size_t align, size_t size)
 
 static void *z_object_alloc(enum k_objects otype, size_t size)
 {
-	struct z_object *zo;
+	struct k_object *zo;
 	uintptr_t tidx = 0;
 
 	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
@@ -475,9 +475,9 @@ void k_object_free(void *obj)
 	}
 }
 
-struct z_object *z_object_find(const void *obj)
+struct k_object *z_object_find(const void *obj)
 {
-	struct z_object *ret;
+	struct k_object *ret;
 
 	ret = z_object_gperf_find(obj);
 
@@ -514,7 +514,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 static unsigned int thread_index_get(struct k_thread *thread)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	ko = z_object_find(thread);
 
@@ -525,7 +525,7 @@ static unsigned int thread_index_get(struct k_thread *thread)
 	return ko->data.thread_id;
 }
 
-static void unref_check(struct z_object *ko, uintptr_t index)
+static void unref_check(struct k_object *ko, uintptr_t index)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
@@ -579,7 +579,7 @@ out:
 	k_spin_unlock(&obj_lock, key);
 }
 
-static void wordlist_cb(struct z_object *ko, void *ctx_ptr)
+static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
@@ -602,7 +602,7 @@ void z_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 	}
 }
 
-void z_thread_perms_set(struct z_object *ko, struct k_thread *thread)
+void z_thread_perms_set(struct k_object *ko, struct k_thread *thread)
 {
 	int index = thread_index_get(thread);
 
@@ -611,7 +611,7 @@ void z_thread_perms_set(struct z_object *ko, struct k_thread *thread)
 	}
 }
 
-void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread)
+void z_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 {
 	int index = thread_index_get(thread);
 
@@ -621,7 +621,7 @@ void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread)
 	}
 }
 
-static void clear_perms_cb(struct z_object *ko, void *ctx_ptr)
+static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
 {
 	uintptr_t id = (uintptr_t)ctx_ptr;
 
@@ -637,7 +637,7 @@ void z_thread_perms_all_clear(struct k_thread *thread)
 	}
 }
 
-static int thread_perms_test(struct z_object *ko)
+static int thread_perms_test(struct k_object *ko)
 {
 	int index;
 
@@ -652,7 +652,7 @@ static int thread_perms_test(struct z_object *ko)
 	return 0;
 }
 
-static void dump_permission_error(struct z_object *ko)
+static void dump_permission_error(struct k_object *ko)
 {
 	int index = thread_index_get(_current);
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
@@ -661,7 +661,7 @@ static void dump_permission_error(struct z_object *ko)
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
-void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
+void z_dump_object_error(int retval, const void *obj, struct k_object *ko,
 			enum k_objects otype)
 {
 	switch (retval) {
@@ -691,7 +691,7 @@ void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
 
 void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 {
-	struct z_object *ko = z_object_find(object);
+	struct k_object *ko = z_object_find(object);
 
 	if (ko != NULL) {
 		z_thread_perms_set(ko, thread);
@@ -700,7 +700,7 @@ void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 
 void k_object_access_revoke(const void *object, struct k_thread *thread)
 {
-	struct z_object *ko = z_object_find(object);
+	struct k_object *ko = z_object_find(object);
 
 	if (ko != NULL) {
 		z_thread_perms_clear(ko, thread);
@@ -714,14 +714,14 @@ void z_impl_k_object_release(const void *object)
 
 void k_object_access_all_grant(const void *object)
 {
-	struct z_object *ko = z_object_find(object);
+	struct k_object *ko = z_object_find(object);
 
 	if (ko != NULL) {
 		ko->flags |= K_OBJ_FLAG_PUBLIC;
 	}
 }
 
-int z_object_validate(struct z_object *ko, enum k_objects otype,
+int z_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
@@ -756,7 +756,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 
 void k_object_init(const void *obj)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	/* By the time we get here, if the caller was from userspace, all the
 	 * necessary checks have been done in z_object_validate(), which takes
@@ -781,7 +781,7 @@ void k_object_init(const void *obj)
 
 void z_object_recycle(const void *obj)
 {
-	struct z_object *ko = z_object_find(obj);
+	struct k_object *ko = z_object_find(obj);
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
@@ -792,7 +792,7 @@ void z_object_recycle(const void *obj)
 
 void z_object_uninit(const void *obj)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	/* See comments in k_object_init() */
 	ko = z_object_find(obj);

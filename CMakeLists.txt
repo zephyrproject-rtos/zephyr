@@ -1124,7 +1124,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
     -o ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
-    -p "struct z_object"
+    -p "struct k_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS kobj_prebuilt_hash_output_src_pre ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1316,7 +1316,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${KOBJECT_HASH_OUTPUT_SRC_PRE}
     -o ${KOBJECT_HASH_OUTPUT_SRC}
-    -p "struct z_object"
+    -p "struct k_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS kobj_hash_output_src_pre ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
