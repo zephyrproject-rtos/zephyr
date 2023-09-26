@@ -519,14 +519,14 @@ static const struct rtc_stm32_config rtc_config = {
 
 
 static const struct counter_driver_api rtc_stm32_driver_api = {
-		.start = rtc_stm32_start,
-		.stop = rtc_stm32_stop,
-		.get_value = rtc_stm32_get_value,
-		.set_alarm = rtc_stm32_set_alarm,
-		.cancel_alarm = rtc_stm32_cancel_alarm,
-		.set_top_value = rtc_stm32_set_top_value,
-		.get_pending_int = rtc_stm32_get_pending_int,
-		.get_top_value = rtc_stm32_get_top_value,
+	.start = rtc_stm32_start,
+	.stop = rtc_stm32_stop,
+	.get_value = rtc_stm32_get_value,
+	.set_alarm = rtc_stm32_set_alarm,
+	.cancel_alarm = rtc_stm32_cancel_alarm,
+	.set_top_value = rtc_stm32_set_top_value,
+	.get_pending_int = rtc_stm32_get_pending_int,
+	.get_top_value = rtc_stm32_get_top_value,
 };
 
 DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL,
