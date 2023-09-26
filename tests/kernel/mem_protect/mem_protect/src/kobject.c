@@ -1054,7 +1054,7 @@ ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 	set_fault_valid(false);
 
 	int ret;
-	struct z_object *ko;
+	struct k_object *ko;
 
 	k_thread_access_grant(&child_thread,
 			      &child_stack);

@@ -867,7 +867,7 @@ static struct k_sem recycle_sem;
  */
 ZTEST(userspace, test_object_recycle)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 	int perms_count = 0;
 	int dummy = 0;
 

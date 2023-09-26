@@ -78,7 +78,7 @@ static inline bool z_is_in_user_syscall(void)
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int z_object_validate(struct z_object *ko, enum k_objects otype,
+int z_object_validate(struct k_object *ko, enum k_objects otype,
 		      enum _obj_init_check init);
 
 /**
@@ -86,11 +86,11 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
  *
  * @param retval Return value from z_object_validate()
  * @param obj Kernel object we were trying to verify
- * @param ko If retval=-EPERM, struct z_object * that was looked up, or NULL
+ * @param ko If retval=-EPERM, struct k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
 void z_dump_object_error(int retval, const void *obj,
-			struct z_object *ko, enum k_objects otype);
+			struct k_object *ko, enum k_objects otype);
 
 /**
  * Kernel object validation function
@@ -102,14 +102,14 @@ void z_dump_object_error(int retval, const void *obj,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-struct z_object *z_object_find(const void *obj);
+struct k_object *z_object_find(const void *obj);
 
-typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
+typedef void (*_wordlist_cb_func_t)(struct k_object *ko, void *context);
 
 /**
  * Iterate over all the kernel object metadata in the system
  *
- * @param func function to run on each struct z_object
+ * @param func function to run on each struct k_object
  * @param context Context pointer to pass to each invocation
  */
 void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
@@ -129,7 +129,7 @@ void z_thread_perms_inherit(struct k_thread *parent,
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
+void z_thread_perms_set(struct k_object *ko, struct k_thread *thread);
 
 /**
  * Revoke a thread's permission to a kernel object
@@ -137,7 +137,7 @@ void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread);
+void z_thread_perms_clear(struct k_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
@@ -427,7 +427,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
-static inline int z_obj_validation_check(struct z_object *ko,
+static inline int z_obj_validation_check(struct k_object *ko,
 					 const void *obj,
 					 enum k_objects otype,
 					 enum _obj_init_check init)

@@ -392,7 +392,7 @@ For example::
 
    .. code-block:: c
 
-      struct z_object {
+      struct k_object {
          char *name;
          uint8_t perms[CONFIG_MAX_THREAD_BYTES];
          uint8_t type;
@@ -408,7 +408,7 @@ This would be rendered as:
 
    .. code-block:: c
 
-      struct z_object {
+      struct k_object {
          char *name;
          uint8_t perms[CONFIG_MAX_THREAD_BYTES];
          uint8_t type;
