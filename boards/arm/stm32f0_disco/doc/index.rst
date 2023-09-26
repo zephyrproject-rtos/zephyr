@@ -134,10 +134,10 @@ References
 .. target-notes::
 
 .. _STM32F0DISCOVERY website:
-   http://www.st.com/en/evaluation-tools/stm32f0discovery.html
+   https://www.st.com/en/evaluation-tools/stm32f0discovery.html
 
 .. _STM32F0x8 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031936.pdf
 
 .. _STM32F0DISCOVERY board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00050135.pdf
+   https://www.st.com/resource/en/user_manual/dm00050135.pdf

@@ -39,7 +39,7 @@ as sensors multiple instances are not supported.
 References
 **********
 
-- X-NUCLEO-IKS01A3: http://www.st.com/en/ecosystems/x-nucleo-iks01a3.html
+- X-NUCLEO-IKS01A3: https://www.st.com/en/ecosystems/x-nucleo-iks01a3.html
 
 Building and Running
 ********************

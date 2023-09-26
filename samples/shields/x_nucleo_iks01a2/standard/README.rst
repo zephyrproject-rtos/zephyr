@@ -32,7 +32,7 @@ does not yet support sensors multiple instances.
 References
 **********
 
--X-NUCLEO-IKS01A2: http://www.st.com/en/ecosystems/x-nucleo-iks01a2.html
+-X-NUCLEO-IKS01A2: https://www.st.com/en/ecosystems/x-nucleo-iks01a2.html
 
 Building and Running
 ********************

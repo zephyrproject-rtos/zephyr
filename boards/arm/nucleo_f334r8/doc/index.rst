@@ -170,10 +170,10 @@ References
 .. target-notes::
 
 .. _Nucleo F334R8 website:
-   http://www.st.com/en/evaluation-tools/nucleo-f334r8.html
+   https://www.st.com/en/evaluation-tools/nucleo-f334r8.html
 
 .. _STM32F334 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00093941.pdf
+   https://www.st.com/resource/en/reference_manual/dm00093941.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf

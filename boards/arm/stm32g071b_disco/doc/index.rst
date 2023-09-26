@@ -160,10 +160,10 @@ References
    https://www.st.com/en/evaluation-tools/stm32g071b-disco.html
 
 .. _STM32G071 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00371828.pdf
+   https://www.st.com/resource/en/reference_manual/dm00371828.pdf
 
 .. _STM32G0 Discovery board User Manual:
    https://www.st.com/resource/en/user_manual/dm00496511.pdf
 
 .. _G071RB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32g071rb.html
+   https://www.st.com/en/microcontrollers/stm32g071rb.html

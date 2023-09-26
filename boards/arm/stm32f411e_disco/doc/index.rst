@@ -176,13 +176,13 @@ References
 .. target-notes::
 
 .. _32F411EDISCOVERY website:
-   http://www.st.com/en/evaluation-tools/32f411ediscovery.html
+   https://www.st.com/en/evaluation-tools/32f411ediscovery.html
 
 .. _32F411EDISCOVERY board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00148985.pdf
+   https://www.st.com/resource/en/user_manual/dm00148985.pdf
 
 .. _STM32F411VE website:
-   http://www.st.com/en/microcontrollers/stm32f411ve.html
+   https://www.st.com/en/microcontrollers/stm32f411ve.html
 
 .. _STM32F411x reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00119316.pdf
+   https://www.st.com/resource/en/reference_manual/dm00119316.pdf

@@ -178,13 +178,13 @@ References
 .. target-notes::
 
 .. _Nucleo F103RB website:
-   http://www.st.com/en/evaluation-tools/nucleo-f103rb.html
+   https://www.st.com/en/evaluation-tools/nucleo-f103rb.html
 
 .. _STM32F103 reference manual:
-   http://www.st.com/resource/en/reference_manual/cd00171190.pdf
+   https://www.st.com/resource/en/reference_manual/cd00171190.pdf
 
 .. _STM32F103 data sheet:
-   http://www.st.com/resource/en/datasheet/stm32f103rb.pdf
+   https://www.st.com/resource/en/datasheet/stm32f103rb.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf

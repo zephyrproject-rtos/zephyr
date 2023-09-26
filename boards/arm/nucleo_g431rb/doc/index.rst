@@ -249,13 +249,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo G431RB website:
-   http://www.st.com/en/evaluation-tools/nucleo-g431rb.html
+   https://www.st.com/en/evaluation-tools/nucleo-g431rb.html
 
 .. _STM32G4 Nucleo-64 board User Manual:
    https://www.st.com/resource/en/user_manual/dm00556337.pdf
 
 .. _STM32G431RB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32g431rb.html
+   https://www.st.com/en/microcontrollers/stm32g431rb.html
 
 .. _STM32G4 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00355726.pdf

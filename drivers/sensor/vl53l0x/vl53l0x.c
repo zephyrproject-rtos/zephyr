@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:
- *   http://www.st.com/en/embedded-software/stsw-img005.html
+ *   https://www.st.com/en/embedded-software/stsw-img005.html
  * There are also examples of use in the L4 cube FW:
- *   http://www.st.com/en/embedded-software/stm32cubel4.html
+ *   https://www.st.com/en/embedded-software/stm32cubel4.html
  */
 #define VL53L0X_INITIAL_ADDR                    0x29
 #define VL53L0X_REG_WHO_AM_I                    0xC0
