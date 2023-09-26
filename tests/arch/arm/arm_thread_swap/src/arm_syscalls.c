@@ -29,7 +29,7 @@
 static struct k_thread user_thread;
 static K_THREAD_STACK_DEFINE(user_thread_stack, 1024);
 
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscalls.h"
 
 void z_impl_test_arm_user_syscall(void)

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/auxdisplay.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_auxdisplay_display_on(const struct device *dev)
 {

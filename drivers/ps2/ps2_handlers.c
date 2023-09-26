@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/ps2.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_ps2_config(const struct device *dev,
 				    ps2_callback_t callback_isr)

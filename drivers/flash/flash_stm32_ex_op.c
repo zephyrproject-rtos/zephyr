@@ -11,7 +11,7 @@
 
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #endif
 
 #include <soc.h>

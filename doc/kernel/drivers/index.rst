@@ -235,7 +235,7 @@ implementation of both the subsystem API and the specific APIs:
 
    #ifdef CONFIG_USERSPACE
 
-   #include <zephyr/syscall_handler.h>
+   #include <zephyr/internal/syscall_handler.h>
 
    int z_vrfy_specific_from_user(const struct device *dev, int bar)
    {

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/random/random.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 
 /* TODO: Remove all direct access to private fields.

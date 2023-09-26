@@ -33,7 +33,7 @@
 #include <wait_q.h>
 #include <errno.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>

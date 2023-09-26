@@ -382,7 +382,7 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 }
 
 #if defined(CONFIG_USERSPACE)
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscalls.h"
 
 void z_impl_test_arm_user_interrupt_syscall(void)

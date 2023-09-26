@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <stdbool.h>
 #include <zephyr/spinlock.h>
 #include <ksched.h>
