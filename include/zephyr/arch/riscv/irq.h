@@ -29,13 +29,69 @@ extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
-#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC)
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) || \
+	defined(CONFIG_RISCV_CUSTOM_INTERRUPT_CONTROLLER)
 extern void z_riscv_irq_priority_set(unsigned int irq,
 				     unsigned int prio,
 				     uint32_t flags);
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
+
+#if defined(CONFIG_RISCV_CUSTOM_INTERRUPT_CONTROLLER)
+
+/**
+ * @brief Enable an interrupt line for RISC-V custom interrupt controller.
+ *
+ * This routine enables an interrupt line for RISC-V custom interrupt controller.
+ * Should be implemented by custom interrupt controller.
+ *
+ * @param irq IRQ number to enable
+ */
+void z_irq_enable(unsigned int irq);
+
+/**
+ * @brief Disable an interrupt line for RISC-V custom interrupt controller.
+ *
+ * This routine disables an interrupt line for RISC-V custom interrupt controller.
+ * Should be implemented by custom interrupt controller.
+ *
+ * @param irq IRQ number to disable
+ */
+void z_irq_disable(unsigned int irq);
+
+/**
+ * @brief Check if an interrupt line for RISC-V custom interrupt controller is enabled
+ *
+ * This routine checks if an interrupt line for RISC-V custom interrupt
+ * controller is enabled.
+ * Should be implemented by custom interrupt controller.
+ *
+ * @param irq IRQ number to check
+ *
+ * @return 1 - if IRQ is enabled; 0 - otherwise
+ */
+int z_irq_is_enabled(unsigned int irq);
+
+/**
+ * @brief Set priority of a RISC-V custom interrupt controller interrupt line
+ *
+ * This routine set the priority of a RISC-V custom interrupt controller
+ * interrupt line. Should be implemented by custom interrupt controller.
+ *
+ * @param irq IRQ number for which to set priority
+ * @param prio Priority of IRQ to set to
+ * @param flags IRQ flags to additionally configure, if applicable
+ */
+void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+
+#define arch_irq_enable(irq) z_irq_enable(irq)
+#define arch_irq_disable(irq) z_irq_disable(irq)
+#define arch_irq_is_enabled(irq) z_irq_is_enabled(irq)
+#define z_riscv_irq_priority_set(irq, prio, flags) \
+	z_irq_priority_set(irq, prio, flags)
+
+#endif /* CONFIG_RISCV_CUSTOM_INTERRUPT_CONTROLLER */
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
