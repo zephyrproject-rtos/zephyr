@@ -73,6 +73,8 @@ To enable secure sockets, set the :kconfig:option:`CONFIG_NET_SOCKETS_SOCKOPT_TL
 option. To enable DTLS support, use :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS`
 option.
 
+.. _sockets_tls_credentials_subsys:
+
 TLS credentials subsystem
 =========================
 
