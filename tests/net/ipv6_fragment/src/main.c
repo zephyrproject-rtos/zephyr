@@ -2217,9 +2217,11 @@ static uint8_t ipv6_reass_frag2[] = {
 
 static uint16_t test_recv_payload_len = 1300U;
 
-static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
-					       struct net_ipv6_hdr *ip_hdr,
-					       struct net_icmp_hdr *icmp_hdr)
+static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+				  struct net_pkt *pkt,
+				  struct net_icmp_ip_hdr *ip_hdr,
+				  struct net_icmp_hdr *icmp_hdr,
+				  void *user_data)
 {
 	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	uint8_t verify_buf[NET_IPV6H_LEN];
@@ -2227,6 +2229,11 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	uint16_t expected_icmpv6_length = htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
 	uint16_t i;
 	uint8_t expected_data = 0;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
 
 	NET_DBG("Data %p received", pkt);
 
@@ -2292,13 +2299,12 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	uint16_t payload2_len;
 	uint8_t data;
 	int ret;
-	static struct net_icmpv6_handler ping6_handler = {
-		.type = NET_ICMPV6_ECHO_REPLY,
-		.code = 0,
-		.handler = handle_ipv6_echo_reply,
-	};
+	struct net_icmp_ctx ctx;
 
-	net_icmpv6_register_handler(&ping6_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY,
+				0, handle_ipv6_echo_reply);
+	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
+		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
 	/* Fragment 1 */
 	data = 0U;
@@ -2387,7 +2393,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		zassert_true(false, "Timeout");
 	}
 
-	net_icmpv6_unregister_handler(&ping6_handler);
+	net_icmp_cleanup_ctx(&ctx);
 }
 
 ZTEST_SUITE(net_ipv6_fragment, NULL, test_setup, NULL, NULL, NULL);
