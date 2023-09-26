@@ -63,7 +63,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
-	z_object_init(sem);
+	k_object_init(sem);
 
 #ifdef CONFIG_OBJ_CORE_SEM
 	k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);

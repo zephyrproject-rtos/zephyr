@@ -32,7 +32,7 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->top = stack->base + num_entries;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
-	z_object_init(stack);
+	k_object_init(stack);
 
 #ifdef CONFIG_OBJ_CORE_STACK
 	k_obj_core_init_and_link(K_OBJ_CORE(stack), &obj_type_stack);

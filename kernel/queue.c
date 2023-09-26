@@ -66,7 +66,7 @@ void z_impl_k_queue_init(struct k_queue *queue)
 
 	SYS_PORT_TRACING_OBJ_INIT(k_queue, queue);
 
-	z_object_init(queue);
+	k_object_init(queue);
 }
 
 #ifdef CONFIG_USERSPACE

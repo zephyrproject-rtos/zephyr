@@ -422,7 +422,7 @@ static inline void init_iface(struct net_if *iface)
 	NET_DBG("On iface %p", iface);
 
 #ifdef CONFIG_USERSPACE
-	z_object_init(iface);
+	k_object_init(iface);
 #endif
 
 	k_mutex_init(&iface->lock);
