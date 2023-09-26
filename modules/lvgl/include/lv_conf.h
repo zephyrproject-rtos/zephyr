@@ -11,6 +11,7 @@
 /* Memory manager settings */
 
 #define LV_MEMCPY_MEMSET_STD 1
+#define LV_MEM_CUSTOM        1
 
 #if defined(CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C)
 
