@@ -78,7 +78,7 @@ class SizeCalculator:
         "ctors",
         "init_array",
         "reset",
-        "z_object_assignment_area",
+        "k_object_assignment_area",
         "rodata",
         "net_l2",
         "vector",

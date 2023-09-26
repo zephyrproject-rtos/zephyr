@@ -65,7 +65,7 @@ enum k_objects {
 #define K_THREAD_ACCESS_GRANT(name_, ...) \
 	static void * const _CONCAT(_object_list_, name_)[] = \
 		{ __VA_ARGS__, NULL }; \
-	static const STRUCT_SECTION_ITERABLE(z_object_assignment, \
+	static const STRUCT_SECTION_ITERABLE(k_object_assignment, \
 					_CONCAT(_object_access_, name_)) = \
 			{ (&_k_thread_obj_ ## name_), \
 			  (_CONCAT(_object_list_, name_)) }

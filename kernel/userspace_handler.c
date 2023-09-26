@@ -9,11 +9,11 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 
-static struct z_object *validate_kernel_object(const void *obj,
+static struct k_object *validate_kernel_object(const void *obj,
 					       enum k_objects otype,
 					       enum _obj_init_check init)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 	int ret;
 
 	ko = z_object_find(obj);
@@ -56,7 +56,7 @@ bool k_object_is_valid(const void *obj, enum k_objects otype)
 static inline void z_vrfy_k_object_access_grant(const void *object,
 						struct k_thread *thread)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
 	ko = validate_any_object(object);
@@ -68,7 +68,7 @@ static inline void z_vrfy_k_object_access_grant(const void *object,
 
 static inline void z_vrfy_k_object_release(const void *object)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	ko = validate_any_object((void *)object);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
