@@ -1005,10 +1005,10 @@ static void smbus_isr(const struct device *dev)
 
 /* Device macro initialization  / DTS hackery */
 
-#define SMBUS_PCH_IRQ_FLAGS_SENSE0(n) 0
-#define SMBUS_PCH_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define SMBUS_PCH_IRQ_FLAGS(n) \
-	_CONCAT(SMBUS_PCH_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define SMBUS_PCH_IRQ_FLAGS(n)                                                 \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                            \
+		    (DT_INST_IRQ(n, sense)),                                   \
+		    (0))
 
 #define SMBUS_IRQ_CONFIG(n)                                                    \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                    \
