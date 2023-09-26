@@ -40,7 +40,8 @@ extern "C" {
 
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
-#define SYS_TIMEOUT_MS(ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
+#define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
+					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 

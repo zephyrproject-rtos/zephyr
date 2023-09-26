@@ -92,11 +92,13 @@ typedef struct {
 # define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64(MAX(t, 0)))
 # define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil64(MAX(t, 0)))
 # define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil64(MAX(t, 0)))
+# define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
 #else
 # define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
 # define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil32(MAX(t, 0)))
 # define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil32(MAX(t, 0)))
 # define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil32(MAX(t, 0)))
+# define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
 #endif
 
 /* Converts between absolute timeout expiration values (packed into
