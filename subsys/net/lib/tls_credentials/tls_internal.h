@@ -42,7 +42,6 @@ void credentials_unlock(void);
 struct tls_credential *credential_get(sec_tag_t tag,
 				      enum tls_credential_type type);
 
-
 /* Function for iterating over credentials by tag.
  *
  * Note, that to assure thread safety, credential access should be locked with
@@ -50,5 +49,19 @@ struct tls_credential *credential_get(sec_tag_t tag,
  */
 struct tls_credential *credential_next_get(sec_tag_t tag,
 					   struct tls_credential *iter);
+
+/* Writes a (NULL-terminated, printable) string digest of the contents of the provided credential
+ * to the provided destination buffer.
+ *
+ * Digest format/type is up to the tls_credentials backend in use.
+ *
+ * len pointer should be set to the amount of space available in the destination buffer prior to
+ * calling, and will be set to the amount written to the destination buffer after calling
+ * (excluding the NULL terminator).
+ *
+ * Note, that to assure thread safety, credential access should be locked with
+ * credentials_lock before calling this function.
+ */
+int credential_digest(struct tls_credential *credential, void *dest, size_t *len);
 
 #endif /* __TLS_INTERNAL_H */
