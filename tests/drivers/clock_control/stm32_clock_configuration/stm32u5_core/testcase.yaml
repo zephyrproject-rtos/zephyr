@@ -24,3 +24,9 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_160.overlay"
     # Build only as HSE not implemened on available boards
     build_only: true
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hse_fracn_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_fracn_160.overlay"
+    # Build only as HSE not implemened on available boards
+    build_only: true
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hsi_fracn_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_fracn_160.overlay"
