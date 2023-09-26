@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 
 #include "tls_internal.h"
+#include "tls_credentials_digest_raw.h"
 
 /* Global pool of credentials shared among TLS contexts. */
 static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];
@@ -72,6 +73,11 @@ struct tls_credential *credential_next_get(sec_tag_t tag,
 	}
 
 	return NULL;
+}
+
+int credential_digest(struct tls_credential *credential, void *dest, size_t *len)
+{
+	return credential_digest_raw(credential, dest, len);
 }
 
 void credentials_lock(void)
