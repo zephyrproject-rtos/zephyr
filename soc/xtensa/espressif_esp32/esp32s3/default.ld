@@ -232,6 +232,7 @@ SECTIONS
     _esp_system_init_fn_array_start = ABSOLUTE(.);
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
+
     _rodata_end = ABSOLUTE(.);
     __rodata_region_end = ABSOLUTE(.);
     /* Literals are also RO data. */
@@ -258,16 +259,14 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
+  SECTION_PROLOGUE(_RODATA_SECTION_END,(NOLOAD),ALIGN(0x10))
   {
     /*
       This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address
       We don't need to include the noload rodata in this section
     */
-    . = ALIGN (16);
     *(.rodata_wlog_debug .rodata_wlog_debug.*)
     *(.rodata_wlog_verbose .rodata_wlog_verbose.*)
-    . = . + SIZEOF(.flash.text);
     . = ALIGN(_esp_mmu_block_size) + 0x20;
     _rodata_reserved_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -618,6 +617,7 @@ SECTIONS
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+
 #endif
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)

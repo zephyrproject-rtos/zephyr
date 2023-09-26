@@ -113,6 +113,7 @@ config ESP32_RTC_CLK_CAL_CYCLES
 	  In case more value will help improve the definition of the launch of the crystal.
 	  If the crystal could not start, it will be switched to internal RC.
 
+
 choice ESP32_UNIVERSAL_MAC_ADDRESSES
 	bool "Number of universally administered (by IEEE) MAC address"
 	default ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
@@ -170,7 +171,7 @@ config ESP32_PHY_MAX_WIFI_TX_POWER
 	  Set maximum transmit power for WiFi radio. Actual transmit power for high
 	  data rates may be lower than this setting.
 
-config ESP32_PHY_MAX_TX_POWER
+config ESP_PHY_MAX_TX_POWER
 	int
 	default ESP32_PHY_MAX_WIFI_TX_POWER
 
