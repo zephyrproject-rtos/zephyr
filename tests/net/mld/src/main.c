@@ -429,10 +429,18 @@ static void leave_mldv2_capable_routers_group(void)
 }
 
 /* We are not really interested to parse the query at this point */
-static enum net_verdict handle_mld_query(struct net_pkt *pkt,
-					 struct net_ipv6_hdr *ip_hdr,
-					 struct net_icmp_hdr *icmp_hdr)
+static int handle_mld_query(struct net_icmp_ctx *ctx,
+			    struct net_pkt *pkt,
+			    struct net_icmp_ip_hdr *hdr,
+			    struct net_icmp_hdr *icmp_hdr,
+			    void *user_data)
 {
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
+
 	is_query_received = true;
 
 	NET_DBG("Handling MLD query");
@@ -440,19 +448,19 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-static struct net_icmpv6_handler mld_query_input_handler = {
-	.type = NET_ICMPV6_MLD_QUERY,
-	.code = 0,
-	.handler = handle_mld_query,
-};
-
 static void test_catch_query(void)
 {
+	struct net_icmp_ctx ctx;
+	int ret;
+
 	join_mldv2_capable_routers_group();
 
 	is_query_received = false;
 
-	net_icmpv6_register_handler(&mld_query_input_handler);
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY,
+				0, handle_mld_query);
+	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
+		      STRINGIFY(NET_ICMPV6_MLD_QUERY), ret);
 
 	send_query(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)));
 
@@ -468,9 +476,9 @@ static void test_catch_query(void)
 
 	is_query_received = false;
 
-	net_icmpv6_unregister_handler(&mld_query_input_handler);
-
 	leave_mldv2_capable_routers_group();
+
+	net_icmp_cleanup_ctx(&ctx);
 }
 
 static void test_verify_send_report(void)
