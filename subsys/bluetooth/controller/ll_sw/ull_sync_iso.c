@@ -454,10 +454,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	/* Initialize payload pointers */
 	lll->payload_count_max = PDU_BIG_PAYLOAD_COUNT_MAX;
-	lll->payload_head = 0U;
 	lll->payload_tail = 0U;
 	for (int i = 0; i < CONFIG_BT_CTLR_SYNC_ISO_STREAM_MAX; i++) {
-		for (int j = 0; j < PDU_BIG_PAYLOAD_COUNT_MAX; j++) {
+		for (int j = 0; j < lll->payload_count_max; j++) {
 			lll->payload[i][j] = NULL;
 		}
 	}

@@ -74,7 +74,6 @@ struct lll_sync_iso {
 	struct node_rx_pdu *payload[BT_CTLR_SYNC_ISO_STREAM_MAX]
 				   [PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
-	uint8_t payload_head;
 	uint8_t payload_tail;
 
 	uint32_t window_widening_periodic_us;
