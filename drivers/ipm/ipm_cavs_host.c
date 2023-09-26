@@ -56,7 +56,7 @@ static int send(const struct device *dev, int wait, uint32_t id,
 		return -EBUSY;
 	}
 
-	if (size > MAX_MSG) {
+	if ((size < 0) || (size > MAX_MSG)) {
 		return -EMSGSIZE;
 	}
 
