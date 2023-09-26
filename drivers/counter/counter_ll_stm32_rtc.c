@@ -225,7 +225,7 @@ static uint32_t rtc_stm32_read(const struct device *dev)
 	ts -= T_TIME_OFFSET;
 
 	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
-	ticks = counter_us_to_ticks(dev, ts * USEC_PER_SEC);
+	ticks = ts * counter_get_frequency(dev);
 #else
 	ticks = rtc_time;
 #endif
@@ -271,10 +271,9 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 		 * that tick+1 event occurs before alarm setting is finished.
 		 */
 		ticks += now + 1;
-		alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC)
-			+ T_TIME_OFFSET;
+		alarm_val = (time_t)(ticks / counter_get_frequency(dev)) + T_TIME_OFFSET;
 	} else {
-		alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC);
+		alarm_val = (time_t)(ticks / counter_get_frequency(dev));
 	}
 #else
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
