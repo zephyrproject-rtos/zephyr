@@ -5,7 +5,7 @@ description: NXP MCUX LPDAC
 
 compatible: "nxp,lpdac"
 
-include: dac-controller.yaml
+include: [dac-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
