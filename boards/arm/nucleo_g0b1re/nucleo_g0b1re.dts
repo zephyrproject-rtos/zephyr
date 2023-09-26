@@ -61,6 +61,7 @@
 
 &clk_hsi48 {
 	status = "okay";
+	crs-usb-sof;
 };
 
 &pll {

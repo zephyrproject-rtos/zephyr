@@ -9,6 +9,7 @@
 
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_crs.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control.h>
@@ -74,4 +75,18 @@ void config_enable_default_clocks(void)
 {
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#if defined(CRS)
+	if (IS_ENABLED(STM32_HSI48_CRS_USB_SOF)) {
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+		/*
+		 * After reset the CRS configuration register
+		 * (CRS_CFGR) value corresponds to an USB SOF
+		 * synchronization.  FIXME: write it anyway.
+		 */
+		LL_CRS_EnableAutoTrimming();
+		LL_CRS_EnableFreqErrorCounter();
+	}
+#endif /* defined(CRS) */
+
 }
