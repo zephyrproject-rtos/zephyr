@@ -121,6 +121,11 @@ static void do_test_using(void (*sample_collection_fn)(void))
 
 	periodic_idx = 0;
 	k_sem_init(&periodic_sem, 0, 1);
+	/*
+	 * Align the test case on the first scheduled timer to the tick
+	 * will avoid the one timeout occurring shorter than the rest.
+	 */
+	k_sleep(K_TICKS(2));
 	sample_collection_fn();
 	k_sem_take(&periodic_sem, K_FOREVER);
 
