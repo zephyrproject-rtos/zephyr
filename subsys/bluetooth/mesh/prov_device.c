@@ -94,15 +94,16 @@ static void prov_invite(const uint8_t *data)
 			bt_mesh_prov->input_size > 0 || bt_mesh_prov->static_val;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
-		algorithm_bm |= BIT(BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM);
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM, 1);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
-		algorithm_bm |= BIT(BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM);
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM, 1);
 	}
 
 	if (oob_availability && IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED)) {
 		oob_type |= BT_MESH_OOB_AUTH_REQUIRED;
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM, 0);
 	}
 
 	/* Supported algorithms */
@@ -176,10 +177,18 @@ static void prov_start(const uint8_t *data)
 	bt_mesh_prov_link.oob_action = data[3];
 	bt_mesh_prov_link.oob_size = data[4];
 
+	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
+	    (bt_mesh_prov_link.oob_method == AUTH_METHOD_NO_OOB ||
+	    bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) {
+		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
 	if (bt_mesh_prov_auth(false, data[2], data[3], data[4]) < 0) {
 		LOG_ERR("Invalid authentication method: 0x%02x; "
 			"action: 0x%02x; size: 0x%02x", data[2], data[3], data[4]);
 		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
 	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
