@@ -728,6 +728,35 @@
 			status = "disabled";
 		};
 
+		/*
+		 * The SDMMC domain clock can be chosen between ICLK and PLL1P.
+		 * But ICLK is itself chosen among HSI48 (the default), PLL2Q,
+		 * PLL1Q and MSIK.
+		 *
+		 * Currently, configuring ICLK is unsupported. When support for
+		 * ICLK comes in the future, the clock source for sdmmc1 and
+		 * sdmmc2 will have to be replaced with STM32_SRC_ICLK.
+		 */
+		sdmmc1: sdmmc@420c8000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x08000000>,
+				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2L, 27U)>;
+			interrupts = <78 0>;
+			status = "disabled";
+		};
+
+		sdmmc2: sdmmc@420c8c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x10000000>,
+				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2L, 28U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+
 		dac1: dac@46021800 {
 			compatible = "st,stm32-dac";
 			reg = <0x46021800 0x400>;
