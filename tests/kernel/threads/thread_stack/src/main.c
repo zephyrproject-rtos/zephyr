@@ -333,7 +333,7 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 	size_t metadata_size;
 
 #ifdef CONFIG_USERSPACE
-	struct z_object *zo;
+	struct k_object *zo;
 
 	zo = z_object_find(stack_obj);
 	if (zo != NULL) {

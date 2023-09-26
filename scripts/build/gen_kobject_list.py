@@ -727,7 +727,7 @@ header = """%compare-lengths
 #include <zephyr/syscall_handler.h>
 #include <string.h>
 %}
-struct z_object;
+struct k_object;
 """
 
 # Different versions of gperf have different prototypes for the lookup
@@ -735,7 +735,7 @@ struct z_object;
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-struct z_object *z_object_gperf_find(const void *obj)
+struct k_object *z_object_gperf_find(const void *obj)
 {
     return z_object_lookup((const char *)obj, sizeof(void *));
 }
@@ -752,7 +752,7 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
-struct z_object *z_object_find(const void *obj)
+struct k_object *z_object_find(const void *obj)
 	ALIAS_OF(z_object_gperf_find);
 
 void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)

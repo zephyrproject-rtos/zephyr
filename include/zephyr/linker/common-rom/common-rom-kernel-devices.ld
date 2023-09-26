@@ -75,7 +75,7 @@
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()
 	 */
-	ITERABLE_SECTION_ROM(z_object_assignment, 4)
+	ITERABLE_SECTION_ROM(k_object_assignment, 4)
 #endif
 
 	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
