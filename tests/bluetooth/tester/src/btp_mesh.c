@@ -43,7 +43,7 @@ static uint8_t priv_key[32];
 
 /* Configured provisioning data */
 static uint8_t dev_uuid[16];
-static uint8_t static_auth[16];
+static uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
 
 /* Vendor Model data */
 #define VND_MODEL_ID_1 0x1234
