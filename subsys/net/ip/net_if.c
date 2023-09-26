@@ -4248,7 +4248,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 	}
 }
 
-static inline bool is_iface_offloaded(struct net_if *iface)
+bool net_if_is_offloaded(struct net_if *iface)
 {
 	return (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 		net_if_is_ip_offloaded(iface)) ||
@@ -4268,7 +4268,7 @@ static void notify_iface_up(struct net_if *iface)
 	} else
 #endif	/* CONFIG_NET_L2_CANBUS_RAW */
 	{
-		if (!is_iface_offloaded(iface)) {
+		if (!net_if_is_offloaded(iface)) {
 			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 		}
 	}
@@ -4280,7 +4280,7 @@ static void notify_iface_up(struct net_if *iface)
 	/* If the interface is only having point-to-point traffic then we do
 	 * not need to run DAD etc for it.
 	 */
-	if (!is_iface_offloaded(iface) &&
+	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
 		iface_ipv6_start(iface);
 		net_ipv4_autoconf_start(iface);
@@ -4293,7 +4293,7 @@ static void notify_iface_down(struct net_if *iface)
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 	net_virtual_disable(iface);
 
-	if (!is_iface_offloaded(iface) &&
+	if (!net_if_is_offloaded(iface) &&
 	    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
 		net_ipv4_autoconf_reset(iface);
 	}
@@ -4724,7 +4724,7 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt)
 
 bool net_if_is_wifi(struct net_if *iface)
 {
-	if (is_iface_offloaded(iface)) {
+	if (net_if_is_offloaded(iface)) {
 		return net_off_is_wifi_offloaded(iface);
 	}
 #if defined(CONFIG_NET_L2_ETHERNET)
