@@ -41,6 +41,7 @@ endif
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
 	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
+	default 3072 if 64BIT
 	default 2616 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
@@ -90,7 +91,7 @@ config SHELL_ARGC_MAX
 
 config SHELL_TAB
 	bool "The Tab button support in shell"
-	default y if !SHELL_MINIMAL
+	default y if !SHELL_MINIMAL && !SHELL_BACKEND_RTT
 	help
 	  Enable using the Tab button in the shell. The button
 	  can be used for prompting commands, or for autocompletion.
@@ -103,6 +104,14 @@ config SHELL_TAB_AUTOCOMPLETION
 	help
 	  Enable commands and subcommands autocompletion with the Tab
 	  key. This function can be deactivated to save some flash.
+
+config SHELL_ASCII_FILTER
+	bool "Filter incoming ASCII characters"
+	default y
+	help
+	  Shell will not collect characters that are not in
+	  ASCII range: <0, 127>. As a result filtered characters will not be
+	  printed on the terminal and passed to the command handler.
 
 config SHELL_WILDCARD
 	bool "Wildcard support in shell"
@@ -125,7 +134,7 @@ config SHELL_START_OBSCURED
 
 config SHELL_VT100_COMMANDS
 	bool "VT100 commands in shell"
-	default y
+	default y if !SHELL_BACKEND_RTT
 	help
 	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
 
@@ -250,6 +259,14 @@ config SHELL_AUTOSTART
 	default y
 	help
 	  If enabled, shell will be automatically started.
+
+config SHELL_CMDS_RETURN_VALUE
+	bool "Retval command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  This option enables the retval command. It is used to retrieve
+	  the return value from the most recently executed command.
 
 source "subsys/shell/modules/Kconfig"
 

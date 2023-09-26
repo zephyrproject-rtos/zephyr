@@ -94,8 +94,9 @@ properties:
     required: true
 
   "#clock-cells":
-    const: 2
+    const: 3
 
 clock-cells:
   - regidx
   - bitpos
+  - domain

@@ -29,7 +29,7 @@ static void print_dfd_status(const struct shell *sh, struct bt_mesh_dfd_srv *srv
 		      srv->phase);
 
 	if (srv->phase != BT_MESH_DFD_PHASE_IDLE && srv->dfu.xfer.slot) {
-		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": 0x%04x, \"app_idx\": %d, "
+		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": %d, \"app_idx\": %d, "
 			      "\"ttl\": %d, \"timeout_base\": %d, \"xfer_mode\": %d, "
 			      "\"apply\": %d, \"slot_idx\": %d", srv->inputs.group,
 			      srv->inputs.app_idx, srv->inputs.ttl, srv->inputs.timeout_base,
@@ -43,7 +43,7 @@ static void print_fw_status(const struct shell *sh, enum bt_mesh_dfd_status stat
 			    uint16_t idx, const uint8_t *fwid, size_t fwid_len)
 {
 	shell_fprintf(sh, SHELL_NORMAL, "{ \"status\": %d, \"slot_cnt\": %d, \"idx\": %d",
-		      status, bt_mesh_dfu_slot_foreach(NULL, NULL), idx);
+		      status, bt_mesh_dfu_slot_count(), idx);
 	if (fwid) {
 		shell_fprintf(sh, SHELL_NORMAL, ", \"fwid\": \"");
 		for (size_t i = 0; i < fwid_len; i++) {
@@ -165,7 +165,7 @@ static int cmd_dfd_receivers_get(const struct shell *sh, size_t argc, char *argv
 	for (int i = 0; i < cnt; i++) {
 		const struct bt_mesh_dfu_target *t = &dfd_srv->targets[i + first];
 
-		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": 0x%04x, \"phase\": %d, "
+		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": %d, \"phase\": %d, "
 			    "\"status\": %d, \"blob_status\": %d, \"progress\": %d, "
 			    "\"img_idx\": %d }%s", i + first, t->blob.addr, t->phase, t->status,
 			    t->blob.status, progress, t->img_idx, (i == cnt - 1) ? "" : ",");
@@ -325,10 +325,9 @@ static int cmd_dfd_fw_get(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	const struct bt_mesh_dfu_slot *slot;
-	int idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
+	int idx = bt_mesh_dfu_slot_get(fwid, fwid_len, NULL);
 
-	if (idx >= 0 && bt_mesh_dfu_slot_is_valid(slot)) {
+	if (idx >= 0) {
 		print_fw_status(sh, BT_MESH_DFD_SUCCESS, idx, fwid, fwid_len);
 	} else {
 		print_fw_status(sh, BT_MESH_DFD_ERR_FW_NOT_FOUND, 0xffff, fwid, fwid_len);
@@ -349,7 +348,7 @@ static int cmd_dfd_fw_get_by_idx(const struct shell *sh, size_t argc, char *argv
 		return err;
 	}
 
-	if (slot && bt_mesh_dfu_slot_is_valid(slot)) {
+	if (slot) {
 		print_fw_status(sh, BT_MESH_DFD_SUCCESS, idx, slot->fwid, slot->fwid_len);
 	} else {
 		print_fw_status(sh, BT_MESH_DFD_ERR_FW_NOT_FOUND, idx, NULL, 0);
@@ -412,22 +411,22 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_DFD_SRV, mod);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	dfd_cmds,
-	SHELL_CMD_ARG(receivers-add, NULL, "<addr>,<fw_idx>[;<addr>,<fw_idx>]...",
+	SHELL_CMD_ARG(receivers-add, NULL, "<Addr>,<FwIdx>[;<Addr>,<FwIdx>]...",
 		      cmd_dfd_receivers_add, 2, 0),
 	SHELL_CMD_ARG(receivers-delete-all, NULL, NULL, cmd_dfd_receivers_delete_all, 1, 0),
-	SHELL_CMD_ARG(receivers-get, NULL, "<first> <count>", cmd_dfd_receivers_get, 3, 0),
+	SHELL_CMD_ARG(receivers-get, NULL, "<First> <Count>", cmd_dfd_receivers_get, 3, 0),
 	SHELL_CMD_ARG(capabilities-get, NULL, NULL, cmd_dfd_capabilities_get, 1, 0),
 	SHELL_CMD_ARG(get, NULL, NULL, cmd_dfd_get, 1, 0),
 	SHELL_CMD_ARG(start, NULL,
-		      "<app_idx> <slot_idx> [<group> [<policy_apply> [<ttl> "
-		      "[<timeout_base> [<xfer_mode>]]]]]",
+		      "<AppKeyIdx> <SlotIdx> [<Group> [<PolicyApply> [<TTL> "
+		      "[<TimeoutBase> [<XferMode>]]]]]",
 		      cmd_dfd_start, 3, 5),
 	SHELL_CMD_ARG(suspend, NULL, NULL, cmd_dfd_suspend, 1, 0),
 	SHELL_CMD_ARG(cancel, NULL, NULL, cmd_dfd_cancel, 1, 0),
 	SHELL_CMD_ARG(apply, NULL, NULL, cmd_dfd_apply, 1, 0),
-	SHELL_CMD_ARG(fw-get, NULL, "<fwid>", cmd_dfd_fw_get, 2, 0),
-	SHELL_CMD_ARG(fw-get-by-idx, NULL, "<idx>", cmd_dfd_fw_get_by_idx, 2, 0),
-	SHELL_CMD_ARG(fw-delete, NULL, "<fwid>", cmd_dfd_fw_delete, 2, 0),
+	SHELL_CMD_ARG(fw-get, NULL, "<FwID>", cmd_dfd_fw_get, 2, 0),
+	SHELL_CMD_ARG(fw-get-by-idx, NULL, "<Idx>", cmd_dfd_fw_get_by_idx, 2, 0),
+	SHELL_CMD_ARG(fw-delete, NULL, "<FwID>", cmd_dfd_fw_delete, 2, 0),
 	SHELL_CMD_ARG(fw-delete-all, NULL, NULL, cmd_dfd_fw_delete_all, 1, 0),
 	SHELL_CMD(instance, &instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_SUBCMD_SET_END);

@@ -127,7 +127,8 @@ int led_test(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	led_test();
+	return 0;
 }

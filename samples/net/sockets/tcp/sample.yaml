@@ -6,6 +6,9 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     harness: net
     platform_allow: qemu_x86
-    tags: socket tcp
+    tags:
+      - socket
+      - net
+      - tcp
     integration_platforms:
       - qemu_x86

@@ -1,6 +1,9 @@
 common:
   min_ram: 16
-  tags: net http server
+  tags:
+    - net
+    - http
+    - server
   integration_platforms:
     - native_posix
 

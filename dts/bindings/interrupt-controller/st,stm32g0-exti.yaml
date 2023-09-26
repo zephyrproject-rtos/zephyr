@@ -4,8 +4,8 @@
 
 description: |
         STM32 controller
-        This compatible stands for all interrupt-controller blocks for the
-        STM32C0/G0/L5/mp/u5.
+        This compatible stands for all interrupt-controller blocks with two
+        dedicated Rising and Falling interrupt pending registers.
 
 compatible: "st,stm32g0-exti"
 

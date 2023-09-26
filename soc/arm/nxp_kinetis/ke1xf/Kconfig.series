@@ -32,5 +32,6 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_PWT
 	select HAS_MCUX_RCM
 	select PLATFORM_SPECIFIC_INIT
+	select HAS_PM
 	help
 	  Enable support for Kinetis KE1xF MCU series

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
 
@@ -40,6 +41,9 @@ struct sockaddr_in *zperf_get_sin(void)
 	return &in4_addr_my;
 }
 
+#define ZPERF_WORK_Q_THREAD_PRIORITY                                                               \
+	CLAMP(CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, K_HIGHEST_APPLICATION_THREAD_PRIO,              \
+	      K_LOWEST_APPLICATION_THREAD_PRIO)
 K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 
 static struct k_work_q zperf_work_q;
@@ -127,7 +131,7 @@ const struct in6_addr *zperf_get_default_if_in6_addr(void)
 }
 
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
-			      int proto)
+			      int priority, int proto)
 {
 	socklen_t addrlen = peer_addr->sa_family == AF_INET6 ?
 			    sizeof(struct sockaddr_in6) :
@@ -188,6 +192,24 @@ int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY) && priority >= 0) {
+		uint8_t prio = priority;
+
+		if (!IS_ENABLED(CONFIG_NET_ALLOW_ANY_PRIORITY) &&
+		    (prio >= NET_MAX_PRIORITIES)) {
+			NET_ERR("Priority %d is too large, maximum allowed is %d",
+				prio, NET_MAX_PRIORITIES - 1);
+			return -EINVAL;
+		}
+
+		if (zsock_setsockopt(sock, SOL_SOCKET, SO_PRIORITY,
+				     &prio,
+				     sizeof(prio)) != 0) {
+			NET_WARN("Failed to set SOL_SOCKET - SO_PRIORITY socket option.");
+			return -EINVAL;
+		}
+	}
+
 	ret = zsock_connect(sock, peer_addr, addrlen);
 	if (ret < 0) {
 		NET_ERR("Connect failed (%d)", errno);
@@ -210,14 +232,13 @@ void zperf_async_work_submit(struct k_work *work)
 	k_work_submit_to_queue(&zperf_work_q, work);
 }
 
-static int zperf_init(const struct device *unused)
+static int zperf_init(void)
 {
-	ARG_UNUSED(unused);
 
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
-			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
-			   CONFIG_ZPERF_WORK_Q_THREAD_PRIORITY, NULL);
+			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack), ZPERF_WORK_Q_THREAD_PRIORITY,
+			   NULL);
 	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
 
 	zperf_udp_uploader_init();

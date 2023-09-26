@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import inspect
 import os
 import pickle
 import sys
@@ -11,8 +12,6 @@ from pathlib import Path
 ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
-
-from devicetree import edtlib
 
 # Types we support
 # 'string', 'int', 'hex', 'bool'
@@ -26,6 +25,7 @@ if not doc_mode:
     if EDT_PICKLE is not None and os.path.isfile(EDT_PICKLE):
         with open(EDT_PICKLE, 'rb') as f:
             edt = pickle.load(f)
+            edtlib = inspect.getmodule(edt)
     else:
         edt = None
 
@@ -374,6 +374,28 @@ def dt_node_reg(kconf, name, path, index=0, unit=None):
         return str(_dt_node_reg_addr(kconf, path, index, unit))
     if name == "dt_node_reg_addr_hex":
         return hex(_dt_node_reg_addr(kconf, path, index, unit))
+
+def dt_nodelabel_reg(kconf, name, label, index=0, unit=None):
+    """
+    This function is like dt_node_reg(), but the 'label' argument
+    should be a node label, like "foo" is here:
+
+       foo: some-node { ... };
+    """
+    if doc_mode or edt is None:
+        node = None
+    else:
+        node = edt.label2node.get(label)
+
+    if name == "dt_nodelabel_reg_size_int":
+        return str(_dt_node_reg_size(kconf, node.path, index, unit)) if node else "0"
+    if name == "dt_nodelabel_reg_size_hex":
+        return hex(_dt_node_reg_size(kconf, node.path, index, unit)) if node else "0x0"
+    if name == "dt_nodelabel_reg_addr_int":
+        return str(_dt_node_reg_addr(kconf, node.path, index, unit)) if node else "0"
+    if name == "dt_nodelabel_reg_addr_hex":
+        return hex(_dt_node_reg_addr(kconf, node.path, index, unit)) if node else "0x0"
+
 
 def _dt_node_bool_prop_generic(node_search_function, search_arg, prop):
     """
@@ -764,6 +786,10 @@ functions = {
         "dt_node_reg_addr_hex": (dt_node_reg, 1, 3),
         "dt_node_reg_size_int": (dt_node_reg, 1, 3),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
+        "dt_nodelabel_reg_addr_int": (dt_nodelabel_reg, 1, 3),
+        "dt_nodelabel_reg_addr_hex": (dt_nodelabel_reg, 1, 3),
+        "dt_nodelabel_reg_size_int": (dt_nodelabel_reg, 1, 3),
+        "dt_nodelabel_reg_size_hex": (dt_nodelabel_reg, 1, 3),
         "dt_node_bool_prop": (dt_node_bool_prop, 2, 2),
         "dt_nodelabel_bool_prop": (dt_nodelabel_bool_prop, 2, 2),
         "dt_chosen_bool_prop": (dt_chosen_bool_prop, 2, 2),

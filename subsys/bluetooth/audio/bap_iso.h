@@ -16,7 +16,7 @@ struct bt_bap_iso_dir {
 	struct bt_bap_ep *ep;
 	struct bt_iso_chan_path path;
 	struct bt_iso_chan_io_qos qos;
-	uint8_t cc[CONFIG_BT_CODEC_MAX_DATA_COUNT * CONFIG_BT_CODEC_MAX_DATA_LEN];
+	uint8_t cc[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
 };
 
 struct bt_bap_iso {
@@ -47,6 +47,8 @@ struct bt_bap_ep *bt_bap_iso_get_ep(bool unicast_client, struct bt_bap_iso *iso,
 
 struct bt_bap_ep *bt_bap_iso_get_paired_ep(const struct bt_bap_ep *ep);
 /* Unicast client-only functions*/
-void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream);
-void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream);
+void bt_bap_iso_bind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream,
+			    enum bt_audio_dir dir);
+void bt_bap_iso_unbind_stream(struct bt_bap_iso *bap_iso, struct bt_bap_stream *stream,
+			      enum bt_audio_dir dir);
 struct bt_bap_stream *bt_bap_iso_get_stream(struct bt_bap_iso *iso, enum bt_audio_dir dir);

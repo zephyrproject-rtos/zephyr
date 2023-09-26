@@ -88,3 +88,8 @@
 		zephyr,ocm		= &ocram;
 	};
 };
+
+zephyr_udc0: &usb1 {
+	compatible = "snps,dwc2";
+	status = "okay";
+};

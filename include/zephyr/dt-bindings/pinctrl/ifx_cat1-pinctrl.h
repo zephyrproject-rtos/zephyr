@@ -93,7 +93,15 @@
 #define P19 CYHAL_PORT_19
 #define P20 CYHAL_PORT_20
 
-/* Returns CYHAL GPIO from Board device tree GPIO configuration */
-#define DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(node, gpios_prop)				 \
-	CYHAL_GET_GPIO(DT_STRING_TOKEN(DT_GPIO_CTLR_BY_IDX(node, gpios_prop, 0), label), \
-		       DT_PHA_BY_IDX(node, gpios_prop, 0, pin))
+/* Returns CYHAL GPIO from Board device tree GPIO configuration
+ * CYHAL_GET_GPIO(port_number, pin_number),
+ * port_number = ((REG ADDR of node) - (REG ADDR of gpio_prt0)) / (REG SIZE of gpio_prt0)
+ * pin_number  = DT_PHA_BY_IDX(node, gpios_prop, 0, pin)
+ */
+#define DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(node, gpios_prop)			   \
+	CYHAL_GET_GPIO(								   \
+		(DT_REG_ADDR_BY_IDX(DT_GPIO_CTLR_BY_IDX(node, gpios_prop, 0), 0) - \
+		 DT_REG_ADDR_BY_IDX(DT_NODELABEL(gpio_prt0), 0)) /		   \
+		DT_REG_ADDR_BY_IDX(DT_NODELABEL(gpio_prt0), 1),			   \
+		DT_PHA_BY_IDX(node, gpios_prop, 0, pin)				   \
+		)

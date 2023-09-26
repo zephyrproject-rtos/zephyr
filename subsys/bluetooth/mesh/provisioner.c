@@ -20,9 +20,6 @@
 
 #include "common/bt_str.h"
 
-#include "host/ecc.h"
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
@@ -54,7 +51,6 @@ static struct {
 
 static void send_pub_key(void);
 static void prov_dh_key_gen(void);
-static void pub_key_ready(const uint8_t *pkey);
 
 static int reset_state(void)
 {
@@ -63,7 +59,7 @@ static int reset_state(void)
 		bt_mesh_cdb_node_del(prov_device.node, false);
 	}
 
-	return bt_mesh_prov_reset_state(pub_key_ready);
+	return bt_mesh_prov_reset_state();
 }
 
 static void prov_link_close(enum prov_bearer_link_status status)
@@ -106,12 +102,7 @@ static void send_invite(void)
 
 static void start_sent(int err, void *cb_data)
 {
-	if (!bt_pub_key_get()) {
-		atomic_set_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY);
-		LOG_WRN("Waiting for local public key");
-	} else {
-		send_pub_key();
-	}
+	send_pub_key();
 }
 
 static void send_start(void)
@@ -403,7 +394,7 @@ static void send_pub_key(void)
 	PROV_BUF(buf, PDU_LEN_PUB_KEY);
 	const uint8_t *key;
 
-	key = bt_pub_key_get();
+	key = bt_mesh_pub_key_get();
 	if (!key) {
 		LOG_ERR("No public key available");
 		prov_fail(PROV_ERR_UNEXP_ERR);
@@ -411,13 +402,8 @@ static void send_pub_key(void)
 	}
 
 	bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
-
-	/* Swap X and Y halves independently to big-endian */
-	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), key, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), &key[BT_PUB_KEY_COORD_LEN],
-			BT_PUB_KEY_COORD_LEN);
-
-	LOG_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
+	net_buf_simple_add_mem(&buf, key, PUB_KEY_SIZE);
+	LOG_DBG("Local Public Key: %s", bt_hex(buf.data + 1, PUB_KEY_SIZE));
 
 	/* PublicKeyProvisioner */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_provisioner, &buf.data[1], PDU_LEN_PUB_KEY);
@@ -430,19 +416,30 @@ static void send_pub_key(void)
 	bt_mesh_prov_link.expect = PROV_PUB_KEY;
 }
 
-static void prov_dh_key_cb(const uint8_t dhkey[BT_DH_KEY_LEN])
+static void prov_dh_key_gen(void)
 {
-	LOG_DBG("%p", dhkey);
+	const uint8_t *remote_pk;
+	const uint8_t *local_pk;
 
-	if (!dhkey) {
-		LOG_ERR("DHKey generation failed");
-		prov_fail(PROV_ERR_UNEXP_ERR);
+	local_pk = bt_mesh_prov_link.conf_inputs.pub_key_provisioner;
+	remote_pk = bt_mesh_prov_link.conf_inputs.pub_key_device;
+
+	if (!memcmp(local_pk, remote_pk, PUB_KEY_SIZE)) {
+		LOG_ERR("Public keys are identical");
+		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
-	sys_memcpy_swap(bt_mesh_prov_link.dhkey, dhkey, BT_DH_KEY_LEN);
+	if (bt_mesh_dhkey_gen(remote_pk, NULL, bt_mesh_prov_link.dhkey)) {
+		LOG_ERR("Failed to generate DHKey");
+		prov_fail(PROV_ERR_UNEXP_ERR);
+	}
 
-	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, BT_DH_KEY_LEN));
+	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, DH_KEY_SIZE));
+
+	if (atomic_test_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE)) {
+		bt_mesh_prov_link.expect = PROV_INPUT_COMPLETE;
+	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, WAIT_STRING) ||
 	    atomic_test_bit(bt_mesh_prov_link.flags, WAIT_NUMBER) ||
@@ -454,64 +451,17 @@ static void prov_dh_key_cb(const uint8_t dhkey[BT_DH_KEY_LEN])
 	send_confirm();
 }
 
-static void prov_dh_key_gen(void)
-{
-	uint8_t remote_pk_le[BT_PUB_KEY_LEN];
-	const uint8_t *remote_pk;
-	const uint8_t *local_pk;
-
-	local_pk = bt_mesh_prov_link.conf_inputs.pub_key_provisioner;
-	remote_pk = bt_mesh_prov_link.conf_inputs.pub_key_device;
-
-	/* Copy remote key in little-endian for bt_dh_key_gen().
-	 * X and Y halves are swapped independently. The bt_dh_key_gen()
-	 * will also take care of validating the remote public key.
-	 */
-	sys_memcpy_swap(remote_pk_le, remote_pk, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(&remote_pk_le[BT_PUB_KEY_COORD_LEN], &remote_pk[BT_PUB_KEY_COORD_LEN],
-			BT_PUB_KEY_COORD_LEN);
-
-	if (!memcmp(local_pk, remote_pk, BT_PUB_KEY_LEN)) {
-		LOG_ERR("Public keys are identical");
-		prov_fail(PROV_ERR_NVAL_FMT);
-		return;
-	}
-
-	if (bt_dh_key_gen(remote_pk_le, prov_dh_key_cb)) {
-		LOG_ERR("Failed to generate DHKey");
-		prov_fail(PROV_ERR_UNEXP_ERR);
-	}
-
-	if (atomic_test_bit(bt_mesh_prov_link.flags, NOTIFY_INPUT_COMPLETE)) {
-		bt_mesh_prov_link.expect = PROV_INPUT_COMPLETE;
-	}
-}
-
 static void prov_pub_key(const uint8_t *data)
 {
-	LOG_DBG("Remote Public Key: %s", bt_hex(data, BT_PUB_KEY_LEN));
+	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
 
 	atomic_set_bit(bt_mesh_prov_link.flags, REMOTE_PUB_KEY);
 
 	/* PublicKeyDevice */
-	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, data, BT_PUB_KEY_LEN);
+	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, data, PUB_KEY_SIZE);
 	bt_mesh_prov_link.bearer->clear_tx();
 
 	prov_dh_key_gen();
-}
-
-static void pub_key_ready(const uint8_t *pkey)
-{
-	if (!pkey) {
-		LOG_WRN("Public key not available");
-		return;
-	}
-
-	LOG_DBG("Local public key ready");
-
-	if (atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY)) {
-		send_pub_key();
-	}
 }
 
 static void notify_input_complete(void)
@@ -538,26 +488,25 @@ static void send_prov_data(void)
 {
 	PROV_BUF(pdu, PDU_LEN_DATA);
 	struct bt_mesh_cdb_subnet *sub;
-	uint8_t session_key[16];
+	uint8_t net_key[16];
+	struct bt_mesh_key session_key;
 	uint8_t nonce[13];
 	int err;
 
 	err = bt_mesh_session_key(bt_mesh_prov_link.dhkey,
-				  bt_mesh_prov_link.prov_salt, session_key);
+				  bt_mesh_prov_link.prov_salt, &session_key);
 	if (err) {
 		LOG_ERR("Unable to generate session key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("SessionKey: %s", bt_hex(session_key, 16));
-
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
 	if (err) {
 		LOG_ERR("Unable to generate session nonce");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
 
 	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
@@ -567,20 +516,25 @@ static void send_prov_data(void)
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
-
-	LOG_DBG("DevKey: %s", bt_hex(prov_device.new_dev_key, 16));
 
 	sub = bt_mesh_cdb_subnet_get(prov_device.node->net_idx);
 	if (sub == NULL) {
 		LOG_ERR("No subnet with net_idx %u", prov_device.node->net_idx);
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
+	}
+
+	err = bt_mesh_key_export(net_key, &sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key);
+	if (err) {
+		LOG_ERR("Unable to export network key");
+		prov_fail(PROV_ERR_UNEXP_ERR);
+		goto session_key_destructor;
 	}
 
 	bt_mesh_prov_buf_init(&pdu, PROV_DATA);
-	net_buf_simple_add_mem(&pdu, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key, 16);
+	net_buf_simple_add_mem(&pdu, net_key, sizeof(net_key));
 	net_buf_simple_add_be16(&pdu, prov_device.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
@@ -591,20 +545,23 @@ static void send_prov_data(void)
 		prov_device.node->net_idx, bt_mesh.iv_index,
 		bt_mesh_prov_link.addr);
 
-	err = bt_mesh_prov_encrypt(session_key, nonce, &pdu.data[1],
+	err = bt_mesh_prov_encrypt(&session_key, nonce, &pdu.data[1],
 				   &pdu.data[1]);
 	if (err) {
 		LOG_ERR("Unable to encrypt provisioning data");
 		prov_fail(PROV_ERR_DECRYPT);
-		return;
+		goto session_key_destructor;
 	}
 
 	if (bt_mesh_prov_send(&pdu, NULL)) {
 		LOG_ERR("Failed to send Provisioning Data");
-		return;
+		goto session_key_destructor;
 	}
 
 	bt_mesh_prov_link.expect = PROV_COMPLETE;
+
+session_key_destructor:
+	bt_mesh_key_destroy(&session_key);
 }
 
 static void prov_complete(const uint8_t *data)
@@ -612,8 +569,8 @@ static void prov_complete(const uint8_t *data)
 	struct bt_mesh_cdb_node *node = prov_device.node;
 
 	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
-		bt_hex(prov_device.new_dev_key, 16), node->net_idx, node->num_elem,
-		node->addr);
+		bt_hex(&prov_device.new_dev_key, 16), node->net_idx,
+		node->num_elem, node->addr);
 
 	bt_mesh_prov_link.expect = PROV_NO_PDU;
 	atomic_set_bit(bt_mesh_prov_link.flags, COMPLETE);
@@ -625,13 +582,18 @@ static void prov_node_add(void)
 {
 	LOG_DBG("");
 	struct bt_mesh_cdb_node *node = prov_device.node;
+	int err;
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
 		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
 					prov_device.elem_count);
 	}
 
-	memcpy(node->dev_key, prov_device.new_dev_key, 16);
+	err = bt_mesh_cdb_node_key_import(node, prov_device.new_dev_key);
+	if (err) {
+		LOG_ERR("Failed to import node device key");
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_node_store(node);
@@ -730,7 +692,7 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status status)
 {
 	LOG_DBG("");
 	if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
@@ -811,7 +773,7 @@ int bt_mesh_auth_method_set_none(void)
 	return 0;
 }
 
-int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[BT_PUB_KEY_LEN])
+int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[PUB_KEY_SIZE])
 {
 	if (public_key == NULL) {
 		return -EINVAL;

@@ -24,5 +24,8 @@ CONFIG_SERIAL=y
 # Enable pin controller
 CONFIG_PINCTRL=y
 
+# Enable GPIO driver
+CONFIG_GPIO=y
+
 # Enable clock controller
 CONFIG_CLOCK_CONTROL=y

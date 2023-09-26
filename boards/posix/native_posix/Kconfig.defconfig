@@ -42,7 +42,7 @@ endif # LOG
 
 if CONSOLE
 
-config NATIVE_POSIX_CONSOLE
+config POSIX_ARCH_CONSOLE
 	default y if !SERIAL
 
 config UART_CONSOLE

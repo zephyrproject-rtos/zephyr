@@ -1,12 +1,13 @@
-.. _lorawan_class_a_sample:
+.. zephyr:code-sample:: lorawan-class-a
+   :name: LoRaWAN class A device
+   :relevant-api: lorawan_api
 
-LoRaWAN Class A Sample
-######################
+   Join a LoRaWAN network and send a message periodically.
 
 Overview
 ********
 
-A simple application to demonstrate the LoRaWAN subsystem of Zephyr.
+A simple application to demonstrate the :ref:`LoRaWAN subsystem <lorawan_api>` of Zephyr.
 
 Building and Running
 ********************
@@ -38,5 +39,5 @@ enabled.
    :zephyr-app: samples/subsys/lorawan/class_a
    :board: nucleo_wl55jc
    :goals: build flash
-   :gen-args: -DOVERLAY_CONFIG=overlay-clock-sync.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-clock-sync.conf
    :compact:

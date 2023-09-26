@@ -1,0 +1,22 @@
+# EFM32GG12B (Giant Gecko) MCU line
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32GG12B
+	bool "EFM32GG12B Series MCU"
+	select ARM
+	select HAS_SILABS_GECKO
+	select HAS_SWO
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_EXX32
+	select SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	select SOC_GECKO_HAS_HFRCO_FREQRANGE
+	select SOC_GECKO_CMU
+	select SOC_GECKO_EMU
+	select SOC_GECKO_GPIO
+	select SOC_GECKO_TRNG
+	select SOC_GECKO_SERIES1
+	help
+	  Enable support for EFM32 GiantGecko MCU series

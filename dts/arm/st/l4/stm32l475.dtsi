@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l475", "st,stm32l4", "simple-bus";
+
 		usbotg_fs: otgfs@50000000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x50000000 0x40000>;

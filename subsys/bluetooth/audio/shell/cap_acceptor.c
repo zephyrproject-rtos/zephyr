@@ -15,6 +15,22 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include "shell/bt.h"
 
+static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_size)
+{
+	static const uint8_t ad_cap_announcement[3] = {
+		BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+		BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+	};
+
+	__ASSERT(data_size > 0, "No space for AD_CAP_ANNOUNCEMENT");
+	data[0].type = BT_DATA_SVC_DATA16;
+	data[0].data_len = ARRAY_SIZE(ad_cap_announcement);
+	data[0].data = &ad_cap_announcement[0];
+
+	return 1U;
+}
+
+#if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
 extern const struct shell *ctx_shell;
 static struct bt_csip_set_member_svc_inst *cap_csip_svc_inst;
 static uint8_t sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
@@ -261,3 +277,55 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_acceptor_cmds,
 
 SHELL_CMD_ARG_REGISTER(cap_acceptor, &cap_acceptor_cmds, "Bluetooth CAP acceptor shell commands",
 		       cmd_cap_acceptor, 1, 1);
+
+size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable)
+{
+	size_t ad_len = 0;
+
+	if (!discoverable) {
+		return ad_len;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER) && cap_csip_svc_inst != NULL) {
+		static uint8_t ad_rsi[BT_CSIP_RSI_SIZE];
+		int err;
+
+		ad_len += ad_cap_announcement_data_add(data, data_size);
+
+		/* A privacy-enabled Set Member should only advertise RSI values derived
+		 * from a SIRK that is exposed in encrypted form.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT)) {
+			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
+		}
+
+		err = bt_csip_set_member_generate_rsi(cap_csip_svc_inst, ad_rsi);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
+
+			return err;
+		}
+
+		__ASSERT(data_size > ad_len, "No space for AD_RSI");
+		data[ad_len].type = BT_DATA_CSIS_RSI;
+		data[ad_len].data_len = ARRAY_SIZE(ad_rsi);
+		data[ad_len].data = &ad_rsi[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}
+
+#else /* !CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER */
+
+size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable)
+{
+	if (!discoverable) {
+		return 0U;
+	}
+
+	return ad_cap_announcement_data_add(data, data_size);
+}
+
+#endif /* CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER */

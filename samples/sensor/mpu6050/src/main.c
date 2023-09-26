@@ -84,13 +84,13 @@ static void handle_mpu6050_drdy(const struct device *dev,
 }
 #endif /* CONFIG_MPU6050_TRIGGER */
 
-void main(void)
+int main(void)
 {
 	const struct device *const mpu6050 = DEVICE_DT_GET_ONE(invensense_mpu6050);
 
 	if (!device_is_ready(mpu6050)) {
 		printf("Device %s is not ready\n", mpu6050->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_MPU6050_TRIGGER
@@ -101,7 +101,7 @@ void main(void)
 	if (sensor_trigger_set(mpu6050, &trigger,
 			       handle_mpu6050_drdy) < 0) {
 		printf("Cannot configure trigger\n");
-		return;
+		return 0;
 	}
 	printk("Configured for triggered sampling.\n");
 #endif
@@ -116,4 +116,5 @@ void main(void)
 	}
 
 	/* triggered runs with its own thread after exit */
+	return 0;
 }

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Copyright (c) 2021, Nordic Semiconductor ASA
+# Copyright (c) 2021-2023, Nordic Semiconductor ASA
 
 # Convert Zephyr roots to absolute paths.
 #
@@ -21,19 +21,18 @@ include_guard(GLOBAL)
 
 include(extensions)
 
+# Merge in variables from other sources (e.g. sysbuild)
+zephyr_get(MODULE_EXT_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(BOARD_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(SOC_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(ARCH_ROOT MERGE SYSBUILD GLOBAL)
+zephyr_get(SCA_ROOT MERGE SYSBUILD GLOBAL)
+
 # Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
-
-# Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT BOARD_ROOT)
-
-# Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT SOC_ROOT)
-
-# Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT ARCH_ROOT)
-
-# Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT SCA_ROOT)
 
 if(unittest IN_LIST Zephyr_FIND_COMPONENTS)

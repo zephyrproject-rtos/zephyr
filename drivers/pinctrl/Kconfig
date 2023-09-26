@@ -34,6 +34,7 @@ config PINCTRL_DYNAMIC
 	  peripheral at early boot stages depending on a certain input.
 
 source "drivers/pinctrl/Kconfig.b91"
+source "drivers/pinctrl/Kconfig.ambiq"
 source "drivers/pinctrl/Kconfig.gd32"
 source "drivers/pinctrl/Kconfig.it8xxx2"
 source "drivers/pinctrl/Kconfig.npcx"
@@ -59,5 +60,9 @@ source "drivers/pinctrl/Kconfig.xmc4xxx"
 source "drivers/pinctrl/Kconfig.nxp_s32"
 source "drivers/pinctrl/Kconfig.gecko"
 source "drivers/pinctrl/Kconfig.ti_k3"
+source "drivers/pinctrl/Kconfig.emsdp"
+source "drivers/pinctrl/Kconfig.ti_cc32xx"
+source "drivers/pinctrl/Kconfig.numaker"
+source "drivers/pinctrl/Kconfig.eos_s3"
 
 endif # PINCTRL

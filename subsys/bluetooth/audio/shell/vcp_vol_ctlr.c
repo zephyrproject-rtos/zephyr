@@ -15,7 +15,7 @@
 
 #include "shell/bt.h"
 
-static struct bt_vcp_vol_ctlr *vol_ctlr;
+static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 static struct bt_vcp_included vcp_included;
 
 static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
@@ -343,7 +343,7 @@ static int cmd_vcp_vol_ctlr_discover(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
+	result = bt_vcp_vol_ctlr_discover(default_conn, &vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -361,7 +361,7 @@ static int cmd_vcp_vol_ctlr_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_read_state(vol_ctlr);
+	result = bt_vcp_vol_ctlr_read_state(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -379,7 +379,7 @@ static int cmd_vcp_vol_ctlr_flags_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_read_flags(vol_ctlr);
+	result = bt_vcp_vol_ctlr_read_flags(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -397,7 +397,7 @@ static int cmd_vcp_vol_ctlr_volume_down(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_vol_down(vol_ctlr);
+	result = bt_vcp_vol_ctlr_vol_down(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -416,7 +416,7 @@ static int cmd_vcp_vol_ctlr_volume_up(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_vol_up(vol_ctlr);
+	result = bt_vcp_vol_ctlr_vol_up(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -434,7 +434,7 @@ static int cmd_vcp_vol_ctlr_unmute_volume_down(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_unmute_vol_down(vol_ctlr);
+	result = bt_vcp_vol_ctlr_unmute_vol_down(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -452,7 +452,7 @@ static int cmd_vcp_vol_ctlr_unmute_volume_up(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_unmute_vol_up(vol_ctlr);
+	result = bt_vcp_vol_ctlr_unmute_vol_up(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -485,7 +485,7 @@ static int cmd_vcp_vol_ctlr_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_set_vol(vol_ctlr, volume);
+	result = bt_vcp_vol_ctlr_set_vol(vcp_vol_ctlr, volume);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -504,7 +504,7 @@ static int cmd_vcp_vol_ctlr_unmute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_unmute(vol_ctlr);
+	result = bt_vcp_vol_ctlr_unmute(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -522,7 +522,7 @@ static int cmd_vcp_vol_ctlr_mute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcp_vol_ctlr_mute(vol_ctlr);
+	result = bt_vcp_vol_ctlr_mute(vcp_vol_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}

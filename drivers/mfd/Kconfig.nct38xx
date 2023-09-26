@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google, LLC
+# SPDX -License-Identifier: Apache-2.0
+
+config MFD_NCT38XX
+	bool "Nuvton NCT38xx multi-function device driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT38XX_ENABLED
+	select I2C
+	help
+	  Enable the Nuvoton NCT38xx TCPC multi-function device driver.

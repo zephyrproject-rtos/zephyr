@@ -209,11 +209,11 @@ if (CONFIG_BUILD_WITH_TFM)
 
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_connection_api.c
 
     # Specific to nordic_nrf platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
@@ -311,6 +311,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
+      -DCONFIG_TFM_MEMORY_USAGE_QUIET=OFF
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
@@ -407,7 +408,6 @@ if (CONFIG_BUILD_WITH_TFM)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
 
-    zephyr_library_sources_ifdef(CONFIG_TFM_CONNECTION_BASED_SERVICE_API       ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_connection_api.c)
     zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
 
     if(CONFIG_SOC_FAMILY_NRF)
@@ -483,11 +483,11 @@ if (CONFIG_BUILD_WITH_TFM)
       PARENT_SCOPE)
   endfunction()
 
-  set(MERGED_FILE ${CMAKE_BINARY_DIR}/tfm_merged.hex)
-  set(S_NS_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns.hex)
-  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns_signed.hex)
-  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
-  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
+  set(MERGED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
+  set(S_NS_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
+  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
 
   if (CONFIG_TFM_USE_NS_APP)
     # Use the TF-M NS binary as the Non-Secure application firmware image

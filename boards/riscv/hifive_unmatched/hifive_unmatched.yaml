@@ -11,3 +11,5 @@ testing:
     - bluetooth
 supported:
   - spi
+  - memc
+vendor: sifive

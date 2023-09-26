@@ -40,6 +40,10 @@ static inline bool verify_emptyness(sys_slist_t *list)
 		return false;
 	}
 
+	if (sys_slist_len(list) != 0) {
+		return false;
+	}
+
 	count = 0;
 	SYS_SLIST_FOR_EACH_NODE(list, node) {
 		count++;
@@ -95,6 +99,10 @@ static inline bool verify_content_amount(sys_slist_t *list, int amount)
 	}
 
 	if (!sys_slist_peek_tail(list)) {
+		return false;
+	}
+
+	if (sys_slist_len(list) != amount) {
 		return false;
 	}
 

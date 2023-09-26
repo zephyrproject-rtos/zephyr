@@ -1,16 +1,34 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header_ifdef(
+  CONFIG_FLASH_SIMULATOR
+  ${ZEPHYR_BASE}/include/zephyr/drivers/flash/flash_simulator.h
+)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_NORDIC_QSPI_NOR
+  ${ZEPHYR_BASE}/include/zephyr/drivers/flash/nrf_qspi_nor.h
+)
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/flash.h)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
-zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
+if(CONFIG_FLASH_SIMULATOR)
+  zephyr_library_sources(flash_simulator.c)
+  if(CONFIG_NATIVE_LIBRARY)
+    target_sources(native_simulator INTERFACE flash_simulator_native.c)
+  elseif(CONFIG_ARCH_POSIX)
+    zephyr_library_sources(flash_simulator_native.c)
+  endif()
+endif()
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ITE_IT8XXX2 flash_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER soc_flash_nrf_ticker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_LPC soc_flash_lpc.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
@@ -20,6 +38,8 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM flash_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_GECKO flash_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RV32M1 soc_flash_rv32m1.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_NPCX_FIU_QSPI flash_npcx_fiu_qspi.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_NPCX_FIU_NOR flash_npcx_fiu_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_OSPI flash_stm32_ospi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_flexspi_mx25um51345g.c)
@@ -30,6 +50,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SMARTBOND flash_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c flash_cadence_qspi_nor_ll.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_XMC4XXX soc_flash_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")
@@ -48,6 +69,7 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32H7_FLASH_CONTROLLER_ENABLED flash_stm32h7x.c)
   else()
     zephyr_library_sources(flash_stm32.c)
+    zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
 
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F1_FLASH_CONTROLLER_ENABLED flash_stm32f1x.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F2_FLASH_CONTROLLER_ENABLED flash_stm32f2x.c)
@@ -58,6 +80,7 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32WB_FLASH_CONTROLLER_ENABLED flash_stm32wbx.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32G0_FLASH_CONTROLLER_ENABLED flash_stm32g0x.c)
     zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32G4_FLASH_CONTROLLER_ENABLED flash_stm32g4x.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32WBA_FLASH_CONTROLLER_ENABLED flash_stm32wbax.c)
   endif()
 endif()
 
@@ -84,11 +107,13 @@ zephyr_library_include_directories_ifdef(
   ${ZEPHYR_BASE}/drivers/memc
 )
 
+zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi_nor.c)
 zephyr_library_include_directories_ifdef(
-	CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
-	${ZEPHYR_BASE}/subsys/bluetooth
-	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
-	)
+  CONFIG_FLASH_NXP_S32_QSPI_NOR
+  ${ZEPHYR_BASE}/drivers/memc
+)
 
 zephyr_library_sources_ifdef(CONFIG_FLASH_SHELL flash_shell.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_JESD216 jesd216.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_CAT1 flash_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NUMAKER soc_flash_numaker.c)

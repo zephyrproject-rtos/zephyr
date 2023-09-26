@@ -55,7 +55,8 @@ static struct bst_test_list *install(struct bst_test_list *tests)
 
 bst_test_install_t test_installers[] = { install, NULL };
 
-void main(void)
+int main(void)
 {
 	bst_main();
+	return 0;
 }

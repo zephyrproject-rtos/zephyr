@@ -1,7 +1,8 @@
-.. _samples_lcd_hd44780:
+.. zephyr:code-sample:: lcd-hd44780
+   :name: HD44780 LCD controller
+   :relevant-api: gpio_interface
 
-LCD HD44780 driver sample
-#########################
+   Control an HD44780-based LCD display using GPIO pins.
 
 Overview
 ********

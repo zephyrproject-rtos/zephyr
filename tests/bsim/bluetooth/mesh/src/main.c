@@ -13,6 +13,8 @@ extern struct bst_test_list *test_rpc_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_provision_pst_install(struct bst_test_list *tests);
 #if defined(CONFIG_BT_MESH_V1d1)
 extern struct bst_test_list *test_dfu_install(struct bst_test_list *test);
+extern struct bst_test_list *test_blob_pst_install(struct bst_test_list *test);
+extern struct bst_test_list *test_sar_pst_install(struct bst_test_list *test);
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
 extern struct bst_test_list *test_adv_install(struct bst_test_list *test);
@@ -44,6 +46,8 @@ bst_test_install_t test_installers[] = {
 #if defined(CONFIG_BT_MESH_V1d1)
 	test_provision_pst_install,
 	test_dfu_install,
+	test_blob_pst_install,
+	test_sar_pst_install,
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
 	test_adv_install,
@@ -70,7 +74,20 @@ bst_test_install_t test_installers[] = {
 	NULL
 };
 
-void main(void)
+static struct k_thread bsim_mesh_thread;
+static K_KERNEL_STACK_DEFINE(bsim_mesh_thread_stack, 4096);
+
+static void bsim_mesh_entry_point(void *unused1, void *unused2, void *unused3)
 {
 	bst_main();
+}
+
+int main(void)
+{
+	k_thread_create(&bsim_mesh_thread, bsim_mesh_thread_stack,
+			K_KERNEL_STACK_SIZEOF(bsim_mesh_thread_stack), bsim_mesh_entry_point, NULL,
+			NULL, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
+	k_thread_name_set(&bsim_mesh_thread, "BabbleSim BLE Mesh tests");
+
+	return 0;
 }

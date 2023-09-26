@@ -4,5 +4,6 @@
 
 rsource "Kconfig.loopback"
 rsource "Kconfig.cdc_acm"
+rsource "Kconfig.cdc_ecm"
 rsource "Kconfig.bt"
 rsource "Kconfig.msc"

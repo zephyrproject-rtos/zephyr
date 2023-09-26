@@ -462,9 +462,8 @@ DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 		" has cache size which is not a multiple of its sector size");
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE)
 
-static int disk_flash_init(const struct device *dev)
+static int disk_flash_init(void)
 {
-	ARG_UNUSED(dev);
 	int err = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(flash_disks); i++) {

@@ -45,7 +45,6 @@ int sema_context_switch(void)
 {
 	uint32_t diff;
 
-	bench_test_start();
 	timing_start();
 
 	k_thread_create(&thread_one_data, thread_one_stack,
@@ -57,13 +56,13 @@ int sema_context_switch(void)
 
 	timestamp_end_sema_t_c = timing_counter_get();
 	diff = timing_cycles_get(&timestamp_start_sema_t_c, &timestamp_end_sema_t_c);
-	PRINT_STATS("Semaphore take time (context switch)", diff);
+	PRINT_STATS("Semaphore take time (context switch)", diff, false, "");
 
 
 	timestamp_start_sema_g_c = timing_counter_get();
 	k_sem_give(&sem_bench);
 	diff = timing_cycles_get(&timestamp_start_sema_g_c, &timestamp_end_sema_g_c);
-	PRINT_STATS("Semaphore give time (context switch)", diff);
+	PRINT_STATS("Semaphore give time (context switch)", diff, false, "");
 
 	timing_stop();
 
@@ -85,6 +84,8 @@ int sema_test_signal(void)
 	uint32_t diff;
 	timing_t timestamp_start;
 	timing_t timestamp_end;
+	const char *notes = "";
+	int  end;
 
 	bench_test_start();
 	timing_start();
@@ -96,15 +97,17 @@ int sema_test_signal(void)
 	}
 
 	timestamp_end = timing_counter_get();
+	end = bench_test_end();
 	timing_stop();
 
-	if (bench_test_end() == 0) {
-		diff = timing_cycles_get(&timestamp_start, &timestamp_end);
-		PRINT_STATS_AVG("Average semaphore signal time", diff, N_TEST_SEMA);
-	} else {
+	if (end != 0) {
 		error_count++;
-		PRINT_OVERFLOW_ERROR();
+		notes = TICK_OCCURRENCE_ERROR;
 	}
+
+	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
+	PRINT_STATS_AVG("Average semaphore signal time", diff, N_TEST_SEMA,
+			false, notes);
 
 	bench_test_start();
 	timing_start();
@@ -116,15 +119,17 @@ int sema_test_signal(void)
 	}
 
 	timestamp_end = timing_counter_get();
+	end = bench_test_end();
 	timing_stop();
 
-	if (bench_test_end() == 0) {
-		diff = timing_cycles_get(&timestamp_start, &timestamp_end);
-		PRINT_STATS_AVG("Average semaphore test time", diff, N_TEST_SEMA);
-	} else {
+	if (end != 0) {
 		error_count++;
-		PRINT_OVERFLOW_ERROR();
+		notes = TICK_OCCURRENCE_ERROR;
 	}
+
+	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
+	PRINT_STATS_AVG("Average semaphore test time", diff, N_TEST_SEMA,
+			false, notes);
 
 	return 0;
 }

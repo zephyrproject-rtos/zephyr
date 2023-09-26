@@ -9,26 +9,7 @@
 
 #include <zephyr/types.h>
 
-/* Defines for enabling/disabling an IO */
-#define IOC_SLEW_ENABLE         0x00001000
-#define IOC_SLEW_DISABLE        0x00000000
-#define IOC_INPUT_ENABLE        0x20000000
-#define IOC_INPUT_DISABLE       0x00000000
-#define IOC_HYST_ENABLE         0x40000000
-#define IOC_HYST_DISABLE        0x00000000
-
-/* Defines that can be used to set the IO Mode of an IO */
-#define IOC_IOMODE_NORMAL                0x00000000
-#define IOC_IOMODE_INV                   0x01000000
-#define IOC_IOMODE_OPEN_DRAIN_NORMAL     0x04000000
-#define IOC_IOMODE_OPEN_DRAIN_INV        0x05000000
-#define IOC_IOMODE_OPEN_SRC_NORMAL       0x06000000
-#define IOC_IOMODE_OPEN_SRC_INV          0x07000000
-
-/* Defines that can be used to set pull on an IO */
-#define IOC_NO_IOPULL           0x00006000
-#define IOC_IOPULL_UP           0x00004000
-#define IOC_IOPULL_DOWN         0x00002000
+#include <driverlib/ioc.h>
 
 typedef struct pinctrl_soc_pin {
 	uint32_t pin;
@@ -43,8 +24,10 @@ typedef struct pinctrl_soc_pin {
 	DT_PROP(node_id, bias_disable) * IOC_NO_IOPULL |  \
 	DT_PROP(node_id, drive_open_drain) * IOC_IOMODE_OPEN_DRAIN_NORMAL | \
 	DT_PROP(node_id, drive_open_source) * IOC_IOMODE_OPEN_SRC_NORMAL | \
+	(DT_PROP(node_id, drive_strength) >> 2) << IOC_IOCFG0_IOCURR_S | \
 	DT_PROP(node_id, input_enable) * IOC_INPUT_ENABLE | \
-	DT_PROP(node_id, input_schmitt_enable) * IOC_HYST_ENABLE)
+	DT_PROP(node_id, input_schmitt_enable) * IOC_HYST_ENABLE | \
+	DT_PROP(node_id, ti_input_edge_detect))
 
 #define CC13XX_CC26XX_DT_PIN(node_id)					\
 	{							\

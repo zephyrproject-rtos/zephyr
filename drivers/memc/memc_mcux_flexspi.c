@@ -8,10 +8,9 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/pm/device.h>
+#include <soc.h>
 
 #include "memc_mcux_flexspi.h"
 
@@ -48,9 +47,7 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 	size_t size[kFLEXSPI_PortCount];
 	struct memc_flexspi_buf_cfg *buf_cfg;
 	uint8_t buf_cfg_cnt;
@@ -79,6 +76,34 @@ int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
 	FLEXSPI_UpdateLUT(data->base, index, cmd, count);
 
 	return 0;
+}
+
+int memc_flexspi_update_clock(const struct device *dev,
+		flexspi_device_config_t *device_config,
+		flexspi_port_t port, enum memc_flexspi_clock_t clock)
+{
+#if CONFIG_SOC_SERIES_IMX_RT10XX
+	struct memc_flexspi_data *data = dev->data;
+
+	memc_flexspi_wait_bus_idle(dev);
+
+	FLEXSPI_Enable(data->base, false);
+
+	flexspi_clock_set_div(clock == MEMC_FLEXSPI_CLOCK_166M ? 0 : 3);
+
+	FLEXSPI_Enable(data->base, true);
+
+	memc_flexspi_reset(dev);
+
+	device_config->flexspiRootClk = flexspi_clock_get_freq();
+	FLEXSPI_UpdateDllValue(data->base, device_config, port);
+
+	memc_flexspi_reset(dev);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int memc_flexspi_set_device_config(const struct device *dev,
@@ -157,14 +182,12 @@ static int memc_flexspi_init(const struct device *dev)
 	 * SOCs such as the RT1064 and RT1024 have internal flash, and no pinmux
 	 * settings, continue if no pinctrl state found.
 	 */
-#ifdef CONFIG_PINCTRL
 	int ret;
 
 	ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
-#endif
 
 	FLEXSPI_GetDefaultConfig(&flexspi_config);
 
@@ -176,7 +199,11 @@ static int memc_flexspi_init(const struct device *dev)
 	FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
 	flexspi_config.enableCombination = data->combination_mode;
 #endif
+
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT) && \
+	FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
+#endif
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
 
 	/* Configure AHB RX buffers, if any configuration settings are present */
@@ -206,20 +233,16 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0 && ret != -ENOENT) {
 			return ret;
 		}
-#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0 && ret != -ENOENT) {
 			return ret;
 		}
-#endif
 		break;
 	default:
 		return -ENOTSUP;
@@ -239,16 +262,8 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
 
-#ifdef CONFIG_PINCTRL
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif
-
 #define MEMC_FLEXSPI(n)							\
-	PINCTRL_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static uint16_t  buf_cfg_##n[] =				\
 		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
 									\
@@ -267,7 +282,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,	\
 		.buf_cfg_cnt = sizeof(buf_cfg_##n) /			\
 			sizeof(struct memc_flexspi_buf_cfg),		\
-		PINCTRL_INIT(n)						\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);		\

@@ -20,13 +20,14 @@
 #define STM32_SRC_HSI		0x001
 #define STM32_SRC_LSE		0x002
 #define STM32_SRC_LSI		0x003
-#define STM32_SRC_HSI48		0x004
+#define STM32_SRC_HSI14		0x004
+#define STM32_SRC_HSI48		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
-#define STM32_SRC_PCLK		0x006
+#define STM32_SRC_PCLK		0x007
 /** PLL clock */
-#define STM32_SRC_PLLCLK	0x007
+#define STM32_SRC_PLLCLK	0x008
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
@@ -68,7 +69,6 @@
 #define I2C1_SEL(val)		STM32_CLOCK(val, 1, 4, CFGR3_REG)
 #define CEC_SEL(val)		STM32_CLOCK(val, 1, 6, CFGR3_REG)
 #define USB_SEL(val)		STM32_CLOCK(val, 1, 7, CFGR3_REG)
-#define ADC_SEL(val)		STM32_CLOCK(val, 1, 8, CFGR3_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 16, CFGR3_REG)
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 18, CFGR3_REG)
 /** BDCR devices */

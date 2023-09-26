@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f070", "st,stm32f0", "simple-bus";
+
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;

@@ -562,7 +562,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	shell_print(ctx_shell, "Notification: length %u", length);
+	shell_print(ctx_shell, "Notification: value_handle %u, length %u",
+		    params->value_handle, length);
 	shell_hexdump(ctx_shell, data, length);
 
 	return BT_GATT_ITER_CONTINUE;
@@ -717,7 +718,7 @@ static uint8_t print_attr(const struct bt_gatt_attr *attr, uint16_t handle,
 
 static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_uuid_16 uuid;
+	struct bt_uuid_16 uuid16;
 	size_t total_len;
 
 	memset(&stats, 0, sizeof(stats));
@@ -725,14 +726,14 @@ static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 1) {
 		uint16_t num_matches = 0;
 
-		uuid.uuid.type = BT_UUID_TYPE_16;
-		uuid.val = strtoul(argv[1], NULL, 16);
+		uuid16.uuid.type = BT_UUID_TYPE_16;
+		uuid16.val = strtoul(argv[1], NULL, 16);
 
 		if (argc > 2) {
 			num_matches = strtoul(argv[2], NULL, 10);
 		}
 
-		bt_gatt_foreach_attr_type(0x0001, 0xffff, &uuid.uuid, NULL,
+		bt_gatt_foreach_attr_type(0x0001, 0xffff, &uuid16.uuid, NULL,
 					  num_matches, print_attr,
 					  (void *)sh);
 		return 0;

@@ -7,7 +7,7 @@
 # MDIO options
 #
 menuconfig MDIO
-	bool "MDIO Drivers"
+	bool "Management Data Input/Output (MDIO) drivers"
 	help
 	  Enable MDIO Driver Configuration
 
@@ -28,6 +28,8 @@ config MDIO_SHELL
 source "drivers/mdio/Kconfig.esp32"
 source "drivers/mdio/Kconfig.sam"
 source "drivers/mdio/Kconfig.nxp_s32"
+source "drivers/mdio/Kconfig.adin2111"
+source "drivers/mdio/Kconfig.gpio"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"

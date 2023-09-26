@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	aliases {
 		led0 = &led0;
@@ -63,36 +65,43 @@
 			/* gpio flags need validation */
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 		button2: button_2 {
 			/* gpio flags need validation */
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_2>;
 		};
 		switch0: switch_0 {
 			/* gpio flags need validation */
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 1";
+			zephyr,code = <INPUT_KEY_3>;
 		};
 		switch1: switch_1 {
 			/* gpio flags need validation */
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 2";
+			zephyr,code = <INPUT_KEY_4>;
 		};
 		switch2: switch_2 {
 			/* gpio flags need validation */
 			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 3";
+			zephyr,code = <INPUT_KEY_5>;
 		};
 		switch3: switch_3 {
 			/* gpio flags need validation */
 			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 			label = "DIP SW1 - Switch 4";
+			zephyr,code = <INPUT_KEY_6>;
 		};
 	};
 

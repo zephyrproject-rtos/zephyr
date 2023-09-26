@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/kernel.h>
-
+#include <zephyr/sys/util.h>
 #include <zephyr/net/coap.h>
 
 #include <zephyr/tc_util.h>
@@ -552,7 +552,7 @@ static void prepare_block1_response(struct coap_packet *rsp,
 	zassert_equal(r, 0, "Unable to append block1 option");
 }
 
-#define ITER_COUNT(len, block_len) (((len) + (block_len) - 1) / (block_len))
+#define ITER_COUNT(len, block_len) DIV_ROUND_UP(len, block_len)
 
 static void verify_block1_request(struct coap_block_context *req_ctx,
 				  uint8_t iter)
@@ -1259,6 +1259,463 @@ ZTEST(coap, test_build_options_out_of_order_1)
 	zassert_equal(cpkt.opt_len, 43, "Wrong options size");
 	zassert_equal(cpkt.delta, 60, "Wrong delta");
 	zassert_equal(cpkt.offset, 52, "Wrong data size");
+}
+
+#define ASSERT_OPTIONS_AND_PAYLOAD(cpkt, expected_opt_len, expected_data, expected_offset,         \
+				   expected_delta)                                                 \
+	do {                                                                                       \
+		size_t expected_data_l = ARRAY_SIZE(expected_data);                                \
+		zassert_equal(expected_offset, expected_data_l);                                   \
+		static const uint8_t expected_hdr_len = 9;                                         \
+		zassert_equal(expected_hdr_len, cpkt.hdr_len, "Wrong header length");              \
+		zassert_equal(expected_opt_len, cpkt.opt_len, "Wrong option length");              \
+		zassert_equal(expected_offset, cpkt.offset, "Wrong offset");                       \
+		zassert_mem_equal(expected_data, cpkt.data, expected_offset, "Wrong data");        \
+		zassert_equal(expected_delta, cpkt.delta, "Wrong delta");                          \
+	} while (0)
+
+static void init_basic_test_msg(struct coap_packet *cpkt, uint8_t *data)
+{
+	static const char token[] = "token";
+	const char *uri_path = "path";
+	const char *uri_host = "hostname";
+	const char *uri_query0 = "query0";
+	const char *uri_query1 = "query1";
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+
+	int r;
+
+	r = coap_packet_init(cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_SIZE2,
+				   coap_block_size_to_bytes(COAP_BLOCK_128));
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_packet_append_option(cpkt, COAP_OPTION_URI_PATH, uri_path, strlen(uri_path));
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_CONTENT_FORMAT, COAP_CONTENT_FORMAT_APP_JSON);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_packet_append_option(cpkt, COAP_OPTION_URI_HOST, uri_host, strlen(uri_host));
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_URI_PORT, 5638);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_packet_append_option(cpkt, COAP_OPTION_URI_QUERY, uri_query0, strlen(uri_query0));
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_packet_append_option(cpkt, COAP_OPTION_URI_QUERY, uri_query1, strlen(uri_query1));
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_ACCEPT, COAP_CONTENT_FORMAT_APP_CBOR);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_OBSERVE, 0);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_MAX_AGE, 3);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_SIZE1, 64);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_9[] = {
+		0x45, 0x02, 0x12, 0x34, 't',  'o',  'k',  'e',	'n',  0x38, 'h',  'o',	's',
+		't',  'n',  'a',  'm',	'e',  0x30, 0x12, 0x16, 0x06, 'D',  'p',  'a',	't',
+		'h',  0x11, 0x32, 0x21, 0x03, 0x16, 'q',  'u',	'e',  'r',  'y',  0x30, 0x06,
+		'q',  'u',  'e',  'r',	'y',  0x31, 0x21, 0x3c, 0xb1, 0x80, 0xd1, 0x13, 0x40,
+	};
+
+	ASSERT_OPTIONS((*cpkt), 43, expected_9, 52);
+
+	r = coap_packet_append_payload_marker(cpkt);
+	zassert_equal(r, 0, "Could not append payload marker");
+
+	static const uint8_t test_payload[] = {0xde, 0xad, 0xbe, 0xef};
+
+	r = coap_packet_append_payload(cpkt, test_payload, ARRAY_SIZE(test_payload));
+	zassert_equal(r, 0, "Could not append test payload");
+
+	zassert_equal((*cpkt).hdr_len, 9, "Wrong header len");
+	zassert_equal((*cpkt).opt_len, 43, "Wrong options size");
+	zassert_equal((*cpkt).delta, 60, "Wrong delta");
+	zassert_equal((*cpkt).offset, 57, "Wrong data size");
+}
+
+ZTEST(coap, test_remove_first_coap_option)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	init_basic_test_msg(&cpkt, data);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_HOST);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_0[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x60, 0x12, 0x16,
+		0x06, 0x44, 0x70, 0x61, 0x74, 0x68, 0x11, 0x32, 0x21, 0x03, 0x16, 0x71,
+		0x75, 0x65, 0x72, 0x79, 0x30, 0x06, 0x71, 0x75, 0x65, 0x72, 0x79, 0x31,
+		0x21, 0x3c, 0xb1, 0x80, 0xd1, 0x13, 0x40, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 34, expected_0, 48, 60);
+}
+
+ZTEST(coap, test_remove_middle_coap_option)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	init_basic_test_msg(&cpkt, data);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_OBSERVE);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_0[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x38, 0x68, 0x6f, 0x73, 0x74,
+		0x6e, 0x61, 0x6d, 0x65, 0x42, 0x16, 0x06, 0x44, 0x70, 0x61, 0x74, 0x68, 0x11, 0x32,
+		0x21, 0x03, 0x16, 0x71, 0x75, 0x65, 0x72, 0x79, 0x30, 0x06, 0x71, 0x75, 0x65, 0x72,
+		0x79, 0x31, 0x21, 0x3c, 0xb1, 0x80, 0xd1, 0x13, 0x40, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 42, expected_0, 56, 60);
+}
+
+ZTEST(coap, test_remove_last_coap_option)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	init_basic_test_msg(&cpkt, data);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_SIZE1);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_0[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x38, 0x68, 0x6f, 0x73, 0x74,
+		0x6e, 0x61, 0x6d, 0x65, 0x30, 0x12, 0x16, 0x06, 0x44, 0x70, 0x61, 0x74, 0x68, 0x11,
+		0x32, 0x21, 0x03, 0x16, 0x71, 0x75, 0x65, 0x72, 0x79, 0x30, 0x06, 0x71, 0x75, 0x65,
+		0x72, 0x79, 0x31, 0x21, 0x3c, 0xb1, 0x80, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 40, expected_0, 54, 28);
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_SIZE1, 65);
+	zassert_equal(r, 0, "Could not add option at end");
+
+	static const uint8_t expected_1[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x38, 0x68, 0x6f,
+		0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x30, 0x12, 0x16, 0x06, 0x44, 0x70,
+		0x61, 0x74, 0x68, 0x11, 0x32, 0x21, 0x03, 0x16, 0x71, 0x75, 0x65, 0x72,
+		0x79, 0x30, 0x06, 0x71, 0x75, 0x65, 0x72, 0x79, 0x31, 0x21, 0x3c, 0xb1,
+		0x80, 0xd1, 0x13, 0x41, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 43, expected_1, 57, 60);
+}
+
+ZTEST(coap, test_remove_single_coap_option)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	static const char token[] = "token";
+	const char *uri_path = "path";
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+
+	int r1;
+
+	r1 = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			      strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r1, 0, "Could not initialize packet");
+
+	r1 = coap_packet_append_option(&cpkt, COAP_OPTION_URI_PATH, uri_path, strlen(uri_path));
+	zassert_equal(r1, 0, "Could not append option");
+
+	r1 = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r1, 0, "Could not append payload marker");
+
+	static const uint8_t test_payload[] = {0xde, 0xad, 0xbe, 0xef};
+
+	r1 = coap_packet_append_payload(&cpkt, test_payload, ARRAY_SIZE(test_payload));
+	zassert_equal(r1, 0, "Could not append test payload");
+
+	static const uint8_t expected_0[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b,
+					     0x65, 0x6e, 0xb4, 0x70, 0x61, 0x74, 0x68,
+					     0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 5, expected_0, 19, 11);
+
+	/* remove the one and only option */
+	r1 = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_PATH);
+	zassert_equal(r1, 0, "Could not remove option");
+
+	static const uint8_t expected_1[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b,
+					     0x65, 0x6e, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 0, expected_1, 14, 0);
+}
+
+ZTEST(coap, test_remove_repeatable_coap_option)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	init_basic_test_msg(&cpkt, data);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_QUERY);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_0[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x38, 0x68, 0x6f, 0x73,
+		0x74, 0x6e, 0x61, 0x6d, 0x65, 0x30, 0x12, 0x16, 0x06, 0x44, 0x70, 0x61, 0x74,
+		0x68, 0x11, 0x32, 0x21, 0x03, 0x16, 0x71, 0x75, 0x65, 0x72, 0x79, 0x31, 0x21,
+		0x3c, 0xb1, 0x80, 0xd1, 0x13, 0x40, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 36, expected_0, 50, 60);
+}
+
+ZTEST(coap, test_remove_all_coap_options)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+
+	init_basic_test_msg(&cpkt, data);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_PORT);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_OBSERVE);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_SIZE1);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_0[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x38, 0x68, 0x6f, 0x73,
+		0x74, 0x6e, 0x61, 0x6d, 0x65, 0x84, 0x70, 0x61, 0x74, 0x68, 0x11, 0x32, 0x21,
+		0x03, 0x16, 0x71, 0x75, 0x65, 0x72, 0x79, 0x30, 0x06, 0x71, 0x75, 0x65, 0x72,
+		0x79, 0x31, 0x21, 0x3c, 0xb1, 0x80, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 36, expected_0, 50, 28);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_HOST);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_SIZE2);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_CONTENT_FORMAT);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_1[] = {
+		0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0xb4, 0x70, 0x61, 0x74,
+		0x68, 0x31, 0x03, 0x16, 0x71, 0x75, 0x65, 0x72, 0x79, 0x30, 0x06, 0x71, 0x75,
+		0x65, 0x72, 0x79, 0x31, 0x21, 0x3c, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 23, expected_1, 37, 17);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_ACCEPT);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_PATH);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_QUERY);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_2[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65,
+					     0x6e, 0xd1, 0x01, 0x03, 0x16, 0x71, 0x75, 0x65,
+					     0x72, 0x79, 0x31, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 10, expected_2, 24, 15);
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_MAX_AGE);
+	zassert_equal(r, 0, "Could not remove option");
+
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_QUERY);
+	zassert_equal(r, 0, "Could not remove option");
+
+	static const uint8_t expected_3[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b,
+					     0x65, 0x6e, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 0, expected_3, 14, 0);
+
+	/* remove option that is not there anymore */
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_MAX_AGE);
+	zassert_equal(r, 0, "Could not remove option");
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 0, expected_3, 14, 0);
+}
+
+ZTEST(coap, test_remove_non_existent_coap_option)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	static const char token[] = "token";
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT, COAP_CONTENT_FORMAT_APP_CBOR);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_ACCEPT, COAP_CONTENT_FORMAT_APP_OCTET_STREAM);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r, 0, "Could not append payload marker");
+
+	static const uint8_t test_payload[] = {0xde, 0xad, 0xbe, 0xef};
+
+	r = coap_packet_append_payload(&cpkt, test_payload, ARRAY_SIZE(test_payload));
+
+	static const uint8_t expected_original_msg[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f,
+							0x6b, 0x65, 0x6e, 0xc1, 0x3c, 0x51,
+							0x2a, 0xff, 0xde, 0xad, 0xbe, 0xef};
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
+
+	/* remove option that is not there but would be before existing options */
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_URI_PATH);
+	zassert_equal(r, 0, "Could not remove option");
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
+
+	/* remove option that is not there but would be between existing options */
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_MAX_AGE);
+	zassert_equal(r, 0, "Could not remove option");
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
+
+	/* remove option that is not there but would be after existing options */
+	r = coap_packet_remove_option(&cpkt, COAP_OPTION_LOCATION_QUERY);
+	zassert_equal(r, 0, "Could not remove option");
+
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
+}
+
+static void assert_coap_packet_set_path_query_options(const char *path,
+						      const char * const *expected,
+						      size_t expected_len, uint16_t code)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	struct coap_option options[16] = {0};
+	int res;
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+	TC_PRINT("Assert path: %s\n", path);
+
+	res = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			       COAP_TOKEN_MAX_LEN, coap_next_token(),
+			       COAP_METHOD_GET, 0x1234);
+	zassert_equal(res, 0, "Could not initialize packet");
+
+	res = coap_packet_set_path(&cpkt, path);
+	zassert_equal(res, 0, "Could not set path/query, path: %s", path);
+
+	res = coap_find_options(&cpkt, code, options, ARRAY_SIZE(options));
+	if (res <= 0) {
+		/* fail if we expect options */
+		zassert_true(((expected == NULL) && (expected_len == 0U)),
+			     "Expected options but found none, path: %s", path);
+	}
+
+	for (unsigned int i = 0U; i < expected_len; ++i) {
+		/* validate expected options, the rest shall be 0 */
+		if (i < expected_len) {
+			zassert_true((options[i].len == strlen(expected[i])),
+				     "Expected and parsed option lengths don't match"
+				     ", path: %s",
+				     path);
+
+			zassert_mem_equal(options[i].value, expected[i], options[i].len,
+					  "Expected and parsed option values don't match"
+					  ", path: %s",
+					  path);
+		} else {
+			zassert_true((options[i].len == 0U),
+				     "Unexpected options shall be empty"
+				     ", path: %s",
+				     path);
+		}
+	}
+}
+
+ZTEST(coap, test_coap_packet_set_path)
+{
+	assert_coap_packet_set_path_query_options(" ", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("/", NULL, 0U, COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("?", NULL, 0U, COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("?a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("?a&b",
+						 (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a", NULL, 0, COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a/",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+
+	assert_coap_packet_set_path_query_options("a?b=t&a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a?b=t&a",
+						  (const char *const[]){"b=t", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a?b=t&aa",
+						  (const char *const[]){"b=t", "aa"},
+						  2U, COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a?b&a",
+						  (const char *const[]){"a"}, 1U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a?b&a",
+						  (const char *const[]){"b", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a?b&aa",
+						  (const char *const[]){"b", "aa"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a/b",
+						  (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/b/",
+						  (const char *const[]){"a", "b"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/b?b&a",
+						  (const char *const[]){"b", "a"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+	assert_coap_packet_set_path_query_options("a/b?b&aa",
+						  (const char *const[]){"b", "aa"}, 2U,
+						  COAP_OPTION_URI_QUERY);
+
+	assert_coap_packet_set_path_query_options("a/bb",
+						  (const char *const[]){"a", "bb"}, 2U,
+						  COAP_OPTION_URI_PATH);
+	assert_coap_packet_set_path_query_options("a/bb/",
+						  (const char *const[]){"a", "bb"}, 2U,
+						  COAP_OPTION_URI_PATH);
 }
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

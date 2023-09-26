@@ -52,6 +52,7 @@ static int comp_data_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
+	struct net_buf_simple_state state;
 	struct comp_data *param;
 	size_t to_copy;
 	uint8_t page;
@@ -61,6 +62,7 @@ static int comp_data_status(struct bt_mesh_model *model,
 
 	page = net_buf_simple_pull_u8(buf);
 
+	net_buf_simple_save(buf, &state);
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_DEV_COMP_DATA_STATUS, ctx->addr,
 				      (void **)&param)) {
 		if (param->page) {
@@ -74,6 +76,12 @@ static int comp_data_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
+
+	net_buf_simple_restore(buf, &state);
+	if (cli->cb && cli->cb->comp_data) {
+		cli->cb->comp_data(cli, ctx->addr, page, buf);
+	}
+
 	return 0;
 }
 
@@ -173,6 +181,7 @@ struct krp_param {
 static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
+	int err = 0;
 	struct krp_param *param;
 	uint16_t net_idx;
 	uint8_t status, phase;
@@ -186,7 +195,8 @@ static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_KRP_STATUS, ctx->addr, (void **)&param)) {
 		if (param->net_idx != net_idx) {
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->status) {
@@ -200,7 +210,12 @@ static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	return 0;
+done:
+	if (cli->cb && cli->cb->krp_status) {
+		cli->cb->krp_status(cli, ctx->addr, status, net_idx, phase);
+	}
+
+	return err;
 }
 
 struct relay_param {
@@ -308,44 +323,62 @@ struct net_key_list_param {
 	size_t *key_cnt;
 };
 
+int bt_mesh_key_idx_unpack_list(struct net_buf_simple *buf, uint16_t *dst_arr,
+				      size_t *dst_cnt)
+{
+	size_t i;
+
+	if (!dst_cnt) {
+		return 0;
+	}
+
+	for (i = 0; (i + 1) < *dst_cnt && buf->len >= 3; i += 2) {
+		key_idx_unpack_pair(buf, &dst_arr[i], &dst_arr[i + 1]);
+	}
+
+	if (i < *dst_cnt && buf->len >= 2) {
+		dst_arr[i++] = net_buf_simple_pull_le16(buf) & 0xfff;
+	}
+
+	*dst_cnt = i;
+
+	return buf->len > 0 ? -EMSGSIZE : 0;
+}
+
 static int net_key_list(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
+	int err = 0;
 	struct net_key_list_param *param;
-	int i;
+	struct net_buf_simple_state state;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
-	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_LIST, ctx->addr,
-				      (void **)&param)) {
-
+	net_buf_simple_save(buf, &state);
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_LIST, ctx->addr, (void **)&param)) {
 		if (param->keys && param->key_cnt) {
 
-			for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
-				key_idx_unpack(buf, &param->keys[i],
-						&param->keys[i + 1]);
-			}
+			err = bt_mesh_key_idx_unpack_list(buf, param->keys, param->key_cnt);
 
-			if (i < *param->key_cnt && buf->len >= 2) {
-				param->keys[i++] =
-					net_buf_simple_pull_le16(buf) & 0xfff;
-			}
-
-			if (buf->len > 0) {
+			if (err) {
 				LOG_ERR("The message size for the application opcode is "
 					"incorrect.");
-				return -EMSGSIZE;
+				goto done;
 			}
-
-			*param->key_cnt = i;
 		}
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	return 0;
+done:
+	net_buf_simple_restore(buf, &state);
+	if (cli->cb && cli->cb->net_key_list) {
+		cli->cb->net_key_list(cli, ctx->addr, buf);
+	}
+
+	return err;
 }
 
 static int node_reset_status(struct bt_mesh_model *model,
@@ -392,7 +425,7 @@ static int app_key_status(struct bt_mesh_model *model,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
-	key_idx_unpack(buf, &net_idx, &app_idx);
+	key_idx_unpack_pair(buf, &net_idx, &app_idx);
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_APP_KEY_STATUS, ctx->addr,
 				      (void **)&param)) {
@@ -432,16 +465,18 @@ static int app_key_list(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
+	int err = 0;
+	struct net_buf_simple_state state;
 	struct app_key_list_param *param;
 	uint16_t net_idx;
 	uint8_t status;
-	int i;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
+	net_buf_simple_save(buf, &state);
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_APP_KEY_LIST, ctx->addr,
 				      (void **)&param)) {
@@ -453,22 +488,13 @@ static int app_key_list(struct bt_mesh_model *model,
 
 		if (param->keys && param->key_cnt) {
 
-			for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
-				key_idx_unpack(buf, &param->keys[i],
-						&param->keys[i + 1]);
-			}
+			err = bt_mesh_key_idx_unpack_list(buf, param->keys, param->key_cnt);
 
-			if (i < *param->key_cnt && buf->len == 2) {
-				param->keys[i++] = net_buf_simple_pull_le16(buf) & 0xfff;
-			}
-
-			if (buf->len > 0U) {
+			if (err) {
 				LOG_ERR("The message size for the application opcode is "
 					"incorrect.");
-				return -EMSGSIZE;
+				goto done;
 			}
-
-			*param->key_cnt = i;
 		}
 
 		if (param->status) {
@@ -477,7 +503,14 @@ static int app_key_list(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+done:
+	net_buf_simple_restore(buf, &state);
+	if (cli->cb && cli->cb->app_key_list) {
+		cli->cb->app_key_list(cli, ctx->addr, status, net_idx, buf);
+	}
+
+	return err;
 }
 
 struct mod_app_param {
@@ -555,43 +588,37 @@ struct mod_member_list_param {
 	size_t *member_cnt;
 };
 
-static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
-				   struct net_buf_simple *buf, uint16_t op,
-				   bool vnd)
+static int mod_sub_list_handle(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t op,
+			       bool vnd)
 {
+	int err = 0;
 	struct mod_member_list_param *param;
+	struct net_buf_simple_state state;
 	uint16_t elem_addr, mod_id, cid;
 	uint8_t status;
-	int i;
-
-	if ((vnd && buf->len < 7U) || (buf->len < 5U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
-		return -EMSGSIZE;
-	}
 
 	status = net_buf_simple_pull_u8(buf);
 	elem_addr = net_buf_simple_pull_le16(buf);
-	if (vnd) {
-		cid = net_buf_simple_pull_le16(buf);
-	}
+	cid = vnd ? net_buf_simple_pull_le16(buf) : CID_NVAL;
 
 	mod_id = net_buf_simple_pull_le16(buf);
+	if (buf->len % 2) {
+		LOG_WRN("Model Member List invalid length");
+		return -EMSGSIZE;
+	}
 
-	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, op, ctx->addr,
-				      (void **)&param)) {
+	net_buf_simple_save(buf, &state);
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, op, ctx->addr, (void **)&param)) {
 
 		if (param->elem_addr != elem_addr || param->mod_id != mod_id ||
-				(vnd && param->cid != cid)) {
+		    (vnd && param->cid != cid)) {
 			LOG_WRN("Model Member List parameters did not match");
-			return -ENOENT;
-		}
-
-		if (buf->len % 2) {
-			LOG_WRN("Model Member List invalid length");
-			return -EMSGSIZE;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->member_cnt && param->members) {
+			int i;
 
 			for (i = 0; i < *param->member_cnt && buf->len; i++) {
 				param->members[i] = net_buf_simple_pull_le16(buf);
@@ -606,7 +633,66 @@ static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+done:
+	net_buf_simple_restore(buf, &state);
+	if (cli->cb && cli->cb->mod_sub_list) {
+		cli->cb->mod_sub_list(cli, ctx->addr, status, elem_addr, mod_id, cid, buf);
+	}
+
+	return err;
+
+}
+
+static int mod_app_list_handle(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t op,
+			       bool vnd)
+{
+	int err = 0;
+	struct net_buf_simple_state state;
+	struct mod_member_list_param *param;
+	uint16_t elem_addr, mod_id, cid;
+	uint8_t status;
+
+	status = net_buf_simple_pull_u8(buf);
+	elem_addr = net_buf_simple_pull_le16(buf);
+	cid = vnd ? net_buf_simple_pull_le16(buf) : CID_NVAL;
+
+	mod_id = net_buf_simple_pull_le16(buf);
+
+	net_buf_simple_save(buf, &state);
+	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, op, ctx->addr, (void **)&param)) {
+
+		if (param->elem_addr != elem_addr || param->mod_id != mod_id ||
+		    (vnd && param->cid != cid)) {
+			LOG_WRN("Model Member List parameters did not match");
+			return -ENOENT;
+		}
+
+		if (param->member_cnt && param->members) {
+
+			err = bt_mesh_key_idx_unpack_list(buf, param->members, param->member_cnt);
+
+			if (err) {
+				LOG_ERR("The message size for the application opcode is "
+					"incorrect.");
+				goto done;
+			}
+		}
+
+		if (param->status) {
+			*param->status = status;
+		}
+
+		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	}
+
+done:
+	net_buf_simple_restore(buf, &state);
+	if (cli->cb && cli->cb->mod_app_list) {
+		cli->cb->mod_app_list(cli, ctx->addr, status, elem_addr, mod_id, cid, buf);
+	}
+
+	return err;
 }
 
 static int mod_app_list(struct bt_mesh_model *model,
@@ -615,7 +701,7 @@ static int mod_app_list(struct bt_mesh_model *model,
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
-	return mod_member_list_handle(ctx, buf, OP_SIG_MOD_APP_LIST, false);
+	return mod_app_list_handle(ctx, buf, OP_SIG_MOD_APP_LIST, false);
 }
 
 static int mod_app_list_vnd(struct bt_mesh_model *model,
@@ -625,7 +711,7 @@ static int mod_app_list_vnd(struct bt_mesh_model *model,
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
-	return mod_member_list_handle(ctx, buf, OP_VND_MOD_APP_LIST, true);
+	return mod_app_list_handle(ctx, buf, OP_VND_MOD_APP_LIST, true);
 }
 
 struct mod_pub_param {
@@ -640,6 +726,7 @@ static int mod_pub_status(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
+	int err = 0;
 	struct mod_pub_param *param;
 	uint16_t mod_id, cid, elem_addr;
 	struct bt_mesh_cfg_cli_mod_pub pub;
@@ -677,12 +764,14 @@ static int mod_pub_status(struct bt_mesh_model *model,
 				      (void **)&param)) {
 		if (mod_id != param->mod_id || cid != param->cid) {
 			LOG_WRN("Mod Pub Model ID or Company ID mismatch");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (elem_addr != param->elem_addr) {
 			LOG_WRN("Model Pub Status for unexpected element (0x%04x)", elem_addr);
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->status) {
@@ -700,7 +789,13 @@ static int mod_pub_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+done:
+	if (cli->cb && cli->cb->mod_pub_status) {
+		cli->cb->mod_pub_status(cli, ctx->addr, status, elem_addr, mod_id, cid, &pub);
+	}
+
+	return err;
 }
 
 struct mod_sub_param {
@@ -777,7 +872,7 @@ static int mod_sub_list(struct bt_mesh_model *model,
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
-	return mod_member_list_handle(ctx, buf, OP_MOD_SUB_LIST, false);
+	return mod_sub_list_handle(ctx, buf, OP_MOD_SUB_LIST, false);
 }
 
 static int mod_sub_list_vnd(struct bt_mesh_model *model,
@@ -787,7 +882,7 @@ static int mod_sub_list_vnd(struct bt_mesh_model *model,
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
-	return mod_member_list_handle(ctx, buf, OP_MOD_SUB_LIST_VND, true);
+	return mod_sub_list_handle(ctx, buf, OP_MOD_SUB_LIST_VND, true);
 }
 
 struct hb_sub_param {
@@ -826,6 +921,11 @@ static int hb_sub_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
+
+	if (cli->cb && cli->cb->hb_sub_status) {
+		cli->cb->hb_sub_status(cli, ctx->addr, status, &sub);
+	}
+
 	return 0;
 }
 
@@ -865,6 +965,11 @@ static int hb_pub_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
+
+	if (cli->cb && cli->cb->hb_pub_status) {
+		cli->cb->hb_pub_status(cli, ctx->addr, status, &pub);
+	}
+
 	return 0;
 }
 
@@ -1315,7 +1420,7 @@ int bt_mesh_cfg_cli_app_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_ne
 	};
 
 	bt_mesh_model_msg_init(&msg, OP_APP_KEY_ADD);
-	key_idx_pack(&msg, key_net_idx, key_app_idx);
+	key_idx_pack_pair(&msg, key_net_idx, key_app_idx);
 	net_buf_simple_add_mem(&msg, app_key, 16);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !status ? NULL : &rsp);
@@ -1339,7 +1444,7 @@ int bt_mesh_cfg_cli_app_key_update(uint16_t net_idx, uint16_t addr, uint16_t key
 	};
 
 	bt_mesh_model_msg_init(&msg, OP_APP_KEY_UPDATE);
-	key_idx_pack(&msg, key_net_idx, key_app_idx);
+	key_idx_pack_pair(&msg, key_net_idx, key_app_idx);
 	net_buf_simple_add_mem(&msg, app_key, 16);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !status ? NULL : &rsp);
@@ -1409,7 +1514,7 @@ int bt_mesh_cfg_cli_app_key_del(uint16_t net_idx, uint16_t addr, uint16_t key_ne
 	};
 
 	bt_mesh_model_msg_init(&msg, OP_APP_KEY_DEL);
-	key_idx_pack(&msg, key_net_idx, key_app_idx);
+	key_idx_pack_pair(&msg, key_net_idx, key_app_idx);
 
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !status ? NULL : &rsp);
 }
@@ -2216,7 +2321,7 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 						       struct bt_mesh_comp_p1_elem *elem)
 {
 	if (buf->len < 6) {
-		LOG_ERR("No more elements to pull or missing data");
+		LOG_DBG("No more elements to pull or missing data");
 		return NULL;
 	}
 	size_t elem_size = 0;
@@ -2337,4 +2442,39 @@ struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
 		comp_p1_pull_item_long(item, &ext_item->long_item);
 	}
 	return ext_item;
+}
+
+struct bt_mesh_comp_p2_record *bt_mesh_comp_p2_record_pull(struct net_buf_simple *buf,
+							   struct bt_mesh_comp_p2_record *record)
+{
+	if (buf->len < 8) {
+		LOG_DBG("No more elements to pull or missing data");
+		return NULL;
+	}
+
+	uint8_t elem_offset_cnt;
+	uint16_t data_len;
+
+	record->id = net_buf_simple_pull_le16(buf);
+	record->version.x = net_buf_simple_pull_u8(buf);
+	record->version.y = net_buf_simple_pull_u8(buf);
+	record->version.z = net_buf_simple_pull_u8(buf);
+	elem_offset_cnt = net_buf_simple_pull_u8(buf);
+	if (buf->len < elem_offset_cnt + 2) {
+		LOG_WRN("Invalid composition data offset count");
+		return NULL;
+	}
+
+	net_buf_simple_init_with_data(record->elem_buf,
+				      net_buf_simple_pull_mem(buf, elem_offset_cnt),
+				      elem_offset_cnt);
+	data_len = net_buf_simple_pull_le16(buf);
+	if (buf->len < data_len) {
+		LOG_WRN("Invalid composition data additional data length");
+		return NULL;
+	}
+
+	net_buf_simple_init_with_data(record->data_buf,
+				      net_buf_simple_pull_mem(buf, data_len), data_len);
+	return record;
 }

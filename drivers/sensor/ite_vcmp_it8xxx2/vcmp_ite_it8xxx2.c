@@ -69,6 +69,7 @@ struct vcmp_it8xxx2_data {
 	struct k_work work;
 	/* Sensor trigger hanlder to notify user of assetion */
 	sensor_trigger_handler_t handler;
+	const struct sensor_trigger *trig;
 	/* Pointer of voltage comparator device */
 	const struct device *vcmp;
 };
@@ -148,13 +149,9 @@ static void it8xxx2_vcmp_trigger_work_handler(struct k_work *item)
 {
 	struct vcmp_it8xxx2_data *data =
 			CONTAINER_OF(item, struct vcmp_it8xxx2_data, work);
-	struct sensor_trigger trigger = {
-		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_VOLTAGE
-	};
 
 	if (data->handler) {
-		data->handler(data->vcmp, &trigger);
+		data->handler(data->vcmp, data->trig);
 	}
 }
 
@@ -214,6 +211,7 @@ static int vcmp_ite_it8xxx2_trigger_set(const struct device *dev,
 	}
 
 	data->handler = handler;
+	data->trig = trig;
 
 	vcmp_work_addr[config->vcmp_ch] = (uint32_t) &data->work;
 
@@ -366,9 +364,8 @@ struct k_work_q vcmp_it8xxx2_work_q;
 static K_KERNEL_STACK_DEFINE(vcmp_it8xxx2_work_q_stack,
 			     CONFIG_VCMP_IT8XXX2_WORKQUEUE_STACK_SIZE);
 
-static int vcmp_it8xxx2_init_work_q(const struct device *dev)
+static int vcmp_it8xxx2_init_work_q(void)
 {
-	ARG_UNUSED(dev);
 	struct k_work_queue_config cfg = {
 		.name = "vcmp_work",
 		.no_yield = false,

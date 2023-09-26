@@ -71,17 +71,17 @@ enum {
 };
 
 enum {
-	/* +/-6.144V range = Gain 2/3 */
+	/* +/-6.144V range = Gain 1/3 */
 	ADS1X1X_CONFIG_PGA_6144 = 0,
-	/* +/-4.096V range = Gain 1 */
+	/* +/-4.096V range = Gain 1/2 */
 	ADS1X1X_CONFIG_PGA_4096 = 1,
-	/* +/-2.048V range = Gain 2 (default) */
+	/* +/-2.048V range = Gain 1 (default) */
 	ADS1X1X_CONFIG_PGA_2048 = 2,
-	/* +/-1.024V range = Gain 4 */
+	/* +/-1.024V range = Gain 2 */
 	ADS1X1X_CONFIG_PGA_1024 = 3,
-	/* +/-0.512V range = Gain 8 */
+	/* +/-0.512V range = Gain 4 */
 	ADS1X1X_CONFIG_PGA_512 = 4,
-	/* +/-0.256V range = Gain 16 */
+	/* +/-0.256V range = Gain 8 */
 	ADS1X1X_CONFIG_PGA_256 = 5
 };
 
@@ -185,12 +185,16 @@ static int ads1x1x_start_conversion(const struct device *dev)
 {
 	/* send start sampling command */
 	uint16_t config;
+	int ret;
 
-	ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &config);
+	ret = ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &config);
+	if (ret != 0) {
+		return ret;
+	}
 	config |= ADS1X1X_CONFIG_OS;
-	ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
+	ret = ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
 
-	return 0;
+	return ret;
 }
 
 static inline int ads1x1x_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
@@ -458,11 +462,19 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ads1x1x_data *data = CONTAINER_OF(ctx, struct ads1x1x_data, ctx);
+	int ret;
 
 	data->repeat_buffer = data->buffer;
 
-	ads1x1x_start_conversion(data->dev);
-
+	ret = ads1x1x_start_conversion(data->dev);
+	if (ret != 0) {
+		/* if we fail to complete the I2C operations to start
+		 * sampling, return an immediate error (likely -EIO) rather
+		 * than handing it off to the acquisition thread.
+		 */
+		adc_context_complete(ctx, ret);
+		return;
+	}
 	k_sem_give(&data->acq_sem);
 }
 
@@ -537,7 +549,7 @@ static void ads1x1x_acquisition_thread(const struct device *dev)
 		if (rc != 0) {
 			LOG_ERR("failed to get ready status (err %d)", rc);
 			adc_context_complete(&data->ctx, rc);
-			break;
+			continue;
 		}
 
 		ads1x1x_adc_perform_read(dev);

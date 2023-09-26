@@ -4,7 +4,3 @@
 		status = "okay";
 	};
 };
-
-&rtc {
-	status = "disabled";
-};

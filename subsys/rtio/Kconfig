@@ -38,6 +38,14 @@ config RTIO_CONSUME_SEM
 	  will use polling on the completion queue with a k_yield() in between
 	  iterations.
 
+config RTIO_SYS_MEM_BLOCKS
+	bool "Include system memory blocks as an optional backing read memory pool"
+	select SYS_MEM_BLOCKS
+	help
+	  Enable the RTIO_DEFINE_WITH_MEMPOOL macro which allows queueing reads
+	  without a pre-allocated memory buffer. Instead the buffer will be taken
+	  from the allocated memory pool associated with the RTIO context.
+
 module = RTIO
 module-str = RTIO
 module-help = Sets log level for RTIO support

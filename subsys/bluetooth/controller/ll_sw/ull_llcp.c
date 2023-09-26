@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 
@@ -279,6 +280,38 @@ void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask re
 	}
 }
 
+void llcp_rx_node_retain(struct proc_ctx *ctx)
+{
+	LL_ASSERT(ctx->node_ref.rx);
+
+	/* Mark RX node to NOT release */
+	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+
+	/* store link element reference to use once this node is moved up */
+	ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+}
+
+void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
+		/* RX node retained, so release */
+		ctx->node_ref.rx->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->node_ref.rx;
+	}
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	if (ctx->proc == PROC_PHY_UPDATE && ctx->data.pu.ntf_dle_node) {
+		/* RX node retained, so release */
+		ctx->data.pu.ntf_dle_node->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->data.pu.ntf_dle_node;
+	}
+#endif
+
+	if (ctx->node_ref.tx) {
+		ctx->node_ref.tx->next = conn->llcp.tx_node_release;
+		conn->llcp.tx_node_release = ctx->node_ref.tx;
+	}
+}
+
 /*
  * LLCP Procedure Creation
  */
@@ -296,7 +329,8 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->collision = 0U;
 	ctx->done = 0U;
 	ctx->rx_greedy = 0U;
-	ctx->tx_ack = NULL;
+	ctx->node_ref.rx = NULL;
+	ctx->node_ref.tx_ack = NULL;
 
 	/* Clear procedure data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
@@ -557,6 +591,9 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	conn->llcp.tx_q_pause_data_mask = 0;
 	conn->lll.event_counter = 0;
+
+	conn->llcp.tx_node_release = NULL;
+	conn->llcp.rx_node_release = NULL;
 }
 
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
@@ -573,12 +610,6 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 	ARG_UNUSED(conn);
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 	tx_release(tx);
-}
-
-void ull_cp_release_ntf(struct node_rx_pdu *ntf)
-{
-	ntf->hdr.next = NULL;
-	ll_rx_mem_release((void **)&ntf);
 }
 
 static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
@@ -661,6 +692,41 @@ void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 	}
 }
 
+void ull_cp_release_nodes(struct ll_conn *conn)
+{
+	struct node_rx_pdu *rx;
+	struct node_tx *tx;
+
+	/* release any llcp retained rx nodes */
+	rx = conn->llcp.rx_node_release;
+	while (rx) {
+		struct node_rx_hdr *hdr;
+
+		/* traverse to next rx node */
+		hdr = &rx->hdr;
+		rx = hdr->link->mem;
+
+		/* Mark for buffer for release */
+		hdr->type = NODE_RX_TYPE_RELEASE;
+
+		/* enqueue rx node towards Thread */
+		ll_rx_put(hdr->link, hdr);
+	}
+	conn->llcp.rx_node_release = NULL;
+
+	/* release any llcp pre-allocated tx nodes */
+	tx = conn->llcp.tx_node_release;
+	while (tx) {
+		struct node_tx *tx_release;
+
+		tx_release = tx;
+		tx = tx->next;
+
+		ull_cp_release_tx(conn, tx_release);
+	}
+	conn->llcp.tx_node_release = NULL;
+}
+
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {
@@ -701,7 +767,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
-uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
+uint8_t ull_cp_feature_exchange(struct ll_conn *conn, uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
 
@@ -709,6 +775,8 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	ctx->data.fex.host_initiated = host_initiated;
 
 	llcp_lr_enqueue(conn, ctx);
 
@@ -829,7 +897,8 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
-	llcp_lr_abort(conn);
+	llcp_lr_terminate(conn);
+	llcp_rr_terminate(conn);
 
 	ctx = llcp_create_local_procedure(PROC_TERMINATE);
 	if (!ctx) {
@@ -874,8 +943,11 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	struct ll_conn_iso_group *cig;
 	struct proc_ctx *ctx;
 
-	if (conn->lll.handle != cis->lll.acl_handle) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (!conn->llcp.fex.valid) {
+		/* No feature exchange was performed so initiate before CIS Create */
+		if (ull_cp_feature_exchange(conn, 0U) != BT_HCI_ERR_SUCCESS) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	ctx = llcp_create_local_procedure(PROC_CIS_CREATE);
@@ -905,10 +977,9 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.c_ft = cis->lll.tx.ft;
 	ctx->data.cis_create.p_ft = cis->lll.rx.ft;
 
-	ctx->data.cis_create.conn_event_count =
-		ull_central_iso_cis_offset_get(cis->lll.handle,
-					       &ctx->data.cis_create.cis_offset_min,
-					       &ctx->data.cis_create.cis_offset_max);
+	/* ctx->data.cis_create.conn_event_count will be filled when Tx PDU is
+	 * enqueued.
+	 */
 
 	llcp_lr_enqueue(conn, ctx);
 
@@ -1234,6 +1305,20 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
+void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min,
+				 uint32_t cis_offset_max)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		ctx->data.cis_create.cis_offset_max = cis_offset_max;
+
+		llcp_lp_cc_offset_calc_reply(conn, ctx);
+	}
+}
+
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 {
@@ -1245,7 +1330,6 @@ bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 	}
 
 	return false;
-
 }
 
 uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
@@ -1260,12 +1344,23 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
 	return 0xFFFF;
 }
 
-void ull_cp_cc_accept(struct ll_conn *conn)
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		if (cis_offset_min > ctx->data.cis_create.cis_offset_min) {
+			if (cis_offset_min > ctx->data.cis_create.cis_offset_max) {
+				ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+				llcp_rp_cc_reject(conn, ctx);
+
+				return;
+			}
+
+			ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		}
+
 		llcp_rp_cc_accept(conn, ctx);
 	}
 }
@@ -1303,6 +1398,20 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
 	return false;
 }
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_cp_cc_cancel(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_cancel(conn, ctx);
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
@@ -1337,6 +1446,15 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 		return llcp_lp_cc_is_active(ctx);
 	}
 	return false;
+}
+
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+
+	return (ctx != NULL);
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
@@ -1662,13 +1780,13 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. local request */
 		llcp_lr_tx_ack(conn, ctx, tx);
 	}
 
 	ctx = llcp_rr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. remote response */
 		llcp_rr_tx_ack(conn, ctx, tx);
 	}
@@ -1691,7 +1809,7 @@ void ull_cp_tx_ntf(struct ll_conn *conn)
 	}
 }
 
-void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
+void ull_cp_rx(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx_l;
 	struct proc_ctx *ctx_r;
@@ -1745,15 +1863,18 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 					 pdu_is_unknown(pdu, ctx_r) ||
 					 pdu_is_reject_ext(pdu, ctx_r));
 
-			if (unexpected_l && unexpected_r) {
-				/* Local active procedure
-				 * Unexpected local procedure PDU
-				 * Remote active procedure
-				 * Unexpected remote procedure PDU
+			if (unexpected_l == unexpected_r) {
+				/* Both Local and Remote procedure active
+				 * and PDU is either
+				 * unexpected by both
+				 * or
+				 * expected by both
+				 *
+				 * Both situations is a result of invalid behaviour
 				 */
-
-				/* Invalid Behaviour */
-				conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+				conn->llcp_terminate.reason_final =
+					unexpected_r ? BT_HCI_ERR_LMP_PDU_NOT_ALLOWED :
+						       BT_HCI_ERR_UNSPECIFIED;
 			} else if (unexpected_l) {
 				/* Local active procedure
 				 * Unexpected local procedure PDU
@@ -1762,7 +1883,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in remote procedure */
-				llcp_rr_rx(conn, ctx_r, rx);
+				llcp_rr_rx(conn, ctx_r, link, rx);
 			} else if (unexpected_r) {
 				/* Local active procedure
 				 * Expected local procedure PDU
@@ -1771,17 +1892,11 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in local procedure */
-				llcp_lr_rx(conn, ctx_l, rx);
-			} else {
-				/* Local active procedure
-				 * Expected local procedure PDU
-				 * Remote active procedure
-				 * Expected remote procedure PDU
-				 */
-
-				/* This cannot happen */
-				LL_ASSERT(0);
+				llcp_lr_rx(conn, ctx_l, link, rx);
 			}
+			/* no else clause as this cannot occur with the logic above:
+			 * if they are not identical then one must be true
+			 */
 		} else {
 			/* Local active procedure
 			 * No remote active procedure
@@ -1799,7 +1914,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 				/* Process PDU as a new remote request */
 				LL_ASSERT(pdu_valid);
-				llcp_rr_new(conn, rx, true);
+				llcp_rr_new(conn, link, rx, true);
 			} else {
 				/* Local active procedure
 				 * Expected local procedure PDU
@@ -1807,7 +1922,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in local procedure */
-				llcp_lr_rx(conn, ctx_l, rx);
+				llcp_lr_rx(conn, ctx_l, link, rx);
 			}
 		}
 	} else if (ctx_r) {
@@ -1816,14 +1931,14 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 		 */
 
 		/* Process PDU in remote procedure */
-		llcp_rr_rx(conn, ctx_r, rx);
+		llcp_rr_rx(conn, ctx_r, link, rx);
 	} else {
 		/* No local active procedure
 		 * No remote active procedure
 		 */
 
 		/* Process PDU as a new remote request */
-		llcp_rr_new(conn, rx, pdu_valid);
+		llcp_rr_new(conn, link, rx, pdu_valid);
 	}
 }
 

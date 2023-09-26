@@ -19,7 +19,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
+#include <zephyr/device.h>
+
+#define DT_DRV_COMPAT snps_arcv2_intc
 
 #ifdef CONFIG_ARC_CONNECT
 static void arc_shared_intc_init(void)
@@ -58,7 +60,7 @@ static void arc_shared_intc_init(void)
 }
 
 /* Allow to schedule IRQ to all cores after we bring up all secondary cores */
-static int arc_shared_intc_update_post_smp(const struct device *unused)
+static int arc_shared_intc_update_post_smp(void)
 {
 	__ASSERT(z_arc_v2_core_id() == ARC_MP_PRIMARY_CPU_ID,
 		 "idu interrupts must be updated from primary core");
@@ -134,7 +136,7 @@ void arc_core_private_intc_init(void)
 #endif /* CONFIG_ARC_CONNECT */
 }
 
-static int arc_irq_init(const struct device *unused)
+static int arc_irq_init(const struct device *dev)
 {
 #ifdef CONFIG_ARC_CONNECT
 	arc_shared_intc_init();
@@ -149,4 +151,5 @@ static int arc_irq_init(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(arc_irq_init, PRE_KERNEL_1, 0);
+DEVICE_DT_INST_DEFINE(0, arc_irq_init, NULL,  NULL,  NULL,
+		      PRE_KERNEL_1, 0, NULL);

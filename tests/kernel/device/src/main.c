@@ -15,10 +15,15 @@
 
 #define DUMMY_PORT_1    "dummy"
 #define DUMMY_PORT_2    "dummy_driver"
+#define DUMMY_NOINIT    "dummy_noinit"
 #define BAD_DRIVER	"bad_driver"
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
+
+/* A device without init call */
+DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 /**
  * @brief Test cases to verify device objects
@@ -58,6 +63,10 @@ ZTEST(device, test_dummy_device)
 
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
+	zassert_not_null(dev);
+
+	/* Validates device binding for an existing device object */
+	dev = device_get_binding(DUMMY_NOINIT);
 	zassert_not_null(dev);
 
 	/* device_get_binding() returns false for device object
@@ -148,23 +157,23 @@ static int add_init_record(bool pre_kernel)
 }
 
 __pinned_func
-static int pre1_fn(const struct device *dev)
+static int pre1_fn(void)
 {
 	return add_init_record(true);
 }
 
 __pinned_func
-static int pre2_fn(const struct device *dev)
+static int pre2_fn(void)
 {
 	return add_init_record(true);
 }
 
-static int post_fn(const struct device *dev)
+static int post_fn(void)
 {
 	return add_init_record(false);
 }
 
-static int app_fn(const struct device *dev)
+static int app_fn(void)
 {
 	return add_init_record(false);
 }
@@ -175,9 +184,8 @@ SYS_INIT(post_fn, POST_KERNEL, 0);
 SYS_INIT(app_fn, APPLICATION, 0);
 
 /* This is an error case which driver initializes failed in SYS_INIT .*/
-static int null_driver_init(const struct device *dev)
+static int null_driver_init(void)
 {
-	ARG_UNUSED(dev);
 	return -EINVAL;
 }
 
@@ -238,7 +246,7 @@ ZTEST(device, test_device_list)
 
 static int sys_init_counter;
 
-static int init_fn(const struct device *dev)
+static int init_fn(void)
 {
 	sys_init_counter++;
 	return 0;
@@ -257,6 +265,7 @@ ZTEST(device, test_sys_init_multiple)
 /* this is for storing sequence during initialization */
 extern int init_level_sequence[4];
 extern int init_priority_sequence[4];
+extern int init_sub_priority_sequence[3];
 extern unsigned int seq_level_cnt;
 extern unsigned int seq_priority_cnt;
 
@@ -275,9 +284,9 @@ ZTEST(device, test_device_init_level)
 	bool seq_correct = true;
 
 	/* we check if the stored executing sequence for different level is
-	 * correct, and it should be 1, 2, 3, 4
+	 * correct, and it should be 1, 2, 3
 	 */
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 3; i++) {
 		if (init_level_sequence[i] != (i + 1)) {
 			seq_correct = false;
 		}
@@ -290,7 +299,7 @@ ZTEST(device, test_device_init_level)
 /**
  * @brief Test initialization priorities for device driver instances
  *
- * details After the defined device instances have initialized, we check the
+ * @details After the defined device instances have initialized, we check the
  * sequence number that each driver stored during initialization. If the
  * sequence of initial priority stored is corresponding with our expectation, it
  * means assigning the priority for driver instance works.
@@ -314,6 +323,25 @@ ZTEST(device, test_device_init_priority)
 			"init sequence is not correct");
 }
 
+/**
+ * @brief Test initialization sub-priorities for device driver instances
+ *
+ * @details After the defined device instances have initialized, we check the
+ * sequence number that each driver stored during initialization. If the
+ * sequence of initial priority stored is corresponding with our expectation, it
+ * means using the devicetree for sub-priority sorting works.
+ *
+ * @ingroup kernel_device_tests
+ */
+ZTEST(device, test_device_init_sub_priority)
+{
+	/* fakedomain_1 depends on fakedomain_0 which depends on fakedomain_2,
+	 * therefore we require that the initialisation runs in the reverse order.
+	 */
+	zassert_equal(init_sub_priority_sequence[0], 1, "");
+	zassert_equal(init_sub_priority_sequence[1], 2, "");
+	zassert_equal(init_sub_priority_sequence[2], 0, "");
+}
 
 /**
  * @brief Test abstraction of device drivers with common functionalities

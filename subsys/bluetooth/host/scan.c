@@ -572,8 +572,8 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 	scan_info->rssi = evt->rssi;
 	scan_info->sid = evt->sid;
 	scan_info->interval = sys_le16_to_cpu(evt->interval);
-	scan_info->adv_type = get_adv_type(evt->evt_type);
-	scan_info->adv_props = get_adv_props_extended(evt->evt_type);
+	scan_info->adv_type = get_adv_type(sys_le16_to_cpu(evt->evt_type));
+	scan_info->adv_props = get_adv_props_extended(sys_le16_to_cpu(evt->evt_type));
 }
 
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
@@ -586,6 +586,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		struct bt_hci_evt_le_ext_advertising_info *evt;
 		struct bt_le_scan_recv_info scan_info;
 		uint16_t data_status;
+		uint16_t evt_type;
 		bool is_report_complete;
 		bool more_to_come;
 		bool is_new_advertiser;
@@ -596,11 +597,12 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
-		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type);
+		evt_type = sys_le16_to_cpu(evt->evt_type);
+		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt_type);
 		is_report_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 		more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
-		if (evt->evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
+		if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) {
 			/* Legacy advertising reports are complete.
 			 * Create event immediately.
 			 */
@@ -717,6 +719,13 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 	(void)memset(per_adv_sync, 0, sizeof(*per_adv_sync));
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
 
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	net_buf_simple_init_with_data(&per_adv_sync->reassembly,
+				      per_adv_sync->reassembly_data,
+				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
+	net_buf_simple_reset(&per_adv_sync->reassembly);
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+
 	return per_adv_sync;
 }
 
@@ -768,9 +777,28 @@ void bt_hci_le_per_adv_report_recv(struct bt_le_per_adv_sync *per_adv_sync,
 	}
 }
 
-void bt_hci_le_per_adv_report(struct net_buf *buf)
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP) && (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0)
+static void bt_hci_le_per_adv_report_recv_failure(struct bt_le_per_adv_sync *per_adv_sync,
+				   const struct bt_le_per_adv_sync_recv_info *info)
 {
+	struct bt_le_per_adv_sync_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->recv) {
+			listener->recv(per_adv_sync, info, NULL);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) && (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0) */
+
+static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
+{
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	struct bt_hci_evt_le_per_advertising_report_v2 *evt;
+#else
 	struct bt_hci_evt_le_per_advertising_report *evt;
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
+
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_recv_info info;
 
@@ -800,6 +828,11 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
 	info.sid = per_adv_sync->sid;
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	info.periodic_event_counter = sys_le16_to_cpu(evt->periodic_event_counter);
+	info.subevent = evt->subevent;
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
 	if (!per_adv_sync->report_truncated) {
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
@@ -831,11 +864,15 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 			LOG_DBG("Received incomplete advertising data. "
 				"Advertising report dropped.");
 
-			per_adv_sync->report_truncated = true;
 			net_buf_simple_reset(&per_adv_sync->reassembly);
 
 		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
 			net_buf_simple_add_mem(&per_adv_sync->reassembly, buf->data, evt->length);
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+		} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED &&
+			   per_adv_sync->num_subevents) {
+			bt_hci_le_per_adv_report_recv_failure(per_adv_sync, &info);
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 		} else {
 			__ASSERT(false, "Invalid data status 0x%02X", evt->data_status);
 		}
@@ -849,6 +886,17 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 		per_adv_sync->report_truncated = false;
 	}
+}
+
+void bt_hci_le_per_adv_report(struct net_buf *buf)
+{
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP)) {
+		LOG_ERR("The controller shall raise the latest unmasked version of the event");
+
+		return;
+	}
+
+	bt_hci_le_per_adv_report_common(buf);
 }
 
 static int per_adv_sync_terminate(uint16_t handle)
@@ -894,10 +942,16 @@ static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync,
 	}
 }
 
-void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
+static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 {
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	struct bt_hci_evt_le_per_adv_sync_established_v2 *evt =
+		(struct bt_hci_evt_le_per_adv_sync_established_v2 *)buf->data;
+#else
 	struct bt_hci_evt_le_per_adv_sync_established *evt =
 		(struct bt_hci_evt_le_per_adv_sync_established *)buf->data;
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
+
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
@@ -971,12 +1025,6 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	}
 
 	pending_per_adv_sync->report_truncated = false;
-#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
-	net_buf_simple_init_with_data(&pending_per_adv_sync->reassembly,
-				      pending_per_adv_sync->reassembly_data,
-				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
-	net_buf_simple_reset(&pending_per_adv_sync->reassembly);
-#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 
 	atomic_set_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
@@ -984,11 +1032,11 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	pending_per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	pending_per_adv_sync->clock_accuracy =
 		sys_le16_to_cpu(evt->clock_accuracy);
-	pending_per_adv_sync->phy = evt->phy;
+	pending_per_adv_sync->phy = bt_get_phy(evt->phy);
 
 	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
-	sync_info.phy = bt_get_phy(pending_per_adv_sync->phy);
+	sync_info.phy = pending_per_adv_sync->phy;
 
 	if (atomic_test_bit(pending_per_adv_sync->flags,
 			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
@@ -1005,6 +1053,17 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 
 	sync_info.addr = &pending_per_adv_sync->addr;
 	sync_info.sid = pending_per_adv_sync->sid;
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	sync_info.num_subevents = evt->num_subevents;
+	sync_info.subevent_interval = evt->subevent_interval;
+	sync_info.response_slot_delay = evt->response_slot_delay;
+	sync_info.response_slot_spacing = evt->response_slot_spacing;
+
+	pending_per_adv_sync->num_subevents = evt->num_subevents;
+	pending_per_adv_sync->subevent_interval = evt->subevent_interval;
+	pending_per_adv_sync->response_slot_delay = evt->response_slot_delay;
+	pending_per_adv_sync->response_slot_spacing = evt->response_slot_spacing;
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
 	sync_info.recv_enabled =
 		!atomic_test_bit(pending_per_adv_sync->flags,
@@ -1016,6 +1075,90 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		}
 	}
 }
+
+void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
+{
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP)) {
+		LOG_ERR("The controller shall raise the latest unmasked version of the event");
+
+		return;
+	}
+
+	bt_hci_le_per_adv_sync_established_common(buf);
+}
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
+				struct bt_le_per_adv_sync_subevent_params *params)
+{
+	struct bt_hci_cp_le_set_pawr_sync_subevent *cp;
+	struct net_buf *buf;
+
+	if (params->num_subevents > BT_HCI_PAWR_SUBEVENT_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT,
+				sizeof(*cp) + params->num_subevents);
+
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
+	cp->periodic_adv_properties = sys_cpu_to_le16(params->properties);
+	cp->num_subevents = params->num_subevents;
+	net_buf_add_mem(buf, params->subevents, cp->num_subevents);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL);
+}
+
+int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
+				    const struct bt_le_per_adv_response_params *param,
+				    const struct net_buf_simple *data)
+{
+	struct bt_hci_cp_le_set_pawr_response_data *cp;
+	struct net_buf *buf;
+
+	if (per_adv_sync->num_subevents == 0) {
+		return -EINVAL;
+	}
+
+	if (param->request_subevent >= per_adv_sync->num_subevents) {
+		return -EINVAL;
+	}
+
+	if (param->response_subevent >= per_adv_sync->num_subevents) {
+		return -EINVAL;
+	}
+
+	if (data->len > 247) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA,
+				sizeof(*cp) + data->len);
+
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
+	cp->request_event = sys_cpu_to_le16(param->request_event);
+	cp->request_subevent = param->request_subevent;
+	cp->response_subevent = param->response_subevent;
+	cp->response_slot = param->response_slot;
+	cp->response_data_length = data->len;
+
+	net_buf_add_mem(buf, data->data, cp->response_data_length);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL);
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 {
@@ -1036,10 +1179,16 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CONN)
-void bt_hci_le_past_received(struct net_buf *buf)
+static void bt_hci_le_past_received_common(struct net_buf *buf)
 {
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	struct bt_hci_evt_le_past_received_v2 *evt =
+		(struct bt_hci_evt_le_past_received_v2 *)buf->data;
+#else
 	struct bt_hci_evt_le_past_received *evt =
 		(struct bt_hci_evt_le_past_received *)buf->data;
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
+
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync_cb *listener;
 	struct bt_le_per_adv_sync *per_adv_sync;
@@ -1052,7 +1201,8 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	}
 
 	sync_info.conn = bt_conn_lookup_handle(
-				sys_le16_to_cpu(evt->conn_handle));
+				sys_le16_to_cpu(evt->conn_handle),
+				BT_CONN_TYPE_LE);
 
 	if (!sync_info.conn) {
 		LOG_ERR("Could not lookup connection handle from PAST");
@@ -1064,6 +1214,7 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	if (!per_adv_sync) {
 		LOG_WRN("Could not allocate new PA sync from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		bt_conn_unref(sync_info.conn);
 		return;
 	}
 
@@ -1079,23 +1230,69 @@ void bt_hci_le_past_received(struct net_buf *buf)
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
 	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
 	per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
-	per_adv_sync->phy = evt->phy;
+	per_adv_sync->phy = bt_get_phy(evt->phy);
 	bt_addr_le_copy(&per_adv_sync->addr, &id_addr);
 	per_adv_sync->sid = evt->adv_sid;
 
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	per_adv_sync->num_subevents = evt->num_subevents;
+	per_adv_sync->subevent_interval = evt->subevent_interval;
+	per_adv_sync->response_slot_delay = evt->response_slot_delay;
+	per_adv_sync->response_slot_spacing = evt->response_slot_spacing;
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
+
 	sync_info.interval = per_adv_sync->interval;
-	sync_info.phy = bt_get_phy(per_adv_sync->phy);
+	sync_info.phy = per_adv_sync->phy;
 	sync_info.addr = &per_adv_sync->addr;
 	sync_info.sid = per_adv_sync->sid;
 	sync_info.service_data = sys_le16_to_cpu(evt->service_data);
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+	sync_info.num_subevents =  per_adv_sync->num_subevents;
+	sync_info.subevent_interval =  per_adv_sync->subevent_interval;
+	sync_info.response_slot_delay =  per_adv_sync->response_slot_delay;
+	sync_info.response_slot_spacing =  per_adv_sync->response_slot_spacing;
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->synced) {
 			listener->synced(per_adv_sync, &sync_info);
 		}
 	}
+
+	bt_conn_unref(sync_info.conn);
 }
+
+void bt_hci_le_past_received(struct net_buf *buf)
+{
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP)) {
+		LOG_ERR("The controller shall raise the latest unmasked version of the event");
+
+		return;
+	}
+
+	bt_hci_le_past_received_common(buf);
+}
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+void bt_hci_le_past_received_v2(struct net_buf *buf)
+{
+	bt_hci_le_past_received_common(buf);
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+void bt_hci_le_per_adv_sync_established_v2(struct net_buf *buf)
+{
+	bt_hci_le_per_adv_sync_established_common(buf);
+}
+
+void bt_hci_le_per_adv_report_v2(struct net_buf *buf)
+{
+	bt_hci_le_per_adv_report_common(buf);
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
@@ -1126,7 +1323,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 	biginfo.max_pdu = sys_le16_to_cpu(evt->max_pdu);
 	biginfo.sdu_interval = sys_get_le24(evt->sdu_interval);
 	biginfo.max_sdu = sys_le16_to_cpu(evt->max_sdu);
-	biginfo.phy = evt->phy;
+	biginfo.phy = bt_get_phy(evt->phy);
 	biginfo.framing = evt->framing;
 	biginfo.encryption = evt->encryption ? true : false;
 

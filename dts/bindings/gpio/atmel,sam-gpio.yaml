@@ -1,3 +1,6 @@
+# Copyright (c) 2021-2023, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
 description: SAM GPIO PORT node
 
 compatible: "atmel,sam-gpio"
@@ -11,9 +14,7 @@ properties:
   interrupts:
     required: true
 
-  peripheral-id:
-    type: int
-    description: peripheral ID
+  clocks:
     required: true
 
   "#gpio-cells":

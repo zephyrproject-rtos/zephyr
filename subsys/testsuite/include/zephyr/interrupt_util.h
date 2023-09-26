@@ -10,7 +10,7 @@
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {
@@ -158,11 +158,11 @@ static inline void trigger_irq(int vector)
 }
 
 #elif defined(CONFIG_ARCH_POSIX)
-#include "irq_ctrl.h"
+#include <zephyr/arch/posix/posix_soc_if.h>
 
 static inline void trigger_irq(int irq)
 {
-	hw_irq_ctrl_raise_im_from_sw(irq);
+	posix_sw_set_pending_IRQ(irq);
 }
 
 #elif defined(CONFIG_RISCV)
@@ -195,6 +195,15 @@ extern void z_mips_enter_irq(int);
 static inline void trigger_irq(int irq)
 {
 	z_mips_enter_irq(irq);
+}
+
+#elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_VIM)
+
+extern void z_vim_arm_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_vim_arm_enter_irq(irq);
 }
 
 #else

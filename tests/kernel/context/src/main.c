@@ -239,7 +239,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			k_cpu_idle();
 		}
 		dt = k_uptime_ticks() - t0;
-		zassert_true(abs(dt - dur) <= slop,
+		zassert_true(abs((int32_t) (dt - dur)) <= slop,
 			     "Inaccurate wakeup, idled for %d ticks, expected %d",
 			     dt, dur);
 	}
@@ -361,13 +361,6 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
  */
 ZTEST(context_cpu_idle, test_cpu_idle)
 {
-/*
- * Fixme: remove the skip code when sleep instruction in
- * nsim_hs_smp is fixed.
- */
-#if defined(CONFIG_SOC_NSIM) && defined(CONFIG_SMP)
-	ztest_test_skip();
-#endif
 	_test_kernel_cpu_idle(0);
 }
 
@@ -385,7 +378,7 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 static void _test_kernel_interrupts(disable_int_func disable_int,
 				    enable_int_func enable_int, int irq)
 {
-	unsigned long long count = 0;
+	unsigned long long count = 1ull;
 	unsigned long long i = 0;
 	int tick;
 	int tick2;

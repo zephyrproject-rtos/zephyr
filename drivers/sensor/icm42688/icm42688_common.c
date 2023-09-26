@@ -58,15 +58,7 @@ int icm42688_reset(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Always use internal RC oscillator */
-	res = icm42688_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG1,
-					FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
-	if (res) {
-		return res;
-	}
-
-	/* Switch on MCLK by setting the IDLE bit */
-	return icm42688_spi_single_write(&dev_cfg->spi, REG_PWR_MGMT0, BIT_IDLE);
+	return 0;
 }
 
 int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
@@ -182,8 +174,8 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 
 	uint8_t int_config1 = 0;
 
-	if (cfg->fifo_en && (cfg->accel_odr <= ICM42688_ACCEL_ODR_4000 ||
-			     cfg->gyro_odr <= ICM42688_GYRO_ODR_4000)) {
+	if ((cfg->accel_odr <= ICM42688_ACCEL_ODR_4000 ||
+	     cfg->gyro_odr <= ICM42688_GYRO_ODR_4000)) {
 		int_config1 = FIELD_PREP(BIT_INT_TPULSE_DURATION, 1) |
 			      FIELD_PREP(BIT_INT_TDEASSERT_DISABLE, 1);
 	}

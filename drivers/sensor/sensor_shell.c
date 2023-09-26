@@ -4,12 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/shell/shell.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
+
+LOG_MODULE_REGISTER(sensor_shell);
 
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \
@@ -26,6 +33,10 @@
 	"<device_name> <channel_name> <attribute_name> <value>"
 
 #define SENSOR_INFO_HELP "Get sensor info, such as vendor and model name, for all sensors."
+
+#define SENSOR_TRIG_HELP                                                                           \
+	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
+	"<device_name> <on/off> <trigger_name>"
 
 const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
@@ -105,6 +116,38 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
 };
 
+/* Forward declaration */
+static void data_ready_trigger_handler(const struct device *sensor,
+				       const struct sensor_trigger *trigger);
+
+#define TRIGGER_DATA_ENTRY(trig_enum, str_name, handler_func)                                      \
+	[(trig_enum)] = {.name = #str_name,                                                        \
+			 .handler = (handler_func),                                                \
+			 .trigger = {.chan = SENSOR_CHAN_ALL, .type = (trig_enum)}}
+
+/**
+ * @brief This table stores a mapping of string trigger names along with the sensor_trigger struct
+ * that gets passed to the driver to enable that trigger, plus a function pointer to a handler. If
+ * that pointer is NULL, this indicates there is not currently support for that trigger type in the
+ * sensor shell.
+ */
+static const struct {
+	const char *name;
+	sensor_trigger_handler_t handler;
+	struct sensor_trigger trigger;
+} sensor_trigger_table[SENSOR_TRIG_COMMON_COUNT] = {
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_TIMER, timer, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DATA_READY, data_ready, data_ready_trigger_handler),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DELTA, delta, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_NEAR_FAR, near_far, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_THRESHOLD, threshold, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_TAP, tap, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_DOUBLE_TAP, double_tap, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FREEFALL, freefall, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_MOTION, motion, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_STATIONARY, stationary, NULL),
+};
+
 enum dynamic_command_context {
 	NONE,
 	CTX_GET,
@@ -112,6 +155,22 @@ enum dynamic_command_context {
 };
 
 static enum dynamic_command_context current_cmd_ctx = NONE;
+
+/* Mutex for accessing shared RTIO/IODEV data structures */
+K_MUTEX_DEFINE(cmd_get_mutex);
+
+/* Crate a single common config for one-shot reading */
+static enum sensor_channel iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
+static struct sensor_read_config iodev_sensor_shell_read_config = {
+	.sensor = NULL,
+	.channels = iodev_sensor_shell_channels,
+	.count = 0,
+	.max = ARRAY_SIZE(iodev_sensor_shell_channels),
+};
+RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_shell_read_config);
+
+/* Create the RTIO context to service the reading */
+RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
 
 static int parse_named_int(const char *name, const char *heystack[], size_t count)
 {
@@ -175,76 +234,175 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 	return 0;
 }
 
-static int handle_channel_by_name(const struct shell *shell_ptr, const struct device *dev,
-				  const char *channel_name)
-{
-	struct sensor_value value[3];
-	int err;
-	const int i =
-		parse_named_int(channel_name, sensor_channel_name, ARRAY_SIZE(sensor_channel_name));
+struct sensor_shell_processing_context {
+	const struct device *dev;
+	const struct shell *sh;
+};
 
-	if (i < 0) {
-		shell_error(shell_ptr, "Channel not supported (%s)", channel_name);
-		return i;
+static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len,
+					     void *userdata)
+{
+	struct sensor_shell_processing_context *ctx = userdata;
+	const struct sensor_decoder_api *decoder;
+	uint8_t decoded_buffer[128];
+	int rc;
+
+	ARG_UNUSED(buf_len);
+
+	if (result < 0) {
+		shell_error(ctx->sh, "Read failed");
+		return;
 	}
 
-	err = sensor_channel_get(dev, i, value);
+	rc = sensor_get_decoder(ctx->dev, &decoder);
+	if (rc != 0) {
+		shell_error(ctx->sh, "Failed to get decoder for '%s'", ctx->dev->name);
+		return;
+	}
+
+	for (int channel = 0; channel < SENSOR_CHAN_ALL; ++channel) {
+		uint32_t fit = 0;
+		size_t base_size;
+		size_t frame_size;
+		size_t channel_idx = 0;
+		uint16_t frame_count;
+
+		if (channel == SENSOR_CHAN_ACCEL_X || channel == SENSOR_CHAN_ACCEL_Y ||
+		    channel == SENSOR_CHAN_ACCEL_Z || channel == SENSOR_CHAN_GYRO_X ||
+		    channel == SENSOR_CHAN_GYRO_Y || channel == SENSOR_CHAN_GYRO_Z ||
+		    channel == SENSOR_CHAN_MAGN_X || channel == SENSOR_CHAN_MAGN_Y ||
+		    channel == SENSOR_CHAN_MAGN_Z || channel == SENSOR_CHAN_POS_DY ||
+		    channel == SENSOR_CHAN_POS_DZ) {
+			continue;
+		}
+
+		rc = decoder->get_size_info(channel, &base_size, &frame_size);
+		if (rc != 0) {
+			/* Channel not supported, skipping */
+			continue;
+		}
+
+		if (base_size > ARRAY_SIZE(decoded_buffer)) {
+			shell_error(ctx->sh,
+				    "Channel (%d) requires %zu bytes to decode, but only %zu are "
+				    "available",
+				    channel, base_size, ARRAY_SIZE(decoded_buffer));
+			continue;
+		}
+
+		while (decoder->get_frame_count(buf, channel, channel_idx, &frame_count) == 0) {
+			fit = 0;
+			while (decoder->decode(buf, channel, channel_idx, &fit, 1, decoded_buffer) >
+			       0) {
+
+				switch (channel) {
+				case SENSOR_CHAN_ACCEL_XYZ:
+				case SENSOR_CHAN_GYRO_XYZ:
+				case SENSOR_CHAN_MAGN_XYZ:
+				case SENSOR_CHAN_POS_DX: {
+					struct sensor_three_axis_data *data =
+						(struct sensor_three_axis_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s shift=%d "
+						   "value=%" PRIsensor_three_axis_data,
+						   channel, sensor_channel_name[channel],
+						   data->shift,
+						   PRIsensor_three_axis_data_arg(*data, 0));
+					break;
+				}
+				case SENSOR_CHAN_PROX: {
+					struct sensor_byte_data *data =
+						(struct sensor_byte_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s value=%" PRIsensor_byte_data(
+							   is_near),
+						   channel, sensor_channel_name[channel],
+						   PRIsensor_byte_data_arg(*data, 0, is_near));
+					break;
+				}
+				default: {
+					struct sensor_q31_data *data =
+						(struct sensor_q31_data *)decoded_buffer;
+
+					shell_info(ctx->sh,
+						   "channel idx=%d %s shift=%d "
+						   "value=%" PRIsensor_q31_data,
+						   channel,
+						   (channel >= ARRAY_SIZE(sensor_channel_name))
+							   ? ""
+							   : sensor_channel_name[channel],
+						   data->shift, PRIsensor_q31_data_arg(*data, 0));
+					break;
+				}
+				}
+			}
+			++channel_idx;
+		}
+	}
+}
+
+static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *dev;
+	int count = 0;
+	int err;
+
+	err = k_mutex_lock(&cmd_get_mutex, K_NO_WAIT);
 	if (err < 0) {
+		shell_error(sh, "Another sensor reading in progress");
 		return err;
 	}
 
-	if (i >= ARRAY_SIZE(sensor_channel_name)) {
-		shell_print(shell_ptr, "channel idx=%d value = %10.6f", i,
-			    sensor_value_to_double(&value[0]));
-	} else if (i != SENSOR_CHAN_ACCEL_XYZ && i != SENSOR_CHAN_GYRO_XYZ &&
-		   i != SENSOR_CHAN_MAGN_XYZ) {
-		shell_print(shell_ptr, "channel idx=%d %s = %10.6f", i, sensor_channel_name[i],
-			    sensor_value_to_double(&value[0]));
-	} else {
-		/* clang-format off */
-		shell_print(shell_ptr,
-			"channel idx=%d %s x = %10.6f y = %10.6f z = %10.6f",
-			i, sensor_channel_name[i],
-			sensor_value_to_double(&value[0]),
-			sensor_value_to_double(&value[1]),
-			sensor_value_to_double(&value[2]));
-		/* clang-format on */
-	}
-
-	return 0;
-}
-
-static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
-{
-	const struct device *dev;
-	int err;
-
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
-		shell_error(shell, "Device unknown (%s)", argv[1]);
+		shell_error(sh, "Device unknown (%s)", argv[1]);
+		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
-	}
-
-	err = sensor_sample_fetch(dev);
-	if (err < 0) {
-		shell_error(shell, "Failed to read sensor: %d", err);
 	}
 
 	if (argc == 2) {
 		/* read all channels */
-		for (int i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
-			if (sensor_channel_name[i]) {
-				handle_channel_by_name(shell, dev, sensor_channel_name[i]);
+		for (int i = 0; i < ARRAY_SIZE(iodev_sensor_shell_channels); ++i) {
+			if (SENSOR_CHANNEL_3_AXIS(i)) {
+				continue;
 			}
+			iodev_sensor_shell_channels[count++] = i;
 		}
 	} else {
-		for (int i = 2; i < argc; i++) {
-			err = handle_channel_by_name(shell, dev, argv[i]);
-			if (err < 0) {
-				shell_error(shell, "Failed to read channel (%s)", argv[i]);
+		/* read specific channels */
+		for (int i = 2; i < argc; ++i) {
+			int chan = parse_named_int(argv[i], sensor_channel_name,
+						   ARRAY_SIZE(sensor_channel_name));
+
+			if (chan < 0) {
+				shell_error(sh, "Failed to read channel (%s)", argv[i]);
+				continue;
 			}
+			iodev_sensor_shell_channels[count++] = chan;
 		}
 	}
+
+	if (count == 0) {
+		shell_error(sh, "No channels to read, bailing");
+		k_mutex_unlock(&cmd_get_mutex);
+		return -EINVAL;
+	}
+	iodev_sensor_shell_read_config.sensor = dev;
+	iodev_sensor_shell_read_config.count = count;
+
+	struct sensor_shell_processing_context ctx = {
+		.dev = dev,
+		.sh = sh,
+	};
+	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
+	if (err < 0) {
+		shell_error(sh, "Failed to read sensor: %d", err);
+	}
+	sensor_processing_with_callback(&sensor_read_rtio, sensor_shell_processing_callback);
+
+	k_mutex_unlock(&cmd_get_mutex);
 
 	return 0;
 }
@@ -436,6 +594,61 @@ static void device_name_get_for_attr(size_t idx, struct shell_static_entry *entr
 }
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_for_attr, device_name_get_for_attr);
 
+static void trigger_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	int cnt = 0;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	for (int i = 0; i < SENSOR_TRIG_COMMON_COUNT; i++) {
+		if (sensor_trigger_table[i].name != NULL) {
+			if (cnt == idx) {
+				entry->syntax = sensor_trigger_table[i].name;
+				break;
+			}
+			cnt++;
+		}
+	}
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_name, trigger_name_get);
+
+static void trigger_on_off_get(size_t idx, struct shell_static_entry *entry)
+{
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_trigger_name;
+
+	switch (idx) {
+	case 0:
+		entry->syntax = "on";
+		break;
+	case 1:
+		entry->syntax = "off";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_onoff, trigger_on_off_get);
+
+static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_trigger_onoff;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
+
 static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -444,8 +657,7 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_SENSOR_INFO
 	const char *null_str = "(null)";
 
-	STRUCT_SECTION_FOREACH(sensor_info, sensor)
-	{
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
 		shell_print(sh,
 			    "device name: %s, vendor: %s, model: %s, "
 			    "friendly name: %s",
@@ -459,6 +671,119 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #endif
 }
 
+enum sample_stats_state {
+	SAMPLE_STATS_STATE_UNINITIALIZED = 0,
+	SAMPLE_STATS_STATE_ENABLED,
+	SAMPLE_STATS_STATE_DISABLED,
+};
+
+struct sample_stats {
+	int64_t accumulator;
+	uint32_t count;
+	uint64_t sample_window_start;
+	enum sample_stats_state state;
+};
+
+static void data_ready_trigger_handler(const struct device *sensor,
+				       const struct sensor_trigger *trigger)
+{
+	static struct sample_stats stats[SENSOR_CHAN_ALL];
+	const int64_t now = k_uptime_get();
+	struct sensor_value value;
+
+	if (sensor_sample_fetch(sensor)) {
+		LOG_ERR("Failed to fetch samples on data ready handler");
+	}
+	for (int i = 0; i < SENSOR_CHAN_ALL; ++i) {
+		int rc;
+
+		/* Skip disabled channels */
+		if (stats[i].state == SAMPLE_STATS_STATE_DISABLED) {
+			continue;
+		}
+		/* Skip 3 axis channels */
+		if (i == SENSOR_CHAN_ACCEL_XYZ || i == SENSOR_CHAN_GYRO_XYZ ||
+		    i == SENSOR_CHAN_MAGN_XYZ) {
+			continue;
+		}
+
+		rc = sensor_channel_get(sensor, i, &value);
+		if (rc == -ENOTSUP && stats[i].state == SAMPLE_STATS_STATE_UNINITIALIZED) {
+			/* Stop reading this channel if the driver told us it's not supported. */
+			stats[i].state = SAMPLE_STATS_STATE_DISABLED;
+		}
+		if (rc != 0) {
+			/* Skip on any error. */
+			continue;
+		}
+		/* Do something with the data */
+		stats[i].accumulator += value.val1 * INT64_C(1000000) + value.val2;
+		if (stats[i].count++ == 0) {
+			stats[i].sample_window_start = now;
+		} else if (now > stats[i].sample_window_start +
+					 CONFIG_SENSOR_SHELL_TRIG_PRINT_TIMEOUT_MS) {
+			int64_t micro_value = stats[i].accumulator / stats[i].count;
+
+			value.val1 = micro_value / 1000000;
+			value.val2 = (int32_t)llabs(micro_value - (value.val1 * 1000000));
+			LOG_INF("chan=%d, num_samples=%u, data=%d.%06d", i, stats[i].count,
+				value.val1, value.val2);
+
+			stats[i].accumulator = 0;
+			stats[i].count = 0;
+		}
+	}
+}
+
+static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum sensor_trigger_type trigger;
+	int err;
+
+	if (argc < 4) {
+		shell_error(sh, "Wrong number of args");
+		return -EINVAL;
+	}
+
+	/* Parse device name */
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	/* Map the trigger string to an enum value */
+	for (trigger = 0; trigger < ARRAY_SIZE(sensor_trigger_table); trigger++) {
+		if (strcmp(argv[3], sensor_trigger_table[trigger].name) == 0) {
+			break;
+		}
+	}
+	if (trigger >= SENSOR_TRIG_COMMON_COUNT || sensor_trigger_table[trigger].handler == NULL) {
+		shell_error(sh, "Unsupported trigger type (%s)", argv[3]);
+		return -ENOTSUP;
+	}
+
+	/* Parse on/off */
+	if (strcmp(argv[2], "on") == 0) {
+		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger,
+					 sensor_trigger_table[trigger].handler);
+	} else if (strcmp(argv[2], "off") == 0) {
+		/* Clear the handler for the given trigger on this device */
+		err = sensor_trigger_set(dev, &sensor_trigger_table[trigger].trigger, NULL);
+	} else {
+		shell_error(sh, "Pass 'on' or 'off' to enable/disable trigger");
+		return -EINVAL;
+	}
+
+	if (err) {
+		shell_error(sh, "Error while setting trigger %d on device %s (%d)", trigger,
+			    argv[1], err);
+	}
+
+	return err;
+}
+
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 	SHELL_CMD_ARG(get, &dsub_device_name, SENSOR_GET_HELP, cmd_get_sensor,
@@ -469,6 +794,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 			cmd_sensor_attr_get, 2, 255),
 	SHELL_COND_CMD(CONFIG_SENSOR_INFO, info, NULL, SENSOR_INFO_HELP,
 			cmd_get_sensor_info),
+	SHELL_CMD_ARG(trig, &dsub_trigger, SENSOR_TRIG_HELP, cmd_trig_sensor,
+			2, 255),
 	SHELL_SUBCMD_SET_END
 	);
 /* clang-format on */

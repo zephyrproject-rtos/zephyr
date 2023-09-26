@@ -167,7 +167,7 @@ def find_log_const_symbols(elf):
     return ret_list
 
 
-def parse_log_const_symbols(database, log_const_section, log_const_symbols, string_mappings):
+def parse_log_const_symbols(database, log_const_area, log_const_symbols, string_mappings):
     """Find the log instances and map source IDs to names"""
     if database.is_tgt_little_endian():
         formatter = "<"
@@ -192,17 +192,17 @@ def parse_log_const_symbols(database, log_const_section, log_const_symbols, stri
         if sym.entry['st_value'] < first_offset:
             first_offset = sym.entry['st_value']
 
-    first_offset -= log_const_section['start']
+    first_offset -= log_const_area['start']
 
     # find all log_const_*
     for sym in log_const_symbols:
-        # Find data offset in log_const_section for this symbol
-        offset = sym.entry['st_value'] - log_const_section['start']
+        # Find data offset in log_const_area for this symbol
+        offset = sym.entry['st_value'] - log_const_area['start']
 
         idx_s = offset
         idx_e = offset + datum_size
 
-        datum = log_const_section['data'][idx_s:idx_e]
+        datum = log_const_area['data'][idx_s:idx_e]
 
         if len(datum) != datum_size:
             # Not enough data to unpack
@@ -266,13 +266,13 @@ def extract_logging_subsys_information(elf, database, string_mappings):
     mapping from source ID to name.
     """
     # Extract log constant section for module names
-    section_log_const = find_elf_sections(elf, "log_const_sections")
+    section_log_const = find_elf_sections(elf, "log_const_area")
     if section_log_const is None:
-        # ESP32 puts "log_const_*" info log_static_section instead of log_const_sections
+        # ESP32 puts "log_const_*" info log_static_section instead of log_const_areas
         section_log_const = find_elf_sections(elf, "log_static_section")
 
     if section_log_const is None:
-        logger.error("Cannot find section 'log_const_sections' in ELF file, exiting...")
+        logger.error("Cannot find section 'log_const_areas' in ELF file, exiting...")
         sys.exit(1)
 
     # Find all "log_const_*" symbols and parse them
@@ -378,97 +378,70 @@ def extract_string_variables(elf):
 
     return strings
 
-
 def try_decode_string(str_maybe):
     """Check if it is a printable string"""
     for encoding in STR_ENCODINGS:
         try:
-            decoded_str = str_maybe.decode(encoding)
-
-            # Check if string is printable according to Python
-            # since the parser (written in Python) will need to
-            # print the string.
-            #
-            # Note that '\r' and '\n' are not included in
-            # string.printable so they need to be checked separately.
-            printable = True
-            for one_char in decoded_str:
-                if (one_char not in string.printable
-                    and one_char not in ACCEPTABLE_ESCAPE_CHARS):
-                    printable = False
-                    break
-
-            if printable:
-                return decoded_str
+            return str_maybe.decode(encoding)
         except UnicodeDecodeError:
             pass
 
     return None
 
+def is_printable(b):
+    # Check if string is printable according to Python
+    # since the parser (written in Python) will need to
+    # print the string.
+    #
+    # Note that '\r' and '\n' are not included in
+    # string.printable so they need to be checked separately.
+    return (b in string.printable) or (b in ACCEPTABLE_ESCAPE_CHARS)
 
 def extract_strings_in_one_section(section, str_mappings):
     """Extract NULL-terminated strings in one ELF section"""
-    bindata = section['data']
-
-    if len(bindata) < 2:
-        # Can't have a NULL-terminated string with fewer than 2 bytes.
-        return str_mappings
-
+    data = section['data']
     idx = 0
-
-    # If first byte is not NULL, it may be a string.
-    if bindata[0] == 0:
-        start = None
-    else:
-        start = 0
-
-    while idx < len(bindata):
-        if start is None:
-            if bindata[idx] == 0:
-                # Skip NULL bytes to find next string
-                idx += 1
-            else:
-                # Beginning of possible string
+    start = None
+    for x in data:
+        if is_printable(chr(x)):
+            # Printable character, potential part of string
+            if start is None:
+                # Beginning of potential string
                 start = idx
-                idx += 1
-        else:
-            if bindata[idx] != 0:
-                # Skipping till next NULL byte for possible string
-                idx += 1
-            else:
-                # End of possible string
-                end = idx
+        elif x == 0:
+            # End of possible string
+            if start is not None:
+                # Found potential string
+                str_maybe = data[start : idx]
+                decoded_str = try_decode_string(str_maybe)
 
-                if start != end:
-                    str_maybe = bindata[start:end]
-                    decoded_str = try_decode_string(str_maybe)
+                if decoded_str is not None:
+                    addr = section['start'] + start
 
-                    # Only store readable string
-                    if decoded_str is not None:
-                        addr = section['start'] + start
+                    if addr not in str_mappings:
+                        str_mappings[addr] = decoded_str
 
-                        if addr not in str_mappings:
-                            str_mappings[addr] = decoded_str
+                        # Decoded string may contain un-printable characters
+                        # (e.g. extended ASC-II characters) or control
+                        # characters (e.g. '\r' or '\n'), so simply print
+                        # the byte string instead.
+                        logger.debug('Found string via extraction at ' + PTR_FMT + ': %s',
+                                     addr, str_maybe)
 
-                            # Decoded string may contain un-printable characters
-                            # (e.g. extended ASC-II characters) or control
-                            # characters (e.g. '\r' or '\n'), so simply print
-                            # the byte string instead.
-                            logger.debug('Found string via extraction at ' + PTR_FMT + ': %s',
-                                         addr, str_maybe)
+                        # GCC-based toolchain will reuse the NULL character
+                        # for empty strings. There is no way to know which
+                        # one is being reused, so just treat all NULL character
+                        # at the end of legitimate strings as empty strings.
+                        null_addr = section['start'] + idx
+                        str_mappings[null_addr] = ''
 
-                            # GCC-based toolchain will reuse the NULL character
-                            # for empty strings. There is no way to know which
-                            # one is being reused, so just treat all NULL character
-                            # at the end of legitimate strings as empty strings.
-                            null_addr = section['start'] + end
-                            str_mappings[null_addr] = ''
-
-                            logger.debug('Found null string via extraction at ' + PTR_FMT,
-                                         null_addr)
-
+                        logger.debug('Found null string via extraction at ' + PTR_FMT,
+                                     null_addr)
                 start = None
-                idx += 1
+        else:
+            # Non-printable byte, remove start location
+            start = None
+        idx += 1
 
     return str_mappings
 

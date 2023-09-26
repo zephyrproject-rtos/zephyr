@@ -13,3 +13,4 @@ DEFINE_FAKE_VALUE_FUNC(int, k_work_schedule, struct k_work_delayable *, k_timeou
 DEFINE_FAKE_VALUE_FUNC(bool, k_work_cancel_delayable_sync, struct k_work_delayable *,
 		       struct k_work_sync *);
 DEFINE_FAKE_VOID_FUNC(k_work_init_delayable, struct k_work_delayable *, k_work_handler_t);
+DEFINE_FAKE_VALUE_FUNC(int, k_work_submit, struct k_work *);

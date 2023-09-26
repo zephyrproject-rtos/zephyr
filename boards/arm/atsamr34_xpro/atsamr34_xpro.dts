@@ -7,10 +7,11 @@
 /dts-v1/;
 #include <atmel/samr34.dtsi>
 #include "atsamr34_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM R34 Xplained Pro";
-	compatible = "atsamr34,xpro", "atmel,samr34j18b", "atmel,samr34";
+	compatible = "atmel,atsamr34xpro", "atmel,samr34j18b", "atmel,samr34";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -46,6 +47,7 @@
 		user_button: button_0 {
 			gpios = <&porta 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -94,11 +96,11 @@
 /* SERCOM4 is used for the internal LoRa radio */
 &sercom4 {
 	status = "okay";
-
-	pinctrl-0 = <&sercom4_default>;
-	pinctrl-names = "default";
 };
+
 &lora {
+	status = "okay";
+
 	tcxo-power-gpios = <&porta 9 GPIO_ACTIVE_HIGH>;  /* TCXO_PWR */
 	tcxo-power-startup-delay-ms = <5>;
 	rfi-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>; /* BAND_SEL */

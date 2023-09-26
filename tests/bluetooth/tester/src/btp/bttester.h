@@ -78,5 +78,26 @@ uint8_t tester_unregister_gap(void);
 
 void tester_init_core(void);
 
+uint8_t tester_init_pacs(void);
+uint8_t tester_unregister_pacs(void);
+
+uint8_t tester_init_ascs(void);
+uint8_t tester_unregister_ascs(void);
+
 uint8_t tester_init_bap(void);
 uint8_t tester_unregister_bap(void);
+
+uint8_t tester_init_has(void);
+uint8_t tester_unregister_has(void);
+
+uint8_t tester_init_csis(void);
+uint8_t tester_unregister_csis(void);
+
+uint8_t tester_init_micp(void);
+uint8_t tester_unregister_micp(void);
+
+uint8_t tester_init_mics(void);
+uint8_t tester_unregister_mics(void);
+
+uint8_t tester_init_ccp(void);
+uint8_t tester_unregister_ccp(void);

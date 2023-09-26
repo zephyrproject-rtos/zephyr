@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -29,9 +30,18 @@
 
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
 		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000  {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
 		#interrupt-cells = <3>;
+		#address-cells = <1>;
 	};
 
 	pcie0: pcie0 {
@@ -39,6 +49,18 @@
 		#size-cells = <1>;
 		compatible = "intel,pcie";
 		ranges;
+
+		smbus0: smbus0 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x7a23>;
+			interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
 
 		i2c0: i2c0 {
 			compatible = "snps,designware-i2c";
@@ -53,6 +75,13 @@
 			status = "okay";
 		};
 
+		i2c0_dma: i2c0_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c0>;
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
 		i2c1: i2c1 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -63,7 +92,14 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
+		};
+
+		i2c1_dma: i2c1_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c1>;
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		i2c2: i2c2 {
@@ -71,12 +107,21 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x7ace>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
+		};
+
+		i2c2_dma: i2c2_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c2>;
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		i2c3: i2c3 {
@@ -89,6 +134,13 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c3_dma: i2c3_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c3>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -105,6 +157,13 @@
 			status = "disabled";
 		};
 
+		i2c4_dma: i2c4_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c4>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		i2c5: i2c5 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -115,6 +174,13 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c5_dma: i2c5_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c5>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -131,6 +197,13 @@
 			status = "disabled";
 		};
 
+		i2c6_dma: i2c6_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c6>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		i2c7: i2c7 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -141,6 +214,145 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
+			status = "disabled";
+		};
+
+		i2c7_dma: i2c7_dma {
+			compatible = "intel,lpss";
+			dma-parent = <&i2c7>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi0 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x7aaa>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_0_i 15 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+
+		spi1: spi1 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x7aab>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_0_i 19 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		spi2: spi2 {
+			compatible = "intel,penwell-spi";
+			vendor-id = <0x8086>;
+			device-id = <0x7afb>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_0_r 12 GPIO_ACTIVE_LOW>;
+			clock-frequency = <100000000>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		uart0: uart0 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7aa8>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+
+		uart1: uart1 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7aa9>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "okay";
+		};
+
+		uart2: uart2 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7afe>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart3 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7adc>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart4 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7add>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart5 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7ade>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart6: uart6 {
+			compatible = "ns16550";
+			vendor-id = <0x8086>;
+			device-id = <0x7adf>;
+			reg-shift = <2>;
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 	};
@@ -161,10 +373,12 @@
 		uart_ec_0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
+			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			io-mapped;
 			status = "okay";
 		};
 
@@ -350,6 +564,26 @@
 			status = "okay";
 		};
 
+		pwm0: pwm@e06a0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0xe06a0000 0x400>;
+			reg-offset = <0x304>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
+			status = "okay";
+		};
+
+		rtc: counter: rtc@70 {
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
+
+			status = "okay";
+		};
+
 		hpet: hpet@fed00000 {
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
@@ -359,10 +593,11 @@
 			status = "okay";
 		};
 
-		counter: counter@70 {
-			compatible = "motorola,mc146818";
-			reg = <0x70 0x0D 0x71 0x0D>;
-			status = "okay";
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
+
+			status = "disabled";
 		};
 	};
 };

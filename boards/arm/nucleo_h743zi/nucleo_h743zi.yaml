@@ -24,3 +24,5 @@ supported:
   - usb_device
   - can
   - dac
+  - dma
+vendor: st

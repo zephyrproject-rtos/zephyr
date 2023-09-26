@@ -15,6 +15,7 @@
 #define OSDP_PACKET_BUF_SIZE           CONFIG_OSDP_UART_BUFFER_LENGTH
 #define OSDP_PD_SC_TIMEOUT_MS          (800)
 #define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
+#define OSDP_PD_MAX                    CONFIG_OSDP_NUM_CONNECTED_PD
 
 #define OSDP_QUEUE_SLAB_SIZE \
 	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
@@ -123,6 +124,7 @@
 #define PD_FLAG_SC_SCBKD_DONE   0x00000200 /* SCBKD check is done */
 #define PD_FLAG_PKT_HAS_MARK    0x00000400 /* Packet has mark byte */
 #define PD_FLAG_PKT_SKIP_MARK   0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */
+#define PD_FLAG_HAS_SCBK        0x00001000 /* PD has a dedicated SCBK */
 #define PD_FLAG_INSTALL_MODE    0x40000000 /* PD is in install mode */
 #define PD_FLAG_PD_MODE         0x80000000 /* device is setup as PD */
 
@@ -499,10 +501,18 @@ struct osdp {
 	cp_event_callback_t event_callback;
 };
 
+#ifdef CONFIG_OSDP_MODE_PD
+static inline void cp_keyset_complete(struct osdp_pd *pd) { }
+#else
+void cp_keyset_complete(struct osdp_pd *pd);
+#endif
+
+void osdp_keyset_complete(struct osdp_pd *pd);
+
 /* from osdp_phy.c */
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
-			       int len, int max_len);
+			     int len, int max_len);
 int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			  int *one_pkt_len);
 int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len,
@@ -531,7 +541,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 #endif
 
 /* from osdp_sc.c */
-void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk);
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk);
 void osdp_compute_session_keys(struct osdp_pd *pd);
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
 int osdp_verify_cp_cryptogram(struct osdp_pd *pd);
@@ -542,7 +552,7 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
 int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
 int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len);
-void osdp_sc_init(struct osdp_pd *pd);
+void osdp_sc_setup(struct osdp_pd *pd);
 void osdp_fill_random(uint8_t *buf, int len);
 
 /* must be implemented by CP or PD */

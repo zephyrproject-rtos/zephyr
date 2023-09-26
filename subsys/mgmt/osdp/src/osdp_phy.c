@@ -446,6 +446,21 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {
+		/**
+		 * If the current packet is an ACK for a KEYSET, the PD might
+		 * have discarded the secure channel session keys in favour of
+		 * the new key we sent and hence this packet may reach us in
+		 * plain text. To work with such PDs, we must also discard our
+		 * secure session.
+		 *
+		 * The way we do this is by calling osdp_keyset_complete() which
+		 * copies the key in ephemeral_data to the current SCBK.
+		 */
+		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
+		    pkt->data[0] == REPLY_ACK) {
+			osdp_keyset_complete(pd);
+		}
+
 		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
@@ -482,12 +497,21 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			 * ID (data[0])  when calling osdp_decrypt_data().
 			 */
 			len = osdp_decrypt_data(pd, is_cmd, data + 1, len - 1);
-			if (len <= 0) {
+			if (len < 0) {
 				LOG_ERR("Failed at decrypt; discarding SC");
 				sc_deactivate(pd);
 				pd->reply_id = REPLY_NAK;
 				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_NACK;
+			}
+			if (len == 0) {
+				/**
+				 * If cmd/reply has no data, PD "should" have
+				 * used SCS_15/SCS_16 but we will be tolerant
+				 * towards those faulty implementations.
+				 */
+				LOG_INF("Received encrypted data block with 0 "
+					"length; tolerating non-conformance!");
 			}
 			len += 1; /* put back cmd/reply ID */
 		}

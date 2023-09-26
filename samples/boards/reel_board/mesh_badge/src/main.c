@@ -191,14 +191,14 @@ static void bt_ready(int err)
 	printk("Board started\n");
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = board_init();
 	if (err) {
 		printk("board init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Starting Board Demo\n");
@@ -207,12 +207,13 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = periphs_init();
 	if (err) {
 		printk("peripherals initialization failed (err %d)\n", err);
-		return;
+		return 0;
 	}
+	return 0;
 }

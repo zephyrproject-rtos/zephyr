@@ -9,9 +9,14 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include "common.h"
 
+static bool expect_rank = true;
+static bool expect_set_size = true;
+static bool expect_lockable = true;
+
 extern enum bst_result_t bst_result;
 static volatile bool discovered;
 static volatile bool members_discovered;
+static volatile bool discover_timed_out;
 static volatile bool set_locked;
 static volatile bool set_unlocked;
 static volatile bool ordered_access_locked;
@@ -64,6 +69,35 @@ static void csip_discover_cb(struct bt_conn *conn,
 	}
 
 	conn_index = bt_conn_index(conn);
+
+	for (size_t i = 0U; i < set_count; i++) {
+		const uint8_t rank = member->insts[i].info.rank;
+		const uint8_t set_size = member->insts[i].info.set_size;
+		const uint8_t lockable = member->insts[i].info.lockable;
+
+		printk("CSIS[%zu]: %p\n", i, &member->insts[i]);
+		printk("\tRank: %u\n", rank);
+		printk("\tSet Size: %u\n", set_size);
+		printk("\tLockable: %u\n", lockable);
+
+		if ((expect_rank && rank == 0U) || (!expect_rank && rank != 0U)) {
+			FAIL("Unexpected rank: %u %u", expect_rank, rank);
+
+			return;
+		}
+
+		if ((expect_set_size && set_size == 0U) || (!expect_set_size && set_size != 0U)) {
+			FAIL("Unexpected set_size: %u %u", expect_set_size, set_size);
+
+			return;
+		}
+
+		if (expect_lockable != lockable) {
+			FAIL("Unexpected lockable: %u %u", expect_lockable, lockable);
+
+			return;
+		}
+	}
 
 	inst = &member->insts[0];
 	set_members[conn_index] = member;
@@ -137,8 +171,11 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		printk("Found member (%u / %u)\n",
-		       members_found, inst->info.set_size);
+		if (inst->info.set_size == 0) {
+			printk("Found member %u\n", members_found);
+		} else {
+			printk("Found member (%u / %u)\n", members_found, inst->info.set_size);
+		}
 
 		/* Stop parsing */
 		return false;
@@ -170,8 +207,11 @@ static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
 
 static void discover_members_timer_handler(struct k_work *work)
 {
-	FAIL("Could not find all members (%u / %u)\n",
-	     members_found, inst->info.set_size);
+	if (inst->info.set_size > 0) {
+		FAIL("Could not find all members (%u / %u)\n", members_found, inst->info.set_size);
+	} else {
+		discover_timed_out = true;
+	}
 }
 
 static void ordered_access(const struct bt_csip_set_coordinator_set_member **members,
@@ -275,9 +315,14 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR_COND(members_found == inst->info.set_size);
+	if (inst->info.set_size > 0) {
+		WAIT_FOR_COND(members_found == inst->info.set_size);
 
-	(void)k_work_cancel_delayable(&discover_members_timer);
+		(void)k_work_cancel_delayable(&discover_members_timer);
+	} else {
+		WAIT_FOR_COND(discover_timed_out);
+	}
+
 	err = bt_le_scan_stop();
 	if (err != 0) {
 		FAIL("Scanning failed to stop (err %d)\n", err);
@@ -318,59 +363,73 @@ static void test_main(void)
 		locked_members[i] = set_members[i];
 	}
 
-	ordered_access(locked_members, connected_member_count, false);
-
-	printk("Locking set\n");
-	err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
-					   &inst->info);
-	if (err != 0) {
-		FAIL("Failed to do set coordinator lock (%d)", err);
-		return;
+	if (inst->info.rank != 0U) {
+		ordered_access(locked_members, connected_member_count, false);
 	}
 
-	WAIT_FOR_COND(set_locked);
+	if (inst->info.lockable) {
+		printk("Locking set\n");
+		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
+						   &inst->info);
+		if (err != 0) {
+			FAIL("Failed to do set coordinator lock (%d)", err);
+			return;
+		}
 
-	ordered_access(locked_members, connected_member_count, true);
+		WAIT_FOR_COND(set_locked);
+	}
+
+	if (inst->info.rank != 0U) {
+		ordered_access(locked_members, connected_member_count, inst->info.lockable);
+	}
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
-	printk("Releasing set\n");
-	err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
-					      &inst->info);
-	if (err != 0) {
-		FAIL("Failed to do set coordinator release (%d)", err);
-		return;
+	if (inst->info.lockable) {
+		printk("Releasing set\n");
+		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
+						      &inst->info);
+		if (err != 0) {
+			FAIL("Failed to do set coordinator release (%d)", err);
+			return;
+		}
+
+		WAIT_FOR_COND(set_unlocked);
 	}
 
-	WAIT_FOR_COND(set_unlocked);
-
-	ordered_access(locked_members, connected_member_count, false);
-
-	/* Lock and unlock again */
-	set_locked = false;
-	set_unlocked = false;
-
-	printk("Locking set\n");
-	err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
-					   &inst->info);
-	if (err != 0) {
-		FAIL("Failed to do set coordinator lock (%d)", err);
-		return;
+	if (inst->info.rank != 0U) {
+		ordered_access(locked_members, connected_member_count, false);
 	}
 
-	WAIT_FOR_COND(set_locked);
+	if (inst->info.lockable) {
+		/* Lock and unlock again */
+		set_locked = false;
+		set_unlocked = false;
+
+		printk("Locking set\n");
+		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
+						   &inst->info);
+		if (err != 0) {
+			FAIL("Failed to do set coordinator lock (%d)", err);
+			return;
+		}
+
+		WAIT_FOR_COND(set_locked);
+	}
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
-	printk("Releasing set\n");
-	err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
-					      &inst->info);
-	if (err != 0) {
-		FAIL("Failed to do set coordinator release (%d)", err);
-		return;
-	}
+	if (inst->info.lockable) {
+		printk("Releasing set\n");
+		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
+						      &inst->info);
+		if (err != 0) {
+			FAIL("Failed to do set coordinator release (%d)", err);
+			return;
+		}
 
-	WAIT_FOR_COND(set_unlocked);
+		WAIT_FOR_COND(set_unlocked);
+	}
 
 	for (uint8_t i = 0; i < members_found; i++) {
 		printk("Disconnecting member[%u] (%s)", i, addr);
@@ -386,17 +445,34 @@ static void test_main(void)
 	PASS("All members disconnected\n");
 }
 
+static void test_args(int argc, char *argv[])
+{
+	for (int argn = 0; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "no-size") == 0) {
+			expect_set_size = false;
+		} else if (strcmp(arg, "no-rank") == 0) {
+			expect_rank = false;
+		} else if (strcmp(arg, "no-lock") == 0) {
+			expect_lockable = false;
+		} else {
+			FAIL("Invalid arg: %s", arg);
+		}
+	}
+}
+
 static const struct bst_test_instance test_connect[] = {
 
 	{
 		.test_id = "csip_set_coordinator",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main,
+		.test_args_f = test_args,
 	},
 
-	BSTEST_END_MARKER
-};
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_csip_set_coordinator_install(struct bst_test_list *tests)
 {

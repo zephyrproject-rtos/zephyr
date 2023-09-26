@@ -20,8 +20,7 @@
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF
@@ -180,7 +179,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 			slen_packed = bt_iso_pkt_len_pack(total_len, packet_status_flag);
 
 			data_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
-			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.seqn);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.sn);
 			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
@@ -826,9 +825,8 @@ static const struct bt_hci_driver drv = {
 	.send	= hci_driver_send,
 };
 
-static int hci_driver_init(const struct device *unused)
+static int hci_driver_init(void)
 {
-	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 

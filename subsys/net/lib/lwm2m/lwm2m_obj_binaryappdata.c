@@ -104,7 +104,7 @@ static struct lwm2m_engine_obj_inst *lwm2m_binaryappdata_create(uint16_t obj_ins
 	return &inst[avail];
 }
 
-static int lwm2m_binaryappdata_init(const struct device *dev)
+static int lwm2m_binaryappdata_init(void)
 {
 	int ret = 0;
 

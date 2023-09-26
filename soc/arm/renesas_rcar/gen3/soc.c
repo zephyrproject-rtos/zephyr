@@ -7,25 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
-
-/**
- *
- * @brief Perform basic hardware initialization
- *
- * @return 0
- */
-
-static int soc_init(const struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-	return 0;
-}
+#include <zephyr/sys/barrier.h>
 
 void z_arm_platform_init(void)
 {
@@ -34,11 +16,9 @@ void z_arm_platform_init(void)
 
 	/* Invalidate instruction cache and flush branch target cache */
 	__set_ICIALLU(0);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	L1C_EnableCaches();
 	L1C_EnableBTAC();
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

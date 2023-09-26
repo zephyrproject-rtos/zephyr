@@ -29,7 +29,7 @@ static void input_cb_filtered(struct input_event *evt)
 
 	k_sem_give(&cb_start);
 }
-INPUT_LISTENER_CB_DEFINE(&fake_dev, input_cb_filtered);
+INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered);
 
 static void input_cb_unfiltered(struct input_event *evt)
 {
@@ -42,7 +42,7 @@ static void input_cb_unfiltered(struct input_event *evt)
 		k_sem_give(&cb_done);
 	}
 }
-INPUT_LISTENER_CB_DEFINE(NULL, input_cb_unfiltered);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered);
 
 ZTEST(input_api, test_sequence_thread)
 {
@@ -91,13 +91,13 @@ static void input_cb_filtered(struct input_event *evt)
 		message_count_filtered++;
 	}
 }
-INPUT_LISTENER_CB_DEFINE(&fake_dev, input_cb_filtered);
+INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered);
 
 static void input_cb_unfiltered(struct input_event *evt)
 {
 	message_count_unfiltered++;
 }
-INPUT_LISTENER_CB_DEFINE(NULL, input_cb_unfiltered);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered);
 
 ZTEST(input_api, test_synchronous)
 {
@@ -122,7 +122,7 @@ static void input_cb_last_event(struct input_event *evt)
 {
 	memcpy(&last_event, evt, sizeof(last_event));
 }
-INPUT_LISTENER_CB_DEFINE(NULL, input_cb_last_event);
+INPUT_CALLBACK_DEFINE(NULL, input_cb_last_event);
 
 ZTEST(input_api, test_report_apis)
 {

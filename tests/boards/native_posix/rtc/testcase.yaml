@@ -1,7 +1,9 @@
 # Test of the native_posix real timeness and RTC model
 tests:
   boards.native_posix.rtc:
-    platform_allow: native_posix native_posix_64
+    platform_allow:
+      - native_posix
+      - native_posix_64
     integration_platforms:
       - native_posix
     build_only: true

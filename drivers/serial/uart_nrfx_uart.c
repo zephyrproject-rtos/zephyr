@@ -285,7 +285,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 	nrf_uart_txd_set(uart0_addr, (uint8_t)c);
 
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
-	int res;
+	bool res;
 
 	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
 
@@ -404,6 +404,11 @@ static int uart_nrfx_callback_set(const struct device *dev,
 {
 	uart0_cb.callback = callback;
 	uart0_cb.user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
+	irq_callback = NULL;
+	irq_cb_data = NULL;
+#endif
 
 	return 0;
 }
@@ -581,7 +586,8 @@ static void rx_isr(const struct device *dev)
 		/* Byte received when receiving is disabled - data lost. */
 		nrf_uart_rxd_get(uart0_addr);
 	} else {
-		if (uart0_cb.rx_counter == 0) {
+		if (uart0_cb.rx_counter == 0 &&
+		    uart0_cb.rx_secondary_buffer_length == 0) {
 			event.type = UART_RX_BUF_REQUEST;
 			user_callback(dev, &event);
 		}
@@ -922,6 +928,11 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
 	(void)dev;
 	irq_callback = cb;
 	irq_cb_data = cb_data;
+
+#if defined(CONFIG_UART_0_ASYNC) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	uart0_cb.callback = NULL;
+	uart0_cb.user_data = NULL;
+#endif
 }
 
 /**

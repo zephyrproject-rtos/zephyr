@@ -3,5 +3,9 @@ sample:
 tests:
   sample.sensor.lsm303dlhc:
     harness: sensor
-    tags: samples sensor
-    depends_on: i2c lsm303dlhc
+    tags:
+      - samples
+      - sensor
+    depends_on:
+      - i2c
+      - lsm303dlhc

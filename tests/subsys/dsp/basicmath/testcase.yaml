@@ -14,7 +14,9 @@ tests:
     integration_platforms:
       - mps2_an521_remote
       - mps3_an547
-    tags: zdsp fpu
+    tags:
+      - zdsp
+      - fpu
     extra_configs:
       - CONFIG_FPU=y
     min_flash: 128

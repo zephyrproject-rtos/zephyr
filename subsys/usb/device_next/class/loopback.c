@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(usb_loopback, CONFIG_USBD_LOOPBACK_LOG_LEVEL);
  * interface and endpoint configuration.
  */
 
-/* Internal buffer for intermidiate test data */
+/* Internal buffer for intermediate test data */
 static uint8_t lb_buf[1024];
 
 #define LB_VENDOR_REQ_OUT		0x5b

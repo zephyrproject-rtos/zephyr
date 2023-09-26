@@ -13,5 +13,9 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
+  - counter
   - gpio
   - uart
+  - i2c
+vendor: cypress

@@ -181,7 +181,7 @@ static int pca9685_set_cycles(const struct device *dev,
 		return -EINVAL;
 	}
 
-	pre_scale = ceiling_fraction((int64_t)period_count, PWM_STEPS) - 1;
+	pre_scale = DIV_ROUND_UP((int64_t)period_count, PWM_STEPS) - 1;
 
 	if (pre_scale < PRE_SCALE_MIN) {
 		LOG_ERR("period_count %u < %u (min)", period_count,
@@ -203,7 +203,7 @@ static int pca9685_set_cycles(const struct device *dev,
 	}
 
 	/* Adjust PWM output for the resolution of the PCA9685 */
-	led_off_count = ceiling_fraction(pulse_count * PWM_STEPS, period_count);
+	led_off_count = DIV_ROUND_UP(pulse_count * PWM_STEPS, period_count);
 
 	buf[0] = ADDR_LED_ON_L(channel);
 	if (led_off_count == 0) {

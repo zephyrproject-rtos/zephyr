@@ -17,7 +17,7 @@ cd ${BSIM_OUT_PATH}/bin
 Execute "$test_2_exe" \
     -v=${verbosity_level} -s="${simulation_id}" -d=0 -testid=dut_2 -RealEncryption=1
 
-Execute "$test_2_exe" \
+Execute "$test_exe" \
     -v=${verbosity_level} -s="${simulation_id}" -d=1 -testid=tester_2 -RealEncryption=1
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}" \

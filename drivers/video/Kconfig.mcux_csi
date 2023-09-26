@@ -8,3 +8,10 @@ config VIDEO_MCUX_CSI
 	default y
 	depends on HAS_MCUX_CSI
 	depends on DT_HAS_NXP_IMX_CSI_ENABLED
+
+config VIDEO_MCUX_CSI_INIT_PRIORITY
+	int "NXP MCUX CSI init priority"
+	default 61
+	depends on VIDEO_MCUX_CSI
+	help
+	  Initialization priority for the CSI interface on an NXP MCUX device.

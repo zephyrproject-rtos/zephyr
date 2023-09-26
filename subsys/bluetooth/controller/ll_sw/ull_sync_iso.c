@@ -6,8 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -219,7 +218,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 
 		node_rx = (void *)&sync_iso->node_rx_lost;
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-		node_rx->hdr.handle = 0xffff;
+		node_rx->hdr.handle = big_handle;
 
 		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
 		 *       context, pass ULL context as parameter.
@@ -422,11 +421,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->irc = bi->irc;
 	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
 
+	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[1] << 8;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
-	lll->payload_count |= (uint64_t)bi->payload_count_framing[4] << 32;
+	lll->payload_count |= (uint64_t)(bi->payload_count_framing[4] & 0x7f) << 32;
 
 	if (lll->enc && (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE)) {
 		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
@@ -471,7 +471,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	sca = sync_iso->sync->lll.sca;
 	lll->window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(sca)) *
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
@@ -509,11 +509,11 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
-			EVENT_OVERHEAD_START_US + ready_delay_us +
-			PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
-				       lll->phy) +
-			EVENT_OVERHEAD_END_US);
+	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + ready_delay_us +
+		PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
+			       lll->phy) +
+		EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
 				sync_iso->ull.ticks_prepare_to_start);

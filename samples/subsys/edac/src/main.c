@@ -30,21 +30,22 @@ static void notification_callback(const struct device *dev, void *data)
 	atomic_set(&handled, true);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);
-		return;
+		return 0;
 	}
 
 	if (edac_notify_callback_set(dev, notification_callback)) {
 		LOG_ERR("Cannot set notification callback");
-		return;
+		return 0;
 	}
 
 	LOG_INF("EDAC shell application initialized");
+	return 0;
 }
 
 void thread_function(void)

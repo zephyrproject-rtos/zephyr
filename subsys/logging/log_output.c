@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output_custom.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/cbprintf.h>
@@ -196,8 +197,8 @@ static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
 	/* compute the proper month */
 	for (i = 0; i < ARRAY_SIZE(days_in_month); i++) {
 		tmp = ((i == 1) && is_leap_year(output_date->year)) ?
-					(days_in_month[i] + 1) * SECONDS_IN_DAY :
-					days_in_month[i] * SECONDS_IN_DAY;
+					((uint64_t)days_in_month[i] + 1) * SECONDS_IN_DAY :
+					(uint64_t)days_in_month[i] * SECONDS_IN_DAY;
 		if (tmp > seconds) {
 			output_date->month += i;
 			break;
@@ -215,7 +216,8 @@ static int timestamp_print(const struct log_output *output,
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
-		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP);
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
 
 
 	if (!format) {
@@ -249,8 +251,10 @@ static int timestamp_print(const struct log_output *output,
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+			length = log_custom_timestamp_print(output, timestamp, print_formatted);
+		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_NEWLIB_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
 			struct tm *tm;
@@ -321,14 +325,25 @@ static void color_postfix(const struct log_output *output,
 static int ids_print(const struct log_output *output,
 		     bool level_on,
 		     bool func_on,
+		     bool thread_on,
 		     const char *domain,
 		     const char *source,
+		     const k_tid_t tid,
 		     uint32_t level)
 {
 	int total = 0;
 
 	if (level_on) {
 		total += print_formatted(output, "<%s> ", severity[level]);
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) && thread_on) {
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			total += print_formatted(output, "[%s] ",
+				tid == NULL ? "irq" : k_thread_name_get(tid));
+		} else {
+			total += print_formatted(output, "[%p] ", tid);
+		}
 	}
 
 	if (domain) {
@@ -426,13 +441,17 @@ static uint32_t prefix_print(const struct log_output *output,
 			     log_timestamp_t timestamp,
 			     const char *domain,
 			     const char *source,
+			     const k_tid_t tid,
 			     uint8_t level)
 {
+	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
 	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
+	bool thread_on = IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
+			 (flags & LOG_OUTPUT_FLAG_THREAD);
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -470,7 +489,7 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on, domain, source, level);
+	length += ids_print(output, level_on, func_on, thread_on, domain, source, tid, level);
 
 	return length;
 }
@@ -487,6 +506,7 @@ void log_output_process(const struct log_output *output,
 			log_timestamp_t timestamp,
 			const char *domain,
 			const char *source,
+			const k_tid_t tid,
 			uint8_t level,
 			const uint8_t *package,
 			const uint8_t *data,
@@ -498,7 +518,8 @@ void log_output_process(const struct log_output *output,
 	cbprintf_cb cb;
 
 	if (!raw_string) {
-		prefix_offset = prefix_print(output, flags, 0, timestamp, domain, source, level);
+		prefix_offset = prefix_print(output, flags, 0, timestamp,
+					     domain, source, tid, level);
 		cb = out_func;
 	} else {
 		prefix_offset = 0;
@@ -555,7 +576,7 @@ void log_output_msg_process(const struct log_output *output,
 	uint8_t *package = log_msg_get_package(msg, &plen);
 	uint8_t *data = log_msg_get_data(msg, &dlen);
 
-	log_output_process(output, timestamp, NULL, sname, level,
+	log_output_process(output, timestamp, NULL, sname, (k_tid_t)log_msg_get_tid(msg), level,
 			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 
@@ -592,7 +613,7 @@ void log_output_timestamp_freq_set(uint32_t frequency)
 	freq = frequency;
 }
 
-uint64_t log_output_timestamp_to_us(uint32_t timestamp)
+uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp)
 {
 	timestamp /= timestamp_div;
 

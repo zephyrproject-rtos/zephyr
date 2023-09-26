@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCUX_SMARTDMA
+	bool "MCUX SmartDMA Driver"
+	default y
+	depends on DT_HAS_NXP_SMARTDMA_ENABLED
+	help
+	  MCUX SmartDMA driver.

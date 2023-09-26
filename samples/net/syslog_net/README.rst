@@ -1,7 +1,8 @@
-.. _syslog-net-sample:
+.. zephyr:code-sample:: syslog-net
+   :name: Remote syslog
+   :relevant-api: log_backend log_ctrl
 
-Syslog net Application
-######################
+   Enable a remote syslog service that sends syslog messages to a remote server
 
 Overview
 ********

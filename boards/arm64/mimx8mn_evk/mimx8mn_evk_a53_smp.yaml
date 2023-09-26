@@ -6,7 +6,10 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 1024
+supported:
+  - smp
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: fsl

@@ -122,7 +122,7 @@ USB Device Port
 
 The SAMD51 MCU has a USB device port that can be used to communicate with a
 host PC.  See the :ref:`usb-samples` sample applications for more, such as the
-:ref:`usb_cdc-acm` sample which sets up a virtual serial port that echos
+:zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual serial port that echos
 characters back to the host PC.
 
 Programming and Debugging
@@ -166,7 +166,7 @@ Debugging
 In addition to the built-in bootloader, the Wio Terminal can be flashed and
 debugged using an SWD probe such as the Segger J-Link.
 
-#.  Solder cables to the code:`SWCLK`, :code:`SWDIO`, :code:`RESET`,
+#.  Solder cables to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`,
     :code:`GND`, and :code:`3V3` pins. See `Test with SWD`_ for more
     information.
 

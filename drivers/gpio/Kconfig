@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO
-	bool "GPIO Drivers"
+	bool "General-Purpose Input/Output (GPIO) drivers"
 	help
 	  Include GPIO drivers in system config
 
@@ -58,6 +58,18 @@ config GPIO_HOGS_INIT_PRIORITY
 	help
 	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
 	  GPIO controller drivers.
+
+config GPIO_ENABLE_DISABLE_INTERRUPT
+	bool "Support for enable/disable interrupt without re-config [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for enabling/disabling interrupt with
+	  previous configuration, and enabling/disabling the interrupt only turns
+	  on/off the interrupt signal without changing other registers, such as
+	  pending register, etc. The driver must implement it to work.
+
+
+source "drivers/gpio/Kconfig.axp192"
 
 source "drivers/gpio/Kconfig.b91"
 
@@ -117,6 +129,8 @@ source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.lmp90xxx"
 
+source "drivers/gpio/Kconfig.ads114s0x"
+
 source "drivers/gpio/Kconfig.litex"
 
 source "drivers/gpio/Kconfig.lpc11u6x"
@@ -173,6 +187,8 @@ source "drivers/gpio/Kconfig.nxp_s32"
 
 source "drivers/gpio/Kconfig.tca6424a"
 
+source "drivers/gpio/Kconfig.npm1300"
+
 source "drivers/gpio/Kconfig.npm6001"
 
 source "drivers/gpio/Kconfig.rt1718s"
@@ -180,5 +196,16 @@ source "drivers/gpio/Kconfig.rt1718s"
 source "drivers/gpio/Kconfig.numicro"
 
 source "drivers/gpio/Kconfig.bd8lb600fs"
+
+source "drivers/gpio/Kconfig.sc18im704"
+
+source "drivers/gpio/Kconfig.numaker"
+
+source "drivers/gpio/Kconfig.efinix_sapphire"
+
+source "drivers/gpio/Kconfig.davinci"
+source "drivers/gpio/Kconfig.sedi"
+
+source "drivers/gpio/Kconfig.altera"
 
 endif # GPIO

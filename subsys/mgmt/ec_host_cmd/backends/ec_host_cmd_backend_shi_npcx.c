@@ -75,7 +75,7 @@ LOG_MODULE_REGISTER(host_cmd_shi_npcx, CONFIG_EC_HC_LOG_LEVEL);
  * overhead, as passed to the host command handler, must be 32-bit aligned.
  */
 #define SHI_OUT_START_PAD (4 * (EC_SHI_FRAME_START_LENGTH / 4 + 1))
-#define SHI_OUT_END_PAD	  (4 * (EC_SHI_PAST_END_LENGTH / 4 + 1))
+#define SHI_OUT_END_PAD   (4 * (EC_SHI_PAST_END_LENGTH / 4 + 1))
 
 enum shi_npcx_state {
 	SHI_STATE_NONE = -1,
@@ -114,14 +114,14 @@ struct shi_npcx_data {
 	/* Communication status */
 	enum shi_npcx_state state;
 	enum shi_npcx_state last_error_state;
-	uint8_t *rx_msg;	  /* Entry pointer of msg rx buffer   */
-	uint8_t *tx_msg;	  /* Entry pointer of msg tx buffer   */
+	uint8_t *rx_msg;          /* Entry pointer of msg rx buffer   */
+	uint8_t *tx_msg;          /* Entry pointer of msg tx buffer   */
 	volatile uint8_t *rx_buf; /* Entry pointer of receive buffer  */
 	volatile uint8_t *tx_buf; /* Entry pointer of transmit buffer */
-	uint16_t sz_sending;	  /* Size of sending data in bytes    */
-	uint16_t sz_request;	  /* Request bytes need to receive    */
-	uint16_t sz_response;	  /* Response bytes need to receive   */
-	uint64_t rx_deadline;	  /* Deadline of receiving            */
+	uint16_t sz_sending;      /* Size of sending data in bytes    */
+	uint16_t sz_request;      /* Request bytes need to receive    */
+	uint16_t sz_response;     /* Response bytes need to receive   */
+	uint64_t rx_deadline;     /* Deadline of receiving            */
 	/* Buffers */
 	uint8_t out_msg_padded[SHI_OUT_START_PAD + CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE +
 			       SHI_OUT_END_PAD] __aligned(4);
@@ -349,7 +349,7 @@ static void shi_npcx_handle_host_package(const struct device *dev)
 	data->out_msg[0] = EC_SHI_FRAME_START;
 
 	/* Wake-up the HC handler thread */
-	k_sem_give(&data->rx_ctx->handler_owns);
+	ec_host_cmd_rx_notify();
 }
 
 static int shi_npcx_host_request_expected_size(const struct ec_host_cmd_request_header *r)
@@ -687,7 +687,9 @@ static void shi_npcx_reset_prepare(const struct device *dev)
 	data->tx_msg = data->out_msg;
 	data->rx_buf = inst->IBUF;
 	data->tx_buf = inst->OBUF;
-	data->rx_ctx->len = 0;
+	if (data->rx_ctx) {
+		data->rx_ctx->len = 0;
+	}
 	data->sz_sending = 0;
 	data->sz_request = 0;
 	data->sz_response = 0;
@@ -719,7 +721,7 @@ static int shi_npcx_enable(const struct device *dev)
 	const struct shi_npcx_config *const config = dev->config;
 	int ret;
 
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on SHI clock fail %d", ret);
 		return ret;
@@ -761,7 +763,7 @@ static int shi_npcx_disable(const struct device *dev)
 		return ret;
 	}
 
-	ret = clock_control_off(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_off(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn off SHI clock fail %d", ret);
 		return ret;
@@ -778,7 +780,7 @@ static int shi_npcx_init_registers(const struct device *dev)
 	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
 	/* Turn on shi device clock first */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on SHI clock fail %d", ret);
 		return ret;
@@ -983,11 +985,10 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void)
 	return &ec_host_cmd_shi_npcx;
 }
 
-#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_backend))
-static int host_cmd_init(const struct device *arg)
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_host_cmd_shi_backend)) &&                                      \
+	defined(CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT)
+static int host_cmd_init(void)
 {
-	ARG_UNUSED(arg);
-
 	ec_host_cmd_init(ec_host_cmd_backend_get_shi_npcx());
 	return 0;
 }

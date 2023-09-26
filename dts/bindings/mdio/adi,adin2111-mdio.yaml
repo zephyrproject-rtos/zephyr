@@ -1,0 +1,19 @@
+# Copyright (c) 2023 PHOENIX CONTACT Electronics GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADIN2111 MDIO Driver node
+
+compatible: "adi,adin2111-mdio"
+
+include: mdio-controller.yaml
+
+on-bus: adin2111
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0

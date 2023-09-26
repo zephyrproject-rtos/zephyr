@@ -47,7 +47,7 @@ By node label
 By alias
    Use :c:func:`DT_ALIAS()` to get a node identifier for a property of the
    special ``/aliases`` node. This is sometimes done by applications (like
-   :ref:`blinky <blinky-sample>`, which uses the ``led0`` alias) that need to
+   :zephyr:code-sample:`blinky`, which uses the ``led0`` alias) that need to
    refer to *some* device of a particular type ("the board's user LED") but
    don't care which one is used.
 

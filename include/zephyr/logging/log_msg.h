@@ -10,6 +10,7 @@
 #include <zephyr/sys/mpsc_packet.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/toolchain.h>
@@ -77,6 +78,9 @@ struct log_msg_hdr {
 #else
 	const void *source;
 	log_timestamp_t timestamp;
+#endif
+#if CONFIG_LOG_THREAD_ID_PREFIX
+	void *tid;
 #endif
 };
 
@@ -157,8 +161,8 @@ enum z_log_msg_mode {
 
 #ifdef CONFIG_LOG_USE_VLA
 #define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
-	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
+	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
+	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
 	ptr = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
 			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
@@ -208,7 +212,7 @@ enum z_log_msg_mode {
 	(offsetof(struct log_msg, data) + pkg_len + (data_len))
 
 #define Z_LOG_MSG_ALIGNED_WLEN(pkg_len, data_len) \
-	ceiling_fraction(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
+	DIV_ROUND_UP(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
 				  Z_LOG_MSG_ALIGNMENT), \
 			 sizeof(uint32_t))
 
@@ -226,20 +230,22 @@ enum z_log_msg_mode {
 #define Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
-	uint32_t flags = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
-			 CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
+	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
+			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
 	} else { \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, flags, \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
 	} \
+	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
 	struct log_msg *_msg; \
+	TOOLCHAIN_IGNORE_WSHADOW_END \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen != 0) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
-					_plen, Z_LOG_MSG_ALIGN_OFFSET, flags, \
+					_plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__);\
 	} \
 	struct log_msg_desc _desc = \
@@ -342,7 +348,7 @@ do { \
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
 		    (/* No args provided, no variable */), \
 		    (static const char _name[] \
-			__attribute__((__section__(".log_strings"))) = \
+		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan = \
 			GET_ARG_N(1, __VA_ARGS__);))
 
 /** @brief Create variable in the dedicated memory section (if enabled).
@@ -650,6 +656,21 @@ static inline const void *log_msg_get_source(struct log_msg *msg)
 static inline log_timestamp_t log_msg_get_timestamp(struct log_msg *msg)
 {
 	return msg->hdr.timestamp;
+}
+
+/** @brief Get Thread ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Thread ID.
+ */
+static inline void *log_msg_get_tid(struct log_msg *msg)
+{
+#if CONFIG_LOG_THREAD_ID_PREFIX
+	return msg->hdr.tid;
+#else
+	return NULL;
+#endif
 }
 
 /** @brief Get data buffer.

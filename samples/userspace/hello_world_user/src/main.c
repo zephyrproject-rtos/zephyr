@@ -20,9 +20,10 @@ static void user_function(void *p1, void *p2, void *p3)
 }
 
 
-void main(void)
+int main(void)
 {
 	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
 			user_function, NULL, NULL, NULL,
 			-1, K_USER, K_MSEC(0));
+	return 0;
 }

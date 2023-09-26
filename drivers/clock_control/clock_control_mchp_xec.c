@@ -8,13 +8,14 @@
 
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/barrier.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define CLK32K_SIL_OSC_DELAY		256
@@ -108,6 +109,9 @@ struct pcr_hw_regs {
 	volatile uint32_t CLK32K_MON_ISTS;
 	volatile uint32_t CLK32K_MON_IEN;
 };
+
+#define XEC_CC_PCR_RST_EN_UNLOCK	0xa6382d4cu
+#define XEC_CC_PCR_RST_EN_LOCK		0xa6382d4du
 
 #define XEC_CC_PCR_OSC_ID_PLL_LOCK	BIT(8)
 #define XEC_CC_PCR_TURBO_CLK_96M	BIT(2)
@@ -762,8 +766,8 @@ static void xec_clock_control_core_clock_divider_set(uint8_t clkdiv)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /*
@@ -787,6 +791,29 @@ int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 	} else {
 		pcr->SLP_EN[slp_idx] &= ~BIT(slp_pos);
 	}
+
+	return 0;
+}
+
+/* Most peripherals have a write only reset bit in the PCR reset enable registers.
+ * The layout of these registers is identical to the PCR sleep enable registers.
+ * Reset enables are protected by a lock register.
+ */
+int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos)
+{
+	struct pcr_hw_regs *const pcr = (struct pcr_hw_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0);
+
+	if ((slp_idx >= MCHP_MAX_PCR_SCR_REGS) || (slp_pos >= 32)) {
+		return -EINVAL;
+	}
+
+	uint32_t lock = irq_lock();
+
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_UNLOCK;
+	pcr->RST_EN[slp_idx] = BIT(slp_pos);
+	pcr->RST_EN_LOCK = XEC_CC_PCR_RST_EN_LOCK;
+
+	irq_unlock(lock);
 
 	return 0;
 }

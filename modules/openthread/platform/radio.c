@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_time.h>
 #include <zephyr/sys/__assert.h>
 
 #include <openthread/ip6.h>
@@ -32,17 +33,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/instance.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
+#include <openthread/platform/time.h>
 #include <openthread/message.h>
 
 #include "platform-zephyr.h"
 
 #define SHORT_ADDRESS_SIZE 2
 
-#define FCS_SIZE 2
-#if defined(CONFIG_IEEE802154_2015)
-#define ACK_PKT_LENGTH 127
-#else
+#define FCS_SIZE     2
+#if defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #define ACK_PKT_LENGTH 5
+#else
+#define ACK_PKT_LENGTH 127
 #endif
 
 #define FRAME_TYPE_MASK 0x07
@@ -153,8 +155,7 @@ void energy_detected(const struct device *dev, int16_t max_ed)
 	}
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-					     struct net_pkt *pkt)
+enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	ARG_UNUSED(iface);
 
@@ -180,13 +181,14 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	ack_frame.mPsdu = ack_psdu;
 	ack_frame.mLength = ack_len;
 	ack_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
-	ack_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
+	ack_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi_dbm(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
-	ack_frame.mInfo.mRxInfo.mTimestamp =
-		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+	/* OpenThread expects the timestamp to point to the end of SFD */
+	ack_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
+					     pkt_time->nanosecond / NSEC_PER_USEC;
 #endif
 
 	return NET_OK;
@@ -234,6 +236,84 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 		break;
 	}
 }
+
+#if defined(CONFIG_NET_PKT_TXTIME) || defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+/**
+ * @brief Convert 32-bit (potentially wrapped) OpenThread microsecond timestamps
+ * to 64-bit Zephyr network subsystem nanosecond timestamps.
+ *
+ * This is a workaround until OpenThread is able to schedule 64-bit RX/TX time.
+ *
+ * @param target_time_ns_wrapped time in nanoseconds referred to the radio clock
+ * modulo UINT32_MAX.
+ *
+ * @return 64-bit nanosecond timestamp
+ */
+static net_time_t convert_32bit_us_wrapped_to_64bit_ns(uint32_t target_time_us_wrapped)
+{
+	/**
+	 * OpenThread provides target time as a (potentially wrapped) 32-bit
+	 * integer defining a moment in time in the microsecond domain.
+	 *
+	 * The target time can point to a moment in the future, but can be
+	 * overdue as well. In order to determine what's the case and correctly
+	 * set the absolute (non-wrapped) target time, it's necessary to compare
+	 * the least significant 32 bits of the current 64-bit network subsystem
+	 * time with the provided 32-bit target time. Let's assume that half of
+	 * the 32-bit range can be used for specifying target times in the
+	 * future, and the other half - in the past.
+	 */
+	uint64_t now_us = otPlatTimeGet();
+	uint32_t now_us_wrapped = (uint32_t)now_us;
+	uint32_t time_diff = target_time_us_wrapped - now_us_wrapped;
+	uint64_t result = UINT64_C(0);
+
+	if (time_diff < 0x80000000) {
+		/**
+		 * Target time is assumed to be in the future. Check if a 32-bit overflow
+		 * occurs between the current time and the target time.
+		 */
+		if (now_us_wrapped > target_time_us_wrapped) {
+			/**
+			 * Add a 32-bit overflow and replace the least significant 32 bits
+			 * with the provided target time.
+			 */
+			result = now_us + UINT32_MAX + 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time_us_wrapped;
+		} else {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
+		}
+	} else {
+		/**
+		 * Target time is assumed to be in the past. Check if a 32-bit overflow
+		 * occurs between the target time and the current time.
+		 */
+		if (now_us_wrapped > target_time_us_wrapped) {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time_us_wrapped;
+		} else {
+			/**
+			 * Subtract a 32-bit overflow and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = now_us - UINT32_MAX - 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time_us_wrapped;
+		}
+	}
+
+	__ASSERT_NO_MSG(result <= INT64_MAX / NSEC_PER_USEC);
+	return (net_time_t)result * NSEC_PER_USEC;
+}
+#endif /* CONFIG_NET_PKT_TXTIME || CONFIG_OPENTHREAD_CSL_RECEIVER */
 
 static void dataInit(void)
 {
@@ -313,9 +393,13 @@ void transmit_message(struct k_work *tx_job)
 
 	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
-		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
+#if defined(CONFIG_NET_PKT_TXTIME)
+		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
-		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+		struct net_ptp_time timestamp =
+			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
+		net_pkt_set_timestamp(tx_pkt, &timestamp);
+#endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
@@ -388,17 +472,17 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mLength = net_buf_frags_len(pkt->buffer);
 	recv_frame.mChannel = platformRadioChannelGet(instance);
 	recv_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
-	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
+	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi_dbm(pkt);
 	recv_frame.mInfo.mRxInfo.mAckedWithFramePending = net_pkt_ieee802154_ack_fpb(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
+	/* OpenThread expects the timestamp to point to the end of SFD */
 	recv_frame.mInfo.mRxInfo.mTimestamp =
 		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
 #endif
 
-#if defined(CONFIG_IEEE802154_2015)
 	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
 		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
 			net_pkt_ieee802154_ack_seb(pkt);
@@ -407,7 +491,6 @@ static void openthread_handle_received_frame(otInstance *instance,
 		recv_frame.mInfo.mRxInfo.mAckKeyId =
 			net_pkt_ieee802154_ack_keyid(pkt);
 	}
-#endif
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance, &recv_frame, OT_ERROR_NONE);
@@ -488,14 +571,14 @@ void platformRadioProcess(otInstance *aInstance)
 	bool event_pending = false;
 
 	if (is_pending_event_set(PENDING_EVENT_FRAME_TO_SEND)) {
-		struct net_pkt *tx_pkt;
+		struct net_pkt *evt_pkt;
 
 		reset_pending_event(PENDING_EVENT_FRAME_TO_SEND);
-		while ((tx_pkt = (struct net_pkt *) k_fifo_get(&tx_pkt_fifo, K_NO_WAIT)) != NULL) {
+		while ((evt_pkt = (struct net_pkt *) k_fifo_get(&tx_pkt_fifo, K_NO_WAIT)) != NULL) {
 			if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR_RCP)) {
-				net_pkt_unref(tx_pkt);
+				net_pkt_unref(evt_pkt);
 			} else {
-				openthread_handle_frame_to_send(aInstance, tx_pkt);
+				openthread_handle_frame_to_send(aInstance, evt_pkt);
 			}
 		}
 	}
@@ -526,7 +609,8 @@ void platformRadioProcess(otInstance *aInstance)
 	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
 		reset_pending_event(PENDING_EVENT_TX_DONE);
 
-		if (sState == OT_RADIO_STATE_TRANSMIT) {
+		if (sState == OT_RADIO_STATE_TRANSMIT ||
+		    radio_api->get_capabilities(radio_dev) & IEEE802154_HW_SLEEP_TO_TX) {
 			sState = OT_RADIO_STATE_RECEIVE;
 			handle_tx_done(aInstance);
 		}
@@ -662,8 +746,8 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 
 	struct ieee802154_config config = {
 		.rx_slot.channel = aChannel,
-		.rx_slot.start = aStart,
-		.rx_slot.duration = aDuration,
+		.rx_slot.start = convert_32bit_us_wrapped_to_64bit_ns(aStart),
+		.rx_slot.duration = (net_time_t)aDuration * NSEC_PER_USEC,
 	};
 
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_SLOT,
@@ -743,7 +827,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
 	int8_t ret_rssi = INT8_MAX;
 	int error = 0;
-	const uint16_t energy_detection_time = 1;
+	const uint16_t detection_time = 1;
 	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 
@@ -760,7 +844,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 		 * Blocking implementation of get RSSI
 		 * using no-blocking ed_scan
 		 */
-		error = radio_api->ed_scan(radio_dev, energy_detection_time,
+		error = radio_api->ed_scan(radio_dev, detection_time,
 					   get_rssi_energy_detected);
 
 		if (error == 0) {
@@ -800,7 +884,7 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 	}
 
-#if defined(CONFIG_IEEE802154_2015)
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	if (radio_caps & IEEE802154_HW_TX_SEC) {
 		caps |= OT_RADIO_CAPS_TRANSMIT_SEC;
 	}
@@ -841,7 +925,7 @@ void otPlatRadioSetPromiscuous(otInstance *aInstance, bool aEnable)
 	promiscuous = aEnable;
 	/* TODO: Should check whether the radio driver actually supports
 	 *       promiscuous mode, see net_if_l2(iface)->get_flags() and
-	 *       ieee802154_get_hw_capabilities(iface).
+	 *       ieee802154_radio_get_hw_capabilities(iface).
 	 */
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_PROMISCUOUS, &config);
 }
@@ -1050,7 +1134,7 @@ uint64_t otPlatTimeGet(void)
 	if (radio_api == NULL || radio_api->get_time == NULL) {
 		return k_ticks_to_us_floor64(k_uptime_ticks());
 	} else {
-		return radio_api->get_time(radio_dev);
+		return radio_api->get_time(radio_dev) / NSEC_PER_USEC;
 	}
 }
 
@@ -1063,7 +1147,7 @@ uint64_t otPlatRadioGetNow(otInstance *aInstance)
 }
 #endif
 
-#if defined(CONFIG_IEEE802154_2015)
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId,
 			  const otMacKeyMaterial *aPrevKey, const otMacKeyMaterial *aCurrKey,
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
@@ -1191,7 +1275,8 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 {
 	ARG_UNUSED(aInstance);
 
-	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime };
+	struct ieee802154_config config = {
+		.csl_rx_time = convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime)};
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
 }

@@ -19,14 +19,20 @@ This board models some of the NRF52 SOC peripherals:
 
 * Radio
 * Timers
-* Real time counter
-* Random number generator
+* RTC (Real Time Counter)
+* RNG (Random Number Generator)
 * AES CCM & AES ECB encryption HW
-* Accelerated address resolver
-* Clock control
+* AAR (Accelerated Address Resolver)
+* CLOCK (Clock control)
 * PPI (Programmable Peripheral Interconnect)
+* EGU (Event Generator Unit)
+* GPIO & GPIOTE
+* TEMP (Temperature sensor)
+* UICR (User Information Configuration Registers)
+* FICR (Factory Information Configuration Registers)
+* NVMC (Non-Volatile Memory Controller)
 
-The nrf52_bsim board definition uses the POSIX architecture to
+The nrf52_bsim board definition uses the POSIX architecture and the native simulator to
 run applications natively on the development system, this has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
@@ -43,28 +49,32 @@ This board requires the host 32 bit C library. See
 :ref:`POSIX Arch dependencies<posix_arch_deps>`.
 
 To target this board you also need to have `BabbleSim`_ compiled in your system.
-If you do not have it yet, in `its web page <https://BabbleSim.github.io>`_
-you can find instructions on how to
-`fetch <https://babblesim.github.io/fetching.html>`_ and
-`build <https://babblesim.github.io/building.html>`_ it.
-In short, you can do:
+If you do not have it yet, the easiest way to get it, is to enable the babblesim group
+in your local west configuration, running west update, and building the simulator:
 
 .. code-block:: console
 
-   mkdir -p ${HOME}/bsim && cd ${HOME}/bsim
-   curl https://storage.googleapis.com/git-repo-downloads/repo > ./repo  && chmod a+x ./repo
-   ./repo init -u https://github.com/BabbleSim/manifest.git -m everything.xml -b master
-   ./repo sync
+   west config manifest.group-filter -- +babblesim
+   west update
+   cd ${ZEPHYR_BASE}/../tools/bsim
    make everything -j 8
 
-Define two environment variables to point to your BabbleSim
+.. note::
+
+   If you need more BabbleSim components, or more up to date versions,
+   you can check the `BabbleSim web page <https://BabbleSim.github.io>`_
+   for instructions on how to
+   `fetch <https://babblesim.github.io/fetching.html>`_ and
+   `build <https://babblesim.github.io/building.html>`_ it.
+
+You will now need to define two environment variables to point to your BabbleSim
 installation, ``BSIM_OUT_PATH`` and ``BSIM_COMPONENTS_PATH``.
 If you followed the previous steps, you can just do:
 
 .. code-block:: console
 
-   export BSIM_OUT_PATH=${HOME}/bsim/
-   export BSIM_COMPONENTS_PATH=${HOME}/bsim/components/
+   export BSIM_OUT_PATH=${ZEPHYR_BASE}/../tools/bsim
+   export BSIM_COMPONENTS_PATH=${BSIM_OUT_PATH}/components/
 
 .. note::
 
@@ -159,7 +169,7 @@ The same
 :ref:`code coverage analysis means from the POSIX arch<coverage_posix>`
 are inherited in this board.
 Similarly, the
-:ref:`address sanitizers can be used as in native_posix<native_posix_asan>`.
+:ref:`address and undefined behavior sanitizers can be used as in native_posix<native_posix_asan>`.
 
 
 Note that BabbleSim will run fine if one or several of its components are

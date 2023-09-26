@@ -360,6 +360,11 @@ static void uart_xmc4xxx_irq_callback_set(const struct device *dev,
 
 	data->user_cb = cb;
 	data->user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_cb = NULL;
+	data->async_user_data = NULL;
+#endif
 }
 
 #define NVIC_ISPR_BASE 0xe000e200u
@@ -490,6 +495,11 @@ static void uart_xmc4xxx_async_rx_timeout(struct k_work *work)
 	struct dma_status stat;
 	unsigned int key = irq_lock();
 
+	if (data->dma_rx.buffer_len == 0) {
+		irq_unlock(key);
+		return;
+	}
+
 	if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
 		size_t rx_rcv_len = data->dma_rx.buffer_len - stat.pending_length;
 
@@ -594,6 +604,12 @@ static int uart_xmc4xxx_async_callback_set(const struct device *dev, uart_callba
 
 	data->async_cb = callback;
 	data->async_user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->user_cb = NULL;
+	data->user_data = NULL;
+#endif
+
 	return 0;
 }
 
@@ -644,12 +660,7 @@ static int uart_xmc4xxx_async_tx(const struct device *dev, const uint8_t *tx_dat
 
 	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
-	ret = dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return ret;
+	return dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 }
 
 static int uart_xmc4xxx_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
@@ -684,8 +695,8 @@ static int uart_xmc4xxx_async_rx_enable(const struct device *dev, uint8_t *buf, 
 	/* request a new buffer in time (for example if receive buffer size is one byte). */
 	async_evt_rx_buf_request(data);
 	uart_xmc4xxx_irq_rx_enable(dev);
-	ret = dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
-	return ret;
+
+	return dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 }
 
 static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,

@@ -24,7 +24,7 @@
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_core
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
 
@@ -74,6 +74,18 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_VOCS);
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_HAS) || defined(CONFIG_BT_HAS_CLIENT)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_HAS);
+#endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CSIS);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MICP);
+#endif /* CONFIG_BT_MICP_MIC_DEV */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CCP);
+#endif /* CONFIG_BT_TBS_CLIENT */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -129,11 +141,40 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	case BTP_SERVICE_ID_PACS:
+		status = tester_init_pacs();
+		break;
+	case BTP_SERVICE_ID_ASCS:
+		status = tester_init_ascs();
+		break;
+	case BTP_SERVICE_ID_BAP:
 		status = tester_init_bap();
 		break;
-#endif /* CONFIG_BT_PACS */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	case BTP_SERVICE_ID_MICP:
+		status = tester_init_micp();
+		break;
+	case BTP_SERVICE_ID_MICS:
+		status = tester_init_mics();
+		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
+#if defined(CONFIG_BT_HAS)
+	case BTP_SERVICE_ID_HAS:
+		status = tester_init_has();
+		break;
+#endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+	case BTP_SERVICE_ID_CSIS:
+		status = tester_init_csis();
+		break;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_init_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -196,11 +237,35 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	case BTP_SERVICE_ID_PACS:
+		status = tester_unregister_pacs();
+		break;
+	case BTP_SERVICE_ID_ASCS:
+		status = tester_unregister_ascs();
+		break;
+	case BTP_SERVICE_ID_BAP:
 		status = tester_unregister_bap();
 		break;
-#endif /* CONFIG_BT_PACS */
+		case BTP_SERVICE_ID_MICP:
+		status = tester_unregister_micp();
+		break;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#if defined(CONFIG_BT_HAS)
+	case BTP_SERVICE_ID_HAS:
+		status = tester_unregister_has();
+		break;
+#endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER)
+	case BTP_SERVICE_ID_CSIS:
+		status = tester_unregister_csis();
+		break;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_unregister_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

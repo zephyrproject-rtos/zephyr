@@ -11,10 +11,10 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <mmu.h>
-#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
-#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
+#include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "soc.h"
+
+#include <cmsis_core.h>
 
 void arch_reserved_pages_update(void)
 {
@@ -70,10 +70,8 @@ const struct arm_mmu_config mmu_config = {
  *
  * @return 0
  */
-static int soc_intel_cyclonev_init(const struct device *arg)
+static int soc_intel_cyclonev_init(void)
 {
-	ARG_UNUSED(arg);
-	NMI_INIT();
 	unsigned int sctlr = __get_SCTLR(); /* modifying some registers prior to initialization */
 
 	sctlr &= ~SCTLR_A_Msk;

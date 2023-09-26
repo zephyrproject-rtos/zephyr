@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/net/ppp.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * FSM flags that control how it operates.
@@ -85,7 +86,7 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 			void *user_data);
 
 #define PPP_PROTO_GET_NAME(proto_name)		\
-	(ppp_protocol_handler_##proto_name)
+	_CONCAT(ppp_protocol_handler_, proto_name)
 
 #define PPP_PROTOCOL_REGISTER(name, proto, init_func, proto_handler,	\
 			      proto_lower_up, proto_lower_down,		\
@@ -212,5 +213,3 @@ static inline bool ppp_my_option_is_acked(struct ppp_fsm *fsm,
 {
 	return ppp_my_option_flags(fsm, code) & PPP_MY_OPTION_ACKED;
 }
-
-void ppp_if_carrier_down(struct net_if *iface);

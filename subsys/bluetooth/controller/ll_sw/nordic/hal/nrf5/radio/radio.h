@@ -6,25 +6,25 @@
  */
 
 /* Set of macros related with Radio packet configuration flags */
-/* PDU type, 1 bit field*/
+/* PDU type, 2 bit field*/
 #define RADIO_PKT_CONF_PDU_TYPE_POS (0U)
-#define RADIO_PKT_CONF_PDU_TYPE_MSK BIT(RADIO_PKT_CONF_PDU_TYPE_POS)
+#define RADIO_PKT_CONF_PDU_TYPE_MSK (BIT_MASK(2U))
 #define RADIO_PKT_CONF_PDU_TYPE_AC  (0U)
 #define RADIO_PKT_CONF_PDU_TYPE_DC  (1U)
-#define RADIO_PKT_CONF_PDU_TYPE_BIS (1U)
-#define RADIO_PKT_CONF_PDU_TYPE_CIS (1U)
+#define RADIO_PKT_CONF_PDU_TYPE_BIS (2U)
+#define RADIO_PKT_CONF_PDU_TYPE_CIS (3U)
 /* PHY type, three bit field */
-#define RADIO_PKT_CONF_PHY_POS (1U)
-#define RADIO_PKT_CONF_PHY_MSK (BIT_MASK(3U))
-#define RADIO_PKT_CONF_PHY_LEGACY (0U)
-#define RADIO_PKT_CONF_PHY_1M (BIT(0U))
-#define RADIO_PKT_CONF_PHY_2M (BIT(1U))
-#define RADIO_PKT_CONF_PHY_CODED (BIT(2U))
+#define RADIO_PKT_CONF_PHY_POS      (2U)
+#define RADIO_PKT_CONF_PHY_MSK      (BIT_MASK(3U))
+#define RADIO_PKT_CONF_PHY_LEGACY   (0U)
+#define RADIO_PKT_CONF_PHY_1M       (BIT(0U))
+#define RADIO_PKT_CONF_PHY_2M       (BIT(1U))
+#define RADIO_PKT_CONF_PHY_CODED    (BIT(2U))
 /* CTE enabled, 1 bit field */
-#define RADIO_PKT_CONF_CTE_POS (4U)
-#define RADIO_PKT_CONF_CTE_MSK BIT(0)
+#define RADIO_PKT_CONF_CTE_POS      (5U)
+#define RADIO_PKT_CONF_CTE_MSK      (BIT_MASK(1U))
 #define RADIO_PKT_CONF_CTE_DISABLED (0U)
-#define RADIO_PKT_CONF_CTE_ENABLED (1U)
+#define RADIO_PKT_CONF_CTE_ENABLED  (1U)
 
 /* Macro to define length of the BLE packet length field in bits */
 #define RADIO_PKT_CONF_LENGTH_8BIT (8U)
@@ -164,7 +164,9 @@ void radio_gpio_pa_lna_enable(uint32_t trx_us);
 void radio_gpio_pa_lna_disable(void);
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt);
+void *radio_ccm_iso_rx_pkt_set(struct ccm *ccm, uint8_t phy, uint8_t pdu_type, void *pkt);
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
+void *radio_ccm_iso_tx_pkt_set(struct ccm *ccm, uint8_t pdu_type, void *pkt);
 uint32_t radio_ccm_is_done(void);
 uint32_t radio_ccm_mic_is_valid(void);
 

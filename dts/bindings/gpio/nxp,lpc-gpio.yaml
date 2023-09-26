@@ -28,6 +28,21 @@ properties:
       - 6
       - 7
 
+  int-source:
+    type: string
+    default: "none"
+    enum:
+      - "pint"
+      - "int-a"
+      - "int-b"
+      - "none"
+    description: |
+      Interrupt source for the gpio port. For ports that can use the PINT
+      as an interrupt source for their pins (typically ports 0 and 1),
+      this can be set to PINT. Otherwise, the property should be set to "int-a"
+      or "int-b" if interrupt support is desired, and the appropriate IRQ number
+      should set for the device.
+
 gpio-cells:
   - pin
   - flags

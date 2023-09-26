@@ -15,12 +15,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: west setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        working-directory: zephyrproject/zephyr
+        run: |
+          pip3 install west
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          west init -l . || true
+
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@a6d0c6e52bbbb7d6df23ceb42842edcb4582b8dc
+        uses: zephyrproject-rtos/action-manifest@f223dce288b0d8f30bfd57eb2b14b18c230a7d8b
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'
           checkout-path: 'zephyrproject/zephyr'
+          use-tree-checkout: 'true'
           label-prefix: 'manifest-'
           verbosity-level: '1'
           labels: 'manifest'

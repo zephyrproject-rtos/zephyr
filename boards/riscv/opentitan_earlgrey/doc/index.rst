@@ -20,7 +20,8 @@ Hardware
 - 32 x GPIO
 - 4 x UART
 - 3 x I2C
-- 2 x SPI
+- 2 x SPI host
+- 1 x SPI device
 - Various security peripherals
 
 Detailed specification is on the `OpenTitan Earl Grey Chip Datasheet`_.
@@ -39,6 +40,10 @@ the Earl Grey chip simulated in Verilator, a cycle-accurate HDL simulation tool.
 | Timer     | on-chip    | RISC-V Machine Timer                |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | SPI host                            |
++-----------+------------+-------------------------------------+
+| WDT       | on-chip    | Always-On Timer (Watchdog)          |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
@@ -86,8 +91,8 @@ References
 
 .. target-notes::
 
-.. _OpenTitan Earl Grey Chip Datasheet: https://docs.opentitan.org/hw/top_earlgrey/doc/
+.. _OpenTitan Earl Grey Chip Datasheet: https://opentitan.org/book/hw/top_earlgrey/doc/specification.html
 
 .. _OpenTitan GitHub: https://github.com/lowRISC/opentitan
 
-.. _OpenTitan Verilator Setup: https://docs.opentitan.org/doc/getting_started/setup_verilator/
+.. _OpenTitan Verilator Setup: https://opentitan.org/guides/getting_started/setup_verilator.html

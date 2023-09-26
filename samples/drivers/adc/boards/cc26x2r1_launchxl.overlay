@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	zephyr,user {
 		/* 0x5 is ADC_COMPB_IN_VDDS (power supply measurement) */

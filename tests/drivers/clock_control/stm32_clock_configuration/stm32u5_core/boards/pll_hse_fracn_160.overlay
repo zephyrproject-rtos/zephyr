@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Jatty Andriean <jandriea@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+/*
+ * Warning: HSE is not implemented on available boards, hence:
+ *          This configuration is only available for build
+ */
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <16777216>;
+};
+
+&pll1 {
+	div-m = <2>;
+	mul-n = <19>;
+	div-p = <1>;
+	div-q = <1>;
+	div-r = <1>;
+	fracn = <602>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 The Chromium OS Authors
+ * Copyright (c) 2023 The Chromium OS Authors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,12 +14,23 @@
 #include "usbc_timer.h"
 #include "usbc_stack.h"
 
+enum tc_flags {
+	/**
+	 * Flag to track Rp resistor change when the sink attached
+	 * sub-state runs
+	 */
+	TC_FLAGS_RP_SUBSTATE_CHANGE = 0,
+	/** Tracks if VCONN is ON or OFF */
+	TC_FLAGS_VCONN_ON,
+};
+
 /**
  * @brief Type-C States
  */
 enum tc_state_t {
 	/** Super state that opens the CC lines */
 	TC_CC_OPEN_SUPER_STATE,
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	/** Super state that applies Rd to the CC lines */
 	TC_CC_RD_SUPER_STATE,
 	/** Unattached Sink State */
@@ -28,6 +39,18 @@ enum tc_state_t {
 	TC_ATTACH_WAIT_SNK_STATE,
 	/** Attached Sink State */
 	TC_ATTACHED_SNK_STATE,
+#else
+	/** Super state that applies Rp to the CC lines */
+	TC_CC_RP_SUPER_STATE,
+	/** Unattached Source State */
+	TC_UNATTACHED_SRC_STATE,
+	/** Unattached Wait Source State */
+	TC_UNATTACHED_WAIT_SRC_STATE,
+	/** Attach Wait Source State */
+	TC_ATTACH_WAIT_SRC_STATE,
+	/** Attached Source State */
+	TC_ATTACHED_SRC_STATE,
+#endif
 	/** Disabled State */
 	TC_DISABLED_STATE,
 	/** Error Recovery State */
@@ -35,17 +58,6 @@ enum tc_state_t {
 
 	/** Number of TC States */
 	TC_STATE_COUNT
-};
-
-/**
- * @brief Type-C Layer flags
- */
-enum tc_flags {
-	/**
-	 * Flag to track Rp resistor change when the sink attached
-	 * sub-state runs
-	 */
-	TC_FLAGS_RP_SUBSTATE_CHANGE = 0,
 };
 
 /**
@@ -79,6 +91,10 @@ struct tc_sm_t {
 	struct usbc_timer_t tc_t_rp_value_change;
 	/** tErrorRecovery timer */
 	struct usbc_timer_t tc_t_error_recovery;
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+	/** tVconnOff timer */
+	struct usbc_timer_t tc_t_vconn_off;
+#endif
 };
 
 /**
@@ -129,5 +145,13 @@ void tc_run(const struct device *dev, int32_t dpm_request);
  * @retval true if TC Layer is in an Attached state, else false
  */
 bool tc_is_in_attached_state(const struct device *dev);
+
+/**
+ * @brief Sets the Collision Avoidance Rp value
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param rp Collision Avoidance Rp to set
+ */
+void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp);
 
 #endif /* ZEPHYR_SUBSYS_USBC_TC_COMMON_INTERNAL_H_ */

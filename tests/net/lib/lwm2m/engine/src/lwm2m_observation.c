@@ -49,13 +49,10 @@ static void assert_path_list_order(sys_slist_t *lwm2m_path_list)
 	struct lwm2m_obj_path_list *prev = NULL;
 	struct lwm2m_obj_path_list *entry, *tmp;
 
-	uint16_t obj_id_max;
-	uint16_t obj_inst_id_max;
-	uint16_t res_id_max;
-	uint16_t res_inst_id_max;
-
-	char next_path_str[LWM2M_MAX_PATH_STR_SIZE];
-	char prev_path_str[LWM2M_MAX_PATH_STR_SIZE];
+	uint16_t obj_id_max = 0;
+	uint16_t obj_inst_id_max = 0;
+	uint16_t res_id_max = 0;
+	uint16_t res_inst_id_max = 0;
 
 	if (sys_slist_is_empty(lwm2m_path_list)) {
 		return;
@@ -64,11 +61,6 @@ static void assert_path_list_order(sys_slist_t *lwm2m_path_list)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(lwm2m_path_list, entry, tmp, node) {
 		if (prev) {
 			if (entry->path.level > prev->path.level) {
-
-				lwm2m_path_to_string(next_path_str, sizeof(next_path_str),
-							 &entry->path, entry->path.level);
-				lwm2m_path_to_string(prev_path_str, sizeof(prev_path_str),
-							 &prev->path, prev->path.level);
 
 				bool is_after = false;
 
@@ -93,8 +85,8 @@ static void assert_path_list_order(sys_slist_t *lwm2m_path_list)
 						entry->path.res_inst_id >= prev->path.res_inst_id;
 				}
 
-				zassert_true(is_after, "Next element %s must be before previous %s",
-						 next_path_str, prev_path_str);
+				zassert_true(is_after, "Next element %p must be before previous %p",
+						 entry, prev);
 			} else if (entry->path.level == prev->path.level) {
 
 				if (entry->path.level >= LWM2M_PATH_LEVEL_OBJECT) {
@@ -221,21 +213,6 @@ static void assert_path_list_order(sys_slist_t *lwm2m_path_list)
 		prev = entry;
 	}
 }
-static void print_path_list(sys_slist_t *lwm2m_path_list, const char *name)
-{
-	struct lwm2m_obj_path_list *entry, *tmp;
-
-	if (name != NULL) {
-		TEST_VERBOSE_PRINT("Path List %s:\n", name);
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(lwm2m_path_list, entry, tmp, node) {
-		char buf[LWM2M_MAX_PATH_STR_SIZE];
-
-		lwm2m_path_to_string(buf, LWM2M_MAX_PATH_STR_SIZE, &entry->path, entry->path.level);
-		TEST_VERBOSE_PRINT("- %s\n", buf);
-	}
-}
 
 static void run_insertion_test(char const *insert_path_str[], int insertions_count,
 				   char const *expected_path_str[])
@@ -251,7 +228,6 @@ static void run_insertion_test(char const *insert_path_str[], int insertions_cou
 
 	/* WHEN: inserting each path */
 	struct lwm2m_obj_path insert_path;
-	char name[20];
 
 	for (int i = 0; i < insertions_count; ++i) {
 		ret = lwm2m_string_to_path(insert_path_str[i], &insert_path, '/');
@@ -260,14 +236,10 @@ static void run_insertion_test(char const *insert_path_str[], int insertions_cou
 		ret = lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list,
 							&insert_path);
 
-		sprintf(name, "Insertion: %d", i);
-		print_path_list(&lwm2m_path_list, name);
 		zassert_true(ret >= 0, "Insertion #%d failed", i);
 		/* THEN: path order is maintained */
 		assert_path_list_order(&lwm2m_path_list);
 	}
-
-	print_path_list(&lwm2m_path_list, "Final");
 
 	/* AND: final list matches expectation */
 	struct lwm2m_obj_path_list *entry, *tmp;

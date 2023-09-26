@@ -45,6 +45,8 @@ hardware features:
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
 
 Other hardware features, including the Configurable MAC (CMAC) controller,
 are currently not supported by the port.

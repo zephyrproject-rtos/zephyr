@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/buf.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -176,9 +177,18 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
-		/* FIXME: Do something similar to connected */
+		const struct lll_adv_iso_stream *adv_stream;
+		uint16_t stream_handle;
 
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		adv_stream = ull_adv_iso_stream_get(stream_handle);
+		if (!adv_stream || !adv_stream->dp ||
+		    isoal_tx_get_sync_info(adv_stream->dp->source_hdl, seq,
+					   timestamp, offset) != ISOAL_STATUS_OK) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
@@ -225,7 +235,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		 * Identifier (0x02)
 		 */
 		cis = ll_conn_iso_stream_get(handle);
-		if (!cis->group) {
+		if (!cis || !cis->group) {
 			/* CIS does not belong to a CIG */
 			return BT_HCI_ERR_UNKNOWN_CONN_ID;
 		}
@@ -303,7 +313,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		lll_iso = &adv_iso->lll;
 
-		role = 0U; /* FIXME: Set role from LLL struct */
+		role = ISOAL_ROLE_BROADCAST_SOURCE;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -329,7 +339,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 		lll_iso = &sync_iso->lll;
 
-		role = 1U; /* FIXME: Is this correct role value? */
+		role = ISOAL_ROLE_BROADCAST_SINK;
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -510,26 +520,22 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
+	/* If the Host issues this command with a Connection_Handle that does
+	 * not exist or is not for a CIS or a BIS, the Controller shall return
+	 * the error code Unknown Connection Identifier (0x02).
+	 */
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	} else if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
+		struct ll_iso_stream_hdr *hdr;
+		struct ll_iso_datapath *dp;
 
-		/* If the Host issues this command with a Connection_Handle that does
-		 * not exist or is not for a CIS or a BIS, the Controller shall return
-		 * the error code Unknown Connection Identifier (0x02).
-		 */
 		cis = ll_conn_iso_stream_get(handle);
-		if (!cis) {
-			return BT_HCI_ERR_UNKNOWN_CONN_ID;
-		}
+		hdr = &cis->hdr;
 
-		if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
-
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR)) {
 			dp = hdr->datapath_in;
 			if (dp) {
 				isoal_source_destroy(dp->source_hdl);
@@ -540,11 +546,9 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
-			struct ll_iso_stream_hdr *hdr;
-			struct ll_iso_datapath *dp;
+		}
 
-			hdr = &cis->hdr;
+		if (path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST)) {
 			dp = hdr->datapath_out;
 			if (dp) {
 				isoal_sink_destroy(dp->sink_hdl);
@@ -555,9 +559,6 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 				/* Datapath was not previously set up */
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
-		} else {
-			/* Reserved for future use */
-			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
@@ -567,7 +568,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -594,7 +595,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 			struct ll_iso_datapath *dp;
 		uint16_t stream_handle;
 
-		if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		if (!(path_dir & BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST))) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -908,16 +909,45 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 				 uint32_t *rx_unreceived_packets,
 				 uint32_t *duplicate_packets)
 {
-	ARG_UNUSED(handle);
-	ARG_UNUSED(tx_unacked_packets);
-	ARG_UNUSED(tx_flushed_packets);
-	ARG_UNUSED(tx_last_subevent_packets);
-	ARG_UNUSED(retransmitted_packets);
-	ARG_UNUSED(crc_error_packets);
-	ARG_UNUSED(rx_unreceived_packets);
-	ARG_UNUSED(duplicate_packets);
+	uint8_t status;
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	*tx_unacked_packets = 0;
+	*tx_flushed_packets = 0;
+	*tx_last_subevent_packets = 0;
+	*retransmitted_packets = 0;
+	*crc_error_packets = 0;
+	*rx_unreceived_packets = 0;
+	*duplicate_packets = 0;
+
+	status = BT_HCI_ERR_SUCCESS;
+
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_iso_stream_connected_get(handle);
+
+		if (!cis) {
+			/* CIS is not connected */
+			return BT_HCI_ERR_UNKNOWN_CONN_ID;
+		}
+
+		*tx_unacked_packets       = cis->hdr.link_quality.tx_unacked_packets;
+		*tx_flushed_packets       = cis->hdr.link_quality.tx_flushed_packets;
+		*tx_last_subevent_packets = cis->hdr.link_quality.tx_last_subevent_packets;
+		*retransmitted_packets    = cis->hdr.link_quality.retransmitted_packets;
+		*crc_error_packets        = cis->hdr.link_quality.crc_error_packets;
+		*rx_unreceived_packets    = cis->hdr.link_quality.rx_unreceived_packets;
+		*duplicate_packets        = cis->hdr.link_quality.duplicate_packets;
+
+	} else if (IS_SYNC_ISO_HANDLE(handle)) {
+		/* FIXME: Implement for sync receiver */
+		status = BT_HCI_ERR_CMD_DISALLOWED;
+	} else {
+		/* Handle is out of range */
+		status = BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	return status;
 }
 #endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
 
@@ -944,15 +974,16 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 	struct isoal_sdu_tx sdu;
 	isoal_status_t err;
 	uint8_t tx_buffer[ISO_TEST_TX_BUFFER_SIZE];
+	uint64_t next_payload_number;
 	uint16_t remaining_tx;
 	uint32_t sdu_counter;
 
 	if (IS_CIS_HANDLE(handle)) {
-		struct isoal_pdu_production *pdu_production;
 		struct ll_conn_iso_stream *cis;
 		struct ll_conn_iso_group *cig;
-		struct isoal_source *source;
 		uint32_t rand_max_sdu;
+		uint8_t event_offset;
+		uint8_t max_sdu;
 		uint8_t rand_8;
 
 		cis = ll_iso_stream_connected_get(handle);
@@ -966,21 +997,23 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		cig = cis->group;
 		source_handle = cis->hdr.datapath_in->source_hdl;
 
+		max_sdu = IS_PERIPHERAL(cig) ? cis->p_max_sdu : cis->c_max_sdu;
+
 		switch (cis->hdr.test_mode.tx_payload_type) {
 		case BT_HCI_ISO_TEST_ZERO_SIZE_SDU:
 			remaining_tx = 0;
 			break;
 
 		case BT_HCI_ISO_TEST_VARIABLE_SIZE_SDU:
-			/* Randomize the length [4..p_max_sdu] */
+			/* Randomize the length [4..max_sdu] */
 			lll_rand_get(&rand_8, sizeof(rand_8));
-			rand_max_sdu = rand_8 * (cis->p_max_sdu - ISO_TEST_PACKET_COUNTER_SIZE);
+			rand_max_sdu = rand_8 * (max_sdu - ISO_TEST_PACKET_COUNTER_SIZE);
 			remaining_tx = ISO_TEST_PACKET_COUNTER_SIZE + (rand_max_sdu >> 8);
 			break;
 
 		case BT_HCI_ISO_TEST_MAX_SIZE_SDU:
-			LL_ASSERT(cis->p_max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
-			remaining_tx = cis->p_max_sdu;
+			LL_ASSERT(max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
+			remaining_tx = max_sdu;
 			break;
 
 		default:
@@ -995,15 +1028,38 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		}
 
 		/* Configure SDU similarly to one delivered via HCI */
+		sdu.packet_sn = 0;
 		sdu.dbuf = tx_buffer;
-		sdu.grp_ref_point = cig->cig_ref_point;
-		sdu.target_event = cis->lll.event_count +
-					(cis->lll.tx.ft > 1U ? 0U : 1U);
+
+		/* We must ensure sufficient time for ISO-AL to fragment SDU and
+		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
+		 * know if we are within the subevents of an ISO event. If so,
+		 * we can assume that we have enough time to deliver in the next
+		 * ISO event. If we're not active within the ISO event, we don't
+		 * know if there is enough time to deliver in the next event,
+		 * and for safety we set the target to current event + 2.
+		 *
+		 * For FT > 1, we have the opportunity to retransmit in later
+		 * event(s), in which case we have the option to target an
+		 * earlier event (this or next) because being late does not
+		 * instantly flush the payload.
+		 */
+		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
+		if (cis->lll.tx.ft > 1) {
+			/* FT > 1, target an earlier event */
+			event_offset -= 1;
+		}
+
+		sdu.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
+						(event_offset * cig->iso_interval *
+							ISO_INT_UNIT_US));
+		sdu.target_event = cis->lll.event_count + event_offset;
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
 		do {
-			sdu.time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.time_stamp = sdu.cntr_time_stamp;
 			sdu.size = MIN(remaining_tx, ISO_TEST_TX_BUFFER_SIZE);
 			memset(tx_buffer, 0, sdu.size);
 
@@ -1021,12 +1077,10 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 					 * When using unframed PDUs, the SDU counter shall be equal
 					 * to the payload counter.
 					 */
-					source = isoal_source_get(source_handle);
-					pdu_production = &source->pdu_production;
-
-					sdu_counter = MAX(pdu_production->payload_number,
-							  (sdu.target_event *
-							   cis->lll.tx.bn));
+					isoal_tx_unframed_get_next_payload_number(source_handle,
+									&sdu,
+									&next_payload_number);
+					sdu_counter = (uint32_t)next_payload_number;
 				}
 
 				sys_put_le32(sdu_counter, tx_buffer);
@@ -1101,18 +1155,12 @@ uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
 		cis->hdr.datapath_in = dp;
 		cig = cis->group;
 
-		if (cig->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-			/* peripheral */
-			sdu_interval = cig->c_sdu_interval;
-		} else {
-			/* central */
-			sdu_interval = cig->p_sdu_interval;
-		}
+		sdu_interval = IS_PERIPHERAL(cig) ? cig->p_sdu_interval : cig->c_sdu_interval;
 
 		/* Setup the test source */
 		err = isoal_source_create(handle, cig->lll.role, cis->framed,
-					  cis->lll.rx.bn, cis->lll.rx.ft,
-					  cis->lll.rx.max_pdu, sdu_interval,
+					  cis->lll.tx.bn, cis->lll.tx.ft,
+					  cis->lll.tx.max_pdu, sdu_interval,
 					  cig->iso_interval, cis->sync_delay,
 					  cig->sync_delay, ll_iso_pdu_alloc,
 					  ll_iso_pdu_write, ll_iso_pdu_emit,
@@ -1399,8 +1447,8 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 			/* Update the CIG reference point based on the CIS
 			 * anchor point
 			 */
-			cig->cig_ref_point = meta->timestamp + cis_sync_delay -
-					     cig_sync_delay;
+			cig->cig_ref_point = isoal_get_wrapped_time_us(meta->timestamp,
+						cis_sync_delay - cig_sync_delay);
 		}
 	}
 }

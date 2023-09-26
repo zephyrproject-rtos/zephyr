@@ -17,6 +17,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/barrier.h>
 
 #include "dma_mcux_edma.h"
 
@@ -120,14 +121,14 @@ static bool data_size_valid(const size_t data_size)
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
 			      uint32_t tcds)
 {
-	int ret = 1;
+	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
 	uint32_t channel = handle->channel;
 
 	if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
 		data->busy = (handle->tcdPool != NULL) && (handle->tcdUsed > 0);
-		ret = 0;
+		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
 	data->dma_callback(data->dev, data->user_data, channel, ret);
@@ -147,7 +148,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev)
 			EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, i));
 			LOG_DBG("IRQ DONE");
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-			__DSB();
+			barrier_dsync_fence_full();
 #endif
 		}
 	}
@@ -170,7 +171,7 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	}
 
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 

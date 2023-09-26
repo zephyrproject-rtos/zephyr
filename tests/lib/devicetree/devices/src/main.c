@@ -87,16 +87,16 @@ ZTEST(devicetree_devices, test_init_get)
 		      DEVICE_DT_GET(TEST_NOLABEL), NULL);
 
 	/* Check init functions */
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->init, dev_init);
-	zassert_equal(DEVICE_INIT_GET(manual_dev)->init, dev_init);
-	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->init, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_I2C)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVA)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVB)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIOX)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_DEVC)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_GET(manual_dev)->init_fn.dev, dev_init);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->init_fn.dev, dev_init);
 }
 
 ZTEST(devicetree_devices, test_init_order)

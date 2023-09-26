@@ -13,7 +13,6 @@ set(ARMFVP_FLAGS
   -C cluster0.gicv3.SRE-enable-action-on-mmap=2
   -C cluster0.gicv3.SRE-EL2-enable-RAO=1
   -C cluster0.gicv3.extended-interrupt-range-support=1
-  -C bp.sram.enable_atomic_ops=1
   -C gic_distributor.GICD_CTLR-DS-1-means-secure-only=1
   -C gic_distributor.has-two-security-states=0
   -C bp.refcounter.non_arch_start_at_default=1
@@ -36,4 +35,5 @@ set(ARMFVP_FLAGS
 
   -C bp.vis.disable_visualisation=1
   -C bp.vis.rate_limit-enable=0
+  -C cache_state_modelled=0
   )

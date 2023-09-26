@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/byteorder.h>
@@ -165,13 +166,11 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf)
 
 int udc_submit_event(const struct device *dev,
 		     const enum udc_event_type type,
-		     const int status,
-		     struct net_buf *const buf)
+		     const int status)
 {
 	struct udc_data *data = dev->data;
 	struct udc_event drv_evt = {
 		.type = type,
-		.buf = buf,
 		.status = status,
 		.dev = dev,
 	};
@@ -179,6 +178,27 @@ int udc_submit_event(const struct device *dev,
 	if (!udc_is_initialized(dev)) {
 		return -EPERM;
 	}
+
+	return data->event_cb(dev, &drv_evt);
+}
+
+int udc_submit_ep_event(const struct device *dev,
+			struct net_buf *const buf,
+			const int err)
+{
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
+	struct udc_data *data = dev->data;
+	const struct udc_event drv_evt = {
+		.type = UDC_EVT_EP_REQUEST,
+		.buf = buf,
+		.dev = dev,
+	};
+
+	if (!udc_is_initialized(dev)) {
+		return -EPERM;
+	}
+
+	bi->err = err;
 
 	return data->event_cb(dev, &drv_evt);
 }
@@ -850,7 +870,7 @@ int udc_ctrl_submit_s_out_status(const struct device *dev,
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_s_in_status(const struct device *dev)
@@ -869,7 +889,7 @@ int udc_ctrl_submit_s_in_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_s_status(const struct device *dev)
@@ -884,7 +904,7 @@ int udc_ctrl_submit_s_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, ret, data->setup);
+	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
 int udc_ctrl_submit_status(const struct device *dev,
@@ -894,7 +914,7 @@ int udc_ctrl_submit_status(const struct device *dev,
 
 	bi->status = true;
 
-	return udc_submit_event(dev, UDC_EVT_EP_REQUEST, 0, buf);
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 bool udc_ctrl_stage_is_data_out(const struct device *dev)
@@ -1062,9 +1082,8 @@ K_KERNEL_STACK_DEFINE(udc_work_q_stack, CONFIG_UDC_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q udc_work_q;
 
-static int udc_work_q_init(const struct device *dev)
+static int udc_work_q_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_work_queue_start(&udc_work_q,
 			   udc_work_q_stack,

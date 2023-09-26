@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -24,7 +24,6 @@
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -36,6 +35,9 @@
 #define LOG_LEVEL CONFIG_BT_MESH_PROXY_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_gatt);
+
+#define PROXY_SVC_INIT_TIMEOUT K_MSEC(10)
+#define PROXY_SVC_REG_ATTEMPTS 5
 
 /* Interval to update random value in (10 minutes).
  *
@@ -49,10 +51,12 @@ LOG_MODULE_REGISTER(bt_mesh_gatt);
 #define ADV_OPT_USE_NAME 0
 #endif
 
-#define ADV_OPT_PROXY                                                           \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
-	 ADV_OPT_USE_NAME)
+#define ADV_OPT_ADDR(private) (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR) ?                      \
+			       BT_LE_ADV_OPT_USE_IDENTITY : (private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
+
+#define ADV_OPT_PROXY(private)                                                                     \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private) |             \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_NAME)
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
@@ -68,6 +72,9 @@ static struct bt_mesh_proxy_client {
 		REJECT,
 	} filter_type;
 	struct k_work send_beacons;
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	bool privacy;
+#endif
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 		.send_beacons = Z_WORK_INITIALIZER(proxy_send_beacons),
@@ -325,7 +332,12 @@ static int beacon_send(struct bt_mesh_proxy_client *client,
 	NET_BUF_SIMPLE_DEFINE(buf, 28);
 
 	net_buf_simple_reserve(&buf, 1);
-	err = bt_mesh_beacon_create(sub, &buf);
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	err = bt_mesh_beacon_create(sub, &buf, client->privacy);
+#else
+	err = bt_mesh_beacon_create(sub, &buf, false);
+#endif
 	if (err) {
 		return err;
 	}
@@ -382,7 +394,7 @@ static void identity_enabled(struct bt_mesh_subnet *sub)
 static void node_id_start(struct bt_mesh_subnet *sub)
 {
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-	sub->priv_beacon.node_id = false;
+	sub->priv_beacon_ctx.node_id = false;
 #endif
 
 	identity_enabled(sub);
@@ -391,7 +403,7 @@ static void node_id_start(struct bt_mesh_subnet *sub)
 static void private_node_id_start(struct bt_mesh_subnet *sub)
 {
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-	sub->priv_beacon.node_id = true;
+	sub->priv_beacon_ctx.node_id = true;
 #endif
 
 	identity_enabled(sub);
@@ -488,16 +500,20 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 		      uint8_t hash[16], int32_t duration)
 {
 	struct bt_le_adv_param slow_adv_param = {
-		.options = ADV_OPT_PROXY,
+		.id = BT_ID_DEFAULT,
+		.options = ADV_OPT_PROXY(type == BT_MESH_ID_TYPE_PRIV_NET ||
+					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_SLOW_INT,
 	};
 	struct bt_le_adv_param fast_adv_param = {
-		.options = ADV_OPT_PROXY,
+		.id = BT_ID_DEFAULT,
+		.options = ADV_OPT_PROXY(type == BT_MESH_ID_TYPE_PRIV_NET ||
+					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_FAST_INT,
 	};
 	int err;
 
-	err = bt_encrypt_be(sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, hash, hash);
+	err = bt_mesh_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, hash, hash);
 	if (err) {
 		return err;
 	}
@@ -588,7 +604,8 @@ static int priv_net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
 	struct bt_le_adv_param slow_adv_param = {
-		.options = ADV_OPT_PROXY,
+		.id = BT_ID_DEFAULT,
+		.options = ADV_OPT_PROXY(false),
 		ADV_SLOW_INT,
 	};
 	int err;
@@ -752,7 +769,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 				LOG_DBG("Node ID active for %u ms, %d ms remaining",
 					active, remaining);
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-				priv_node_id = sub->priv_beacon.node_id;
+				priv_node_id = sub->priv_beacon_ctx.node_id;
 #endif
 				if (priv_node_id) {
 					err = priv_node_id_adv(sub, remaining);
@@ -874,10 +891,24 @@ static struct bt_gatt_attr proxy_attrs[] = {
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
+static void svc_reg_work_handler(struct k_work *work);
+static struct k_work_delayable svc_reg_work = Z_WORK_DELAYABLE_INITIALIZER(svc_reg_work_handler);
+static uint32_t svc_reg_attempts;
 
 static void svc_reg_work_handler(struct k_work *work)
 {
-	(void)bt_gatt_service_register(&proxy_svc);
+	int err;
+
+	err = bt_gatt_service_register(&proxy_svc);
+	if ((err == -EINVAL) && ((--svc_reg_attempts) > 0)) {
+		/* settings_load() didn't finish yet. Try again. */
+		(void)k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
+		return;
+	} else if (err) {
+		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
+		return;
+	}
+
 	service_registered = true;
 
 	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
@@ -888,8 +919,6 @@ static void svc_reg_work_handler(struct k_work *work)
 
 	bt_mesh_adv_gatt_update();
 }
-
-static struct k_work svc_reg_work = Z_WORK_INITIALIZER(svc_reg_work_handler);
 
 int bt_mesh_proxy_gatt_enable(void)
 {
@@ -903,7 +932,8 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	return k_work_submit(&svc_reg_work);
+	svc_reg_attempts = PROXY_SVC_REG_ATTEMPTS;
+	return k_work_schedule(&svc_reg_work, PROXY_SVC_INIT_TIMEOUT);
 }
 
 void bt_mesh_proxy_gatt_disconnect(void)
@@ -1044,6 +1074,21 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	(void)memset(client->filter, 0, sizeof(client->filter));
 	client->cli = bt_mesh_proxy_role_setup(conn, proxy_send,
 					       proxy_msg_recv);
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
+	/* Binding from section 7.2.2.2.6 of MshPRTv1.1. */
+	enum bt_mesh_subnets_node_id_state cur_node_id = bt_mesh_subnets_node_id_state_get();
+
+	if (bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED ||
+	    cur_node_id == BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED) {
+		client->privacy = false;
+	} else {
+		client->privacy = (bt_mesh_priv_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) ||
+				  (cur_node_id == BT_MESH_SUBNETS_NODE_ID_STATE_ENABLED_PRIVATE);
+	}
+
+	LOG_DBG("privacy: %d", client->privacy);
+#endif
 
 	/* If connection was formed after Proxy Solicitation we need to stop future
 	 * Private Network ID advertisements

@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2020, NXP
+ * Copyright (c) 2023, Nobleo Technology
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +23,8 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 26
 #define COUNTER_NODE_NAME pit0
-#define HW_TRIGGER_INTERVAL (2U)
+#define HW_TRIGGER_INTERVAL (30000U)
+#define SAMPLE_INTERVAL_US HW_TRIGGER_INTERVAL
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
@@ -33,7 +35,8 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 26
 #define COUNTER_NODE_NAME pit0
-#define HW_TRIGGER_INTERVAL (2U)
+#define HW_TRIGGER_INTERVAL (30000U)
+#define SAMPLE_INTERVAL_US HW_TRIGGER_INTERVAL
 
 #elif defined(CONFIG_BOARD_NUCLEO_H743ZI)
 
@@ -45,7 +48,18 @@
 #define ADC_1ST_CHANNEL_ID 1
 #define ADC_2ND_CHANNEL_ID 7
 #define ALIGNMENT 32
-#define BUFFER_MEM_REGION __attribute__((__section__(".sram4")))
+#define BUFFER_MEM_REGION __attribute__((__section__("SRAM4.dma")))
+
+#elif defined(CONFIG_BOARD_NUCLEO_U575ZI_Q)
+
+#define ADC_DEVICE_NODE DT_INST(0, st_stm32_adc)
+#define ADC_RESOLUTION 12
+#define ADC_GAIN ADC_GAIN_1
+#define ADC_REFERENCE ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID 1
+#define ADC_2ND_CHANNEL_ID 7
+#define ALIGNMENT 32
 
 #endif
 
@@ -64,8 +78,12 @@
 #define BUFFER_MEM_REGION EMPTY
 #endif
 
-/* for DMA HW trigger interval need large than HW trigger interval*/
-#define SAMPLE_INTERVAL_US (10000U)
+/* The sample interval between consecutive samplings. Some drivers require
+ * specific values to function.
+ */
+#if !defined(SAMPLE_INTERVAL_US)
+#define SAMPLE_INTERVAL_US 0
+#endif
 
 #define BUFFER_SIZE 24
 #ifndef ALIGNMENT
@@ -284,7 +302,7 @@ static int test_task_asynchronous_call(void)
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us = 0,
+		.interval_us = SAMPLE_INTERVAL_US,
 	};
 	const struct adc_sequence sequence = {
 		.options = &options,
@@ -348,7 +366,7 @@ static int test_task_with_interval(void)
 	int64_t milliseconds_spent;
 
 	const struct adc_sequence_options options = {
-		.interval_us = 500UL, /*make this double to sample time*/
+		.interval_us = 100 * 1000, /* 10 ms - much larger than expected sampling time */
 		.callback = sample_with_interval_callback,
 		.extra_samplings = 1,
 	};
@@ -372,7 +390,7 @@ static int test_task_with_interval(void)
 		time_stamp = k_uptime_get();
 		ret = adc_read(adc_dev, &sequence);
 		milliseconds_spent = k_uptime_delta(&time_stamp);
-		printk("now spend = %lldms\n", milliseconds_spent);
+		zassert_true(milliseconds_spent >= (options.interval_us / 1000UL));
 		zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 	}
 	check_samples2(1 + options.extra_samplings);
@@ -438,7 +456,6 @@ static int test_task_repeated_samplings(void)
 		 */
 		.extra_samplings = 2,
 		/* Start consecutive samplings as fast as possible. */
-		/* but the interval shall be larger than the HW trigger*/
 		.interval_us = SAMPLE_INTERVAL_US,
 	};
 	const struct adc_sequence sequence = {

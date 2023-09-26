@@ -43,20 +43,20 @@ static const struct bt_data ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
 };
 
-static int cmd_hrs_simulate(const struct shell *shell,
+static int cmd_hrs_simulate(const struct shell *sh,
 			    size_t argc, char *argv[])
 {
 	static bool hrs_registered;
 	int err;
 
 	if (!strcmp(argv[1], "on")) {
-		if (!hrs_registered) {
-			shell_print(shell, "Registering HRS Service");
+		if (!hrs_registered && IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+			shell_print(sh, "Registering HRS Service");
 			hrs_registered = true;
 			err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad,
 					      ARRAY_SIZE(ad), NULL, 0);
 			if (err) {
-				shell_error(shell, "Advertising failed to start"
+				shell_error(sh, "Advertising failed to start"
 					    " (err %d)\n", err);
 				return -ENOEXEC;
 			}
@@ -64,19 +64,19 @@ static int cmd_hrs_simulate(const struct shell *shell,
 			printk("Advertising successfully started\n");
 		}
 
-		shell_print(shell, "Start HRS simulation");
+		shell_print(sh, "Start HRS simulation");
 		hrs_simulate = true;
 	} else if (!strcmp(argv[1], "off")) {
-		shell_print(shell, "Stop HRS simulation");
+		shell_print(sh, "Stop HRS simulation");
 
-		if (hrs_registered) {
+		if (hrs_registered && IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 			bt_le_adv_stop();
 		}
 
 		hrs_simulate = false;
 	} else {
-		shell_print(shell, "Incorrect value: %s", argv[1]);
-		shell_help(shell);
+		shell_print(sh, "Incorrect value: %s", argv[1]);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
@@ -96,9 +96,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
+static int cmd_hrs(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
@@ -121,7 +121,7 @@ static void hrs_notify(void)
 }
 #endif /* CONFIG_BT_HRS */
 
-void main(void)
+int main(void)
 {
 #if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 	const struct device *dev;
@@ -129,7 +129,7 @@ void main(void)
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	if (!device_is_ready(dev) || usb_enable(NULL)) {
-		return;
+		return 0;
 	}
 
 	while (!dtr) {

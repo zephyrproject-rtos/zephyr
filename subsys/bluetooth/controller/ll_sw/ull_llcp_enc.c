@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
@@ -59,7 +59,6 @@ enum {
 	LP_ENC_STATE_WAIT_RX_START_ENC_REQ,
 	LP_ENC_STATE_WAIT_TX_START_ENC_RSP,
 	LP_ENC_STATE_WAIT_RX_START_ENC_RSP,
-	LP_ENC_STATE_WAIT_NTF,
 	/* Pause Procedure */
 	LP_ENC_STATE_ENCRYPTED,
 	LP_ENC_STATE_WAIT_TX_PAUSE_ENC_REQ,
@@ -99,12 +98,11 @@ enum {
 	RP_ENC_STATE_UNENCRYPTED,
 	RP_ENC_STATE_WAIT_RX_ENC_REQ,
 	RP_ENC_STATE_WAIT_TX_ENC_RSP,
-	RP_ENC_STATE_WAIT_NTF_LTK_REQ,
 	RP_ENC_STATE_WAIT_LTK_REPLY,
+	RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE,
 	RP_ENC_STATE_WAIT_TX_START_ENC_REQ,
 	RP_ENC_STATE_WAIT_TX_REJECT_IND,
 	RP_ENC_STATE_WAIT_RX_START_ENC_RSP,
-	RP_ENC_STATE_WAIT_NTF,
 	RP_ENC_STATE_WAIT_TX_START_ENC_RSP,
 	/* Pause Procedure */
 	RP_ENC_STATE_ENCRYPTED,
@@ -225,8 +223,8 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
+	/* Piggy-back on RX node */
+	ntf = ctx->node_ref.rx;
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -248,20 +246,13 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	} else {
 		llcp_pdu_encode_reject_ind(pdu, ctx->data.enc.error);
 	}
-
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void lp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = LP_ENC_STATE_WAIT_NTF;
-	} else {
-		lp_enc_ntf(conn, ctx);
-		llcp_lr_complete(conn);
-		ctx->state = LP_ENC_STATE_UNENCRYPTED;
-	}
+	lp_enc_ntf(conn, ctx);
+	llcp_lr_complete(conn);
+	ctx->state = LP_ENC_STATE_UNENCRYPTED;
 }
 
 static void lp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -519,18 +510,6 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (evt) {
-	case LP_ENC_EVT_RUN:
-		lp_enc_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
@@ -611,9 +590,6 @@ static void lp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		break;
 	case LP_ENC_STATE_WAIT_RX_START_ENC_RSP:
 		lp_enc_st_wait_rx_start_enc_rsp(conn, ctx, evt, param);
-		break;
-	case LP_ENC_STATE_WAIT_NTF:
-		lp_enc_st_wait_ntf(conn, ctx, evt, param);
 		break;
 	/* Pause Procedure */
 	case LP_ENC_STATE_ENCRYPTED:
@@ -730,10 +706,10 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		if (conn->llcp.fex.valid && feature_ext_rej_ind(conn)) {
-			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ,
-						       BT_HCI_ERR_PIN_OR_KEY_MISSING);
+			llcp_pdu_encode_reject_ext_ind(pdu, ctx->reject_ext_ind.reject_opcode,
+						       ctx->reject_ext_ind.error_code);
 		} else {
-			llcp_pdu_encode_reject_ind(pdu, BT_HCI_ERR_PIN_OR_KEY_MISSING);
+			llcp_pdu_encode_reject_ind(pdu, ctx->reject_ext_ind.error_code);
 		}
 		break;
 	default:
@@ -755,10 +731,14 @@ static void rp_enc_ntf_ltk(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
+	uint8_t piggy_back;
 
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
+	/* Piggy-back on RX node */
+	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
+
+	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
@@ -766,8 +746,11 @@ static void rp_enc_ntf_ltk(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	llcp_ntf_encode_enc_req(ctx, pdu);
 
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
+	if (!piggy_back) {
+		/* Enqueue notification towards LL unless it's piggybacked */
+		ll_rx_put_sched(ntf->hdr.link, ntf);
+	}
+
 }
 
 static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -775,8 +758,9 @@ static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 
-	/* Allocate ntf node */
-	ntf = llcp_ntf_alloc();
+	/* Piggy-back on RX node */
+	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -794,9 +778,6 @@ static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		/* Should never happen */
 		LL_ASSERT(0);
 	}
-
-	/* Enqueue notification towards LL */
-	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
 
 static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -804,23 +785,8 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void rp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = RP_ENC_STATE_WAIT_NTF;
-	} else {
-		rp_enc_ntf(conn, ctx);
-		rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
-	}
-}
-
-static void rp_enc_send_ltk_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
-{
-	if (!llcp_ntf_alloc_is_available()) {
-		ctx->state = RP_ENC_STATE_WAIT_NTF_LTK_REQ;
-	} else {
-		rp_enc_ntf_ltk(conn, ctx);
-		ctx->state = RP_ENC_STATE_WAIT_LTK_REPLY;
-	}
+	rp_enc_ntf(conn, ctx);
+	rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
 }
 
 static void rp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -840,11 +806,15 @@ static void rp_enc_send_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	struct node_tx *tx;
 
 	if (!llcp_tx_alloc_peek(conn, ctx)) {
+		/* Mark RX node to not release, needed for LTK NTF */
+		llcp_rx_node_retain(ctx);
 		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
 	} else {
 		tx = llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
 		rp_enc_store_s(conn, ctx, (struct pdu_data *)tx->pdu);
-		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
+
+		rp_enc_ntf_ltk(conn, ctx);
+		ctx->state = RP_ENC_STATE_WAIT_LTK_REPLY;
 	}
 }
 
@@ -873,14 +843,30 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 	} else {
 		llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 		llcp_rr_complete(conn);
-		ctx->state = RP_ENC_STATE_UNENCRYPTED;
 
-		/* Resume Tx data */
-		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
-		/* Resume Rx data */
-		ull_conn_resume_rx_data(conn);
-		/* Resume possibly paused local procedure */
-		llcp_lr_resume(conn);
+		if (ctx->data.enc.error == BT_HCI_ERR_PIN_OR_KEY_MISSING) {
+			/* Start encryption rejected due to missing key.
+			 *
+			 * Resume paused data and local procedures.
+			 */
+
+			ctx->state = RP_ENC_STATE_UNENCRYPTED;
+
+			/* Resume Tx data */
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
+			/* Resume Rx data */
+			ull_conn_resume_rx_data(conn);
+			/* Resume possibly paused local procedure */
+			llcp_lr_resume(conn);
+		} else if (ctx->data.enc.error == BT_HCI_ERR_LMP_PDU_NOT_ALLOWED) {
+			/* Pause encryption rejected due to invalid behaviour.
+			 *
+			 * Nothing special needs to be done.
+			 */
+		} else {
+			/* Shouldn't happen */
+			LL_ASSERT(0);
+		}
 	}
 }
 
@@ -969,6 +955,7 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 		llcp_lr_pause(conn);
 
 		rp_enc_store_m(conn, ctx, param);
+
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
 		break;
 	default:
@@ -990,12 +977,20 @@ static void rp_enc_state_wait_tx_enc_rsp(struct ll_conn *conn, struct proc_ctx *
 	}
 }
 
-static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-					  void *param)
+static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					void *param)
 {
 	switch (evt) {
-	case RP_ENC_EVT_RUN:
-		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
+	case RP_ENC_EVT_LTK_REQ_REPLY:
+		/* Continue procedure in next prepare run */
+		ctx->state = RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE;
+		break;
+	case RP_ENC_EVT_LTK_REQ_NEG_REPLY:
+		ctx->data.enc.error = BT_HCI_ERR_PIN_OR_KEY_MISSING;
+		ctx->reject_ext_ind.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+		ctx->reject_ext_ind.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING;
+		/* Send reject in next prepare run */
+		ctx->state = RP_ENC_STATE_WAIT_TX_REJECT_IND;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1003,15 +998,12 @@ static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx 
 	}
 }
 
-static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-					void *param)
+static void rp_enc_state_wait_ltk_reply_continue(struct ll_conn *conn, struct proc_ctx *ctx,
+						 uint8_t evt, void *param)
 {
 	switch (evt) {
-	case RP_ENC_EVT_LTK_REQ_REPLY:
+	case RP_ENC_EVT_RUN:
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
-		break;
-	case RP_ENC_EVT_LTK_REQ_NEG_REPLY:
-		rp_enc_send_reject_ind(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1058,19 +1050,6 @@ static void rp_enc_state_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc
 	}
 }
 
-static void rp_enc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				  void *param)
-{
-	switch (evt) {
-	case RP_ENC_EVT_RUN:
-		rp_enc_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void rp_enc_state_wait_tx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
@@ -1102,6 +1081,26 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 {
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_REQ:
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		{
+			/* Central is not allowed to send a LL_PAUSE_ENC_REQ while the ACL is
+			 * associated with a CIS that has been created.
+			 *
+			 * Handle this invalid case, by rejecting.
+			 */
+			struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+
+			if (cis) {
+				ctx->data.enc.error = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+				ctx->reject_ext_ind.reject_opcode =
+					PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
+				ctx->reject_ext_ind.error_code = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+				rp_enc_send_reject_ind(conn, ctx, evt, param);
+				break;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 		/* Pause Tx data */
 		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/*
@@ -1162,11 +1161,11 @@ static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	case RP_ENC_STATE_WAIT_TX_ENC_RSP:
 		rp_enc_state_wait_tx_enc_rsp(conn, ctx, evt, param);
 		break;
-	case RP_ENC_STATE_WAIT_NTF_LTK_REQ:
-		rp_enc_state_wait_ntf_ltk_req(conn, ctx, evt, param);
-		break;
 	case RP_ENC_STATE_WAIT_LTK_REPLY:
 		rp_enc_state_wait_ltk_reply(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_LTK_REPLY_CONTINUE:
+		rp_enc_state_wait_ltk_reply_continue(conn, ctx, evt, param);
 		break;
 	case RP_ENC_STATE_WAIT_TX_START_ENC_REQ:
 		rp_enc_state_wait_tx_start_enc_req(conn, ctx, evt, param);
@@ -1176,9 +1175,6 @@ static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		break;
 	case RP_ENC_STATE_WAIT_RX_START_ENC_RSP:
 		rp_enc_state_wait_rx_start_enc_rsp(conn, ctx, evt, param);
-		break;
-	case RP_ENC_STATE_WAIT_NTF:
-		rp_enc_state_wait_ntf(conn, ctx, evt, param);
 		break;
 	case RP_ENC_STATE_WAIT_TX_START_ENC_RSP:
 		rp_enc_state_wait_tx_start_enc_rsp(conn, ctx, evt, param);

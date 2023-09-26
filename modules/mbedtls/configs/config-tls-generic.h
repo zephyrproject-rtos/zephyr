@@ -15,6 +15,7 @@
 #define MBEDTLS_PLATFORM_C
 #define MBEDTLS_PLATFORM_MEMORY
 #define MBEDTLS_MEMORY_BUFFER_ALLOC_C
+#define MBEDTLS_MEMORY_ALIGN_MULTIPLE (sizeof(void *))
 #define MBEDTLS_PLATFORM_EXIT_ALT
 #define MBEDTLS_NO_PLATFORM_ENTROPY
 
@@ -140,6 +141,10 @@
 
 #if defined(CONFIG_MBEDTLS_AES_ROM_TABLES)
 #define MBEDTLS_AES_ROM_TABLES
+#endif
+
+#if defined(CONFIG_MBEDTLS_AES_FEWER_TABLES)
+#define MBEDTLS_AES_FEWER_TABLES
 #endif
 
 #if defined(CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED)
@@ -390,15 +395,6 @@
 #define MBEDTLS_X509_USE_C
 #endif
 
-#if defined(MBEDTLS_X509_USE_C) || \
-    defined(MBEDTLS_ECDSA_C)
-#define MBEDTLS_ASN1_PARSE_C
-#endif
-
-#if defined(MBEDTLS_ECDSA_C)
-#define MBEDTLS_ASN1_WRITE_C
-#endif
-
 #if defined(MBEDTLS_DHM_C) || \
     defined(MBEDTLS_ECP_C) || \
     defined(MBEDTLS_RSA_C) || \
@@ -422,6 +418,14 @@
 
 #if defined(MBEDTLS_PK_PARSE_C) || defined(MBEDTLS_PK_WRITE_C)
 #define MBEDTLS_PK_C
+#endif
+
+#if defined(MBEDTLS_X509_USE_C) || defined(MBEDTLS_ECDSA_C)
+#define MBEDTLS_ASN1_PARSE_C
+#endif
+
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_PK_WRITE_C)
+#define MBEDTLS_ASN1_WRITE_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_PKCS5_C)
@@ -457,6 +461,23 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #define MBEDTLS_PSA_CRYPTO_C
+#define MBEDTLS_USE_PSA_CRYPTO
+
+#if defined(CONFIG_ARCH_POSIX)
+#define MBEDTLS_PSA_KEY_SLOT_COUNT     64
+#define MBEDTLS_PSA_CRYPTO_STORAGE_C
+#define MBEDTLS_PSA_ITS_FILE_C
+#define MBEDTLS_FS_IO
+#endif
+
+#endif
+
+#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#define MBEDTLS_SSL_ENCRYPT_THEN_MAC
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+#define MBEDTLS_SSL_DTLS_CONNECTION_ID
 #endif
 
 /* User config file */
@@ -465,6 +486,19 @@
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
+#if !defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+/* When PSA API is used the checking header is included over the chain:
+ * |-psa/crypto.h
+ * |-psa/crypto_platform.h
+ * |-mbedtls/build_info.h
+ * |-mbedtls/check_config.h
+ * If include this header here then PSA API will be in semiconfigured state
+ * without considering dependencies from mbedtls/config_psa.h.
+ * mbedtls/config_psa.h should be included right after config-tls-generic.h before checking.
+ * Formally, all settings are correct but mbedtls library cannot be built.
+ * The behavior was introduced after adding mbedTLS 3.4.0
+ */
 #include "mbedtls/check_config.h"
+#endif
 
 #endif /* MBEDTLS_CONFIG_H */

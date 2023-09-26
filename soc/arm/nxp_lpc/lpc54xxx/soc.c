@@ -19,7 +19,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
@@ -107,16 +107,8 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc54114_init(const struct device *arg)
+static int nxp_lpc54114_init(void)
 {
-	ARG_UNUSED(arg);
-
-	/* old interrupt lock level */
-	unsigned int oldLevel;
-
-	/* disable interrupts */
-	oldLevel = irq_lock();
-
 	/* Initialize FRO/system clock to 48 MHz */
 	clock_init();
 
@@ -124,15 +116,6 @@ static int nxp_lpc54114_init(const struct device *arg)
 	/* Turn on PINT device*/
 	PINT_Init(PINT);
 #endif
-
-	/*
-	 * install default handler that simply resets the CPU if configured in
-	 * the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	/* restore interrupt state */
-	irq_unlock(oldLevel);
 
 	return 0;
 }
@@ -166,11 +149,10 @@ void z_arm_platform_init(void)
  *
  */
 /* This function is also called at deep sleep resume. */
-int _slave_init(const struct device *arg)
+int _slave_init(void)
 {
 	int32_t temp;
 
-	ARG_UNUSED(arg);
 
 	/* Enable SRAM2, used by other core */
 	SYSCON->AHBCLKCTRLSET[0] = SYSCON_AHBCLKCTRL_SRAM2_MASK;

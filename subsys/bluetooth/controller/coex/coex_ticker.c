@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT gpio_radio_coex
+
 #include <errno.h>
 #include <soc.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"
@@ -195,18 +196,11 @@ static int coex_ticker_init(const struct device *dev)
 	return 0;
 }
 
-#define RADIO_NODE DT_NODELABEL(radio)
-#define COEX_NODE DT_PROP(RADIO_NODE, coex)
-
-#if DT_NODE_EXISTS(COEX_NODE)
 static struct coex_ticker_config config = {
-	.grant_spec = GPIO_DT_SPEC_GET(COEX_NODE, grant_gpios),
-	.grant_delay_us = DT_PROP(COEX_NODE, grant_delay_us)
+	.grant_spec = GPIO_DT_SPEC_INST_GET(0, grant_gpios),
+	.grant_delay_us = DT_INST_PROP(0, grant_delay_us)
 };
 static struct coex_ticker_data data;
 
-DEVICE_DEFINE(coex_ticker, "COEX_TICKER", &coex_ticker_init, NULL,
-	&data, &config,
-	APPLICATION, 90,
-	NULL);
-#endif
+DEVICE_DT_INST_DEFINE(0, &coex_ticker_init, NULL, &data, &config,
+		      POST_KERNEL, 90, NULL);

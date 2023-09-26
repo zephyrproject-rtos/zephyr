@@ -8,6 +8,8 @@
 
 #include <nxp/nxp_rt1050.dtsi>
 #include "mimxrt1050_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP MIMXRT1050-EVK board";
@@ -16,7 +18,6 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
@@ -33,7 +34,6 @@
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -55,7 +55,13 @@
 		user_button: button_0 {
 			label = "User SW8";
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
 	};
 
 	arduino_header: connector {
@@ -172,15 +178,22 @@ arduino_serial: &lpuart3 {
 	status = "okay";
 	width = <480>;
 	height = <272>;
-	hsync = <41>;
-	hfp = <4>;
-	hbp = <8>;
-	vsync = <10>;
-	vfp = <4>;
-	vbp = <2>;
-	polarity = <3>;
-	pixel-format = "bgr-565";
-	data-buswidth = "16-bit";
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <41>;
+		hfront-porch = <4>;
+		hback-porch = <8>;
+		vsync-len = <10>;
+		vfront-porch = <4>;
+		vback-porch = <2>;
+		de-active= <1>;
+		pixelclk-active = <1>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		clock-frequency = <9210240>;
+	};
+	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	data-bus-width = "16-bit";
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
 	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
@@ -209,7 +222,7 @@ arduino_serial: &lpuart3 {
 		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 
-	touch_controller: ft5336@38 {
+	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;

@@ -70,8 +70,6 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	count_callback1 = 0;
 	struct sensor_data_msg sd = {.a = 10, .b = 100};
 
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE,
-		      k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 	/* Tyring to add same static observer as one dynamic */
 	zassert_equal(-EEXIST, zbus_chan_add_obs(&chan2, &lis2, K_MSEC(200)), NULL);
 
@@ -79,29 +77,18 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(count_callback1, 0, "The counter could not be more than zero, no obs");
 
 	zassert_equal(0, zbus_chan_add_obs(&chan1, &lis1, K_MSEC(200)), NULL);
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE - 1,
-		      k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 	zassert_equal(-EALREADY, zbus_chan_add_obs(&chan1, &lis1, K_MSEC(200)),
 		      "It cannot be added twice");
-
-	zassert_equal(1, k_mem_slab_max_used_get(zbus_runtime_obs_pool()), NULL);
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE - 1,
-		      k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 
 	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback1, 1, "The counter could not be more than zero, no obs, %d",
 		      count_callback1);
 
 	zassert_equal(0, zbus_chan_rm_obs(&chan1, &lis1, K_MSEC(200)), "It must remove the obs");
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE,
-		      k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 
-	zassert_equal(1, k_mem_slab_max_used_get(zbus_runtime_obs_pool()), NULL);
 	zassert_equal(-ENODATA, zbus_chan_rm_obs(&chan1, &lis1, K_MSEC(200)),
 		      "It cannot be removed twice");
 
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE,
-		      k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback1, 1, "The counter could not be more than zero, no obs, %d",
 		      count_callback1);
@@ -125,25 +112,26 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis4, K_MSEC(200)), "It must add the obs");
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis5, K_MSEC(200)), "It must add the obs");
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis6, K_MSEC(200)), "It must add the obs");
-	zassert_equal(-EAGAIN, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)),
-		      "It must add the obs");
+
+	/* Make the heap full */
+	void *mem;
+
+	do {
+		mem = k_malloc(1);
+	} while (mem != NULL);
+
+	/* With the heap full it will not be possible to add another obs */
+	zassert_equal(-ENOMEM, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)), NULL);
 	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback2, 5, NULL);
+
 	/* To cause an error to sub1 and sub2. They have the queue full in this point */
-	/* An error message must be printed saying the */
-	zassert_equal(-EFAULT, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
+	/* ENOMSG must be the result */
+	zassert_equal(-ENOMSG, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback2, 10, NULL);
 
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE,
-		      k_mem_slab_max_used_get(zbus_runtime_obs_pool()), NULL);
-
-	zassert_equal(0, k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub1, K_MSEC(200)), NULL);
 	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)), NULL);
-	zassert_equal(2, k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
-
-	zassert_equal(CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE,
-		      k_mem_slab_max_used_get(zbus_runtime_obs_pool()), NULL);
 }
 
 struct aux2_wq_data {
@@ -166,8 +154,58 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs_busy)
 	k_work_submit(&wq_handler.work);
 	k_msleep(1000);
 
-	zassert_equal(2, k_mem_slab_num_free_get(zbus_runtime_obs_pool()), NULL);
 	zassert_equal(0, zbus_chan_finish(&chan2), NULL);
+}
+
+ZBUS_CHAN_DEFINE(chan4,                  /* Name */
+		 struct sensor_data_msg, /* Message type */
+
+		 NULL,                                 /* Validator */
+		 NULL,                                 /* User data */
+		 ZBUS_OBSERVERS(prio_lis6, prio_lis5), /* observers */
+		 ZBUS_MSG_INIT(0) /* Initial value major 0, minor 1, build 1023 */
+);
+
+static int execution_sequence_idx;
+static uint8_t execution_sequence[6] = {0};
+
+#define CALLBACK_DEF(_lis, _idx)                                                                   \
+	static void _CONCAT(prio_cb, _idx)(const struct zbus_channel *chan)                        \
+	{                                                                                          \
+		execution_sequence[execution_sequence_idx] = _idx;                                 \
+		++execution_sequence_idx;                                                          \
+	}                                                                                          \
+	ZBUS_LISTENER_DEFINE(_lis, _CONCAT(prio_cb, _idx))
+
+CALLBACK_DEF(prio_lis1, 1);
+CALLBACK_DEF(prio_lis2, 2);
+CALLBACK_DEF(prio_lis3, 3);
+CALLBACK_DEF(prio_lis4, 4);
+CALLBACK_DEF(prio_lis5, 5);
+CALLBACK_DEF(prio_lis6, 6);
+
+ZBUS_CHAN_ADD_OBS(chan4, prio_lis3, 3);
+ZBUS_CHAN_ADD_OBS(chan4, prio_lis4, 2);
+
+/* Checking the ZBUS_CHAN_ADD_OBS. The execution sequence must be: 6, 5, 4, 3, 2, 1. */
+
+ZTEST(basic, test_specification_based__zbus_obs_priority)
+{
+	struct sensor_data_msg sd = {.a = 70, .b = 116};
+
+	execution_sequence_idx = 0;
+
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis2, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis1, K_MSEC(200)), NULL);
+
+	zassert_equal(0, zbus_chan_pub(&chan4, &sd, K_MSEC(500)), NULL);
+
+	zassert_equal(execution_sequence[0], 6, NULL);
+	zassert_equal(execution_sequence[1], 5, NULL);
+	zassert_equal(execution_sequence[2], 4, NULL);
+	zassert_equal(execution_sequence[3], 3, NULL);
+	zassert_equal(execution_sequence[4], 2, NULL);
+	zassert_equal(execution_sequence[5], 1, NULL);
 }
 
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);

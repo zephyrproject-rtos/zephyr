@@ -5,7 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
@@ -42,4 +43,38 @@ void bt_data_parse(struct net_buf_simple *ad,
 
 		net_buf_simple_pull(ad, len - 1);
 	}
+}
+
+size_t bt_data_get_len(const struct bt_data data[], size_t data_count)
+{
+	size_t total_len = 0;
+
+	for (size_t i = 0; i < data_count; i++) {
+		total_len += sizeof(data[i].data_len) + sizeof(data[i].type) + data[i].data_len;
+	}
+
+	return total_len;
+}
+
+size_t bt_data_serialize(const struct bt_data *input, uint8_t *output)
+{
+	CHECKIF(input == NULL) {
+		LOG_DBG("input is NULL");
+		return 0;
+	}
+
+	CHECKIF(output == NULL) {
+		LOG_DBG("output is NULL");
+		return 0;
+	}
+
+	uint8_t ad_data_len = input->data_len;
+	uint8_t data_len = ad_data_len + 1;
+
+	output[0] = data_len;
+	output[1] = input->type;
+
+	memcpy(&output[2], input->data, ad_data_len);
+
+	return data_len + 1;
 }

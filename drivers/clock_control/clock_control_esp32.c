@@ -9,32 +9,32 @@
 
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 
-#if defined(CONFIG_SOC_ESP32) || defined(CONFIG_SOC_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx6
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include "esp32/rom/rtc.h"
 #include "soc/dport_reg.h"
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include "esp32s2/rom/rtc.h"
 #include "soc/dport_reg.h"
-#elif defined(CONFIG_SOC_ESP32S3)
+#elif defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include "esp32s3/rom/rtc.h"
 #include "soc/dport_reg.h"
 #include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_SOC_SERIES_ESP32C3
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include "esp32c3/rom/rtc.h"
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
 #include <soc/rtc.h>
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32xx */
 
 #include "esp_rom_sys.h"
 #include <soc/rtc.h>
@@ -55,14 +55,16 @@ struct esp32_clock_config {
 };
 
 static uint8_t const xtal_freq[] = {
-#if defined(CONFIG_SOC_ESP32) || defined(CONFIG_SOC_ESP32_NET) || defined(CONFIG_SOC_ESP32S3)
+#if defined(CONFIG_SOC_SERIES_ESP32) || \
+	defined(CONFIG_SOC_SERIES_ESP32_NET) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	[ESP32_CLK_XTAL_24M] = 24,
 	[ESP32_CLK_XTAL_26M] = 26,
 	[ESP32_CLK_XTAL_40M] = 40,
 	[ESP32_CLK_XTAL_AUTO] = 0
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
 	[ESP32_CLK_XTAL_40M] = 40,
-#elif defined(CONFIG_SOC_ESP32C3)
+#elif defined(CONFIG_SOC_SERIES_ESP32C3)
 	[ESP32_CLK_XTAL_32M] = 32,
 	[ESP32_CLK_XTAL_40M] = 40,
 #endif
@@ -124,7 +126,7 @@ static int clock_control_esp32_get_rate(const struct device *dev,
 	return 0;
 }
 
-#if defined(CONFIG_SOC_ESP32) || defined(CONFIG_SOC_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;
@@ -217,9 +219,9 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 }
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32 */
 
-#if defined(CONFIG_SOC_ESP32S2)
+#if defined(CONFIG_SOC_SERIES_ESP32S2)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;
@@ -321,9 +323,9 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 }
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32S2 */
 
-#if defined(CONFIG_SOC_ESP32S3)
+#if defined(CONFIG_SOC_SERIES_ESP32S3)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
@@ -421,9 +423,9 @@ static void esp32_clock_perip_init(void)
 	esp_rom_uart_tx_wait_idle(0);
 	esp_rom_uart_set_clock_baudrate(0, UART_CLK_FREQ_ROM, 115200);
 }
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32S3 */
 
-#if defined(CONFIG_SOC_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;
@@ -510,7 +512,7 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 }
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32C3 */
 
 static int clock_control_esp32_init(const struct device *dev)
 {
@@ -596,7 +598,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_esp32_api);
 
-#ifndef CONFIG_SOC_ESP32C3
+#ifndef CONFIG_SOC_SERIES_ESP32C3
 BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) ==
 		    DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency),
 		    "SYS_CLOCK_HW_CYCLES_PER_SEC Value must be equal to CPU_Freq");

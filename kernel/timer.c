@@ -7,11 +7,11 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/init.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/syscall_handler.h>
 #include <stdbool.h>
 #include <zephyr/spinlock.h>
+#include <ksched.h>
+#include <wait_q.h>
 
 static struct k_spinlock lock;
 

@@ -40,28 +40,28 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #endif
 
 
-#if	(defined(CONFIG_UART_0_NRF_UARTE) &&         \
+#if	(defined(CONFIG_HAS_HW_NRF_UARTE0) &&         \
 	 defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
-	(defined(CONFIG_UART_1_NRF_UARTE) &&         \
+	(defined(CONFIG_HAS_HW_NRF_UARTE1) &&         \
 	 defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
-	(defined(CONFIG_UART_2_NRF_UARTE) &&         \
+	(defined(CONFIG_HAS_HW_NRF_UARTE2) &&         \
 	 defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
-	(defined(CONFIG_UART_3_NRF_UARTE) &&         \
+	(defined(CONFIG_HAS_HW_NRF_UARTE3) &&         \
 	 defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
 	#define UARTE_INTERRUPT_DRIVEN	1
 #endif
 
-#if	(defined(CONFIG_UART_0_NRF_UARTE) && !defined(CONFIG_UART_0_ASYNC)) || \
-	(defined(CONFIG_UART_1_NRF_UARTE) && !defined(CONFIG_UART_1_ASYNC)) || \
-	(defined(CONFIG_UART_2_NRF_UARTE) && !defined(CONFIG_UART_2_ASYNC)) || \
-	(defined(CONFIG_UART_3_NRF_UARTE) && !defined(CONFIG_UART_3_ASYNC))
+#if	(defined(CONFIG_HAS_HW_NRF_UARTE0) && !defined(CONFIG_UART_0_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE1) && !defined(CONFIG_UART_1_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE2) && !defined(CONFIG_UART_2_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE3) && !defined(CONFIG_UART_3_ASYNC))
 #define UARTE_ANY_NONE_ASYNC 1
 #endif
 
-#if	(defined(CONFIG_UART_0_NRF_UARTE) && defined(CONFIG_UART_0_ASYNC)) || \
-	(defined(CONFIG_UART_1_NRF_UARTE) && defined(CONFIG_UART_1_ASYNC)) || \
-	(defined(CONFIG_UART_2_NRF_UARTE) && defined(CONFIG_UART_2_ASYNC)) || \
-	(defined(CONFIG_UART_3_NRF_UARTE) && defined(CONFIG_UART_3_ASYNC))
+#if	(defined(CONFIG_HAS_HW_NRF_UARTE0) && defined(CONFIG_UART_0_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE1) && defined(CONFIG_UART_1_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE2) && defined(CONFIG_UART_2_ASYNC)) || \
+	(defined(CONFIG_HAS_HW_NRF_UARTE3) && defined(CONFIG_UART_3_ASYNC))
 #define UARTE_ANY_ASYNC 1
 #endif
 
@@ -587,7 +587,8 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 	int ret;
 
 	if (HW_RX_COUNTING_ENABLED(data)) {
-		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG;
+		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG(
+						NRF_TIMER_BASE_FREQUENCY_GET(cfg->timer.p_reg));
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
 		tmr_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
@@ -1482,32 +1483,6 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
 	unsigned int key;
 
-#if CONFIG_UART_NRF_DK_SERIAL_WORKAROUND
-	/* On some boards (usually those which have multiple virtual coms) it can
-	 * be seen that bytes are dropped on the console serial (serial that goes
-	 * through Segger interface chip) when working in virtual environment.
-	 * It's the Segger chip that drops those bytes. A workaround is to enforce
-	 * periodic gaps which allows to handle the traffic correctly.
-	 */
-	if (dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_console))) {
-		static int cnt;
-		static uint32_t t;
-		uint32_t now = k_uptime_get_32();
-
-		if ((now - t) >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS) {
-			cnt = 0;
-		} else {
-			cnt++;
-			if (cnt >= CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_COUNT) {
-				k_busy_wait(1000 * CONFIG_UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS);
-				cnt = 0;
-			}
-		}
-
-		t = now;
-	}
-#endif
-
 	if (isr_mode) {
 		while (1) {
 			key = irq_lock();
@@ -2083,18 +2058,18 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			DT_PHANDLE(UARTE(idx), memory_regions)))))),	       \
 		())
 
-#ifdef CONFIG_UART_0_NRF_UARTE
+#ifdef CONFIG_HAS_HW_NRF_UARTE0
 UART_NRF_UARTE_DEVICE(0);
 #endif
 
-#ifdef CONFIG_UART_1_NRF_UARTE
+#ifdef CONFIG_HAS_HW_NRF_UARTE1
 UART_NRF_UARTE_DEVICE(1);
 #endif
 
-#ifdef CONFIG_UART_2_NRF_UARTE
+#ifdef CONFIG_HAS_HW_NRF_UARTE2
 UART_NRF_UARTE_DEVICE(2);
 #endif
 
-#ifdef CONFIG_UART_3_NRF_UARTE
+#ifdef CONFIG_HAS_HW_NRF_UARTE3
 UART_NRF_UARTE_DEVICE(3);
 #endif

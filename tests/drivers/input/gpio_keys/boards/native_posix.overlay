@@ -10,7 +10,7 @@
 
 / {
 	buttons: gpio-keys0 {
-		compatible = "zephyr,gpio-keys";
+		compatible = "gpio-keys";
 		debounce-interval-ms = <30>;
 
 		voldown_button: button_0 {

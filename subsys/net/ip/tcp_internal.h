@@ -414,6 +414,15 @@ static inline int net_tcp_get_option(struct net_context *context,
  */
 struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
 
+/**
+ * @brief Obtain a semaphore indicating if connection is connected.
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if connection is connected
+ */
+struct k_sem *net_tcp_conn_sem_get(struct net_context *context);
+
 #ifdef __cplusplus
 }
 #endif

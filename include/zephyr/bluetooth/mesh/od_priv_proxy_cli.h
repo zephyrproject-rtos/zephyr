@@ -4,18 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_od_priv_proxy_cli Bluetooth Mesh On-Demand Private GATT Proxy Client
- * @{
- * @brief
- */
-
 #ifndef BT_MESH_OD_PRIV_PROXY_CLI_H__
 #define BT_MESH_OD_PRIV_PROXY_CLI_H__
+
+#include <zephyr/bluetooth/mesh.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_od_priv_proxy_cli Bluetooth Mesh On-Demand Private GATT Proxy Client
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** On-Demand Private Proxy Client Model Context */
 struct bt_mesh_od_priv_proxy_cli {
@@ -45,7 +47,6 @@ struct bt_mesh_od_priv_proxy_cli {
 			 _bt_mesh_od_priv_proxy_cli_op, NULL, cli_data,            \
 			 &_bt_mesh_od_priv_proxy_cli_cb)
 
-
 /** @brief Get the target's On-Demand Private GATT Proxy state.
  *
  *  This method can be used asynchronously by setting @p val_rsp as NULL.
@@ -55,12 +56,13 @@ struct bt_mesh_od_priv_proxy_cli {
  *  To process the response arguments of an async method, register
  *  the @c od_status callback in @c bt_mesh_od_priv_proxy_cli struct.
  *
- *  @param ctx        Message context for the message.
+ *  @param net_idx    Network index to encrypt with.
+ *  @param addr       Target node address.
  *  @param val_rsp    Response buffer for On-Demand Private GATT Proxy value.
  *
  *  @return 0 on success, or (negative) error code otherwise.
  */
-int bt_mesh_od_priv_proxy_cli_get(struct bt_mesh_msg_ctx *ctx, uint8_t *val_rsp);
+int bt_mesh_od_priv_proxy_cli_get(uint16_t net_idx, uint16_t addr, uint8_t *val_rsp);
 
 /** @brief Set the target's On-Demand Private GATT Proxy state.
  *
@@ -71,13 +73,14 @@ int bt_mesh_od_priv_proxy_cli_get(struct bt_mesh_msg_ctx *ctx, uint8_t *val_rsp)
  *  To process the response arguments of an async method, register
  *  the @c od_status callback in @c bt_mesh_od_priv_proxy_cli struct.
  *
- *  @param ctx        Message context for the message.
+ *  @param net_idx    Network index to encrypt with.
+ *  @param addr       Target node address.
  *  @param val        On-Demand Private GATT Proxy state to be set
  *  @param val_rsp    Response buffer for On-Demand Private GATT Proxy value.
  *
  *  @return 0 on success, or (negative) error code otherwise.
  */
-int bt_mesh_od_priv_proxy_cli_set(struct bt_mesh_msg_ctx *ctx, uint8_t val, uint8_t *val_rsp);
+int bt_mesh_od_priv_proxy_cli_set(uint16_t net_idx, uint16_t addr, uint8_t val, uint8_t *val_rsp);
 
 /** @brief Set the transmission timeout value.
  *
@@ -90,10 +93,10 @@ extern const struct bt_mesh_model_op _bt_mesh_od_priv_proxy_cli_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_od_priv_proxy_cli_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* BT_MESH_OD_PRIV_PROXY_CLI_H__ */
-
-/** @} */

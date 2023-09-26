@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "util/util.h"
@@ -190,7 +190,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
 	lll->periph.window_widening_periodic_us =
-		ceiling_fraction(((lll_clock_ppm_local_get() +
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
 				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us), USEC_PER_SEC);
 	lll->periph.window_widening_max_us = (conn_interval_us >> 1) -
@@ -371,13 +371,10 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       EVENT_OVERHEAD_END_US +
-				       ready_delay_us +
-				       max_rx_time +
-				       EVENT_IFS_US +
-				       max_tx_time);
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US +
+		ready_delay_us + max_rx_time + EVENT_IFS_US + max_tx_time +
+		(EVENT_CLOCK_JITTER_US << 1));
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
@@ -441,8 +438,8 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		 * Deferred attempt to stop can fail as it would have
 		 * expired, hence ignore failure.
 		 */
-		ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			    TICKER_ID_ADV_STOP, NULL, NULL);
+		(void)ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				  TICKER_ID_ADV_STOP, NULL, NULL);
 	}
 
 	/* Start Peripheral */
@@ -523,7 +520,7 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		int ret;
 
 		/* Handle any LL Control Procedures */
-		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
+		ret = ull_conn_llcp(conn, ticks_at_expire, remainder, lazy);
 		if (ret) {
 			/* NOTE: Under BT_CTLR_LOW_LAT, ULL_LOW context is
 			 *       disabled inside radio events, hence, abort any

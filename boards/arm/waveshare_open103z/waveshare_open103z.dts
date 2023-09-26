@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f1/stm32f103Xe.dtsi>
 #include <st/f1/stm32f103z(c-d-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Waveshare Open103Z";
@@ -45,26 +46,32 @@
 		button: button {
 			label = "User button";
 			gpios = <&gpiog 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		joystick_enter: joystick_enter {
 			label = "User joystick ENTER";
 			gpios = <&gpiog 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joystick_right: joystick_right {
 			label = "User joystick RIGHT";
 			gpios = <&gpioc 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 		joystick_up: joystick_up {
 			label = "User joystick UP";
 			gpios = <&gpioc 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 		joystick_down: joystick_down {
 			label = "User joystick DOWN";
 			gpios = <&gpioc 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joystick_left: joystick_left {
 			label = "User joystick LEFT";
 			gpios = <&gpioc 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 	};
 

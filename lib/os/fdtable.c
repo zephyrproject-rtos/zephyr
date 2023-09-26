@@ -26,6 +26,7 @@ struct fd_entry {
 	const struct fd_op_vtable *vtable;
 	atomic_t refcount;
 	struct k_mutex lock;
+	struct k_condvar cond;
 };
 
 #ifdef CONFIG_POSIX_API
@@ -141,6 +142,44 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 	return entry->obj;
 }
 
+static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtable)
+{
+	int fd;
+
+	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
+		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable) {
+			return fd;
+		}
+	}
+
+	errno = ENFILE;
+	return -1;
+}
+
+bool z_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
+			     struct k_condvar **cond)
+{
+	int fd;
+	struct fd_entry *entry;
+
+	fd = z_get_fd_by_obj_and_vtable(obj, vtable);
+	if (_check_fd(fd) < 0) {
+		return false;
+	}
+
+	entry = &fdtable[fd];
+
+	if (lock) {
+		*lock = &entry->lock;
+	}
+
+	if (cond) {
+		*cond = &entry->cond;
+	}
+
+	return true;
+}
+
 void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock)
 {
@@ -173,6 +212,7 @@ int z_reserve_fd(void)
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
 		k_mutex_init(&fdtable[fd].lock);
+		k_condvar_init(&fdtable[fd].cond);
 	}
 
 	k_mutex_unlock(&fdtable_lock);

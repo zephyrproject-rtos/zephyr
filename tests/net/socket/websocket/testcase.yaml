@@ -3,4 +3,6 @@ common:
 tests:
   net.socket.websocket:
     min_ram: 21
-    tags: net websocket
+    tags:
+      - net
+      - websocket

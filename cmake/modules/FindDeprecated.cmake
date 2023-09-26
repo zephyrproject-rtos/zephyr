@@ -88,10 +88,12 @@ if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
   # This code was deprecated after Zephyr v3.2.0
   if(SPARSE)
     message(DEPRECATION
-        "Setting SPARSE=${SPARSE} is deprecated. "
+        "Setting SPARSE='${SPARSE}' is deprecated. "
         "Please set ZEPHYR_SCA_VARIANT to 'sparse'"
     )
-    set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+    if("${SPARSE}" STREQUAL "y")
+      set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+    endif()
   endif()
 endif()
 
@@ -102,6 +104,25 @@ if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
         "Setting SOURCES prior to calling find_package() for unit tests is deprecated."
         " To add sources after find_package() use:\n"
         "    target_sources(testbinary PRIVATE <source-file.c>)")
+  endif()
+endif()
+
+if("PRJ_BOARD" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.3.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS PRJ_BOARD)
+  message(DEPRECATION "'prj_<board>.conf' files are deprecated and should be "
+                      "replaced with board Kconfig fragments instead.")
+endif()
+
+if("PYTHON_PREFER" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.4.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS PYTHON_PREFER)
+  if(DEFINED PYTHON_PREFER)
+    message(DEPRECATION "'PYTHON_PREFER' variable is deprecated. Please use "
+                        "Python3_EXECUTABLE instead.")
+    if(NOT DEFINED Python3_EXECUTABLE)
+      set(Python3_EXECUTABLE ${PYTHON_PREFER})
+    endif()
   endif()
 endif()
 

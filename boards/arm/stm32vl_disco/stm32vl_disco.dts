@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f1/stm32f100Xb.dtsi>
 #include <st/f1/stm32f100r(8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32VLDISCOVERY board";
@@ -36,6 +37,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

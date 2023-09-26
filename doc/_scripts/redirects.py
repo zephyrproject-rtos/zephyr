@@ -14,11 +14,16 @@ Notes:
 
 REDIRECTS = [
     ('application/index', 'develop/application/index'),
+    ('boards/x86/ehl_crb/doc/index', 'boards/x86/intel_ehl/doc/index'),
+    ('boards/x86/rpl_crb/doc/index', 'boards/x86/intel_rpl/doc/index'),
     ('development_process/code_flow', 'project/code_flow'),
     ('development_process/index', 'project/index'),
     ('development_process/issues', 'project/issues'),
     ('development_process/proposals', 'project/proposals'),
     ('getting_started/index', 'develop/getting_started/index'),
+    ('getting_started/toolchain_3rd_party_x_compilers', 'develop/toolchains/index'),
+    ('getting_started/toolchain_custom_cmake', 'develop/toolchains/custom_cmake'),
+    ('getting_started/toolchain_other_x_compilers', 'develop/toolchains/other_x_compilers'),
     ('guides/arch/arm_cortex_m', 'hardware/arch/arm_cortex_m'),
     ('guides/arch/index', 'hardware/arch/index'),
     ('guides/arch/x86', 'hardware/arch/x86'),
@@ -158,4 +163,5 @@ REDIRECTS = [
     ('reference/usermode/overview', 'kernel/usermode/overview'),
     ('reference/usermode/syscalls', 'kernel/usermode/syscalls'),
     ('reference/util/index', 'kernel/util/index'),
+    ('samples/net/cloud/google_iot_mqtt', 'samples/net/cloud'),
 ]

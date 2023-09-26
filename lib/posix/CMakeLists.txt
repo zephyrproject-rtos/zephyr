@@ -1,10 +1,29 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
+
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/posix/time.h
+)
 
 zephyr_interface_library_named(posix_subsys)
 
 if(CONFIG_POSIX_API)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
+endif()
+
+if(CONFIG_POSIX_SIGNAL)
+  set(STRSIGNAL_TABLE_H ${GEN_DIR}/posix/strsignal_table.h)
+
+  add_custom_command(
+    OUTPUT ${STRSIGNAL_TABLE_H}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_strsignal_table.py
+    -i ${ZEPHYR_BASE}/include/zephyr/posix/signal.h
+    -o ${STRSIGNAL_TABLE_H}
+    DEPENDS ${ZEPHYR_BASE}/include/zephyr/posix/signal.h
+  )
 endif()
 
 if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK OR
@@ -16,25 +35,28 @@ if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK OR
 endif()
 
 zephyr_library()
+add_subdirectory_ifdef(CONFIG_GETOPT getopt)
+zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
+zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_common.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_cond.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_mutex.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_barrier.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_sched.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK clock.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK nanosleep.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK sleep.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK timer.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_rwlock.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_key.c)
-zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
-zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
-zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
-add_subdirectory_ifdef(CONFIG_GETOPT getopt)
+zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNAL signal.c ${STRSIGNAL_TABLE_H})
+zephyr_library_sources_ifdef(CONFIG_POSIX_UNAME uname.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC _common.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC barrier.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC cond.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC key.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC mutex.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC rwlock.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC sched.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
+zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC spinlock.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

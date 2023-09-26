@@ -938,6 +938,7 @@ static int mcp2515_init(const struct device *dev)
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
 	struct can_timing timing;
+	k_tid_t tid;
 	int ret;
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
@@ -963,7 +964,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	/* Initialize interrupt handling  */
-	if (!device_is_ready(dev_cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
 		LOG_ERR("Interrupt GPIO port not ready");
 		return -ENODEV;
 	}
@@ -986,11 +987,12 @@ static int mcp2515_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	k_thread_create(&dev_data->int_thread, dev_data->int_thread_stack,
-			dev_cfg->int_thread_stack_size,
-			(k_thread_entry_t) mcp2515_int_thread, (void *)dev,
-			NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
-			0, K_NO_WAIT);
+	tid = k_thread_create(&dev_data->int_thread, dev_data->int_thread_stack,
+			      dev_cfg->int_thread_stack_size,
+			      (k_thread_entry_t) mcp2515_int_thread, (void *)dev,
+			      NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
+			      0, K_NO_WAIT);
+	(void)k_thread_name_set(tid, "mcp2515");
 
 	(void)memset(dev_data->rx_cb, 0, sizeof(dev_data->rx_cb));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
@@ -1055,8 +1057,8 @@ static int mcp2515_init(const struct device *dev)
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &mcp2515_init, NULL, &mcp2515_data_##inst,                     \
-			      &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,       \
-			      &can_api_funcs);
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                 \
+				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
+				  &can_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)

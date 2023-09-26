@@ -1,0 +1,62 @@
+# NXP S32K MCUs family
+
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NXP S32K MCUs family SoC Selection"
+	depends on SOC_SERIES_S32K3_M7
+
+config SOC_S32K344_M7
+	bool "SOC_S32K_M7"
+	select HAS_NXP_S32_HAL
+
+endchoice
+
+if SOC_SERIES_S32K3_M7
+
+config SOC_PART_NUMBER_S32K344
+	bool
+
+config SOC_PART_NUMBER_S32K3
+	string
+	default "S32K344" if SOC_PART_NUMBER_S32K344
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config IVT_HEADER_OFFSET
+	hex
+	depends on XIP
+	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,ivt_header))
+	help
+	  The offset address from flash base address for ivt header
+
+config IVT_HEADER_SIZE
+	hex
+	depends on XIP
+	default $(dt_node_reg_size_hex,$(dt_nodelabel_path,ivt_header))
+	help
+	  Size of ivt header region
+
+config NXP_S32_PMC_LMEN
+	bool "Last Mile regulator"
+	default y if CLOCK_CONTROL
+	help
+	  Enables the Last Mile regulator, which regulates an external 1.5V
+	  voltage on V15 down to the core and logic supply (V11 power domain),
+	  which is typically 1.1V.
+	  When enabling PLL as system clock, the PMC last mile regulator should
+	  be enabled.
+
+config NXP_S32_PMC_LMBCTLEN
+	bool "External BCTL regulator for V15"
+	depends on NXP_S32_PMC_LMEN
+	help
+	  This option must be selected if an external BJT between VDD_HV_A and
+	  V15 is used on the PCB. The base of this BJT must be connected to the
+	  VRC_CTRL pin and is controlled by the PMC to regulate a voltage of
+	  1.5V on V15 pin.
+
+endif

@@ -1039,7 +1039,7 @@ static int read_int(struct lwm2m_input_context *in, int64_t *value, bool accept_
 		c = *(buf + i);
 		if (c == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (isdigit(c)) {
+		} else if (isdigit(c) != 0) {
 			*value = *value * 10 + (c - '0');
 		} else {
 			/* anything else stop reading */
@@ -1132,7 +1132,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	while (*(json_buf + len) && len < value_length) {
 		tmp = *(json_buf + len);
 
-		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) || isdigit(tmp)) {
+		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) || isdigit(tmp) != 0) {
 			len++;
 
 			/* Copy only if it fits into provided buffer - we won't

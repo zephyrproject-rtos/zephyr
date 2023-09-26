@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
- * Copyright (c) 2017 Justin Watson
- * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/irq.h>
 
 /**
  * @brief Setup various clock on SoC at boot time.
@@ -182,22 +179,8 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 }
 
-/**
- * @brief Perform basic hardware initialization at boot.
- *
- * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
- */
-static int atmel_sam4e_init(const struct device *arg)
+void z_arm_platform_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
 	 * (MCK) frequency. Look at table 44.73 in the SAM4E datasheet.
@@ -210,16 +193,4 @@ static int atmel_sam4e_init(const struct device *arg)
 
 	/* Setup system clocks. */
 	clock_init();
-
-	/*
-	 * Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise.
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(atmel_sam4e_init, PRE_KERNEL_1, 0);

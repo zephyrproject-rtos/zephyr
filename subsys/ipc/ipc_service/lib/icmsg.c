@@ -10,19 +10,32 @@
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/spsc_pbuf.h>
+#include <zephyr/init.h>
 
-#define RX_BUF_SIZE	CONFIG_IPC_SERVICE_ICMSG_CB_BUF_SIZE
-#define BOND_NOTIFY_REPEAT_TO K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
+#define BOND_NOTIFY_REPEAT_TO	K_MSEC(CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS)
+#define SHMEM_ACCESS_TO		K_MSEC(CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_TO_MS)
 
-#define RX_BUFFER_RELEASED	0
-#define RX_BUFFER_HELD		1
-#define SEND_BUFFER_UNUSED	0
-#define SEND_BUFFER_RESERVED	1
+enum rx_buffer_state {
+	RX_BUFFER_STATE_RELEASED,
+	RX_BUFFER_STATE_RELEASING,
+	RX_BUFFER_STATE_HELD
+};
+
+enum tx_buffer_state {
+	TX_BUFFER_STATE_UNUSED,
+	TX_BUFFER_STATE_RESERVED
+};
 
 static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 				0x30, 0x72, 0x6e, 0x33, 0x6c, 0x69, 0x34};
-BUILD_ASSERT(sizeof(magic) <= RX_BUF_SIZE);
-BUILD_ASSERT(RX_BUF_SIZE <= UINT16_MAX);
+
+#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
+static K_THREAD_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
+static struct k_work_q icmsg_workq;
+static struct k_work_q *const workq = &icmsg_workq;
+#else
+static struct k_work_q *const workq = &k_sys_work_q;
+#endif
 
 static int mbox_deinit(const struct icmsg_config_t *conf,
 		       struct icmsg_data_t *dev_data)
@@ -58,7 +71,7 @@ static void notify_process(struct k_work *item)
 	if (state != ICMSG_STATE_READY) {
 		int ret;
 
-		ret = k_work_reschedule(dwork, BOND_NOTIFY_REPEAT_TO);
+		ret = k_work_reschedule_for_queue(workq, dwork, BOND_NOTIFY_REPEAT_TO);
 		__ASSERT_NO_MSG(ret >= 0);
 		(void)ret;
 	}
@@ -69,37 +82,59 @@ static bool is_endpoint_ready(struct icmsg_data_t *dev_data)
 	return atomic_get(&dev_data->state) == ICMSG_STATE_READY;
 }
 
-static bool is_send_buffer_reserved(struct icmsg_data_t *dev_data)
+static bool is_tx_buffer_reserved(struct icmsg_data_t *dev_data)
 {
-	return atomic_get(&dev_data->send_buffer_reserved) ==
-			SEND_BUFFER_RESERVED;
+	return atomic_get(&dev_data->tx_buffer_state) ==
+			TX_BUFFER_STATE_RESERVED;
 }
 
-static int reserve_send_buffer_if_unused(struct icmsg_data_t *dev_data)
+static int reserve_tx_buffer_if_unused(struct icmsg_data_t *dev_data)
 {
-	bool was_unused;
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	int ret = k_mutex_lock(&dev_data->tx_lock, SHMEM_ACCESS_TO);
 
-	was_unused = atomic_cas(&dev_data->send_buffer_reserved,
-				  SEND_BUFFER_UNUSED, SEND_BUFFER_RESERVED);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+	bool was_unused = atomic_cas(&dev_data->tx_buffer_state,
+				  TX_BUFFER_STATE_UNUSED, TX_BUFFER_STATE_RESERVED);
 
 	return was_unused ? 0 : -EALREADY;
 }
 
-static int release_send_buffer(struct icmsg_data_t *dev_data)
+static int release_tx_buffer(struct icmsg_data_t *dev_data)
 {
-	bool was_reserved;
+	bool was_reserved = atomic_cas(&dev_data->tx_buffer_state,
+					TX_BUFFER_STATE_RESERVED, TX_BUFFER_STATE_UNUSED);
 
-	was_reserved = atomic_cas(&dev_data->send_buffer_reserved,
-				  SEND_BUFFER_RESERVED, SEND_BUFFER_UNUSED);
-	return was_reserved ? 0 : -EALREADY;
+	if (!was_reserved) {
+		return -EALREADY;
+	}
+
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	return k_mutex_unlock(&dev_data->tx_lock);
+#else
+	return 0;
+#endif
 }
 
 static bool is_rx_buffer_free(struct icmsg_data_t *dev_data)
 {
 #ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-	return atomic_get(&dev_data->rx_buffer_held) == RX_BUFFER_RELEASED;
+	return atomic_get(&dev_data->rx_buffer_state) == RX_BUFFER_STATE_RELEASED;
 #else
 	return true;
+#endif
+}
+
+static bool is_rx_buffer_held(struct icmsg_data_t *dev_data)
+{
+#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+	return atomic_get(&dev_data->rx_buffer_state) == RX_BUFFER_STATE_HELD;
+#else
+	return false;
 #endif
 }
 
@@ -112,7 +147,7 @@ static bool is_rx_data_available(struct icmsg_data_t *dev_data)
 
 static void submit_mbox_work(struct icmsg_data_t *dev_data)
 {
-	if (k_work_submit(&dev_data->mbox_work) < 0) {
+	if (k_work_submit_to_queue(workq, &dev_data->mbox_work) < 0) {
 		/* The mbox processing work is never canceled.
 		 * The negative error code should never be seen.
 		 */
@@ -144,33 +179,48 @@ static void submit_work_if_buffer_free_and_data_available(
 
 static void mbox_callback_process(struct k_work *item)
 {
+	char *rx_buffer;
 	struct icmsg_data_t *dev_data = CONTAINER_OF(item, struct icmsg_data_t, mbox_work);
 
 	atomic_t state = atomic_get(&dev_data->state);
-	int len = spsc_pbuf_read(dev_data->rx_ib, dev_data->rx_buffer,
-				 RX_BUF_SIZE);
 
-	__ASSERT_NO_MSG(len <= RX_BUF_SIZE);
+	uint16_t len = spsc_pbuf_claim(dev_data->rx_ib, &rx_buffer);
 
-	if (len == -EAGAIN) {
-		__ASSERT_NO_MSG(false);
-		submit_mbox_work(dev_data);
-		return;
-	} else if (len <= 0) {
+	if (len == 0) {
+		/* Unlikely, no data in buffer. */
 		return;
 	}
 
 	if (state == ICMSG_STATE_READY) {
 		if (dev_data->cb->received) {
-			dev_data->cb->received(dev_data->rx_buffer, len,
+#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+			dev_data->rx_buffer = rx_buffer;
+			dev_data->rx_len = len;
+#endif
+
+			dev_data->cb->received(rx_buffer, len,
 					       dev_data->ctx);
+
+			/* Release Rx buffer here only in case when user did not request
+			 * to hold it.
+			 */
+			if (!is_rx_buffer_held(dev_data)) {
+				spsc_pbuf_free(dev_data->rx_ib, len);
+
+#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+				dev_data->rx_buffer = NULL;
+				dev_data->rx_len = 0;
+#endif
+			}
 		}
 	} else {
-		int ret;
-
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
-		if (len != sizeof(magic) ||
-		    memcmp(magic, dev_data->rx_buffer, len)) {
+
+		bool endpoint_invalid = (len != sizeof(magic) || memcmp(magic, rx_buffer, len));
+
+		spsc_pbuf_free(dev_data->rx_ib, len);
+
+		if (endpoint_invalid) {
 			__ASSERT_NO_MSG(false);
 			return;
 		}
@@ -180,9 +230,6 @@ static void mbox_callback_process(struct k_work *item)
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
-		ret = k_work_cancel_delayable(&dev_data->notify_work);
-		__ASSERT_NO_MSG(ret >= 0);
-		(void)ret;
 	}
 
 	submit_work_if_buffer_free_and_data_available(dev_data);
@@ -192,7 +239,6 @@ static void mbox_callback(const struct device *instance, uint32_t channel,
 			  void *user_data, struct mbox_msg *msg_data)
 {
 	struct icmsg_data_t *dev_data = user_data;
-
 	submit_work_if_buffer_free(dev_data);
 }
 
@@ -212,24 +258,11 @@ static int mbox_init(const struct icmsg_config_t *conf,
 	return mbox_set_enabled(&conf->mbox_rx, 1);
 }
 
-int icmsg_init(const struct icmsg_config_t *conf,
-	       struct icmsg_data_t *dev_data)
-{
-	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
-
-	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
-					 conf->tx_shm_size,
-					 SPSC_PBUF_CACHE);
-	dev_data->rx_ib = (void *)conf->rx_shm_addr;
-
-	return 0;
-}
-
 int icmsg_open(const struct icmsg_config_t *conf,
 	       struct icmsg_data_t *dev_data,
 	       const struct ipc_service_cb *cb, void *ctx)
 {
-	int ret;
+	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
 
 	if (!atomic_cas(&dev_data->state, ICMSG_STATE_OFF, ICMSG_STATE_BUSY)) {
 		/* Already opened. */
@@ -240,12 +273,17 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	dev_data->ctx = ctx;
 	dev_data->cfg = conf;
 
-	ret = mbox_init(conf, dev_data);
-	if (ret) {
-		return ret;
-	}
+#ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
+	k_mutex_init(&dev_data->tx_lock);
+#endif
 
-	ret = spsc_pbuf_write(dev_data->tx_ib, magic, sizeof(magic));
+	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
+					 conf->tx_shm_size,
+					 SPSC_PBUF_CACHE);
+	dev_data->rx_ib = (void *)conf->rx_shm_addr;
+
+	int ret = spsc_pbuf_write(dev_data->tx_ib, magic, sizeof(magic));
+
 	if (ret < 0) {
 		__ASSERT_NO_MSG(false);
 		return ret;
@@ -256,7 +294,12 @@ int icmsg_open(const struct icmsg_config_t *conf,
 		return ret;
 	}
 
-	ret = k_work_schedule(&dev_data->notify_work, K_NO_WAIT);
+	ret = mbox_init(conf, dev_data);
+	if (ret) {
+		return ret;
+	}
+
+	ret = k_work_schedule_for_queue(workq, &dev_data->notify_work, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -297,13 +340,13 @@ int icmsg_send(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	ret = reserve_send_buffer_if_unused(dev_data);
-	if (ret) {
+	ret = reserve_tx_buffer_if_unused(dev_data);
+	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
 	write_ret = spsc_pbuf_write(dev_data->tx_ib, msg, len);
-	release_ret = release_send_buffer(dev_data);
+	release_ret = release_tx_buffer(dev_data);
 	__ASSERT_NO_MSG(!release_ret);
 
 	if (write_ret < 0) {
@@ -343,14 +386,14 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
 		requested_size = *size;
 	}
 
-	ret = reserve_send_buffer_if_unused(dev_data);
-	if (ret) {
+	ret = reserve_tx_buffer_if_unused(dev_data);
+	if (ret < 0) {
 		return -ENOBUFS;
 	}
 
 	ret = spsc_pbuf_alloc(dev_data->tx_ib, requested_size, &allocated_buf);
 	if (ret < 0) {
-		release_ret = release_send_buffer(dev_data);
+		release_ret = release_tx_buffer(dev_data);
 		__ASSERT_NO_MSG(!release_ret);
 		return ret;
 	}
@@ -374,7 +417,7 @@ int icmsg_get_tx_buffer(const struct icmsg_config_t *conf,
 	/* Allocated smaller buffer than requested.
 	 * Silently stop using the allocated buffer what is allowed by SPSC API
 	 */
-	release_send_buffer(dev_data);
+	release_tx_buffer(dev_data);
 	*size = allocated_len;
 	return -ENOMEM;
 }
@@ -385,7 +428,7 @@ int icmsg_drop_tx_buffer(const struct icmsg_config_t *conf,
 {
 	/* Silently stop using the allocated buffer what is allowed by SPSC API
 	 */
-	return release_send_buffer(dev_data);
+	return release_tx_buffer(dev_data);
 }
 
 int icmsg_send_nocopy(const struct icmsg_config_t *conf,
@@ -404,14 +447,14 @@ int icmsg_send_nocopy(const struct icmsg_config_t *conf,
 		return -ENODATA;
 	}
 
-	if (!is_send_buffer_reserved(dev_data)) {
+	if (!is_tx_buffer_reserved(dev_data)) {
 		return -ENXIO;
 	}
 
 	spsc_pbuf_commit(dev_data->tx_ib, len);
 	sent_bytes = len;
 
-	ret = release_send_buffer(dev_data);
+	ret = release_tx_buffer(dev_data);
 	__ASSERT_NO_MSG(!ret);
 
 	__ASSERT_NO_MSG(conf->mbox_tx.dev != NULL);
@@ -439,8 +482,8 @@ int icmsg_hold_rx_buffer(const struct icmsg_config_t *conf,
 		return -EINVAL;
 	}
 
-	was_released = atomic_cas(&dev_data->rx_buffer_held,
-				  RX_BUFFER_RELEASED, RX_BUFFER_HELD);
+	was_released = atomic_cas(&dev_data->rx_buffer_state,
+				  RX_BUFFER_STATE_RELEASED, RX_BUFFER_STATE_HELD);
 	if (!was_released) {
 		return -EALREADY;
 	}
@@ -462,11 +505,23 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 		return -EINVAL;
 	}
 
-	was_held = atomic_cas(&dev_data->rx_buffer_held,
-			      RX_BUFFER_HELD, RX_BUFFER_RELEASED);
+	/* Do not schedule new packet processing until buffer will be released.
+	 * Protect buffer against being freed multiple times.
+	 */
+	was_held = atomic_cas(&dev_data->rx_buffer_state,
+			      RX_BUFFER_STATE_HELD, RX_BUFFER_STATE_RELEASING);
 	if (!was_held) {
 		return -EALREADY;
 	}
+
+	spsc_pbuf_free(dev_data->rx_ib, dev_data->rx_len);
+
+#if CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
+	dev_data->rx_buffer = NULL;
+	dev_data->rx_len = 0;
+#endif
+
+	atomic_set(&dev_data->rx_buffer_state, RX_BUFFER_STATE_RELEASED);
 
 	submit_work_if_buffer_free_and_data_available(dev_data);
 
@@ -474,18 +529,21 @@ int icmsg_release_rx_buffer(const struct icmsg_config_t *conf,
 }
 #endif /* CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX */
 
-int icmsg_clear_tx_memory(const struct icmsg_config_t *conf)
-{
-	/* Clear spsc_pbuf header and a part of the magic number. */
-	memset((void *)conf->tx_shm_addr, 0, sizeof(struct spsc_pbuf) + sizeof(int));
+#if IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
 
+static int work_q_init(void)
+{
+	struct k_work_queue_config cfg = {
+		.name = "icmsg_workq",
+	};
+
+	k_work_queue_start(&icmsg_workq,
+			    icmsg_stack,
+			    K_KERNEL_STACK_SIZEOF(icmsg_stack),
+			    CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY, &cfg);
 	return 0;
 }
 
-int icmsg_clear_rx_memory(const struct icmsg_config_t *conf)
-{
-	/* Clear spsc_pbuf header and a part of the magic number. */
-	memset((void *)conf->rx_shm_addr, 0, sizeof(struct spsc_pbuf) + sizeof(int));
+SYS_INIT(work_q_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-	return 0;
-}
+#endif

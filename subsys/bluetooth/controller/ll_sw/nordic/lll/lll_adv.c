@@ -8,9 +8,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
-#include <soc.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -89,9 +88,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define PAYLOAD_BASED_FRAG_COUNT \
-	ceiling_fraction(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
-			 PDU_AC_PAYLOAD_SIZE_MAX)
-#define PAYLOAD_FRAG_COUNT MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
+		DIV_ROUND_UP(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+			     PDU_AC_PAYLOAD_SIZE_MAX)
+#define PAYLOAD_FRAG_COUNT \
+		MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
 #define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 #define BT_CTLR_ADV_SYNC_SET CONFIG_BT_CTLR_ADV_SYNC_SET
@@ -99,7 +99,8 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else
-#define PAYLOAD_FRAG_COUNT   1
+#define PAYLOAD_BASED_FRAG_COUNT 1
+#define PAYLOAD_FRAG_COUNT       (PAYLOAD_BASED_FRAG_COUNT)
 #define BT_CTLR_ADV_AUX_SET  0
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif
@@ -113,9 +114,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * extra for double buffers for these is kept as configurable, by increasing
  * CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
  */
-#define PDU_MEM_COUNT_MIN  ((BT_CTLR_ADV_SET * 3) + \
-			    ((BT_CTLR_ADV_AUX_SET + \
-			      BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_COUNT_MIN  (((BT_CTLR_ADV_SET) * 3) + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 /* Maximum advertising PDU buffers to allocate, which is the sum of minimum
@@ -131,9 +133,11 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  *       PDU data is updated more frequently compare to the advertising
  *       interval with random delay included.
  */
-#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
-			   ((1 + CONFIG_BT_CTLR_ADV_DATA_BUF_MAX) * \
-			    PAYLOAD_FRAG_COUNT))
+#define PDU_MEM_COUNT_MAX ((PDU_MEM_COUNT_MIN) + \
+			   ((BT_CTLR_ADV_SYNC_SET) * \
+			    PAYLOAD_FRAG_COUNT) + \
+			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+			    PAYLOAD_BASED_FRAG_COUNT))
 #else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 /* NOTE: When Extended Advertising is supported but no Periodic Advertising
  *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers is
@@ -144,7 +148,7 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  */
 #define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
 			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
-			    PAYLOAD_FRAG_COUNT))
+			    PAYLOAD_BASED_FRAG_COUNT))
 #endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 /* NOTE: When Extended Advertising is not supported then
@@ -158,8 +162,10 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  * each for Extended Advertising and Periodic Advertising times the number of
  * chained fragments that would get returned.
  */
-#define PDU_MEM_FIFO_COUNT (BT_CTLR_ADV_SET + 1 +\
-			    ((BT_CTLR_ADV_AUX_SET + BT_CTLR_ADV_SYNC_SET) * \
+#define PDU_MEM_FIFO_COUNT ((BT_CTLR_ADV_SET) + 1 + \
+			    ((BT_CTLR_ADV_AUX_SET) * \
+			     PAYLOAD_BASED_FRAG_COUNT) + \
+			    ((BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
 
 #define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT_MAX)
@@ -930,6 +936,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct lll_adv *lll;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint32_t ret;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_A(1);
@@ -1028,20 +1035,37 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_ADV_BASE + ull_adv_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_ADV_BASE +
-				   ull_adv_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
+		return -ECANCELED;
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	if (lll->aux) {
+		/* fill in aux ptr in pdu */
+		ull_adv_aux_lll_auxptr_fill(pdu, lll);
+
+		/* NOTE: as first primary channel PDU does not use remainder, the packet
+		 * timer is started one tick in advance to start the radio with
+		 * microsecond precision, hence compensate for the higher start_us value
+		 * captured at radio start of the first primary channel PDU.
+		 */
+		lll->aux->ticks_pri_pdu_offset += 1U;
+	}
+#endif
+
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_A(1);
 

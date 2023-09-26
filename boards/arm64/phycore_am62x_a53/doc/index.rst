@@ -60,44 +60,15 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART0.
 
-U-Boot
-******
+SD Card
+*******
 
-The factory SD card from PHYTEC contains a U-Boot image that does not have
-the cache commands enabled. These commands are required for a successful
-boot of Zephyr. Follow these steps to rebuild U-Boot.
-
-Install U-Boot dependencies:
-https://u-boot.readthedocs.io/en/latest/build/gcc.html#dependencies
-
-Clone the PHYTEC TI fork of U-Boot:
+Download PHYTEC's official `WIC`_ and `bmap`_ files and flash the WIC file with
+bmap-tools on a SD-card.
 
 .. code-block:: console
 
-    git clone https://github.com/phytec/u-boot-phytec-ti.git
-    cd u-boot-phytec-ti
-    git checkout v2021.01_08.03.00.005-phy
-
-Append ``CONFIG_CMD_CACHE=y`` to "configs/phycore_am62x_a53_defconfig"
-
-Build U-Boot:
-
-.. code-block:: console
-
-    export CROSS_COMPILE=aarch64-linux-gnu-
-    make phycore_am62x_a53_defconfig
-    make all
-
-Overwrite ``u-boot.img`` on the SD card and power on the board.
-
-U-Boot should now have the cache commands available:
-
-.. code-block:: console
-
-    => dcache
-    Data (writethrough) Cache is ON
-    => icache
-    Instruction Cache is ON
+    bmaptool copy phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.xz /dev/sdX
 
 Building
 ********
@@ -124,8 +95,15 @@ Use U-Boot to load and kick zephyr.bin:
 
     fatload mmc 1:1 0x82000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x82000000
 
-References
-==========
+
+..
+  References
 
 .. _PHYTEC website:
    https://www.phytec.com/product/phycore-am62x/
+
+.. _WIC:
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.xz
+
+.. _Bmap:
+   https://download.phytec.de/Software/Linux/BSP-Yocto-AM62x/BSP-Yocto-AM62x-PD23.1.0/images/yogurt/phyboard-lyra-am62xx-2/phytec-qt5demo-image-phyboard-lyra-am62xx-2.wic.bmap

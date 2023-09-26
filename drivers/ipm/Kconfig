@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig IPM
-	bool "IPM drivers"
+	bool "Inter-Processor Mailbox (IPM) drivers"
 	help
 	  Include interrupt-based inter-processor mailboxes
 	  drivers in system configuration
@@ -38,10 +38,30 @@ config ESP32_SOFT_IPM
 	help
 	  Interprocessor driver for ESP32 when using AMP.
 
+config IPM_IVSHMEM
+	bool "IPM driver based on IVSHMEM-Doorbell"
+	default y
+	depends on DT_HAS_LINARO_IVSHMEM_IPM_ENABLED
+	depends on IVSHMEM
+	depends on IVSHMEM_DOORBELL
+	help
+	  Interprocessor driver using IVSHMEM Doorbell mechanism.
+
+config XLNX_IPI
+	bool "AMD-Xilinx IPM driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_IPI_MAILBOX_ENABLED
+	help
+	  Inter Processor Interrupt driver for AMD-Xilinx
+	  platforms such as ZynqMP Ultrascale+.
+
 source "drivers/ipm/Kconfig.nrfx"
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.stm32"
 source "drivers/ipm/Kconfig.intel_adsp"
+source "drivers/ipm/Kconfig.ivshmem"
+source "drivers/ipm/Kconfig.sedi"
+
 
 module = IPM
 module-str = ipm

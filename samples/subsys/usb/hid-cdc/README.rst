@@ -1,7 +1,8 @@
-.. _usb_hid-cdc:
+.. zephyr:code-sample:: usb-hid-cdc
+   :name: USB HID and CDC ACM
+   :relevant-api: _usb_device_core_api usb_hid_class input_interface
 
-USB HID CDC ACM Application
-###########################
+   Expose multiple USB HID and CDC ACM instances.
 
 Overview
 ********

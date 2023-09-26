@@ -10,3 +10,4 @@ supported:
   - arduino_i2c
   - i2c
   - pwm
+vendor: openisa

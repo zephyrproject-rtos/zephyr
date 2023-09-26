@@ -18,11 +18,12 @@ config BOARD
 
 # When building MCUBoot, MCUBoot itself will select USE_DT_CODE_PARTITION
 # which will make it link into the correct partition specified in DTS file,
-# so no override is necessary.
+# the offset is applied here so that the full partition size can be used when
+# the bootloader Kconfig option has been disabled.
 
 config FLASH_LOAD_OFFSET
 	default 0x1000
-	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
+	depends on BOARD_HAS_NRF5_BOOTLOADER && (MCUBOOT || !USE_DT_CODE_PARTITION)
 
 if BOARD_SERIAL_BACKEND_CDC_ACM
 
@@ -30,15 +31,19 @@ config USB_DEVICE_STACK
 	default y
 
 config USB_CDC_ACM
-	default y
+	default SERIAL
 
 config UART_CONSOLE
 	default CONSOLE
 
 config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y if !MCUBOOT
+	default y if !MCUBOOT && CONSOLE
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
 	default SHELL
 
 config USB_DEVICE_REMOTE_WAKEUP

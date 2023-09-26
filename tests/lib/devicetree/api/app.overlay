@@ -19,6 +19,11 @@
 		ztest,gpio = &test_nodelabel;
 	};
 
+	zephyr,user {
+		ph = <&test_gpio_1>;
+		string = "foo";
+	};
+
 	test {
 		#address-cells = < 0x1 >;
 		#size-cells = < 0x1 >;
@@ -100,13 +105,19 @@
 		};
 
 		/*
-		 * This should be the only node with this
+		 * disabled/reserved should be the only nodes with their
 		 * compatible in the tree.
 		 */
 		disabled-node@0 {
 			compatible = "vnd,disabled-compat";
 			reg = < 0x0 0x1000 >;
 			status = "disabled";
+		};
+
+		reserved-node@0 {
+			compatible = "vnd,reserved-node";
+			reg = < 0x0 0x1000 >;
+			status = "reserved";
 		};
 
 		disabled_gpio: gpio@0 {
@@ -117,6 +128,16 @@
 			#gpio-cells = < 0x2 >;
 			label = "TEST_GPIO_0";
 			status = "disabled";
+		};
+
+		reserved_gpio: gpio@1 {
+			compatible = "vnd,gpio-device";
+			gpio-controller;
+			reg = < 0x1 0x1000 >;
+			interrupts = <3 1>;
+			#gpio-cells = < 0x2 >;
+			label = "TEST_GPIO_1";
+			status = "reserved";
 		};
 
 		test_no_status: intc_no_status@0 {
@@ -535,6 +556,33 @@
 				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
 				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
+
+			test_ranges_empty: empty@2 {
+				reg = <0 2 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges;
+			};
+		};
+
+		device-with-props-0 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <1>;
+			bar = <2>;
+		};
+
+		device-with-props-1 {
+			compatible = "vnd,device-with-props";
+			status = "okay";
+			foo = <2>;
+		};
+
+		device-with-props-2 {
+			compatible = "vnd,device-with-props";
+			status = "disabled";
+			baz = <1>;
 		};
 
 		test_string_token_0: string-token-0 {
@@ -595,6 +643,58 @@
 		test_stra_unquoted_t: string-array-unquoted-t {
 			compatible = "vnd,string-array-unquoted";
 			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
+
+		test-mtd@ffeeddcc {
+			reg = < 0x0 0x1000 >;
+			#address-cells = < 1 >;
+			#size-cells = < 1 >;
+
+			flash@20000000 {
+				compatible = "soc-nv-flash";
+				reg = < 0x20000000 0x100 >;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = < 1 >;
+					#size-cells = < 1 >;
+
+					partition@0 {
+						reg = < 0x0 0xc0 >;
+						label = "test-partition-0";
+					};
+					partition@c0 {
+						reg = < 0xc0 0x40 >;
+						label = "test-partition-1";
+					};
+				};
+			};
+		};
+
+		test-mtd@33221100 {
+			reg = < 0x33221100 0x1000 >;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = < 1 >;
+				#size-cells = < 1 >;
+
+				partition@6ff80 {
+					reg = < 0x6ff80 0x80 >;
+					label = "test-partition-2";
+				};
+			};
+		};
+	};
+
+	test_64 {
+		#address-cells = < 2 >;
+		#size-cells = < 0 >;
+
+		test_reg_64: reg-holder-64@ffffffff11223344 {
+			compatible = "vnd,reg-holder-64";
+			reg = < 0xffffffff 0x11223344>;
+			status = "okay";
+			reg-names = "test_name";
 		};
 	};
 };

@@ -4,17 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
-
-#include <zephyr/dt-bindings/i2c/i2c.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
-#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
-
 #include "mec172xnsz.dtsi"
-#include "mec172x/mec172x-vw-routing.dtsi"
-#include "mec172x/mec172xnsz-pinctrl.dtsi"
-#include "mec172x/mec172xnlj-pinctrl.dtsi"
 
 / {
 
@@ -27,19 +17,21 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm10: pwm@400058A0 {
+		pwm10: pwm@400058a0 {
 			compatible = "microchip,xec-pwm";
-			reg = <0x400058A0 0x20>;
+			reg = <0x400058a0 0x20>;
 			pcrs = <4 0>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 
-		pwm11: pwm@400058B0 {
+		pwm11: pwm@400058b0 {
 			compatible = "microchip,xec-pwm";
-			reg = <0x400058B0 0x20>;
+			reg = <0x400058b0 0x20>;
 			pcrs = <4 1>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+	};
+};
 

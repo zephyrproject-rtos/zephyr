@@ -975,8 +975,6 @@ static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
 	   *low_time = &lcko->div.low_time;
 
 	if (lcko->frac.frac == 0) {
-		int ret;
-
 		lcko->ts_config.duty = *duty;
 		LOG_DBG("CLKOUT%d: setting duty: %u/%u",
 			lcko->id, duty->num, duty->den);
@@ -1308,16 +1306,16 @@ static int litex_clk_calc_all_params(void)
 		ldev->ts_g_config.div = div;
 		for (mul = ldev->clkfbout.max; mul >= ldev->clkfbout.min;
 								 mul--) {
-			int bellow, above, all_valid = true;
+			int below, above, all_valid = true;
 
 			vco_freq = (uint64_t)ldev->sys_clk_freq * (uint64_t)mul;
 			vco_freq /= div;
-			bellow = vco_freq < (ldev->vco.min
+			below = vco_freq < (ldev->vco.min
 					     * (1 + ldev->vco_margin));
 			above = vco_freq > (ldev->vco.max
 					    * (1 - ldev->vco_margin));
 
-			if (!bellow && !above) {
+			if (!below && !above) {
 				all_valid = litex_clk_calc_all_clkout_params
 								     (vco_freq);
 				if (all_valid) {

@@ -36,6 +36,16 @@
 			};
 		};
 
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <47 0>;
+			status = "disabled";
+		};
+
 		eeprom: eeprom@8080000{
 			reg = <0x08080000 DT_SIZE_K(8)>;
 		};

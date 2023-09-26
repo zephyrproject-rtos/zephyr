@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, NXP
+ * Copyright 2018-2023, NXP
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,8 +12,9 @@
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
 #include <soc.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/pinctrl.h>
 #include "usb.h"
 #include "usb_device.h"
 #include "usb_device_config.h"
@@ -69,8 +70,14 @@ static void usb_isr_handler(void);
 #define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
 #define CONTROLLER_ID		(DT_INST_ENUM_IDX(0, usb_controller_index))
 
-/* The minimum value is 1 */
-#define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
+/* We do not need a buffer for the write side on platforms that have USB RAM.
+ * The SDK driver will copy the data buffer to be sent to USB RAM.
+ */
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
+#define EP_BUF_NUMOF_BLOCKS	(NUM_OF_EP_MAX / 2)
+#else
+#define EP_BUF_NUMOF_BLOCKS	NUM_OF_EP_MAX
+#endif
 
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
@@ -133,10 +140,7 @@ int usb_dc_reset(void)
 	if (dev_state.dev_struct.controllerHandle != NULL) {
 		dev_state.dev_struct.controllerInterface->deviceControl(
 						dev_state.dev_struct.controllerHandle,
-						kUSB_DeviceControlStop, NULL);
-		dev_state.dev_struct.controllerInterface->deviceDeinit(
-						dev_state.dev_struct.controllerHandle);
-		dev_state.dev_struct.controllerHandle = NULL;
+						kUSB_DeviceControlSetDefaultStatus, NULL);
 	}
 
 	return 0;
@@ -268,8 +272,10 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		LOG_WRN("Failed to un-initialize endpoint (status=%d)", (int)status);
 	}
 
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	/* Allocate buffers used during read operation */
 	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
+#endif
 		struct k_mem_block *block;
 
 		block = &(eps->block);
@@ -285,7 +291,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		}
 
 		memset(block->data, 0, cfg->ep_mps);
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	}
+#endif
 
 	dev_state.eps[ep_abs_idx].ep_mps = cfg->ep_mps;
 	status = dev_state.dev_struct.controllerInterface->deviceControl(
@@ -459,12 +467,14 @@ int usb_dc_ep_disable(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	status = dev_state.dev_struct.controllerInterface->deviceCancel(
-						  dev_state.dev_struct.controllerHandle,
-						  ep);
-	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to disable ep 0x%02x", ep);
-		return -EIO;
+	if (dev_state.dev_struct.controllerHandle != NULL) {
+		status = dev_state.dev_struct.controllerInterface->deviceCancel(
+							dev_state.dev_struct.controllerHandle,
+							ep);
+		if (kStatus_USB_Success != status) {
+			LOG_ERR("Failed to disable ep 0x%02x", ep);
+			return -EIO;
+		}
 	}
 
 	dev_state.eps[ep_abs_idx].ep_enabled = false;
@@ -491,6 +501,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		    const uint32_t data_len, uint32_t *const ret_bytes)
 {
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
+	uint8_t *buffer;
+	uint32_t len_to_send = data_len;
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
@@ -503,19 +515,37 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_HAS_MCUX_CACHE)
-	DCACHE_CleanByRange((uint32_t)data, data_len);
+	/* Copy the data for SoC's that do not have a USB RAM
+	 * as the SDK driver will copy the data into USB RAM,
+	 * if available.
+	 */
+#ifndef CONFIG_USB_DC_NXP_LPCIP3511
+	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
+
+	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
+		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
+	}
+
+	for (uint32_t n = 0; n < len_to_send; n++) {
+		buffer[n] = data[n];
+	}
+#else
+	buffer = (uint8_t *)data;
+#endif
+
+#if defined(CONFIG_HAS_MCUX_CACHE) && !defined(EP_BUF_NONCACHED)
+	DCACHE_CleanByRange((uint32_t)buffer, len_to_send);
 #endif
 	status = dev_state.dev_struct.controllerInterface->deviceSend(
 						dev_state.dev_struct.controllerHandle,
-						ep, (uint8_t *)data, data_len);
+						ep, buffer, len_to_send);
 	if (kStatus_USB_Success != status) {
 		LOG_ERR("Failed to fill ep 0x%02x buffer", ep);
 		return -EIO;
 	}
 
 	if (ret_bytes) {
-		*ret_bytes = data_len;
+		*ret_bytes = len_to_send;
 	}
 
 	return 0;
@@ -883,15 +913,23 @@ static void usb_isr_handler(void)
 #endif
 }
 
-static int usb_mcux_init(const struct device *dev)
+static int usb_mcux_init(void)
 {
-	ARG_UNUSED(dev);
+	int err;
 
 	k_thread_create(&dev_state.thread, dev_state.thread_stack,
 			CONFIG_USB_MCUX_THREAD_STACK_SIZE,
 			usb_mcux_thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&dev_state.thread, "usb_mcux");
+
+	PINCTRL_DT_INST_DEFINE(0);
+
+	/* Apply pinctrl state */
+	err = pinctrl_apply_state(PINCTRL_DT_INST_DEV_CONFIG_GET(0), PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	return 0;
 }

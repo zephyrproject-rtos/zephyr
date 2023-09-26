@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <soc.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
@@ -482,7 +481,7 @@ static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
-			 DEVICE_DT_GET(DT_INST_PHANDLE(n, mdio)))	 \
+			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
 };
 
 #define PHY_MII_DEVICE(n)						\

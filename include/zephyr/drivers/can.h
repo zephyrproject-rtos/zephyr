@@ -182,7 +182,7 @@ struct can_frame {
 	/** The frame payload data. */
 	union {
 		uint8_t data[CAN_MAX_DLEN];
-		uint32_t data_32[ceiling_fraction(CAN_MAX_DLEN, sizeof(uint32_t))];
+		uint32_t data_32[DIV_ROUND_UP(CAN_MAX_DLEN, sizeof(uint32_t))];
 	};
 };
 
@@ -233,6 +233,11 @@ struct can_bus_err_cnt {
 	/** Value of the CAN controller receive error counter. */
 	uint8_t rx_err_cnt;
 };
+
+/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
+ * be changed by the timing calculation.
+ */
+#define CAN_SJW_NO_CHANGE 0
 
 /**
  * @brief CAN bus timing structure
@@ -613,7 +618,11 @@ struct can_device_state {
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 7,	\
 			   STATS_NAME_INIT_PARMS(can));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
-		return init_fn(dev);					\
+		if (init_fn != NULL) {					\
+			return init_fn(dev);				\
+		}							\
+									\
+		return 0;						\
 	}
 
 /** @endcond */
@@ -710,6 +719,7 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  * @param dev Pointer to the device structure for the driver instance.
  * @param[out] max_bitrate Maximum supported bitrate in bits/s
  *
+ * @retval 0 If successful.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
@@ -868,24 +878,11 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @retval 0 If successful.
  * @retval -EBUSY if the CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
+ * @retval -ENOTSUP if the timing parameters are not supported by the driver.
  * @retval -ENOSYS if CAN-FD support is not implemented by the driver.
  */
 __syscall int can_set_timing_data(const struct device *dev,
 				  const struct can_timing *timing_data);
-
-#ifdef CONFIG_CAN_FD_MODE
-static inline int z_impl_can_set_timing_data(const struct device *dev,
-					     const struct can_timing *timing_data)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	if (api->set_timing_data == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_timing_data(dev, timing_data);
-}
-#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Set the bitrate for the data phase of the CAN-FD controller
@@ -936,11 +933,6 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
 int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 		       uint32_t bitrate);
 
-/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
- * be changed by the timing calculation.
- */
-#define CAN_SJW_NO_CHANGE 0
-
 /**
  * @brief Configure the bus timing of a CAN controller.
  *
@@ -953,18 +945,11 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  *
  * @retval 0 If successful.
  * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval -ENOTSUP if the timing parameters are not supported by the driver.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
 			     const struct can_timing *timing);
-
-static inline int z_impl_can_set_timing(const struct device *dev,
-					const struct can_timing *timing)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-
-	return api->set_timing(dev, timing);
-}
 
 /**
  * @brief Get the supported modes of the CAN controller
@@ -1375,7 +1360,7 @@ static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
 	static const uint8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
 					    16, 20, 24, 32, 48, 64};
 
-	return dlc > 0x0F ? 64 : dlc_table[dlc];
+	return dlc_table[MIN(dlc, ARRAY_SIZE(dlc_table) - 1)];
 }
 
 /**

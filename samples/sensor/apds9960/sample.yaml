@@ -7,7 +7,9 @@ tests:
     integration_platforms:
       - reel_board
     tags: sensors
-    depends_on: i2c gpio
+    depends_on:
+      - i2c
+      - gpio
     harness_config:
       type: multi_line
       ordered: true
@@ -21,7 +23,9 @@ tests:
     integration_platforms:
       - reel_board
     tags: sensors
-    depends_on: i2c gpio
+    depends_on:
+      - i2c
+      - gpio
     extra_configs:
       - CONFIG_APDS9960_TRIGGER_GLOBAL_THREAD=y
     harness_config:

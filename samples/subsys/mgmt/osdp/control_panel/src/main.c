@@ -65,7 +65,7 @@ int event_handler(void *unused, int pd, struct osdp_event *e)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int ret, led_state;
 	uint32_t cnt = 0;
@@ -76,15 +76,15 @@ void main(void)
 		.output.timer_count = 10,  /* Timer: 10 * 100ms = 1 second */
 	};
 
-	if (!device_is_ready(led0.port)) {
+	if (!gpio_is_ready_dt(&led0)) {
 		printk("Failed to get LED GPIO port %s\n", led0.port->name);
-		return;
+		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
 		printk("Failed to configure gpio pin\n");
-		return;
+		return 0;
 	}
 
 	osdp_cp_set_event_callback(event_handler, NULL);
@@ -102,4 +102,5 @@ void main(void)
 		k_msleep(SLEEP_TIME_MS);
 		cnt++;
 	}
+	return 0;
 }

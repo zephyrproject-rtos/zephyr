@@ -41,7 +41,7 @@
 	};
 
 	gic: interrupt-controller@fffc1000 {
-		compatible = "arm,gic";
+		compatible = "arm,gic-v2", "arm,gic";
 		reg = <0xfffc1000 0x1000>,
 		      <0xfffc2000 0x2000>;
 		interrupt-controller;
@@ -108,6 +108,53 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
+		status = "disabled";
+	};
+
+	sip_smc: smc{
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		status = "disabled";
+		zephyr,num-clients = <2>;
+	};
+
+	timer0: timer@ffc03000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffc03000 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer1: timer@ffc03100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffc03100 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer2: timer@ffd00000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffd00000 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer3: timer@ffd00100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffd00100 0x100>;
+		clock-frequency = < 100000000 >;
 		status = "disabled";
 	};
 };

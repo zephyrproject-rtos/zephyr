@@ -4,18 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_op_agg_srv Opcodes Aggregator Server model
- * @{
- * @brief API for the Opcodes Aggregator Server model.
- */
 #ifndef BT_MESH_OP_AGG_SRV_H__
 #define BT_MESH_OP_AGG_SRV_H__
+
+#include <zephyr/bluetooth/mesh.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_op_agg_srv Opcodes Aggregator Server model
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /**
  *
@@ -36,12 +38,12 @@ extern const struct bt_mesh_model_op _bt_mesh_op_agg_srv_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_op_agg_srv_cb;
 /** @endcond */
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* BT_MESH_OP_AGG_SRV_H__ */
-
-/**
- * @}
- */

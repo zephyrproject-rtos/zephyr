@@ -1,7 +1,7 @@
-.. _gsm-modem-sample:
+.. zephyr:code-sample:: gsm-modem
+   :name: Generic GSM modem
 
-Generic GSM Modem Sample
-########################
+   Use a GSM modem to connect to a GPRS network.
 
 Overview
 ********

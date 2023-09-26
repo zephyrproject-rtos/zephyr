@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_nct38xx.h>
+#include <zephyr/drivers/mfd/nct38xx.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -16,6 +17,13 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);
+
+struct nct38xx_mfd {
+	/* Lock for NCT38xx register access */
+	struct k_sem *lock;
+	/* I2C device used for register access */
+	const struct i2c_dt_spec *i2c_dev;
+};
 
 /* Driver config */
 struct nct38xx_alert_config {
@@ -35,6 +43,8 @@ struct nct38xx_alert_data {
 	struct gpio_callback gpio_cb;
 	/* Alert worker */
 	struct k_work alert_worker;
+	/* Lock for NCT38xx register access */
+	struct nct38xx_mfd *mfd;
 };
 
 static void nct38xx_alert_callback(const struct device *dev, struct gpio_callback *cb,
@@ -46,39 +56,58 @@ static void nct38xx_alert_callback(const struct device *dev, struct gpio_callbac
 	k_work_submit(&data->alert_worker);
 }
 
+static bool nct38xx_alert_is_active(struct nct38xx_mfd *mfd)
+{
+	int ret;
+	uint16_t alert, mask;
+
+	k_sem_take(mfd->lock, K_FOREVER);
+
+	/* Clear alert */
+	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert,
+				sizeof(alert));
+	if (ret < 0) {
+		goto release_lock;
+	}
+	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT_MASK,
+				(uint8_t *)&mask, sizeof(mask));
+	if (ret < 0) {
+		goto release_lock;
+	}
+
+	alert &= mask;
+	if (alert) {
+		ret = i2c_burst_write_dt(mfd->i2c_dev, NCT38XX_REG_ALERT,
+						(uint8_t *)&alert, sizeof(alert));
+	}
+
+release_lock:
+	k_sem_give(mfd->lock);
+
+	if (ret < 0) {
+		LOG_ERR("i2c access failed");
+		return false;
+	}
+
+	if (alert & BIT(NCT38XX_REG_ALERT_VENDOR_DEFINDED_ALERT)) {
+		return true;
+	}
+
+	return false;
+}
+
 static void nct38xx_alert_worker(struct k_work *work)
 {
 	struct nct38xx_alert_data *const data =
 		CONTAINER_OF(work, struct nct38xx_alert_data, alert_worker);
 	const struct nct38xx_alert_config *const config = data->alert_dev->config;
-	uint16_t alert, mask;
 
 	do {
 		/* NCT38XX device handler */
 		for (int i = 0; i < config->nct38xx_num; i++) {
-			/* Clear alert */
-			if (nct38xx_reg_burst_read(config->nct38xx_dev[i], NCT38XX_REG_ALERT,
-						   (uint8_t *)&alert, sizeof(alert))) {
-				LOG_ERR("i2c access failed");
-				return;
-			}
-			if (nct38xx_reg_burst_read(config->nct38xx_dev[i], NCT38XX_REG_ALERT_MASK,
-						   (uint8_t *)&mask, sizeof(mask))) {
-				LOG_ERR("i2c access failed");
-				return;
-			}
+			struct nct38xx_mfd *mfd = &data->mfd[i];
 
-			alert &= mask;
-			if (alert) {
-				if (nct38xx_reg_burst_write(config->nct38xx_dev[i],
-							    NCT38XX_REG_ALERT, (uint8_t *)&alert,
-							    sizeof(alert))) {
-					LOG_ERR("i2c access failed");
-					return;
-				}
-			}
-
-			if (alert & BIT(NCT38XX_REG_ALERT_VENDOR_DEFINDED_ALERT)) {
+			if (nct38xx_alert_is_active(mfd)) {
 				nct38xx_gpio_alert_handler(config->nct38xx_dev[i]);
 			}
 		}
@@ -98,12 +127,15 @@ static int nct38xx_alert_init(const struct device *dev)
 			LOG_ERR("%s device not ready", config->nct38xx_dev[i]->name);
 			return -ENODEV;
 		}
+
+		data->mfd[i].lock = mfd_nct38xx_get_lock_reference(config->nct38xx_dev[i]);
+		data->mfd[i].i2c_dev = mfd_nct38xx_get_i2c_dt_spec(config->nct38xx_dev[i]);
 	}
 
 	/* Set the alert pin for handling the interrupt */
 	k_work_init(&data->alert_worker, nct38xx_alert_worker);
 
-	if (!device_is_ready(config->irq_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->irq_gpio)) {
 		LOG_ERR("%s device not ready", config->irq_gpio.port->name);
 		return -ENODEV;
 	}
@@ -129,8 +161,9 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
 
 #define NCT38XX_ALERT_DEVICE_INSTANCE(inst)                                                        \
-	const struct device *nct38xx_dev_##inst[] = { DT_INST_FOREACH_PROP_ELEM(                   \
-		inst, nct38xx_dev, NCT38XX_DEV_AND_COMMA) };                                       \
+	const struct device *nct38xx_dev_##inst[] = {                                              \
+		DT_INST_FOREACH_PROP_ELEM(inst, nct38xx_dev, NCT38XX_DEV_AND_COMMA)};              \
+	static struct nct38xx_mfd nct38xx_mfd_##inst[DT_INST_PROP_LEN(inst, nct38xx_dev)];         \
 	static const struct nct38xx_alert_config nct38xx_alert_cfg_##inst = {                      \
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),                                \
 		.nct38xx_dev = &nct38xx_dev_##inst[0],                                             \
@@ -138,6 +171,7 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_
 	};                                                                                         \
 	static struct nct38xx_alert_data nct38xx_alert_data_##inst = {                             \
 		.alert_dev = DEVICE_DT_INST_GET(inst),                                             \
+		.mfd = nct38xx_mfd_##inst,                                                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,          \
 			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                              \

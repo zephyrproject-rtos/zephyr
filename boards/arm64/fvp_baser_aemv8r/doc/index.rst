@@ -46,6 +46,8 @@ The following hardware features are supported:
 +-----------------------+------------+----------------------+
 | Arm GENERIC TIMER     | on-chip    | system clock         |
 +-----------------------+------------+----------------------+
+| SMSC_91C111           | on-chip    | ethernet device      |
++-----------------------+------------+----------------------+
 
 The kernel currently does not support other hardware features on this platform.
 
@@ -84,7 +86,7 @@ Programming
 ===========
 
 Use this configuration to build basic Zephyr applications and kernel tests in the
-Arm FVP emulated environment, for example, with the :ref:`synchronization_sample`:
+Arm FVP emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization

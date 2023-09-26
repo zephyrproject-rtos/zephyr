@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig HWINFO
-	bool "Hardware Information driver"
+	bool "Hardware Information drivers"
 	help
 	  Enable hwinfo driver.
 
@@ -20,6 +20,42 @@ config HWINFO_SHELL
 	depends on SHELL
 	help
 	  Enable hwinfo Shell for testing.
+
+menuconfig HWINFO_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx/CC26xx hwinfo driver"
+	default y
+	depends on SOC_SERIES_CC13X2_CC26X2 || SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  Enable TI SimpleLink CC13xx/CC26xx hwinfo driver.
+
+if HWINFO_CC13XX_CC26XX
+
+config HWINFO_CC13XX_CC26XX_ALWAYS_USE_FACTORY_DEFAULT
+	bool "Ignore CCFG and always use factory value"
+	default y
+	help
+	  Always return factory pre-programmed values, stored in FCFG and ignore
+	  values provided in CCFG (Customer Configuration).
+
+choice
+	prompt "Select MAC address type for device ID"
+	default HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	help
+	  Specify the MAC address type to be used as device ID by the driver.
+
+config HWINFO_CC13XX_CC26XX_USE_IEEE_MAC
+	bool "Use IEEE 802.15.4 extended address"
+	help
+	  Use 8-bytes length IEEE 802.15.4 extended address as device ID value.
+
+config HWINFO_CC13XX_CC26XX_USE_BLE_MAC
+	bool "Use BLE MAC address"
+	help
+	  Use 6-bytes length BLE MAC address as device ID value.
+
+endchoice
+
+endif
 
 config HWINFO_STM32
 	bool "STM32 hwinfo"
@@ -89,8 +125,7 @@ config HWINFO_RPI_PICO
 config HWINFO_SAM_RSTC
 	bool "Atmel SAM reset cause"
 	default y
-	depends on SOC_SERIES_SAM4S || SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
+	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
 	help
 	  Enable Atmel SAM reset cause hwinfo driver.
 
@@ -118,7 +153,7 @@ config HWINFO_SAM0
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_ESP32 || SOC_ESP32C3
+	depends on SOC_FAMILY_ESP32
 	help
 	  Enable ESP32 hwinfo driver.
 

@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth_psi);
 #include "eth_nxp_s32_netc_priv.h"
 
 #define PSI_NODE	DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_s32_netc_psi)
-#define PHY_NODE	DT_PHANDLE(PSI_NODE, phy_dev)
+#define PHY_NODE	DT_PHANDLE(PSI_NODE, phy_handle)
 #define INIT_VSIS	DT_NODE_HAS_PROP(PSI_NODE, vsis)
 #define TX_RING_IDX	1
 #define RX_RING_IDX	0
@@ -135,7 +135,6 @@ static int nxp_s32_eth_configure_cgm(uint8_t port_idx)
 static int nxp_s32_eth_initialize(const struct device *dev)
 {
 	const struct nxp_s32_eth_config *cfg = dev->config;
-	Std_ReturnType swt_status;
 	int err;
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
@@ -146,14 +145,6 @@ static int nxp_s32_eth_initialize(const struct device *dev)
 	err = nxp_s32_eth_configure_cgm(cfg->port_idx);
 	if (err != 0) {
 		LOG_ERR("Failed to configure NETC Switch CGM");
-		return -EIO;
-	}
-
-	/* NETC Switch driver must be initialized before PSI */
-	swt_status = Netc_EthSwt_Ip_Init(NETC_SWITCH_IDX, &cfg->switch_cfg);
-	if (swt_status != E_OK) {
-		LOG_ERR("Failed to initialize NETC Switch %d (%d)",
-			NETC_SWITCH_IDX, swt_status);
 		return -EIO;
 	}
 
@@ -369,6 +360,15 @@ static Netc_EthSwt_Ip_PortType nxp_s32_eth0_switch_ports_cfg[NETC_ETHSWT_NUMBER_
 	LISTIFY(NETC_ETHSWT_NUMBER_OF_PORTS, NETC_SWITCH_PORT_CFG, (,))
 };
 
+static const Netc_EthSwt_Ip_ConfigType nxp_s32_eth0_switch_cfg = {
+	.port = &nxp_s32_eth0_switch_ports_cfg,
+	.EthSwtArlTableEntryTimeout = NETC_SWITCH_PORT_AGING,
+	.netcClockFrequency = DT_PROP(PSI_NODE, clock_frequency),
+	.MacLearningOption = ETHSWT_MACLEARNINGOPTION_HWDISABLED,
+	.MacForwardingOption = ETHSWT_NO_FDB_LOOKUP_FLOOD_FRAME,
+	.Timer1588ClkSrc = ETHSWT_REFERENCE_CLOCK_DISABLED,
+};
+
 PINCTRL_DT_DEFINE(PSI_NODE);
 
 NETC_GENERATE_MAC_ADDRESS(PSI_NODE, 0)
@@ -381,14 +381,6 @@ static const struct nxp_s32_eth_config nxp_s32_eth0_config = {
 		.stateStructure = &nxp_s32_eth0_state,
 		.paCtrlRxRingConfig = &nxp_s32_eth0_rxring_cfg,
 		.paCtrlTxRingConfig = &nxp_s32_eth0_txring_cfg,
-	},
-	.switch_cfg = {
-		.port = &nxp_s32_eth0_switch_ports_cfg,
-		.EthSwtArlTableEntryTimeout = NETC_SWITCH_PORT_AGING,
-		.netcClockFrequency = DT_PROP(PSI_NODE, clock_frequency),
-		.MacLearningOption = ETHSWT_MACLEARNINGOPTION_HWDISABLED,
-		.MacForwardingOption = ETHSWT_NO_FDB_LOOKUP_FLOOD_FRAME,
-		.Timer1588ClkSrc = ETHSWT_REFERENCE_CLOCK_DISABLED,
 	},
 	.si_idx = NETC_ETH_IP_PSI_INDEX,
 	.port_idx = NETC_SWITCH_PORT_IDX,
@@ -415,6 +407,28 @@ ETH_NET_DEVICE_DT_DEFINE(PSI_NODE,
 			NULL,
 			&nxp_s32_eth0_data,
 			&nxp_s32_eth0_config,
-			CONFIG_ETH_NXP_S32_PSI_INIT_PRIORITY,
+			CONFIG_ETH_INIT_PRIORITY,
 			&nxp_s32_eth_api,
 			NET_ETH_MTU);
+
+static int nxp_s32_eth_switch_init(void)
+{
+	Std_ReturnType swt_status;
+
+	swt_status = Netc_EthSwt_Ip_Init(NETC_SWITCH_IDX, &nxp_s32_eth0_switch_cfg);
+	if (swt_status != E_OK) {
+		LOG_ERR("Failed to initialize NETC Switch %d (%d)",
+			NETC_SWITCH_IDX, swt_status);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/*
+ * NETC Switch driver must be initialized before any other NETC component.
+ * This is because Netc_EthSwt_Ip_Init() will not only initialize the Switch,
+ * but also perform global initialization, enable the PCIe functions for MDIO
+ * and ENETC, and initialize MDIO with a fixed configuration.
+ */
+SYS_INIT(nxp_s32_eth_switch_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

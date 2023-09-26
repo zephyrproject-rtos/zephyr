@@ -61,6 +61,10 @@ static void print_desc(const struct shell *sh, const struct net_buf *const buf)
 {
 	struct usb_desc_header *head = (void *)buf->data;
 
+	if (buf->len < sizeof(struct usb_desc_header)) {
+		return;
+	}
+
 	switch (head->bDescriptorType) {
 	case USB_DESC_DEVICE: {
 		struct usb_device_descriptor *desc = (void *)buf->data;
@@ -129,35 +133,35 @@ static int bazfoo_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static int bazfoo_connected(struct usbh_contex *const uhs_ctx)
+static int bazfoo_connected(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: USB device connected");
 
 	return 0;
 }
 
-static int bazfoo_removed(struct usbh_contex *const uhs_ctx)
+static int bazfoo_removed(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: USB device removed");
 
 	return 0;
 }
 
-static int bazfoo_rwup(struct usbh_contex *const uhs_ctx)
+static int bazfoo_rwup(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus remote wakeup event");
 
 	return 0;
 }
 
-static int bazfoo_suspended(struct usbh_contex *const uhs_ctx)
+static int bazfoo_suspended(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus suspended");
 
 	return 0;
 }
 
-static int bazfoo_resumed(struct usbh_contex *const uhs_ctx)
+static int bazfoo_resumed(struct usbh_contex *const ctx)
 {
 	shell_info(ctx_shell, "host: Bus resumed");
 
@@ -506,7 +510,7 @@ static int cmd_bus_reset(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to perform bus reset %d", err);
 	} else {
-		shell_print(sh, "host: USB bus reseted");
+		shell_print(sh, "host: USB bus reset");
 	}
 
 	err = uhc_sof_enable(uhs_ctx.dev);

@@ -74,7 +74,7 @@ void tfm_psa_crypto_rng(void)
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	printk("TF-M IPC on %s\n", CONFIG_BOARD);
 
@@ -83,4 +83,5 @@ void main(void)
 	tfm_get_sid();
 	tfm_psa_crypto_rng();
 #endif
+	return 0;
 }

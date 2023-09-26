@@ -6,6 +6,7 @@
 
 /**
  * @file
+ * @ingroup hashmap_implementations
  * @brief C++ Hashmap
  *
  * This is a C wrapper around `std::unordered_map`. It is mainly used for

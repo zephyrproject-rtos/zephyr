@@ -6,3 +6,5 @@ zephyr_sources(soc.c)
 zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
+
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)

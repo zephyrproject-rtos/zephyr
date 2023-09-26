@@ -31,8 +31,9 @@ void expect_single_call_bt_settings_encode_key_with_null_key(const bt_addr_le_t 
 {
 	const char *func_name = "bt_settings_encode_key";
 
-	zassert_equal(bt_settings_encode_key_fake.call_count, 1, "'%s()' was called more than once",
-		      func_name);
+	zassert_equal(bt_settings_encode_key_fake.call_count, 1,
+		      "'%s()' was called more than once (%d)", func_name,
+		      bt_settings_encode_key_fake.call_count);
 	zassert_not_null(bt_settings_encode_key_fake.arg0_val,
 			 "'%s()' was called with incorrect '%s' value", func_name, "path");
 	zassert_true(bt_settings_encode_key_fake.arg1_val != 0,

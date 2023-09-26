@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SMP test"
+
+source "Kconfig.zephyr"
+
+config SMP_TEST_RUN_FACTOR
+	int "Run factor for stressing tests, such as 'switch torture', \
+		as a percentage"
+	default 100

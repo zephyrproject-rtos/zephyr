@@ -7,7 +7,7 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel/sched_priq.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <zephyr/syscall_handler.h>
@@ -18,6 +18,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -64,6 +65,11 @@ static inline int is_preempt(struct k_thread *thread)
 	/* explanation in kernel_struct.h */
 	return thread->base.preempt <= _PREEMPT_THRESHOLD;
 }
+
+BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
+	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
+	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
+	     "threads.");
 
 static inline int is_metairq(struct k_thread *thread)
 {
@@ -313,9 +319,16 @@ static inline bool is_aborting(struct k_thread *thread)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
+#ifdef CONFIG_SMP
+	if (is_aborting(_current)) {
+		end_thread(_current);
+	}
+#endif
+
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	/* MetaIRQs must always attempt to return back to a
 	 * cooperative thread they preempted and not whatever happens
 	 * to be highest priority now. The cooperative thread was
@@ -352,10 +365,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * "ready", it means "is _current already added back to the
 	 * queue such that we don't want to re-add it".
 	 */
-	if (is_aborting(_current)) {
-		end_thread(_current);
-	}
-
 	bool queued = z_is_thread_queued(_current);
 	bool active = !z_is_thread_prevented_from_running(_current);
 
@@ -412,8 +421,8 @@ static void flag_ipi(void)
 
 #ifdef CONFIG_TIMESLICING
 
-static int slice_ticks;
-static int slice_max_prio;
+static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
+static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
 static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
 static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -482,25 +491,19 @@ void z_reset_time_slice(struct k_thread *curr)
 
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		slice_ticks = k_ms_to_ticks_ceil32(slice);
-		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
-			/* It's not possible to reliably set a 1-tick
-			 * timeout if ticks aren't regular.
-			 */
-			slice_ticks = MAX(2, slice_ticks);
-		}
 		slice_max_prio = prio;
 		z_reset_time_slice(_current);
 	}
 }
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
-void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
+void k_thread_time_slice_set(struct k_thread *th, int32_t thread_slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data)
 {
-	LOCKED(&sched_spinlock) {
-		th->base.slice_ticks = slice_ticks;
+	K_SPINLOCK(&sched_spinlock) {
+		th->base.slice_ticks = thread_slice_ticks;
 		th->base.slice_expired = expired;
 		th->base.slice_data = data;
 	}
@@ -545,7 +548,8 @@ void z_time_slice(void)
  */
 static void update_metairq_preempt(struct k_thread *thread)
 {
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	if (is_metairq(thread) && !is_metairq(_current) &&
 	    !is_preempt(_current)) {
 		/* Record new preemption */
@@ -626,7 +630,7 @@ static void ready_thread(struct k_thread *thread)
 
 void z_ready_thread(struct k_thread *thread)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		if (!thread_active_elsewhere(thread)) {
 			ready_thread(thread);
 		}
@@ -635,7 +639,7 @@ void z_ready_thread(struct k_thread *thread)
 
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		move_thread_to_end_of_prio_q(thread);
 	}
 }
@@ -660,7 +664,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 
 	(void)z_abort_thread_timeout(thread);
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
 		}
@@ -763,7 +767,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		pend_locked(thread, wait_q, timeout);
 	}
 }
@@ -777,7 +781,7 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		if (thread->base.pended_on != NULL) {
 			unpend_thread_no_timeout(thread);
 		}
@@ -786,7 +790,7 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 
 void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		bool killed = ((thread->base.thread_state & _THREAD_DEAD) ||
 			       (thread->base.thread_state & _THREAD_ABORTING));
 
@@ -839,7 +843,7 @@ int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 	pending_current = _current;
 
 	int ret = z_swap_irqlock(key);
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		if (pending_current == _current) {
 			pending_current = NULL;
 		}
@@ -876,7 +880,7 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = NULL;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		thread = _priq_wait_best(&wait_q->waitq);
 
 		if (thread != NULL) {
@@ -891,7 +895,7 @@ struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = NULL;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		thread = _priq_wait_best(&wait_q->waitq);
 
 		if (thread != NULL) {
@@ -916,7 +920,7 @@ bool z_set_prio(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		need_sched = z_is_thread_ready(thread);
 
 		if (need_sched) {
@@ -999,7 +1003,7 @@ void z_reschedule_irqlock(uint32_t key)
 
 void k_sched_lock(void)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
 		z_sched_lock();
@@ -1008,7 +1012,7 @@ void k_sched_lock(void)
 
 void k_sched_unlock(void)
 {
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		__ASSERT(_current->base.sched_locked != 0U, "");
 		__ASSERT(!arch_is_in_isr(), "");
 
@@ -1088,7 +1092,7 @@ void *z_get_next_switch_handle(void *interrupted)
 #ifdef CONFIG_SMP
 	void *ret = NULL;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
 		if (IS_ENABLED(CONFIG_SMP)) {
@@ -1100,7 +1104,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 		if (old_thread != new_thread) {
 			update_metairq_preempt(new_thread);
-			wait_for_switch(new_thread);
+			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 			_current_cpu->swap_ok = 0;
@@ -1306,18 +1310,11 @@ void init_ready_q(struct _ready_q *rq)
 void z_sched_init(void)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	unsigned int num_cpus = arch_num_cpus();
-
-	for (int i = 0; i < num_cpus; i++) {
+	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		init_ready_q(&_kernel.cpus[i].ready_q);
 	}
 #else
 	init_ready_q(&_kernel.ready_q);
-#endif
-
-#ifdef CONFIG_TIMESLICING
-	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
-		CONFIG_TIMESLICE_PRIORITY);
 #endif
 }
 
@@ -1369,7 +1366,7 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		thread->base.prio_deadline = k_cycle_get_32() + deadline;
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
@@ -1624,8 +1621,8 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 
 #ifdef CONFIG_SCHED_CPU_MASK
 # ifdef CONFIG_SMP
-/* Right now we use a single byte for this mask */
-BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 8, "Too many CPUs for mask word");
+/* Right now we use a two byte for this mask */
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 16, "Too many CPUs for mask word");
 # endif
 
 
@@ -1638,7 +1635,7 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 		 "Running threads cannot change CPU pin");
 #endif
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		if (z_is_thread_prevented_from_running(thread)) {
 			thread->base.cpu_mask |= enable_mask;
 			thread->base.cpu_mask  &= ~disable_mask;
@@ -1724,6 +1721,10 @@ static void end_thread(struct k_thread *thread)
 		unpend_all(&thread->join_queue);
 		update_cache(1);
 
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+		arch_float_disable(thread);
+#endif
+
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
@@ -1783,6 +1784,13 @@ void z_thread_abort(struct k_thread *thread)
 			k_spin_unlock(&sched_spinlock, key);
 			while (is_aborting(thread)) {
 			}
+
+			/* Now we know it's dying, but not necessarily
+			 * dead.  Wait for the switch to happen!
+			 */
+			key = k_spin_lock(&sched_spinlock);
+			z_sched_switch_spin(thread);
+			k_spin_unlock(&sched_spinlock, key);
 		} else if (active) {
 			/* Threads can join */
 			add_to_waitq_locked(_current, &thread->join_queue);
@@ -1818,6 +1826,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
 	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+		z_sched_switch_spin(thread);
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = -EBUSY;
@@ -1903,7 +1912,7 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 	struct k_thread *thread;
 	bool ret = false;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		thread = _priq_wait_best(&wait_q->waitq);
 
 		if (thread != NULL) {
@@ -1937,7 +1946,7 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	struct k_thread *thread;
 	int  status = 0;
 
-	LOCKED(&sched_spinlock) {
+	K_SPINLOCK(&sched_spinlock) {
 		_WAIT_Q_FOR_EACH(wait_q, thread) {
 
 			/*

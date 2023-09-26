@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f042", "st,stm32f0", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;
@@ -37,7 +39,7 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <30 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;

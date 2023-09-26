@@ -66,7 +66,7 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 		copy_success = z_user_to_copy((void *)buf, mem_block,
 					      data_size);
 
-		k_mem_slab_free(rx_cfg->mem_slab, &mem_block);
+		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
 		Z_OOPS(copy_success);
 		Z_OOPS(z_user_to_copy((void *)size, &data_size,
 				      sizeof(data_size)));
@@ -100,13 +100,13 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 
 	ret = z_user_from_copy(mem_block, (void *)buf, size);
 	if (ret) {
-		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
+		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
 		Z_OOPS(ret);
 	}
 
 	ret = i2s_write((const struct device *)dev, mem_block, size);
 	if (ret != 0) {
-		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
+		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
 	}
 
 	return ret;

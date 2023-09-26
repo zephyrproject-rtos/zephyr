@@ -101,7 +101,7 @@ static void stm32wb_start_ble(uint32_t rf_clock)
 	    CFG_BLE_MAX_ATT_MTU,
 	    CFG_BLE_SLAVE_SCA,
 	    CFG_BLE_MASTER_SCA,
-	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LSE_SOURCE : 0,
+	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0,
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
@@ -147,7 +147,7 @@ static void tryfix_event(TL_Evt_t *tev)
 	struct bt_hci_evt_le_enh_conn_complete *evt =
 			(void *)((uint8_t *)mev + (sizeof(*mev)));
 
-	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
+	if (bt_addr_eq(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		LOG_WRN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
 		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
 		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
@@ -607,11 +607,10 @@ static const struct bt_hci_driver drv = {
 	.send           = bt_ipm_send,
 };
 
-static int _bt_ipm_init(const struct device *unused)
+static int _bt_ipm_init(void)
 {
 	int err;
 
-	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 

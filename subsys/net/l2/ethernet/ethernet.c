@@ -302,6 +302,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_eth_is_addr_lldp_multicast(
 		    (struct net_eth_addr *)lladdr->addr) &&
+	    !net_eth_is_addr_ptp_multicast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
 		/* The ethernet frame is not for me as the link addresses
 		 * are different.
@@ -1178,6 +1179,7 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 }
 #endif /* CONFIG_NET_L2_PTP */
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {
 	struct ethernet_req_params params;
@@ -1191,6 +1193,7 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
 			&params, sizeof(struct ethernet_req_params));
 }
+#endif/* CONFIG_NET_PROMISCUOUS_MODE */
 
 void ethernet_init(struct net_if *iface)
 {

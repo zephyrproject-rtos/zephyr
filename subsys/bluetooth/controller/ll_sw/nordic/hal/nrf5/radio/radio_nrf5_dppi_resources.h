@@ -3,15 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(CONFIG_SOC_NRF5340_CPUNET) || defined(DPPI_PRESENT)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(DPPI_PRESENT)
 
 /*******************************************************************************
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 6
-#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
-#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
+#define HAL_RADIO_ENABLE_TX_ON_TICK_PPI 6
+#define HAL_RADIO_ENABLE_RX_ON_TICK_PPI 6
 
 /*******************************************************************************
  * Capture event timer on Address reception:
@@ -158,4 +157,4 @@
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-#endif /* CONFIG_SOC_NRF5340_CPUNET || DPPI_PRESENT */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || DPPI_PRESENT */

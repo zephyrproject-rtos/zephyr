@@ -6,7 +6,9 @@ tests:
     sysbuild: true
     # Platform allowed is used as twister using sysbuild still lacks proper
     # filtering support, see discussion in #49552.
-    platform_allow: reel_board nrf52840dk_nrf52840
+    platform_allow:
+      - reel_board
+      - nrf52840dk_nrf52840
     integration_platforms:
       - nrf52840dk_nrf52840
     tags: mcuboot

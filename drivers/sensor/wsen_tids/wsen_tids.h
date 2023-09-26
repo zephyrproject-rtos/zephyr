@@ -29,7 +29,7 @@ struct tids_data {
 	/* Callback for high/low limit interrupts */
 	struct gpio_callback threshold_cb;
 
-	struct sensor_trigger threshold_trigger;
+	const struct sensor_trigger *threshold_trigger;
 	sensor_trigger_handler_t threshold_handler;
 
 #if defined(CONFIG_WSEN_TIDS_TRIGGER_OWN_THREAD)

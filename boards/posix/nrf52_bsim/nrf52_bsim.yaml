@@ -9,4 +9,7 @@ toolchain:
   - zephyr
 testing:
   ignore_tags:
-    - drivers
+    - modem
+    - uart
+supported:
+  - gpio

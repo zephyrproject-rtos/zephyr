@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_rpr Remote Provisioning models
- * @{
- * @brief Common API for the Remote provisioning models.
- */
-
 #ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_H__
 #define ZEPHYR_INCLUDE_BT_MESH_RPR_H__
 
@@ -20,6 +13,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_rpr Remote Provisioning models
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** Unprovisioned device has URI hash value */
 #define BT_MESH_RPR_UNPROV_HASH           BIT(0)
@@ -108,10 +107,10 @@ struct bt_mesh_rpr_link {
 	enum bt_mesh_rpr_link_state state;
 };
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_H__ */
-
-/** @} */

@@ -46,7 +46,7 @@ void z_riscv_secondary_cpu_init(int hartid)
 #ifdef CONFIG_SMP
 	_kernel.cpus[cpu_num].arch.online = true;
 #endif
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_MULTITHREADING) && defined(CONFIG_THREAD_LOCAL_STORAGE)
 	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
 #endif
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
@@ -66,8 +66,8 @@ void z_riscv_secondary_cpu_init(int hartid)
 #define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
 
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
-#define IPI_SCHED	BIT(0)
-#define IPI_FPU_FLUSH	BIT(1)
+#define IPI_SCHED	0
+#define IPI_FPU_FLUSH	1
 
 void arch_sched_ipi(void)
 {
@@ -77,7 +77,7 @@ void arch_sched_ipi(void)
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
 		if (i != id && _kernel.cpus[i].arch.online) {
-			atomic_or(&cpu_pending_ipi[i], IPI_SCHED);
+			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
 			MSIP(_kernel.cpus[i].arch.hartid) = 1;
 		}
 	}
@@ -88,7 +88,7 @@ void arch_sched_ipi(void)
 #ifdef CONFIG_FPU_SHARING
 void z_riscv_flush_fpu_ipi(unsigned int cpu)
 {
-	atomic_or(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
+	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
 	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
 }
 #endif
@@ -101,11 +101,11 @@ static void ipi_handler(const void *unused)
 
 	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 
-	if (pending_ipi & IPI_SCHED) {
+	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
 		z_sched_ipi();
 	}
 #ifdef CONFIG_FPU_SHARING
-	if (pending_ipi & IPI_FPU_FLUSH) {
+	if (pending_ipi & ATOMIC_MASK(IPI_FPU_FLUSH)) {
 		/* disable IRQs */
 		csr_clear(mstatus, MSTATUS_IEN);
 		/* perform the flush */
@@ -118,9 +118,30 @@ static void ipi_handler(const void *unused)
 #endif
 }
 
-static int riscv_smp_init(const struct device *dev)
+#ifdef CONFIG_FPU_SHARING
+/*
+ * Make sure there is no pending FPU flush request for this CPU while
+ * waiting for a contended spinlock to become available. This prevents
+ * a deadlock when the lock we need is already taken by another CPU
+ * that also wants its FPU content to be reinstated while such content
+ * is still live in this CPU's FPU.
+ */
+void arch_spin_relax(void)
 {
-	ARG_UNUSED(dev);
+	atomic_val_t *pending_ipi = &cpu_pending_ipi[_current_cpu->id];
+
+	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
+		/*
+		 * We may not be in IRQ context here hence cannot use
+		 * z_riscv_flush_local_fpu() directly.
+		 */
+		arch_float_disable(_current_cpu->arch.fpu_owner);
+	}
+}
+#endif
+
+static int riscv_smp_init(void)
+{
 
 	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);

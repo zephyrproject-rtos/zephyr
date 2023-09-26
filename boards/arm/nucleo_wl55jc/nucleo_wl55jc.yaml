@@ -18,7 +18,9 @@ supported:
   - adc
   - dac
   - pwm
+  - counter
   - dma
   - watchdog
   - nvs
   - lora
+vendor: st

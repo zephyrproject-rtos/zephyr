@@ -15,9 +15,9 @@ properties:
 
   nxp,lcdif:
     type: phandle
-    required: true
     description:
-      Instance of the LCDIF peripheral.
+      Instance of the LCDIF peripheral. Only required when using the MIPI
+      in video mode
   dpi-color-coding:
     type: string
     enum:
@@ -63,13 +63,6 @@ properties:
     type: boolean
     description:
       Automatically insert an EoTp short packet when switching from HS to LP mode.
-
-  dphy-clk-div:
-    type: int
-    required: true
-    description:
-      MIPI D-PHY clock divider. Must be set to ensure clock frequency is at
-      least (pixel clock * bits per output pixel) / number of mipi data lanes
 
   dphy-ref-frequency:
     type: int

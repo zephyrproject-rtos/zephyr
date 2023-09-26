@@ -153,12 +153,12 @@ static bool sol_pdu_decrypt(struct bt_mesh_subnet *sub, void *data)
 		net_buf_simple_init(out, 0);
 		net_buf_simple_add_mem(out, in->data, in->len);
 
-		err = bt_mesh_net_obfuscate(out->data, 0, sub->keys[i].msg.privacy);
+		err = bt_mesh_net_obfuscate(out->data, 0, &sub->keys[i].msg.privacy);
 		if (err) {
 			LOG_DBG("obfuscation err %d", err);
 			continue;
 		}
-		err = bt_mesh_net_decrypt(sub->keys[i].msg.enc, out,
+		err = bt_mesh_net_decrypt(&sub->keys[i].msg.enc, out,
 					  0, BT_MESH_NONCE_SOLICITATION);
 		if (!err) {
 			LOG_DBG("Decrypted PDU %s", bt_hex(out->data, out->len));
@@ -304,7 +304,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	/* DST = 0x0000 */
 	net_buf_simple_add_le16(pdu, 0x0000);
 
-	err = bt_mesh_net_encrypt(sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.enc,
+	err = bt_mesh_net_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.enc,
 				  pdu, 0, BT_MESH_NONCE_SOLICITATION);
 
 	if (err) {
@@ -313,7 +313,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	}
 
 	err = bt_mesh_net_obfuscate(pdu->data, 0,
-				    sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
+				    &sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
 	if (err) {
 		LOG_ERR("Obfuscation failed, err=%d", err);
 		return err;
@@ -463,13 +463,17 @@ void bt_mesh_sol_reset(void)
 #if CONFIG_BT_MESH_PROXY_SOLICITATION
 	sseq_out = 0;
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	}
 #endif
 
 #if CONFIG_BT_MESH_OD_PRIV_PROXY_SRV
-	(void)atomic_cas(&clear, 0, 1);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		(void)atomic_cas(&clear, 0, 1);
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SRPL_PENDING);
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SRPL_PENDING);
+	}
 #endif
 }
 
@@ -533,7 +537,9 @@ int bt_mesh_sol_send(void)
 
 	sseq_out++;
 
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SSEQ_PENDING);
+	}
 
 	return 0;
 #else

@@ -132,7 +132,7 @@ static bool match_region(sys_bitarray_t *bitarray, size_t offset,
 
 		if (bundle != 0U) {
 			/* Bits in "between bundles" do not match */
-			mismatch_bundle = ~bundle;
+			mismatch_bundle = bundle;
 			mismatch_bundle_idx = idx;
 			goto mismatch;
 		}
@@ -427,7 +427,6 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 			bit_idx += off_start;
 		}
 
-		ret = idx < INT_MAX ? (int)idx : INT_MAX;
 		break;
 	}
 

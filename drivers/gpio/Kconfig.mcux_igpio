@@ -8,5 +8,6 @@ config GPIO_MCUX_IGPIO
 	default y
 	depends on HAS_MCUX_IGPIO
 	depends on DT_HAS_NXP_IMX_GPIO_ENABLED
+	select PINCTRL
 	help
 	  Enable the MCUX IGPIO driver.

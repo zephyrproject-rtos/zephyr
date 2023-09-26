@@ -38,10 +38,4 @@ GEN_OFFSET_SYM(z_arch_esf_t, psr);
 GEN_OFFSET_SYM(z_arch_esf_t, tbr);
 GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
 
-/*
- * size of the struct k_thread structure sans save area for floating
- * point regs
- */
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
-
 GEN_ABS_SYM_END

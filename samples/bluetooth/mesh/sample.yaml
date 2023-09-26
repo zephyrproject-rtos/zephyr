@@ -3,7 +3,11 @@ sample:
 tests:
   sample.bluetooth.mesh:
     harness: bluetooth
-    platform_allow: bbc_microbit qemu_x86 nrf52840dk_nrf52840
+    platform_allow:
+      - bbc_microbit
+      - qemu_x86
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp_ns
     integration_platforms:
       - qemu_x86
     tags: bluetooth

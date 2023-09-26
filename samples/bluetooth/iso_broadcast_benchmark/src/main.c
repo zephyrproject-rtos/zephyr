@@ -50,7 +50,7 @@ static enum benchmark_role device_role_select(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	enum benchmark_role role;
@@ -60,13 +60,13 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err != 0) {
 		LOG_INF("Bluetooth init failed (err %d)", err);
-		return;
+		return 0;
 	}
 
 	err = console_init();
 	if (err != 0) {
 		LOG_INF("Console init failed (err %d)", err);
-		return;
+		return 0;
 	}
 
 	LOG_INF("Bluetooth initialized");
@@ -93,4 +93,5 @@ void main(void)
 	}
 
 	LOG_INF("Exiting");
+	return 0;
 }

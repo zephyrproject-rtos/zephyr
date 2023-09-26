@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32l462", "st,stm32l4", "simple-bus";
+
 		aes: aes@50060000 {
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;

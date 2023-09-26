@@ -5,3 +5,9 @@
  */
 
 #include <st/l4/stm32l496.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l4a6", "st,stm32l4", "simple-bus";
+	};
+};

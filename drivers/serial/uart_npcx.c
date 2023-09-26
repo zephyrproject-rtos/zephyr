@@ -47,7 +47,7 @@ enum uart_pm_policy_state_flag {
 struct uart_npcx_data {
 	/* Baud rate */
 	uint32_t baud_rate;
-	struct miwu_dev_callback uart_rx_cb;
+	struct miwu_callback uart_rx_cb;
 	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
@@ -424,8 +424,9 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev, struct npcx_w
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
 static void uart_npcx_rx_refresh_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct uart_npcx_data *data =
-		CONTAINER_OF(work, struct uart_npcx_data, rx_refresh_timeout_work);
+		CONTAINER_OF(dwork, struct uart_npcx_data, rx_refresh_timeout_work);
 
 	uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_RX_FLAG);
 }
@@ -469,7 +470,7 @@ static int uart_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on UART clock fail %d", ret);
 		return ret;
@@ -479,7 +480,7 @@ static int uart_npcx_init(const struct device *dev)
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)&config->clk_cfg,
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &uart_rate);
 	if (ret < 0) {
 		LOG_ERR("Get UART clock rate error %d", ret);
@@ -519,7 +520,7 @@ static int uart_npcx_init(const struct device *dev)
 		/* Initialize a miwu device input and its callback function */
 		npcx_miwu_init_dev_callback(&data->uart_rx_cb, &config->uart_rx_wui,
 					    uart_npcx_rx_wk_isr, dev);
-		npcx_miwu_manage_dev_callback(&data->uart_rx_cb, true);
+		npcx_miwu_manage_callback(&data->uart_rx_cb, true);
 		/*
 		 * Configure the UART wake-up event triggered from a falling
 		 * edge on CR_SIN pin. No need for callback function.

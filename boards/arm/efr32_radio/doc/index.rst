@@ -7,9 +7,11 @@ EFR32 Radio Boards
    :maxdepth: 1
 
    brd4104a.rst
+   brd4170a.rst
    brd4250b.rst
    brd4180a.rst
    brd4255a.rst
+   brd4187c.rst
 
 Overview
 ********
@@ -177,6 +179,9 @@ Reset the board and you should see the following message in the terminal:
 
 .. _EFR32MG21 Mighty Gecko Wireless Starter Kit User's Guide:
    https://www.silabs.com/documents/public/user-guides/ug385-brd4180a-user-guide.pdf
+
+.. _EFR32MG24 Mighty Gecko Wireless Starter Kit User's Guide:
+   https://www.silabs.com/documents/public/user-guides/ug526-brd4187c-user-guide.pdf
 
 .. _WSTK Main Board BRD4001A Schematics:
    https://www.silabs.com/documents/public/schematic-files/BRD4001A-A01-schematic.pdf

@@ -7,8 +7,10 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt5xx.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "mimxrt595_evk_cm33-pinctrl.dtsi"
+
 
 / {
 	model = "NXP MIMXRT595-EVK board";
@@ -25,7 +27,6 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
-		kscan0 = &touch_controller;
 		pwm-0 = &sc_timer;
 	};
 
@@ -37,7 +38,6 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,display = &lcdif;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	gpio_keys {
@@ -45,10 +45,12 @@
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -97,35 +99,26 @@
 				<21 0 &gpio4 21 0>;	/* D15 */
 	};
 
-	power-states {
-		/* This is the setting Sleep Mode */
-		idle: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <0>;
-			exit-latency-us = <0>;
-		};
-		/* This is the setting for Deep-sleep Mode */
-		suspend: suspend {
-			compatible = "nxp,pdcfg-power", "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <500>;
-			exit-latency-us = <120>;
-			/*
-			 * These values are written to the PDSLEEPCFG registers to keep certain
-			 * blocks such as LPOSC, SRAM's, FlexSPI0 SRAM powered on during deep
-			 * sleep mode.
-			 */
-			deep-sleep-config = <0xC800>,
-						<0x80000004>,
-						<0xFFFFFFFF>,
-						<0>;
-		};
-		/*
-		 * Deep power-down mode is supported in this SoC through 'PM_STATE_SOFT_OFF' state.
-		 * There is no entry for this in device tree, user can call pm_state_force to enter
-		 * this state.
-		 */
+	/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J44 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio0 12 0>,	/* Pin 1, LEDK */
+				<21 0 &gpio3 21 0>,	/* Pin 21, RESET */
+				<22 0 &gpio3 18 0>,	/* Pin 22, LPTE */
+				<26 0 &gpio0 30 0>,	/* Pin 26, CTP_I2C SDA */
+				<27 0 &gpio0 29 0>,	/* Pin 27, CTP_I2C SCL */
+				<28 0 &gpio4 4 0>,	/* Pin 28, CTP_RST */
+				<29 0 &gpio3 19 0>,	/* Pin 29, CTP_INT */
+				<32 0 &gpio3 15 0>,	/* Pin 32, PWR_EN */
+				<34 0 &gpio0 12 0>;	/* Pin 34, BL_PWM */
 	};
 
 	en_mipi_display: enable-mipi-display {
@@ -136,10 +129,6 @@
 	};
 };
 
-&cpu0 {
-	cpu-power-states = <&idle &suspend>;
-};
-
 /*
  * RT595 EVK board uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
@@ -147,49 +136,11 @@
  */
 &os_timer {
 	status = "okay";
+	wakeup-source;
 };
 
 &rtc {
 	status = "okay";
-};
-
-&lcdif {
-	status = "okay";
-	width = <720>;
-	height = <1280>;
-	clk-div = <7>;
-	polarity = <12>;
-	hsync = <8>;
-	hfp = <32>;
-	hbp = <32>;
-	vsync = <2>;
-	vfp = <16>;
-	vbp = <14>;
-	backlight-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-	data-bus-width = "24-bit";
-	pixel-format = "rgb-565";
-};
-
-&mipi_dsi {
-	status = "okay";
-	nxp,lcdif = <&lcdif>;
-	dpi-color-coding = "24-bit";
-	dpi-pixel-packet = "24-bit";
-	dpi-video-mode = "burst";
-	dpi-bllp-mode = "low-power";
-	autoinsert-eotp;
-	dphy-clk-div = <12>;
-
-	rm68200@0 {
-		status = "okay";
-		compatible = "raydium,rm68200";
-		reg = <0x0>;
-		reset-gpios = <&gpio3 21 GPIO_ACTIVE_HIGH>;
-		data-lanes = <2>;
-		width = <720>;
-		height = <1280>;
-		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
-	};
 };
 
 &flexcomm0 {
@@ -198,6 +149,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "rx", "tx";
 };
 
 arduino_i2c: &flexcomm4 {
@@ -215,14 +168,14 @@ arduino_i2c: &flexcomm4 {
 		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
-
-	touch_controller: gt911@5d {
-		compatible = "goodix,gt911";
-		reg = <0x5d>;
-		irq-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
-	};
 };
+
+nxp_mipi_i2c: &arduino_i2c {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+zephyr_lcdif: &lcdif {};
+
 
 hs_spi1: &hs_lspi1 {
 	compatible = "nxp,lpc-spi";
@@ -233,12 +186,38 @@ hs_spi1: &hs_lspi1 {
 	status = "okay";
 };
 
+/* I2S RX */
+i2s0: &flexcomm1 {
+	compatible = "nxp,lpc-i2s";
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 2>;
+	dma-names = "rx";
+	status = "disabled";
+};
+
+/* I2S TX */
+i2s1: &flexcomm3 {
+	compatible = "nxp,lpc-i2s";
+	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 7>;
+	dma-names = "tx";
+	status = "disabled";
+};
+
 arduino_serial: &flexcomm12 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm12_usart>;
 	pinctrl-names = "default";
+	dmas = <&dma0 34>, <&dma0 35>;
+	dma-names = "rx", "tx";
 };
 
 /* PCA9420 PMIC */
@@ -304,12 +283,24 @@ arduino_serial: &flexcomm12 {
 	status = "okay";
 };
 
+/*
+ * GPIO module interrupts are shared between all GPIO devices on this
+ * SOC, but Zephyr does not currently support sharing interrupts between
+ * devices. The user can select GPIO modules to support interrupts by
+ * setting the appropriate `int-source` and `interrupt` property for
+ * a given module. On this board, GPIO3 and GPIO4 are configured to support
+ * interrupts.
+ */
 &gpio3 {
 	status = "okay";
+	int-source = "int-a";
+	interrupts = <2 0>;
 };
 
 &gpio4 {
 	status = "okay";
+	int-source = "int-b";
+	interrupts = <3 0>;
 };
 
 &gpio5 {
@@ -341,15 +332,6 @@ arduino_serial: &flexcomm12 {
 };
 
 &dma0 {
-	/*
-	 * The total number of dma channels available is defined by
-	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
-	 * Since memory from the heap pool is allocated based on the number
-	 * of DMA channels, set this property to as many channels is needed
-	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
-	 * memory.
-	 */
-	dma-channels = <37>;
 	status = "okay";
 };
 
@@ -437,10 +419,6 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-/*
- * Configure FlexSPI2 to use 1KB of AHB RX buffer for GPU/Display master.
- * This will improve performance when using external pSRAM with the LCDIF.
- */
 &flexspi2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi2>;
@@ -450,7 +428,6 @@ zephyr_udc0: &usbhs {
 	ahb-bufferable;
 	ahb-cacheable;
 	ahb-read-addr-opt;
-	rx-buffer-config = <1 7 11 1024>;
 	aps6408l: aps6408l@0 {
 		compatible = "nxp,imx-flexspi-aps6408l";
 		/* APS6408L is 8MB, 64MBit pSRAM */
@@ -473,4 +450,31 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&pinmux_sctimer_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&i3c0 {
+	pinctrl-0 = <&pinmux_i3c>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+&mbox {
+	status = "okay";
+};
+
+/* Disable this node if not using USB and need another MPU region */
+&sram1 {
+	status = "okay";
+};
+
+/* Enable smartDMA controller */
+&smartdma {
+	status = "okay";
+};
+
+/* Add smartDMA to mipi DSI */
+&mipi_dsi {
+	dmas = <&smartdma>;
+	dma-names = "smartdma";
 };

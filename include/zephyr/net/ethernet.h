@@ -96,8 +96,14 @@ struct net_eth_addr {
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 #define NET_ETH_MTU			1500
-#define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + sizeof(struct net_eth_hdr))
+
+#if defined(CONFIG_NET_VLAN)
+#define _NET_ETH_MAX_HDR_SIZE		(sizeof(struct net_eth_vlan_hdr))
+#else
 #define _NET_ETH_MAX_HDR_SIZE		(sizeof(struct net_eth_hdr))
+#endif
+
+#define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + _NET_ETH_MAX_HDR_SIZE)
 /*
  * Extend the max frame size for DSA (KSZ8794) by one byte (to 1519) to
  * store tail tag.
@@ -347,6 +353,16 @@ enum ethernet_filter_type {
 
 /** @endcond */
 
+/** Types of Ethernet L2 */
+enum ethernet_if_types {
+	/** IEEE 802.3 Ethernet (default) */
+	L2_ETH_IF_TYPE_ETHERNET,
+
+	/** IEEE 802.11 Wi-Fi*/
+	L2_ETH_IF_TYPE_WIFI,
+} __packed;
+
+
 struct ethernet_filter {
 	/** Type of filter */
 	enum ethernet_filter_type type;
@@ -595,6 +611,9 @@ struct ethernet_context {
 
 	/** Is this context already initialized */
 	bool is_init : 1;
+
+	/** Types of Ethernet network interfaces */
+	enum ethernet_if_types eth_if_type;
 };
 
 /**
@@ -689,6 +708,22 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 	    addr->addr[3] == 0x00 &&
 	    addr->addr[4] == 0x00 &&
 	    addr->addr[5] == 0x0e) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr *addr)
+{
+#if defined(CONFIG_NET_GPTP)
+	if (addr->addr[0] == 0x01 &&
+	    addr->addr[1] == 0x1b &&
+	    addr->addr[2] == 0x19 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x00) {
 		return true;
 	}
 #endif
@@ -1002,7 +1037,28 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
  */
 #if defined(CONFIG_NET_L2_PTP)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
+#else
+static inline void net_eth_set_ptp_port(struct net_if *iface, int port)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(port);
+}
 #endif /* CONFIG_NET_L2_PTP */
+
+/**
+ * @brief Check if the Ethernet L2 network interface can perform Wi-Fi.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface supports Wi-Fi, False otherwise.
+ */
+static inline bool net_eth_type_is_wifi(struct net_if *iface)
+{
+	const struct ethernet_context *ctx = (struct ethernet_context *)
+		net_if_l2_data(iface);
+
+	return ctx->eth_if_type == L2_ETH_IF_TYPE_WIFI;
+}
 
 /**
  * @}

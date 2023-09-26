@@ -1,6 +1,6 @@
 .. _retained_mem_api:
 
-Retained memory
+Retained Memory
 ###############
 
 Overview

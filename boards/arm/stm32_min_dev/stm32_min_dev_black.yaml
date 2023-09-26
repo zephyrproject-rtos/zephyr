@@ -13,3 +13,4 @@ supported:
   - spi
   - adc
   - gpio
+vendor: st

@@ -1,7 +1,8 @@
-.. _cfb_shell_sample:
+.. zephyr:code-sample:: cfb-shell-sample
+   :name: Character Framebuffer shell module
+   :relevant-api: monochrome_character_framebuffer
 
-Character Framebuffer Shell Module Sample
-#########################################
+   Use the CFB shell module to interact with a monochrome display.
 
 Overview
 ********

@@ -63,11 +63,6 @@ static int reset_stm32_line_toggle(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int reset_stm32_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct reset_driver_api reset_stm32_driver_api = {
 	.status = reset_stm32_status,
 	.line_assert = reset_stm32_line_assert,
@@ -79,6 +74,5 @@ static const struct reset_stm32_config reset_stm32_config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, reset_stm32_init, NULL, NULL, &reset_stm32_config,
-		      PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,
-		      &reset_stm32_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &reset_stm32_config, PRE_KERNEL_1,
+		      CONFIG_RESET_INIT_PRIORITY, &reset_stm32_driver_api);

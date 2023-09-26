@@ -29,15 +29,7 @@ config FLASH_BASE_ADDRESS
 	default 0
 endif # !XIP
 
-# Ethernet driver must init first because it initializes the
-# NETC which is needed for EMDIO functionality
 if NET_L2_ETHERNET
-
-config MDIO_INIT_PRIORITY
-	default 70
-
-config PHY_INIT_PRIORITY
-	default 80
 
 # NETC drops TCP/UDP packets with invalid checksum
 config NET_TCP_CHECKSUM

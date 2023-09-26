@@ -9,7 +9,7 @@
 
 #include "dummy_partition.h"
 
-void main(void)
+int main(void)
 {
 	uint8_t digest[32];
 
@@ -28,4 +28,5 @@ void main(void)
 			printk("\n");
 		}
 	}
+	return 0;
 }

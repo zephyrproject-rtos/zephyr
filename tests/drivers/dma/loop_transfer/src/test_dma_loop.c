@@ -25,47 +25,23 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/ztest.h>
 
 /* in millisecond */
 #define SLEEPTIME 250
 
-#define DATA                                                                                       \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog\n"                                            \
-	"The quick brown fox jumps over the lazy dog"
-
 #define TRANSFER_LOOPS (4)
-#define RX_BUFF_SIZE (1024)
 
 #if CONFIG_NOCACHE_MEMORY
-static const char TX_DATA[] = DATA;
-static __aligned(32) char tx_data[1024] __used
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
 	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
-static __aligned(32) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
+static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
 	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static char tx_data[] = DATA;
-static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
+static uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
+static __aligned(16) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
 #endif
 
 volatile uint32_t transfer_count;
@@ -78,9 +54,14 @@ static void test_transfer(const struct device *dev, uint32_t id)
 {
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
-		dma_block_cfg.block_size = strlen(tx_data);
+		dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+		dma_block_cfg.source_address = (uint64_t)tx_data;
+		dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 		zassert_false(dma_config(dev, id, &dma_cfg),
 					"Not able to config transfer %d",
@@ -92,14 +73,14 @@ static void test_transfer(const struct device *dev, uint32_t id)
 }
 
 static void dma_user_callback(const struct device *dma_dev, void *arg,
-			      uint32_t id, int error_code)
+			      uint32_t id, int status)
 {
 	/* test case is done so ignore the interrupt */
 	if (done) {
 		return;
 	}
 
-	zassert_false(error_code, "DMA could not proceed, an error occurred\n");
+	zassert_false(status < 0, "DMA could not proceed, an error occurred\n");
 
 #ifdef CONFIG_DMAMUX_STM32
 	/* the channel is the DMAMUX's one
@@ -119,10 +100,11 @@ static int test_loop(const struct device *dma)
 	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started\n");
 
-#if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
-	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
-#endif
+
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
+		tx_data[i] = i;
+	}
 
 	memset(rx_data, 0, sizeof(rx_data));
 
@@ -158,9 +140,14 @@ static int test_loop(const struct device *dma)
 	transfer_count = 0;
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
-	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -186,8 +173,8 @@ static int test_loop(const struct device *dma)
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
-		TC_PRINT("RX data Loop %d: %s\n", i, rx_data[i]);
-		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+		TC_PRINT("RX data Loop %d\n", i);
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
@@ -204,10 +191,11 @@ static int test_loop_suspend_resume(const struct device *dma)
 	test_case_id = 1;
 	TC_PRINT("DMA memory to memory transfer started\n");
 
-#if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
-	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
-#endif
+
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
+		tx_data[i] = i;
+	}
 
 	memset(rx_data, 0, sizeof(rx_data));
 
@@ -243,9 +231,14 @@ static int test_loop_suspend_resume(const struct device *dma)
 	transfer_count = 0;
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
-	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	unsigned int irq_key;
 
@@ -324,8 +317,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
-		TC_PRINT("RX data Loop %d: %s\n", i, rx_data[i]);
-		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+		TC_PRINT("RX data Loop %d\n", i);
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
@@ -334,18 +327,50 @@ static int test_loop_suspend_resume(const struct device *dma)
 	return TC_PASS;
 }
 
+/**
+ * @brief Check if the device is in valid power state.
+ *
+ * @param dev Device instance.
+ * @param expected Device expected power state.
+ *
+ * @retval true If device is in correct power state.
+ * @retval false If device is not in correct power state.
+ */
+static bool check_dev_power_state(const struct device *dev, enum pm_device_state expected)
+{
+#if CONFIG_PM_DEVICE_RUNTIME
+	enum pm_device_state state;
+
+	if (pm_device_state_get(dev, &state) == 0) {
+		if (expected != state) {
+			TC_PRINT("ERROR: device %s is incorrect power state"
+				 " (current state = %s, expected = %s)\n",
+				 dev->name, pm_device_state_str(state),
+				 pm_device_state_str(expected));
+			return false;
+		}
+
+		return true;
+	}
+
+	TC_PRINT("ERROR: unable to get power state of %s", dev->name);
+	return false;
+#else
+	return true;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+}
+
 static int test_loop_repeated_start_stop(const struct device *dma)
 {
 	static int chan_id;
+	enum pm_device_state init_state = pm_device_on_power_domain(dma) ?
+					  PM_DEVICE_STATE_OFF : PM_DEVICE_STATE_SUSPENDED;
 
 	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started\n");
 	TC_PRINT("Preparing DMA Controller\n");
 
-#if CONFIG_NOCACHE_MEMORY
 	memset(tx_data, 0, sizeof(tx_data));
-	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
-#endif
 
 	memset(rx_data, 0, sizeof(rx_data));
 
@@ -372,6 +397,10 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
+	if (!check_dev_power_state(dma, PM_DEVICE_STATE_OFF)) {
+		return TC_FAIL;
+	}
+
 	chan_id = dma_request_channel(dma, NULL);
 	if (chan_id < 0) {
 		TC_PRINT("this platform do not support the dma channel\n");
@@ -380,9 +409,14 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	transfer_count = 0;
 	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
-	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.block_size = sizeof(tx_data);
+#ifdef CONFIG_DMA_64BIT
+	dma_block_cfg.source_address = (uint64_t)tx_data;
+	dma_block_cfg.dest_address = (uint64_t)rx_data[transfer_count];
+#else
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+#endif
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -394,8 +428,16 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
+	if (!check_dev_power_state(dma, init_state)) {
+		return TC_FAIL;
+	}
+
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer start (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (!check_dev_power_state(dma, PM_DEVICE_STATE_ACTIVE)) {
 		return TC_FAIL;
 	}
 
@@ -413,8 +455,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
-		TC_PRINT("RX data Loop %d: %s\n", i, rx_data[i]);
-		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+		TC_PRINT("RX data Loop %d\n", i);
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}
@@ -423,6 +465,10 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 
 	if (dma_stop(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer stop (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (!check_dev_power_state(dma, init_state)) {
 		return TC_FAIL;
 	}
 

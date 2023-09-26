@@ -1,0 +1,54 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NXP_S32_QSPI_NOR
+	bool "NXP S32 QSPI NOR driver"
+	default y
+	depends on DT_HAS_NXP_S32_QSPI_NOR_ENABLED
+	select MEMC
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
+	help
+	  Enable the Flash driver for a NOR Serial Flash Memory device connected
+	  to an NXP S32 QSPI bus.
+
+if FLASH_NXP_S32_QSPI_NOR
+
+config FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME
+	bool "Read flash parameters at runtime"
+	help
+	  Read flash device characteristics from the device at runtime.
+	  This option should provide functionality for all supported
+	  JESD216-compatible devices, with the following notes:
+	  - Quad Enable Requirements bitfield (DW15) must be present in the SFDP
+	    tables to configure Quad mode. Otherwise it defaults to Dual or
+	    Single mode as supported by the device.
+	  - Soft Reset bitfield (DW16) must be present in the SFDP tables to
+	    automatically reset the device at initialization time.
+	  - 0-X-X mode discovery not yet implemented by the HAL.
+
+	  If not selected, the driver uses a fixed configuration assuming 256 By
+	  page size and 4 KiBy, 32 KiBy and 64 KiBy erase instructions. The
+	  device size and jedec-id properties must be set in devicetree node.
+
+config FLASH_NXP_S32_QSPI_VERIFY_ERASE
+	bool "Verify memory after erased"
+	help
+	  Verify contents of memory after erased.
+
+config FLASH_NXP_S32_QSPI_VERIFY_WRITE
+	bool "Verify memory after written"
+	help
+	  Verify contents of memory after written.
+
+config FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 4096
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support that API.
+	  By default the page size corresponds to the sector size (4096) for a NOR
+	  flash memory. Other options may include the 32K-byte erase size (32768),
+	  the block size (65536), or any non-zero multiple of the sector size.
+
+endif # FLASH_NXP_S32_QSPI_NOR

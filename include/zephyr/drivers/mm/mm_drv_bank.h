@@ -14,12 +14,14 @@
  * using these APIs.
  */
 
-#ifndef ZEPHYR_INCLUDE_KERNEL_H
-#define ZEPHYR_INCLUDE_KERNEL_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
+#define ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_stats.h>
 #include <stdint.h>
+
+#define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
 
 struct mem_drv_bank {
 	uint32_t  unmapped_pages;
@@ -32,7 +34,9 @@ struct mem_drv_bank {
  *
  * The driver may wish to track various information about the memory banks
  * that it uses. This routine will initialize a generic structure containing
- * that information.
+ * that information. Since at the power on all memory banks are switched on
+ * it will start with all pages mapped. In next phase of driver initialization
+ * unused pages will be unmapped.
  *
  * @param bank Pointer to the memory bank structure used for tracking
  * @param bank_pages Number of pages in the memory bank
@@ -85,4 +89,4 @@ void sys_mm_drv_bank_stats_reset_max(struct mem_drv_bank *bank);
 void sys_mm_drv_bank_stats_get(struct mem_drv_bank *bank,
 			       struct sys_memory_stats *stats);
 
-#endif /* ZEPHYR_INCLUDE_KERNEL_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H */

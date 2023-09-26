@@ -33,7 +33,7 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
@@ -50,32 +50,32 @@ void main(void)
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create TCP socket: %d", errno);
-		return;
+		return 0;
 	}
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		LOG_ERR("Failed to bind TCP socket: %d", errno);
 		close(sock);
-		return;
+		return 0;
 	}
 
 	ret = listen(sock, MAX_CLIENT_QUEUE);
 	if (ret < 0) {
 		LOG_ERR("Failed to listen on TCP socket: %d", errno);
 		close(sock);
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(video)) {
 		LOG_ERR("%s: device not ready.\n", video->name);
-		return;
+		return 0;
 	}
 
 	/* Get default/native format */
 	if (video_get_format(video, VIDEO_EP_OUT, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
-		return;
+		return 0;
 	}
 
 	printk("Video device detected, format: %c%c%c%c %ux%u\n",
@@ -88,7 +88,7 @@ void main(void)
 		buffers[i] = video_buffer_alloc(fmt.pitch * fmt.height);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
-			return;
+			return 0;
 		}
 	}
 
@@ -100,7 +100,7 @@ void main(void)
 				&client_addr_len);
 		if (client < 0) {
 			printk("Failed to accept: %d\n", errno);
-			return;
+			return 0;
 		}
 
 		printk("TCP: Accepted connection\n");
@@ -113,7 +113,7 @@ void main(void)
 		/* Start video capture */
 		if (video_stream_start(video)) {
 			LOG_ERR("Unable to start video");
-			return;
+			return 0;
 		}
 
 		printk("Stream started\n");
@@ -125,7 +125,7 @@ void main(void)
 					    K_FOREVER);
 			if (ret) {
 				LOG_ERR("Unable to dequeue video buf");
-				return;
+				return 0;
 			}
 
 			printk("\rSending frame %d", i++);
@@ -144,7 +144,7 @@ void main(void)
 		/* stop capture */
 		if (video_stream_stop(video)) {
 			LOG_ERR("Unable to stop video");
-			return;
+			return 0;
 		}
 
 		/* Flush remaining buffers */

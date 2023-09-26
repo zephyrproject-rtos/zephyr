@@ -10,7 +10,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 /*
  * Initialize MEC1501 EC Interrupt Aggregator (ECIA) and external NVIC
@@ -71,11 +71,10 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
 }
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
 	uint32_t isave;
 
-	ARG_UNUSED(dev);
 
 	isave = __get_PRIMASK();
 	__disable_irq();

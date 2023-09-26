@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2023 Laczen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+        sram_2001C000:sram@2001C000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2001C000 0x4000>;
+		zephyr,memory-region = "FlashSim";
+		status = "okay";
+        };
+
+        soc {
+                sim_flash_controller: sim-flash-controller@0 {
+	                compatible = "zephyr,sim-flash";
+                        reg = <0x0 0x1>;
+
+			#address-cells = <1>;
+		        #size-cells = <1>;
+		        erase-value = <0xff>;
+                        memory-region = <&sram_2001C000>;
+
+			flash_sim0: flash_sim@0 {
+			        status = "okay";
+			        compatible = "soc-nv-flash";
+			        erase-block-size = <512>;
+				/* the flash_simulator test uses a write block
+				 * size of 4 for alignment test, so set it to 4.
+				 */
+			        write-block-size = <4>;
+			        reg = <0x00000000 DT_SIZE_K(16)>;
+                        };
+                };
+        };
+};
+
+&flash_sim0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lfsram_partition: partition@0 {
+			label = "lfsram";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+		};
+	};
+};

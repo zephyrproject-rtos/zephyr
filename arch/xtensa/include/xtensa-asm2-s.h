@@ -7,7 +7,10 @@
 #ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 
+#include <zsr.h>
 #include "xtensa-asm2-context.h"
+
+#include <offsets.h>
 
 /* Assembler header!  This file contains macros designed to be included
  * only by the assembler.
@@ -100,48 +103,48 @@
  */
 .macro FPU_REG_SAVE
 	rur.fcr	a0
-	s32i	a0, a1, BSA_FPU_OFF
+	s32i	a0, a1, ___xtensa_irq_bsa_t_fcr_OFFSET
 	rur.fsr	a0
-	s32i	a0, a1, 4+BSA_FPU_OFF
-	ssi	f0, a1, 8+BSA_FPU_OFF
-	ssi	f1, a1, 12+BSA_FPU_OFF
-	ssi	f2, a1, 16+BSA_FPU_OFF
-	ssi	f3, a1, 20+BSA_FPU_OFF
-	ssi	f4, a1, 24+BSA_FPU_OFF
-	ssi	f5, a1, 28+BSA_FPU_OFF
-	ssi	f6, a1, 32+BSA_FPU_OFF
-	ssi	f7, a1, 36+BSA_FPU_OFF
-	ssi	f8, a1, 40+BSA_FPU_OFF
-	ssi	f9, a1, 44+BSA_FPU_OFF
-	ssi	f10, a1, 48+BSA_FPU_OFF
-	ssi	f11, a1, 52+BSA_FPU_OFF
-	ssi	f12, a1, 56+BSA_FPU_OFF
-	ssi	f13, a1, 60+BSA_FPU_OFF
-	ssi	f14, a1, 64+BSA_FPU_OFF
-	ssi	f15, a1, 68+BSA_FPU_OFF
+	s32i	a0, a1, ___xtensa_irq_bsa_t_fsr_OFFSET
+	ssi	f0, a1, ___xtensa_irq_bsa_t_fpu0_OFFSET
+	ssi	f1, a1, ___xtensa_irq_bsa_t_fpu1_OFFSET
+	ssi	f2, a1, ___xtensa_irq_bsa_t_fpu2_OFFSET
+	ssi	f3, a1, ___xtensa_irq_bsa_t_fpu3_OFFSET
+	ssi	f4, a1, ___xtensa_irq_bsa_t_fpu4_OFFSET
+	ssi	f5, a1, ___xtensa_irq_bsa_t_fpu5_OFFSET
+	ssi	f6, a1, ___xtensa_irq_bsa_t_fpu6_OFFSET
+	ssi	f7, a1, ___xtensa_irq_bsa_t_fpu7_OFFSET
+	ssi	f8, a1, ___xtensa_irq_bsa_t_fpu8_OFFSET
+	ssi	f9, a1, ___xtensa_irq_bsa_t_fpu9_OFFSET
+	ssi	f10, a1, ___xtensa_irq_bsa_t_fpu10_OFFSET
+	ssi	f11, a1, ___xtensa_irq_bsa_t_fpu11_OFFSET
+	ssi	f12, a1, ___xtensa_irq_bsa_t_fpu12_OFFSET
+	ssi	f13, a1, ___xtensa_irq_bsa_t_fpu13_OFFSET
+	ssi	f14, a1, ___xtensa_irq_bsa_t_fpu14_OFFSET
+	ssi	f15, a1, ___xtensa_irq_bsa_t_fpu15_OFFSET
 .endm
 
 .macro FPU_REG_RESTORE
-	l32i.n	a0, a1, BSA_FPU_OFF
+	l32i.n	a0, a1, ___xtensa_irq_bsa_t_fcr_OFFSET
 	wur.fcr	a0
-	l32i.n	a0, a1, 4+BSA_FPU_OFF
+	l32i.n	a0, a1, ___xtensa_irq_bsa_t_fsr_OFFSET
 	wur.fsr	a0
-	lsi	f0, a1, 8+BSA_FPU_OFF
-	lsi	f1, a1, 12+BSA_FPU_OFF
-	lsi	f2, a1, 16+BSA_FPU_OFF
-	lsi	f3, a1, 20+BSA_FPU_OFF
-	lsi	f4, a1, 24+BSA_FPU_OFF
-	lsi	f5, a1, 28+BSA_FPU_OFF
-	lsi	f6, a1, 32+BSA_FPU_OFF
-	lsi	f7, a1, 36+BSA_FPU_OFF
-	lsi	f8, a1, 40+BSA_FPU_OFF
-	lsi	f9, a1, 44+BSA_FPU_OFF
-	lsi	f10, a1, 48+BSA_FPU_OFF
-	lsi	f11, a1, 52+BSA_FPU_OFF
-	lsi	f12, a1, 56+BSA_FPU_OFF
-	lsi	f13, a1, 60+BSA_FPU_OFF
-	lsi	f14, a1, 64+BSA_FPU_OFF
-	lsi	f15, a1, 68+BSA_FPU_OFF
+	lsi	f0, a1, ___xtensa_irq_bsa_t_fpu0_OFFSET
+	lsi	f1, a1, ___xtensa_irq_bsa_t_fpu1_OFFSET
+	lsi	f2, a1, ___xtensa_irq_bsa_t_fpu2_OFFSET
+	lsi	f3, a1, ___xtensa_irq_bsa_t_fpu3_OFFSET
+	lsi	f4, a1, ___xtensa_irq_bsa_t_fpu4_OFFSET
+	lsi	f5, a1, ___xtensa_irq_bsa_t_fpu5_OFFSET
+	lsi	f6, a1, ___xtensa_irq_bsa_t_fpu6_OFFSET
+	lsi	f7, a1, ___xtensa_irq_bsa_t_fpu7_OFFSET
+	lsi	f8, a1, ___xtensa_irq_bsa_t_fpu8_OFFSET
+	lsi	f9, a1, ___xtensa_irq_bsa_t_fpu9_OFFSET
+	lsi	f10, a1, ___xtensa_irq_bsa_t_fpu10_OFFSET
+	lsi	f11, a1, ___xtensa_irq_bsa_t_fpu11_OFFSET
+	lsi	f12, a1, ___xtensa_irq_bsa_t_fpu12_OFFSET
+	lsi	f13, a1, ___xtensa_irq_bsa_t_fpu13_OFFSET
+	lsi	f14, a1, ___xtensa_irq_bsa_t_fpu14_OFFSET
+	lsi	f15, a1, ___xtensa_irq_bsa_t_fpu15_OFFSET
 .endm
 #endif
 
@@ -158,29 +161,123 @@
  */
 .macro ODD_REG_SAVE
 	rsr.SAR a0
-	s32i a0, a1, BSA_SAR_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 #if XCHAL_HAVE_LOOPS
 	rsr.LBEG a0
-	s32i a0, a1, BSA_LBEG_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
 	rsr.LEND a0
-	s32i a0, a1, BSA_LEND_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
 	rsr.LCOUNT a0
-	s32i a0, a1, BSA_LCOUNT_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
 #endif
 	rsr.exccause a0
-	s32i a0, a1, BSA_EXCCAUSE_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
 #if XCHAL_HAVE_S32C1I
 	rsr.SCOMPARE1 a0
-	s32i a0, a1, BSA_SCOMPARE1_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
 	rur.THREADPTR a0
-	s32i a0, a1, BSA_THREADPTR_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 #endif
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_SAVE
 #endif
 .endm
+
+#ifdef CONFIG_XTENSA_MMU
+/*
+ * CALC_PTEVADDR_BASE
+ *
+ * This calculates the virtual address of the first PTE page
+ * (PTEVADDR base, the one mapping 0x00000000) so that we can
+ * use this to obtain the virtual address of the PTE page we are
+ * interested in. This can be obtained via
+ * (1 << CONFIG_XTENSA_MMU_PTEVADDR_SHIFT).
+ *
+ * Note that this is done this way is to avoid any TLB
+ * miss if we are to use l32r to load the PTEVADDR base.
+ * If the page containing the PTEVADDR base address is
+ * not in TLB, we will need to handle the TLB miss which
+ * we are trying to avoid here.
+ *
+ * @param ADDR_REG Register to store the calculated
+ *                 PTEVADDR base address.
+ *
+ * @note The content of ADDR_REG will be modified.
+ *       Save and restore it around this macro usage.
+ */
+.macro CALC_PTEVADDR_BASE ADDR_REG
+	movi \ADDR_REG, 1
+	slli \ADDR_REG, \ADDR_REG, CONFIG_XTENSA_MMU_PTEVADDR_SHIFT
+.endm
+
+/*
+ * PRELOAD_PTEVADDR
+ *
+ * This preloads the page table entries for a 4MB region to avoid TLB
+ * misses. This 4MB region is mapped via a page (4KB) of page table
+ * entries (PTE). Each entry is 4 bytes mapping a 4KB region. Each page,
+ * then, has 1024 entries mapping a 4MB region. Filling TLB entries is
+ * automatically done via hardware, as long as the PTE page associated
+ * with a particular address is also in TLB. If the PTE page is not in
+ * TLB, an exception will be raised that must be handled. This TLB miss
+ * is problematic when we are in the middle of dealing with another
+ * exception or handling an interrupt. So we need to put the PTE page
+ * into TLB by simply do a load operation.
+ *
+ * @param ADDR_REG Register containing the target address
+ * @param PTEVADDR_BASE_REG Register containing the PTEVADDR base
+ *
+ * @note Both the content of ADDR_REG will be modified.
+ *       Save and restore it around this macro usage.
+ */
+.macro PRELOAD_PTEVADDR ADDR_REG, PTEVADDR_BASE_REG
+	/*
+	 * Calculate the offset to first PTE page of all memory.
+	 *
+	 * Every page (4KB) of page table entries contains
+	 * 1024 entires (as each entry is 4 bytes). Each entry
+	 * maps one 4KB page. So one page of entries maps 4MB of
+	 * memory.
+	 *
+	 * 1. We need to find the virtual address of the PTE page
+	 *    having the page table entry mapping the address in
+	 *    register ADDR_REG. To do this, we first need to find
+	 *    the offset of this PTE page from the first PTE page
+	 *    (the one mapping memory 0x00000000):
+	 *    a. Find the beginning address of the 4KB page
+	 *       containing address in ADDR_REG. This can simply
+	 *       be done by discarding 11 bits (or shifting right
+	 *	 and then left 12 bits).
+	 *    b. Since each PTE page contains 1024 entries,
+	 *	 we divide the address obtained in step (a) by
+	 *       further dividing it by 1024 (shifting right and
+	 *       then left 10 bits) to obtain the offset of
+	 *       the PTE page.
+	 *
+	 *    Step (a) and (b) can be obtained together so that
+	 *    we can shift right 22 bits, and then shift left
+	 *    12 bits.
+	 *
+	 * 2. Once we have combine the results from step (1) and
+	 *    PTEVADDR_BASE_REG to get the virtual address of
+	 *    the PTE page.
+	 *
+	 * 3. Do a l32i to force the PTE page to be in TLB.
+	 */
+
+	/* Step 1 */
+	srli \ADDR_REG, \ADDR_REG, 22
+	slli \ADDR_REG, \ADDR_REG, 12
+
+	/* Step 2 */
+	add \ADDR_REG, \ADDR_REG, \PTEVADDR_BASE_REG
+
+	/* Step 3 */
+	l32i \ADDR_REG, \ADDR_REG, 0
+.endm
+#endif /* CONFIG_XTENSA_MMU */
 
 /*
  * CROSS_STACK_CALL
@@ -240,11 +337,14 @@
  * should point to a stored pointer which points to one BSA below the
  * interrupted/old stack) in A1, a handler function in A2, and a "new"
  * stack pointer (i.e. a pointer to the word ABOVE the allocated stack
- * area) in A3.  On return A0/1 will be unchanged, A2 has the return
- * value of the called function, and A3 is clobbered.  A4-A15 become
- * part of called frames and MUST NOT BE IN USE by the code that
- * expands this macro.  The called function gets the context save
- * handle in A1 as it's first argument.
+ * area) in A3.  Exceptions should be enabled via PS.EXCM, but
+ * PS.INTLEVEL must (!) be set such that no nested interrupts can
+ * arrive (we restore the natural INTLEVEL from the value in ZSR_EPS
+ * just before entering the call).  On return A0/1 will be unchanged,
+ * A2 has the return value of the called function, and A3 is
+ * clobbered.  A4-A15 become part of called frames and MUST NOT BE IN
+ * USE by the code that expands this macro.  The called function gets
+ * the context save handle in A1 as it's first argument.
  */
 .macro CROSS_STACK_CALL
 	mov a6, a3		/* place "new sp" in the next frame's A2 */
@@ -254,8 +354,8 @@
 
 	/* Recover the interrupted SP from the BSA */
 	l32i a1, a1, 0
-	l32i a0, a1, BSA_A0_OFF
-	addi a1, a1, BASE_SAVE_AREA_SIZE
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
 
 	call4 _xstack_call0_\@
 	mov a1, a3		/* restore original SP */
@@ -264,10 +364,13 @@
 .align 4
 _xstack_call0_\@:
 	/* We want an ENTRY to set a bit in windowstart and do the
-	 * rotation, but we want our own SP
+	 * rotation, but we want our own SP.  After that, we are
+	 * running in a valid frame, so re-enable interrupts.
 	 */
 	entry a1, 16
 	mov a1, a2
+	rsr.ZSR_EPS a2
+	wsr.PS a2
 	call4 _xstack_call1_\@
 	mov a2, a6		/* copy return value */
 	retw
@@ -293,18 +396,18 @@ _xstack_returned_\@:
  * that struct which contains an interrupt stack top and a "nest
  * count" word.
  */
-.macro EXCINT_HANDLER SR, NEST_OFF, INTSTACK_OFF
+.macro EXCINT_HANDLER NEST_OFF, INTSTACK_OFF
 	/* A2 contains our handler function which will get clobbered
 	 * by the save.  Stash it into the unused "a1" slot in the
 	 * BSA and recover it immediately after.  Kind of a hack.
 	 */
-	s32i a2, a1, BSA_SCRATCH_OFF
+	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
 	ODD_REG_SAVE
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0
-	l32i a2, a2, BSA_SCRATCH_OFF
+	l32i a2, a2, ___xtensa_irq_bsa_t_scratch_OFFSET
 
 	/* There's a gotcha with level 1 handlers: the INTLEVEL field
 	 * gets left at zero and not set like high priority interrupts
@@ -328,13 +431,23 @@ _xstack_returned_\@:
 	wsr.PS a0
 _not_l1:
 
-	/* Unmask EXCM bit so C code can spill/fill in window
-	 * exceptions.  Note interrupts are already fully masked by
-	 * INTLEVEL, so this is safe.
+	/* Setting up the cross stack call below has states where the
+	 * resulting frames are invalid/non-reentrant, so we can't
+	 * allow nested interrupts.  But we do need EXCM unmasked, as
+	 * we use CALL/ENTRY instructions in the process and need to
+	 * handle exceptions to spill caller/interruptee frames.  Use
+	 * PS.INTLEVEL at maximum to mask all interrupts and stash the
+	 * current value in our designated EPS register (which is
+	 * guaranteed unused across the call)
 	 */
-	rsr.PS a0
-	movi a3, ~(PS_EXCM_MASK)
+	rsil a0, 0xf
+
+	/* Since we are unmasking EXCM, we need to set RING bits to kernel
+	 * mode, otherwise we won't be able to run the exception handler in C.
+	 */
+	movi a3, ~(PS_EXCM_MASK) & ~(PS_RING_MASK)
 	and a0, a0, a3
+	wsr.ZSR_EPS a0
 	wsr.PS a0
 	rsync
 
@@ -344,7 +457,7 @@ _not_l1:
 	 * entirely new area depending on whether we find a 1 in our
 	 * SR[off] macro argument.
 	 */
-	rsr.\SR a3
+	rsr.ZSR_CPU a3
 	l32i a0, a3, \NEST_OFF
 	beqz a0, _switch_stacks_\@
 
@@ -369,7 +482,7 @@ _do_call_\@:
 	rsil a0, XCHAL_NMILEVEL
 
 	/* Decrement nest count */
-	rsr.\SR a3
+	rsr.ZSR_CPU a3
 	l32i a0, a3, \NEST_OFF
 	addi a0, a0, -1
 	s32i a0, a3, \NEST_OFF
@@ -384,8 +497,8 @@ _do_call_\@:
 	 */
 	beq a6, a1, _restore_\@
 	l32i a1, a1, 0
-	l32i a0, a1, BSA_A0_OFF
-	addi a1, a1, BASE_SAVE_AREA_SIZE
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
 #ifndef CONFIG_KERNEL_COHERENCE
 	/* When using coherence, the registers of the interrupted
 	 * context got spilled upstream in arch_cohere_stacks()
@@ -433,10 +546,35 @@ _Level\LVL\()VectorHelper :
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
 #endif
-	addi a1, a1, -BASE_SAVE_AREA_SIZE
-	s32i a0, a1, BSA_A0_OFF
-	s32i a2, a1, BSA_A2_OFF
-	s32i a3, a1, BSA_A3_OFF
+#ifdef CONFIG_XTENSA_MMU
+	wsr.ZSR_EXTRA0 a2
+	wsr.ZSR_EXTRA1 a3
+	rsync
+
+	/* Calculations below will clobber registers used.
+	 * So we make a copy of the stack pointer to avoid
+	 * changing it.
+	 */
+	mov a3, a1
+
+	CALC_PTEVADDR_BASE a2
+
+	/* Preload PTE entry page of current stack. */
+	PRELOAD_PTEVADDR a3, a2
+
+	/* Preload PTE entry page of new stack, where
+	 * it will be used later (in EXCINT_HANDLER above).
+	 */
+	rsr.ZSR_CPU a3
+	PRELOAD_PTEVADDR a3, a2
+
+	rsr.ZSR_EXTRA1 a3
+	rsr.ZSR_EXTRA0 a2
+#endif /* CONFIG_XTENSA_MMU */
+	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
+	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
+	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 
 	/* Level "1" is the exception handler, which uses a different
 	 * calling convention.  No special register holds the
@@ -445,16 +583,27 @@ _Level\LVL\()Vector:
 	 */
 .if \LVL == 1
 	rsr.PS a0
+#ifdef CONFIG_XTENSA_MMU
+	/* TLB misses also come through level 1 interrupts.
+	 * We do not want to unconditionally unmask interrupts.
+	 * Execution continues after a TLB miss is handled,
+	 * and we need to preserve the interrupt mask.
+	 * The interrupt mask will be cleared for non-TLB-misses
+	 * level 1 interrupt later in the handler code.
+	 */
+	movi a2, ~PS_EXCM_MASK
+#else
 	movi a2, ~(PS_EXCM_MASK | PS_INTLEVEL_MASK)
+#endif
 	and a0, a0, a2
-	s32i a0, a1, BSA_PS_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .else
 	rsr.EPS\LVL a0
-	s32i a0, a1, BSA_PS_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .endif
 
 	rsr.EPC\LVL a0
-	s32i a0, a1, BSA_PC_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* What's happening with this jump is that the L32R
 	 * instruction to load a full 32 bit immediate must use an

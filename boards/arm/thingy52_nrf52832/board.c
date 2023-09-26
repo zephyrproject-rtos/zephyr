@@ -11,11 +11,11 @@
 static const struct gpio_dt_spec ccs_gpio =
 	GPIO_DT_SPEC_GET(DT_NODELABEL(ccs_pwr), enable_gpios);
 
-static int pwr_ctrl_init(const struct device *dev)
+static int pwr_ctrl_init(void)
 {
 	int ret;
 
-	if (!device_is_ready(ccs_gpio.port)) {
+	if (!gpio_is_ready_dt(&ccs_gpio)) {
 		return -ENODEV;
 	}
 

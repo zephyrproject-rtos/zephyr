@@ -39,7 +39,7 @@
 	};
 
 	intc: intc@fffed000 {
-		compatible = "arm,gic";
+		compatible = "arm,gic-v1", "arm,gic";
 		#interrupt-cells = <4>;
 		interrupt-controller;
 		reg = <0xfffed000 0x1000>,
@@ -223,20 +223,18 @@
 		};
 
 		usb0: usb@ffb30000 {
-			compatible = "snps,designware-usb";
+			compatible = "snps,dwc2";
 			reg = <0xffb30000 0xffff>;
 			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
-			num-bidir-endpoints = <16>;
 			status = "disabled";
 			};
 
 		usb1: usb@ffb40000 {
-			compatible = "snps,designware-usb";
+			compatible = "snps,dwc2";
 			reg = <0xffb40000 0xffff>;
 			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
-			num-bidir-endpoints = <16>;
 			status = "okay";
 			};
 
@@ -245,6 +243,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xfff00000 0x1000>;
+			fifo-depth = <256>;
 			interrupts = <0 154 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "okay";
@@ -255,6 +254,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xfff01000 0x1000>;
+			fifo-depth = <256>;
 			interrupts = <0 155 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "disabled";

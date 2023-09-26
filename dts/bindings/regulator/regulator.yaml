@@ -15,6 +15,10 @@ properties:
     type: string
     description: A string used as a descriptive name for regulator outputs
 
+  regulator-init-microvolt:
+    type: int
+    description: Voltage set during initialisation
+
   regulator-min-microvolt:
     type: int
     description: smallest voltage consumers may set
@@ -143,7 +147,7 @@ properties:
     type: int
     description: |
       Set over current error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested. Zero can be
+      probably is malfunctional and damage prevention is requested. Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted.
 
@@ -168,7 +172,7 @@ properties:
     type: int
     description: |
       Set over voltage error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested Zero can be
+      probably is malfunctional and damage prevention is requested Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted. Limit is given as
       microvolt offset from voltage set to regulator.
@@ -196,7 +200,7 @@ properties:
     type: int
     description: |
       Set under voltage error limit. This is a limit where part of the hardware
-      propably is malfunctional and damage prevention is requested Zero can be
+      probably is malfunctional and damage prevention is requested Zero can be
       passed to disable error detection and value '1' indicates that detection
       should be enabled but limit setting can be omitted. Limit is given as
       microvolt offset from voltage set to regulator.
@@ -223,7 +227,7 @@ properties:
     type: int
     description: |
       Set over temperature error limit. This is a limit where part of the
-      hardware propably is malfunctional and damage prevention is requested Zero
+      hardware probably is malfunctional and damage prevention is requested Zero
       can be passed to disable error detection and value '1' indicates that
       detection should be enabled but limit setting can be omitted.
 

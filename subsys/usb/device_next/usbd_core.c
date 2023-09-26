@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/sys/slist.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usbd.h>
 
 #include "usbd_device.h"
+#include "usbd_desc.h"
 #include "usbd_config.h"
 #include "usbd_init.h"
 #include "usbd_ch9.h"
@@ -43,11 +45,9 @@ static int event_handler_ep_request(struct usbd_contex *const uds_ctx,
 	bi = udc_get_buf_info(event->buf);
 
 	if (USB_EP_GET_IDX(bi->ep) == 0) {
-		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf,
-					    event->status);
+		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);
 	} else {
-		ret = usbd_class_handle_xfer(uds_ctx, event->buf,
-					     event->status);
+		ret = usbd_class_handle_xfer(uds_ctx, event->buf, bi->err);
 	}
 
 	if (ret) {
@@ -121,7 +121,7 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 }
 
 /* TODO: Add event broadcaster to user application */
-static int ALWAYS_INLINE usbd_event_handler(struct usbd_contex *const uds_ctx,
+static ALWAYS_INLINE int usbd_event_handler(struct usbd_contex *const uds_ctx,
 					    struct udc_event *const event)
 {
 	int ret = 0;
@@ -171,7 +171,8 @@ static void usbd_thread(void)
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
 		STRUCT_SECTION_FOREACH(usbd_contex, uds_ctx) {
-			if (uds_ctx->dev == event.dev) {
+			if (uds_ctx->dev == event.dev &&
+			    usbd_is_initialized(uds_ctx)) {
 				usbd_event_handler(uds_ctx, &event);
 			}
 		}
@@ -201,10 +202,27 @@ int usbd_device_init_core(struct usbd_contex *const uds_ctx)
 
 int usbd_device_shutdown_core(struct usbd_contex *const uds_ctx)
 {
+	struct usbd_config_node *cfg_nd;
+	int ret;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->configs, cfg_nd, node) {
+		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+
+		ret = usbd_class_remove_all(uds_ctx, cfg_value);
+		if (ret) {
+			LOG_ERR("Failed to cleanup registered classes, %d", ret);
+		}
+	}
+
+	ret = usbd_desc_remove_all(uds_ctx);
+	if (ret) {
+		LOG_ERR("Failed to cleanup descriptors, %d", ret);
+	}
+
 	return udc_shutdown(uds_ctx->dev);
 }
 
-static int usbd_pre_init(const struct device *unused)
+static int usbd_pre_init(void)
 {
 	k_thread_create(&usbd_thread_data, usbd_stack,
 			K_KERNEL_STACK_SIZEOF(usbd_stack),

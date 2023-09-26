@@ -56,7 +56,8 @@ union aligntest {
 };
 
 
-#if defined(CONFIG_MINIMAL_LIBC) && (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
+#if defined(CONFIG_COMMON_LIBC_MALLOC) && \
+	(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0)
 __no_optimization void _test_no_mem_malloc(void)
 {
 	int *iptr = NULL;

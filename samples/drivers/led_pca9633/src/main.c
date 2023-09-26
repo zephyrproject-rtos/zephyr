@@ -22,17 +22,17 @@ LOG_MODULE_REGISTER(main);
 #define DELAY_TIME_MS 1000
 #define DELAY_TIME K_MSEC(DELAY_TIME_MS)
 
-void main(void)
+int main(void)
 {
 	const struct device *const led_dev = DEVICE_DT_GET_ANY(nxp_pca9633);
 	int i, ret;
 
 	if (!led_dev) {
 		LOG_ERR("No devices with compatible nxp,pca9633 found");
-		return;
+		return 0;
 	} else if (!device_is_ready(led_dev)) {
 		LOG_ERR("LED device %s is not ready", led_dev->name);
-		return;
+		return 0;
 	} else {
 		LOG_INF("Found LED device %s", led_dev->name);
 	}
@@ -44,7 +44,7 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_on(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -54,7 +54,7 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_off(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -64,7 +64,7 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_set_brightness(led_dev, i, HALF_BRIGHTNESS);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -74,7 +74,7 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_off(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -85,7 +85,7 @@ void main(void)
 			ret = led_blink(led_dev, i, BLINK_DELAY_ON,
 					BLINK_DELAY_OFF);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
@@ -98,11 +98,12 @@ void main(void)
 		for (i = 0; i < NUM_LEDS; i++) {
 			ret = led_off(led_dev, i);
 			if (ret < 0) {
-				return;
+				return 0;
 			}
 
 			k_sleep(DELAY_TIME);
 		}
 
 	}
+	return 0;
 }

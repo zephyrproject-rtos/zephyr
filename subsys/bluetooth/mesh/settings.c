@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 #include <zephyr/settings/settings.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #include "host/hci_core.h"
 #include "mesh.h"
@@ -29,6 +30,7 @@
 #include "settings.h"
 #include "cfg.h"
 #include "solicitation.h"
+#include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -39,6 +41,21 @@ LOG_MODULE_REGISTER(bt_mesh_settings);
 #else
 #define RPL_STORE_TIMEOUT (-1)
 #endif
+
+#ifdef CONFIG_BT_MESH_SETTINGS_WORKQ_PRIO
+#define SETTINGS_WORKQ_PRIO CONFIG_BT_MESH_SETTINGS_WORKQ_PRIO
+#else
+#define SETTINGS_WORKQ_PRIO 1
+#endif
+
+#ifdef CONFIG_BT_MESH_SETTINGS_WORKQ_STACK_SIZE
+#define SETTINGS_WORKQ_STACK_SIZE CONFIG_BT_MESH_SETTINGS_WORKQ_STACK_SIZE
+#else
+#define SETTINGS_WORKQ_STACK_SIZE 0
+#endif
+
+static struct k_work_q settings_work_q;
+static K_THREAD_STACK_DEFINE(settings_work_stack, SETTINGS_WORKQ_STACK_SIZE);
 
 static struct k_work_delayable pending_store;
 static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
@@ -115,7 +132,9 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			      BIT(BT_MESH_SETTINGS_CFG_PENDING)      |      \
 			      BIT(BT_MESH_SETTINGS_MOD_PENDING)      |      \
 			      BIT(BT_MESH_SETTINGS_VA_PENDING)       |      \
-			      BIT(BT_MESH_SETTINGS_SSEQ_PENDING))
+			      BIT(BT_MESH_SETTINGS_SSEQ_PENDING)     |      \
+			      BIT(BT_MESH_SETTINGS_COMP_PENDING)     |      \
+			      BIT(BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING))
 
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 {
@@ -142,9 +161,19 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 	 * deadline.
 	 */
 	if (timeout_ms < remaining_ms) {
-		k_work_reschedule(&pending_store, K_MSEC(timeout_ms));
+		if (IS_ENABLED(CONFIG_BT_MESH_SETTINGS_WORKQ)) {
+			k_work_reschedule_for_queue(&settings_work_q, &pending_store,
+						    K_MSEC(timeout_ms));
+		} else {
+			k_work_reschedule(&pending_store, K_MSEC(timeout_ms));
+		}
 	} else {
-		k_work_schedule(&pending_store, K_MSEC(timeout_ms));
+		if (IS_ENABLED(CONFIG_BT_MESH_SETTINGS_WORKQ)) {
+			k_work_schedule_for_queue(&settings_work_q, &pending_store,
+						  K_MSEC(timeout_ms));
+		} else {
+			k_work_schedule(&pending_store, K_MSEC(timeout_ms));
+		}
 	}
 }
 
@@ -188,6 +217,11 @@ static void store_pending(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(pending_flags,
+				      BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING)) {
+		bt_mesh_net_pending_dev_key_cand_store();
+	}
+
+	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_HB_PUB_PENDING)) {
 		bt_mesh_hb_pub_pending_store();
 	}
@@ -195,6 +229,11 @@ static void store_pending(struct k_work *work)
 	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_CFG_PENDING)) {
 		bt_mesh_cfg_pending_store();
+	}
+
+	if (atomic_test_and_clear_bit(pending_flags,
+				      BT_MESH_SETTINGS_COMP_PENDING)) {
+		bt_mesh_comp_data_pending_clear();
 	}
 
 	if (atomic_test_and_clear_bit(pending_flags,
@@ -228,6 +267,13 @@ static void store_pending(struct k_work *work)
 
 void bt_mesh_settings_init(void)
 {
+	if (IS_ENABLED(CONFIG_BT_MESH_SETTINGS_WORKQ)) {
+		k_work_queue_start(&settings_work_q, settings_work_stack,
+				   K_THREAD_STACK_SIZEOF(settings_work_stack),
+				   K_PRIO_COOP(SETTINGS_WORKQ_PRIO), NULL);
+		k_thread_name_set(&settings_work_q.thread, "BT Mesh settings workq");
+	}
+
 	k_work_init_delayable(&pending_store, store_pending);
 }
 

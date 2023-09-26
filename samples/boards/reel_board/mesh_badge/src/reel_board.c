@@ -54,7 +54,7 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-static const struct device *const epd_dev = DEVICE_DT_GET_ONE(solomon_ssd16xxfb);
+static const struct device *const epd_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static bool pressed;
 static uint8_t screen_id = SCREEN_MAIN;
 static struct k_work_delayable epd_work;
@@ -504,7 +504,7 @@ static int configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	if (!device_is_ready(sw0_gpio.port)) {
+	if (!gpio_is_ready_dt(&sw0_gpio)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
 		return -ENODEV;
 	}
@@ -553,7 +553,7 @@ static int configure_leds(void)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(leds); i++) {
-		if (!device_is_ready(leds[i].port)) {
+		if (!gpio_is_ready_dt(&leds[i])) {
 			printk("%s: device not ready.\n", leds[i].port->name);
 			return -ENODEV;
 		}

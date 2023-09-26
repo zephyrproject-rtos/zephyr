@@ -18,14 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Structured Data
- * @defgroup structured_data Structured Data
- */
-
-
-/**
  * @defgroup json JSON
- * @ingroup structured_data
+ * @ingroup utilities
  * @{
  */
 
@@ -150,7 +144,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *     struct foo {
- *         int some_int;
+ *         int32_t some_int;
  *     };
  *
  *     struct json_obj_descr foo[] = {
@@ -176,9 +170,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct nested {
- *          int foo;
+ *          int32_t foo;
  *          struct {
- *             int baz;
+ *             int32_t baz;
  *          } bar;
  *      };
  *
@@ -266,7 +260,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct example {
- *          int foo[10];
+ *          int32_t foo[10];
  *          size_t foo_len;
  *      };
  *
@@ -307,7 +301,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -359,7 +353,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct person_heights_array {
@@ -395,6 +389,43 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name_len = sizeof(#field_name_) - 1, \
 		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, field_name_), \
+		{ \
+			.array = { \
+				.element_descr = Z_JSON_ELEMENT_DESCR( \
+					struct_, len_field_, JSON_TOK_ARRAY_START, \
+					Z_JSON_DESCR_ARRAY( \
+						elem_descr_, \
+						1 + ZERO_OR_COMPILE_ERROR(elem_descr_len_ == 1))), \
+				.n_elements = (max_len_), \
+			}, \
+		}, \
+	}
+
+/**
+ * @brief Variant of JSON_OBJ_DESCR_ARRAY_ARRAY that can be used when the
+ *        structure and JSON field names differ.
+ *
+ * This is useful when the JSON field is not a valid C identifier.
+ *
+ * @param struct_ Struct packing the values
+ * @param json_field_name_ String, field name in JSON strings
+ * @param struct_field_name_ Field name in the struct containing the array
+ * @param max_len_ Maximum number of elements in the array
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ *
+ * @see JSON_OBJ_DESCR_ARRAY_ARRAY
+ */
+#define JSON_OBJ_DESCR_ARRAY_ARRAY_NAMED(struct_, json_field_name_, struct_field_name_, \
+					 max_len_, len_field_, elem_descr_, elem_descr_len_) \
+	{ \
+		.field_name = (#json_field_name_), \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.field_name_len = sizeof(#json_field_name_) - 1, \
+		.type = JSON_TOK_ARRAY_START, \
+		.offset = offsetof(struct_, struct_field_name_), \
 		{ \
 			.array = { \
 				.element_descr = Z_JSON_ELEMENT_DESCR( \
@@ -513,7 +544,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -560,7 +591,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
@@ -594,7 +625,7 @@ int64_t json_obj_parse(char *json, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
@@ -694,6 +725,18 @@ size_t json_calc_escaped_len(const char *str, size_t len);
  */
 ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
 			      size_t descr_len, const void *val);
+
+/**
+ * @brief Calculates the string length to fully encode an array
+ *
+ * @param descr Pointer to the descriptor array
+ * @param val Struct holding the values
+ *
+ * @return Number of bytes necessary to encode the values if >0,
+ * an error code is returned.
+ */
+ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
+				  const void *val);
 
 /**
  * @brief Encodes an object in a contiguous memory location

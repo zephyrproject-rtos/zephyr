@@ -63,7 +63,7 @@ level to the Zephyr GitHub repository.
 
 You may nominate yourself, or another GitHub user, for promotion to the Triage
 permission level by creating a GitHub issue, using the :github:`nomination
-template <new?assignees=&labels=Role+Nomination&template=nomination.md&title=>`.
+template <new?assignees=&labels=Role+Nomination&template=006_nomination.md&title=>`.
 
 Contributors granted the Triage permission level are permitted to add reviewers
 to a pull request and can be added as a reviewer by other GitHub users.

@@ -8,5 +8,7 @@ Testing
 
    ztest
    twister
+   pytest
    coverage
+   BabbleSim<bsim>
    ztest_deprecated

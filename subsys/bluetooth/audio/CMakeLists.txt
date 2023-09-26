@@ -3,9 +3,8 @@
 add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 
 zephyr_library()
-zephyr_library_sources(
-	audio.c
-)
+
+zephyr_library_sources(audio.c)
 
 if (CONFIG_BT_VOCS OR CONFIG_BT_VOCS_CLIENT)
 	zephyr_library_sources(vocs.c)
@@ -61,3 +60,4 @@ zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CAP cap_stream.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CAP_ACCEPTOR cap_acceptor.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CAP_INITIATOR cap_initiator.c)
+zephyr_library_sources_ifdef(CONFIG_BT_TMAP tmap.c)

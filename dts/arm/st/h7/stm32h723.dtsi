@@ -7,11 +7,13 @@
 
 #include <mem.h>
 #include <st/h7/stm32h7.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	soc {
+		compatible = "st,stm32h723", "st,stm32h7", "simple-bus";
+
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
@@ -40,9 +42,17 @@
 			status = "disabled";
 		};
 
+		/*
+		 * ADC3 on STM32H723, 725, 730, 733 & 735 is a 12-bit resolution
+		 * ADC, so we redefine the resolution for these devices.
+		 */
 		adc3: adc@58026000 {
-			temp-channel = <17>;
-			vref-channel = <18>;
+			resolutions = <STM32H72X_ADC3_RES(12, 0x00)
+				       STM32H72X_ADC3_RES(10, 0x01)
+				       STM32H72X_ADC3_RES(8, 0x02)
+				       STM32H72X_ADC3_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -105,20 +115,19 @@
 			status = "disabled";
 		};
 
-		can {
-			can3: can@4000D400 {
-				compatible = "st,stm32h7-fdcan";
-				reg = <0x4000D400 0x400>, <0x4000ac00 0x350>;
-				reg-names = "m_can", "message_ram";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
-				interrupts = <159 0>, <160 0>, <63 0>;
-				interrupt-names = "LINE_0", "LINE_1", "CALIB";
-				sjw = <1>;
-				sample-point = <875>;
-				sjw-data = <1>;
-				sample-point-data = <875>;
-				status = "disabled";
-			};
+		fdcan3: can@4000d400 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x4000d400 0x400>, <0x4000ac00 0x9f0>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+			interrupts = <159 0>, <160 0>, <63 0>;
+			interrupt-names = "LINE_0", "LINE_1", "CALIB";
+			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			status = "disabled";
 		};
 
 		rtc@58004000 {
@@ -179,5 +188,13 @@
 	die_temp: dietemp {
 		io-channels = <&adc3 17>;
 		ts-cal2-temp = <130>;
+	};
+
+	vref: vref {
+		io-channels = <&adc3 18>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 16>;
 	};
 };

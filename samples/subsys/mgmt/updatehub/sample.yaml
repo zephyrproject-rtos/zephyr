@@ -3,7 +3,10 @@ sample:
   name: UpdateHub
 common:
   harness: net
-  tags: net wifi updatehub
+  tags:
+    - net
+    - wifi
+    - updatehub
   depends_on: netif
   build_only: true
   platform_allow: frdm_k64f

@@ -51,7 +51,7 @@ static void bt_ready(int err)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	int temp = 0;
@@ -62,7 +62,7 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	for (;;) {
@@ -78,4 +78,5 @@ void main(void)
 		}
 		k_sleep(K_MSEC(BT_GAP_ADV_SLOW_INT_MIN));
 	}
+	return 0;
 }

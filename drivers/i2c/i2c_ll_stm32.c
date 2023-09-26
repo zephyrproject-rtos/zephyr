@@ -61,7 +61,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t *) &cfg->pclken[0],
+					   (clock_control_subsys_t) &cfg->pclken[0],
 					   &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
@@ -89,56 +89,6 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #endif
 
 	k_sem_give(&data->bus_mutex);
-
-	return ret;
-}
-
-static inline int
-i2c_stm32_transaction(const struct device *dev,
-		      struct i2c_msg msg, uint8_t *next_msg_flags,
-		      uint16_t periph)
-{
-	/*
-	 * Perform a I2C transaction, while taking into account the STM32 I2C
-	 * peripheral has a limited maximum chunk size. Take appropriate action
-	 * if the message to send exceeds that limit.
-	 *
-	 * The last chunk of a transmission uses this function's next_msg_flags
-	 * parameter for its backend calls (_write/_read). Any previous chunks
-	 * use a copy of the current message's flags, with the STOP and RESTART
-	 * bits turned off. This will cause the backend to use reload-mode,
-	 * which will make the combination of all chunks to look like one big
-	 * transaction on the wire.
-	 */
-	const uint32_t i2c_stm32_maxchunk = 255U;
-	const uint8_t saved_flags = msg.flags;
-	uint8_t combine_flags =
-		saved_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
-	uint8_t *flagsp = NULL;
-	uint32_t rest = msg.len;
-	int ret = 0;
-
-	do { /* do ... while to allow zero-length transactions */
-		if (msg.len > i2c_stm32_maxchunk) {
-			msg.len = i2c_stm32_maxchunk;
-			msg.flags &= ~I2C_MSG_STOP;
-			flagsp = &combine_flags;
-		} else {
-			msg.flags = saved_flags;
-			flagsp = next_msg_flags;
-		}
-		if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, &msg, flagsp, periph);
-		} else {
-			ret = stm32_i2c_msg_read(dev, &msg, flagsp, periph);
-		}
-		if (ret < 0) {
-			break;
-		}
-		rest -= msg.len;
-		msg.buf += msg.len;
-		msg.len = rest;
-	} while (rest > 0U);
 
 	return ret;
 }
@@ -196,11 +146,6 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 		return ret;
 	}
 
-	ret = pm_device_runtime_get(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Send out messages */
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
@@ -220,7 +165,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
-		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
+		ret = stm32_i2c_transaction(dev, *current, next_msg_flags, slave);
 		if (ret < 0) {
 			break;
 		}
@@ -276,12 +221,12 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 
 	LOG_ERR("attempting to recover bus");
 
-	if (!device_is_ready(config->scl.port)) {
+	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->sda.port)) {
+	if (!gpio_is_ready_dt(&config->sda)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}
@@ -380,7 +325,7 @@ static int i2c_stm32_activate(const struct device *dev)
 
 	/* Enable device clock. */
 	if (clock_control_on(clk,
-			     (clock_control_subsys_t *) &cfg->pclken[0]) != 0) {
+			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
 	}
@@ -418,7 +363,7 @@ static int i2c_stm32_init(const struct device *dev)
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
-					(clock_control_subsys_t *) &cfg->pclken[1],
+					(clock_control_subsys_t) &cfg->pclken[1],
 					NULL);
 		if (ret < 0) {
 			return -EIO;

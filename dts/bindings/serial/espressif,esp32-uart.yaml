@@ -13,3 +13,11 @@ properties:
 
   pinctrl-names:
     required: true
+
+  hw-rs485-hd-mode:
+    type: boolean
+    description: |
+      Enable the hardware RS485 half duplex mode.
+      Overrides hw-flow-control if both are set.
+      Using this mode, the pin assigned to DTR
+      is asserted during transmission.

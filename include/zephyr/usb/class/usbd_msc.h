@@ -11,6 +11,8 @@
  * Header exposes API for registering LUNs.
  */
 
+#include <zephyr/sys/iterable_sections.h>
+
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_USBD_MSC_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_USBD_MSC_H_
 

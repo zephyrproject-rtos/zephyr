@@ -2,11 +2,19 @@ sample:
   description: Hello Thrift server sample
   name: hello thrift server
 common:
-  tags: thrift cpp sample
+  tags:
+    - thrift
+    - cpp
+    - sample
   build_only: true
   modules:
     - thrift
-  platform_allow: mps2_an385 qemu_x86_64
+  platform_allow:
+    - mps2_an385
+    - qemu_x86_64
+  integration_platforms:
+    - qemu_x86_64
+  filter: CONFIG_FULL_LIBCPP_SUPPORTED
 tests:
   sample.thrift.hello.server.binaryProtocol: {}
   sample.thrift.hello.server.compactProtocol:

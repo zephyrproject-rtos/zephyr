@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 
@@ -34,6 +35,7 @@
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
+#include "ull_internal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
@@ -157,12 +159,32 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 	/* This function is called from both Thread and Mayfly (ISR),
 	 * make sure only a single context have access at a time.
 	 */
-
 	struct proc_ctx *ctx;
 
 	bool key = shared_data_access_lock();
 
 	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+
+	shared_data_access_unlock(key);
+
+	return ctx;
+}
+
+struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc)
+{
+	/* This function is called from both Thread and Mayfly (ISR),
+	 * make sure only a single context have access at a time.
+	 */
+
+	struct proc_ctx *ctx, *tmp;
+
+	bool key = shared_data_access_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->llcp.local.pend_proc_list, ctx, tmp, node) {
+		if (ctx->proc == proc) {
+			break;
+		}
+	}
 
 	shared_data_access_unlock(key);
 
@@ -199,8 +221,26 @@ void llcp_lr_prt_stop(struct ll_conn *conn)
 	conn->llcp.local.prt_expire = 0U;
 }
 
-void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_lr_flush_procedures(struct ll_conn *conn)
 {
+	struct proc_ctx *ctx;
+
+	/* Flush all pending procedures */
+	ctx = lr_dequeue(conn);
+	while (ctx) {
+		llcp_nodes_release(conn, ctx);
+		llcp_proc_ctx_release(ctx);
+		ctx = lr_dequeue(conn);
+	}
+}
+
+void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
+		struct node_rx_pdu *rx)
+{
+	/* Store RX node and link */
+	ctx->node_ref.rx = rx;
+	ctx->node_ref.link = link;
+
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
@@ -305,6 +345,10 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 		/* Ignore tx_ack */
 	}
+
+	/* Clear TX node reference */
+	ctx->node_ref.tx_ack = NULL;
+
 	llcp_lr_check_done(conn, ctx);
 }
 
@@ -426,19 +470,7 @@ static void lr_act_connect(struct ll_conn *conn)
 
 static void lr_act_disconnect(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = lr_dequeue(conn);
-
-	/*
-	 * we may have been disconnected in the
-	 * middle of a control procedure, in
-	 * which case we need to release context
-	 */
-	while (ctx != NULL) {
-		llcp_proc_ctx_release(ctx);
-		ctx = lr_dequeue(conn);
-	}
+	llcp_lr_flush_procedures(conn);
 }
 
 static void lr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
@@ -582,17 +614,10 @@ void llcp_lr_disconnect(struct ll_conn *conn)
 	lr_execute_fsm(conn, LR_EVT_DISCONNECT, NULL);
 }
 
-void llcp_lr_abort(struct ll_conn *conn)
+void llcp_lr_terminate(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
 
-	/* Flush all pending procedures */
-	ctx = lr_dequeue(conn);
-	while (ctx) {
-		llcp_proc_ctx_release(ctx);
-		ctx = lr_dequeue(conn);
-	}
-
+	llcp_lr_flush_procedures(conn);
 	llcp_lr_prt_stop(conn);
 	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);

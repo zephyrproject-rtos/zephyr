@@ -870,6 +870,22 @@ int i3c_ccc_do_rstdaa_all(const struct device *controller);
 int i3c_ccc_do_setdasa(const struct i3c_device_desc *target);
 
 /**
+ * @brief Set New Dynamic Address for a target
+ *
+ * Helper function to do SETNEWDA(Set New Dynamic Address) for a particular target.
+ *
+ * Note this does not update @p target with the new dynamic address.
+ *
+ * @param[in] target Pointer to the target device descriptor where
+ *                   the device is configured with a static address.
+ * @param[in] new_da Pointer to the new_da struct.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setnewda(const struct i3c_device_desc *target,
+			  struct i3c_ccc_address new_da);
+
+/**
  * @brief Broadcast ENEC/DISEC to enable/disable target events.
  *
  * Helper function to broadcast Target Events Command to enable or

@@ -42,7 +42,7 @@ static inline uint32_t rotl(const uint32_t x, int k)
 	return (x << k) | (x >> (32 - k));
 }
 
-static int xoshiro128_initialize(const struct device *dev)
+static int xoshiro128_initialize(void)
 {
 	if (!device_is_ready(entropy_driver)) {
 		return -ENODEV;

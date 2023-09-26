@@ -52,11 +52,12 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("Run ipv4 autoconf client");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
 	net_mgmt_add_event_callback(&mgmt_cb);
+	return 0;
 }

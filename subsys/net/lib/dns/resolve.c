@@ -1075,7 +1075,7 @@ static void query_timeout(struct k_work *work)
 	 */
 	ret = k_mutex_lock(&pending_query->ctx->lock, K_NO_WAIT);
 	if (ret != 0) {
-		struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+		struct k_work_delayable *dwork2 = k_work_delayable_from_work(work);
 
 		/*
 		 * Reschedule query timeout handler with some delay, so that all
@@ -1085,7 +1085,7 @@ static void query_timeout(struct k_work *work)
 		 * Timeout value was arbitrarily chosen and can be updated in
 		 * future if needed.
 		 */
-		k_work_reschedule(dwork, K_MSEC(10));
+		k_work_reschedule(dwork2, K_MSEC(10));
 		return;
 	}
 

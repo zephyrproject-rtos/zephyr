@@ -471,18 +471,18 @@ do { \
 	if (_pbuf != NULL) { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
-		for (size_t i = 0; i < _ros_cnt; i++) { \
-			*_pbuf_loc++ = _ros_pos_buf[i]; \
+		for (size_t _ros_idx = 0; _ros_idx < _ros_cnt; _ros_idx++) { \
+			*_pbuf_loc++ = _ros_pos_buf[_ros_idx]; \
 		} \
-		for (size_t i = 0; i < (2 * _rws_cnt); i++) { \
-			*_pbuf_loc++ = _rws_buffer[i]; \
+		for (size_t _rws_idx = 0; _rws_idx < (2 * _rws_cnt); _rws_idx++) { \
+			*_pbuf_loc++ = _rws_buffer[_rws_idx]; \
 		} \
 	} \
 	/* Store length */ \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf != NULL) { \
-		union cbprintf_package_hdr hdr = { \
+		union cbprintf_package_hdr pkg_hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
@@ -491,8 +491,8 @@ do { \
 			} \
 		}; \
 		IF_ENABLED(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS, \
-			   (hdr.desc.pkg_flags = flags)); \
-		*_len_loc = hdr; \
+			   (pkg_hdr.desc.pkg_flags = flags)); \
+		*_len_loc = pkg_hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
 } while (false)

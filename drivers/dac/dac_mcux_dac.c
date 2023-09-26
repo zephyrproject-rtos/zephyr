@@ -82,11 +82,6 @@ static int mcux_dac_write_value(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
-static int mcux_dac_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct dac_driver_api mcux_dac_driver_api = {
 	.channel_setup = mcux_dac_channel_setup,
 	.write_value = mcux_dac_write_value,
@@ -105,7 +100,7 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 		.low_power = DT_INST_PROP(n, low_power_mode),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, mcux_dac_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL,				\
 			&mcux_dac_data_##n,				\
 			&mcux_dac_config_##n,				\
 			POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\

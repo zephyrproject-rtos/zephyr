@@ -941,15 +941,15 @@ static void disable_port(int port)
 
 static void vlan_enabled(struct k_work *work)
 {
-	struct vlan_work *vlan = CONTAINER_OF(work,
-					      struct vlan_work,
-					      work);
+	struct vlan_work *one_vlan = CONTAINER_OF(work,
+						  struct vlan_work,
+						  work);
 	if (tid) {
 		int port;
 
-		port = gptp_get_port_number(vlan->iface);
+		port = gptp_get_port_number(one_vlan->iface);
 		if (port < 0) {
-			NET_DBG("No port found for iface %p", vlan->iface);
+			NET_DBG("No port found for iface %p", one_vlan->iface);
 			return;
 		}
 
@@ -963,14 +963,14 @@ static void vlan_enabled(struct k_work *work)
 
 static void vlan_disabled(struct k_work *work)
 {
-	struct vlan_work *vlan = CONTAINER_OF(work,
-					      struct vlan_work,
-					      work);
+	struct vlan_work *one_vlan = CONTAINER_OF(work,
+						  struct vlan_work,
+						  work);
 	int port;
 
-	port = gptp_get_port_number(vlan->iface);
+	port = gptp_get_port_number(one_vlan->iface);
 	if (port < 0) {
-		NET_DBG("No port found for iface %p", vlan->iface);
+		NET_DBG("No port found for iface %p", one_vlan->iface);
 		return;
 	}
 

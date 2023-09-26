@@ -259,6 +259,9 @@ struct coap_option {
  * @typedef coap_reply_t
  * @brief Helper function to be called when a response matches the
  * a pending request.
+ * When sending blocks, the callback is only executed when the
+ * reply of the last block is received.
+ * i.e. it is not called when the code of the reply is 'continue' (2.31).
  */
 typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
@@ -269,7 +272,7 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  */
 struct coap_pending {
 	struct sockaddr addr;
-	uint32_t t0;
+	int64_t t0;
 	uint32_t timeout;
 	uint16_t id;
 	uint8_t *data;
@@ -369,6 +372,17 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num);
 
 /**
+ * @brief Parses provided coap path (with/without query) or query and appends
+ * that as options to the @a cpkt.
+ *
+ * @param cpkt Packet to append path and query options for.
+ * @param path Null-terminated string of coap path, query or both.
+ *
+ * @retval 0 in case of success or negative in case of error.
+ */
+int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
+
+/**
  * @brief Creates a new CoAP Packet from input data.
  *
  * @param cpkt New packet to be initialized using the storage from @a data.
@@ -439,9 +453,8 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 /**
  * @brief Appends an option to the packet.
  *
- * Note: options must be added in numeric order of their codes. Otherwise
- * error will be returned.
- * TODO: Add support for placing options according to its delta value.
+ * Note: options can be added out of numeric order of their codes. But
+ * it's more efficient to add them in order.
  *
  * @param cpkt Packet to be updated
  * @param code Option code to add to the packet, see #coap_option_num
@@ -453,6 +466,16 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
  */
 int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
 			      const uint8_t *value, uint16_t len);
+
+/**
+ * @brief Remove an option from the packet.
+ *
+ * @param cpkt Packet to be updated
+ * @param code Option code to remove from the packet, see #coap_option_num
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code);
 
 /**
  * @brief Converts an option to its integer representation.
@@ -580,6 +603,45 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 			     size_t total_size);
 
 /**
+ * @brief Append BLOCK1 or BLOCK2 option to the packet.
+ *
+ * If the CoAP packet is a request then BLOCK1 is appended
+ * otherwise BLOCK2 is appended.
+ *
+ * @param cpkt Packet to be updated
+ * @param ctx Block context from which to retrieve the
+ * information for the block option
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx);
+
+/**
+ * @brief Check if a descriptive block option is set in the packet.
+ *
+ * If the CoAP packet is a request then an available BLOCK1 option
+ * would be checked otherwise a BLOCK2 option would be checked.
+ *
+ * @param cpkt Packet to be checked.
+ *
+ * @return true if the corresponding block option is set,
+ *        false otherwise.
+ */
+bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
+
+/**
+ * @brief Remove BLOCK1 or BLOCK2 option from the packet.
+ *
+ * If the CoAP packet is a request then BLOCK1 is removed
+ * otherwise BLOCK2 is removed.
+ *
+ * @param cpkt Packet to be updated.
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
+
+/**
  * @brief Append BLOCK1 option to the packet.
  *
  * @param cpkt Packet to be updated
@@ -637,6 +699,19 @@ int coap_append_size2_option(struct coap_packet *cpkt,
  * of error.
  */
 int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
+
+/**
+ * @brief Get the block size, more flag and block number from the
+ * CoAP block1 option.
+ *
+ * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates

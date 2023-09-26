@@ -15,6 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/net/capture.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +99,7 @@ NET_L2_DECLARE_PUBLIC(DUMMY_L2);
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 #define OFFLOADED_NETDEV_L2 OFFLOADED_NETDEV
 NET_L2_DECLARE_PUBLIC(OFFLOADED_NETDEV_L2);
-#endif /* CONFIG_NET_L2_ETHERNET */
+#endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_SOCKETS_OFFLOAD */
 
 #ifdef CONFIG_NET_L2_ETHERNET
 #define ETHERNET_L2		ETHERNET

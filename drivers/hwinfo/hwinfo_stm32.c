@@ -7,6 +7,10 @@
 #include <soc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <stm32_ll_icache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
@@ -19,9 +23,17 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct stm32_uid dev_id;
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 	dev_id.id[0] = sys_cpu_to_be32(LL_GetUID_Word2());
 	dev_id.id[1] = sys_cpu_to_be32(LL_GetUID_Word1());
 	dev_id.id[2] = sys_cpu_to_be32(LL_GetUID_Word0());
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ICACHE_Enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
@@ -102,6 +114,28 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM4)
+	if (LL_PWR_CPU2_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM7)
+	if (LL_PWR_CPU_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	if (LL_PWR_MCU_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
+	if (LL_PWR_IsActiveFlag_C1SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#elif defined(PWR_FLAG_SB)
+	if (LL_PWR_IsActiveFlag_SB()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#endif /* PWR_FLAG_SB */
+
 	*cause = flags;
 
 	return 0;
@@ -110,6 +144,18 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 int z_impl_hwinfo_clear_reset_cause(void)
 {
 	LL_RCC_ClearResetFlags();
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM4)
+	LL_PWR_ClearFlag_CPU2();
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM7)
+	LL_PWR_ClearFlag_CPU();
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	LL_PWR_ClearFlag_MCU();
+#elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
+	LL_PWR_ClearFlag_C1STOP_C1STB();
+#elif defined(PWR_FLAG_SB)
+	LL_PWR_ClearFlag_SB();
+#endif /* PWR_FLAG_SB */
 
 	return 0;
 }

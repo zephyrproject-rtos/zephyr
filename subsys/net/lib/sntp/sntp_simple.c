@@ -11,8 +11,8 @@
 int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 {
 	int res;
-	static struct addrinfo hints;
-	struct addrinfo *addr;
+	static struct zsock_addrinfo hints;
+	struct zsock_addrinfo *addr;
 	struct sntp_ctx sntp_ctx;
 	uint64_t deadline;
 	uint32_t iter_timeout;
@@ -61,7 +61,7 @@ int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 	sntp_close(&sntp_ctx);
 
 freeaddr:
-	freeaddrinfo(addr);
+	zsock_freeaddrinfo(addr);
 
 	return res;
 }

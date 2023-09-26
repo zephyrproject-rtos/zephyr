@@ -244,7 +244,7 @@ struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr)
 		}
 
 		if (key_pool[i].id == id &&
-		    !bt_addr_cmp(&addr->a, &key_pool[i].irk.rpa)) {
+		    bt_addr_eq(&addr->a, &key_pool[i].irk.rpa)) {
 			LOG_DBG("cached RPA %s for %s", bt_addr_str(&key_pool[i].irk.rpa),
 				bt_addr_le_str(&key_pool[i].addr));
 			return &key_pool[i];
@@ -311,22 +311,8 @@ void bt_keys_clear(struct bt_keys *keys)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		char key[BT_SETTINGS_KEY_MAX];
-
 		/* Delete stored keys from flash */
-		if (keys->id) {
-			char id[4];
-
-			u8_to_dec(id, sizeof(id), keys->id);
-			bt_settings_encode_key(key, sizeof(key), "keys",
-					       &keys->addr, id);
-		} else {
-			bt_settings_encode_key(key, sizeof(key), "keys",
-					       &keys->addr, NULL);
-		}
-
-		LOG_DBG("Deleting key %s", key);
-		settings_delete(key);
+		bt_settings_delete_keys(keys->id, &keys->addr);
 	}
 
 	(void)memset(keys, 0, sizeof(*keys));
@@ -335,29 +321,18 @@ void bt_keys_clear(struct bt_keys *keys)
 #if defined(CONFIG_BT_SETTINGS)
 int bt_keys_store(struct bt_keys *keys)
 {
-	char key[BT_SETTINGS_KEY_MAX];
 	int err;
 
 	__ASSERT_NO_MSG(keys != NULL);
 
-	if (keys->id) {
-		char id[4];
-
-		u8_to_dec(id, sizeof(id), keys->id);
-		bt_settings_encode_key(key, sizeof(key), "keys", &keys->addr,
-				       id);
-	} else {
-		bt_settings_encode_key(key, sizeof(key), "keys", &keys->addr,
-				       NULL);
-	}
-
-	err = settings_save_one(key, keys->storage_start, BT_KEYS_STORAGE_LEN);
+	err = bt_settings_store_keys(keys->id, &keys->addr, keys->storage_start,
+				     BT_KEYS_STORAGE_LEN);
 	if (err) {
 		LOG_ERR("Failed to save keys (err %d)", err);
 		return err;
 	}
 
-	LOG_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr), key);
+	LOG_DBG("Stored keys for %s", bt_addr_le_str(&keys->addr));
 
 	return 0;
 }
@@ -473,8 +448,7 @@ static int keys_commit(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_keys, "bt/keys", NULL, keys_set, keys_commit,
-			       NULL);
+BT_SETTINGS_DEFINE(keys, "keys", keys_set, keys_commit);
 
 #endif /* CONFIG_BT_SETTINGS */
 

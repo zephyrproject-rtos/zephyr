@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/linker/sections.h>
 
 
@@ -216,7 +216,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 };
 #endif
 #endif
-#elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2)
+#elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2) || defined(CONFIG_SOC_SERIES_CC13X2X7_CC26X2X7)
 /* TI CC13x2/CC26x2 based platforms also employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in

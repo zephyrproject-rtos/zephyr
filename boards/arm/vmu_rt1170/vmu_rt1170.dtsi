@@ -1,0 +1,215 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "vmu_rt1170-pinctrl.dtsi"
+
+/ {
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		led2 = &blue_led;
+		sdhc0 = &usdhc1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		red_led: led-2 {
+			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		blue_led: led-3 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+};
+
+&semc {
+	status = "disabled";
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart4 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart4>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart5 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart6 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart8 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart10 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart11 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&green_led {
+	status = "okay";
+};
+
+&enet1g {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+};
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2 {
+	pinctrl-0 =<&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	pinctrl-0 =<&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
+&lpi2c6 {
+	pinctrl-0 =<&pinmux_lpi2c6>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&lpspi2 {
+	pinctrl-0 = <&pinmux_lpspi2>;
+	pinctrl-names = "default";
+};
+
+&lpspi3 {
+	pinctrl-0 = <&pinmux_lpspi3>;
+	pinctrl-names = "default";
+};
+
+&lpspi6 {
+	pinctrl-0 = <&pinmux_lpspi6>;
+	pinctrl-names = "default";
+};
+
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	mx25um51345g: mx25um51345g@0 {
+		compatible = "nxp,imx-flexspi-mx25um51345g";
+		/* MX25UM51245G is 64MB, 512MBit flash part */
+		size = <DT_SIZE_M(64 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <200000000>;
+		status = "okay";
+		jedec-id = [c2 81 3a];
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_K(3076)>;
+			};
+			slot1_partition: partition@321000 {
+				label = "image-1";
+				reg = <0x00321000 DT_SIZE_K(3072)>;
+			};
+			storage_partition: partition@621000 {
+				label = "storage";
+				reg = <0x00621000 DT_SIZE_M(57)>;
+			};
+		};
+	};
+};

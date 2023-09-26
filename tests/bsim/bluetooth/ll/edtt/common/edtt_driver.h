@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 
 #define EDTTT_NONBLOCK 0
 #define EDTTT_BLOCK 1

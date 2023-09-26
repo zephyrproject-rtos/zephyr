@@ -140,7 +140,7 @@ int adxl362_init_interrupt(const struct device *dev)
 
 	k_mutex_init(&drv_data->trigger_mutex);
 
-	if (!device_is_ready(cfg->interrupt.port)) {
+	if (!gpio_is_ready_dt(&cfg->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -ENODEV;
 	}

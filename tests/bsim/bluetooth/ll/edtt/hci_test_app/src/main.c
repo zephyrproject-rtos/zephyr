@@ -755,7 +755,7 @@ static struct k_thread service_events_data;
 /**
  * @brief Zephyr application main entry...
  */
-void main(void)
+int main(void)
 {
 	int err;
 	uint16_t command;
@@ -773,7 +773,7 @@ void main(void)
 	err = bt_enable_raw(&rx_queue);
 	if (err) {
 		LOG_ERR("Bluetooth initialization failed (err %d)", err);
-		return;
+		return 0;
 	}
 	/**
 	 * Initialize and start EDTT system...
@@ -865,4 +865,5 @@ void main(void)
 			}
 		}
 	}
+	return 0;
 }

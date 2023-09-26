@@ -1,0 +1,44 @@
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# ARM Options
+CONFIG_AARCH64_IMAGE_HEADER=y
+CONFIG_ARMV8_A_NS=y
+
+# The number of bits used for PAs and VAs
+# from Zephyr needs to match the number of
+# bits used for said address used by Jailhouse.
+CONFIG_ARM64_VA_BITS_40=y
+CONFIG_ARM64_PA_BITS_40=y
+
+# Cache Options
+CONFIG_CACHE_MANAGEMENT=y
+CONFIG_ICACHE_LINE_SIZE_DETECT=y
+# SOF doesn't currently support the usage of
+# run-time data cache line size detection.
+# Because of this, CONFIG_DCACHE_LINE_SIZE_DETECT
+# (which defaults to n) can't be set to 'y'.
+# The size of data cache line will have to be
+# set manually to 64 (value taken from A55 TRM).
+CONFIG_DCACHE_LINE_SIZE=64
+
+# Platform Configuration
+CONFIG_SOC_SERIES_MIMX9_A55=y
+CONFIG_SOC_MIMX93_A55=y
+CONFIG_BOARD_MIMX93_EVK_A55=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+CONFIG_CLOCK_CONTROL=y
+CONFIG_PINCTRL=y
+
+# Enable dynamic interrupts
+CONFIG_DYNAMIC_INTERRUPTS=y

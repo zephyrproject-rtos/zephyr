@@ -20,7 +20,7 @@ BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 struct posix_fs_desc {
 	union {
 		struct fs_file_t file;
-		struct fs_dir_t	dir;
+		struct fs_dir_t dir;
 	};
 	bool is_dir;
 	bool used;
@@ -349,22 +349,47 @@ int unlink(const char *path)
 int stat(const char *path, struct stat *buf)
 {
 	int rc;
-	struct fs_statvfs stat;
+	struct fs_statvfs stat_vfs;
+	struct fs_dirent stat_file;
 
 	if (buf == NULL) {
 		errno = EBADF;
 		return -1;
 	}
 
-	rc = fs_statvfs(path, &stat);
+	rc = fs_statvfs(path, &stat_vfs);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;
 	}
 
-	buf->st_size = stat.f_bsize * stat.f_blocks;
-	buf->st_blksize = stat.f_bsize;
-	buf->st_blocks = stat.f_blocks;
+	rc = fs_stat(path, &stat_file);
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+
+	memset(buf, 0, sizeof(struct stat));
+
+	switch (stat_file.type) {
+	case FS_DIR_ENTRY_FILE:
+		buf->st_mode = S_IFREG;
+		break;
+	case FS_DIR_ENTRY_DIR:
+		buf->st_mode = S_IFDIR;
+		break;
+	default:
+		errno = EIO;
+		return -1;
+	}
+	buf->st_size = stat_file.size;
+	buf->st_blksize = stat_vfs.f_bsize;
+	/*
+	 * This is a best effort guess, as this information is not provided
+	 * by the fs_stat function.
+	 */
+	buf->st_blocks = (stat_file.size + stat_vfs.f_bsize - 1) / stat_vfs.f_bsize;
+
 	return 0;
 }
 

@@ -75,7 +75,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 #endif
 
 	/* save old thread into switch handle which is required by
-	 * wait_for_switch
+	 * z_sched_switch_spin()
 	 */
 	 str	x1, [x1, #___thread_t_switch_handle_OFFSET]
 
@@ -115,7 +115,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	str	x2, [x4, #_cpu_offset_to_current_stack_limit]
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 	str     lr, [sp, #-16]!
 	bl      z_arm64_swap_mem_domains
 	ldr     lr, [sp], #16

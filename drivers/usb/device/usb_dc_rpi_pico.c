@@ -11,6 +11,7 @@
 #include <hardware/resets.h>
 #include <pico/platform.h>
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/sys/util.h>
@@ -982,9 +983,8 @@ static void udc_rpi_thread_main(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int usb_rpi_init(const struct device *dev)
+static int usb_rpi_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_thread_create(&thread, thread_stack,
 			USBD_THREAD_STACK_SIZE,

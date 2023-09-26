@@ -8,3 +8,7 @@ RunTest mesh_transport_seg_block transport_tx_seg_block transport_rx_seg_block
 
 conf=prj_mesh1d1_conf
 RunTest mesh_transport_seg_block_1d1 transport_tx_seg_block transport_rx_seg_block
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_transport_seg_block_psa transport_tx_seg_block transport_rx_seg_block

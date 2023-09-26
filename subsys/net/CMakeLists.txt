@@ -20,3 +20,4 @@ if(CONFIG_NETWORKING)
 endif()
 
 add_subdirectory(lib)
+add_subdirectory_ifdef(CONFIG_NET_CONNECTION_MANAGER conn_mgr)

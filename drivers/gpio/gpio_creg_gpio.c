@@ -104,14 +104,6 @@ static int port_toggle_bits(const struct device *dev,
 	return port_write(dev, 0, 0, pins);
 }
 
-static int pin_interrupt_configure(const struct device *dev,
-				   gpio_pin_t pin,
-				   enum gpio_int_mode mode,
-				   enum gpio_int_trig trig)
-{
-	return -ENOTSUP;
-}
-
 static int pin_config(const struct device *dev,
 		       gpio_pin_t pin,
 		       gpio_flags_t flags)
@@ -156,17 +148,6 @@ static int pin_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-/**
- * @brief Initialization function of creg_gpio
- *
- * @param dev Device struct
- * @return 0 if successful, failed otherwise.
- */
-static int creg_gpio_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct gpio_driver_api api_table = {
 	.pin_configure = pin_config,
 	.port_get_raw = port_get,
@@ -174,7 +155,6 @@ static const struct gpio_driver_api api_table = {
 	.port_set_bits_raw = port_set_bits,
 	.port_clear_bits_raw = port_clear_bits,
 	.port_toggle_bits = port_toggle_bits,
-	.pin_interrupt_configure = pin_interrupt_configure,
 };
 
 static const struct creg_gpio_config creg_gpio_cfg = {
@@ -191,7 +171,6 @@ static struct creg_gpio_drv_data creg_gpio_drvdata = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, creg_gpio_init, NULL,
-		      &creg_gpio_drvdata, &creg_gpio_cfg,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, &creg_gpio_drvdata, &creg_gpio_cfg,
 		      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 		      &api_table);

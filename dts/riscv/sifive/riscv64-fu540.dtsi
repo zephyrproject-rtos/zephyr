@@ -36,7 +36,7 @@
 			compatible = "sifive,e51";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac";
+			riscv,isa = "rv64imac_zicsr_zifencei";
 			status = "okay";
 
 			hlic: interrupt-controller {

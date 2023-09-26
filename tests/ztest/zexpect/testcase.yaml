@@ -4,6 +4,8 @@
 common:
   integration_platforms:
     - native_posix
+  tags:
+    - test_framework
 tests:
   testing.ztest.expect:
     integration_platforms:
@@ -11,7 +13,6 @@ tests:
   testing.ztest.expect_cpp:
     extra_configs:
       - CONFIG_CPLUSPLUS=y
-      - CONFIG_LIB_CPLUSPLUS=y
     integration_platforms:
       - native_posix
   testing.ztest.expect.unit:

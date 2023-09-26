@@ -1,0 +1,66 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Retention subsystem area, which has a retained memory parent. Example
+  64-byte area with 2-byte prefix and 1-byte checksum with 61 usable bytes
+  for user storage:
+
+  sram@2003FFC0 {
+    compatible = "zephyr,memory-region", "mmio-sram";
+    reg = <0x2003FFC0 64>;
+    zephyr,memory-region = "RetainedMem";
+    status = "okay";
+
+    retainedmem {
+      compatible = "zephyr,retained-ram";
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      retention0: retention@0 {
+        compatible = "zephyr,retention";
+        status = "okay";
+        reg = <0x0 0x40>;
+        prefix = [04 fa];
+        checksum = <1>;
+      };
+    };
+  };
+
+compatible: "zephyr,retention"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+    description: |
+      Address reg cell is for the offset of the area in parent node, can be
+      increased if multiple retention partitions are used or parts are
+      reserved.
+
+  "#size-cells":
+    const: 1
+    description: |
+      Size reg cell is for the size of the area, which includes sizes of
+      prefix and checksum (if enabled).
+
+  reg:
+    required: true
+
+  prefix:
+    description: |
+      An optional magic prefix, which indicates that the data has been set
+      (applies to the header of the data, reduces the available user data
+      size).
+    type: uint8-array
+
+  checksum:
+    description: |
+      An optional data verification checksum, which indicates that the data is
+      valid (appended to the footer of the data, reduces the available user
+      data size). Value is size in bytes (0 for none, 1 for 8-bit CRC, 2 for
+      16-bit CRC, 4 for 32-bit CRC). Default is to not use a checksum.
+    type: int
+    default: 0

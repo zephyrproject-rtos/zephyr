@@ -36,6 +36,9 @@ struct spi_esp32_config {
 	bool dma_enabled;
 	int dma_clk_src;
 	int dma_host;
+	int cs_setup;
+	int cs_hold;
+	bool line_idle_low;
 };
 
 struct spi_esp32_data {

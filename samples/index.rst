@@ -5,6 +5,7 @@ Samples and Demos
 
 
 .. toctree::
+   :titlesonly:
    :maxdepth: 2
    :glob:
 
@@ -27,6 +28,7 @@ Samples and Demos
    tfm_integration/tfm_integration.rst
    modules/*
    compression/*
+   fuel_gauge/*
 
 .. comment
    To add a new sample document, please use the template available under

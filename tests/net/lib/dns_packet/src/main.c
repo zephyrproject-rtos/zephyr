@@ -14,8 +14,8 @@
 /* RFC 1035, 4.1.1. Header section format */
 #define DNS_HEADER_SIZE	12
 
-static uint8_t buf[MAX_BUF_SIZE];
-static uint16_t buf_len;
+static uint8_t dns_buf[MAX_BUF_SIZE];
+static uint16_t dns_buf_len;
 
 static uint8_t qname[MAX_BUF_SIZE];
 static uint16_t qname_len;
@@ -61,90 +61,90 @@ static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
 		goto lb_exit;
 	}
 
-	rc = dns_msg_pack_query(buf, &buf_len, MAX_BUF_SIZE, qname, qname_len,
+	rc = dns_msg_pack_query(dns_buf, &dns_buf_len, MAX_BUF_SIZE, qname, qname_len,
 				tid, type);
 	if (rc != 0) {
 		goto lb_exit;
 	}
 
-	if (dns_unpack_header_id(buf) != tid) {
+	if (dns_unpack_header_id(dns_buf) != tid) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* This is a query */
-	if (dns_header_qr(buf) != DNS_QUERY) {
+	if (dns_header_qr(dns_buf) != DNS_QUERY) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* This is a query (standard query) */
-	if (dns_header_opcode(buf) != DNS_QUERY) {
+	if (dns_header_opcode(dns_buf) != DNS_QUERY) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Authoritative Answer must be 0 for a Query */
-	if (dns_header_aa(buf) != 0) {
+	if (dns_header_aa(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* TrunCation is always 0 */
-	if (dns_header_tc(buf) != 0) {
+	if (dns_header_tc(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Recursion Desired is always 1 */
-	if (dns_header_rd(buf) != 1) {
+	if (dns_header_rd(dns_buf) != 1) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Recursion Available is always 0 */
-	if (dns_header_ra(buf) != 0) {
+	if (dns_header_ra(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Z is always 0 */
-	if (dns_header_z(buf) != 0) {
+	if (dns_header_z(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Response code must be 0 (no error) */
-	if (dns_header_rcode(buf) != DNS_HEADER_NOERROR) {
+	if (dns_header_rcode(dns_buf) != DNS_HEADER_NOERROR) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Question counter must be 1 */
-	if (dns_header_qdcount(buf) != 1) {
+	if (dns_header_qdcount(dns_buf) != 1) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Answer counter must be 0 */
-	if (dns_header_ancount(buf) != 0) {
+	if (dns_header_ancount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Name server resource records counter must be 0 */
-	if (dns_header_nscount(buf) != 0) {
+	if (dns_header_nscount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
 	/* Additional records counter must be 0 */
-	if (dns_header_arcount(buf) != 0) {
+	if (dns_header_arcount(dns_buf) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
-	question = buf + DNS_HEADER_SIZE;
+	question = dns_buf + DNS_HEADER_SIZE;
 
 	/* QClass */
 	if (dns_unpack_query_qclass(question + qname_len) != DNS_CLASS_IN) {
@@ -159,12 +159,12 @@ static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
 	}
 
 	/* compare with the expected result */
-	if (buf_len != expected_len) {
+	if (dns_buf_len != expected_len) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}
 
-	if (memcmp(expected, buf, buf_len) != 0) {
+	if (memcmp(expected, dns_buf, dns_buf_len) != 0) {
 		rc = -EINVAL;
 		goto lb_exit;
 	}

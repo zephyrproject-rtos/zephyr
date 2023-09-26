@@ -5,7 +5,7 @@
 
 menuconfig COUNTER_RTC_STM32
 	bool "STM32 Counter RTC driver"
-	default y
+	default y if !RTC
 	depends on DT_HAS_ST_STM32_RTC_ENABLED
 	select USE_STM32_LL_RTC
 	select USE_STM32_LL_PWR
@@ -43,5 +43,14 @@ config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	default n
 	help
 	  Keep the counter value after each reset.
+
+config COUNTER_RTC_STM32_SUBSECONDS
+	bool "Use the subseconds as a basic tick."
+	depends on !SOC_SERIES_STM32F1X
+	help
+	  Use the subseconds as the basic time tick. It increases resolution
+	  of the counter. The frequency of the time is RTC Source Clock divided
+	  by 2. It is the clock after the first asynchronous prescaler.
+	  The config increases power consumption.
 
 endif # COUNTER_RTC_STM32

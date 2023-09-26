@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
+#include <stmemsc.h>
 #include "iis2dh_reg.h"
 
 /*

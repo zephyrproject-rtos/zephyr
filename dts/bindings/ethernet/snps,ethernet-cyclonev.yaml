@@ -5,7 +5,7 @@ description: Ethernet driver for Cyclone V SoC
 
 compatible: "snps,ethernet-cyclonev"
 
-include: ethernet.yaml
+include: ethernet-controller.yaml
 
 properties:
   reg:

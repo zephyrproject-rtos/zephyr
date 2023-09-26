@@ -8,6 +8,7 @@
 #include <st/c0/stm32c031X6.dtsi>
 #include <st/c0/stm32c031c(4-6)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32C031C6-NUCLEO board";
@@ -20,7 +21,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_4: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -42,6 +43,7 @@
 			label = "user button";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			status = "okay";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -50,6 +52,8 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
 	};
 };
 
@@ -101,4 +105,35 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
 };

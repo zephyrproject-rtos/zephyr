@@ -10,3 +10,8 @@ RunTest mesh_access_pub_retr \
 conf=prj_mesh1d1_conf
 RunTest mesh_access_pub_retr_1d1 \
 	access_tx_transmit access_rx_transmit
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_access_pub_retr_psa \
+	access_tx_period access_rx_period

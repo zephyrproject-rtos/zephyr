@@ -2,10 +2,6 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-# Syntax run_parallel.sh [-h] [options]
-
-set -u
-
 start=$SECONDS
 
 function display_help(){
@@ -14,7 +10,25 @@ function display_help(){
   echo "  [options] will be passed directly to the scripts"
   echo "  The results will be saved to \${RESULTS_FILE}, by default"
   echo "  ../RunResults.xml"
-  echo "  Testcases are searched for in \${SEARCH_PATH}, by default this folder"
+  echo "  Testcases are searched for in \${SEARCH_PATH},"
+  echo "  which by default is the folder the script is run from"
+  echo "  You can instead also provide a space separated test list with \${TESTS_LIST}, "
+  echo "  or an input file including a list of tests \${TESTS_FILE} (w one line"
+  echo "  per test, you can comment lines with #)"
+  echo ""
+  echo "  Examples (run from \${ZEPHYR_BASE}):"
+  echo " * Run all tests found under one folder:"
+  echo "   SEARCH_PATH=tests/bsim/bluetooth/ll/conn/ tests/bsim/run_parallel.sh"
+  echo " * Run all tests found under two separate folders, matching a pattern in the first:"
+  echo "   SEARCH_PATH=\"tests/bsim/bluetooth/ll/conn/tests_scripts/*encr*  tests/bsim/net\"\
+ tests/bsim/run_parallel.sh"
+  echo " * Provide a tests list explicitly from an environment variable"
+  echo "   TESTS_LIST=\
+\"tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split_privacy.sh\
+ tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_split_low_lat.sh\
+ tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_split.sh\" tests/bsim/run_parallel.sh"
+  echo " * Provide a tests list in a file:"
+  echo "   TESTS_FILE=my_tests.txt tests/bsim/run_parallel.sh"
 }
 
 # Parse command line
@@ -28,12 +42,19 @@ fi
 err=0
 i=0
 
-SEARCH_PATH="${SEARCH_PATH:-.}"
+if [ -n "${TESTS_FILE}" ]; then
+	#remove comments and empty lines from file
+	all_cases=$(sed 's/#.*$//;/^$/d' "${TESTS_FILE}")
+elif [ -n "${TESTS_LIST}" ]; then
+	all_cases=${TESTS_LIST}
+else
+	SEARCH_PATH="${SEARCH_PATH:-.}"
+	all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
+	         grep -Ev "(/_|run_parallel|compile.sh|generate_coverage_report.sh)"`
+	#we dont run ourselves
+fi
 
-#All the testcases we want to run:
-all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
-           grep -Ev "(/_|run_parallel|compile.sh)"`
-#we dont run ourselves
+set -u
 
 RESULTS_FILE="${RESULTS_FILE:-`pwd`/../RunResults.xml}"
 tmp_res_file=tmp.xml
@@ -43,8 +64,6 @@ n_cases=$((${#all_cases_a[@]}))
 touch ${RESULTS_FILE}
 echo "Attempting to run ${n_cases} cases (logging to \
  `realpath ${RESULTS_FILE}`)"
-
-chmod +x $all_cases
 
 export CLEAN_XML="sed -E -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
                   -e 's/\"/&quot;/g'"

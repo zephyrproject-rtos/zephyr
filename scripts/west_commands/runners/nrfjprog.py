@@ -5,9 +5,15 @@
 
 '''Runner for flashing with nrfjprog.'''
 
+import subprocess
 import sys
 
-from runners.nrf_common import NrfBinaryRunner
+from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, \
+                               NrfBinaryRunner
+
+# https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
+UnavailableOperationBecauseProtectionError = 16
+VerifyError = 55
 
 class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
@@ -81,6 +87,14 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         else:
             raise RuntimeError(f'Invalid operation: {op_type}')
 
-        self.check_call(cmd + ['-f', families[self.family]] + core_opt +
-                        ['--snr', self.dev_id] + self.tool_opt)
+        try:
+            self.check_call(cmd + ['-f', families[self.family]] + core_opt +
+                            ['--snr', self.dev_id] + self.tool_opt)
+        except subprocess.CalledProcessError as cpe:
+            # Translate error codes
+            if cpe.returncode == UnavailableOperationBecauseProtectionError:
+                cpe.returncode = ErrNotAvailableBecauseProtection
+            elif cpe.returncode == VerifyError:
+                cpe.returncode = ErrVerify
+            raise cpe
         return True

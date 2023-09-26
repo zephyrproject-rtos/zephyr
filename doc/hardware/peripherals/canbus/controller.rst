@@ -331,9 +331,9 @@ which adds some computation and memory overhead.
 Samples
 *******
 
-We have two ready-to-build samples demonstrating use of the Zephyr CAN API
-:ref:`Zephyr CAN counter sample <can-counter-sample>` and
-:ref:`SocketCAN sample <socket-can-sample>`.
+We have two ready-to-build samples demonstrating use of the Zephyr CAN API:
+:zephyr:code-sample:`Zephyr CAN counter sample <can-counter>` and
+:zephyr:code-sample:`SocketCAN sample <socket-can>`.
 
 
 CAN Controller API Reference

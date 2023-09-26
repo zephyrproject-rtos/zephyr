@@ -24,9 +24,6 @@
  *
  */
 
-#include <pthread.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include "posix_soc.h"
 #include "posix_board_if.h"
@@ -34,33 +31,14 @@
 #include "posix_arch_internal.h"
 #include "kernel_internal.h"
 #include "soc.h"
+#include "nce_if.h"
 
-#define POSIX_ARCH_SOC_DEBUG_PRINTS 0
-
-#define PREFIX "POSIX SOC: "
-#define ERPREFIX PREFIX"error on "
-
-#if POSIX_ARCH_SOC_DEBUG_PRINTS
-#define PS_DEBUG(fmt, ...) posix_print_trace(PREFIX fmt, __VA_ARGS__)
-#else
-#define PS_DEBUG(...)
-#endif
-
-/* Conditional variable to know if the CPU is running or halted/idling */
-static pthread_cond_t  cond_cpu  = PTHREAD_COND_INITIALIZER;
-/* Mutex for the conditional variable posix_soc_cond_cpu */
-static pthread_mutex_t mtx_cpu   = PTHREAD_MUTEX_INITIALIZER;
-/* Variable which tells if the CPU is halted (1) or not (0) */
-static bool cpu_halted = true;
-
-static bool soc_terminate; /* Is the program being closed */
-
+static void *nce_st;
 
 int posix_is_cpu_running(void)
 {
-	return !cpu_halted;
+	return nce_is_cpu_running(nce_st);
 }
-
 
 /**
  * Helper function which changes the status of the CPU (halted or running)
@@ -75,31 +53,11 @@ int posix_is_cpu_running(void)
  */
 void posix_change_cpu_state_and_wait(bool halted)
 {
-	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
-
-	PS_DEBUG("Going to halted = %d\n", halted);
-
-	cpu_halted = halted;
-
-	/* We let the other side know the CPU has changed state */
-	PC_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
-
-	/* We wait until the CPU state has been changed. Either:
-	 * we just awoke it, and therefore wait until the CPU has run until
-	 * completion before continuing (before letting the HW models do
-	 * anything else)
-	 *  or
-	 * we are just hanging it, and therefore wait until the HW models awake
-	 * it again
-	 */
-	while (cpu_halted == halted) {
-		/* Here we unlock the mutex while waiting */
-		pthread_cond_wait(&cond_cpu, &mtx_cpu);
+	if (halted) {
+		nce_halt_cpu(nce_st);
+	} else {
+		nce_wake_cpu(nce_st);
 	}
-
-	PS_DEBUG("Awaken after halted = %d\n", halted);
-
-	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 }
 
 /**
@@ -111,15 +69,7 @@ void posix_interrupt_raised(void)
 	/* We change the CPU to running state (we awake it), and block this
 	 * thread until the CPU is halted again
 	 */
-	posix_change_cpu_state_and_wait(false);
-
-	/*
-	 * If while the SW was running it was decided to terminate the execution
-	 * we stop immediately.
-	 */
-	if (soc_terminate) {
-		posix_exit(0);
-	}
+	nce_wake_cpu(nce_st);
 }
 
 
@@ -136,7 +86,7 @@ void posix_halt_cpu(void)
 	 * We set the CPU in the halted state (this blocks this pthread
 	 * until the CPU is awoken again by the HW models)
 	 */
-	posix_change_cpu_state_and_wait(true);
+	nce_halt_cpu(nce_st);
 
 	/* We are awoken, normally that means some interrupt has just come
 	 * => let the "irq handler" check if/what interrupt was raised
@@ -164,34 +114,6 @@ void posix_atomic_halt_cpu(unsigned int imask)
 	posix_irq_unlock(imask);
 }
 
-
-/**
- * Just a wrapper function to call Zephyr's z_cstart()
- * called from posix_boot_cpu()
- */
-static void *zephyr_wrapper(void *a)
-{
-	/* Ensure posix_boot_cpu has reached the cond loop */
-	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
-	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
-
-#if (POSIX_ARCH_SOC_DEBUG_PRINTS)
-		pthread_t zephyr_thread = pthread_self();
-
-		PS_DEBUG("Zephyr init started (%lu)\n",
-			zephyr_thread);
-#endif
-
-	posix_init_multithreading();
-
-	/* Start Zephyr: */
-	z_cstart();
-	CODE_UNREACHABLE;
-
-	return NULL;
-}
-
-
 /**
  * The HW models will call this function to "boot" the CPU
  * == spawn the Zephyr init thread, which will then spawn
@@ -199,57 +121,9 @@ static void *zephyr_wrapper(void *a)
  */
 void posix_boot_cpu(void)
 {
-	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
-
-	cpu_halted = false;
-
-	pthread_t zephyr_thread;
-
-	/* Create a thread for Zephyr init: */
-	PC_SAFE_CALL(pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL));
-
-	/* And we wait until Zephyr has run til completion (has gone to idle) */
-	while (cpu_halted == false) {
-		pthread_cond_wait(&cond_cpu, &mtx_cpu);
-	}
-	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
-
-	if (soc_terminate) {
-		posix_exit(0);
-	}
-}
-
-/**
- * @brief Run the set of special native tasks corresponding to the given level
- *
- * @param level One of _NATIVE_*_LEVEL as defined in soc.h
- */
-void run_native_tasks(int level)
-{
-	extern void (*__native_PRE_BOOT_1_tasks_start[])(void);
-	extern void (*__native_PRE_BOOT_2_tasks_start[])(void);
-	extern void (*__native_PRE_BOOT_3_tasks_start[])(void);
-	extern void (*__native_FIRST_SLEEP_tasks_start[])(void);
-	extern void (*__native_ON_EXIT_tasks_start[])(void);
-	extern void (*__native_tasks_end[])(void);
-
-	static void (**native_pre_tasks[])(void) = {
-		__native_PRE_BOOT_1_tasks_start,
-		__native_PRE_BOOT_2_tasks_start,
-		__native_PRE_BOOT_3_tasks_start,
-		__native_FIRST_SLEEP_tasks_start,
-		__native_ON_EXIT_tasks_start,
-		__native_tasks_end
-	};
-
-	void (**fptr)(void);
-
-	for (fptr = native_pre_tasks[level]; fptr < native_pre_tasks[level+1];
-		fptr++) {
-		if (*fptr) { /* LCOV_EXCL_BR_LINE */
-			(*fptr)();
-		}
-	}
+	nce_st = nce_init();
+	posix_arch_init();
+	nce_boot_cpu(nce_st, z_cstart);
 }
 
 /**
@@ -259,47 +133,7 @@ void run_native_tasks(int level)
  */
 void posix_soc_clean_up(void)
 {
-	/* LCOV_EXCL_START */ /* See Note1 */
-	/*
-	 * If we are being called from a HW thread we can cleanup
-	 *
-	 * Otherwise (!cpu_halted) we give back control to the HW thread and
-	 * tell it to terminate ASAP
-	 */
-	if (cpu_halted) {
-
-		posix_core_clean_up();
-		run_native_tasks(_NATIVE_ON_EXIT_LEVEL);
-
-	} else if (soc_terminate == false) {
-
-		soc_terminate = true;
-
-		PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
-
-		cpu_halted = true;
-
-		PC_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
-		PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
-
-		while (1) {
-			sleep(1);
-			/* This SW thread will wait until being cancelled from
-			 * the HW thread. sleep() is a cancellation point, so it
-			 * won't really wait 1 second
-			 */
-		}
-	}
-	/* LCOV_EXCL_STOP */
+	nce_terminate(nce_st);
+	posix_arch_clean_up();
+	run_native_tasks(_NATIVE_ON_EXIT_LEVEL);
 }
-
-/*
- * Notes about coverage:
- *
- * Note1: When the application is closed due to a SIGTERM, the path in this
- * function will depend on when that signal was received. Typically during a
- * regression run, both paths will be covered. But in some cases they won't.
- * Therefore and to avoid confusing developers with spurious coverage changes
- * we exclude this function from the coverage check
- *
- */

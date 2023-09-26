@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
+#include <soc.h>
 #include <hal/nrf_gpio.h>
 
 LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);
@@ -27,7 +28,7 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);
  * exposes the nRESET function (P0.18 in nRF52840), there is no need to
  * provide any additional GPIO configuration for it.
  */
-#define RESET_INPUT_IS_PINRESET (IS_ENABLED(CONFIG_GPIO_AS_PINRESET) && \
+#define RESET_INPUT_IS_PINRESET (DT_PROP(DT_NODELABEL(uicr), gpio_as_nreset) && \
 				 GET_PORT(reset_input, gpios, 0) == 0 && \
 				 GET_PIN(reset_input, gpios, 0) == 18)
 #define USE_RESET_GPIO \
@@ -159,7 +160,7 @@ static int reset_pin_configure(void)
 }
 #endif /* USE_RESET_GPIO */
 
-static int init(const struct device *dev)
+static int init(void)
 {
 	int rc;
 
@@ -214,7 +215,7 @@ SYS_INIT(init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #define EXT_MEM_CTRL DT_NODELABEL(external_flash_pins_routing)
 #if DT_NODE_EXISTS(EXT_MEM_CTRL)
 
-static int early_init(const struct device *dev)
+static int early_init(void)
 {
 	/* As soon as possible after the system starts up, enable the analog
 	 * switch that routes signals to the external flash. Otherwise, the

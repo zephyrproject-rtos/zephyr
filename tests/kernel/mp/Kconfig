@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Must have this on where available, otherwise the linker will place
+# the shared variables in cached/incoherent memory.
+config KERNEL_COHERENCE
+	bool
+	default y if ARCH_HAS_COHERENCE
+
+source "Kconfig.zephyr"

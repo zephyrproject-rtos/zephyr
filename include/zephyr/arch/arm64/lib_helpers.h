@@ -16,10 +16,10 @@
 
 #define read_sysreg(reg)						\
 ({									\
-	uint64_t val;							\
+	uint64_t reg_val;						\
 	__asm__ volatile ("mrs %0, " STRINGIFY(reg)			\
-			  : "=r" (val) :: "memory");			\
-	val;								\
+			  : "=r" (reg_val) :: "memory");		\
+	reg_val;							\
 })
 
 #define write_sysreg(val, reg)						\
@@ -153,15 +153,6 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define sev()	__asm__ volatile("sev" : : : "memory")
 #define wfe()	__asm__ volatile("wfe" : : : "memory")
 #define wfi()	__asm__ volatile("wfi" : : : "memory")
-
-#define dsb()	__asm__ volatile ("dsb sy" ::: "memory")
-#define dmb()	__asm__ volatile ("dmb sy" ::: "memory")
-#define isb()	__asm__ volatile ("isb" ::: "memory")
-
-/* Zephyr needs these as well */
-#define __ISB() isb()
-#define __DMB() dmb()
-#define __DSB() dsb()
 
 static inline bool is_el_implemented(unsigned int el)
 {

@@ -3,7 +3,9 @@ sample:
   description: devmem load sample
 common:
   harness: keyboard
-  tags: devmem devmem_load
+  tags:
+    - devmem
+    - devmem_load
 tests:
   sample.devmem_load.polled:
     integration_platforms:

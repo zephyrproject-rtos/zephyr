@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g031X6.dtsi>
 #include <st/g0/stm32g031j(4-6)mx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32G0316 Discovery board";
@@ -38,6 +39,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

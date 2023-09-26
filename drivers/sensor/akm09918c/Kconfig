@@ -11,6 +11,7 @@ config AKM09918C
 
 config EMUL_AKM09918C
 	bool "Emulator for AKM09918C"
+	default y
 	depends on AKM09918C
 	depends on EMUL
 	help

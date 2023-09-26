@@ -11,6 +11,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - can
+  - adc
   - dac
   - gpio
   - i2c
@@ -21,3 +22,4 @@ supported:
   - dma
 ram: 786
 flash: 2048
+vendor: st

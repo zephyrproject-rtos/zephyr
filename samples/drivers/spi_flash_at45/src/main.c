@@ -23,7 +23,7 @@
 static uint8_t write_buf[TEST_REGION_SIZE];
 static uint8_t read_buf[TEST_REGION_SIZE];
 
-void main(void)
+int main(void)
 {
 	printk("DataFlash sample on %s\n", CONFIG_BOARD);
 
@@ -38,7 +38,7 @@ void main(void)
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
@@ -53,7 +53,7 @@ void main(void)
 	err = flash_read(flash_dev, TEST_REGION_OFFSET, &data, 1);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -80,7 +80,7 @@ void main(void)
 
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -90,7 +90,7 @@ void main(void)
 			 read_buf, TEST_REGION_SIZE);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	for (i = 0; i < TEST_REGION_SIZE; ++i) {
@@ -98,7 +98,7 @@ void main(void)
 			printk("\nERROR at read_buf[%d]: "
 			       "expected 0x%02X, got 0x%02X\n",
 			       i, 0xFF, read_buf[i]);
-			return;
+			return 0;
 		}
 	}
 
@@ -110,7 +110,7 @@ void main(void)
 			  write_buf,  TEST_REGION_SIZE/2);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -120,7 +120,7 @@ void main(void)
 			  &write_buf[TEST_REGION_SIZE/2], TEST_REGION_SIZE/2);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -130,7 +130,7 @@ void main(void)
 			 read_buf, TEST_REGION_SIZE);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -141,7 +141,7 @@ void main(void)
 			printk("\nERROR at read_buf[%d]: "
 			       "expected 0x%02X, got 0x%02X\n",
 			       i, write_buf[i], read_buf[i]);
-			return;
+			return 0;
 		}
 	}
 
@@ -152,11 +152,12 @@ void main(void)
 	err = pm_device_action_run(flash_dev, PM_DEVICE_ACTION_SUSPEND);
 	if (err != 0) {
 		printk("FAILED\n");
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
 #endif
 
 	k_sleep(K_FOREVER);
+	return 0;
 }

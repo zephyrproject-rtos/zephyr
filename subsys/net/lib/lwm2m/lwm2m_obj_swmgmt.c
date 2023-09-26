@@ -780,7 +780,7 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int lwm2m_swmgmt_init(const struct device *dev)
+static int lwm2m_swmgmt_init(void)
 {
 	swmgmt.obj_id = LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID;
 	swmgmt.version_major = SWMGMT_VERSION_MAJOR;

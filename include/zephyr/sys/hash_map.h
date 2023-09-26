@@ -6,10 +6,8 @@
 
 /**
  * @file
- * @brief Hashmap (Hash Table) API
- *
- * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
- * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
+ * @addtogroup hashmap_apis
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_HASH_MAP_H_
@@ -28,11 +26,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @ingroup hashmap_apis
- * @{
- */
 
 /**
  * @brief Declare a Hashmap (advanced)
@@ -63,9 +56,9 @@ extern "C" {
 	}
 
 /**
- * @brief Declare a Hashmap (advanced)
+ * @brief Declare a Hashmap statically (advanced)
  *
- * Declare a Hashmap with control over advanced parameters.
+ * Declare a Hashmap statically with control over advanced parameters.
  *
  * @note The allocator @p _alloc is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
@@ -121,6 +114,7 @@ static inline void *sys_hashmap_default_allocator(void *ptr, size_t size)
 	return realloc(ptr, size);
 }
 
+/** @brief The default Hashmap allocator */
 #define SYS_HASHMAP_DEFAULT_ALLOCATOR sys_hashmap_default_allocator
 
 /** @brief The default Hashmap load factor (in hundredths) */
@@ -128,10 +122,15 @@ static inline void *sys_hashmap_default_allocator(void *ptr, size_t size)
 
 /** @brief Generic Hashmap */
 struct sys_hashmap {
+	/** Hashmap API */
 	const struct sys_hashmap_api *api;
+	/** Hashmap configuration */
 	const struct sys_hashmap_config *config;
+	/** Hashmap data */
 	struct sys_hashmap_data *data;
+	/** Hash function */
 	sys_hash_func32_t hash_func;
+	/** Allocator */
 	sys_hashmap_allocator_t alloc_func;
 };
 

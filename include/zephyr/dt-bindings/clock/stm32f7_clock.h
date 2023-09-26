@@ -35,6 +35,16 @@
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK	0x007
 
+
+#define STM32_CLOCK_REG_MASK    0xFFU
+#define STM32_CLOCK_REG_SHIFT   0U
+#define STM32_CLOCK_SHIFT_MASK  0x1FU
+#define STM32_CLOCK_SHIFT_SHIFT 8U
+#define STM32_CLOCK_MASK_MASK   0x7U
+#define STM32_CLOCK_MASK_SHIFT  13U
+#define STM32_CLOCK_VAL_MASK    0x7U
+#define STM32_CLOCK_VAL_SHIFT   16U
+
 /**
  * @brief STM32 clock configuration bit field.
  *
@@ -48,26 +58,21 @@
  * @param mask Mask for the RCC_CFGRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
 #define STM32_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
 	 (((val) & STM32_CLOCK_VAL_MASK) << STM32_CLOCK_VAL_SHIFT))
 
+/** @brief RCC_CFGRx register offset */
+#define CFGR_REG		0x08
+
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x70
 
 /** @brief Device domain clocks selection helpers */
+/** CFGR devices */
+#define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 

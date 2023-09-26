@@ -632,7 +632,6 @@ ZTEST(tinycrypt, test_ecc_dsa)
 {
 	unsigned int result = TC_PASS;
 
-	TC_START("Performing ECC-DSA tests:");
 	/* Setup of the Cryptographically Secure PRNG. */
 	uECC_set_rng(&default_CSPRNG);
 

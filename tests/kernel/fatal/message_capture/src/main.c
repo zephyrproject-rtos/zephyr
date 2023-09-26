@@ -75,7 +75,7 @@ void test_message_capture(void)
 	irq_unlock(key);
 }
 
-void main(void)
+int main(void)
 {
 	/* main() is an essential thread, and we try to OOPS it.  When
 	 * this test was written, that worked (even though it wasn't
@@ -86,4 +86,5 @@ void main(void)
 	z_thread_essential_clear();
 
 	test_message_capture();
+	return 0;
 }

@@ -9,7 +9,7 @@ config BOARD
 
 config HEAP_MEM_POOL_SIZE
 	default 98304 if WIFI
-	default 16384 if BT
+	default 40960 if BT
 	default 4096
 
 if BT

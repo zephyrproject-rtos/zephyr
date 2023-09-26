@@ -211,7 +211,6 @@ static enum bt_gatt_ots_oacp_res_code oacp_checksum_proc_validate(
 		}
 
 		checksum = bt_ots_client_calc_checksum((const uint8_t *)obj_data, params->len);
-		net_buf_simple_reserve(resp_param, sizeof(uint32_t));
 		net_buf_simple_add_le32(resp_param, checksum);
 		LOG_DBG("Calculate from offset %u len %u checksum 0x%08x\n", params->offset,
 			params->len, checksum);
@@ -686,7 +685,7 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 	int decode_status;
 	struct bt_gatt_ots_oacp_proc oacp_proc = {0};
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
-	struct net_buf_simple resp_param;
+	NET_BUF_SIMPLE_DEFINE(resp_param, sizeof(uint32_t));
 
 	LOG_DBG("Object Action Control Point GATT Write Operation");
 

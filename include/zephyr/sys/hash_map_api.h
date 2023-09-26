@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Hashmap (Hash Table) API
- *
- * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
- * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
- */
-
 #ifndef ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
 #define ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
 
@@ -27,8 +19,19 @@ extern "C" {
 #endif
 
 /**
+ * @file
  * @defgroup hashmap_apis Hashmap
  * @ingroup datastructure_apis
+ *
+ * @brief Hashmap (Hash Table) API
+ *
+ * Hashmaps (a.k.a Hash Tables) sacrifice space for speed. All operations
+ * on a Hashmap (insert, delete, search) are O(1) complexity (on average).
+ *
+ * @defgroup hashmap_implementations Hashmap Implementations
+ * @ingroup hashmap_apis
+ *
+ * @addtogroup hashmap_apis
  * @{
  */
 
@@ -37,22 +40,21 @@ extern "C" {
  *
  * @note @a next should not be used without first checking
  * @ref sys_hashmap_iterator_has_next
- *
- * @param map Pointer to the associated Hashmap
- * @param next Modify the iterator in-place to point to the next Hashmap entry
- * @param state Implementation-specific iterator state
- * @param key Key associated with the current entry
- * @param value Value associated with the current entry
- * @param size Number of entries in the map
- * @param pos Number of entries already iterated
  */
 struct sys_hashmap_iterator {
+	/** Pointer to the associated Hashmap */
 	const struct sys_hashmap *map;
+	/** Modify the iterator in-place to point to the next Hashmap entry */
 	void (*next)(struct sys_hashmap_iterator *it);
+	/** Implementation-specific iterator state */
 	void *state;
+	/** Key associated with the current entry */
 	uint64_t key;
+	/** Value associated with the current entry */
 	uint64_t value;
+	/** Number of entries in the map */
 	const size_t size;
+	/** Number of entries already iterated */
 	size_t pos;
 };
 
@@ -162,19 +164,17 @@ typedef bool (*sys_hashmap_get_t)(const struct sys_hashmap *map, uint64_t key, u
 
 /**
  * @brief Generic Hashmap API
- *
- * @param iter Iterator constructor (in-place)
- * @param next Forward-incrementer for iterator
- * @param clear Clear the hash table, freeing all resources
- * @param insert Insert a key-value pair into the Hashmap
- * @param remove Remove a key-value pair from the Hashmap
- * @param get Retrieve a the value associated with a given key from the Hashmap
  */
 struct sys_hashmap_api {
+	/** Iterator constructor (in-place) */
 	sys_hashmap_iterator_t iter;
+	/** Clear the hash table, freeing all resources */
 	sys_hashmap_clear_t clear;
+	/** Insert a key-value pair into the Hashmap */
 	sys_hashmap_insert_t insert;
+	/** Remove a key-value pair from the Hashmap */
 	sys_hashmap_remove_t remove;
+	/** Retrieve the value associated with a given key from the Hashmap */
 	sys_hashmap_get_t get;
 };
 
@@ -193,14 +193,13 @@ struct sys_hashmap_api {
  * The @a initial_n_buckets is defined as the number of buckets to allocate
  * when moving from size 0 to size 1 such that the maximum @a load_factor
  * property is preserved.
- *
- * @param max_size Maximum number of entries
- * @param load_factor Maximum load factor of expressed in hundredths
- * @param initial_n_buckets Initial number of buckets to allocate
  */
 struct sys_hashmap_config {
+	/** Maximum number of entries */
 	size_t max_size;
+	/** Maximum load factor expressed in hundredths */
 	uint8_t load_factor;
+	/** Initial number of buckets to allocate */
 	uint8_t initial_n_buckets;
 };
 
@@ -215,21 +214,20 @@ struct sys_hashmap_config {
 #define SYS_HASHMAP_CONFIG(_max_size, _load_factor)                                                \
 	{                                                                                          \
 		.max_size = (size_t)_max_size, .load_factor = (uint8_t)_load_factor,               \
-		.initial_n_buckets = NHPOT(ceiling_fraction(100, _load_factor)),                   \
+		.initial_n_buckets = NHPOT(DIV_ROUND_UP(100, _load_factor)),                   \
 	}
 
 /**
  * @brief Generic Hashmap data
  *
  * @note When @a size is zero, @a buckets should be `NULL`.
- *
- * @param buckets Pointer for implementation-specific Hashmap storage
- * @param n_buckets The number of buckets currently allocated
- * @param size The number of entries currently in the Hashmap
  */
 struct sys_hashmap_data {
+	/** Pointer for implementation-specific Hashmap storage */
 	void *buckets;
+	/** The number of buckets currently allocated */
 	size_t n_buckets;
+	/** The number of entries currently in the Hashmap */
 	size_t size;
 };
 

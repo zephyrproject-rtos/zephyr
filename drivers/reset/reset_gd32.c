@@ -66,14 +66,9 @@ static const struct reset_driver_api reset_gd32_driver_api = {
 	.line_toggle = reset_gd32_line_toggle,
 };
 
-static int reset_gd32_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct reset_gd32_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, reset_gd32_init, NULL, NULL, &config, PRE_KERNEL_1,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
 		      CONFIG_RESET_INIT_PRIORITY, &reset_gd32_driver_api);

@@ -237,7 +237,7 @@ static void lsm6dso_config(const struct device *lsm6dso)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	struct sensor_value temp1, temp2, temp3, hum, press;
 #ifdef CONFIG_LSM6DSO_ENABLE_TEMP
@@ -257,27 +257,27 @@ void main(void)
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lps22hh)) {
 		printk("%s: device not ready.\n", lps22hh->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(stts751)) {
 		printk("%s: device not ready.\n", stts751->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lis2mdl)) {
 		printk("%s: device not ready.\n", lis2mdl->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lis2dw12)) {
 		printk("%s: device not ready.\n", lis2dw12->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm6dso)) {
 		printk("%s: device not ready.\n", lsm6dso->name);
-		return;
+		return 0;
 	}
 
 	lis2mdl_config(lis2mdl);
@@ -291,36 +291,36 @@ void main(void)
 
 		if (sensor_sample_fetch(hts221) < 0) {
 			printf("HTS221 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #ifndef CONFIG_LPS22HH_TRIGGER
 		if (sensor_sample_fetch(lps22hh) < 0) {
 			printf("LPS22HH Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 		if (sensor_sample_fetch(stts751) < 0) {
 			printf("STTS751 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 
 #ifndef CONFIG_LIS2MDL_TRIGGER
 		if (sensor_sample_fetch(lis2mdl) < 0) {
 			printf("LIS2MDL Magn Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 #ifndef CONFIG_LIS2DW12_TRIGGER
 		if (sensor_sample_fetch(lis2dw12) < 0) {
 			printf("LIS2DW12 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 #ifndef CONFIG_LSM6DSO_TRIGGER
 		if (sensor_sample_fetch(lsm6dso) < 0) {
 			printf("LSM6DSO Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 

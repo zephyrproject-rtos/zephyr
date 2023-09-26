@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3.dtsi>
+#include <espressif/esp32c3/esp32c3_fx4.dtsi>
 #include "xiao_esp32c3-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
 
@@ -26,27 +26,10 @@
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
 	};
-
-	power-states {
-		light_sleep: light_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <200>;
-			exit-latency-us = <60>;
-		};
-
-		deep_sleep: deep_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <660>;
-			exit-latency-us = <105>;
-		};
-	};
 };
 
 &cpu0 {
 	clock-frequency = <ESP32_CLK_CPU_160M>;
-	cpu-power-states = <&deep_sleep &light_sleep>;
 };
 
 &uart0 {

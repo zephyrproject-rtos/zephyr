@@ -738,14 +738,25 @@ static int sdhc_spi_init(const struct device *dev)
 {
 	const struct sdhc_spi_config *cfg = dev->config;
 	struct sdhc_spi_data *data = dev->data;
+	int ret = 0;
 
 	if (!device_is_ready(cfg->spi_dev)) {
 		return -ENODEV;
 	}
+	if (cfg->pwr_gpio.port) {
+		if (!gpio_is_ready_dt(&cfg->pwr_gpio)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Could not configure power gpio (%d)", ret);
+			return ret;
+		}
+	}
 	data->power_mode = SDHC_POWER_OFF;
 	data->spi_cfg = &data->cfg_a;
 	data->spi_cfg->frequency = 0;
-	return 0;
+	return ret;
 }
 
 static struct sdhc_driver_api sdhc_spi_api = {
@@ -768,7 +779,10 @@ static struct sdhc_driver_api sdhc_spi_api = {
 										\
 	struct sdhc_spi_data sdhc_spi_data_##n = {				\
 		.cfg_a = SPI_CONFIG_DT_INST(n,					\
-				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8)),\
+				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8) \
+				 | (DT_INST_PROP(n, spi_clock_mode_cpol) ? SPI_MODE_CPOL : 0) \
+				 | (DT_INST_PROP(n, spi_clock_mode_cpha) ? SPI_MODE_CPHA : 0) \
+				),\
 				0),						\
 	};									\
 										\

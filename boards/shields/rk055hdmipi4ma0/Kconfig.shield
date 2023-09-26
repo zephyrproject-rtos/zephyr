@@ -1,0 +1,5 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RK055HDMIPI4MA0
+	def_bool $(shields_list_contains,rk055hdmipi4ma0)

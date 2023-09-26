@@ -27,6 +27,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f723", "st,stm32f7", "simple-bus";
+
 		usbphyc: usbphyc@40017c00 {
 			compatible = "st,stm32-usbphyc";
 			reg = <0x40017c00 0x400>;

@@ -23,21 +23,17 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry);
 
 static inline size_t nvs_lookup_cache_pos(uint16_t id)
 {
-	size_t pos;
+	uint16_t hash;
 
-#if CONFIG_NVS_LOOKUP_CACHE_SIZE <= (UINT8_MAX + 1)
-	/*
-	 * CRC8-CCITT is used for ATE checksums and it also acts well as a hash
-	 * function, so it can be a good choice from the code size perspective.
-	 * However, other hash functions can be used as well if proved better
-	 * performance.
-	 */
-	pos = crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, &id, sizeof(id));
-#else
-	pos = crc16_ccitt(0xffff, (const uint8_t *)&id, sizeof(id));
-#endif
+	/* 16-bit integer hash function found by https://github.com/skeeto/hash-prospector. */
+	hash = id;
+	hash ^= hash >> 8;
+	hash *= 0x88b5U;
+	hash ^= hash >> 7;
+	hash *= 0xdb2dU;
+	hash ^= hash >> 9;
 
-	return pos % CONFIG_NVS_LOOKUP_CACHE_SIZE;
+	return hash % CONFIG_NVS_LOOKUP_CACHE_SIZE;
 }
 
 static int nvs_lookup_cache_rebuild(struct nvs_fs *fs)
@@ -539,7 +535,6 @@ static void nvs_sector_advance(struct nvs_fs *fs, uint32_t *addr)
  */
 static int nvs_sector_close(struct nvs_fs *fs)
 {
-	int rc;
 	struct nvs_ate close_ate;
 	size_t ate_size;
 
@@ -548,13 +543,14 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.id = 0xFFFF;
 	close_ate.len = 0U;
 	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
+	close_ate.part = 0xff;
 
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
 
 	nvs_ate_crc8_update(&close_ate);
 
-	rc = nvs_flash_ate_wrt(fs, &close_ate);
+	(void)nvs_flash_ate_wrt(fs, &close_ate);
 
 	nvs_sector_advance(fs, &fs->ate_wra);
 
@@ -570,6 +566,7 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	LOG_DBG("Adding gc done ate at %x", fs->ate_wra & ADDR_OFFS_MASK);
 	gc_done_ate.id = 0xffff;
 	gc_done_ate.len = 0U;
+	gc_done_ate.part = 0xff;
 	gc_done_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
 	nvs_ate_crc8_update(&gc_done_ate);
 
@@ -868,7 +865,7 @@ static int nvs_startup(struct nvs_fs *fs)
 		 * So, temporarily, we set the lookup cache to the end of the fs.
 		 * The cache will be rebuilt afterwards
 		 **/
-		for (int i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+		for (i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
 			fs->lookup_cache[i] = fs->ate_wra;
 		}
 #endif

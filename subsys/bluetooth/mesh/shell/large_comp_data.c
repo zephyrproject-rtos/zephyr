@@ -11,9 +11,28 @@
 
 #include "utils.h"
 
+extern const struct shell *bt_mesh_shell_ctx_shell;
+
+static void status_print(int err, char *msg, uint16_t addr, struct bt_mesh_large_comp_data_rsp *rsp)
+{
+	if (err) {
+		shell_error(bt_mesh_shell_ctx_shell,
+			    "Failed to send %s Get message (err %d)", msg, err);
+		return;
+	}
+
+	shell_print(bt_mesh_shell_ctx_shell,
+		    "%s [0x%04x]: page: %u offset: %u total size: %u", msg, addr, rsp->page,
+		    rsp->offset, rsp->total_size);
+	shell_hexdump(bt_mesh_shell_ctx_shell, rsp->data->data, rsp->data->len);
+}
+
 static int cmd_large_comp_data_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(comp, 64);
+	struct bt_mesh_large_comp_data_rsp rsp = {
+		.data = &comp,
+	};
 	uint8_t page;
 	uint16_t offset;
 	int err = 0;
@@ -29,21 +48,18 @@ static int cmd_large_comp_data_get(const struct shell *sh, size_t argc, char *ar
 	}
 
 	err = bt_mesh_large_comp_data_get(bt_mesh_shell_target_ctx.net_idx,
-					  bt_mesh_shell_target_ctx.dst, page, offset,
-					  &comp);
-	if (err) {
-		shell_print(sh, "Failed to send Large Composition Data Get (err=%d)", err);
-		return err;
-	}
+					  bt_mesh_shell_target_ctx.dst, page, offset, &rsp);
+	status_print(err, "Composition Data", bt_mesh_shell_target_ctx.dst, &rsp);
 
-	shell_print(sh, "Large Composition Data Get len=%d", comp.len);
-
-	return 0;
+	return err;
 }
 
 static int cmd_models_metadata_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(metadata, 64);
+	struct bt_mesh_large_comp_data_rsp rsp = {
+		.data = &metadata,
+	};
 	uint8_t page;
 	uint16_t offset;
 	int err = 0;
@@ -59,16 +75,10 @@ static int cmd_models_metadata_get(const struct shell *sh, size_t argc, char *ar
 	}
 
 	err = bt_mesh_models_metadata_get(bt_mesh_shell_target_ctx.net_idx,
-					  bt_mesh_shell_target_ctx.dst, page, offset,
-					  &metadata);
-	if (err) {
-		shell_print(sh, "Failed to send Models Metadata Get (err=%d)", err);
-		return err;
-	}
+					  bt_mesh_shell_target_ctx.dst, page, offset, &rsp);
+	status_print(err, "Models Metadata", bt_mesh_shell_target_ctx.dst, &rsp);
 
-	shell_print(sh, "Models Metadata Get len=%d", metadata.len);
-
-	return 0;
+	return err;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(

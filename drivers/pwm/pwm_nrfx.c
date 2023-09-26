@@ -75,7 +75,7 @@ static bool pwm_period_check_and_set(const struct device *dev,
 			data->period_cycles = period_cycles;
 			data->prescaler     = prescaler;
 
-			nrf_pwm_configure(config->pwm.p_registers,
+			nrf_pwm_configure(config->pwm.p_reg,
 					  data->prescaler,
 					  config->initial_config.count_mode,
 					  (uint16_t)countertop);
@@ -93,7 +93,7 @@ static bool pwm_period_check_and_set(const struct device *dev,
 static bool channel_psel_get(uint32_t channel, uint32_t *psel,
 			     const struct pwm_nrfx_config *config)
 {
-	*psel = nrf_pwm_pin_get(config->pwm.p_registers, (uint8_t)channel);
+	*psel = nrf_pwm_pin_get(config->pwm.p_reg, (uint8_t)channel);
 
 	return (((*psel & PWM_PSEL_OUT_CONNECT_Msk) >> PWM_PSEL_OUT_CONNECT_Pos)
 		== PWM_PSEL_OUT_CONNECT_Connected);
@@ -198,7 +198,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 			 * and till that moment, it ignores any start requests,
 			 * so ensure here that it is stopped.
 			 */
-			while (!nrfx_pwm_is_stopped(&config->pwm)) {
+			while (!nrfx_pwm_stopped_check(&config->pwm)) {
 			}
 		}
 
@@ -351,18 +351,18 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM0
 PWM_NRFX_DEVICE(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM1
 PWM_NRFX_DEVICE(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM2
 PWM_NRFX_DEVICE(2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
+#ifdef CONFIG_HAS_HW_NRF_PWM3
 PWM_NRFX_DEVICE(3);
 #endif

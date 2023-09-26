@@ -38,5 +38,5 @@ Sample usage
 You can try using OpenThread with the Zephyr Echo server and Echo client samples,
 which provide out-of-the-box configuration for OpenThread. To enable OpenThread
 support in these samples, build them with ``overlay-ot.conf`` overlay config file.
-See :ref:`sockets-echo-server-sample` and :ref:`sockets-echo-client-sample` for
-details.
+See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-echo-client`
+samples for details.

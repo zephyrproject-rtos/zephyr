@@ -83,7 +83,7 @@ ZTEST(regulator_voltage, test_output_voltage)
 			}
 
 			for (unsigned int k = 0U; k < adc_avg_count; k++) {
-				ret = adc_read(adc_chs[i].dev, &sequence);
+				ret = adc_read_dt(&adc_chs[i], &sequence);
 				zassert_equal(ret, 0);
 
 				val_mv += buf;
@@ -114,7 +114,7 @@ void *setup(void)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(regs); i++) {
 		zassert_true(device_is_ready(regs[i]));
-		zassert_true(device_is_ready(adc_chs[i].dev));
+		zassert_true(adc_is_ready_dt(&adc_chs[i]));
 		zassert_equal(adc_channel_setup_dt(&adc_chs[i]), 0);
 	}
 

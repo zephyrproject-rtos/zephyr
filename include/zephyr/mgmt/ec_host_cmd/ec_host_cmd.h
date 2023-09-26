@@ -15,15 +15,91 @@
  */
 
 #include <stdint.h>
+#include <zephyr/kernel.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/iterable_sections.h>
+
+/**
+ * @brief Host command response codes (16-bit).
+ */
+enum ec_host_cmd_status {
+	/** Host command was successful. */
+	EC_HOST_CMD_SUCCESS = 0,
+	/** The specified command id is not recognized or supported. */
+	EC_HOST_CMD_INVALID_COMMAND = 1,
+	/** Generic Error. */
+	EC_HOST_CMD_ERROR = 2,
+	/** One of more of the input request parameters is invalid. */
+	EC_HOST_CMD_INVALID_PARAM = 3,
+	/** Host command is not permitted. */
+	EC_HOST_CMD_ACCESS_DENIED = 4,
+	/** Response was invalid (e.g. not version 3 of header). */
+	EC_HOST_CMD_INVALID_RESPONSE = 5,
+	/** Host command id version unsupported. */
+	EC_HOST_CMD_INVALID_VERSION = 6,
+	/** Checksum did not match. */
+	EC_HOST_CMD_INVALID_CHECKSUM = 7,
+	/** A host command is currently being processed. */
+	EC_HOST_CMD_IN_PROGRESS = 8,
+	/** Requested information is currently unavailable. */
+	EC_HOST_CMD_UNAVAILABLE = 9,
+	/** Timeout during processing. */
+	EC_HOST_CMD_TIMEOUT = 10,
+	/** Data or table overflow. */
+	EC_HOST_CMD_OVERFLOW = 11,
+	/** Header is invalid or unsupported (e.g. not version 3 of header). */
+	EC_HOST_CMD_INVALID_HEADER = 12,
+	/** Did not receive all expected request data. */
+	EC_HOST_CMD_REQUEST_TRUNCATED = 13,
+	/** Response was too big to send within one response packet. */
+	EC_HOST_CMD_RESPONSE_TOO_BIG = 14,
+	/** Error on underlying communication bus. */
+	EC_HOST_CMD_BUS_ERROR = 15,
+	/** System busy. Should retry later. */
+	EC_HOST_CMD_BUSY = 16,
+	/** Header version invalid. */
+	EC_HOST_CMD_INVALID_HEADER_VERSION = 17,
+	/** Header CRC invalid. */
+	EC_HOST_CMD_INVALID_HEADER_CRC = 18,
+	/** Data CRC invalid. */
+	EC_HOST_CMD_INVALID_DATA_CRC = 19,
+	/** Can't resend response. */
+	EC_HOST_CMD_DUP_UNAVAILABLE = 20,
+
+	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits. */
+} __packed;
+
+enum ec_host_cmd_log_level {
+	EC_HOST_CMD_DEBUG_OFF, /* No Host Command debug output */
+	EC_HOST_CMD_DEBUG_NORMAL, /* Normal output mode; skips repeated commands */
+	EC_HOST_CMD_DEBUG_EVERY, /* Print every command */
+	EC_HOST_CMD_DEBUG_PARAMS, /* ... and print params for request/response */
+	EC_HOST_CMD_DEBUG_MODES /* Number of host command debug modes */
+};
+
+typedef void (*ec_host_cmd_user_cb_t)(const struct ec_host_cmd_rx_ctx *rx_ctx, void *user_data);
 
 struct ec_host_cmd {
 	struct ec_host_cmd_rx_ctx rx_ctx;
 	struct ec_host_cmd_tx_buf tx;
 	struct ec_host_cmd_backend *backend;
-	struct k_thread *thread;
-	k_thread_stack_t *stack;
+	/**
+	 * The backend gives rx_ready (by calling the ec_host_cmd_send_receive function),
+	 * when data in rx_ctx are ready. The handler takes rx_ready to read data in rx_ctx.
+	 */
+	struct k_sem rx_ready;
+	/** Status of the rx data checked in the ec_host_cmd_send_received function. */
+	enum ec_host_cmd_status rx_status;
+	/**
+	 * User callback after receiving a command. It is called by the ec_host_cmd_send_received
+	 * function.
+	 */
+	ec_host_cmd_user_cb_t user_cb;
+	void *user_data;
+#ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
+	struct k_thread thread;
+#endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
 };
 
 /**
@@ -94,8 +170,8 @@ struct ec_host_cmd_handler {
  */
 #define EC_HOST_CMD_HANDLER(_id, _function, _version_mask, _request_type, _response_type)          \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
-		.id = _id,                                                                         \
 		.handler = _function,                                                              \
+		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
 		.min_rqt_size = sizeof(_request_type),                                             \
 		.min_rsp_size = sizeof(_response_type),                                            \
@@ -114,8 +190,8 @@ struct ec_host_cmd_handler {
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_id, _function, _version_mask)                                 \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {                         \
-		.id = _id,                                                                         \
 		.handler = _function,                                                              \
+		.id = _id,                                                                         \
 		.version_mask = _version_mask,                                                     \
 		.min_rqt_size = 0,                                                                 \
 		.min_rsp_size = 0,                                                                 \
@@ -175,71 +251,113 @@ struct ec_host_cmd_response_header {
 	uint16_t reserved;
 } __packed;
 
-/*
- * Host command response codes (16-bit).
- */
-enum ec_host_cmd_status {
-	/** Host command was successful. */
-	EC_HOST_CMD_SUCCESS = 0,
-	/** The specified command id is not recognized or supported. */
-	EC_HOST_CMD_INVALID_COMMAND = 1,
-	/** Generic Error. */
-	EC_HOST_CMD_ERROR = 2,
-	/** One of more of the input request parameters is invalid. */
-	EC_HOST_CMD_INVALID_PARAM = 3,
-	/** Host command is not permitted. */
-	EC_HOST_CMD_ACCESS_DENIED = 4,
-	/** Response was invalid (e.g. not version 3 of header). */
-	EC_HOST_CMD_INVALID_RESPONSE = 5,
-	/** Host command id version unsupported. */
-	EC_HOST_CMD_INVALID_VERSION = 6,
-	/** Checksum did not match. */
-	EC_HOST_CMD_INVALID_CHECKSUM = 7,
-	/** A host command is currently being processed. */
-	EC_HOST_CMD_IN_PROGRESS = 8,
-	/** Requested information is currently unavailable. */
-	EC_HOST_CMD_UNAVAILABLE = 9,
-	/** Timeout during processing. */
-	EC_HOST_CMD_TIMEOUT = 10,
-	/** Data or table overflow. */
-	EC_HOST_CMD_OVERFLOW = 11,
-	/** Header is invalid or unsupported (e.g. not version 3 of header). */
-	EC_HOST_CMD_INVALID_HEADER = 12,
-	/** Did not receive all expected request data. */
-	EC_HOST_CMD_REQUEST_TRUNCATED = 13,
-	/** Response was too big to send within one response packet. */
-	EC_HOST_CMD_RESPONSE_TOO_BIG = 14,
-	/** Error on underlying communication bus. */
-	EC_HOST_CMD_BUS_ERROR = 15,
-	/** System busy. Should retry later. */
-	EC_HOST_CMD_BUSY = 16,
-	/** Header version invalid. */
-	EC_HOST_CMD_INVALID_HEADER_VERSION = 17,
-	/** Header CRC invalid. */
-	EC_HOST_CMD_INVALID_HEADER_CRC = 18,
-	/** Data CRC invalid. */
-	EC_HOST_CMD_INVALID_DATA_CRC = 19,
-	/** Can't resend response. */
-	EC_HOST_CMD_DUP_UNAVAILABLE = 20,
-
-	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits. */
-} __packed;
-
 /**
  * @brief Initialize the host command subsystem
  *
  * This routine initializes the host command subsystem. It includes initialization
  * of a backend and the handler.
- * When the application configures the zephyr,host-cmd-backend chosen node, the chosen backend
- * automatically calls this routine at CONFIG_EC_HOST_CMD_INIT_PRIORITY.
- * Applications that require a run-time selection of the backend must leave
- * zephyr,host-cmd-backend undefined and must explicitly call this routine.
+ * When the application configures the zephyr,host-cmd-espi-backend/zephyr,host-cmd-shi-backend/
+ * zephyr,host-cmd-uart-backend chosen node and @kconfig{CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT} is
+ * set, the chosen backend automatically calls this routine at
+ * @kconfig{CONFIG_EC_HOST_CMD_INIT_PRIORITY}. Applications that require a run-time selection of the
+ * backend must set @kconfig{CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT} to n and must explicitly call
+ * this routine.
  *
  * @param[in] backend        Pointer to the backend structure to initialize.
  *
  * @retval 0 if successful
  */
 int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
+
+/**
+ * @brief Send the host command response
+ *
+ * This routine sends the host command response. It should be used to send IN_PROGRESS status or
+ * if the host command handler doesn't return e.g. reboot command.
+ *
+ * @param[in] status        Host command status to be sent.
+ * @param[in] args          Pointer of a structure passed to the handler.
+ *
+ * @retval 0 if successful.
+ */
+int ec_host_cmd_send_response(enum ec_host_cmd_status status,
+		const struct ec_host_cmd_handler_args *args);
+
+/**
+ * @brief Signal a new host command
+ *
+ * Signal that a new host command has been received. The function should be called by a backend
+ * after copying data to the rx buffer and setting the length.
+ */
+void ec_host_cmd_rx_notify(void);
+
+/**
+ * @brief Install a user callback for receiving a host command
+ *
+ * It allows installing a custom procedure needed by a user after receiving a command.
+ *
+ * @param[in] cb          A callback to be installed.
+ * @param[in] user_data   User data to be passed to the callback.
+ */
+void ec_host_cmd_set_user_cb(ec_host_cmd_user_cb_t cb, void *user_data);
+
+/**
+ * @brief Get the main ec host command structure
+ *
+ * This routine returns a pointer to the main host command structure.
+ * It allows the application code to get inside information for any reason e.g.
+ * the host command thread id.
+ *
+ * @retval A pointer to the main host command structure
+ */
+const struct ec_host_cmd *ec_host_cmd_get_hc(void);
+
+#ifndef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
+/**
+ * @brief The thread function for Host Command subsystem
+ *
+ * This routine calls the Host Command thread entry function. If
+ * @kconfig{CONFIG_EC_HOST_CMD_DEDICATED_THREAD} is not defined, a new thread is not created,
+ * and this function has to be called by application code. It doesn't return.
+ */
+FUNC_NORETURN void ec_host_cmd_task(void);
+#endif
+
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+/**
+ * @brief Check if a Host Command that sent EC_HOST_CMD_IN_PROGRESS status has ended.
+ *
+ * A Host Command that sends EC_HOST_CMD_IN_PROGRESS status doesn't send a final result.
+ * The final result can be get with the ec_host_cmd_send_in_progress_status function.
+ *
+ * @retval true if the Host Command endded
+ */
+bool ec_host_cmd_send_in_progress_ended(void);
+
+/**
+ * @brief Get final result of a last Host Command that has sent EC_HOST_CMD_IN_PROGRESS status.
+ *
+ * A Host Command that sends EC_HOST_CMD_IN_PROGRESS status doesn't send a final result.
+ * Get the saved status with this function. The status can be get only once. Futher calls return
+ * EC_HOST_CMD_UNAVAILABLE.
+ *
+ * Saving status of Host Commands that send response data is not supported.
+ *
+ * @retval The final status or EC_HOST_CMD_UNAVAILABLE if not available.
+ */
+enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void);
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
+
+/**
+ * @brief Add a suppressed command.
+ *
+ * Suppressed commands are not logged. Add a command to be suppressed.
+ *
+ * @param[in] cmd_id        A command id to be suppressed.
+ *
+ * @retval 0 if successful, -EIO if exceeded max number of suppressed commands.
+ */
+int ec_host_cmd_add_suppressed(uint16_t cmd_id);
 
 /**
  * @}

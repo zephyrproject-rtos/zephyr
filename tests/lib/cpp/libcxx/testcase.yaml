@@ -41,3 +41,12 @@ tests:
     extra_configs:
       - CONFIG_ARCMWDT_LIBC=y
       - CONFIG_ARCMWDT_LIBCPP=y
+  cpp.libcxx.host:
+    arch_allow: posix
+    tags: cpp
+    extra_configs:
+      - CONFIG_EXTERNAL_LIBCPP=y
+      - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - native_posix
+      - native_posix_64

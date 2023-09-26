@@ -623,14 +623,14 @@ static int uc81xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(config->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 
 	gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
-	if (!device_is_ready(config->dc_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->dc_gpio)) {
 		LOG_ERR("DC GPIO device not ready");
 		return -ENODEV;
 	}
@@ -638,7 +638,7 @@ static int uc81xx_init(const struct device *dev)
 	gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
 
 
-	if (!device_is_ready(config->busy_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
 		return -ENODEV;
 	}

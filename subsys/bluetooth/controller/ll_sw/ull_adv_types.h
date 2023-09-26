@@ -92,12 +92,19 @@ struct ll_adv_sync_set {
 	uint8_t is_started:1;
 	uint8_t is_data_cmplt:1;
 
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	uint32_t aux_remainder;
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 };
 
 struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
+
+	uint32_t big_ref_point; /* Previously elapsed BIG reference point in
+				 * microseconds of the free running Controller
+				 * clock.
+				 */
 
 	struct {
 		struct node_rx_hdr hdr;

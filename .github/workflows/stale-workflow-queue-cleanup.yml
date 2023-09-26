@@ -14,7 +14,7 @@ concurrency:
 jobs:
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Delete stale queued workflow runs

@@ -98,9 +98,8 @@
 	#endif /* CONFIG_XTENSA */
 #endif
 
-static int malloc_prepare(const struct device *unused)
+static int malloc_prepare(void)
 {
-	ARG_UNUSED(unused);
 
 #ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
@@ -333,9 +332,8 @@ K_SEM_DEFINE(__lock___arc4random_mutex, 1, 1);
 
 #ifdef CONFIG_USERSPACE
 /* Grant public access to all static locks after boot */
-static int newlib_locks_prepare(const struct device *unused)
+static int newlib_locks_prepare(void)
 {
-	ARG_UNUSED(unused);
 
 	/* Initialise recursive locks */
 	k_object_access_all_grant(&__lock___sinit_recursive_mutex);

@@ -6,8 +6,10 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_IOCTL_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_IOCTL_H_
 
-#define FIONBIO 0x5421
-#define FIONREAD 0x541B
+#include <zephyr/sys/fdtable.h>
+
+#define FIONBIO ZFD_IOCTL_FIONBIO
+#define FIONREAD ZFD_IOCTL_FIONREAD
 
 #ifdef __cplusplus
 extern "C" {

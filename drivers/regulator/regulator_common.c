@@ -9,7 +9,9 @@ void regulator_common_data_init(const struct device *dev)
 {
 	struct regulator_common_data *data = dev->data;
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_init(&data->lock);
+#endif
 	data->refcnt = 0;
 }
 
@@ -23,6 +25,13 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 
 	if (config->initial_mode != REGULATOR_INITIAL_MODE_UNKNOWN) {
 		ret = regulator_set_mode(dev, config->initial_mode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (config->init_uv > INT32_MIN) {
+		ret = regulator_set_voltage(dev, config->init_uv, config->init_uv);
 		if (ret < 0) {
 			return ret;
 		}
@@ -81,7 +90,9 @@ int regulator_enable(const struct device *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 
 	data->refcnt++;
 
@@ -92,7 +103,9 @@ int regulator_enable(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	k_mutex_unlock(&data->lock);
+#endif
 
 	return ret;
 }
@@ -106,9 +119,13 @@ bool regulator_is_enabled(const struct device *dev)
 	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
 		enabled = true;
 	} else {
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 		(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 		enabled = data->refcnt != 0;
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 		k_mutex_unlock(&data->lock);
+#endif
 	}
 
 	return enabled;
@@ -131,7 +148,9 @@ int regulator_disable(const struct device *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 
 	data->refcnt--;
 
@@ -142,7 +161,9 @@ int regulator_disable(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	k_mutex_unlock(&data->lock);
+#endif
 
 	return ret;
 }

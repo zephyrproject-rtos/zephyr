@@ -10,6 +10,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_internal.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {

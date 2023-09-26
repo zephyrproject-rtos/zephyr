@@ -365,13 +365,6 @@ static inline int32_t hl_write_char(int fd, const char c)
 	return ret;
 }
 
-static int uart_hostlink_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 /**
  * @brief Poll the device for input.
  *
@@ -406,5 +399,5 @@ static const struct uart_driver_api uart_hostlink_driver_api = {
 	.poll_out = uart_hostlink_poll_out,
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(hostlink), uart_hostlink_init, NULL, NULL, NULL, PRE_KERNEL_1,
+DEVICE_DT_DEFINE(DT_NODELABEL(hostlink), NULL, NULL, NULL, NULL, PRE_KERNEL_1,
 		 CONFIG_SERIAL_INIT_PRIORITY, &uart_hostlink_driver_api);

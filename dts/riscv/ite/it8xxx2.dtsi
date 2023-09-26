@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -28,17 +29,18 @@
 		#size-cells = <0>;
 		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite";
+			riscv,isa = "rv32imafc_zifencei";
 			device_type = "cpu";
 			reg = <0>;
 			cpu-power-states = <&standby>;
 		};
-	};
 
-	power-states {
-		standby: standby {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <240000>;
+		power-states {
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <500>;
+			};
 		};
 	};
 
@@ -72,10 +74,9 @@
 			compatible = "mmio-sram";
 			reg = <0x80100000 DT_SIZE_K(60)>;
 		};
-		ilm: ilm@f0205d {
+		ilm: ilm@f01040 {
 			compatible = "ite,it8xxx2-ilm";
-			reg = <0xf0205d 3	/* RVILMCR0..2 */
-			       0xf01040 3	/* SCAR0 */
+			reg = <0xf01040 3	/* SCAR0 */
 			       0xf01043 3
 			       0xf01046 3
 			       0xf01049 3
@@ -706,6 +707,12 @@
 				   &wuc_wu37>; /* KSI[7] */
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		};
+
+		sha0: sha@f0202d {
+			compatible = "ite,it8xxx2-sha";
+			reg = <0x00f0202d 0x3>;
+			status = "disabled";
 		};
 
 		usbpd0: usbpd@f03700 {

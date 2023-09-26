@@ -91,7 +91,7 @@ static void wait_for_iface(struct net_if *iface)
 	net_mgmt_del_event_callback(&iface_up_cb);
 }
 
-void main(void)
+int main(void)
 {
 	struct net_if *iface;
 
@@ -116,4 +116,5 @@ void main(void)
 			    CONFIG_NET_SAMPLE_IFACE2_MY_IPV4_NETMASK);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_netc_vsi)*/
+	return 0;
 }

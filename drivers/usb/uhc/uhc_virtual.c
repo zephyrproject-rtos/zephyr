@@ -378,7 +378,7 @@ static void xfer_work_handler(struct k_work *work)
 			}
 		}
 
-		k_mem_slab_free(&uhc_vrt_slab, (void **)&ev);
+		k_mem_slab_free(&uhc_vrt_slab, (void *)ev);
 	}
 }
 

@@ -7,15 +7,15 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
-#include <zephyr/kernel.h>
-#include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/unistd.h>
-#include "posix_types.h"
-#include <zephyr/posix/sched.h>
 #include "pthread_key.h"
+
 #include <stdlib.h>
 #include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sched.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +24,10 @@ extern "C" {
 /* Pthread detach/joinable */
 #define PTHREAD_CREATE_DETACHED 0
 #define PTHREAD_CREATE_JOINABLE 1
+
+/* Pthread resource visibility */
+#define PTHREAD_PROCESS_PRIVATE 0
+#define PTHREAD_PROCESS_SHARED  1
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
@@ -106,26 +110,34 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
  *
  * See IEEE 1003.1.
  *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_condattr_init(pthread_condattr_t *att)
-{
-	ARG_UNUSED(att);
-	return 0;
-}
+int pthread_condattr_init(pthread_condattr_t *att);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_condattr_destroy(pthread_condattr_t *att)
-{
-	ARG_UNUSED(att);
-	return 0;
-}
+int pthread_condattr_destroy(pthread_condattr_t *att);
+
+/**
+ * @brief POSIX threading comatibility API
+ *
+ * See IEEE 1003.1
+ *
+ */
+int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
+		clockid_t *ZRESTRICT clock_id);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ *
+ */
+
+int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
 
 /**
  * @brief Declare a mutex as initialized
@@ -277,24 +289,6 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 	return 0;
 }
 
-/* FIXME: these are going to be tricky to implement.  Zephyr has (for
- * good reason) deprecated its own "initializer" macros in favor of a
- * static "declaration" macros instead.  Using such a macro inside a
- * gcc compound expression to declare and object then reference it
- * would work, but gcc limits such expressions to function context
- * (because they may need to generate code that runs at assignment
- * time) and much real-world use of these initializers is for static
- * variables.  The best trick I can think of would be to declare it in
- * a special section and then initialize that section at runtime
- * startup, which sort of defeats the purpose of having these be
- * static...
- *
- * Instead, see the nonstandard PTHREAD_*_DEFINE macros instead, which
- * work similarly but conform to Zephyr's paradigms.
- */
-/* #define PTHREAD_MUTEX_INITIALIZER */
-/* #define PTHREAD_COND_INITIALIZER */
-
 /**
  * @brief Declare a pthread barrier
  *
@@ -305,14 +299,17 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
  * @param name Symbol name of the barrier
  * @param count Thread count, same as the "count" argument to
  *             pthread_barrier_init()
+ * @deprecated Use @ref pthread_barrier_init instead.
  */
-#define PTHREAD_BARRIER_DEFINE(name, count)			\
-	struct pthread_barrier name = {				\
-		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),		\
-		.max = count,					\
-	}
+#define PTHREAD_BARRIER_DEFINE(name, count) pthread_barrier_t name = -1 __DEPRECATED_MACRO
 
 #define PTHREAD_BARRIER_SERIAL_THREAD 1
+
+/*
+ *  Barrier attributes - type
+ */
+#define PTHREAD_PROCESS_PRIVATE		0
+#define PTHREAD_PROCESS_PUBLIC		1
 
 /**
  * @brief POSIX threading compatibility API
@@ -326,58 +323,44 @@ int pthread_barrier_wait(pthread_barrier_t *b);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_barrier_init(pthread_barrier_t *b,
-				       const pthread_barrierattr_t *attr,
-				       unsigned int count)
-{
-	ARG_UNUSED(attr);
-
-	b->max = count;
-	b->count = 0;
-	z_waitq_init(&b->wait_q);
-
-	return 0;
-}
+int pthread_barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr,
+			 unsigned int count);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  */
-static inline int pthread_barrier_destroy(pthread_barrier_t *b)
-{
-	ARG_UNUSED(b);
-
-	return 0;
-}
+int pthread_barrier_destroy(pthread_barrier_t *b);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
- *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_barrierattr_init(pthread_barrierattr_t *b)
-{
-	ARG_UNUSED(b);
-
-	return 0;
-}
+int pthread_barrierattr_init(pthread_barrierattr_t *b);
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
- *
- * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_barrierattr_destroy(pthread_barrierattr_t *b)
-{
-	ARG_UNUSED(b);
+int pthread_barrierattr_destroy(pthread_barrierattr_t *b);
 
-	return 0;
-}
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
+				   int *ZRESTRICT pshared);
 
 /* Predicates and setters for various pthread attribute values that we
  * don't support (or always support: the "process shared" attribute
@@ -389,9 +372,7 @@ static inline int pthread_barrierattr_destroy(pthread_barrierattr_t *b)
  * Unix code.  Leave the declarations here so they can be easily
  * uncommented and implemented as needed.
 
-int pthread_condattr_getclock(const pthread_condattr_t * clockid_t *);
 int pthread_condattr_getpshared(const pthread_condattr_t * int *);
-int pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
 int pthread_condattr_setpshared(pthread_condattr_t *, int);
 int pthread_mutex_consistent(pthread_mutex_t *);
 int pthread_mutex_getprioceiling(const pthread_mutex_t * int *);
@@ -402,8 +383,6 @@ int pthread_mutexattr_getrobust(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
-int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
-int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
 
 /* Base Pthread related APIs */
@@ -423,10 +402,7 @@ pthread_t pthread_self(void);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
-{
-	return (pt1 == pt2);
-}
+int pthread_equal(pthread_t pt1, pthread_t pt2);
 
 /**
  * @brief Destroy the read-write lock attributes object.
@@ -530,6 +506,45 @@ int pthread_setname_np(pthread_t thread, const char *name);
  * @retval Negative value if kernel function error
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
+
+#ifdef CONFIG_PTHREAD_IPC
+
+/**
+ * @brief Destroy a pthread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_destroy(pthread_spinlock_t *lock);
+
+/**
+ * @brief Initialize a thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_init(pthread_spinlock_t *lock, int pshared);
+
+/**
+ * @brief Lock a previously initialized thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_lock(pthread_spinlock_t *lock);
+
+/**
+ * @brief Attempt to lock a previously initialized thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_trylock(pthread_spinlock_t *lock);
+
+/**
+ * @brief Unlock a previously locked thread_spinlock_t.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_spin_unlock(pthread_spinlock_t *lock);
+
+#endif
 
 #ifdef __cplusplus
 }

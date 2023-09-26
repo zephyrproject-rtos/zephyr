@@ -876,7 +876,7 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 	return rc;
 }
 
-static int fs_init(const struct device *dev)
+static int fs_init(void)
 {
 	k_mutex_init(&mutex);
 	sys_dlist_init(&fs_mnt_list);

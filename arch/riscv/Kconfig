@@ -30,6 +30,7 @@ config RISCV_GP
 
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
+	depends on MULTITHREADING
 	depends on !RISCV_PMP
 	help
 	  Use mret instruction only when in a trap handler.
@@ -88,6 +89,16 @@ config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	  Enable this hidden option and specialize the z_soc_* functions when
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the mstatus register to lock and unlock the IRQs.
+
+config RISCV_SOC_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
+	  platform-specific versions named z_soc_sys_read*() and z_soc_sys_write*().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the registers.
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"
@@ -168,6 +179,19 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	  On some RISCV platform the first interrupt vectors are primarly
+	  intended for inter-hart interrupt signaling and so retained for that
+	  purpose and not available. When this option is set, all the IRQ
+	  vectors are shifted by this offset value when installed into the
+	  software ISR table and the IRQ vector table. CONFIG_NUM_IRQS must be
+	  properly sized to take into account this offset. This is a hidden
+	  option which needs to be set per architecture and left alone.
+
 config NUM_IRQS
 	int
 
@@ -229,10 +253,20 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
 
+config PMP_GRANULARITY
+	int "The granularity of PMP address matching"
+	default 8 if (PMP_NO_TOR && PMP_NO_NA4)
+	default 4
+	help
+	  The granularity must be a power of 2 greater than or equal to 4
+	  (ie 4, 8, 16, ...), but if neither TOR mode nor NA4 mode is
+	  supported, the minimum granularity is 8.
+
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
 	def_bool y
+	depends on MULTITHREADING
 	depends on HW_STACK_PROTECTION
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -249,6 +283,27 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  catch any sudden jump in stack pointer decrement, plus some
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
+
+# Implement the null pointer detection using the Physical Memory Protection
+# (PMP) Unit.
+config NULL_POINTER_EXCEPTION_DETECTION_PMP
+	bool "Use PMP for null pointer exception detection"
+	depends on RISCV_PMP
+	help
+	  Null pointer dereference detection implemented
+	  using PMP functionality.
+
+if NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config NULL_POINTER_EXCEPTION_REGION_SIZE
+	hex "Inaccessible region to implement null pointer detection"
+	default 0x10
+	help
+	  Use a PMP slot to make region (starting at address 0x0) inaccessible for
+	  detecting null pointer dereferencing (raising a CPU access fault).
+	  Minimum is 4 bytes.
+
+endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
 
 endmenu
 
@@ -268,8 +323,20 @@ config CMSIS_V2_THREAD_MAX_STACK_SIZE
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 256
 
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	int "Alignment of RISC-V trap handler in bytes"
+	default 4
+	help
+	  This value configures the alignment of RISC-V trap handling
+	  code. The requirement for a particular alignment arises from
+	  the format of MTVEC register which is RISC-V platform-specific.
+	  The minimum alignment is 4 bytes according to the Spec.
+
 config GEN_IRQ_VECTOR_TABLE
-	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
+	select RISCV_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGED
+
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	default y if !SMP
 
 rsource "Kconfig.isa"
 rsource "Kconfig.core"

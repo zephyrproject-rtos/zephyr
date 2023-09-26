@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 /* ADC channels disabled */
 #define IT8XXX2_ADC_CHANNEL_DISABLED 0x1F
 /* ADC sample time delay (Unit:us) */
-#define IT8XXX2_ADC_SAMPLE_TIME_US 200
+#define IT8XXX2_ADC_SAMPLE_TIME_US 500
 /* Wait next clock rising (Clock source 32.768K) */
 #define IT8XXX2_WAIT_NEXT_CLOCK_TIME_US 31
 /* ADC channels offset */
@@ -438,7 +438,11 @@ static int adc_it8xxx2_init(const struct device *dev)
 	 * (Current setting is 61.6us)
 	 *
 	 * NOTE: A sample time delay (60us) also need to be included in
-	 * conversion time, so the final result is ~= 121.6us.
+	 * conversion time.
+	 * In addition, the ADC has a waiting time of 202.8us for
+	 * voltage stabilization.
+	 *
+	 * So the final ADC sample time result is ~= 324.4us.
 	 */
 	adc_regs->ADCSTS &= ~IT8XXX2_ADC_ADCCTS1;
 	adc_regs->ADCCFG &= ~IT8XXX2_ADC_ADCCTS0;

@@ -42,21 +42,22 @@
 #include "hal/debug.h"
 
 static struct ll_conn_iso_group cig = { 0 };
-static struct ll_conn_iso_stream cis = { .established = 1};
+static struct ll_conn_iso_stream cis = { 0 };
 
-struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn, uint16_t *cis_iter)
+__weak struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn,
+								uint16_t *cis_iter)
 {
-	return &cis;
+	return NULL;
 }
 
-struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle)
+__weak struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle)
 {
 	return &cis;
 }
 
 struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 {
-	return &cis;
+	return NULL;
 }
 
 struct ll_conn_iso_group *ll_conn_iso_group_get_by_id(uint8_t id)
@@ -82,8 +83,9 @@ void ull_conn_iso_cis_stop_by_id(uint8_t cig_id, uint8_t cis_id, uint8_t reason)
 
 }
 
-void ull_conn_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire,
-			uint16_t cis_handle, uint16_t instant_latency)
+void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
+			uint32_t ticks_at_expire, uint32_t remainder,
+			uint16_t instant_latency)
 {
 
 }

@@ -1,7 +1,8 @@
-.. _wpanusb-sample:
+.. zephyr:code-sample:: wpan-usb
+   :name: 802.15.4 USB
+   :relevant-api: ieee802154 _usb_device_core_api
 
-wpanusb sample
-##############
+   Implement a device that exposes an IEEE 802.15.4 radio over USB.
 
 Overview
 ********
@@ -39,7 +40,7 @@ Build the wpanusb sample for a board:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wpanusb
    :board: <board to use>
-   :gen-args: -DOVERLAY_CONFIG=<overlay file to use>
+   :gen-args: -DEXTRA_CONF_FILE=<overlay file to use>
    :goals: build
    :compact:
 

@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NTC_THERMISTOR
+	bool "NTC Thermistor"
+	default y
+	depends on DT_HAS_NTC_THERMISTOR_GENERIC_ENABLED || \
+		   DT_HAS_EPCOS_B57861S0103A039_ENABLED  || \
+		   DT_HAS_MURATA_NCP15WB473_ENABLED
+	select ADC
+	help
+	  Enable driver for Zephyr NTC Thermistor.

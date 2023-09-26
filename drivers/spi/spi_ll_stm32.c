@@ -25,8 +25,33 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 #include "spi_ll_stm32.h"
+
+/*
+ * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
+ * e.g. nucleo_f746zg
+ */
+#if defined(CONFIG_CPU_HAS_DCACHE) &&                       \
+	defined(CONFIG_DCACHE) &&                               \
+	!defined(CONFIG_NOCACHE_MEMORY)
+#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	1
+#else
+#define  SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	0
+#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+
+#define WAIT_1US	1U
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
@@ -49,10 +74,30 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #ifdef CONFIG_SPI_STM32_DMA
+static uint32_t bits2bytes(uint32_t bits)
+{
+	return bits / 8;
+}
+
 /* dummy value used for transferring NOP when tx buf is null
- * and use as dummy sink for when rx buf is null
+ * and use as dummy sink for when rx buf is null.
  */
-uint32_t dummy_rx_tx_buffer;
+#ifdef CONFIG_NOCACHE_MEMORY
+/*
+ * If a nocache area is available, place it there to avoid potential DMA
+ * cache-coherency problems.
+ */
+static __aligned(32) uint32_t dummy_rx_tx_buffer
+	__attribute__((__section__(".nocache")));
+
+#else /* CONFIG_NOCACHE_MEMORY */
+
+/*
+ * If nocache areas are not available, cache coherency might need to be kept
+ * manually. See SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED.
+ */
+static __aligned(32) uint32_t dummy_rx_tx_buffer;
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device *dev, void *arg,
@@ -61,7 +106,7 @@ static void dma_callback(const struct device *dev, void *arg,
 	/* arg directly holds the spi device */
 	struct spi_stm32_data *data = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
@@ -101,8 +146,11 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	/* tx direction has memory as source and periph as dest. */
 	if (buf == NULL) {
-		dummy_rx_tx_buffer = 0;
 		/* if tx buff is null, then sends NOP on the line. */
+		dummy_rx_tx_buffer = 0;
+#if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
+		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
+#endif /* CONFIG_CPU_HAS_DCACHE && !defined(CONFIG_NOCACHE_MEMORY) */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
@@ -541,7 +589,7 @@ static int spi_stm32_configure(const struct device *dev,
 
 	LL_SPI_DisableCRC(spi);
 
-	if (config->cs || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
+	if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
@@ -628,7 +676,11 @@ static int transceive(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -638,6 +690,14 @@ static int transceive(const struct device *dev,
 #endif
 
 	LL_SPI_Enable(spi);
+
+#if CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * Add a small delay after enabling to prevent transfer stalling at high
+	 * system clock frequency (see errata sheet ES0392).
+	 */
+	k_busy_wait(WAIT_1US);
+#endif
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
@@ -679,9 +739,20 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
 	int res = -1;
+	k_timeout_t timeout;
+
+	/*
+	 * In slave mode we do not know when the transaction will start. Hence,
+	 * it doesn't make sense to have timeout in this case.
+	 */
+	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
+		timeout = K_FOREVER;
+	} else {
+		timeout = K_MSEC(1000);
+	}
 
 	while (1) {
-		res = k_sem_take(&data->status_sem, K_MSEC(1000));
+		res = k_sem_take(&data->status_sem, timeout);
 		if (res != 0) {
 			return res;
 		}
@@ -697,6 +768,44 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 
 	return res;
 }
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+{
+	bool buf_within_nocache = false;
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
+		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
+	if (buf_within_nocache) {
+		return true;
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+	buf_within_nocache = mem_attr_check_buf(
+		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+
+	return buf_within_nocache;
+}
+
+static bool is_dummy_buffer(const struct spi_buf *buf)
+{
+	return buf->buf == NULL;
+}
+
+static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
+{
+	for (size_t i = 0; i < bufs->count; i++) {
+		const struct spi_buf *buf = &bufs->buffers[i];
+
+		if (!is_dummy_buffer(buf) &&
+				!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+			return false;
+		}
+	}
+	return true;
+}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
@@ -719,6 +828,13 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
+		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
+		return -EFAULT;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	k_sem_reset(&data->status_sem);
@@ -729,7 +845,11 @@ static int transceive_dma(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
@@ -792,8 +912,11 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_DisableDMAReq_RX(spi);
 #endif /* ! st_stm32h7_spi */
 
-		spi_context_update_tx(&data->ctx, 1, dma_len);
-		spi_context_update_rx(&data->ctx, 1, dma_len);
+		uint8_t frame_size_bytes = bits2bytes(
+			SPI_WORD_SIZE_GET(config->operation));
+
+		spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
+		spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
 	}
 
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
@@ -923,7 +1046,7 @@ static int spi_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_INF(" SPI with DMA transfer");
+	LOG_DBG("SPI with DMA transfer");
 
 #endif /* CONFIG_SPI_STM32_DMA */
 

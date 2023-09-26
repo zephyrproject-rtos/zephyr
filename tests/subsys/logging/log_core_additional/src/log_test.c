@@ -19,6 +19,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_output.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define TEST_MESSAGE "test msg"
 

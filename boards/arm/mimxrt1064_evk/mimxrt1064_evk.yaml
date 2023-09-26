@@ -29,7 +29,7 @@ supported:
   - spi
   - usb_device
   - video
-  - kscan:touch
   - can
   - watchdog
   - adc
+vendor: nxp

@@ -40,10 +40,15 @@ static uint8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
 static int mem_free = 15;
 static int mem_total = 25;
 
-static struct lwm2m_ctx client;
+static struct lwm2m_ctx client_ctx;
 
 static const char *endpoint =
 	(sizeof(CONFIG_LWM2M_APP_ID) > 1 ? CONFIG_LWM2M_APP_ID : CONFIG_BOARD);
+
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+BUILD_ASSERT(sizeof(endpoint) <= CONFIG_LWM2M_SECURITY_KEY_SIZE,
+		"Client ID length is too long");
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 static struct k_sem quit_lock;
 
@@ -257,7 +262,7 @@ static void observe_cb(enum lwm2m_observe_event event,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t flags = IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) ?
 				LWM2M_RD_CLIENT_FLAG_BOOTSTRAP : 0;
@@ -270,16 +275,17 @@ void main(void)
 	ret = lwm2m_setup();
 	if (ret < 0) {
 		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
-		return;
+		return 0;
 	}
 
-	(void)memset(&client, 0x0, sizeof(client));
+	(void)memset(&client_ctx, 0x0, sizeof(client_ctx));
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	client.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
+	client_ctx.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
 #endif
 
-	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, endpoint, flags, rd_client_event, observe_cb);
+	/* client_ctx.sec_obj_inst is 0 as a starting point */
+	lwm2m_rd_client_start(&client_ctx, endpoint, flags, rd_client_event, observe_cb);
 
 	k_sem_take(&quit_lock, K_FOREVER);
+	return 0;
 }

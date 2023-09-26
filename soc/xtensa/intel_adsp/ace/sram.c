@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
-#include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <soc_util.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>

@@ -1,6 +1,6 @@
 # MIMXRT1064-EVK board
 
-# Copyright (c) 2018, NXP
+# Copyright 2018,2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT1064_EVK
@@ -12,15 +12,21 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI2
 endchoice
 
-config KSCAN
-	default y if LVGL
-
-if KSCAN
-
-config KSCAN_FT5336_INTERRUPT
+config DEVICE_CONFIGURATION_DATA
 	default y
 
-endif # KSCAN
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+config INPUT
+	default y if LVGL
+
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+endif # INPUT
 
 if NETWORKING
 
@@ -34,13 +40,10 @@ endif # NETWORKING
 
 if LVGL
 
-config LV_Z_POINTER_KSCAN
-	default y
-
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH

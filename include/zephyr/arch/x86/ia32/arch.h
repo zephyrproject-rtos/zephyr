@@ -144,7 +144,7 @@ typedef struct s_isrList {
  */
 #define _X86_IDT_TSS_REGISTER(tss_p, irq_p, priority_p, vec_p, dpl_p) \
 	static ISR_LIST __attribute__((section(".intList"))) \
-			__attribute__((used)) MK_ISR_NAME(r) = \
+			__attribute__((used)) MK_ISR_NAME(vec_p) = \
 			{ \
 				.fnc = NULL, \
 				.irq = (irq_p), \

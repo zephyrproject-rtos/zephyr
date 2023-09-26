@@ -23,7 +23,7 @@ config USB_DEVICE_REMOTE_WAKEUP
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	default y
-	depends on DT_HAS_SNPS_DESIGNWARE_USB_ENABLED
+	depends on DT_HAS_SNPS_DWC2_ENABLED
 	help
 	  Designware USB Device Controller Driver.
 
@@ -72,6 +72,15 @@ config USB_DC_SAM0
 	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
 	help
 	  SAM0 family USB device controller Driver.
+
+config USB_DC_SMARTBOND
+	bool "SmartBond series USB Device Controller driver"
+	default y
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	depends on DT_HAS_RENESAS_SMARTBOND_USBD_ENABLED
+	help
+	  SmartBond family USB device controller Driver.
 
 config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
@@ -151,14 +160,15 @@ choice USB_MCUX_CONTROLLER_TYPE
 
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
-	select USB_DC_HAS_HS_SUPPORT
+	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
+	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
 
@@ -173,14 +183,23 @@ config USB_DC_MSG_QUEUE_LEN
 
 config USB_MCUX_THREAD_STACK_SIZE
 	int "Stack size for the USB driver"
+	default 2048 if USB_DEVICE_LOG_LEVEL_DBG
 	default 1024
 	help
 	  Size of the stack used for the internal USB thread.
 
 endif # USB_MCUX
 
+config USB_DC_IT82XX2
+	bool "ITE IT82XX2 USB Device Controller Driver"
+	default y
+	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	help
+	  ITE IT82XX2 USB Device Controller Driver
+
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
+	depends on ARCH_POSIX && EXTERNAL_LIBC
 	help
 	  Native Posix USB Device Controller Driver.
 

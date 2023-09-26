@@ -6,9 +6,18 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SCHED_H_
 #define ZEPHYR_INCLUDE_POSIX_SCHED_H_
 
+#include <zephyr/kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Other mandatory scheduling policy. Must be numerically distinct. May
+ * execute identically to SCHED_RR or SCHED_FIFO. For Zephyr this is a
+ * pseudonym for SCHED_RR.
+ */
+#define SCHED_OTHER 0
 
 /* Cooperative scheduling policy */
 #define SCHED_FIFO 1
@@ -16,7 +25,8 @@ extern "C" {
 /* Priority based preemptive scheduling policy */
 #define SCHED_RR 2
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
 struct sched_param {
 	int sched_priority;
 };

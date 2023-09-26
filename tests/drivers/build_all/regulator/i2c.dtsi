@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+pca9420@0 {
+	compatible = "nxp,pca9420";
+	reg = <0x0>;
+
+	BUCK1 {};
+	BUCK2 {};
+	LDO1 {};
+	LDO2 {};
+};
+
+npm6001@1 {
+	compatible = "nordic,npm6001";
+	reg = <0x1>;
+
+	regulators {
+		compatible = "nordic,npm6001-regulator";
+
+		BUCK0 {};
+		BUCK1 {};
+		BUCK2 {};
+		BUCK3 {};
+		LDO0 {};
+		LDO1 {};
+	};
+};
+
+npm1300@2 {
+	compatible = "nordic,npm1300";
+	reg = <0x2>;
+
+	regulators {
+		compatible = "nordic,npm1300-regulator";
+
+		BUCK1 {};
+		BUCK2 {};
+		LDO1 {};
+		LDO2 {};
+	};
+};
+
+apd356x@3 {
+	compatible = "adi,adp5360";
+	reg = <0x3>;
+
+	regulators {
+		compatible = "adi,adp5360-regulator";
+
+		BUCK {};
+		BUCKBOOST {};
+	};
+};
+
+axp192@4 {
+	compatible = "x-powers,axp192";
+	reg = <0x4>;
+
+	regulators {
+		compatible = "x-powers,axp192-regulator";
+
+		DCDC1 {};
+		DCDC2 {};
+		DCDC3 {};
+		LDOIO0 {};
+		LDO1 {};
+		LDO2 {};
+		LDO3 {};
+	};
+};

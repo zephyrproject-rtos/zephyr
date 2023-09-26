@@ -15,9 +15,7 @@
 #include <zephyr/irq.h>
 #include <fsl_lpi2c.h>
 
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif /* CONFIG_PINCTRL */
 
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -41,9 +39,7 @@ struct mcux_lpi2c_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif /* CONFIG_PINCTRL */
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -257,12 +253,12 @@ static int mcux_lpi2c_recover_bus(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int error = 0;
 
-	if (!device_is_ready(config->scl.port)) {
+	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->sda.port)) {
+	if (!gpio_is_ready_dt(&config->sda)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -EIO;
 	}
@@ -498,6 +494,11 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (error) {
+		return error;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -517,13 +518,6 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
-#ifdef CONFIG_PINCTRL
-	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (error) {
-		return error;
-	}
-#endif /* CONFIG_PINCTRL */
-
 	config->irq_config_func(dev);
 
 	return 0;
@@ -541,14 +535,6 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #endif /* CONFIG_I2C_TARGET */
 };
 
-#ifdef CONFIG_PINCTRL
-#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define I2C_MCUX_LPI2C_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)
-#define I2C_MCUX_LPI2C_PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
-
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #define I2C_MCUX_LPI2C_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
 #define I2C_MCUX_LPI2C_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
@@ -558,7 +544,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #define I2C_MCUX_LPI2C_INIT(n)						\
-	I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)				\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
 									\
@@ -569,7 +555,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
-		I2C_MCUX_LPI2C_PINCTRL_INIT(n)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\
 		.bus_idle_timeout_ns =					\

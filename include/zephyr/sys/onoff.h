@@ -29,10 +29,10 @@ extern "C" {
  */
 #define ONOFF_FLAG_ERROR BIT(0)
 
-/** @internal */
+/** @cond INTERNAL_HIDDEN */
 #define ONOFF_FLAG_ONOFF BIT(1)
-/** @internal */
 #define ONOFF_FLAG_TRANSITION BIT(2)
+/** @endcond */
 
 /**
  * @brief Mask used to isolate bits defining the service state.
@@ -131,13 +131,13 @@ typedef void (*onoff_transition_fn)(struct onoff_manager *mgr,
 
 /** @brief On-off service transition functions. */
 struct onoff_transitions {
-	/* Function to invoke to transition the service to on. */
+	/** Function to invoke to transition the service to on. */
 	onoff_transition_fn start;
 
-	/* Function to invoke to transition the service to off. */
+	/** Function to invoke to transition the service to off. */
 	onoff_transition_fn stop;
 
-	/* Function to force the service state to reset, where
+	/** Function to force the service state to reset, where
 	 * supported.
 	 */
 	onoff_transition_fn reset;
@@ -152,29 +152,29 @@ struct onoff_transitions {
  * case of error it may be reset through the onoff_reset() API.
  */
 struct onoff_manager {
-	/* List of clients waiting for request or reset completion
+	/** List of clients waiting for request or reset completion
 	 * notifications.
 	 */
 	sys_slist_t clients;
 
-	/* List of monitors to be notified of state changes including
+	/** List of monitors to be notified of state changes including
 	 * errors and transition completion.
 	 */
 	sys_slist_t monitors;
 
-	/* Transition functions. */
+	/** Transition functions. */
 	const struct onoff_transitions *transitions;
 
-	/* Mutex protection for other fields. */
+	/** Mutex protection for other fields. */
 	struct k_spinlock lock;
 
-	/* The result of the last transition. */
+	/** The result of the last transition. */
 	int last_res;
 
-	/* Flags identifying the service state. */
+	/** Flags identifying the service state. */
 	uint16_t flags;
 
-	/* Number of active clients for the service. */
+	/** Number of active clients for the service. */
 	uint16_t refs;
 };
 
@@ -193,10 +193,11 @@ struct onoff_manager {
 		.reset = _reset,			       \
 }
 
-/** @internal */
+/** @cond INTERNAL_HIDDEN */
 #define ONOFF_MANAGER_INITIALIZER(_transitions) { \
 		.transitions = _transitions,	  \
 }
+/** @endcond */
 
 /**
  * @brief Initialize an on-off service to off state.
@@ -271,13 +272,14 @@ typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
  * reinitialized for the next operation.
  */
 struct onoff_client {
-	/** @internal
+	/** @cond INTERNAL_HIDDEN
 	 *
 	 * Links the client into the set of waiting service users.
 	 * Applications must ensure this field is zero-initialized
 	 * before use.
 	 */
 	sys_snode_t node;
+	/** @endcond */
 
 	/** @brief Notification configuration. */
 	struct sys_notify notify;
@@ -520,13 +522,13 @@ typedef void (*onoff_monitor_callback)(struct onoff_manager *mgr,
  * one onoff_manager instance.
  */
 struct onoff_monitor {
-	/* Links the client into the set of waiting service users.
+	/** Links the client into the set of waiting service users.
 	 *
 	 * This must be zero-initialized.
 	 */
 	sys_snode_t node;
 
-	/** @brief Callback to be invoked on state change.
+	/** Callback to be invoked on state change.
 	 *
 	 * This must not be null.
 	 */
@@ -572,10 +574,10 @@ int onoff_monitor_unregister(struct onoff_manager *mgr,
  * updates supported by onoff_sync_lock() and onoff_sync_finalize().
  */
 struct onoff_sync_service {
-	/* Mutex protection for other fields. */
+	/** Mutex protection for other fields. */
 	struct k_spinlock lock;
 
-	/* Negative is error, non-negative is reference count. */
+	/** Negative is error, non-negative is reference count. */
 	int32_t count;
 };
 

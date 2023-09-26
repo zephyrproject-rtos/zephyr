@@ -134,7 +134,7 @@ static void setup_ipv6(struct net_if *iface)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
-void main(void)
+int main(void)
 {
 	struct net_if *iface = net_if_get_default();
 
@@ -145,4 +145,5 @@ void main(void)
 	setup_dhcpv4(iface);
 
 	setup_ipv6(iface);
+	return 0;
 }

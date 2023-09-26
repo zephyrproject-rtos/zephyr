@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include <DA1469xAB.h>
 
 #define DT_DRV_COMPAT renesas_smartbond_trng
@@ -309,7 +310,7 @@ static int entropy_smartbond_get_entropy_isr(const struct device *dev, uint8_t *
 				 * DSB is recommended by spec before WFE (to
 				 * guarantee completion of memory transactions)
 				 */
-				__DSB();
+				barrier_dsync_fence_full();
 				__WFE();
 				__SEV();
 				__WFE();

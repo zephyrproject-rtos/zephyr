@@ -1,7 +1,8 @@
-.. _sockets-tcp-sample:
+.. zephyr:code-sample:: sockets-tcp-sample
+   :name: TCP sample for TTCN-3 based sanity check
+   :relevant-api: bsd_sockets
 
-TCP Sample for TTCN-3 based Sanity Check
-########################################
+   Use TTCN-3 to validate the functionality of the TCP stack.
 
 Overview
 ********
@@ -26,7 +27,7 @@ Build the TCP sample app:
 
    cd samples/net/sockets/tcp
    mkdir build && cd build
-   cmake -DBOARD=qemu_x86 -DOVERLAY_CONFIG="overlay-slip.conf" ..
+   cmake -DBOARD=qemu_x86 -DEXTRA_CONF_FILE="overlay-slip.conf" ..
    make run
 
 Compile and run the TCP sanity check `net-test-suites`_:

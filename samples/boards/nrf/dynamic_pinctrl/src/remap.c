@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 
@@ -28,15 +28,14 @@ static const struct pinctrl_state uart0_alt[] = {
 #endif
 };
 
-static int remap_pins(const struct device *dev)
+static int remap_pins(void)
 {
 	int ret;
 	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0),
 							       gpios, {0});
 
-	ARG_UNUSED(dev);
 
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		return -ENODEV;
 	}
 

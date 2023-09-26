@@ -15,8 +15,10 @@ static PORT_Type *ports[] = {
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porta)),
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portb)),
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portc)),
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 5
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portd)),
+#endif
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 4
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porte)),
 #endif
 };
@@ -74,7 +76,7 @@ static int pinctrl_mcux_init(const struct device *dev)
 			    NULL,					\
 			    NULL, &pinctrl_mcux_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    0,						\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)

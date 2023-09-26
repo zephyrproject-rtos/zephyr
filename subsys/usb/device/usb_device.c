@@ -67,7 +67,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 #include <zephyr/usb/class/usb_audio.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_device, CONFIG_USB_DEVICE_LOG_LEVEL);
 
@@ -136,6 +136,8 @@ static struct usb_dev_priv {
 	bool remote_wakeup;
 	/** Tracks whether set_endpoint() had been called on an EP */
 	uint32_t ep_bm;
+	/** Maximum Packet Size (MPS) of control endpoint */
+	uint8_t mps0;
 } usb_dev;
 
 /* Setup packet definition used to read raw data from USB line */
@@ -255,7 +257,7 @@ static void usb_data_to_host(void)
 		if (!usb_dev.data_buf_residue && chunk &&
 		    usb_dev.setup.wLength > usb_dev.data_buf_len) {
 			/* Send less data as requested during the Setup stage */
-			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {
+			if (!(usb_dev.data_buf_len % usb_dev.mps0)) {
 				/* Transfers a zero-length packet */
 				LOG_DBG("ZLP, requested %u , length %u ",
 					usb_dev.setup.wLength,
@@ -1297,7 +1299,7 @@ static int usb_vbus_set(bool on)
 	int ret = 0;
 	struct gpio_dt_spec gpio_dev = GPIO_DT_SPEC_GET(USB_DEV_NODE, vbus_gpios);
 
-	if (!device_is_ready(gpio_dev.port)) {
+	if (!gpio_is_ready_dt(&gpio_dev)) {
 		LOG_DBG("USB requires GPIO. Device %s is not ready!", gpio_dev.port->name);
 		return -ENODEV;
 	}
@@ -1593,6 +1595,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 {
 	int ret;
 	struct usb_dc_ep_cfg_data ep0_cfg;
+	struct usb_device_descriptor *dev_desc = (void *)usb_dev.descriptors;
 
 	/* Prevent from calling usb_enable form different context.
 	 * This should only be called once.
@@ -1626,8 +1629,16 @@ int usb_enable(usb_dc_status_callback status_cb)
 		goto out;
 	}
 
+	if (dev_desc->bDescriptorType != USB_DESC_DEVICE ||
+	    dev_desc->bMaxPacketSize0 == 0) {
+		LOG_ERR("Erroneous device descriptor or bMaxPacketSize0");
+		ret = -EINVAL;
+		goto out;
+	}
+
 	/* Configure control EP */
-	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
+	usb_dev.mps0 = dev_desc->bMaxPacketSize0;
+	ep0_cfg.ep_mps = usb_dev.mps0;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
 	ep0_cfg.ep_addr = USB_CONTROL_EP_OUT;
@@ -1686,7 +1697,7 @@ out:
  * This function configures the USB device stack based on USB descriptor and
  * usb_cfg_data.
  */
-static int usb_device_init(const struct device *dev)
+static int usb_device_init(void)
 {
 	uint8_t *device_descriptor;
 

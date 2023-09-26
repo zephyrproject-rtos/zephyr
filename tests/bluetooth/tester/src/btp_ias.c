@@ -8,12 +8,12 @@
 #include <zephyr/bluetooth/services/ias.h>
 
 #include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
+#include <zephyr/sys/byteorder.h>
 #include <stdint.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_ias
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static bool initialized;
 

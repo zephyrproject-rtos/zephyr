@@ -449,7 +449,7 @@ USBD_DEFINE_CFG_DATA(bluetooth_config) = {
 	.endpoint = bluetooth_ep_data,
 };
 
-static int bluetooth_init(const struct device *dev)
+static int bluetooth_init(void)
 {
 	int ret;
 

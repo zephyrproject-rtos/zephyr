@@ -15,20 +15,33 @@ extern "C" {
 
 #if (CONFIG_FILE_SYSTEM_MAX_FILE_NAME - 0) > 0
 #define MAX_FILE_NAME CONFIG_FILE_SYSTEM_MAX_FILE_NAME
+
 #else /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 /* Select from enabled file systems */
-#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-#define MAX_FILE_NAME 256
-#elif defined(CONFIG_FAT_FILESYSTEM_ELM)
+
+#if defined(CONFIG_FAT_FILESYSTEM_ELM)
+
 #if defined(CONFIG_FS_FATFS_LFN)
 #define MAX_FILE_NAME CONFIG_FS_FATFS_MAX_LFN
 #else /* CONFIG_FS_FATFS_LFN */
 #define MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 #endif /* CONFIG_FS_FATFS_LFN */
-#else /* filesystem selection */
+
+#endif
+
+#if !defined(MAX_FILE_NAME) && defined(CONFIG_FILE_SYSTEM_EXT2)
+#define MAX_FILE_NAME 255
+#endif
+
+#if !defined(MAX_FILE_NAME) && defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#define MAX_FILE_NAME 256
+#endif
+
+#if !defined(MAX_FILE_NAME) /* filesystem selection */
 /* Use standard 8.3 when no filesystem is explicitly selected */
 #define MAX_FILE_NAME 12
 #endif /* filesystem selection */
+
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
 
@@ -45,27 +58,26 @@ struct fs_mount_t;
 /**
  * @brief File object representing an open file
  *
- * The object needs to be initialized with function fs_file_t_init().
- *
- * @param Pointer to FATFS file object structure
- * @param mp Pointer to mount point structure
+ * The object needs to be initialized with fs_file_t_init().
  */
 struct fs_file_t {
+	/** Pointer to file object structure */
 	void *filep;
+	/** Pointer to mount point structure */
 	const struct fs_mount_t *mp;
+	/** Open/create flags */
 	fs_mode_t flags;
 };
 
 /**
  * @brief Directory object representing an open directory
  *
- * The object needs to be initialized with function fs_dir_t_init().
- *
- * @param dirp Pointer to directory object structure
- * @param mp Pointer to mount point structure
+ * The object needs to be initialized with fs_dir_t_init().
  */
 struct fs_dir_t {
+	/** Pointer to directory object structure */
 	void *dirp;
+	/** Pointer to mount point structure */
 	const struct fs_mount_t *mp;
 };
 

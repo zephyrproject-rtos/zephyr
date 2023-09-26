@@ -160,7 +160,8 @@ The ``projects`` subsection contains a sequence describing the project
 repositories in the west workspace. Every project has a unique name. You can
 specify what Git remote URLs to use when cloning and fetching the projects,
 what revisions to track, and where the project should be stored on the local
-file system.
+file system. Note that west projects :ref:`are different from modules
+<modules-vs-projects>`.
 
 Here is an example. We'll assume the ``remotes`` given above.
 
@@ -411,49 +412,153 @@ The available ``self`` keys and their usage are in the following table.
 Version
 =======
 
-The ``version`` subsection can be used to mark the lowest version of the
-manifest file schema that can parse this file's data:
+The ``version`` subsection declares that the manifest file uses features which
+were introduced in some version of west. Attempts to load the manifest with
+older versions of west will fail with an error message that explains the
+minimum required version of west which is needed.
+
+Here is an example:
 
 .. code-block:: yaml
 
    manifest:
-     version: "0.10"
-     # marks that this file uses version 0.10 of the west manifest
+     # Marks that this file uses version 0.10 of the west manifest
      # file format.
+     #
+     # An attempt to load this manifest file with west v0.8.0 will
+     # fail with an error message saying that west v0.10.0 or
+     # later is required.
+     version: "0.10"
 
-The pykwalify schema :file:`manifest-schema.yml` in the west source code
-repository is used to validate the manifest section. The current manifest
-``version`` is 0.13, which is supported by west version v0.13.x.
+The pykwalify schema :file:`manifest-schema.yml` in the `west source code
+repository`_ is used to validate the manifest section.
 
-The ``version`` value may be any one of these values: ``"0.7"``, ``"0.8"``,
-``"0.9"``, ``"0.10"``, ``"0.12"``, ``"0.13"``. West v0.11 did not include any
-new features which broke the previous schema, so ``"0.11"`` **is not** a valid
-schema version.
+.. _west source code repository:
+   https://github.com/zephyrproject-rtos/west
 
-West v0.10.x can load manifests with any of these ``version`` values, while
-west v0.9.x can only load versions up to ``"0.9"``, and so on.
+Here is a table with the valid ``version`` values, along with information
+about the manifest file features that were introduced in that version.
 
-West halts with an error if you ask it to load a manifest file written in a
-version it cannot handle.
+.. list-table::
+   :header-rows: 1
+   :widths: 1 4
 
-Quoting the ``version`` value as shown above forces the YAML parser to treat
-it as a string. Without quotes, ``0.10`` in YAML is just the floating point
-value ``0.1``. You can omit the quotes if the value is the same when cast to
-string, but it's best to include them. Always use quotes if you're not sure.
+   * - ``version``
+     - New features
+
+   * - ``"0.7"``
+     - Initial support for the ``version`` feature. All manifest file features
+       that are not otherwise mentioned in this table were introduced in
+       west v0.7.0 or earlier.
+
+   * - ``"0.8"``
+     - Support for ``import: path-prefix:`` (:ref:`west-manifest-import-map`)
+
+   * - ``"0.9"``
+     - **Use of west v0.9.x is discouraged**.
+
+       This schema version is provided to allow users to explicitly request
+       compatibility with west :ref:`west_0_9_0`. However, west
+       :ref:`west_0_10_0` and later have incompatible behavior for features
+       that were introduced in west v0.9.0. You should ignore version "0.9" if
+       possible.
+
+   * - ``"0.10"``
+
+     - Support for:
+
+       - ``submodules:`` in ``projects:`` (:ref:`west-manifest-submodules`)
+       - ``manifest: group-filter:``, and ``groups:`` in ``projects:``
+         (:ref:`west-manifest-groups`)
+       - The ``import:`` feature now supports ``allowlist:`` and
+         ``blocklist:``; these are respectively recommended as replacements for
+         older names as part of a general Zephyr-wide inclusive language
+         change. The older key names are still supported for backwards
+         compatibility. (:ref:`west-manifest-import`,
+         :ref:`west-manifest-import-map`)
+
+   * - ``"0.12"``
+     - Support for ``userdata:`` in ``projects:`` (:ref:`west-project-userdata`)
+
+   * - ``"0.13"``
+     - Support for ``self: userdata:`` (:ref:`west-project-userdata`)
+
+   * - ``"1.0"``
+     - Identical to ``"0.13"``, but available for use by users that
+       do not wish to use a ``"0.x"`` version field.
+
+.. note::
+
+   Versions of west without any new features in the manifest file format do not
+   change the list of valid ``version`` values. For example, ``version:
+   "0.11"`` is **not** valid, because west v0.11.x did not introduce new
+   manifest file format features.
+
+Quoting the ``version`` value as shown above forces the YAML parser to treat it
+as a string. Without quotes, ``0.10`` in YAML is just the floating point value
+``0.1``. You can omit the quotes if the value is the same when cast to string,
+but it's best to include them. Always use quotes if you're not sure.
+
+If you do not include a ``version`` in your manifest, each new release of west
+assumes that it should try to load it using the features that were available in
+that release. This may result in error messages that are harder to understand
+if that version of west is too old to load the manifest.
 
 Group-filter
 ============
 
 See :ref:`west-manifest-groups`.
 
+.. _west-active-inactive-projects:
+
+Active and Inactive Projects
+****************************
+
+Projects defined in the west manifest can be *inactive* or *active*. The
+difference is that an inactive project is generally ignored by west. For
+example, ``west update`` will not update inactive projects, and ``west list``
+will not print information about them by default. As another example, any
+:ref:`west-manifest-import` in an inactive project will be ignored by west.
+
+There are two ways to make a project inactive:
+
+1. Using the ``manifest.project-filter`` configuration option. If a project is
+   made active or inactive using this option, then the rules related to making
+   a project inactive using its ``groups:`` are ignored. That is, if a regular
+   expression in ``manifest.project-filter`` applies to a project, the
+   project's groups have no effect on whether it is active or inactive.
+
+   See the entry for this option in :ref:`west-config-index` for details.
+
+2. Otherwise, if a project has groups, and they are all disabled, then the
+   project is inactive.
+
+   See the following section for details.
+
 .. _west-manifest-groups:
 
-Project Groups and Active Projects
-**********************************
+Project Groups
+**************
 
 You can use the ``groups`` and ``group-filter`` keys briefly described
-:ref:`above <west-manifest-files>` to place projects into groups, and filter
-which groups are enabled. These keys appear in the manifest like this:
+:ref:`above <west-manifest-files>` to place projects into groups, and to
+enable or disable groups.
+
+For example, this lets you run a ``west forall`` command only on the projects
+in the group by using ``west forall --group``. This can also let you make
+projects inactive; see the previous section for more information on inactive
+projects.
+
+The next section introduces project groups. The following section describes
+:ref:`west-enabled-disabled-groups`. There are some basic examples in
+:ref:`west-project-group-examples`. Finally, :ref:`west-group-filter-imports`
+provides a simplified overview of how ``group-filter`` interacts with the
+:ref:`west-manifest-import` feature.
+
+Groups Basics
+=============
+
+The ``groups:`` and ``group-filter:`` keys appear in the manifest like this:
 
 .. code-block:: yaml
 
@@ -463,22 +568,11 @@ which groups are enabled. These keys appear in the manifest like this:
          groups: ...
      group-filter: ...
 
+The ``groups`` key's value is a list of group names. Group names are strings.
+
 You can enable or disable project groups using ``group-filter``. Projects whose
-groups are all disabled are *inactive*; west essentially ignores inactive
-projects unless explicitly requested not to.
-
-The next section introduces project groups; the following sections describe
-:ref:`west-enabled-disabled-groups` and :ref:`west-active-inactive-projects`.
-There are some basic examples in :ref:`west-project-group-examples`.
-
-Finally, :ref:`west-group-filter-imports` provides a simplified overview of how
-``group-filter`` interacts with the :ref:`west-manifest-import` feature.
-
-Project Groups
-==============
-
-Inside ``manifest: projects:``, you can add a project to one or more groups.
-The ``groups`` key is a list of group names. Group names are strings.
+groups are all disabled, and which are not otherwise made active by a
+``manifest.project-filter`` configuration option, are inactive.
 
 For example, in this manifest fragment:
 
@@ -510,7 +604,7 @@ contain these characters elsewhere in their names. For example, ``foo-bar`` and
 Group names are otherwise arbitrary strings. Group names are case sensitive.
 
 As a restriction, no project may use both ``import:`` and ``groups:``. (This
-avoids some edge cases whose semantics are difficult to specify.)
+is necessary to avoid some pathological edge cases.)
 
 .. _west-enabled-disabled-groups:
 
@@ -571,20 +665,6 @@ You can think of this as if the ``manifest.group-filter`` configuration option
 is appended to the ``manifest: group-filter:`` list from YAML, with "last entry
 wins" semantics.
 
-.. _west-active-inactive-projects:
-
-Active and Inactive Projects
-============================
-
-All projects are *active* by default. Projects with no groups are always
-active. A project is *inactive* if all of its groups are disabled. This is the
-only way to make a project inactive.
-
-Most west commands that operate on projects will ignore inactive projects by
-default. For example, :ref:`west-update` when run without arguments will not
-update inactive projects. As another example, running ``west list`` without
-arguments will not print information for inactive projects.
-
 .. _west-project-group-examples:
 
 Project Group Examples
@@ -596,6 +676,11 @@ projects. The examples use both ``manifest: group-filter:`` YAML lists and
 
 Note that the ``defaults`` and ``remotes`` data in the following manifests
 isn't relevant except to make the examples complete and self-contained.
+
+.. note::
+
+   In all of the examples that follow, the ``manifest.project-filter`` option
+   is assumed to be unset.
 
 Example 1: no disabled groups
 -----------------------------
@@ -1925,14 +2010,18 @@ sections. The general case looks like this:
    manifest:
      projects:
        - name: foo
-         import: import-1
+         import:
+           ... # import-1
        - name: bar
-         import: import-2
+         import:
+           ... # import-2
        # ...
        - name: baz
-         import: import-N
+         import:
+           ... # import-N
      self:
-       import: self-import
+       import:
+         ... # self-import
 
 Import keys are optional. If any of ``import-1, ..., import-N`` are missing,
 west will not import additional manifest data from that project. If
@@ -1968,6 +2057,8 @@ processed in this order:
 This process recurses if necessary. E.g., if ``import-1`` produces a manifest
 file that contains an ``import`` key, it is resolved recursively using the same
 rules before its contents are processed further.
+
+The following sections describe these outcomes.
 
 Projects
 --------
@@ -2034,8 +2125,8 @@ In other words, let:
 - the submanifests resolved from ``import-1`` through ``import-N`` have group
   filters ``filter-1`` through ``filter-N`` respectively
 
-The final resolved ``group-filter`` value is then ``filter1 + filter-2 + ... +
-filter-N + top-filter + self-filter``, where ``+`` here refers to list
+The final resolved ``group-filter`` value is then ``filterN + ... + filter-2 +
+filter-1 + top-filter + self-filter``, where ``+`` here refers to list
 concatenation.
 
 .. important::

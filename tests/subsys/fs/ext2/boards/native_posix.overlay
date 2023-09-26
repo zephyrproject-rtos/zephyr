@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_M(128)>;
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_M(128)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage: partition@0 {
+			reg = <0x00000000 0x08000000>;
+		};
+	};
+};
+
+/ {
+	storage_disk {
+		compatible = "zephyr,flash-disk";
+		partition = <&storage>;
+		disk-name = "NAND";
+		cache-size = <4096>;
+	};
+};

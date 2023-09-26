@@ -7,6 +7,7 @@
 #include <st/u5/stm32u585Xi.dtsi>
 #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	leds {
@@ -26,6 +27,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -33,6 +35,9 @@
 	aliases {
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25lm51245;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
 	};
 };
 
@@ -66,10 +71,6 @@
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
 	apb3-prescaler = <1>;
-};
-
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
 &lptim1 {
@@ -188,12 +189,16 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in15_pb0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
 &adc4 {
 	pinctrl-0 = <&adc4_in19_pb1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -208,5 +213,13 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
 	status = "okay";
 };

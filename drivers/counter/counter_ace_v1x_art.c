@@ -102,17 +102,10 @@ int counter_ace_v1x_art_get_value(const struct device *dev, uint64_t *value)
 	return 0;
 }
 
-int counter_ace_v1x_art_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct counter_driver_api ace_v1x_art_counter_apis = {
 	.get_value_64 = counter_ace_v1x_art_get_value
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ace_art_counter), counter_ace_v1x_art_init, NULL, NULL, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(ace_art_counter), NULL, NULL, NULL, NULL,
 		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		 &ace_v1x_art_counter_apis);

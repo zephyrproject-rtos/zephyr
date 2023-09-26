@@ -133,7 +133,7 @@ osStatus_t osMutexDelete(osMutexId_t mutex_id)
 	 * mutex_id is in an invalid mutex state) is not supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_mutex_slab, (void *) &mutex);
+	k_mem_slab_free(&cv2_mutex_slab, (void *)mutex);
 
 	return osOK;
 }

@@ -13,3 +13,4 @@ supported:
 testing:
   ignore_tags:
     - net
+vendor: st

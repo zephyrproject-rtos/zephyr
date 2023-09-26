@@ -25,7 +25,6 @@
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -77,6 +76,11 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 {
 	const uint8_t *data = buf;
 	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
+
+	if (net_buf_simple_tailroom(&role->buf) < len - 1) {
+		LOG_WRN("Proxy role buffer overflow");
+		return -EINVAL;
+	}
 
 	switch (PDU_SAR(data)) {
 	case SAR_COMPLETE:

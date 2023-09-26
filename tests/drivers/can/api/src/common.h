@@ -92,7 +92,7 @@ extern const struct can_frame test_ext_rtr_frame_1;
 extern const struct can_frame test_std_fdf_frame_1;
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 2 with CAN-FD payload.
  */
 extern const struct can_frame test_std_fdf_frame_2;
 

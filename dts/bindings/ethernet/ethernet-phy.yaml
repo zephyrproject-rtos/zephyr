@@ -14,10 +14,6 @@ properties:
     type: int
     required: true
     description: PHY address
-  mdio:
-    type: phandle
-    required: true
-    description: MDIO driver node
   no-reset:
     type: boolean
     description: Do not reset the PHY during initialization

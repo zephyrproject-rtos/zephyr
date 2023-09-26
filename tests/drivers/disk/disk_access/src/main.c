@@ -19,7 +19,9 @@
 #elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME CONFIG_MMC_VOLUME_NAME
 #elif IS_ENABLED(CONFIG_DISK_DRIVER_RAM)
-#define DISK_NAME CONFIG_DISK_RAM_VOLUME_NAME
+#define DISK_NAME "RAM"
+#elif IS_ENABLED(CONFIG_NVME)
+#define DISK_NAME "nvme0n0"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
@@ -39,7 +41,8 @@ static const char *disk_pdrv = DISK_NAME;
 static uint32_t disk_sector_count;
 static uint32_t disk_sector_size;
 
-static uint8_t scratch_buf[2][SECTOR_COUNT4 * SECTOR_SIZE + 1];
+/* + 4 to make sure the second buffer is dword-aligned for NVME */
+static uint8_t scratch_buf[2][SECTOR_COUNT4 * SECTOR_SIZE + 4];
 
 
 /* Sets up test by initializing disk */

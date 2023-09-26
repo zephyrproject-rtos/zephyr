@@ -33,6 +33,7 @@
 #define DEBUG_PIN9       BIT(DEBUG_PIN_IDX9)
 #if defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP) || \
 	(defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS) && defined(CONFIG_BUILD_WITH_TFM))
+#include <soc_secure.h>
 #define DEBUG_SETUP() \
 	do { \
 		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX0, NRF_GPIO_PIN_SEL_NETWORK); \

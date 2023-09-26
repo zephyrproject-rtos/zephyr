@@ -65,12 +65,16 @@
 			#size-cells = <1>;
 
 			gpregret1: gpregret1@4000051c {
+				#address-cells = <1>;
+				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x4000051c 0x1>;
 				status = "okay";
 			};
 
 			gpregret2: gpregret2@40000520 {
+				#address-cells = <1>;
+				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x40000520 0x1>;
 				status = "okay";
@@ -134,6 +138,7 @@
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -168,6 +173,7 @@
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -259,6 +265,7 @@
 			reg = <0x4000f000 0x1000>;
 			interrupts = <15 NRF_DEFAULT_IRQ_PRIORITY>;
 			length-field-length-8-bits;
+			headermask-supported;
 			status = "okay";
 		};
 
@@ -441,6 +448,7 @@
 			reg = <0x40023000 0x1000>;
 			interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -497,6 +505,7 @@
 			reg = <0x4002f000 0x1000>;
 			interrupts = <47 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(32)>;
+			easydma-maxcnt-bits = <16>;
 			rx-delay-supported;
 			rx-delay = <2>;
 			status = "disabled";
@@ -522,14 +531,6 @@
 			status = "disabled";
 			port = <1>;
 		};
-	};
-
-	sw_pwm: sw-pwm {
-		compatible = "nordic,nrf-sw-pwm";
-		status = "disabled";
-		generator = <&timer2>;
-		clock-prescaler = <0>;
-		#pwm-cells = <3>;
 	};
 };
 

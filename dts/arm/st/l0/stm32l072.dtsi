@@ -12,6 +12,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32l072", "st,stm32l0", "simple-bus";
+
 		clocks {
 			clk_hsi48: clk-hsi48 {
 				#clock-cells = <0>;

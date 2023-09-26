@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/clock/nxp_s32z2_clock.h>
 #include <arm/nxp/nxp_s32z27x_rtu0_r52.dtsi>
 #include "s32z270dc2_r52.dtsi"
 
@@ -14,8 +15,7 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,canbus = &can0;
 	};
 
 	aliases {

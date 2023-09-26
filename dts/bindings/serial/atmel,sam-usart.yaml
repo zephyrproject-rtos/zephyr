@@ -13,7 +13,5 @@ properties:
   interrupts:
     required: true
 
-  peripheral-id:
-    type: int
-    description: peripheral ID
+  clocks:
     required: true

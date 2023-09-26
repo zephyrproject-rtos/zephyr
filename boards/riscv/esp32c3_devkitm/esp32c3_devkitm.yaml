@@ -1,7 +1,7 @@
 identifier: esp32c3_devkitm
 name: ESP32-C3
 type: mcu
-arch: riscv
+arch: riscv32
 toolchain:
   - zephyr
 supported:
@@ -11,7 +11,12 @@ supported:
   - watchdog
   - uart
   - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: espressif

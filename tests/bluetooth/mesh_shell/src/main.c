@@ -37,6 +37,10 @@ static struct bt_mesh_sol_pdu_rpl_cli srpl_cli;
 static struct bt_mesh_od_priv_proxy_cli od_priv_proxy_cli;
 #endif
 
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
+struct bt_mesh_large_comp_data_cli large_comp_data_cli;
+#endif
+
 BT_MESH_SHELL_HEALTH_PUB_DEFINE(health_pub);
 
 static struct bt_mesh_model root_models[] = {
@@ -83,7 +87,7 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_LARGE_COMP_DATA_SRV,
 #endif
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
-	BT_MESH_MODEL_LARGE_COMP_DATA_CLI,
+	BT_MESH_MODEL_LARGE_COMP_DATA_CLI(&large_comp_data_cli),
 #endif
 
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
@@ -137,12 +141,12 @@ static void bt_ready(int err)
 	if (bt_mesh_is_provisioned()) {
 		printk("Mesh network restored from flash\n");
 	} else {
-		printk("Use \"pb-adv on\" or \"pb-gatt on\" to "
+		printk("Use \"prov pb-adv on\" or \"prov pb-gatt on\" to "
 			    "enable advertising\n");
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -156,4 +160,5 @@ void main(void)
 
 	printk("Press the <Tab> button for supported commands.\n");
 	printk("Before any Mesh commands you must run \"mesh init\"\n");
+	return 0;
 }

@@ -1,5 +1,7 @@
 common:
-  tags: bluetooth host
+  tags:
+    - bluetooth
+    - host
 tests:
   bluetooth.host.bt_le_oob_set_legacy_tk.default:
     type: unit

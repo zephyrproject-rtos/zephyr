@@ -89,7 +89,7 @@ void central_test_args_parse(int argc, char *argv[])
 		},
 		{
 			.dest = &use_active_scan,
-			.type = 's',
+			.type = 'b',
 			.name = "{0, 1}",
 			.option = "active-scan",
 			.descript = "",
@@ -147,8 +147,10 @@ static void check_addresses(const bt_addr_le_t *peer_addr)
 	}
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 struct net_buf_simple *ad)
+
+
+static void scan_recv(const struct bt_le_scan_recv_info *info,
+		      struct net_buf_simple *ad)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -157,11 +159,30 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	LOG_DBG("Device found: %s (RSSI %d)", addr_str, rssi);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	LOG_INF("Device found: %s (RSSI %d)", addr_str, info->rssi);
+
+	/* In the case of extended advertising and active scanning, this
+	 * callback will be called twice: once for the AUX_ADV_IND and
+	 * another time for the AUX_SCAN_RSP.
+	 *
+	 * We have to be careful not to stop the scanner before we have gotten
+	 * the second one, as the peripheral side waits until it gets an
+	 * AUX_SCAN_REQ to end the test.
+	 *
+	 * There is a catch though, since we have to bond, in order to exchange
+	 * the address resolving keys, then this check should only apply after
+	 * the pairing is done.
+	 */
+	if (GET_FLAG(paired) &&
+	    info->adv_props == (BT_GAP_ADV_PROP_EXT_ADV | BT_GAP_ADV_PROP_SCANNABLE)) {
+		LOG_DBG("skipping AUX_ADV_IND report, waiting for AUX_SCAN_REQ "
+			"(props: 0x%x)", info->adv_props);
+		return;
+	}
 
 	if (GET_FLAG(paired)) {
-		check_addresses(addr);
+		check_addresses(info->addr);
 	}
 
 	if (connection_test || !GET_FLAG(paired)) {
@@ -169,9 +190,11 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			LOG_DBG("Failed to stop scanner");
 			return;
 		}
-		LOG_DBG("Scanner stopped");
+		LOG_DBG("Scanner stopped: conn %d paired %d", connection_test, GET_FLAG(paired));
 
-		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+		err = bt_conn_le_create(info->addr,
+					BT_CONN_LE_CREATE_CONN,
+					BT_LE_CONN_PARAM_DEFAULT,
 					&default_conn);
 		if (err) {
 			LOG_DBG("Create conn to %s failed (%u)", addr_str, err);
@@ -180,6 +203,10 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
+static struct bt_le_scan_cb scan_cb = {
+	.recv = scan_recv,
+};
+
 static void start_scan(void)
 {
 	int err;
@@ -187,7 +214,8 @@ static void start_scan(void)
 	LOG_DBG("Using %s scan", use_active_scan ? "active" : "passive");
 
 	err = bt_le_scan_start(use_active_scan ? BT_LE_SCAN_ACTIVE : BT_LE_SCAN_PASSIVE,
-			       device_found);
+			       NULL);
+
 	if (err) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 	}
@@ -243,20 +271,24 @@ static struct bt_conn_cb central_cb;
 
 void test_central(void)
 {
-	LOG_DBG("Central device");
-
 	int err;
+
+	LOG_DBG("Central device");
 
 	central_cb.connected = connected;
 	central_cb.disconnected = disconnected;
 	central_cb.identity_resolved = identity_resolved;
 
 	bt_conn_cb_register(&central_cb);
+	bt_le_scan_cb_register(&scan_cb);
 
 	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 	}
+
+	UNSET_FLAG(identity_tested);
+	UNSET_FLAG(rpa_tested);
 
 	start_scan();
 
@@ -265,8 +297,6 @@ void test_central(void)
 
 void test_central_main(void)
 {
-	test_central();
-
 	char *addr_tested = "";
 
 	if (test_addr_type == RPA) {
@@ -275,7 +305,11 @@ void test_central_main(void)
 		addr_tested = "identity address";
 	}
 
-	PASS("Central test passed (id: %d; params: %s scan, %sconnectable test, testing %s)\n",
-	     sim_id, use_active_scan ? "active" : "passive", connection_test ? "" : "non-",
-	     addr_tested);
+	LOG_INF("Central test START (id: %d: params: %s scan, %sconnectable test, testing %s)\n",
+		sim_id, use_active_scan ? "active" : "passive", connection_test ? "" : "non-",
+		addr_tested);
+
+	test_central();
+
+	PASS("passed\n");
 }

@@ -52,6 +52,7 @@ these references:
 - `MIMXRT595-EVK Website`_
 - `MIMXRT595-EVK User Guide`_
 - `MIMXRT595-EVK Schematics`_
+- `MIMXRT595-EVK Debug Firmware`_
 
 Supported Features
 ==================
@@ -105,9 +106,12 @@ already supported, which can also be re-used on this mimxrt595_evk board:
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access (works with eMMC & SD)  |
 +-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with RM68200|
-|           |            | based MIPI display                  |
-|           |            | (`RK055HDMIPI4M`_)                  |
+| I2S       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | LCDIF; MIPI-DSI. Tested with        |
+|           |            | :ref:`rk055hdmipi4m`,               |
+|           |            | :ref:`rk055hdmipi4ma0`, and         |
+|           |            | :ref:`g1120b0mipi` display shields  |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -205,6 +209,11 @@ configured by default to use the LPC-Link2.
 
         See :ref:`jlink-external-debug-probe` for more information.
 
+    .. group-tab:: Linkserver
+
+        1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+        2. To update the debug firmware, please follow the instructions on `MIMXRT595-EVK Debug Firmware`
+
 Configuring a Console
 =====================
 
@@ -290,6 +299,9 @@ steps:
 .. _MIMXRT595-EVK User Guide:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT595EVKHUG
 
+.. _MIMXRT595-EVK Debug Firmware:
+   https://www.nxp.com/docs/en/application-note/AN13206.pdf
+
 .. _MIMXRT595-EVK Schematics:
    https://www.nxp.com/downloads/en/schematics/MIMXRT595-EVK-DESIGN-FILES.zip
 
@@ -301,6 +313,3 @@ steps:
 
 .. _i.MX RT595 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT500RM
-
-.. _RK055HDMIPI4M:
-   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/5-5-lcd-panel:RK055HDMIPI4M

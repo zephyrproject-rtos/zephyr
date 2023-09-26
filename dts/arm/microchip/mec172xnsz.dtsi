@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
@@ -25,6 +26,21 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000000>;
+			};
 		};
 	};
 
@@ -59,13 +75,13 @@
 			/* pin configured only if one of the sources is set to PIN */
 			pinctrl-0 = <&clk_32khz_in_gpio165>;
 			pinctrl-names = "default";
-			#clock-cells = <2>;
+			#clock-cells = <3>;
 		};
 		ecia: ecia@4000e000 {
 			compatible = "microchip,xec-ecia";
 			reg = <0x4000e000 0x400>;
 			direct-capable-girqs = <13 14 15 16 17 18 19 20 21 23>;
-			clocks = <&pcr 1 0>;
+			clocks = <&pcr 1 0 MCHP_XEC_PCR_CLK_PERIPH>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -470,10 +486,10 @@
 		dmac: dmac@40002400 {
 			compatible = "microchip,xec-dmac";
 			reg = <0x40002400 0xc00>;
-			interrupts = <24 0>, <25 0>, <26 0>, <27 0>,
-				     <28 0>, <29 0>, <30 0>, <31 0>,
-				     <32 0>, <33 0>, <34 0>, <35 0>,
-				     <36 0>, <37 0>, <38 0>, <39 0>;
+			interrupts = <24 1>, <25 1>, <26 1>, <27 1>,
+				     <28 1>, <29 1>, <30 1>, <31 1>,
+				     <32 1>, <33 1>, <34 1>, <35 1>,
+				     <36 1>, <37 1>, <38 1>, <39 1>;
 			girqs = < MCHP_XEC_ECIA(14, 0, 6, 24)
 				  MCHP_XEC_ECIA(14, 1, 6, 25)
 				  MCHP_XEC_ECIA(14, 2, 6, 26)
@@ -564,7 +580,7 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
-			girqs = <18 10>;
+			girqs = <18 10>, <21 18>;
 			pcrs = <3 5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -688,13 +704,14 @@
 			status = "disabled";
 		};
 		adc0: adc@40007c00 {
-			compatible = "microchip,xec-adc-v2";
+			compatible = "microchip,xec-adc";
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 0>, <79 0>;
 			girqs = <17 8>, <17 9>;
 			pcrs = <3 3>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			clktime = <32>;
 		};
 		kscan0: kscan@40009c00 {
 			compatible = "microchip,xec-kscan";
@@ -719,8 +736,7 @@
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
 			girqs = < MCHP_XEC_ECIA(18, 1, 10, 91) >;
-			pcrs = <4 8>;
-			clocks = <&pcr 1 0>;
+			clocks = <&pcr 4 8 MCHP_XEC_PCR_CLK_PERIPH>;
 			clock-frequency = <12000000>;
 			lines = <1>;
 			chip-select = <0>;
@@ -820,6 +836,28 @@
 		glblcfg0: glblcfg@400fff00 {
 			reg = <0x400fff00 0x40>;
 			pcrs = <2 12>;
+			status = "disabled";
+		};
+		uart0: uart@400f2400 {
+			compatible = "microchip,xec-uart";
+			reg = <0x400f2400 0x400>;
+			interrupts = <40 1>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			girqs = <15 0>;
+			pcrs = <2 1>;
+			ldn = <9>;
+			status = "disabled";
+		};
+		uart1: uart@400f2800 {
+			compatible = "microchip,xec-uart";
+			reg = <0x400f2800 0x400>;
+			interrupts = <41 1>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			girqs = <15 1>;
+			pcrs = <2 2>;
+			ldn = <10>;
 			status = "disabled";
 		};
 		espi0: espi@400f3400 {
@@ -949,28 +987,6 @@
 				ldn = <8>;
 				status = "disabled";
 			};
-			uart0: uart@400f2400 {
-				compatible = "microchip,xec-uart";
-				reg = <0x400f2400 0x400>;
-				interrupts = <40 1>;
-				clock-frequency = <1843200>;
-				current-speed = <38400>;
-				girqs = <15 0>;
-				pcrs = <2 1>;
-				ldn = <9>;
-				status = "disabled";
-			};
-			uart1: uart@400f2800 {
-				compatible = "microchip,xec-uart";
-				reg = <0x400f2800 0x400>;
-				interrupts = <41 1>;
-				clock-frequency = <1843200>;
-				current-speed = <38400>;
-				girqs = <15 1>;
-				pcrs = <2 2>;
-				ldn = <10>;
-				status = "disabled";
-			};
 			emi0: emi@400f4000 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f4000 0x400>;
@@ -1025,6 +1041,22 @@
 				host-io-addr-mask = <0x01>;
 				status = "disabled";
 			};
+		};
+
+		symcr: symcr@40100000 {
+			compatible = "microchip,xec-symcr";
+			reg = <0x40100000 0x1000>;
+			interrupts = <68 1>;
+			clocks = <&pcr 3 26 MCHP_XEC_PCR_CLK_PERIPH>;
+			girqs = <16 3>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		rom_api: rom_api@1f000 {
+			reg = <0x1f000 0x1000>;
+			status = "disabled";
 		};
 	};
 };

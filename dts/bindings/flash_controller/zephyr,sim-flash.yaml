@@ -10,3 +10,8 @@ properties:
   erase-value:
     type: int
     description: Value of erased flash cell
+  memory-region:
+    type: phandle
+    description: |
+      Memory region used by the simulated flash memory. If this option is used
+      the memory that is used by the simulated flash memory is not erased.

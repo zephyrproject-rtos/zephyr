@@ -1,0 +1,14 @@
+# Copyright (c) 2023, Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NCT38xx multi-function device
+
+  The NCT38xx provides a TCPC and an I/O Expander capabilities.
+
+  The TCPC and I/O expander drivers are added to the devicetree
+  as children of the nuvoton,nct38xx device.
+
+compatible: "nuvoton,nct38xx"
+
+include: i2c-device.yaml

@@ -63,6 +63,10 @@ if(QEMU_PTY)
 elseif(QEMU_PIPE)
   # Redirect console to a pipe, used for running automated tests.
   list(APPEND QEMU_FLAGS -chardev pipe,id=con,mux=on,path=${QEMU_PIPE})
+  # Create the pipe file before passing the path to QEMU.
+  foreach(target ${qemu_targets})
+    list(APPEND PRE_QEMU_COMMANDS_FOR_${target} COMMAND ${CMAKE_COMMAND} -E touch ${QEMU_PIPE})
+  endforeach()
 else()
   # Redirect console to stdio, used for manual debugging.
   list(APPEND QEMU_FLAGS -chardev stdio,id=con,mux=on)
@@ -348,6 +352,37 @@ if(CONFIG_IVSHMEM)
   endif()
 endif()
 
+if(CONFIG_NVME)
+  if(qemu_alternate_path)
+    find_program(
+      QEMU_IMG
+      PATHS ${qemu_alternate_path}
+      NO_DEFAULT_PATH
+      NAMES qemu-img
+    )
+  else()
+    find_program(
+      QEMU_IMG
+      qemu-img
+    )
+  endif()
+
+  list(APPEND QEMU_EXTRA_FLAGS
+    -drive file=${ZEPHYR_BINARY_DIR}/nvme_disk.img,if=none,id=nvm1
+    -device nvme,serial=deadbeef,drive=nvm1
+  )
+
+  add_custom_target(qemu_nvme_disk
+    COMMAND
+    ${QEMU_IMG}
+    create
+    ${ZEPHYR_BINARY_DIR}/nvme_disk.img
+    1M
+  )
+else()
+  add_custom_target(qemu_nvme_disk)
+endif()
+
 if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
@@ -404,6 +439,6 @@ foreach(target ${qemu_targets})
     USES_TERMINAL
     )
   if(DEFINED QEMU_KERNEL_FILE)
-    add_dependencies(${target} qemu_kernel_target)
+    add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
   endif()
 endforeach()

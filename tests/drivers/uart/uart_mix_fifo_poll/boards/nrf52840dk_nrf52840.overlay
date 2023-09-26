@@ -50,7 +50,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&uart0 {
+dut: &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
@@ -64,6 +64,6 @@
 	interrupts = <17 2>;
 };
 
-&timer0 {
+counter_dev: &timer0 {
 	status = "okay";
 };

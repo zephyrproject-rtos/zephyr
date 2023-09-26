@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -606,7 +606,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				sizeof(struct pdu_adv_adi));
 
 			adi = (void *)pri_dptr;
-			adi->sid = sid;
+			PDU_ADV_ADI_SID_SET(adi, sid);
 		}
 		adv->sid = sid;
 
@@ -690,7 +690,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			lll_adv_data_reset(&adv->lll.scan_rsp);
 			err = lll_adv_aux_data_init(&adv->lll.scan_rsp);
 			if (err) {
-				return err;
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 			}
 
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
@@ -710,7 +710,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			lll_adv_data_reset(&adv->lll.scan_rsp);
 			err = lll_adv_data_init(&adv->lll.scan_rsp);
 			if (err) {
-				return err;
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 			}
 
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
@@ -926,7 +926,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		err = lll_adv_data_init(&adv->lll.scan_rsp);
 		if (err) {
-			return err;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		pdu_scan = lll_adv_scan_rsp_peek(lll);
@@ -1220,7 +1220,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		interval_min_us = time_us +
 				  (scan_delay + scan_window) * USEC_PER_MSEC;
 		if ((interval * SCAN_INT_UNIT_US) < interval_min_us) {
-			interval = ceiling_fraction(interval_min_us,
+			interval = DIV_ROUND_UP(interval_min_us,
 						    SCAN_INT_UNIT_US);
 		}
 
@@ -1251,7 +1251,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	adv->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 	ticks_slot_offset = MAX(adv->ull.ticks_active_to_start,
 				adv->ull.ticks_prepare_to_start);
@@ -1277,7 +1277,22 @@ uint8_t ll_adv_enable(uint8_t enable)
 	lll->is_hdcd = !interval && (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
 	if (lll->is_hdcd) {
 		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+
+#if defined(CONFIG_BT_TICKER_EXT)
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		ll_adv_ticker_ext[handle].ticks_slot_window = 0;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+		ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+		ret = ticker_start_ext(
+#else /* !CONFIG_BT_TICKER_EXT */
+		ret = ticker_start(
+#endif /* !CONFIG_BT_TICKER_EXT */
+				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
@@ -1285,7 +1300,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
-				   ull_ticker_status_give, (void *)&ret_cb);
+				   ull_ticker_status_give, (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT)
+				   ,
+				   &ll_adv_ticker_ext[handle]
+#endif /* CONFIG_BT_TICKER_EXT */
+				   );
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret != TICKER_STATUS_SUCCESS) {
 			goto failure_cleanup;
@@ -1372,7 +1392,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * started.
 			 */
 			if (sync) {
-				uint32_t ticks_slot_overhead;
+				uint32_t ticks_slot_overhead2;
 				uint32_t ticks_slot_aux;
 
 #if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
@@ -1416,10 +1436,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
 
-				ticks_slot_overhead = ull_adv_sync_evt_init(adv, sync, NULL);
+				ticks_slot_overhead2 = ull_adv_sync_evt_init(adv, sync, NULL);
 				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync,
-							 ticks_slot_overhead);
+							 ticks_slot_overhead2);
 				if (ret) {
 					goto failure_cleanup;
 				}
@@ -1448,7 +1468,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * BIG radio events.
 			 */
 			aux->interval =
-				ceiling_fraction(((uint64_t)adv->interval *
+				DIV_ROUND_UP(((uint64_t)adv->interval *
 						  ADV_INT_UNIT_US) +
 						 HAL_TICKER_TICKS_TO_US(
 							ULL_ADV_RANDOM_DELAY),
@@ -1467,13 +1487,28 @@ uint8_t ll_adv_enable(uint8_t enable)
 		ret_cb = TICKER_STATUS_BUSY;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (lll->aux) {
+			uint8_t aux_handle = ull_adv_aux_handle_get(aux);
+
+			ll_adv_ticker_ext[handle].expire_info_id = TICKER_ID_ADV_AUX_BASE +
+								  aux_handle;
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+		} else {
+			ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
+			ll_adv_ticker_ext[handle].ext_timeout_func = ticker_cb;
+		}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
-#else
+#else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
-#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_EXT */
 				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -1490,8 +1525,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 				   ticks_slot,
 				   ticker_cb, adv,
-				   ull_ticker_status_give,
-				   (void *)&ret_cb
+				   ull_ticker_status_give, (void *)&ret_cb
 #if defined(CONFIG_BT_TICKER_EXT)
 				   ,
 				   &ll_adv_ticker_ext[handle]
@@ -1586,13 +1620,20 @@ int ull_adv_init(void)
 	return 0;
 }
 
-int ull_adv_reset(void)
+uint8_t ll_adv_disable_all(void)
 {
 	uint8_t handle;
 
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		(void)disable(handle);
 	}
+
+	return 0U;
+}
+
+int ull_adv_reset(void)
+{
+	(void)ll_adv_disable_all();
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
@@ -1722,6 +1763,21 @@ struct ll_adv_set *ull_adv_is_created_get(uint8_t handle)
 
 	return adv;
 }
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+void ull_adv_aux_created(struct ll_adv_set *adv)
+{
+	if (adv->lll.aux && adv->is_enabled) {
+		uint8_t aux_handle = ull_adv_aux_handle_get(HDR_LLL2ULL(adv->lll.aux));
+		uint8_t handle = ull_adv_handle_get(adv);
+
+		ticker_update_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_BASE + handle), 0, 0, 0, 0, 0, 0,
+			   ticker_update_op_cb, adv, 0,
+			   TICKER_ID_ADV_AUX_BASE + aux_handle);
+	}
+}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
@@ -1817,7 +1873,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 		err = lll_adv_data_init(&adv->lll.scan_rsp);
 		if (err) {
-			return err;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		prev = lll_adv_scan_rsp_peek(&adv->lll);
@@ -2068,16 +2124,12 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 			    struct pdu_adv *pdu_scan)
 {
-	uint32_t volatile ret_cb;
-	uint32_t ticks_minus;
-	uint32_t ticks_plus;
 	struct lll_adv *lll;
 	uint32_t time_ticks;
 	uint8_t phy_flags;
 	uint16_t time_us;
 	uint8_t chan_map;
 	uint8_t chan_cnt;
-	uint32_t ret;
 	uint8_t phy;
 
 	lll = &adv->lll;
@@ -2093,7 +2145,14 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 	chan_map = lll->chan_map;
 	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
 	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, phy, phy_flags);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint32_t volatile ret_cb;
+	uint32_t ticks_minus;
+	uint32_t ticks_plus;
+	uint32_t ret;
+
 	if (adv->ull.ticks_slot > time_ticks) {
 		ticks_minus = adv->ull.ticks_slot - time_ticks;
 		ticks_plus = 0U;
@@ -2115,6 +2174,7 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 	if (ret != TICKER_STATUS_SUCCESS) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	adv->ull.ticks_slot = time_ticks;
 
@@ -2239,7 +2299,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	struct ticker_ext_context *context = param;
+	struct ll_adv_set *adv = context->context;
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_set *adv = param;
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	uint32_t random_delay;
 	struct lll_adv *lll;
 	uint32_t ret;
@@ -2272,6 +2337,27 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		ref = ull_ref_inc(&adv->ull);
 		LL_ASSERT(ref);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		if (adv->lll.aux) {
+			uint32_t ticks_to_expire;
+			uint32_t other_remainder;
+
+			LL_ASSERT(context->other_expire_info);
+
+			/* Adjust ticks to expire based on remainder value */
+			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+			other_remainder = context->other_expire_info->remainder;
+			hal_ticker_remove_jitter(&ticks_to_expire, &other_remainder);
+
+			/* Store the ticks and remainder offset for aux ptr population in LLL */
+			adv->lll.aux->ticks_pri_pdu_offset = ticks_to_expire;
+			adv->lll.aux->us_pri_pdu_offset = other_remainder;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) &&
+	* CONFIG_BT_TICKER_EXT_EXPIRE_INFO
+	*/
+
 		/* Append timing parameters */
 		p.ticks_at_expire = ticks_at_expire;
 		p.remainder = remainder;
@@ -2285,11 +2371,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) && \
+	!defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
 			ull_adv_aux_offset_get(adv);
 		}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO
+	*/
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		adv->ticks_at_expire = ticks_at_expire;
@@ -2334,8 +2423,25 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 static void ticker_update_op_cb(uint32_t status, void *param)
 {
+#if defined(CONFIG_BT_PERIPHERAL) && (defined(CONFIG_BT_ASSERT) || defined(CONFIG_ASSERT))
+	struct ll_adv_set *adv = param;
+	struct pdu_adv *pdu = lll_adv_data_peek(&adv->lll);
+	bool connectable = (pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+			   (pdu->type == PDU_ADV_TYPE_DIRECT_IND) ||
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			   ((pdu->type == PDU_ADV_TYPE_EXT_IND) &&
+			    (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN)) ||
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+			   0;
+#endif /* CONFIG_BT_PERIPHERAL && (CONFIG_BT_ASSERT || CONFIG_ASSERT) */
+
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_disable_mark_get());
+		  param == ull_disable_mark_get() ||
+#if defined(CONFIG_BT_PERIPHERAL)
+		   /* if using connectable adv and lll.conn is 0 -> a connection is underway */
+		  (connectable && !adv->lll.conn) ||
+#endif /* CONFIG_BT_PERIPHERAL */
+		  0);
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)

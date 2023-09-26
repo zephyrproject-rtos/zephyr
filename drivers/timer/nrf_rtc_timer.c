@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
@@ -13,6 +13,7 @@
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/barrier.h>
 #include <hal/nrf_rtc.h>
 #include <zephyr/irq.h>
 
@@ -71,22 +72,22 @@ static void set_comparator(int32_t chan, uint32_t cyc)
 
 static bool event_check(int32_t chan)
 {
-	return nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan));
+	return nrf_rtc_event_check(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
 }
 
 static void event_clear(int32_t chan)
 {
-	nrf_rtc_event_clear(RTC, RTC_CHANNEL_EVENT_ADDR(chan));
+	nrf_rtc_event_clear(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
 }
 
 static void event_enable(int32_t chan)
 {
-	nrf_rtc_event_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 }
 
 static void event_disable(int32_t chan)
 {
-	nrf_rtc_event_disable(RTC, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_event_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 }
 
 static uint32_t counter(void)
@@ -150,10 +151,10 @@ static bool compare_int_lock(int32_t chan)
 {
 	atomic_val_t prev = atomic_and(&int_mask, ~BIT(chan));
 
-	nrf_rtc_int_disable(RTC, RTC_CHANNEL_INT_MASK(chan));
+	nrf_rtc_int_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 
-	__DMB();
-	__ISB();
+	barrier_dmem_fence_full();
+	barrier_isync_fence_full();
 
 	return prev & BIT(chan);
 }
@@ -170,7 +171,7 @@ static void compare_int_unlock(int32_t chan, bool key)
 {
 	if (key) {
 		atomic_or(&int_mask, BIT(chan));
-		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
+		nrf_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 		if (atomic_get(&force_isr_mask) & BIT(chan)) {
 			NVIC_SetPendingIRQ(RTC_IRQn);
 		}
@@ -231,9 +232,20 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
  * @param[in] chan A channel for which a new CC value is to be set.
  *
  * @param[in] req_cc Requested CC register value to be set.
+ *
+ * @param[in] exact Use @c false to allow CC adjustment if @c req_cc value is
+ *                  close to the current value of the timer.
+ *                  Use @c true to disallow CC adjustment. The function can
+ *                  fail with -EINVAL result if @p req_cc is too close to the
+ *                  current value.
+ *
+ * @retval 0 The requested CC has been set successfully.
+ * @retval -EINVAL The requested CC value could not be reliably set.
  */
-static void set_alarm(int32_t chan, uint32_t req_cc)
+static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 {
+	int ret = 0;
+
 	/* Ensure that the value exposed in this driver API is consistent with
 	 * assumptions of this function.
 	 */
@@ -300,9 +312,16 @@ static void set_alarm(int32_t chan, uint32_t req_cc)
 				now = counter();
 				if (counter_sub(now, req_cc) > COUNTER_HALF_SPAN) {
 					event_clear(chan);
+					if (exact) {
+						ret = -EINVAL;
+						break;
+					}
 				} else {
 					break;
 				}
+			} else if (exact) {
+				ret = -EINVAL;
+				break;
 			}
 
 			cc_val = now + cc_inc;
@@ -311,11 +330,13 @@ static void set_alarm(int32_t chan, uint32_t req_cc)
 			break;
 		}
 	}
+
+	return ret;
 }
 
 static int compare_set_nolocks(int32_t chan, uint64_t target_time,
 			z_nrf_rtc_timer_compare_handler_t handler,
-			void *user_data)
+			void *user_data, bool exact)
 {
 	int ret = 0;
 	uint32_t cc_value = absolute_time_to_cc(target_time);
@@ -331,29 +352,33 @@ static int compare_set_nolocks(int32_t chan, uint64_t target_time,
 			/* Target time is valid and is different than currently set.
 			 * Set CC value.
 			 */
-			set_alarm(chan, cc_value);
+			ret = set_alarm(chan, cc_value, exact);
 		}
-	} else {
+	} else if (!exact) {
 		/* Force ISR handling when exiting from critical section. */
 		atomic_or(&force_isr_mask, BIT(chan));
+	} else {
+		ret = -EINVAL;
 	}
 
-	cc_data[chan].target_time = target_time;
-	cc_data[chan].callback = handler;
-	cc_data[chan].user_context = user_data;
+	if (ret == 0) {
+		cc_data[chan].target_time = target_time;
+		cc_data[chan].callback = handler;
+		cc_data[chan].user_context = user_data;
+	}
 
 	return ret;
 }
 
 static int compare_set(int32_t chan, uint64_t target_time,
 			z_nrf_rtc_timer_compare_handler_t handler,
-			void *user_data)
+			void *user_data, bool exact)
 {
 	bool key;
 
 	key = compare_int_lock(chan);
 
-	int ret = compare_set_nolocks(chan, target_time, handler, user_data);
+	int ret = compare_set_nolocks(chan, target_time, handler, user_data, exact);
 
 	compare_int_unlock(chan, key);
 
@@ -366,7 +391,16 @@ int z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 {
 	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
-	return compare_set(chan, target_time, handler, user_data);
+	return compare_set(chan, target_time, handler, user_data, false);
+}
+
+int z_nrf_rtc_timer_exact_set(int32_t chan, uint64_t target_time,
+			      z_nrf_rtc_timer_compare_handler_t handler,
+			      void *user_data)
+{
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
+
+	return compare_set(chan, target_time, handler, user_data, true);
 }
 
 void z_nrf_rtc_timer_abort(int32_t chan)
@@ -387,7 +421,7 @@ uint64_t z_nrf_rtc_timer_read(void)
 {
 	uint64_t val = ((uint64_t)overflow_cnt) << COUNTER_BIT_WIDTH;
 
-	__DMB();
+	barrier_dmem_fence_full();
 
 	uint32_t cntr = counter();
 
@@ -447,7 +481,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 		 * so it won't get preempted by the interrupt.
 		 */
 		compare_set(chan, last_count + CYC_PER_TICK,
-					  sys_clock_timeout_handler, NULL);
+					  sys_clock_timeout_handler, NULL, false);
 	}
 
 	sys_clock_announce(dticks);
@@ -455,7 +489,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 
 static bool channel_processing_check_and_clear(int32_t chan)
 {
-	if (nrf_rtc_int_enable_check(RTC, RTC_CHANNEL_INT_MASK(chan))) {
+	if (nrf_rtc_int_enable_check(RTC, NRF_RTC_CHANNEL_INT_MASK(chan))) {
 		/* The processing of channel can be caused by CC match
 		 * or be forced.
 		 */
@@ -630,7 +664,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * the requested ticks have passed starting now.
 	 */
 	cyc += unannounced;
-	cyc = ceiling_fraction(cyc, CYC_PER_TICK) * CYC_PER_TICK;
+	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
 
 	/* Due to elapsed time the calculation above might produce a
 	 * duration that laps the counter.  Don't let it.
@@ -643,7 +677,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint64_t target_time = cyc + last_count;
 
-	compare_set(0, target_time, sys_clock_timeout_handler, NULL);
+	compare_set(0, target_time, sys_clock_timeout_handler, NULL, false);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -660,15 +694,8 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)z_nrf_rtc_timer_read();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static void int_event_disable_rtc(void)
 {
-	ARG_UNUSED(dev);
-	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
-			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
-			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
-			CLOCK_CONTROL_NRF_LF_START_STABLE);
 	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
 			NRF_RTC_INT_OVERFLOW_MASK |
 			NRF_RTC_INT_COMPARE0_MASK |
@@ -681,12 +708,32 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Reset event routing enabling to expected reset values */
 	nrf_rtc_event_disable(RTC, mask);
+}
+
+void sys_clock_disable(void)
+{
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_STOP);
+	irq_disable(RTC_IRQn);
+	int_event_disable_rtc();
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+}
+
+static int sys_clock_driver_init(void)
+{
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
+
+	int_event_disable_rtc();
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
 	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
 		cc_data[chan].target_time = TARGET_TIME_INVALID;
-		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
+		nrf_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 	}
 
 	nrf_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
@@ -708,7 +755,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
 		MAX_CYCLES : CYC_PER_TICK;
 
-	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL);
+	compare_set(0, initial_timeout, sys_clock_timeout_handler, NULL, false);
 
 	z_nrf_clock_control_lf_on(mode);
 

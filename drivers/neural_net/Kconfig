@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NEURAL_NET_ACCEL
-	bool "Neural Network Accelerator Drivers"
+	bool "Neural Network Accelerator drivers"
 	help
 	  Enable support for Neural Network Accelerators
 
@@ -13,7 +13,5 @@ if NEURAL_NET_ACCEL
 module = NEURAL_NET
 module-str = neural_net
 source "subsys/logging/Kconfig.template.log_config"
-
-source "drivers/neural_net/Kconfig.*"
 
 endif # NEURAL_NET

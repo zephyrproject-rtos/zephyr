@@ -155,7 +155,7 @@ static void listener(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	/* The thread start to trigger network management events that
 	 * we then can catch.
@@ -168,4 +168,5 @@ void main(void)
 	} else {
 		listener();
 	}
+	return 0;
 }

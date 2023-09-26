@@ -35,7 +35,7 @@
 			mmu-type = "riscv,sv39";
 			next-level-cache = <&cachectrl>;
 			reg = <0>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			starfive,itim = <&itim0>;
 			status = "okay";
 			tlb-split;
@@ -64,7 +64,7 @@
 			mmu-type = "riscv,sv39";
 			next-level-cache = <&cachectrl>;
 			reg = <1>;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			starfive,itim = <&itim1>;
 			status = "okay";
 			tlb-split;

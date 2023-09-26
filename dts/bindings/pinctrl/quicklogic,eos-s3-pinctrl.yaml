@@ -1,0 +1,75 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Quicklogic EOS S3 IO MUX binding covers the 46 IOMUX_PAD_x_CTRL registers
+  that can be used to set the direction and the function of a pad.
+
+  Device pin configuration should be placed in the child nodes of this node.
+  Populate the 'pinmux' field with IO function and pin number.
+
+  For example, setting pins 44 and 45 for use as UART would look like this:
+
+    #include <dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+
+    &pinctrl {
+      uart0_rx_default: uart0_rx_default {
+        pinmux = <UART_RX_PAD45>;
+        input-enable;
+      };
+      uart0_tx_default: uart0_tx_default {
+        pinmux = <UART_TX_PAD44>;
+        output-enable;
+      };
+    };
+
+compatible: "quicklogic,eos-s3-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the SiFive FE310 pins
+    configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - input-enable
+        - output-enable
+        - bias-pull-up
+        - bias-pull-down
+        - bias-high-impedance
+        - input-schmitt-enable
+        - drive-strength
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        Quicklogic EOS S3 pin's configuration (pin, IO function).
+    slew-rate:
+      description: |
+        The default value "slow" matches the power-on reset value.
+      default: "slow"
+      type: string
+      enum:
+        - "slow"
+        - "fast"
+    quicklogic,control-selection:
+      description: |
+        Control selection for IO output.
+        It's either controlled from registers of the A0 always-on domain,
+        fabric-controlled for signaling with FPGA,
+        or other-controller for bidirectional signals.
+        The default value "a0registers" matches the power-on reset value.
+      default: "a0registers"
+      type: string
+      enum:
+        - "a0registers"
+        - "others"
+        - "fabric"

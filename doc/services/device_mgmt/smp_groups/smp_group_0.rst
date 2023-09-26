@@ -16,7 +16,7 @@ OS management group defines following commands:
     | ``1``             | Console/Terminal echo control;                |
     |                   | unimplemented by Zephyr                       |
     +-------------------+-----------------------------------------------+
-    | ``2``             | Statistics                                    |
+    | ``2``             | Task Statistics                               |
     +-------------------+-----------------------------------------------+
     | ``3``             | Memory pool statistics                        |
     +-------------------+-----------------------------------------------+
@@ -62,7 +62,7 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "d"                   | string to be replied by echo service              |
+    | "d"                   | string to be replied by echo service.             |
     +-----------------------+---------------------------------------------------+
 
 Echo response
@@ -91,23 +91,44 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "r"                   | Replying echo string                              |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "r"              | replying echo string.                                                   |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 Task statistics command
 ***********************
@@ -168,41 +189,62 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | <task_name>           | string identifying task                           |
-    +-----------------------+---------------------------------------------------+
-    | "prio"                | task priority                                     |
-    +-----------------------+---------------------------------------------------+
-    | "tid"                 | numeric task ID                                   |
-    +-----------------------+---------------------------------------------------+
-    | "state"               | numeric task state                                |
-    +-----------------------+---------------------------------------------------+
-    | "stkuse"              | task's/thread's stack usage                       |
-    +-----------------------+---------------------------------------------------+
-    | "stksiz"              | task's/thread's stack size                        |
-    +-----------------------+---------------------------------------------------+
-    | "cswcnt"              | task's/thread's context switches                  |
-    +-----------------------+---------------------------------------------------+
-    | "runtime"             | task's/thread's runtime in "ticks"                |
-    +-----------------------+---------------------------------------------------+
-    | "last_checkin"        | set to 0 by Zephyr                                |
-    +-----------------------+---------------------------------------------------+
-    | "next_checkin"        | set to 0 by Zephyr                                |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | <task_name>      | string identifying task.                                                |
+    +------------------+-------------------------------------------------------------------------+
+    | "prio"           | task priority.                                                          |
+    +------------------+-------------------------------------------------------------------------+
+    | "tid"            | numeric task ID.                                                        |
+    +------------------+-------------------------------------------------------------------------+
+    | "state"          | numeric task state.                                                     |
+    +------------------+-------------------------------------------------------------------------+
+    | "stkuse"         | task's/thread's stack usage.                                            |
+    +------------------+-------------------------------------------------------------------------+
+    | "stksiz"         | task's/thread's stack size.                                             |
+    +------------------+-------------------------------------------------------------------------+
+    | "cswcnt"         | task's/thread's context switches.                                       |
+    +------------------+-------------------------------------------------------------------------+
+    | "runtime"        | task's/thread's runtime in "ticks".                                     |
+    +------------------+-------------------------------------------------------------------------+
+    | "last_checkin"   | set to 0 by Zephyr.                                                     |
+    +------------------+-------------------------------------------------------------------------+
+    | "next_checkin"   | set to 0 by Zephyr.                                                     |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 .. note::
     The unit for "stkuse" and "stksiz" is system dependent and in case of Zephyr
@@ -260,33 +302,53 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | <pool_name>           | string representing the pool name, used as a key  |
-    |                       | for dictionary with pool statistics data          |
-    +-----------------------+---------------------------------------------------+
-    | "blksiz"              | size of the memory block in the pool              |
-    +-----------------------+---------------------------------------------------+
-    | "nblks"               | number of blocks in the pool                      |
-    +-----------------------+---------------------------------------------------+
-    | "nrfree"              | number of free blocks                             |
-    +-----------------------+---------------------------------------------------+
-    | "min"                 | lowest number of free blocks the pool reached     |
-    |                       | during run-time                                   |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | <pool_name>      | string representing the pool name, used as a key for dictionary with    |
+    |                  | pool statistics data.                                                   |
+    +------------------+-------------------------------------------------------------------------+
+    | "blksiz"         | size of the memory block in the pool.                                   |
+    +------------------+-------------------------------------------------------------------------+
+    | "nblks"          | number of blocks in the pool.                                           |
+    +------------------+-------------------------------------------------------------------------+
+    | "nfree"          | number of free blocks.                                                  |
+    +------------------+-------------------------------------------------------------------------+
+    | "min"            | lowest number of free blocks the pool reached during run-time.          |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 Date-time command
 *****************
@@ -318,7 +380,7 @@ Date-time request header fields:
 
 The command sends an empty CBOR map as data.
 
-Data-time get response
+Date-time get response
 ----------------------
 
 Date-time get response header fields:
@@ -342,24 +404,44 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "datetime"            | String in format                                  |
-    |                       | yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ                 |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "datetime"       | String in format: ``yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ``.                |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 
 Date-time set
@@ -394,12 +476,11 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "datetime"            | String in format                                  |
-    |                       | yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ                 |
-    +-----------------------+---------------------------------------------------+
+    +---------------+----------------------------------------------------------+
+    | "datetime"    | String in format: ``yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ``. |
+    +---------------+----------------------------------------------------------+
 
-Data-time set response
+Date-time set response
 ----------------------
 
 Date-time set response header fields:
@@ -410,27 +491,48 @@ Date-time set response header fields:
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``1``  | ``0``        |  ``4``         |
+    | ``3``  | ``0``        |  ``4``         |
     +--------+--------------+----------------+
 
 The command sends an empty CBOR map as data if successful. In case of error the
 CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 System reset
 ************
@@ -458,9 +560,9 @@ System reset request header fields:
     | ``2``  | ``0``        |  ``5``         |
     +--------+--------------+----------------+
 
-Normally the command sends an empty CBOR map as data, but if previous
-reset attempt has been responded with "rc" code equal ``10`` (busy),
-then following map may be send to force the reset:
+Normally the command sends an empty CBOR map as data, but if a previous reset
+attempt has responded with "rc" equal to :c:enum:`MGMT_ERR_EBUSY` then the
+following map may be sent to force a reset:
 
 .. code-block:: none
 
@@ -495,31 +597,52 @@ System reset response header fields
 The command sends an empty CBOR map as data if successful. In case of error the
 CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
-MCUMGR Parameters
+MCUmgr Parameters
 *****************
 
 Used to obtain parameters of mcumgr library.
 
-MCUMGR Parameters Request
+MCUmgr Parameters Request
 =========================
 
-MCUMGR parameters request header fields:
+MCUmgr parameters request header fields:
 
 .. table::
     :align: center
@@ -532,10 +655,10 @@ MCUMGR parameters request header fields:
 
 The command sends an empty CBOR map as data.
 
-MCUMGR Parameters Response
+MCUmgr Parameters Response
 ==========================
 
-MCUMGR parameters response header fields
+MCUmgr parameters response header fields
 
 .. table::
     :align: center
@@ -543,7 +666,7 @@ MCUMGR parameters response header fields
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``2``  | ``0``        |  ``6``         |
+    | ``1``  | ``0``        |  ``6``         |
     +--------+--------------+----------------+
 
 CBOR data of successful response:
@@ -557,26 +680,46 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "buf_size"            | Single SMP buffer size, this includes SMP header  |
-    |                       | and CBOR payload                                  |
-    +-----------------------+---------------------------------------------------+
-    | "buf_count"           | Number of SMP buffers supported                   |
-    +-----------------------+---------------------------------------------------+
-    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
-    |                       | only appears if non-zero (error condition).       |
-    +-----------------------+---------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "buf_size"       | Single SMP buffer size, this includes SMP header and CBOR payload.      |
+    +------------------+-------------------------------------------------------------------------+
+    | "buf_count"      | Number of SMP buffers supported.                                        |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 .. _mcumgr_os_application_info:
 
@@ -646,26 +789,54 @@ OS/Application info response header fields
     +--------+--------------+----------------+
     | ``OP`` | ``Group ID`` | ``Command ID`` |
     +========+==============+================+
-    | ``2``  | ``0``        |  ``7``         |
+    | ``1``  | ``0``        |  ``7``         |
     +--------+--------------+----------------+
 
-CBOR data of response:
+CBOR data of successful response:
 
 .. code-block:: none
 
     {
         (str)"output"       : (str)
-        (opt,str)"rc"       : (int)
     }
+
+In case of error the CBOR data takes the form:
+
+.. tabs::
+
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +--------------+------------------------------------------------------------+
-    | "output"     | Text response including requested parameters               |
-    +--------------+------------------------------------------------------------+
-    | "rc"         | :ref:`mcumgr_smp_protocol_status_codes`; will not appear   |
-    |              | if 0                                                       |
-    +--------------+------------------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "output"         | Text response including requested parameters.                           |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+

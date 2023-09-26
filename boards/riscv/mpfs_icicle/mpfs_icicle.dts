@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include <mpfs-icicle.dtsi>
+#include <microchip/mpfs-icicle.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
 / {
@@ -14,6 +15,8 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &sw0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
 	};
 
 	chosen {
@@ -36,6 +39,7 @@
 		sw0: sw0 {
 			gpios = <&gpio2 30 GPIO_ACTIVE_LOW>;
 			label = "SW_0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -58,5 +62,13 @@
 };
 
 &gpio2 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
 	status = "okay";
 };

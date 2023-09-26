@@ -162,7 +162,11 @@ NPCX_REG_OFFSET_CHECK(ps2_reg, PSISIG, 0x008);
 NPCX_REG_OFFSET_CHECK(ps2_reg, PSIEN, 0x00a);
 
 /* FIU register structure check */
+#if defined(CONFIG_SOC_SERIES_NPCX9) || defined(CONFIG_SOC_SERIES_NPCX4)
+NPCX_REG_SIZE_CHECK(fiu_reg, 0x040);
+#else
 NPCX_REG_SIZE_CHECK(fiu_reg, 0x034);
+#endif
 NPCX_REG_OFFSET_CHECK(fiu_reg, BURST_CFG, 0x001);
 NPCX_REG_OFFSET_CHECK(fiu_reg, SPI_FL_CFG, 0x014);
 NPCX_REG_OFFSET_CHECK(fiu_reg, UMA_CTS, 0x01e);

@@ -2,7 +2,11 @@
 
 tests:
   drivers.input.gpio_keys:
-    tags: drivers input
-    platform_allow: native_posix native_posix_64
+    tags:
+      - drivers
+      - input
+    platform_allow:
+      - native_posix
+      - native_posix_64
     integration_platforms:
       - native_posix

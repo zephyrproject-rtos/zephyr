@@ -38,9 +38,26 @@ static void rpr_scan_report(struct bt_mesh_rpr_cli *cli,
 		uint8_t len, type;
 		uint8_t data[31];
 
-		len = net_buf_simple_pull_u8(adv_data) - 1;
+		len = net_buf_simple_pull_u8(adv_data);
+		if (len == 0) {
+			/* No data in this AD Structure. */
+			continue;
+		}
+
+		if (len > adv_data->len) {
+			/* Malformed AD Structure. */
+			break;
+		}
+
 		type = net_buf_simple_pull_u8(adv_data);
-		memcpy(data, net_buf_simple_pull_mem(adv_data, len), len);
+		if ((--len) > 0) {
+			uint8_t dlen;
+
+			/* Pull all length, but print only what fits into `data` array. */
+			dlen = MIN(len, sizeof(data) - 1);
+			memcpy(data, net_buf_simple_pull_mem(adv_data, len), dlen);
+			len = dlen;
+		}
 		data[len] = '\0';
 
 		if (type == BT_DATA_URI) {
@@ -392,19 +409,19 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_REMOTE_PROV_CLI,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	rpr_cli_cmds,
-	SHELL_CMD_ARG(scan, NULL, "<timeout in seconds> [<UUID>]", cmd_scan, 2, 1),
-	SHELL_CMD_ARG(scan-ext, NULL, "<timeout in seconds> <UUID> [<AD-type> ... ]",
+	SHELL_CMD_ARG(scan, NULL, "<Timeout(s)> [<UUID(1-16 hex)>]", cmd_scan, 2, 1),
+	SHELL_CMD_ARG(scan-ext, NULL, "<Timeout(s)> <UUID(1-16 hex)> [<ADType> ... ]",
 		      cmd_scan_ext, 3, CONFIG_BT_MESH_RPR_AD_TYPES_MAX),
-	SHELL_CMD_ARG(scan-srv, NULL, "[<AD-type> ... ]", cmd_scan_srv, 1,
+	SHELL_CMD_ARG(scan-srv, NULL, "[<ADType> ... ]", cmd_scan_srv, 1,
 		      CONFIG_BT_MESH_RPR_AD_TYPES_MAX),
 	SHELL_CMD_ARG(scan-caps, NULL, NULL, cmd_scan_caps, 1, 0),
 	SHELL_CMD_ARG(scan-get, NULL, NULL, cmd_scan_get, 1, 0),
 	SHELL_CMD_ARG(scan-stop, NULL, NULL, cmd_scan_stop, 1, 0),
 	SHELL_CMD_ARG(link-get, NULL, NULL, cmd_link_get, 1, 0),
 	SHELL_CMD_ARG(link-close, NULL, NULL, cmd_link_close, 1, 0),
-	SHELL_CMD_ARG(provision-remote, NULL, "<UUID> <NetKeyIndex> <addr>",
+	SHELL_CMD_ARG(provision-remote, NULL, "<UUID(1-16 hex)> <NetKeyIdx> <Addr>",
 		      cmd_provision_remote, 4, 0),
-	SHELL_CMD_ARG(reprovision-remote, NULL, "<addr> [<comp changed: false, true>]",
+	SHELL_CMD_ARG(reprovision-remote, NULL, "<Addr> [<CompChanged(false, true)>]",
 		      cmd_reprovision_remote, 2, 1),
 	SHELL_CMD(instance, &instance_cmds, "Instance commands", bt_mesh_shell_mdl_cmds_help),
 	SHELL_SUBCMD_SET_END);

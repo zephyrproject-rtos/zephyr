@@ -198,6 +198,10 @@
 						 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
 				func3-en-mask = <0       0x20     0x20     0
 						 0       0x04     0x08     0      >;
+				func3-ext =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+						 NO_FUNC 0xf03a23 0xf03a23 NO_FUNC>;
+				func3-ext-mask = <0      0        0        0
+						  0      0x01     0x01     0      >;
 				func4-gcr =     <NO_FUNC 0xf016f5 0xf016f5 NO_FUNC
 						 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
 				func4-en-mask = <0       0x04     0x08     0
@@ -362,7 +366,7 @@
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
-			/delete-property/ fifo-enable;   /* FIFO2 */
+			fifo-enable;   /* FIFO2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -378,7 +382,7 @@
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
-			fifo-enable;   /* FIFO2 */
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 
 		i2c3: i2c@f03680 {
@@ -593,7 +597,7 @@
 
 		twd0: watchdog@f01f00 {
 			compatible = "ite,it8xxx2-watchdog";
-			reg = <0x00f01f00 0x0062>;
+			reg = <0x00f01f00 0x000f>;
 			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
 				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
 			interrupt-parent = <&intc>;

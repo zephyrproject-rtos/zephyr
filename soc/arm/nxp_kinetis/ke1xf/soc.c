@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 #include <fsl_clock.h>
 #include <fsl_cache.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT(val >= min && val <= max, str)
@@ -237,18 +237,12 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int ke1xf_init(const struct device *arg)
+static int ke1xf_init(void)
 
 {
-	ARG_UNUSED(arg);
-
-	unsigned int old_level; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)
 	uint32_t temp_reg;
 #endif /* !CONFIG_ARM_MPU */
-
-	/* Disable interrupts */
-	old_level = irq_lock();
 
 #if !defined(CONFIG_ARM_MPU)
 	/*
@@ -266,18 +260,10 @@ static int ke1xf_init(const struct device *arg)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-	/*
-	 * Install default handler that simply resets the CPU if
-	 * configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
 #ifndef CONFIG_KINETIS_KE1XF_ENABLE_CODE_CACHE
 	/* SystemInit will have enabled the code cache. Disable it here */
 	L1CACHE_DisableCodeCache();
 #endif
-	/* Restore interrupt state */
-	irq_unlock(old_level);
 
 	return 0;
 }

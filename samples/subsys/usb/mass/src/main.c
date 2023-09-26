@@ -39,9 +39,10 @@ USBD_CONFIGURATION_DEFINE(config_1,
 			  200);
 
 USBD_DESC_LANG_DEFINE(sample_lang);
-USBD_DESC_STRING_DEFINE(sample_mfr, "ZEPHYR", 1);
-USBD_DESC_STRING_DEFINE(sample_product, "Zephyr USBD MSC", 2);
-USBD_DESC_STRING_DEFINE(sample_sn, "0123456789ABCDEF", 3);
+USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, "ZEPHYR");
+USBD_DESC_PRODUCT_DEFINE(sample_product, "Zephyr USBD MSC");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn, "0123456789ABCDEF");
+
 
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
@@ -248,7 +249,7 @@ static void setup_disk(void)
 	return;
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -261,8 +262,9 @@ void main(void)
 #endif
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_INF("The device is put in USB mass storage mode.\n");
+	return 0;
 }

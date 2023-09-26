@@ -230,6 +230,9 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
 {
 	LOG_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	if (cur_inst) {
+		cur_inst = NULL;
+	}
 }
 /* End L2CAP callbacks */
 
@@ -597,6 +600,12 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 			    struct bt_conn *conn,
 			    uint64_t obj_id)
 {
+	CHECKIF(!BT_OTS_VALID_OBJ_ID(obj_id)) {
+		LOG_DBG("Invalid object ID 0x%016llx", obj_id);
+
+		return -EINVAL;
+	}
+
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
 		uint8_t param[BT_OTS_OBJ_ID_SIZE];
@@ -1393,7 +1402,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
@@ -1454,7 +1463,7 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 		return -EINVAL;
 	}
 
-	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
+	CHECKIF((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
 		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}

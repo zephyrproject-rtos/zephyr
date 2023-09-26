@@ -14,9 +14,8 @@ K_KERNEL_STACK_DEFINE(z_usb_work_q_stack, CONFIG_USB_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q z_usb_work_q;
 
-static int z_usb_work_q_init(const struct device *dev)
+static int z_usb_work_q_init(void)
 {
-	ARG_UNUSED(dev);
 
 	k_work_queue_start(&z_usb_work_q,
 			   z_usb_work_q_stack,

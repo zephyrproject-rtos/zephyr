@@ -55,15 +55,16 @@ struct sd_card {
 	struct sdhc_host_props host_props; /*!< SDHC host properties */
 	uint32_t ocr; /*!< Raw card OCR content */
 	struct sd_switch_caps switch_caps; /*!< SD switch capabilities */
-	uint32_t num_io; /*!< I/O function count. 0 for SD cards */
-	uint32_t relative_addr; /*!< Card relative address */
+	unsigned int num_io: 3; /*!< I/O function count. 0 for SD cards */
+	uint16_t relative_addr; /*!< Card relative address */
 	uint32_t block_count; /*!< Number of blocks in SD card */
-	uint32_t block_size; /*!< SD block size */
-	uint32_t sd_version; /*!< SD specification version */
-	uint32_t card_speed; /*!< Card timing mode */
+	uint16_t block_size; /*!< SD block size */
+	uint8_t sd_version; /*!< SD specification version */
+	uint8_t card_speed; /*!< Card timing mode */
 	enum card_status status; /*!< Card status */
 	enum card_type type; /*!< Card type */
-	uint32_t flags; /*!< Card flags */
+	uint16_t flags; /*!< Card flags */
+	uint8_t bus_width; /*!< Desired bus width */
 	uint8_t card_buffer[CONFIG_SD_BUFFER_SIZE]
 		__aligned(CONFIG_SDHC_BUFFER_ALIGNMENT); /* Card internal buffer */
 };

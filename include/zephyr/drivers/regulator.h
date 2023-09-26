@@ -2,6 +2,7 @@
  * Copyright (c) 2019-2020 Peter Bigot Consulting, LLC
  * Copyright (c) 2021 NXP
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 EPAM Systems
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,7 +21,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 #include <zephyr/kernel.h>
+#endif
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -56,9 +59,12 @@ typedef uint8_t regulator_error_flags_t;
 typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
 					 regulator_dvs_state_t state);
 
+typedef int (*regulator_ship_mode_t)(const struct device *dev);
+
 /** @brief Driver-specific API functions to support parent regulator control. */
 __subsystem struct regulator_parent_driver_api {
 	regulator_dvs_state_set_t dvs_state_set;
+	regulator_ship_mode_t ship_mode;
 };
 
 typedef int (*regulator_enable_t)(const struct device *dev);
@@ -123,6 +129,8 @@ struct regulator_common_config {
 	int32_t min_uv;
 	/** Maximum allowed voltage, in microvolts. */
 	int32_t max_uv;
+	/** Initial voltage, in microvolts. */
+	int32_t init_uv;
 	/** Minimum allowed current, in microamps. */
 	int32_t min_ua;
 	/** Maximum allowed current, in microamps. */
@@ -148,6 +156,8 @@ struct regulator_common_config {
 				     INT32_MIN),                               \
 		.max_uv = DT_PROP_OR(node_id, regulator_max_microvolt,         \
 				     INT32_MAX),                               \
+		.init_uv = DT_PROP_OR(node_id, regulator_init_microvolt,       \
+				      INT32_MIN),			       \
 		.min_ua = DT_PROP_OR(node_id, regulator_min_microamp,          \
 				     INT32_MIN),                               \
 		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
@@ -178,8 +188,10 @@ struct regulator_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct regulator_common_data {
-	/** Lock */
+#if defined(CONFIG_REGULATOR_THREAD_SAFE_REFCNT) || defined(__DOXYGEN__)
+	/** Lock (only if @kconfig{CONFIG_REGULATOR_THREAD_SAFE_REFCNT}=y) */
 	struct k_mutex lock;
+#endif
 	/** Reference count */
 	int refcnt;
 };
@@ -215,6 +227,43 @@ void regulator_common_data_init(const struct device *dev);
  * @retval -errno Negative errno in case of failure.
  */
 int regulator_common_init(const struct device *dev, bool is_enabled);
+
+/**
+ * @brief Check if regulator is expected to be enabled at init time.
+ *
+ * @param dev Regulator device instance
+ * @return true If regulator needs to be enabled at init time.
+ * @return false If regulator does not need to be enabled at init time.
+ */
+static inline bool regulator_common_is_init_enabled(const struct device *dev)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	return (config->flags & REGULATOR_INIT_ENABLED) != 0U;
+}
+
+/**
+ * @brief Get minimum supported voltage.
+ *
+ * @param dev Regulator device instance.
+ * @param min_uv Where minimum voltage will be stored, in microvolts.
+ *
+ * @retval 0 If successful
+ * @retval -ENOENT If minimum voltage is not specified.
+ */
+static inline int regulator_common_get_min_voltage(const struct device *dev, int32_t *min_uv)
+{
+	const struct regulator_common_config *config =
+		(const struct regulator_common_config *)dev->config;
+
+	if (config->min_uv == INT32_MIN) {
+		return -ENOENT;
+	}
+
+	*min_uv = config->min_uv;
+	return 0;
+}
 
 /** @endcond */
 
@@ -256,6 +305,32 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
 	return api->dvs_state_set(dev, state);
 }
 
+/**
+ * @brief Enter ship mode.
+ *
+ * Some PMICs feature a ship mode, which allows the system to save power.
+ * Exit from low power is normally by pin transition.
+ *
+ * This API can be used when ship mode needs to be entered.
+ *
+ * @param dev Parent regulator device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If function is not implemented.
+ * @retval -errno In case of any other error.
+ */
+static inline int regulator_parent_ship_mode(const struct device *dev)
+{
+	const struct regulator_parent_driver_api *api =
+		(const struct regulator_parent_driver_api *)dev->api;
+
+	if (api->ship_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ship_mode(dev);
+}
+
 /** @} */
 
 /**
@@ -270,6 +345,7 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
  *
  * @retval 0 If regulator has been successfully enabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator enablement can not be controlled.
  */
 int regulator_enable(const struct device *dev);
 
@@ -297,6 +373,7 @@ bool regulator_is_enabled(const struct device *dev);
  *
  * @retval 0 If regulator has been successfully disabled.
  * @retval -errno Negative errno in case of failure.
+ * @retval -ENOTSUP If regulator disablement can not be controlled.
  */
 int regulator_disable(const struct device *dev);
 

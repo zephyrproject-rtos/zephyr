@@ -12,13 +12,15 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 #-------------------------------------------------------------------------------
 # Options
 
-set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
+set(SPHINXOPTS "-j auto -W --keep-going -T" CACHE STRING "Default Sphinx Options")
+set(SPHINXOPTS_EXTRA "" CACHE STRING "Extra Sphinx Options (added to defaults)")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
 separate_arguments(SPHINXOPTS)
+separate_arguments(SPHINXOPTS_EXTRA)
 separate_arguments(LATEXMKOPTS)
 
 #-------------------------------------------------------------------------------
@@ -145,6 +147,7 @@ add_doc_target(
     -w ${DOCS_BUILD_DIR}/html.log
     -t ${DOC_TAG}
     ${SPHINXOPTS}
+    ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
     ${DOCS_HTML_DIR}
   USES_TERMINAL
@@ -173,6 +176,7 @@ add_doc_target(
     -t ${DOC_TAG}
     -t svgconvert
     ${SPHINXOPTS}
+    ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
     ${DOCS_LATEX_DIR}
   USES_TERMINAL
@@ -223,6 +227,7 @@ add_doc_target(
     -w ${DOCS_BUILD_DIR}/linkcheck.log
     -t ${DOC_TAG}
     ${SPHINXOPTS}
+    ${SPHINXOPTS_EXTRA}
     ${DOCS_SRC_DIR}
     ${DOCS_LINKCHECK_DIR}
   USES_TERMINAL

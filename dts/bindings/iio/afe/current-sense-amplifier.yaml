@@ -1,0 +1,47 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  When an io-channel measures the voltage over a current sense amplifier,
+  the interesting measurement is almost always the current through the
+  sense resistor, not the voltage over it. This binding describes such a current
+  sense circuit.
+
+  This is based on Linux, documentation:
+    https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/afe/current-sense-amplifier.yaml
+
+compatible: "current-sense-amplifier"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      Channels available with this divider configuration.
+
+  sense-resistor-micro-ohms:
+    type: int
+    required: true
+    description: |
+      Resistance of the shunt resistor in micro-ohms
+
+  sense-gain-mult:
+    type: int
+    default: 1
+    description: |
+      Amplifier gain multiplier. The default is <1>.
+
+  sense-gain-div:
+    type: int
+    default: 1
+    description: |
+      Amplifier gain divider. The default is <1>.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Control power to the current amplifier.
+
+      If present the corresponding GPIO must be set to an active level
+      to enable the current amplifier.

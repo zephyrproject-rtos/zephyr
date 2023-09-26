@@ -12,7 +12,11 @@ toolchain:
   - xtools
 supported:
   - adc
+  - can
+  - dma
   - gpio
   - i2c
   - pwm
   - spi
+  - uart
+vendor: atmel

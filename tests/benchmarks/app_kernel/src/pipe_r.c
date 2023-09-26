@@ -127,15 +127,12 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	if (bench_test_end() < 0) {
 		if (high_timer_overflow()) {
 			PRINT_STRING("| Timer overflow. "
-			"Results are invalid            ",
-						 output_file);
+				     "Results are invalid            ");
 		} else {
 			PRINT_STRING("| Tick occurred. "
-			"Results may be inaccurate       ",
-						 output_file);
+				     "Results may be inaccurate       ");
 		}
-		PRINT_STRING("                             |\n",
-					 output_file);
+		PRINT_STRING("                             |\n");
 	}
 	return 0;
 }

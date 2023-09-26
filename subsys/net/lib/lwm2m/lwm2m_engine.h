@@ -31,23 +31,6 @@
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
 /**
- * @brief Used for debugging to print ip addresses.
- *
- * @param addr sockaddr for socket using ipv4 or ipv6
- * @return ip address in readable form
- */
-char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
-
-/**
- * @brief Converts the token to a printable format.
- *
- * @param[in] token Token to be printed
- * @param[in] tkl Lenghts of token
- * @return char buffer with the string representation of the token
- */
-char *sprint_token(const uint8_t *token, uint8_t tkl);
-
-/**
  * @brief Validates that writing is a legal operation on the field given by the object in
  * @p obj_inst and the resource id in @p msg. Returns the field to obj_field (if it exists).
  *
@@ -110,6 +93,36 @@ int bootstrap_delete(struct lwm2m_message *msg);
  * @return 0 for success or negative in case of error
  */
 int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms);
+
+/**
+ * @brief Update the period of a given service or remove it.
+ *
+ * Allow the period modification on an existing service created with
+ * lwm2m_engine_add_service(). When period is zero, service is removed.
+ *
+ * @param[in] service Handler of the periodic_service
+ * @param[in] period_ms New period for the periodic_service (in milliseconds) or zero.
+ *
+ * @return 0 for success, 1 when service was removed or negative in case of error.
+ */
+int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms);
+
+/**
+ * @brief Call specific service handler only once at given timestamp.
+ *
+ * @param[in] service service to be called
+ * @param[in] timestamp Time when to call
+ * @return 0 for success or negative in case of error
+ */
+int lwm2m_engine_call_at(k_work_handler_t service, int64_t timestamp);
+
+/**
+ * @brief Call given handler from engine context.
+ *
+ * @param[in] service Service callback to be called.
+ * @return 0 for success or negative in case of error
+ */
+int lwm2m_engine_call_now(k_work_handler_t service);
 
 /**
  * @brief Returns the index in the security objects list corresponding to the object instance
@@ -323,4 +336,13 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
 /* Resources */
 struct lwm2m_ctx **lwm2m_sock_ctx(void);
 int lwm2m_sock_nfds(void);
+
+/**
+ * @brief Trigger the LwM2M engine to run.
+ *
+ * This function wakes up ongoing poll() from the socket-loop.
+ * It should be called when new transmissions are scheduled or service schedules are modified.
+ */
+void lwm2m_engine_wake_up(void);
+
 #endif /* LWM2M_ENGINE_H */

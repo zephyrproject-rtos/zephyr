@@ -80,7 +80,7 @@ Our documentation processing has been tested to run with:
 * Graphviz 2.43
 * Latexmk version 4.56
 * All Python dependencies listed in the repository file
-  ``scripts/requirements-doc.txt``
+  ``doc/requirements.txt``
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
@@ -92,6 +92,13 @@ as described below:
 .. tabs::
 
    .. group-tab:: Linux
+
+      Common to all Linux installations, install the Python dependencies
+      required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
 
       On Ubuntu Linux:
 
@@ -122,6 +129,12 @@ as described below:
 
    .. group-tab:: macOS
 
+      Install the Python dependencies required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r ~/zephyrproject/zephyr/doc/requirements.txt
+
       Use ``brew`` and ``tlmgr`` to install the tools:
 
       .. code-block:: console
@@ -131,6 +144,12 @@ as described below:
          tlmgr install collection-fontsrecommended
 
    .. group-tab:: Windows
+
+      Install the Python dependencies required to build the documentation:
+
+      .. code-block:: console
+
+         pip install -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
 
       Open a ``cmd.exe`` window as **Administrator** and run the following command:
 
@@ -201,7 +220,7 @@ folder, here are the commands to generate the html content locally:
 Depending on your development system, it will take up to 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
 output with your browser started at ``doc/_build/html/index.html`` and
-if generated, the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
+if generated, the PDF file is available at ``doc/_build/latex/zephyr.pdf``.
 
 If you want to build the documentation from scratch just delete the contents
 of the build folder and run ``cmake`` and then ``ninja`` again.

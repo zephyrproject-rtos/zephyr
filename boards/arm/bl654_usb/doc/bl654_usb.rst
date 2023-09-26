@@ -130,7 +130,7 @@ before proceeding. These instructions were tested with version 6.1.0.
    The blue LED should start a fade pattern, signalling the bootloader is
    running.
 
-#. Compile a Zephyr application; we'll use :ref:`blinky <blinky-sample>`.
+#. Compile a Zephyr application; we'll use :zephyr:code-sample:`blinky`.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
@@ -171,7 +171,7 @@ Testing the LED on the BL654 USB
 There is a sample that allows you to test that the LED on
 the board is working properly with Zephyr:
 
-* :ref:`blinky-sample`
+* :zephyr:code-sample:`blinky`
 
 You can build and flash the example to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in

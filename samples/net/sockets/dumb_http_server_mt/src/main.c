@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 
 #define MY_PORT 8080
 
@@ -402,7 +402,7 @@ void start_listener(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
@@ -426,7 +426,7 @@ void main(void)
 					     event_handler, EVENT_MASK);
 		net_mgmt_add_event_callback(&mgmt_cb);
 
-		net_conn_mgr_resend_status();
+		conn_mgr_mon_resend_status();
 	}
 
 	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
@@ -450,4 +450,5 @@ void main(void)
 	} else {
 		exit(1);
 	}
+	return 0;
 }

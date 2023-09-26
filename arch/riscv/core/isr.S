@@ -103,6 +103,9 @@ GTEXT(_isr_wrapper)
  */
 SECTION_FUNC(exception.entry, _isr_wrapper)
 
+/* Provide requested alignment, which depends e.g. on MTVEC format */
+.balign CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT
+
 #ifdef CONFIG_USERSPACE
 	/* retrieve address of _current_cpu preserving s0 */
 	csrrw s0, mscratch, s0
@@ -557,6 +560,8 @@ irq_done:
 
 check_reschedule:
 
+#ifdef CONFIG_MULTITHREADING
+
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
 
@@ -586,6 +591,8 @@ z_riscv_thread_start:
 might_have_rescheduled:
 	/* reload s0 with &_current_cpu as it might have changed or be unset */
 	get_current_cpu s0
+
+#endif /* CONFIG_MULTITHREADING */
 
 no_reschedule:
 

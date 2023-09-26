@@ -28,7 +28,6 @@ set_compiler_property(PROPERTY warning_base
                       -Wformat
                       -Wformat-security
                       -Wno-format-zero-length
-                      -Wno-main-return-type
                       -Wno-unaligned-pointer-conversion
                       -Wno-incompatible-pointer-types-discards-qualifiers
                       -Wno-typedef-redefinition
@@ -204,3 +203,6 @@ if(CONFIG_ARCMWDT_LIBC)
   # to ASM builds (which may use 'stdbool.h').
   set_property(TARGET asm APPEND PROPERTY required "-I${NOSTDINC}")
 endif()
+
+# Remove after testing that -Wshadow works
+set_compiler_property(PROPERTY warning_shadow_variables)

@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/ppp.h>
 
 #include "net_private.h"
@@ -45,10 +45,10 @@ void ppp_network_done(struct ppp_context *ctx, int proto)
 {
 	ctx->network_protos_up--;
 	if (ctx->network_protos_up <= 0) {
-		const struct ppp_protocol_handler *proto = ppp_lcp_get();
+		const struct ppp_protocol_handler *ppp_proto = ppp_lcp_get();
 
-		if (proto) {
-			proto->close(ctx, "All networks down");
+		if (ppp_proto) {
+			ppp_proto->close(ctx, "All networks down");
 		}
 	}
 }

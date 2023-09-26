@@ -3,4 +3,6 @@ tests:
     ignore_faults: true
     arch_allow: x86
     filter: not CONFIG_X86_64
-    tags: interrupt idt
+    tags:
+      - interrupt
+      - idt

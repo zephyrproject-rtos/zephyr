@@ -6,8 +6,10 @@
 
 /dts-v1/;
 
-#include <atmel/samc21x18.dtsi>
+#include <atmel/samc21.dtsi>
+#include <atmel/samx2xx18.dtsi>
 #include "atsamc21n_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "SAM C21N Xplained Pro";
@@ -18,6 +20,7 @@
 		zephyr,shell-uart = &sercom4;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &can0;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -48,6 +51,7 @@
 		user_button: button_0 {
 			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -149,5 +153,31 @@
 			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};
+	};
+};
+
+&can0 {
+	status = "okay";
+
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
 	};
 };

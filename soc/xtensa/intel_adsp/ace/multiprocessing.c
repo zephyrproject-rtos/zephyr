@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/pm/pm.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -15,8 +17,12 @@
 #include <adsp_memory.h>
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
-#define CORE_POWER_CHECK_NUM 32
+#define CORE_POWER_CHECK_NUM 128
+
+#define CPU_POWERUP_TIMEOUT_USEC 10000
+
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 static void ipc_isr(void *arg)
@@ -47,7 +53,7 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-static __imr int soc_num_cpus_init(const struct device *dev)
+static __imr int soc_num_cpus_init(void)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
@@ -77,6 +83,17 @@ void soc_mp_init(void)
 	soc_cpus_active[0] = true;
 }
 
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
+/*
+ * Called after exiting D3 state when context restore is enabled.
+ * Re-enables IDC interrupt again for all cores. Called once from core 0.
+ */
+void soc_mp_on_d3_exit(void)
+{
+	soc_mp_init();
+}
+#endif
+
 void soc_start_core(int cpu_num)
 {
 	int retry = CORE_POWER_CHECK_NUM;
@@ -84,12 +101,29 @@ void soc_start_core(int cpu_num)
 	if (cpu_num > 0) {
 		/* Initialize the ROM jump address */
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
-		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
-		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
-		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
+#if CONFIG_PM
+		extern void dsp_restore_vector(void);
 
-		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
-			k_busy_wait(HW_STATE_CHECK_DELAY);
+		/* We need to find out what type of booting is taking place here. Secondary cores
+		 * can be disabled and enabled multiple times during runtime. During kernel
+		 * initialization, the next pm state is set to ACTIVE. This way we can determine
+		 * whether the core is being turned on again or for the first time.
+		 */
+		if (pm_state_next_get(cpu_num)->state == PM_STATE_ACTIVE) {
+			*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
+		} else {
+			*rom_jump_vector = (uint32_t) dsp_restore_vector;
+		}
+#else
+		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
+#endif
+
+		sys_cache_data_flush_range(rom_jump_vector, sizeof(*rom_jump_vector));
+		soc_cpu_power_up(cpu_num);
+
+		if (!WAIT_FOR(soc_cpu_is_powered(cpu_num),
+			      CPU_POWERUP_TIMEOUT_USEC, k_busy_wait(HW_STATE_CHECK_DELAY))) {
+			k_panic();
 		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
@@ -103,8 +137,9 @@ void soc_start_core(int cpu_num)
 	DSPCS.capctl[cpu_num].ctl &= ~DSPCS_CTL_SPA;
 
 	/* Checking current power status of the core. */
-	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) == DSPCS_CTL_CPA)) {
-		k_busy_wait(HW_STATE_CHECK_DELAY);
+	if (!WAIT_FOR((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) != DSPCS_CTL_CPA,
+		      CPU_POWERUP_TIMEOUT_USEC, k_busy_wait(HW_STATE_CHECK_DELAY))) {
+		k_panic();
 	}
 
 	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;
@@ -176,7 +211,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	ACE_PWRCTL->wpdsphpxpg &= ~BIT(id);
+	soc_cpu_power_down(id);
 	return 0;
 }
 #endif

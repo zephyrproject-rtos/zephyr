@@ -1,13 +1,14 @@
 /*
  * Copyright (c) 2018, Piotr Mienkowski
+ * Copyright (c) 2023, Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <em_emu.h>
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
@@ -15,10 +16,11 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  * PM_STATE_RUNTIME_IDLE: EM1 Sleep
  * PM_STATE_SUSPEND_TO_IDLE: EM2 Deep Sleep
  * PM_STATE_STANDBY: EM3 Stop
+ * PM_STATE_SOFT_OFF: EM4
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -46,6 +48,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		EMU_EnterEM3(true);
 		break;
+	case PM_STATE_SOFT_OFF:
+		EMU_EnterEM4();
+		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -58,7 +63,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);

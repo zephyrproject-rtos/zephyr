@@ -17,7 +17,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
@@ -135,9 +135,8 @@ uint64_t sys_clock_cycle_get_64(void)
 	return get_systimer_alarm();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
 		0,

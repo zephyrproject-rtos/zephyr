@@ -1,0 +1,13 @@
+# Copyright (c) 2023 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_IT8XXX2_SHA
+	bool "ITE IT8XXX2 SHA driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_SHA_ENABLED
+	select SOC_IT8XXX2_SHA256_HW_ACCELERATE
+	help
+	  Enable ITE IT8XXX2 SHA driver.
+	  This driver supports SHA256 hardware accelerator of the it8xxx2 series.
+	  It requires 256 + 256 bytes in the RAM's first 4k-bytes to calculate
+	  SHA256 hash.

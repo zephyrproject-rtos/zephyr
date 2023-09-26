@@ -83,7 +83,7 @@ static void init(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	init();
 
@@ -110,6 +110,7 @@ void main(void)
 		i2s_read(host_i2s_rx_dev, &rx_mem_block, &size);
 		memcpy(tx_mem_block, rx_mem_block, size);
 		i2s_write(host_i2s_tx_dev, tx_mem_block, size);
-		k_mem_slab_free(&i2s_rx_mem_slab, &rx_mem_block);
+		k_mem_slab_free(&i2s_rx_mem_slab, rx_mem_block);
 	}
+	return 0;
 }

@@ -1,0 +1,54 @@
+# ACPI configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ACPI
+	bool "ACPI support"
+	help
+	  This option enables support for ACPI driver.
+
+if ACPI
+
+module = ACPI
+module-str = acpi
+source "subsys/logging/Kconfig.template.log_config"
+
+config ACPI_MAX_PRT_ENTRY
+	int "Size of PRT buffer"
+	default 4096
+	help
+	  Size of PRT table buffer.
+
+config ACPI_SHELL
+	bool "ACPI command Shell"
+	default y
+	depends on SHELL
+	help
+	  Enable commands for debugging ACPI using the built-in shell.
+
+config ACPI_DEV_MAX
+	int "maximum child devices"
+	default 1000
+	help
+	  maximum acpi child devices.
+
+config ACPI_INIT_PRIORITY
+	int "acpi boot time init level"
+	default 42
+	help
+	  boot time init level for acpi driver.
+
+config ACPI_MAX_INIT_TABLES
+	int "maximum table entries"
+	default 128
+	help
+	  maximum number of table entries.
+
+endif # ACPI
+
+config ACPI_HID_LEN_MAX
+	int "Size of HID name"
+	default 12
+	help
+	  Size of HID string.

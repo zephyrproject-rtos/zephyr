@@ -38,11 +38,19 @@ properties:
   dmas:
     description: |
       Optional DMA channel specifier. If DMA should be used, specifier should
-      hold a phandle reference to the dma controller, the channel number,
-      the slot number, channel configuration and finally features.
+      hold a phandle reference to the dma controller (not the DMAMUX even if present),
+      the channel number, the slot number, channel configuration and finally features.
+      (depending on the type of DMA: 'features' is optional)
 
-      For example dmas for TX/RX on QSPI
-         dmas = <&dma1 5 5 0x0000 0x03>;
+      When a DMAMUX is present and enabled, the channel is the dma one
+      (not dmamux channel). The request is given by the DMAMUX (no 'features' required).
+
+      For example with DMA 2 for TX/RX on QSPI like stm32l496 (no 'features')
+         /* select DMA2 channel 7 request 3 for QUADSPI */
+         dmas = <&dma2 7 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+      For example with a DMAMUX for TX/RX on QSPI like stm32wb55  (no 'features')
+         /* select DMA2 channel 0, request 20 for QUADSPI */
+         dmas = <&dma2 0 20 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
 
   dma-names:
     description: |

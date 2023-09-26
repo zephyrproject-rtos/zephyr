@@ -158,11 +158,11 @@ struct udc_event {
 	union {
 		/** Event value */
 		uint32_t value;
+		/** Event status value, if any */
+		int status;
 		/** Pointer to request used only for UDC_EVT_EP_REQUEST */
 		struct net_buf *buf;
 	};
-	/** Event status, 0 on success, other values on error */
-	int status;
 	/** Pointer to device struct */
 	const struct device *dev;
 };
@@ -191,6 +191,8 @@ struct udc_buf_info {
 	unsigned int queued : 1;
 	/** Transfer owner (usually pointer to a class instance) */
 	void *owner;
+	/** Transfer result, 0 on success, other values on error */
+	int err;
 } __packed;
 
 /**
@@ -476,7 +478,7 @@ static inline int udc_host_wakeup(const struct device *dev)
  * of the endpoint. All properties of the descriptor,
  * such as direction, and transfer type, should be set correctly.
  * If wMaxPacketSize value is zero, it will be
- * updated to maximum buffer size of the enpoint.
+ * updated to maximum buffer size of the endpoint.
  *
  * @param[in] dev        Pointer to device struct of the driver instance
  * @param[in] ep         Endpoint address (same as bEndpointAddress)

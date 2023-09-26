@@ -37,6 +37,7 @@ alphascale	AlphaScale Integrated Circuits Systems, Inc.
 alps	Alps Electric Co., Ltd.
 alt	Altus-Escon-Company BV
 altr	Altera Corp.
+ambiq	Ambiq Micro, Inc.
 amarula	Amarula Solutions
 amazon	Amazon.com, Inc.
 amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
@@ -150,10 +151,12 @@ delta	Delta Electronics, Inc.
 denx	Denx Software Engineering
 devantech	Devantech, Ltd.
 dfi	DFI Inc.
+dfrobot	DFRobot
 dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
 digilent	Diglent, Inc.
+diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
@@ -172,6 +175,7 @@ ebv	EBV Elektronik
 eckelmann	Eckelmann AG
 edt	Emerging Display Technologies
 eeti	eGalax_eMPIA Technology Inc
+efinix	Efinix Inc
 einfochips	Einfochips
 elan	Elan Microelectronic Corp.
 element14	Element14 (A Premier Farnell Company)
@@ -201,7 +205,7 @@ evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
-facebook	Facebook
+facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
@@ -209,6 +213,7 @@ fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
 fii	Foxconn Industrial Internet
+fintek	Feature Integration Technology Inc.
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
 frida	Shenzhen Frida LCD Co., Ltd.
@@ -239,6 +244,7 @@ greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
+hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
@@ -287,6 +293,7 @@ invensense	InvenSense Inc.
 inversepath	Inverse Path
 iom	Iomega Corporation
 isee	ISEE 2007 S.L.
+isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
 ite	ITE Tech. Inc.
@@ -296,6 +303,7 @@ jdi	Japan Display Inc.
 jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jianda	Jiandangjing Technology Co., Ltd.
+jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
@@ -368,12 +376,12 @@ menlo	Menlo Systems GmbH
 mentor	Mentor Graphics
 meraki	Cisco Meraki, LLC
 merrii	Merrii Technology Co., Ltd.
+meta	Meta Platforms, Inc.
 micrel	Micrel Inc.
 microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
-microsemi	Microchip Technology Inc. (formerly Microsemi Corporation)
 microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
@@ -390,7 +398,6 @@ mpl	MPL AG
 mps	Monolithic Power Systems Inc.
 mqmaker	mqmaker Inc.
 mrvl	Marvell Technology Group Ltd.
-mscc	Microsemi Corporation
 msi	Micro-Star International Co. Ltd.
 mstar	MStar Semiconductor, Inc. (acquired by MediaTek Inc.)
 mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
@@ -416,6 +423,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
+noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nutsboard	NutsBoard
 nuclei	Nuclei System Technology
@@ -437,6 +445,7 @@ opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
 openisa	open-isa.org
 openrisc	OpenRISC.io
+openthread	OpenThread.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.
 ORCL	Oracle Corporation
@@ -477,6 +486,7 @@ powervr	PowerVR (deprecated, use img)
 primux	Primux Trading, S.L.
 probox2	PROBOX2 (by W2COMP Co., Ltd.)
 prt	Protonic Holland
+ptc	Princeton Technology Corp.
 pulsedlight	PulsedLight, Inc
 purism	Purism, SPC
 qca	Qualcomm Atheros, Inc.
@@ -553,6 +563,7 @@ simcom	SIMCom Wireless Solutions Co., LTD
 simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
+sinowealth	Sino Wealth Electronic Ltd
 sipeed	Shenzhen Sipeed Technology Co., Ltd.
 sirf	SiRF Technology, Inc.
 sis	Silicon Integrated Systems Corp.
@@ -609,6 +620,7 @@ topeet	Topeet
 toppoly	TPO (deprecated, use tpo)
 topwise	Topwise Communication Co., Ltd.
 toradex	Toradex AG
+torex	Torex Semiconductor Ltd.
 toshiba	Toshiba Corporation
 toumaz	Toumaz
 tpk	TPK U.S.A. LLC

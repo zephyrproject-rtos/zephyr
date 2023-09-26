@@ -7,7 +7,6 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/conn.h>
 #include <common/bt_str.h>
-#include "host/ecc.h"
 #include "access.h"
 #include "prov.h"
 #include "rpr.h"
@@ -84,7 +83,7 @@ static void tx_complete(struct bt_mesh_rpr_cli *cli, int err, void *cb_data)
 	LOG_DBG("%d", err);
 
 	cli->link.tx_pdu++;
-	bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_clear(&cli->prov_ack_ctx);
 
 	if (bearer.tx.cb) {
 		bearer.tx.cb(err, cb_data);
@@ -130,8 +129,7 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
 	struct bt_mesh_rpr_link link;
-	uint8_t reason = PROV_ERR_NONE;
-	void *cb_data;
+	uint8_t reason = PROV_BEARER_LINK_STATUS_SUCCESS;
 
 	link.status = net_buf_simple_pull_u8(buf);
 	link.state = net_buf_simple_pull_u8(buf);
@@ -140,13 +138,6 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	} else if (buf->len) {
 		LOG_WRN("Invalid link report len");
 		return -EINVAL;
-	}
-
-	/* The server uses the link report to notify about failed tx */
-	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_LINK_REPORT,
-				      srv.addr, &cb_data) &&
-	    link.status != BT_MESH_RPR_SUCCESS) {
-		tx_complete(cli, -ECANCELED, cb_data);
 	}
 
 	if (cli->link.srv.addr != srv.addr) {
@@ -158,8 +149,8 @@ static int handle_link_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
 	cli->link.state = link.state;
 
-	LOG_DBG("0x%04x: status: %u state: %u", srv.addr, link.status,
-	       link.state);
+	LOG_DBG("0x%04x: status: %u state: %u reason: %u", srv.addr, link.status, link.state,
+		reason);
 
 	if (link.state == BT_MESH_RPR_LINK_IDLE) {
 		link_reset(cli);
@@ -184,10 +175,10 @@ static int handle_link_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	LOG_DBG("0x%04x: status: %u state: %u", srv.addr, link.status,
 	       link.state);
 
-	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_LINK_STATUS,
+	if (bt_mesh_msg_ack_ctx_match(&cli->prov_ack_ctx, RPR_OP_LINK_STATUS,
 				      srv.addr, (void **)&rsp)) {
 		*rsp = link;
-		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+		bt_mesh_msg_ack_ctx_rx(&cli->prov_ack_ctx);
 	}
 
 	if (cli->link.srv.addr == srv.addr) {
@@ -223,7 +214,7 @@ static int handle_pdu_outbound_report(struct bt_mesh_model *mod, struct bt_mesh_
 
 	k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_PDU_OUTBOUND_REPORT,
+	if (!bt_mesh_msg_ack_ctx_match(&cli->prov_ack_ctx, RPR_OP_PDU_OUTBOUND_REPORT,
 				       srv.addr, &cb_data) ||
 	    num != cli->link.tx_pdu) {
 		LOG_WRN("Non-matching PDU report (%u)", num);
@@ -273,7 +264,7 @@ static int handle_scan_caps_status(struct bt_mesh_model *mod, struct bt_mesh_msg
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_caps *caps;
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_SCAN_CAPS_STATUS,
+	if (!bt_mesh_msg_ack_ctx_match(&cli->scan_ack_ctx, RPR_OP_SCAN_CAPS_STATUS,
 				       srv.addr, (void **)&caps)) {
 		LOG_WRN("Unexpected scan caps rsp from 0x%04x", srv.addr);
 		return 0;
@@ -285,7 +276,7 @@ static int handle_scan_caps_status(struct bt_mesh_model *mod, struct bt_mesh_msg
 	LOG_DBG("max devs: %u active scan: %u", caps->max_devs,
 	       caps->active_scan);
 
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_rx(&cli->scan_ack_ctx);
 
 	return 0;
 }
@@ -299,9 +290,9 @@ static int handle_scan_report(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
 	dev.rssi = net_buf_simple_pull_u8(buf);
 	memcpy(dev.uuid, net_buf_simple_pull_mem(buf, 16), 16);
-	dev.oob = net_buf_simple_pull_be16(buf);
+	dev.oob = net_buf_simple_pull_le16(buf);
 	if (buf->len == 4) {
-		dev.hash = net_buf_simple_pull_be32(buf);
+		memcpy(&dev.hash, net_buf_simple_pull_mem(buf, 4), 4);
 		dev.flags = BT_MESH_RPR_UNPROV_HASH;
 	} else if (buf->len) {
 		return -EINVAL;
@@ -329,7 +320,7 @@ static int handle_scan_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	struct bt_mesh_rpr_scan_status *status;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, RPR_OP_SCAN_STATUS,
+	if (!bt_mesh_msg_ack_ctx_match(&cli->scan_ack_ctx, RPR_OP_SCAN_STATUS,
 				       srv.addr, (void **)&status)) {
 		LOG_WRN("Unexpected scan status from 0x%04x", srv.addr);
 		return 0;
@@ -342,7 +333,7 @@ static int handle_scan_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
 	LOG_DBG("status: %u state: %u max devs: %u timeout: %u seconds",
 	       status->status, status->scan, status->max_devs, status->timeout);
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_rx(&cli->scan_ack_ctx);
 
 	return 0;
 }
@@ -372,12 +363,19 @@ static void link_timeout(struct k_work *work)
 
 static int rpr_cli_init(struct bt_mesh_model *mod)
 {
+	if (mod->elem_idx) {
+		LOG_ERR("Remote provisioning client must be initialized "
+			"on first element");
+		return -EINVAL;
+	}
+
 	struct bt_mesh_rpr_cli *cli = mod->user_data;
 
 	cli->mod = mod;
 	cli->link.time = LINK_TIMEOUT_SECONDS_DEFAULT;
 
-	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_init(&cli->scan_ack_ctx);
+	bt_mesh_msg_ack_ctx_init(&cli->prov_ack_ctx);
 	k_work_init_delayable(&cli->link.timeout, link_timeout);
 	mod->keys[0] = BT_MESH_KEY_DEV_ANY;
 	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
@@ -422,27 +420,27 @@ static const struct bt_mesh_send_cb pdu_send_cb = {
 };
 
 static int tx_wait(struct bt_mesh_rpr_cli *cli,
-		   const struct bt_mesh_rpr_node *srv,
+		   struct bt_mesh_msg_ack_ctx *ack_ctx, const struct bt_mesh_rpr_node *srv,
 		   struct net_buf_simple *buf, uint32_t rsp, void *rsp_ctx)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(srv, false);
 	int err;
 
-	err = bt_mesh_msg_ack_ctx_prepare(&cli->ack_ctx, rsp, srv->addr, rsp_ctx);
+	err = bt_mesh_msg_ack_ctx_prepare(ack_ctx, rsp, srv->addr, rsp_ctx);
 	if (err) {
 		return err;
 	}
 
 	err = bt_mesh_model_send(cli->mod, &ctx, buf, NULL, NULL);
 	if (err) {
-		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		bt_mesh_msg_ack_ctx_clear(ack_ctx);
 		LOG_WRN("TX fail");
 		return err;
 	}
 
-	err = bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(tx_timeout));
+	err = bt_mesh_msg_ack_ctx_wait(ack_ctx, K_MSEC(tx_timeout));
 
-	bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_clear(ack_ctx);
 	return err;
 }
 
@@ -461,7 +459,7 @@ static void link_reset(struct bt_mesh_rpr_cli *cli)
 	k_work_cancel_delayable(&cli->link.timeout);
 	cli->link.srv.addr = BT_MESH_ADDR_UNASSIGNED;
 	cli->link.state = BT_MESH_RPR_LINK_IDLE;
-	bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+	bt_mesh_msg_ack_ctx_clear(&cli->prov_ack_ctx);
 }
 
 static void link_closed(struct bt_mesh_rpr_cli *cli,
@@ -488,7 +486,7 @@ int bt_mesh_rpr_scan_caps_get(struct bt_mesh_rpr_cli *cli,
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_CAPS_GET, 0);
 	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_CAPS_GET);
 
-	return tx_wait(cli, srv, &buf, RPR_OP_SCAN_CAPS_STATUS, caps);
+	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_CAPS_STATUS, caps);
 }
 
 int bt_mesh_rpr_scan_get(struct bt_mesh_rpr_cli *cli,
@@ -498,7 +496,7 @@ int bt_mesh_rpr_scan_get(struct bt_mesh_rpr_cli *cli,
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_GET, 0);
 	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_GET);
 
-	return tx_wait(cli, srv, &buf, RPR_OP_SCAN_STATUS, status);
+	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_STATUS, status);
 }
 
 int bt_mesh_rpr_scan_start(struct bt_mesh_rpr_cli *cli,
@@ -521,7 +519,7 @@ int bt_mesh_rpr_scan_start(struct bt_mesh_rpr_cli *cli,
 		net_buf_simple_add_mem(&buf, uuid, 16);
 	}
 
-	return tx_wait(cli, srv, &buf, RPR_OP_SCAN_STATUS, status);
+	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_STATUS, status);
 }
 
 int bt_mesh_rpr_scan_start_ext(struct bt_mesh_rpr_cli *cli,
@@ -558,7 +556,7 @@ int bt_mesh_rpr_scan_stop(struct bt_mesh_rpr_cli *cli,
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_STOP, 0);
 	bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_STOP);
 
-	return tx_wait(cli, srv, &buf, RPR_OP_SCAN_STATUS, status);
+	return tx_wait(cli, &cli->scan_ack_ctx, srv, &buf, RPR_OP_SCAN_STATUS, status);
 }
 
 int bt_mesh_rpr_link_get(struct bt_mesh_rpr_cli *cli,
@@ -568,7 +566,7 @@ int bt_mesh_rpr_link_get(struct bt_mesh_rpr_cli *cli,
 	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_GET, 0);
 	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_GET);
 
-	return tx_wait(cli, srv, &buf, RPR_OP_LINK_STATUS, rsp);
+	return tx_wait(cli, &cli->prov_ack_ctx, srv, &buf, RPR_OP_LINK_STATUS, rsp);
 }
 
 int bt_mesh_rpr_link_close(struct bt_mesh_rpr_cli *cli,
@@ -579,7 +577,7 @@ int bt_mesh_rpr_link_close(struct bt_mesh_rpr_cli *cli,
 	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_CLOSE);
 	net_buf_simple_add_u8(&buf, PROV_BEARER_LINK_STATUS_FAIL);
 
-	return tx_wait(cli, srv, &buf, RPR_OP_LINK_STATUS, rsp);
+	return tx_wait(cli, &cli->prov_ack_ctx, srv, &buf, RPR_OP_LINK_STATUS, rsp);
 }
 
 static int link_open_prov(struct bt_mesh_rpr_cli *cli,
@@ -654,7 +652,7 @@ static int send(struct bt_mesh_rpr_cli *cli, struct net_buf_simple *buf,
 		return -EINVAL;
 	}
 
-	err = bt_mesh_msg_ack_ctx_prepare(&cli->ack_ctx,
+	err = bt_mesh_msg_ack_ctx_prepare(&cli->prov_ack_ctx,
 					  RPR_OP_PDU_OUTBOUND_REPORT,
 					  cli->link.srv.addr, cb_data);
 	if (err) {

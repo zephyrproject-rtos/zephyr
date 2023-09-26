@@ -5,7 +5,7 @@ description: NXP S32 NETC Physical Station Interface (PSI)
 
 compatible: "nxp,s32-netc-psi"
 
-include: [ethernet.yaml, pinctrl-device.yaml]
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -22,11 +22,8 @@ properties:
   mbox-names:
     required: true
 
-  phy-dev:
+  phy-handle:
     required: true
-    type: phandle
-    description: |
-      Ethernet PHY device managed by this network interface.
 
   vsis:
     type: array

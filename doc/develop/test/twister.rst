@@ -290,10 +290,10 @@ skip: <True|False> (default False)
     skip testcase unconditionally. This can be used for broken tests.
 
 slow: <True|False> (default False)
-    Don't run this test case unless --enable-slow was passed in on the
-    command line. Intended for time-consuming test cases that are only
-    run under certain circumstances, like daily builds. These test cases
-    are still compiled.
+    Don't run this test case unless --enable-slow or --enable-slow-only was
+    passed in on the command line. Intended for time-consuming test cases that
+    are only run under certain circumstances, like daily builds. These test
+    cases are still compiled.
 
 extra_args: <list of extra arguments>
     Extra arguments to pass to Make when building or running the
@@ -360,7 +360,7 @@ min_flash: <integer>
     compared with information provided by the board metadata.
 
 timeout: <number of seconds>
-    Length of time to run test in QEMU before automatically killing it.
+    Length of time to run test before automatically killing it.
     Default to 60 seconds.
 
 arch_allow: <list of arches, such as x86, arm, arc>
@@ -408,8 +408,6 @@ harness: <string>
     keyboard harness is set on tests that require keyboard interaction to reach
     verdict on whether a test has passed or failed, however, Twister lack this
     harness implementation at the momemnt.
-    The console harness tells Twister to parse a test's text output for a regex
-    defined in the test's YAML file.
 
     Supported harnesses:
 
@@ -417,6 +415,17 @@ harness: <string>
     - test
     - console
     - pytest
+    - gtest
+    - robot
+
+    Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
+    output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
+    for pass/fail/etc. frames defined in those frameworks. Use ``gtest``
+    harness if you've already got tests written in the gTest framework and do
+    not wish to update them to zTest. The ``console`` harness tells Twister to
+    parse a test's text output for a regex defined in the test's YAML file.
+    The ``robot`` harness is used to execute Robot Framework test suites
+    in the Renode simulation framework.
 
     Some widely used harnesses that are not supported yet:
 
@@ -483,13 +492,17 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per testcase and the fixture name has to
         be unique across all tests in the test suite.
 
-    pytest_root: <pytest directory> (default pytest)
-        Specify a pytest directory which need to execute when test case begin to running,
-        default pytest directory name is pytest, after pytest finished, twister will
-        check if this case pass or fail according the pytest report.
+    pytest_root: <list of pytest testpaths> (default pytest)
+        Specify a list of pytest directories, files or subtests that need to be executed
+        when test case begin to running, default pytest directory is pytest.
+        After pytest finished, twister will check if this case pass or fail according
+        to the pytest report.
 
     pytest_args: <list of arguments> (default empty)
         Specify a list of additional arguments to pass to ``pytest``.
+
+    robot_test_path: <robot file path> (default empty)
+        Specify a path to a file containing a Robot Framework test suite to be run.
 
     The following is an example yaml file with a few harness_config options.
 
@@ -514,15 +527,34 @@ harness_config: <harness configuration options>
 
     The following is an example yaml file with pytest harness_config options,
     default pytest_root name "pytest" will be used if pytest_root not specified.
-    please refer the example in samples/subsys/testsuite/pytest/.
+    please refer the examples in samples/subsys/testsuite/pytest/.
+
+    ::
+
+        common:
+          harness: pytest
+        tests:
+          pytest.example.directories:
+            harness_config:
+              pytest_root:
+                - pytest_dir1
+                - $ENV_VAR/samples/test/pytest_dir2
+          pytest.example.files_and_subtests:
+            harness_config:
+              pytest_root:
+                - pytest/test_file_1.py
+                - test_file_2.py::test_A
+                - test_file_2.py::test_B[param_a]
+
+    The following is an example yaml file with robot harness_config options.
 
     ::
 
         tests:
-          pytest.example:
-            harness: pytest
+          robot.example:
+            harness: robot
             harness_config:
-              pytest_root: [pytest directory name]
+              robot_test_path: [robot file path]
 
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
@@ -539,7 +571,7 @@ filter: <expression>
     Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
     can be done. Existence of "dt_*" entries indicates devicetree is needed.
     Existence of "CONFIG*" entries indicates kconfig is needed.
-    If there are no other types of entries in the expression a filtration can be done wihout creating a complete build system.
+    If there are no other types of entries in the expression a filtration can be done without creating a complete build system.
     If there are entries of other types a full cmake is required.
 
     The grammar for the expression language is as follows:
@@ -594,6 +626,24 @@ filter: <expression>
 
     Would match it.
 
+required_snippets: <list of needed snippets>
+    :ref:`Snippets <snippets>` are supported in twister for test cases that
+    require them. As with normal applications, twister supports using the base
+    zephyr snippet directory and test application directory for finding
+    snippets. Listed snippets will filter supported tests for boards (snippets
+    must be compatible with a board for the test to run on them, they are not
+    optional).
+
+    The following is an example yaml file with 2 required snippets.
+
+    ::
+
+        tests:
+          snippet.example:
+            required_snippets:
+              - cdc-acm-console
+              - user-snippet-example
+
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
 running with -v or examining the discard report
@@ -620,6 +670,42 @@ the scope of builds and tests if applicable to platforms defined under the
 integration keyword in the testcase definition file (testcase.yaml and
 sample.yaml).
 
+
+Running tests on custom emulator
+********************************
+
+Apart from the already supported QEMU and other simulated environments, Twister
+supports running any out-of-tree custom emulator defined in the board's :file:`board.cmake`.
+To use this type of simulation, add the following properties to
+:file:`custom_board/custom_board.yaml`:
+
+::
+
+   simulation: custom
+   simulation_exec: <name_of_emu_binary>
+
+This tells Twister that the board is using a custom emulator called ``<name_of_emu_binary>``,
+make sure this binary exists in the PATH.
+
+Then, in :file:`custom_board/board.cmake`, set the supported emulation platforms to ``custom``:
+
+::
+
+   set(SUPPORTED_EMU_PLATFORMS custom)
+
+Finally, implement the ``run_custom`` target in :file:`custom_board/board.cmake`.
+It should look something like this:
+
+::
+
+   add_custom_target(run_custom
+     COMMAND
+     <name_of_emu_binary to invoke during 'run'>
+     <any args to be passed to the command, i.e. ${BOARD}, ${APPLICATION_BINARY_DIR}/zephyr/zephyr.elf>
+     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+     DEPENDS ${logical_target_for_zephyr_elf}
+     USES_TERMINAL
+     )
 
 Running Tests on Hardware
 *************************
@@ -680,6 +766,13 @@ In this case you can run twister with the following options:
 The script is user-defined and handles delivering the messages which can be
 used by twister to determine the test execution status.
 
+The ``--device-flash-timeout`` option allows to set explicit timeout on the
+device flash operation, for example when device flashing takes significantly
+large time.
+
+The ``--device-flash-with-test`` option indicates that on the platform
+the flash operation also executes a test case, so the flash timeout is
+increased by a test case timeout.
 
 Executing tests on multiple devices
 ===================================
@@ -820,18 +913,13 @@ on those platforms.
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
+Hardware map allows to set ``--device-flash-timeout`` and ``--device-flash-with-test``
+command line options as ``flash-timeout`` and ``flash-with-test`` fields respectively.
+These hardware map values override command line options for the particular platform.
+
 Serial PTY support using ``--device-serial-pty``  can also be used in the
 hardware map::
 
- - connected: true
-   id: None
-   platform: intel_adsp_cavs18
-   product: None
-   runner: intel_adsp
-   serial_pty: path/to/script.py
-   runner_params:
-     - --remote-host=remote_host_ip_addr
-     - --key=/path/to/key.pem
  - connected: true
    id: None
    platform: intel_adsp_cavs25
@@ -855,7 +943,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp_cavs18 --device-testing --device-serial-pty script.py
+         twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
@@ -1020,9 +1108,9 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_onl_all` options used in some testscases.
+- Ability to override `build_onl_all` options used in some testcases.
   This will treat tests or sample as any other just build for default
-  platforms you specify in the configuation file or on the command line.
+  platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
   default platforms are not in scope.
 
@@ -1075,6 +1163,53 @@ And example test level configuration::
 	      - arch.interrupt
 	      - boards.*
 
+
+Combined configuration
+======================
+
+To mix the Platform and level configuration, you can take an example as below:
+
+And example platforms plus level configuration::
+
+	platforms:
+	  override_default_platforms: true
+	  default_platforms:
+	    - frdm_k64f
+	levels:
+	  - name: smoke
+	    description: >
+	        A plan to be used verifying basic zephyr features.
+	  - name: unit
+	    description: >
+	        A plan to be used verifying unit test.
+	  - name: integration
+	    description: >
+	        A plan to be used verifying integration.
+	  - name: acceptance
+	    description: >
+	        A plan to be used verifying acceptance.
+	  - name: system
+	    description: >
+	        A plan to be used verifying system.
+	  - name: regression
+	    description: >
+	        A plan to be used verifying regression.
+
+
+To run with above test_config.yaml file, only default_paltforms with given test level
+test cases will run.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         scripts/twister --test-config=<path to>/test_config.yaml
+          -T tests --level="smoke"
+
+
+
 Running in Tests in Random Order
 ********************************
 Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
@@ -1083,3 +1218,43 @@ dependencies between test cases.  For native_posix platforms, you can provide
 the seed to the random number generator by providing ``-seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.
+
+Robot Framework Tests
+*********************
+Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for automated testing.
+
+Robot files allow you to express interactive test scenarios in human-readable text format and execute them in simulation or against hardware.
+At this moment Zephyr integration supports running Robot tests in the `Renode <https://renode.io/>`_ simulation framework.
+
+To execute a Robot test suite with twister, run the following command:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         $ ./scripts/twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
+
+   .. group-tab:: Windows
+
+      .. code-block:: bat
+
+         python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
+
+It's also possible to run it by `west` directly, with:
+
+.. code-block:: bash
+
+   $ ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
+
+Writing Robot tests
+===================
+
+For the list of keywords provided by the Robot Framework itself, refer to `the official Robot documentation <https://robotframework.org/robotframework/>`_.
+
+Information on writing and running Robot Framework tests in Renode can be found in `the testing section <https://renode.readthedocs.io/en/latest/introduction/testing.html>`_ of Renode documentation.
+It provides a list of the most commonly used keywords together with links to the source code where those are defined.
+
+It's possible to extend the framework by adding new keywords expressed directly in Robot test suite files, as an external Python library or, like Renode does it, dynamically via XML-RPC.
+For details see the `extending Robot Framework <https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#extending-robot-framework>`_ section in the official Robot documentation.

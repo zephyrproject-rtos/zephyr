@@ -66,7 +66,7 @@ struct mcp9808_data {
 
 	const struct device *dev;
 
-	struct sensor_trigger trig;
+	const struct sensor_trigger *trig;
 	sensor_trigger_handler_t trigger_handler;
 #endif
 

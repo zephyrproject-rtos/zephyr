@@ -79,6 +79,10 @@ already supported, which can also be re-used on this lpcxpresso55s36 board:
 +-----------+------------+-------------------------------------+
 | CSS       | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| USB FS    | on-chip    | USB Full Speed device               |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
@@ -136,6 +140,8 @@ the functionality of a pin.
 | PIO1_2  | CAN0_TXD        | CAN TX                     |
 +---------+-----------------+----------------------------+
 | PIO1_3  | CAN0_RXD        | CAN RX                     |
++---------+-----------------+----------------------------+
+| PIO0_22 | USB0_VBUS       | USBFS VBUS                 |
 +---------+-----------------+----------------------------+
 
 System Clock

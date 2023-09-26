@@ -222,7 +222,7 @@ static struct lwm2m_engine_obj_inst *generic_sensor_create(uint16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int ipso_generic_sensor_init(const struct device *dev)
+static int ipso_generic_sensor_init(void)
 {
 	sensor.obj_id = IPSO_OBJECT_ID;
 	sensor.version_major = GENERIC_VERSION_MAJOR;

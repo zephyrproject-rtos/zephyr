@@ -47,7 +47,7 @@ int icmsg_me_init(const struct icmsg_config_t *conf,
 	k_event_init(&data->event);
 	k_mutex_init(&data->send_mutex);
 
-	return icmsg_init(conf, &data->icmsg_data);
+	return 0;
 }
 
 int icmsg_me_open(const struct icmsg_config_t *conf,
@@ -168,7 +168,7 @@ int icmsg_me_send(const struct icmsg_config_t *conf,
 		  const void *msg, size_t len)
 {
 	int r;
-	int sent_bytes;
+	int sent_bytes = 0;
 
 	if (user_buffer_len_to_icmsg_buffer_len(len) >= SEND_BUF_SIZE) {
 		return -EBADMSG;

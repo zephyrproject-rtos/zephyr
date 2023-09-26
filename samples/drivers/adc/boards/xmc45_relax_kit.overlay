@@ -4,8 +4,6 @@
  * Copyright (c) 2022 Andriy Gelman <andriy.gelman@gmail.com>
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
 	zephyr,user {
 		io-channels = <&adc0 0>; /* P14.0 */

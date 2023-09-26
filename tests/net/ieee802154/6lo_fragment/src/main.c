@@ -492,7 +492,7 @@ static bool test_fragment(struct net_fragment_data *data)
 		goto end;
 	}
 
-	if (!ieee802154_6lo_requires_fragmentation(pkt, 0)) {
+	if (!ieee802154_6lo_requires_fragmentation(pkt, 0, 0)) {
 		f_pkt = pkt;
 		pkt = NULL;
 

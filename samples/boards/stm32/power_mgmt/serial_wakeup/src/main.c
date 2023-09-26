@@ -11,14 +11,14 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(dev)) {
 		printk("Console device not ready");
-		return;
+		return 0;
 	}
 
 #if CONFIG_PM_DEVICE
@@ -51,4 +51,5 @@ void main(void)
 	}
 #endif
 
+	return 0;
 }

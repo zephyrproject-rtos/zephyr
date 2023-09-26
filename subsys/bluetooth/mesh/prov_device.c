@@ -19,9 +19,6 @@
 
 #include "common/bt_str.h"
 
-#include "host/ecc.h"
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
@@ -40,14 +37,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_prov_device);
 
-static void send_pub_key(void);
-static void pub_key_ready(const uint8_t *pkey);
 static void reprovision_fail(void);
-
-static int reset_state(void)
-{
-	return bt_mesh_prov_reset_state(pub_key_ready);
-}
 
 static void prov_send_fail_msg(uint8_t err)
 {
@@ -301,7 +291,7 @@ static void send_pub_key(void)
 	PROV_BUF(buf, PDU_LEN_PUB_KEY);
 	const uint8_t *key;
 
-	key = bt_pub_key_get();
+	key = bt_mesh_pub_key_get();
 	if (!key) {
 		LOG_ERR("No public key available");
 		prov_fail(PROV_ERR_UNEXP_ERR);
@@ -309,13 +299,8 @@ static void send_pub_key(void)
 	}
 
 	bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
-
-	/* Swap X and Y halves independently to big-endian */
-	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), key, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), &key[BT_PUB_KEY_COORD_LEN],
-			BT_PUB_KEY_COORD_LEN);
-
-	LOG_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
+	net_buf_simple_add_mem(&buf, key, PUB_KEY_SIZE);
+	LOG_DBG("Local Public Key: %s", bt_hex(buf.data + 1, PUB_KEY_SIZE));
 
 	/* PublicKeyDevice */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, &buf.data[1], PDU_LEN_PUB_KEY);
@@ -328,70 +313,38 @@ static void send_pub_key(void)
 	start_auth();
 }
 
-static void dh_key_gen_complete(void)
-{
-	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, BT_DH_KEY_LEN));
-
-	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_DH_KEY) &&
-	    atomic_test_bit(bt_mesh_prov_link.flags, OOB_PUB_KEY)) {
-		send_confirm();
-	} else if (!atomic_test_bit(bt_mesh_prov_link.flags, OOB_PUB_KEY)) {
-		send_pub_key();
-	}
-}
-
-static void prov_dh_key_cb(const uint8_t dhkey[BT_DH_KEY_LEN])
-{
-	LOG_DBG("%p", dhkey);
-
-	if (!dhkey) {
-		LOG_ERR("DHKey generation failed");
-		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
-	}
-
-	sys_memcpy_swap(bt_mesh_prov_link.dhkey, dhkey, BT_DH_KEY_LEN);
-
-	dh_key_gen_complete();
-}
-
 static void prov_dh_key_gen(void)
 {
-	const uint8_t *remote_pk;
-	uint8_t remote_pk_le[BT_PUB_KEY_LEN];
+	const uint8_t *remote_pub_key;
+	const uint8_t *remote_priv_key;
 
-	remote_pk = bt_mesh_prov_link.conf_inputs.pub_key_provisioner;
+	remote_pub_key = bt_mesh_prov_link.conf_inputs.pub_key_provisioner;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY) &&
 	    atomic_test_bit(bt_mesh_prov_link.flags, OOB_PUB_KEY)) {
+		remote_priv_key = bt_mesh_prov->private_key_be;
+	} else {
+		remote_priv_key = NULL;
+	}
 
-		if (bt_mesh_dhkey_gen(remote_pk, bt_mesh_prov->private_key_be,
-				bt_mesh_prov_link.dhkey)) {
-			prov_fail(PROV_ERR_UNEXP_ERR);
-			return;
-		}
-
-		dh_key_gen_complete();
+	if (bt_mesh_dhkey_gen(remote_pub_key, remote_priv_key, bt_mesh_prov_link.dhkey)) {
+		LOG_ERR("Failed to generate DHKey");
+		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	/* Copy remote key in little-endian for bt_dh_key_gen().
-	 * X and Y halves are swapped independently. The bt_dh_key_gen()
-	 * will also take care of validating the remote public key.
-	 */
-	sys_memcpy_swap(remote_pk_le, remote_pk, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(&remote_pk_le[BT_PUB_KEY_COORD_LEN], &remote_pk[BT_PUB_KEY_COORD_LEN],
-			BT_PUB_KEY_COORD_LEN);
+	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, DH_KEY_SIZE));
 
-	if (bt_dh_key_gen(remote_pk_le, prov_dh_key_cb)) {
-		LOG_ERR("Failed to generate DHKey");
-		prov_fail(PROV_ERR_UNEXP_ERR);
+	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_PUB_KEY)) {
+		start_auth();
+	} else {
+		send_pub_key();
 	}
 }
 
 static void prov_pub_key(const uint8_t *data)
 {
-	LOG_DBG("Remote Public Key: %s", bt_hex(data, BT_PUB_KEY_LEN));
+	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
 
 	/* PublicKeyProvisioner */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_provisioner, data, PDU_LEN_PUB_KEY);
@@ -404,36 +357,19 @@ static void prov_pub_key(const uint8_t *data)
 			return;
 		}
 
+		if (!memcmp(bt_mesh_prov->public_key_be,
+			    bt_mesh_prov_link.conf_inputs.pub_key_provisioner, PDU_LEN_PUB_KEY)) {
+			LOG_ERR("Public keys are identical");
+			prov_fail(PROV_ERR_NVAL_FMT);
+			return;
+		}
+
 		/* No swap needed since user provides public key in big-endian */
 		memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, bt_mesh_prov->public_key_be,
 		       PDU_LEN_PUB_KEY);
-
-		atomic_set_bit(bt_mesh_prov_link.flags, WAIT_DH_KEY);
-
-		start_auth();
-	} else if (!bt_pub_key_get()) {
-		/* Clear retransmit timer */
-		bt_mesh_prov_link.bearer->clear_tx();
-		atomic_set_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY);
-		LOG_WRN("Waiting for local public key");
-		return;
 	}
 
 	prov_dh_key_gen();
-}
-
-static void pub_key_ready(const uint8_t *pkey)
-{
-	if (!pkey) {
-		LOG_WRN("Public key not available");
-		return;
-	}
-
-	LOG_DBG("Local public key ready");
-
-	if (atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY)) {
-		prov_dh_key_gen();
-	}
 }
 
 static void notify_input_complete(void)
@@ -508,9 +444,7 @@ static void prov_confirm(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf, data, conf_size);
 	notify_input_complete();
 
-	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_DH_KEY)) {
-		send_confirm();
-	}
+	send_confirm();
 }
 
 static inline bool is_pb_gatt(void)
@@ -532,7 +466,7 @@ static bool refresh_is_valid(const uint8_t *netkey, uint16_t net_idx,
 		return false;
 	}
 
-	if (!sub || memcmp(netkey, sub->keys[SUBNET_KEY_TX_IDX(sub)].net, 16)) {
+	if (!sub || bt_mesh_key_compare(netkey, &sub->keys[SUBNET_KEY_TX_IDX(sub)].net)) {
 		LOG_ERR("Invalid netkey");
 		return false;
 	}
@@ -554,7 +488,7 @@ static bool refresh_is_valid(const uint8_t *netkey, uint16_t net_idx,
 static void prov_data(const uint8_t *data)
 {
 	PROV_BUF(msg, PDU_LEN_COMPLETE);
-	uint8_t session_key[16];
+	struct bt_mesh_key session_key;
 	uint8_t nonce[13];
 	uint8_t dev_key[16];
 	uint8_t pdu[25];
@@ -567,30 +501,28 @@ static void prov_data(const uint8_t *data)
 	LOG_DBG("");
 
 	err = bt_mesh_session_key(bt_mesh_prov_link.dhkey,
-				  bt_mesh_prov_link.prov_salt, session_key);
+				  bt_mesh_prov_link.prov_salt, &session_key);
 	if (err) {
 		LOG_ERR("Unable to generate session key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("SessionKey: %s", bt_hex(session_key, 16));
-
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
 	if (err) {
 		LOG_ERR("Unable to generate session nonce");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
 
 	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
 
-	err = bt_mesh_prov_decrypt(session_key, nonce, data, pdu);
+	err = bt_mesh_prov_decrypt(&session_key, nonce, data, pdu);
 	if (err) {
 		LOG_ERR("Unable to decrypt provisioning data");
 		prov_fail(PROV_ERR_DECRYPT);
-		return;
+		goto session_key_destructor;
 	}
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
@@ -598,10 +530,8 @@ static void prov_data(const uint8_t *data)
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
-		return;
+		goto session_key_destructor;
 	}
-
-	LOG_DBG("DevKey: %s", bt_hex(dev_key, 16));
 
 	net_idx = sys_get_be16(&pdu[16]);
 	flags = pdu[18];
@@ -612,7 +542,7 @@ static void prov_data(const uint8_t *data)
 	    atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION) &&
 	    !refresh_is_valid(pdu, net_idx, iv_index)) {
 		prov_send_fail_msg(PROV_ERR_INVALID_DATA);
-		return;
+		goto session_key_destructor;
 	}
 
 	LOG_DBG("net_idx %u iv_index 0x%08x, addr 0x%04x",
@@ -621,7 +551,7 @@ static void prov_data(const uint8_t *data)
 	bt_mesh_prov_buf_init(&msg, PROV_COMPLETE);
 	if (bt_mesh_prov_send(&msg, NULL)) {
 		LOG_ERR("Failed to send Provisioning Complete");
-		return;
+		goto session_key_destructor;
 	}
 
 	/* Ignore any further PDUs on this link */
@@ -631,7 +561,7 @@ static void prov_data(const uint8_t *data)
 	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
 	    atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
 		bt_mesh_dev_key_cand(dev_key);
-		return;
+		goto session_key_destructor;
 	}
 
 	/* Store info, since bt_mesh_provision() will end up clearing it */
@@ -641,11 +571,10 @@ static void prov_data(const uint8_t *data)
 		identity_enable = false;
 	}
 
-	err = bt_mesh_provision(pdu, net_idx, flags, iv_index,
-				bt_mesh_prov_link.addr, dev_key);
+	err = bt_mesh_provision(pdu, net_idx, flags, iv_index, bt_mesh_prov_link.addr, dev_key);
 	if (err) {
 		LOG_ERR("Failed to provision (err %d)", err);
-		return;
+		goto session_key_destructor;
 	}
 
 	/* After PB-GATT provisioning we should start advertising
@@ -654,6 +583,9 @@ static void prov_data(const uint8_t *data)
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && identity_enable) {
 		bt_mesh_proxy_identity_enable();
 	}
+
+session_key_destructor:
+	bt_mesh_key_destroy(&session_key);
 }
 
 static void reprovision_complete(void)
@@ -688,11 +620,12 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status status)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) &&
 	    atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
-		if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
+		if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE) &&
+		    status == PROV_BEARER_LINK_STATUS_SUCCESS) {
 			reprovision_complete();
 		} else {
 			reprovision_fail();
@@ -702,7 +635,7 @@ static void prov_link_closed(void)
 		bt_mesh_attention(NULL, 0);
 	}
 
-	reset_state();
+	bt_mesh_prov_reset_state();
 }
 
 static void prov_link_opened(void)
@@ -742,12 +675,14 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 		return -EALREADY;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
+#if defined(CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL)
+	if (CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL > 2) {
 		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
 
-		memcpy(uuid.val, bt_mesh_prov->uuid, 16);
+		sys_memcpy_swap(uuid.val, bt_mesh_prov->uuid, 16);
 		LOG_INF("Device UUID: %s", bt_uuid_str(&uuid.uuid));
 	}
+#endif
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
 	    (bearers & BT_MESH_PROV_ADV)) {

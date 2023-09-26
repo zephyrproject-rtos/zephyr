@@ -55,6 +55,9 @@ foreach(root ${kconfig_board_root})
 endforeach()
 
 if(KCONFIG_ROOT)
+  # Perform any variable substitutions if they are present
+  string(CONFIGURE "${KCONFIG_ROOT}" KCONFIG_ROOT)
+
   zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
@@ -76,12 +79,12 @@ if(CONF_FILE)
   string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
 endif()
 
-zephyr_get(OVERLAY_CONFIG SYSBUILD LOCAL)
-if(OVERLAY_CONFIG)
-  string(CONFIGURE "${OVERLAY_CONFIG}" OVERLAY_CONFIG_EXPANDED)
-  string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG_EXPANDED}")
+if(EXTRA_CONF_FILE)
+  string(CONFIGURE "${EXTRA_CONF_FILE}" EXTRA_CONF_FILE_EXPANDED)
+  string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
 endif()
 
+zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files)
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -113,10 +116,23 @@ string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
 # cmake commands are escaped differently
 string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
 
+if(TOOLCHAIN_HAS_NEWLIB)
+  set(_local_TOOLCHAIN_HAS_NEWLIB y)
+else()
+  set(_local_TOOLCHAIN_HAS_NEWLIB n)
+endif()
+
+if(TOOLCHAIN_HAS_PICOLIBC)
+  set(_local_TOOLCHAIN_HAS_PICOLIBC y)
+else()
+  set(_local_TOOLCHAIN_HAS_PICOLIBC n)
+endif()
+
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
+  APPVERSION=${APP_VERSION_STRING}
   CONFIG_=${KCONFIG_NAMESPACE}_
   KCONFIG_CONFIG=${DOTCONFIG}
   # Set environment variables so that Kconfig can prune Kconfig source
@@ -126,9 +142,11 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   BOARD_DIR=${BOARD_DIR}
   BOARD_REVISION=${BOARD_REVISION}
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
+  APPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
   ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
-  TOOLCHAIN_HAS_NEWLIB=$<IF:$<BOOL:${TOOLCHAIN_HAS_NEWLIB}>,y,n>
+  TOOLCHAIN_HAS_NEWLIB=${_local_TOOLCHAIN_HAS_NEWLIB}
+  TOOLCHAIN_HAS_PICOLIBC=${_local_TOOLCHAIN_HAS_PICOLIBC}
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}
@@ -200,19 +218,15 @@ if(SYSBUILD)
   endforeach()
 else()
   get_cmake_property(cache_variable_names CACHE_VARIABLES)
+  list(FILTER cache_variable_names INCLUDE REGEX "^(CLI_)?${KCONFIG_NAMESPACE}_")
+  list(TRANSFORM cache_variable_names REPLACE "^CLI_" "")
+  list(REMOVE_DUPLICATES cache_variable_names)
 endif()
 
+# Sorting the variable names will make checksum calculation more stable.
+list(SORT cache_variable_names)
 foreach (name ${cache_variable_names})
-  if("${name}" MATCHES "^CLI_${KCONFIG_NAMESPACE}_")
-    # Variable was set by user in earlier invocation, let's append to extra
-    # config unless a new value has been given.
-    string(REGEX REPLACE "^CLI_" "" org_name ${name})
-    if(NOT DEFINED ${org_name})
-      set(EXTRA_KCONFIG_OPTIONS
-        "${EXTRA_KCONFIG_OPTIONS}\n${org_name}=${${name}}"
-      )
-    endif()
-  elseif("${name}" MATCHES "^${KCONFIG_NAMESPACE}_")
+  if(DEFINED ${name})
     # When a cache variable starts with the 'KCONFIG_NAMESPACE' value, it is
     # assumed to be a Kconfig symbol assignment from the CMake command line.
     set(EXTRA_KCONFIG_OPTIONS
@@ -220,6 +234,13 @@ foreach (name ${cache_variable_names})
       )
     set(CLI_${name} "${${name}}")
     list(APPEND cli_config_list ${name})
+  elseif(DEFINED CLI_${name})
+    # An additional 'CLI_' prefix means that the value was set by the user in
+    # an earlier invocation. Append it to extra config only if no new value was
+    # assigned above.
+    set(EXTRA_KCONFIG_OPTIONS
+      "${EXTRA_KCONFIG_OPTIONS}\n${name}=${CLI_${name}}"
+      )
   endif()
 endforeach()
 
@@ -239,9 +260,10 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${BOARD_REVISION_CONFIG}
+  ${board_extension_conf_files}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
-  ${OVERLAY_CONFIG_AS_LIST}
+  ${EXTRA_CONF_FILE_AS_LIST}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )
@@ -296,10 +318,14 @@ if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
 endif()
 
 if(CREATE_NEW_DOTCONFIG)
-  set(input_configs_are_handwritten --handwritten-input-configs)
-  set(input_configs ${merge_config_files})
+  set(input_configs_flags --handwritten-input-configs)
+  set(input_configs ${merge_config_files} ${FORCED_CONF_FILE})
 else()
-  set(input_configs ${DOTCONFIG})
+  set(input_configs ${DOTCONFIG} ${FORCED_CONF_FILE})
+endif()
+
+if(DEFINED FORCED_CONF_FILE)
+  list(APPEND input_configs_flags --forced-input-configs)
 endif()
 
 cmake_path(GET AUTOCONF_H PARENT_PATH autoconf_h_path)
@@ -314,7 +340,7 @@ execute_process(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}
-  ${input_configs_are_handwritten}
+  ${input_configs_flags}
   ${KCONFIG_ROOT}
   ${DOTCONFIG}
   ${AUTOCONF_H}
@@ -359,15 +385,32 @@ foreach (name ${cli_config_list})
   unset(${name} CACHE)
 endforeach()
 
+# Before importing the symbol values from DOTCONFIG, process the CLI values by
+# re-importing them from EXTRA_KCONFIG_OPTIONS_FILE. Later, we want to compare
+# the values from both files, and 'import_kconfig' will make this easier.
+if(EXTRA_KCONFIG_OPTIONS_FILE)
+  import_kconfig(${KCONFIG_NAMESPACE} ${EXTRA_KCONFIG_OPTIONS_FILE})
+  foreach (name ${cache_variable_names})
+    if(DEFINED ${name})
+      set(temp_${name} "${${name}}")
+      unset(${name})
+    endif()
+  endforeach()
+endif()
+
 # Import the .config file and make all settings available in CMake processing.
 import_kconfig(${KCONFIG_NAMESPACE} ${DOTCONFIG})
 
 # Cache the CLI Kconfig symbols that survived through Kconfig, prefixed with CLI_.
 # Remove those who might have changed compared to earlier runs, if they no longer appears.
-foreach (name ${cli_config_list})
-  if(DEFINED ${name})
+foreach (name ${cache_variable_names})
+  # Note: "${CLI_${name}}" is the verbatim value of ${name} from command-line,
+  # while "${temp_${name}}" is the same value processed by 'import_kconfig'.
+  if(((NOT DEFINED ${name}) AND (NOT DEFINED temp_${name})) OR
+     ((DEFINED ${name}) AND (DEFINED temp_${name}) AND (${name} STREQUAL temp_${name})))
     set(CLI_${name} ${CLI_${name}} CACHE INTERNAL "")
   else()
     unset(CLI_${name} CACHE)
   endif()
+  unset(temp_${name})
 endforeach()

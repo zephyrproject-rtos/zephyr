@@ -8,7 +8,5 @@ compatible: "atmel,sam-flash-controller"
 include: flash-controller.yaml
 
 properties:
-  peripheral-id:
-    type: int
-    description: peripheral ID
+  clocks:
     required: true

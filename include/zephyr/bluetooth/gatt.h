@@ -17,13 +17,17 @@
  * @{
  */
 
+#include <stdint.h>
 #include <stddef.h>
-#include <zephyr/sys/slist.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -732,6 +736,11 @@ struct bt_gatt_ccc_cfg {
 	uint8_t id;
 	/** Remote peer address. */
 	bt_addr_le_t peer;
+	/**
+	 * Separate storage for encrypted and unencrypted context. This
+	 * indicate that the link was encrypted when the CCC was written.
+	 */
+	bool link_encrypted;
 	/** Configuration value. */
 	uint16_t value;
 };
@@ -1454,10 +1463,10 @@ struct bt_gatt_discover_params {
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Only for stack-internal use, used for automatic discovery. */
 	struct bt_gatt_subscribe_params *sub_params;
-#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 #if defined(CONFIG_BT_EATT)
 	enum bt_att_chan_opt chan_opt;
 #endif /* CONFIG_BT_EATT */
@@ -1822,12 +1831,12 @@ struct bt_gatt_subscribe_params {
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
 	uint16_t ccc_handle;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Subscribe End handle (for automatic discovery) */
 	uint16_t end_handle;
 	/** Discover parameters used when ccc_handle = 0 */
 	struct bt_gatt_discover_params *disc_params;
-#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */
 	uint16_t value;
 #if defined(CONFIG_BT_SMP)
@@ -1857,12 +1866,12 @@ struct bt_gatt_subscribe_params {
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
- *  @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *
- *  @note Notifications are asynchronous therefore the parameters need to
- *        remain valid while subscribed.
+ *  @note Notifications are asynchronous therefore the @p params must remain
+ *        valid while subscribed and cannot be reused for additional subscriptions
+ *        whilst active.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.

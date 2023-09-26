@@ -12,28 +12,26 @@ The :dfn:`Zephyr message bus - Zbus` is a lightweight and flexible message bus e
 Concepts
 ********
 
-Threads can broadcast messages to all interested observers using zbus. Many-to-many communication is possible. The bus implements message-passing and publish/subscribe communication paradigms that enable threads to communicate synchronously or asynchronously through shared memory. The communication through zbus is channel-based, where threads publish and read to and from using messages. Additionally, threads can observe channels and receive notifications from the bus when the channels are modified. :numref:`zbus common` shows an example of a typical application using zbus in which the application logic (hardware independent) talks to other threads via message bus. Note that the threads are decoupled from each other because they only use zbus' channels and do not need to know each other to talk.
+Threads can broadcast messages to all interested observers using zbus. Many-to-many communication is possible. The bus implements message-passing and publish/subscribe communication paradigms that enable threads to communicate synchronously or asynchronously through shared memory. The communication through zbus is channel-based, where threads publish and read to and from using messages. Additionally, threads can observe channels and receive notifications from the bus when the channels are modified. The figure below shows an example of a typical application using zbus in which the application logic (hardware independent) talks to other threads via message bus. Note that the threads are decoupled from each other because they only use zbus' channels and do not need to know each other to talk.
 
 
-.. _zbus common:
 .. figure:: images/zbus_overview.svg
     :alt: zbus usage overview
     :width: 75%
 
     A typical zbus application architecture.
 
-:numref:`zbus anatomy` illustrates zbus' anatomy. The bus comprises:
+The bus comprises:
 
 * Set of channels that consists of a unique identifier, its control metadata information, and the message itself;
 * :dfn:`Virtual distributed event dispatcher` (VDED), the bus logic responsible for sending notifications to the observers. The VDED logic runs inside the publishing action in the same thread context, giving the bus an idea of a distributed execution. When a thread publishes to a channel, it also propagates the notifications to the observers;
 * Threads (subscribers) and callbacks (listeners) publishing, reading, and receiving notifications from the bus.
 
-.. _zbus anatomy:
 .. figure:: images/zbus_anatomy.svg
     :alt: Zbus anatomy
     :width: 70%
 
-    Zbus internals details.
+    Zbus anatomy.
 
 The bus makes the publish, read, and subscribe actions available over channels. Publishing and reading are available in all RTOS thread contexts. However, it cannot run inside Interrupt Service Routines (ISR) because it uses mutexes to control channels access, and mutexes cannot work appropriately inside ISRs. The publish and read operations are simple and fast; the procedure is a mutex locking followed by a memory copy to and from a shared memory region and then a mutex unlocking. Another essential aspect of zbus is the observers, which can be:
 
@@ -41,10 +39,9 @@ The bus makes the publish, read, and subscribe actions available over channels. 
 * Dynamic; it can be added and removed to and from a channel at runtime.
 
 
-For illustration purposes, suppose a usual sensor-based solution in :numref:`zbus operations`. When the timer is triggered, it pushes an action to a work queue that publishes to the ``Start trigger`` channel. As the sensor thread subscribed to the ``Start trigger`` channel, it fetches the sensor data. Notice the VDED executes the blink callback because it also listens to the ``Start trigger`` channel. When the sensor data is ready, the sensor thread publishes it to the ``Sensor data`` channel. The core thread, as a ``Sensor data`` channel subscriber, processes the sensor data and stores it in an internal sample buffer. It repeats until the sample buffer is full; when it happens, the core thread aggregates the sample buffer information, prepares a package, and publishes that to the ``Payload`` channel. The Lora thread receives that because it is a ``Payload`` channel subscriber and sends the payload to the cloud. When it completes the transmission, the Lora thread publishes to the ``Transmission done`` channel. The VDED executes the blink callback again since it listens to the ``Transmission done`` channel.
+For illustration purposes, suppose a usual sensor-based solution in the figure below. When the timer is triggered, it pushes an action to a work queue that publishes to the ``Start trigger`` channel. As the sensor thread subscribed to the ``Start trigger`` channel, it fetches the sensor data. Notice the VDED executes the blink callback because it also listens to the ``Start trigger`` channel. When the sensor data is ready, the sensor thread publishes it to the ``Sensor data`` channel. The core thread, as a ``Sensor data`` channel subscriber, processes the sensor data and stores it in an internal sample buffer. It repeats until the sample buffer is full; when it happens, the core thread aggregates the sample buffer information, prepares a package, and publishes that to the ``Payload`` channel. The Lora thread receives that because it is a ``Payload`` channel subscriber and sends the payload to the cloud. When it completes the transmission, the Lora thread publishes to the ``Transmission done`` channel. The VDED executes the blink callback again since it listens to the ``Transmission done`` channel.
 
 
-.. _zbus operations:
 .. figure:: images/zbus_operations.svg
     :alt: Zbus sensor-based application
     :width: 80%
@@ -68,14 +65,12 @@ The VDED execution always happens in the publishing's (thread) context. So it ca
 
 * The channel mutex is acquired;
 * The channel receives the new message via direct copy (by a raw :c:func:`memcpy`);
-* The event dispatcher logic executes the listeners in the same sequence they appear on the channel observers' list. The listeners can perform non-copy quick access to the constant message reference directly (via the :c:func:`zbus_chan_const_msg` function) since the channel is still locked;
-* The event dispatcher logic pushes the channel's reference to the subscribers' notification message queue. The pushing sequence is the same as the subscribers appear in the channel observers' list;
+* The event dispatcher logic executes the listeners and pushes the channel's reference to the subscribers' notification message queue in the same sequence they appear on the channel observers' list. The listeners can perform non-copy quick access to the constant message reference directly (via the :c:func:`zbus_chan_const_msg` function) since the channel is still locked;
 * At last, the publishing function unlocks the channel.
 
 
-To illustrate the VDED execution, consider the example the :numref:`zbus vded scenario` shows. We have four threads in ascending priority T1, T2, T3, and T4 (the highest priority); two listeners, L1 and L2; and channel A. Suposing L1, L2, T2, T3, and T4 observer channel A.
+To illustrate the VDED execution, consider the example illustrated below. We have four threads in ascending priority T1, T2, T3, and T4 (the highest priority); two listeners, L1 and L2; and channel A. Supposing L1, L2, T2, T3, and T4 observer channel A.
 
-.. _zbus vded scenario:
 .. figure:: images/zbus_publishing_process_example_scenario.svg
     :alt: Zbus example scenario
     :width: 55%
@@ -97,10 +92,9 @@ The following code implements channel A. Note the ``struct a_msg`` is illustrati
     );
 
 
-In :numref:`zbus vded`, the letters indicate some action related to the VDED execution. The X-axis represents the time, and the Y-axis represents the priority of threads. Channel A's message, represented by a voice balloon, is only one memory portion (shared memory). It appears several times only as an illustration of the message at that point in time.
+In the figure below, the letters indicate some action related to the VDED execution. The X-axis represents the time, and the Y-axis represents the priority of threads. Channel A's message, represented by a voice balloon, is only one memory portion (shared memory). It appears several times only as an illustration of the message at that point in time.
 
 
-.. _zbus vded:
 .. figure:: images/zbus_publishing_process_example.svg
     :alt: Zbus publish processing detail
     :width: 85%
@@ -109,10 +103,9 @@ In :numref:`zbus vded`, the letters indicate some action related to the VDED exe
 
 
 
-The :numref:`zbus vded` illustrates the actions performed during the VDED execution when T1 publishes to channel A. Thus, :numref:`zbus vded table` describes the actions (represented by a letter) of the VDED execution.
+The figure above illustrates the actions performed during the VDED execution when T1 publishes to channel A. Thus, the figure below describes the actions (represented by a letter) of the VDED execution.
 
 
-.. _zbus vded table:
 .. list-table:: VDED execution steps in detail.
    :widths: 5 65
    :header-rows: 1
@@ -161,7 +154,7 @@ Zbus always delivers the messages to the listeners. However, there are no messag
 Message delivery sequence
 -------------------------
 
-The listeners (synchronous observers) will follow the channel definition sequence as the notification and message consumption sequence. However, the subscribers, as they have an asynchronous nature, all will receive the notification as the channel definition sequence but only will consume the data when they execute again, so the delivery respects the order, but the priority assigned to the subscribers will define the reaction sequence. All the listeners (static o dynamic) will receive the message before subscribers receive the notification. The sequence of delivery is: (i) static listeners; (ii) runtime listeners; (iii) static subscribers; at last (iv) runtime subscribers.
+The listeners (synchronous observers) will follow the channel definition sequence as the notification and message consumption sequence. However, the subscribers, as they have an asynchronous nature, will all receive the notification as the channel definition sequence but only will consume the data when they execute again. Hence, the delivery respects the order, but the priority assigned to the subscribers will define the reaction sequence. The delivery sequence is first the static observers and then the runtime ones.
 
 Usage
 *****
@@ -198,6 +191,10 @@ The following code defines and initializes a regular channel and its dependencie
 
     ZBUS_LISTENER_DEFINE(my_listener, listener_callback_example);
 
+    ZBUS_LISTENER_DEFINE(my_listener2, listener_callback_example);
+
+    ZBUS_CHAN_ADD_OBS(acc_chan, my_listener2, 3);
+
     ZBUS_SUBSCRIBER_DEFINE(my_subscriber, 4);
     void subscriber_task(void)
     {
@@ -215,12 +212,13 @@ The following code defines and initializes a regular channel and its dependencie
     }
     K_THREAD_DEFINE(subscriber_task_id, 512, subscriber_task, NULL, NULL, NULL, 3, 0, 0);
 
+It is possible to add static observers to a channel using the :c:macro:`ZBUS_CHAN_ADD_OBS`. We call that a post-definition static observer. The command enables us to indicate an initialization priority that affects the observers' initialization order. The priority param only affects the post-definition static observers. There is no possibility to overwrite the execution sequence of the static observers.
 
 .. note::
     It is unnecessary to claim/lock a channel before accessing the message inside the listener since the event dispatcher calls listeners with the notifying channel already locked. Subscribers, however, must claim/lock that or use regular read operations to access the message after being notified.
 
 
-Channels can have a ``validator function`` that enables a channel to accept only valid messages. Publish attempts invalidated by hard channels will return immediately with an error code. This allows original creators of a channel to exert some authority over other developers/publishers who may want to piggy-back on their channels. The following code defines and initializes a :dfn:`hard channel` and its dependencies. Only valid messages can be published to a :dfn:`hard channel`. It is possible because a ``Validator function`` passed to the channel's definition. In this example, only messages with ``move`` equal to 0, -1, and 1 are valid. Publish function will discard all other values to ``move``.
+Channels can have a ``validator function`` that enables a channel to accept only valid messages. Publish attempts invalidated by hard channels will return immediately with an error code. This allows original creators of a channel to exert some authority over other developers/publishers who may want to piggy-back on their channels. The following code defines and initializes a :dfn:`hard channel` and its dependencies. Only valid messages can be published to a :dfn:`hard channel`. It is possible because a ``validator function`` was passed to the channel's definition. In this example, only messages with ``move`` equal to 0, -1, and 1 are valid. Publish function will discard all other values to ``move``.
 
 .. code-block:: c
 
@@ -279,7 +277,7 @@ Messages are read from a channel in zbus by calling :c:func:`zbus_chan_read`. So
     Do not use this function inside an ISR.
 
 .. warning::
-    Choose the timeout of :c:func:`zbus_chan_read` after receiving a notification from :c:func:`zbus_sub_wait` carefully because the channel will always be unavailable during the VDED execution. Using ``K_NO_WAIT`` for reading is highly likely to return a timeout error if there are more than one subscriber. For example, consider the :numref:`zbus vded` again and notice how ``T3`` and ``T4's`` read attempts would definitely fail with K_NO_WAIT. For more details, check the `Virtual Distributed Event Dispatcher`_ section.
+    Choose the timeout of :c:func:`zbus_chan_read` after receiving a notification from :c:func:`zbus_sub_wait` carefully because the channel will always be unavailable during the VDED execution. Using ``K_NO_WAIT`` for reading is highly likely to return a timeout error if there are more than one subscriber. For example, consider the VDED illustration again and notice how ``T3`` and ``T4's`` read attempts would definitely fail with K_NO_WAIT. For more details, check the `Virtual Distributed Event Dispatcher`_ section.
 
 Forcing channel notification
 ============================
@@ -307,40 +305,66 @@ For accessing channels or observers from files other than its defining files, it
 Iterating over channels and observers
 =====================================
 
-Zbus subsystem also implements :ref:`Iterable Sections <iterable_sections_api>` for channels and observers, for which there are supporting APIs like :c:func:`zbus_iterate_over_channels` and :c:func:`zbus_iterate_over_observers`. This feature enables developers to call a procedure over all declared channels, where the procedure parameter is a :c:struct:`zbus_channel`. The execution sequence is in the alphabetical name order of the channels (see :ref:`Iterable Sections <iterable_sections_api>` documentation for details). Zbus also implements this feature for :c:struct:`zbus_observer`.
+Zbus subsystem also implements :ref:`Iterable Sections <iterable_sections_api>` for channels and observers, for which there are supporting APIs like :c:func:`zbus_iterate_over_channels`, :c:func:`zbus_iterate_over_channels_with_user_data`, :c:func:`zbus_iterate_over_observers` and :c:func:`zbus_iterate_over_observers_with_user_data`. This feature enables developers to call a procedure over all declared channels, where the procedure parameter is a :c:struct:`zbus_channel`. The execution sequence is in the alphabetical name order of the channels (see :ref:`Iterable Sections <iterable_sections_api>` documentation for details). Zbus also implements this feature for :c:struct:`zbus_observer`.
 
 .. code-block:: c
 
-    int count;
+   static bool print_channel_data_iterator(const struct zbus_channel *chan, void *user_data)
+   {
+         int *count = user_data;
 
-    bool print_channel_data_iterator(const struct zbus_channel *chan)
-    {
-            LOG_DBG("%d - Channel %s:", count, zbus_chan_name(chan));
-            LOG_DBG("      Message size: %d", zbus_chan_msg_size(chan));
-            ++count;
-            LOG_DBG("      Observers:");
-            for (struct zbus_observer **obs = chan->observers; *obs != NULL; ++obs) {
-                LOG_DBG("      - %s", zbus_obs_name(*obs));
-            }
-            return true;
-    }
+         LOG_INF("%d - Channel %s:", *count, zbus_chan_name(chan));
+         LOG_INF("      Message size: %d", zbus_chan_msg_size(chan));
+         LOG_INF("      Observers:");
 
-    bool print_observer_data_iterator(const struct zbus_observer *obs)
-    {
-            LOG_DBG("%d - %s %s", count, ((obs->queue != NULL) ? "Subscriber" : "Listener"), zbus_obs_name(obs));
-            ++count;
-            return true;
-    }
-    void main(void)
-    {
-            LOG_DBG("Channel list:");
-            count = 0;
-            zbus_iterate_over_channels(print_channel_data_iterator);
+         ++(*count);
 
-            LOG_DBG("Observers list:");
-            count = 0;
-            zbus_iterate_over_observers(print_observer_data_iterator);
-    }
+         struct zbus_channel_observation *observation;
+
+         for (int16_t i = *chan->observers_start_idx, limit = *chan->observers_end_idx; i < limit;
+               ++i) {
+               STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
+
+               LOG_INF("      - %s", observation->obs->name);
+         }
+
+         struct zbus_observer_node *obs_nd, *tmp;
+
+         SYS_SLIST_FOR_EACH_CONTAINER_SAFE(chan->observers, obs_nd, tmp, node) {
+               LOG_INF("      - %s", obs_nd->obs->name);
+         }
+
+         return true;
+   }
+
+   static bool print_observer_data_iterator(const struct zbus_observer *obs, void *user_data)
+   {
+         int *count = user_data;
+
+         LOG_INF("%d - %s %s", *count, obs->queue ? "Subscriber" : "Listener", zbus_obs_name(obs));
+
+         ++(*count);
+
+         return true;
+   }
+
+   int main(void)
+   {
+         int count = 0;
+
+         LOG_INF("Channel list:");
+
+         zbus_iterate_over_channels_with_user_data(print_channel_data_iterator, &count);
+
+         count = 0;
+
+         LOG_INF("Observers list:");
+
+         zbus_iterate_over_observers_with_user_data(print_observer_data_iterator, &count);
+
+         return 0;
+   }
+
 
 The code will log the following output:
 
@@ -394,7 +418,7 @@ It is possible to pass custom data into the channel's ``user_data`` for various 
 Claim and finish a channel
 --------------------------
 
-To take more control over channels, two function were added :c:func:`zbus_chan_claim` and :c:func:`zbus_chan_finish`. With these functions, it is possible to access the channel's metadata safely. When a channel is claimed, no actions are available to that channel. After finishing the channel, all the actions are available again.
+To take more control over channels, two functions were added :c:func:`zbus_chan_claim` and :c:func:`zbus_chan_finish`. With these functions, it is possible to access the channel's metadata safely. When a channel is claimed, no actions are available to that channel. After finishing the channel, all the actions are available again.
 
 .. warning::
     Never change the fields of the channel struct directly. It may cause zbus behavior inconsistencies and scheduling issues.
@@ -439,7 +463,9 @@ The following code has the exact behavior of the code in :ref:`reading from a ch
 Runtime observer registration
 -----------------------------
 
-It is possible to add observers to channels in runtime. This feature uses the object pool pattern technique in which the dynamic nodes are pre-allocated and can be used and recycled. Therefore, it is necessary to set the pool size by changing the feature :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` to enable this feature. Furthermore, it uses memory slabs. When necessary, turn on the :kconfig:option:`CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION` configuration to track the maximum usage of the pool. The following example illustrates the runtime registration usage.
+It is possible to add observers to channels in runtime. This feature uses the heap to allocate the nodes dynamically. The heap size limits the number of dynamic observers Zbus can create. Therefore, set the :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` to enable the feature. It is possible to adjust the heap size by changing the configuration :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. The following example illustrates the runtime registration usage.
+
+
 
 .. code-block:: c
 
@@ -453,35 +479,23 @@ It is possible to add observers to channels in runtime. This feature uses the ob
             zbus_chan_rm_obs(&chan1, &my_listener);
 
 
-Zbus can only use a limited number of dynamic observers. The configuration option :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` represents the size of the runtime observers pool (memory slab). Change that to fit the solution needs. Use the :c:func:`k_mem_slab_num_used_get` to verify how many runtime observers slots are available. The function :c:func:`k_mem_slab_max_used_get` will provide information regarding the maximum number of used slots count reached during the execution. Use that to set the appropriate pool size avoiding waste. The following code illustrates how to use that.
-
-.. code-block:: c
-
-    extern struct k_mem_slab _zbus_runtime_obs_pool;
-    uint32_t slots_available = k_mem_slab_num_free_get(&_zbus_runtime_obs_pool);
-    uint32_t max_usage = k_mem_slab_max_used_get(&_zbus_runtime_obs_pool);
-
-
-.. warning::
-    Do not use ``_zbus_runtime_obs_pool`` memory slab directly. It may lead to inconsistencies.
-
 Samples
 *******
 
 For a complete overview of zbus usage, take a look at the samples. There are the following samples available:
 
-* :ref:`zbus-hello-world-sample` illustrates the code used above in action;
-* :ref:`zbus-work-queue-sample` shows how to define and use different kinds of observers. Note there is an example of using a work queue instead of executing the listener as an execution option;
-* :ref:`zbus-dyn-channel-sample` demonstrates how to use dynamically allocated exchanging data in zbus;
-* :ref:`zbus-uart-bridge-sample` shows an example of sending the operation of the channel to a host via serial;
-* :ref:`zbus-remote-mock-sample` illustrates how to implement an external mock (on the host) to send and receive messages to and from the bus.
-* :ref:`zbus-runtime-obs-registration-sample` illustrates a way of using the runtime observer registration feature;
-* :ref:`zbus-benchmark-sample` implements a benchmark with different combinations of inputs.
+* :zephyr:code-sample:`zbus-hello-world` illustrates the code used above in action;
+* :zephyr:code-sample:`zbus-work-queue` shows how to define and use different kinds of observers. Note there is an example of using a work queue instead of executing the listener as an execution option;
+* :zephyr:code-sample:`zbus-dyn-channel` demonstrates how to use dynamically allocated exchanging data in zbus;
+* :zephyr:code-sample:`zbus-uart-bridge` shows an example of sending the operation of the channel to a host via serial;
+* :zephyr:code-sample:`zbus-remote-mock` illustrates how to implement an external mock (on the host) to send and receive messages to and from the bus.
+* :zephyr:code-sample:`zbus-runtime-obs-registration` illustrates a way of using the runtime observer registration feature;
+* :zephyr:code-sample:`zbus-benchmark` implements a benchmark with different combinations of inputs.
 
 Suggested Uses
 **************
 
-Use zbus to transfer data (messages) between threads in one-to-one, one-to-many, and many-to-many synchronously or asynchronously.
+Use zbus to transfer data (messages) between threads in one-to-one, one-to-many, and many-to-many synchronously or asynchronously. Choosing the proper observer type is crucial. Use subscribers for scenarios that can tolerate message losses and duplications; when they cannot, use listeners. In addition to the listener, another asynchronous message processing mechanism (like :ref:`message queues <message_queues_v2>`) may be necessary to retain the pending message until it gets processed.
 
 .. note::
     Zbus can be used to transfer streams from the producer to the consumer. However, this can increase zbus' communication latency. So maybe consider a Pipe a good alternative for this communication topology.
@@ -495,8 +509,8 @@ Related configuration options:
 
 * :kconfig:option:`CONFIG_ZBUS_CHANNEL_NAME` enables the name of channels to be available inside the channels metadata. The log uses this information to show the channels' names;
 * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME` enables the name of observers to be available inside the channels metadata;
-* :kconfig:option:`CONFIG_ZBUS_STRUCTS_ITERABLE_ACCESS` enables :ref:`Iterable Sections <iterable_sections_api>` to on zbus channels and observers;
-* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE` enables the runtime observer registration. It is necessary to set a value to be greater than zero.
+* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration.
+* :kconfig:option:`CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY` determine the :c:macro:`SYS_INIT` priority used by Zbus to organize the channels observations by channel.
 
 API Reference
 *************

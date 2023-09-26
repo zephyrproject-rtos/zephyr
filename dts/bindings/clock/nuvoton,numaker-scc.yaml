@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker System Clock Controller (SCC)
+
+compatible: "nuvoton,numaker-scc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  hxt:
+    type: string
+    description: |
+      Enable/disable 4~24 MHz external crystal oscillator (HXT)
+    enum:
+      - "untouched"
+      - "enable"
+      - "disable"
+
+  lxt:
+    type: string
+    description: |
+      Enable/disable 32.768 kHz low-speed external crystal oscillator (LXT)
+    enum:
+      - "untouched"
+      - "enable"
+      - "disable"
+
+  hirc48:
+    type: string
+    description: |
+      Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48)
+    enum:
+      - "untouched"
+      - "enable"
+      - "disable"
+
+  clk-pclkdiv:
+    type: int
+    description: |
+      Configure APB Clock Divider register
+
+  core-clock:
+    type: int
+    description: |
+      Configure core clock (HCLK)

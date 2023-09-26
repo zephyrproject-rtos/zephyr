@@ -93,7 +93,7 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 
 		drv_data->dev = dev;
 
-		if (!device_is_ready(config->gpio1.port)) {
+		if (!gpio_is_ready_dt(&config->gpio1)) {
 			LOG_ERR("%s: device %s is not ready", dev->name, config->gpio1.port->name);
 			return -ENODEV;
 		}
@@ -307,7 +307,8 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 	const struct vl53l1x_config *config = dev->config;
 	VL53L1_Error ret;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
+	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL)
+			|| (chan == SENSOR_CHAN_DISTANCE));
 
 	/* Will immediately stop current measurement */
 	ret = VL53L1_StopMeasurement(&drv_data->vl53l1x);
@@ -340,7 +341,9 @@ static int vl53l1x_channel_get(const struct device *dev,
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
+	if (chan != SENSOR_CHAN_DISTANCE) {
+		return -ENOTSUP;
+	}
 
 	/* Calling VL53L1_WaitMeasurementDataReady regardless of using interrupt or
 	 * polling method ensures user does not have to consider the time between

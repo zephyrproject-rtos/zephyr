@@ -38,6 +38,8 @@
 
 #include <zephyr/dsp/basicmath.h>
 
+#include <zephyr/dsp/print_format.h>
+
 #include "zdsp_backend.h"
 
 #endif /* INCLUDE_ZEPHYR_DSP_DSP_H_ */

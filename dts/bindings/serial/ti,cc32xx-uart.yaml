@@ -2,11 +2,17 @@ description: TI CC32XX UART
 
 compatible: "ti,cc32xx-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
     required: true
 
   interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
     required: true

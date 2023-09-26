@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
-static void print_pmp_entries(unsigned int start, unsigned int end,
+static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
 {
@@ -64,7 +64,7 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 	unsigned int index;
 
 	LOG_DBG("PMP %s:", banner);
-	for (index = start; index < end; index++) {
+	for (index = pmp_start; index < pmp_end; index++) {
 		unsigned long start, end, tmp;
 
 		switch (pmp_n_cfg[index] & PMP_A) {
@@ -329,6 +329,17 @@ void z_riscv_pmp_init(void)
 		      (uintptr_t)__rom_region_start,
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+#ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
+	/*
+	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
+	 * for detecting null pointer dereferencing.
+	 */
+	set_pmp_entry(&index, PMP_NONE | PMP_L,
+		      0,
+		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
+		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*

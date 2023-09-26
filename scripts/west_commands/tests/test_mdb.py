@@ -13,7 +13,7 @@ from runners.mdb import MdbNsimBinaryRunner, MdbHwBinaryRunner
 from conftest import RC_KERNEL_ELF, RC_BOARD_DIR, RC_BUILD_DIR
 
 
-TEST_DRIVER_CMD = 'mdb'
+TEST_DRIVER_CMD = 'mdb64'
 TEST_NSIM_ARGS='test_nsim.args'
 TEST_TARGET = 'test-target'
 TEST_BOARD_NSIM_ARGS = '@' + path.join(RC_BOARD_DIR, 'support', TEST_NSIM_ARGS)
@@ -92,8 +92,8 @@ TEST_HW_FLASH_CASES_ERR = [
         'i': ['--jtag=test_debug', '--cores=1'],
         'e': "unsupported jtag adapter test_debug"
     },{
-        'i': ['--jtag=digilent', '--cores=16'],
-        'e': "unsupported cores 16"
+        'i': ['--jtag=digilent', '--cores=13'],
+        'e': "unsupported cores 13"
     }]
 
 TEST_HW_DEBUG_CASES = [
@@ -116,8 +116,8 @@ TEST_HW_DEBUG_CASES_ERR = [
         'i': ['--jtag=test_debug', '--cores=1'],
         'e': "unsupported jtag adapter test_debug"
     }, {
-        'i': ['--jtag=digilent', '--cores=16'],
-        'e': "unsupported cores 16"
+        'i': ['--jtag=digilent', '--cores=13'],
+        'e': "unsupported cores 13"
     }]
 
 TEST_HW_MULTICORE_CASES = [['--jtag=digilent', '--cores=2']]

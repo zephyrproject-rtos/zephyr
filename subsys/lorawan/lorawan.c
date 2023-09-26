@@ -369,7 +369,7 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 
 	/* MIB_PUBLIC_NETWORK powers on the radio and does not turn it off */
 	mib_req.Type = MIB_PUBLIC_NETWORK;
-	mib_req.Param.EnablePublicNetwork = true;
+	mib_req.Param.EnablePublicNetwork = IS_ENABLED(CONFIG_LORAWAN_PUBLIC_NETWORK);
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
@@ -418,11 +418,11 @@ out:
 		 * responsibility to increase datarates when ADR is enabled.
 		 */
 		if (!lorawan_adr_enable) {
-			MibRequestConfirm_t mib_req;
+			MibRequestConfirm_t mib_req2;
 
-			mib_req.Type = MIB_CHANNELS_DATARATE;
-			mib_req.Param.ChannelsDatarate = default_datarate;
-			LoRaMacMibSetRequestConfirm(&mib_req);
+			mib_req2.Type = MIB_CHANNELS_DATARATE;
+			mib_req2.Param.ChannelsDatarate = default_datarate;
+			LoRaMacMibSetRequestConfirm(&mib_req2);
 		}
 
 		/*
@@ -685,9 +685,8 @@ int lorawan_start(void)
 	return 0;
 }
 
-static int lorawan_init(const struct device *dev)
+static int lorawan_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_slist_init(&dl_callbacks);
 
@@ -709,4 +708,4 @@ static int lorawan_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(lorawan_init, POST_KERNEL, 0);

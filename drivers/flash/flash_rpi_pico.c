@@ -298,13 +298,6 @@ void flash_rpi_page_layout(const struct device *dev, const struct flash_pages_la
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_rpi_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
 static const struct flash_driver_api flash_rpi_driver_api = {
 	.read = flash_rpi_read,
 	.write = flash_rpi_write,
@@ -315,6 +308,5 @@ static const struct flash_driver_api flash_rpi_driver_api = {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_rpi_init, NULL,
-		      NULL, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
 		      CONFIG_FLASH_INIT_PRIORITY, &flash_rpi_driver_api);

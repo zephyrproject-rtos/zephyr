@@ -19,6 +19,10 @@ properties:
     type: int
     description: Index of HPRO clock encoding in the encoding array.
 
+  adsp-clkctl-clk-ipll:
+    type: int
+    description: Index of ACE integrated PLL clock encoding in the encoding array.
+
   adsp-clkctl-freq-enc:
     type: array
     required: true

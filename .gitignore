@@ -39,6 +39,7 @@ sanity-out*
 twister-out*
 bsim_out
 bsim_bt_out
+tests/RunResults.xml
 scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings
@@ -74,7 +75,9 @@ Identity.txt
 ImageSize.txt
 Kconfig.txt
 KconfigBasic.txt
+KconfigBasicNoModules.txt
 MaintainersFormat.txt
+ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
 YAMLLint.txt

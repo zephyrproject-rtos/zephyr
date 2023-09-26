@@ -2,7 +2,7 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# Compile all the applications needed by the bsim tests
+# Compile all the applications needed by the bsim tests in these subfolders
 
 #set -x #uncomment this line for debugging
 set -ue

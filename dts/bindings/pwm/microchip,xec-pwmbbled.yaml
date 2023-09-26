@@ -46,6 +46,18 @@ properties:
   "#pwm-cells":
     const: 2
 
+  enable-low-power-32k:
+    type: boolean
+    description: |
+      BBLED has two clock inputs.
+      - Main system clock (48MHz)
+      - 32KHz Core clock (32.768KHz)
+      When BBLED enter into Suspend state, 48MHz clock will be switched off by
+      PCR(Power, Clock and Reset) block. But 32KHz Core clock will be available to BBLED.
+      There may be a product requirement, either to blink (or) not blink LED in Suspend state.
+      Flag "enable-low-power-32k" shall be used along with 32KHz clock to blink (or) not blink
+      the LED in Suspend state.
+
 pwm-cells:
   - channel
   - period

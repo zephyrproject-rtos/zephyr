@@ -19,7 +19,6 @@
 
 #include "test.h"
 #include "adv.h"
-#include "host/ecc.h"
 #include "prov.h"
 #include "provisioner.h"
 #include "net.h"
@@ -40,6 +39,7 @@
 #include "mesh.h"
 #include "solicitation.h"
 #include "gatt_cli.h"
+#include "crypto.h"
 
 LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
 
@@ -47,13 +47,18 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      uint8_t flags, uint32_t iv_index, uint16_t addr,
 		      const uint8_t dev_key[16])
 {
-	int err;
+	struct bt_mesh_key mesh_dev_key;
+	struct bt_mesh_key mesh_net_key;
+	bool is_net_key_valid = false;
+	bool is_dev_key_valid = false;
+	int err = 0;
 
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
 		return -ENODEV;
 	}
 
 	struct bt_mesh_cdb_subnet *subnet = NULL;
+	struct bt_mesh_cdb_node *node = NULL;
 
 	LOG_INF("Primary Element: 0x%04x", addr);
 	LOG_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x", net_idx, flags, iv_index);
@@ -66,7 +71,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	    atomic_test_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID)) {
 		const struct bt_mesh_comp *comp;
 		const struct bt_mesh_prov *prov;
-		struct bt_mesh_cdb_node *node;
 
 		comp = bt_mesh_comp_get();
 		if (comp == NULL) {
@@ -92,28 +96,55 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		}
 
 		if (BT_MESH_KEY_REFRESH(flags)) {
-			memcpy(subnet->keys[1].net_key, net_key, 16);
 			subnet->kr_phase = BT_MESH_KR_PHASE_2;
 		} else {
-			memcpy(subnet->keys[0].net_key, net_key, 16);
 			subnet->kr_phase = BT_MESH_KR_NORMAL;
+		}
+
+		/* The primary network key has been imported during cdb creation.
+		 * Importing here leaves it 'as is' if the key is the same.
+		 * Otherwise, cdb replaces the old one with the new one.
+		 */
+		err = bt_mesh_cdb_subnet_key_import(subnet, BT_MESH_KEY_REFRESH(flags) ? 1 : 0,
+						    net_key);
+		if (err) {
+			LOG_ERR("Failed to import cdb network key");
+			goto end;
 		}
 		bt_mesh_cdb_subnet_store(subnet);
 
 		addr = node->addr;
 		bt_mesh_cdb_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
 
-		memcpy(node->dev_key, dev_key, 16);
+		err = bt_mesh_cdb_node_key_import(node, dev_key);
+		if (err) {
+			LOG_ERR("Failed to import cdb device key");
+			goto end;
+		}
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			bt_mesh_cdb_node_store(node);
 		}
 	}
 
-	err = bt_mesh_net_create(net_idx, flags, net_key, iv_index);
+	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, dev_key, &mesh_dev_key);
+	if (err) {
+		LOG_ERR("Failed to import device key");
+		goto end;
+	}
+	is_dev_key_valid = true;
+
+	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, net_key, &mesh_net_key);
+	if (err) {
+		LOG_ERR("Failed to import network key");
+		goto end;
+	}
+	is_net_key_valid = true;
+
+	err = bt_mesh_net_create(net_idx, flags, &mesh_net_key, iv_index);
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
-		return err;
+		goto end;
 	}
 
 	bt_mesh_net_settings_commit();
@@ -122,7 +153,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 	bt_mesh_comp_provision(addr);
 
-	memcpy(bt_mesh.dev_key, dev_key, 16);
+	memcpy(&bt_mesh.dev_key, &mesh_dev_key, sizeof(struct bt_mesh_key));
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
@@ -130,18 +161,33 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_net_pending_net_store();
+		bt_mesh_net_store();
 	}
 
 	bt_mesh_start();
 
-	return 0;
+end:
+	if (err && node != NULL && IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		bt_mesh_cdb_node_del(node, true);
+	}
+
+	if (err && is_dev_key_valid) {
+		bt_mesh_key_destroy(&mesh_dev_key);
+	}
+
+	if (err && is_net_key_valid) {
+		bt_mesh_key_destroy(&mesh_net_key);
+	}
+
+	return err;
 }
 
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 void bt_mesh_reprovision(uint16_t addr)
 {
-	LOG_DBG("0x%04x devkey: %s", addr, bt_hex(bt_mesh.dev_key_cand, 16));
+	LOG_DBG("0x%04x devkey: %s", addr,
+		bt_hex(&bt_mesh.dev_key_cand, sizeof(struct bt_mesh_key)));
+
 	if (addr != bt_mesh_primary_addr()) {
 		bt_mesh.seq = 0U;
 
@@ -159,19 +205,25 @@ void bt_mesh_reprovision(uint16_t addr)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		LOG_DBG("Storing network information persistently");
-		bt_mesh_net_pending_net_store();
-		bt_mesh_net_pending_seq_store();
-		bt_mesh_comp_clear();
-		bt_mesh_models_metadata_clear();
+		bt_mesh_net_store();
+		bt_mesh_net_seq_store(true);
+		bt_mesh_comp_data_clear();
 	}
 }
 
 void bt_mesh_dev_key_cand(const uint8_t *key)
 {
-	memcpy(bt_mesh.dev_key_cand, key, 16);
-	atomic_set_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND);
+	int err;
 
 	LOG_DBG("%s", bt_hex(key, 16));
+
+	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, key, &bt_mesh.dev_key_cand);
+	if (err) {
+		LOG_ERR("Failed to import device key candidate");
+		return;
+	}
+
+	atomic_set_bit(bt_mesh.flags, BT_MESH_DEVKEY_CAND);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_net_dev_key_cand_store();
@@ -197,7 +249,9 @@ void bt_mesh_dev_key_cand_activate(void)
 		return;
 	}
 
-	memcpy(bt_mesh.dev_key, bt_mesh.dev_key_cand, 16);
+	bt_mesh_key_destroy(&bt_mesh.dev_key);
+	memcpy(&bt_mesh.dev_key, &bt_mesh.dev_key_cand, sizeof(struct bt_mesh_key));
+	memset(&bt_mesh.dev_key_cand, 0, sizeof(struct bt_mesh_key));
 
 	LOG_DBG("");
 
@@ -340,7 +394,8 @@ void bt_mesh_reset(void)
 		bt_mesh_net_clear();
 	}
 
-	(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
+	bt_mesh_key_destroy(&bt_mesh.dev_key);
+	memset(&bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 
 	bt_mesh_beacon_disable();
 
@@ -401,9 +456,7 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_hb_suspend();
 
-	if (bt_mesh_beacon_enabled()) {
-		bt_mesh_beacon_disable();
-	}
+	bt_mesh_beacon_disable();
 
 	bt_mesh_model_foreach(model_suspend, NULL);
 
@@ -444,7 +497,8 @@ int bt_mesh_resume(void)
 
 	bt_mesh_hb_resume();
 
-	if (bt_mesh_beacon_enabled()) {
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
 	}
 
@@ -463,6 +517,11 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	}
 
 	err = bt_mesh_test();
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_crypto_init();
 	if (err) {
 		return err;
 	}
@@ -511,10 +570,10 @@ int bt_mesh_start(void)
 		return err;
 	}
 
-	if (bt_mesh_beacon_enabled()) {
+
+	if (bt_mesh_beacon_enabled() ||
+	    bt_mesh_priv_beacon_get() == BT_MESH_PRIV_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
-	} else {
-		bt_mesh_beacon_disable();
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||

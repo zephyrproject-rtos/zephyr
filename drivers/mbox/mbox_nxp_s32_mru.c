@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,10 +85,10 @@ static int nxp_s32_mru_send(const struct device *dev, uint32_t channel,
 		tx_mbox_addr[i] = (uint32_t *)get_mbox_addr(dev, channel, i);
 	}
 
-	tx_cfg.NumTxMB = MRU_MAX_MBOX_PER_CHAN,
-	tx_cfg.LastTxMBIndex = MRU_MAX_MBOX_PER_CHAN - 1,
-	tx_cfg.MBAddList = (volatile uint32 * const *)tx_mbox_addr,
-	tx_cfg.ChMBSTATAdd = &cfg->base->CHXCONFIG[channel].CH_MBSTAT,
+	tx_cfg.NumTxMB = MRU_MAX_MBOX_PER_CHAN;
+	tx_cfg.LastTxMBIndex = MRU_MAX_MBOX_PER_CHAN - 1;
+	tx_cfg.MBAddList = (volatile uint32 * const *)tx_mbox_addr;
+	tx_cfg.ChMBSTATAdd = &cfg->base->CHXCONFIG[channel].CH_MBSTAT;
 
 	status = Mru_Ip_Transmit(&tx_cfg, (const uint32_t *)msg->data);
 

@@ -8,6 +8,11 @@ struct ll_conn;
 
 typedef void (*ll_iso_stream_released_cb_t)(struct ll_conn *conn);
 
+#define CIG_STATE_NO_CIG       0
+#define CIG_STATE_CONFIGURABLE 1 /* Central only */
+#define CIG_STATE_INITIATING   2 /* Central only */
+#define CIG_STATE_ACTIVE       3
+#define CIG_STATE_INACTIVE     4
 
 struct ll_conn_iso_stream {
 	struct ll_iso_stream_hdr hdr;
@@ -67,7 +72,10 @@ struct ll_conn_iso_group {
 	uint16_t iso_interval;
 	uint8_t  cig_id;
 
-	uint8_t  started:1;     /* 1 if CIG started and ticker is running */
+	uint8_t  state:3;       /* CIG_STATE_NO_CIG, CIG_STATE_CONFIGURABLE (central only),
+				 * CIG_STATE_INITIATING (central only), CIG_STATE_ACTIVE or
+				 * CIG_STATE_INACTIVE.
+				 */
 	uint8_t  sca_update:4;  /* (new SCA)+1 to trigger restart of ticker */
 
 	union {

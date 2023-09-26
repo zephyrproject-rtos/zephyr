@@ -63,19 +63,30 @@ enum peci_command_code {
 	PECI_CMD_GET_DIB             = 0xF7,
 };
 
-/** PECI read/write supported responses */
+/**
+ * @name PECI read/write supported responses.
+ * @{
+ */
 #define PECI_CC_RSP_SUCCESS              (0x40U)
 #define PECI_CC_RSP_TIMEOUT              (0x80U)
 #define PECI_CC_OUT_OF_RESOURCES_TIMEOUT (0x81U)
 #define PECI_CC_RESOURCES_LOWPWR_TIMEOUT (0x82U)
 #define PECI_CC_ILLEGAL_REQUEST          (0x90U)
+/** @} */
 
-/** Ping command format. */
+/**
+ * @name Ping command format.
+ * @{
+ */
 #define PECI_PING_WR_LEN               (0U)
 #define PECI_PING_RD_LEN               (0U)
 #define PECI_PING_LEN                  (3U)
+/** @} */
 
-/** GetDIB command format. */
+/**
+ * @name GetDIB command format.
+ * @{
+ */
 #define PECI_GET_DIB_WR_LEN            (1U)
 #define PECI_GET_DIB_RD_LEN            (8U)
 #define PECI_GET_DIB_CMD_LEN           (4U)
@@ -84,8 +95,12 @@ enum peci_command_code {
 #define PECI_GET_DIB_DOMAIN_BIT_MASK   (0x4U)
 #define PECI_GET_DIB_MAJOR_REV_MASK    0xF0
 #define PECI_GET_DIB_MINOR_REV_MASK    0x0F
+/** @} */
 
-/** GetTemp command format. */
+/**
+ * @name GetTemp command format.
+ * @{
+ */
 #define PECI_GET_TEMP_WR_LEN           (1U)
 #define PECI_GET_TEMP_RD_LEN           (2U)
 #define PECI_GET_TEMP_CMD_LEN          (4U)
@@ -96,77 +111,113 @@ enum peci_command_code {
 #define PECI_GET_TEMP_ERR_LSB_RES      (0x1U)
 #define PECI_GET_TEMP_ERR_LSB_TEMP_LO  (0x2U)
 #define PECI_GET_TEMP_ERR_LSB_TEMP_HI  (0x3U)
+/** @} */
 
-/** RdPkgConfig command format. */
+/**
+ * @name RdPkgConfig command format.
+ * @{
+ */
 #define PECI_RD_PKG_WR_LEN             (5U)
 #define PECI_RD_PKG_LEN_BYTE           (2U)
 #define PECI_RD_PKG_LEN_WORD           (3U)
 #define PECI_RD_PKG_LEN_DWORD          (5U)
 #define PECI_RD_PKG_CMD_LEN            (8U)
+/** @} */
 
-/** WrPkgConfig command format */
+/**
+ * @name WrPkgConfig command format.
+ * @{
+ */
 #define PECI_WR_PKG_RD_LEN              (1U)
 #define PECI_WR_PKG_LEN_BYTE            (7U)
 #define PECI_WR_PKG_LEN_WORD            (8U)
 #define PECI_WR_PKG_LEN_DWORD           (10U)
 #define PECI_WR_PKG_CMD_LEN             (9U)
+/** @} */
 
-/** RdIAMSR command format */
+/**
+ * @name RdIAMSR command format.
+ * @{
+ */
 #define PECI_RD_IAMSR_WR_LEN            (5U)
 #define PECI_RD_IAMSR_LEN_BYTE          (2U)
 #define PECI_RD_IAMSR_LEN_WORD          (3U)
 #define PECI_RD_IAMSR_LEN_DWORD         (5U)
 #define PECI_RD_IAMSR_LEN_QWORD         (9U)
 #define PECI_RD_IAMSR_CMD_LEN           (8U)
+/** @} */
 
-/** WrIAMSR command format */
+/**
+ * @name WrIAMSR command format.
+ * @{
+ */
 #define PECI_WR_IAMSR_RD_LEN            (1U)
 #define PECI_WR_IAMSR_LEN_BYTE          (7U)
 #define PECI_WR_IAMSR_LEN_WORD          (8U)
 #define PECI_WR_IAMSR_LEN_DWORD         (10U)
 #define PECI_WR_IAMSR_LEN_QWORD         (14U)
 #define PECI_WR_IAMSR_CMD_LEN           (9U)
+/** @} */
 
-/** RdPCIConfig command format */
+/**
+ * @name RdPCIConfig command format.
+ * @{
+ */
 #define PECI_RD_PCICFG_WR_LEN           (6U)
 #define PECI_RD_PCICFG_LEN_BYTE         (2U)
 #define PECI_RD_PCICFG_LEN_WORD         (3U)
 #define PECI_RD_PCICFG_LEN_DWORD        (5U)
 #define PECI_RD_PCICFG_CMD_LEN          (9U)
+/** @} */
 
-/** WrPCIConfig command format */
+/**
+ * @name WrPCIConfig command format.
+ * @{
+ */
 #define PECI_WR_PCICFG_RD_LEN           (1U)
 #define PECI_WR_PCICFG_LEN_BYTE         (8U)
 #define PECI_WR_PCICFG_LEN_WORD         (9U)
 #define PECI_WR_PCICFG_LEN_DWORD        (11U)
 #define PECI_WR_PCICFG_CMD_LEN          (10U)
+/** @} */
 
-/** RdPCIConfigLocal command format */
+/**
+ * @name RdPCIConfigLocal command format.
+ * @{
+ */
 #define PECI_RD_PCICFGL_WR_LEN          (5U)
 #define PECI_RD_PCICFGL_RD_LEN_BYTE     (2U)
 #define PECI_RD_PCICFGL_RD_LEN_WORD     (3U)
 #define PECI_RD_PCICFGL_RD_LEN_DWORD    (5U)
 #define PECI_RD_PCICFGL_CMD_LEN         (8U)
+/** @} */
 
-/** WrPCIConfigLocal command format */
+/**
+ * @name WrPCIConfigLocal command format.
+ * @{
+ */
 #define PECI_WR_PCICFGL_RD_LEN          (1U)
 #define PECI_WR_PCICFGL_WR_LEN_BYTE     (7U)
 #define PECI_WR_PCICFGL_WR_LEN_WORD     (8U)
 #define PECI_WR_PCICFGL_WR_LEN_DWORD    (10U)
 #define PECI_WR_PCICFGL_CMD_LEN         (9U)
+/** @} */
 
 /**
  * @brief PECI buffer structure
- *
- * @param buf is a valid pointer on a data buffer, or NULL otherwise.
- * @param len is the length of the data buffer expected to received without
- * considering the frame check sequence byte.
- *
- * Note: Frame check sequence byte is added into rx buffer, need to allocate
- * an additional byte for this in rx buffer.
  */
 struct peci_buf {
+	/**
+	 * Valid pointer on a data buffer, or NULL otherwise.
+	 */
 	uint8_t *buf;
+	/**
+	 * Length of the data buffer expected to be received without considering
+	 * the frame check sequence byte.
+	 *
+	 * @note Frame check sequence byte is added into rx buffer: need to allocate
+	 * an additional byte for this in rx buffer.
+	 */
 	size_t len;
 };
 
@@ -213,8 +264,7 @@ __subsystem struct peci_driver_api {
  * @brief Configures the PECI interface.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param bitrate the selected expressed in Kbps.
- * command or when an event needs to be sent to the client application.
+ * @param bitrate the selected bitrate expressed in Kbps.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.

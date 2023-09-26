@@ -5,7 +5,7 @@
 #define __INTEL_ADSP_CPU_INIT_H
 
 #include <zephyr/arch/arch_inlines.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 #include <adsp_memory.h>
@@ -56,6 +56,11 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	reg = MEMCTL_VALUE;
 	XTENSA_WSR("MEMCTL", reg);
 	__asm__ volatile("rsync");
+#endif
+
+#if XCHAL_HAVE_THREADPTR
+	reg = 0;
+	XTENSA_WUR("THREADPTR", reg);
 #endif
 
 	/* Likewise enable prefetching.  Sadly these values are not

@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/posix/signal.h>
 #include <zephyr/posix/time.h>
 
 #define ACTIVE 1
@@ -16,8 +17,8 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
 struct timer_obj {
 	struct k_timer ztimer;
-	void (*sigev_notify_function)(sigval val);
-	sigval val;
+	void (*sigev_notify_function)(union sigval val);
+	union sigval val;
 	struct timespec interval;	/* Reload value */
 	uint32_t reload;			/* Reload value in ms */
 	uint32_t status;
@@ -180,6 +181,29 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 }
 
 /**
+ * @brief Returns the timer expiration overrun count.
+ *
+ * See IEEE 1003.1
+ */
+int timer_getoverrun(timer_t timerid)
+{
+	struct timer_obj *timer = (struct timer_obj *) timerid;
+
+	if (timer == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	int overruns = k_timer_status_get(&timer->ztimer) - 1;
+
+	if (overruns > CONFIG_TIMER_DELAYTIMER_MAX) {
+		overruns = CONFIG_TIMER_DELAYTIMER_MAX;
+	}
+
+	return overruns;
+}
+
+/**
  * @brief Delete a per-process timer.
  *
  * See IEEE 1003.1
@@ -198,7 +222,7 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
-	k_mem_slab_free(&posix_timer_slab, (void *) &timer);
+	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 
 	return 0;
 }

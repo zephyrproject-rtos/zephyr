@@ -602,7 +602,7 @@ static int dma_gd32_init(const struct device *dev)
 	const struct dma_gd32_config *cfg = dev->config;
 
 	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t *)&cfg->clkid);
+			       (clock_control_subsys_t)&cfg->clkid);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1)
 	(void)reset_line_toggle_dt(&cfg->reset);

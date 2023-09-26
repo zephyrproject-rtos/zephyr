@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f071", "st,stm32f0", "simple-bus";
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				erase-block-size = <2048>;

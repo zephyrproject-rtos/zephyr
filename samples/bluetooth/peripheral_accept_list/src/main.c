@@ -151,14 +151,14 @@ static struct bt_conn_auth_info_cb bt_conn_auth_info = {
 	.pairing_complete = pairing_complete
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	bt_ready();
@@ -167,4 +167,5 @@ void main(void)
 	while (1) {
 		k_sleep(K_FOREVER);
 	}
+	return 0;
 }

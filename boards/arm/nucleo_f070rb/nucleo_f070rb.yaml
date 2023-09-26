@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
@@ -21,3 +22,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: st

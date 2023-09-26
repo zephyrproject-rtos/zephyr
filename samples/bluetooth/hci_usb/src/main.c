@@ -15,9 +15,10 @@ USBD_CONFIGURATION_DEFINE(config_1,
 			  200);
 
 USBD_DESC_LANG_DEFINE(sample_lang);
-USBD_DESC_STRING_DEFINE(sample_mfr, "ZEPHYR", 1);
-USBD_DESC_STRING_DEFINE(sample_product, "Zephyr USBD BT HCI", 2);
-USBD_DESC_STRING_DEFINE(sample_sn, "0123456789ABCDEF", 3);
+USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, "ZEPHYR");
+USBD_DESC_PRODUCT_DEFINE(sample_product, "Zephyr USBD BT HCI");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn, "0123456789ABCDEF");
+
 
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
@@ -71,7 +72,7 @@ static int enable_usb_device_next(void)
 }
 #endif /* CONFIG_USB_DEVICE_STACK_NEXT */
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -83,8 +84,9 @@ void main(void)
 
 	if (ret != 0) {
 		printk("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth over USB sample\n");
+	return 0;
 }

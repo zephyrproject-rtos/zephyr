@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,7 +135,7 @@ struct input_listener {
  * @param _dev @ref device pointer or NULL.
  * @param _callback The callback function.
  */
-#define INPUT_LISTENER_CB_DEFINE(_dev, _callback)                              \
+#define INPUT_CALLBACK_DEFINE(_dev, _callback)                                 \
 	static const STRUCT_SECTION_ITERABLE(input_listener,                   \
 					     _input_listener__##_callback) = { \
 		.dev = _dev,                                                   \

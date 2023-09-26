@@ -67,8 +67,22 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 | QSPI      | on-chip    | QSPI flash                          |
 +-----------+------------+-------------------------------------+
+| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr port.
+
+Fetch Binary Blobs
+******************
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+.. note: Only Bluetooth functionality is currently supported.
 
 Resources sharing
 =================
@@ -137,7 +151,7 @@ You should see the following message on the console:
 
 Similarly, you can build and flash samples on the M4 target.
 
-Here is an example for the :ref:`blinky-sample` application on M4 core.
+Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -163,7 +177,7 @@ as "JTAG". For example::
    https://www.st.com/content/st_com/en/products/microcontrollers-microprocessors/stm32-32-bit-arm-cortex-mcus/stm32-high-performance-mcus/stm32h7-series/stm32h747-757/stm32h747xi.html
 
 .. _STM32H747xx reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00176879.pdf
+   https://www.st.com/resource/en/reference_manual/dm00176879.pdf
 
 .. _STM32H747xx datasheet:
    https://www.st.com/resource/en/datasheet/stm32h747xi.pdf

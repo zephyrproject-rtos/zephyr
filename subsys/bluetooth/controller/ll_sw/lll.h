@@ -15,11 +15,6 @@
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
 #define EVENT_PIPELINE_MAX 7
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-#define EVENT_DONE_LINK_CNT 0
-#else
-#define EVENT_DONE_LINK_CNT 1
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #define ADV_INT_UNIT_US      625U
 #define SCAN_INT_UNIT_US     625U
@@ -186,6 +181,9 @@ enum {
 #else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
 #define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#define LL_CIS_HANDLE_BASE (BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE)
+#define LL_CIS_IDX_FROM_HANDLE(handle) \
+	((handle) - LL_CIS_HANDLE_BASE)
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
@@ -316,6 +314,8 @@ enum node_rx_type {
 	NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_ULL_RELEASE,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE,
+	/* Signals retention (ie non-release) of rx node */
+	NODE_RX_TYPE_RETAIN,
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	/* No entries shall be added after the NODE_RX_TYPE_USER_START/END */
@@ -593,9 +593,7 @@ void *ull_pdu_rx_alloc(void);
 void *ull_iso_pdu_rx_alloc_peek(uint8_t count);
 void *ull_iso_pdu_rx_alloc(void);
 void ull_rx_put(memq_link_t *link, void *rx);
-void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
-void ull_rx_sched_done(void);
 void ull_rx_put_sched(memq_link_t *link, void *rx);
 void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);

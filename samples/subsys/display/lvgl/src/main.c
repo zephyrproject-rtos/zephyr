@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <lvgl_input_device.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
@@ -34,11 +35,22 @@ static void button_isr_callback(const struct device *port,
 
 	count = 0;
 }
-#endif
+#endif /* CONFIG_GPIO */
 
-void main(void)
+#ifdef CONFIG_LV_Z_ENCODER_INPUT
+static const struct device *lvgl_encoder =
+	DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_lvgl_encoder_input));
+#endif /* CONFIG_LV_Z_ENCODER_INPUT */
+
+static void lv_btn_click_callback(lv_event_t *e)
 {
-	int err;
+	ARG_UNUSED(e);
+
+	count = 0;
+}
+
+int main(void)
+{
 	char count_str[11] = {0};
 	const struct device *display_dev;
 	lv_obj_t *hello_world_label;
@@ -47,15 +59,17 @@ void main(void)
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device not ready, aborting test");
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_GPIO
-	if (device_is_ready(button_gpio.port)) {
+	if (gpio_is_ready_dt(&button_gpio)) {
+		int err;
+
 		err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
 		if (err) {
 			LOG_ERR("failed to configure button gpio: %d", err);
-			return;
+			return 0;
 		}
 
 		gpio_init_callback(&button_callback, button_isr_callback,
@@ -64,23 +78,38 @@ void main(void)
 		err = gpio_add_callback(button_gpio.port, &button_callback);
 		if (err) {
 			LOG_ERR("failed to add button callback: %d", err);
-			return;
+			return 0;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&button_gpio,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
 			LOG_ERR("failed to enable button callback: %d", err);
-			return;
+			return 0;
 		}
 	}
-#endif
+#endif /* CONFIG_GPIO */
 
-	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN)) {
+#ifdef CONFIG_LV_Z_ENCODER_INPUT
+	lv_obj_t *arc;
+	lv_group_t *arc_group;
+
+	arc = lv_arc_create(lv_scr_act());
+	lv_obj_align(arc, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_size(arc, 150, 150);
+
+	arc_group = lv_group_create();
+	lv_group_add_obj(arc_group, arc);
+	lv_indev_set_group(lvgl_input_get_indev(lvgl_encoder), arc_group);
+#endif /* CONFIG_LV_Z_ENCODER_INPUT */
+
+	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN) || IS_ENABLED(CONFIG_LV_Z_POINTER_INPUT)) {
 		lv_obj_t *hello_world_button;
 
 		hello_world_button = lv_btn_create(lv_scr_act());
 		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
+						NULL);
 		hello_world_label = lv_label_create(hello_world_button);
 	} else {
 		hello_world_label = lv_label_create(lv_scr_act());

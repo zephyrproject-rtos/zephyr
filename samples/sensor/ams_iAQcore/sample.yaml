@@ -5,4 +5,6 @@ tests:
   sample.sensor.iaqcore:
     harness: sensor
     tags: samples
-    depends_on: i2c arduino_i2c
+    depends_on:
+      - i2c
+      - arduino_i2c

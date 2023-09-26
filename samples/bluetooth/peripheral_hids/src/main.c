@@ -127,14 +127,14 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SAMPLE_BT_USE_AUTHENTICATION)) {
@@ -143,4 +143,5 @@ void main(void)
 	}
 
 	hog_button_loop();
+	return 0;
 }

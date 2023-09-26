@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022 Laird Connectivity
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,20 @@ extern "C" {
 #define OS_MGMT_ID_RESET		5
 #define OS_MGMT_ID_MCUMGR_PARAMS	6
 #define OS_MGMT_ID_INFO			7
+
+/**
+ * Command result codes for OS management group.
+ */
+enum os_mgmt_err_code_t {
+	/** No error, this is implied if there is no ret value in the response */
+	OS_MGMT_ERR_OK = 0,
+
+	/** Unknown error occurred. */
+	OS_MGMT_ERR_UNKNOWN,
+
+	/** The provided format value is not valid. */
+	OS_MGMT_ERR_INVALID_FORMAT,
+};
 
 /* Bitmask values used by the os info command handler. Note that the width of this variable is
  * 32-bits, allowing 32 flags, custom user-level implementations should start at

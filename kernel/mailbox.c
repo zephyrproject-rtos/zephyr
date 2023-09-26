@@ -14,10 +14,11 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <string.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/init.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
@@ -49,10 +50,8 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(const struct device *dev)
+static int init_mbox_module(void)
 {
-	ARG_UNUSED(dev);
-
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 

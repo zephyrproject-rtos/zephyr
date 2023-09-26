@@ -60,6 +60,42 @@ ZTEST(regulator_api, test_parent_dvs_state_set_fail)
 	zassert_equal(regulator_parent_fake_dvs_state_set_fake.call_count, 1U);
 }
 
+ZTEST(regulator_api, test_parent_ship_mode_not_implemented)
+{
+	int ret;
+	struct regulator_parent_driver_api *api =
+		(struct regulator_parent_driver_api *)parent->api;
+	regulator_ship_mode_t ship_mode = api->ship_mode;
+
+	api->ship_mode = NULL;
+	ret = regulator_parent_ship_mode(parent);
+	api->ship_mode = ship_mode;
+
+	zassert_equal(ret, -ENOSYS);
+}
+
+ZTEST(regulator_api, test_parent_ship_mode_ok)
+{
+	RESET_FAKE(regulator_parent_fake_ship_mode);
+
+	regulator_parent_fake_ship_mode_fake.return_val = 0;
+
+	zassert_equal(regulator_parent_ship_mode(parent), 0);
+	zassert_equal(regulator_parent_fake_ship_mode_fake.arg0_val, parent);
+	zassert_equal(regulator_parent_fake_ship_mode_fake.call_count, 1U);
+}
+
+ZTEST(regulator_api, test_parent_ship_mode_fail)
+{
+	RESET_FAKE(regulator_parent_fake_ship_mode);
+
+	regulator_parent_fake_ship_mode_fake.return_val = -ENOTSUP;
+
+	zassert_equal(regulator_parent_ship_mode(parent), -ENOTSUP);
+	zassert_equal(regulator_parent_fake_ship_mode_fake.arg0_val, parent);
+	zassert_equal(regulator_parent_fake_ship_mode_fake.call_count, 1U);
+}
+
 ZTEST(regulator_api, test_common_config)
 {
 	const struct regulator_common_config *config;
@@ -91,6 +127,14 @@ ZTEST(regulator_api, test_common_config)
 	zassert_equal(config->allowed_modes[0], 1U);
 	zassert_equal(config->allowed_modes[1], 10U);
 	zassert_equal(config->allowed_modes_cnt, 2U);
+}
+
+ZTEST(regulator_api, test_common_is_init_enabled)
+{
+	zassert_false(regulator_common_is_init_enabled(reg0));
+	zassert_true(regulator_common_is_init_enabled(reg1));
+	zassert_true(regulator_common_is_init_enabled(reg2));
+	zassert_false(regulator_common_is_init_enabled(reg3));
 }
 
 ZTEST(regulator_api, test_enable_disable)

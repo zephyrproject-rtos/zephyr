@@ -49,13 +49,17 @@ simulation and framework, while being fully decoupled of the host.
 Host system dependencies
 ========================
 
-This port is designed to run in POSIX compatible operating systems,
-but it has only been tested on Linux.
+This port is designed and tested to run in Linux.
 
 .. note::
 
    You must have the 32-bit C library installed in your system
    (in Ubuntu 16.04 install the gcc-multilib package)
+
+.. note::
+
+   The POSIX architecture is known to **not** work on macOS due to
+   fundamental differences between macOS and other typical Unixes.
 
 .. note::
 

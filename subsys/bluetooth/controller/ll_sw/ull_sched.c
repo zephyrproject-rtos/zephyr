@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/slist.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -32,6 +34,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ll_sw/ull_tx_queue.h"
 
@@ -39,164 +42,140 @@
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
 
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ll_feat.h"
 
 #include "hal/debug.h"
 
 
-#if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				 uint32_t ticks_anchor,
 				 uint32_t *win_offset_us);
-#endif /* CONFIG_BT_CONN && CONFIG_BT_CENTRAL */
+static bool ticker_match_cen_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				   uint32_t ticks_to_expire, void *op_context);
+#endif /* CONFIG_BT_CENTRAL */
 
 typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id,
 					    uint32_t *ticks_slot);
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
+				    uint32_t *remainder_match,
 				    uint32_t *ticks_slot_match);
 static void ticker_op_cb(uint32_t status, void *param);
-static bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
-			       uint32_t ticks_to_expire, void *op_context);
 static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot);
 
+#if (defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+			       uint32_t *ticks_to_expire_prev,
+			       uint32_t *ticks_slot_prev,
+			       uint32_t *ticks_anchor);
+static bool ticker_match_any_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				   uint32_t ticks_to_expire, void *op_context);
+#endif /* (CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER) ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO
+	*/
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
-int ull_sched_adv_aux_sync_free_slot_get(uint8_t user_id,
-					 uint32_t ticks_slot_abs,
-					 uint32_t *ticks_anchor)
+int ull_sched_adv_aux_sync_free_anchor_get(uint32_t ticks_slot_abs,
+					   uint32_t *ticks_anchor)
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
-	uint8_t ticker_id;
 
-	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
-					 ticker_match_op_cb, ull_hdr_get_cb,
-					 ticks_anchor, &ticks_to_expire,
-					 &ticks_slot);
-	if (ticker_id != TICKER_NULL) {
-		if (false) {
-
-		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_AUX_BASE,
-				    TICKER_ID_ADV_AUX_LAST)) {
-			const struct ll_adv_aux_set *aux;
-
-			*ticks_anchor += ticks_to_expire;
-			*ticks_anchor += ticks_slot;
-
-			aux = ull_adv_aux_get(ticker_id -
-					      TICKER_ID_ADV_AUX_BASE);
-
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-			if (aux->lll.adv->sync) {
-				const struct ll_adv_sync_set *sync;
-
-				sync = HDR_LLL2ULL(aux->lll.adv->sync);
-				if (sync->is_started) {
-					*ticks_anchor += sync->ull.ticks_slot;
-					*ticks_anchor += HAL_TICKER_US_TO_TICKS(
-						EVENT_TICKER_RES_MARGIN_US << 1);
-				}
-			}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				*ticks_anchor +=
-					MAX(aux->ull.ticks_active_to_start,
-					    aux->ull.ticks_prepare_to_start);
-			}
-
-			return 0;
-
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_SYNC_BASE,
-				    TICKER_ID_ADV_SYNC_LAST)) {
-			*ticks_anchor += ticks_to_expire;
-			*ticks_anchor += ticks_slot;
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				const struct ll_adv_sync_set *sync;
-
-				sync = ull_adv_sync_get(ticker_id -
-							TICKER_ID_ADV_SYNC_BASE);
-				*ticks_anchor +=
-					MAX(sync->ull.ticks_active_to_start,
-					    sync->ull.ticks_prepare_to_start);
-			}
-
-			return 0;
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_ISO_BASE,
-				    TICKER_ID_ADV_ISO_LAST)) {
-			*ticks_anchor += ticks_to_expire;
-			*ticks_anchor += ticks_slot;
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-				const struct ll_adv_iso_set *iso;
-
-				iso = ull_adv_iso_get(ticker_id -
-						      TICKER_ID_ADV_ISO_BASE);
-				*ticks_anchor +=
-					MAX(iso->ull.ticks_active_to_start,
-					    iso->ull.ticks_prepare_to_start);
-			}
-
-			return 0;
-
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-
-#if defined(CONFIG_BT_CONN)
-		} else if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
-				    TICKER_ID_CONN_LAST)) {
-			*ticks_anchor += ticks_to_expire;
-			*ticks_anchor += ticks_slot;
-
-			return 0;
-#endif /* CONFIG_BT_CONN */
-
-		}
-	}
-
-	return -ECHILD;
+	return group_free_slot_get(TICKER_USER_ID_THREAD, ticks_slot_abs,
+				   &ticks_to_expire, &ticks_slot, ticks_anchor);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+int ull_sched_conn_iso_free_offset_get(uint32_t ticks_slot_abs,
+				       uint32_t *ticks_to_expire)
+{
+	uint32_t ticks_anchor;
+	uint32_t ticks_slot;
+	int err;
+
+	err = group_free_slot_get(TICKER_USER_ID_ULL_LOW, ticks_slot_abs,
+				  ticks_to_expire, &ticks_slot, &ticks_anchor);
+	if (err) {
+		return err;
+	}
+
+	*ticks_to_expire += ticks_slot;
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				 uint32_t *ticks_anchor, uint32_t *us_offset)
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
+	uint32_t remainder;
 	uint8_t ticker_id;
 
 	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
-					 ticker_match_op_cb, ull_hdr_get_cb,
+					 ticker_match_cen_op_cb, ull_hdr_get_cb,
 					 ticks_anchor, &ticks_to_expire,
-					 &ticks_slot);
+					 &remainder, &ticks_slot);
 	if (ticker_id != TICKER_NULL) {
-		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire +
-						    ticks_slot) +
-						    (EVENT_JITTER_US << 3);
+		uint32_t central_spacing_us;
+		uint32_t remainder_us;
+		uint32_t slot_us;
+
+		/* When CONFIG_BT_CTLR_CENTRAL_SPACING is used then ticks_slot
+		 * returned converts to slot_us that is less than or equal to
+		 * CONFIG_BT_CTLR_CENTRAL_SPACING, because floor value in ticks
+		 * is returned as ticks_slot.
+		 * Hence, use CONFIG_BT_CTLR_CENTRAL_SPACING without margin.
+		 *
+		 * If actual ticks_slot in microseconds is larger than
+		 * CONFIG_BT_CTLR_CENTRAL_SPACING, then add margin between
+		 * central radio events.
+		 */
+		slot_us = HAL_TICKER_TICKS_TO_US(ticks_slot);
+		if (slot_us > CONFIG_BT_CTLR_CENTRAL_SPACING) {
+			central_spacing_us = slot_us;
+			central_spacing_us += (EVENT_TICKER_RES_MARGIN_US << 1);
+		} else {
+			central_spacing_us = CONFIG_BT_CTLR_CENTRAL_SPACING;
+		}
+
+		remainder_us = remainder;
+		hal_ticker_remove_jitter(&ticks_to_expire, &remainder_us);
+
+		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
+			     remainder_us + central_spacing_us;
+
 		return 0;
 	}
 
 	return -ECHILD;
 }
 
-#if defined(CONFIG_BT_CENTRAL)
 void ull_sched_mfy_after_cen_offset_get(void *param)
 {
 	struct lll_prepare_param *p = param;
 	struct lll_scan *lll = p->param;
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_at_expire;
+	uint32_t remainder_us;
 	struct ll_conn *conn;
 
 	conn = HDR_LLL2ULL(lll->conn);
@@ -207,9 +186,19 @@ void ull_sched_mfy_after_cen_offset_get(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
+	ticks_at_expire = p->ticks_at_expire;
+	remainder_us = p->remainder;
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+
 	after_cen_offset_get(lll->conn->interval,
 			     (ticks_slot_overhead + conn->ull.ticks_slot),
-			     p->ticks_at_expire, &lll->conn_win_offset_us);
+			     ticks_at_expire, &lll->conn_win_offset_us);
+	if (lll->conn_win_offset_us) {
+		lll->conn_win_offset_us +=
+			HAL_TICKER_TICKS_TO_US(p->ticks_at_expire -
+					       ticks_at_expire) -
+			remainder_us;
+	}
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -309,28 +298,144 @@ static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CONN */
 
+#if (defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+			       uint32_t *ticks_to_expire_prev,
+			       uint32_t *ticks_slot_prev,
+			       uint32_t *ticks_anchor)
+{
+	uint32_t remainder_prev;
+	uint8_t ticker_id;
+
+	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
+					 ticker_match_any_op_cb, ull_hdr_get_cb,
+					 ticks_anchor, ticks_to_expire_prev,
+					 &remainder_prev, ticks_slot_prev);
+	if (ticker_id != TICKER_NULL) {
+		uint32_t ticks_to_expire;
+		uint32_t ticks_slot;
+
+		ticks_to_expire = *ticks_to_expire_prev;
+		ticks_slot = *ticks_slot_prev;
+
+		if (false) {
+
+#if defined(CONFIG_BT_BROADCASTER)
+		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_AUX_BASE,
+				    TICKER_ID_ADV_AUX_LAST)) {
+			const struct ll_adv_aux_set *aux;
+
+			*ticks_anchor += ticks_to_expire;
+			*ticks_anchor += ticks_slot;
+
+			aux = ull_adv_aux_get(ticker_id -
+					      TICKER_ID_ADV_AUX_BASE);
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (aux->lll.adv->sync) {
+				const struct ll_adv_sync_set *sync;
+
+				sync = HDR_LLL2ULL(aux->lll.adv->sync);
+				if (sync->is_started) {
+					*ticks_anchor += sync->ull.ticks_slot;
+					*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+						EVENT_TICKER_RES_MARGIN_US << 1);
+				}
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+				*ticks_anchor +=
+					MAX(aux->ull.ticks_active_to_start,
+					    aux->ull.ticks_prepare_to_start);
+			}
+
+			return 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_SYNC_BASE,
+				    TICKER_ID_ADV_SYNC_LAST)) {
+			*ticks_anchor += ticks_to_expire;
+			*ticks_anchor += ticks_slot;
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+				const struct ll_adv_sync_set *sync;
+
+				sync = ull_adv_sync_get(ticker_id -
+							TICKER_ID_ADV_SYNC_BASE);
+				*ticks_anchor +=
+					MAX(sync->ull.ticks_active_to_start,
+					    sync->ull.ticks_prepare_to_start);
+			}
+
+			return 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_ISO_BASE,
+				    TICKER_ID_ADV_ISO_LAST)) {
+			*ticks_anchor += ticks_to_expire;
+			*ticks_anchor += ticks_slot;
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+				const struct ll_adv_iso_set *iso;
+
+				iso = ull_adv_iso_get(ticker_id -
+						      TICKER_ID_ADV_ISO_BASE);
+				*ticks_anchor +=
+					MAX(iso->ull.ticks_active_to_start,
+					    iso->ull.ticks_prepare_to_start);
+			}
+
+			return 0;
+
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_CONN)
+		} else if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
+				    TICKER_ID_CONN_LAST)) {
+			*ticks_anchor += ticks_to_expire;
+			*ticks_anchor += ticks_slot;
+
+			return 0;
+#endif /* CONFIG_BT_CONN */
+
+		}
+	}
+
+	return -ECHILD;
+}
+#endif /* (CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER) ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO
+	*/
+
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
+				    uint32_t *remainder_match,
 				    uint32_t *ticks_slot_match)
 {
 	uint32_t ticks_to_expire_prev;
 	uint32_t ticks_slot_abs_prev;
 	uint32_t ticks_anchor_prev;
 	uint32_t ticks_to_expire;
+	uint32_t remainder_prev;
+	uint32_t remainder;
 	uint8_t ticker_id_prev;
 	uint8_t ticker_id;
 	uint8_t retry;
 
 	/* As we may place the event between two other events, ensure there is
-	 * space for 3 times +/- 16 us jitter. I.e. with 32KHz sleep clock,
+	 * space for 4 times +/- 16 us jitter. I.e. with 32KHz sleep clock,
 	 * ~30.517 us after previous event, ~30.517 us before and after current
 	 * event, and an ~30.517 us before next event. Hence 8 time of ceil
-	 * value 16 us (30.517 / 2).
+	 * value 16 us (30.517 / 2) or 4 times EVENT_TICKER_RES_MARGIN_US.
 	 */
-	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
+	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US << 2);
 
 	/* There is a possibility that ticker nodes expire during iterations in
 	 * this function causing the reference ticks_anchor returned for the
@@ -346,6 +451,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	ticker_id = ticker_id_prev = TICKER_NULL;
 	ticks_anchor_prev = 0U;
 	ticks_to_expire = ticks_to_expire_prev = 0U;
+	remainder = remainder_prev = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
 		uint32_t ticks_slot_abs_curr = 0U;
@@ -360,7 +466,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
 					       &ticker_id, ticks_anchor,
-					       &ticks_to_expire, NULL,
+					       &ticks_to_expire, &remainder,
 					       NULL, /* lazy */
 					       ticker_match_op_cb,
 					       NULL, /* match_op_context */
@@ -412,7 +518,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		}
 #endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 
-		hdr = ull_hdr_get_cb(ticker_id, &ticks_slot);
+		hdr = ull_hdr_get_cb_fn(ticker_id, &ticks_slot);
 		if (!hdr) {
 			continue;
 		}
@@ -453,11 +559,13 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		ticks_anchor_prev = *ticks_anchor;
 		ticker_id_prev = ticker_id;
 		ticks_to_expire_prev = ticks_to_expire_normal;
+		remainder_prev = remainder;
 		ticks_slot_abs_prev = ticks_slot_abs_curr;
 	}
 
 	if (ticker_id_prev != TICKER_NULL) {
 		*ticks_to_expire_match = ticks_to_expire_prev;
+		*remainder_match = remainder_prev;
 		*ticks_slot_match = ticks_slot_abs_prev;
 	}
 
@@ -469,8 +577,10 @@ static void ticker_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 
-static bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
-			       uint32_t ticks_to_expire, void *op_context)
+#if (defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static bool ticker_match_any_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				   uint32_t ticks_to_expire, void *op_context)
 {
 	ARG_UNUSED(ticks_slot);
 	ARG_UNUSED(ticks_to_expire);
@@ -496,10 +606,39 @@ static bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 #if defined(CONFIG_BT_CONN)
 	       IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
 			TICKER_ID_CONN_LAST) ||
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	       IN_RANGE(ticker_id, TICKER_ID_CONN_ISO_BASE,
+			TICKER_ID_CONN_ISO_LAST) ||
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #endif /* CONFIG_BT_CONN */
 
 	       false;
 }
+#endif /* (CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_BROADCASTER) ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO
+	*/
+
+#if defined(CONFIG_BT_CENTRAL)
+static bool ticker_match_cen_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				   uint32_t ticks_to_expire, void *op_context)
+{
+	ARG_UNUSED(ticks_slot);
+	ARG_UNUSED(ticks_to_expire);
+	ARG_UNUSED(op_context);
+
+	return IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
+			TICKER_ID_CONN_LAST) ||
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) && \
+		(CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+	       IN_RANGE(ticker_id, TICKER_ID_CONN_ISO_BASE,
+			TICKER_ID_CONN_ISO_LAST) ||
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO &&
+	*  (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
+	*/
+	       false;
+}
+#endif /* CONFIG_BT_CENTRAL */
 
 static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 {
@@ -517,7 +656,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 				time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 							       PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = aux->ull.ticks_slot;
 
@@ -547,7 +686,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				uint32_t time_us;
 
 				time_us = ull_adv_sync_time_get(sync, PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = sync->ull.ticks_slot;
 			}
@@ -562,7 +701,10 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		adv_iso = ull_adv_iso_get(ticker_id - TICKER_ID_ADV_ISO_BASE);
 		if (adv_iso) {
-			*ticks_slot = adv_iso->ull.ticks_slot;
+			uint32_t time_us;
+
+			time_us = ull_adv_iso_max_time_get(adv_iso);
+			*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 			return &adv_iso->ull;
 		}
@@ -578,8 +720,6 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
 		if (conn && !conn->lll.role) {
-			uint32_t ticks_slot_conn;
-
 			if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_RESERVE_MAX)) {
 				uint32_t ready_delay_us;
 				uint16_t max_tx_time;
@@ -608,21 +748,36 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 				time_us = EVENT_OVERHEAD_START_US +
+					  EVENT_OVERHEAD_END_US +
 					  ready_delay_us +  max_rx_time +
-					  EVENT_IFS_US + max_tx_time;
-				ticks_slot_conn =
-					HAL_TICKER_US_TO_TICKS(time_us);
+					  EVENT_IFS_US + max_tx_time +
+					  (EVENT_CLOCK_JITTER_US << 1);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
-				ticks_slot_conn = conn->ull.ticks_slot;
+				*ticks_slot = conn->ull.ticks_slot;
 			}
 
-			*ticks_slot =
-				MAX(ticks_slot_conn,
-				    HAL_TICKER_US_TO_TICKS(
-					    CONFIG_BT_CTLR_CENTRAL_SPACING));
+			if (*ticks_slot < HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING)) {
+				*ticks_slot =
+					HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+			}
 
 			return &conn->ull;
 		}
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	} else if (IN_RANGE(ticker_id, TICKER_ID_CONN_ISO_BASE,
+			    TICKER_ID_CONN_ISO_LAST)) {
+		struct ll_conn_iso_group *cig;
+
+		cig = ll_conn_iso_group_get(ticker_id - TICKER_ID_CONN_ISO_BASE);
+		if (cig) {
+			*ticks_slot = cig->ull.ticks_slot;
+
+			return &cig->ull;
+		}
+
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #endif /* CONFIG_BT_CONN */
 
 	}

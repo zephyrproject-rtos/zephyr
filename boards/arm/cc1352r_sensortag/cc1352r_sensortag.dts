@@ -10,6 +10,7 @@
 #include <ti/cc1352r.dtsi>
 #include "../cc1352r1_launchxl/boosterpack_connector.dtsi"
 #include "cc1352r_sensortag-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
@@ -28,6 +29,8 @@
 		sensor2 = &sensor2;
 		accel0 = &sensor1;
 		watchdog0 = &wdt0;
+		mcuboot-led0 = &led1;
+		mcuboot-button0 = &btn1;
 	};
 
 	chosen {
@@ -36,6 +39,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -59,32 +63,49 @@
 		btn0: btn_0 {
 			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
 			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		btn1: btn_1 {
 			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
 			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+};
 
-	power-states {
-		idle: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <1000>;
+&flash0 {
+	partitions {
+		/* 40 KiB (0xa000) for MCUboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
 		};
 
-		standby: standby {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <5000>;
-			exit-latency-us = <240>;
+		/* 136 KiB (0x22000) per slot for application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x00022000>;
 		};
+
+		slot1_partition: partition@2c000 {
+			label = "image-1";
+			reg = <0x0002c000 0x00022000>;
+		};
+
+		/* 32 KiB (0x8000) for storage */
+		storage_partition: partition@4e000 {
+			label = "storage";
+			reg = <0x0004e000 0x00008000>;
+		};
+
+		/* CCFG (customer configuration area) is located in uppermost
+		 * flash sector (0x2000/8 KiB @ 0x56000), keep it unused.
+		 */
 	};
 };
 
 &cpu0 {
 	clock-frequency = <48000000>;
-	cpu-power-states = <&idle &standby>;
 };
 
 &trng {
@@ -139,10 +160,6 @@
 	};
 
 	/* TODO: "jedec,spi-nor" for the mx25r8035 */
-};
-
-&rtc {
-	status = "okay";
 };
 
 &radio {

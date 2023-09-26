@@ -23,14 +23,14 @@ static void trigger_handler(const struct device *dev,
 
 #endif
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(sensirion_sht3xd);
 	int rc;
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 #ifdef CONFIG_SHT3XD_TRIGGER
@@ -53,7 +53,7 @@ void main(void)
 	}
 	if (rc != 0) {
 		printf("SHT3XD: trigger config failed: %d\n", rc);
-		return;
+		return 0;
 	}
 	printf("Alert outside %d..%d %%RH got %d\n", lo_thr.val1,
 	       hi_thr.val1, rc);
@@ -98,4 +98,5 @@ void main(void)
 
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

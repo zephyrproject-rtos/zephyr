@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT gpio_keys
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(zephyr_gpio_keys, CONFIG_INPUT_LOG_LEVEL);
-
-#define DT_DRV_COMPAT zephyr_gpio_keys
+LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
 struct gpio_keys_callback {
 	struct gpio_callback gpio_cb;
@@ -40,19 +40,15 @@ struct gpio_keys_pin_data {
 	int8_t pin_state;
 };
 
-struct gpio_keys_data {
-	struct gpio_keys_pin_data *pin_data;
-};
-
 /**
  * Handle debounced gpio pin state.
  */
 static void gpio_keys_change_deferred(struct k_work *work)
 {
-	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(work, struct gpio_keys_pin_data, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(dwork, struct gpio_keys_pin_data, work);
 	const struct device *dev = pin_data->dev;
-	struct gpio_keys_data *data = dev->data;
-	int key_index = pin_data - &data->pin_data[0];
+	int key_index = pin_data - (struct gpio_keys_pin_data *)dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
 	const struct gpio_keys_pin_config *pin_cfg = &cfg->pin_cfg[key_index];
 
@@ -83,8 +79,10 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 	ARG_UNUSED(dev); /* This is a pointer to GPIO device, use dev pointer in
 			  * cbdata for pointer to gpio_debounce device node
 			  */
-	struct gpio_keys_pin_data *pin_data =
-		CONTAINER_OF(cbdata, struct gpio_keys_pin_data, cb_data);
+	struct gpio_keys_callback *keys_cb = CONTAINER_OF(
+			cbdata, struct gpio_keys_callback, gpio_cb);
+	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(
+			keys_cb, struct gpio_keys_pin_data, cb_data);
 	const struct gpio_keys_config *cfg = pin_data->dev->config;
 
 	for (int i = 0; i < cfg->num_keys; i++) {
@@ -97,11 +95,17 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 					 struct gpio_keys_callback *cb, uint32_t zephyr_code)
 {
-	int retval = -ENODEV;
+	int retval;
 	gpio_flags_t flags;
 
 	gpio_init_callback(&cb->gpio_cb, gpio_keys_interrupt, BIT(gpio_spec->pin));
-	gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+
+	retval = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+	if (retval < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return retval;
+	}
+
 	cb->zephyr_code = zephyr_code;
 	cb->pin_state = -1;
 	flags = GPIO_INT_EDGE_BOTH & ~GPIO_INT_MODE_DISABLED;
@@ -115,7 +119,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 
 static int gpio_keys_init(const struct device *dev)
 {
-	struct gpio_keys_data *data = dev->data;
+	struct gpio_keys_pin_data *pin_data = dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
 	int ret;
 
@@ -133,11 +137,11 @@ static int gpio_keys_init(const struct device *dev)
 			return ret;
 		}
 
-		data->pin_data[i].dev = dev;
-		k_work_init_delayable(&data->pin_data[i].work, gpio_keys_change_deferred);
+		pin_data[i].dev = dev;
+		k_work_init_delayable(&pin_data[i].work, gpio_keys_change_deferred);
 
 		ret = gpio_keys_interrupt_configure(&cfg->pin_cfg[i].spec,
-						    &data->pin_data[i].cb_data,
+						    &pin_data[i].cb_data,
 						    cfg->pin_cfg[i].zephyr_code);
 		if (ret != 0) {
 			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
@@ -148,6 +152,10 @@ static int gpio_keys_init(const struct device *dev)
 	return 0;
 }
 
+#define GPIO_KEYS_CFG_CHECK(node_id)                                                               \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, zephyr_code),                                       \
+		     "zephyr-code must be specified to use the input-gpio-keys driver");
+
 #define GPIO_KEYS_CFG_DEF(node_id)                                                                 \
 	{                                                                                          \
 		.spec = GPIO_DT_SPEC_GET(node_id, gpios),                                          \
@@ -155,19 +163,17 @@ static int gpio_keys_init(const struct device *dev)
 	}
 
 #define GPIO_KEYS_INIT(i)                                                                          \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
-	static struct gpio_keys_config gpio_keys_config_##i = {                                    \
+	static const struct gpio_keys_config gpio_keys_config_##i = {                              \
 		.debounce_interval_ms = DT_INST_PROP(i, debounce_interval_ms),                     \
 		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_cfg = gpio_keys_pin_config_##i,                                               \
 	};                                                                                         \
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
-	static struct gpio_keys_data gpio_keys_data_##i = {                                        \
-		.pin_data = gpio_keys_pin_data_##i,                                                \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, &gpio_keys_data_##i,                       \
+	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, gpio_keys_pin_data_##i,                    \
 			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,      \
 			      NULL);
 

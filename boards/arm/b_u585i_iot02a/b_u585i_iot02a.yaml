@@ -21,3 +21,5 @@ supported:
   - nvs
   - backup_sram
   - pwm
+  - counter
+vendor: st

@@ -1,7 +1,8 @@
-.. _kscan-touch-sample:
+.. zephyr:code-sample:: kscan-touch
+   :name: KSCAN touch panel
+   :relevant-api: kscan_interface
 
-KSCAN touch panel example
-####################################
+   Use the KSCAN API to interface with a touch panel.
 
 Overview
 ********

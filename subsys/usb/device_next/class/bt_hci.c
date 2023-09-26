@@ -588,7 +588,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 BT_HCI_DESCRIPTOR_DEFINE(0)
 BT_HCI_CLASS_DATA_DEFINE(0)
 
-static int bt_hci_preinit(const struct device *dev)
+static int bt_hci_preinit(void)
 {
 	int ret;
 

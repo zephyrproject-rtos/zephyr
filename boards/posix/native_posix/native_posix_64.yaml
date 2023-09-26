@@ -15,3 +15,5 @@ supported:
   - usb_device
   - adc
   - gpio
+  - rtc
+vendor: zephyr

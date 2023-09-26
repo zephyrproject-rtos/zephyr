@@ -9,11 +9,13 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
-#include <ksched.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/iterable_sections.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
 
 /**
  * @brief Initialize kernel memory slab subsystem.
@@ -53,10 +55,9 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * @return 0 on success, fails otherwise.
  */
-static int init_mem_slab_module(const struct device *dev)
+static int init_mem_slab_module(void)
 {
 	int rc = 0;
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		rc = create_free_list(slab);
@@ -145,9 +146,14 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 	return result;
 }
 
-void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
+void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
+
+	__ASSERT(((char *)mem >= slab->buffer) &&
+		 ((((char *)mem - slab->buffer) % slab->block_size) == 0) &&
+		 ((char *)mem <= (slab->buffer + (slab->block_size * (slab->num_blocks - 1)))),
+		 "Invalid memory pointer provided");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
 	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -156,14 +162,14 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 		if (pending_thread != NULL) {
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
 
-			z_thread_return_value_set_with_data(pending_thread, 0, *mem);
+			z_thread_return_value_set_with_data(pending_thread, 0, mem);
 			z_ready_thread(pending_thread);
 			z_reschedule(&slab->lock, key);
 			return;
 		}
 	}
-	**(char ***) mem = slab->free_list;
-	slab->free_list = *(char **) mem;
+	*(char **) mem = slab->free_list;
+	slab->free_list = (char *) mem;
 	slab->num_used--;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);

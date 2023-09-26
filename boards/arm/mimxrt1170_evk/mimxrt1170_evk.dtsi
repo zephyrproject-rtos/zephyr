@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "mimxrt1170_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	aliases {
@@ -14,6 +15,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
+		pwm-led0 = &green_pwm_led;
 	};
 
 	leds {
@@ -34,6 +36,7 @@
 		user_button: button-1 {
 			label = "User SW7";
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -200,4 +203,8 @@
 			};
 		};
 	};
+};
+
+&pxp {
+	status = "okay";
 };

@@ -12,7 +12,7 @@ config CPP
 
 if CPP
 
-choice
+choice STD_CPP
 	prompt "C++ Standard"
 	default STD_CPP11
 	help
@@ -57,18 +57,23 @@ config STD_CPP2B
 endchoice
 
 config REQUIRES_FULL_LIBCPP
-	bool
+	bool "Require complete C++ standard library"
 	select REQUIRES_FULL_LIBC
 	help
-	  Helper symbol to indicate that a full C++ standard library
-	  implementation is required.
+	  Indicates that a full C++ standard library is required, either by
+	  a subsystem or an application. This will also include a full C
+	  library implementation.
 
-	  Select this from a symbol that enables a feature requiring a full
-	  C++ standard library implementation.
+config FULL_LIBCPP_SUPPORTED
+	bool
+	help
+	  Selected when the target has at least one C++ library that offers a
+	  complete implementation and which would be selected when
+	  REQUIRES_FULL_LIBCPP is set.
 
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
-	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_APPLICATION
+	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_BUILD
 	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP
 	default MINIMAL_LIBCPP
 
@@ -86,6 +91,7 @@ config GLIBCXX_LIBCPP
 	bool "GNU C++ Standard Library"
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC || PICOLIBC
+	select FULL_LIBCPP_SUPPORTED
 	help
 	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
 	  Compiler Collection (GCC)-based toolchain.
@@ -106,15 +112,15 @@ config EXTERNAL_LIBCPP
 endchoice # LIBCPP_IMPLEMENTATION
 
 config CPP_MAIN
-	bool "C++ main() function definition"
+	bool "[DEPRECATED] C++ main() function definition"
+	select DEPRECATED
 	help
-	  This option instructs the Zephyr kernel to call the 'int main(void)'
-	  instead of the 'void main(void)', which is the default main() type
-	  for Zephyr.
+	  This option used to be necessary to instruct the Zephyr kernel to
+	  call 'int main(void)' instead of the old Zephyr default, 'void
+	  main(void)'.
 
-	  C++ does not allow the main() to be defined with 'void' return type,
-	  and any applications defining its main() in a C++ source file must
-	  enable this option.
+	  As the Zephyr type now matches the C++ required type, this option
+	  is no longer necessary.
 
 if !MINIMAL_LIBCPP
 

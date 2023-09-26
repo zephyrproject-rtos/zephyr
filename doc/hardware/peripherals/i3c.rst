@@ -1,7 +1,7 @@
 .. _i3c_api:
 
-I3C
-###
+Improved Inter-Integrated Circuit (I3C) Bus
+###########################################
 
 I3C (Improved Inter-Integrated Circuit) is a two-signal shared
 peripheral interface bus.  Devices on the bus can operate in

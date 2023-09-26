@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/adc/adc.h>
-
 / {
         /* NOTE: It is necessary to connect VREG_OUT to the ADC to perform the test.
 	 * But the rpi_pico board and most boards that use the rp2040, VREG_OUT and

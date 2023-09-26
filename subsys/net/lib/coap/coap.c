@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/coap.h>
 
+#define COAP_PATH_ELEM_DELIM '/'
+#define COAP_PATH_ELEM_QUERY '?'
+#define COAP_PATH_ELEM_AMP   '&'
+
 /* Values as per RFC 7252, section-3.1.
  *
  * Option Delta/Length: 4-bit unsigned integer. A value between 0 and
@@ -335,7 +339,7 @@ int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
 		code = (code == cpkt->delta) ? 0 : code - cpkt->delta;
 	}
 
-	r = encode_option(cpkt, code, value, len, cpkt->offset);
+	r = encode_option(cpkt, code, value, len, cpkt->hdr_len + cpkt->opt_len);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -605,6 +609,111 @@ static int parse_option(uint8_t *data, uint16_t offset, uint16_t *pos,
 	return r;
 }
 
+/* Remove the raw data of an option. Also adjusting offsets.
+ * But not adjusting code delta of the option after the removed one.
+ */
+static void remove_option_data(struct coap_packet *cpkt,
+			       const uint16_t to_offset,
+			       const uint16_t from_offset)
+{
+	const uint16_t move_size = from_offset - to_offset;
+
+	memmove(cpkt->data + to_offset, cpkt->data + from_offset, cpkt->offset - from_offset);
+	cpkt->opt_len -= move_size;
+	cpkt->offset -= move_size;
+}
+
+/* Remove an option (that is not the last one).
+ * Also adjusting the code delta of the option following the removed one.
+ */
+static int remove_middle_option(struct coap_packet *cpkt,
+				uint16_t offset,
+				uint16_t opt_delta,
+				const uint16_t previous_offset,
+				const uint16_t previous_code)
+{
+	int r;
+	struct coap_option option;
+	uint16_t opt_len = 0;
+
+	/* get the option after the removed one */
+	r = parse_option(cpkt->data, offset, &offset, cpkt->hdr_len + cpkt->opt_len,
+			 &opt_delta, &opt_len, &option);
+	if (r < 0) {
+		return -EILSEQ;
+	}
+
+	/* clear requested option and the one after (delta changed) */
+	remove_option_data(cpkt, previous_offset, offset);
+
+	/* reinsert option that comes after the removed option (with adjusted delta) */
+	r = encode_option(cpkt, option.delta - previous_code, option.value, option.len,
+			  previous_offset);
+	if (r < 0) {
+		return -EINVAL;
+	}
+	cpkt->opt_len += r;
+
+	return 0;
+}
+int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code)
+{
+	uint16_t offset = cpkt->hdr_len;
+	uint16_t opt_delta = 0;
+	uint16_t opt_len = 0;
+	uint16_t previous_offset = cpkt->hdr_len;
+	uint16_t previous_code = 0;
+	struct coap_option option;
+	int r;
+
+	if (!cpkt) {
+		return -EINVAL;
+	}
+
+	if (cpkt->opt_len == 0) {
+		return 0;
+	}
+
+	if (code > cpkt->delta) {
+		return 0;
+	}
+
+	/* Find the requested option */
+	while (offset < cpkt->hdr_len + cpkt->opt_len) {
+		r = parse_option(cpkt->data, offset, &offset, cpkt->hdr_len + cpkt->opt_len,
+				 &opt_delta, &opt_len, &option);
+		if (r < 0) {
+			return -EILSEQ;
+		}
+
+		if (opt_delta == code) {
+			break;
+		}
+
+		if (opt_delta > code) {
+			return 0;
+		}
+
+		previous_code = opt_delta;
+		previous_offset = offset;
+	}
+
+	/* Check if the found option is the last option */
+	if (cpkt->opt_len > opt_len) {
+		/* not last option */
+		r = remove_middle_option(cpkt, offset, opt_delta, previous_offset, previous_code);
+		if (r < 0) {
+			return r;
+		}
+	} else {
+		/* last option */
+		remove_option_data(cpkt, previous_offset, cpkt->hdr_len + cpkt->opt_len);
+		cpkt->delta = previous_code;
+	}
+
+	return 0;
+}
+
 int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num)
 {
@@ -671,6 +780,108 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 	cpkt->delta = delta;
 
 	return 0;
+}
+
+int coap_packet_set_path(struct coap_packet *cpkt, const char *path)
+{
+	int ret = 0;
+	int path_start, path_end;
+	int path_length;
+	bool contains_query = false;
+	int i;
+
+	path_start = 0;
+	path_end = 0;
+	path_length = strlen(path);
+	for (i = 0; i < path_length; i++) {
+		path_end = i;
+		if (path[i] == COAP_PATH_ELEM_DELIM) {
+			/* Guard for preceding delimiters */
+			if (path_start < path_end) {
+				ret = coap_packet_append_option(cpkt, COAP_OPTION_URI_PATH,
+								path + path_start,
+								path_end - path_start);
+				if (ret < 0) {
+					LOG_ERR("Failed to append path to CoAP message");
+					goto out;
+				}
+			}
+			/* Check if there is a new path after delimiter,
+			 * if not, point to the end of string to not add
+			 * new option after this
+			 */
+			if (path_length > i + 1) {
+				path_start = i + 1;
+			} else {
+				path_start = path_length;
+			}
+		} else if (path[i] == COAP_PATH_ELEM_QUERY) {
+			/* Guard for preceding delimiters */
+			if (path_start < path_end) {
+				ret = coap_packet_append_option(cpkt, COAP_OPTION_URI_PATH,
+								path + path_start,
+								path_end - path_start);
+				if (ret < 0) {
+					LOG_ERR("Failed to append path to CoAP message");
+					goto out;
+				}
+			}
+			/* Rest of the path is query */
+			contains_query = true;
+			if (path_length > i + 1) {
+				path_start = i + 1;
+			} else {
+				path_start = path_length;
+			}
+			break;
+		}
+	}
+
+	if (contains_query) {
+		for (i = path_start; i < path_length; i++) {
+			path_end = i;
+			if (path[i] == COAP_PATH_ELEM_AMP || path[i] == COAP_PATH_ELEM_QUERY) {
+				/* Guard for preceding delimiters */
+				if (path_start < path_end) {
+					ret = coap_packet_append_option(cpkt, COAP_OPTION_URI_QUERY,
+									path + path_start,
+									path_end - path_start);
+					if (ret < 0) {
+						LOG_ERR("Failed to append path to CoAP message");
+						goto out;
+					}
+				}
+				/* Check if there is a new query option after delimiter,
+				 * if not, point to the end of string to not add
+				 * new option after this
+				 */
+				if (path_length > i + 1) {
+					path_start = i + 1;
+				} else {
+					path_start = path_length;
+				}
+			}
+		}
+	}
+
+	if (path_start < path_length) {
+		if (contains_query) {
+			ret = coap_packet_append_option(cpkt, COAP_OPTION_URI_QUERY,
+							path + path_start,
+							path_end - path_start + 1);
+		} else {
+			ret = coap_packet_append_option(cpkt, COAP_OPTION_URI_PATH,
+							path + path_start,
+							path_end - path_start + 1);
+		}
+		if (ret < 0) {
+			LOG_ERR("Failed to append path to CoAP message");
+			goto out;
+		}
+	}
+
+out:
+	return ret;
 }
 
 int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
@@ -748,6 +959,10 @@ uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token)
 	}
 
 	tkl = cpkt->data[0] & 0x0f;
+	if (tkl > COAP_TOKEN_MAX_LEN) {
+		return 0;
+	}
+
 	if (tkl) {
 		memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
 	}
@@ -909,6 +1124,12 @@ static int method_from_code(const struct coap_resource *resource,
 	}
 }
 
+
+static inline bool is_empty_message(const struct coap_packet *cpkt)
+{
+	return __coap_header_get_code(cpkt) == COAP_CODE_EMPTY;
+}
+
 static bool is_request(const struct coap_packet *cpkt)
 {
 	uint8_t code = coap_header_get_code(cpkt);
@@ -971,6 +1192,33 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 #define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
 #define SET_NUM(v, n) ((v) |= ((n) << 4))
+
+int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx)
+{
+	if (is_request(cpkt)) {
+		return coap_append_block1_option(cpkt, ctx);
+	} else {
+		return coap_append_block2_option(cpkt, ctx);
+	}
+}
+
+bool coap_has_descriptive_block_option(struct coap_packet *cpkt)
+{
+	if (is_request(cpkt)) {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK1) >= 0;
+	} else {
+		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK2) >= 0;
+	}
+}
+
+int coap_remove_descriptive_block_option(struct coap_packet *cpkt)
+{
+	if (is_request(cpkt)) {
+		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK1);
+	} else {
+		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK2);
+	}
+}
 
 int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx)
@@ -1039,6 +1287,20 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 	val = coap_option_value_to_int(&option);
 
 	return val;
+}
+
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number)
+{
+	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*has_more = GET_MORE(ret);
+	*block_number = GET_NUM(ret);
+	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
+	return ret;
 }
 
 int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value, uint16_t len)
@@ -1254,7 +1516,7 @@ int coap_pending_init(struct coap_pending *pending,
 
 	pending->data = request->data;
 	pending->len = request->offset;
-	pending->t0 = k_uptime_get_32();
+	pending->t0 = k_uptime_get();
 	pending->retries = retries;
 
 	return 0;
@@ -1349,7 +1611,7 @@ struct coap_pending *coap_pending_next_to_expire(
 {
 	struct coap_pending *p, *found = NULL;
 	size_t i;
-	uint32_t expiry, min_expiry;
+	int64_t expiry, min_expiry = INT64_MAX;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
 		if (!p->timeout) {
@@ -1358,7 +1620,7 @@ struct coap_pending *coap_pending_next_to_expire(
 
 		expiry = p->t0 + p->timeout;
 
-		if (!found || (int32_t)(expiry - min_expiry) < 0) {
+		if (expiry < min_expiry) {
 			min_expiry = expiry;
 			found = p;
 		}
@@ -1438,6 +1700,11 @@ struct coap_reply *coap_response_received(
 	uint8_t tkl;
 	size_t i;
 
+	if (!is_empty_message(response) && is_request(response)) {
+		/* Request can't be response */
+		return NULL;
+	}
+
 	id = coap_header_get_id(response);
 	tkl = coap_header_get_token(response, token);
 
@@ -1461,7 +1728,9 @@ struct coap_reply *coap_response_received(
 		/* handle observed requests only if received in order */
 		if (age == -ENOENT || is_newer(r->age, age)) {
 			r->age = age;
-			r->reply(response, r, from);
+			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
+				r->reply(response, r, from);
+			}
 		}
 
 		return r;

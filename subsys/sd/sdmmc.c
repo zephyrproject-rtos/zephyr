@@ -19,7 +19,7 @@
 LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
 static inline void sdmmc_decode_scr(struct sd_scr *scr,
-	uint32_t *raw_scr, uint32_t *version)
+	uint32_t *raw_scr, uint8_t *version)
 {
 	uint32_t tmp_version = 0;
 
@@ -78,7 +78,17 @@ static int sdmmc_spi_send_ocr(struct sd_card *card, uint32_t arg)
 
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 
+	if (ret) {
+		LOG_DBG("CMD58 failed: %d", ret);
+		return ret;
+	}
+
 	card->ocr = cmd.response[1];
+	if (card->ocr == 0) {
+		LOG_DBG("No OCR detected");
+		return -ENOTSUP;
+	}
+
 	return ret;
 }
 

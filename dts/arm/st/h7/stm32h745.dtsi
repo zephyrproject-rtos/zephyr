@@ -5,10 +5,12 @@
  */
 
 #include <st/h7/stm32h7_dualcore.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	soc {
+		compatible = "st,stm32h745", "st,stm32h7", "simple-bus";
+
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
@@ -24,11 +26,6 @@
 				/* maximum erase time for a 128K sector */
 				max-erase-time = <4000>;
 			};
-		};
-
-		adc3: adc@58026000 {
-			temp-channel = <18>;
-			vref-channel = <19>;
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -127,5 +124,13 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	vref: vref {
+		io-channels = <&adc3 19>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 17>;
 	};
 };

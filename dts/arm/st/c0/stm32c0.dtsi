@@ -5,10 +5,13 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32c0_reset.h>
 #include <freq.h>
 
@@ -98,6 +101,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40021800 0x400>;
 			num-lines = <16>;
 			interrupts = <5 0>, <6 0>, <7 0>;
@@ -269,6 +273,75 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>;
+			interrupts = <23 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		adc1: adc@40012400 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>;
+			interrupts = <12 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <2 4 8 13 20 40 80 161>;
+			num-sampling-time-common-channels = <2>;
+			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0 10 0 10 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			dma-requests = <3>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		/* DMAMUX clock is enabled as long as DMA1 is enabled */
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x40020800 0x800>;
+			interrupts = <11 0>;
+			dma-channels = <3>;
+			dma-generators = <4>;
+			dma-requests= <49>;
+			status = "disabled";
+		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32c0-temp-cal";
+		ts-cal1-addr = <0x1FFF7568>;
+		ts-cal1-temp = <30>;
+		ts-cal-vrefanalog = <3000>;
+		avgslope = <2530>;
+		io-channels = <&adc1 9>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF756A>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc1 10>;
+		status = "disabled";
 	};
 };
 

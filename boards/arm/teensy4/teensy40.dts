@@ -8,6 +8,8 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 #include "teensy4-pinctrl.dtsi"
+#include <freq.h>
+#include <mem.h>
 
 / {
 	model = "PJRC TEENSY 4.0 board";
@@ -18,10 +20,13 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &w25q16jvuxim;
+		zephyr,flash = &w25q16jvuxim;
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart6; /* Teensy Pins 0(RX1) 1(TX1) */
+		zephyr,shell-uart = &lpuart6;
 		zephyr,canbus = &flexcan1; /* Teensy Pins 23(CRX1) 22(CTX1) */
 	};
 
@@ -35,15 +40,20 @@
 };
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 0x200000>;
+	status = "okay";
+
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(2)>;
 	/* WINBOND flash memory*/
 	w25q16jvuxim: w25q16jvuxim@0 {
-		compatible = "winbond,w25q16jvuxim";
-		size = <16777208>;
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(2 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 40 15];
+
+		erase-block-size = <4096>;
+		write-block-size = <1>;
 	};
 };
 

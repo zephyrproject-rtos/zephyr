@@ -54,9 +54,8 @@ static void arm_musca_s1_pinmux_defaults(void)
 }
 #endif
 
-static int arm_musca_pinmux_init(const struct device *port)
+static int arm_musca_pinmux_init(void)
 {
-	ARG_UNUSED(port);
 
 	arm_musca_s1_pinmux_defaults();
 

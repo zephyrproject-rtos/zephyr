@@ -7,6 +7,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/iterable_sections.h>
 
 LOG_MODULE_REGISTER(input, CONFIG_INPUT_LOG_LEVEL);
 

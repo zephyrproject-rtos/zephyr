@@ -43,6 +43,8 @@ static int io_open(const struct bt_mesh_blob_io *io,
 {
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
 
+	flash->mode = mode;
+
 	return flash_area_open(flash->area_id, &flash->area);
 }
 
@@ -81,7 +83,7 @@ static int block_start(const struct bt_mesh_blob_io *io,
 		return err;
 	}
 
-	erase_size = page.size * ceiling_fraction(block->size, page.size);
+	erase_size = page.size * DIV_ROUND_UP(block->size, page.size);
 #else
 	erase_size = block->size;
 #endif

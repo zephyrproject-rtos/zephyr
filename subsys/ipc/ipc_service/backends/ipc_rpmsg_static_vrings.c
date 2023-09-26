@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/ipc/ipc_service_backend.h>
@@ -95,7 +96,7 @@ static bool check_endpoints_freed(struct ipc_rpmsg_instance *rpmsg_inst)
 	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
 		rpmsg_ept = &rpmsg_inst->endpoint[i];
 
-		if (strcmp("", rpmsg_ept->name) != 0) {
+		if (rpmsg_ept->bound == true) {
 			return false;
 		}
 	}
@@ -250,12 +251,34 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 		return -ENOMEM;
 	}
 
-	vr->shm_addr = conf->shm_addr + VDEV_STATUS_SIZE;
-	vr->shm_size = shm_size(num_desc, conf->buffer_size) - VDEV_STATUS_SIZE;
+	/*
+	 * conf->shm_addr  +--------------+  vr->status_reg_addr
+	 *		   |    STATUS    |
+	 *		   +--------------+  vr->shm_addr
+	 *		   |              |
+	 *		   |              |
+	 *		   |   RX BUFS    |
+	 *		   |              |
+	 *		   |              |
+	 *		   +--------------+
+	 *		   |              |
+	 *		   |              |
+	 *		   |   TX BUFS    |
+	 *		   |              |
+	 *		   |              |
+	 *		   +--------------+  vr->rx_addr (aligned)
+	 *		   |   RX VRING   |
+	 *		   +--------------+  vr->tx_addr (aligned)
+	 *		   |   TX VRING   |
+	 *		   +--------------+
+	 */
+
+	vr->shm_addr = ROUND_UP(conf->shm_addr + VDEV_STATUS_SIZE, MEM_ALIGNMENT);
+	vr->shm_size = shm_size(num_desc, conf->buffer_size);
 
 	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
-	vr->tx_addr = ROUND_UP(vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT),
-			       VRING_ALIGNMENT);
+	vr->tx_addr = ROUND_UP(vr->rx_addr + vring_size(num_desc, MEM_ALIGNMENT),
+			       MEM_ALIGNMENT);
 
 	vr->status_reg_addr = conf->shm_addr;
 
@@ -736,6 +759,15 @@ static int backend_init(const struct device *instance)
 
 	data->role = conf->role;
 
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	__ASSERT((VDEV_STATUS_SIZE % sys_cache_data_line_size_get()) == 0U,
+		  "VDEV status area must be aligned to the cache line");
+	__ASSERT((MEM_ALIGNMENT % sys_cache_data_line_size_get()) == 0U,
+		  "Static VRINGs must be aligned to the cache line");
+	__ASSERT((conf->buffer_size % sys_cache_data_line_size_get()) == 0U,
+		  "Buffers must be aligned to the cache line ");
+#endif
+
 	k_mutex_init(&data->rpmsg_inst.mtx);
 	atomic_set(&data->state, STATE_READY);
 
@@ -776,7 +808,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
 #define BACKEND_CONFIG_INIT(n) &backend_config_##n,
 
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
-static int shared_memory_prepare(const struct device *arg)
+static int shared_memory_prepare(void)
 {
 	static const struct backend_config_t *config[] = {
 		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_INIT)

@@ -19,7 +19,7 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/drivers/usb/uhc.h>
-#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,8 @@ extern "C" {
 
 /**
  * @brief USB HOST Core Layer API
- * @defgroup _usb_host_core_api USB Host Core API
+ * @defgroup usb_host_core_api USB Host Core API
+ * @ingroup usb
  * @{
  */
 

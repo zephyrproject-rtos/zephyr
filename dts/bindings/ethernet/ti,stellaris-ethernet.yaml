@@ -5,7 +5,7 @@ description: TI Stellaris Ethernet
 
 compatible: "ti,stellaris-ethernet"
 
-include: ethernet.yaml
+include: ethernet-controller.yaml
 
 properties:
   reg:

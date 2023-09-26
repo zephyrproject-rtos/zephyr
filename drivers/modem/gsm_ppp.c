@@ -117,7 +117,7 @@ static struct gsm_modem {
 	gsm_modem_power_cb modem_on_cb;
 	gsm_modem_power_cb modem_off_cb;
 	struct net_mgmt_event_callback gsm_mgmt_cb;
-} gsm;
+} modem;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL);
 K_KERNEL_STACK_DEFINE(gsm_rx_stack, CONFIG_MODEM_GSM_RX_STACK_SIZE);
@@ -135,7 +135,7 @@ static inline void gsm_ppp_unlock(struct gsm_modem *gsm)
 
 static inline int gsm_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
-	return k_work_reschedule_for_queue(&gsm.workq, dwork, delay);
+	return k_work_reschedule_for_queue(&modem.workq, dwork, delay);
 }
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
@@ -174,11 +174,10 @@ static void gsm_rx(struct gsm_modem *gsm)
 	LOG_DBG("starting");
 
 	while (true) {
-		(void)k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&gsm->context.iface, K_FOREVER);
 
 		/* The handler will listen AT channel */
-		gsm->context.cmd_handler.process(&gsm->context.cmd_handler,
-						 &gsm->context.iface);
+		modem_cmd_handler_process(&gsm->context.cmd_handler, &gsm->context.iface);
 	}
 }
 
@@ -186,7 +185,7 @@ MODEM_CMD_DEFINE(gsm_cmd_ok)
 {
 	(void)modem_cmd_handler_set_error(data, 0);
 	LOG_DBG("ok");
-	k_sem_give(&gsm.sem_response);
+	k_sem_give(&modem.sem_response);
 	return 0;
 }
 
@@ -194,7 +193,7 @@ MODEM_CMD_DEFINE(gsm_cmd_error)
 {
 	(void)modem_cmd_handler_set_error(data, -EINVAL);
 	LOG_DBG("error");
-	k_sem_give(&gsm.sem_response);
+	k_sem_give(&modem.sem_response);
 	return 0;
 }
 
@@ -203,7 +202,7 @@ MODEM_CMD_DEFINE(gsm_cmd_exterror)
 {
 	/* TODO: map extended error codes to values */
 	(void)modem_cmd_handler_set_error(data, -EIO);
-	k_sem_give(&gsm.sem_response);
+	k_sem_give(&modem.sem_response);
 	return 0;
 }
 
@@ -231,15 +230,15 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 	if (argc >= 1) {
 #if defined(CONFIG_MODEM_CELL_INFO)
 		if (argc >= 3) {
-			gsm.context.data_operator = unquoted_atoi(argv[2], 10);
+			modem.context.data_operator = unquoted_atoi(argv[2], 10);
 			LOG_INF("operator: %u",
-				gsm.context.data_operator);
+				modem.context.data_operator);
 		}
 #endif
 		if (unquoted_atoi(argv[0], 10) == 0) {
-			gsm.context.is_automatic_oper = true;
+			modem.context.is_automatic_oper = true;
 		} else {
-			gsm.context.is_automatic_oper = false;
+			modem.context.is_automatic_oper = false;
 		}
 	}
 
@@ -256,11 +255,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_manufacturer,
-				    sizeof(gsm.minfo.mdm_manufacturer) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_manufacturer,
+				    sizeof(modem.minfo.mdm_manufacturer) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_manufacturer[out_len] = '\0';
-	LOG_INF("Manufacturer: %s", gsm.minfo.mdm_manufacturer);
+	modem.minfo.mdm_manufacturer[out_len] = '\0';
+	LOG_INF("Manufacturer: %s", modem.minfo.mdm_manufacturer);
 
 	return 0;
 }
@@ -270,11 +269,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_model,
-				    sizeof(gsm.minfo.mdm_model) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_model,
+				    sizeof(modem.minfo.mdm_model) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_model[out_len] = '\0';
-	LOG_INF("Model: %s", gsm.minfo.mdm_model);
+	modem.minfo.mdm_model[out_len] = '\0';
+	LOG_INF("Model: %s", modem.minfo.mdm_model);
 
 	return 0;
 }
@@ -284,11 +283,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_revision,
-				    sizeof(gsm.minfo.mdm_revision) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_revision,
+				    sizeof(modem.minfo.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_revision[out_len] = '\0';
-	LOG_INF("Revision: %s", gsm.minfo.mdm_revision);
+	modem.minfo.mdm_revision[out_len] = '\0';
+	LOG_INF("Revision: %s", modem.minfo.mdm_revision);
 
 	return 0;
 }
@@ -298,10 +297,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_imei, sizeof(gsm.minfo.mdm_imei) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_imei, sizeof(modem.minfo.mdm_imei) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_imei[out_len] = '\0';
-	LOG_INF("IMEI: %s", gsm.minfo.mdm_imei);
+	modem.minfo.mdm_imei[out_len] = '\0';
+	LOG_INF("IMEI: %s", modem.minfo.mdm_imei);
 
 	return 0;
 }
@@ -312,10 +311,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_imsi, sizeof(gsm.minfo.mdm_imsi) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_imsi, sizeof(modem.minfo.mdm_imsi) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_imsi[out_len] = '\0';
-	LOG_INF("IMSI: %s", gsm.minfo.mdm_imsi);
+	modem.minfo.mdm_imsi[out_len] = '\0';
+	LOG_INF("IMSI: %s", modem.minfo.mdm_imsi);
 
 	return 0;
 }
@@ -325,22 +324,22 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(gsm.minfo.mdm_iccid, sizeof(gsm.minfo.mdm_iccid) - 1,
+	out_len = net_buf_linearize(modem.minfo.mdm_iccid, sizeof(modem.minfo.mdm_iccid) - 1,
 				    data->rx_buf, 0, len);
-	gsm.minfo.mdm_iccid[out_len] = '\0';
-	if (gsm.minfo.mdm_iccid[0] == '+') {
+	modem.minfo.mdm_iccid[out_len] = '\0';
+	if (modem.minfo.mdm_iccid[0] == '+') {
 		/* Seen on U-blox SARA: "+CCID: nnnnnnnnnnnnnnnnnnnn".
 		 * Skip over the +CCID bit, which other modems omit.
 		 */
-		char *p = strchr(gsm.minfo.mdm_iccid, ' ');
+		char *p = strchr(modem.minfo.mdm_iccid, ' ');
 
 		if (p) {
-			size_t len = strlen(p+1);
+			size_t iccid_len = strlen(p+1);
 
-			(void)memmove(gsm.minfo.mdm_iccid, p+1, len+1);
+			(void)memmove(modem.minfo.mdm_iccid, p+1, iccid_len+1);
 		}
 	}
-	LOG_INF("ICCID: %s", gsm.minfo.mdm_iccid);
+	LOG_INF("ICCID: %s", modem.minfo.mdm_iccid);
 
 	return 0;
 }
@@ -348,9 +347,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 
 MODEM_CMD_DEFINE(on_cmd_net_reg_sts)
 {
-	gsm.net_state = (enum network_state)atoi(argv[1]);
+	modem.net_state = (enum network_state)atoi(argv[1]);
 
-	switch (gsm.net_state) {
+	switch (modem.net_state) {
 	case GSM_NET_NOT_REGISTERED:
 		LOG_DBG("Network %s.", "not registered");
 		break;
@@ -384,16 +383,16 @@ MODEM_CMD_DEFINE(on_cmd_net_reg_sts)
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
 {
 	if (argc >= 4) {
-		gsm.context.data_lac = unquoted_atoi(argv[2], 16);
-		gsm.context.data_cellid = unquoted_atoi(argv[3], 16);
+		modem.context.data_lac = unquoted_atoi(argv[2], 16);
+		modem.context.data_cellid = unquoted_atoi(argv[3], 16);
 		LOG_INF("lac: %u, cellid: %u",
-			gsm.context.data_lac,
-			gsm.context.data_cellid);
+			modem.context.data_lac,
+			modem.context.data_cellid);
 	}
 
 	if (argc >= 5) {
-		gsm.context.data_act = unquoted_atoi(argv[4], 10);
-		LOG_INF("act: %u", gsm.context.data_act);
+		modem.context.data_act = unquoted_atoi(argv[4], 10);
+		LOG_INF("act: %u", modem.context.data_act);
 	}
 
 	return 0;
@@ -437,16 +436,16 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 	rxlev = ATOI(argv[0], 0, "rxlev");
 
 	if ((rsrp >= 0) && (rsrp <= 97)) {
-		gsm.minfo.mdm_rssi = -140 + (rsrp - 1);
-		LOG_DBG("RSRP: %d", gsm.minfo.mdm_rssi);
+		modem.minfo.mdm_rssi = -140 + (rsrp - 1);
+		LOG_DBG("RSRP: %d", modem.minfo.mdm_rssi);
 	} else if ((rscp >= 0) && (rscp <= 96)) {
-		gsm.minfo.mdm_rssi = -120 + (rscp - 1);
-		LOG_DBG("RSCP: %d", gsm.minfo.mdm_rssi);
+		modem.minfo.mdm_rssi = -120 + (rscp - 1);
+		LOG_DBG("RSCP: %d", modem.minfo.mdm_rssi);
 	} else if ((rxlev >= 0) && (rxlev <= 63)) {
-		gsm.minfo.mdm_rssi = -110 + (rxlev - 1);
-		LOG_DBG("RSSI: %d", gsm.minfo.mdm_rssi);
+		modem.minfo.mdm_rssi = -110 + (rxlev - 1);
+		LOG_DBG("RSSI: %d", modem.minfo.mdm_rssi);
 	} else {
-		gsm.minfo.mdm_rssi = GSM_RSSI_INVALID;
+		modem.minfo.mdm_rssi = GSM_RSSI_INVALID;
 		LOG_DBG("RSRP/RSCP/RSSI not known");
 	}
 
@@ -466,7 +465,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 			rssi = GSM_RSSI_INVALID;
 		}
 
-		gsm.minfo.mdm_rssi = rssi;
+		modem.minfo.mdm_rssi = rssi;
 		LOG_DBG("RSSI: %d", rssi);
 	}
 
@@ -615,31 +614,15 @@ static struct net_if *ppp_net_if(void)
 
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
-	static const struct ppp_api *api;
 	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
 	struct net_if *iface = gsm->iface;
-	int ret;
 
 	if (ppp_dev == NULL) {
 		LOG_ERR("Cannot find PPP %s!", CONFIG_NET_PPP_DRV_NAME);
 		return;
 	}
 
-	if (api == NULL) {
-		api = (const struct ppp_api *)ppp_dev->api;
-
-		/* For the first call, we want to call ppp_start()... */
-		ret = api->start(ppp_dev);
-		if (ret < 0) {
-			LOG_ERR("ppp start returned %d", ret);
-		}
-	} else {
-		/* ...but subsequent calls should be to ppp_enable() */
-		ret = net_if_l2(iface)->enable(iface, true);
-		if (ret < 0) {
-			LOG_ERR("ppp l2 enable returned %d", ret);
-		}
-	}
+	net_if_up(iface);
 }
 
 static void query_rssi(struct gsm_modem *gsm, bool lock)
@@ -1196,7 +1179,7 @@ void gsm_ppp_stop(const struct device *dev)
 
 	/* wait for the interface to be properly down */
 	if (net_if_is_up(iface)) {
-		(void)(net_if_l2(iface)->enable(iface, false));
+		net_if_down(ppp_net_if());
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
 
@@ -1251,14 +1234,14 @@ static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	/* Right now we only support 1 GSM instance */
-	if (iface != gsm.iface) {
+	if (iface != modem.iface) {
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		LOG_INF("GSM network interface down");
 		/* raise semaphore to indicate the interface is down */
-		k_sem_give(&gsm.sem_if_down);
+		k_sem_give(&modem.sem_if_down);
 		return;
 	}
 }
@@ -1273,19 +1256,24 @@ static int gsm_init(const struct device *dev)
 	(void)k_mutex_init(&gsm->lock);
 	gsm->dev = dev;
 
-	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	gsm->cmd_handler_data.match_buf = &gsm->cmd_match_buf[0];
-	gsm->cmd_handler_data.match_buf_len = sizeof(gsm->cmd_match_buf);
-	gsm->cmd_handler_data.buf_pool = &gsm_recv_pool;
-	gsm->cmd_handler_data.alloc_timeout = K_NO_WAIT;
-	gsm->cmd_handler_data.eol = "\r";
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &gsm->cmd_match_buf[0],
+		.match_buf_len = sizeof(gsm->cmd_match_buf),
+		.buf_pool = &gsm_recv_pool,
+		.alloc_timeout = K_NO_WAIT,
+		.eol = "\r",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = NULL,
+		.unsol_cmds_len = 0,
+	};
 
 	(void)k_sem_init(&gsm->sem_response, 0, 1);
 	(void)k_sem_init(&gsm->sem_if_down, 0, 1);
 
-	ret = modem_cmd_handler_init(&gsm->context.cmd_handler,
-				   &gsm->cmd_handler_data);
+	ret = modem_cmd_handler_init(&gsm->context.cmd_handler, &gsm->cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		LOG_DBG("cmd handler error %d", ret);
 		return ret;
@@ -1305,13 +1293,15 @@ static int gsm_init(const struct device *dev)
 #endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->context.is_automatic_oper = false;
-	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
-	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
-	gsm->gsm_data.hw_flow_control = DT_PROP(GSM_UART_NODE,
-						hw_flow_control);
 
-	ret = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
-				DEVICE_DT_GET(GSM_UART_NODE));
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &gsm->gsm_rx_rb_buf[0],
+		.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf),
+		.hw_flow_control = DT_PROP(GSM_UART_NODE, hw_flow_control),
+		.dev = DEVICE_DT_GET(GSM_UART_NODE),
+	};
+
+	ret = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data, &uart_config);
 	if (ret < 0) {
 		LOG_DBG("iface uart error %d", ret);
 		return ret;
@@ -1364,5 +1354,5 @@ static int gsm_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_DRV_INST(0), gsm_init, NULL, &gsm, NULL,
+DEVICE_DT_DEFINE(DT_DRV_INST(0), gsm_init, NULL, &modem, NULL,
 		 POST_KERNEL, CONFIG_MODEM_GSM_INIT_PRIORITY, NULL);

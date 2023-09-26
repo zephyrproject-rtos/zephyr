@@ -15,6 +15,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32l4r5", "st,stm32l4", "simple-bus";
+
 		rtc@40002800 {
 			bbram: backup_regs {
 				compatible = "st,stm32-bbram";

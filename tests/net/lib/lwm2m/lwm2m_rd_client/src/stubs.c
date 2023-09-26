@@ -20,6 +20,14 @@ uint8_t coap_header_get_code_fake_deleted(const struct coap_packet *cpkt)
 {
 	return COAP_RESPONSE_CODE_DELETED;
 }
+uint8_t coap_header_get_code_fake_changed(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_CHANGED;
+}
+uint8_t coap_header_get_code_fake_bad_request(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_BAD_REQUEST;
+}
 
 DEFINE_FAKE_VALUE_FUNC(int, coap_append_option_int, struct coap_packet *, uint16_t, unsigned int);
 DEFINE_FAKE_VALUE_FUNC(int, coap_packet_append_option, struct coap_packet *, uint16_t,
@@ -55,16 +63,32 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_open_socket, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u32, const struct lwm2m_obj_path *, uint32_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_u16, const struct lwm2m_obj_path *, uint16_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_set_u32, const struct lwm2m_obj_path *, uint32_t);
 int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 {
 	*value = false;
 	return 0;
 }
+int lwm2m_get_bool_fake_true(const struct lwm2m_obj_path *path, bool *value)
+{
+	*value = true;
+	return 0;
+}
+
+uint32_t get_u32_val;
+
+int lwm2m_get_u32_val(const struct lwm2m_obj_path *path, uint32_t *val)
+{
+	*val = get_u32_val;
+	return 0;
+}
+
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_close, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_close_socket, struct lwm2m_ctx *);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_suspend, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_inst_id_to_index, uint16_t);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_engine_connection_resume, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_push_queued_buffers, struct lwm2m_ctx *);
@@ -78,35 +102,43 @@ char *lwm2m_sprint_ip_addr_fake_default(const struct sockaddr *addr)
 
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_server_short_id_to_inst, uint16_t);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_index_to_inst_id, int);
-DEFINE_FAKE_VALUE_FUNC(int, lwm2m_engine_add_service, k_work_handler_t, uint32_t);
 
-k_work_handler_t lwm2m_engine_add_service_service;
-uint32_t lwm2m_engine_add_service_period_ms = 20;
-int lwm2m_engine_add_service_fake_default(k_work_handler_t service, uint32_t period_ms)
+k_work_handler_t service;
+int64_t next;
+
+int lwm2m_engine_call_at(k_work_handler_t work, int64_t timestamp)
 {
-	lwm2m_engine_add_service_service = service;
-	lwm2m_engine_add_service_period_ms = period_ms;
+	service = work;
+	next = timestamp ? timestamp : 1;
 	return 0;
 }
 
 uint16_t counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 struct lwm2m_message *pending_message;
 void *(*pending_message_cb)();
+static bool running;
+K_SEM_DEFINE(srv_sem, 0, 1);
 
 static void service_work_fn(struct k_work *work)
 {
-	while (lwm2m_engine_add_service_service != NULL) {
+	while (running) {
+		k_sleep(K_MSEC(10));
 		if (pending_message != NULL && pending_message_cb != NULL) {
 			pending_message_cb(pending_message);
 			pending_message = NULL;
 		}
 
-		lwm2m_engine_add_service_service(work);
-		k_sleep(K_MSEC(lwm2m_engine_add_service_period_ms));
+		if (next && next < k_uptime_get()) {
+			next = 0;
+			service(NULL);
+			k_sem_give(&srv_sem);
+		}
+
 		counter--;
 
 		/* avoid endless loop if rd client is stuck somewhere */
 		if (counter == 0) {
+			printk("Counter!\n");
 			break;
 		}
 	}
@@ -114,10 +146,8 @@ static void service_work_fn(struct k_work *work)
 
 void wait_for_service(uint16_t cycles)
 {
-	uint16_t end = counter - cycles;
-
-	while (counter > end) {
-		k_sleep(K_MSEC(1));
+	while (cycles--) {
+		k_sem_take(&srv_sem, K_MSEC(100));
 	}
 }
 
@@ -125,18 +155,22 @@ K_WORK_DEFINE(service_work, service_work_fn);
 
 void test_lwm2m_engine_start_service(void)
 {
+	running = true;
 	counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 	k_work_submit(&service_work);
+	k_sem_reset(&srv_sem);
 }
 
 void test_lwm2m_engine_stop_service(void)
 {
 	pending_message_cb = NULL;
+	running = false;
 	k_work_cancel(&service_work);
 }
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);
+DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 int lwm2m_init_message_fake_default(struct lwm2m_message *msg)
 {
 	pending_message = msg;

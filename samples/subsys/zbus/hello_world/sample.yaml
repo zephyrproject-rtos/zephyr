@@ -26,21 +26,7 @@ tests:
         - "I: From listener -> Acc x=2, y=2, z=2"
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
-    arch_exclude: posix xtensa
     platform_exclude: qemu_leon3
     tags: zbus
-  sample.zbus.hello_world_no_iterable_sections:
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: false
-      regex:
-        - "I: Sensor sample started raw reading, version 0.1-2!"
-        - "I: From subscriber -> Acc x=1, y=1, z=1"
-        - "I: From listener -> Acc x=1, y=1, z=1"
-        - "I: From subscriber -> Acc x=2, y=2, z=2"
-        - "I: From listener -> Acc x=2, y=2, z=2"
-        - "I: Pub a valid value to a channel with validator successfully."
-        - "I: Pub an invalid value to a channel with validator successfully."
-    arch_allow: posix xtensa
-    tags: zbus
+    integration_platforms:
+      - qemu_x86

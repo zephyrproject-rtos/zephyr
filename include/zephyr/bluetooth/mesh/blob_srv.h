@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_blob_srv Bluetooth mesh BLOB Transfer Server model API
- * @{
- * @brief API for the Bluetooth Mesh Binary Large Object (BLOB) Transfer Server model.
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_SRV_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_SRV_H_
 
@@ -21,6 +14,12 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup bt_mesh_blob_srv Bluetooth Mesh BLOB Transfer Server model API
+ * @ingroup bt_mesh
+ * @{
+ */
+
 struct bt_mesh_blob_srv;
 
 /**
@@ -29,7 +28,7 @@ struct bt_mesh_blob_srv;
  */
 #if defined(CONFIG_BT_MESH_BLOB_SRV)
 #define BT_MESH_BLOB_BLOCKS_MAX                                                \
-	(ceiling_fraction(CONFIG_BT_MESH_BLOB_SIZE_MAX,                        \
+	(DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_SIZE_MAX,                        \
 			  CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN))
 #else
 #define BT_MESH_BLOB_BLOCKS_MAX 1
@@ -212,10 +211,10 @@ extern const struct bt_mesh_model_op _bt_mesh_blob_srv_op[];
 extern const struct bt_mesh_model_cb _bt_mesh_blob_srv_cb;
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_SRV_H_ */
-
-/** @} */

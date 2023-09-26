@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
+#include <hal/nrf_reset.h>
 
 #include <nrfx_gpiote.h>
 
@@ -49,11 +50,10 @@ static void remoteproc_mgr_config(void)
 #endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
 }
 
-static int remoteproc_mgr_boot(const struct device *dev)
+static int remoteproc_mgr_boot(void)
 {
 	int ret;
 
-	ARG_UNUSED(dev);
 
 	ret = core_config();
 	if (ret) {
@@ -72,7 +72,7 @@ static int remoteproc_mgr_boot(const struct device *dev)
 	 */
 
 	/* Release the Network MCU, 'Release force off signal' */
-	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
+	nrf_reset_network_force_off(NRF_RESET, false);
 
 	LOG_DBG("Network MCU released.");
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */

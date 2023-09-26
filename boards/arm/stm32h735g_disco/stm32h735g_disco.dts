@@ -7,6 +7,8 @@
 /dts-v1/;
 #include <st/h7/stm32h735Xg.dtsi>
 #include <st/h7/stm32h735igkx-pinctrl.dtsi>
+#include "pmod_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32H735G DISCOVERY board";
@@ -36,6 +38,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -43,6 +46,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		sw0 = &user_button;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -109,6 +113,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_inp0_pa0_c>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -178,4 +184,8 @@
 	backup_regs {
 		status = "okay";
 	};
+};
+
+&vbat {
+	status = "okay";
 };

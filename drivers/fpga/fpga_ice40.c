@@ -18,7 +18,6 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/sys/crc.h>
 
 /*
@@ -220,7 +219,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	const struct fpga_ice40_config *config = dev->config;
 
 	/* prepare masks */
-	cs = BIT(config->bus.config.cs->gpio.pin);
+	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
 	pico = BIT(config->pico.pin);
 	creset = BIT(config->creset.pin);
@@ -241,7 +240,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_HIGH) ||
 	      gpio_pin_configure_dt(&config->pico, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
@@ -297,7 +296,7 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
 	(void)gpio_pin_configure_dt(&config->pico, GPIO_DISCONNECTED);
 #ifdef CONFIG_PINCTRL
@@ -339,7 +338,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Initializing GPIO");
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
 	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
-	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	      gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
 
 	LOG_DBG("Set CRESET low");
@@ -350,7 +349,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
@@ -373,7 +372,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	k_busy_wait(config->config_delay_us);
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -381,7 +380,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->leading_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->leading_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->leading_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
@@ -389,7 +388,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
@@ -405,7 +404,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	}
 
 	LOG_DBG("Set SPI_CS high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
@@ -413,7 +412,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 	LOG_DBG("Send %u clocks", config->trailing_clocks);
 	tx_buf.buf = clock_buf;
-	tx_buf.len = ceiling_fraction(config->trailing_clocks, BITS_PER_BYTE);
+	tx_buf.len = DIV_ROUND_UP(config->trailing_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&config->bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);
@@ -438,7 +437,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
-	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 #ifdef CONFIG_PINCTRL
 	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 #endif
@@ -597,6 +596,7 @@ static int fpga_ice40_init(const struct device *dev)
 		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
-			      &fpga_ice40_config_##inst, POST_KERNEL, 0, &fpga_ice40_api);
+			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
+			      &fpga_ice40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FPGA_ICE40_DEFINE)

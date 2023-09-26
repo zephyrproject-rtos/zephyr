@@ -107,7 +107,7 @@ supported in Zephyr).
 To enable tracing support with `SEGGER SystemView`_ add the configuration option
 :kconfig:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
 it to *y*. For example, this can be added to the
-:ref:`synchronization_sample` to visualize fast switching between threads.
+:zephyr:code-sample:`synchronization` sample to visualize fast switching between threads.
 SystemView can also be used for post-mortem tracing, which can be enabled with
 `CONFIG_SEGGER_SYSVIEW_POST_MORTEM_MODE`. In this mode, a debugger can
 be attached after the system has crashed using ``west attach`` after which the
@@ -139,7 +139,7 @@ file available in the tree to your local configuration directory to override the
 builtin table::
 
         # On Linux and MacOS
-        cp ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
+        cp $ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
 
 User-Defined Tracing
 ====================
@@ -154,23 +154,25 @@ Examples include:
 not be supported by the other tracing systems
 
 The following functions can be defined by the user:
-- ``void sys_trace_thread_create_user(struct k_thread *thread)``
-- ``void sys_trace_thread_abort_user(struct k_thread *thread)``
-- ``void sys_trace_thread_suspend_user(struct k_thread *thread)``
-- ``void sys_trace_thread_resume_user(struct k_thread *thread)``
-- ``void sys_trace_thread_name_set_user(struct k_thread *thread)``
-- ``void sys_trace_thread_switched_in_user(struct k_thread *thread)``
-- ``void sys_trace_thread_switched_out_user(struct k_thread *thread)``
-- ``void sys_trace_thread_info_user(struct k_thread *thread)``
-- ``void sys_trace_thread_sched_ready_user(struct k_thread *thread)``
-- ``void sys_trace_thread_pend_user(struct k_thread *thread)``
-- ``void sys_trace_thread_priority_set_user(struct k_thread *thread, int prio)``
-- ``void sys_trace_isr_enter_user(int nested_interrupts)``
-- ``void sys_trace_isr_exit_user(int nested_interrupts)``
-- ``void sys_trace_idle_user()``
+
+.. code-block:: c
+
+   void sys_trace_thread_create_user(struct k_thread *thread);
+   void sys_trace_thread_abort_user(struct k_thread *thread);
+   void sys_trace_thread_suspend_user(struct k_thread *thread);
+   void sys_trace_thread_resume_user(struct k_thread *thread);
+   void sys_trace_thread_name_set_user(struct k_thread *thread);
+   void sys_trace_thread_switched_in_user(struct k_thread *thread);
+   void sys_trace_thread_switched_out_user(struct k_thread *thread);
+   void sys_trace_thread_info_user(struct k_thread *thread);
+   void sys_trace_thread_sched_ready_user(struct k_thread *thread);
+   void sys_trace_thread_pend_user(struct k_thread *thread);
+   void sys_trace_thread_priority_set_user(struct k_thread *thread, int prio);
+   void sys_trace_isr_enter_user(int nested_interrupts);
+   void sys_trace_isr_exit_user(int nested_interrupts);
+   void sys_trace_idle_user();
 
 Enable this format with the :kconfig:option:`CONFIG_TRACING_USER` option.
-
 
 Transport Backends
 ******************

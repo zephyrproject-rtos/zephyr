@@ -35,7 +35,7 @@ enum bt_mesh_nonce_type;
 struct bt_mesh_node {
 	uint16_t addr;
 	uint16_t net_idx;
-	uint8_t  dev_key[16];
+	struct bt_mesh_key dev_key;
 	uint8_t  num_elem;
 };
 
@@ -229,10 +229,10 @@ struct bt_mesh_net {
 	/* Timer to track duration in current IV Update state */
 	struct k_work_delayable ivu_timer;
 
-	uint8_t dev_key[16];
+	struct bt_mesh_key dev_key;
 
 #if defined(CONFIG_BT_MESH_RPR_SRV)
-	uint8_t dev_key_cand[16];
+	struct bt_mesh_key dev_key_cand;
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	uint8_t on_demand_state;
@@ -283,7 +283,7 @@ extern struct bt_mesh_net bt_mesh;
 
 #define BT_MESH_NET_HDR_LEN 9
 
-int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
+int bt_mesh_net_create(uint16_t idx, uint8_t flags, const struct bt_mesh_key *key,
 		       uint32_t iv_index);
 
 bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update);
@@ -303,6 +303,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 void bt_mesh_net_loopback_clear(uint16_t net_idx);
 
 uint32_t bt_mesh_next_seq(void);
+void bt_mesh_net_seq_store(bool force);
 
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
@@ -310,8 +311,11 @@ void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 void bt_mesh_net_pending_net_store(void);
 void bt_mesh_net_pending_iv_store(void);
 void bt_mesh_net_pending_seq_store(void);
+
+void bt_mesh_net_pending_dev_key_cand_store(void);
 void bt_mesh_net_dev_key_cand_store(void);
 
+void bt_mesh_net_store(void);
 void bt_mesh_net_clear(void);
 void bt_mesh_net_settings_commit(void);
 

@@ -9,12 +9,12 @@ config SOC_ARM_DESIGNSTART_FPGA_CORTEX_M1
 	bool "ARM Cortex-M1 DesignStart FPGA"
 	select CPU_CORTEX_M1
 	imply XIP
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 config SOC_ARM_DESIGNSTART_FPGA_CORTEX_M3
 	bool "ARM Cortex-M3 DesignStart FPGA"
 	select CPU_CORTEX_M3
 	imply XIP
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 endchoice

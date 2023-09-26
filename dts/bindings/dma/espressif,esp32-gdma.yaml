@@ -13,13 +13,29 @@ description: |
 
   Every channel can be connected to different peripherals.
 
-  Peripherals with GDMA:
+  ESP32C3's Peripherals with GDMA:
   * SPI2
   * UHCI0 (UART0/UART1)
-  * I2S
-  * AES
-  * SHA
+  * I2S (Not Supported yet)
+  * AES (Not Supported yet)
+  * SHA (Not Supported yet)
   * ADC
+
+  The GDMA controller in ESP32-S3 has ten independent channels,
+  five transmit channels and five receive channels. Only six are
+  supported, meaning three transmit and three receive channels.
+
+  ESP32S3's Peripherals with GDMA:
+  * SPI2
+  * SPI3
+  * UHCI0
+  * I2S0 (Not Supported yet)
+  * I2S1 (Not Supported yet)
+  * LCD/CAM (Not Supported yet)
+  * AES (Not Supported yet)
+  * SHA (Not Supported yet)
+  * ADC (Not Supported yet)
+  * RMT (Not Supported yet)
 
 compatible: "espressif,esp32-gdma"
 

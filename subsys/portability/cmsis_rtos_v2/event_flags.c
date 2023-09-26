@@ -252,7 +252,7 @@ osStatus_t osEventFlagsDelete(osEventFlagsId_t ef_id)
 	 * ef_id is incorrect) is not supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_event_flags_slab, (void *)&events);
+	k_mem_slab_free(&cv2_event_flags_slab, (void *)events);
 
 	return osOK;
 }

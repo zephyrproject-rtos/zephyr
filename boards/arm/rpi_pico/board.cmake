@@ -14,7 +14,7 @@
 # in the openocd interface configuration file.
 # The setting is store to CMakeCache.txt.
 if ("${RPI_PICO_DEBUG_ADAPTER}" STREQUAL "")
-	set(RPI_PICO_DEBUG_ADAPTER picoprobe)
+	set(RPI_PICO_DEBUG_ADAPTER "cmsis-dap")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]")

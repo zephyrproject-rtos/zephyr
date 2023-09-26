@@ -87,6 +87,10 @@ SECTIONS
 	*(.iplt)
 	}
 
+#if defined(CONFIG_SOC_FAMILY_INTEL_ISH) && defined(CONFIG_PM)
+#include <zephyr/arch/x86/ia32/scripts/ish_aon.ld>
+#endif
+
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 
 	SECTION_PROLOGUE(boot.text,,)
@@ -503,14 +507,10 @@ SECTIONS
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
-	_image_ram_end = .;
 	_image_ram_all = (KERNEL_BASE_ADDR + KERNEL_RAM_SIZE) - _image_ram_start;
 
 	z_mapped_end = .;
 	z_mapped_size = z_mapped_end - z_mapped_start;
-	_end = .; /* end of image */
-
-	GROUP_END(RAMABLE_REGION)
 
 #ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
@@ -537,6 +537,10 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

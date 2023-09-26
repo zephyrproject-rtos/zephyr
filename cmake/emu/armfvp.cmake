@@ -60,6 +60,13 @@ else()
     )
 endif()
 
+if(CONFIG_ETH_SMSC91X)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    -C bp.smsc_91c111.enabled=1
+    -C bp.hostbridge.userNetworking=1
+    )
+endif()
+
 # Use flags passed in from the environment
 set(env_fvp $ENV{ARMFVP_EXTRA_FLAGS})
 separate_arguments(env_fvp)

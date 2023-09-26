@@ -60,14 +60,8 @@ int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 	      FILE *ZRESTRICT stream);
-static inline int putc(int c, FILE *stream)
-{
-	return fputc(c, stream);
-}
-static inline int putchar(int c)
-{
-	return putc(c, stdout);
-}
+#define putc(c, stream) fputc(c, stream)
+#define putchar(c) putc(c, stdout)
 
 #ifdef __cplusplus
 }

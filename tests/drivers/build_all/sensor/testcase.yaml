@@ -1,13 +1,30 @@
 common:
-  tags: drivers sensors
+  tags:
+    - drivers
+    - sensors
   platform_allow: native_posix
   build_only: true
 tests:
-  sensors.build.trigger:
+  sensors.build.sensorhub:
+    extra_args: OVERLAY_CONFIG=sensors_shub.conf
+  sensors.build.trigger.own:
     extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf
+  sensors.build.trigger.global:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_global.conf
+  sensors.build.trigger.none:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_none.conf
   sensors.build:
     tags: sensors
   sensors.build.pm:
     extra_configs:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
+  sensors.generic_test:
+    build_only: false
+    extra_configs:
+      - CONFIG_GENERIC_SENSOR_TEST=y
+      - CONFIG_ZTEST=y
+      - CONFIG_ZTEST_NEW_API=y
+      - CONFIG_EMUL=y
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_SENSOR_ASYNC_API=y

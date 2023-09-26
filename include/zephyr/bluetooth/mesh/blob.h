@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_blob Bluetooth mesh BLOB model API
- * @{
- * @brief API for the Bluetooth mesh Binary Large Object Transfer models.
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__
 
-#include <zephyr/kernel.h>
 #include <sys/types.h>
+
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_blob Bluetooth Mesh BLOB model API
+ * @ingroup bt_mesh
+ * @{
+ */
 
 #ifndef CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX
 #define CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX 0
@@ -105,7 +105,7 @@ struct bt_mesh_blob_block {
 	/** Number of chunks in block. */
 	uint16_t chunk_count;
 	/** Bitmap of missing chunks. */
-	uint8_t missing[ceiling_fraction(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX,
+	uint8_t missing[DIV_ROUND_UP(CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX,
 					 8)];
 };
 
@@ -253,10 +253,10 @@ struct bt_mesh_blob_io {
 		  const struct bt_mesh_blob_chunk *chunk);
 };
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_H__ */
-
-/** @} */

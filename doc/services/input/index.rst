@@ -38,7 +38,7 @@ Application API
 ***************
 
 An application can register a callback using the
-:c:macro:`INPUT_LISTENER_CB_DEFINE` macro. If a device node is specified, the
+:c:macro:`INPUT_CALLBACK_DEFINE` macro. If a device node is specified, the
 callback is only invoked for events from the specific device, otherwise the
 callback will receive all the events in the system. This is the only type of
 filtering supported, any more complex filtering logic has to be implemented in
@@ -54,6 +54,29 @@ The synchronous mode can be used in a simple application to keep a minimal
 footprint, or in a complex application with an existing event model, where the
 callback is just a wrapper to pipe back the event in a more complex application
 specific event system.
+
+Kscan Compatibility
+*******************
+
+Input devices generating X/Y/Touch events can be used in existing applications
+based on the :ref:`kscan_api` API by enabling both
+:kconfig:option:`CONFIG_INPUT` and :kconfig:option:`CONFIG_KSCAN`, defining a
+:dtcompatible:`zephyr,kscan-input` node as a child node of the corresponding
+input device and pointing the ``zephyr,keyboard-scan`` chosen node to the
+compatibility device node, for example:
+
+.. code-block:: devicetree
+
+    chosen {
+        zephyr,keyboard-scan = &kscan_input;
+    };
+
+    ft5336@38 {
+        ...
+        kscan_input: kscan-input {
+            compatible = "zephyr,kscan-input";
+        };
+    };
 
 API Reference
 *************

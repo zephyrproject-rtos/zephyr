@@ -15,9 +15,7 @@
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #include <zephyr/drivers/dma.h>
 #endif
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
 
@@ -38,9 +36,7 @@ struct spi_mcux_config {
 	uint32_t frame_delay;
 	uint32_t transfer_delay;
 	uint32_t def_char;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif
 };
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
@@ -309,7 +305,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	const struct device *spi_dev = arg;
 	struct spi_mcux_data *data = spi_dev->data;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
 	} else {
@@ -519,6 +515,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	if (buf == NULL) {
 		/* if rx buff is null, then write data to dummy address. */
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->dest_address = (uint32_t)buf;
 	}
@@ -593,6 +590,7 @@ static int transceive_dma(const struct device *dev,
 	SPI_Type *base = config->base;
 	int ret;
 	uint32_t word_size;
+	uint16_t data_size;
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
@@ -607,12 +605,18 @@ static int transceive_dma(const struct device *dev,
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
-	data->dma_rx.dma_cfg.dest_data_size = (word_size > 8) ?
-				(sizeof(uint16_t)) : (sizeof(uint8_t));
-	data->dma_tx.dma_cfg.dest_data_size = data->dma_rx.dma_cfg.dest_data_size;
+	data_size = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
+	data->dma_rx.dma_cfg.source_data_size = data_size;
+	data->dma_rx.dma_cfg.dest_data_size = data_size;
+	data->dma_tx.dma_cfg.source_data_size = data_size;
+	data->dma_tx.dma_cfg.dest_data_size = data_size;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
+
+		/* last is used to deassert chip select if this
+		 * is the last transfer in the set.
+		 */
 		bool last = false;
 
 		if (data->ctx.rx_len == 0) {
@@ -627,6 +631,34 @@ static int transceive_dma(const struct device *dev,
 		} else {
 			dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
 			last = false;
+		}
+
+		/* at this point, last just means whether or not
+		 * this transfer will completely cover
+		 * the current tx/rx buffer in data->ctx
+		 * or require additional transfers because the
+		 * the two buffers are not the same size.
+		 *
+		 * if it covers the current ctx tx/rx buffers, then
+		 * we'll move to the next pair of buffers (if any)
+		 * after the transfer, but if there are
+		 * no more buffer pairs, then this is the last
+		 * transfer in the set and we need to deassert CS.
+		 */
+		if (last) {
+			/* this dma transfer should cover
+			 * the entire current data->ctx set
+			 * of buffers. if there are more
+			 * buffers in the set, then we don't
+			 * want to deassert CS.
+			 */
+			if ((data->ctx.tx_count > 1) ||
+			    (data->ctx.rx_count > 1)) {
+				/* more buffers to transfer so
+				 * this isn't last
+				 */
+				last = false;
+			}
 		}
 
 		data->status_flags = 0;
@@ -712,6 +744,10 @@ static int spi_mcux_transceive_async(const struct device *dev,
 				     spi_callback_t cb,
 				     void *userdata)
 {
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
+#endif
+
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
@@ -736,12 +772,10 @@ static int spi_mcux_init(const struct device *dev)
 
 	data->dev = dev;
 
-#ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
-#endif
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 	if (!device_is_ready(data->dma_tx.dma_dev)) {
@@ -788,14 +822,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 	irq_enable(DT_INST_IRQN(id));				\
 }
 
-#ifdef CONFIG_PINCTRL
-#define SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id) PINCTRL_DT_INST_DEFINE(id);
-#define SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),
-#else
-#define SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)
-#define SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id)
-#endif
-
 #ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #define SPI_DMA_CHANNELS(id)
 #else
@@ -807,7 +833,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.dma_cfg = {					\
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
 			.block_count = 2,		\
 		}							\
 	},								\
@@ -818,7 +843,6 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.dma_cfg = {				\
 			.channel_direction = PERIPHERAL_TO_MEMORY,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.source_data_size = 1,				\
 			.block_count = 1,		\
 		}							\
 	}
@@ -827,7 +851,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 
 #define SPI_MCUX_FLEXCOMM_DEVICE(id)					\
 	SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id);			\
-	SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)				\
+	PINCTRL_DT_INST_DEFINE(id);					\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
@@ -840,7 +864,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.frame_delay = DT_INST_PROP_OR(id, frame_delay, 0),		\
 		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),		\
 		.def_char = DT_INST_PROP_OR(id, def_char, 0),		\
-		SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\

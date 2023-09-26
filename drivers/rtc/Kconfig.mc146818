@@ -1,0 +1,9 @@
+# Intel SoC RTC configuration options
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_MOTOROLA_MC146818
+	bool "RTC driver for x86 CMOS/RTC clock"
+	default y if !COUNTER
+	depends on DT_HAS_MOTOROLA_MC146818_ENABLED

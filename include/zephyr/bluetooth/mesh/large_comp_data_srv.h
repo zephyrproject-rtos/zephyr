@@ -4,18 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_large_comp_data_srv Large Composition Data Server model
- * @{
- * @brief API for the Large Composition Data Server model.
- */
 #ifndef BT_MESH_LARGE_COMP_DATA_SRV_H__
 #define BT_MESH_LARGE_COMP_DATA_SRV_H__
+
+#include <zephyr/bluetooth/mesh.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_large_comp_data_srv Large Composition Data Server model
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /**
  *

@@ -2,9 +2,8 @@
  * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-/*
- * Generated using zcbor version 0.6.0
+ *
+ * Generated using zcbor version 0.7.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
@@ -15,8 +14,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <string.h>
-#include "zcbor_common.h"
+#include <zcbor_common.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum lwm2m_senml_cbor_key {
 	lwm2m_senml_cbor_key_bn = -2,
@@ -54,6 +56,13 @@ struct record_n {
 struct record_t {
 	int64_t _record_t;
 };
+
+/* The union members and enum members have the same names.
+ * This is intentional so we need to ignore -Wshadow to avoid
+ * compiler complaining about them.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 
 struct record_union_ {
 	union {
@@ -103,6 +112,8 @@ struct value_ {
 	} _value_choice;
 };
 
+#pragma GCC diagnostic pop
+
 struct key_value_pair {
 	int32_t _key_value_pair_key;
 	struct value_ _key_value_pair;
@@ -114,22 +125,26 @@ struct record__key_value_pair {
 
 struct record {
 	struct record_bn _record_bn;
-	uint_fast32_t _record_bn_present;
+	bool _record_bn_present;
 	struct record_bt _record_bt;
-	uint_fast32_t _record_bt_present;
+	bool _record_bt_present;
 	struct record_n _record_n;
-	uint_fast32_t _record_n_present;
+	bool _record_n_present;
 	struct record_t _record_t;
-	uint_fast32_t _record_t_present;
+	bool _record_t_present;
 	struct record_union_ _record_union;
-	uint_fast32_t _record_union_present;
+	bool _record_union_present;
 	struct record__key_value_pair _record__key_value_pair[5];
-	uint_fast32_t _record__key_value_pair_count;
+	size_t _record__key_value_pair_count;
 };
 
 struct lwm2m_senml {
 	struct record _lwm2m_senml__record[DEFAULT_MAX_QTY];
-	uint_fast32_t _lwm2m_senml__record_count;
+	size_t _lwm2m_senml__record_count;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LWM2M_SENML_CBOR_TYPES_H__ */

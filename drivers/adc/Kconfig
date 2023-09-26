@@ -7,7 +7,7 @@
 # ADC options
 #
 menuconfig ADC
-	bool "ADC drivers"
+	bool "Analog-to-Digital Converter (ADC) drivers"
 	# All platforms that implement the ADC driver are now required to
 	# provide relevant DTS entries.
 	help
@@ -26,6 +26,12 @@ config ADC_SHELL
 # required to explicitly specify analog inputs when configuring channels or
 # just the channel identifier is sufficient.
 config ADC_CONFIGURABLE_INPUTS
+	bool
+
+# By selecting or not this option particular ADC drivers indicate if it is
+# required to explicitly specify for the excitation current source the pin
+# which should be used.
+config ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 	bool
 
 config ADC_ASYNC
@@ -54,6 +60,8 @@ source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
 
+source "drivers/adc/Kconfig.sam"
+
 source "drivers/adc/Kconfig.sam0"
 
 source "drivers/adc/Kconfig.stm32"
@@ -74,16 +82,38 @@ source "drivers/adc/Kconfig.cc13xx_cc26xx"
 
 source "drivers/adc/Kconfig.adc_emul"
 
+source "drivers/adc/Kconfig.vf610"
+
 source "drivers/adc/Kconfig.test"
 
 source "drivers/adc/Kconfig.ads1x1x"
 
 source "drivers/adc/Kconfig.gd32"
 
+source "drivers/adc/Kconfig.ads1112"
+
 source "drivers/adc/Kconfig.ads1119"
+
+source "drivers/adc/Kconfig.ads7052"
+
+source "drivers/adc/Kconfig.ads114s0x"
 
 source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"
+
+source "drivers/adc/Kconfig.gecko"
+
+source "drivers/adc/Kconfig.ifx_cat1"
+
+source "drivers/adc/Kconfig.smartbond"
+
+source "drivers/adc/Kconfig.tla2021"
+
+source "drivers/adc/Kconfig.nxp_s32"
+
+source "drivers/adc/Kconfig.max1125x"
+
+source "drivers/adc/Kconfig.max11102_17"
 
 endif # ADC

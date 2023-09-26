@@ -122,7 +122,7 @@ application. To enable debug over RTT the debug configuration file can be used.
 
 .. code-block:: console
 
-   west build samples/bluetooth/hci_uart -- -DOVERLAY_CONFIG='debug.conf'
+   west build samples/bluetooth/hci_uart -- -DEXTRA_CONF_FILE='debug.conf'
 
 Then attach RTT as described here: :ref:`Using Segger J-Link <Using Segger J-Link>`
 
@@ -147,7 +147,7 @@ Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`blu
 Using a USB CDC ACM UART
 ========================
 
-The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.conf` and :zephyr_file:`samples/bluetooth/hci_uart/nrf52840dongle_nrf52840.overlay`.
+The sample can be configured to use a USB UART instead. See :zephyr_file:`samples/bluetooth/hci_uart/boards/nrf52840dongle_nrf52840.conf` and :zephyr_file:`samples/bluetooth/hci_uart/boards/nrf52840dongle_nrf52840.overlay`.
 
 Using the controller with the Zephyr host
 =========================================

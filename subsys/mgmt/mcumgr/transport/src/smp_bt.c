@@ -109,6 +109,10 @@ BT_CONN_CB_DEFINE(mcumgr_bt_callbacks) = {
 	.disconnected = disconnected,
 };
 
+#ifdef CONFIG_SMP_CLIENT
+static struct smp_client_transport_entry smp_client_transport;
+#endif
+
 /* Helper function that allocates conn_param_data for a conn. */
 static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
 {
@@ -191,7 +195,8 @@ static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
 /* Work handler function for restoring the preferred connection parameters for the connection. */
 static void conn_param_on_pref_restore(struct k_work *work)
 {
-	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, dwork);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct conn_param_data *cpd = CONTAINER_OF(dwork, struct conn_param_data, dwork);
 
 	if (cpd != NULL) {
 		conn_param_set(cpd->conn, CONN_PARAM_PREF);
@@ -202,7 +207,8 @@ static void conn_param_on_pref_restore(struct k_work *work)
 /* Work handler function for retrying on conn negotiation API error. */
 static void conn_param_on_error_retry(struct k_work *work)
 {
-	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, ework);
+	struct k_work_delayable *ework = k_work_delayable_from_work(work);
+	struct conn_param_data *cpd = CONTAINER_OF(ework, struct conn_param_data, ework);
 	struct bt_le_conn_param *param = (cpd->state & CONN_PARAM_SMP_REQUESTED) ?
 		CONN_PARAM_SMP : CONN_PARAM_PREF;
 
@@ -653,11 +659,25 @@ static void smp_bt_setup(void)
 		++i;
 	}
 
-	smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-			   smp_bt_get_mtu, smp_bt_ud_copy,
-			   smp_bt_ud_free, smp_bt_query_valid_check);
+	smp_bt_transport.functions.output = smp_bt_tx_pkt;
+	smp_bt_transport.functions.get_mtu = smp_bt_get_mtu;
+	smp_bt_transport.functions.ud_copy = smp_bt_ud_copy;
+	smp_bt_transport.functions.ud_free = smp_bt_ud_free;
+	smp_bt_transport.functions.query_valid_check = smp_bt_query_valid_check;
 
-	rc = smp_bt_register();
+	rc = smp_transport_init(&smp_bt_transport);
+
+	if (rc == 0) {
+		rc = smp_bt_register();
+	}
+
+#ifdef CONFIG_SMP_CLIENT
+	if (rc == 0) {
+		smp_client_transport.smpt = &smp_bt_transport;
+		smp_client_transport.smpt_type = SMP_BLUETOOTH_TRANSPORT;
+		rc = smp_client_transport_register(&smp_client_transport);
+	}
+#endif
 
 	if (rc != 0) {
 		LOG_ERR("Bluetooth SMP transport register failed (err %d)", rc);

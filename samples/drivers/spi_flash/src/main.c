@@ -26,7 +26,7 @@
 #endif
 #define SPI_FLASH_SECTOR_SIZE        4096
 
-#if defined CONFIG_FLASH_STM32_OSPI
+#if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
@@ -175,13 +175,13 @@ void multi_sector_test(const struct device *flash_dev)
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);
-		return;
+		return 0;
 	}
 
 	printf("\n%s SPI flash testing\n", flash_dev->name);
@@ -191,4 +191,5 @@ void main(void)
 #if defined SPI_FLASH_MULTI_SECTOR_TEST
 	multi_sector_test(flash_dev);
 #endif
+	return 0;
 }

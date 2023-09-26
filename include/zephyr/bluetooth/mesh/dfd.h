@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @defgroup bt_mesh_dfd Firmware Distribution models
- * @{
- * @brief Common API for the Firmware Distribution models.
- */
-
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFD_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFD_H__
 
@@ -19,6 +12,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup bt_mesh_dfd Firmware Distribution models
+ * @ingroup bt_mesh
+ * @{
+ */
 
 /** Firmware distribution status. */
 enum bt_mesh_dfd_status {
@@ -115,10 +114,10 @@ enum bt_mesh_dfd_upload_phase {
 	BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS,
 };
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFD_H__ */
-
-/** @} */

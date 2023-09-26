@@ -394,8 +394,8 @@ SECTIONS
 		*(.text.*.constprop.*)
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
-		*libc.a:(.text)
-		*libc.a:(.text.*)
+		*libc*.a:(.text)
+		*libc*.a:(.text.*)
 #endif
 
 #ifdef CONFIG_COVERAGE
@@ -438,8 +438,8 @@ SECTIONS
 		*(.rodata.*.str*.*)
 
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
-		*libc.a:(.rodata)
-		*libc.a:(.rodata.*)
+		*libc*.a:(.rodata)
+		*libc*.a:(.rodata.*)
 #endif
 
 #include <snippets-rodata.ld>
@@ -788,14 +788,9 @@ SECTIONS
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
-	_image_ram_end = .;
 	_image_ram_all = (KERNEL_BASE_ADDR + KERNEL_RAM_SIZE) - _image_ram_start;
 
-	z_mapped_end = .;
 	z_mapped_size = z_mapped_end - z_mapped_start;
-	_end = .; /* end of image */
-
-	GROUP_END(RAMABLE_REGION)
 
 #ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
@@ -822,6 +817,12 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-sections.ld>
+
+#define LAST_RAM_ALIGN MMU_PAGE_ALIGN
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

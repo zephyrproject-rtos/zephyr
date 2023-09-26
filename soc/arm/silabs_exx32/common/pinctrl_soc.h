@@ -15,7 +15,11 @@
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
+#if CONFIG_SOC_GECKO_SERIES1
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+#else
 #include <zephyr/dt-bindings/pinctrl/gecko-pinctrl.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

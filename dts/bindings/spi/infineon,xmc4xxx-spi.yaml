@@ -30,11 +30,47 @@ properties:
 
   interrupts:
     description: |
-      IRQ number and priority to use for interrupt driven UART.
-      USIC0..2 have their own interrupt range as follows:
+      IRQ number and priority to use for interrupt driven SPI. If DMA is not used (enabled using
+      option CONFIG_SPI_XMC4XXX_DMA) then only one, for receiving, labelled with "rx" needs to be
+      set. When using DMA, two interrupts labelled "tx" and "rx" must be set.
+      Each USIC must use a certain interrupt range:
       USIC0 = [84, 89]
       USIC1 = [90, 95]
       USIC2 = [96, 101]
+
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.
+
+      The dmas are referenced in the USIC/SPI node using the following syntax:
+      dmas = <&dma1 1 0 XMC4XXX_SET_CONFIG(10,6)>, <&dma1 2 0 XMC4XXX_SET_CONFIG(11,6)>;
+      where the first entry is for the TX, and the second for RX.
+
+      The parameters in the dma entry are: dma device phandle, dma channel, dma priority (0 is
+      lowest and 7 is highest), and an opaque entry for the dma line routing parameters set
+      by the macro XMC4XXX_SET_CONFIG(line, request_source). Use the following steps to properly
+      select parameters line, request_source:
+      1. Select a dma device and a free dma channel.
+      1. Select a free dma line. dma0 device can only connect to lines [0, 7] and
+         dma1 can connect to lines [8, 11].
+      2. For a given interrupt, calculate the service request (SR) number. Note the following
+         simple mapping: in USIC0 interrupt 84->SR0, interrupt 85->SR1, ... etc.
+         In USIC1, intterupt 90->SR0, 91->SR1, etc.
+      3. Select request_source from Table "DMA Request Source Selection" in XMC4XXX reference
+         manual.
+
+      For example, say we select interrupt 85 on USIC0, dma0, channel 3, priority 4, and line 7.
+      The interrupt would map to SR1. From Table "DMA Request Source Selection", request_source
+      would need to be set to 10 and the dts entry would be:
+      dma = <&dma0 3 4 XMC4XXX_SET_CONFIG(7,10) ... >;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. Should be set to "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
 
   pinctrl-0:
     required: true

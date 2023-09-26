@@ -15,6 +15,11 @@
 
 		/* MIWU table 0 */
 		/* MIWU group A */
+		wui_cr_sin2: wui0-1-6-2 {
+			miwus = <&miwu0 0 6>; /* CR_SIN2 */
+		};
+
+		/* MIWU group A */
 		wui_io86: wui0-1-6 {
 			miwus = <&miwu0 0 6>; /* GPIO86 */
 		};

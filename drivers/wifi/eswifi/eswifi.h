@@ -50,6 +50,7 @@ struct eswifi_sta {
 	char pass[65];
 	bool connected;
 	uint8_t channel;
+	int rssi;
 };
 
 struct eswifi_bus_ops;
@@ -65,6 +66,7 @@ struct eswifi_dev {
 	scan_result_cb_t scan_cb;
 	struct k_work_q work_q;
 	struct k_work request_work;
+	struct k_work_delayable status_work;
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
@@ -119,7 +121,7 @@ static inline int __select_socket(struct eswifi_dev *eswifi, uint8_t idx)
 static inline
 struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 {
-	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
+	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket[0]);
 }
 
 struct eswifi_bus_ops *eswifi_get_bus(void);

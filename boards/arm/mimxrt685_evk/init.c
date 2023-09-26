@@ -7,9 +7,8 @@
 #include <zephyr/devicetree.h>
 #include <fsl_device_registers.h>
 
-static int mimxrt685_evk_init(const struct device *dev)
+static int mimxrt685_evk_init(void)
 {
-	ARG_UNUSED(dev);
 
 /* flexcomm1 and flexcomm3 are configured to loopback the TX signal to RX */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay)) && \

@@ -160,3 +160,7 @@ ZTEST_USER(common_errno, test_errno)
 
 	k_thread_join(tid, K_FOREVER);
 }
+
+extern void *common_setup(void);
+
+ZTEST_SUITE(common_errno, NULL, common_setup, NULL, NULL, NULL);

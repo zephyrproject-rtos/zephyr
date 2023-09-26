@@ -44,16 +44,16 @@ static const struct device *name2reg(const char *name)
 	return NULL;
 }
 
-void main(void)
+int main(void)
 {
 	if (!device_is_ready(gpio)) {
 		printk("nPM6001 GPIO device not ready\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(wdt)) {
 		printk("nPM6001 Watchdog device not ready\n");
-		return;
+		return 0;
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(regulators); i++) {
@@ -61,9 +61,10 @@ void main(void)
 		    !device_is_ready(regulators[i].dev)) {
 			printk("nPM6001 %s regulator device not ready\n",
 			       regulators[i].name);
-			return;
+			return 0;
 		}
 	}
+	return 0;
 }
 
 static int cmd_regulator_list(const struct shell *sh, size_t argc, char **argv)

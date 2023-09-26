@@ -13,3 +13,5 @@ supported:
   - gpio
   - watchdog
   - netif:eth
+  - can
+vendor: nxp

@@ -79,9 +79,11 @@ static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 	new_event.event = mgmt_event;
 	new_event.iface = iface;
 
-	if (k_msgq_put(&event_msgq, &new_event, K_MSEC(10)) != 0) {
+	if (k_msgq_put(&event_msgq, &new_event,
+		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
 		NET_WARN("Failure to push event (%u), "
-			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE'",
+			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
+			 "or 'CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT' options.",
 			 mgmt_event);
 	}
 
@@ -234,29 +236,32 @@ static int mgmt_event_wait_call(struct net_if *iface,
 	net_mgmt_add_event_callback(&sync);
 
 	ret = k_sem_take(sync.sync_call, timeout);
-	if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	} else {
-		if (!ret) {
-			if (raised_event) {
-				*raised_event = sync.raised_event;
-			}
+	if (ret < 0) {
+		if (ret == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 
-			if (event_iface) {
-				*event_iface = sync_data.iface;
-			}
+		net_mgmt_del_event_callback(&sync);
+		return ret;
+	}
+
+	if (raised_event) {
+		*raised_event = sync.raised_event;
+	}
+
+	if (event_iface) {
+		*event_iface = sync_data.iface;
+	}
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-			if (info) {
-				*info = sync.info;
+	if (info) {
+		*info = sync.info;
 
-				if (info_length) {
-					*info_length = sync.info_length;
-				}
-			}
-#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+		if (info_length) {
+			*info_length = sync.info_length;
 		}
 	}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
 	return ret;
 }

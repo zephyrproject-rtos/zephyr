@@ -22,8 +22,9 @@ bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 			     uint8_t const peer_id_addr_type,
 			     uint8_t const *const peer_id_addr);
 void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx);
-int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
-int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy);
+void ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
+int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
+		  uint32_t remainder, uint16_t lazy);
 void ull_conn_done(struct node_rx_event_done *done);
 void ull_conn_tx_demux(uint8_t count);
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count);
@@ -79,7 +80,7 @@ static inline void cpr_active_reset(void)
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 
 void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
-				uint8_t win_size, uint16_t win_offset_us,
+				uint8_t win_size, uint32_t win_offset_us,
 				uint16_t interval, uint16_t latency,
 				uint16_t timeout, uint16_t instant);
 

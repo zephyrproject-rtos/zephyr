@@ -43,6 +43,7 @@ For more information about the LPC55S69 SoC and LPCXPRESSO55S69 board, see:
 - `LPCXPRESSO55S69 Website`_
 - `LPCXPRESSO55S69 User Guide`_
 - `LPCXPRESSO55S69 Schematics`_
+- `LPCXPRESSO55S69 Debug Firmware`_
 
 Supported Features
 ==================
@@ -83,7 +84,9 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
+| USB HS    | on-chip    | USB High Speed device               |
++-----------+------------+-------------------------------------+
+| USB FS    | on-chip    | USB Full Speed device               |
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
@@ -287,6 +290,12 @@ Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program
 the J-Link firmware. Please make sure you have the latest firmware for this
 board.
 
+:ref:`lpclink2-cmsis-onboard-debug-probe`
+-----------------------------------------
+
+        1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`
+
 :ref:`opensda-daplink-onboard-debug-probe`
 ------------------------------------------
 
@@ -335,7 +344,7 @@ a J-Link as follows (reset and erase are for recovering a locked core):
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
       J-Link>r
       J-Link>erase
-      J-Link>loadfile build/tfm_merged.hex
+      J-Link>loadfile build/zephyr/tfm_merged.hex
 
 We need to reset the board manually after flashing the image to run this code.
 
@@ -389,6 +398,9 @@ should see the following message in the terminal:
 
 .. _LPCXPRESSO55S69 User Guide:
    https://www.nxp.com/webapp/Download?colCode=UM11158
+
+.. _LPCXPRESSO55S69 Debug Firmware:
+   https://www.nxp.com/docs/en/application-note/AN13206.pdf
 
 .. _LPCXPRESSO55S69 Schematics:
    https://www.nxp.com/webapp/Download?colCode=LPC55S69-SCH

@@ -102,6 +102,7 @@ class CoverageTool:
             if ret == 0:
                 report_log = {
                     "html": "HTML report generated: {}".format(os.path.join(outdir, "coverage", "index.html")),
+                    "lcov": "LCOV report generated: {}".format(os.path.join(outdir, "coverage.info")),
                     "xml": "XML report generated: {}".format(os.path.join(outdir, "coverage", "coverage.xml")),
                     "csv": "CSV report generated: {}".format(os.path.join(outdir, "coverage", "coverage.csv")),
                     "txt": "TXT report generated: {}".format(os.path.join(outdir, "coverage", "coverage.txt")),
@@ -117,6 +118,7 @@ class Lcov(CoverageTool):
     def __init__(self):
         super().__init__()
         self.ignores = []
+        self.output_formats = "lcov,html"
 
     def add_ignore_file(self, pattern):
         self.ignores.append('*' + pattern + '*')
@@ -159,6 +161,9 @@ class Lcov(CoverageTool):
                  coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
 
+        if 'html' not in self.output_formats.split(','):
+            return 0
+
         # The --ignore-errors source option is added to avoid it exiting due to
         # samples/application_development/external_lib/
         return subprocess.call(["genhtml", "--legend", "--branch-coverage",
@@ -173,6 +178,7 @@ class Gcovr(CoverageTool):
     def __init__(self):
         super().__init__()
         self.ignores = []
+        self.output_formats = "html"
 
     def add_ignore_file(self, pattern):
         self.ignores.append('.*' + pattern + '.*')
@@ -269,9 +275,8 @@ def run_coverage(testplan, options):
     coverage_tool.gcov_tool = options.gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
     # Apply output format default
-    if options.coverage_formats is None:
-        options.coverage_formats = "html"
-    coverage_tool.output_formats = options.coverage_formats
+    if options.coverage_formats is not None:
+        coverage_tool.output_formats = options.coverage_formats
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')

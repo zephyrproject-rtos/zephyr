@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define ICCM_SIZE DT_SIZE_K(256)
+#define DCCM_SIZE DT_SIZE_K(256)
+#define UART0_IRQ_NUM 23
+
+#include "nsim.dtsi"
+#include "nsim-ccm-mem.dtsi"
+#include "nsim-uart-ns16550.dtsi"
+
+/ {
+	model = "snps,nsim_hs";
+	compatible = "snps,nsim_hs";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "snps,archs";
+			reg = <0>;
+		};
+	};
+};

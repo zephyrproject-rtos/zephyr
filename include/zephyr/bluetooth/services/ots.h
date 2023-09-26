@@ -17,31 +17,33 @@
  * as a part of ongoing development.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/byteorder.h>
+#include <stdint.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
 
 /** @brief Minimum allowed value for object ID (except ID for directory listing) */
-#define BT_OTS_OBJ_ID_MIN 0x000000000100
+#define BT_OTS_OBJ_ID_MIN 0x000000000100ULL
 
 /** @brief Maximum allowed value for object ID (except ID for directory listing) */
-#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFF
+#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFFULL
 
 /** @brief ID of the Directory Listing Object */
-#define OTS_OBJ_ID_DIR_LIST     0x000000000000
+#define OTS_OBJ_ID_DIR_LIST 0x000000000000ULL
 
 /** @brief Mask for OTS object IDs, preserving the 48 bits */
 #define BT_OTS_OBJ_ID_MASK BIT64_MASK(48)
@@ -747,7 +749,7 @@ struct bt_ots_cb {
 };
 
 /** @brief Descriptor for OTS initialization. */
-struct bt_ots_init {
+struct bt_ots_init_param {
 	/* OTS features */
 	struct bt_ots_feat features;
 
@@ -801,7 +803,7 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_ots_init(struct bt_ots *ots, struct bt_ots_init *ots_init);
+int bt_ots_init(struct bt_ots *ots, struct bt_ots_init_param *ots_init);
 
 /** @brief Get a free instance of OTS from the pool.
  *
@@ -934,6 +936,17 @@ struct bt_ots_client_cb {
  *  @return int               0 if success, ERRNO on failure.
  */
 int bt_ots_client_register(struct bt_ots_client *ots_inst);
+
+/** @brief Unregister an Object Transfer Service Instance.
+ *
+ *  Unregister an Object Transfer Service instance when disconnect from the peer.
+ *  Call this function when an ACL using OTS instance is disconnected.
+ *
+ *  @param[in]  index	      Index of OTS instance.
+ *
+ *  @return int               0 if success, ERRNO on failure.
+ */
+int bt_ots_client_unregister(uint8_t index);
 
 /** @brief OTS Indicate Handler function.
  *
@@ -1144,10 +1157,12 @@ void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
  * @return CRC32 value.
  *
  */
+#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
 static inline uint32_t bt_ots_client_calc_checksum(const uint8_t *data, size_t len)
 {
 	return crc32_ieee(data, len);
 }
+#endif
 
 #ifdef __cplusplus
 }

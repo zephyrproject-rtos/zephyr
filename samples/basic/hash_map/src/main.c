@@ -13,8 +13,6 @@ LOG_MODULE_REGISTER(hashmap_sample);
 
 SYS_HASHMAP_DEFINE_STATIC(map);
 
-void print_sys_memory_stats(void);
-
 struct _stats {
 	uint64_t n_insert;
 	uint64_t n_remove;
@@ -26,7 +24,7 @@ struct _stats {
 
 static void print_stats(const struct _stats *stats);
 
-void main(void)
+int main(void)
 {
 	size_t i;
 	int ires;
@@ -89,9 +87,7 @@ out:
 
 	LOG_INF("success");
 
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		exit(0);
-	}
+	return 0;
 }
 
 static void print_stats(const struct _stats *stats)
