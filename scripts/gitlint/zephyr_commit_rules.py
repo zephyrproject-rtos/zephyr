@@ -109,7 +109,7 @@ class MaxLineLengthExceptions(LineRule):
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
         urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
-        if line.startswith('Signed-off-by'):
+        if line.lower().startswith('signed-off-by') or line.lower().startswith('co-authored-by'):
             return
 
         if urls:
