@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Copyright (c) 2023 Meta
  * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -31,6 +32,8 @@
 #define PLIC_REG_PRIO_OFFSET 0x0
 #define PLIC_REG_IRQ_EN_OFFSET 0x2000
 #define PLIC_REG_REGS_OFFSET 0x200000
+#define PLIC_REG_REGS_THRES_PRIORITY_OFFSET 0
+#define PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET sizeof(uint32_t)
 /*
  * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
@@ -41,11 +44,6 @@
 /* PLIC registers are 32-bit memory-mapped */
 #define PLIC_REG_SIZE 32
 #define PLIC_REG_MASK BIT_MASK(LOG2(PLIC_REG_SIZE))
-
-struct plic_regs_t {
-	uint32_t threshold_prio;
-	uint32_t claim_complete;
-};
 
 typedef void (*riscv_plic_irq_config_func_t)(void);
 struct plic_config {
@@ -71,6 +69,20 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	const struct plic_config *config = dev->config;
 
 	return local_irq_to_reg_offset(config->num_irqs) + 1;
+}
+
+static inline uint32_t get_claim_complete_offset(const struct device *dev)
+{
+	const struct plic_config *config = dev->config;
+
+	return config->reg + PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET;
+}
+
+static inline uint32_t get_threshold_priority_offset(const struct device *dev)
+{
+	const struct plic_config *config = dev->config;
+
+	return config->reg + PLIC_REG_REGS_THRES_PRIORITY_OFFSET;
 }
 
 /**
@@ -103,10 +115,9 @@ static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
 {
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *trig = (volatile uint32_t *) config->trig;
+	mem_addr_t trig_addr = config->trig + local_irq_to_reg_offset(local_irq);
 
-	trig += local_irq_to_reg_offset(local_irq);
-	return *trig & BIT(local_irq);
+	return sys_read32(trig_addr) & BIT(local_irq);
 }
 
 /**
@@ -123,13 +134,15 @@ void riscv_plic_irq_enable(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
+	uint32_t en_value;
 	uint32_t key;
 
 	key = irq_lock();
-	en += local_irq_to_reg_offset(local_irq);
-	WRITE_BIT(*en, local_irq & PLIC_REG_MASK, true);
+	en_value = sys_read32(en_addr);
+	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, true);
+	sys_write32(en_value, en_addr);
 	irq_unlock(key);
 }
 
@@ -147,13 +160,15 @@ void riscv_plic_irq_disable(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
+	uint32_t en_value;
 	uint32_t key;
 
 	key = irq_lock();
-	en += local_irq_to_reg_offset(local_irq);
-	WRITE_BIT(*en, local_irq & PLIC_REG_MASK, false);
+	en_value = sys_read32(en_addr);
+	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, false);
+	sys_write32(en_value, en_addr);
 	irq_unlock(key);
 }
 
@@ -169,11 +184,14 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
 	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
+	uint32_t en_value;
 
-	en += local_irq_to_reg_offset(local_irq);
-	return !!(*en & BIT(local_irq & PLIC_REG_MASK));
+	en_value = sys_read32(en_addr);
+	en_value &= BIT(local_irq & PLIC_REG_MASK);
+
+	return !!en_value;
 }
 
 /**
@@ -190,14 +208,13 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
 	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t prio_addr = config->prio + (local_irq * sizeof(uint32_t));
 
 	if (priority > config->max_prio)
 		priority = config->max_prio;
 
-	prio += local_irq;
-	*prio = priority;
+	sys_write32(priority, prio_addr);
 }
 
 /**
@@ -223,12 +240,12 @@ const struct device *riscv_plic_get_dev(void)
 static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
-	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *) config->reg;
+	mem_addr_t claim_complete_addr = get_claim_complete_offset(dev);
 	struct _isr_table_entry *ite;
 	int edge_irq;
 
 	/* Get the IRQ number generating the interrupt */
-	const uint32_t local_irq = regs->claim_complete;
+	const uint32_t local_irq = sys_read32(claim_complete_addr);
 
 	/*
 	 * Save IRQ in save_irq. To be used, if need be, by
@@ -254,7 +271,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * for edge triggered interrupts.
 	 */
 	if (edge_irq)
-		regs->claim_complete = local_irq;
+		sys_write32(local_irq, claim_complete_addr);
 
 	const uint32_t parent_irq = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
 						(z_get_sw_isr_irq_from_device(dev)), (0U));
@@ -273,7 +290,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * for level triggered interrupts.
 	 */
 	if (!edge_irq)
-		regs->claim_complete = local_irq;
+		sys_write32(local_irq, claim_complete_addr);
 }
 
 /**
@@ -286,24 +303,22 @@ static void plic_irq_handler(const struct device *dev)
 static int plic_init(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
-	volatile uint32_t *en = (volatile uint32_t *) config->irq_en;
-	volatile uint32_t *prio = (volatile uint32_t *) config->prio;
-	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *) config->reg;
+	mem_addr_t en_addr = config->irq_en;
+	mem_addr_t prio_addr = config->prio;
+	mem_addr_t thres_prio_addr = get_threshold_priority_offset(dev);
 
 	/* Ensure that all interrupts are disabled initially */
 	for (uint32_t i = 0; i < get_plic_enabled_size(dev); i++) {
-		*en = 0U;
-		en++;
+		sys_write32(0U, en_addr + (i * sizeof(uint32_t)));
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
 	for (uint32_t i = 0; i < config->num_irqs; i++) {
-		*prio = 0U;
-		prio++;
+		sys_write32(0U, prio_addr + (i * sizeof(uint32_t)));
 	}
 
 	/* Set threshold priority to 0 */
-	regs->threshold_prio = 0U;
+	sys_write32(0U, thres_prio_addr);
 
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();
