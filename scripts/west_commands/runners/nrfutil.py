@@ -16,9 +16,9 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 tool_opt=[], force=False, recover=False):
+                 reset=True, tool_opt=[], force=False, recover=False):
 
-        super().__init__(cfg, family, softreset, dev_id, erase,
+        super().__init__(cfg, family, softreset, dev_id, erase, reset,
                          tool_opt, force, recover)
         self._ops = []
         self._op_id = 1
@@ -35,6 +35,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
                                    args.dev_id, erase=args.erase,
+                                   reset=args.reset,
                                    tool_opt=args.tool_opt, force=args.force,
                                    recover=args.recover)
 

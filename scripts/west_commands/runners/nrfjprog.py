@@ -30,6 +30,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.dev_id, erase=args.erase,
+                                    reset=args.reset,
                                     tool_opt=args.tool_opt, force=args.force,
                                     recover=args.recover)
 
