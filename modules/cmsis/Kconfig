@@ -1,6 +1,9 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_CMSIS_MODULE
+	bool
+
 config HAS_CMSIS_CORE
 	bool
 	select HAS_CMSIS_CORE_A if CPU_AARCH32_CORTEX_A
