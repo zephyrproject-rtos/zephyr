@@ -79,6 +79,19 @@ sys_slist_t *llext_list(void);
 struct llext *llext_by_name(const char *name);
 
 /**
+ * @brief llext loader parameters
+ *
+ * These are parameters, not saved in the permanent llext context, needed only
+ * for the loader
+ */
+struct llext_load_param {
+	/** Should local relocation be performed */
+	bool relocate_local;
+};
+
+#define LLEXT_LOAD_PARAM_DEFAULT {.relocate_local = true,}
+
+/**
  * @brief Load and link an extension
  *
  * Loads relevant ELF data into memory and provides a structure to work with it.
@@ -88,12 +101,14 @@ struct llext *llext_by_name(const char *name);
  * @param[in] loader An extension loader that provides input data and context
  * @param[in] name A string identifier for the extension
  * @param[out] ext A pointer to a statically allocated llext struct
+ * @param[in] ldr_parm Loader parameters
  *
  * @retval 0 Success
  * @retval -ENOMEM Not enough memory
  * @retval -EINVAL Invalid ELF stream
  */
-int llext_load(struct llext_loader *loader, const char *name, struct llext **ext);
+int llext_load(struct llext_loader *loader, const char *name, struct llext **ext,
+	       struct llext_load_param *ldr_parm);
 
 /**
  * @brief Unload an extension
