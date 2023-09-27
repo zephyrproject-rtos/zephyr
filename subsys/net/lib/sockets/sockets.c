@@ -482,7 +482,7 @@ static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
 {
 	struct sockaddr_storage dest_addr_copy;
 
-	Z_OOPS(Z_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+	Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
 	Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
 	return z_impl_zsock_bind(sock, (struct sockaddr *)&dest_addr_copy,
@@ -561,7 +561,7 @@ int z_vrfy_zsock_connect(int sock, const struct sockaddr *addr,
 {
 	struct sockaddr_storage dest_addr_copy;
 
-	Z_OOPS(Z_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+	Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
 	Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
 	return z_impl_zsock_connect(sock, (struct sockaddr *)&dest_addr_copy,
@@ -864,7 +864,7 @@ ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 
 	Z_OOPS(K_SYSCALL_MEMORY_READ(buf, len));
 	if (dest_addr) {
-		Z_OOPS(Z_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+		Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
 		Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)dest_addr,
 					addrlen));
 	}

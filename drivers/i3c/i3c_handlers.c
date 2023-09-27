@@ -69,7 +69,7 @@ static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 	 * in i2c.h use only a handful of messages, so up to 32 messages
 	 * should be more than sufficient.
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
+	Z_OOPS(K_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
 
 	/* We need to be able to read the overall array of messages */
 	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
