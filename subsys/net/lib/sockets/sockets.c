@@ -955,7 +955,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
 
-	msg_copy.msg_iov = z_user_alloc_from_copy(msg->msg_iov,
+	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
 				       msg->msg_iovlen * sizeof(struct iovec));
 	if (!msg_copy.msg_iov) {
 		errno = ENOMEM;
@@ -964,7 +964,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 
 	for (i = 0; i < msg->msg_iovlen; i++) {
 		msg_copy.msg_iov[i].iov_base =
-			z_user_alloc_from_copy(msg->msg_iov[i].iov_base,
+			k_usermode_alloc_from_copy(msg->msg_iov[i].iov_base,
 					       msg->msg_iov[i].iov_len);
 		if (!msg_copy.msg_iov[i].iov_base) {
 			errno = ENOMEM;
@@ -975,7 +975,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 	}
 
 	if (msg->msg_namelen > 0) {
-		msg_copy.msg_name = z_user_alloc_from_copy(msg->msg_name,
+		msg_copy.msg_name = k_usermode_alloc_from_copy(msg->msg_name,
 							   msg->msg_namelen);
 		if (!msg_copy.msg_name) {
 			errno = ENOMEM;
@@ -984,7 +984,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 	}
 
 	if (msg->msg_controllen > 0) {
-		msg_copy.msg_control = z_user_alloc_from_copy(msg->msg_control,
+		msg_copy.msg_control = k_usermode_alloc_from_copy(msg->msg_control,
 							  msg->msg_controllen);
 		if (!msg_copy.msg_control) {
 			errno = ENOMEM;
@@ -1906,7 +1906,7 @@ static inline int z_vrfy_zsock_poll(struct zsock_pollfd *fds,
 		errno = EFAULT;
 		return -1;
 	}
-	fds_copy = z_user_alloc_from_copy((void *)fds, fds_size);
+	fds_copy = k_usermode_alloc_from_copy((void *)fds, fds_size);
 	if (!fds_copy) {
 		errno = ENOMEM;
 		return -1;
@@ -2173,7 +2173,7 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 		return -1;
 	}
 
-	kernel_optval = z_user_alloc_from_copy((const void *)optval,
+	kernel_optval = k_usermode_alloc_from_copy((const void *)optval,
 					       kernel_optlen);
 	Z_OOPS(!kernel_optval);
 
@@ -2517,7 +2517,7 @@ int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
 	void *kernel_optval;
 	int ret;
 
-	kernel_optval = z_user_alloc_from_copy((const void *)optval, optlen);
+	kernel_optval = k_usermode_alloc_from_copy((const void *)optval, optlen);
 	Z_OOPS(!kernel_optval);
 
 	ret = z_impl_zsock_setsockopt(sock, level, optname,

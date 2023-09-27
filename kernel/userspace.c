@@ -806,7 +806,7 @@ void k_object_uninit(const void *obj)
 /*
  * Copy to/from helper functions used in syscall handlers
  */
-void *z_user_alloc_from_copy(const void *src, size_t size)
+void *k_usermode_alloc_from_copy(const void *src, size_t size)
 {
 	void *dst = NULL;
 
@@ -872,7 +872,7 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 		goto out;
 	}
 
-	ret = z_user_alloc_from_copy(src, actual_len);
+	ret = k_usermode_alloc_from_copy(src, actual_len);
 
 	/* Someone may have modified the source string during the above
 	 * checks. Ensure what we actually copied is still terminated
