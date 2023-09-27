@@ -367,7 +367,7 @@ static void isr_tx(void *param)
 		switch_radio_complete_and_b2b_tx(lll_sync, lll->phy_s);
 	} else {
 		radio_isr_set(isr_done, lll_sync);
-		radio_switch_complete_and_disable();
+		radio_switch_complete_and_b2b_tx_disable();
 	}
 
 	radio_pkt_tx_set(pdu);
