@@ -29,3 +29,9 @@ struct net_shell_user_data {
 	const struct shell *sh;
 	void *user_data;
 };
+
+const char *addrtype2str(enum net_addr_type addr_type);
+const char *addrstate2str(enum net_addr_state addr_state);
+void get_addresses(struct net_context *context,
+		   char addr_local[], int local_len,
+		   char addr_remote[], int remote_len);
