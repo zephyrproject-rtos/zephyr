@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    OSRAM ams TMD26XX Proximity Sensor
+
+compatible: "ams,tmd26xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  timeout:
+    type: int
+    required: false
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identifies pin for the INT signal on the module. Tristate
+      interrupt output based on ramp generator flags RAMP_STAT
+      bits 4, 5, 6 & 7. Outputs positive active interrupt signal.
+
+  proximity-gain:
+    type: int
+    required: true
+    description: |
+      Proximity detection gain of the sensor
+      Legal values: 1, 2, 4, 8
+
+  proximity-pulse-length:
+    type: int
+    required: true
+    description: |
+      IR led pulse length in us
+      Legal values: 1, 2, 4, 8, 12, 16, 24, 32
+
+  proximity-pulse-count:
+    type: int
+    required: true
+    description: |
+      count of IR led pulses (min. 1; max. 64)
+
+  proximity-high-threshold:
+    type: int
+    required: true
+    description: |
+      high threshold for interrupt.
+
+  proximity-low-threshold:
+    type: int
+    required: true
+    description: |
+      low threshold for interrupt.
+
+  proximity-led-drive-strength:
+    type: int
+    required: true
+    description: |
+      This field sets the drive strength of the IR VCSEL current.
+      Values are approximate; actual current through VCSEL is
+      factory trimmed to normalize IR intensity. For lowest part
+      to part variation, 7mA is recommended.
+
+  proximity-interrupt-filter:
+    type: int
+    required: true
+    description: |
+      This register sets the proximity persistence filter. (min. 0; max. 15)
+      0-> every cycle fires an interrupt
+      1-> 1 Any value outside proximity thresholds
+      2-> 2 consecutive proximity values out of range
+      ...
+      15-> 15 consecutive proximity values out of range
+
+  enable-wait-mode:
+    type: boolean
+    description: Enables wait mode
+
+  wait-time-factor:
+    type: int
+    required: true
+    description: |
+      Value that specifies the wait time in 2.78ms increments.
+      value: 0x00 Increment: 1 Wait Time 2.78ms
+      value: 0x01 Increment: 2 Wait Time 5.56ms
+      value: 0x11 Increment: 18 Wait Time 50.0ms
+      value: 0x23 Increment: 36 Wait Time 100ms
+      value: 0x3f Increment: 64 Wait Time 178ms
+      value: 0xff Increment: 256 Wait Time 712ms
+
+  wait-long:
+    type: boolean
+    description: |
+      When PWLONG (PROX Wait Long) is asserted the wait,
+      period as set by PWTIME is increased by a factor of 12.
+
+  proximity-sample-duration:
+    type: int
+    required: true
+    description: |
+      This register defines the duration of 1 proximity sample,
+      which is (PRATE + 1)*88µs. default: 0x1F
