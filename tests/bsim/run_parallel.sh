@@ -76,11 +76,10 @@ if [ `command -v parallel` ]; then
   {} $@ &> {#}.log
   if [ $? -ne 0 ]; then
     (>&2 echo -e "\e[91m{} FAILED\e[39m")
-    (>&2 cat {#}.log)
+    (>&2 echo "  Check {#}.log")
     echo "<failure message=\"failed\" type=\"failure\">"
     cat {#}.log | eval $CLEAN_XML
     echo "</failure>"
-    rm {#}.log
     echo "</testcase>"
     exit 1
   else
