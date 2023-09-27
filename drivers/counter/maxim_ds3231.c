@@ -1314,7 +1314,7 @@ int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 	rv = z_impl_maxim_ds3231_get_syncpoint(dev, &value);
 
 	if (rv >= 0) {
-		Z_OOPS(z_user_to_copy(syncpoint, &value, sizeof(*syncpoint)));
+		Z_OOPS(k_usermode_to_copy(syncpoint, &value, sizeof(*syncpoint)));
 	}
 
 	return rv;

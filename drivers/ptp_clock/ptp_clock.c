@@ -22,7 +22,7 @@ int z_vrfy_ptp_clock_get(const struct device *dev,
 		return 0;
 	}
 
-	if (z_user_to_copy((void *)tm, &ptp_time, sizeof(ptp_time)) != 0) {
+	if (k_usermode_to_copy((void *)tm, &ptp_time, sizeof(ptp_time)) != 0) {
 		return 0;
 	}
 

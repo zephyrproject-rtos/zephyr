@@ -377,7 +377,7 @@ The proper procedure to mitigate these attacks is to make a copies in the
 verification function, and only perform parameter checks on the copies, which
 user threads will never have access to. The implementation functions get passed
 the copy and not the original data sent by the user. The
-:c:func:`z_user_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
+:c:func:`k_usermode_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
 this purpose.
 
 There is one exception in place, with respect to large data buffers which are
@@ -397,12 +397,12 @@ for some integral value:
         int ret;
 
         ret = z_impl_some_syscall(&local_out_param);
-        Z_OOPS(z_user_to_copy(out_param, &local_out_param, sizeof(*out_param)));
+        Z_OOPS(k_usermode_to_copy(out_param, &local_out_param, sizeof(*out_param)));
         return ret;
     }
 
 Here we have allocated ``local_out_param`` on the stack, passed its address to
-the implementation function, and then used :c:func:`z_user_to_copy()` to fill
+the implementation function, and then used :c:func:`k_usermode_to_copy()` to fill
 in the memory passed in by the caller.
 
 It might be tempting to do something more concise:
@@ -435,7 +435,7 @@ bytes processed. This too should use a stack copy:
 
         Z_OOPS(k_usermode_from_copy(&size, size_ptr, sizeof(size));
         ret = z_impl_in_out_syscall(&size);
-        Z_OOPS(z_user_to_copy(size_ptr, &size, sizeof(size)));
+        Z_OOPS(k_usermode_to_copy(size_ptr, &size, sizeof(size)));
         return ret;
     }
 
@@ -566,7 +566,7 @@ conventions are as follows:
    invokes :c:macro:`Z_OOPS()`.
 
 #. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
-   :c:func:`k_usermode_from_copy()`, :c:func:`z_user_to_copy()`
+   :c:func:`k_usermode_from_copy()`, :c:func:`k_usermode_to_copy()`
    should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
    appropriate permissions on the memory buffer or some size calculation
    overflowed.
