@@ -129,7 +129,7 @@ void z_thread_perms_inherit(struct k_thread *parent,
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-void z_thread_perms_set(struct k_object *ko, struct k_thread *thread);
+void k_thread_perms_set(struct k_object *ko, struct k_thread *thread);
 
 /**
  * Revoke a thread's permission to a kernel object

@@ -428,7 +428,7 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	/* The allocating thread implicitly gets permission on kernel objects
 	 * that it allocates
 	 */
-	z_thread_perms_set(zo, _current);
+	k_thread_perms_set(zo, _current);
 
 	/* Activates reference counting logic for automatic disposal when
 	 * all permissions have been revoked
@@ -602,7 +602,7 @@ void z_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 	}
 }
 
-void z_thread_perms_set(struct k_object *ko, struct k_thread *thread)
+void k_thread_perms_set(struct k_object *ko, struct k_thread *thread)
 {
 	int index = thread_index_get(thread);
 
@@ -694,7 +694,7 @@ void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 	struct k_object *ko = z_object_find(object);
 
 	if (ko != NULL) {
-		z_thread_perms_set(ko, thread);
+		k_thread_perms_set(ko, thread);
 	}
 }
 
@@ -785,7 +785,7 @@ void k_object_recycle(const void *obj)
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
-		z_thread_perms_set(ko, _current);
+		k_thread_perms_set(ko, _current);
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
 }
