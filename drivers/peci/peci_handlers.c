@@ -11,7 +11,7 @@
 static inline int z_vrfy_peci_config(const struct device *dev,
 				     uint32_t bitrate)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, config));
+	Z_OOPS(K_SYSCALL_DRIVER_PECI(dev, config));
 
 	return z_impl_peci_config(dev, bitrate);
 }
@@ -19,7 +19,7 @@ static inline int z_vrfy_peci_config(const struct device *dev,
 
 static inline int z_vrfy_peci_enable(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, enable));
+	Z_OOPS(K_SYSCALL_DRIVER_PECI(dev, enable));
 
 	return z_impl_peci_enable(dev);
 }
@@ -27,7 +27,7 @@ static inline int z_vrfy_peci_enable(const struct device *dev)
 
 static inline int z_vrfy_peci_disable(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, disable));
+	Z_OOPS(K_SYSCALL_DRIVER_PECI(dev, disable));
 
 	return z_impl_peci_disable(dev);
 }
@@ -38,7 +38,7 @@ static inline int z_vrfy_peci_transfer(const struct device *dev,
 {
 	struct peci_msg msg_copy;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, transfer));
+	Z_OOPS(K_SYSCALL_DRIVER_PECI(dev, transfer));
 	Z_OOPS(k_usermode_from_copy(&msg_copy, msg, sizeof(*msg)));
 
 	return z_impl_peci_transfer(dev, &msg_copy);

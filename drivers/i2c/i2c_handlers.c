@@ -11,7 +11,7 @@
 static inline int z_vrfy_i2c_configure(const struct device *dev,
 				       uint32_t dev_config)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, configure));
+	Z_OOPS(K_SYSCALL_DRIVER_I2C(dev, configure));
 	return z_impl_i2c_configure((const struct device *)dev, dev_config);
 }
 #include <syscalls/i2c_configure_mrsh.c>
@@ -19,7 +19,7 @@ static inline int z_vrfy_i2c_configure(const struct device *dev,
 static inline int z_vrfy_i2c_get_config(const struct device *dev,
 					uint32_t *dev_config)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, get_config));
+	Z_OOPS(K_SYSCALL_DRIVER_I2C(dev, get_config));
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dev_config, sizeof(uint32_t)));
 
 	return z_impl_i2c_get_config(dev, dev_config);

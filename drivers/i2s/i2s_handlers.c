@@ -16,7 +16,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	struct i2s_config config;
 	int ret = -EINVAL;
 
-	if (Z_SYSCALL_DRIVER_I2S(dev, configure)) {
+	if (K_SYSCALL_DRIVER_I2S(dev, configure)) {
 		goto out;
 	}
 
@@ -50,7 +50,7 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 	size_t data_size;
 	int ret;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, read));
+	Z_OOPS(K_SYSCALL_DRIVER_I2S(dev, read));
 
 	ret = i2s_read((const struct device *)dev, &mem_block, &data_size);
 
@@ -83,7 +83,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 	const struct i2s_config *tx_cfg;
 	void *mem_block;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, write));
+	Z_OOPS(K_SYSCALL_DRIVER_I2S(dev, write));
 	tx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_TX);
 	if (!tx_cfg) {
 		return -EIO;
@@ -117,7 +117,7 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 				     enum i2s_dir dir,
 				     enum i2s_trigger_cmd cmd)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, trigger));
+	Z_OOPS(K_SYSCALL_DRIVER_I2S(dev, trigger));
 
 	return z_impl_i2s_trigger((const struct device *)dev, dir, cmd);
 }

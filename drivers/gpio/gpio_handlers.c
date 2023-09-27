@@ -11,7 +11,7 @@ static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 					    gpio_pin_t pin,
 					    gpio_flags_t flags)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_configure));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_configure));
 	return z_impl_gpio_pin_configure((const struct device *)port,
 					  pin,
 					  flags);
@@ -23,7 +23,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 					     gpio_pin_t pin,
 					     gpio_flags_t *flags)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_get_config));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_get_config));
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
@@ -34,7 +34,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
 					   gpio_port_value_t *value)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_get_raw));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_get_raw));
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(value, sizeof(gpio_port_value_t)));
 	return z_impl_gpio_port_get_raw((const struct device *)port,
 					(gpio_port_value_t *)value);
@@ -45,7 +45,7 @@ static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port,
 						  gpio_port_pins_t mask,
 						  gpio_port_value_t value)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_set_masked_raw));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_set_masked_raw));
 	return z_impl_gpio_port_set_masked_raw((const struct device *)port,
 						mask,
 						value);
@@ -55,7 +55,7 @@ static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port,
 static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port,
 						gpio_port_pins_t pins)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_set_bits_raw));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_set_bits_raw));
 	return z_impl_gpio_port_set_bits_raw((const struct device *)port,
 					     pins);
 }
@@ -64,7 +64,7 @@ static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port,
 static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port,
 						  gpio_port_pins_t pins)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_clear_bits_raw));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_clear_bits_raw));
 	return z_impl_gpio_port_clear_bits_raw((const struct device *)port,
 					       pins);
 }
@@ -73,7 +73,7 @@ static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port,
 static inline int z_vrfy_gpio_port_toggle_bits(const struct device *port,
 					       gpio_port_pins_t pins)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_toggle_bits));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_toggle_bits));
 	return z_impl_gpio_port_toggle_bits((const struct device *)port, pins);
 }
 #include <syscalls/gpio_port_toggle_bits_mrsh.c>
@@ -82,7 +82,7 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 						      gpio_pin_t pin,
 						      gpio_flags_t flags)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
 	return z_impl_gpio_pin_interrupt_configure((const struct device *)port,
 						   pin,
 						   flags);
@@ -91,7 +91,7 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 
 static inline int z_vrfy_gpio_get_pending_int(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(dev, get_pending_int));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(dev, get_pending_int));
 
 	return z_impl_gpio_get_pending_int((const struct device *)dev);
 }
@@ -102,7 +102,7 @@ static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_
 						 gpio_port_pins_t *inputs,
 						 gpio_port_pins_t *outputs)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(dev, port_get_direction));
+	Z_OOPS(K_SYSCALL_DRIVER_GPIO(dev, port_get_direction));
 
 	if (inputs != NULL) {
 		Z_OOPS(K_SYSCALL_MEMORY_WRITE(inputs, sizeof(gpio_port_pins_t)));
