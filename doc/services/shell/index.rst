@@ -75,6 +75,29 @@ procedure:
   to the shell.
 
 
+Telnet Backend
+==============
+
+Enabling :kconfig:option:`CONFIG_SHELL_BACKEND_TELNET` will allow users to use telnet
+as a shell backend. Connecting to it can be done using PuTTY or any ``telnet`` client.
+For example:
+
+.. code-block:: none
+
+  telnet <ip address> <port>
+
+By default the telnet client won't handle telnet commands and configuration. Although
+command support can be enabled with :kconfig:option:`CONFIG_SHELL_TELNET_SUPPORT_COMMAND`.
+This will give the telnet client access to a very limited set of supported commands but
+still can be turned on if needed. One of the command options it supports is the ``ECHO``
+option. This will allow the client to be in character mode (character at a time),
+similar to a UART backend in that regard. This will make the client send a character
+as soon as it is typed having the effect of increasing the network traffic
+considerably. For that cost, it will enable the line editing,
+`tab completion <tab-feature_>`_, and `history <history-feature_>`_
+features of the shell.
+
+
 Commands
 ********
 
@@ -428,6 +451,7 @@ These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``
           case of Bluetooth shell to limit the amount of transferred bytes.
 	* :command:`stats` - Shows shell statistics.
 
+.. _tab-feature:
 
 Tab Feature
 ***********
@@ -447,6 +471,8 @@ the shell will do one of 3 possible things:
 .. image:: images/tab_prompt.png
       :align: center
       :alt: Tab Feature usage example
+
+.. _history-feature:
 
 History Feature
 ***************
