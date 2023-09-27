@@ -1359,9 +1359,9 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
+	Z_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
 
@@ -1390,7 +1390,7 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 	struct k_thread *thread = tid;
 
 	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(deadline > 0,
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(deadline > 0,
 				    "invalid thread deadline %d",
 				    (int)deadline));
 
@@ -1890,7 +1890,7 @@ static bool thread_obj_validate(struct k_thread *thread)
 #ifdef CONFIG_LOG
 		z_dump_object_error(ret, thread, ko, K_OBJ_THREAD);
 #endif
-		Z_OOPS(Z_SYSCALL_VERIFY_MSG(ret, "access denied"));
+		Z_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
 	}
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
@@ -1912,7 +1912,7 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 		return;
 	}
 
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
 				    "aborting essential thread %p", thread));
 
 	z_impl_k_thread_abort((struct k_thread *)thread);

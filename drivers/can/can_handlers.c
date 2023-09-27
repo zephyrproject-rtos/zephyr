@@ -189,7 +189,7 @@ static inline int z_vrfy_can_send(const struct device *dev,
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
 	Z_OOPS(z_user_from_copy(&frame_copy, frame, sizeof(frame_copy)));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback == NULL, "callbacks may not be set from user mode"));
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(callback == NULL, "callbacks may not be set from user mode"));
 
 	return z_impl_can_send(dev, &frame_copy, timeout, callback, user_data);
 }
