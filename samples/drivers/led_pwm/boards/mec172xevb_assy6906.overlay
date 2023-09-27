@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2023 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/* MEC172x EVB
+ * BBLED controller 0 uses GPIO156/LED1 connected to JP71-11
+ * BBLED controller 1 uses GPIO157/LED2 connected to JP71-13
+ * BBLED controller 2 uses GPIO153/LED3 connected to JP71-5
+ * BBLED controller 3 uses GPIO035/PWM8 connected to JP67-19
+ * NOTE: Data sheet indicates BBLED3 uses GPIO035.
+ * Schematic Rev A1p0 shows LED3 on GPIO226 (incorrect).
+ * BBLED hardware divides input clock (32KHz or 48MHz) by (256 * (prescalar+1)
+ * and implements duty cycle for blink mode as an 8-bit value where 0 is off and
+ * 255 full on. BBLED PWM is 8-bit.
+ * BBLED-PWM driver get cycles API reports 32KHz/256 or 48M/256.
+ * Due to all the above we use 50 ms for DT PWM period.
+ */
+
+/* PWM_SEC(1) PWM_USEC(7812) */
+/ {
+	pwmleds {
+		compatible = "pwm-leds";
+		/* struct pwm_dt_spec: phandle channel period(ns) flags */
+		bbled_pwm0: bbled_pwm0 {
+			pwms = <&bbled0 0 PWM_MSEC(50) PWM_POLARITY_NORMAL>;
+		};
+		bbled_pwm1: bbled_pwm1 {
+			pwms = <&bbled1 0 PWM_MSEC(50) PWM_POLARITY_NORMAL>;
+		};
+		bbled_pwm2: bbled_pwm2 {
+			pwms = <&bbled2 0 PWM_MSEC(50) PWM_POLARITY_NORMAL>;
+		};
+		bbled_pwm3: bbled_pwm3 {
+			pwms = <&bbled3 0 PWM_MSEC(50) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&pinctrl {
+	led0_gpio156_invert: led0_gpio156_invert {
+		pinmux = <MCHP_XEC_PINMUX(0156, MCHP_AF1)>;
+		microchip,output-func-invert;
+	};
+	led1_gpio157_invert: led1_gpio157_invert {
+		pinmux = <MCHP_XEC_PINMUX(0157, MCHP_AF1)>;
+		microchip,output-func-invert;
+	};
+	led2_gpio153_invert: led2_gpio153_invert {
+		pinmux = <MCHP_XEC_PINMUX(0153, MCHP_AF1)>;
+		microchip,output-func-invert;
+	};
+	led3_gpio035_invert: led3_gpio035_invert {
+		pinmux = <MCHP_XEC_PINMUX(035, MCHP_AF4)>;
+		microchip,output-func-invert;
+	};
+};
+
+&bbled0 {
+	compatible = "microchip,xec-pwmbbled";
+	clock-select = "PWM_BBLED_CLK_32K";
+	pinctrl-0 = <&led0_gpio156>;
+	pinctrl-1 = <&led0_gpio156_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+	#pwm-cells = <3>;
+};
+
+&bbled1 {
+	compatible = "microchip,xec-pwmbbled";
+	clock-select = "PWM_BBLED_CLK_32K";
+	pinctrl-0 = <&led1_gpio157>;
+	pinctrl-1 = <&led1_gpio157_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+	#pwm-cells = <3>;
+};
+
+&bbled2 {
+	compatible = "microchip,xec-pwmbbled";
+	clock-select = "PWM_BBLED_CLK_32K";
+	pinctrl-0 = <&led2_gpio153>;
+	pinctrl-1 = <&led2_gpio153_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+	#pwm-cells = <3>;
+};
+
+&bbled3 {
+	compatible = "microchip,xec-pwmbbled";
+	clock-select = "PWM_BBLED_CLK_32K";
+	pinctrl-0 = <&led3_gpio035>;
+	pinctrl-1 = <&led3_gpio035_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+	#pwm-cells = <3>;
+};
