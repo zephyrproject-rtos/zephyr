@@ -19,6 +19,7 @@ zephyr_library_sources(ipv6.c)
 zephyr_library_sources(mem.c)
 zephyr_library_sources(nbr.c)
 zephyr_library_sources(ping.c)
+zephyr_library_sources(pkt.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
