@@ -621,6 +621,9 @@ static void configure_fir(struct dai_intel_dmic *dmic, const uint32_t base,
 	dai_dmic_write(dmic, base + DC_OFFSET_RIGHT, fir_cfg->dc_offset_right);
 	dai_dmic_write(dmic, base + OUT_GAIN_LEFT, fir_cfg->out_gain_left);
 	dai_dmic_write(dmic, base + OUT_GAIN_RIGHT, fir_cfg->out_gain_right);
+
+	dmic->gain_left = fir_cfg->out_gain_left;
+	dmic->gain_right = fir_cfg->out_gain_right;
 }
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cfg)

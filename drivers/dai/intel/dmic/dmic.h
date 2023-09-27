@@ -179,6 +179,8 @@ struct dai_intel_dmic {
 #endif
 	int irq;
 	uint32_t flags;
+	uint32_t gain_left;
+	uint32_t gain_right;
 };
 
 static inline int32_t sat_int32(int64_t x)
