@@ -112,7 +112,7 @@ typedef void (*_wordlist_cb_func_t)(struct k_object *ko, void *context);
  * @param func function to run on each struct k_object
  * @param context Context pointer to pass to each invocation
  */
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
+void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
 
 /**
  * Copy all kernel object permissions from the parent to the child

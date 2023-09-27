@@ -755,7 +755,7 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 struct k_object *z_object_find(const void *obj)
 	ALIAS_OF(z_object_gperf_find);
 
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 	ALIAS_OF(z_object_gperf_wordlist_foreach);
 #endif
 """
