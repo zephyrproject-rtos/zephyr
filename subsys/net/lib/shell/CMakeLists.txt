@@ -13,6 +13,7 @@ zephyr_library_sources(conn.c)
 zephyr_library_sources(dns.c)
 zephyr_library_sources(events.c)
 zephyr_library_sources(gptp.c)
+zephyr_library_sources(iface.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
