@@ -790,7 +790,7 @@ void k_object_recycle(const void *obj)
 	}
 }
 
-void z_object_uninit(const void *obj)
+void k_object_uninit(const void *obj)
 {
 	struct k_object *ko;
 
