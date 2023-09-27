@@ -6,6 +6,7 @@
 
 /**
  * @defgroup arch-interface Architecture Interface
+ * @ingroup internal_api
  * @brief Internal kernel APIs with public scope
  *
  * Any public kernel APIs that are implemented as inline functions and need to
