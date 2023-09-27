@@ -135,7 +135,7 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 static uint32_t calc_ntc_res(const struct npm1300_charger_config *const config, int32_t temp_mdegc)
 {
 	float inv_t0 = 1.f / 298.15f;
-	float temp = (float)temp_mdegc / 1000000.f;
+	float temp = (float)temp_mdegc / 1000.f;
 
 	float inv_temp_k = 1.f / (temp + 273.15f);
 
