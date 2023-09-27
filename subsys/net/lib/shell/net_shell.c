@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet_mgmt.h>
 #endif /* CONFIG_NET_L2_ETHERNET */
 
-#include <zephyr/net/icmp.h>
+#include "common.h"
 
 #include "route.h"
 #include "icmpv6.h"
@@ -88,28 +88,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr/sys/fdtable.h>
 #include "websocket/websocket_internal.h"
-
-#define PR(fmt, ...)						\
-	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
-
-#define PR_SHELL(sh, fmt, ...)				\
-	shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
-
-#define PR_ERROR(fmt, ...)					\
-	shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
-
-#define PR_INFO(fmt, ...)					\
-	shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__)
-
-#define PR_WARNING(fmt, ...)					\
-	shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
-
-#include "net_private.h"
-
-struct net_shell_user_data {
-	const struct shell *sh;
-	void *user_data;
-};
 
 static inline const char *addrtype2str(enum net_addr_type addr_type)
 {
