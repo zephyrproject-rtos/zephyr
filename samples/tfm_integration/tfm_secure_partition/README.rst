@@ -17,7 +17,7 @@ This dummy partition has a single secure service, which can index one of 5 dummy
 The partition is located in the ``dummy_partition`` directory. It contains the partition sources, build files and build configuration files.
 The partition is built by the TF-M build system, refer to :ref:`tfm_build_system` for more details.
 
-For more information on how to add custom secure partitions refer to TF-M's guide: https://tf-m-user-guide.trustedfirmware.org/docs/integration_guide/services/tfm_secure_partition_addition.html
+For more information on how to add custom secure partitions refer to TF-M's guide: https://tf-m-user-guide.trustedfirmware.org/integration_guide/services/tfm_secure_partition_addition.html
 
 When adapting this partition for your own purposes, please change all occurrences of "dummy_partition", "DUMMY_PARTITION", "dp", and "DP" to your own partition name.
 Also, look through both the secure and non-secure CMakeLists.txt file and make relevant changes, as well as the yaml files inside "partition".
@@ -32,8 +32,8 @@ On Target
 
 Refer to :ref:`tfm_ipc` for detailed instructions.
 
-On QEMU:
-========
+On QEMU
+=======
 
 Refer to :ref:`tfm_ipc` for detailed instructions.
 
