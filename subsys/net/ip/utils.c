@@ -323,7 +323,7 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 		return 0;
 	}
 
-	Z_OOPS(z_user_to_copy((void *)dst, str, MIN(size, sizeof(str))));
+	Z_OOPS(k_usermode_to_copy((void *)dst, str, MIN(size, sizeof(str))));
 
 	return dst;
 }
@@ -484,7 +484,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 		return -EINVAL;
 	}
 
-	if (z_user_string_copy(str, (char *)src, sizeof(str)) != 0) {
+	if (k_usermode_string_copy(str, (char *)src, sizeof(str)) != 0) {
 		return -EINVAL;
 	}
 
@@ -495,7 +495,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 		return err;
 	}
 
-	Z_OOPS(z_user_to_copy((void *)dst, addr, size));
+	Z_OOPS(k_usermode_to_copy((void *)dst, addr, size));
 
 	return 0;
 }

@@ -266,7 +266,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	 * the current z_vrfy / z_impl split does not provide a
 	 * means of doing so.
 	 */
-	if (z_user_string_copy(name, (char *)str, sizeof(name)) != 0) {
+	if (k_usermode_string_copy(name, (char *)str, sizeof(name)) != 0) {
 		return -EFAULT;
 	}
 
@@ -377,7 +377,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 		return -ENOSPC;
 	}
 
-	return z_user_to_copy((void *)buf, thread->name, len + 1);
+	return k_usermode_to_copy((void *)buf, thread->name, len + 1);
 #else
 	ARG_UNUSED(thread);
 	ARG_UNUSED(buf);
@@ -1070,7 +1070,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 		return ret;
 	}
 
-	ret = z_user_to_copy(unused_ptr, &unused, sizeof(size_t));
+	ret = k_usermode_to_copy(unused_ptr, &unused, sizeof(size_t));
 	CHECKIF(ret != 0) {
 		return ret;
 	}

@@ -462,7 +462,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		ret = flash_npcx_nor_ex_exec_uma(dev, op_in, op_out);
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, op_out, sizeof(out_copy)));
+			Z_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
 		}
 #endif
 		break;
@@ -495,7 +495,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		ret = flash_npcx_nor_ex_get_spi_spec(dev, op_out);
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, op_out, sizeof(out_copy)));
+			Z_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
 		}
 #endif
 		break;

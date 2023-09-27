@@ -59,7 +59,7 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 		err_copy = -1;
 	}
 
-	Z_OOPS(z_user_to_copy((int *)err, &err_copy, sizeof(err_copy)));
+	Z_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
 
 	return ret;
 }
@@ -79,7 +79,7 @@ static inline int z_vrfy_string_alloc_copy(char *src)
 	char *src_copy;
 	int ret;
 
-	src_copy = z_user_string_alloc_copy((char *)src, BUF_SIZE);
+	src_copy = k_usermode_string_alloc_copy((char *)src, BUF_SIZE);
 	if (!src_copy) {
 		return -1;
 	}
@@ -102,7 +102,7 @@ int z_impl_string_copy(char *src)
 
 static inline int z_vrfy_string_copy(char *src)
 {
-	int ret = z_user_string_copy(kernel_buf, (char *)src, BUF_SIZE);
+	int ret = k_usermode_string_copy(kernel_buf, (char *)src, BUF_SIZE);
 
 	if (ret) {
 		return ret;
@@ -123,7 +123,7 @@ int z_impl_to_copy(char *dest)
 
 static inline int z_vrfy_to_copy(char *dest)
 {
-	return z_user_to_copy((char *)dest, user_string, BUF_SIZE);
+	return k_usermode_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 #include <syscalls/to_copy_mrsh.c>
 
@@ -248,7 +248,7 @@ ZTEST_USER(syscalls, test_string_nlen)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_alloc_copy(), strcmp()
+ * @see k_usermode_string_alloc_copy(), strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_alloc_copy)
 {
@@ -273,7 +273,7 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_copy(), strcmp()
+ * @see k_usermode_string_copy(), strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_copy)
 {
@@ -297,7 +297,7 @@ ZTEST_USER(syscalls, test_user_string_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see memcpy(), z_user_to_copy()
+ * @see memcpy(), k_usermode_to_copy()
  */
 ZTEST_USER(syscalls, test_to_copy)
 {

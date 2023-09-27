@@ -251,7 +251,7 @@ int k_usermode_from_copy(void *dst, const void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-int z_user_to_copy(void *dst, const void *src, size_t size);
+int k_usermode_to_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy a C string from userspace into a resource pool allocation
@@ -267,7 +267,7 @@ int z_user_to_copy(void *dst, const void *src, size_t size);
  * @param maxlen Maximum size of the string including trailing NULL
  * @return The duplicated string, or NULL if an error occurred.
  */
-char *z_user_string_alloc_copy(const char *src, size_t maxlen);
+char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
 
 /**
  * @brief Copy a C string from userspace into a provided buffer
@@ -285,7 +285,7 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen);
  *	to maxlen
  * @retval EFAULT On memory access error
  */
-int z_user_string_copy(char *dst, const char *src, size_t maxlen);
+int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_OOPS(expr) \
 	do { \

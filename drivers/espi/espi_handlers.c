@@ -40,7 +40,7 @@ static inline int z_vrfy_espi_read_lpc_request(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_DRIVER_ESPI(dev, read_lpc_request));
 
 	ret = z_impl_espi_read_lpc_request(dev, op, &data_copy);
-	Z_OOPS(z_user_to_copy(data, &data_copy, sizeof(uint8_t)));
+	Z_OOPS(k_usermode_to_copy(data, &data_copy, sizeof(uint8_t)));
 
 	return ret;
 }
@@ -79,7 +79,7 @@ static inline int z_vrfy_espi_receive_vwire(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_DRIVER_ESPI(dev, receive_vwire));
 
 	ret = z_impl_espi_receive_vwire(dev, signal, &level_copy);
-	Z_OOPS(z_user_to_copy(level, &level_copy, sizeof(uint8_t)));
+	Z_OOPS(k_usermode_to_copy(level, &level_copy, sizeof(uint8_t)));
 
 	return ret;
 }
@@ -98,7 +98,7 @@ static inline int z_vrfy_espi_read_request(const struct device *dev,
 
 	ret = z_impl_espi_read_request(dev, &req_copy);
 
-	Z_OOPS(z_user_to_copy(req, &req_copy,
+	Z_OOPS(k_usermode_to_copy(req, &req_copy,
 			      sizeof(struct espi_request_packet)));
 
 	return ret;
@@ -151,7 +151,7 @@ static inline int z_vrfy_espi_receive_oob(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(pckt->buf, pckt->len));
 
 	ret = z_impl_espi_receive_oob(dev, &pckt_copy);
-	Z_OOPS(z_user_to_copy(pckt, &pckt_copy,
+	Z_OOPS(k_usermode_to_copy(pckt, &pckt_copy,
 			      sizeof(struct espi_oob_packet)));
 
 	return ret;
@@ -170,7 +170,7 @@ static inline int z_vrfy_espi_read_flash(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(pckt->buf, pckt->len));
 
 	ret = z_impl_espi_read_flash(dev, pckt);
-	Z_OOPS(z_user_to_copy(pckt, &pckt_copy,
+	Z_OOPS(k_usermode_to_copy(pckt, &pckt_copy,
 			      sizeof(struct espi_flash_packet)));
 
 	return ret;

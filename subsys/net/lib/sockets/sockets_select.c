@@ -261,17 +261,17 @@ static int z_vrfy_zsock_select(int nfds, zsock_fd_set *readfds,
 
 	if (ret >= 0) {
 		if (readfds_copy) {
-			z_user_to_copy((void *)readfds, readfds_copy,
+			k_usermode_to_copy((void *)readfds, readfds_copy,
 				       sizeof(zsock_fd_set));
 		}
 
 		if (writefds_copy) {
-			z_user_to_copy((void *)writefds, writefds_copy,
+			k_usermode_to_copy((void *)writefds, writefds_copy,
 				       sizeof(zsock_fd_set));
 		}
 
 		if (exceptfds_copy) {
-			z_user_to_copy((void *)exceptfds, exceptfds_copy,
+			k_usermode_to_copy((void *)exceptfds, exceptfds_copy,
 				       sizeof(zsock_fd_set));
 		}
 	}

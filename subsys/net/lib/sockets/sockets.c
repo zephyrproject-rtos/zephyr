@@ -700,7 +700,7 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr,
 				  addrlen ? &addrlen_copy : NULL);
 
-	Z_OOPS(ret >= 0 && addrlen && z_user_to_copy(addrlen, &addrlen_copy,
+	Z_OOPS(ret >= 0 && addrlen && k_usermode_to_copy(addrlen, &addrlen_copy,
 						     sizeof(socklen_t)));
 
 	return ret;
@@ -1530,7 +1530,7 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 				   addrlen ? &addrlen_copy : NULL);
 
 	if (addrlen) {
-		Z_OOPS(z_user_to_copy(addrlen, &addrlen_copy,
+		Z_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy,
 				      sizeof(socklen_t)));
 	}
 
@@ -1915,7 +1915,7 @@ static inline int z_vrfy_zsock_poll(struct zsock_pollfd *fds,
 	ret = z_impl_zsock_poll(fds_copy, nfds, timeout);
 
 	if (ret >= 0) {
-		z_user_to_copy((void *)fds, fds_copy, fds_size);
+		k_usermode_to_copy((void *)fds, fds_copy, fds_size);
 	}
 	k_free(fds_copy);
 
@@ -1954,9 +1954,9 @@ static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
 		return -1;
 	}
 
-	Z_OOPS(z_user_string_copy(src_copy, (char *)src, sizeof(src_copy)));
+	Z_OOPS(k_usermode_string_copy(src_copy, (char *)src, sizeof(src_copy)));
 	ret = z_impl_zsock_inet_pton(family, src_copy, dst_copy);
-	Z_OOPS(z_user_to_copy(dst, dst_copy, dst_size));
+	Z_OOPS(k_usermode_to_copy(dst, dst_copy, dst_size));
 
 	return ret;
 }
@@ -2180,8 +2180,8 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 	ret = z_impl_zsock_getsockopt(sock, level, optname,
 				      kernel_optval, &kernel_optlen);
 
-	Z_OOPS(z_user_to_copy((void *)optval, kernel_optval, kernel_optlen));
-	Z_OOPS(z_user_to_copy((void *)optlen, &kernel_optlen,
+	Z_OOPS(k_usermode_to_copy((void *)optval, kernel_optval, kernel_optlen));
+	Z_OOPS(k_usermode_to_copy((void *)optlen, &kernel_optlen,
 			      sizeof(socklen_t)));
 
 	k_free(kernel_optval);
@@ -2603,7 +2603,7 @@ static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
 				       &addrlen_copy);
 
 	if (ret == 0 &&
-	    z_user_to_copy((void *)addrlen, &addrlen_copy,
+	    k_usermode_to_copy((void *)addrlen, &addrlen_copy,
 			   sizeof(socklen_t))) {
 		errno = EINVAL;
 		return -1;
@@ -2682,7 +2682,7 @@ static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
 				       &addrlen_copy);
 
 	if (ret == 0 &&
-	    z_user_to_copy((void *)addrlen, &addrlen_copy,
+	    k_usermode_to_copy((void *)addrlen, &addrlen_copy,
 			   sizeof(socklen_t))) {
 		errno = EINVAL;
 		return -1;

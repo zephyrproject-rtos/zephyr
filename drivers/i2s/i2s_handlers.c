@@ -63,12 +63,12 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 		 */
 		rx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_RX);
 
-		copy_success = z_user_to_copy((void *)buf, mem_block,
+		copy_success = k_usermode_to_copy((void *)buf, mem_block,
 					      data_size);
 
 		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
 		Z_OOPS(copy_success);
-		Z_OOPS(z_user_to_copy((void *)size, &data_size,
+		Z_OOPS(k_usermode_to_copy((void *)size, &data_size,
 				      sizeof(data_size)));
 	}
 

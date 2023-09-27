@@ -21,7 +21,7 @@ int z_vrfy_hwinfo_get_reset_cause(uint32_t *cause)
 	uint32_t cause_copy;
 
 	ret = z_impl_hwinfo_get_reset_cause(&cause_copy);
-	Z_OOPS(z_user_to_copy(cause, &cause_copy, sizeof(uint32_t)));
+	Z_OOPS(k_usermode_to_copy(cause, &cause_copy, sizeof(uint32_t)));
 
 	return ret;
 }
@@ -40,7 +40,7 @@ int z_vrfy_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	uint32_t supported_copy;
 
 	ret = z_impl_hwinfo_get_supported_reset_cause(&supported_copy);
-	Z_OOPS(z_user_to_copy(supported, &supported_copy, sizeof(uint32_t)));
+	Z_OOPS(k_usermode_to_copy(supported, &supported_copy, sizeof(uint32_t)));
 
 	return ret;
 }

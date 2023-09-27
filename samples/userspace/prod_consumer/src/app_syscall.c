@@ -47,7 +47,7 @@ static int z_vrfy_magic_syscall(unsigned int *cookie)
 	ret = z_impl_magic_syscall(&cookie_copy);
 
 	if (ret == 0 &&
-	    z_user_to_copy(cookie, &cookie_copy, sizeof(*cookie)) != 0) {
+	    k_usermode_to_copy(cookie, &cookie_copy, sizeof(*cookie)) != 0) {
 		return -EPERM;
 	}
 
