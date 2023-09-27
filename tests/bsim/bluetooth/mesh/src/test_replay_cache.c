@@ -178,7 +178,7 @@ static void test_rx_immediate_replay_attack(void)
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
 
-	ASSERT_TRUE(rx_cnt == 3, "Device didn't receive expected data");
+	ASSERT_TRUE_MSG(rx_cnt == 3, "Device didn't receive expected data\n");
 
 	PASS();
 }
@@ -235,7 +235,7 @@ static void test_rx_power_replay_attack(void)
 
 	k_sleep(K_SECONDS(6 * TEST_DATA_WAITING_TIME));
 
-	ASSERT_TRUE(rx_cnt == 3, "Device didn't receive expected data");
+	ASSERT_TRUE_MSG(rx_cnt == 3, "Device didn't receive expected data\n");
 
 	PASS();
 }
