@@ -15,37 +15,11 @@
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
-#include <kernel_internal.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/random/random.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/shell/shell_uart.h>
-
-#include <zephyr/net/net_if.h>
-#include <zephyr/sys/printk.h>
 
 #include "common.h"
-
-#include "connection.h"
-
-#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#include <zephyr/net/ethernet_mgmt.h>
-#endif
-
-#if defined(CONFIG_NET_L2_VIRTUAL_MGMT)
-#include <zephyr/net/virtual_mgmt.h>
-#endif
-
-#if defined(CONFIG_NET_L2_PPP)
-#include <zephyr/net/ppp.h>
-#include "ppp/ppp_internal.h"
-#endif
-
 #include "net_shell.h"
-
-#include <zephyr/sys/fdtable.h>
 
 int get_iface_idx(const struct shell *sh, char *index_str)
 {
@@ -247,14 +221,6 @@ const char *iface2str(struct net_if *iface, const char **extra)
 SHELL_DYNAMIC_CMD_CREATE(iface_index, iface_index_get);
 
 #endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
-
-
-
-SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(net_old, &net_commands, "Networking commands", NULL);
 
 /* Placeholder for net commands that are configured in the rest of the .c files */
 SHELL_SUBCMD_SET_CREATE(net_cmds, (net));
