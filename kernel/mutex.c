@@ -71,7 +71,7 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 {
-	Z_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_init(mutex);
 }
 #include <syscalls/k_mutex_init_mrsh.c>
@@ -200,7 +200,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 				      k_timeout_t timeout)
 {
-	Z_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_lock(mutex, timeout);
 }
 #include <syscalls/k_mutex_lock_mrsh.c>
@@ -284,7 +284,7 @@ k_mutex_unlock_return:
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 {
-	Z_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_unlock(mutex);
 }
 #include <syscalls/k_mutex_unlock_mrsh.c>

@@ -287,7 +287,7 @@ char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
  */
 int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 
-#define Z_OOPS(expr) \
+#define K_OOPS(expr) \
 	do { \
 		if (expr) { \
 			arch_syscall_oops(_current->syscall_frame); \

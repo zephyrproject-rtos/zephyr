@@ -70,7 +70,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
-	Z_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
 
 	return z_impl_device_is_ready(dev);
 }

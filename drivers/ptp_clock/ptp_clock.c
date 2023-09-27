@@ -14,8 +14,8 @@ int z_vrfy_ptp_clock_get(const struct device *dev,
 	struct net_ptp_time ptp_time;
 	int ret;
 
-	Z_OOPS(K_SYSCALL_DRIVER_PTP_CLOCK(dev, get));
-	Z_OOPS(K_SYSCALL_MEMORY_WRITE(tm, sizeof(struct net_ptp_time)));
+	K_OOPS(K_SYSCALL_DRIVER_PTP_CLOCK(dev, get));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(tm, sizeof(struct net_ptp_time)));
 
 	ret = z_impl_ptp_clock_get((const struct device *)dev, &ptp_time);
 	if (ret != 0) {

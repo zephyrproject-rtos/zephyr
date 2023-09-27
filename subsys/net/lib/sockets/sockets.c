@@ -482,8 +482,8 @@ static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
 {
 	struct sockaddr_storage dest_addr_copy;
 
-	Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
-	Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
+	K_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+	K_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
 	return z_impl_zsock_bind(sock, (struct sockaddr *)&dest_addr_copy,
 				addrlen);
@@ -561,8 +561,8 @@ int z_vrfy_zsock_connect(int sock, const struct sockaddr *addr,
 {
 	struct sockaddr_storage dest_addr_copy;
 
-	Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
-	Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
+	K_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+	K_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)addr, addrlen));
 
 	return z_impl_zsock_connect(sock, (struct sockaddr *)&dest_addr_copy,
 				   addrlen);
@@ -693,14 +693,14 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 	socklen_t addrlen_copy;
 	int ret;
 
-	Z_OOPS(addrlen && k_usermode_from_copy(&addrlen_copy, addrlen,
+	K_OOPS(addrlen && k_usermode_from_copy(&addrlen_copy, addrlen,
 					   sizeof(socklen_t)));
-	Z_OOPS(addr && K_SYSCALL_MEMORY_WRITE(addr, addrlen ? addrlen_copy : 0));
+	K_OOPS(addr && K_SYSCALL_MEMORY_WRITE(addr, addrlen ? addrlen_copy : 0));
 
 	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr,
 				  addrlen ? &addrlen_copy : NULL);
 
-	Z_OOPS(ret >= 0 && addrlen && k_usermode_to_copy(addrlen, &addrlen_copy,
+	K_OOPS(ret >= 0 && addrlen && k_usermode_to_copy(addrlen, &addrlen_copy,
 						     sizeof(socklen_t)));
 
 	return ret;
@@ -862,10 +862,10 @@ ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 {
 	struct sockaddr_storage dest_addr_copy;
 
-	Z_OOPS(K_SYSCALL_MEMORY_READ(buf, len));
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, len));
 	if (dest_addr) {
-		Z_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
-		Z_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)dest_addr,
+		K_OOPS(K_SYSCALL_VERIFY(addrlen <= sizeof(dest_addr_copy)));
+		K_OOPS(k_usermode_from_copy(&dest_addr_copy, (void *)dest_addr,
 					addrlen));
 	}
 
@@ -950,7 +950,7 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 	size_t i;
 	int ret;
 
-	Z_OOPS(k_usermode_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
+	K_OOPS(k_usermode_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
 
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
@@ -1520,17 +1520,17 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 	}
 
 	if (addrlen) {
-		Z_OOPS(k_usermode_from_copy(&addrlen_copy, addrlen,
+		K_OOPS(k_usermode_from_copy(&addrlen_copy, addrlen,
 					sizeof(socklen_t)));
 	}
-	Z_OOPS(src_addr && K_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
+	K_OOPS(src_addr && K_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
 
 	ret = z_impl_zsock_recvfrom(sock, (void *)buf, max_len, flags,
 				   (struct sockaddr *)src_addr,
 				   addrlen ? &addrlen_copy : NULL);
 
 	if (addrlen) {
-		Z_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy,
+		K_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy,
 				      sizeof(socklen_t)));
 	}
 
@@ -1609,7 +1609,7 @@ static inline int z_vrfy_zsock_ioctl(int sock, unsigned long request, va_list ar
 		int *avail;
 
 		avail = va_arg(args, int *);
-		Z_OOPS(K_SYSCALL_MEMORY_WRITE(avail, sizeof(*avail)));
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(avail, sizeof(*avail)));
 
 		break;
 	}
@@ -1954,9 +1954,9 @@ static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
 		return -1;
 	}
 
-	Z_OOPS(k_usermode_string_copy(src_copy, (char *)src, sizeof(src_copy)));
+	K_OOPS(k_usermode_string_copy(src_copy, (char *)src, sizeof(src_copy)));
 	ret = z_impl_zsock_inet_pton(family, src_copy, dst_copy);
-	Z_OOPS(k_usermode_to_copy(dst, dst_copy, dst_size));
+	K_OOPS(k_usermode_to_copy(dst, dst_copy, dst_size));
 
 	return ret;
 }
@@ -2175,13 +2175,13 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 
 	kernel_optval = k_usermode_alloc_from_copy((const void *)optval,
 					       kernel_optlen);
-	Z_OOPS(!kernel_optval);
+	K_OOPS(!kernel_optval);
 
 	ret = z_impl_zsock_getsockopt(sock, level, optname,
 				      kernel_optval, &kernel_optlen);
 
-	Z_OOPS(k_usermode_to_copy((void *)optval, kernel_optval, kernel_optlen));
-	Z_OOPS(k_usermode_to_copy((void *)optlen, &kernel_optlen,
+	K_OOPS(k_usermode_to_copy((void *)optval, kernel_optval, kernel_optlen));
+	K_OOPS(k_usermode_to_copy((void *)optlen, &kernel_optlen,
 			      sizeof(socklen_t)));
 
 	k_free(kernel_optval);
@@ -2518,7 +2518,7 @@ int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
 	int ret;
 
 	kernel_optval = k_usermode_alloc_from_copy((const void *)optval, optlen);
-	Z_OOPS(!kernel_optval);
+	K_OOPS(!kernel_optval);
 
 	ret = z_impl_zsock_setsockopt(sock, level, optname,
 				      kernel_optval, optlen);
@@ -2591,7 +2591,7 @@ static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
 	socklen_t addrlen_copy;
 	int ret;
 
-	Z_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
+	K_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
 				sizeof(socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
@@ -2670,7 +2670,7 @@ static inline int z_vrfy_zsock_getsockname(int sock, struct sockaddr *addr,
 	socklen_t addrlen_copy;
 	int ret;
 
-	Z_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
+	K_OOPS(k_usermode_from_copy(&addrlen_copy, (void *)addrlen,
 				sizeof(socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {

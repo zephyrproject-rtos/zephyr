@@ -68,7 +68,7 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 #ifdef CONFIG_USERSPACE
 int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	Z_OOPS(K_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
 	return z_impl_clock_gettime(clock_id, ts);
 }
 #include <syscalls/clock_gettime_mrsh.c>

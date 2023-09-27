@@ -13,8 +13,8 @@ static inline int z_vrfy_adc_channel_setup(const struct device *dev,
 {
 	struct adc_channel_cfg channel_cfg;
 
-	Z_OOPS(K_SYSCALL_DRIVER_ADC(dev, channel_setup));
-	Z_OOPS(k_usermode_from_copy(&channel_cfg,
+	K_OOPS(K_SYSCALL_DRIVER_ADC(dev, channel_setup));
+	K_OOPS(k_usermode_from_copy(&channel_cfg,
 				(struct adc_channel_cfg *)user_channel_cfg,
 				sizeof(struct adc_channel_cfg)));
 
@@ -55,12 +55,12 @@ static inline int z_vrfy_adc_read(const struct device *dev,
 	struct adc_sequence sequence;
 	struct adc_sequence_options options;
 
-	Z_OOPS(K_SYSCALL_DRIVER_ADC(dev, read));
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(copy_sequence(&sequence, &options,
+	K_OOPS(K_SYSCALL_DRIVER_ADC(dev, read));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(copy_sequence(&sequence, &options,
 					(struct adc_sequence *)user_sequence),
 				    "invalid ADC sequence"));
 	if (sequence.options != NULL) {
-		Z_OOPS(K_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
+		K_OOPS(K_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
 			    "ADC sequence callbacks forbidden from user mode"));
 	}
 
@@ -76,15 +76,15 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
 	struct adc_sequence sequence;
 	struct adc_sequence_options options;
 
-	Z_OOPS(K_SYSCALL_DRIVER_ADC(dev, read_async));
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(copy_sequence(&sequence, &options,
+	K_OOPS(K_SYSCALL_DRIVER_ADC(dev, read_async));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(copy_sequence(&sequence, &options,
 					(struct adc_sequence *)user_sequence),
 				    "invalid ADC sequence"));
 	if (sequence.options != NULL) {
-		Z_OOPS(K_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
+		K_OOPS(K_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
 			    "ADC sequence callbacks forbidden from user mode"));
 	}
-	Z_OOPS(K_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
 
 	return z_impl_adc_read_async((const struct device *)dev, &sequence,
 				     (struct k_poll_signal *)async);

@@ -433,7 +433,7 @@ void z_impl_k_thread_start(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_start(thread);
 }
 #include <syscalls/k_thread_start_mrsh.c>
@@ -728,13 +728,13 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	struct k_object *stack_object;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
-	Z_OOPS(K_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 
 	/* No need to check z_stack_is_user_capable(), it won't be in the
 	 * object table if it isn't
 	 */
 	stack_object = k_object_find(stack);
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(k_object_validation_check(stack_object, stack,
+	K_OOPS(K_SYSCALL_VERIFY_MSG(k_object_validation_check(stack_object, stack,
 						K_OBJ_THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
@@ -742,7 +742,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
 	 */
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(!size_add_overflow(K_THREAD_STACK_RESERVED,
+	K_OOPS(K_SYSCALL_VERIFY_MSG(!size_add_overflow(K_THREAD_STACK_RESERVED,
 						       stack_size, &total_size),
 				    "stack size overflow (%zu+%zu)",
 				    stack_size,
@@ -756,21 +756,21 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #else
 	stack_obj_size = stack_object->data.stack_size;
 #endif
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(total_size <= stack_obj_size,
+	K_OOPS(K_SYSCALL_VERIFY_MSG(total_size <= stack_obj_size,
 				    "stack size %zu is too big, max is %zu",
 				    total_size, stack_obj_size));
 
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
 	 */
-	Z_OOPS(K_SYSCALL_VERIFY(options & K_USER));
-	Z_OOPS(K_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
+	K_OOPS(K_SYSCALL_VERIFY(options & K_USER));
+	K_OOPS(K_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
 
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	Z_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
-	Z_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
+	K_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
+	K_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
 							_current->base.prio)));
 
 	z_setup_new_thread(new_thread, stack, stack_size,
@@ -966,7 +966,7 @@ int z_impl_k_float_enable(struct k_thread *thread, unsigned int options)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_float_disable(thread);
 }
 #include <syscalls/k_float_disable_mrsh.c>
@@ -1085,7 +1085,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 						    const struct k_thread *t)
 {
-	Z_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(t);
 }
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
@@ -1093,7 +1093,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 						  const struct k_thread *t)
 {
-	Z_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(t);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>

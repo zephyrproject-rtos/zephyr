@@ -101,7 +101,7 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 					  FILE *ZRESTRICT stream)
 {
 
-	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
 	return z_impl_zephyr_fwrite((const void *ZRESTRICT)ptr, size,
 				    nitems, (FILE *ZRESTRICT)stream);
 }

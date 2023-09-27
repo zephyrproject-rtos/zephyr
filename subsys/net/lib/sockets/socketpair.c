@@ -350,7 +350,7 @@ int z_vrfy_zsock_socketpair(int family, int type, int proto, int *sv)
 
 	ret = z_impl_zsock_socketpair(family, type, proto, tmp);
 	if (ret == 0) {
-		Z_OOPS(k_usermode_to_copy(sv, tmp, sizeof(tmp)));
+		K_OOPS(k_usermode_to_copy(sv, tmp, sizeof(tmp)));
 	}
 
 out:
