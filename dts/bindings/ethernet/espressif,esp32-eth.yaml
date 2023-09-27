@@ -14,8 +14,3 @@ properties:
 
   phy-connection-type:
     default: "rmii"
-
-  ref-clk-output-gpios:
-    type: phandle-array
-    description: |
-      GPIO to output RMII Clock.
