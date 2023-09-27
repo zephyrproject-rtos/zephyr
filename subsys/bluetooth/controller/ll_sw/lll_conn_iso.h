@@ -62,6 +62,10 @@ struct lll_conn_iso_stream {
 	/* Resumption information */
 	uint8_t next_subevent;      /* Next subevent to schedule */
 
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	int8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
 	/* Transmission queue */
 	MEMQ_DECLARE(tx);
 	memq_link_t link_tx;
