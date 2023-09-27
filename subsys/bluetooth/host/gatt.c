@@ -5145,18 +5145,21 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
 		struct gatt_sub *sub;
-		sys_snode_t *node, *tmp;
+		sys_snode_t *node, *tmp, *prev;
 
 		sub = gatt_sub_find(conn);
 		if (!sub) {
 			return;
 		}
 
+		prev = NULL;
+
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&sub->list, node, tmp) {
 			if (node == &params->node) {
-				gatt_sub_remove(conn, sub, tmp, params);
+				gatt_sub_remove(conn, sub, prev, params);
 				break;
 			}
+			prev = node;
 		}
 	} else if (!params->value) {
 		/* Notify with NULL data to complete unsubscribe */
