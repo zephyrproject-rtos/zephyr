@@ -1525,7 +1525,7 @@ static void srv_check_reboot_and_continue(void)
 	ASSERT_EQUAL(0, blob_srv.state.ttl);
 	ASSERT_EQUAL(BLOB_CLI_ADDR, blob_srv.state.cli);
 	ASSERT_EQUAL(1, blob_srv.state.timeout_base);
-	ASSERT_TRUE(BT_MESH_TX_SDU_MAX, blob_srv.state.mtu_size);
+	ASSERT_EQUAL(BT_MESH_RX_SDU_MAX - BT_MESH_MIC_SHORT, blob_srv.state.mtu_size);
 	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2, blob_srv.state.xfer.size);
 	ASSERT_EQUAL(12, blob_srv.state.xfer.block_size_log);
 	ASSERT_EQUAL(1, blob_srv.state.xfer.id);
