@@ -447,7 +447,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
 	return ret;
 }
 
-#define Z_SYSCALL_IS_OBJ(ptr, type, init) \
+#define K_SYSCALL_IS_OBJ(ptr, type, init) \
 	K_SYSCALL_VERIFY_MSG(z_obj_validation_check(			\
 				     z_object_find((const void *)ptr),	\
 				     (const void *)ptr,			\
@@ -511,7 +511,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_OBJ(ptr, type) \
-	Z_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
+	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
@@ -525,7 +525,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
  */
 
 #define Z_SYSCALL_OBJ_INIT(ptr, type) \
-	Z_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_ANY)
+	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_ANY)
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
@@ -541,7 +541,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
  */
 
 #define Z_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
-	Z_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
+	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
 
 #include <driver-validation.h>
 
