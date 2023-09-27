@@ -221,7 +221,7 @@ static int z_vrfy_zsock_select(int nfds, zsock_fd_set *readfds,
 	int ret = -1;
 
 	if (readfds) {
-		readfds_copy = z_user_alloc_from_copy((void *)readfds,
+		readfds_copy = k_usermode_alloc_from_copy((void *)readfds,
 						      sizeof(zsock_fd_set));
 		if (!readfds_copy) {
 			errno = ENOMEM;
@@ -230,7 +230,7 @@ static int z_vrfy_zsock_select(int nfds, zsock_fd_set *readfds,
 	}
 
 	if (writefds) {
-		writefds_copy = z_user_alloc_from_copy((void *)writefds,
+		writefds_copy = k_usermode_alloc_from_copy((void *)writefds,
 						       sizeof(zsock_fd_set));
 		if (!writefds_copy) {
 			errno = ENOMEM;
@@ -239,7 +239,7 @@ static int z_vrfy_zsock_select(int nfds, zsock_fd_set *readfds,
 	}
 
 	if (exceptfds) {
-		exceptfds_copy = z_user_alloc_from_copy((void *)exceptfds,
+		exceptfds_copy = k_usermode_alloc_from_copy((void *)exceptfds,
 							sizeof(zsock_fd_set));
 		if (!exceptfds_copy) {
 			errno = ENOMEM;
@@ -248,7 +248,7 @@ static int z_vrfy_zsock_select(int nfds, zsock_fd_set *readfds,
 	}
 
 	if (timeout) {
-		timeval = z_user_alloc_from_copy((void *)timeout,
+		timeval = k_usermode_alloc_from_copy((void *)timeout,
 						 sizeof(struct zsock_timeval));
 		if (!timeval) {
 			errno = ENOMEM;
