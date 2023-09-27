@@ -1751,7 +1751,7 @@ static void end_thread(struct k_thread *thread)
 
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);
-		z_thread_perms_all_clear(thread);
+		k_thread_perms_all_clear(thread);
 		k_object_uninit(thread->stack_obj);
 		k_object_uninit(thread);
 #endif
