@@ -40,7 +40,7 @@ static struct spi_buf_set *copy_and_check(struct spi_buf_set *bufs,
 		 */
 		const struct spi_buf *buf = &bufs->buffers[i];
 
-		Z_OOPS(Z_SYSCALL_MEMORY(buf->buf, buf->len, writable));
+		Z_OOPS(K_SYSCALL_MEMORY(buf->buf, buf->len, writable));
 	}
 
 	return bufs;
@@ -76,14 +76,14 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 	struct spi_buf_set rx_bufs_copy;
 	struct spi_config config_copy;
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
 	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, transceive));
 
 	if (tx_bufs) {
 		const struct spi_buf_set *tx =
 			(const struct spi_buf_set *)tx_bufs;
 
-		Z_OOPS(Z_SYSCALL_MEMORY_READ(tx_bufs,
+		Z_OOPS(K_SYSCALL_MEMORY_READ(tx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&tx_bufs_copy, tx, sizeof(tx_bufs_copy));
 		Z_OOPS(Z_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
@@ -95,7 +95,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 		const struct spi_buf_set *rx =
 			(const struct spi_buf_set *)rx_bufs;
 
-		Z_OOPS(Z_SYSCALL_MEMORY_READ(rx_bufs,
+		Z_OOPS(K_SYSCALL_MEMORY_READ(rx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&rx_bufs_copy, rx, sizeof(rx_bufs_copy));
 		Z_OOPS(Z_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
@@ -105,7 +105,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 
 	memcpy(&config_copy, config, sizeof(*config));
 	if (spi_cs_is_gpio(&config_copy)) {
-		Z_OOPS(Z_SYSCALL_OBJ(config_copy.cs.gpio.port,
+		Z_OOPS(K_SYSCALL_OBJ(config_copy.cs.gpio.port,
 				     K_OBJ_DRIVER_GPIO));
 	}
 
@@ -119,7 +119,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 static inline int z_vrfy_spi_release(const struct device *dev,
 				     const struct spi_config *config)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
 	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
 	return z_impl_spi_release((const struct device *)dev, config);
 }
