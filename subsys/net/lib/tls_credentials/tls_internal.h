@@ -28,6 +28,11 @@ struct tls_credential {
 	size_t len;
 };
 
+/*
+ * Special sec_tag value indicating none or invalid sec_tag. For internal use only for now.
+ */
+#define TLS_SEC_TAG_NONE -1
+
 /* Lock TLS credential access. */
 void credentials_lock(void);
 
@@ -49,6 +54,15 @@ struct tls_credential *credential_get(sec_tag_t tag,
  */
 struct tls_credential *credential_next_get(sec_tag_t tag,
 					   struct tls_credential *iter);
+
+/* Function for iterating over occupied sec tags.
+ *
+ * Returns the next occupied sec tag after the one provided, or TLS_SEC_TAG_NONE if there are no
+ * more.
+ *
+ * Provide TLS_SEC_TAG_NONE to start from the first available sec tag.
+ */
+sec_tag_t credential_next_tag_get(sec_tag_t iter);
 
 /* Writes a (NULL-terminated, printable) string digest of the contents of the provided credential
  * to the provided destination buffer.
