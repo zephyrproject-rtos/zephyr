@@ -486,7 +486,7 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)
 {
-	Z_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
 
 	return z_impl_flash_simulator_get_memory(dev, mock_size);
 }

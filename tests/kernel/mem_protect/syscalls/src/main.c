@@ -59,7 +59,7 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 		err_copy = -1;
 	}
 
-	Z_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
+	K_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
 
 	return ret;
 }

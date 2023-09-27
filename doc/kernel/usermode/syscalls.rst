@@ -331,7 +331,7 @@ Several macros exist to validate arguments:
   API structure.
 
 If any check fails, the macros will return a nonzero value. The macro
-:c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the
+:c:macro:`K_OOPS()` can be used to induce a kernel oops which will kill the
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
@@ -357,7 +357,7 @@ For example:
 
     static int z_vrfy_k_sem_take(struct k_sem *sem, int32_t timeout)
     {
-        Z_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
+        K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
         return z_impl_k_sem_take(sem, timeout);
     }
     #include <syscalls/k_sem_take_mrsh.c>
@@ -397,7 +397,7 @@ for some integral value:
         int ret;
 
         ret = z_impl_some_syscall(&local_out_param);
-        Z_OOPS(k_usermode_to_copy(out_param, &local_out_param, sizeof(*out_param)));
+        K_OOPS(k_usermode_to_copy(out_param, &local_out_param, sizeof(*out_param)));
         return ret;
     }
 
@@ -411,7 +411,7 @@ It might be tempting to do something more concise:
 
     int z_vrfy_some_syscall(int *out_param)
     {
-        Z_OOPS(K_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
+        K_OOPS(K_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
         return z_impl_some_syscall(out_param);
     }
 
@@ -433,9 +433,9 @@ bytes processed. This too should use a stack copy:
         size_t size;
         int ret;
 
-        Z_OOPS(k_usermode_from_copy(&size, size_ptr, sizeof(size));
+        K_OOPS(k_usermode_from_copy(&size, size_ptr, sizeof(size));
         ret = z_impl_in_out_syscall(&size);
-        Z_OOPS(k_usermode_to_copy(size_ptr, &size, sizeof(size)));
+        K_OOPS(k_usermode_to_copy(size_ptr, &size, sizeof(size)));
         return ret;
     }
 
@@ -461,11 +461,11 @@ be copied. Typically this is done by allocating copies on the stack:
         struct bar bar_right_copy;
         struct bar bar_left_copy;
 
-        Z_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
-        Z_OOPS(k_usermode_from_copy(&bar_right_copy, foo_copy.bar_right,
+        K_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
+        K_OOPS(k_usermode_from_copy(&bar_right_copy, foo_copy.bar_right,
                                 sizeof(struct bar)));
         foo_copy.bar_right = &bar_right_copy;
-        Z_OOPS(k_usermode_from_copy(&bar_left_copy, foo_copy.bar_left,
+        K_OOPS(k_usermode_from_copy(&bar_left_copy, foo_copy.bar_left,
                                 sizeof(struct bar)));
         foo_copy.bar_left = &bar_left_copy;
 
@@ -478,7 +478,7 @@ memory from the caller's resource pool via :c:func:`z_thread_malloc()`. This
 should always be considered last resort. Functional safety programming
 guidelines heavily discourage usage of heap and the fact that a resource pool is
 used must be clearly documented. Any issues with allocation must be
-reported, to a caller, with returning the ``-ENOMEM`` . The ``Z_OOPS()``
+reported, to a caller, with returning the ``-ENOMEM`` . The ``K_OOPS()``
 should never be used to verify if resource allocation has been successful.
 
 .. code-block:: c
@@ -500,7 +500,7 @@ should never be used to verify if resource allocation has been successful.
         size_t bar_list_bytes;
 
         /* Safely copy foo into foo_copy */
-        Z_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
+        K_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
 
         /* Bounds check the count member, in the copy we made */
         if (foo_copy.count > 32) {
@@ -514,7 +514,7 @@ should never be used to verify if resource allocation has been successful.
         if (bar_list_copy == NULL) {
             return -ENOMEM;
         }
-        Z_OOPS(k_usermode_from_copy(bar_list_copy, foo_copy.bar_list,
+        K_OOPS(k_usermode_from_copy(bar_list_copy, foo_copy.bar_list,
                                 bar_list_bytes));
         foo_copy.bar_list = bar_list_copy;
 
@@ -549,7 +549,7 @@ The following constraints need to be met:
 
     int z_vrfy_get_data_from_kernel(void *buf, size_t size)
     {
-        Z_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
+        K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
         return z_impl_get_data_from_kernel(buf, size);
     }
 
@@ -558,16 +558,16 @@ Verification Return Value Policies
 
 When verifying system calls, it's important to note which kinds of verification
 failures should propagate a return value to the caller, and which should
-simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
+simply invoke :c:macro:`K_OOPS()` which kills the calling thread. The current
 conventions are as follows:
 
 #. For system calls that are defined but not compiled, invocations of these
    missing system calls are routed to :c:func:`handler_no_syscall()` which
-   invokes :c:macro:`Z_OOPS()`.
+   invokes :c:macro:`K_OOPS()`.
 
 #. Any invalid access to memory found by the set of ``K_SYSCALL_MEMORY`` APIs,
    :c:func:`k_usermode_from_copy()`, :c:func:`k_usermode_to_copy()`
-   should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
+   should trigger a :c:macro:`K_OOPS`. This happens when the caller doesn't have
    appropriate permissions on the memory buffer or some size calculation
    overflowed.
 
@@ -576,7 +576,7 @@ conventions are as follows:
    manually using :c:func:`k_object_validate()`. These can fail for a variety
    of reasons: missing driver API, bad kernel object pointer, wrong kernel
    object type, or improper initialization state. These issues should always
-   invoke :c:macro:`Z_OOPS()`.
+   invoke :c:macro:`K_OOPS()`.
 
 #. Any error resulting from a failed memory heap allocation, often from
    invoking :c:func:`z_thread_malloc()`, should propagate ``-ENOMEM`` to the
@@ -594,7 +594,7 @@ conventions are as follows:
    be registered from user mode. APIs which simply install callbacks shall not
    be exposed as system calls. Some driver subsystem APIs may take optional
    function callback pointers. User mode verification functions for these APIs
-   must enforce that these are NULL and should invoke :c:macro:`Z_OOPS()` if
+   must enforce that these are NULL and should invoke :c:macro:`K_OOPS()` if
    not.
 
 #. Some parameter checks are enforced only from user mode. These should be
@@ -608,14 +608,14 @@ There are some known exceptions to these policies currently in Zephyr:
   initialization bit pulls double-duty to indicate whether a thread is
   running, cleared upon exit. See #23030.
 
-* :c:func:`k_thread_create()` invokes :c:macro:`Z_OOPS()` for parameter
+* :c:func:`k_thread_create()` invokes :c:macro:`K_OOPS()` for parameter
   checks, due to a great deal of existing code ignoring the return value.
   This will also be addressed by #23030.
 
-* :c:func:`k_thread_abort()` invokes :c:macro:`Z_OOPS()` if an essential
+* :c:func:`k_thread_abort()` invokes :c:macro:`K_OOPS()` if an essential
   thread is aborted, as the function has no return value.
 
-* Various system calls related to logging invoke :c:macro:`Z_OOPS()`
+* Various system calls related to logging invoke :c:macro:`K_OOPS()`
   when bad parameters are passed in as they do not propagate errors.
 
 Configuration Options
@@ -635,7 +635,7 @@ Helper macros for creating system call verification functions are provided in
 * :c:macro:`K_SYSCALL_OBJ()`
 * :c:macro:`K_SYSCALL_OBJ_INIT()`
 * :c:macro:`K_SYSCALL_OBJ_NEVER_INIT()`
-* :c:macro:`Z_OOPS()`
+* :c:macro:`K_OOPS()`
 * :c:macro:`K_SYSCALL_MEMORY_READ()`
 * :c:macro:`K_SYSCALL_MEMORY_WRITE()`
 * :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()`

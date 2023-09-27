@@ -1308,13 +1308,13 @@ int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 	struct maxim_ds3231_syncpoint value;
 	int rv;
 
-	Z_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
-	Z_OOPS(K_SYSCALL_MEMORY_WRITE(syncpoint, sizeof(*syncpoint)));
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(syncpoint, sizeof(*syncpoint)));
 
 	rv = z_impl_maxim_ds3231_get_syncpoint(dev, &value);
 
 	if (rv >= 0) {
-		Z_OOPS(k_usermode_to_copy(syncpoint, &value, sizeof(*syncpoint)));
+		K_OOPS(k_usermode_to_copy(syncpoint, &value, sizeof(*syncpoint)));
 	}
 
 	return rv;
@@ -1325,9 +1325,9 @@ int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 int z_vrfy_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
 {
-	Z_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
 	if (sig != NULL) {
-		Z_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+		K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	}
 
 	return z_impl_maxim_ds3231_req_syncpoint(dev, sig);

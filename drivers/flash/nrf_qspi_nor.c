@@ -1468,7 +1468,7 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 
 void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
-	Z_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
 					 &qspi_nor_api));
 
 	z_impl_nrf_qspi_nor_xip_enable(dev, enable);
