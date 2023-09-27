@@ -1056,10 +1056,9 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt, uint16_t 
 		cpkt->data + cpkt->hdr_len + cpkt->opt_len + 1;
 }
 
-static bool uri_path_eq(const struct coap_packet *cpkt,
-			const char * const *path,
-			struct coap_option *options,
-			uint8_t opt_num)
+bool coap_uri_path_match(const char * const *path,
+			 struct coap_option *options,
+			 uint8_t opt_num)
 {
 	uint8_t i;
 	uint8_t j = 0U;
@@ -1163,7 +1162,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 		coap_method_t method;
 		uint8_t code;
 
-		if (!uri_path_eq(cpkt, resources[i].path, options, opt_num)) {
+		if (!coap_uri_path_match(resources[i].path, options, opt_num)) {
 			continue;
 		}
 
