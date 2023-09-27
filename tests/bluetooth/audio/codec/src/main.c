@@ -84,7 +84,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_duration_us)
 	zassert_equal(ret, 10000u, "unexpected return value %d", ret);
 }
 
-ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_val)
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation)
 {
 	const struct bt_bap_lc3_preset preset =
 		BT_BAP_LC3_UNICAST_PRESET_8_1_1(BT_AUDIO_LOCATION_FRONT_LEFT,
@@ -92,9 +92,32 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation_val)
 	enum bt_audio_location chan_allocation = BT_AUDIO_LOCATION_FRONT_RIGHT;
 	int err;
 
-	err = bt_audio_codec_cfg_get_chan_allocation_val(&preset.codec_cfg, &chan_allocation);
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
 	zassert_false(err, "unexpected error %d", err);
 	zassert_equal(chan_allocation, BT_AUDIO_LOCATION_FRONT_LEFT, "unexpected return value %d",
+		      chan_allocation);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_chan_allocation)
+{
+	struct bt_bap_lc3_preset preset = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	enum bt_audio_location chan_allocation;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(chan_allocation, 0x00000001, "Unexpected chan_allocation value %d",
+		      chan_allocation);
+
+	chan_allocation = BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_SIDE_RIGHT |
+			  BT_AUDIO_LOCATION_TOP_SIDE_RIGHT | BT_AUDIO_LOCATION_RIGHT_SURROUND;
+	err = bt_audio_codec_cfg_set_chan_allocation(&preset.codec_cfg, chan_allocation);
+	zassert_true(err > 0, "Unexpected return value %d", err);
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&preset.codec_cfg, &chan_allocation);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(chan_allocation, 0x8080802, "Unexpected chan_allocation value %d",
 		      chan_allocation);
 }
 

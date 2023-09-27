@@ -637,8 +637,21 @@ int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *co
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *codec_cfg,
-					       enum bt_audio_location *chan_allocation);
+int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,
+					   enum bt_audio_location *chan_allocation);
+
+/**
+ * @brief Set the channel allocation of a codec configuration.
+ *
+ * @param codec_cfg       The codec configuration to set data for.
+ * @param chan_allocation The channel allocation to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_chan_allocation(struct bt_audio_codec_cfg *codec_cfg,
+					   enum bt_audio_location chan_allocation);
 
 /** @brief Extract frame size in octets from BT codec config
  *
