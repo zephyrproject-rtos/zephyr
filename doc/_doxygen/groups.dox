@@ -1,5 +1,11 @@
 /**
 
+@defgroup internal_api Internal and System API
+@brief Internal and System API
+@{
+
+@}
+
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{
