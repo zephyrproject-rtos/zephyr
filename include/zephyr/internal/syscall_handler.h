@@ -3,12 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-
 #ifndef ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
 #define ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
 
-#ifdef CONFIG_USERSPACE
+/**
+ * @brief User mode and Syscall APIs
+ * @defgroup syscall_apis User mode and Syscall APIs
+ * @ingroup internal_api
+ * @{
+ */
+
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/kernel.h>
@@ -547,5 +552,8 @@ static inline int k_object_validation_check(struct k_object *ko,
 #endif /* _ASMLANGUAGE */
 
 #endif /* CONFIG_USERSPACE */
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_ */
