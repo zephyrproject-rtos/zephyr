@@ -234,7 +234,11 @@ static int init_lc3(void)
 		return ret;
 	}
 
-	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret > 0) {
+		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	}
+
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
