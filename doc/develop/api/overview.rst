@@ -37,6 +37,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.4
 
+   * - :ref:`blinfo_api`
+     - Experimental
+     - 3.5
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
