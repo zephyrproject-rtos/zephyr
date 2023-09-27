@@ -5,6 +5,8 @@
 #ifndef ZEPHYR_INCLUDE_ATOMIC_XTENSA_H_
 #define ZEPHYR_INCLUDE_ATOMIC_XTENSA_H_
 
+#include <xtensa/hal.h>
+
 /* Included from <sys/atomic.h> */
 
 /* Recent GCC versions actually do have working atomics support on
@@ -32,10 +34,7 @@ static ALWAYS_INLINE
 atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 			atomic_val_t newval)
 {
-	__asm__ volatile("wsr %1, SCOMPARE1; s32c1i %0, %2, 0"
-			 : "+r"(newval), "+r"(oldval) : "r"(addr) : "memory");
-
-	return newval; /* got swapped with the old memory by s32c1i */
+	return xthal_compare_and_set((int32_t *)addr, oldval, newval);
 }
 
 static ALWAYS_INLINE
