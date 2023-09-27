@@ -377,6 +377,18 @@ int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *cod
 	return sys_get_le16(data);
 }
 
+int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
+					    uint16_t octets_per_frame)
+{
+	uint16_t octets_per_frame_le16;
+
+	octets_per_frame_le16 = sys_cpu_to_le16(octets_per_frame);
+
+	return bt_audio_codec_cfg_set_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FRAME_LEN,
+					  (uint8_t *)&octets_per_frame_le16,
+					  sizeof(octets_per_frame_le16));
+}
+
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default)
 {
