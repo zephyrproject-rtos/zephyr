@@ -635,16 +635,49 @@ int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg);
 int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
 				enum bt_audio_codec_config_freq freq);
 
+/**
+ * @brief Convert assigned numbers frame duration to duration in microseconds.
+ *
+ * @param frame_dur The assigned numbers frame duration to convert.
+ *
+ * @retval -EINVAL if arguments are invalid.
+ * @retval The converted frame duration value in microseconds.
+ */
+int bt_audio_codec_cfg_frame_dur_to_frame_dur_us(enum bt_audio_codec_config_frame_dur frame_dur);
+
+/**
+ * @brief Convert frame duration in microseconds to assigned numbers frame duration.
+ *
+ * @param frame_dur_us The frame duration in microseconds to convert.
+ *
+ * @retval -EINVAL if arguments are invalid.
+ * @retval The assigned numbers frame duration (@ref bt_audio_codec_config_frame_dur).
+ */
+int bt_audio_codec_cfg_frame_dur_us_to_frame_dur(uint32_t frame_dur_us);
+
 /** @brief Extract frame duration from BT codec config
  *
  *  @param codec_cfg The codec configuration to extract data from.
  *
- *  @retval Frame duration in microseconds
+ *  @retval A @ref bt_audio_codec_config_frame_dur value
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *codec_cfg);
+int bt_audio_codec_cfg_get_frame_dur(const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the frame duration of a codec configuration.
+ *
+ * @param codec_cfg  The codec configuration to set data for.
+ * @param frame_dur  The assigned numbers frame duration to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
+				     enum bt_audio_codec_config_frame_dur frame_dur);
 
 /** @brief Extract channel allocation from BT codec config
  *

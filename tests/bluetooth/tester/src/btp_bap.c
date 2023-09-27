@@ -148,8 +148,12 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			LOG_DBG("  Frequency: %d Hz", bt_audio_codec_cfg_freq_to_freq_hz(ret));
 		}
 
-		LOG_DBG("  Frame Duration: %d us",
-			bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret > 0) {
+			LOG_DBG("  Frame Duration: %d us",
+				bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
+		}
+
 		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
 			LOG_DBG("  Channel allocation: 0x%x", chan_allocation);
 		}
@@ -260,14 +264,12 @@ static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase
 
 static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	int frame_duration_us;
 	int frames_per_sdu;
 	int octets_per_frame;
 	int chan_allocation_err;
 	enum bt_audio_location chan_allocation;
 	int ret;
 
-	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
 	chan_allocation_err =
 		bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
@@ -279,8 +281,9 @@ static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 		return -EINVAL;
 	}
 
-	if (frame_duration_us < 0) {
-		LOG_DBG("Error: Invalid frame duration.");
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		LOG_DBG("Error: Invalid frame duration: %d", ret);
 		return -EINVAL;
 	}
 
