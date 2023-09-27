@@ -1888,7 +1888,7 @@ static bool thread_obj_validate(struct k_thread *thread)
 		return true;
 	default:
 #ifdef CONFIG_LOG
-		z_dump_object_error(ret, thread, ko, K_OBJ_THREAD);
+		k_object_dump_error(ret, thread, ko, K_OBJ_THREAD);
 #endif
 		Z_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
 	}
