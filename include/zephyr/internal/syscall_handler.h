@@ -200,7 +200,7 @@ void k_object_recycle(const void *obj);
  *	maxlen if there were no NULL terminating characters within the
  *	first maxlen bytes.
  */
-static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
+static inline size_t k_usermode_string_nlen(const char *src, size_t maxlen,
 					int *err)
 {
 	return arch_user_string_nlen(src, maxlen, err);

@@ -858,7 +858,7 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 	int err;
 	char *ret = NULL;
 
-	actual_len = z_user_string_nlen(src, maxlen, &err);
+	actual_len = k_usermode_string_nlen(src, maxlen, &err);
 	if (err != 0) {
 		goto out;
 	}
@@ -890,7 +890,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 	size_t actual_len;
 	int ret, err;
 
-	actual_len = z_user_string_nlen(src, maxlen, &err);
+	actual_len = k_usermode_string_nlen(src, maxlen, &err);
 	if (err != 0) {
 		ret = EFAULT;
 		goto out;
