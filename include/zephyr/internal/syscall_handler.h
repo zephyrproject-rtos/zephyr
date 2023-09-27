@@ -308,7 +308,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  *            arguments) to print on verification failure
  * @return False on success, True on failure
  */
-#define Z_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
+#define K_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
 	bool expr_copy = !(expr); \
 	if (expr_copy) { \
 		TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
@@ -329,7 +329,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  *             oops. A stringified version of this expression will be printed.
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
+#define Z_SYSCALL_VERIFY(expr) K_SYSCALL_VERIFY_MSG(expr, #expr)
 
 /**
  * @brief Runtime check that a user thread has read and/or write permission to
@@ -348,7 +348,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
+	K_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
 			     "Memory region %p (size %zu) %s access denied", \
 			     (void *)(ptr), (size_t)(size), \
@@ -389,7 +389,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		size_t product; \
-		Z_SYSCALL_VERIFY_MSG(!size_mul_overflow((size_t)(nmemb), \
+		K_SYSCALL_VERIFY_MSG(!size_mul_overflow((size_t)(nmemb), \
 							(size_t)(size), \
 							&product), \
 				     "%zux%zu array is too large", \
@@ -448,7 +448,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
 }
 
 #define Z_SYSCALL_IS_OBJ(ptr, type, init) \
-	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(			\
+	K_SYSCALL_VERIFY_MSG(z_obj_validation_check(			\
 				     z_object_find((const void *)ptr),	\
 				     (const void *)ptr,			\
 				     type, init) == 0, "access denied")
@@ -467,7 +467,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
 	({ \
 		struct api_name *__device__ = (struct api_name *) \
 			((const struct device *)ptr)->api; \
-		Z_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
+		K_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
 				    "Operation %s not defined for driver " \
 				    "instance %p", \
 				    # op, __device__); \
@@ -495,7 +495,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
 	({ \
 		const struct device *_dev = (const struct device *)_device; \
 		Z_SYSCALL_OBJ(_dev, _dtype) || \
-			Z_SYSCALL_VERIFY_MSG(_dev->api == _api, \
+			K_SYSCALL_VERIFY_MSG(_dev->api == _api, \
 					     "API structure mismatch"); \
 	})
 

@@ -368,7 +368,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		ret = -EINVAL;
 		goto out;
 	}
-	if (Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow(num_events,
+	if (K_SYSCALL_VERIFY_MSG(!u32_mul_overflow(num_events,
 						   sizeof(struct k_poll_event),
 						   &bounds),
 				 "num_events too large")) {

@@ -18,7 +18,7 @@ static inline int z_vrfy_bc12_set_result_cb(const struct device *dev, bc12_callb
 					    void *user_data)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_BC12(dev, set_result_cb));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(cb == NULL, "callbacks may not be set from user mode"));
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(cb == NULL, "callbacks may not be set from user mode"));
 
 	return z_impl_bc12_set_result_cb(dev, cb, user_data);
 }
