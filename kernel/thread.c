@@ -673,7 +673,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_mem_domain_init_thread(new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
-		z_thread_perms_inherit(_current, new_thread);
+		k_thread_perms_inherit(_current, new_thread);
 	}
 #endif
 #ifdef CONFIG_SCHED_DEADLINE
