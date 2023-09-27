@@ -885,7 +885,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
 
 
 driver_macro_tpl = """
-#define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+#define K_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) K_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
 
 
@@ -893,7 +893,7 @@ def write_validation_output(fp):
     fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
     fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
-    fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+    fp.write("""#define K_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
 		(K_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
 		 K_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
                 """)
