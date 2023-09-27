@@ -1372,3 +1372,17 @@ This has been fixed in main for v3.4.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/59157>`_
 - `PR 59018 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/59018>`_
+
+CVE-2023-5184
+-------------
+
+Potential signed to unsigned conversion errors and buffer overflow
+vulnerabilities in the Zephyr IPM driver
+
+- `Zephyr project bug tracker GHSA-8x3p-q3r5-xh9g
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8x3p-q3r5-xh9g>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63069 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63069>`_
