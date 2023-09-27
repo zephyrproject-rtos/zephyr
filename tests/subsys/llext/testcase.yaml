@@ -1,0 +1,11 @@
+common:
+  tags: llext
+tests:
+  llext.simple.arm:
+    filter: not CONFIG_CPU_HAS_MMU
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_ARM_MPU=n
+    # Broken platforms
+    platform_exclude:
+      - nuvoton_pfm_m487 # See #63167
