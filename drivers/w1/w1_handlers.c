@@ -9,7 +9,7 @@
 
 static inline int z_vrfy_w1_reset_bus(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, reset_bus));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, reset_bus));
 
 	return z_impl_w1_reset_bus((const struct device *)dev);
 }
@@ -17,7 +17,7 @@ static inline int z_vrfy_w1_reset_bus(const struct device *dev)
 
 static inline int z_vrfy_w1_read_bit(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, read_bit));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, read_bit));
 
 	return z_impl_w1_read_bit((const struct device *)dev);
 }
@@ -25,7 +25,7 @@ static inline int z_vrfy_w1_read_bit(const struct device *dev)
 
 static inline int z_vrfy_w1_write_bit(const struct device *dev, bool bit)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, write_bit));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, write_bit));
 
 	return z_impl_w1_write_bit((const struct device *)dev, bit);
 }
@@ -33,7 +33,7 @@ static inline int z_vrfy_w1_write_bit(const struct device *dev, bool bit)
 
 static inline int z_vrfy_w1_read_byte(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, read_byte));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, read_byte));
 
 	return z_impl_w1_read_byte((const struct device *)dev);
 }
@@ -41,7 +41,7 @@ static inline int z_vrfy_w1_read_byte(const struct device *dev)
 
 static inline int z_vrfy_w1_write_byte(const struct device *dev, uint8_t byte)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, write_byte));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, write_byte));
 
 	return z_impl_w1_write_byte((const struct device *)dev, (uint8_t)byte);
 }
@@ -80,7 +80,7 @@ static inline int z_vrfy_w1_change_bus_lock(const struct device *dev, bool lock)
 static inline int z_vrfy_w1_configure(const struct device *dev,
 				      enum w1_settings_type type, uint32_t value)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_W1(dev, configure));
+	Z_OOPS(K_SYSCALL_DRIVER_W1(dev, configure));
 
 	return z_impl_w1_configure(dev, type, value);
 }

@@ -11,7 +11,7 @@
 static inline int z_vrfy_smbus_configure(const struct device *dev,
 					 uint32_t dev_config)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_SMBUS(dev, configure));
+	Z_OOPS(K_SYSCALL_DRIVER_SMBUS(dev, configure));
 
 	return z_impl_smbus_configure(dev, dev_config);
 }
@@ -20,7 +20,7 @@ static inline int z_vrfy_smbus_configure(const struct device *dev,
 static inline int z_vrfy_smbus_get_config(const struct device *dev,
 					  uint32_t *dev_config)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_SMBUS(dev, get_config));
+	Z_OOPS(K_SYSCALL_DRIVER_SMBUS(dev, get_config));
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dev_config, sizeof(uint32_t)));
 
 	return z_impl_smbus_get_config(dev, dev_config);

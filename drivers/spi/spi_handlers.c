@@ -77,7 +77,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 	struct spi_config config_copy;
 
 	Z_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
-	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, transceive));
+	Z_OOPS(K_SYSCALL_DRIVER_SPI(dev, transceive));
 
 	if (tx_bufs) {
 		const struct spi_buf_set *tx =
@@ -120,7 +120,7 @@ static inline int z_vrfy_spi_release(const struct device *dev,
 				     const struct spi_config *config)
 {
 	Z_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
-	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
+	Z_OOPS(K_SYSCALL_DRIVER_SPI(dev, release));
 	return z_impl_spi_release((const struct device *)dev, config);
 }
 #include <syscalls/spi_release_mrsh.c>

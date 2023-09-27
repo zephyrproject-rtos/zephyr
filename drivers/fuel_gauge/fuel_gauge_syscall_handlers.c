@@ -13,7 +13,7 @@ static inline int z_vrfy_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
 {
 	union fuel_gauge_prop_val k_val;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
 
 	Z_OOPS(k_usermode_from_copy(&k_val, val, sizeof(union fuel_gauge_prop_val)));
 
@@ -32,7 +32,7 @@ static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gau
 	union fuel_gauge_prop_val k_vals[len];
 	fuel_gauge_prop_t k_props[len];
 
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_property));
 
 	Z_OOPS(k_usermode_from_copy(k_vals, vals, len * sizeof(union fuel_gauge_prop_val)));
 	Z_OOPS(k_usermode_from_copy(k_props, props, len * sizeof(fuel_gauge_prop_t)));
@@ -49,7 +49,7 @@ static inline int z_vrfy_fuel_gauge_get_props(const struct device *dev, fuel_gau
 static inline int z_vrfy_fuel_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					     union fuel_gauge_prop_val val)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
 
 	int ret = z_impl_fuel_gauge_set_prop(dev, prop, val);
 
@@ -64,7 +64,7 @@ static inline int z_vrfy_fuel_gauge_set_props(const struct device *dev, fuel_gau
 	union fuel_gauge_prop_val k_vals[len];
 	fuel_gauge_prop_t k_props[len];
 
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, set_property));
 
 	Z_OOPS(k_usermode_from_copy(k_vals, vals, len * sizeof(union fuel_gauge_prop_val)));
 	Z_OOPS(k_usermode_from_copy(k_props, props, len * sizeof(fuel_gauge_prop_t)));
@@ -83,7 +83,7 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 						    fuel_gauge_prop_t prop, void *dst,
 						    size_t dst_len)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_buffer_property));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_buffer_property));
 
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, dst_len));
 
@@ -96,7 +96,7 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 
 static inline int z_vrfy_fuel_gauge_battery_cutoff(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, battery_cutoff));
+	Z_OOPS(K_SYSCALL_DRIVER_FUEL_GAUGE(dev, battery_cutoff));
 
 	return z_impl_fuel_gauge_battery_cutoff(dev);
 }

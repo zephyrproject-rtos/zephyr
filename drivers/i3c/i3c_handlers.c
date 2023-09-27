@@ -11,7 +11,7 @@
 static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 				    struct i3c_ccc_payload *payload)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_I3C(dev, do_ccc));
+	Z_OOPS(K_SYSCALL_DRIVER_I3C(dev, do_ccc));
 	Z_OOPS(K_SYSCALL_MEMORY_READ(payload, sizeof(*payload)));
 	Z_OOPS(K_SYSCALL_MEMORY_WRITE(payload, sizeof(*payload)));
 

@@ -12,7 +12,7 @@ static inline int z_vrfy_charger_get_prop(const struct device *dev, const charge
 {
 	union charger_propval k_val;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_CHARGER(dev, get_property));
+	Z_OOPS(K_SYSCALL_DRIVER_CHARGER(dev, get_property));
 
 	int ret = z_impl_charger_get_prop(dev, prop, &k_val);
 
@@ -28,7 +28,7 @@ static inline int z_vrfy_charger_set_prop(const struct device *dev, const charge
 {
 	union charger_propval k_val;
 
-	Z_OOPS(Z_SYSCALL_DRIVER_CHARGER(dev, set_property));
+	Z_OOPS(K_SYSCALL_DRIVER_CHARGER(dev, set_property));
 
 	Z_OOPS(k_usermode_from_copy(&k_val, val, sizeof(union charger_propval)));
 
