@@ -31,6 +31,13 @@ config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 	help
 	  Character Framebuffer Display Driver Name
 
+config CHARACTER_FRAMEBUFFER_ROTATE
+	bool "Rotate the frambuffer"
+	default n
+	help
+	  Rotate the Framebuffer by 180deg. Used if the screen is up side
+	  down.
+
 module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"

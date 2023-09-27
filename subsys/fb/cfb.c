@@ -445,6 +445,18 @@ int cfb_framebuffer_finalize(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_CHARACTER_FRAMEBUFFER_ROTATE)
+	uint8_t temp = 0;
+	uint16_t end = ((fb->x_res * fb->y_res) / 8U);
+
+	for (size_t i = 0; i < fb->x_res * fb->y_res / 16U; i++) {
+		temp = byte_reverse(fb->buf[end]);
+		fb->buf[end] = byte_reverse(fb->buf[i]);
+		fb->buf[i] = temp;
+		end--;
+	}
+#endif
+
 	desc.buf_size = fb->size;
 	desc.width = fb->x_res;
 	desc.height = fb->y_res;
