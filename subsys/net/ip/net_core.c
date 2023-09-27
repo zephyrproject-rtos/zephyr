@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #endif
 
 #include "net_private.h"
-#include "net_shell.h"
+#include "shell/net_shell.h"
 
 #include "icmpv6.h"
 #include "ipv6.h"
