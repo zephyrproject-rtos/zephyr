@@ -3680,3 +3680,18 @@ zbus:
     - doc/services/zbus/
   labels:
     - "area: zbus"
+
+"Linkable Loadable Extensions":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - lyakh
+  files:
+    - samples/subsys/llext/
+    - include/zephyr/llext/
+    - tests/subsys/llext/
+    - subsys/llext/
+    - doc/services/llext/
+  labels:
+    - "area: Linkable Loadable Extensions"
