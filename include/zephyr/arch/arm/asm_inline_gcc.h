@@ -43,13 +43,17 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
+#if CONFIG_MP_MAX_NUM_CPUS == 1
 	__asm__ volatile("mrs %0, PRIMASK;"
 		"cpsid i"
 		: "=r" (key)
 		:
 		: "memory");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#else
+#error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
+#endif
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
 	unsigned int tmp;
 
 	__asm__ volatile(
@@ -83,7 +87,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
 	if (key != 0U) {
 		return;
 	}
@@ -91,7 +95,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"cpsie i;"
 		"isb"
 		: : : "memory");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
 	__asm__ volatile(
 		"msr BASEPRI, %0;"
 		"isb;"
