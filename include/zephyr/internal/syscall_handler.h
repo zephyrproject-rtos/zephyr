@@ -147,7 +147,7 @@ void z_thread_perms_clear(struct k_object *ko, struct k_thread *thread);
  *
  * @param thread Thread object to revoke access
  */
-void z_thread_perms_all_clear(struct k_thread *thread);
+void k_thread_perms_all_clear(struct k_thread *thread);
 
 /**
  * Clear initialization state of a kernel object

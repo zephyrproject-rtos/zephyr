@@ -628,7 +628,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
 	unref_check(ko, id);
 }
 
-void z_thread_perms_all_clear(struct k_thread *thread)
+void k_thread_perms_all_clear(struct k_thread *thread)
 {
 	uintptr_t index = thread_index_get(thread);
 
