@@ -24,6 +24,7 @@
 	shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
 
 #include "net_private.h"
+#include "../ip/ipv6.h"
 
 struct net_shell_user_data {
 	const struct shell *sh;
@@ -34,6 +35,14 @@ struct net_shell_user_data {
 #define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
 #else
 #define MAX_IFACE_COUNT NET_VLAN_MAX_COUNT
+#endif
+
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#elif defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+#define ADDR_LEN NET_IPV4_ADDR_LEN
+#else
+#define ADDR_LEN NET_IPV6_ADDR_LEN
 #endif
 
 #define MAX_IFACE_HELP_STR_LEN sizeof("longbearername (0xabcd0123)")
@@ -55,3 +64,4 @@ void get_addresses(struct net_context *context,
 void events_enable(void);
 int get_iface_idx(const struct shell *sh, char *index_str);
 const char *iface2str(struct net_if *iface, const char **extra);
+void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data);
