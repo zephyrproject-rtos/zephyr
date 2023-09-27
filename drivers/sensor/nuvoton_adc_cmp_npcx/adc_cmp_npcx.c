@@ -251,20 +251,23 @@ static const struct sensor_driver_api adc_cmp_npcx_api = {
 	.channel_get = adc_cmp_npcx_channel_get,
 };
 
-#define NPCX_ADC_CMP_INIT(inst)                                               \
-	static struct adc_cmp_npcx_data adc_cmp_npcx_data_##inst;             \
-	static const struct adc_cmp_npcx_config adc_cmp_npcx_config_##inst = {\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),         \
-		.chnsel = DT_INST_IO_CHANNELS_INPUT(inst),                    \
-		.th_sel = DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst),       \
-		.thr_mv = DT_INST_PROP_OR(inst, threshold_mv,                 \
-			ADC_CMP_NPCX_UNDEFINED),                              \
-		.comparison = DT_INST_STRING_TOKEN_OR(inst,                   \
-			comparison, ADC_CMP_NPCX_UNDEFINED)                   \
-	};                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adc_cmp_npcx_init, NULL,           \
-			      &adc_cmp_npcx_data_##inst,                      \
-			      &adc_cmp_npcx_config_##inst, POST_KERNEL,       \
-			      CONFIG_SENSOR_INIT_PRIORITY,                    \
-			      &adc_cmp_npcx_api);
+#define NPCX_ADC_CMP_INIT(inst)							\
+	static struct adc_cmp_npcx_data adc_cmp_npcx_data_##inst;		\
+	static const struct adc_cmp_npcx_config adc_cmp_npcx_config_##inst = {	\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),		\
+		.chnsel = DT_INST_IO_CHANNELS_INPUT(inst),			\
+		.th_sel = DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst),		\
+		.thr_mv = DT_INST_PROP_OR(inst, threshold_mv,			\
+			ADC_CMP_NPCX_UNDEFINED),				\
+		.comparison = DT_INST_STRING_TOKEN_OR(inst,			\
+			comparison, ADC_CMP_NPCX_UNDEFINED)			\
+	};									\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adc_cmp_npcx_init, NULL,		\
+			      &adc_cmp_npcx_data_##inst,			\
+			      &adc_cmp_npcx_config_##inst, POST_KERNEL,		\
+			      CONFIG_SENSOR_INIT_PRIORITY,			\
+			      &adc_cmp_npcx_api);				\
+	BUILD_ASSERT(DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst) <		\
+		     DT_PROP(DT_INST_IO_CHANNELS_CTLR(inst), threshold_count),	\
+		     "Exceed the number of threshold detectors adc supports");
 DT_INST_FOREACH_STATUS_OKAY(NPCX_ADC_CMP_INIT)
