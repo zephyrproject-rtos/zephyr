@@ -474,6 +474,14 @@ static void isr_rx(void *param)
 	/* No Rx */
 	if (!trx_done ||
 #if defined(CONFIG_TEST_FT_PER_SKIP_SUBEVENTS)
+	    /* Used by test code,
+	     * to skip a number of events in every 3 event count when current subevent is less than
+	     * or equal to 2 or when current subevent has completed all its NSE number of subevents.
+	     * OR
+	     * to skip a (number + 1) of events in every 3 event count when current subevent is less
+	     * than or equal to 1 or when current subevent has completed all its NSE number of
+	     * subevents.
+	     */
 	    ((((cis_lll->event_count % 3U) < CONFIG_TEST_FT_PER_SKIP_EVENTS_COUNT) &&
 	      ((se_curr > cis_lll->nse) || (se_curr <= 2U))) ||
 	     (((cis_lll->event_count % 3U) < (CONFIG_TEST_FT_PER_SKIP_EVENTS_COUNT + 1U)) &&

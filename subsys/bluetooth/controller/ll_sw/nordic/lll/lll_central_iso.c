@@ -48,7 +48,7 @@ static void isr_prepare_subevent(void *param);
 static void isr_done(void *param);
 static void payload_count_flush(struct lll_conn_iso_stream *cis_lll);
 static void payload_count_flush_or_inc_on_close(struct lll_conn_iso_stream *cis_lll);
-static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t lazy);
+static void payload_count_lazy_update(struct lll_conn_iso_stream *cis_lll, uint16_t lazy);
 
 static uint16_t next_cis_chan_remap_idx;
 static uint16_t next_cis_chan_prn_s;
@@ -183,7 +183,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	se_curr = 1U;
 
 	/* Adjust the SN and NESN for skipped CIG events */
-	payload_count_lazy(cis_lll, lazy);
+	payload_count_lazy_update(cis_lll, lazy);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
@@ -370,7 +370,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
 		if (cis_lll && cis_lll->active) {
 			/* Adjust sn and nesn for skipped CIG events */
-			payload_count_lazy(cis_lll, lazy);
+			payload_count_lazy_update(cis_lll, lazy);
 
 			/* Adjust sn and nesn for canceled events */
 			if (err) {
@@ -676,11 +676,20 @@ static void isr_rx(void *param)
 	/* No Rx */
 	if (!trx_done ||
 #if defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
+	    /* Used by test code,
+	     * to skip a number of events in every 3 event count when current subevent is less than
+	     * or equal to 2 or when current subevent has completed all its NSE number of subevents.
+	     * OR
+	     * to skip a (number + 1) of events in every 3 event count when current subevent is less
+	     * than or equal to 1 or when current subevent has completed all its NSE number of
+	     * subevents.
+	     */
 	    ((((cis_lll->event_count % 3U) < CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT) &&
 	      ((se_curr > cis_lll->nse) || (se_curr <= 2U))) ||
+
 	     (((cis_lll->event_count % 3U) < (CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT + 1U)) &&
 	      ((se_curr > cis_lll->nse) || (se_curr <= 1U)))) ||
-#endif
+#endif /* CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS */
 	    false) {
 		payload_count_flush(cis_lll);
 
@@ -1230,7 +1239,7 @@ payload_count_flush_or_inc_on_close_rx:
 	}
 }
 
-static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t lazy)
+static void payload_count_lazy_update(struct lll_conn_iso_stream *cis_lll, uint16_t lazy)
 {
 	if (cis_lll->tx.bn) {
 		uint16_t tx_lazy;

@@ -5762,6 +5762,18 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
 		event_count = cis->lll.event_count;
 		pkt_seq_num = event_count + 1U;
+		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
+		 * then we simply check that the pb_flag is an even value, and
+		 * then  pkt_seq_num is a future sequence number value compare
+		 * to last recorded number in cis->pkt_seq_num.
+		 *
+		 * When (pkt_seq_num - stream->pkt_seq_num) is negative then
+		 * BIT64(39) will be set (2's compliment value). The diff value
+		 * less than or equal to BIT64_MASK(38) means the diff value is
+		 * positive and hence pkt_seq_num is greater than
+		 * stream->pkt_seq_num. This calculation is valid for when value
+		 * rollover too.
+		 */
 		if (!(pb_flag & 0x01) &&
 		    (((pkt_seq_num - cis->pkt_seq_num) &
 		      BIT64_MASK(39)) <= BIT64_MASK(38))) {
@@ -5770,12 +5782,17 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			pkt_seq_num = cis->pkt_seq_num;
 		}
 
-		/* Pre-increment, for next ISO data packet seq num comparison */
+		/* Pre-increment, when pg_flag is BT_ISO_SINGLE (0b10) or
+		 * BT_ISO_END (0b11) then we simple check if pb_flag has bit 1
+		 * is set, for next ISO data packet seq num comparison.
+		 */
 		if (pb_flag & 0x10) {
 			cis->pkt_seq_num++;
 		}
 
-		/* Target next event to avoid overlapping with current event */
+		/* Target next ISO event to avoid overlapping with, if any,
+		 * current ISO event
+		 */
 		pkt_seq_num++;
 		sdu_frag_tx.target_event = pkt_seq_num;
 		sdu_frag_tx.grp_ref_point =
@@ -5817,7 +5834,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 #endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 
 		/* Get controller's input data path for CIS */
-		hdr = &(cis->hdr);
+		hdr = &cis->hdr;
 		dp_in = hdr->datapath_in;
 		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
 			LOG_ERR("Input data path not set for HCI");
@@ -5884,6 +5901,18 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
 		event_count = lll_iso->payload_count / lll_iso->bn;
 		pkt_seq_num = event_count;
+		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
+		 * then we simply check that the pb_flag is an even value, and
+		 * then  pkt_seq_num is a future sequence number value compare
+		 * to last recorded number in cis->pkt_seq_num.
+		 *
+		 * When (pkt_seq_num - stream->pkt_seq_num) is negative then
+		 * BIT64(39) will be set (2's compliment value). The diff value
+		 * less than or equal to BIT64_MASK(38) means the diff value is
+		 * positive and hence pkt_seq_num is greater than
+		 * stream->pkt_seq_num. This calculation is valid for when value
+		 * rollover too.
+		 */
 		if (!(pb_flag & 0x01) &&
 		    (((pkt_seq_num - stream->pkt_seq_num) &
 		      BIT64_MASK(39)) <= BIT64_MASK(38))) {
@@ -5892,12 +5921,17 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			pkt_seq_num = stream->pkt_seq_num;
 		}
 
-		/* Pre-increment, for next ISO data packet seq num comparison */
+		/* Pre-increment, when pg_flag is BT_ISO_SINGLE (0b10) or
+		 * BT_ISO_END (0b11) then we simple check if pb_flag has bit 1
+		 * is set, for next ISO data packet seq num comparison.
+		 */
 		if (pb_flag & 0x10) {
 			stream->pkt_seq_num++;
 		}
 
-		/* Target next event to avoid overlapping with current event */
+		/* Target next ISO event to avoid overlapping with, if any,
+		 * current ISO event
+		 */
 		/* FIXME: Implement ISO Tx ack generation early in done compared
 		 *        to currently only in prepare. I.e. to ensure upper
 		 *        layer has the number of completed packet before the
