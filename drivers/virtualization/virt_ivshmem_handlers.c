@@ -12,7 +12,7 @@ static inline size_t z_vrfy_ivshmem_get_mem(const struct device *dev,
 					    uintptr_t *memmap)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_mem));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_mem(dev, memmap);
 }
@@ -48,7 +48,7 @@ static inline int z_vrfy_ivshmem_register_handler(const struct device *dev,
 						  uint16_t vector)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, register_handler));
-	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
+	Z_OOPS(K_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
 
 	return z_impl_ivshmem_register_handler(dev, signal, vector);
 }
@@ -60,7 +60,7 @@ static inline size_t z_vrfy_ivshmem_get_rw_mem_section(const struct device *dev,
 						       uintptr_t *memmap)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_rw_mem_section));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_rw_mem_section(dev, memmap);
 }
@@ -71,7 +71,7 @@ static inline size_t z_vrfy_ivshmem_get_output_mem_section(const struct device *
 							   uintptr_t *memmap)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_output_mem_section));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_output_mem_section(dev, peer_id, memmap);
 }

@@ -23,7 +23,7 @@ static inline int z_vrfy_pwm_get_cycles_per_sec(const struct device *dev,
 						uint64_t *cycles)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PWM(dev, get_cycles_per_sec));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cycles, sizeof(uint64_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(cycles, sizeof(uint64_t)));
 	return z_impl_pwm_get_cycles_per_sec((const struct device *)dev,
 					     channel, (uint64_t *)cycles);
 }

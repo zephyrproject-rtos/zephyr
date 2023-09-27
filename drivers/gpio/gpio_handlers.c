@@ -24,7 +24,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 					     gpio_flags_t *flags)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_get_config));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
 }
@@ -35,7 +35,7 @@ static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
 					   gpio_port_value_t *value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, port_get_raw));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(gpio_port_value_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(value, sizeof(gpio_port_value_t)));
 	return z_impl_gpio_port_get_raw((const struct device *)port,
 					(gpio_port_value_t *)value);
 }
@@ -105,11 +105,11 @@ static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(dev, port_get_direction));
 
 	if (inputs != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(inputs, sizeof(gpio_port_pins_t)));
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(inputs, sizeof(gpio_port_pins_t)));
 	}
 
 	if (outputs != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(outputs, sizeof(gpio_port_pins_t)));
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(outputs, sizeof(gpio_port_pins_t)));
 	}
 
 	return z_impl_gpio_port_get_direction(dev, map, inputs, outputs);

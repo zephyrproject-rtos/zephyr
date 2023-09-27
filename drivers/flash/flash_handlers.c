@@ -11,7 +11,7 @@ static inline int z_vrfy_flash_read(const struct device *dev, off_t offset,
 				    void *data, size_t len)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, read));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(data, len));
 	return z_impl_flash_read((const struct device *)dev, offset,
 				 (void *)data,
 				 len);
@@ -22,7 +22,7 @@ static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
 				     const void *data, size_t len)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, write));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, len));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(data, len));
 	return z_impl_flash_write((const struct device *)dev, offset,
 				  (const void *)data, len);
 }
@@ -38,7 +38,7 @@ static inline int z_vrfy_flash_erase(const struct device *dev, off_t offset,
 
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
 	return z_impl_flash_get_write_block_size(dev);
 }
 #include <syscalls/flash_get_write_block_size_mrsh.c>
@@ -56,7 +56,7 @@ static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,
 						     struct flash_pages_info *info)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, page_layout));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(info, sizeof(struct flash_pages_info)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(info, sizeof(struct flash_pages_info)));
 	return z_impl_flash_get_page_info_by_offs((const struct device *)dev,
 						  offs,
 						  (struct flash_pages_info *)info);
@@ -68,7 +68,7 @@ static inline int z_vrfy_flash_get_page_info_by_idx(const struct device *dev,
 						    struct flash_pages_info *info)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, page_layout));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(info, sizeof(struct flash_pages_info)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(info, sizeof(struct flash_pages_info)));
 	return z_impl_flash_get_page_info_by_idx((const struct device *)dev,
 						 idx,
 						 (struct flash_pages_info *)info);
@@ -91,7 +91,7 @@ static inline int z_vrfy_flash_sfdp_read(const struct device *dev,
 					 void *data, size_t len)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, sfdp_read));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(data, len));
 	return z_impl_flash_sfdp_read(dev, offset, data, len);
 }
 #include <syscalls/flash_sfdp_read.c>
@@ -100,7 +100,7 @@ static inline int z_vrfy_flash_read_jedec_id(const struct device *dev,
 					     uint8_t *id)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, read_jedec_id));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(id, 3));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(id, 3));
 	return z_impl_flash_read_jedec_id(dev, id);
 }
 #include <syscalls/flash_sfdp_jedec_id.c>

@@ -12,8 +12,8 @@ static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 				    struct i3c_ccc_payload *payload)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I3C(dev, do_ccc));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(payload, sizeof(*payload)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(payload, sizeof(*payload)));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(payload, sizeof(*payload)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(payload, sizeof(*payload)));
 
 	if (payload->ccc.data != NULL) {
 		Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(payload->ccc.data,
@@ -51,7 +51,7 @@ static uint32_t copy_i3c_msgs_and_transfer(struct i3c_device_desc *target,
 	 * that the target buffer be writable
 	 */
 	for (i = 0U; i < num_msgs; i++) {
-		Z_OOPS(Z_SYSCALL_MEMORY(copy[i].buf, copy[i].len,
+		Z_OOPS(K_SYSCALL_MEMORY(copy[i].buf, copy[i].len,
 					copy[i].flags & I3C_MSG_READ));
 	}
 
@@ -61,8 +61,8 @@ static uint32_t copy_i3c_msgs_and_transfer(struct i3c_device_desc *target,
 static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 				      struct i3c_msg *msgs, uint8_t num_msgs)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(target, sizeof(*target)));
-	Z_OOPS(Z_SYSCALL_OBJ(target->bus, K_OBJ_DRIVER_I3C));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(target, sizeof(*target)));
+	Z_OOPS(K_SYSCALL_OBJ(target->bus, K_OBJ_DRIVER_I3C));
 
 	/* copy_msgs_and_transfer() will allocate a copy on the stack using
 	 * VLA, so ensure this won't blow the stack.  Most functions defined

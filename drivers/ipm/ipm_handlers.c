@@ -12,7 +12,7 @@ static inline int z_vrfy_ipm_send(const struct device *dev, int wait,
 				  const void *data, int size)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IPM(dev, send));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, size));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(data, size));
 	return z_impl_ipm_send((const struct device *)dev, wait, id,
 			       (const void *)data, size);
 }

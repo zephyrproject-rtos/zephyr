@@ -689,7 +689,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_suspend(thread);
 }
 #include <syscalls/k_thread_suspend_mrsh.c>
@@ -718,7 +718,7 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_resume(thread);
 }
 #include <syscalls/k_thread_resume_mrsh.c>
@@ -1335,7 +1335,7 @@ int z_impl_k_thread_priority_get(k_tid_t thread)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_priority_get(thread);
 }
 #include <syscalls/k_thread_priority_get_mrsh.c>
@@ -1358,7 +1358,7 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
 	Z_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
@@ -1389,7 +1389,7 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
 
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(deadline > 0,
 				    "invalid thread deadline %d",
 				    (int)deadline));
@@ -1583,7 +1583,7 @@ void z_sched_ipi(void)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_wakeup(k_tid_t thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_wakeup(thread);
 }
 #include <syscalls/k_wakeup_mrsh.c>
