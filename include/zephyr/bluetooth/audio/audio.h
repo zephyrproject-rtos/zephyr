@@ -660,6 +660,19 @@ int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *
  */
 int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *codec_cfg);
 
+/**
+ * @brief Set the octets per codec frame of a codec configuration.
+ *
+ * @param codec_cfg        The codec configuration to set data for.
+ * @param octets_per_frame The octets per codec frame to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg,
+					    uint16_t octets_per_frame);
+
 /** @brief Extract number of audio frame blockss in each SDU from BT codec config
  *
  *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
