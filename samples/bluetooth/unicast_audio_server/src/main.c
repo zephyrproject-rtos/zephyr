@@ -147,8 +147,12 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			printk("  Frequency: %d Hz\n", bt_audio_codec_cfg_freq_to_freq_hz(ret));
 		}
 
-		printk("  Frame Duration: %d us\n",
-		       bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret > 0) {
+			printk("  Frame Duration: %d us\n",
+			       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
+		}
+
 		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
@@ -354,8 +358,7 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 
 #if defined(CONFIG_LIBLC3)
 	{
-		const int frame_duration_us =
-			bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
+		int frame_duration_us;
 		int freq;
 		int ret;
 
@@ -369,11 +372,14 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 			return ret;
 		}
 
-		if (frame_duration_us < 0) {
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret > 0) {
+			frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+		} else {
 			printk("Error: Frame duration not set, cannot start codec.");
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 					       BT_BAP_ASCS_REASON_CODEC_DATA);
-			return -1;
+			return ret;
 		}
 
 		frames_per_sdu =
