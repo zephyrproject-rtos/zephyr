@@ -299,14 +299,14 @@ Several macros exist to validate arguments:
   :c:macro:`Z_SYSCALL_MEMORY_READ()` but the calling thread must additionally
   have write permissions.
 
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
   is expressed as separate arguments for the number of elements and the
   element size. This macro correctly accounts for multiplication overflow
   when computing the total size. The calling thread must have read permissions
   on the total size.
 
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
-  :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
+  :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
   additionally have write permissions.
 
 * :c:macro:`K_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
@@ -638,8 +638,8 @@ Helper macros for creating system call verification functions are provided in
 * :c:macro:`Z_OOPS()`
 * :c:macro:`Z_SYSCALL_MEMORY_READ()`
 * :c:macro:`Z_SYSCALL_MEMORY_WRITE()`
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()`
-* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()`
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()`
+* :c:macro:`K_SYSCALL_MEMORY_ARRAY_WRITE()`
 * :c:macro:`K_SYSCALL_VERIFY_MSG()`
 * :c:macro:`Z_SYSCALL_VERIFY`
 

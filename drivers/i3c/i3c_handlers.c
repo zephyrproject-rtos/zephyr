@@ -16,19 +16,19 @@ static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(payload, sizeof(*payload)));
 
 	if (payload->ccc.data != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(payload->ccc.data,
+		Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(payload->ccc.data,
 						   payload->ccc.data_len,
 						   sizeof(*payload->ccc.data)));
-		Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(payload->ccc.data,
+		Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(payload->ccc.data,
 						    payload->ccc.data_len,
 						    sizeof(*payload->ccc.data)));
 	}
 
 	if (payload->targets.payloads != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(payload->targets.payloads,
+		Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(payload->targets.payloads,
 						   payload->targets.num_targets,
 						   sizeof(*payload->targets.payloads)));
-		Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(payload->targets.payloads,
+		Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(payload->targets.payloads,
 						    payload->targets.num_targets,
 						    sizeof(*payload->targets.payloads)));
 	}
@@ -72,7 +72,7 @@ static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 	Z_OOPS(Z_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
 
 	/* We need to be able to read the overall array of messages */
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
 					   sizeof(struct i3c_msg)));
 
 	return copy_i3c_msgs_and_transfer((struct i3c_device_desc *)target,

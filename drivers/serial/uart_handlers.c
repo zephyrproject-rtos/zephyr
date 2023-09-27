@@ -102,7 +102,7 @@ static inline int z_vrfy_uart_tx_u16(const struct device *dev,
 				     size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(buf, len, sizeof(uint16_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(buf, len, sizeof(uint16_t)));
 	return z_impl_uart_tx_u16(dev, buf, len, timeout);
 }
 #include <syscalls/uart_tx_u16_mrsh.c>
@@ -127,7 +127,7 @@ static inline int z_vrfy_uart_rx_enable_u16(const struct device *dev,
 					    size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(buf, len, sizeof(uint16_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(buf, len, sizeof(uint16_t)));
 	return z_impl_uart_rx_enable_u16(dev, buf, len, timeout);
 }
 #include <syscalls/uart_rx_enable_u16_mrsh.c>

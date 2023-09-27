@@ -284,7 +284,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 		Z_OOPS(z_user_from_copy(&hints_copy, (void *)hints,
 					sizeof(hints_copy)));
 	}
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));
 
 	if (service) {
 		service_copy = z_user_string_alloc_copy((char *)service, 64);
