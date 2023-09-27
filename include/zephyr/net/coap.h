@@ -404,6 +404,20 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
 				       uint16_t *len);
 
 /**
+ * @brief Verify if CoAP URI path matches with provided options.
+ *
+ * @param path Null-terminated array of strings.
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ *
+ * @return true if the CoAP URI path matches,
+ *        false otherwise.
+ */
+bool coap_uri_path_match(const char * const *path,
+			 struct coap_option *options,
+			 uint8_t opt_num);
+
+/**
  * @brief Parses the CoAP packet in data, validating it and
  * initializing @a cpkt. @a data must remain valid while @a cpkt is used.
  *
