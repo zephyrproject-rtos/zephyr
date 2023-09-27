@@ -221,7 +221,7 @@ static inline size_t k_usermode_string_nlen(const char *src, size_t maxlen,
  * @return An allocated buffer with the data copied within it, or NULL
  *	if some error condition occurred
  */
-void *z_user_alloc_from_copy(const void *src, size_t size);
+void *k_usermode_alloc_from_copy(const void *src, size_t size);
 
 /**
  * @brief Copy data from user mode
