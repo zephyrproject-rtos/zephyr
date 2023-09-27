@@ -592,6 +592,16 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len);
 
 /**
+ * @brief Check if a CoAP packet is a CoAP request.
+ *
+ * @param cpkt Packet to be checked.
+ *
+ * @return true if the packet is a request,
+ *        false otherwise.
+ */
+bool coap_packet_is_request(const struct coap_packet *cpkt);
+
+/**
  * @brief When a request is received, call the appropriate methods of
  * the matching resources.
  *
