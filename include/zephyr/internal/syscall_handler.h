@@ -157,7 +157,7 @@ void z_thread_perms_all_clear(struct k_thread *thread);
  *
  * @param object Address of the kernel object
  */
-void z_object_uninit(const void *obj);
+void k_object_uninit(const void *obj);
 
 /**
  * Initialize and reset permissions to only access by the caller
