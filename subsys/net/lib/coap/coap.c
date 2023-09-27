@@ -1129,7 +1129,7 @@ static inline bool is_empty_message(const struct coap_packet *cpkt)
 	return __coap_header_get_code(cpkt) == COAP_CODE_EMPTY;
 }
 
-static bool is_request(const struct coap_packet *cpkt)
+bool coap_packet_is_request(const struct coap_packet *cpkt)
 {
 	uint8_t code = coap_header_get_code(cpkt);
 
@@ -1143,7 +1143,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    uint8_t opt_num,
 			    struct sockaddr *addr, socklen_t addr_len)
 {
-	if (!is_request(cpkt)) {
+	if (!coap_packet_is_request(cpkt)) {
 		return 0;
 	}
 
@@ -1209,7 +1209,7 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 
 int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx)
 {
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		return coap_append_block1_option(cpkt, ctx);
 	} else {
 		return coap_append_block2_option(cpkt, ctx);
@@ -1218,7 +1218,7 @@ int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_b
 
 bool coap_has_descriptive_block_option(struct coap_packet *cpkt)
 {
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK1) >= 0;
 	} else {
 		return coap_get_option_int(cpkt, COAP_OPTION_BLOCK2) >= 0;
@@ -1227,7 +1227,7 @@ bool coap_has_descriptive_block_option(struct coap_packet *cpkt)
 
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt)
 {
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK1);
 	} else {
 		return coap_packet_remove_option(cpkt, COAP_OPTION_BLOCK2);
@@ -1241,7 +1241,7 @@ int coap_append_block1_option(struct coap_packet *cpkt,
 	unsigned int val = 0U;
 	int r;
 
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		SET_BLOCK_SIZE(val, ctx->block_size);
 		SET_MORE(val, ctx->current + bytes < ctx->total_size);
 		SET_NUM(val, ctx->current / bytes);
@@ -1261,7 +1261,7 @@ int coap_append_block2_option(struct coap_packet *cpkt,
 	int r, val = 0;
 	uint16_t bytes = coap_block_size_to_bytes(ctx->block_size);
 
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		SET_BLOCK_SIZE(val, ctx->block_size);
 		SET_NUM(val, ctx->current / bytes);
 	} else {
@@ -1469,7 +1469,7 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
 	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
 
-	if (is_request(cpkt)) {
+	if (coap_packet_is_request(cpkt)) {
 		r = update_control_block2(ctx, block2, size2);
 		if (r) {
 			return r;
@@ -1524,7 +1524,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 	enum coap_option_num option;
 	int ret;
 
-	option = is_request(cpkt) ? COAP_OPTION_BLOCK1 : COAP_OPTION_BLOCK2;
+	option = coap_packet_is_request(cpkt) ? COAP_OPTION_BLOCK1 : COAP_OPTION_BLOCK2;
 	ret = coap_next_block_for_option(cpkt, ctx, option);
 
 	return MAX(ret, 0);
@@ -1727,7 +1727,7 @@ struct coap_reply *coap_response_received(
 	uint8_t tkl;
 	size_t i;
 
-	if (!is_empty_message(response) && is_request(response)) {
+	if (!is_empty_message(response) && coap_packet_is_request(response)) {
 		/* Request can't be response */
 		return NULL;
 	}
