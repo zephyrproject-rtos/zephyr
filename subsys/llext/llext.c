@@ -635,7 +635,7 @@ out:
 
 int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext)
 {
-	int ret = 0;
+	int ret;
 	elf_ehdr_t ehdr;
 
 	ret = llext_seek(ldr, 0);
