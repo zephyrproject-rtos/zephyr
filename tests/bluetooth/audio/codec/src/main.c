@@ -136,6 +136,22 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_blocks_per_sdu)
 	zassert_equal(ret, 1u, "unexpected return value %d", ret);
 }
 
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_frame_blocks_per_sdu)
+{
+	struct bt_bap_lc3_preset preset = BT_BAP_LC3_UNICAST_PRESET_32_2_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&preset.codec_cfg, true);
+	zassert_equal(ret, 1, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_set_frame_blocks_per_sdu(&preset.codec_cfg, 2U);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&preset.codec_cfg, true);
+	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_pref_context)
 {
 	const enum bt_audio_context ctx =
