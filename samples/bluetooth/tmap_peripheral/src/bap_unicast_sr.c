@@ -78,7 +78,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 
 		printk("  Frame Duration: %d us\n",
 		       bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
-		if (bt_audio_codec_cfg_get_chan_allocation_val(codec_cfg, &chan_allocation) == 0) {
+		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
 
