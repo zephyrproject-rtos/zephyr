@@ -41,3 +41,15 @@
 
 	status = "okay";
 };
+
+&spi0 {
+	interrupts = <23 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&spi1 {
+	interrupts = <24 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};
