@@ -1378,8 +1378,7 @@ static void get_addresses(struct net_context *context,
 			  char addr_local[], int local_len,
 			  char addr_remote[], int remote_len)
 {
-#if defined(CONFIG_NET_IPV6)
-	if (context->local.family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == AF_INET6) {
 		snprintk(addr_local, local_len, "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 net_sin6_ptr(&context->local)->sin6_addr),
@@ -1388,10 +1387,8 @@ static void get_addresses(struct net_context *context,
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&context->remote)->sin6_addr),
 			 ntohs(net_sin6(&context->remote)->sin6_port));
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (context->local.family == AF_INET) {
+
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == AF_INET) {
 		snprintk(addr_local, local_len, "%s:%d",
 			 net_sprint_ipv4_addr(
 				 net_sin_ptr(&context->local)->sin_addr),
@@ -1400,9 +1397,8 @@ static void get_addresses(struct net_context *context,
 			 net_sprint_ipv4_addr(
 				 &net_sin(&context->remote)->sin_addr),
 			 ntohs(net_sin(&context->remote)->sin_port));
-	} else
-#endif
-	if (context->local.family == AF_UNSPEC) {
+
+	} else if (context->local.family == AF_UNSPEC) {
 		snprintk(addr_local, local_len, "AF_UNSPEC");
 	} else if (context->local.family == AF_PACKET) {
 		snprintk(addr_local, local_len, "AF_PACKET");
@@ -6730,7 +6726,7 @@ SHELL_CMD_REGISTER(net, &net_commands, "Networking commands", NULL);
 int net_shell_init(void)
 {
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR_AUTO_START)
-	char *argv[] = {
+	static const char * const argv[] = {
 		"on",
 		NULL
 	};
