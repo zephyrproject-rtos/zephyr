@@ -281,7 +281,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 					       *tidx);
 
 			/* Clear permission from all objects */
-			z_object_wordlist_foreach(clear_perms_cb,
+			k_object_wordlist_foreach(clear_perms_cb,
 						   (void *)*tidx);
 
 			return true;
@@ -306,7 +306,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 static void thread_idx_free(uintptr_t tidx)
 {
 	/* To prevent leaked permission when index is recycled */
-	z_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
+	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
@@ -497,7 +497,7 @@ struct k_object *z_object_find(const void *obj)
 	return ret;
 }
 
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
 	struct dyn_obj *obj, *next;
 
@@ -598,7 +598,7 @@ void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 	};
 
 	if ((ctx.parent_id != -1) && (ctx.child_id != -1)) {
-		z_object_wordlist_foreach(wordlist_cb, &ctx);
+		k_object_wordlist_foreach(wordlist_cb, &ctx);
 	}
 }
 
@@ -633,7 +633,7 @@ void k_thread_perms_all_clear(struct k_thread *thread)
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
-		z_object_wordlist_foreach(clear_perms_cb, (void *)index);
+		k_object_wordlist_foreach(clear_perms_cb, (void *)index);
 	}
 }
 
