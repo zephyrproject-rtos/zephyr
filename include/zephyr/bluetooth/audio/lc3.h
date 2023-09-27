@@ -243,14 +243,16 @@ enum bt_audio_codec_config_freq {
 	BT_AUDIO_CODEC_CONFIG_LC3_FREQ_384KHZ = 0x0d,
 };
 
-/**
- *  @brief LC3 7.5 msec Frame Duration configuration
- */
-#define BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5 0x00
-/**
- *  @brief LC3 10 msec Frame Duration configuration
- */
-#define BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10  0x01
+enum bt_audio_codec_config_frame_dur {
+	/**
+	 *  @brief LC3 7.5 msec Frame Duration configuration
+	 */
+	BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5 = 0x00,
+	/**
+	 *  @brief LC3 10 msec Frame Duration configuration
+	 */
+	BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10 = 0x01,
+};
 
 /**
  *  @brief Helper to declare LC3 codec capability

@@ -88,6 +88,30 @@ int bt_audio_codec_cfg_freq_hz_to_freq(uint32_t freq_hz)
 	}
 }
 
+int bt_audio_codec_cfg_frame_dur_to_frame_dur_us(enum bt_audio_codec_config_frame_dur frame_dur)
+{
+	switch (frame_dur) {
+	case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5:
+		return 7500;
+	case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10:
+		return 10000;
+	default:
+		return -EINVAL;
+	}
+}
+
+int bt_audio_codec_cfg_frame_dur_us_to_frame_dur(uint32_t frame_dur_us)
+{
+	switch (frame_dur_us) {
+	case 7500U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5;
+	case 10000U:
+		return BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10;
+	default:
+		return -EINVAL;
+	}
+}
+
 struct search_type_param {
 	bool found;
 	uint8_t type;
@@ -309,8 +333,9 @@ int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
 					  sizeof(freq_u8));
 }
 
-int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *codec_cfg)
+int bt_audio_codec_cfg_get_frame_dur(const struct bt_audio_codec_cfg *codec_cfg)
 {
+	enum bt_audio_codec_config_frame_dur frame_dur;
 	const uint8_t *data;
 	uint8_t data_len;
 
@@ -328,14 +353,29 @@ int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *co
 		return -EBADMSG;
 	}
 
-	switch (data[0]) {
-	case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5:
-		return 7500;
-	case BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10:
-		return 10000;
-	default:
+	frame_dur = data[0];
+	if (bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur) < 0) {
+		LOG_DBG("Invalid frame_dur value: 0x%02X", frame_dur);
 		return -EBADMSG;
 	}
+
+	return frame_dur;
+}
+
+int bt_audio_codec_cfg_set_frame_dur(struct bt_audio_codec_cfg *codec_cfg,
+				     enum bt_audio_codec_config_frame_dur frame_dur)
+{
+	uint8_t frame_dur_u8;
+
+	if (bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur) < 0) {
+		LOG_DBG("Invalid freq value: %d", frame_dur);
+		return -EINVAL;
+	}
+
+	frame_dur_u8 = (uint8_t)frame_dur;
+
+	return bt_audio_codec_cfg_set_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_DURATION,
+					  &frame_dur_u8, sizeof(frame_dur_u8));
 }
 
 int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,

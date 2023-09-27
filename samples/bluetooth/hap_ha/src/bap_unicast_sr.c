@@ -87,8 +87,12 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			printk("  Frequency: %d Hz\n", bt_audio_codec_cfg_freq_to_freq_hz(ret));
 		}
 
-		printk("  Frame Duration: %d us\n",
-		       bt_audio_codec_cfg_get_frame_duration_us(codec_cfg));
+		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		if (ret > 0) {
+			printk("  Frame Duration: %d us\n",
+			       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
+		}
+
 		if (bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation) == 0) {
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}

@@ -73,15 +73,54 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_freq)
 	zassert_equal(ret, 0x06, "Unexpected return value %d", ret);
 }
 
-ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_duration_us)
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_frame_dur_to_frame_dur_us)
+{
+	const struct frame_dur_test_input {
+		enum bt_audio_codec_config_frame_dur frame_dur;
+		uint32_t frame_dur_us;
+	} frame_dur_test_inputs[] = {
+		{.frame_dur = BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5, .frame_dur_us = 7500U},
+		{.frame_dur = BT_AUDIO_CODEC_CONFIG_LC3_DURATION_10, .frame_dur_us = 10000U},
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(frame_dur_test_inputs); i++) {
+		const struct frame_dur_test_input *fdti = &frame_dur_test_inputs[i];
+
+		zassert_equal(bt_audio_codec_cfg_frame_dur_to_frame_dur_us(fdti->frame_dur),
+			      fdti->frame_dur_us, "frame_dur %d was not coverted to %u",
+			      fdti->frame_dur, fdti->frame_dur_us);
+		zassert_equal(bt_audio_codec_cfg_frame_dur_us_to_frame_dur(fdti->frame_dur_us),
+			      fdti->frame_dur, "frame_dur_us %u was not coverted to %d",
+			      fdti->frame_dur_us, fdti->frame_dur);
+	}
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_frame_dur)
 {
 	const struct bt_bap_lc3_preset preset =
 		BT_BAP_LC3_UNICAST_PRESET_48_2_2(BT_AUDIO_LOCATION_FRONT_LEFT,
 						 BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	int ret;
 
-	ret = bt_audio_codec_cfg_get_frame_duration_us(&preset.codec_cfg);
-	zassert_equal(ret, 10000u, "unexpected return value %d", ret);
+	ret = bt_audio_codec_cfg_get_frame_dur(&preset.codec_cfg);
+	zassert_equal(ret, 0x01, "unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_frame_dur)
+{
+	struct bt_bap_lc3_preset preset = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_frame_dur(&preset.codec_cfg);
+	zassert_equal(ret, 0x01, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_set_frame_dur(&preset.codec_cfg,
+					       BT_AUDIO_CODEC_CONFIG_LC3_DURATION_7_5);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_get_frame_dur(&preset.codec_cfg);
+	zassert_equal(ret, 0x00, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_get_chan_allocation)

@@ -245,7 +245,13 @@ static int init_lc3(const struct bt_bap_stream *stream)
 		return ret;
 	}
 
-	lc3_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
+	ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
+	if (ret > 0) {
+		lc3_frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	} else {
+		return ret;
+	}
+
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 	lc3_frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
@@ -2637,8 +2643,12 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	stream_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(bap_stream->codec_cfg);
-	if (stream_frame_duration_us != lc3_frame_duration_us) {
+	err = bt_audio_codec_cfg_get_frame_dur(bap_stream->codec_cfg);
+	if (err > 0) {
+		if (bt_audio_codec_cfg_frame_dur_to_frame_dur_us(err) != lc3_frame_duration_us) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 
