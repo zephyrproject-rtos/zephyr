@@ -279,24 +279,24 @@ Argument Validation
 
 Several macros exist to validate arguments:
 
-* :c:macro:`Z_SYSCALL_OBJ()` Checks a memory address to assert that it is
+* :c:macro:`K_SYSCALL_OBJ()` Checks a memory address to assert that it is
   a valid kernel object of the expected type, that the calling thread
   has permissions on it, and that the object is initialized.
 
-* :c:macro:`Z_SYSCALL_OBJ_INIT()` is the same as
-  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object may be
+* :c:macro:`K_SYSCALL_OBJ_INIT()` is the same as
+  :c:macro:`K_SYSCALL_OBJ()`, except that the provided object may be
   uninitialized. This is useful for verifiers of object init functions.
 
-* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()` is the same as
-  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object must be
+* :c:macro:`K_SYSCALL_OBJ_NEVER_INIT()` is the same as
+  :c:macro:`K_SYSCALL_OBJ()`, except that the provided object must be
   uninitialized. This is not used very often, currently only for
   :c:func:`k_thread_create()`.
 
-* :c:macro:`Z_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
+* :c:macro:`K_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
   size. The calling thread must have read permissions on the entire buffer.
 
-* :c:macro:`Z_SYSCALL_MEMORY_WRITE()` is the same as
-  :c:macro:`Z_SYSCALL_MEMORY_READ()` but the calling thread must additionally
+* :c:macro:`K_SYSCALL_MEMORY_WRITE()` is the same as
+  :c:macro:`K_SYSCALL_MEMORY_READ()` but the calling thread must additionally
   have write permissions.
 
 * :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
@@ -315,14 +315,14 @@ Several macros exist to validate arguments:
   a message parameter, instead printing the expression tested if it
   fails. The latter should only be used for the most obvious of tests.
 
-* :c:macro:`Z_SYSCALL_DRIVER_OP()` checks at runtime if a driver
+* :c:macro:`K_SYSCALL_DRIVER_OP()` checks at runtime if a driver
   instance is capable of performing a particular operation.  While this
   macro can be used by itself, it's mostly a building block for macros
   that are automatically generated for every driver subsystem.  For
   instance, to validate the GPIO driver, one could use the
   :c:macro:`Z_SYSCALL_DRIVER_GPIO()` macro.
 
-* :c:macro:`Z_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
+* :c:macro:`K_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
   a provided pointer is a valid instance of a specific device driver, that
   the calling thread has permissions on it, and that the driver has been
   initialized. It does this by checking the API structure pointer that
@@ -357,7 +357,7 @@ For example:
 
     static int z_vrfy_k_sem_take(struct k_sem *sem, int32_t timeout)
     {
-        Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+        Z_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
         return z_impl_k_sem_take(sem, timeout);
     }
     #include <syscalls/k_sem_take_mrsh.c>
@@ -411,7 +411,7 @@ It might be tempting to do something more concise:
 
     int z_vrfy_some_syscall(int *out_param)
     {
-        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
+        Z_OOPS(K_SYSCALL_MEMORY_WRITE(out_param, sizeof(*out_param)));
         return z_impl_some_syscall(out_param);
     }
 
@@ -528,7 +528,7 @@ should never be used to verify if resource allocation has been successful.
 Finally, we must consider large data buffers. These represent areas of user
 memory which either have data copied out of, or copied into. It is permitted
 to pass these pointers to the implementation function directly. The caller's
-access to the buffer still must be validated with ``Z_SYSCALL_MEMORY`` APIs.
+access to the buffer still must be validated with ``K_SYSCALL_MEMORY`` APIs.
 The following constraints need to be met:
 
  * If the buffer is used by the implementation function to write data, such
@@ -549,7 +549,7 @@ The following constraints need to be met:
 
     int z_vrfy_get_data_from_kernel(void *buf, size_t size)
     {
-        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, size));
+        Z_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
         return z_impl_get_data_from_kernel(buf, size);
     }
 
@@ -565,14 +565,14 @@ conventions are as follows:
    missing system calls are routed to :c:func:`handler_no_syscall()` which
    invokes :c:macro:`Z_OOPS()`.
 
-#. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
+#. Any invalid access to memory found by the set of ``K_SYSCALL_MEMORY`` APIs,
    :c:func:`k_usermode_from_copy()`, :c:func:`k_usermode_to_copy()`
    should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
    appropriate permissions on the memory buffer or some size calculation
    overflowed.
 
 #. Most system calls take kernel object pointers as an argument, checked either
-   with one of the ``Z_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
+   with one of the ``K_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
    manually using :c:func:`k_object_validate()`. These can fail for a variety
    of reasons: missing driver API, bad kernel object pointer, wrong kernel
    object type, or improper initialization state. These issues should always
@@ -632,12 +632,12 @@ APIs
 Helper macros for creating system call verification functions are provided in
 :zephyr_file:`include/zephyr/internal/syscall_handler.h`:
 
-* :c:macro:`Z_SYSCALL_OBJ()`
-* :c:macro:`Z_SYSCALL_OBJ_INIT()`
-* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()`
+* :c:macro:`K_SYSCALL_OBJ()`
+* :c:macro:`K_SYSCALL_OBJ_INIT()`
+* :c:macro:`K_SYSCALL_OBJ_NEVER_INIT()`
 * :c:macro:`Z_OOPS()`
-* :c:macro:`Z_SYSCALL_MEMORY_READ()`
-* :c:macro:`Z_SYSCALL_MEMORY_WRITE()`
+* :c:macro:`K_SYSCALL_MEMORY_READ()`
+* :c:macro:`K_SYSCALL_MEMORY_WRITE()`
 * :c:macro:`K_SYSCALL_MEMORY_ARRAY_READ()`
 * :c:macro:`K_SYSCALL_MEMORY_ARRAY_WRITE()`
 * :c:macro:`K_SYSCALL_VERIFY_MSG()`

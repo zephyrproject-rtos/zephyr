@@ -58,7 +58,7 @@ static inline void z_vrfy_k_object_access_grant(const void *object,
 {
 	struct k_object *ko;
 
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
 	ko = validate_any_object(object);
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
 				    object));
