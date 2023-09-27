@@ -46,7 +46,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
-	return z_user_string_nlen(src, maxlen, err);
+	return k_usermode_string_nlen(src, maxlen, err);
 }
 
 static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
@@ -193,14 +193,14 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
 #include <syscalls/more_args_mrsh.c>
 
 /**
- * @brief Test to demonstrate usage of z_user_string_nlen()
+ * @brief Test to demonstrate usage of k_usermode_string_nlen()
  *
  * @details The test will be called from user mode and kernel
- * mode to check the behavior of z_user_string_nlen()
+ * mode to check the behavior of k_usermode_string_nlen()
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_nlen()
+ * @see k_usermode_string_nlen()
  */
 ZTEST_USER(syscalls, test_string_nlen)
 {
