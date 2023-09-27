@@ -263,7 +263,7 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 	 * This call is a no-op if obj is invalid or points to something
 	 * not a kernel object.
 	 */
-	z_object_recycle(obj);
+	k_object_recycle(obj);
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;

@@ -176,7 +176,7 @@ void z_object_uninit(const void *obj);
  *
  * @param object Address of the kernel object
  */
-void z_object_recycle(const void *obj);
+void k_object_recycle(const void *obj);
 
 /**
  * @brief Obtain the size of a C string passed from user mode
