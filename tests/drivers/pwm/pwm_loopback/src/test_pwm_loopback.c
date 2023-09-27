@@ -115,12 +115,16 @@ ZTEST_USER(pwm_loopback, test_pulse_capture)
 
 ZTEST_USER(pwm_loopback, test_pulse_capture_inverted)
 {
+#ifdef CONFIG_SKIP_PWM_INVERTED_TEST
+	ztest_test_skip();
+#else
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_INVERTED);
 	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_INVERTED);
+#endif
 }
 
 ZTEST_USER(pwm_loopback, test_period_capture)
@@ -135,12 +139,16 @@ ZTEST_USER(pwm_loopback, test_period_capture)
 
 ZTEST_USER(pwm_loopback, test_period_capture_inverted)
 {
+#ifdef CONFIG_SKIP_PWM_INVERTED_TEST
+	ztest_test_skip();
+#else
 	test_capture(TEST_PWM_PERIOD_NSEC, TEST_PWM_PULSE_NSEC,
 		     TEST_PWM_UNIT_NSEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED);
 	test_capture(TEST_PWM_PERIOD_USEC, TEST_PWM_PULSE_USEC,
 		     TEST_PWM_UNIT_USEC,
 		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_INVERTED);
+#endif
 }
 
 ZTEST_USER(pwm_loopback, test_pulse_and_period_capture)

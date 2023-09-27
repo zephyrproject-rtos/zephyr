@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SKIP_PWM_INVERTED_TEST
+	bool "Skip test for PWM inverted polarity"
+	help
+	  Skip test for PWM inverted polarity
