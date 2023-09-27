@@ -217,7 +217,9 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
 	 */
-	const char *phy_connection_type = DT_INST_PROP(0, phy_connection_type);
+	const char *phy_connection_type = DT_INST_PROP_OR(0,
+						phy_connection_type,
+						"rmii");
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
