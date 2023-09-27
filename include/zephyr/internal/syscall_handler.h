@@ -78,13 +78,13 @@ static inline bool k_is_in_user_syscall(void)
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int z_object_validate(struct k_object *ko, enum k_objects otype,
+int k_object_validate(struct k_object *ko, enum k_objects otype,
 		      enum _obj_init_check init);
 
 /**
- * Dump out error information on failed z_object_validate() call
+ * Dump out error information on failed k_object_validate() call
  *
- * @param retval Return value from z_object_validate()
+ * @param retval Return value from k_object_validate()
  * @param obj Kernel object we were trying to verify
  * @param ko If retval=-EPERM, struct k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
@@ -433,7 +433,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 {
 	int ret;
 
-	ret = z_object_validate(ko, otype, init);
+	ret = k_object_validate(ko, otype, init);
 
 #ifdef CONFIG_LOG
 	if (ret != 0) {
@@ -501,7 +501,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 /**
  * @brief Runtime check kernel object pointer for non-init functions
  *
- * Calls z_object_validate and triggers a kernel oops if the check fails.
+ * Calls k_object_validate and triggers a kernel oops if the check fails.
  * For use in system call handlers which are not init functions; a fatal
  * error will occur if the object is not initialized.
  *

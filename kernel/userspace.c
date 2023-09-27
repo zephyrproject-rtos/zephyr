@@ -721,7 +721,7 @@ void k_object_access_all_grant(const void *object)
 	}
 }
 
-int z_object_validate(struct k_object *ko, enum k_objects otype,
+int k_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
@@ -759,7 +759,7 @@ void k_object_init(const void *obj)
 	struct k_object *ko;
 
 	/* By the time we get here, if the caller was from userspace, all the
-	 * necessary checks have been done in z_object_validate(), which takes
+	 * necessary checks have been done in k_object_validate(), which takes
 	 * place before the object is initialized.
 	 *
 	 * This function runs after the object has been initialized and

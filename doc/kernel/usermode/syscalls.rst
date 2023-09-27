@@ -573,7 +573,7 @@ conventions are as follows:
 
 #. Most system calls take kernel object pointers as an argument, checked either
    with one of the ``Z_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
-   manually using :c:func:`z_object_validate()`. These can fail for a variety
+   manually using :c:func:`k_object_validate()`. These can fail for a variety
    of reasons: missing driver API, bad kernel object pointer, wrong kernel
    object type, or improper initialization state. These issues should always
    invoke :c:macro:`Z_OOPS()`.
