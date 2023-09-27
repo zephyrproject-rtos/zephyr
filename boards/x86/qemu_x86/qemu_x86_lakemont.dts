@@ -46,6 +46,7 @@
 			interrupt-parent = <&intc>;
 			current-speed = <115200>;
 			reg-shift = <2>;
+			io-mapped;
 			status = "okay";
 		};
 
