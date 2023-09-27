@@ -689,7 +689,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_suspend(thread);
 }
 #include <syscalls/k_thread_suspend_mrsh.c>
@@ -718,7 +718,7 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_resume(thread);
 }
 #include <syscalls/k_thread_resume_mrsh.c>
@@ -1335,7 +1335,7 @@ int z_impl_k_thread_priority_get(k_tid_t thread)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_priority_get(thread);
 }
 #include <syscalls/k_thread_priority_get_mrsh.c>
@@ -1358,10 +1358,10 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
-	Z_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
+	K_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
 
@@ -1389,8 +1389,8 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
 
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(deadline > 0,
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(deadline > 0,
 				    "invalid thread deadline %d",
 				    (int)deadline));
 
@@ -1583,7 +1583,7 @@ void z_sched_ipi(void)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_wakeup(k_tid_t thread)
 {
-	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_wakeup(thread);
 }
 #include <syscalls/k_wakeup_mrsh.c>
@@ -1890,7 +1890,7 @@ static bool thread_obj_validate(struct k_thread *thread)
 #ifdef CONFIG_LOG
 		k_object_dump_error(ret, thread, ko, K_OBJ_THREAD);
 #endif
-		Z_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
+		K_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
 	}
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
@@ -1912,7 +1912,7 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 		return;
 	}
 
-	Z_OOPS(K_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
+	K_OOPS(K_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
 				    "aborting essential thread %p", thread));
 
 	z_impl_k_thread_abort((struct k_thread *)thread);
