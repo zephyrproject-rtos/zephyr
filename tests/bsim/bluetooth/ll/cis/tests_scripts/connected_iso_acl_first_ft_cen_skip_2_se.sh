@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2020 Nordic Semiconductor ASA
+# Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
