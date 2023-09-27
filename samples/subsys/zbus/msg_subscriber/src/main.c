@@ -154,9 +154,9 @@ static void subscriber_task(void *sub)
 }
 
 K_THREAD_DEFINE(subscriber_task_id17, CONFIG_MAIN_STACK_SIZE, subscriber_task, &bar_sub1, NULL,
-		NULL, 3, 0, 0);
+		NULL, 2, 0, 0);
 K_THREAD_DEFINE(subscriber_task_id18, CONFIG_MAIN_STACK_SIZE, subscriber_task, &bar_sub2, NULL,
-		NULL, 3, 0, 0);
+		NULL, 4, 0, 0);
 
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_sub2, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub10, 3);
@@ -167,9 +167,10 @@ ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub14, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub15, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub16, 3);
 
+static struct acc_msg acc = {.x = 1, .y = 10, .z = 100};
+
 int main(void)
 {
-	struct acc_msg acc = {.x = 1, .y = 10, .z = 100};
 
 	total_allocated = 0;
 
@@ -186,7 +187,6 @@ int main(void)
 		acc.x += 1;
 		acc.y += 10;
 		acc.z += 100;
-
 		k_msleep(1000);
 	}
 
