@@ -64,12 +64,12 @@ static inline int z_vrfy_pwm_capture_cycles(const struct device *dev,
 	err = z_impl_pwm_capture_cycles((const struct device *)dev, channel,
 					flags, &period, &pulse, timeout);
 	if (period_cycles != NULL) {
-		Z_OOPS(z_user_to_copy(period_cycles, &period,
+		Z_OOPS(k_usermode_to_copy(period_cycles, &period,
 				      sizeof(*period_cycles)));
 	}
 
 	if (pulse_cycles != NULL) {
-		Z_OOPS(z_user_to_copy(pulse_cycles, &pulse,
+		Z_OOPS(k_usermode_to_copy(pulse_cycles, &pulse,
 				      sizeof(*pulse_cycles)));
 	}
 
