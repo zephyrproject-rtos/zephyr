@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LLEXT
+	bool "Linkable loadable extensions"
+	help
+	  Enable the linkable loadable extension subsystem
+
+if LLEXT
+
+config LLEXT_HEAP_SIZE
+	int "llext heap memory size in kilobytes"
+	default 8
+	help
+	  Heap size in kilobytes available to llext for dynamic allocation
+
+config LLEXT_SHELL
+	bool "llext shell commands"
+	depends on SHELL
+	help
+	  Manage llext with shell commands for loading, unloading, and introspection
+
+module = LLEXT
+module-str = llext
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

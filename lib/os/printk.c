@@ -20,6 +20,7 @@
 #include <zephyr/syscall_handler.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/cbprintf.h>
+#include <zephyr/llext/symbol.h>
 #include <sys/types.h>
 
 /* Option present only when CONFIG_USERSPACE enabled. */
@@ -210,6 +211,7 @@ void printk(const char *fmt, ...)
 
 	va_end(ap);
 }
+EXPORT_SYMBOL(printk);
 #endif /* defined(CONFIG_PRINTK) */
 
 #ifndef CONFIG_PICOLIBC

@@ -1,0 +1,6 @@
+if(CONFIG_LLEXT)
+  zephyr_library()
+  zephyr_library_sources(llext.c)
+  zephyr_library_sources(buf_loader.c)
+  zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
+endif()

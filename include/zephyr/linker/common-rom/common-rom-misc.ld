@@ -39,6 +39,10 @@
 	ITERABLE_SECTION_ROM(zbus_channel_observation, 4)
 #endif /* CONFIG_ZBUS */
 
+#ifdef CONFIG_LLEXT
+	ITERABLE_SECTION_ROM(llext_const_symbol, 4)
+#endif /* CONFIG_LLEXT */
+
 	SECTION_DATA_PROLOGUE(symbol_to_keep,,)
 	{
 		__symbol_to_keep_start = .;
