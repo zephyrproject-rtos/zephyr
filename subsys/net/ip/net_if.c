@@ -152,19 +152,13 @@ struct net_if *z_impl_net_if_get_by_index(int index)
 struct net_if *z_vrfy_net_if_get_by_index(int index)
 {
 	struct net_if *iface;
-	struct z_object *zo;
-	int ret;
 
 	iface = net_if_get_by_index(index);
 	if (!iface) {
 		return NULL;
 	}
 
-	zo = z_object_find(iface);
-
-	ret = z_object_validate(zo, K_OBJ_NET_IF, _OBJ_INIT_TRUE);
-	if (ret != 0) {
-		z_dump_object_error(ret, iface, zo, K_OBJ_NET_IF);
+	if (!k_object_is_valid(iface, K_OBJ_NET_IF)) {
 		return NULL;
 	}
 
