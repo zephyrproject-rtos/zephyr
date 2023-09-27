@@ -13,9 +13,6 @@
 #include <intel/alder_lake.dtsi>
 
 / {
-	model = "Alder Lake";
-	compatible = "intel,alder-lake";
-
 	chosen {
 		zephyr,sram = &dram0;
 	};
