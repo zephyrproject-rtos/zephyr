@@ -34,9 +34,9 @@ static int test_object(struct k_sem *sem, int retval)
 		/* Expected to fail; bypass k_object_validation_check() so we don't
 		 * fill the logs with spam
 		 */
-		ret = z_object_validate(z_object_find(sem), K_OBJ_SEM, 0);
+		ret = z_object_validate(k_object_find(sem), K_OBJ_SEM, 0);
 	} else {
-		ret = k_object_validation_check(z_object_find(sem), sem,
+		ret = k_object_validation_check(k_object_find(sem), sem,
 					    K_OBJ_SEM, 0);
 	}
 
@@ -179,7 +179,7 @@ ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 	k_object_access_revoke(test_dyn_mutex, thread);
 
 	/* check object was released, when no threads have access to it */
-	ret = z_object_validate(z_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
+	ret = z_object_validate(k_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
 
