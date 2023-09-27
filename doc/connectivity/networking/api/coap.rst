@@ -172,14 +172,14 @@ Install eclipse-titan and set symbolic links for titan tools
 
     export TTCN3_DIR=/usr/share/titan
 
-    git clone https://github.com/eclipse/titan.misc.git
+    git clone https://gitlab.eclipse.org/eclipse/titan/titan.misc.git
 
     cd titan.misc
 
 Follow the instruction to setup CoAP test suite from here:
 
-- https://github.com/eclipse/titan.misc
-- https://github.com/eclipse/titan.misc/tree/master/CoAP_Conf
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc/-/tree/master/CoAP_Conf
 
 After the build is complete, the :zephyr:code-sample:`coap-server` sample can be built
 and executed on QEMU as described in :ref:`networking_with_qemu`.
