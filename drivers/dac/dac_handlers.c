@@ -14,7 +14,7 @@ static inline int z_vrfy_dac_channel_setup(const struct device *dev,
 	struct dac_channel_cfg channel_cfg;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_DAC(dev, channel_setup));
-	Z_OOPS(z_user_from_copy(&channel_cfg,
+	Z_OOPS(k_usermode_from_copy(&channel_cfg,
 				(struct dac_channel_cfg *)user_channel_cfg,
 				sizeof(struct dac_channel_cfg)));
 
