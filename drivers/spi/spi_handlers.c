@@ -86,7 +86,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 		Z_OOPS(K_SYSCALL_MEMORY_READ(tx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&tx_bufs_copy, tx, sizeof(tx_bufs_copy));
-		Z_OOPS(Z_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
+		Z_OOPS(K_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
 	} else {
 		memset(&tx_bufs_copy, 0, sizeof(tx_bufs_copy));
 	}
@@ -98,7 +98,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 		Z_OOPS(K_SYSCALL_MEMORY_READ(rx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&rx_bufs_copy, rx, sizeof(rx_bufs_copy));
-		Z_OOPS(Z_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
+		Z_OOPS(K_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
 	} else {
 		memset(&rx_bufs_copy, 0, sizeof(rx_bufs_copy));
 	}

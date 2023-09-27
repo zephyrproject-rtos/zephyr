@@ -763,14 +763,14 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(options & K_USER));
-	Z_OOPS(Z_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
+	Z_OOPS(K_SYSCALL_VERIFY(options & K_USER));
+	Z_OOPS(K_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
 
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
-	Z_OOPS(Z_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
+	Z_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
+	Z_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
 							_current->base.prio)));
 
 	z_setup_new_thread(new_thread, stack, stack_size,

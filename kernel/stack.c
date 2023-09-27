@@ -65,7 +65,7 @@ static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
 					      uint32_t num_entries)
 {
 	Z_OOPS(K_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
-	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
+	Z_OOPS(K_SYSCALL_VERIFY(num_entries > 0));
 	return z_impl_k_stack_alloc_init(stack, num_entries);
 }
 #include <syscalls/k_stack_alloc_init_mrsh.c>
