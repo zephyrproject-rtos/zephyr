@@ -102,7 +102,7 @@ static inline int z_vrfy_w1_search_bus(const struct device *dev,
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
 
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback == 0,
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(callback == 0,
 				    "callbacks may not be set from user mode"));
 	/* user_data is not dereferenced, no need to check parameter */
 

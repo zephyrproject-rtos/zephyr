@@ -309,7 +309,7 @@ Several macros exist to validate arguments:
   :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
   additionally have write permissions.
 
-* :c:macro:`Z_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
+* :c:macro:`K_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
   expression which must evaluate to true otherwise the check will fail.
   A variant :c:macro:`Z_SYSCALL_VERIFY` exists which does not take
   a message parameter, instead printing the expression tested if it
@@ -640,7 +640,7 @@ Helper macros for creating system call verification functions are provided in
 * :c:macro:`Z_SYSCALL_MEMORY_WRITE()`
 * :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()`
 * :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()`
-* :c:macro:`Z_SYSCALL_VERIFY_MSG()`
+* :c:macro:`K_SYSCALL_VERIFY_MSG()`
 * :c:macro:`Z_SYSCALL_VERIFY`
 
 Functions for invoking system calls are defined in
