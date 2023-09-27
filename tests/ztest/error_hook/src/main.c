@@ -31,7 +31,7 @@ enum {
 	ZTEST_CATCH_FATAL_IN_ISR,
 	ZTEST_CATCH_ASSERT_FAIL,
 	ZTEST_CATCH_ASSERT_IN_ISR,
-	ZTEST_CATCH_USER_FATAL_Z_OOPS,
+	ZTEST_CATCH_USER_FATAL_K_OOPS,
 	ZTEST_ERROR_MAX
 } error_case_type;
 
@@ -161,7 +161,7 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 	case ZTEST_CATCH_FATAL_DIVIDE_ZERO:
 	case ZTEST_CATCH_FATAL_K_PANIC:
 	case ZTEST_CATCH_FATAL_K_OOPS:
-	case ZTEST_CATCH_USER_FATAL_Z_OOPS:
+	case ZTEST_CATCH_USER_FATAL_K_OOPS:
 		zassert_true(true);
 		break;
 
@@ -338,7 +338,7 @@ static void trigger_z_oops(void)
 	/* Set up a dummy syscall frame, pointing to a valid area in memory. */
 	_current->syscall_frame = _image_ram_start;
 
-	Z_OOPS(true);
+	K_OOPS(true);
 }
 
 /**
@@ -351,7 +351,7 @@ static void trigger_z_oops(void)
  */
 ZTEST(error_hook_tests, test_catch_z_oops)
 {
-	case_type = ZTEST_CATCH_USER_FATAL_Z_OOPS;
+	case_type = ZTEST_CATCH_USER_FATAL_K_OOPS;
 
 	ztest_set_fault_valid(true);
 	trigger_z_oops();
