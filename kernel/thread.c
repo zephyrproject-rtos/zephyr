@@ -360,7 +360,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 {
 #ifdef CONFIG_THREAD_NAME
 	size_t len;
-	struct k_object *ko = z_object_find(thread);
+	struct k_object *ko = k_object_find(thread);
 
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
@@ -715,7 +715,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack)
 {
-	return z_object_find(stack) != NULL;
+	return k_object_find(stack) != NULL;
 }
 
 k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
@@ -733,7 +733,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* No need to check z_stack_is_user_capable(), it won't be in the
 	 * object table if it isn't
 	 */
-	stack_object = z_object_find(stack);
+	stack_object = k_object_find(stack);
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(k_object_validation_check(stack_object, stack,
 						K_OBJ_THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE) == 0,

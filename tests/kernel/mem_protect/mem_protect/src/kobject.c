@@ -481,7 +481,7 @@ ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_access_grant(), k_object_access_revoke(),
- * z_object_find()
+ * k_object_find()
  */
 ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
 {
@@ -1069,12 +1069,12 @@ ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 	k_thread_join(&child_thread, K_FOREVER);
 
 	/* check thread is uninitialized after its exit */
-	ko = z_object_find(&child_thread);
+	ko = k_object_find(&child_thread);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
 	zassert_equal(ret, _OBJ_INIT_FALSE);
 
 	/* check stack is uninitialized after thread exit */
-	ko = z_object_find(child_stack);
+	ko = k_object_find(child_stack);
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
 	zassert_equal(ret, _OBJ_INIT_FALSE);
 }

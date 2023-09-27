@@ -102,7 +102,7 @@ void z_dump_object_error(int retval, const void *obj,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-struct k_object *z_object_find(const void *obj);
+struct k_object *k_object_find(const void *obj);
 
 typedef void (*_wordlist_cb_func_t)(struct k_object *ko, void *context);
 
@@ -448,7 +448,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 
 #define K_SYSCALL_IS_OBJ(ptr, type, init) \
 	K_SYSCALL_VERIFY_MSG(k_object_validation_check(			\
-				     z_object_find((const void *)ptr),	\
+				     k_object_find((const void *)ptr),	\
 				     (const void *)ptr,			\
 				     type, init) == 0, "access denied")
 

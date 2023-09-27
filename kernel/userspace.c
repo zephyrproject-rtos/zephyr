@@ -119,7 +119,7 @@ struct perm_ctx {
  */
 uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
-	struct k_object *obj = z_object_find(stack);
+	struct k_object *obj = k_object_find(stack);
 
 	__ASSERT(obj != NULL, "stack object not found");
 	__ASSERT(obj->type == K_OBJ_THREAD_STACK_ELEMENT,
@@ -475,7 +475,7 @@ void k_object_free(void *obj)
 	}
 }
 
-struct k_object *z_object_find(const void *obj)
+struct k_object *k_object_find(const void *obj)
 {
 	struct k_object *ret;
 
@@ -516,7 +516,7 @@ static unsigned int thread_index_get(struct k_thread *thread)
 {
 	struct k_object *ko;
 
-	ko = z_object_find(thread);
+	ko = k_object_find(thread);
 
 	if (ko == NULL) {
 		return -1;
@@ -691,7 +691,7 @@ void z_dump_object_error(int retval, const void *obj, struct k_object *ko,
 
 void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 {
-	struct k_object *ko = z_object_find(object);
+	struct k_object *ko = k_object_find(object);
 
 	if (ko != NULL) {
 		k_thread_perms_set(ko, thread);
@@ -700,7 +700,7 @@ void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 
 void k_object_access_revoke(const void *object, struct k_thread *thread)
 {
-	struct k_object *ko = z_object_find(object);
+	struct k_object *ko = k_object_find(object);
 
 	if (ko != NULL) {
 		k_thread_perms_clear(ko, thread);
@@ -714,7 +714,7 @@ void z_impl_k_object_release(const void *object)
 
 void k_object_access_all_grant(const void *object)
 {
-	struct k_object *ko = z_object_find(object);
+	struct k_object *ko = k_object_find(object);
 
 	if (ko != NULL) {
 		ko->flags |= K_OBJ_FLAG_PUBLIC;
@@ -766,7 +766,7 @@ void k_object_init(const void *obj)
 	 * finalizes it
 	 */
 
-	ko = z_object_find(obj);
+	ko = k_object_find(obj);
 	if (ko == NULL) {
 		/* Supervisor threads can ignore rules about kernel objects
 		 * and may declare them on stacks, etc. Such objects will never
@@ -781,7 +781,7 @@ void k_object_init(const void *obj)
 
 void k_object_recycle(const void *obj)
 {
-	struct k_object *ko = z_object_find(obj);
+	struct k_object *ko = k_object_find(obj);
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
@@ -795,7 +795,7 @@ void k_object_uninit(const void *obj)
 	struct k_object *ko;
 
 	/* See comments in k_object_init() */
-	ko = z_object_find(obj);
+	ko = k_object_find(obj);
 	if (ko == NULL) {
 		return;
 	}

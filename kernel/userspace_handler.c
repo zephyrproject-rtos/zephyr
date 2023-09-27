@@ -16,7 +16,7 @@ static struct k_object *validate_kernel_object(const void *obj,
 	struct k_object *ko;
 	int ret;
 
-	ko = z_object_find(obj);
+	ko = k_object_find(obj);
 
 	/* This can be any kernel object and it doesn't have to be
 	 * initialized
@@ -50,7 +50,7 @@ bool k_object_is_valid(const void *obj, enum k_objects otype)
  * syscall_dispatch.c declares weak handlers results in build errors if these
  * are located in userspace.c. Just put in a separate file.
  *
- * To avoid double z_object_find() lookups, we don't call the implementation
+ * To avoid double k_object_find() lookups, we don't call the implementation
  * function, but call a level deeper.
  */
 static inline void z_vrfy_k_object_access_grant(const void *object,
