@@ -1589,7 +1589,7 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 {
 	struct in6_addr addr_v6;
 
-	Z_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+	K_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
 
 	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
 }
@@ -1929,7 +1929,7 @@ bool z_vrfy_net_if_ipv6_addr_add_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+	K_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
 
 	return z_impl_net_if_ipv6_addr_add_by_index(index,
 						    &addr_v6,
@@ -1965,7 +1965,7 @@ bool z_vrfy_net_if_ipv6_addr_rm_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+	K_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
 
 	return z_impl_net_if_ipv6_addr_rm_by_index(index, &addr_v6);
 }
@@ -3526,7 +3526,7 @@ static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(
 {
 	struct in_addr addr_v4;
 
-	Z_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+	K_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
 
 	return z_impl_net_if_ipv4_addr_lookup_by_index(&addr_v4);
 }
@@ -3578,7 +3578,7 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&netmask_addr, (void *)netmask,
+	K_OOPS(k_usermode_from_copy(&netmask_addr, (void *)netmask,
 				sizeof(netmask_addr)));
 
 	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
@@ -3631,7 +3631,7 @@ bool z_vrfy_net_if_ipv4_set_gw_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&gw_addr, (void *)gw, sizeof(gw_addr)));
+	K_OOPS(k_usermode_from_copy(&gw_addr, (void *)gw, sizeof(gw_addr)));
 
 	return z_impl_net_if_ipv4_set_gw_by_index(index, &gw_addr);
 }
@@ -3805,7 +3805,7 @@ bool z_vrfy_net_if_ipv4_addr_add_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+	K_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
 
 	return z_impl_net_if_ipv4_addr_add_by_index(index,
 						    &addr_v4,
@@ -3841,7 +3841,7 @@ bool z_vrfy_net_if_ipv4_addr_rm_by_index(int index,
 		return false;
 	}
 
-	Z_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
+	K_OOPS(k_usermode_from_copy(&addr_v4, (void *)addr, sizeof(addr_v4)));
 
 	return (uint32_t)z_impl_net_if_ipv4_addr_rm_by_index(index, &addr_v4);
 }

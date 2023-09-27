@@ -402,20 +402,20 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		case K_POLL_TYPE_IGNORE:
 			break;
 		case K_POLL_TYPE_SIGNAL:
-			Z_OOPS(K_SYSCALL_OBJ(e->signal, K_OBJ_POLL_SIGNAL));
+			K_OOPS(K_SYSCALL_OBJ(e->signal, K_OBJ_POLL_SIGNAL));
 			break;
 		case K_POLL_TYPE_SEM_AVAILABLE:
-			Z_OOPS(K_SYSCALL_OBJ(e->sem, K_OBJ_SEM));
+			K_OOPS(K_SYSCALL_OBJ(e->sem, K_OBJ_SEM));
 			break;
 		case K_POLL_TYPE_DATA_AVAILABLE:
-			Z_OOPS(K_SYSCALL_OBJ(e->queue, K_OBJ_QUEUE));
+			K_OOPS(K_SYSCALL_OBJ(e->queue, K_OBJ_QUEUE));
 			break;
 		case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-			Z_OOPS(K_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ));
+			K_OOPS(K_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ));
 			break;
 #ifdef CONFIG_PIPES
 		case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-			Z_OOPS(K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
+			K_OOPS(K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
 			break;
 #endif
 		default:
@@ -432,7 +432,7 @@ out:
 	return ret;
 oops_free:
 	k_free(events_copy);
-	Z_OOPS(1);
+	K_OOPS(1);
 }
 #include <syscalls/k_poll_mrsh.c>
 #endif
@@ -490,7 +490,7 @@ void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *sig)
 {
-	Z_OOPS(K_SYSCALL_OBJ_INIT(sig, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_OBJ_INIT(sig, K_OBJ_POLL_SIGNAL));
 	z_impl_k_poll_signal_init(sig);
 }
 #include <syscalls/k_poll_signal_init_mrsh.c>
@@ -516,9 +516,9 @@ void z_impl_k_poll_signal_check(struct k_poll_signal *sig,
 void z_vrfy_k_poll_signal_check(struct k_poll_signal *sig,
 			       unsigned int *signaled, int *result)
 {
-	Z_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
-	Z_OOPS(K_SYSCALL_MEMORY_WRITE(signaled, sizeof(unsigned int)));
-	Z_OOPS(K_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
+	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(signaled, sizeof(unsigned int)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
 	z_impl_k_poll_signal_check(sig, signaled, result);
 }
 #include <syscalls/k_poll_signal_check_mrsh.c>
@@ -553,14 +553,14 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
 static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *sig,
 					     int result)
 {
-	Z_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	return z_impl_k_poll_signal_raise(sig, result);
 }
 #include <syscalls/k_poll_signal_raise_mrsh.c>
 
 static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *sig)
 {
-	Z_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	z_impl_k_poll_signal_reset(sig);
 }
 #include <syscalls/k_poll_signal_reset_mrsh.c>
