@@ -163,5 +163,29 @@
 
 			status = "okay";
 		};
+
+		spi0: spi@8000000 {
+			compatible = "intel,sedi-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x8000000 0x1000>;
+			peripheral-id = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
+
+		spi1: spi@8002000 {
+			compatible = "intel,sedi-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x8002000 0x1000>;
+			peripheral-id = <1>;
+			interrupt-parent = <&intc>;
+			interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "disabled";
+		};
 	};
 };
