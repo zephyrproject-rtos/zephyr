@@ -25,7 +25,7 @@ int z_vrfy_sample_driver_write(const struct device *dev, void *buf)
 		return -EINVAL;
 	}
 
-	if (Z_SYSCALL_MEMORY_READ(buf, SAMPLE_DRIVER_MSG_SIZE)) {
+	if (K_SYSCALL_MEMORY_READ(buf, SAMPLE_DRIVER_MSG_SIZE)) {
 		return -EFAULT;
 	}
 

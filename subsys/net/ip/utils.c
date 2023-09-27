@@ -304,7 +304,7 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 	char *out;
 	const void *addr;
 
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, size));
 
 	if (family == AF_INET) {
 		Z_OOPS(k_usermode_from_copy(&addr4, (const void *)src,
@@ -488,7 +488,7 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 		return -EINVAL;
 	}
 
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, size));
 
 	err = z_impl_net_addr_pton(family, str, addr);
 	if (err) {

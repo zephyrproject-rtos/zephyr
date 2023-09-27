@@ -257,7 +257,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
 
 	if (thread != NULL) {
-		if (Z_SYSCALL_OBJ(thread, K_OBJ_THREAD) != 0) {
+		if (K_SYSCALL_OBJ(thread, K_OBJ_THREAD) != 0) {
 			return -EINVAL;
 		}
 	}
@@ -369,7 +369,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
 		return -EINVAL;
 	}
-	if (Z_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
+	if (K_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
 		return -EFAULT;
 	}
 	len = strlen(thread->name);
@@ -433,7 +433,7 @@ void z_impl_k_thread_start(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_thread_start(struct k_thread *thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_thread_start(thread);
 }
 #include <syscalls/k_thread_start_mrsh.c>
@@ -728,7 +728,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	struct k_object *stack_object;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 
 	/* No need to check z_stack_is_user_capable(), it won't be in the
 	 * object table if it isn't
@@ -966,7 +966,7 @@ int z_impl_k_float_enable(struct k_thread *thread, unsigned int options)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	return z_impl_k_float_disable(thread);
 }
 #include <syscalls/k_float_disable_mrsh.c>
@@ -1060,7 +1060,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 	size_t unused;
 	int ret;
 
-	ret = Z_SYSCALL_OBJ(thread, K_OBJ_THREAD);
+	ret = K_SYSCALL_OBJ(thread, K_OBJ_THREAD);
 	CHECKIF(ret != 0) {
 		return ret;
 	}
@@ -1085,7 +1085,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 						    const struct k_thread *t)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(t);
 }
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
@@ -1093,7 +1093,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 						  const struct k_thread *t)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
+	Z_OOPS(K_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(t);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>

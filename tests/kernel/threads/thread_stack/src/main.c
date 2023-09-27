@@ -41,8 +41,8 @@ void z_impl_stack_info_get(char **start_addr, size_t *size)
 static inline void z_vrfy_stack_info_get(char **start_addr,
 					 size_t *size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(start_addr, sizeof(uintptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(size_t)));
 
 	z_impl_stack_info_get(start_addr, size);
 }

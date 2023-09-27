@@ -42,7 +42,7 @@ static struct k_spinlock lock;
 #define ATOMIC_SYSCALL_HANDLER_TARGET(name) \
 	static inline atomic_val_t z_vrfy_##name(atomic_t *target) \
 	{								\
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target); \
 	}
 
@@ -50,7 +50,7 @@ static struct k_spinlock lock;
 	static inline atomic_val_t z_vrfy_##name(atomic_t *target, \
 						 atomic_val_t value) \
 	{								\
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target, value); \
 	}
 #else
@@ -108,7 +108,7 @@ bool z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 bool z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
 		       atomic_val_t new_value)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t)));
 
 	return z_impl_atomic_cas((atomic_t *)target, old_value, new_value);
 }
@@ -138,7 +138,7 @@ static inline bool z_vrfy_atomic_ptr_cas(atomic_ptr_t *target,
 					 atomic_ptr_val_t old_value,
 					 atomic_ptr_val_t new_value)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
 
 	return z_impl_atomic_ptr_cas(target, old_value, new_value);
 }
@@ -276,7 +276,7 @@ atomic_ptr_val_t z_impl_atomic_ptr_set(atomic_ptr_t *target,
 static inline atomic_ptr_val_t z_vrfy_atomic_ptr_set(atomic_ptr_t *target,
 						     atomic_ptr_val_t value)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
 
 	return z_impl_atomic_ptr_set(target, value);
 }

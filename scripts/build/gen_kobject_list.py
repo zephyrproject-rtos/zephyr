@@ -894,8 +894,8 @@ def write_validation_output(fp):
     fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
     fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
-		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
-		 Z_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
+		(K_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
+		 K_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
                 """)
 
     for subsystem in subsystems:

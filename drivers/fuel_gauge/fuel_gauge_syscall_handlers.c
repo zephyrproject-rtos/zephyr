@@ -85,7 +85,7 @@ static inline int z_vrfy_fuel_gauge_get_buffer_prop(const struct device *dev,
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_FUEL_GAUGE(dev, get_buffer_property));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, dst_len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, dst_len));
 
 	int ret = z_impl_fuel_gauge_get_buffer_prop(dev, prop, dst, dst_len);
 

@@ -27,7 +27,7 @@ static inline int z_vrfy_ps2_write(const struct device *dev, uint8_t value)
 static inline int z_vrfy_ps2_read(const struct device *dev, uint8_t *value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, read));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(uint8_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(value, sizeof(uint8_t)));
 	return z_impl_ps2_read(dev, value);
 }
 #include <syscalls/ps2_read_mrsh.c>

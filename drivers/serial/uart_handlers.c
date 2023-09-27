@@ -28,7 +28,7 @@ static inline int z_vrfy_uart_poll_in(const struct device *dev,
 				      unsigned char *p_char)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_in));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(p_char, sizeof(unsigned char)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(p_char, sizeof(unsigned char)));
 	return z_impl_uart_poll_in(dev, p_char);
 }
 #include <syscalls/uart_poll_in_mrsh.c>
@@ -37,7 +37,7 @@ static inline int z_vrfy_uart_poll_in_u16(const struct device *dev,
 					  uint16_t *p_u16)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_in));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(p_u16, sizeof(uint16_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(p_u16, sizeof(uint16_t)));
 	return z_impl_uart_poll_in_u16(dev, p_u16);
 }
 #include <syscalls/uart_poll_in_u16_mrsh.c>
@@ -63,7 +63,7 @@ static inline int z_vrfy_uart_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, config_get));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cfg, sizeof(struct uart_config)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(cfg, sizeof(struct uart_config)));
 
 	return z_impl_uart_config_get(dev, cfg);
 }
@@ -73,7 +73,7 @@ static inline int z_vrfy_uart_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, config_get));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(cfg, sizeof(struct uart_config)));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(cfg, sizeof(struct uart_config)));
 
 	return z_impl_uart_configure(dev, cfg);
 }
@@ -91,7 +91,7 @@ static inline int z_vrfy_uart_tx(const struct device *dev, const uint8_t *buf,
 				 size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, tx));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, len));
+	Z_OOPS(K_SYSCALL_MEMORY_READ(buf, len));
 	return z_impl_uart_tx(dev, buf, len, timeout);
 }
 #include <syscalls/uart_tx_mrsh.c>
@@ -116,7 +116,7 @@ static inline int z_vrfy_uart_rx_enable(const struct device *dev,
 					size_t len, int32_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, rx_enable));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(buf, len));
 	return z_impl_uart_rx_enable(dev, buf, len, timeout);
 }
 #include <syscalls/uart_rx_enable_mrsh.c>
@@ -170,7 +170,7 @@ static inline int z_vrfy_uart_line_ctrl_get(const struct device *dev,
 					    uint32_t ctrl, uint32_t *val)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, line_ctrl_get));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(val, sizeof(uint32_t)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(val, sizeof(uint32_t)));
 	return z_impl_uart_line_ctrl_get((const struct device *)dev, ctrl,
 					 (uint32_t *)val);
 }

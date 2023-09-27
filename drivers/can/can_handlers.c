@@ -39,7 +39,7 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 					    uint32_t *rate)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(rate, sizeof(*rate)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(rate, sizeof(*rate)));
 
 	return z_impl_can_get_core_clock(dev, rate);
 }
@@ -49,8 +49,8 @@ static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 					     uint32_t *max_bitrate)
 {
 	/* Optional API function */
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(max_bitrate, sizeof(*max_bitrate)));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(max_bitrate, sizeof(*max_bitrate)));
 
 	return z_impl_can_get_max_bitrate(dev, max_bitrate);
 }
@@ -58,7 +58,7 @@ static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 
 static inline const struct can_timing *z_vrfy_can_get_timing_min(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_get_timing_min(dev);
 }
@@ -66,7 +66,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_min(const struct de
 
 static inline const struct can_timing *z_vrfy_can_get_timing_max(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_get_timing_max(dev);
 }
@@ -92,7 +92,7 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 
 static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_get_timing_data_min(dev);
 }
@@ -100,7 +100,7 @@ static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const stru
 
 static inline const struct can_timing *z_vrfy_can_get_timing_data_max(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_get_timing_data_max(dev);
 }
@@ -132,7 +132,7 @@ static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
 static inline int z_vrfy_can_get_max_filters(const struct device *dev, bool ide)
 {
 	/* Optional API function */
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	return z_impl_can_get_max_filters(dev, ide);
 }
@@ -141,7 +141,7 @@ static inline int z_vrfy_can_get_max_filters(const struct device *dev, bool ide)
 static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_capabilities));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cap, sizeof(*cap)));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(cap, sizeof(*cap)));
 
 	return z_impl_can_get_capabilities(dev, cap);
 }
@@ -202,7 +202,7 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 	struct can_filter filter_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, add_rx_filter));
-	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 	Z_OOPS(k_usermode_from_copy(&filter_copy, filter, sizeof(filter_copy)));
 
 	return z_impl_can_add_rx_filter_msgq(dev, msgq, &filter_copy);
@@ -223,11 +223,11 @@ static inline int z_vrfy_can_get_state(const struct device *dev, enum can_state 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_state));
 
 	if (state != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(state, sizeof(*state)));
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(state, sizeof(*state)));
 	}
 
 	if (err_cnt != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(err_cnt, sizeof(*err_cnt)));
+		Z_OOPS(K_SYSCALL_MEMORY_WRITE(err_cnt, sizeof(*err_cnt)));
 	}
 
 	return z_impl_can_get_state(dev, state, err_cnt);

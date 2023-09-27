@@ -189,7 +189,7 @@ void k_object_recycle(const void *obj);
  * will be safely handled and an error code returned.
  *
  * NOTE: Doesn't guarantee that user mode has actual access to this
- * string, you will need to still do a Z_SYSCALL_MEMORY_READ()
+ * string, you will need to still do a K_SYSCALL_MEMORY_READ()
  * with the obtained size value to guarantee this.
  *
  * @param src String to measure size of
@@ -346,7 +346,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *		read it
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_MEMORY(ptr, size, write) \
+#define K_SYSCALL_MEMORY(ptr, size, write) \
 	K_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
 			     "Memory region %p (size %zu) %s access denied", \
@@ -366,8 +366,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param size Size of the memory area
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_MEMORY_READ(ptr, size) \
-	Z_SYSCALL_MEMORY(ptr, size, 0)
+#define K_SYSCALL_MEMORY_READ(ptr, size) \
+	K_SYSCALL_MEMORY(ptr, size, 0)
 
 /**
  * @brief Runtime check that a user thread has write permission to a memory area
@@ -382,8 +382,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param size Size of the memory area
  * @param 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_MEMORY_WRITE(ptr, size) \
-	Z_SYSCALL_MEMORY(ptr, size, 1)
+#define K_SYSCALL_MEMORY_WRITE(ptr, size) \
+	K_SYSCALL_MEMORY(ptr, size, 1)
 
 #define K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
@@ -393,7 +393,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 							&product), \
 				     "%zux%zu array is too large", \
 				     (size_t)(nmemb), (size_t)(size)) ||  \
-			Z_SYSCALL_MEMORY(ptr, product, write); \
+			K_SYSCALL_MEMORY(ptr, product, write); \
 	})
 
 /**
@@ -462,7 +462,7 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param op Driver operation (e.g. manage_callback)
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_DRIVER_OP(ptr, api_name, op) \
+#define K_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
 		struct api_name *__device__ = (struct api_name *) \
 			((const struct device *)ptr)->api; \
@@ -490,10 +490,10 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param _api Expected driver API structure memory address
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
+#define K_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
 	({ \
 		const struct device *_dev = (const struct device *)_device; \
-		Z_SYSCALL_OBJ(_dev, _dtype) || \
+		K_SYSCALL_OBJ(_dev, _dtype) || \
 			K_SYSCALL_VERIFY_MSG(_dev->api == _api, \
 					     "API structure mismatch"); \
 	})
@@ -509,7 +509,7 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param type Expected kernel object type
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_OBJ(ptr, type) \
+#define K_SYSCALL_OBJ(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
 
 /**
@@ -523,7 +523,7 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @return 0 on success, nonzero on failure
  */
 
-#define Z_SYSCALL_OBJ_INIT(ptr, type) \
+#define K_SYSCALL_OBJ_INIT(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_ANY)
 
 /**
@@ -539,7 +539,7 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @return 0 on success, nonzero on failure
  */
 
-#define Z_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
+#define K_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
 
 #include <driver-validation.h>
