@@ -31,6 +31,15 @@ static inline int llext_seek(struct llext_loader *l, size_t pos)
 	return l->seek(l, pos);
 }
 
+static inline void *llext_peek(struct llext_loader *l, size_t pos)
+{
+	if (l->peek) {
+		return l->peek(l, pos);
+	}
+
+	return NULL;
+}
+
 static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
 sys_slist_t *llext_list(void)
