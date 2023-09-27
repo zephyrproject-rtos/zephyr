@@ -21,6 +21,14 @@ config USE_STM32_ASSERT
 	help
 	  Enable asserts in STM32Cube HAL and LL drivers.
 
+config SWJ_ANALOG_PRIORITY
+	int "SWJ DP port to analog routine initialization priority"
+	default 49
+	help
+	  Initialization priority of the routine within the PRE_KERNEL1 level.
+	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
+	  UART_INIT_PRIORITY.
+
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
