@@ -35,3 +35,4 @@ const char *addrstate2str(enum net_addr_state addr_state);
 void get_addresses(struct net_context *context,
 		   char addr_local[], int local_len,
 		   char addr_remote[], int remote_len);
+void events_enable(void);
