@@ -186,7 +186,8 @@ void k_thread_perms_all_clear(struct k_thread *thread);
  * Intended for thread objects upon thread exit, or for other kernel objects
  * that were released back to an object pool.
  *
- * @param object Address of the kernel object
+ * @param obj Address of the kernel object
+ *
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
@@ -207,7 +208,7 @@ void k_object_uninit(const void *obj);
  * The object will be marked as initialized and the calling thread
  * granted access to it.
  *
- * @param object Address of the kernel object
+ * @param obj Address of the kernel object
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
@@ -436,7 +437,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param 0 on success, nonzero on failure
+ * @return 0 on success, nonzero on failure
+ *
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
@@ -520,9 +522,11 @@ static inline int k_object_validation_check(struct k_object *ko,
  * Validates if the driver object is capable of performing a certain operation.
  *
  * @param ptr Untrusted device instance object pointer
- * @param api_struct Name of the driver API struct (e.g. gpio_driver_api)
+ * @param api_name Name of the driver API struct (e.g. gpio_driver_api)
  * @param op Driver operation (e.g. manage_callback)
+ *
  * @return 0 on success, nonzero on failure
+ *
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
