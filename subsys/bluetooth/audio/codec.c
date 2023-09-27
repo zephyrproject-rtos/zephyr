@@ -322,8 +322,8 @@ int bt_audio_codec_cfg_get_frame_duration_us(const struct bt_audio_codec_cfg *co
 	}
 }
 
-int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *codec_cfg,
-					       enum bt_audio_location *chan_allocation)
+int bt_audio_codec_cfg_get_chan_allocation(const struct bt_audio_codec_cfg *codec_cfg,
+					   enum bt_audio_location *chan_allocation)
 {
 	const uint8_t *data;
 	uint8_t data_len;
@@ -352,6 +352,23 @@ int bt_audio_codec_cfg_get_chan_allocation_val(const struct bt_audio_codec_cfg *
 	*chan_allocation = sys_get_le32(data);
 
 	return 0;
+}
+
+int bt_audio_codec_cfg_set_chan_allocation(struct bt_audio_codec_cfg *codec_cfg,
+					   enum bt_audio_location chan_allocation)
+{
+	uint32_t chan_allocation_u32;
+
+	if ((chan_allocation & BT_AUDIO_LOCATION_ANY) != chan_allocation) {
+		LOG_DBG("Invalid chan_allocation value: 0x%08X", chan_allocation);
+		return -EINVAL;
+	}
+
+	chan_allocation_u32 = sys_cpu_to_le32((uint32_t)chan_allocation);
+
+	return bt_audio_codec_cfg_set_val(codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+					  (const uint8_t *)&chan_allocation_u32,
+					  sizeof(chan_allocation_u32));
 }
 
 int bt_audio_codec_cfg_get_octets_per_frame(const struct bt_audio_codec_cfg *codec_cfg)
