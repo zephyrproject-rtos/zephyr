@@ -2127,45 +2127,6 @@ static int cmd_net_suspend(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_net_resume(const struct shell *sh, size_t argc,
-			  char *argv[])
-{
-#if defined(CONFIG_NET_POWER_MANAGEMENT)
-	if (argv[1]) {
-		struct net_if *iface = NULL;
-		const struct device *dev;
-		int idx;
-		int ret;
-
-		idx = get_iface_idx(sh, argv[1]);
-		if (idx < 0) {
-			return -ENOEXEC;
-		}
-
-		iface = net_if_get_by_index(idx);
-		if (!iface) {
-			PR_WARNING("No such interface in index %d\n", idx);
-			return -ENOEXEC;
-		}
-
-		dev = net_if_get_device(iface);
-
-		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
-		if (ret != 0) {
-			PR_INFO("Iface could not be resumed\n");
-		}
-
-	} else {
-		PR("Usage:\n");
-		PR("\tresume <iface index>\n");
-	}
-#else
-	PR_INFO("You need a network driver supporting Power Management.\n");
-#endif /* CONFIG_NET_POWER_MANAGEMENT */
-
-	return 0;
-}
-
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 static void websocket_context_cb(struct websocket_context *context,
 				 void *user_data)
@@ -2306,7 +2267,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_udp,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
-	SHELL_CMD(resume, NULL, "Resume a network interface", cmd_net_resume),
 	SHELL_CMD(route, &net_cmd_route, "Show network route.", cmd_net_route),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
