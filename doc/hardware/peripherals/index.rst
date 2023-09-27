@@ -56,5 +56,6 @@ Peripherals
    uart.rst
    usbc_vbus.rst
    tcpc.rst
+   tgpio.rst
    video.rst
    watchdog.rst
