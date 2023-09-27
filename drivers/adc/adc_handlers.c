@@ -14,7 +14,7 @@ static inline int z_vrfy_adc_channel_setup(const struct device *dev,
 	struct adc_channel_cfg channel_cfg;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_ADC(dev, channel_setup));
-	Z_OOPS(z_user_from_copy(&channel_cfg,
+	Z_OOPS(k_usermode_from_copy(&channel_cfg,
 				(struct adc_channel_cfg *)user_channel_cfg,
 				sizeof(struct adc_channel_cfg)));
 
@@ -27,13 +27,13 @@ static bool copy_sequence(struct adc_sequence *dst,
 			  struct adc_sequence_options *options,
 			  struct adc_sequence *src)
 {
-	if (z_user_from_copy(dst, src, sizeof(struct adc_sequence)) != 0) {
+	if (k_usermode_from_copy(dst, src, sizeof(struct adc_sequence)) != 0) {
 		printk("couldn't copy adc_sequence struct\n");
 		return false;
 	}
 
 	if (dst->options) {
-		if (z_user_from_copy(options, dst->options,
+		if (k_usermode_from_copy(options, dst->options,
 				sizeof(struct adc_sequence_options)) != 0) {
 			printk("couldn't copy adc_options struct\n");
 			return false;

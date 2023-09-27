@@ -307,11 +307,11 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
 
 	if (family == AF_INET) {
-		Z_OOPS(z_user_from_copy(&addr4, (const void *)src,
+		Z_OOPS(k_usermode_from_copy(&addr4, (const void *)src,
 					sizeof(addr4)));
 		addr = &addr4;
 	} else if (family == AF_INET6) {
-		Z_OOPS(z_user_from_copy(&addr6, (const void *)src,
+		Z_OOPS(k_usermode_from_copy(&addr6, (const void *)src,
 					sizeof(addr6)));
 		addr = &addr6;
 	} else {

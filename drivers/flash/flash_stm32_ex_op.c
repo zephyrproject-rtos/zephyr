@@ -36,7 +36,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 		struct flash_stm32_ex_op_sector_wp_in in_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, request,
+			Z_OOPS(k_usermode_from_copy(&in_copy, request,
 						sizeof(in_copy)));
 			request = &in_copy;
 		}
@@ -102,7 +102,7 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 	if (request != NULL) {
 #ifdef CONFIG_USERSPACE
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&copy, request, sizeof(copy)));
+			Z_OOPS(k_usermode_from_copy(&copy, request, sizeof(copy)));
 			request = &copy;
 		}
 #endif

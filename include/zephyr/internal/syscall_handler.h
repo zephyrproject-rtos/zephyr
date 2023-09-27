@@ -236,7 +236,7 @@ void *k_usermode_alloc_from_copy(const void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-int z_user_from_copy(void *dst, const void *src, size_t size);
+int k_usermode_from_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy data to user mode

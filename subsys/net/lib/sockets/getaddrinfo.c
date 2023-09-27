@@ -281,7 +281,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	uint32_t ret;
 
 	if (hints) {
-		Z_OOPS(z_user_from_copy(&hints_copy, (void *)hints,
+		Z_OOPS(k_usermode_from_copy(&hints_copy, (void *)hints,
 					sizeof(hints_copy)));
 	}
 	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));

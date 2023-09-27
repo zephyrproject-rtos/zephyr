@@ -39,7 +39,7 @@ static inline int z_vrfy_peci_transfer(const struct device *dev,
 	struct peci_msg msg_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, transfer));
-	Z_OOPS(z_user_from_copy(&msg_copy, msg, sizeof(*msg)));
+	Z_OOPS(k_usermode_from_copy(&msg_copy, msg, sizeof(*msg)));
 
 	return z_impl_peci_transfer(dev, &msg_copy);
 }

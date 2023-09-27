@@ -14,7 +14,7 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 	int err;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
-	Z_OOPS(z_user_from_copy(&res_copy, res, sizeof(res_copy)));
+	Z_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
 
 	err = z_impl_can_calc_timing(dev, &res_copy, bitrate, sample_pnt);
 	Z_OOPS(z_user_to_copy(res, &res_copy, sizeof(*res)));
@@ -29,7 +29,7 @@ static inline int z_vrfy_can_set_timing(const struct device *dev,
 	struct can_timing timing_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
-	Z_OOPS(z_user_from_copy(&timing_copy, timing, sizeof(timing_copy)));
+	Z_OOPS(k_usermode_from_copy(&timing_copy, timing, sizeof(timing_copy)));
 
 	return z_impl_can_set_timing(dev, &timing_copy);
 }
@@ -81,7 +81,7 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 	int err;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
-	Z_OOPS(z_user_from_copy(&res_copy, res, sizeof(res_copy)));
+	Z_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
 
 	err = z_impl_can_calc_timing_data(dev, &res_copy, bitrate, sample_pnt);
 	Z_OOPS(z_user_to_copy(res, &res_copy, sizeof(*res)));
@@ -112,7 +112,7 @@ static inline int z_vrfy_can_set_timing_data(const struct device *dev,
 	struct can_timing timing_data_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing_data));
-	Z_OOPS(z_user_from_copy(&timing_data_copy, timing_data, sizeof(timing_data_copy)));
+	Z_OOPS(k_usermode_from_copy(&timing_data_copy, timing_data, sizeof(timing_data_copy)));
 
 	return z_impl_can_set_timing_data(dev, &timing_data_copy);
 }
@@ -188,7 +188,7 @@ static inline int z_vrfy_can_send(const struct device *dev,
 	struct can_frame frame_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
-	Z_OOPS(z_user_from_copy(&frame_copy, frame, sizeof(frame_copy)));
+	Z_OOPS(k_usermode_from_copy(&frame_copy, frame, sizeof(frame_copy)));
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(callback == NULL, "callbacks may not be set from user mode"));
 
 	return z_impl_can_send(dev, &frame_copy, timeout, callback, user_data);
@@ -203,7 +203,7 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, add_rx_filter));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
-	Z_OOPS(z_user_from_copy(&filter_copy, filter, sizeof(filter_copy)));
+	Z_OOPS(k_usermode_from_copy(&filter_copy, filter, sizeof(filter_copy)));
 
 	return z_impl_can_add_rx_filter_msgq(dev, msgq, &filter_copy);
 }

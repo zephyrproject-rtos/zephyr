@@ -30,7 +30,7 @@ static inline int z_vrfy_charger_set_prop(const struct device *dev, const charge
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CHARGER(dev, set_property));
 
-	Z_OOPS(z_user_from_copy(&k_val, val, sizeof(union charger_propval)));
+	Z_OOPS(k_usermode_from_copy(&k_val, val, sizeof(union charger_propval)));
 
 	return z_impl_charger_set_prop(dev, prop, &k_val);
 }
