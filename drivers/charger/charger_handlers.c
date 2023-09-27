@@ -16,7 +16,7 @@ static inline int z_vrfy_charger_get_prop(const struct device *dev, const charge
 
 	int ret = z_impl_charger_get_prop(dev, prop, &k_val);
 
-	Z_OOPS(z_user_to_copy(val, &k_val, sizeof(union charger_propval)));
+	Z_OOPS(k_usermode_to_copy(val, &k_val, sizeof(union charger_propval)));
 
 	return ret;
 }
