@@ -287,7 +287,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));
 
 	if (service) {
-		service_copy = z_user_string_alloc_copy((char *)service, 64);
+		service_copy = k_usermode_string_alloc_copy((char *)service, 64);
 		if (!service_copy) {
 			ret = DNS_EAI_MEMORY;
 			goto out;
@@ -295,7 +295,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	}
 
 	if (host) {
-		host_copy = z_user_string_alloc_copy((char *)host, 64);
+		host_copy = k_usermode_string_alloc_copy((char *)host, 64);
 		if (!host_copy) {
 			ret = DNS_EAI_MEMORY;
 			goto out;

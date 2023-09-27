@@ -17,7 +17,7 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 	Z_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
 
 	err = z_impl_can_calc_timing(dev, &res_copy, bitrate, sample_pnt);
-	Z_OOPS(z_user_to_copy(res, &res_copy, sizeof(*res)));
+	Z_OOPS(k_usermode_to_copy(res, &res_copy, sizeof(*res)));
 
 	return err;
 }
@@ -84,7 +84,7 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 	Z_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
 
 	err = z_impl_can_calc_timing_data(dev, &res_copy, bitrate, sample_pnt);
-	Z_OOPS(z_user_to_copy(res, &res_copy, sizeof(*res)));
+	Z_OOPS(k_usermode_to_copy(res, &res_copy, sizeof(*res)));
 
 	return err;
 }
