@@ -108,6 +108,16 @@ Required changes
     to a smaller, but inexact conversion algorithm. This requires building
     Picolibc as a module.
 
+* The CAN controller timing API functions :c:func:`can_set_timing` and :c:func:`can_set_timing_data`
+  no longer fallback to the (Re-)Synchronization Jump Width (SJW) value set in the devicetree
+  properties for the given CAN controller upon encountering an SJW value corresponding to
+  ``CAN_SJW_NO_CHANGE`` (which is no longer available). The caller will therefore need to fill in
+  the ``sjw`` field in :c:struct:`can_timing`. To aid in this, the :c:func:`can_calc_timing` and
+  :c:func:`can_calc_timing_data` functions now automatically calculate a suitable SJW. The
+  calculated SJW can be overwritten by the caller if needed. The CAN controller API functions
+  :c:func:`can_set_bitrate` and :c:func:`can_set_bitrate_data` now also automatically calculate a
+  suitable SJW, but their SJW cannot be overwritten by the caller.
+
 Recommended Changes
 *******************
 
@@ -151,3 +161,15 @@ Recommended Changes
   will be removed in future releases. Note that these changes do not apply to
   initialization levels used in the context of the ``init.h`` API,
   e.g. :c:macro:`SYS_INIT`.
+
+* The following CAN controller devicetree properties are now deprecated in favor specifying the
+  initial CAN bitrate using the ``bus-speed``, ``sample-point``, ``bus-speed-data``, and
+  ``sample-point-data`` properties:
+  * ``sjw``
+  * ``prop-seg``
+  * ``phase-seg1``
+  * ``phase-seg1``
+  * ``sjw-data``
+  * ``prop-seg-data``
+  * ``phase-seg1-data``
+  * ``phase-seg1-data``
