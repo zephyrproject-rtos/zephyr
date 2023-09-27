@@ -89,8 +89,8 @@ int k_object_validate(struct k_object *ko, enum k_objects otype,
  * @param ko If retval=-EPERM, struct k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-void z_dump_object_error(int retval, const void *obj,
-			struct k_object *ko, enum k_objects otype);
+void k_object_dump_error(int retval, const void *obj,
+			 struct k_object *ko, enum k_objects otype);
 
 /**
  * Kernel object validation function
@@ -437,7 +437,7 @@ static inline int k_object_validation_check(struct k_object *ko,
 
 #ifdef CONFIG_LOG
 	if (ret != 0) {
-		z_dump_object_error(ret, obj, ko, otype);
+		k_object_dump_error(ret, obj, ko, otype);
 	}
 #else
 	ARG_UNUSED(obj);

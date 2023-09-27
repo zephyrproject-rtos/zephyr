@@ -661,7 +661,7 @@ static void dump_permission_error(struct k_object *ko)
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
-void z_dump_object_error(int retval, const void *obj, struct k_object *ko,
+void k_object_dump_error(int retval, const void *obj, struct k_object *ko,
 			enum k_objects otype)
 {
 	switch (retval) {
