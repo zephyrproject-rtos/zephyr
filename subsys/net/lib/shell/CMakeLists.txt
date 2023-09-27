@@ -27,6 +27,7 @@ zephyr_library_sources(stacks.c)
 zephyr_library_sources(stats.c)
 zephyr_library_sources(suspend.c)
 zephyr_library_sources(tcp.c)
+zephyr_library_sources(udp.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
