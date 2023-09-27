@@ -23,6 +23,7 @@ zephyr_library_sources(pkt.c)
 zephyr_library_sources(ppp.c)
 zephyr_library_sources(resume.c)
 zephyr_library_sources(route.c)
+zephyr_library_sources(stacks.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
