@@ -190,7 +190,7 @@ struct adc_stm32_data {
 	uint32_t channels;
 	uint8_t channel_count;
 	uint8_t samples_count;
-	int8_t acq_time_index;
+	int8_t acq_time_index[2];
 
 #ifdef CONFIG_ADC_STM32_DMA
 	volatile int dma_error;
@@ -1081,7 +1081,8 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	adc_stm32_disable(adc);
 
 	/* Reset acquisition time used for the sequence */
-	data->acq_time_index = -1;
+	data->acq_time_index[0] = -1;
+	data->acq_time_index[1] = -1;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Reset channel preselection register */
@@ -1120,7 +1121,7 @@ static int adc_stm32_read_async(const struct device *dev,
 }
 #endif
 
-static int adc_stm32_check_acq_time(const struct device *dev, uint16_t acq_time)
+static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_time)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
@@ -1140,16 +1141,24 @@ static int adc_stm32_check_acq_time(const struct device *dev, uint16_t acq_time)
 		}
 	}
 
-	LOG_ERR("Conversion time not supported.");
+	LOG_ERR("Sampling time value not supported.");
 	return -EINVAL;
 }
 
-static int adc_stm32_setup_speed(const struct device *dev, uint8_t id,
-				  uint8_t acq_time_index)
+static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
+					 uint16_t acq_time)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
+	struct adc_stm32_data *data = dev->data;
+
+	int acq_time_index;
+
+	acq_time_index = adc_stm32_sampling_time_check(dev, acq_time);
+	if (acq_time_index < 0) {
+		return acq_time_index;
+	}
 
 	/*
 	 * For all series we use the fact that the macros LL_ADC_SAMPLINGTIME_*
@@ -1160,25 +1169,60 @@ static int adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 	switch (config->num_sampling_time_common_channels) {
 	case 0:
 #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
+		ARG_UNUSED(data);
 		LL_ADC_SetChannelSamplingTime(adc,
-			__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
-			acq_time_index);
+					      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+					      (uint32_t)acq_time_index);
 #endif
 		break;
 	case 1:
 #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(1)
-		LL_ADC_SetSamplingTimeCommonChannels(adc,
-			acq_time_index);
+		/* Only one sampling time can be selected for all channels.
+		 * The first one we find is used, all others must match.
+		 */
+		if ((data->acq_time_index[0] == -1) ||
+			(acq_time_index == data->acq_time_index[0])) {
+			/* Reg is empty or value matches */
+			data->acq_time_index[0] = acq_time_index;
+			LL_ADC_SetSamplingTimeCommonChannels(adc,
+							     (uint32_t)acq_time_index);
+		} else {
+			/* Reg is used and value does not match */
+			LOG_ERR("Multiple sampling times not supported");
+			return -EINVAL;
+		}
 #endif
 		break;
 	case 2:
 #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(2)
-		LL_ADC_SetChannelSamplingTime(adc,
-			__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
-			LL_ADC_SAMPLINGTIME_COMMON_1);
-		LL_ADC_SetSamplingTimeCommonChannels(adc,
-			LL_ADC_SAMPLINGTIME_COMMON_1,
-			acq_time_index);
+		/* Two different sampling times can be selected for all channels.
+		 * The first two we find are used, all others must match either one.
+		 */
+		if ((data->acq_time_index[0] == -1) ||
+			(acq_time_index == data->acq_time_index[0])) {
+			/* 1st reg is empty or value matches 1st reg */
+			data->acq_time_index[0] = acq_time_index;
+			LL_ADC_SetChannelSamplingTime(adc,
+						      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+						      LL_ADC_SAMPLINGTIME_COMMON_1);
+			LL_ADC_SetSamplingTimeCommonChannels(adc,
+							     LL_ADC_SAMPLINGTIME_COMMON_1,
+							     (uint32_t)acq_time_index);
+		} else if ((data->acq_time_index[1] == -1) ||
+			(acq_time_index == data->acq_time_index[1])) {
+			/* 2nd reg is empty or value matches 2nd reg */
+			data->acq_time_index[1] = acq_time_index;
+			LL_ADC_SetChannelSamplingTime(adc,
+						      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+						      LL_ADC_SAMPLINGTIME_COMMON_2);
+			LL_ADC_SetSamplingTimeCommonChannels(adc,
+							     LL_ADC_SAMPLINGTIME_COMMON_2,
+							     (uint32_t)acq_time_index);
+		} else {
+			/* Both regs are used, value does not match any of them */
+			LOG_ERR("Only two different sampling times supported");
+			return -EINVAL;
+		}
 #endif
 		break;
 	default:
@@ -1191,32 +1235,6 @@ static int adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
-
-	struct adc_stm32_data *data = dev->data;
-	int acq_time_index;
-
-	acq_time_index = adc_stm32_check_acq_time(dev,
-				channel_cfg->acquisition_time);
-	if (acq_time_index < 0) {
-		return acq_time_index;
-	}
-	if (config->num_sampling_time_common_channels) {
-		if (data->acq_time_index == -1) {
-			data->acq_time_index = acq_time_index;
-		} else {
-			/*
-			 * All families that use common channel must have
-			 * identical acquisition time.
-			 */
-			if (acq_time_index != data->acq_time_index) {
-				LOG_ERR("Multiple sampling times not supported");
-				return -EINVAL;
-			}
-		}
-	}
-
 	if (channel_cfg->differential) {
 		LOG_ERR("Differential channels are not supported");
 		return -EINVAL;
@@ -1232,8 +1250,8 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (adc_stm32_setup_speed(dev, channel_cfg->channel_id,
-				  acq_time_index) != 0) {
+	if (adc_stm32_sampling_time_setup(dev, channel_cfg->channel_id,
+					  channel_cfg->acquisition_time) != 0) {
 		LOG_ERR("Invalid sampling time");
 		return -EINVAL;
 	}
@@ -1320,12 +1338,13 @@ static int adc_stm32_init(const struct device *dev)
 	 * For series that use common channels for sampling time, all
 	 * conversion time for all channels on one ADC instance has to
 	 * be the same.
-	 * For series that use two common channels, currently only one
-	 * of the two available common channel conversion times is used.
-	 * This additional variable is for checking if the conversion time
-	 * selection of all channels on one ADC instance is the same.
+	 * For series that use two common channels, there can be up to two
+	 * conversion times selected for all channels in a sequence.
+	 * This additional table is for checking that the conversion time
+	 * selection of all channels respects these requirements.
 	 */
-	data->acq_time_index = -1;
+	data->acq_time_index[0] = -1;
+	data->acq_time_index[1] = -1;
 
 	adc_stm32_set_clock(dev);
 
