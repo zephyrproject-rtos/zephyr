@@ -427,7 +427,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
-static inline int z_obj_validation_check(struct k_object *ko,
+static inline int k_object_validation_check(struct k_object *ko,
 					 const void *obj,
 					 enum k_objects otype,
 					 enum _obj_init_check init)
@@ -448,7 +448,7 @@ static inline int z_obj_validation_check(struct k_object *ko,
 }
 
 #define K_SYSCALL_IS_OBJ(ptr, type, init) \
-	K_SYSCALL_VERIFY_MSG(z_obj_validation_check(			\
+	K_SYSCALL_VERIFY_MSG(k_object_validation_check(			\
 				     z_object_find((const void *)ptr),	\
 				     (const void *)ptr,			\
 				     type, init) == 0, "access denied")
