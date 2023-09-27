@@ -345,7 +345,11 @@ config SHELL_TELNET_SUPPORT_COMMAND
 	help
 	  Current support is so limited it's not interesting to enable it.
 	  However, if proven to be needed at some point, it will be possible
-	  to extend such support.
+	  to extend such support. It does have support for echo and "character
+	  at a time" mode, which enable the history and line-editing features
+	  of the shell.
+	  IMPORTANT: This will increase network usage as a TCP packet will be
+	  sent each time a character is typed in the telnet client.
 
 module = SHELL_TELNET
 default-timeout = 100
