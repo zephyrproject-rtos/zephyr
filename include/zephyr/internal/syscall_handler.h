@@ -336,6 +336,17 @@ char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
  */
 int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 
+/**
+ * @brief Induce a kernel oops
+ *
+ * This macro can be used to induce a kernel oops which will kill the
+ * calling thread.
+ *
+ * @param expr Expression to be evaluated
+ *
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
 #define K_OOPS(expr) \
 	do { \
 		if (expr) { \
