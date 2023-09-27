@@ -1,0 +1,14 @@
+sample:
+  description: Loadable extensions with shell sample
+  name: Extension loader shell
+tests:
+  sample.llext.shell:
+    tags: shell llext
+    harness: keyboard
+    filter: not CONFIG_CPU_HAS_MMU
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_ARM_MPU=n
+    # Broken platforms
+    platform_exclude:
+      - nuvoton_pfm_m487 # See #63167
