@@ -46,7 +46,7 @@ enum _obj_init_check {
  * @return whether the current context is handling a syscall for a user
  *         mode thread
  */
-static inline bool z_is_in_user_syscall(void)
+static inline bool k_is_in_user_syscall(void)
 {
 	/* This gets set on entry to the syscall's generasted z_mrsh
 	 * function and then cleared on exit. This code path is only
