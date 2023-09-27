@@ -32,14 +32,14 @@ static struct k_object *validate_kernel_object(const void *obj,
 	return ko;
 }
 
-static ALWAYS_INLINE struct z_object *validate_any_object(const void *obj)
+static ALWAYS_INLINE struct k_object *validate_any_object(const void *obj)
 {
 	return validate_kernel_object(obj, K_OBJ_ANY, _OBJ_INIT_ANY);
 }
 
 bool k_object_is_valid(const void *obj, enum k_objects otype)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 
 	ko = validate_kernel_object(obj, otype, _OBJ_INIT_TRUE);
 
