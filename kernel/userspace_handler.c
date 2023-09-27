@@ -62,7 +62,7 @@ static inline void z_vrfy_k_object_access_grant(const void *object,
 	ko = validate_any_object(object);
 	Z_OOPS(K_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
 				    object));
-	z_thread_perms_set(ko, thread);
+	k_thread_perms_set(ko, thread);
 }
 #include <syscalls/k_object_access_grant_mrsh.c>
 
