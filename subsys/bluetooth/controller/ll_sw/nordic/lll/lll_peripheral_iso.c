@@ -238,7 +238,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(cis_lll->tx_pwr_lvl);
+	radio_tx_power_set(conn_lll->tx_pwr_lvl);
 #else /* !CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif /* !CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
