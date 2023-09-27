@@ -697,6 +697,19 @@ int bt_audio_codec_cfg_set_octets_per_frame(struct bt_audio_codec_cfg *codec_cfg
 int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg *codec_cfg,
 						bool fallback_to_default);
 
+/**
+ * @brief Set the frame blocks per SDU of a codec configuration.
+ *
+ * @param codec_cfg    The codec configuration to set data for.
+ * @param frame_blocks The frame blocks per SDU to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_frame_blocks_per_sdu(struct bt_audio_codec_cfg *codec_cfg,
+						uint8_t frame_blocks);
+
 /** @brief Lookup a specific codec configuration value
  *
  *  @param[in] codec_cfg The codec data to search in.
