@@ -81,7 +81,7 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 {
 	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(sqes, sqe_count, sizeof(struct rtio_sqe)));
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(sqes, sqe_count, sizeof(struct rtio_sqe)));
 	struct rtio_sqe *sqe;
 	uint32_t acquirable = rtio_sqe_acquirable(r);
 
@@ -116,7 +116,7 @@ static inline int z_vrfy_rtio_cqe_copy_out(struct rtio *r,
 {
 	Z_OOPS(Z_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(cqes, cqe_count, sizeof(struct rtio_cqe)));
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(cqes, cqe_count, sizeof(struct rtio_cqe)));
 
 	return z_impl_rtio_cqe_copy_out(r, cqes, cqe_count, timeout);
 }
