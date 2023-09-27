@@ -41,7 +41,7 @@ static bool copy_sequence(struct adc_sequence *dst,
 		dst->options = options;
 	}
 
-	if (Z_SYSCALL_MEMORY_WRITE(dst->buffer, dst->buffer_size) != 0) {
+	if (K_SYSCALL_MEMORY_WRITE(dst->buffer, dst->buffer_size) != 0) {
 		printk("no access to buffer memory\n");
 		return false;
 	}
@@ -84,7 +84,7 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
 		Z_OOPS(K_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
 			    "ADC sequence callbacks forbidden from user mode"));
 	}
-	Z_OOPS(Z_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
+	Z_OOPS(K_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
 
 	return z_impl_adc_read_async((const struct device *)dev, &sequence,
 				     (struct k_poll_signal *)async);

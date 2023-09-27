@@ -15,7 +15,7 @@ static inline uint32_t z_vrfy_sys_rand32_get(void)
 
 static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
 
 	z_impl_sys_rand_get(dst, len);
 }
@@ -24,7 +24,7 @@ static inline void z_vrfy_sys_rand_get(void *dst, size_t len)
 #ifdef CONFIG_CSPRNG_ENABLED
 static inline int z_vrfy_sys_csrand_get(void *dst, size_t len)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, len));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(dst, len));
 
 	return z_impl_sys_csrand_get(dst, len);
 }

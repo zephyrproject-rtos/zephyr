@@ -811,7 +811,7 @@ void *k_usermode_alloc_from_copy(const void *src, size_t size)
 	void *dst = NULL;
 
 	/* Does the caller in user mode have access to read this memory? */
-	if (Z_SYSCALL_MEMORY_READ(src, size)) {
+	if (K_SYSCALL_MEMORY_READ(src, size)) {
 		goto out_err;
 	}
 
@@ -831,8 +831,8 @@ static int user_copy(void *dst, const void *src, size_t size, bool to_user)
 	int ret = EFAULT;
 
 	/* Does the caller in user mode have access to this memory? */
-	if (to_user ? Z_SYSCALL_MEMORY_WRITE(dst, size) :
-			Z_SYSCALL_MEMORY_READ(src, size)) {
+	if (to_user ? K_SYSCALL_MEMORY_WRITE(dst, size) :
+			K_SYSCALL_MEMORY_READ(src, size)) {
 		goto out_err;
 	}
 

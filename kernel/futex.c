@@ -54,7 +54,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 
 static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
-	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
+	if (K_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;
 	}
 
@@ -92,7 +92,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
 				      k_timeout_t timeout)
 {
-	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
+	if (K_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
 		return -EACCES;
 	}
 

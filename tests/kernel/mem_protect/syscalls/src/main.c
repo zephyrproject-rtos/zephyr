@@ -55,7 +55,7 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 	size_t ret;
 
 	ret = z_impl_string_nlen((char *)src, maxlen, &err_copy);
-	if (!err_copy && Z_SYSCALL_MEMORY_READ(src, ret + 1)) {
+	if (!err_copy && K_SYSCALL_MEMORY_READ(src, ret + 1)) {
 		err_copy = -1;
 	}
 

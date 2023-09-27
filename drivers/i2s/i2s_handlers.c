@@ -26,7 +26,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	/* Check that the k_mem_slab provided is a valid pointer and that
 	 * the caller has permission on it
 	 */
-	if (Z_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
+	if (K_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
 		goto out;
 	}
 

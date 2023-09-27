@@ -492,7 +492,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
 	k_object_access_grant(&kobject_sem, &uninit_thread);
 	k_object_access_revoke(&kobject_sem, &uninit_thread);
 
-	zassert_not_equal(Z_SYSCALL_OBJ(&uninit_thread, K_OBJ_THREAD), 0,
+	zassert_not_equal(K_SYSCALL_OBJ(&uninit_thread, K_OBJ_THREAD), 0,
 			  "Access granted/revoked to invalid thread k_object");
 }
 

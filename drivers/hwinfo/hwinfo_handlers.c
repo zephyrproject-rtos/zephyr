@@ -9,7 +9,7 @@
 
 ssize_t z_vrfy_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buffer, length));
+	Z_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, length));
 
 	return z_impl_hwinfo_get_device_id((uint8_t *)buffer, (size_t)length);
 }
