@@ -1879,7 +1879,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 static bool thread_obj_validate(struct k_thread *thread)
 {
 	struct k_object *ko = k_object_find(thread);
-	int ret = z_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
+	int ret = k_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
 
 	switch (ret) {
 	case 0:
