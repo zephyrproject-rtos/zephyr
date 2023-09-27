@@ -21,7 +21,7 @@ static struct k_object *validate_kernel_object(const void *obj,
 	/* This can be any kernel object and it doesn't have to be
 	 * initialized
 	 */
-	ret = z_object_validate(ko, otype, init);
+	ret = k_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_ANY);
 	if (ret != 0) {
 #ifdef CONFIG_LOG
 		z_dump_object_error(ret, obj, ko, otype);
