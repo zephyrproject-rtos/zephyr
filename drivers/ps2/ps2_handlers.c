@@ -11,7 +11,7 @@ static inline int z_vrfy_ps2_config(const struct device *dev,
 				    ps2_callback_t callback_isr)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, config));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == NULL,
+	Z_OOPS(K_SYSCALL_VERIFY_MSG(callback_isr == NULL,
 				    "callback not be set from user mode"));
 	return z_impl_ps2_config(dev, callback_isr);
 }
