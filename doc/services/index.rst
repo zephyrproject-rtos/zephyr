@@ -16,6 +16,7 @@ OS Services
    formatted_output.rst
    input/index.rst
    ipc/index.rst
+   lw_sched/index.rst
    llext/index.rst
    logging/index.rst
    tracing/index.rst
