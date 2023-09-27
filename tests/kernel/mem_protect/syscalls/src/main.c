@@ -410,7 +410,7 @@ ZTEST(syscalls, test_syscall_torture)
 
 bool z_impl_syscall_context(void)
 {
-	return z_is_in_user_syscall();
+	return k_is_in_user_syscall();
 }
 
 static inline bool z_vrfy_syscall_context(void)
@@ -433,7 +433,7 @@ void test_syscall_context_user(void *p1, void *p2, void *p3)
 ZTEST(syscalls, test_syscall_context)
 {
 	/* We're a regular supervisor thread. */
-	zassert_false(z_is_in_user_syscall(),
+	zassert_false(k_is_in_user_syscall(),
 		      "reported in user syscall when in supv. thread ctx");
 
 	/* Make a system call from supervisor mode. The check in the

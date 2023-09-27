@@ -78,7 +78,7 @@ static inline void *get_sock_vtable(int sock,
 				      lock);
 
 #ifdef CONFIG_USERSPACE
-	if (ctx != NULL && z_is_in_user_syscall()) {
+	if (ctx != NULL && k_is_in_user_syscall()) {
 		if (!k_object_is_valid(ctx, K_OBJ_NET_SOCKET)) {
 			/* Invalidate the context, the caller doesn't have
 			 * sufficient permission or there was some other
