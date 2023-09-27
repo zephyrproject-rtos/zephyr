@@ -320,7 +320,7 @@ Several macros exist to validate arguments:
   macro can be used by itself, it's mostly a building block for macros
   that are automatically generated for every driver subsystem.  For
   instance, to validate the GPIO driver, one could use the
-  :c:macro:`Z_SYSCALL_DRIVER_GPIO()` macro.
+  :c:macro:`K_SYSCALL_DRIVER_GPIO()` macro.
 
 * :c:macro:`K_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
   a provided pointer is a valid instance of a specific device driver, that
@@ -572,7 +572,7 @@ conventions are as follows:
    overflowed.
 
 #. Most system calls take kernel object pointers as an argument, checked either
-   with one of the ``K_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
+   with one of the ``K_SYSCALL_OBJ`` functions,  ``K_SYSCALL_DRIVER_nnnnn``, or
    manually using :c:func:`k_object_validate()`. These can fail for a variety
    of reasons: missing driver API, bad kernel object pointer, wrong kernel
    object type, or improper initialization state. These issues should always
