@@ -66,21 +66,40 @@
 		}                                                              \
 	} while (0)
 
-#define ASSERT_TRUE(cond, ...)                                                 \
+#define ASSERT_TRUE(cond)                                                      \
 	do {                                                                   \
 		if (!(cond)) {                                                 \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
-				#cond " is false.", ##__VA_ARGS__);             \
+				#cond " is false.\n");                         \
 		}                                                              \
 	} while (0)
 
-#define ASSERT_FALSE(cond, ...)                                                \
+#define ASSERT_TRUE_MSG(cond, fmt, ...)                                        \
+	do {                                                                   \
+		if (!(cond)) {                                                 \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " is false. " fmt, ##__VA_ARGS__);       \
+		}                                                              \
+	} while (0)
+
+
+#define ASSERT_FALSE(cond)                                                     \
 	do {                                                                   \
 		if (cond) {                                                    \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
-				#cond " is true.", ##__VA_ARGS__);             \
+				#cond " is true.\n");                          \
+		}                                                              \
+	} while (0)
+
+#define ASSERT_FALSE_MSG(cond, fmt, ...)                                       \
+	do {                                                                   \
+		if (cond) {                                                    \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " is true. " fmt, ##__VA_ARGS__);        \
 		}                                                              \
 	} while (0)
 
