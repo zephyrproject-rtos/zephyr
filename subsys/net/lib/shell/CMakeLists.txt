@@ -16,6 +16,7 @@ zephyr_library_sources(gptp.c)
 zephyr_library_sources(iface.c)
 zephyr_library_sources(ipv4.c)
 zephyr_library_sources(ipv6.c)
+zephyr_library_sources(mem.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
