@@ -77,7 +77,7 @@ static inline unsigned int gpio_sifive_pin_irq(unsigned int base_irq, int pin)
 	if (level == 1) {
 		pin_irq = base_irq + pin;
 	} else if (level == 2) {
-		pin_irq = base_irq + (pin << 8);
+		pin_irq = base_irq + (pin << CONFIG_1ST_LEVEL_INTERRUPT_BITS);
 	}
 
 	return pin_irq;
@@ -104,7 +104,8 @@ static void gpio_sifive_irq_handler(const struct device *dev)
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
 	/* Calculate pin and mask from base level 2 line */
-	uint8_t pin = 1 + (riscv_plic_get_irq() - (uint8_t)(cfg->gpio_irq_base >> 8));
+	uint8_t pin = 1 + (riscv_plic_get_irq() -
+			   (uint8_t)(cfg->gpio_irq_base >> CONFIG_1ST_LEVEL_INTERRUPT_BITS));
 
 	/* This peripheral tracks each condition separately: a
 	 * transition from low to high will mark the pending bit for
