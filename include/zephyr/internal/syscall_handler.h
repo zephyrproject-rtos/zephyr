@@ -328,7 +328,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *             oops. A stringified version of this expression will be printed.
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_VERIFY(expr) K_SYSCALL_VERIFY_MSG(expr, #expr)
+#define K_SYSCALL_VERIFY(expr) K_SYSCALL_VERIFY_MSG(expr, #expr)
 
 /**
  * @brief Runtime check that a user thread has read and/or write permission to
