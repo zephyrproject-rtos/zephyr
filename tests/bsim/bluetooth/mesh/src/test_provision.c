@@ -565,7 +565,7 @@ static void node_configure_and_reset(void)
 					  BT_MESH_MODEL_ID_HEALTH_SRV, &healthpub,
 					  &status));
 	ASSERT_EQUAL(0, status);
-	ASSERT_TRUE(healthpub.addr == BT_MESH_ADDR_UNASSIGNED, "Pub not cleared");
+	ASSERT_TRUE_MSG(healthpub.addr == BT_MESH_ADDR_UNASSIGNED, "Pub not cleared\n");
 
 	/* Set pub and sub to check that they are reset */
 	healthpub.addr = 0xc001;

@@ -601,8 +601,8 @@ static void test_dist_dfu_slot_create(void)
 	size_t metadata_len = 4;
 	int err, i;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
@@ -613,7 +613,7 @@ static void test_dist_dfu_slot_create(void)
 		metadata[0] = i;
 		slot[i] = slot_reserve_and_set(size, fwid, fwid_len, metadata, metadata_len);
 
-		ASSERT_FALSE(slot[i] == NULL, "Failed to add slot");
+		ASSERT_FALSE_MSG(slot[i] == NULL, "Failed to add slot\n");
 
 		if (i > 0) {
 			/* All but first slot are committed */
@@ -668,8 +668,8 @@ static void test_dist_dfu_slot_create_recover(void)
 	size_t metadata_len = 4;
 	int i, idx;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
@@ -698,8 +698,8 @@ static void check_delete_all(void)
 	const struct bt_mesh_dfu_slot *slot;
 	size_t slot_count;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	slot_count = bt_mesh_dfu_slot_foreach(NULL, NULL);
 	ASSERT_EQUAL(0, slot_count);
@@ -712,8 +712,8 @@ static void check_delete_all(void)
 
 static void test_dist_dfu_slot_delete_all(void)
 {
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
@@ -763,8 +763,8 @@ static void test_dist_dfu_slot_idempotency(void)
 	size_t fwid_len = 4;
 	struct bt_mesh_dfu_slot *slot;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 1,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 1");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 1,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 1\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);

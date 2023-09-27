@@ -77,13 +77,13 @@ static int blob_chunk_wr(const struct bt_mesh_blob_io *io,
 			 const struct bt_mesh_blob_chunk *chunk)
 {
 	partial_block += chunk->size;
-	ASSERT_TRUE(partial_block <= block->size, "Received block is too large");
+	ASSERT_TRUE_MSG(partial_block <= block->size, "Received block is too large\n");
 
 
 	if (partial_block == block->size) {
 		partial_block = 0;
-		ASSERT_FALSE(atomic_test_and_set_bit(block_bitfield, block->number),
-			     "Received duplicate block");
+		ASSERT_FALSE_MSG(atomic_test_and_set_bit(block_bitfield, block->number),
+				 "Received duplicate block\n");
 	}
 
 	if (atomic_test_bit(block_bitfield, 0)) {
