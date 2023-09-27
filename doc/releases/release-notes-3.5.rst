@@ -374,6 +374,10 @@ Libraries / Subsystems
     operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
     because we can avoid extra copy of data from card bffer to read/prog buffer.
 
+* Retention
+
+  * Added the :ref:`blinfo_api` subsystem.
+
 HALs
 ****
 
