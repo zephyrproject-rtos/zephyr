@@ -778,17 +778,6 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_STATISTICS */
 
-static int cmd_net_stacks(const struct shell *sh, size_t argc,
-			  char *argv[])
-{
-#if !defined(CONFIG_KERNEL_SHELL)
-	PR("Enable CONFIG_KERNEL_SHELL and type \"kernel stacks\" to see stack information.\n");
-#else
-	PR("Type \"kernel stacks\" to see stack information.\n");
-#endif
-	return 0;
-}
-
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 static void net_shell_print_statistics_all(struct net_shell_user_data *data)
 {
@@ -2027,8 +2016,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_udp,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
-	SHELL_CMD(stacks, NULL, "Show network stacks information.",
-		  cmd_net_stacks),
 	SHELL_CMD(stats, &net_cmd_stats, "Show network statistics.",
 		  cmd_net_stats),
 	SHELL_CMD(suspend, NULL, "Suspend a network interface",
