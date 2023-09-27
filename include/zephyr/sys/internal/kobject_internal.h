@@ -11,7 +11,9 @@ extern "C" {
 #endif
 
 /**
- * @cond INTERNAL
+ * @defgroup usermode_internal_apis User Mode Internal APIs
+ * @ingroup internal_api
+ * @{
  */
 
 #if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
@@ -169,10 +171,6 @@ static inline struct k_object *k_object_create_dynamic(size_t size)
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 /** @} */
-
-/**
- * @endcond INTERNAL
- */
 
 #ifdef __cplusplus
 }
