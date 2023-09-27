@@ -201,6 +201,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.9
 
+   * - :ref:`llext`
+     - Experimental
+     - 3.5
+
    * - :ref:`logging_api`
      - Stable
      - 1.13
