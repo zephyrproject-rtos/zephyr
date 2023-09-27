@@ -32,6 +32,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
 
 from devicetree import edtlib
 
+INTERRUPT_BITS = []
+
 class LogFormatter(logging.Formatter):
     '''A log formatter that prints the level name in lower case,
     for compatibility with earlier versions of edtlib.'''
@@ -48,6 +50,10 @@ def main():
     global flash_area_num
 
     args = parse_args()
+
+    if args.level_bits:
+        for bits in args.level_bits.split(","):
+            INTERRUPT_BITS.append(int(bits))
 
     setup_edtlib_logging()
 
@@ -189,6 +195,8 @@ def parse_args():
                         "we allow multiple")
     parser.add_argument("--header-out", required=True,
                         help="path to write header to")
+    parser.add_argument("--level-bits",
+                        help="Multi level interrupt bits (e.g. 8,8,8)")
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
@@ -456,17 +464,22 @@ def write_interrupts(node):
     def encode_zephyr_multi_level_irq(irq, irq_num):
         # See doc/kernel/services/interrupts.rst for details
         # on how this encoding works
-
+        irq_nums = [irq_num]
         irq_ctrl = irq.controller
+
         # Look for interrupt controller parent until we have none
         while irq_ctrl.interrupts:
-            irq_num = (irq_num + 1) << 8
-            if "irq" not in irq_ctrl.interrupts[0].data:
-                err(f"Expected binding for {irq_ctrl!r} to have 'irq' in "
-                    "interrupt-cells")
-            irq_num |= irq_ctrl.interrupts[0].data["irq"]
+            irq_nums.append(irq_ctrl.interrupts[0].data["irq"])
             irq_ctrl = irq_ctrl.interrupts[0].controller
-        return irq_num
+
+        # Encode the output IRQ number based on the number of levels we have
+        irq_out = 0
+        last_idx = len(irq_nums) - 1
+        for idx, irq in enumerate(irq_nums):
+            irq_out += (irq + (1 if idx != last_idx else 0)
+                        ) << sum(INTERRUPT_BITS[:(last_idx - idx)])
+
+        return irq_out
 
     idx_vals = []
     name_vals = []
