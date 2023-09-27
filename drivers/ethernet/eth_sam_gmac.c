@@ -133,6 +133,8 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
+
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
@@ -1113,7 +1115,15 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	gmac->GMAC_UR = DT_INST_ENUM_IDX(0, phy_connection_type);
+	switch (DT_INST_ENUM_IDX_OR(0, phy_connection_type, 1)) {
+	case 0: /* mii */
+		gmac->GMAC_UR = 0x1;
+	case 1: /* rmii */
+		gmac->GMAC_UR = 0x0;
+	default:
+		/* Build assert at top of file should catch this case */
+		return -EINVAL;
+	}
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
