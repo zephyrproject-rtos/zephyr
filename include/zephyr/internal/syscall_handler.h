@@ -120,8 +120,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
  * @param parent Parent thread, to get permissions from
  * @param child Child thread, to copy permissions to
  */
-void z_thread_perms_inherit(struct k_thread *parent,
-				  struct k_thread *child);
+void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child);
 
 /**
  * Grant a thread permission to a kernel object

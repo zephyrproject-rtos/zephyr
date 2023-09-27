@@ -589,7 +589,7 @@ static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 	}
 }
 
-void z_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
+void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 {
 	struct perm_ctx ctx = {
 		thread_index_get(parent),
