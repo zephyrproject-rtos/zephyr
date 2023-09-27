@@ -18,7 +18,7 @@
 	PROVIDE(z_object_gperf_find = .);
 	PROVIDE(z_object_gperf_wordlist_foreach = .);
 #else
-	PROVIDE(z_object_find = .);
+	PROVIDE(k_object_find = .);
 	PROVIDE(k_object_wordlist_foreach = .);
 #endif
 #endif

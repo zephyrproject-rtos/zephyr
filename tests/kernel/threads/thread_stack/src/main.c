@@ -335,7 +335,7 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 #ifdef CONFIG_USERSPACE
 	struct k_object *zo;
 
-	zo = z_object_find(stack_obj);
+	zo = k_object_find(stack_obj);
 	if (zo != NULL) {
 		is_user = true;
 #ifdef CONFIG_GEN_PRIV_STACKS
