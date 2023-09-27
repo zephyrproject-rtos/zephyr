@@ -394,7 +394,7 @@ static void isr_tx_chain(void *param)
 						 lll->phy_s, lll->phy_flags);
 	} else {
 		radio_isr_set(isr_done, lll_aux);
-		radio_switch_complete_and_disable();
+		radio_switch_complete_and_b2b_tx_disable();
 	}
 
 	radio_pkt_tx_set(pdu);
