@@ -453,7 +453,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		struct npcx_ex_ops_uma_out out_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, op_in, sizeof(in_copy)));
+			Z_OOPS(k_usermode_from_copy(&in_copy, op_in, sizeof(in_copy)));
 			op_in = &in_copy;
 			op_out = &out_copy;
 		}
@@ -474,7 +474,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		struct npcx_ex_ops_qspi_oper_in in_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, op_in, sizeof(in_copy)));
+			Z_OOPS(k_usermode_from_copy(&in_copy, op_in, sizeof(in_copy)));
 			op_in = &in_copy;
 		}
 #endif

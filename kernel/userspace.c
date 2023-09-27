@@ -842,7 +842,7 @@ out_err:
 	return ret;
 }
 
-int z_user_from_copy(void *dst, const void *src, size_t size)
+int k_usermode_from_copy(void *dst, const void *src, size_t size)
 {
 	return user_copy(dst, src, size, false);
 }
@@ -907,7 +907,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 		goto out;
 	}
 
-	ret = z_user_from_copy(dst, src, actual_len);
+	ret = k_usermode_from_copy(dst, src, actual_len);
 
 	/* See comment above in z_user_string_alloc_copy() */
 	dst[actual_len - 1] = '\0';

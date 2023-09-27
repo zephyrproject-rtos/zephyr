@@ -20,7 +20,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 		goto out;
 	}
 
-	Z_OOPS(z_user_from_copy(&config, (const void *)cfg_ptr,
+	Z_OOPS(k_usermode_from_copy(&config, (const void *)cfg_ptr,
 				sizeof(struct i2s_config)));
 
 	/* Check that the k_mem_slab provided is a valid pointer and that
@@ -98,7 +98,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	ret = z_user_from_copy(mem_block, (void *)buf, size);
+	ret = k_usermode_from_copy(mem_block, (void *)buf, size);
 	if (ret) {
 		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
 		Z_OOPS(ret);

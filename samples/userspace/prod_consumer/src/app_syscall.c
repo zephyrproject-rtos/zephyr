@@ -38,7 +38,7 @@ static int z_vrfy_magic_syscall(unsigned int *cookie)
 	/* Confirm that this user-supplied pointer is valid memory that
 	 * can be accessed. If it's OK, copy into cookie_copy.
 	 */
-	if (z_user_from_copy(&cookie_copy, cookie, sizeof(*cookie)) != 0) {
+	if (k_usermode_from_copy(&cookie_copy, cookie, sizeof(*cookie)) != 0) {
 		return -EPERM;
 	}
 

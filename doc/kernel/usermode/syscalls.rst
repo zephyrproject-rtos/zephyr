@@ -377,7 +377,7 @@ The proper procedure to mitigate these attacks is to make a copies in the
 verification function, and only perform parameter checks on the copies, which
 user threads will never have access to. The implementation functions get passed
 the copy and not the original data sent by the user. The
-:c:func:`z_user_to_copy()` and :c:func:`z_user_from_copy()` APIs exist for
+:c:func:`z_user_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
 this purpose.
 
 There is one exception in place, with respect to large data buffers which are
@@ -433,7 +433,7 @@ bytes processed. This too should use a stack copy:
         size_t size;
         int ret;
 
-        Z_OOPS(z_user_from_copy(&size, size_ptr, sizeof(size));
+        Z_OOPS(k_usermode_from_copy(&size, size_ptr, sizeof(size));
         ret = z_impl_in_out_syscall(&size);
         Z_OOPS(z_user_to_copy(size_ptr, &size, sizeof(size)));
         return ret;
@@ -461,11 +461,11 @@ be copied. Typically this is done by allocating copies on the stack:
         struct bar bar_right_copy;
         struct bar bar_left_copy;
 
-        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
-        Z_OOPS(z_user_from_copy(&bar_right_copy, foo_copy.bar_right,
+        Z_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
+        Z_OOPS(k_usermode_from_copy(&bar_right_copy, foo_copy.bar_right,
                                 sizeof(struct bar)));
         foo_copy.bar_right = &bar_right_copy;
-        Z_OOPS(z_user_from_copy(&bar_left_copy, foo_copy.bar_left,
+        Z_OOPS(k_usermode_from_copy(&bar_left_copy, foo_copy.bar_left,
                                 sizeof(struct bar)));
         foo_copy.bar_left = &bar_left_copy;
 
@@ -500,7 +500,7 @@ should never be used to verify if resource allocation has been successful.
         size_t bar_list_bytes;
 
         /* Safely copy foo into foo_copy */
-        Z_OOPS(z_user_from_copy(&foo_copy, foo, sizeof(*foo)));
+        Z_OOPS(k_usermode_from_copy(&foo_copy, foo, sizeof(*foo)));
 
         /* Bounds check the count member, in the copy we made */
         if (foo_copy.count > 32) {
@@ -514,7 +514,7 @@ should never be used to verify if resource allocation has been successful.
         if (bar_list_copy == NULL) {
             return -ENOMEM;
         }
-        Z_OOPS(z_user_from_copy(bar_list_copy, foo_copy.bar_list,
+        Z_OOPS(k_usermode_from_copy(bar_list_copy, foo_copy.bar_list,
                                 bar_list_bytes));
         foo_copy.bar_list = bar_list_copy;
 
@@ -566,7 +566,7 @@ conventions are as follows:
    invokes :c:macro:`Z_OOPS()`.
 
 #. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
-   :c:func:`z_user_from_copy()`, :c:func:`z_user_to_copy()`
+   :c:func:`k_usermode_from_copy()`, :c:func:`z_user_to_copy()`
    should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
    appropriate permissions on the memory buffer or some size calculation
    overflowed.
