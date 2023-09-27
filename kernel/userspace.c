@@ -611,7 +611,7 @@ void z_thread_perms_set(struct k_object *ko, struct k_thread *thread)
 	}
 }
 
-void z_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
+void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 {
 	int index = thread_index_get(thread);
 
@@ -703,7 +703,7 @@ void k_object_access_revoke(const void *object, struct k_thread *thread)
 	struct k_object *ko = z_object_find(object);
 
 	if (ko != NULL) {
-		z_thread_perms_clear(ko, thread);
+		k_thread_perms_clear(ko, thread);
 	}
 }
 

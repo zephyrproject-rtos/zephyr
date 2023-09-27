@@ -137,12 +137,12 @@ void z_thread_perms_set(struct k_object *ko, struct k_thread *thread);
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-void z_thread_perms_clear(struct k_object *ko, struct k_thread *thread);
+void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
  *
- * NOTE: Unlike z_thread_perms_clear(), this function will not clear
+ * NOTE: Unlike k_thread_perms_clear(), this function will not clear
  * permissions on public objects.
  *
  * @param thread Thread object to revoke access
