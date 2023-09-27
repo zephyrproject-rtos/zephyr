@@ -861,7 +861,7 @@ static struct k_sem recycle_sem;
  * @details Test recycle valid/invalid kernel object, see if
  * perms_count changes as expected.
  *
- * @see z_object_recycle(), z_object_find()
+ * @see k_object_recycle(), z_object_find()
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -877,12 +877,12 @@ ZTEST(userspace, test_object_recycle)
 	ko = z_object_find(&dummy);
 	zassert_true(ko == NULL, "not an invalid object");
 
-	z_object_recycle(&dummy);
+	k_object_recycle(&dummy);
 
 	ko = z_object_find(&recycle_sem);
 	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
 
-	z_object_recycle(&recycle_sem);
+	k_object_recycle(&recycle_sem);
 	zassert_true(ko != NULL, "kernel object not found");
 	zassert_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
 		     "object wasn't marked as initialized");

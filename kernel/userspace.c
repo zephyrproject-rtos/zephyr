@@ -779,7 +779,7 @@ void k_object_init(const void *obj)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
-void z_object_recycle(const void *obj)
+void k_object_recycle(const void *obj)
 {
 	struct k_object *ko = z_object_find(obj);
 
