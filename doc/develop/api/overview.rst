@@ -329,6 +329,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.1
 
+   * - :ref:`tgpio_api`
+     - Experimental
+     - 3.5
+
    * - :ref:`uart_api`
      - Stable
      - 1.0
