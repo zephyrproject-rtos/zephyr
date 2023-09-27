@@ -48,6 +48,9 @@ enum _obj_init_check {
  * user thread. If the system call was invoked from supervisor mode,
  * or we are not handling a system call, this will return false.
  *
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  * @return whether the current context is handling a syscall for a user
  *         mode thread
  */
@@ -78,6 +81,9 @@ static inline bool k_is_in_user_syscall(void)
  *	  doesn't matter
  * @param init Indicate whether the object needs to already be in initialized
  *             or uninitialized state, or that we don't care
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  * @return 0 If the object is valid
  *         -EBADF if not a valid object of the specified type
  *         -EPERM If the caller does not have permissions
@@ -93,6 +99,9 @@ int k_object_validate(struct k_object *ko, enum k_objects otype,
  * @param obj Kernel object we were trying to verify
  * @param ko If retval=-EPERM, struct k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 void k_object_dump_error(int retval, const void *obj,
 			 struct k_object *ko, enum k_objects otype);
@@ -106,6 +115,9 @@ void k_object_dump_error(int retval, const void *obj,
  * @param obj Address of kernel object to get metadata
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 struct k_object *k_object_find(const void *obj);
 
@@ -116,6 +128,9 @@ typedef void (*_wordlist_cb_func_t)(struct k_object *ko, void *context);
  *
  * @param func function to run on each struct k_object
  * @param context Context pointer to pass to each invocation
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
 
@@ -124,6 +139,9 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
  *
  * @param parent Parent thread, to get permissions from
  * @param child Child thread, to copy permissions to
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child);
 
@@ -132,6 +150,9 @@ void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child);
  *
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 void k_thread_perms_set(struct k_object *ko, struct k_thread *thread);
 
@@ -140,14 +161,20 @@ void k_thread_perms_set(struct k_object *ko, struct k_thread *thread);
  *
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
  */
 void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread);
 
-/*
+/**
  * Revoke access to all objects for the provided thread
  *
- * NOTE: Unlike k_thread_perms_clear(), this function will not clear
+ * @note Unlike k_thread_perms_clear(), this function will not clear
  * permissions on public objects.
+ *
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  *
  * @param thread Thread object to revoke access
  */
@@ -160,6 +187,8 @@ void k_thread_perms_all_clear(struct k_thread *thread);
  * that were released back to an object pool.
  *
  * @param object Address of the kernel object
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 void k_object_uninit(const void *obj);
 
@@ -179,6 +208,8 @@ void k_object_uninit(const void *obj);
  * granted access to it.
  *
  * @param object Address of the kernel object
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 void k_object_recycle(const void *obj);
 
@@ -204,6 +235,8 @@ void k_object_recycle(const void *obj);
  * @return undefined on error, or strlen(src) if that is less than maxlen, or
  *	maxlen if there were no NULL terminating characters within the
  *	first maxlen bytes.
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 static inline size_t k_usermode_string_nlen(const char *src, size_t maxlen,
 					int *err)
@@ -225,6 +258,8 @@ static inline size_t k_usermode_string_nlen(const char *src, size_t maxlen,
  * @param size Size of the memory buffer
  * @return An allocated buffer with the data copied within it, or NULL
  *	if some error condition occurred
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 void *k_usermode_alloc_from_copy(const void *src, size_t size);
 
@@ -240,6 +275,8 @@ void *k_usermode_alloc_from_copy(const void *src, size_t size);
  * @param size Number of bytes to copy
  * @retval 0 On success
  * @retval EFAULT On memory access error
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 int k_usermode_from_copy(void *dst, const void *src, size_t size);
 
@@ -255,6 +292,8 @@ int k_usermode_from_copy(void *dst, const void *src, size_t size);
  * @param size Number of bytes to copy
  * @retval 0 On success
  * @retval EFAULT On memory access error
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 int k_usermode_to_copy(void *dst, const void *src, size_t size);
 
@@ -271,6 +310,8 @@ int k_usermode_to_copy(void *dst, const void *src, size_t size);
  * @param src Source string pointer, in userspace
  * @param maxlen Maximum size of the string including trailing NULL
  * @return The duplicated string, or NULL if an error occurred.
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
 
@@ -289,6 +330,8 @@ char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
  * @retval EINVAL if the source string is too long with respect
  *	to maxlen
  * @retval EFAULT On memory access error
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 
@@ -311,6 +354,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param fmt Printf-style format string (followed by appropriate variadic
  *            arguments) to print on verification failure
  * @return False on success, True on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
 	bool expr_copy = !(expr); \
@@ -332,6 +377,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param expr Boolean expression to verify, a false result will trigger an
  *             oops. A stringified version of this expression will be printed.
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_VERIFY(expr) K_SYSCALL_VERIFY_MSG(expr, #expr)
 
@@ -350,6 +397,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param write If the thread should be able to write to this memory, not just
  *		read it
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY(ptr, size, write) \
 	K_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
@@ -370,6 +419,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param ptr Memory area to examine
  * @param size Size of the memory area
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY_READ(ptr, size) \
 	K_SYSCALL_MEMORY(ptr, size, 0)
@@ -386,6 +437,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param ptr Memory area to examine
  * @param size Size of the memory area
  * @param 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY_WRITE(ptr, size) \
 	K_SYSCALL_MEMORY(ptr, size, 1)
@@ -412,6 +465,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size) \
 	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0)
@@ -427,6 +482,8 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
@@ -466,6 +523,8 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param api_struct Name of the driver API struct (e.g. gpio_driver_api)
  * @param op Driver operation (e.g. manage_callback)
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
@@ -494,6 +553,8 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param _dtype Expected kernel object type for the provided device pointer
  * @param _api Expected driver API structure memory address
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
 	({ \
@@ -513,6 +574,8 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_OBJ(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
@@ -526,6 +589,8 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 
 #define K_SYSCALL_OBJ_INIT(ptr, type) \
@@ -542,6 +607,8 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
  * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
  */
 
 #define K_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
