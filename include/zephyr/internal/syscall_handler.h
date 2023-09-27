@@ -386,7 +386,7 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_WRITE(ptr, size) \
 	Z_SYSCALL_MEMORY(ptr, size, 1)
 
-#define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
+#define K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		size_t product; \
 		K_SYSCALL_VERIFY_MSG(!size_mul_overflow((size_t)(nmemb), \
@@ -409,8 +409,8 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @param size Size of each array element
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size) \
-	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0)
+#define K_SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size) \
+	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0)
 
 /**
  * @brief Validate user thread has read/write permission for sized array
@@ -424,8 +424,8 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @param size Size of each array element
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
-	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
+#define K_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
+	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
 static inline int z_obj_validation_check(struct k_object *ko,
 					 const void *obj,

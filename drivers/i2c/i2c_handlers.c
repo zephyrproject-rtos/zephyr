@@ -62,7 +62,7 @@ static inline int z_vrfy_i2c_transfer(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
 
 	/* We need to be able to read the overall array of messages */
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
 					   sizeof(struct i2c_msg)));
 
 	return copy_msgs_and_transfer((const struct device *)dev,

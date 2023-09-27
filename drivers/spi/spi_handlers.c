@@ -23,7 +23,7 @@ static struct spi_buf_set *copy_and_check(struct spi_buf_set *bufs,
 	}
 
 	/* Validate the array of struct spi_buf instances */
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
+	Z_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
 					   bufs->count,
 					   sizeof(struct spi_buf)));
 
