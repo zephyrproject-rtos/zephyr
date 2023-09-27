@@ -184,6 +184,17 @@ which will allow rebooting directly into the serial recovery mode by using:
 	bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
 	sys_reboot(0);
 
+Retention system modules
+************************
+
+Modules can expand the functionality of the retention system by using it as a
+transport (e.g. between a bootloader and application).
+
+.. toctree::
+    :maxdepth: 1
+
+    blinfo.rst
+
 API Reference
 *************
 
