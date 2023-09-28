@@ -1,0 +1,61 @@
+/*
+ * Copyright 2023 honglin leng <a909204013@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <0>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	soc {
+		sram0: memory@200000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x200000 0x80000>;
+		};
+
+		gic: interrupt-controller@ff841000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0xff841000 0x1000>,
+			      <0xff842000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		uart1: uart@fe215040 {
+			compatible = "brcm,bcm2711-aux-uart";
+			reg = <0xfe215040 0x40>;
+			clock-frequency = <500000000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+};
