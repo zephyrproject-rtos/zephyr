@@ -404,7 +404,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 {
 	struct serial_vnd_data *data = dev->data;
 
-	LOG_WRN("read_size %d", read_size);
+	LOG_WRN("read_size %zd", read_size);
 
 	if (data == NULL) {
 		return -ENOTSUP;
