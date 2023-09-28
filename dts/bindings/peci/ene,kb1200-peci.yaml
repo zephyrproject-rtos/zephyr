@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE KB1200 PECI controller
+
+compatible: "ene,kb1200-peci"
+
+include: [peci.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of pairs of GIRQ number and bit position
+
+  pcrs:
+    type: array
+    required: true
+    description: ADC PCR register index and bit position
+
+girq-cells:
+  - girqnum
+  - bitpos
+
+pcr-cells:
+  - regidx
+  - bitpos

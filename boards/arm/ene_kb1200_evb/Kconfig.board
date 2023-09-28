@@ -1,0 +1,7 @@
+
+# Copyright (c) ENE
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENE_KB1200_EVB
+	bool "ENE KB1200 EVB Development Board"
+	depends on SOC_ENE_KB1200

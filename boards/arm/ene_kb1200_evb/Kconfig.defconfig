@@ -1,0 +1,17 @@
+# ENE ene_kb1062 board configuration
+
+# Copyright (c) 2023 ENE.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ENE_KB1200_EVB
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config BOARD
+	default "ene_kb1200_evb"
+
+endif # BOARD_ENE_KB1200_EVB

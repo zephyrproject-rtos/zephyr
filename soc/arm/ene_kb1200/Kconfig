@@ -1,0 +1,8 @@
+# ENE Cortex-M4 Embedded Controller
+
+# Copyright (c) 2020 ENE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ENE_KB1200
+	bool
+

@@ -1,0 +1,10 @@
+# Serial driver configuration options
+
+# Copyright (c) 2023 ENE Technology
+
+config UART_KB1200
+	bool "KB1200 serial driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the KB1200 serial driver.
