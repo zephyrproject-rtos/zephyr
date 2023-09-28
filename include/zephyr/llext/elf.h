@@ -435,7 +435,7 @@ typedef elf64_half elf_half;
 /** Machine sized integer */
 typedef elf64_xword elf_word;
 /** Machine sized relocation struct */
-typedef struct elf64_rela elf_rel_t;
+typedef struct elf64_rel elf_rel_t;
 /** Machine sized symbol struct */
 typedef struct elf64_sym elf_sym_t;
 /** Machine sized macro alias for obtaining a relocation symbol */
