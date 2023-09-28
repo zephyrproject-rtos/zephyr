@@ -31,6 +31,8 @@ pointer or by a network interface index. The network interface can be
 resolved from its index by calling ``net_if_get_by_index()`` and from interface
 pointer by calling ``net_if_get_by_iface()``.
 
+.. _net_if_interface_ip_management:
+
 The IP address for network devices must be set for them to be connectable.
 In a typical dynamic network environment, IP addresses are set automatically
 by DHCPv4, for example. If needed though, the application can set a device's
@@ -54,6 +56,8 @@ If the :kconfig:option:`CONFIG_NET_PROMISCUOUS_MODE` is enabled and if the under
 network technology supports promiscuous mode, then it is possible to receive
 all the network packets that the network device driver is able to receive.
 See :ref:`promiscuous_interface` API for more details.
+
+.. _net_if_interface_state_management:
 
 Network interface state management
 **********************************

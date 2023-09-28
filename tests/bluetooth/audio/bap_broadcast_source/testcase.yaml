@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - bluetooth_audio
+tests:
+  bluetooth.audio.bap_broadcast_source.test_default:
+    type: unit

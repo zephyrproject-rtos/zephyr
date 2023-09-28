@@ -11,6 +11,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/init.h>
 #include <zephyr/fs/fs.h>
+#include <zephyr/sd/sd_spec.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -34,6 +35,33 @@ static struct fs_mount_t fatfs_mnt = {
 /* LITTLEFS */
 #ifdef CONFIG_FILE_SYSTEM_LITTLEFS
 #include <zephyr/fs/littlefs.h>
+
+/* TODO: Implement dynamic storage dev selection */
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
+
+#if defined(CONFIG_DISK_DRIVER_SDMMC)
+#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#elif defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#else
+#error "No disk device defined, is your board supported?"
+#endif
+
+FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(
+	lfs_data,
+	CONFIG_SDHC_BUFFER_ALIGNMENT,
+	SDMMC_DEFAULT_BLOCK_SIZE,
+	SDMMC_DEFAULT_BLOCK_SIZE,
+	SDMMC_DEFAULT_BLOCK_SIZE,
+	2 * SDMMC_DEFAULT_BLOCK_SIZE);
+
+static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &lfs_data,
+	.flags = FS_MOUNT_FLAG_USE_DISK_ACCESS,
+	.storage_dev = DISK_NAME,
+};
+#else
 #include <zephyr/storage/flash_map.h>
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
@@ -42,6 +70,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.fs_data = &lfs_data,
 	.storage_dev = (void *)STORAGE_PARTITION_ID,
 };
+#endif
 #endif
 
 #define BUF_CNT 64

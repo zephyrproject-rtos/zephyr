@@ -1181,18 +1181,18 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	},                                                               \
 	.config_irq = config_can_##inst##_irq,                           \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
-	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),         \
-	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id, 1000000), \
+	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),       \
+	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000), \
 };
 
 #define CAN_STM32_DATA_INST(inst) \
 static struct can_stm32_data can_stm32_dev_data_##inst;
 
 #define CAN_STM32_DEFINE_INST(inst)                                      \
-DEVICE_DT_INST_DEFINE(inst, &can_stm32_init, NULL,                       \
-		      &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
-		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,             \
-		      &can_api_funcs);
+CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32_init, NULL,                    \
+			  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
+			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,         \
+			  &can_api_funcs);
 
 #define CAN_STM32_INST(inst)      \
 CAN_STM32_IRQ_INST(inst)          \

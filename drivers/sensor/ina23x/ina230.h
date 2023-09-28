@@ -34,7 +34,7 @@
 
 struct ina230_data {
 	const struct device *dev;
-	uint16_t current;
+	int16_t current;
 	uint16_t bus_voltage;
 	uint16_t power;
 #ifdef CONFIG_INA230_TRIGGER

@@ -315,7 +315,8 @@ static struct net_if_api bt_if_api = {
 	.init = bt_iface_init,
 };
 
-static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		       struct bt_l2cap_chan **chan)
 {
 	struct bt_if_conn *if_conn = NULL;
 	int i;

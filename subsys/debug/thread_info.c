@@ -40,7 +40,7 @@ enum {
  * Only version 1 is backward compatible to version 0.
  */
 __attribute__((used, section(".dbg_thread_info")))
-size_t _kernel_thread_info_offsets[] = {
+const size_t _kernel_thread_info_offsets[] = {
 	/* Version 0 starts */
 	[THREAD_INFO_OFFSET_VERSION] = 1,
 	[THREAD_INFO_OFFSET_K_CURR_THREAD] = offsetof(struct _cpu, current),
@@ -146,15 +146,15 @@ size_t _kernel_thread_info_offsets[] = {
 #endif /* CONFIG_ARC */
 };
 
-extern size_t __attribute__((alias("_kernel_thread_info_offsets")))
+extern const size_t __attribute__((alias("_kernel_thread_info_offsets")))
 		_kernel_openocd_offsets;
 
 __attribute__((used, section(".dbg_thread_info")))
-size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);
-extern size_t __attribute__((alias("_kernel_thread_info_num_offsets")))
+const size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);
+extern const size_t __attribute__((alias("_kernel_thread_info_num_offsets")))
 		_kernel_openocd_num_offsets;
 
 __attribute__((used, section(".dbg_thread_info")))
-uint8_t _kernel_thread_info_size_t_size = (uint8_t)sizeof(size_t);
-extern uint8_t __attribute__((alias("_kernel_thread_info_size_t_size")))
+const uint8_t _kernel_thread_info_size_t_size = (uint8_t)sizeof(size_t);
+extern const uint8_t __attribute__((alias("_kernel_thread_info_size_t_size")))
 		_kernel_openocd_size_t_size;

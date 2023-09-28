@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
@@ -35,7 +35,7 @@ int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(mux.port)) {
+	if (!gpio_is_ready_dt(&mux)) {
 		LOG_ERR("DAPLink QSPI MUX GPIO device not ready");
 		return -EINVAL;
 	}

@@ -565,7 +565,7 @@ ZTEST_USER(semaphore, test_sem_take_timeout_forever)
  * @brief Test k_sem_take() with timeout in ISR context
  * @see k_sem_take()
  */
-ZTEST(semaphore, test_sem_take_timeout_isr)
+ZTEST(semaphore_1cpu, test_sem_take_timeout_isr)
 {
 	/*
 	 * Signal the semaphore upon which the another thread is waiting.  The

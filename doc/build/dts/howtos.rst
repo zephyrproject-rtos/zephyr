@@ -630,6 +630,6 @@ Applications that depend on board-specific devices
 
 One way to allow application code to run unmodified on multiple boards is by
 supporting a devicetree alias to specify the hardware specific portions, as is
-done in the :ref:`blinky-sample`. The application can then be configured in
+done in the :zephyr:code-sample:`blinky` sample. The application can then be configured in
 :ref:`BOARD.dts <devicetree-in-out-files>` files or via :ref:`devicetree
 overlays <use-dt-overlays>`.

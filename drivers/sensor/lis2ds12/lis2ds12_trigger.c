@@ -122,7 +122,7 @@ int lis2ds12_trigger_init(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
-	if (!device_is_ready(cfg->gpio_int.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		if (cfg->gpio_int.port) {
 			LOG_ERR("%s: device %s is not ready", dev->name,
 						cfg->gpio_int.port->name);

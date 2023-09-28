@@ -195,7 +195,8 @@ static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
 /* Work handler function for restoring the preferred connection parameters for the connection. */
 static void conn_param_on_pref_restore(struct k_work *work)
 {
-	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, dwork);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct conn_param_data *cpd = CONTAINER_OF(dwork, struct conn_param_data, dwork);
 
 	if (cpd != NULL) {
 		conn_param_set(cpd->conn, CONN_PARAM_PREF);
@@ -206,7 +207,8 @@ static void conn_param_on_pref_restore(struct k_work *work)
 /* Work handler function for retrying on conn negotiation API error. */
 static void conn_param_on_error_retry(struct k_work *work)
 {
-	struct conn_param_data *cpd = CONTAINER_OF(work, struct conn_param_data, ework);
+	struct k_work_delayable *ework = k_work_delayable_from_work(work);
+	struct conn_param_data *cpd = CONTAINER_OF(ework, struct conn_param_data, ework);
 	struct bt_le_conn_param *param = (cpd->state & CONN_PARAM_SMP_REQUESTED) ?
 		CONN_PARAM_SMP : CONN_PARAM_PREF;
 

@@ -515,7 +515,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 			}
 		}
 
-		if (!device_is_ready(config->gpio_int.port)) {
+		if (!gpio_is_ready_dt(&config->gpio_int)) {
 			LOG_ERR("INT port is not ready");
 			return -ENODEV;
 		}

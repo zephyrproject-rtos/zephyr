@@ -325,14 +325,25 @@ static void color_postfix(const struct log_output *output,
 static int ids_print(const struct log_output *output,
 		     bool level_on,
 		     bool func_on,
+		     bool thread_on,
 		     const char *domain,
 		     const char *source,
+		     const k_tid_t tid,
 		     uint32_t level)
 {
 	int total = 0;
 
 	if (level_on) {
 		total += print_formatted(output, "<%s> ", severity[level]);
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) && thread_on) {
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			total += print_formatted(output, "[%s] ",
+				tid == NULL ? "irq" : k_thread_name_get(tid));
+		} else {
+			total += print_formatted(output, "[%p] ", tid);
+		}
 	}
 
 	if (domain) {
@@ -430,6 +441,7 @@ static uint32_t prefix_print(const struct log_output *output,
 			     log_timestamp_t timestamp,
 			     const char *domain,
 			     const char *source,
+			     const k_tid_t tid,
 			     uint8_t level)
 {
 	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
@@ -438,6 +450,8 @@ static uint32_t prefix_print(const struct log_output *output,
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
+	bool thread_on = IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
+			 (flags & LOG_OUTPUT_FLAG_THREAD);
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -475,7 +489,7 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on, domain, source, level);
+	length += ids_print(output, level_on, func_on, thread_on, domain, source, tid, level);
 
 	return length;
 }
@@ -492,6 +506,7 @@ void log_output_process(const struct log_output *output,
 			log_timestamp_t timestamp,
 			const char *domain,
 			const char *source,
+			const k_tid_t tid,
 			uint8_t level,
 			const uint8_t *package,
 			const uint8_t *data,
@@ -503,7 +518,8 @@ void log_output_process(const struct log_output *output,
 	cbprintf_cb cb;
 
 	if (!raw_string) {
-		prefix_offset = prefix_print(output, flags, 0, timestamp, domain, source, level);
+		prefix_offset = prefix_print(output, flags, 0, timestamp,
+					     domain, source, tid, level);
 		cb = out_func;
 	} else {
 		prefix_offset = 0;
@@ -560,7 +576,7 @@ void log_output_msg_process(const struct log_output *output,
 	uint8_t *package = log_msg_get_package(msg, &plen);
 	uint8_t *data = log_msg_get_data(msg, &dlen);
 
-	log_output_process(output, timestamp, NULL, sname, level,
+	log_output_process(output, timestamp, NULL, sname, (k_tid_t)log_msg_get_tid(msg), level,
 			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 

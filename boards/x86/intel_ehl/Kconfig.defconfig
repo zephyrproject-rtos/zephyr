@@ -19,6 +19,10 @@ config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	default n
 endif
 
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
 # TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1900000000 if APIC_TSC_DEADLINE_TIMER

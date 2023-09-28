@@ -6,7 +6,7 @@
 
 #include <errno.h>
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <string.h>

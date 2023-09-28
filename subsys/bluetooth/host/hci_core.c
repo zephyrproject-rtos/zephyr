@@ -3938,6 +3938,13 @@ static void rx_work_handler(struct k_work *work)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
+#if defined(CONFIG_BT_TESTING)
+k_tid_t bt_testing_tx_tid_get(void)
+{
+	return &tx_thread_data;
+}
+#endif
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
@@ -4110,7 +4117,7 @@ int bt_set_name(const char *name)
 		return 0;
 	}
 
-	strncpy(bt_dev.name, name, len);
+	memcpy(bt_dev.name, name, len);
 	bt_dev.name[len] = '\0';
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {

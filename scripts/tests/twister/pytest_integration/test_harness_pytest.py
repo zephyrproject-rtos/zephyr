@@ -48,6 +48,67 @@ def test_pytest_command(testinstance: TestInstance, device_type):
         assert c in command
 
 
+@pytest.mark.parametrize(
+    ('pytest_root', 'expected'),
+    [
+        (
+            ['pytest/test_shell_help.py'],
+            ['samples/hello/pytest/test_shell_help.py']
+        ),
+        (
+            ['pytest/test_shell_help.py', 'pytest/test_shell_version.py', 'test_dir'],
+            ['samples/hello/pytest/test_shell_help.py',
+             'samples/hello/pytest/test_shell_version.py',
+             'samples/hello/test_dir']
+        ),
+        (
+            ['../shell/pytest/test_shell.py'],
+            ['samples/shell/pytest/test_shell.py']
+        ),
+        (
+            ['/tmp/test_temp.py'],
+            ['/tmp/test_temp.py']
+        ),
+        (
+            ['~/tmp/test_temp.py'],
+            ['/home/joe/tmp/test_temp.py']
+        ),
+        (
+            ['$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest'],
+            ['/zephyr_base/samples/subsys/testsuite/pytest/shell/pytest']
+        ),
+        (
+            ['pytest/test_shell_help.py::test_A', 'pytest/test_shell_help.py::test_B'],
+            ['samples/hello/pytest/test_shell_help.py::test_A',
+             'samples/hello/pytest/test_shell_help.py::test_B']
+        ),
+        (
+            ['pytest/test_shell_help.py::test_A[param_a]'],
+            ['samples/hello/pytest/test_shell_help.py::test_A[param_a]']
+        )
+    ],
+    ids=[
+        'one_file',
+        'more_files',
+        'relative_path',
+        'absollute_path',
+        'user_dir',
+        'with_env_var',
+        'subtests',
+        'subtest_with_param'
+    ]
+)
+def test_pytest_handle_source_list(testinstance: TestInstance, monkeypatch, pytest_root, expected):
+    monkeypatch.setenv('ZEPHYR_BASE', '/zephyr_base')
+    monkeypatch.setenv('HOME', '/home/joe')
+    testinstance.testsuite.harness_config['pytest_root'] = pytest_root
+    pytest_harness = Pytest()
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    for pytest_src in expected:
+        assert pytest_src in command
+
+
 def test_if_report_is_parsed(pytester, testinstance: TestInstance):
     test_file_content = textwrap.dedent("""
         def test_1():

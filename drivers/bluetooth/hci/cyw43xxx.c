@@ -221,7 +221,7 @@ int bt_h4_vnd_setup(const struct device *dev)
 	struct gpio_dt_spec bt_reg_on = GPIO_DT_SPEC_GET(DT_DRV_INST(0), bt_reg_on_gpios);
 
 	/* Check BT REG_ON gpio instance */
-	if (!device_is_ready(bt_reg_on.port)) {
+	if (!gpio_is_ready_dt(&bt_reg_on)) {
 		LOG_ERR("Error: failed to configure bt_reg_on %s pin %d",
 			bt_reg_on.port->name, bt_reg_on.pin);
 		return -EIO;

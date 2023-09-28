@@ -1398,6 +1398,20 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
 	return false;
 }
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_cp_cc_cancel(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_cancel(conn, ctx);
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;

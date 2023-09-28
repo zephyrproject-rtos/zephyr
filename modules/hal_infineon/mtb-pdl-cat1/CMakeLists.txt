@@ -14,15 +14,9 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 ${CONFIG_SOC})
 zephyr_include_directories(${pdl_drv_dir}/include)
 zephyr_include_directories(${pdl_dev_cat1a_dir}/include)
 zephyr_include_directories(${pdl_dev_cat1a_dir}/include/ip)
-zephyr_include_directories(${pdl_dev_cat1a_dir}/templates/COMPONENT_MTB)
 
 zephyr_library_sources(${pdl_dev_cat1a_dir}/source/cy_device.c)
-zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_gcc.S)
-
-zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M4
-  ${pdl_dev_cat1a_dir}/templates/COMPONENT_MTB/COMPONENT_CM4/system_psoc6_cm4.c)
-zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M0PLUS
-  ${pdl_dev_cat1a_dir}/templates/COMPONENT_MTB/COMPONENT_CM0P/system_psoc6_cm0plus.c)
+zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S)
 
 # Peripheral drivers
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_PSOC6      ${pdl_drv_dir}/source/cy_sysint.c)
@@ -30,7 +24,6 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C      ${pdl_drv_dir}/source/cy_scb_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER  ${pdl_drv_dir}/source/cy_mcwdt.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM      ${pdl_drv_dir}/source/cy_tcpwm_pwm.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC      ${pdl_drv_dir}/source/cy_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO     ${pdl_drv_dir}/source/cy_sd_host.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI      ${pdl_drv_dir}/source/cy_scb_spi.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/cy_tcpwm_counter.c)

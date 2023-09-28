@@ -263,7 +263,7 @@ static int i2c_sc18im_init(const struct device *dev)
 	if (cfg->reset_gpios.port) {
 		uint8_t buf[2];
 
-		if (!device_is_ready(cfg->reset_gpios.port)) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpios)) {
 			LOG_ERR("Reset GPIO device not ready");
 			return -ENODEV;
 		}

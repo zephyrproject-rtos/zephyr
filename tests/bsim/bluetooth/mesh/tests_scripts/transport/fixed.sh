@@ -17,3 +17,7 @@ RunTest mesh_transport_fixed transport_tx_fixed transport_rx_fixed
 
 conf=prj_mesh1d1_conf
 RunTest mesh_transport_fixed_1d1 transport_tx_fixed transport_rx_fixed
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_transport_fixed_1d1 transport_tx_fixed transport_rx_fixed

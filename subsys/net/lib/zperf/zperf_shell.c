@@ -68,9 +68,9 @@ static struct sockaddr_in in4_addr_my = {
 	.sin_port = htons(MY_SRC_PORT),
 };
 
-static struct in6_addr ipv6;
+static struct in6_addr shell_ipv6;
 
-static struct in_addr ipv4;
+static struct in_addr shell_ipv4;
 
 #define DEVICE_NAME "zperf shell"
 
@@ -189,7 +189,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
-					&ipv6) < 0) {
+					&shell_ipv6) < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to set IP\n");
 			return 0;
@@ -197,7 +197,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Setting IP address %s\n",
-			      net_sprint_ipv6_addr(&ipv6));
+			      net_sprint_ipv6_addr(&shell_ipv6));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -206,7 +206,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (zperf_get_ipv4_addr(argv[start + 1], &ipv4) < 0) {
+		if (zperf_get_ipv4_addr(argv[start + 1], &shell_ipv4) < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Unable to set IP\n");
 			return -ENOEXEC;
@@ -214,18 +214,18 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_fprintf(sh, SHELL_NORMAL,
 			      "Setting IP address %s\n",
-			      net_sprint_ipv4_addr(&ipv4));
+			      net_sprint_ipv4_addr(&shell_ipv4));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		if (net_addr_pton(AF_INET6, argv[start + 1], &ipv6) < 0) {
+		if (net_addr_pton(AF_INET6, argv[start + 1], &shell_ipv6) < 0) {
 			if (argc != 2) {
 				shell_help(sh);
 				return -ENOEXEC;
 			}
 
 			if (zperf_get_ipv4_addr(argv[start + 1],
-						&ipv4) < 0) {
+						&shell_ipv4) < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to set IP\n");
 				return -ENOEXEC;
@@ -233,7 +233,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "Setting IP address %s\n",
-				      net_sprint_ipv4_addr(&ipv4));
+				      net_sprint_ipv4_addr(&shell_ipv4));
 		} else {
 			if (argc != 3) {
 				shell_help(sh);
@@ -241,7 +241,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 			}
 
 			if (zperf_get_ipv6_addr(argv[start + 1],
-						argv[start + 2], &ipv6) < 0) {
+						argv[start + 2], &shell_ipv6) < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to set IP\n");
 				return -ENOEXEC;
@@ -249,7 +249,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "Setting IP address %s\n",
-				      net_sprint_ipv6_addr(&ipv6));
+				      net_sprint_ipv6_addr(&shell_ipv6));
 		}
 	}
 
@@ -501,6 +501,57 @@ static void tcp_upload_cb(enum zperf_status status,
 	}
 }
 
+static int ping_handler(struct net_icmp_ctx *ctx,
+			struct net_pkt *pkt,
+			struct net_icmp_ip_hdr *ip_hdr,
+			struct net_icmp_hdr *icmp_hdr,
+			void *user_data)
+{
+	struct k_sem *sem_wait = user_data;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(icmp_hdr);
+
+	k_sem_give(sem_wait);
+
+	return 0;
+}
+
+static void send_ping(const struct shell *sh,
+		      struct in6_addr *addr,
+		      int timeout_ms)
+{
+	static struct k_sem sem_wait;
+	struct sockaddr_in6 dest_addr = { 0 };
+	struct net_icmp_ctx ctx;
+	int ret;
+
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
+	if (ret < 0) {
+		shell_fprintf(sh, SHELL_WARNING, "Cannot send ping (%d)\n", ret);
+		return;
+	}
+
+	memcpy(&dest_addr.sin6_addr, addr, sizeof(struct in6_addr));
+
+	k_sem_init(&sem_wait, 0, 1);
+
+	(void)net_icmp_send_echo_request(&ctx,
+					 net_if_get_default(),
+					 (struct sockaddr *)&dest_addr,
+					 NULL, &sem_wait);
+
+	ret = k_sem_take(&sem_wait, K_MSEC(timeout_ms));
+	if (ret == -EAGAIN) {
+		shell_fprintf(sh, SHELL_WARNING, "ping %s timeout\n",
+			      net_sprint_ipv6_addr(addr));
+	}
+
+	(void)net_icmp_cleanup_ctx(&ctx);
+}
+
 static int execute_upload(const struct shell *sh,
 			  const struct zperf_upload_params *param,
 			  bool is_udp, bool async)
@@ -525,10 +576,7 @@ static int execute_upload(const struct shell *sh,
 		 * has been done for the peer. So send ping here, wait
 		 * some time and start the test after that.
 		 */
-		net_icmpv6_send_echo_request(net_if_get_default(),
-					     &ipv6->sin6_addr, 0, 0, 0, NULL, 0);
-
-		k_sleep(K_SECONDS(1));
+		send_ping(sh, &ipv6->sin6_addr, MSEC_PER_SEC);
 	}
 
 	if (is_udp && IS_ENABLED(CONFIG_NET_UDP)) {
@@ -642,6 +690,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	int start = 0;
 	size_t opt_cnt = 0;
 
+	param.options.priority = -1;
 	is_udp = proto == IPPROTO_UDP;
 
 	/* Parse options */
@@ -679,6 +728,19 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 			param.options.tcp_nodelay = 1;
 			opt_cnt += 1;
 			break;
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		case 'p':
+			param.options.priority = parse_arg(&i, argc, argv);
+			if (param.options.priority < 0 ||
+			    param.options.priority > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			break;
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -852,6 +914,19 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 			param.options.tcp_nodelay = 1;
 			opt_cnt += 1;
 			break;
+
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		case 'p':
+			param.options.priority = parse_arg(&i, argc, argv);
+			if (param.options.priority == -1 ||
+			    param.options.priority > UINT8_MAX) {
+				shell_fprintf(sh, SHELL_WARNING,
+					      "Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			opt_cnt += 2;
+			break;
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 		default:
 			shell_fprintf(sh, SHELL_WARNING,
@@ -1146,6 +1221,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
 		  "-n: Disable Nagle's algorithm\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: tcp upload 192.0.2.2 1111 1 1K\n"
 		  "Example: tcp upload 2001:db8::2\n",
 		  cmd_tcp_upload),
@@ -1159,6 +1237,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: tcp upload2 v6 1 1K\n"
 		  "Example: tcp upload2 v4\n"
 		  "-n: Disable Nagle's algorithm\n"
@@ -1198,6 +1279,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: udp upload 192.0.2.2 1111 1 1K 1M\n"
 		  "Example: udp upload 2001:db8::2\n",
 		  cmd_udp_upload),
@@ -1212,6 +1296,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
 		  "-a: Asynchronous call (shell will not block for the upload)\n"
+#ifdef CONFIG_NET_CONTEXT_PRIORITY
+		  "-p: Specify custom packet priority\n"
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
 #if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)

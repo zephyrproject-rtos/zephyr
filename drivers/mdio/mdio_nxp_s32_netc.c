@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(nxp_s32_emdio, CONFIG_MDIO_LOG_LEVEL);
 #define NETC_SWT_IDX	0
 
 struct nxp_s32_mdio_config {
-	int protocol;
 	const struct pinctrl_dev_config *pincfg;
 };
 
@@ -25,38 +24,26 @@ struct nxp_s32_mdio_data {
 };
 
 static int nxp_s32_mdio_read(const struct device *dev, uint8_t prtad,
-			     uint8_t devad, uint16_t *regval)
+			     uint8_t regad, uint16_t *regval)
 {
-	const struct nxp_s32_mdio_config *const cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
 
-	if (cfg->protocol != CLAUSE_22) {
-		LOG_ERR("Unsupported protocol");
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_ReadTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_ReadTrcvRegister(NETC_SWT_IDX, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
 }
 
 static int nxp_s32_mdio_write(const struct device *dev, uint8_t prtad,
-			      uint8_t devad, uint16_t regval)
+			      uint8_t regad, uint16_t regval)
 {
-	const struct nxp_s32_mdio_config *const cfg = dev->config;
 	struct nxp_s32_mdio_data *data = dev->data;
 	Std_ReturnType status;
 
-	if (cfg->protocol != CLAUSE_22) {
-		LOG_ERR("Unsupported protocol");
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&data->rw_mutex, K_FOREVER);
-	status = Netc_EthSwt_Ip_WriteTrcvRegister(NETC_SWT_IDX, prtad, devad, regval);
+	status = Netc_EthSwt_Ip_WriteTrcvRegister(NETC_SWT_IDX, prtad, regad, regval);
 	k_mutex_unlock(&data->rw_mutex);
 
 	return status == E_OK ? 0 : -EIO;
@@ -96,7 +83,6 @@ PINCTRL_DT_DEFINE(MDIO_NODE);
 static struct nxp_s32_mdio_data nxp_s32_mdio0_data;
 
 static const struct nxp_s32_mdio_config nxp_s32_mdio0_cfg = {
-	.protocol = DT_ENUM_IDX(MDIO_NODE, protocol),
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(MDIO_NODE),
 };
 

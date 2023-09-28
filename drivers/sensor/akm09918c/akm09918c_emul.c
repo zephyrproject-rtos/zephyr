@@ -76,7 +76,7 @@ static int akm09918c_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 {
 	struct akm09918c_emul_data *data = target->data;
 
-	i2c_dump_msgs_rw("emul", msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 
 	if (num_msgs < 1) {
 		LOG_ERR("Invalid number of messages: %d", num_msgs);

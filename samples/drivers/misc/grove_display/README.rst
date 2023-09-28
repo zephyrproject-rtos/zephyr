@@ -1,7 +1,8 @@
-.. _grove-lcd-sample:
+.. zephyr:code-sample:: grove-lcd
+   :name: Grove LCD
+   :relevant-api: grove_display
 
-Grove LCD
-#########
+   Display an incrementing counter and change the backlight color.
 
 Overview
 ********

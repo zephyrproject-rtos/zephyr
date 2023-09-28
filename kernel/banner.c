@@ -16,10 +16,12 @@
 #define BANNER_POSTFIX ""
 #endif
 
+#ifndef BANNER_VERSION
 #ifdef BUILD_VERSION
 #define BANNER_VERSION STRINGIFY(BUILD_VERSION)
 #else
 #define BANNER_VERSION KERNEL_VERSION_STRING
+#endif
 #endif
 
 void boot_banner(void)

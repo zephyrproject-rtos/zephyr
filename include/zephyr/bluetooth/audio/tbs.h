@@ -520,11 +520,10 @@ struct bt_tbs_client_cb {
  * discover and setup handles and subscriptions.
  *
  * @param conn          The connection to discover TBS for.
- * @param subscribe     Whether to subscribe to all handles.
  *
  * @return int          0 on success, GATT error value on fail.
  */
-int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe);
+int bt_tbs_client_discover(struct bt_conn *conn);
 
 /**
  * @brief Set the outgoing URI for a TBS instance on the peer device.

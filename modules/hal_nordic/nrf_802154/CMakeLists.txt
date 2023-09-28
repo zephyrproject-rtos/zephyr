@@ -8,9 +8,7 @@ if (CONFIG_NRF_802154_RADIO_DRIVER)
   target_sources(nrf-802154-platform
     PRIVATE
       radio/platform/nrf_802154_random_zephyr.c
-      sl_opensource/platform/nrf_802154_gpiote_crit_sect.c
       sl_opensource/platform/nrf_802154_clock_zephyr.c
-      sl_opensource/platform/nrf_802154_gpiote_zephyr.c
       sl_opensource/platform/nrf_802154_irq_zephyr.c
       sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
@@ -93,6 +91,10 @@ if (CONFIG_NRF_802154_CARRIER_FUNCTIONS)
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=1)
 else()
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CARRIER_FUNCTIONS_ENABLED=0)
+endif()
+
+if (CONFIG_NRF_802154_RADIO_DRIVER OR CONFIG_NRF_802154_SERIALIZATION)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENERGY_DETECTED_VERSION=1)
 endif()
 
 set(NRF52_SERIES  ${CONFIG_SOC_SERIES_NRF52X})

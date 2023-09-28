@@ -38,7 +38,7 @@ BUILD_ASSERT(sizeof(bt_mesh_prov_link.conf_inputs) == 145,
 int bt_mesh_prov_reset_state(void)
 {
 	int err;
-	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
+	const size_t offset = offsetof(struct bt_mesh_prov_link, addr);
 
 	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
@@ -180,12 +180,6 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 	bt_mesh_input_action_t input;
 	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	int err;
-
-	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
-	    (method == AUTH_METHOD_NO_OOB ||
-	    bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) {
-		return -EINVAL;
-	}
 
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:

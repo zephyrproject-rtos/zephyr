@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/sys/barrier.h>
 

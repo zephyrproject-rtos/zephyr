@@ -95,6 +95,12 @@
 
 &gpio0 {
 	status = "okay";
+
+	blue-led-disable {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
 };
 
 &gpio1 {

@@ -138,7 +138,7 @@ config USB_WORKQUEUE
 config USB_WORKQUEUE_STACK_SIZE
 	int "USB workqueue stack size"
 	depends on USB_WORKQUEUE
-	default 4096 if COVERAGE
+	default 4096 if COVERAGE_GCOV
 	default 1024
 
 config USB_WORKQUEUE_PRIORITY

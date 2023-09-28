@@ -5,6 +5,7 @@
 #include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/init.h>
 #include <errno.h>
 #include <soc.h>
 

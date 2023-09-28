@@ -580,14 +580,14 @@ static int lsm6dso16is_shub_read_target_reg(const struct device *dev,
 	trgt_cfg.slv_subadd = trgt_reg;
 	trgt_cfg.slv_len = len;
 
-	lsm6dso16is_sh_slv0_cfg_read(ctx, &trgt_cfg);
+	lsm6dso16is_sh_slv_cfg_read(ctx, 0, &trgt_cfg);
 
 	/* turn SH on, wait for shub i2c read to finish */
 	lsm6dso16is_shub_enable(dev, 1);
 	lsm6dso16is_shub_wait_completed(ctx);
 
 	/* read data from external target */
-	if (lsm6dso16is_sh_read_data_raw_get(ctx, (lsm6dso16is_emb_sh_read_t *)value, len) < 0) {
+	if (lsm6dso16is_sh_read_data_raw_get(ctx, value, len) < 0) {
 		LOG_DBG("shub: error reading sensor data");
 		return -EIO;
 	}
@@ -662,13 +662,6 @@ static int lsm6dso16is_shub_set_data_channel(const struct device *dev)
 	struct lsm6dso16is_shub_slist *sp;
 	lsm6dso16is_sh_cfg_read_t trgt_cfg;
 
-	int32_t (*sh_chan_cfg[LSM6DSO16IS_SHUB_MAX_NUM_TARGETS])
-			(stmdev_ctx_t *ctx, lsm6dso16is_sh_cfg_read_t *val) = {
-		lsm6dso16is_sh_slv1_cfg_read,
-		lsm6dso16is_sh_slv2_cfg_read,
-		lsm6dso16is_sh_slv3_cfg_read,
-	};
-
 	/* Configure shub data channels to access external targets */
 	for (n = 0; n < data->num_ext_dev; n++) {
 		sp = &lsm6dso16is_shub_slist[data->shub_ext[n]];
@@ -677,7 +670,7 @@ static int lsm6dso16is_shub_set_data_channel(const struct device *dev)
 		trgt_cfg.slv_subadd = sp->out_data_addr;
 		trgt_cfg.slv_len = sp->out_data_len;
 
-		if (sh_chan_cfg[n](ctx, &trgt_cfg) < 0) {
+		if (lsm6dso16is_sh_slv_cfg_read(ctx, n + 1, &trgt_cfg) < 0) {
 			LOG_DBG("shub: error configuring shub for ext targets");
 			return -EIO;
 		}

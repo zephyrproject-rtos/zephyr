@@ -38,6 +38,9 @@ target_link_libraries(kernel INTERFACE ${libkernel})
 
 else()
 
+# FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
+add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
+
 list(APPEND kernel_files
   main_weak.c
   banner.c

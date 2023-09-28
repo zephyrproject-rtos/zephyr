@@ -300,15 +300,15 @@ static inline void i2s_purge_stream_buffers(struct stream *stream,
 		struct i2s_txq_entry queue_entry;
 
 		while (k_msgq_get(&stream->in_queue, &queue_entry, K_NO_WAIT) == 0) {
-			k_mem_slab_free(mem_slab, &queue_entry.mem_block);
+			k_mem_slab_free(mem_slab, queue_entry.mem_block);
 		}
 	} else {
 		while (k_msgq_get(&stream->in_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(mem_slab, &buffer);
+			k_mem_slab_free(mem_slab, buffer);
 		}
 	}
 	while (k_msgq_get(&stream->out_queue, &buffer, K_NO_WAIT) == 0) {
-		k_mem_slab_free(mem_slab, &buffer);
+		k_mem_slab_free(mem_slab, buffer);
 	}
 }
 
@@ -457,7 +457,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 	ret = k_msgq_get(&stream->out_queue, &queue_entry.mem_block, K_NO_WAIT);
 	if (ret == 0) {
 		/* transmission complete. free the buffer */
-		k_mem_slab_free(stream->cfg.mem_slab, &queue_entry.mem_block);
+		k_mem_slab_free(stream->cfg.mem_slab, queue_entry.mem_block);
 	} else {
 		LOG_ERR("no buffer in output queue for channel %u", channel);
 	}

@@ -20,6 +20,14 @@ uint8_t coap_header_get_code_fake_deleted(const struct coap_packet *cpkt)
 {
 	return COAP_RESPONSE_CODE_DELETED;
 }
+uint8_t coap_header_get_code_fake_changed(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_CHANGED;
+}
+uint8_t coap_header_get_code_fake_bad_request(const struct coap_packet *cpkt)
+{
+	return COAP_RESPONSE_CODE_BAD_REQUEST;
+}
 
 DEFINE_FAKE_VALUE_FUNC(int, coap_append_option_int, struct coap_packet *, uint16_t, unsigned int);
 DEFINE_FAKE_VALUE_FUNC(int, coap_packet_append_option, struct coap_packet *, uint16_t,
@@ -61,6 +69,20 @@ int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value)
 	*value = false;
 	return 0;
 }
+int lwm2m_get_bool_fake_true(const struct lwm2m_obj_path *path, bool *value)
+{
+	*value = true;
+	return 0;
+}
+
+uint32_t get_u32_val;
+
+int lwm2m_get_u32_val(const struct lwm2m_obj_path *path, uint32_t *val)
+{
+	*val = get_u32_val;
+	return 0;
+}
+
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);
@@ -95,21 +117,23 @@ uint16_t counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 struct lwm2m_message *pending_message;
 void *(*pending_message_cb)();
 static bool running;
+K_SEM_DEFINE(srv_sem, 0, 1);
 
 static void service_work_fn(struct k_work *work)
 {
 	while (running) {
+		k_sleep(K_MSEC(10));
 		if (pending_message != NULL && pending_message_cb != NULL) {
 			pending_message_cb(pending_message);
 			pending_message = NULL;
 		}
 
 		if (next && next < k_uptime_get()) {
-			printk("Event!\n");
 			next = 0;
 			service(NULL);
+			k_sem_give(&srv_sem);
 		}
-		k_sleep(K_MSEC(10));
+
 		counter--;
 
 		/* avoid endless loop if rd client is stuck somewhere */
@@ -122,10 +146,8 @@ static void service_work_fn(struct k_work *work)
 
 void wait_for_service(uint16_t cycles)
 {
-	uint16_t end = counter - cycles;
-
-	while (counter > end) {
-		k_sleep(K_MSEC(10));
+	while (cycles--) {
+		k_sem_take(&srv_sem, K_MSEC(100));
 	}
 }
 
@@ -136,6 +158,7 @@ void test_lwm2m_engine_start_service(void)
 	running = true;
 	counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 	k_work_submit(&service_work);
+	k_sem_reset(&srv_sem);
 }
 
 void test_lwm2m_engine_stop_service(void)

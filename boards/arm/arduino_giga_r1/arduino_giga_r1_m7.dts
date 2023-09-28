@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_giga_r1.dtsi"
 
 / {
@@ -20,7 +21,7 @@
 		zephyr,bt-uart = &uart7;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,canbus = &can2;
+		zephyr,canbus = &fdcan2;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -29,7 +30,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = "RAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	aliases {
@@ -134,7 +135,7 @@
 	pinctrl-names = "default";
 };
 
-&can2 {
+&fdcan2 {
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";

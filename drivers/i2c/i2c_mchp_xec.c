@@ -854,12 +854,12 @@ static int i2c_xec_init(const struct device *dev)
 		return ret;
 	}
 
-	if (!device_is_ready(cfg->sda_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->sda_gpio)) {
 		LOG_ERR("%s GPIO device is not ready for SDA GPIO", dev->name);
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(cfg->scl_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->scl_gpio)) {
 		LOG_ERR("%s GPIO device is not ready for SCL GPIO", dev->name);
 		return -ENODEV;
 	}

@@ -12,7 +12,7 @@
  * the migration towards the Native simulator.
  */
 
-#include "zephyr/arch/posix/posix_trace.h"
+#include <zephyr/arch/posix/posix_trace.h>
 
 void nsi_print_error_and_exit(const char *format, ...)
 {

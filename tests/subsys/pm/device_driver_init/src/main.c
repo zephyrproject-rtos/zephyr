@@ -17,8 +17,8 @@
 	{\
 		const struct gpio_dt_spec gpio = GPIO_DT_SPEC_GET(node_id, enable_gpios);\
 		gpio_flags_t gpio_config; \
-		int rc = gpio_pin_get_config_dt(&gpio, &gpio_config); \
-		zassert_equal(rc, 0, "GPIO config retrieval failed"); \
+		int gpio_ret = gpio_pin_get_config_dt(&gpio, &gpio_config); \
+		zassert_equal(gpio_ret, 0, "GPIO config retrieval failed"); \
 		zassert_equal(gpio_config, config, "Unexpected config");\
 	}
 
@@ -27,7 +27,7 @@
 	zassert_equal(rc, 0, "Device state retrieval failed"); \
 	zassert_equal(state, value, "Unexpected device state");
 
-ZTEST(device_driver_init, test_demo)
+ZTEST(device_driver_init, test_device_driver_init)
 {
 #if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
 	enum pm_device_state state;

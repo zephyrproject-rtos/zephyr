@@ -92,6 +92,9 @@ hardware features:
    * - UART (PIO)
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`raspberrypi,pico-uart-pio`
+   * - SPI (PIO)
+     - :kconfig:option:`CONFIG_SPI`
+     - :dtcompatible:`raspberrypi,pico-spi-pio`
 
 Pin Mapping
 ===========
@@ -137,6 +140,16 @@ Zephyr does not (currently) assemble PIO programs. Rather, they should be
 manually assembled and embedded in source code. An example of how this is done
 can be found at `drivers/serial/uart_rpi_pico_pio.c`.
 
+Sample:  SPI vio PIO
+====================
+
+The :zephyr_file:`samples/sensor/bme280/README.rst` sample includes a
+demonstration of using the PIO SPI driver to communicate with an
+environmental sensor.  The PIO SPI driver supports using any
+combination of GPIO pins for an SPI bus, as well as allowing up to
+four independent SPI buses on a single board (using the two SPI
+devices as well as both PIO devices).
+
 Programming and Debugging
 *************************
 
@@ -149,7 +162,7 @@ Using SEGGER JLink
 You can Flash the rpi_pico with a SEGGER JLink debug probe as described in
 :ref:`Building, Flashing and Debugging <west-flashing>`.
 
-Here is an example of building and flashing the :ref:`blinky-sample` application.
+Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -184,7 +197,7 @@ Depending on the interface used (such as JLink), you might need to
 checkout to a branch that supports this interface, before proceeding.
 Build and install OpenOCD as described in the README.
 
-Here is an example of building and flashing the :ref:`blinky-sample` application.
+Here is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -244,7 +257,7 @@ Using OpenOCD
 
 Install OpenOCD as described for flashing the board.
 
-Here is an example for debugging the :ref:`blinky-sample` application.
+Here is an example for debugging the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

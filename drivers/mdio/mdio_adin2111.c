@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(mdio_adin2111, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
-#include <zephyr/drivers/mdio/mdio_adin2111.h>
 #include <zephyr/drivers/ethernet/eth_adin2111.h>
 
 /* MDIO ready check retry delay */
@@ -56,9 +55,9 @@ static int mdio_adin2111_wait_ready(const struct device *dev, uint16_t reg,
 }
 
 
-int adin2111_mdio_c45_read(const struct device *dev, uint8_t prtad,
-			   uint8_t devad, uint16_t regad,
-			   uint16_t *data)
+static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
+				  uint8_t devad, uint16_t regad,
+				  uint16_t *data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t rdy;
@@ -96,9 +95,9 @@ int adin2111_mdio_c45_read(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-int adin2111_mdio_c45_write(const struct device *dev, uint8_t prtad,
-			    uint8_t devad, uint16_t regad,
-			    uint16_t data)
+static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
+				   uint8_t devad, uint16_t regad,
+				   uint16_t data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 
@@ -131,7 +130,7 @@ int adin2111_mdio_c45_write(const struct device *dev, uint8_t prtad,
 }
 
 static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
-			      uint8_t devad, uint16_t *data)
+			      uint8_t regad, uint16_t *data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t read;
@@ -141,7 +140,7 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 	cmd = BIT(28);
 	cmd |= 0x3U << 26;
 	cmd |= (prtad & 0x1FU) << 21;
-	cmd |= (devad & 0x1FU) << 16;
+	cmd |= (regad & 0x1FU) << 16;
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret >= 0) {
@@ -153,7 +152,7 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 }
 
 static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
-			       uint8_t devad, uint16_t data)
+			       uint8_t regad, uint16_t data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t cmd;
@@ -163,7 +162,7 @@ static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
 	cmd = BIT(28);
 	cmd |= BIT(26);
 	cmd |= (prtad & 0x1FU) << 21;
-	cmd |= (devad & 0x1FU) << 16;
+	cmd |= (regad & 0x1FU) << 16;
 	cmd |= data;
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
@@ -191,6 +190,8 @@ static void mdio_adin2111_bus_disable(const struct device *dev)
 static const struct mdio_driver_api mdio_adin2111_api = {
 	.read = mdio_adin2111_read,
 	.write = mdio_adin2111_write,
+	.read_c45 = mdio_adin2111_read_c45,
+	.write_c45 = mdio_adin2111_write_c45,
 	.bus_enable = mdio_adin2111_bus_enable,
 	.bus_disable = mdio_adin2111_bus_disable
 };

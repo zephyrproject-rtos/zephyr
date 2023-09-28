@@ -294,15 +294,6 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-mbox
 
-.. _devicetree-memory-attr-api:
-
-Memory attributes
-=================
-
-These conveniences may be used for nodes with a memory attribute property.
-
-.. doxygengroup:: devicetree-memory-attr
-
 .. _devicetree-pinctrl-api:
 
 Pinctrl (pin control)

@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>
@@ -64,8 +64,8 @@ void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
 			volatile uint32_t *dst =
 				(volatile uint32_t *)segment->load_addr;
 
-			for (int i = 0; i < segment->data_len/4 ; i++) {
-				dst[i] = src[i];
+			for (int j = 0; j < segment->data_len/4 ; j++) {
+				dst[j] = src[j];
 			}
 		} else if (segment->load_addr >= SOC_DRAM_LOW &&
 			segment->load_addr < SOC_DRAM_HIGH) {

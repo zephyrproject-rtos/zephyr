@@ -95,11 +95,10 @@
 	clkctl: clkctl {
 		compatible = "intel,adsp-shim-clkctl";
 		adsp-clkctl-clk-wovcro = <0>;
-		adsp-clkctl-clk-lpro = <1>;
-		adsp-clkctl-clk-hpro = <2>;
-		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
-		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
-		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-clk-ipll = <1>;
+		adsp-clkctl-freq-enc = <0xc 0x4>;
+		adsp-clkctl-freq-mask = <0x0 0x0>;
+		adsp-clkctl-freq-default = <1>;
 		adsp-clkctl-freq-lowest = <0>;
 		wovcro-supported;
 	};
@@ -174,6 +173,112 @@
 		hdamlssp: hdamlssp@d00 {
 			compatible = "intel,adsp-hda-ssp-cap";
 			reg = <0xD00 0x40>;
+			status = "okay";
+		};
+
+		/*
+		 * FIXME this is modeling individual alh channels/instances
+		 * with node labels, which has problems. A better representation
+		 * is discussed here:
+		 *
+		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
+		 *
+		 * The hardware actually supports 16 ALH streams/FIFOs. Below description does
+		 * not fully represent hardware capabilities and is expected to be modified.
+		 */
+		alh0: alh0@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh1: alh1@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh2: alh2@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh3: alh3@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh4: alh4@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh5: alh5@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh6: alh6@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh7: alh7@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh8: alh8@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh9: alh9@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh10: alh10@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh11: alh11@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh12: alh12@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh13: alh13@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh14: alh14@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			status = "okay";
+		};
+
+		alh15: alh15@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
 			status = "okay";
 		};
 
@@ -385,6 +490,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			interrupts = <13 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -396,6 +503,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
+			interrupts = <12 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 

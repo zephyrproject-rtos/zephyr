@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA and Ulf Magnusson
+# Originally modified from:
+# https://github.com/ulfalizer/Kconfiglib/blob/master/examples/merge_config.py
+
+# SPDX-License-Identifier: ISC
+
 # Writes/updates the zephyr/.config configuration file by merging configuration
 # files passed as arguments, e.g. board *_defconfig and application prj.conf
 # files.

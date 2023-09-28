@@ -6,6 +6,8 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 #include "ntc_thermistor.h"
 
@@ -26,6 +28,7 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 {
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
+	enum pm_device_state pm_state;
 	int32_t val_mv;
 	int res;
 	struct adc_sequence sequence = {
@@ -35,11 +38,16 @@ static int ntc_thermistor_sample_fetch(const struct device *dev, enum sensor_cha
 		.calibrate = false,
 	};
 
+	(void)pm_device_state_get(dev, &pm_state);
+	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
+		return -EIO;
+	}
+
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	adc_sequence_init_dt(&cfg->adc_channel, &sequence);
 	res = adc_read(cfg->adc_channel.dev, &sequence);
-	if (res) {
+	if (!res) {
 		val_mv = data->raw;
 		res = adc_raw_to_millivolts_dt(&cfg->adc_channel, &val_mv);
 		data->sample_val = val_mv;
@@ -55,17 +63,15 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 {
 	struct ntc_thermistor_data *data = dev->data;
 	const struct ntc_thermistor_config *cfg = dev->config;
-	uint32_t ohm, max_adc;
+	uint32_t ohm;
 	int32_t temp;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		max_adc = (1 << (cfg->adc_channel.resolution - 1)) - 1;
-		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, max_adc, data->raw);
+		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val);
 		temp = ntc_get_temp_mc(&cfg->ntc_cfg.type, ohm);
 		val->val1 = temp / 1000;
 		val->val2 = (temp % 1000) * 1000;
-		LOG_INF("ntc temp says %u", val->val1);
 		break;
 	default:
 		return -ENOTSUP;
@@ -94,50 +100,69 @@ static int ntc_thermistor_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+
+	err = pm_device_runtime_enable(dev);
+	if (err) {
+		LOG_ERR("Failed to enable runtime power management");
+		return err;
+	}
+#endif
+
 	return 0;
 }
 
-#define NTC_THERMISTOR_DEFINE(inst, id, comp_table)                                                \
-	BUILD_ASSERT(ARRAY_SIZE(comp_table) % 2 == 0, "Compensation table needs to be even size"); \
-                                                                                                   \
-	static int compare_ohm_##id##inst(const void *key, const void *element);                   \
-                                                                                                   \
+#ifdef CONFIG_PM_DEVICE
+static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
+
+#define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                           \
 	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                        \
                                                                                                    \
 	static const struct ntc_thermistor_config ntc_thermistor_cfg_##id##inst = {                \
 		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
 		.ntc_cfg =                                                                         \
 			{                                                                          \
-				.r25_ohm = DT_INST_PROP(inst, r25_ohm),                            \
 				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
 				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
 				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
 				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
 				.type = {                                                          \
-					.comp = (const struct ntc_compensation *)comp_table,       \
-					.n_comp = ARRAY_SIZE(comp_table),                          \
-					.ohm_cmp = compare_ohm_##id##inst,                         \
+					.comp = _comp,                                             \
+					.n_comp = _n_comp,                                         \
 				},                                                                 \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	static int compare_ohm_##id##inst(const void *key, const void *element)                    \
-	{                                                                                          \
-		return ntc_compensation_compare_ohm(                                               \
-			&ntc_thermistor_cfg_##id##inst.ntc_cfg.type, key, element);                \
-	}                                                                                          \
+	PM_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_pm_action);                                  \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
-		inst, ntc_thermistor_init, NULL, &ntc_thermistor_driver_##id##inst,                \
-		&ntc_thermistor_cfg_##id##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,          \
-		&ntc_thermistor_driver_api);
+		inst, ntc_thermistor_init, PM_DEVICE_DT_INST_GET(inst),                            \
+		&ntc_thermistor_driver_##id##inst, &ntc_thermistor_cfg_##id##inst, POST_KERNEL,    \
+		CONFIG_SENSOR_INIT_PRIORITY, &ntc_thermistor_driver_api);
+
+#define NTC_THERMISTOR_DEFINE(inst, id, comp) \
+	NTC_THERMISTOR_DEFINE0(inst, id, comp, ARRAY_SIZE(comp))
 
 /* ntc-thermistor-generic */
 #define DT_DRV_COMPAT ntc_thermistor_generic
 
 #define NTC_THERMISTOR_GENERIC_DEFINE(inst)                                                        \
 	static const uint32_t comp_##inst[] = DT_INST_PROP(inst, zephyr_compensation_table);       \
-	NTC_THERMISTOR_DEFINE(inst, DT_DRV_COMPAT, comp_##inst)
+	NTC_THERMISTOR_DEFINE0(inst, DT_DRV_COMPAT, (struct ntc_compensation *)comp_##inst,        \
+		ARRAY_SIZE(comp_##inst) / 2)
 
 DT_INST_FOREACH_STATUS_OKAY(NTC_THERMISTOR_GENERIC_DEFINE)
 
@@ -166,3 +191,29 @@ static __unused const struct ntc_compensation comp_epcos_b57861s0103a039[] = {
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
 				  comp_epcos_b57861s0103a039)
+
+/* murata,ncp15wb473 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT murata_ncp15wb473
+
+static __unused const struct ntc_compensation comp_murata_ncp15wb473[] = {
+	{ -25, 655802 },
+	{ -15, 360850 },
+	{ -5,  206463 },
+	{ 5,   122259 },
+	{ 15,  74730 },
+	{ 25,  47000 },
+	{ 35,  30334 },
+	{ 45,  20048 },
+	{ 55,  13539 },
+	{ 65,  9328 },
+	{ 75,  6544 },
+	{ 85,  4674 },
+	{ 95,  3388 },
+	{ 105, 2494 },
+	{ 115, 1860 },
+	{ 125, 1406 },
+};
+
+DT_INST_FOREACH_STATUS_OKAY_VARGS(NTC_THERMISTOR_DEFINE, DT_DRV_COMPAT,
+				  comp_murata_ncp15wb473)

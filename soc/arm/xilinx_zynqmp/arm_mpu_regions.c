@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 
 #define MPUTYPE_READ_ONLY \
 	{ \

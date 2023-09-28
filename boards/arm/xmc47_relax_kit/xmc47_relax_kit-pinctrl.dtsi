@@ -55,3 +55,15 @@
 	drive-push-pull;
 	hwctrl = "disabled";
 };
+
+&i2c_scl_p0_13_u1c1 {
+	drive-strength = "strong-sharp-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};
+
+&i2c_sda_p3_15_u1c1 {
+	drive-strength = "strong-soft-edge";
+	drive-open-drain;
+	hwctrl = "disabled";
+};

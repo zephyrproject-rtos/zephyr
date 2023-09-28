@@ -37,6 +37,13 @@ config PM_S2RAM
 	help
 	  This option enables suspend-to-RAM (S2RAM).
 
+config PM_NEED_ALL_DEVICES_IDLE
+	bool "System Low Power Mode Needs All Devices Idle"
+	depends on PM_DEVICE && !SMP
+	help
+	  When this option is enabled, check that no devices are busy before
+	  entering into system low power mode.
+
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
 	default PM_POLICY_DEFAULT

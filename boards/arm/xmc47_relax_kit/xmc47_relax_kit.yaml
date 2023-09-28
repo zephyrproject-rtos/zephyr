@@ -16,3 +16,4 @@ supported:
   - arduino_serial
 ram: 352
 flash: 2048
+vendor: infineon

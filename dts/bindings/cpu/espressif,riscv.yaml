@@ -5,7 +5,7 @@ description: Espressif RISC-V CPU
 
 compatible: "espressif,riscv"
 
-include: cpu.yaml
+include: riscv,cpus.yaml
 
 properties:
   clock-source:

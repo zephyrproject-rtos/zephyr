@@ -79,13 +79,14 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			ret = sedi_i2c_master_write_async(
 				context->sedi_device, addr | context->addr_10bit, msgs[i].buf,
-				msgs[i].len, msgs[i].flags & I2C_MSG_STOP);
+				msgs[i].len, (msgs[i].flags & I2C_MSG_STOP) == 0x0);
 		} else {
-			ret = sedi_i2c_master_read_async(context->sedi_device,
-							 addr | context->addr_10bit, msgs[i].buf,
-							 msgs[i].len, msgs[i].flags & I2C_MSG_STOP);
+			ret = sedi_i2c_master_read_async(
+				context->sedi_device, addr | context->addr_10bit, msgs[i].buf,
+				msgs[i].len, (msgs[i].flags & I2C_MSG_STOP) == 0x0);
 		}
 		if (ret != 0) {
+			ret = -EIO;
 			break;
 		}
 

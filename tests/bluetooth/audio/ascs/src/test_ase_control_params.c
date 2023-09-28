@@ -645,11 +645,11 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 		0x03,                   /* Opcode = Enable */
 		0x02,                   /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
 		0x03,                   /* Opcode = Enable */
@@ -660,6 +660,32 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 		ase_id_valid,           /* ASE_ID[1] */
 		0x00,                   /* Response_Code[1] = Success */
 		0x00,                   /* Reason[1] */
+	};
+
+	test_preamble_state_qos_configured(&fixture->conn, ase_id_valid, &fixture->stream);
+
+	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
+
+	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
+					     fixture->ase_cp, data_expected, sizeof(data_expected));
+}
+
+ZTEST_F(test_ase_control_params, test_enable_metadata_prohibited_context)
+{
+	const uint8_t ase_id_valid = 0x01;
+	const uint8_t buf[] = {
+		0x03,                   /* Opcode = Enable */
+		0x01,                   /* Number_of_ASEs */
+		ase_id_valid,           /* ASE_ID[0] */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x00, 0x00, /* Metadata[0] = Streaming Context (Prohibited) */
+	};
+	const uint8_t data_expected[] = {
+		0x03,                   /* Opcode = Enable */
+		0x01,                   /* Number_of_ASEs */
+		ase_id_valid,           /* ASE_ID[0] */
+		0x0C,                   /* Response_Code[0] = Invalid Metadata */
+		0x02,                   /* Reason[0] = Streaming Context */
 	};
 
 	test_preamble_state_qos_configured(&fixture->conn, ase_id_valid, &fixture->stream);
@@ -830,8 +856,9 @@ static void test_receiver_stop_ready_expect_invalid_length(struct bt_conn *conn,
 		0x02,           /* Response_Code[0] = Invalid Length */
 		0x00,           /* Reason[0] */
 	};
+	struct bt_iso_chan *chan;
 
-	test_preamble_state_disabling(conn, ase_id, stream);
+	test_preamble_state_disabling(conn, ase_id, stream, &chan);
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
@@ -988,11 +1015,11 @@ ZTEST_F(test_ase_control_params, test_update_metadata_invalid_ase_id)
 		0x07,                   /* Opcode = Update Metadata */
 		0x02,                   /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x03,                   /* Metadata_Length[0] */
-		0x02, 0x02, 0x04,       /* Metadata[0] = Streaming Context (Media) */
+		0x04,                   /* Metadata_Length[0] */
+		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
 		0x07,                   /* Opcode = Update Metadata */

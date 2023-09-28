@@ -238,13 +238,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(cis_lll->tx_pwr_lvl);
+	radio_tx_power_set(conn_lll->tx_pwr_lvl);
 #else /* !CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif /* !CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	phy = cis_lll->rx.phy;
-	radio_phy_set(phy, cis_lll->rx.phy_flags);
+	radio_phy_set(phy, PHY_FLAGS_S8);
 	radio_aa_set(cis_lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(conn_lll->crc_init));
 	lll_chan_set(data_chan_use);
@@ -257,27 +257,28 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	} else if (conn_lll->enc_rx) {
-		uint64_t payload_count;
+		uint64_t payload_cnt;
 		uint8_t pkt_flags;
 
-		payload_count = (cis_lll->event_count * cis_lll->rx.bn) +
-				(cis_lll->rx.bn_curr - 1U);
-		cis_lll->rx.ccm.counter = payload_count;
+		payload_cnt = (cis_lll->event_count * cis_lll->rx.bn) +
+			      (cis_lll->rx.bn_curr - 1U);
+		cis_lll->rx.ccm.counter = payload_cnt;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->rx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&cis_lll->rx.ccm, phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&cis_lll->rx.ccm, phy,
+							  RADIO_PKT_CONF_PDU_TYPE_CIS,
+							  node_rx->pdu));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -616,9 +617,9 @@ static void isr_rx(void *param)
 			iso_meta->payload_number = (cis_lll->event_count *
 						    cis_lll->rx.bn) +
 						   (cis_lll->rx.bn_curr - 1U);
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() -
+				radio_tmr_aa_restore() - cis_offset_first -
 				addr_us_get(cis_lll->rx.phy);
 			iso_meta->timestamp %=
 				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
@@ -737,6 +738,9 @@ static void isr_rx(void *param)
 	pdu_tx->rfu0 = 0U;
 	pdu_tx->rfu1 = 0U;
 
+	/* PHY */
+	radio_phy_set(cis_lll->tx.phy, cis_lll->tx.phy_flags);
+
 	/* Encryption */
 	if (false) {
 
@@ -746,20 +750,21 @@ static void isr_rx(void *param)
 
 		cis_lll->tx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->tx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->tx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&cis_lll->tx.ccm,
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&cis_lll->tx.ccm,
+						      RADIO_PKT_CONF_PDU_TYPE_CIS,
 						      pdu_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->tx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -878,6 +883,9 @@ static void isr_tx(void *param)
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+	/* PHY */
+	radio_phy_set(cis_lll->rx.phy, PHY_FLAGS_S8);
+
 	/* Encryption */
 	if (false) {
 
@@ -890,21 +898,22 @@ static void isr_tx(void *param)
 				(cis_lll->rx.bn_curr - 1U);
 		cis_lll->rx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->rx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&cis_lll->rx.ccm,
-						      cis_lll->rx.phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&cis_lll->rx.ccm,
+							  cis_lll->rx.phy,
+							  RADIO_PKT_CONF_PDU_TYPE_CIS,
+							  node_rx->pdu));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -1091,6 +1100,9 @@ static void isr_prepare_subevent_common(void *param)
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+	/* PHY */
+	radio_phy_set(cis_lll->rx.phy, PHY_FLAGS_S8);
+
 	/* Encryption */
 	if (false) {
 
@@ -1103,21 +1115,22 @@ static void isr_prepare_subevent_common(void *param)
 				(cis_lll->rx.bn_curr - 1U);
 		cis_lll->rx.ccm.counter = payload_count;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (cis_lll->rx.max_pdu + PDU_MIC_SIZE),
 				    pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&cis_lll->rx.ccm,
-						      cis_lll->rx.phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&cis_lll->rx.ccm,
+							  cis_lll->rx.phy,
+							  RADIO_PKT_CONF_PDU_TYPE_CIS,
+							  node_rx->pdu));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	} else {
 		uint8_t pkt_flags;
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC,
+		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_CIS,
 						 cis_lll->rx.phy,
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
@@ -1246,14 +1259,14 @@ static void isr_done(void *param)
 		iso_meta->payload_number = (cis_lll->event_count *
 					    cis_lll->rx.bn) + (bn - 1U);
 		if (trx_performed_bitmask) {
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() -
+				radio_tmr_aa_restore() - cis_offset_first -
 				addr_us_get(cis_lll->rx.phy);
 		} else {
-			iso_meta->timestamp =
+			iso_meta->timestamp = cis_lll->offset +
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_ready_restore();
+				radio_tmr_ready_restore() - cis_offset_first;
 		}
 		iso_meta->timestamp %=
 			HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));

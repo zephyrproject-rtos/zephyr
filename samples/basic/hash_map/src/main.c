@@ -13,8 +13,6 @@ LOG_MODULE_REGISTER(hashmap_sample);
 
 SYS_HASHMAP_DEFINE_STATIC(map);
 
-void print_sys_memory_stats(void);
-
 struct _stats {
 	uint64_t n_insert;
 	uint64_t n_remove;

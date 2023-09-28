@@ -13,47 +13,14 @@ The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
 ******************************
+The following CVEs are addressed by this release:
 
-API Changes
-***********
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
-Changes in this release
-=======================
+* CVE-2023-4258 `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
 
-* Set :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE` default value to ``0`` (was
-  ``16``). Bootloaders that use a part of the SRAM should set this value to an
-  appropriate size. :github:`60371`
-
-* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
-  were more precisely specified and all in-tree call sites updated accordingly.
-  Fields for timed TX and TX/RX timestamps have been consolidated. See
-  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
-  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
-  documentation. As this is largely an internal API, existing applications will
-  most probably continue to work unchanged.
-
-* The Kconfig option CONFIG_GPIO_NCT38XX_INTERRUPT has been renamed to
-  :kconfig:option:`CONFIG_GPIO_NCT38XX_ALERT`.
-
-Removed APIs in this release
-============================
-
-Deprecated in this release
-==========================
-
-* Setting the GIC architecture version by selecting
-  :kconfig:option:`CONFIG_GIC_V1`, :kconfig:option:`CONFIG_GIC_V2` and
-  :kconfig:option:`CONFIG_GIC_V3` directly in Kconfig has been deprecated.
-  The GIC version should now be specified by adding the appropriate compatible, for
-  example :dtcompatible:`arm,gic-v2`, to the GIC node in the device tree.
-
-Stable API changes in this release
-==================================
-
-New APIs in this release
-========================
-
-* Introduced MCUmgr client support with handlers for img_mgmt and os_mgmt.
 
 Kernel
 ******
@@ -61,32 +28,14 @@ Kernel
 Architectures
 *************
 
-* ARC
-
 * ARM
 
-  * Fixed the Cortex-A/-R linker command file:
+  * Architectural support for Arm Cortex-M has been separated from Arm
+    Cortex-A and Cortex-R. This includes separate source modules to handle
+    tasks like IRQ management, exception handling, thread handling and swap.
+    For implementation details see :github:`60031`.
 
-    * The sections for zero-initialized (.bss) and uninitialized (.noinit) data
-      are now the last sections within the binary. This allows the linker to just
-      account for the required memory, but not having to actually include large
-      empty spaces within the binary. With the .bss and .noinit sections placed
-      somewhere in the middle of the resulting binary, as was the case with
-      previous releases, the linker had to pad the space for zero-/uninitialized
-      data due to subsequent sections containing initialized data. The inclusion
-      of large zero-initialized arrays or statically defined heaps reflected
-      directly in the size of the resulting binary, resulting in unnecessarily
-      large binaries, even when stripped.
-    * Fixed the location of the z_mapped_start address marker to point to the
-      base of RAM instead of to the start of the .text section. Therefore, the
-      single 4k page .vectors section, which is located right at the base of RAM
-      before the .text section and which was previously not included in the
-      mapped memory range, is now considered mapped and unavailable for dynamic
-      memory mapping via the MMU at run-time. This prevents the 4k page containing
-      the exception vectors data being mapped as regular memory at run-time, with
-      any subsequently mapped pages being located beyond the permanently mapped
-      memory regions (beyond z_mapped_end), resulting in non-contiguous memory
-      allocation for any first memory request greater than 4k.
+* ARM
 
 * ARM64
 
@@ -171,6 +120,22 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+* SCA (Static Code Analysis)
+
+  * Added support for CodeChecker
+
+* Twister now supports ``required_snippets`` in testsuite .yml files, this can
+  be used to include a snippet when a test is ran (and exclude any boards from
+  running that the snippet cannot be applied to).
+
+* Interrupts
+
+  * Added support for shared interrupts
+
+* Added support for setting MCUboot encryption key in sysbuild which is then
+  propagated to the bootloader and target images to automatically create
+  encrypted updates.
+
 Drivers and Sensors
 *******************
 
@@ -196,6 +161,8 @@ Drivers and Sensors
 
 * Display
 
+  * Added support for ST7735S (in ST7735R driver)
+
 * DMA
 
 * EEPROM
@@ -205,6 +172,8 @@ Drivers and Sensors
 * ESPI
 
 * Ethernet
+
+  * Added :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_RX_TIMEOUT` to set rx timeout for native posix.
 
 * Flash
 
@@ -230,6 +199,23 @@ Drivers and Sensors
 * I3C
 
 * IEEE 802.15.4
+
+  * A new mandatory method attr_get() was introduced into ieee802154_radio_api.
+    Drivers need to implement at least
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES and
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES.
+  * The hardware capabilities IEEE802154_HW_2_4_GHZ and IEEE802154_HW_SUB_GHZ
+    were removed as they were not aligned with the standard and some already
+    existing drivers couldn't properly express their channel page and channel
+    range (notably SUN FSK and HRP UWB drivers). The capabilities were replaced
+    by the standard conforming new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES that fits all in-tree drivers.
+  * The method get_subg_channel_count() was removed from ieee802154_radio_api.
+    This method could not properly express the channel range of existing drivers
+    (notably SUN FSK drivers that implement channel pages > 0 and may not have
+    zero-based channel ranges or UWB drivers that could not be represented at
+    all). The method was replaced by the new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES that fits all in-tree drivers.
 
 * Interrupt Controller
 
@@ -271,6 +257,12 @@ Drivers and Sensors
 
   * Added support for Nuvoton NuMaker M46x
 
+  * NS16550: Reworked how device initialization macros.
+
+    * CONFIG_UART_NS16550_ACCESS_IOPORT and CONFIG_UART_NS16550_SIMULT_ACCESS
+      are removed. For UART using IO port access, add "io-mapped" property to
+      device tree node.
+
 * SPI
 
   * Remove npcx spi driver implemented by Flash Interface Unit (FIU) module.
@@ -294,6 +286,14 @@ Drivers and Sensors
 Networking
 **********
 
+* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
+  were more precisely specified and all in-tree call sites updated accordingly.
+  Fields for timed TX and TX/RX timestamps have been consolidated. See
+  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
+  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
+  documentation. As this is largely an internal API, existing applications will
+  most probably continue to work unchanged.
+
 * CoAP:
 
   * Use 64 bit timer values for calculating transmission timeouts. This fixes potential problems for
@@ -313,23 +313,18 @@ Networking
 USB
 ***
 
+* USB device HID
+  * Kconfig option USB_HID_PROTOCOL_CODE, deprecated in v2.6, is finally removed.
+
 Devicetree
 **********
-
-* ``zephyr,memory-region-mpu`` was renamed ``zephyr,memory-attr``
-
-* The following macros were added:
-  :c:macro:`DT_FOREACH_NODE_VARGS`,
-  :c:macro:`DT_FOREACH_STATUS_OKAY_NODE_VARGS`
-  :c:macro:`DT_MEMORY_ATTR_FOREACH_NODE`
-  :c:macro:`DT_MEMORY_ATTR_APPLY`
-  :c:macro:`DT_MEM_FROM_FIXED_PARTITION`
-  :c:macro:`DT_FIXED_PARTITION_ADDR`
 
 Libraries / Subsystems
 **********************
 
 * Management
+
+  * Introduced MCUmgr client support with handlers for img_mgmt and os_mgmt.
 
   * Added response checking to MCUmgr's :c:enumerator:`MGMT_EVT_OP_CMD_RECV`
     notification callback to allow applications to reject MCUmgr commands.
@@ -356,9 +351,32 @@ Libraries / Subsystems
   * Added optional mutex locking support to MCUmgr img_mgmt group, which can
     be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_MUTEX`.
 
+  * Added MCUmgr settings management group, which allows for manipulation of
+    zephyr settings from a remote device, see :ref:`mcumgr_smp_group_3` for
+    details.
+
+  * Added :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY`
+    and :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY`
+    that allow to control whether MCUmgr client will be allowed to confirm
+    non-active images.
+
+  * Added :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING` that allows
+    to erase slots pending for next boot, that are not revert slots.
+
+  * Added ``user_data`` as an optional field to :c:struct:`mgmt_handler` when
+    :kconfig:option:`CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA` is enabled.
+
 * File systems
 
   * Added support for ext2 file system.
+  * Added support of mounting littlefs on the block device from the shell/fs.
+  * Added alignment parameter to FS_LITTLEFS_DECLARE_CUSTOM_CONFIG macro, it can speed up read/write
+    operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
+    because we can avoid extra copy of data from card bffer to read/prog buffer.
+
+* Retention
+
+  * Added the :ref:`blinfo_api` subsystem.
 
 HALs
 ****
@@ -369,6 +387,11 @@ HALs
 
 MCUboot
 *******
+
+  * Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE`
+    that allows to inform application that the on-board MCUboot has been configured
+    with downgrade  prevention enabled. This option is automatically selected for
+    DirectXIP mode and is available for both swap modes.
 
 Storage
 *******

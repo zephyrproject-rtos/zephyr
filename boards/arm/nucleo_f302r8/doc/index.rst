@@ -153,16 +153,16 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 
 .. _Nucleo F302R8 website:
-   http://www.st.com/en/evaluation-tools/nucleo-f302r8.html
+   https://www.st.com/en/evaluation-tools/nucleo-f302r8.html
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf
 
 .. _STM32F302R8 on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f302r8.html
+   https://www.st.com/en/microcontrollers/stm32f302r8.html
 
 .. _STM32F302R8 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00094349.pdf
+   https://www.st.com/resource/en/reference_manual/dm00094349.pdf
 
 .. _STM32F302R8 datasheet:
-   http://www.st.com/resource/en/datasheet/stm32f302r8.pdf
+   https://www.st.com/resource/en/datasheet/stm32f302r8.pdf

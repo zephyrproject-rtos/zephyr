@@ -241,15 +241,23 @@ static inline uint32_t npcx_devalt_lk_offset(uint32_t alt_lk_no)
 
 static inline uint32_t npcx_pupd_en_offset(uint32_t pupd_en_no)
 {
-	return 0x28 + pupd_en_no;
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		return 0x28 + pupd_en_no;
+	} else { /* NPCX4 and later series */
+		return 0x2b + pupd_en_no;
+	}
 }
 
 static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 {
-	if (ctl_no < 5) {
-		return 0x02a + ctl_no;
-	} else {
-		return 0x026 + ctl_no - 5;
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7) || IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		if (ctl_no < 5) {
+			return 0x02a + ctl_no;
+		} else {
+			return 0x026 + ctl_no - 5;
+		}
+	} else { /* NPCX4 and later series */
+		return 0x150 + ctl_no;
 	}
 }
 
@@ -558,7 +566,9 @@ struct adc_reg {
 	volatile uint16_t ASCADD;
 	/* 0x008: ADC Scan Channels Select */
 	volatile uint16_t ADCCS;
-	volatile uint8_t reserved1[16];
+	/* 0x00A: ADC Scan Channels Select 2 */
+	volatile uint16_t ADCCS2;
+	volatile uint8_t reserved1[14];
 	/* 0x01A:  Threshold Status */
 	volatile uint16_t THRCTS;
 	volatile uint8_t reserved2[4];
@@ -571,12 +581,34 @@ struct adc_reg {
 	volatile uint16_t MEAST;
 };
 
+/* ADC internal inline functions for multi-registers */
 static inline uint32_t npcx_chndat_offset(uint32_t ch)
 {
 	return 0x40 + ch * 2;
 }
 
+static inline uint32_t npcx_thr_base(void)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x014;
+	} else if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX9)) {
+		return 0x060;
+	} else { /* NPCX4 and later series */
+		return 0x080;
+	}
+}
+
+static inline uint32_t npcx_thrctl_offset(uint32_t ctrl)
+{
+	return npcx_thr_base() + ctrl * 2;
+}
+
 #define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
+#define THRCTL(base, ctrl) \
+	(*(volatile uint16_t *)(base + npcx_thrctl_offset(ctrl)))
+#ifdef CONFIG_SOC_SERIES_NPCX4
+#define THEN(base) (*(volatile uint16_t *)(base + 0x90))
+#endif
 
 /* ADC register fields */
 #define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)
@@ -596,10 +628,16 @@ static inline uint32_t npcx_chndat_offset(uint32_t ch)
 #define NPCX_ADCCNF_STOP                      11
 #define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
 #define NPCX_CHNDAT_NEW                       15
+#ifdef CONFIG_SOC_SERIES_NPCX4
+#define NPCX_THRCTL_L_H                       15
+#define NPCX_THRCTL_CHNSEL                    FIELD(10, 5)
+#define NPCX_THRCTL_THRVAL                    FIELD(0, 10)
+#else
 #define NPCX_THRCTL_THEN                      15
 #define NPCX_THRCTL_L_H                       14
 #define NPCX_THRCTL_CHNSEL                    FIELD(10, 4)
 #define NPCX_THRCTL_THRVAL                    FIELD(0, 10)
+#endif
 #define NPCX_THRCTS_ADC_WKEN                  15
 #define NPCX_THRCTS_THR3_IEN                  10
 #define NPCX_THRCTS_THR2_IEN                  9
@@ -1525,10 +1563,24 @@ struct fiu_reg {
 	volatile uint8_t SPI1_DEV;
 	/* 0x03E-0x3F */
 	volatile uint8_t reserved9[2];
+#elif defined(CONFIG_SOC_SERIES_NPCX4)
+	/* 0x034: UMA address byte 0-3 */
+	volatile uint32_t UMA_AB0_3;
+	/* 0x038-0x3B */
+	volatile uint8_t reserved8[4];
+	/* 0x03C: SPI Device */
+	volatile uint8_t SPI_DEV;
+	/* 0x03D */
+	volatile uint8_t reserved9;
+	/* 0x03E */
+	volatile uint8_t SPI_DEV_SIZE;
+	/* 0x03F */
+	volatile uint8_t reserved10;
 #endif
 };
 
 /* FIU register fields */
+#define NPCX_BURST_CFG_SPI_DEV_SEL       FIELD(4, 2)
 #define NPCX_RESP_CFG_IAD_EN             0
 #define NPCX_RESP_CFG_DEV_SIZE_EX        2
 #define NPCX_RESP_CFG_QUAD_EN            3
@@ -1542,12 +1594,20 @@ struct fiu_reg {
 #define NPCX_UMA_ECTS_SW_CS1             1
 #define NPCX_UMA_ECTS_SEC_CS             2
 #define NPCX_UMA_ECTS_UMA_LOCK           3
+#define NPCX_UMA_ECTS_UMA_ADDR_SIZE      FIELD(4, 3)
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS10    6
 #define NPCX_SPI1_DEV_FOUR_BADDR_CS11    7
 #define NPCX_SPI1_DEV_SPI1_LO_DEV_SIZE   FIELD(0, 4)
+#if defined(CONFIG_SOC_SERIES_NPCX9)
 #define NPCX_FIU_EXT_CFG_SPI1_2DEV       7
+#else
+#define NPCX_FIU_EXT_CFG_SPI1_2DEV       6
+#endif
 #define NPCX_FIU_EXT_CFG_SET_DMM_EN      2
 #define NPCX_FIU_EXT_CFG_SET_CMD_EN      1
+#define NPCX_SPI_DEV_NADDRB              FIELD(5, 3)
+
+#define NPCX_MSR_IE_CFG_UMA_BLOCK        3
 
 /* UMA fields selections */
 #define UMA_FLD_ADDR     BIT(NPCX_UMA_CTS_A_SIZE)  /* 3-bytes ADR field */

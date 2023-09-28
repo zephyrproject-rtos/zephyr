@@ -18,7 +18,9 @@
 #define RAM_IRAM_START    0x40020000
 #define RAM_DRAM_START    0x3ffb0000
 
-#define DATA_RAM_END      0x40000000
+/* DATA_RAM_END is equivalent 2nd stage bootloader iram_loader_seg
+   start address (that should not be overlapped) */
+#define DATA_RAM_END      0x3FFE0000
 
 #define IRAM_ORG    (RAM_IRAM_START + CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
                                     + CONFIG_ESP32S2_DATA_CACHE_SIZE)
@@ -50,6 +52,11 @@
 #define IROM_SEG_LEN FLASH_SIZE
 #define IROM_SEG_ALIGN 0x10000
 #endif
+
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 MEMORY
 {
@@ -179,18 +186,12 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
@@ -333,6 +334,7 @@ SECTIONS
 #if defined(CONFIG_ESP_SPIRAM)
   .ext_ram.bss (NOLOAD):
   {
+    _ext_ram_data_start = ABSOLUTE(.);
     _ext_ram_bss_start = ABSOLUTE(.);
 
 #if defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
@@ -342,10 +344,14 @@ SECTIONS
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
 #endif
+    _spiram_heap_start = ABSOLUTE(.);
+    . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
 
     *(.ext_ram.bss*)
     . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.) + CONFIG_ESP_SPIRAM_SIZE;
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    _ext_ram_data_end = ABSOLUTE(.);
   } > ext_ram_seg
 #endif
 
@@ -555,3 +561,8 @@ ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
+
+#if defined(CONFIG_ESP_SPIRAM)
+ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
+          "External SPIRAM overflowed.")
+#endif /* CONFIG_ESP_SPIRAM */

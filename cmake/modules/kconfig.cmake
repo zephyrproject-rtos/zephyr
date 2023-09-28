@@ -84,6 +84,7 @@ if(EXTRA_CONF_FILE)
   string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
 endif()
 
+zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files)
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -121,6 +122,12 @@ else()
   set(_local_TOOLCHAIN_HAS_NEWLIB n)
 endif()
 
+if(TOOLCHAIN_HAS_PICOLIBC)
+  set(_local_TOOLCHAIN_HAS_PICOLIBC y)
+else()
+  set(_local_TOOLCHAIN_HAS_PICOLIBC n)
+endif()
+
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
   srctree=${ZEPHYR_BASE}
@@ -139,6 +146,7 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
   TOOLCHAIN_HAS_NEWLIB=${_local_TOOLCHAIN_HAS_NEWLIB}
+  TOOLCHAIN_HAS_PICOLIBC=${_local_TOOLCHAIN_HAS_PICOLIBC}
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}
@@ -252,6 +260,7 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${BOARD_REVISION_CONFIG}
+  ${board_extension_conf_files}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${EXTRA_CONF_FILE_AS_LIST}

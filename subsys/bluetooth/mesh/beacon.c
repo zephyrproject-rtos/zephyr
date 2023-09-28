@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(bt_mesh_beacon);
 #define PROV_XMIT                  BT_MESH_TRANSMIT(0, 20)
 
 static struct k_work_delayable beacon_timer;
+#if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 static struct {
 	/**
 	 * Identifier for the current Private beacon random-value.
@@ -54,6 +55,7 @@ static struct {
 	uint8_t val[13];
 	uint64_t timestamp;
 } priv_random;
+#endif
 
 struct beacon_params {
 	bool private;
@@ -791,10 +793,4 @@ void bt_mesh_beacon_disable(void)
 {
 	/* If this fails, we'll do an early exit in the work handler. */
 	(void)k_work_cancel_delayable(&beacon_timer);
-}
-
-void bt_mesh_beacon_priv_random_get(uint8_t *random, size_t size)
-{
-	__ASSERT(size <= sizeof(priv_random.val), "Invalid random value size %u", size);
-	memcpy(random, priv_random.val, size);
 }

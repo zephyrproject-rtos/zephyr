@@ -36,6 +36,10 @@
 	};
 };
 
+&uicr {
+	gpio-as-nreset;
+};
+
 &i2c1 { /* power monitoring */
 	compatible = "nordic,nrf-twi";
 	status = "okay";

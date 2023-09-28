@@ -369,10 +369,17 @@ TESTDATA_4 = [
         'dummy stdout date'
     ),
     (
+        mock.Mock(returncode=1, stdout='dummy stdout version'),
+        mock.Mock(returncode=0, stdout='dummy stdout date'),
+        ['Could not determine version'],
+        'Unknown',
+        'dummy stdout date'
+    ),
+    (
         OSError,
         mock.Mock(returncode=1),
-        ['Cannot read zephyr version.'],
-        None,
+        ['Could not determine version'],
+        'Unknown',
         'Unknown'
     ),
 ]
@@ -382,7 +389,12 @@ TESTDATA_4 = [
     'git_describe_return, git_show_return, expected_logs,' \
     ' expected_version, expected_commit_date',
     TESTDATA_4,
-    ids=['valid', 'no zephyr version on describe', 'error on git describe']
+    ids=[
+        'valid',
+        'no zephyr version on describe',
+        'error on git describe',
+        'execution error on git describe',
+    ]
 )
 def test_twisterenv_check_zephyr_version(
     caplog,

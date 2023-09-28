@@ -75,12 +75,12 @@ int main(void)
 	int i;
 	uint32_t ms;
 
-	if (!device_is_ready(led0.port)) {
+	if (!gpio_is_ready_dt(&led0)) {
 		printk("LED0 GPIO controller device is not ready\n");
 		return 0;
 	}
 
-	if (!device_is_ready(led1.port)) {
+	if (!gpio_is_ready_dt(&led1)) {
 		printk("LED1 GPIO controller device is not ready\n");
 		return 0;
 	}

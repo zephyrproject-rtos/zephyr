@@ -11,7 +11,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+
+#include <cmsis_core.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

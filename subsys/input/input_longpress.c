@@ -36,8 +36,9 @@ struct longpress_data {
 
 static void longpress_deferred(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct longpress_data_entry *entry = CONTAINER_OF(
-			work, struct longpress_data_entry, work);
+			dwork, struct longpress_data_entry, work);
 	const struct device *dev = entry->dev;
 	const struct longpress_config *cfg = dev->config;
 	uint16_t code;
@@ -136,6 +137,6 @@ static int longpress_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, longpress_init, NULL,                                          \
 			      &longpress_data_##inst, &longpress_config_##inst,                    \
-			      APPLICATION, CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_LONGPRESS_DEFINE)

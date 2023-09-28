@@ -10,6 +10,8 @@ zephyr_library_sources_ifdef(
   sw_isr_common.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
+
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
@@ -56,6 +58,10 @@ if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_ARM64
   # Exclamation mark is printable character with lowest number in ASCII table.
   # We are sure that this file will be included as a first.
   zephyr_linker_sources(ROM_START SORT_KEY ! rom_start_address.ld)
+  # Some linkers fill unspecified region with pattern other than 0x00. Include
+  # fill_with_zeros.ld file which forces the linker to use 0x00 pattern. Please
+  # note that the pattern will affect empty spaces created after FILL(0x00).
+  zephyr_linker_sources(ROM_START SORT_KEY $ fill_with_zeros.ld)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
   # Handled in ld.cmake
 endif()

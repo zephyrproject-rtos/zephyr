@@ -147,8 +147,9 @@ static void gpio_qdec_irq_setup(const struct device *dev, bool enable)
 
 static void gpio_qdec_idle_worker(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct gpio_qdec_data *data = CONTAINER_OF(
-			work, struct gpio_qdec_data, idle_work);
+			dwork, struct gpio_qdec_data, idle_work);
 	const struct device *dev = data->dev;
 
 	k_timer_stop(&data->sample_timer);

@@ -27,3 +27,4 @@ supported:
   - dma
 ram: 96
 flash: 1024
+vendor: st

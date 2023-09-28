@@ -18,8 +18,9 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include "stm32_hsem.h"
+
+#include <cmsis_core.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

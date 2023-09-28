@@ -208,7 +208,7 @@ The ``blackmagicprobe`` can also be used to program the device.
 Flashing
 ========
 
-Here is an example for the :ref:`button-sample` application.
+Here is an example for the :zephyr:code-sample:`button` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button

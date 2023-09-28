@@ -41,6 +41,11 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MAX_BITWIDTH
 #define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
 
+#elif CONFIG_SOC_SERIES_ESP32S3
+#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
+#define ADC_RESOLUTION_MIN	SOC_ADC_DIGI_MIN_BITWIDTH
+#define ADC_RESOLUTION_MAX	SOC_ADC_DIGI_MAX_BITWIDTH
+
 #endif
 
 /* Convert resolution in bits to esp32 enum values */
@@ -150,6 +155,18 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	if (seq->channels > BIT(channel_id)) {
 		LOG_ERR("Multi-channel readings not supported");
 		return -ENOTSUP;
+	}
+
+	if (seq->options) {
+		if (seq->options->extra_samplings) {
+			LOG_ERR("Extra samplings not supported");
+			return -ENOTSUP;
+		}
+
+		if (seq->options->interval_us) {
+			LOG_ERR("Interval between samplings not supported");
+			return -ENOTSUP;
+		}
 	}
 
 	if (INVALID_RESOLUTION(seq->resolution)) {

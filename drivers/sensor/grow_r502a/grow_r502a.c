@@ -711,7 +711,7 @@ static int grow_r502a_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_GROW_R502A_GPIO_POWER)) {
-		if (!device_is_ready(cfg->vin_gpios.port)) {
+		if (!gpio_is_ready_dt(&cfg->vin_gpios)) {
 			LOG_ERR("GPIO port %s not ready", cfg->vin_gpios.port->name);
 			return -ENODEV;
 		}
@@ -724,7 +724,7 @@ static int grow_r502a_init(const struct device *dev)
 
 		k_sleep(K_MSEC(R502A_DELAY));
 
-		if (!device_is_ready(cfg->act_gpios.port)) {
+		if (!gpio_is_ready_dt(&cfg->act_gpios)) {
 			LOG_ERR("GPIO port %s not ready", cfg->act_gpios.port->name);
 			return -ENODEV;
 		}

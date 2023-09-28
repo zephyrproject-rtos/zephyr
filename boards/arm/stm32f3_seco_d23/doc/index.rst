@@ -236,7 +236,7 @@ You should see the following message on the console:
    https://www.seco.com/Manuals/SBC-D23_Manual.pdf
 
 .. _STM32F302VC on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f302vc.html
+   https://www.st.com/en/microcontrollers/stm32f302vc.html
 
 .. _STM32F302xC reference manual:
    https://www.st.com/resource/en/reference_manual/rm0365-stm32f302xbcde-and-stm32f302x68-advanced-armbased-32bit-mcus-stmicroelectronics.pdf

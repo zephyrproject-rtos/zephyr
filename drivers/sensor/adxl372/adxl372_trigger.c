@@ -150,7 +150,7 @@ int adxl372_init_interrupt(const struct device *dev)
 	struct adxl372_data *drv_data = dev->data;
 	int ret;
 
-	if (!device_is_ready(cfg->interrupt.port)) {
+	if (!gpio_is_ready_dt(&cfg->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -EINVAL;
 	}

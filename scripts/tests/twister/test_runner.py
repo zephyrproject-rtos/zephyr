@@ -90,7 +90,7 @@ def test_projectbuilder_cmake_assemble_args(m):
     handler.ready = True
 
     assert(ProjectBuilder.cmake_assemble_args(
-        ["basearg1"],
+        ["basearg1", "CONFIG_t=\"test\"", "SNIPPET_t=\"test\""],
         handler,
         ["a.conf;b.conf", "c.conf"],
         ["extra_overlay.conf"],
@@ -98,8 +98,9 @@ def test_projectbuilder_cmake_assemble_args(m):
         ["cmake1=foo", "cmake2=bar"],
         "/builddir/",
     ) == [
+        "-DCONFIG_t=\"test\"",
         "-Dcmake1=foo", "-Dcmake2=bar",
-        "-Dbasearg1",
+        "-Dbasearg1", "-DSNIPPET_t=test",
         "-Dhandler_arg1", "-Dhandler_arg2",
         "-DCONF_FILE=a.conf;b.conf;c.conf",
         "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",

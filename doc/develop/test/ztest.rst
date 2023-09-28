@@ -83,7 +83,7 @@ This is achieved via fixtures in the following way:
    static void *my_suite_setup(void)
    {
    	/* Allocate the fixture with 256 byte buffer */
-   	struct my_suite_fixture *fixture = k_malloc(sizeof(struct my_suite_fixture) + 255);
+      struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
 
    	zassume_not_null(fixture, NULL);
    	fixture->max_size = 256;
@@ -100,7 +100,7 @@ This is achieved via fixtures in the following way:
 
    static void my_suite_teardown(void *f)
    {
-   	k_free(f);
+      free(f);
    }
 
    ZTEST_SUITE(my_suite, NULL, my_suite_setup, my_suite_before, NULL, my_suite_teardown);
@@ -132,14 +132,14 @@ nature of the code, it's possible to annotate the test as such. For example:
 
     ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
 
-    ZTEST_EXPECT_FAIL(my_suite, test_fail)
+    ZTEST_EXPECT_FAIL(my_suite, test_fail);
     ZTEST(my_suite, test_fail)
     {
       /** This will fail the test */
       zassert_true(false, NULL);
     }
 
-    ZTEST_EXPECT_SKIP(my_suite, test_skip)
+    ZTEST_EXPECT_SKIP(my_suite, test_skip);
     ZTEST(my_suite, test_skip)
     {
       /** This will skip the test */

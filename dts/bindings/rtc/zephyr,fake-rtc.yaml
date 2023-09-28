@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides a fake RTC controller for use as either a stub or a mock in Zephyr
+    testing.
+
+compatible: "zephyr,fake-rtc"
+
+include: rtc-device.yaml

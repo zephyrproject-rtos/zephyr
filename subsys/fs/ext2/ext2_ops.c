@@ -126,7 +126,7 @@ static int ext2_close(struct fs_file_t *filp)
 		goto out;
 	}
 
-	k_mem_slab_free(&file_struct_slab, (void **)&f);
+	k_mem_slab_free(&file_struct_slab, (void *)f);
 	filp->filep = NULL;
 out:
 	return rc;
@@ -349,7 +349,7 @@ static int ext2_closedir(struct fs_dir_t *dirp)
 	struct ext2_file *dir = dirp->dirp;
 
 	ext2_inode_drop(dir->f_inode);
-	k_mem_slab_free(&file_struct_slab, (void **)&dir);
+	k_mem_slab_free(&file_struct_slab, (void *)dir);
 	return 0;
 }
 

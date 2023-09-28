@@ -506,7 +506,7 @@ static int w5500_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->interrupt.port)) {
+	if (!gpio_is_ready_dt(&config->interrupt)) {
 		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
@@ -527,7 +527,7 @@ static int w5500_init(const struct device *dev)
 					GPIO_INT_EDGE_FALLING);
 
 	if (config->reset.port) {
-		if (!device_is_ready(config->reset.port)) {
+		if (!gpio_is_ready_dt(&config->reset)) {
 			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
 			return -EINVAL;
 		}

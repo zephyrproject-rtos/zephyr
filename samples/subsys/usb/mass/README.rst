@@ -1,7 +1,8 @@
-.. _usb_mass:
+.. zephyr:code-sample:: usb-mass
+   :name: USB Mass Storage
+   :relevant-api: usbd_api _usb_device_core_api file_system_api
 
-USB Mass Storage Sample Application
-###################################
+   Expose board's RAM or FLASH as a USB disk using USB Mass Storage driver.
 
 Overview
 ********
@@ -157,7 +158,7 @@ LittleFS Example
 
 This board configures to use the external 64 MiBi QSPI flash chip with a
 128 KiBy `littlefs`_ partition compatible with the one produced by the
-:ref:`littlefs-sample`.
+:zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass

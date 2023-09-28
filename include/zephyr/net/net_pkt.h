@@ -151,16 +151,7 @@ struct net_pkt {
 #endif
 
 	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
-	uint8_t sent_or_eof : 1; /* For outgoing packet: is this sent or not
-				  * For incoming packet of a socket: last
-				  * packet before EOF
-				  * Used only if defined(CONFIG_NET_TCP)
-				  */
-	uint8_t pkt_queued : 1;	 /* For outgoing packet: is this packet
-				  * queued to be sent but has not reached
-				  * the driver yet.
-				  * Used only if defined(CONFIG_NET_TCP)
-				  */
+	uint8_t eof : 1;	 /* Last packet before EOF */
 	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
 				  * a L2 PTP packet.
 				  * Used only if defined (CONFIG_NET_L2_PTP)
@@ -455,26 +446,6 @@ static inline void net_pkt_set_ip_ecn(struct net_pkt *pkt, uint8_t ecn)
 #endif
 }
 
-static inline uint8_t net_pkt_sent(struct net_pkt *pkt)
-{
-	return pkt->sent_or_eof;
-}
-
-static inline void net_pkt_set_sent(struct net_pkt *pkt, bool sent)
-{
-	pkt->sent_or_eof = sent;
-}
-
-static inline uint8_t net_pkt_queued(struct net_pkt *pkt)
-{
-	return pkt->pkt_queued;
-}
-
-static inline void net_pkt_set_queued(struct net_pkt *pkt, bool send)
-{
-	pkt->pkt_queued = send;
-}
-
 static inline uint8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_TCP)
@@ -494,34 +465,25 @@ static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
 #endif
 }
 
-#if defined(CONFIG_NET_SOCKETS)
 static inline uint8_t net_pkt_eof(struct net_pkt *pkt)
 {
-	return pkt->sent_or_eof;
+	return pkt->eof;
 }
 
 static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 {
-	pkt->sent_or_eof = eof;
+	pkt->eof = eof;
 }
-#endif
 
-#if defined(CONFIG_NET_ROUTE)
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
-	return pkt->forwarding;
+	return !!(pkt->forwarding);
 }
 
 static inline void net_pkt_set_forwarding(struct net_pkt *pkt, bool forward)
 {
 	pkt->forwarding = forward;
 }
-#else
-static inline bool net_pkt_forwarding(struct net_pkt *pkt)
-{
-	return false;
-}
-#endif
 
 #if defined(CONFIG_NET_IPV4)
 static inline uint8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
@@ -1155,7 +1117,7 @@ static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
 #if defined(CONFIG_NET_IPV4_AUTO)
 static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
 {
-	return pkt->ipv4_auto_arp_msg;
+	return !!(pkt->ipv4_auto_arp_msg);
 }
 
 static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
@@ -1182,7 +1144,7 @@ static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
 #if defined(CONFIG_NET_LLDP)
 static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
 {
-	return pkt->lldp_pkt;
+	return !!(pkt->lldp_pkt);
 }
 
 static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
@@ -1207,7 +1169,7 @@ static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
 {
-	return pkt->ppp_msg;
+	return !!(pkt->ppp_msg);
 }
 
 static inline void net_pkt_set_ppp(struct net_pkt *pkt,
@@ -1262,7 +1224,7 @@ static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
 
 static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 {
-	return pkt->overwrite;
+	return !!(pkt->overwrite);
 }
 
 #ifdef CONFIG_NET_PKT_FILTER
@@ -1326,10 +1288,10 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
  *
  * A net_pkt slab is used to store meta-information about
  * network packets. It must be coupled with a data fragment pool
- * (:c:macro:`NET_PKT_DATA_POOL_DEFINE`) used to store the actual
+ * (@ref NET_PKT_DATA_POOL_DEFINE) used to store the actual
  * packet data. The macro can be used by an application to define
  * additional custom per-context TX packet slabs (see
- * :c:func:`net_context_setup_pools`).
+ * net_context_setup_pools()).
  *
  * @param name Name of the slab.
  * @param count Number of net_pkt in this slab.
@@ -1345,10 +1307,10 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
  *
  * A net_buf pool is used to store actual data for
  * network packets. It must be coupled with a net_pkt slab
- * (:c:macro:`NET_PKT_SLAB_DEFINE`) used to store the packet
+ * (@ref NET_PKT_SLAB_DEFINE) used to store the packet
  * meta-information. The macro can be used by an application to
  * define additional custom per-context TX packet pools (see
- * :c:func:`net_context_setup_pools`).
+ * net_context_setup_pools()).
  *
  * @param name Name of the pool.
  * @param count Number of net_buf in this pool.
@@ -2239,8 +2201,8 @@ struct net_pkt_data_access {
  * @brief Get data from a network packet in a contiguous way
  *
  * @details net_pkt's cursor should be properly initialized and,
- *          if needed, positioned using net_pkt_skip.
- *          Cursor position will be updated after the operation.
+ *          if needed, positioned using net_pkt_skip. Unlike other functions,
+ *          cursor position will not be updated after the operation.
  *
  * @param pkt    The network packet from where to get the data.
  * @param access A pointer to a valid net_pkt_data_access describing the

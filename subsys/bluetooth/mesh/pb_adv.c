@@ -282,7 +282,7 @@ static void prov_failed(uint8_t err)
 
 static void prov_msg_recv(void)
 {
-	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
 		LOG_ERR("Incorrect FCS");
@@ -654,7 +654,7 @@ static int bearer_ctl_send(struct net_buf *buf)
 	}
 
 	prov_clear_tx();
-	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
 	link.tx.start = k_uptime_get();
 	link.tx.buf[0] = buf;
@@ -670,7 +670,7 @@ static int bearer_ctl_send_unacked(struct net_buf *buf, void *user_data)
 	}
 
 	prov_clear_tx();
-	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
 	bt_mesh_adv_send(buf, &buf_sent_cb, user_data);
 	net_buf_unref(buf);
@@ -685,7 +685,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	uint8_t seg_len, seg_id;
 
 	prov_clear_tx();
-	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
 	start = adv_buf_create(RETRANSMITS_RELIABLE);
 	if (!start) {

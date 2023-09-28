@@ -96,7 +96,7 @@ static void it8xxx2_sha256_init(bool init_k)
 	}
 	/* Initialize array of round constants */
 	if (init_k) {
-		for (int i = 0; i < ARRAY_SIZE(sha256_k); i++) {
+		for (i = 0; i < ARRAY_SIZE(sha256_k); i++) {
 			chip_ctx.k[i] = sha256_k[i];
 		}
 	}

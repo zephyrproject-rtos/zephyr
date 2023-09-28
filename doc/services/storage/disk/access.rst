@@ -65,6 +65,14 @@ To read and write files and directories, see the :ref:`file_system_api` in
 :zephyr_file:`include/zephyr/fs/fs.h` such as :c:func:`fs_open()`,
 :c:func:`fs_read()`, and :c:func:`fs_write()`.
 
+eMMC Device Support
+*******************
+
+Zephyr also has support for eMMC devices using the Disk Access API.
+MMC in zephyr is implemented using the SD subsystem because the MMC bus
+shares a lot of similarity with the SD bus. MMC controllers also use the
+SDHC device driver API.
+
 Emulated block device on flash partition support
 ************************************************
 

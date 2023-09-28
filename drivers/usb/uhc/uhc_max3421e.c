@@ -177,7 +177,7 @@ static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
 }
 
 /* Set peripheral (device) address to be used in next transfer */
-static int ALWAYS_INLINE max3421e_peraddr(const struct device *dev,
+static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev,
 					  const uint8_t addr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -1052,7 +1052,7 @@ static int max3421e_driver_init(const struct device *dev)
 	int ret;
 
 	if (config->dt_rst.port) {
-		if (!device_is_ready(config->dt_rst.port)) {
+		if (!gpio_is_ready_dt(&config->dt_rst)) {
 			LOG_ERR("GPIO device %s not ready",
 				config->dt_rst.port->name);
 			return -EIO;
@@ -1072,7 +1072,7 @@ static int max3421e_driver_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!device_is_ready(config->dt_int.port)) {
+	if (!gpio_is_ready_dt(&config->dt_int)) {
 		LOG_ERR("GPIO device %s not ready", config->dt_int.port->name);
 		return -EIO;
 	}

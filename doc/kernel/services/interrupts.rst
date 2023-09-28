@@ -215,6 +215,38 @@ priority of the thread handling the offload, it is possible that
 the currently executing cooperative thread or other higher-priority threads
 may execute before the thread handling the offload is scheduled.
 
+Sharing interrupt lines
+=======================
+
+In the case of some hardware platforms, the same interrupt lines may be used
+by different IPs. For example, interrupt 17 may be used by a DMA controller to
+signal that a data transfer has been completed or by a DAI controller to signal
+that the transfer FIFO has reached its watermark. To make this work, one would
+have to either employ some special logic or find a workaround (for example, using
+the shared_irq interrupt controller), which doesn't scale very well.
+
+To solve this problem, one may use shared interrupts, which can be enabled using
+:kconfig:option:`CONFIG_SHARED_INTERRUPTS`. Whenever an attempt to register
+a second ISR/argument pair on the same interrupt line is made (using
+:c:macro:`IRQ_CONNECT` or :c:func:`irq_connect_dynamic`), the interrupt line will
+become shared, meaning the two ISR/argument pairs (previous one and the one that
+has just been registered) will be invoked each time the interrupt is triggered.
+The entities that make use of an interrupt line in the shared interrupt context
+are known as clients. The maximum number of allowed clients for an interrupt is
+controlled by :kconfig:option:`SHARED_IRQ_MAX_NUM_CLIENTS`.
+
+Interrupt sharing is transparent to the user. As such, the user may register
+interrupts using :c:macro:`IRQ_CONNECT` and :c:func:`irq_connect_dynamic` as
+they normally would. The interrupt sharing is taken care of behind the scenes.
+
+Enabling the shared interrupt support and dynamic interrupt support will
+allow users to dynamically disconnect ISRs using :c:func:`irq_disconnect_dynamic`.
+After an ISR is disconnected, whenever the interrupt line for which it was
+register gets triggered, the ISR will no longer get invoked.
+
+Please note that enabling :kconfig:option:`CONFIG_SHARED_INTERRUPTS` will
+result in a non-negligible increase in the binary size. Use with caution.
+
 Implementation
 **************
 
@@ -326,6 +358,98 @@ architecture-specific basis. (The feature is currently implemented in
 ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
 exposed to the user via an ARM-only API.)
 
+Sharing an interrupt line
+=========================
+
+The following code defines two ISRs using the same interrupt number.
+
+.. code-block:: c
+
+    #define MY_DEV_IRQ 24		/* device uses INTID 24 */
+    #define MY_DEV_IRQ_PRIO 2		/* device uses interrupt priority 2 */
+    /*  this argument may be anything */
+    #define MY_FST_ISR_ARG INT_TO_POINTER(1)
+    /*  this argument may be anything */
+    #define MY_SND_ISR_ARG INT_TO_POINTER(2)
+    #define MY_IRQ_FLAGS 0		/* IRQ flags */
+
+    void my_first_isr(void *arg)
+    {
+       ... /* some magic happens here */
+    }
+
+    void my_second_isr(void *arg)
+    {
+       ... /* even more magic happens here */
+    }
+
+    void my_isr_installer(void)
+    {
+       ...
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_second_isr, MY_SND_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+The same restrictions regarding :c:macro:`IRQ_CONNECT` described in `Defining a regular ISR`_
+are applicable here. If :kconfig:option:`CONFIG_SHARED_INTERRUPTS` is disabled, the above
+code will generate a build error. Otherwise, the above code will result in the two ISRs
+being invoked each time interrupt 24 is triggered.
+
+If :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS` is set to a value lower than 2
+(current number of clients), a build error will be generated.
+
+If dynamic interrupts are enabled, c:func:`irq_connect_dynamic` will allow sharing interrupts
+during runtime. Exceeding the configured maximum number of allowed clients will result in
+a failed assertion.
+
+Dynamically disconnecting an ISR
+================================
+
+The following code defines two ISRs using the same interrupt number. The second
+ISR is disconnected during runtime.
+
+.. code-block:: c
+
+    #define MY_DEV_IRQ 24		/* device uses INTID 24 */
+    #define MY_DEV_IRQ_PRIO 2		/* device uses interrupt priority 2 */
+    /*  this argument may be anything */
+    #define MY_FST_ISR_ARG INT_TO_POINTER(1)
+    /*  this argument may be anything */
+    #define MY_SND_ISR_ARG INT_TO_POINTER(2)
+    #define MY_IRQ_FLAGS 0		/* IRQ flags */
+
+    void my_first_isr(void *arg)
+    {
+       ... /* some magic happens here */
+    }
+
+    void my_second_isr(void *arg)
+    {
+       ... /* even more magic happens here */
+    }
+
+    void my_isr_installer(void)
+    {
+       ...
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       IRQ_CONNECT(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_second_isr, MY_SND_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+    void my_isr_uninstaller(void)
+    {
+       ...
+       irq_disconnect_dynamic(MY_DEV_IRQ, MY_DEV_IRQ_PRIO, my_first_isr, MY_FST_ISR_ARG, MY_IRQ_FLAGS);
+       ...
+    }
+
+The :c:func:`irq_disconnect_dynamic` call will result in interrupt 24 becoming
+unshared, meaning the system will act as if the first :c:macro:`IRQ_CONNECT`
+call never happened. This behaviour is only allowed if
+:kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` is enabled, otherwise a linker
+error will be generated.
+
 Implementation Details
 ======================
 
@@ -416,6 +540,32 @@ This is an array of struct _isr_table_entry:
 This is used by the common software IRQ handler to look up the ISR and its
 argument and execute it. The active IRQ line is looked up in an interrupt
 controller register and used to index this table.
+
+Shared SW ISR Table
+-------------------
+
+This is an array of struct z_shared_isr_table_entry:
+
+.. code-block:: c
+
+    struct z_shared_isr_table_entry {
+        struct z_shared_isr_client clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+        size_t client_num;
+    };
+
+This table keeps track of the registered clients for each of the interrupt
+lines. Whenever an interrupt line becomes shared, c:func:`z_shared_isr` will
+replace the currently registered ISR in _sw_isr_table. This special ISR will
+iterate through the list of registered clients and invoke the ISRs.
+
+The definition for struct z_shared_isr_client is as follows:
+
+.. code-block:: c
+
+    struct z_shared_isr_client {
+        void (*isr)(const void *arg);
+        const void *arg;
+    };
 
 x86 Details
 -----------

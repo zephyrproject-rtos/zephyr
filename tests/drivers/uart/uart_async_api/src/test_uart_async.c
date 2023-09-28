@@ -14,7 +14,7 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
-ZTEST_BMEM static const struct device *const uart_dev =
+static ZTEST_BMEM const struct device *const uart_dev =
 	DEVICE_DT_GET(UART_NODE);
 
 static void read_abort_timeout(struct k_timer *timer);
@@ -24,6 +24,13 @@ K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
 static void init_test(void)
 {
 	__ASSERT_NO_MSG(device_is_ready(uart_dev));
+	uart_rx_disable(uart_dev);
+	uart_tx_abort(uart_dev);
+	k_sem_reset(&tx_done);
+	k_sem_reset(&tx_aborted);
+	k_sem_reset(&rx_rdy);
+	k_sem_reset(&rx_buf_released);
+	k_sem_reset(&rx_disabled);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -39,6 +46,9 @@ static void uart_async_test_init(void)
 {
 	static bool initialized;
 
+	__ASSERT_NO_MSG(device_is_ready(uart_dev));
+	uart_rx_disable(uart_dev);
+	uart_tx_abort(uart_dev);
 	k_sem_reset(&tx_done);
 	k_sem_reset(&tx_aborted);
 	k_sem_reset(&rx_rdy);
@@ -46,14 +56,25 @@ static void uart_async_test_init(void)
 	k_sem_reset(&rx_buf_released);
 	k_sem_reset(&rx_disabled);
 
+#ifdef CONFIG_UART_WIDE_DATA
+	const struct uart_config uart_cfg = {
+		.baudrate = 115200,
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_9,
+		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
+	};
+	__ASSERT_NO_MSG(uart_configure(uart_dev, &uart_cfg) == 0);
+#endif
+
 	if (!initialized) {
 		init_test();
 		initialized = true;
-
 #ifdef CONFIG_USERSPACE
 		set_permissions();
 #endif
 	}
+
 }
 
 struct test_data {
@@ -99,7 +120,6 @@ static void test_single_read_callback(const struct device *dev,
 	default:
 		break;
 	}
-
 }
 
 ZTEST_BMEM volatile uint32_t tx_aborted_count;
@@ -122,7 +142,7 @@ ZTEST_USER(uart_async_single_read, test_single_read)
 	uint8_t rx_buf[10] = {0};
 
 	/* Check also if sending from read only memory (e.g. flash) works. */
-	static const uint8_t tx_buf[5] = "test";
+	static const uint8_t tx_buf[5] = "test\0";
 
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 5), 0,
 			  "Initial buffer check failed");

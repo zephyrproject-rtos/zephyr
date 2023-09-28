@@ -2032,8 +2032,8 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			for (uint8_t i = 0; i < cis_count; i++) {
-				rp->handle[i] = sys_cpu_to_le16(handles[i]);
+			for (uint8_t j = 0; j < cis_count; j++) {
+				rp->handle[j] = sys_cpu_to_le16(handles[j]);
 			}
 		}
 	}
@@ -2104,8 +2104,8 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 		status = ll_cig_parameters_commit(cig_id, handles);
 
 		if (status == BT_HCI_ERR_SUCCESS) {
-			for (uint8_t i = 0; i < cis_count; i++) {
-				rp->handle[i] = sys_cpu_to_le16(handles[i]);
+			for (uint8_t j = 0; j < cis_count; j++) {
+				rp->handle[j] = sys_cpu_to_le16(handles[j]);
 			}
 		}
 	}
@@ -3529,6 +3529,18 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	/* Check for duplicate handles */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		for (uint8_t i = 0U; i < set_num - 1; i++) {
+			for (uint8_t j = i + 1U; j < set_num; j++) {
+				if (cmd->s[i].handle == cmd->s[j].handle) {
+					*evt = cmd_complete_status(BT_HCI_ERR_INVALID_PARAM);
+					return;
+				}
+			}
+		}
+	}
+
 	s = (void *) cmd->s;
 	do {
 		status = ll_adv_set_by_hci_handle_get(s->handle, &handle);
@@ -4233,8 +4245,8 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	sys_put_le24(cis->sync_delay, sep->cis_sync_delay);
 	sys_put_le24(cig->c_latency, sep->c_latency);
 	sys_put_le24(cig->p_latency, sep->p_latency);
-	sep->c_phy = lll_cis_c->phy;
-	sep->p_phy = lll_cis_p->phy;
+	sep->c_phy = find_lsb_set(lll_cis_c->phy);
+	sep->p_phy = find_lsb_set(lll_cis_p->phy);
 	sep->nse = lll_cis->nse;
 	sep->c_bn = lll_cis_c->bn;
 	sep->p_bn = lll_cis_p->bn;
@@ -5666,7 +5678,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	iso_hdr = net_buf_pull_mem(buf, sizeof(*iso_hdr));
 	handle = sys_le16_to_cpu(iso_hdr->handle);
-	len = sys_le16_to_cpu(iso_hdr->len);
+	len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len));
 
 	if (buf->len < len) {
 		LOG_ERR("Invalid HCI ISO packet length");
@@ -5688,17 +5700,21 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	 * -- A captured time stamp of the SDU
 	 * -- A time stamp provided by the higher layer
 	 * -- A computed time stamp based on a sequence counter provided by the
-	 *    higher layer (Not implemented)
-	 * -- Any other method of determining Time_Offset (Not implemented)
+	 *    higher layer
+	 * -- Any other method of determining Time_Offset
+	 *    (Uses a timestamp computed from the difference in provided
+	 *    timestamps, if the timestamp is deemed not based on the
+	 *    controller's clock)
 	 */
+	sdu_frag_tx.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	if (ts_flag) {
-		/* Overwrite time stamp with HCI provided time stamp */
+		/* Use HCI provided time stamp */
 		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
 		len -= sizeof(*time_stamp);
 		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
 	} else {
-		sdu_frag_tx.time_stamp =
-			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
+		/* Use controller's capture time */
+		sdu_frag_tx.time_stamp = sdu_frag_tx.cntr_time_stamp;
 	}
 
 	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
@@ -5706,7 +5722,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
 		len -= sizeof(*iso_data_hdr);
 		sdu_frag_tx.packet_sn = sys_le16_to_cpu(iso_data_hdr->sn);
-		sdu_frag_tx.iso_sdu_length = sys_le16_to_cpu(iso_data_hdr->slen);
+		sdu_frag_tx.iso_sdu_length =
+			sys_le16_to_cpu(bt_iso_pkt_len(iso_data_hdr->slen));
 	} else {
 		sdu_frag_tx.packet_sn = 0;
 		sdu_frag_tx.iso_sdu_length = 0;

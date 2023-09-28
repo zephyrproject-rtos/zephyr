@@ -332,15 +332,13 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <12>;
-			vref-channel = <13>;
-			vbat-channel = <14>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
+			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {

@@ -71,6 +71,17 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_dac60508: dac60508@0 {
@@ -133,6 +144,94 @@
 				reg = <0x4>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad5628: ad5628@5 {
+				compatible = "adi,ad5628";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5648: ad5648@6 {
+				compatible = "adi,ad5648";
+				reg = <0x6>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5668: ad5668@7 {
+				compatible = "adi,ad5668";
+				reg = <0x7>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5672: ad5672@8 {
+				compatible = "adi,ad5672";
+				reg = <0x8>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5674: ad5674@9 {
+				compatible = "adi,ad5674";
+				reg = <0x9>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5676: ad5676@A {
+				compatible = "adi,ad5676";
+				reg = <0xA>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5679: ad5679@B {
+				compatible = "adi,ad5679";
+				reg = <0xB>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5684: ad5684@C {
+				compatible = "adi,ad5684";
+				reg = <0xC>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5686: ad5686@D {
+				compatible = "adi,ad5686";
+				reg = <0xD>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5687: ad5687@E {
+				compatible = "adi,ad5687";
+				reg = <0xE>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad5689: ad5689@F {
+				compatible = "adi,ad5689";
+				reg = <0xF>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

@@ -151,7 +151,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 
 #include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #else
 #include <zephyr/interrupt_util.h>
 #endif

@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_SIMULATOR_CPU_N
+	int "CPU Number this image targets"
+	range 0 15
+	default 0
+	depends on NATIVE_LIBRARY
+	help
+	  Which native simulator embedded CPU number is this image targeting.
+	  This option is only applicable for targets which use the
+	  native simulator as their runner.

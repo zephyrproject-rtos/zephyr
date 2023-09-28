@@ -9,3 +9,7 @@ RunTest mesh_ivi_deferring ivi_ivu_deferring
 
 conf=prj_mesh1d1_conf
 RunTest mesh_ivi_deferring_1d1 ivi_ivu_deferring
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_ivi_deferring_psa ivi_ivu_deferring

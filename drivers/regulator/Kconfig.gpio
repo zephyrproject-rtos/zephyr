@@ -1,0 +1,20 @@
+# Copyright 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_GPIO
+	bool "GPIO-controlled regulators"
+	default y
+	depends on DT_HAS_REGULATOR_GPIO_ENABLED
+	select GPIO
+	help
+	  Enable the driver for GPIO-controlled regulators
+
+if REGULATOR_GPIO
+
+config REGULATOR_GPIO_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  Device driver initialization priority
+
+endif # REGULATOR_GPIO

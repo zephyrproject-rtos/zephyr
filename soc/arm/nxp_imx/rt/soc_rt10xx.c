@@ -11,7 +11,6 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
 #include <fsl_clock.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
 #endif
@@ -21,6 +20,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+
+#include <cmsis_core.h>
 
 #define CCM_NODE	DT_INST(0, nxp_imx_ccm)
 
@@ -91,8 +92,13 @@ const clock_video_pll_config_t videoPllConfig = {
 
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
+#ifdef CONFIG_XIP
 	.start = CONFIG_FLASH_BASE_ADDRESS,
-	.size = KB(CONFIG_FLASH_SIZE),
+	.size = (uint32_t)&_flash_used,
+#else
+	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.size = (uint32_t)&_image_ram_size,
+#endif
 	.plugin = PLUGIN_FLAG,
 	.placeholder = 0xFFFFFFFF,
 };

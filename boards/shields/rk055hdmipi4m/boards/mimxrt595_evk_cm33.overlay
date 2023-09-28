@@ -13,7 +13,7 @@
 };
 
 /* GT911 IRQ GPIO is active low on this board, and needs probing mode */
-&touch_controller {
+&gt911_rk055hdmipi4m {
 	irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
 	alt-addr = <0x14>;
 };

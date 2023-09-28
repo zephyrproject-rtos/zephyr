@@ -16,50 +16,69 @@
 typedef enum bt_mesh_dfu_iter (*bt_mesh_dfu_slot_cb_t)(
 	const struct bt_mesh_dfu_slot *slot, void *user_data);
 
-/** @brief Register a new DFU image slot for a distributable image.
+/** @brief Get the number of slots committed to the firmware list.
+ *
+ *  @return Number of committed slots.
+ */
+int bt_mesh_dfu_slot_count(void);
+
+/** @brief Reserve a new DFU image slot for a distributable image.
  *
  *  A DFU image slot represents a single distributable DFU image with all its
- *  metadata.
+ *  metadata. The slot data must be set using @ref bt_mesh_dfu_slot_info_set and
+ *  @ref bt_mesh_dfu_slot_fwid_set, and the slot committed using
+ *  @ref bt_mesh_dfu_slot_commit for the slot to be considered part of the slot
+ *  list.
  *
- *  @note The slot is allocated as invalid. Call
- *        @ref bt_mesh_dfu_slot_valid_set to make it valid.
+ *  @return A pointer to the reserved slot, or NULL if allocation failed.
+ */
+struct bt_mesh_dfu_slot *bt_mesh_dfu_slot_reserve(void);
+
+/** @brief Set the size and metadata for a reserved slot.
  *
- *  @param size         Size of the image in bytes.
- *  @param fwid         Firmware ID.
- *  @param fwid_len     Length of the firmware ID, at most @c
- *                      CONFIG_BT_MESH_DFU_FWID_MAXLEN.
+ *  @param dfu_slot     Pointer to the reserved slot for which to set the
+ *                      metadata.
+ *  @param size         The size of the image.
  *  @param metadata     Metadata or NULL.
  *  @param metadata_len Length of the metadata, at most @c
  *                      CONFIG_BT_MESH_DFU_METADATA_MAXLEN.
- *  @param uri          Image URI or NULL.
- *  @param uri_len      Length of the image URI, at most @c
- *                      CONFIG_BT_MESH_DFU_URI_MAXLEN.
  *
- *  @return A pointer to the allocated slot, or NULL if allocation failed.
+ *  @return 0 on success, (negative) error code otherwise.
  */
-const struct bt_mesh_dfu_slot *
-bt_mesh_dfu_slot_add(size_t size, const uint8_t *fwid, size_t fwid_len,
-		     const uint8_t *metadata, size_t metadata_len,
-		     const char *uri, size_t uri_len);
+int bt_mesh_dfu_slot_info_set(struct bt_mesh_dfu_slot *dfu_slot, size_t size,
+			      const uint8_t *metadata, size_t metadata_len);
 
-/** @brief Set whether the given slot is valid.
+/** @brief Set the new fwid for the incoming image for a reserved slot.
  *
- *  @param slot  Allocated DFU image slot.
- *  @param valid New valid state of the slot.
+ *  @param dfu_slot Pointer to the reserved slot for which to set the fwid.
+ *  @param fwid     Fwid to set.
+ *  @param fwid_len Length of the fwid, at most @c
+ *                  CONFIG_BT_MESH_DFU_FWID_MAXLEN.
  *
- *  @return 0 on success, or (negative) error code on failure.
+ *  @return 0 on success, (negative) error code otherwise.
  */
-int bt_mesh_dfu_slot_valid_set(const struct bt_mesh_dfu_slot *slot, bool valid);
+int bt_mesh_dfu_slot_fwid_set(struct bt_mesh_dfu_slot *dfu_slot,
+			      const uint8_t *fwid, size_t fwid_len);
 
-/** @brief Check whether a slot is valid.
+/** @brief Commit the reserved slot to the list of slots, and store it
+ *         persistently.
  *
- *  @param slot Slot to check.
+ *  If the commit fails for any reason, the slot will still be in the reserved
+ *  state after this call.
  *
- *  @return true if the slot is valid, false otherwise.
+ *  @param dfu_slot Pointer to the reserved slot.
+ *
+ *  @return 0 on success, (negative) error code otherwise.
  */
-bool bt_mesh_dfu_slot_is_valid(const struct bt_mesh_dfu_slot *slot);
+int bt_mesh_dfu_slot_commit(struct bt_mesh_dfu_slot *dfu_slot);
 
-/** @brief Delete an allocated DFU image slot.
+/** @brief Release a reserved slot so that it can be reserved again.
+ *
+ *  @param dfu_slot Pointer to the reserved slot.
+ */
+void bt_mesh_dfu_slot_release(const struct bt_mesh_dfu_slot *dfu_slot);
+
+/** @brief Delete a committed DFU image slot.
  *
  *  @param slot Slot to delete. Must be a valid pointer acquired from this
  *              module.
@@ -72,18 +91,19 @@ int bt_mesh_dfu_slot_del(const struct bt_mesh_dfu_slot *slot);
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_dfu_slot_del_all(void);
+void bt_mesh_dfu_slot_del_all(void);
 
-/** @brief Get the DFU image slot at the given index.
+/** @brief Get the DFU image slot at the given firmware image list index.
  *
  *  @param idx DFU image slot index.
  *
  *  @return The DFU image slot at the given index, or NULL if no slot exists with the
  *          given index.
  */
-const struct bt_mesh_dfu_slot *bt_mesh_dfu_slot_at(uint16_t idx);
+const struct bt_mesh_dfu_slot *bt_mesh_dfu_slot_at(uint16_t img_idx);
 
-/** @brief Get the DFU image slot for the image with the given firmware ID.
+/** @brief Get the committed DFU image slot for the image with the given
+ *         firmware ID.
  *
  *  @param fwid     Firmware ID.
  *  @param fwid_len Firmware ID length.
@@ -91,16 +111,15 @@ const struct bt_mesh_dfu_slot *bt_mesh_dfu_slot_at(uint16_t idx);
  *
  *  @return Slot index on success, or negative error code on failure.
  */
-int bt_mesh_dfu_slot_get(const uint8_t *fwid, size_t fwid_len,
-			 const struct bt_mesh_dfu_slot **slot);
+int bt_mesh_dfu_slot_get(const uint8_t *fwid, size_t fwid_len, struct bt_mesh_dfu_slot **slot);
 
-/** @brief Get the DFU image slot index of the given slot.
+/** @brief Get the index in the firmware image list for the given slot.
  *
  *  @param slot Slot to find.
  *
  *  @return Slot index on success, or negative error code on failure.
  */
-int bt_mesh_dfu_slot_idx_get(const struct bt_mesh_dfu_slot *slot);
+int bt_mesh_dfu_slot_img_idx_get(const struct bt_mesh_dfu_slot *slot);
 
 /** @brief Iterate through all DFU image slots.
  *

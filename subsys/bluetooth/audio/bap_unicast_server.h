@@ -12,7 +12,7 @@
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 				   const struct bt_audio_codec_cfg *codec_cfg);
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream);
-int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, struct bt_audio_codec_data meta[],
-				   size_t meta_count);
+int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
+				   size_t meta_len);
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream);
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream);

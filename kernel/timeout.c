@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <ksched.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
 #include <zephyr/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
@@ -224,7 +224,7 @@ void sys_clock_announce(int32_t ticks)
 
 	announce_remaining = ticks;
 
-	struct _timeout *t = first();
+	struct _timeout *t;
 
 	for (t = first();
 	     (t != NULL) && (t->dticks <= announce_remaining);

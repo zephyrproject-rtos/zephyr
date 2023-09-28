@@ -41,6 +41,16 @@
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
 			};
+
+			test_i2c_mb85rcxx: mb85rcxx@1 {
+				compatible = "fujitsu,mb85rcxx";
+				reg = <0x1>;
+				size = <131072>;
+				pagesize = <131072>;
+				address-width = <16>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
 		};
 
 		test_spi: spi@33334444 {

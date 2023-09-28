@@ -9,7 +9,7 @@ Overview
 This sample show how to use the NXP MCUX Analog Comparator (ACMP) driver. The
 sample supports the :ref:`twr_ke18f`, :ref:`mimxrt1170_evk`.
 
-The input voltage for the the negative input of the analog comparator is
+The input voltage for the negative input of the analog comparator is
 provided by the ACMP Digital-to-Analog Converter (DAC). The input voltage for
 the positive input can be adjusted by turning the on-board potentiometer for
 :ref:`twr_ke18f` board, for :ref:`mimxrt1170_evk` the voltage signal is

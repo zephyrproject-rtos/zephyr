@@ -582,7 +582,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 	if (adv->is_enabled) {
 		struct ll_adv_aux_set *aux;
-		struct pdu_adv *pdu;
+		struct pdu_adv *chan_res_pdu;
 		uint8_t tmp_idx;
 
 		aux = HDR_LLL2ULL(adv->lll.aux);
@@ -634,8 +634,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		}
 
 		/* Update primary channel reservation */
-		pdu = lll_adv_data_alloc(&adv->lll, &tmp_idx);
-		err = ull_adv_time_update(adv, pdu, NULL);
+		chan_res_pdu = lll_adv_data_alloc(&adv->lll, &tmp_idx);
+		err = ull_adv_time_update(adv, chan_res_pdu, NULL);
 		if (err) {
 			return err;
 		}
@@ -2454,7 +2454,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
@@ -2471,7 +2471,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 #if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
 	time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 				       PDU_AC_PAYLOAD_SIZE_MAX);
-	ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 #else
 	ticks_slot = aux->ull.ticks_slot;
 #endif
@@ -2993,15 +2993,18 @@ static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan)
 {
+	uint32_t time_ticks;
+	uint32_t time_us;
+
+	time_us = aux_time_min_get(aux);
+	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t volatile ret_cb;
 	uint32_t ticks_minus;
 	uint32_t ticks_plus;
-	uint32_t time_ticks;
-	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = aux_time_min_get(aux);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (aux->ull.ticks_slot > time_ticks) {
 		ticks_minus = aux->ull.ticks_slot - time_ticks;
 		ticks_plus = 0U;
@@ -3023,6 +3026,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	if (ret != TICKER_STATUS_SUCCESS) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	aux->ull.ticks_slot = time_ticks;
 
@@ -3053,7 +3057,6 @@ void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
 		    lll_aux->us_pri_pdu_offset;
 	if ((offset_us/OFFS_UNIT_30_US)*OFFS_UNIT_30_US < EVENT_MAFS_US + pdu_us) {
-		struct ll_adv_aux_set *aux = HDR_LLL2ULL(lll_aux);
 		uint32_t interval_us;
 
 		/* Offset too small, point to next aux packet instead */

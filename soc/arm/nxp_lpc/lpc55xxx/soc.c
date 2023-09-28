@@ -1,5 +1,4 @@
-/*
- * Copyright 2017, 2019-2023 NXP
+/* Copyright 2017, 2019-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +18,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
@@ -31,7 +30,8 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-#if defined(CONFIG_SOC_LPC55S36) && defined(CONFIG_ADC_MCUX_LPADC)
+#if defined(CONFIG_SOC_LPC55S36) && (defined(CONFIG_ADC_MCUX_LPADC) \
+	|| defined(CONFIG_DAC_MCUX_LPDAC))
 #include <fsl_vref.h>
 #endif
 
@@ -322,28 +322,31 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
-
-#if defined(CONFIG_ADC_MCUX_LPADC)
-	/* Vref is required for LPADC reference */
-	POWER_DisablePD(kPDRUNCFG_PD_VREF);
-
-	vref_config_t vrefConfig;
-
-	VREF_GetDefaultConfig(&vrefConfig);
-	vrefConfig.bufferMode                     = kVREF_ModeHighPowerBuffer;
-	vrefConfig.enableInternalVoltageRegulator = true;
-	vrefConfig.enableVrefOut                  = true;
-	VREF_Init((VREF_Type *)VREF_BASE, &vrefConfig);
-#endif
-#else
+#else /* not LPC55s36 */
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk,
 			DT_PROP(DT_NODELABEL(adc0), clk_divider), true);
 	CLOCK_AttachClk(MUX_A(CM_ADCASYNCCLKSEL, DT_PROP(DT_NODELABEL(adc0), clk_source)));
 
 	/* Power up the ADC */
 	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
-#endif
-#endif
+#endif /* SOC platform */
+#endif /* ADC */
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref0), nxp_vref, okay))
+	CLOCK_EnableClock(kCLOCK_Vref);
+	POWER_DisablePD(kPDRUNCFG_PD_VREF);
+#endif /* vref0 */
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dac0), nxp_lpdac, okay)
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1U, true);
+	CLOCK_AttachClk(kMAIN_CLK_to_DAC0);
+
+	/* Disable DAC0 power down */
+	POWER_DisablePD(kPDRUNCFG_PD_DAC0);
+#endif /* SOC platform */
+#endif /* DAC */
+
 }
 
 /**

@@ -12,7 +12,4 @@ choice HTS221_TRIGGER_MODE
 	default HTS221_TRIGGER_NONE
 endchoice
 
-config SSD1306_REVERSE_MODE
-	default y
-
 endif # BOARD_AZ3166_DEVKIT

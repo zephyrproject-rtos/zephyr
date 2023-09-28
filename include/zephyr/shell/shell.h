@@ -530,7 +530,7 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
  * @param[in] _name	Name of the dictionary subcommand set
  * @param[in] _handler	Command handler common for all dictionary commands.
  *			@see shell_dict_cmd_handler
- * @param[in] ...	Dictionary pairs: (command_syntax, value). Value will be
+ * @param[in] ...	Dictionary triplets: (command_syntax, value, helper). Value will be
  *			passed to the _handler as user data.
  *
  * Example usage:

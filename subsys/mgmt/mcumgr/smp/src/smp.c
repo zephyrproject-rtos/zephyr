@@ -31,11 +31,11 @@
  * @brief	Translate SMP version 2 error code to legacy SMP version 1 MCUmgr error code.
  *
  * @param group	#mcumgr_group_t group ID
- * @param ret	Group-specific error code
+ * @param err	Group-specific error code
  *
  * @return	#mcumgr_err_t error code
  */
-static int smp_translate_error_code(uint16_t group, uint16_t ret)
+static int smp_translate_error_code(uint16_t group, uint16_t err)
 {
 	smp_translate_error_fn translate_error_function = NULL;
 
@@ -45,7 +45,7 @@ static int smp_translate_error_code(uint16_t group, uint16_t ret)
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	return translate_error_function(ret);
+	return translate_error_function(err);
 }
 #endif
 
@@ -61,7 +61,7 @@ static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 	net_buf_reset(nb);
 	cnw->nb = nb;
 	cnw->nb->len = sizeof(struct smp_hdr);
-	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct smp_hdr),
+	zcbor_new_encode_state(cnw->zs, ARRAY_SIZE(cnw->zs), nb->data + sizeof(struct smp_hdr),
 			       net_buf_tailroom(nb), 0);
 }
 
@@ -165,8 +165,8 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	enum mgmt_cb_return status;
 	struct mgmt_evt_op_cmd_arg cmd_recv;
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	handler = mgmt_find_handler(req_hdr->nh_group, req_hdr->nh_id);
@@ -207,17 +207,17 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 
 		/* Send request to application to check if handler should run or not. */
 		status = mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv),
-					      &ret_rc, &ret_group);
+					      &err_rc, &err_group);
 
 		/* Skip running the command if a handler reported an error and return that
 		 * instead.
 		 */
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
-				rc = ret_rc;
+				rc = err_rc;
 			} else {
-				ok = smp_add_cmd_ret(cbuf->writer->zs, ret_group,
-						     (uint16_t)ret_rc);
+				ok = smp_add_cmd_err(cbuf->writer->zs, err_group,
+						     (uint16_t)err_rc);
 
 				rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
 			}
@@ -374,8 +374,8 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	struct mgmt_evt_op_cmd_arg cmd_done_arg;
-	int32_t ret_rc;
-	uint16_t ret_group;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	rsp = NULL;
@@ -446,7 +446,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		cmd_done_arg.err = MGMT_ERR_EOK;
 
 		(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-					   sizeof(cmd_done_arg), &ret_rc, &ret_group);
+					   sizeof(cmd_done_arg), &err_rc, &err_group);
 #endif
 	}
 
@@ -460,7 +460,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			cmd_done_arg.err = rc;
 
 			(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-						   sizeof(cmd_done_arg), &ret_rc, &ret_group);
+						   sizeof(cmd_done_arg), &err_rc, &err_group);
 #endif
 		}
 
@@ -473,19 +473,19 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 	return rc;
 }
 
-bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret)
+bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret)
 {
 	bool ok = true;
 
 	if (ret != 0) {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-		struct cbor_nb_writer *container = CONTAINER_OF(zse, struct cbor_nb_writer, zs);
+		struct cbor_nb_writer *container = CONTAINER_OF(zse, struct cbor_nb_writer, zs[0]);
 
 		container->error_group = group;
 		container->error_ret = ret;
 #endif
 
-		ok = zcbor_tstr_put_lit(zse, "ret")		&&
+		ok = zcbor_tstr_put_lit(zse, "err")		&&
 		     zcbor_map_start_encode(zse, 2)		&&
 		     zcbor_tstr_put_lit(zse, "group")		&&
 		     zcbor_uint32_put(zse, (uint32_t)group)	&&

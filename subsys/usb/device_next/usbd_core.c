@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/toolchain/common.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
@@ -120,7 +121,7 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 }
 
 /* TODO: Add event broadcaster to user application */
-static int ALWAYS_INLINE usbd_event_handler(struct usbd_contex *const uds_ctx,
+static ALWAYS_INLINE int usbd_event_handler(struct usbd_contex *const uds_ctx,
 					    struct udc_event *const event)
 {
 	int ret = 0;

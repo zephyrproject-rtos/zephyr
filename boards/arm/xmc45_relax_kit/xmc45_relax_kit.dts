@@ -57,6 +57,16 @@
 	};
 };
 
+&psram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "PSRAM1";
+};
+
+&dsram2 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM2";
+};
+
 &flash_controller {
 	status = "okay";
 };

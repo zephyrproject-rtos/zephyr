@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 
@@ -35,7 +35,7 @@ static int remap_pins(void)
 							       gpios, {0});
 
 
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		return -ENODEV;
 	}
 

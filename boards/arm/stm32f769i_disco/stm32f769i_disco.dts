@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f7/stm32f769Xi.dtsi>
 #include <st/f7/stm32f769nihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -21,7 +22,6 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
-		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -29,7 +29,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = "RAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	leds {
@@ -61,13 +61,17 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft6202>;
+	};
+
 	aliases {
 		led0 = &red_led_1;
 		led1 = &green_led_2;
 		led2 = &green_led_3;
 		led3 = &red_led_4;
 		sw0 = &user_button;
-		kscan0 = &kscan_input;
 		spi-flash0 = &mx25l51245g;
 	};
 };
@@ -125,14 +129,10 @@ arduino_serial: &usart6 {};
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	ft6202@2a {
+	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
 		int-gpios = <&gpioi 13 0>;
-
-		kscan_input: kscan-input {
-			compatible = "zephyr,kscan-input";
-		};
 	};
 };
 

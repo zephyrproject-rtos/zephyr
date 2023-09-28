@@ -113,7 +113,7 @@ Flashing
 Flashing Zephyr onto the ``adafruit_feather_nrf52480`` board requires
 an external programmer. The programmer is attached to the SWD header.
 
-Build the Zephyr kernel and the :ref:`blinky-sample` sample application.
+Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/blinky

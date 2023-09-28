@@ -67,7 +67,7 @@ release = version
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "docleaf.doxygen",
+    "breathe",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
@@ -84,7 +84,9 @@ extensions = [
     "zephyr.vcs_link",
     "notfound.extension",
     "sphinx_copybutton",
+    "sphinx_togglebutton",
     "zephyr.external_content",
+    "zephyr.domain",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -211,17 +213,16 @@ doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
 doxyrunner_outdir_var = "DOXY_OUT"
 
-# -- Options for Docleaf plugin -------------------------------------------
+# -- Options for Breathe plugin -------------------------------------------
 
-docleaf_projects = {"Zephyr": {"xml": str(doxyrunner_outdir / "xml"), "root": "../"}}
-docleaf_default_project = "Zephyr"
-docleaf_domain_by_extension = {
+breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
+breathe_default_project = "Zephyr"
+breathe_domain_by_extension = {
     "h": "c",
     "c": "c",
 }
-# Filters out any 'function' or 'variable' members that have 'all caps' names as
-# they are likely unprocessed macro calls
-docleaf_doxygen_skip = ["members:all_caps"]
+breathe_show_enumvalue_initializer = True
+breathe_default_members = ("members", )
 
 cpp_id_attributes = [
     "__syscall",
@@ -283,6 +284,7 @@ external_content_contents = [
     (ZEPHYR_BASE / "doc", "[!_]*"),
     (ZEPHYR_BASE, "boards/**/*.rst"),
     (ZEPHYR_BASE, "boards/**/doc"),
+    (ZEPHYR_BASE, "samples/**/*.html"),
     (ZEPHYR_BASE, "samples/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/doc"),
     (ZEPHYR_BASE, "snippets/**/*.rst"),

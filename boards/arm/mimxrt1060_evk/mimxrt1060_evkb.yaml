@@ -27,8 +27,8 @@ supported:
   - sdhc
   - spi
   - usb_device
-  - kscan:touch
   - dma
   - can
   - watchdog
   - adc
+vendor: nxp

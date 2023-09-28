@@ -26,7 +26,9 @@
 #define SRAM_DRAM_START     0x3FC7C000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403D0000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+/* SRAM_DRAM_END is equivalent 2nd stage bootloader iram_loader_seg
+   start address (that should not be overlapped) */
+#define SRAM_DRAM_END       0x403D0000 - I_D_SRAM_OFFSET
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START + ICACHE_SIZE)
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
@@ -46,6 +48,11 @@
 #define IROM_SEG_LEN FLASH_SIZE
 #define IROM_SEG_ALIGN 0x10000
 #endif
+
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 /* Global symbols required for espressif hal build */
 MEMORY
@@ -183,11 +190,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
@@ -195,7 +197,6 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */

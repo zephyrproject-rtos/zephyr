@@ -495,6 +495,10 @@ static const struct sensor_driver_api bmm150_api_funcs = {
 #endif
 	.sample_fetch = bmm150_sample_fetch,
 	.channel_get = bmm150_channel_get,
+
+#ifdef CONFIG_BMM150_TRIGGER
+	.trigger_set = bmm150_trigger_set,
+#endif
 };
 
 static int bmm150_full_por(const struct device *dev)
@@ -668,6 +672,13 @@ static int bmm150_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_BMM150_TRIGGER
+	if (bmm150_trigger_mode_init(dev) < 0) {
+		LOG_ERR("Cannot set up trigger mode.");
+		return -EINVAL;
+	}
+#endif
+
 	return 0;
 }
 
@@ -686,6 +697,13 @@ static int bmm150_init(const struct device *dev)
 		    (BMM150_CONFIG_I2C(inst)),	\
 		    (BMM150_CONFIG_SPI(inst)))
 
+#if defined(CONFIG_BMM150_TRIGGER)
+#define BMM150_INT_CFG(inst)					\
+	.drdy_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
+#else
+#define BMM150_INT_CFG(inst)
+#endif
+
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
@@ -694,6 +712,7 @@ static int bmm150_init(const struct device *dev)
 	static struct bmm150_data bmm150_data_##inst;			\
 	static const struct bmm150_config bmm150_config_##inst = {	\
 		BMM150_BUS_CFG(inst)					\
+		BMM150_INT_CFG(inst)					\
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);			\

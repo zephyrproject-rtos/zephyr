@@ -2368,6 +2368,8 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_HEAP_MEM_POOL_SIZE \
                          CONFIG_MMU \
                          CONFIG_NET_L2_ETHERNET_MGMT \
+                         CONFIG_NET_L2_IEEE802154_MGMT \
+                         CONFIG_NET_L2_IEEE802154_SECURITY \
                          CONFIG_NET_MGMT_EVENT \
                          CONFIG_NET_SOCKETS_POSIX_NAMES \
                          CONFIG_NET_TCP \
@@ -2377,7 +2379,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_SCHED_DEADLINE \
                          CONFIG_SETTINGS_RUNTIME \
                          CONFIG_SMP \
-                         CONFIG_SPI_ASYNC \
                          CONFIG_SYS_CLOCK_EXISTS \
                          CONFIG_THREAD_CUSTOM_DATA \
                          CONFIG_THREAD_MONITOR \
@@ -2391,6 +2392,7 @@ PREDEFINED             = __DOXYGEN__ \
                          NET_MGMT_DEFINE_REQUEST_HANDLER(x)= \
                          DEVICE_DEFINE()= \
                          BUILD_ASSERT()= \
+			 XEN_GUEST_HANDLE_64(x)= \
                          _LINKER \
                          __deprecated= \
                          __packed= \

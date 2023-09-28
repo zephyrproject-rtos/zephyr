@@ -10,9 +10,9 @@
  * It also provides a custom k_busy_wait() which can be used with the
  * POSIX arch and InfClock SOC
  */
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include <zephyr/irq.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include "timer_model.h"

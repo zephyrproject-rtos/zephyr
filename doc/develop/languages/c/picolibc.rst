@@ -62,6 +62,28 @@ For every release of Zephyr, the toolchain-bundled Picolibc and the
 sync when using the
 :ref:`recommended version of Zephyr SDK <toolchain_zephyr_sdk_compatibility>`.
 
+Building Without Toolchain bundled Picolibc
+-------------------------------------------
+
+For toolchain where there is no bundled Picolibc, it is still
+possible to use Picolibc by building it from source. Note that
+any restrictions mentioned in :ref:`c_library_picolibc_module`
+still apply.
+
+To build without toolchain bundled Picolibc, the toolchain must
+enable :kconfig:option:`CONFIG_PICOLIBC_SUPPORTED`. For example,
+this needs to be added to the toolchain Kconfig file:
+
+.. code-block:: none
+
+   config TOOLCHAIN_<name>_PICOLIBC_SUPPORTED
+      def_bool y
+      select PICOLIBC_SUPPORTED
+
+By enabling :kconfig:option:`CONFIG_PICOLIBC_SUPPORTED`, the build
+system would automatically build Picolibc from source with its module
+when there is no toolchain bundled Picolibc.
+
 Formatted Output
 ****************
 

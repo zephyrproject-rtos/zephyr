@@ -35,7 +35,6 @@ typedef uint32_t clockid_t;
 typedef unsigned long timer_t;
 #endif
 
-#ifdef CONFIG_PTHREAD_IPC
 /* Thread attributes */
 struct pthread_attr {
 	int priority;
@@ -76,6 +75,7 @@ BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
 typedef uint32_t pthread_cond_t;
 
 struct pthread_condattr {
+	clockid_t clock;
 };
 
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
@@ -100,8 +100,6 @@ typedef struct pthread_rwlock_obj {
 	int32_t status;
 	k_tid_t wr_owner;
 } pthread_rwlock_t;
-
-#endif /* CONFIG_PTHREAD_IPC */
 
 #ifdef __cplusplus
 }

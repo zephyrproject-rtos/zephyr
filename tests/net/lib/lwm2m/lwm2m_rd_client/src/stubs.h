@@ -25,6 +25,8 @@ static const uint16_t RD_CLIENT_MAX_SERVICE_ITERATIONS = UINT16_MAX;
 DECLARE_FAKE_VALUE_FUNC(uint8_t, coap_header_get_code, const struct coap_packet *);
 uint8_t coap_header_get_code_fake_created(const struct coap_packet *cpkt);
 uint8_t coap_header_get_code_fake_deleted(const struct coap_packet *cpkt);
+uint8_t coap_header_get_code_fake_changed(const struct coap_packet *cpkt);
+uint8_t coap_header_get_code_fake_bad_request(const struct coap_packet *cpkt);
 DECLARE_FAKE_VALUE_FUNC(int, coap_append_option_int, struct coap_packet *, uint16_t, unsigned int);
 DECLARE_FAKE_VALUE_FUNC(int, coap_packet_append_option, struct coap_packet *, uint16_t,
 			const uint8_t *, uint16_t);
@@ -46,6 +48,9 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_u16, const struct lwm2m_obj_path *, uint1
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_set_u32, const struct lwm2m_obj_path *, uint32_t);
 int lwm2m_get_bool_fake_default(const struct lwm2m_obj_path *path, bool *value);
+int lwm2m_get_bool_fake_true(const struct lwm2m_obj_path *path, bool *value);
+extern uint32_t get_u32_val;
+int lwm2m_get_u32_val(const struct lwm2m_obj_path *path, uint32_t *val);
 
 /* subsys/net/lib/lwm2m/lwm2m_engine.h */
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_socket_start, struct lwm2m_ctx *);

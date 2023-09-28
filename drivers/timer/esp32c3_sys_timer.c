@@ -17,7 +17,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\

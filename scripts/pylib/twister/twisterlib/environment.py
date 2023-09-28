@@ -482,6 +482,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         """)
 
     parser.add_argument(
+            "--vendor", action="append", default=[],
+            help="Vendor filter for testing")
+
+    parser.add_argument(
         "-p", "--platform", action="append", default=[],
         help="Platform filter for testing. This option may be used multiple "
              "times. Test suites will only be built/run on the platforms "
@@ -786,9 +790,9 @@ def parse_arguments(parser, args, options = None):
 class TwisterEnv:
 
     def __init__(self, options=None) -> None:
-        self.version = None
+        self.version = "Unknown"
         self.toolchain = None
-        self.commit_date = None
+        self.commit_date = "Unknown"
         self.run_date = None
         self.options = options
 
@@ -834,20 +838,21 @@ class TwisterEnv:
                 if _version:
                     self.version = _version
                     logger.info(f"Zephyr version: {self.version}")
-                else:
-                    self.version = "Unknown"
-                    logger.error("Could not determine version")
         except OSError:
-            logger.info("Cannot read zephyr version.")
+            logger.exception("Failure while reading Zephyr version.")
 
-        subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
-                                     stdout=subprocess.PIPE,
-                                     universal_newlines=True,
-                                     cwd=ZEPHYR_BASE)
-        if subproc.returncode == 0:
-            self.commit_date = subproc.stdout.strip()
-        else:
-            self.commit_date = "Unknown"
+        if self.version == "Unknown":
+            logger.warning("Could not determine version")
+
+        try:
+            subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
+                                        stdout=subprocess.PIPE,
+                                        universal_newlines=True,
+                                        cwd=ZEPHYR_BASE)
+            if subproc.returncode == 0:
+                self.commit_date = subproc.stdout.strip()
+        except OSError:
+            logger.exception("Failure while reading head commit date.")
 
     @staticmethod
     def run_cmake_script(args=[]):

@@ -32,7 +32,7 @@ int main(void)
 	int ret, led_state;
 	uint32_t cnt = 0;
 
-	if (!device_is_ready(led0.port)) {
+	if (!gpio_is_ready_dt(&led0)) {
 		printk("LED0 GPIO port %s is not ready\n", led0.port->name);
 		return 0;
 	}

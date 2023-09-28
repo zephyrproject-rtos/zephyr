@@ -81,11 +81,10 @@
 	clkctl: clkctl {
 		compatible = "intel,adsp-shim-clkctl";
 		adsp-clkctl-clk-wovcro = <0>;
-		adsp-clkctl-clk-lpro = <1>;
-		adsp-clkctl-clk-hpro = <2>;
-		adsp-clkctl-freq-enc = <0xc 0x0 0x4>;
-		adsp-clkctl-freq-mask = <0x0 0x0 0x0>;
-		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-clk-ipll = <1>;
+		adsp-clkctl-freq-enc = <0xc 0x4>;
+		adsp-clkctl-freq-mask = <0x0 0x0>;
+		adsp-clkctl-freq-default = <1>;
 		adsp-clkctl-freq-lowest = <0>;
 		wovcro-supported;
 	};
@@ -487,6 +486,8 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
 			power-domain = <&hst_domain>;
+			interrupts = <13 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 
@@ -499,6 +500,8 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <32>;
 			power-domain = <&hst_domain>;
+			interrupts = <12 0 0>;
+			interrupt-parent = <&ace_intc>;
 			status = "okay";
 		};
 

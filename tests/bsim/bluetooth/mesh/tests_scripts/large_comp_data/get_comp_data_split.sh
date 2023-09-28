@@ -22,3 +22,8 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 conf=prj_mesh1d1_conf
 RunTest mesh_lcd_test_split_comp_data \
 	lcd_cli_split_comp_data_request lcd_srv_comp_data_status_respond
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_lcd_test_split_comp_data_psa \
+	lcd_cli_split_comp_data_request lcd_srv_comp_data_status_respond

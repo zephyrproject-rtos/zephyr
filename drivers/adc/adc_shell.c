@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(adc_shell);
 	"Configure channel id\n"		\
 	"Usage: id <channel_id>\n"
 
+#define CMD_HELP_DIFF				\
+	"Configure differential\n"		\
+	"Usage: differential <0||1>\n"
+
 #define CMD_HELP_CH_NEG				\
 	"Configure channel negative input\n"	\
 	"Usage: negative <negative_input_id>\n"
@@ -91,6 +95,15 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(raspberrypi_pico_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(nxp_s32_adc_sar, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11102, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11103, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11105, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11106, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11110, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11111, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11115, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11116, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_max11117, ADC_HDL_LIST_ENTRY)
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
@@ -124,7 +137,34 @@ static int cmd_adc_ch_id(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.channel_id = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
+
+	return retval;
+}
+
+static int cmd_adc_ch_diff(const struct shell *sh, size_t argc, char **argv)
+{
+	/* -2: index of ADC label name */
+	struct adc_hdl *adc = get_adc(argv[-2]);
+	int retval = 0;
+	char *endptr;
+	long diff;
+
+	if (!device_is_ready(adc->dev)) {
+		shell_error(sh, "ADC device not ready");
+		return -ENODEV;
+	}
+
+	endptr = argv[1];
+	diff = strtol(argv[1], &endptr, 10);
+	if ((endptr == argv[1]) || ((diff != 0) && (diff != 1))) {
+		shell_error(sh, "<differential> must be 0 or 1");
+		return -EINVAL;
+	}
+
+	adc->channel_config.differential = (uint8_t)diff;
+	retval = adc_channel_setup(adc->dev, &adc->channel_config);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -148,7 +188,7 @@ static int cmd_adc_ch_neg(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.input_negative = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 #else
@@ -175,7 +215,7 @@ static int cmd_adc_ch_pos(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.input_positive = (uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 #else
@@ -202,7 +242,7 @@ static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
 	memcpy(chosen_gain, argv[0], len);
 	chosen_gain[len] = '\0';
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -239,7 +279,7 @@ static int cmd_adc_acq(const struct shell *sh, size_t argc, char **argv)
 			ADC_ACQ_TIME_DEFAULT;
 	}
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -285,7 +325,7 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 
 	adc->channel_config.reference = reference;
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+	LOG_DBG("Channel setup returned %i", retval);
 
 	return retval;
 }
@@ -296,7 +336,7 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	uint8_t adc_channel_id = strtol(argv[1], NULL, 10);
 	/* -1 index of adc label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
-	uint16_t m_sample_buffer[BUFFER_SIZE];
+	int16_t m_sample_buffer[BUFFER_SIZE];
 	int retval;
 
 	if (!device_is_ready(adc->dev)) {
@@ -330,13 +370,23 @@ static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
 			   "Reference: %s\n"
 			   "Acquisition Time: %u\n"
 			   "Channel ID: %u\n"
+			   "Differential: %u\n"
 			   "Resolution: %u",
 			   adc->dev->name,
 			   chosen_gain,
 			   chosen_reference,
 			   adc->channel_config.acquisition_time,
 			   adc->channel_config.channel_id,
+			   adc->channel_config.differential,
 			   adc->resolution);
+#if CONFIG_ADC_CONFIGURABLE_INPUTS
+	shell_print(sh, "Input positive: %u",
+		    adc->channel_config.input_positive);
+	if (adc->channel_config.differential != 0) {
+		shell_print(sh, "Input negative: %u",
+			    adc->channel_config.input_negative);
+	}
+#endif
 	return 0;
 }
 
@@ -369,6 +419,7 @@ SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel_cmds,
 	SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
+	SHELL_CMD_ARG(differential, NULL, CMD_HELP_DIFF, cmd_adc_ch_diff, 2, 0),
 	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
 		negative, NULL, CMD_HELP_CH_NEG, cmd_adc_ch_neg, 2, 0),
 	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,

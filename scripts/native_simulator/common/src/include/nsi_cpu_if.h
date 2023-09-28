@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#include "nsi_cpu_if_internal.h"
+
 /*
  * Any symbol annotated by this macro will be visible outside of the
  * embedded SW library, both by the native simulator runner,
@@ -92,6 +94,22 @@ NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised(void);
  * context of the calling SW thread).
  */
 NATIVE_SIMULATOR_IF void nsif_cpu0_irq_raised_from_sw(void);
+
+/*
+ * Optional hook which may be used for test functionality.
+ * When the runner HW models use them and for what is up to those
+ * specific models.
+ */
+NATIVE_SIMULATOR_IF int nsif_cpu0_test_hook(void *p);
+
+/* Provide prototypes for all n instances of these hooks */
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _pre_cmdline_hooks(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _pre_hw_init_hooks(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _boot(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF int nsif_cpu, _cleanup(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _irq_raised(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF void nsif_cpu, _irq_raised_from_sw(void))
+F_TRAMP_LIST(NATIVE_SIMULATOR_IF int nsif_cpu, _test_hook(void *p))
 
 #ifdef __cplusplus
 }

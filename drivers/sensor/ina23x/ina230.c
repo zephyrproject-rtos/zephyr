@@ -29,8 +29,8 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
-	uint32_t bus_uv, current_ua, power_uw;
-	int32_t sign;
+	uint32_t bus_uv, power_uw;
+	int32_t current_ua;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -42,21 +42,12 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (data->current & INA23X_CURRENT_SIGN_BIT) {
-			current_ua = ~data->current + 1U;
-			sign = -1;
-		} else {
-			current_ua = data->current;
-			sign = 1;
-		}
-
 		/* see datasheet "Programming" section for reference */
-		current_ua = current_ua * config->current_lsb;
+		current_ua = data->current * config->current_lsb;
 
 		/* convert to fractional amperes */
-		val->val1 = sign * (int32_t)(current_ua / 1000000U);
-		val->val2 = sign * (int32_t)(current_ua % 1000000U);
-
+		val->val1 = current_ua / 1000000L;
+		val->val2 = current_ua % 1000000L;
 		break;
 
 	case SENSOR_CHAN_POWER:
@@ -261,7 +252,11 @@ static const struct sensor_driver_api ina230_driver_api = {
 	static struct ina230_data drv_data_##inst;                                                 \
 	static const struct ina230_config drv_config_##inst = {                                    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.config = DT_INST_PROP(inst, config),                                              \
+		.config = DT_INST_PROP(inst, config) |                           \
+			(DT_INST_ENUM_IDX(inst, avg_count) << 9) |                   \
+			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |     \
+			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |   \
+			DT_INST_ENUM_IDX(inst, adc_mode),                            \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
 		.cal = (uint16_t)((INA230_CAL_SCALING * 10000000ULL) /                             \
 				  ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *           \

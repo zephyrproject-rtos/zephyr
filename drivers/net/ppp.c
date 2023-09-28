@@ -232,8 +232,9 @@ static int ppp_async_uart_rx_enable(struct ppp_driver_context *context)
 
 static void uart_recovery(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct ppp_driver_context *ppp =
-		CONTAINER_OF(work, struct ppp_driver_context, uart_recovery_work);
+		CONTAINER_OF(dwork, struct ppp_driver_context, uart_recovery_work);
 	int ret;
 
 	ret = ring_buf_space_get(&ppp->rx_ringbuf);
@@ -609,7 +610,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
-		CONTAINER_OF(buf, struct ppp_driver_context, buf);
+		CONTAINER_OF(buf, struct ppp_driver_context, buf[0]);
 	size_t i, len = *off;
 
 	for (i = 0; i < *off; i++) {

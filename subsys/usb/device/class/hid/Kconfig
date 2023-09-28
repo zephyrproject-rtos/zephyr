@@ -65,13 +65,4 @@ config USB_HID_BOOT_PROTOCOL
 	  See Chapter 4.2 of Device Class Definition for Human Interface Devices 1.11
 	  for more information.
 
-config USB_HID_PROTOCOL_CODE
-	int "HID Boot Interface protocol code (DEPRECATED)"
-	default 0
-	range 0 2
-	depends on USB_HID_BOOT_PROTOCOL
-	help
-	  This option is deprecated.
-	  Please use usb_hid_set_proto_code() instead.
-
 endif # USB_DEVICE_HID

@@ -15,6 +15,7 @@
 #define MBEDTLS_PLATFORM_C
 #define MBEDTLS_PLATFORM_MEMORY
 #define MBEDTLS_MEMORY_BUFFER_ALLOC_C
+#define MBEDTLS_MEMORY_ALIGN_MULTIPLE (sizeof(void *))
 #define MBEDTLS_PLATFORM_EXIT_ALT
 #define MBEDTLS_NO_PLATFORM_ENTROPY
 
@@ -462,7 +463,7 @@
 #define MBEDTLS_PSA_CRYPTO_C
 #define MBEDTLS_USE_PSA_CRYPTO
 
-#if defined(CONFIG_BOARD_NRF52_BSIM) || defined(CONFIG_BOARD_NATIVE_POSIX)
+#if defined(CONFIG_ARCH_POSIX)
 #define MBEDTLS_PSA_KEY_SLOT_COUNT     64
 #define MBEDTLS_PSA_CRYPTO_STORAGE_C
 #define MBEDTLS_PSA_ITS_FILE_C
@@ -475,12 +476,29 @@
 #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #endif
 
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+#define MBEDTLS_SSL_DTLS_CONNECTION_ID
+#endif
+
 /* User config file */
 
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
+#if !defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+/* When PSA API is used the checking header is included over the chain:
+ * |-psa/crypto.h
+ * |-psa/crypto_platform.h
+ * |-mbedtls/build_info.h
+ * |-mbedtls/check_config.h
+ * If include this header here then PSA API will be in semiconfigured state
+ * without considering dependencies from mbedtls/config_psa.h.
+ * mbedtls/config_psa.h should be included right after config-tls-generic.h before checking.
+ * Formally, all settings are correct but mbedtls library cannot be built.
+ * The behavior was introduced after adding mbedTLS 3.4.0
+ */
 #include "mbedtls/check_config.h"
+#endif
 
 #endif /* MBEDTLS_CONFIG_H */

@@ -674,12 +674,12 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	if (!device_is_ready(config->scl.gpio.port)) {
+	if (!gpio_is_ready_dt(&config->scl.gpio)) {
 		LOG_ERR("SCL GPIO device is not ready");
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->sda.gpio.port)) {
+	if (!gpio_is_ready_dt(&config->sda.gpio)) {
 		LOG_ERR("SDA GPIO device is not ready");
 		return -EINVAL;
 	}

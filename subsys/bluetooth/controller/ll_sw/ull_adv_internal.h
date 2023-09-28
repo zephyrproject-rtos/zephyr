@@ -205,7 +205,7 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 void ull_adv_sync_started_stopped(struct ll_adv_aux_set *aux);
 
 /* notify adv_sync_set that an iso instance has been created for it */
-void ull_adv_iso_created(struct ll_adv_sync_set *sync);
+void ull_adv_sync_iso_created(struct ll_adv_sync_set *sync);
 
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -321,6 +321,9 @@ struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle);
 
 /* helper function to release stream instances */
 void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
+
+/* helper function to return time reservation for Broadcast ISO event */
+uint32_t ull_adv_iso_max_time_get(const struct ll_adv_iso_set *adv_iso);
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* helper function to release unused DF configuration memory */

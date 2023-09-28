@@ -175,3 +175,13 @@ zephyr_udc0: &usbfs {
 &dma0 {
 	status = "okay";
 };
+
+&vref0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};

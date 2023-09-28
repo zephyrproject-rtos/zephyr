@@ -739,8 +739,6 @@ debugging. This can of course also be accomplished using the usual
 targets provided by Zephyr's build system (in fact, that's how these
 commands do it).
 
-.. rubric:: Footnotes
-
 .. _cmake(1):
    https://cmake.org/cmake/help/latest/manual/cmake.1.html
 

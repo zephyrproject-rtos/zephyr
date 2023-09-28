@@ -230,7 +230,7 @@ int main(void)
 	}
 
 	if (led.port != NULL) {
-		if (!device_is_ready(led.port)) {
+		if (!gpio_is_ready_dt(&led)) {
 			printf("LED: Device %s not ready.\n",
 			       led.port->name);
 			return 0;

@@ -557,6 +557,7 @@ add_custom_command(
     -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
+    -DKERNEL_VERSION_CUSTOMIZATION="${KERNEL_VERSION_CUSTOMIZATION}"
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
@@ -570,6 +571,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
+      -DAPP_VERSION_CUSTOMIZATION="${APP_VERSION_CUSTOMIZATION}"
       ${build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
@@ -601,12 +603,7 @@ add_subdirectory(lib)
 # property which is set implicitly for custom command outputs
 include(misc/generated/CMakeLists.txt)
 
-if(EXISTS ${SOC_DIR}/${ARCH}/CMakeLists.txt)
-  add_subdirectory(${SOC_DIR}/${ARCH} soc/${ARCH})
-else()
-  add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
-endif()
-
+add_subdirectory(soc)
 add_subdirectory(boards)
 add_subdirectory(subsys)
 add_subdirectory(drivers)
@@ -1439,6 +1436,7 @@ target_link_libraries_ifdef(CONFIG_NATIVE_LIBRARY ${ZEPHYR_LINK_STAGE_EXECUTABLE
 target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
                   BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
 )
+set(BYPRODUCT_KERNEL_ELF_NAME "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}" CACHE FILEPATH "Kernel elf file" FORCE)
 set_property(TARGET
   ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
@@ -1584,8 +1582,8 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
     list(APPEND
       post_build_byproducts
       ${KERNEL_HEX_NAME}
-      # ${out_hex_byprod} # Is this needed ?
       )
+    set(BYPRODUCT_KERNEL_HEX_NAME "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}" CACHE FILEPATH "Kernel hex file" FORCE)
   endif()
 endif()
 
@@ -1606,8 +1604,8 @@ if(CONFIG_BUILD_OUTPUT_BIN)
     list(APPEND
       post_build_byproducts
       ${KERNEL_BIN_NAME}
-      # ${out_hex_byprod} # Is this needed ?
       )
+    set(BYPRODUCT_KERNEL_BIN_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}" CACHE FILEPATH "Kernel binary file" FORCE)
   endif()
 endif()
 
@@ -1640,6 +1638,7 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     post_build_byproducts
     ${KERNEL_UF2_NAME}
   )
+  set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_META)
@@ -1688,9 +1687,8 @@ if(CONFIG_BUILD_OUTPUT_S19)
     list(APPEND
       post_build_byproducts
       ${KERNEL_S19_NAME}
-      # ${out_S19_byprod} # Is this needed ?
-
       )
+    set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
   endif()
 endif()
 
@@ -1712,7 +1710,6 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
   list(APPEND
     post_build_byproducts
     ${KERNEL_LST_NAME}
-#    ${out_disassembly_byprod} # Needed ??
     )
 endif()
 
@@ -1732,7 +1729,6 @@ if(CONFIG_OUTPUT_SYMBOLS)
 endif()
 
 if(CONFIG_OUTPUT_STAT)
-#  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
@@ -1775,6 +1771,7 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       post_build_byproducts
       ${KERNEL_EXE_NAME}
       )
+    set(BYPRODUCT_KERNEL_EXE_NAME "${PROJECT_BINARY_DIR}/${KERNEL_EXE_NAME}" CACHE FILEPATH "Kernel exe file" FORCE)
   else()
     if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
       set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
@@ -1814,10 +1811,20 @@ if(CONFIG_CHECK_INIT_PRIORITIES)
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --build-dir ${PROJECT_BINARY_DIR}/..
-      --edt-pickle ${EDT_PICKLE}
+      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
       ${fail_on_warning}
     )
+endif()
+
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
+  add_custom_target(
+    initlevels
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+      --initlevels
+    DEPENDS ${logical_target_for_zephyr_elf}
+    USES_TERMINAL
+  )
 endif()
 
 # Generate and use MCUboot related artifacts as needed.

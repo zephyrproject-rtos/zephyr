@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
 #define IP101GRI_RESET_N_PIN	5

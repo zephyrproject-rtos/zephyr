@@ -121,7 +121,7 @@ static inline int __select_socket(struct eswifi_dev *eswifi, uint8_t idx)
 static inline
 struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 {
-	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
+	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket[0]);
 }
 
 struct eswifi_bus_ops *eswifi_get_bus(void);

@@ -21,3 +21,4 @@ supported:
   - tach
   - uart
   - watchdog
+vendor: ite

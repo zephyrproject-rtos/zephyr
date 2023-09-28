@@ -120,7 +120,7 @@ int hids_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(cfg->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
 		LOG_ERR("Device %s is not ready", cfg->gpio_drdy.port->name);
 		return -ENODEV;
 	}

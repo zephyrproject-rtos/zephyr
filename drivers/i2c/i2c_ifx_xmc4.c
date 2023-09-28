@@ -9,19 +9,21 @@
  * @brief I2C driver for Infineon XMC MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_xmc4_i2c
+#define DT_DRV_COMPAT infineon_xmc4xxx_i2c
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(i2c_infineon_xmc4, CONFIG_I2C_LOG_LEVEL);
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+
+#include "i2c-priv.h"
 
 #include <xmc_i2c.h>
 #include <xmc_usic.h>
 
 #define USIC_IRQ_MIN  84
 #define IRQS_PER_USIC 6
-
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_infineon_xmc4, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_XMC_EVENTS_MASK ( \
 	XMC_I2C_CH_EVENT_RECEIVE_START | \
@@ -61,6 +63,7 @@ struct ifx_xmc4_i2c_data {
 	uint8_t target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_XMC4_TARGET_BUF];
 	bool ignore_slave_select;
+	bool is_configured;
 };
 
 /* Device config structure */
@@ -69,7 +72,7 @@ struct ifx_xmc4_i2c_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t scl_src;
 	uint8_t sda_src;
-	uint32_t master_frequency;
+	uint32_t bitrate;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -78,24 +81,22 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 	struct ifx_xmc4_i2c_data *data = dev->data;
 	const struct ifx_xmc4_i2c_config *config = dev->config;
 
-	if (dev_config != 0) {
-		switch (I2C_SPEED_GET(dev_config)) {
-		case I2C_SPEED_STANDARD:
-			data->cfg.baudrate = XMC4_I2C_SPEED_STANDARD;
-			break;
-		case I2C_SPEED_FAST:
-			data->cfg.baudrate = XMC4_I2C_SPEED_FAST;
-			break;
-		default:
-			LOG_ERR("Unsupported speed");
-			return -ERANGE;
-		}
+	/* This is deprecated and could be ignored in the future */
+	if (dev_config & I2C_ADDR_10_BITS) {
+		LOG_ERR("Use I2C_MSG_ADDR_10_BITS instead of I2C_ADDR_10_BITS");
+		return -EIO;
+	}
 
-		/* This is deprecated and could be ignored in the future */
-		if (dev_config & I2C_ADDR_10_BITS) {
-			LOG_ERR("Use I2C_MSG_ADDR_10_BITS instead of I2C_ADDR_10_BITS");
-			return -EIO;
-		}
+	switch (I2C_SPEED_GET(dev_config)) {
+	case I2C_SPEED_STANDARD:
+		data->cfg.baudrate = XMC4_I2C_SPEED_STANDARD;
+		break;
+	case I2C_SPEED_FAST:
+		data->cfg.baudrate = XMC4_I2C_SPEED_FAST;
+		break;
+	default:
+		LOG_ERR("Unsupported speed");
+		return -ERANGE;
 	}
 
 	data->dev_config = dev_config;
@@ -104,6 +105,8 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 	if (k_sem_take(&data->operation_sem, K_FOREVER)) {
 		return -EIO;
 	}
+
+	XMC_I2C_CH_Stop(config->i2c);
 
 	/* Configure the I2C resource */
 	data->cfg.normal_divider_mode = false;
@@ -118,6 +121,7 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 		config->irq_config_func(dev);
 	}
 	XMC_I2C_CH_Start(config->i2c);
+	data->is_configured = true;
 
 	/* Release semaphore */
 	k_sem_give(&data->operation_sem);
@@ -128,26 +132,18 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 static int ifx_xmc4_i2c_get_config(const struct device *dev, uint32_t *dev_config)
 {
 	struct ifx_xmc4_i2c_data *data = dev->data;
-	uint32_t config;
+	const struct ifx_xmc4_i2c_config *config = dev->config;
 
-	switch (data->cfg.baudrate) {
-	case XMC4_I2C_SPEED_STANDARD:
-		config = I2C_SPEED_SET(I2C_SPEED_STANDARD);
-		break;
-	case XMC4_I2C_SPEED_FAST:
-		config = I2C_SPEED_SET(I2C_SPEED_FAST);
-		break;
-	default:
-		LOG_ERR("Unsupported speed");
-		return -ERANGE;
+	if (!data->is_configured) {
+		/* if not yet configured return configuration that will be used */
+		/* when transfer() is called */
+		uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+
+		*dev_config = I2C_MODE_CONTROLLER | bitrate_cfg;
+		return 0;
 	}
 
-	if (data->dev_config & I2C_MODE_CONTROLLER) {
-		config |= I2C_MODE_CONTROLLER;
-	}
-
-	/* Return current configuration */
-	*dev_config = config;
+	*dev_config = data->dev_config;
 
 	return 0;
 }
@@ -171,6 +167,16 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 	if (!num_msgs) {
 		return 0;
+	}
+
+	if (!data->is_configured) {
+		int ret;
+		uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+
+		ret = ifx_xmc4_i2c_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	/* Acquire semaphore (block I2C transfer for another thread) */
@@ -295,17 +301,14 @@ static int ifx_xmc4_i2c_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
 static int ifx_xmc4_i2c_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
-	struct ifx_xmc4_i2c_data *data = (struct ifx_xmc4_i2c_data *)dev->data;
+	struct ifx_xmc4_i2c_data *data = dev->data;
+	const struct ifx_xmc4_i2c_config *config = dev->config;
+	uint32_t bitrate_cfg;
 
 	if (!cfg ||
 	    !cfg->callbacks->read_requested ||
@@ -328,7 +331,16 @@ static int ifx_xmc4_i2c_target_register(const struct device *dev, struct i2c_tar
 	data->p_target_config = cfg;
 	data->cfg.address = cfg->address << 1;
 
-	if (ifx_xmc4_i2c_configure(dev, I2C_SPEED_SET(I2C_SPEED_STANDARD)) != 0) {
+	if (data->is_configured) {
+		uint32_t bitrate;
+
+		bitrate = I2C_SPEED_GET(data->dev_config);
+		bitrate_cfg = i2c_map_dt_bitrate(bitrate);
+	} else {
+		bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	}
+
+	if (ifx_xmc4_i2c_configure(dev, bitrate_cfg) != 0) {
 		/* Release semaphore */
 		k_sem_give(&data->target_sem);
 		return -EIO;
@@ -340,7 +352,7 @@ static int ifx_xmc4_i2c_target_register(const struct device *dev, struct i2c_tar
 
 static int ifx_xmc4_i2c_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
 {
-	struct ifx_xmc4_i2c_data *data = (struct ifx_xmc4_i2c_data *)dev->data;
+	struct ifx_xmc4_i2c_data *data = dev->data;
 	const struct ifx_xmc4_i2c_config *config = dev->config;
 
 	/* Acquire semaphore (block I2C operation for another thread) */
@@ -454,7 +466,7 @@ static const struct i2c_driver_api i2c_xmc4_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.scl_src = DT_INST_ENUM_IDX(n, scl_src),                                           \
 		.sda_src = DT_INST_ENUM_IDX(n, sda_src),                                           \
-		.master_frequency = DT_INST_PROP_OR(n, clock_frequency, XMC4_I2C_SPEED_STANDARD),  \
+		.bitrate = DT_INST_PROP_OR(n, clock_frequency, I2C_SPEED_STANDARD),                \
 		XMC4_IRQ_HANDLER_STRUCT_INIT(n)                                                    \
 	};                                                                                         \
                                                                                                    \

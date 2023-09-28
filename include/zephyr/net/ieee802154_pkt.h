@@ -92,7 +92,7 @@ static inline void *net_pkt_cb(struct net_pkt *pkt);
 
 static inline struct net_pkt_cb_ieee802154 *net_pkt_cb_ieee802154(struct net_pkt *pkt)
 {
-	return net_pkt_cb(pkt);
+	return (struct net_pkt_cb_ieee802154 *)net_pkt_cb(pkt);
 };
 
 static inline uint8_t net_pkt_ieee802154_lqi(struct net_pkt *pkt)

@@ -34,7 +34,7 @@ K_MSGQ_DEFINE(aux_to_host_queue, sizeof(uint8_t), 8, 4);
 K_TIMER_DEFINE(block_ps2_timer, saturate_ps2, NULL);
 
 static const struct device *const ps2_0_dev =
-	DEVICE_DT_GET_ONE(microchip_xec_ps2);
+	DEVICE_DT_GET(DT_ALIAS(ps2_port0));
 
 static void saturate_ps2(struct k_timer *timer)
 {

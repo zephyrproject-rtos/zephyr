@@ -28,22 +28,7 @@ endchoice
 config LV_COLOR_16_SWAP
 	default y
 
-config KSCAN
-	default y
-
 config INPUT
-	default y
-
-config LV_Z_POINTER_KSCAN
-	default y
-
-config LV_Z_POINTER_KSCAN_SWAP_XY
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_X
-	default y
-
-config LV_Z_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL

@@ -68,7 +68,7 @@ typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id,
 					    uint32_t *ticks_slot);
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
 				    uint32_t *remainder_match,
@@ -321,7 +321,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 		if (false) {
 
-#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_BROADCASTER) && CONFIG_BT_CTLR_ADV_AUX_SET > 0
 		} else if (IN_RANGE(ticker_id, TICKER_ID_ADV_AUX_BASE,
 				    TICKER_ID_ADV_AUX_LAST)) {
 			const struct ll_adv_aux_set *aux;
@@ -391,7 +391,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-#endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_AUX_SET > 0 */
 
 #if defined(CONFIG_BT_CONN)
 		} else if (IN_RANGE(ticker_id, TICKER_ID_CONN_BASE,
@@ -413,7 +413,7 @@ static int group_free_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
-				    ull_hdr_get_func ull_hdr_get_cb,
+				    ull_hdr_get_func ull_hdr_get_cb_fn,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
 				    uint32_t *remainder_match,
@@ -518,7 +518,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		}
 #endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 
-		hdr = ull_hdr_get_cb(ticker_id, &ticks_slot);
+		hdr = ull_hdr_get_cb_fn(ticker_id, &ticks_slot);
 		if (!hdr) {
 			continue;
 		}
@@ -656,7 +656,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 				time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 							       PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = aux->ull.ticks_slot;
 
@@ -686,7 +686,7 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				uint32_t time_us;
 
 				time_us = ull_adv_sync_time_get(sync, PDU_AC_PAYLOAD_SIZE_MAX);
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = sync->ull.ticks_slot;
 			}
@@ -701,7 +701,10 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		adv_iso = ull_adv_iso_get(ticker_id - TICKER_ID_ADV_ISO_BASE);
 		if (adv_iso) {
-			*ticks_slot = adv_iso->ull.ticks_slot;
+			uint32_t time_us;
+
+			time_us = ull_adv_iso_max_time_get(adv_iso);
+			*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 			return &adv_iso->ull;
 		}
@@ -745,9 +748,11 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 				time_us = EVENT_OVERHEAD_START_US +
+					  EVENT_OVERHEAD_END_US +
 					  ready_delay_us +  max_rx_time +
-					  EVENT_IFS_US + max_tx_time;
-				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+					  EVENT_IFS_US + max_tx_time +
+					  (EVENT_CLOCK_JITTER_US << 1);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 			} else {
 				*ticks_slot = conn->ull.ticks_slot;
 			}

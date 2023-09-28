@@ -27,7 +27,7 @@ static struct smp_client_object smp_client;
 static struct img_mgmt_client img_client;
 static struct os_mgmt_client os_client;
 
-ZTEST(mcumgr_client, img_upload)
+ZTEST(mcumgr_client, test_img_upload)
 {
 	int rc;
 	struct mcumgr_image_upload response;
@@ -108,7 +108,7 @@ ZTEST(mcumgr_client, img_upload)
 		      response.image_upload_offset);
 }
 
-ZTEST(mcumgr_client, img_erase)
+ZTEST(mcumgr_client, test_img_erase)
 {
 	int rc;
 
@@ -130,7 +130,7 @@ ZTEST(mcumgr_client, img_erase)
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 }
 
-ZTEST(mcumgr_client, image_state_read)
+ZTEST(mcumgr_client, test_image_state_read)
 {
 	int rc;
 	struct mcumgr_image_state res_buf;
@@ -153,7 +153,7 @@ ZTEST(mcumgr_client, image_state_read)
 		      res_buf.image_list_length);
 }
 
-ZTEST(mcumgr_client, image_state_set)
+ZTEST(mcumgr_client, test_image_state_set)
 {
 	int rc;
 	char hash[32];
@@ -199,7 +199,7 @@ ZTEST(mcumgr_client, image_state_set)
 		      true, image_info[0].flags.confirmed);
 }
 
-ZTEST(mcumgr_client, os_reset)
+ZTEST(mcumgr_client, test_os_reset)
 {
 	int rc;
 
@@ -217,7 +217,7 @@ ZTEST(mcumgr_client, os_reset)
 	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
 }
 
-ZTEST(mcumgr_client, os_echo)
+ZTEST(mcumgr_client, test_os_echo)
 {
 	int rc;
 

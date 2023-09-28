@@ -22,7 +22,7 @@ config ARM_SIP_SVC_SUBSYS_INIT_PRIORITY
 
 config ARM_SIP_SVC_SUBSYS_THREAD_STACK_SIZE
 	int "ARM SiP service thread stack size"
-	default 1856
+	default 4096
 	help
 	  Stack size of the ARM SiP  service.
 	  The thread calls the callbacks of the requestor
@@ -55,8 +55,8 @@ config ARM_SIP_SVC_SUBSYS_MAX_TRANSACTION_ID_COUNT
 	  Maximum number of transaction_id per client.
 
 config ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY
-	int "Delay used for polling asynchronous jobs in milliseconds"
-	default 10
+	int "Delay used for polling asynchronous jobs in micro-seconds"
+	default 100
 	help
 	  Delay for sip_svc thread to sleep during each polling call for
 	  ASYNC response.

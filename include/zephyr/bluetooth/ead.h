@@ -11,6 +11,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Encrypted Advertising Data (EAD)
  * @defgroup bt_ead Encrypted Advertising Data (EAD)
@@ -103,5 +107,9 @@ int bt_ead_decrypt(const uint8_t session_key[BT_EAD_KEY_SIZE], const uint8_t iv[
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_EAD_H_ */

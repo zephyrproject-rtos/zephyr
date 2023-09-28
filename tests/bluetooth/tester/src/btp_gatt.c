@@ -2207,7 +2207,7 @@ static uint8_t get_attrs(const void *cmd, uint16_t cmd_len,
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE - sizeof(*rp));
 	struct get_attrs_foreach_data foreach;
 	uint16_t start_handle, end_handle;
-	union uuid uuid;
+	union uuid search_uuid;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->type_length)) {
@@ -2220,15 +2220,15 @@ static uint8_t get_attrs(const void *cmd, uint16_t cmd_len,
 	if (cp->type_length) {
 		char uuid_str[BT_UUID_STR_LEN];
 
-		if (btp2bt_uuid(cp->type, cp->type_length, &uuid.uuid)) {
+		if (btp2bt_uuid(cp->type, cp->type_length, &search_uuid.uuid)) {
 			return BTP_STATUS_FAILED;
 		}
 
-		bt_uuid_to_str(&uuid.uuid, uuid_str, sizeof(uuid_str));
+		bt_uuid_to_str(&search_uuid.uuid, uuid_str, sizeof(uuid_str));
 		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
 			end_handle, uuid_str);
 
-		foreach.uuid = &uuid.uuid;
+		foreach.uuid = &search_uuid.uuid;
 	} else {
 		LOG_DBG("start 0x%04x end 0x%04x", start_handle, end_handle);
 

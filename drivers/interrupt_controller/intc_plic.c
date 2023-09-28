@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
@@ -29,7 +29,7 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
-#define PLIC_EDGE_TRIG_TYPE   (PLIC_MAX_PRIO + DT_INST_PROP(0, riscv_trigger_reg_offset))
+#define PLIC_EDGE_TRIG_TYPE (DT_INST_REG_ADDR(0) + DT_INST_PROP(0, riscv_trigger_reg_offset))
 #define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
@@ -210,7 +210,7 @@ static void plic_irq_handler(const void *arg)
  *
  * @retval 0 on success.
  */
-static int plic_init(void)
+static int plic_init(const struct device *dev)
 {
 
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
@@ -247,4 +247,5 @@ static int plic_init(void)
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, plic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

@@ -12,7 +12,7 @@ config BT_CTLR
 	default BT
 
 config INPUT
-	default y if KSCAN
+	default y if LVGL
 
 if FLASH
 

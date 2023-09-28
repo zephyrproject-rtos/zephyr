@@ -165,7 +165,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 {
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-	uint32_t data32[IMX_IPM_DATA_REGS];
+	uint32_t data32[IMX_IPM_DATA_REGS] = {0};
 #if !IS_ENABLED(CONFIG_IPM_IMX_REV2)
 	mu_status_t status;
 #endif
@@ -175,7 +175,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 		return -EINVAL;
 	}
 
-	if (size > CONFIG_IPM_IMX_MAX_DATA_SIZE) {
+	if ((size < 0) || (size > CONFIG_IPM_IMX_MAX_DATA_SIZE)) {
 		return -EMSGSIZE;
 	}
 
@@ -320,6 +320,22 @@ static int imx_mu_init(const struct device *dev)
 
 	MU_Init(MU(config));
 	config->irq_config_func(dev);
+
+#if defined(CONFIG_IPM_IMX_FW_READY_REPLY)
+	/* Send FW_READY reply message - this is used on host side,
+	 * for handshake communication.
+	 *
+	 * An example is in Linux, imx_dsp_rproc driver, where
+	 * after starting the remote processor, the host is waiting for a
+	 * FW_READY reply.
+	 */
+	MU_Type * base = MU(config);
+
+	MU_TriggerInterrupts(base, kMU_GenInt0InterruptTrigger |
+				   kMU_GenInt1InterruptTrigger |
+				   kMU_GenInt2InterruptTrigger |
+				   kMU_GenInt3InterruptTrigger);
+#endif
 
 	return 0;
 }

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/spinlock.h"
+#include <zephyr/spinlock.h>
 #define DT_DRV_COMPAT atmel_sam_i2c_twihs
 
 /** @file
@@ -26,7 +26,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_executor_simple.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -422,9 +421,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);						\
 	}											\
 												\
-	RTIO_EXECUTOR_SIMPLE_DEFINE(_i2c##n##_sam_rtio_exec);					\
 	RTIO_DEFINE(_i2c##n##_sam_rtio,								\
-		    (struct rtio_executor *)&_i2c##n##_sam_rtio_exec,				\
 		    CONFIG_I2C_SAM_TWIHS_SQ_SIZE,						\
 		    CONFIG_I2C_SAM_TWIHS_CQ_SIZE);						\
 												\

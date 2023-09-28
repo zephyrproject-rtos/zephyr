@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT xlnx_ttcps
 
 #include <zephyr/arch/cpu.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>

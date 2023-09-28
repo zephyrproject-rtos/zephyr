@@ -227,6 +227,9 @@ void z_mem_manage_init(void);
  */
 void z_mem_manage_boot_finish(void);
 
+
+void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+
 #ifdef CONFIG_PM
 
 /* When the kernel is about to go idle, it calls this function to notify the

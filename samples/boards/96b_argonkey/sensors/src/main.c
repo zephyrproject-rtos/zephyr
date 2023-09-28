@@ -134,13 +134,13 @@ int main(void)
 	}
 #endif
 
-	if (!device_is_ready(led0_gpio.port)) {
+	if (!gpio_is_ready_dt(&led0_gpio)) {
 		printk("%s: device not ready.\n", led0_gpio.port->name);
 		return 0;
 	}
 	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
-	if (!device_is_ready(led1_gpio.port)) {
+	if (!gpio_is_ready_dt(&led1_gpio)) {
 		printk("%s: device not ready.\n", led1_gpio.port->name);
 		return 0;
 	}

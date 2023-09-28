@@ -13,7 +13,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <cyhal_adc.h>
-#include <cyhal_utils_psoc.h>
+#include <cyhal_utils_impl.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

@@ -1,12 +1,13 @@
-.. _hawkbit-api-sample:
+.. zephyr:code-sample:: hawkbit-api
+   :name: Eclipse hawkBit Direct Device Integration API
+   :relevant-api: hawkbit
 
-Hawkbit Direct Device Integration API sample
-############################################
+   Update a device using Eclipse hawkBit DDI API.
 
 Overview
 ********
 
-The hawkbit update server provides REST resources which are consumed by the
+The Eclipse hawkBit update server provides REST resources which are consumed by the
 device to retrieve software update tasks. This API is based on HTTP standards
 and a polling mechanism.
 
@@ -116,7 +117,7 @@ of your board.
 
 Once the image is flashed and booted, the sample will print the image build
 time to the console. After it connects to the internet, in hawkbit server UI,
-you should see the the frdm_k64f show up in the Targets pane. It's time to
+you should see the frdm_k64f show up in the Targets pane. It's time to
 upload a firmware binary to the server, and update it using this UI.
 
 Step 7: Building and signing the test image

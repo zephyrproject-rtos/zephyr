@@ -9,7 +9,6 @@
  * @brief Common SoC initialization for the EXX32
  */
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -18,6 +17,7 @@
 #include <em_cmu.h>
 #include <em_emu.h>
 #include <soc.h>
+#include <cmsis_core.h>
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
 #include <sl_device_init_dcdc.h>

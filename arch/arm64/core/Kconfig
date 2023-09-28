@@ -23,6 +23,7 @@ config CPU_AARCH64_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select ARCH_HAS_STACK_PROTECTION
 	select CPU_HAS_FPU
 	imply FPU
 	imply FPU_SHARING
@@ -159,6 +160,26 @@ config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	  The stack size of the safe exception stack. The safe exception stack
 	  requires to be enough to do the stack overflow check.
 
+config ARM64_FALLBACK_ON_RESERVED_CORES
+	bool "To enable fallback on reserved cores"
+	help
+	  Give the ability to define more cores in the device tree than required
+	  via CONFIG_MP_MAX_NUM_CPUS.  The extra cores in the device tree
+	  become reserved.  If there is an issue powering on a core during boot
+	  then that core will be skipped and the next core in the device tree
+	  will be used.
+
+config ARM64_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	depends on ARM_MPU
+	select THREAD_STACK_INFO
+	select ARM64_SAFE_EXCEPTION_STACK
+	help
+	  This option leverages the MMU or MPU to cause a system fatal error if
+	  the bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a fixed guard region.
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS
@@ -187,6 +208,8 @@ config ARMV8_A
 	  compatibility with the Armv7-A architecture and enhances that profile
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
+
+rsource "xen/Kconfig"
 
 endif # CPU_CORTEX_A
 
@@ -255,7 +278,7 @@ if ARM_MMU
 config MMU_PAGE_SIZE
 	default 0x1000
 
-choice
+choice ARM64_VA_BITS
 	prompt "Virtual address space size"
 	default ARM64_VA_BITS_32
 	help
@@ -287,7 +310,7 @@ config ARM64_VA_BITS
 	default 42 if ARM64_VA_BITS_42
 	default 48 if ARM64_VA_BITS_48
 
-choice
+choice ARM64_PA_BITS
 	prompt "Physical address space size"
 	default ARM64_PA_BITS_32
 	help

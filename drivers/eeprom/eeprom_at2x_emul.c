@@ -81,7 +81,7 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 		return -EIO;
 	}
 
-	i2c_dump_msgs_rw("emul", msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {

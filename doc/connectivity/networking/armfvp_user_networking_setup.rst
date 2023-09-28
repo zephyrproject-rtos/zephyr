@@ -33,7 +33,7 @@ Using Arm FVP User Mode Networking with Zephyr
 Arm FVP user mode networking can be enabled in any applications and it doesn't
 need any configurations on the host system. This feature has been enabled in
 DHCPv4 client sample.
-See :ref:`Sample DHCPv4 client application <dhcpv4-client-sample>`
+See :zephyr:code-sample:`dhcpv4-client` sample application.
 
 Limitations
 *************

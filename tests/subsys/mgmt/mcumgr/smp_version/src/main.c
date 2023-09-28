@@ -49,7 +49,7 @@ static const uint8_t response_old[] = {
 /* Response to current packet */
 static const uint8_t response_current[] = {
 	0x09, 0x00, 0x00, 0x13, 0x00, 0x00, 0x01, 0x07,
-	0xbf, 0x63, 0x72, 0x65, 0x74, 0xbf, 0x65, 0x67,
+	0xbf, 0x63, 0x65, 0x72, 0x72, 0xbf, 0x65, 0x67,
 	0x72, 0x6f, 0x75, 0x70, 0x00, 0x62, 0x72, 0x63,
 	0x02, 0xff, 0xff
 };
@@ -115,7 +115,7 @@ ZTEST(smp_version, test_legacy_command)
 	struct zcbor_map_decode_key_val output_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("output", zcbor_tstr_decode, &output),
 		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_int32_decode, &rc),
-		ZCBOR_MAP_DECODE_KEY_DECODER("ret", mcumgr_ret_decode, &group_error),
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error),
 	};
 
 	memset(buffer, 0, sizeof(buffer));
@@ -173,7 +173,7 @@ ZTEST(smp_version, test_legacy_command)
 
 	zassert_equal(
 		zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode),
-						"ret"), 0,
+						"err"), 0,
 		"Did not expect to get ret in response");
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
@@ -202,7 +202,7 @@ ZTEST(smp_version, test_current_command)
 	struct zcbor_map_decode_key_val output_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("output", zcbor_tstr_decode, &output),
 		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_int32_decode, &rc),
-		ZCBOR_MAP_DECODE_KEY_DECODER("ret", mcumgr_ret_decode, &group_error),
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error),
 	};
 
 	memset(buffer, 0, sizeof(buffer));
@@ -260,14 +260,14 @@ ZTEST(smp_version, test_current_command)
 
 	zassert_equal(
 		zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode),
-						"ret"), 1,
+						"err"), 1,
 		"Expected to get ret in response");
 
 	zassert_true(group_error.found, "Expected both group and rc in ret to be found");
 	zassert_equal(group_error.group, MGMT_GROUP_ID_OS,
 		      "Expected to get MGMT_GROUP_ID_OS for ret group");
-	zassert_equal(group_error.rc, OS_MGMT_RET_RC_INVALID_FORMAT,
-		      "Expected to get OS_MGMT_RET_RC_INVALID_FORMAT for ret rc");
+	zassert_equal(group_error.rc, OS_MGMT_ERR_INVALID_FORMAT,
+		      "Expected to get OS_MGMT_ERR_INVALID_FORMAT for ret rc");
 }
 
 ZTEST(smp_version, test_new_command)
@@ -288,7 +288,7 @@ ZTEST(smp_version, test_new_command)
 	struct zcbor_map_decode_key_val output_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("output", zcbor_tstr_decode, &output),
 		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_int32_decode, &rc),
-		ZCBOR_MAP_DECODE_KEY_DECODER("ret", mcumgr_ret_decode, &group_error),
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error),
 	};
 
 	memset(buffer, 0, sizeof(buffer));
@@ -346,7 +346,7 @@ ZTEST(smp_version, test_new_command)
 
 	zassert_equal(
 		zcbor_map_decode_bulk_key_found(output_decode, ARRAY_SIZE(output_decode),
-						"ret"), 0,
+						"err"), 0,
 		"Did not expect to get ret in response");
 
 	zassert_equal(rc, MGMT_ERR_UNSUPPORTED_TOO_NEW,

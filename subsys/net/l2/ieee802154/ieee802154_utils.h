@@ -123,7 +123,7 @@ static inline int ieee802154_radio_attr_get(struct net_if *iface,
 /**
  * Sets the radio drivers extended address filter.
  *
- * @param iface Pointer to the IEEE 802.15.4 interface
+ * @param iface pointer to the IEEE 802.15.4 interface
  * @param ieee_addr Pointer to an extended address in little endian byte order
  */
 static inline void ieee802154_radio_filter_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
@@ -278,112 +278,204 @@ static inline void ieee802154_radio_remove_pan_id(struct net_if *iface, uint16_t
 	}
 }
 
-/**
- * @brief Calculates the PHY's symbol period in microseconds.
- *
- * @details The PHY's symbol period depends on the interface's current PHY which
- * can be derived from the currently chosen channel page (phyCurrentPage).
- *
- * Examples:
- *  * SUN FSK: see section 19.1, table 19-1
- *  * O-QPSK:  see section 12.3.3
- *  * HRP UWB: derived from the preamble symbol period (T_psym), see section
- *             11.3, table 11-1 and section 15.2.5, table 15-4
- *
- * @note Currently the symbol period can only be calculated for SUN FSK and O-QPSK.
- *
- * @param iface The interface for which the symbol period should be calculated.
- *
- * @returns The symbol period for the given interface in microseconds.
- */
-static inline uint32_t ieee802154_radio_get_symbol_period_us(struct net_if *iface)
-{
-	/* TODO: Move symbol period calculation to radio driver. */
 
-	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_SUB_GHZ) &&
-	    ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_SUB_GHZ) {
-		return IEEE802154_PHY_SYMBOL_PERIOD_US(true);
+/**
+ * MAC utilities
+ *
+ * @note While MAC utilities may refer to PHY utilities, the inverse is not
+ * true.
+ */
+
+/**
+ * @brief Retrieves the currently selected channel page from the driver (see
+ * phyCurrentPage, section 11.3, table 11-2). This is PHY-related information
+ * not configured by L2 but directly provided by the driver.
+ *
+ * @param iface pointer to the IEEE 802.15.4 interface
+ *
+ * @returns The currently active channel page.
+ * @retval 0 if an error occurred
+ */
+static inline enum ieee802154_phy_channel_page
+ieee802154_radio_current_channel_page(struct net_if *iface)
+{
+	struct ieee802154_attr_value value;
+
+	/* Currently we assume that drivers are statically configured to only
+	 * support a single channel page. Once drivers need to switch channels at
+	 * runtime this can be changed here w/o affecting clients.
+	 */
+	if (ieee802154_radio_attr_get(iface, IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES, &value)) {
+		return 0;
 	}
 
-	return IEEE802154_PHY_SYMBOL_PERIOD_US(false);
+	return value.phy_supported_channel_pages;
 }
 
 /**
- * @brief Calculates the PHY's turnaround time (see section 11.3, table 11-1,
- * aTurnaroundTime) in PHY symbols.
+ * @brief Calculates a multiple of the PHY's symbol period in nanoseconds.
+ *
+ * @details The PHY's symbol period depends on the interface's current PHY
+ * configuration which usually can be derived from the currently chosen channel
+ * page and channel (phyCurrentPage and phyCurrentChannel, section 11.3, table
+ * 11-2).
+ *
+ * To calculate the symbol period of HRP UWB PHYs, the nominal pulse repetition
+ * frequency (PRF) is required. HRP UWB drivers will be expected to expose the
+ * supported norminal PRF rates as a driver attribute. Existing drivers do not
+ * allow for runtime switching of the PRF, so currently the PRF is considered to
+ * be read-only and known.
+ *
+ * TODO: Add an UwbPrf argument once drivers need to support PRF switching at
+ * runtime.
+ *
+ * @note We do not expose an API for a single symbol period to avoid having to
+ * deal with floats for PHYs that don't require it while maintaining precision
+ * in calculations where PHYs operate at symbol periods involving fractions of
+ * nanoseconds.
+ *
+ * @param iface pointer to the IEEE 802.15.4 interface
+ * @param channel The channel for which the symbol period is to be calculated.
+ * @param multiplier The factor by which the symbol period is to be multiplied.
+ *
+ * @returns A multiple of the symbol period for the given interface with
+ * nanosecond precision.
+ * @retval 0 if an error occurred.
+ */
+static inline net_time_t ieee802154_radio_get_multiple_of_symbol_period(struct net_if *iface,
+									uint16_t channel,
+									uint16_t multiplier)
+{
+	/* To keep things simple we only calculate symbol periods for channel
+	 * pages that are implemented by existing in-tree drivers. Add additional
+	 * channel pages as required.
+	 */
+	switch (ieee802154_radio_current_channel_page(iface)) {
+	case IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915:
+		return (channel >= 11
+				? IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS
+				: (channel > 0 ? IEEE802154_PHY_BPSK_915MHZ_SYMBOL_PERIOD_NS
+					       : IEEE802154_PHY_BPSK_868MHZ_SYMBOL_PERIOD_NS)) *
+		       multiplier;
+
+	case IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915:
+		return (channel > 0 ? IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS
+				    : IEEE802154_PHY_OQPSK_868MHZ_SYMBOL_PERIOD_NS) *
+		       multiplier;
+
+	case IEEE802154_ATTR_PHY_CHANNEL_PAGE_FOUR_HRP_UWB: {
+		struct ieee802154_attr_value value;
+
+		/* Currently we assume that drivers are statically configured to
+		 * only support a single PRF. Once drivers support switching PRF
+		 * at runtime an UWB PRF argument needs to be added to this
+		 * function which then must be validated against the set of
+		 * supported PRFs.
+		 */
+		if (ieee802154_radio_attr_get(iface, IEEE802154_ATTR_PHY_HRP_UWB_SUPPORTED_PRFS,
+					      &value)) {
+			return 0;
+		}
+
+		switch (value.phy_hrp_uwb_supported_nominal_prfs) {
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_4_M:
+			return IEEE802154_PHY_HRP_UWB_PRF4_TPSYM_SYMBOL_PERIOD_NS * multiplier;
+
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_16_M:
+			return IEEE802154_PHY_HRP_UWB_PRF16_TPSYM_SYMBOL_PERIOD_NS * multiplier;
+
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_64_M:
+			return IEEE802154_PHY_HRP_UWB_PRF64_TPSYM_SYMBOL_PERIOD_NS * multiplier;
+
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_64_M_BPRF:
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_128_M_HPRF:
+		case IEEE802154_PHY_HRP_UWB_NOMINAL_256_M_HPRF:
+			return IEEE802154_PHY_HRP_UWB_ERDEV_TPSYM_SYMBOL_PERIOD_NS * multiplier;
+
+		default:
+			CODE_UNREACHABLE;
+		}
+	}
+
+	case IEEE802154_ATTR_PHY_CHANNEL_PAGE_FIVE_OQPSK_780:
+		return IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS * multiplier;
+
+	case IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED:
+		/* Current SUN FSK drivers only implement legacy IEEE 802.15.4g
+		 * 863 MHz (Europe) and 915 MHz (US ISM) bands, see IEEE
+		 * 802.15.4g, section 5.1, table 0. Once more bands are required
+		 * we need to request the currently active frequency band from
+		 * the driver.
+		 */
+		return IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS * multiplier;
+
+	default:
+		CODE_UNREACHABLE;
+	}
+}
+
+/**
+ * @brief Calculates the PHY's turnaround time for the current channel page (see
+ * section 11.3, table 11-1, aTurnaroundTime) in PHY symbols.
  *
  * @details The PHY's turnaround time is used to calculate - among other
  * parameters - the TX-to-RX turnaround time (see section 10.2.2) and the
  * RX-to-TX turnaround time (see section 10.2.3).
  *
- * @note Currently the turnaround time can only be calculated for SUN FSK and O-QPSK.
+ * @param iface pointer to the IEEE 802.15.4 interface
  *
- * @param iface The interface for which the turnaround time should be calculated.
- *
- * @returns The turnaround time for the given interface.
+ * @returns The turnaround time for the given interface in symbols.
+ * @retval 0 if an error occurred.
  */
 static inline uint32_t ieee802154_radio_get_a_turnaround_time(struct net_if *iface)
 {
-	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_SUB_GHZ) &&
-	    ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_SUB_GHZ) {
-		return IEEE802154_PHY_A_TURNAROUND_TIME(true);
+	enum ieee802154_phy_channel_page channel_page =
+		ieee802154_radio_current_channel_page(iface);
+
+	if (!channel_page) {
+		return 0;
 	}
 
-	return IEEE802154_PHY_A_TURNAROUND_TIME(false);
+	/* Section 11.3, table 11-1, aTurnaroundTime: "For the SUN [...] PHYs,
+	 * the value is 1 ms expressed in symbol periods, rounded up to the next
+	 * integer number of symbol periods using the ceiling() function. [...]
+	 * The value is 12 [symbol periods] for all other PHYs.
+	 */
+
+	if (channel_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED) {
+		/* Current SUN FSK drivers only implement legacy IEEE 802.15.4g
+		 * 863 MHz (Europe) and 915 MHz (US ISM) bands, see IEEE
+		 * 802.15.4g, section 5.1, table 0. Once more bands are required
+		 * we need to request the currently active frequency band from
+		 * the driver.
+		 */
+		return IEEE802154_PHY_A_TURNAROUND_TIME_1MS(
+			IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS);
+	}
+
+	return IEEE802154_PHY_A_TURNAROUND_TIME_DEFAULT;
 }
-
-static inline bool ieee802154_radio_verify_channel(struct net_if *iface, uint16_t channel)
-{
-	if (channel == IEEE802154_NO_CHANNEL) {
-		return false;
-	}
-
-#ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
-	const struct ieee802154_radio_api *radio =
-		net_if_get_device(iface)->api;
-
-	if (!radio) {
-		return false;
-	}
-
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_SUB_GHZ) {
-		if (channel >
-		    radio->get_subg_channel_count(net_if_get_device(iface))) {
-			return false;
-		}
-	}
-#endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
-
-	return true;
-}
-
 
 /**
- * MAC utilities
+ * @brief Verify if the given channel lies within the allowed range of available
+ * channels of the driver's currently selected channel page.
  *
- * Note: While MAC utilities may refer to PHY utilities,
- *       the inverse is not true.
+ * @param iface pointer to the IEEE 802.15.4 interface
+ * @param channel The channel to verify or IEEE802154_NO_CHANNEL
+ *
+ * @returns true if the channel is available, false otherwise
  */
+bool ieee802154_radio_verify_channel(struct net_if *iface, uint16_t channel);
 
 /**
- * The number of PHY symbols forming a superframe slot when the superframe order
- * is equal to zero, see sections 8.4.2, table 8-93, aBaseSlotDuration and 6.2.1.
+ * @brief Counts all available channels of the driver's currently selected
+ * channel page.
+ *
+ * @param iface pointer to the IEEE 802.15.4 interface
+ *
+ * @returns The number of available channels.
  */
-#define IEEE802154_MAC_A_BASE_SLOT_DURATION 60U
-
-/**
- * The number of slots contained in any superframe, see section 8.4.2,
- * table 8-93, aNumSuperframeSlots.
- */
-#define IEEE802154_MAC_A_NUM_SUPERFRAME_SLOTS 16U
-
-/**
- * The number of PHY symbols forming a superframe when the superframe order is
- * equal to zero, see section 8.4.2, table 8-93, aBaseSuperframeDuration.
- */
-#define IEEE802154_MAC_A_BASE_SUPERFRAME_DURATION                                                  \
-	(IEEE802154_MAC_A_BASE_SLOT_DURATION * IEEE802154_MAC_A_NUM_SUPERFRAME_SLOTS)
+uint16_t ieee802154_radio_number_of_channels(struct net_if *iface);
 
 /**
  * @brief Calculates the MAC's superframe duration (see section 8.4.2,
@@ -392,22 +484,18 @@ static inline bool ieee802154_radio_verify_channel(struct net_if *iface, uint16_
  * @details The number of symbols forming a superframe when the superframe order
  * is equal to zero.
  *
- * @param iface The interface for which the base superframe duration should be
- *              calculated.
+ * @param iface pointer to the IEEE 802.15.4 interface
  *
  * @returns The base superframe duration for the given interface in microseconds.
  */
 static inline uint32_t ieee802154_get_a_base_superframe_duration(struct net_if *iface)
 {
-	return IEEE802154_MAC_A_BASE_SUPERFRAME_DURATION *
-	       ieee802154_radio_get_symbol_period_us(iface);
-}
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-/**
- * Default macResponseWaitTime in multiples of aBaseSuperframeDuration as
- * defined in section 8.4.3.1, table 8-94.
- */
-#define IEEE802154_MAC_RESONSE_WAIT_TIME_DEFAULT 32U
+	return ieee802154_radio_get_multiple_of_symbol_period(
+		       iface, ctx->channel, IEEE802154_MAC_A_BASE_SUPERFRAME_DURATION) /
+	       NSEC_PER_USEC;
+}
 
 /**
  * @brief Retrieves macResponseWaitTime, see section 8.4.3.1, table 8-94,
@@ -423,16 +511,15 @@ static inline uint32_t ieee802154_get_a_base_superframe_duration(struct net_if *
  *
  * @note Currently this parameter is read-only and uses the specified default of 32.
  *
- * @param iface The interface for which the response wait time should be calculated.
+ * @param iface pointer to the IEEE 802.15.4 interface
  *
  * @returns The response wait time for the given interface in microseconds.
  */
 static inline uint32_t ieee802154_get_response_wait_time_us(struct net_if *iface)
 {
 	/* TODO: Make this parameter configurable. */
-	return IEEE802154_MAC_RESONSE_WAIT_TIME_DEFAULT *
+	return IEEE802154_MAC_RESPONSE_WAIT_TIME_DEFAULT *
 	       ieee802154_get_a_base_superframe_duration(iface);
 }
-
 
 #endif /* __IEEE802154_UTILS_H__ */

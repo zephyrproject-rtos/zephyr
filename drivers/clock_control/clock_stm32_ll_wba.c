@@ -420,15 +420,23 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
+		/* LSI belongs to the back-up domain, enable access.*/
+
+		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
+		LL_PWR_EnableBkUpAccess();
+		while (!LL_PWR_IsEnabledBkUpAccess()) {
+			/* Wait for Backup domain access */
+		}
+
 		LL_RCC_LSI1_Enable();
 		while (LL_RCC_LSI1_IsReady() != 1) {
 		}
+
+		LL_PWR_DisableBkUpAccess();
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
 		/* LSE belongs to the back-up domain, enable access.*/
-
-		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
 		LL_PWR_EnableBkUpAccess();
@@ -452,8 +460,6 @@ static void set_up_fixed_clock_sources(void)
 		}
 
 		LL_PWR_DisableBkUpAccess();
-
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
 }
 

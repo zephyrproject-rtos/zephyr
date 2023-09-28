@@ -18,7 +18,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  * @brief Setup various clock on SoC at boot time.

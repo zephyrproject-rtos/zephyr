@@ -1,10 +1,19 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config GPIO_NRFX
+menuconfig GPIO_NRFX
 	bool "nRF GPIO driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_GPIO_ENABLED
 	select NRFX_GPIOTE
 	help
 	  Enable GPIO driver for nRF line of MCUs.
+
+config GPIO_NRFX_INTERRUPT
+	bool "Interrupt support"
+	depends on GPIO_NRFX
+	default y
+	help
+	  The option can be used to disable the GPIO interrupt support to
+	  significantly reduce memory footprint in case of application that does
+	  not need GPIO interrupts.

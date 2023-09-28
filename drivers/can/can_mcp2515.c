@@ -964,7 +964,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	/* Initialize interrupt handling  */
-	if (!device_is_ready(dev_cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
 		LOG_ERR("Interrupt GPIO port not ready");
 		return -ENODEV;
 	}
@@ -1057,8 +1057,8 @@ static int mcp2515_init(const struct device *dev)
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &mcp2515_init, NULL, &mcp2515_data_##inst,                     \
-			      &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,       \
-			      &can_api_funcs);
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                 \
+				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
+				  &can_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)

@@ -192,7 +192,7 @@ static int sm351lt_init(const struct device *dev)
 	const struct sm351lt_config *const config = dev->config;
 	uint32_t ret;
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

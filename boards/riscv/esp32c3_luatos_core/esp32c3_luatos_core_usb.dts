@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 YuLong Yao<feilongphone@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "esp32c3_luatos_core.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&usb_serial {
+	status = "okay";
+};

@@ -11,3 +11,4 @@ supported:
   - i2c
   - serial
   - eeprom
+vendor: nxp

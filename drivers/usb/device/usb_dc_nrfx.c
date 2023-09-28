@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
@@ -386,7 +387,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	k_mem_slab_free(&fifo_elem_slab, (void **)&ev->block.data);
+	k_mem_slab_free(&fifo_elem_slab, (void *)ev->block.data);
 }
 
 /**

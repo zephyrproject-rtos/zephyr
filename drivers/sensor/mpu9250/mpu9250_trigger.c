@@ -120,7 +120,7 @@ int mpu9250_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(cfg->int_pin.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_pin)) {
 		LOG_ERR("Interrupt pin is not ready.");
 		return -EIO;
 	}

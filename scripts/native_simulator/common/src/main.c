@@ -14,25 +14,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "nsi_cpu_if.h"
+#include "nsi_cpun_if.h"
 #include "nsi_tasks.h"
 #include "nsi_cmdline_main_if.h"
 #include "nsi_utils.h"
 #include "nsi_hw_scheduler.h"
+#include "nsi_config.h"
+#include "nsi_cpu_ctrl.h"
 
 int nsi_exit_inner(int exit_code)
 {
 	static int max_exit_code;
+	int cpu_ret;
 
 	max_exit_code = NSI_MAX(exit_code, max_exit_code);
 	/*
-	 * nsif_cpu0_cleanup may not return if this is called from a SW thread,
+	 * nsif_cpun_cleanup may not return if this is called from a SW thread,
 	 * but instead it would get nsi_exit() recalled again
 	 * ASAP from the HW thread
 	 */
-	int cpu_0_ret = nsif_cpu0_cleanup();
-
-	max_exit_code = NSI_MAX(cpu_0_ret, max_exit_code);
+	for (int i = 0; i < NSI_N_CPUS; i++) {
+		cpu_ret = nsif_cpun_cleanup(i);
+		max_exit_code = NSI_MAX(cpu_ret, max_exit_code);
+	}
 
 	nsi_run_tasks(NSITASK_ON_EXIT_PRE_LEVEL);
 	nsi_hws_cleanup();
@@ -62,19 +66,23 @@ static void nsi_init(int argc, char *argv[])
 	setvbuf(stderr, NULL, _IOLBF, 512);
 
 	nsi_run_tasks(NSITASK_PRE_BOOT_1_LEVEL);
-	nsif_cpu0_pre_cmdline_hooks();
+	for (int i = 0; i < NSI_N_CPUS; i++) {
+		nsif_cpun_pre_cmdline_hooks(i);
+	}
 
 	nsi_handle_cmd_line(argc, argv);
 
 	nsi_run_tasks(NSITASK_PRE_BOOT_2_LEVEL);
-	nsif_cpu0_pre_hw_init_hooks();
+	for (int i = 0; i < NSI_N_CPUS; i++) {
+		nsif_cpun_pre_hw_init_hooks(i);
+	}
 
 	nsi_run_tasks(NSITASK_HW_INIT_LEVEL);
 	nsi_hws_init();
 
 	nsi_run_tasks(NSITASK_PRE_BOOT_3_LEVEL);
 
-	nsif_cpu0_boot();
+	nsi_cpu_auto_boot();
 
 	nsi_run_tasks(NSITASK_FIRST_SLEEP_LEVEL);
 }

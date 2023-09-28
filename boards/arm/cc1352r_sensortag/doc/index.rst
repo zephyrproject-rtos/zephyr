@@ -65,6 +65,8 @@ features:
 +-----------+------------+------------------+
 | WDT       | on-chip    | watchdog         |
 +-----------+------------+------------------+
+| HWINFO    | on-chip    | hwinfo           |
++-----------+------------+------------------+
 
 Other hardware features have not been enabled yet for this board.
 

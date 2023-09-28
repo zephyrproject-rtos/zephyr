@@ -63,7 +63,8 @@ extern void z_arm64_mm_init(bool is_primary_core);
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	int cpu_count, i, j;
+	int cpu_count;
+	static int i;
 	uint64_t cpu_mpid = 0;
 	uint64_t master_core_mpid;
 
@@ -72,41 +73,51 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
+
+#ifdef CONFIG_ARM64_FALLBACK_ON_RESERVED_CORES
+	__ASSERT(cpu_count >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Core nodes in dts is not greater or equal to CONFIG_MP_MAX_NUM_CPUS\n");
+#else
 	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
-
-	for (i = 0, j = 0; i < cpu_count; i++) {
-		if (cpu_node_list[i] == master_core_mpid) {
-			continue;
-		}
-		if (j == cpu_num - 1) {
-			cpu_mpid = cpu_node_list[i];
-			break;
-		}
-		j++;
-	}
-	if (i == cpu_count) {
-		printk("Can't find CPU Core %d from dts and failed to boot it\n", cpu_num);
-		return;
-	}
+#endif
 
 	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
 
-	barrier_dsync_fence_full();
+	for (; i < cpu_count; i++) {
+		if (cpu_node_list[i] == master_core_mpid) {
+			continue;
+		}
 
-	/* store mpid last as this is our synchronization point */
-	arm64_cpu_boot_params.mpid = cpu_mpid;
+		cpu_mpid = cpu_node_list[i];
 
-	sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
-				  sizeof(arm64_cpu_boot_params));
+		barrier_dsync_fence_full();
 
-	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
-		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
-		       cpu_num, cpu_mpid);
-		return;
+		/* store mpid last as this is our synchronization point */
+		arm64_cpu_boot_params.mpid = cpu_mpid;
+
+		sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
+					  sizeof(arm64_cpu_boot_params));
+
+		if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
+			printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
+			       cpu_num, cpu_mpid);
+#ifdef CONFIG_ARM64_FALLBACK_ON_RESERVED_CORES
+			printk("Falling back on reserved cores\n");
+			continue;
+#else
+			k_panic();
+#endif
+		}
+
+		break;
+	}
+	if (i++ == cpu_count) {
+		printk("Can't find CPU Core %d from dts and failed to boot it\n", cpu_num);
+		k_panic();
 	}
 
 	/* Wait secondary cores up, see z_arm64_secondary_start */
@@ -130,11 +141,12 @@ void z_arm64_secondary_start(void)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
+
+	z_arm64_mm_init(false);
+
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	z_arm64_safe_exception_stack_init();
 #endif
-
-	z_arm64_mm_init(false);
 
 #ifdef CONFIG_SMP
 	arm_gic_secondary_init();
@@ -179,7 +191,7 @@ static void broadcast_ipi(unsigned int ipi)
 		uint64_t target_mpidr = cpu_map[i];
 		uint8_t aff0;
 
-		if (mpidr == target_mpidr || mpidr == INV_MPID) {
+		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 
@@ -205,12 +217,15 @@ void arch_sched_ipi(void)
 void mem_cfg_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
+	unsigned int key = arch_irq_lock();
 
 	/*
 	 * Make sure a domain switch by another CPU is effective on this CPU.
 	 * This is a no-op if the page table is already the right one.
+	 * Lock irq to prevent the interrupt during mem region switch.
 	 */
 	z_arm64_swap_mem_domains(_current);
+	arch_irq_unlock(key);
 }
 
 void z_arm64_mem_cfg_ipi(void)

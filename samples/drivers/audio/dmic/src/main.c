@@ -52,7 +52,6 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 	for (int i = 0; i < block_count; ++i) {
 		void *buffer;
 		uint32_t size;
-		int ret;
 
 		ret = dmic_read(dmic_dev, 0, &buffer, &size, READ_TIMEOUT);
 		if (ret < 0) {
@@ -62,7 +61,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 		LOG_INF("%d - got buffer %p of %u bytes", i, buffer, size);
 
-		k_mem_slab_free(&mem_slab, &buffer);
+		k_mem_slab_free(&mem_slab, buffer);
 	}
 
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_STOP);

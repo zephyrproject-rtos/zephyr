@@ -29,7 +29,7 @@ static const struct gpio_dt_spec button =
 
 int main(void)
 {
-	if (!device_is_ready(button.port)) {
+	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n", button.port->name);
 		return 0;
 	}

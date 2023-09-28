@@ -1,7 +1,0 @@
-identifier: ti_am62x_sk_m4
-name: TI AM62X SK M4
-type: mcu
-arch: arm
-toolchain:
-  - zephyr
-ram: 192

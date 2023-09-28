@@ -594,125 +594,78 @@
 		hwctrl = "periph2";
 	};
 
-	/omit-if-no-ref/ i2c_controller_scl_p0_8_u0c0: i2c_controller_scl_p0_8_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p4_7_u2c1: i2c_sda_p4_7_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 7, 1)>; /* USIC sda-src = DX0C */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p1_1_u0c0: i2c_controller_scl_p1_1_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p5_1_u0c0: i2c_sda_p5_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 1, 1)>; /* USIC sda-src = DX0A */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p2_4_u0c1: i2c_controller_scl_p2_4_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p3_13_u0c1: i2c_sda_p3_13_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 2)>; /* USIC sda-src = DX0D */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p3_0_u0c1: i2c_controller_scl_p3_0_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p3_5_u0c1: i2c_sda_p3_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 4)>; /* USIC sda-src = DX0A */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p6_2_u0c1: i2c_controller_scl_p6_2_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p2_14_u1c0: i2c_sda_p2_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 2)>; /* USIC sda-src = DX0D */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p0_11_u1c0: i2c_controller_scl_p0_11_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p0_5_u1c0: i2c_sda_p0_5_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 2)>; /* USIC sda-src = DX0B */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p5_8_u1c0: i2c_controller_scl_p5_8_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p4_2_u1c1: i2c_sda_p4_2_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 2)>; /* USIC sda-src = DX0C */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p0_10_u1c1: i2c_controller_scl_p0_10_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p5_0_u2c0: i2c_sda_p5_0_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 1)>; /* USIC sda-src = DX0B */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p0_13_u1c1: i2c_controller_scl_p0_13_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p1_5_u0c0: i2c_sda_p1_5_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 2)>; /* USIC sda-src = DX0A */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p5_2_u2c0: i2c_controller_scl_p5_2_u2c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p2_5_u0c1: i2c_sda_p2_5_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 2)>; /* USIC sda-src = DX0B */
 	};
-	/omit-if-no-ref/ i2c_controller_scl_p3_6_u2c1: i2c_controller_scl_p3_6_u2c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 0x1A)>;
+	/omit-if-no-ref/ i2c_sda_p3_15_u1c1: i2c_sda_p3_15_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 2)>; /* USIC sda-src = DX0A */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p1_5_u0c0: i2c_controller_sda_p1_5_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0x1A)>;
+
+	/omit-if-no-ref/ i2c_scl_p5_2_u2c0: i2c_scl_p5_2_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 1)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p2_5_u0c1: i2c_controller_sda_p2_5_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p3_6_u0c1: i2c_scl_p3_6_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 4)>; /* USIC scl-src = DX1B */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p3_13_u0c1: i2c_controller_sda_p3_13_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p6_2_u0c1: i2c_scl_p6_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 2)>; /* USIC scl-src = DX1C */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p0_5_u1c0: i2c_controller_sda_p0_5_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p1_1_u0c0: i2c_scl_p1_1_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 2)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p2_14_u1c0: i2c_controller_sda_p2_14_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p3_0_u0c1: i2c_scl_p3_0_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 2)>; /* USIC scl-src = DX1B */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p3_15_u1c1: i2c_controller_sda_p3_15_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p5_8_u1c0: i2c_scl_p5_8_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 2)>; /* USIC scl-src = DX1B */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p4_2_u1c1: i2c_controller_sda_p4_2_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p4_0_u1c0: i2c_scl_p4_0_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 4)>; /* USIC scl-src = DX1C */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p5_0_u2c0: i2c_controller_sda_p5_0_u2c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p2_4_u0c1: i2c_scl_p2_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 2)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_controller_sda_p3_5_u2c1: i2c_controller_sda_p3_5_u2c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0x1A)>;
+	/omit-if-no-ref/ i2c_scl_p0_11_u1c0: i2c_scl_p0_11_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 2)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_target_scl_p0_8_u0c0: i2c_target_scl_p0_8_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 0x19)>;
+	/omit-if-no-ref/ i2c_scl_p0_13_u1c1: i2c_scl_p0_13_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 2)>; /* USIC scl-src = DX1B */
 	};
-	/omit-if-no-ref/ i2c_target_scl_p1_1_u0c0: i2c_target_scl_p1_1_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(1, 1, 0x19)>;
+	/omit-if-no-ref/ i2c_scl_p0_10_u1c1: i2c_scl_p0_10_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 2)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_target_scl_p2_4_u0c1: i2c_target_scl_p2_4_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 4, 0x19)>;
+	/omit-if-no-ref/ i2c_scl_p4_2_u2c1: i2c_scl_p4_2_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 4)>; /* USIC scl-src = DX1A */
 	};
-	/omit-if-no-ref/ i2c_target_scl_p3_0_u0c1: i2c_target_scl_p3_0_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 0, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p6_2_u0c1: i2c_target_scl_p6_2_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(6, 2, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p0_11_u1c0: i2c_target_scl_p0_11_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 11, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p5_8_u1c0: i2c_target_scl_p5_8_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 8, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p0_10_u1c1: i2c_target_scl_p0_10_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 10, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p0_13_u1c1: i2c_target_scl_p0_13_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 13, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p5_2_u2c0: i2c_target_scl_p5_2_u2c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 2, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_scl_p3_6_u2c1: i2c_target_scl_p3_6_u2c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 6, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p1_5_u0c0: i2c_target_sda_p1_5_u0c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p2_5_u0c1: i2c_target_sda_p2_5_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 5, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p3_13_u0c1: i2c_target_sda_p3_13_u0c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p0_5_u1c0: i2c_target_sda_p0_5_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(0, 5, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p2_14_u1c0: i2c_target_sda_p2_14_u1c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(2, 14, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p3_15_u1c1: i2c_target_sda_p3_15_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 15, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p4_2_u1c1: i2c_target_sda_p4_2_u1c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(4, 2, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p5_0_u2c0: i2c_target_sda_p5_0_u2c0 {
-		pinmux = <XMC4XXX_PINMUX_SET(5, 0, 0x19)>;
-	};
-	/omit-if-no-ref/ i2c_target_sda_p3_5_u2c1: i2c_target_sda_p3_5_u2c1 {
-		pinmux = <XMC4XXX_PINMUX_SET(3, 5, 0x19)>;
+	/omit-if-no-ref/ i2c_scl_p0_8_u0c0: i2c_scl_p0_8_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 8, 2)>; /* USIC scl-src = DX1B */
 	};
 
 	/omit-if-no-ref/ pwm_out_p0_12_ccu40_ch3: pwm_out_p0_12_ccu40_ch3 {
@@ -946,5 +899,90 @@
 	};
 	/omit-if-no-ref/ pwm_out_p6_1_ccu81_ch6_high: pwm_out_p6_1_ccu81_ch6_high {
 		pinmux = <XMC4XXX_PINMUX_SET(6, 1, 3)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_12_u2c1: i2c_sda_dx0_p3_12_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 12, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p4_0_u2c1: i2c_sda_dx0_p4_0_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 0, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p0_0_u1c1: i2c_sda_dx0_p0_0_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p4_6_u2c1: i2c_sda_dx0_p4_6_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(4, 6, 0)>; /* USIC sda-src = DX0E */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p2_2_u0c1: i2c_sda_dx0_p2_2_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 2, 0)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p6_3_u0c1: i2c_sda_dx0_p6_3_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 3, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_7_u2c0: i2c_sda_dx0_p3_7_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 7, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_14_u1c1: i2c_sda_dx0_p3_14_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 14, 0)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p2_15_u1c0: i2c_sda_dx0_p2_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 15, 0)>; /* USIC sda-src = DX0C */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p0_4_u1c0: i2c_sda_dx0_p0_4_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 4, 0)>; /* USIC sda-src = DX0A */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p6_5_u2c0: i2c_sda_dx0_p6_5_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 5, 0)>; /* USIC sda-src = DX0D */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p1_14_u1c0: i2c_sda_dx0_p1_14_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 14, 0)>; /* USIC sda-src = DX0E */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p3_4_u2c1: i2c_sda_dx0_p3_4_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 4, 0)>; /* USIC sda-src = DX0B */
+	};
+	/omit-if-no-ref/ i2c_sda_dx0_p1_4_u0c0: i2c_sda_dx0_p1_4_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>; /* USIC sda-src = DX0B */
+	};
+
+	/omit-if-no-ref/ i2c_sda_dout0_p3_8_u2c0: i2c_sda_dout0_p3_8_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 8, 1)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_9_u1c1: i2c_sda_dout0_p1_9_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 4)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p6_4_u0c1: i2c_sda_dout0_p6_4_u0c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 4, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_15_u1c0: i2c_sda_dout0_p1_15_u1c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 15, 4)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p3_11_u2c1: i2c_sda_dout0_p3_11_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 11, 1)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p0_1_u1c1: i2c_sda_dout0_p0_1_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 1, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p1_7_u0c0: i2c_sda_dout0_p1_7_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 7, 2)>;
+	};
+	/omit-if-no-ref/ i2c_sda_dout0_p6_6_u2c0: i2c_sda_dout0_p6_6_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_8_u1c1: i2c_scl_dout1_p1_8_u1c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 4)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p3_13_u2c1: i2c_scl_dout1_p3_13_u2c1 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 13, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_6_u0c0: i2c_scl_dout1_p1_6_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 6, 2)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_9_u0c0: i2c_scl_dout1_p1_9_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 1)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p1_10_u0c0: i2c_scl_dout1_p1_10_u0c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 10, 2)>;
+	};
+	/omit-if-no-ref/ i2c_scl_dout1_p3_9_u2c0: i2c_scl_dout1_p3_9_u2c0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 9, 1)>;
 	};
 };

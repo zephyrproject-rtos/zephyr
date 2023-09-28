@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "stm32h747i_disco.dtsi"
 
 / {
@@ -27,7 +28,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = "RAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	leds {

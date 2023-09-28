@@ -7,7 +7,7 @@
 #define ZEPHYR_SOC_ARM_ASPEED_UTIL_H_
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 
 /* gcc.h doesn't define __section but checkpatch.pl will complain for this. so
  * temporarily add a macro here.

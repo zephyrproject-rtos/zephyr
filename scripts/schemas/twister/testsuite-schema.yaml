@@ -95,8 +95,10 @@ mapping:
             type: int
             required: false
           "pytest_root":
-            type: str
+            type: seq
             required: false
+            sequence:
+              - type: str
           "pytest_args":
             type: seq
             required: false
@@ -143,6 +145,11 @@ mapping:
         required: false
         type: seq
         matching: "all"
+        sequence:
+          - type: str
+      "required_snippets":
+        type: seq
+        required: false
         sequence:
           - type: str
       "tags":
@@ -243,6 +250,11 @@ mapping:
           "extra_sections":
             type: any
             required: false
+          "required_snippets":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "filter":
             type: str
             required: false
@@ -283,8 +295,10 @@ mapping:
                 type: int
                 required: false
               "pytest_root":
-                type: str
+                type: seq
                 required: false
+                sequence:
+                  - type: str
               "pytest_args":
                 type: seq
                 required: false

@@ -163,7 +163,7 @@ int tmp007_init_interrupt(const struct device *dev)
 
 	drv_data->dev = dev;
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->int_gpio.port->name);
 		return -ENODEV;

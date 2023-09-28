@@ -142,7 +142,7 @@ static int ti_hdc_init(const struct device *dev)
 		k_sem_init(&drv_data->data_sem, 0, K_SEM_MAX_LIMIT);
 
 		/* setup data ready gpio interrupt */
-		if (!device_is_ready(cfg->drdy.port)) {
+		if (!gpio_is_ready_dt(&cfg->drdy)) {
 			LOG_ERR("%s: device %s is not ready", dev->name,
 					cfg->drdy.port->name);
 			return -ENODEV;

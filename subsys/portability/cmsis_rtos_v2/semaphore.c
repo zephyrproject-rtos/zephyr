@@ -142,7 +142,7 @@ osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 	 * supported in Zephyr.
 	 */
 
-	k_mem_slab_free(&cv2_semaphore_slab, (void *) &semaphore);
+	k_mem_slab_free(&cv2_semaphore_slab, (void *)semaphore);
 
 	return osOK;
 }

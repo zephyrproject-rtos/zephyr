@@ -366,6 +366,7 @@ bool pm_device_on_power_domain(const struct device *dev)
 	}
 	return pm->domain != NULL;
 #else
+	ARG_UNUSED(dev);
 	return false;
 #endif
 }
@@ -382,6 +383,7 @@ bool pm_device_is_powered(const struct device *dev)
 	       (pm->domain == NULL) ||
 	       (pm->domain->pm->state == PM_DEVICE_STATE_ACTIVE);
 #else
+	ARG_UNUSED(dev);
 	return true;
 #endif
 }

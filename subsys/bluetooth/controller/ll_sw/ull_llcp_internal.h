@@ -738,6 +738,7 @@ void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx);
 bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx);
 void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_lp_cc_cancel(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_rp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);

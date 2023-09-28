@@ -376,11 +376,7 @@ static void eth_rx(struct eth_context *ctx)
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_NET_GPTP)) {
-			k_sleep(K_MSEC(1));
-		} else {
-			k_sleep(K_MSEC(50));
-		}
+		k_sleep(K_MSEC(CONFIG_ETH_NATIVE_POSIX_RX_TIMEOUT));
 	}
 }
 

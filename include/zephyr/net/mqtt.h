@@ -348,13 +348,13 @@ struct mqtt_sec_config {
 	/** Indicates the list of ciphers to be used for the session.
 	 *  May be NULL to use the default ciphers.
 	 */
-	int *cipher_list;
+	const int *cipher_list;
 
 	/** Indicates the number of entries in the sec tag list. */
 	uint32_t sec_tag_count;
 
 	/** Indicates the list of security tags to be used for the session. */
-	sec_tag_t *sec_tag_list;
+	const sec_tag_t *sec_tag_list;
 
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.

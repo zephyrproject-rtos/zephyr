@@ -53,6 +53,8 @@ CHIPS_INFO = {
     'npcx9m3': {'ram_address': 0x10080000, 'ram_size': 0x50000},
     'npcx9m6': {'ram_address': 0x10090000, 'ram_size': 0x40000},
     'npcx9m7': {'ram_address': 0x10070000, 'ram_size': 0x60000},
+    'npcx4m3': {'ram_address': 0x10088000, 'ram_size': 0x50000},
+    'npcx4m8': {'ram_address': 0x10060000, 'ram_size': 0x7c800},
 }
 DEFAULT_CHIP = 'npcx7m6'
 

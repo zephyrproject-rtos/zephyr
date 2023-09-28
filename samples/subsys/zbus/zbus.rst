@@ -1,6 +1,6 @@
 .. _zbus_samples:
 
-Zbus Samples
+zbus Samples
 ############
 
 .. toctree::

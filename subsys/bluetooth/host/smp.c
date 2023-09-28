@@ -630,7 +630,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
-		smp = CONTAINER_OF(chan, struct bt_smp, chan);
+		smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 		smp->local_dist &= ~dist_complete;
 
 		/* if all keys were distributed, pairing is done */
@@ -648,7 +648,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
-		smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+		smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 		smp->local_dist &= ~dist_complete;
 
 		/* if all keys were distributed, pairing is done */
@@ -831,7 +831,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -849,7 +849,7 @@ static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
 
 static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
@@ -1406,7 +1406,7 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 
 static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
+	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
@@ -1513,7 +1513,7 @@ static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_smp_br, chan);
+	return CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
 }
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn)
@@ -1650,11 +1650,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 	LOG_DBG("got status 0x%x", status);
 
-	if (conn->state != BT_CONN_CONNECTED) {
-		/* If disconnection has been triggered in between the security update
-		 * and the call to this function we need to abort the pairing.
+	if (conn->le.keys == NULL) {
+		/* We can get here if the application calls `bt_unpair` in the
+		 * `security_changed` callback.
 		 */
-		LOG_WRN("Not connected!");
+		LOG_WRN("The in-progress pairing has been deleted!");
 		status = BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1677,7 +1677,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_keys_show_sniffer_info(conn->le.keys, NULL);
 		}
 
-		if (bond_flag) {
+		if (bond_flag && conn->le.keys) {
 			bt_keys_store(conn->le.keys);
 		}
 
@@ -1732,7 +1732,8 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 static void smp_timeout(struct k_work *work)
 {
-	struct bt_smp *smp = CONTAINER_OF(work, struct bt_smp, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_smp *smp = CONTAINER_OF(dwork, struct bt_smp, work);
 
 	LOG_ERR("SMP Timeout");
 
@@ -2688,7 +2689,7 @@ static struct bt_smp *smp_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return CONTAINER_OF(chan, struct bt_smp, chan);
+	return CONTAINER_OF(chan, struct bt_smp, chan.chan);
 }
 
 bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint8_t *ltk)
@@ -3814,6 +3815,20 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 	return 0;
 }
 
+struct addr_match {
+	const bt_addr_le_t *rpa;
+	const bt_addr_le_t *id_addr;
+};
+
+static void convert_to_id_on_match(struct bt_conn *conn, void *data)
+{
+	struct addr_match *addr_match = data;
+
+	if (bt_addr_le_eq(&conn->le.dst, addr_match->rpa)) {
+		bt_addr_le_copy(&conn->le.dst, addr_match->id_addr);
+	}
+}
+
 static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -3875,8 +3890,15 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			 * present before ie. due to re-pairing.
 			 */
 			if (!bt_addr_le_is_identity(&conn->le.dst)) {
+				struct addr_match addr_match = {
+					.rpa = &conn->le.dst,
+					.id_addr = &req->addr,
+				};
+
+				bt_conn_foreach(BT_CONN_TYPE_LE,
+						convert_to_id_on_match,
+						&addr_match);
 				bt_addr_le_copy(&keys->addr, &req->addr);
-				bt_addr_le_copy(&conn->le.dst, &req->addr);
 
 				bt_conn_identity_resolved(conn);
 			}
@@ -4441,7 +4463,7 @@ static bool is_in_pairing_procedure(struct bt_smp *smp)
 
 static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
@@ -4548,7 +4570,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 
 static void bt_smp_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
@@ -4562,7 +4584,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 
 static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_keys *keys = chan->conn->le.keys;
 
 	LOG_DBG("chan %p cid 0x%04x", chan,
@@ -4597,7 +4619,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 				  uint8_t hci_status)
 {
-	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
+	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_conn *conn = chan->conn;
 
 	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x", chan, conn,
@@ -4894,14 +4916,14 @@ static const uint8_t M[] = {
 	0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
 };
 
-static int aes_test(const char *prefix, const uint8_t *key, const uint8_t *m,
+static int aes_test(const char *prefix, const uint8_t *in_key, const uint8_t *m,
 		    uint16_t len, const uint8_t *mac)
 {
 	uint8_t out[16];
 
 	LOG_DBG("%s: AES CMAC of message with len %u", prefix, len);
 
-	bt_crypto_aes_cmac(key, m, len, out);
+	bt_crypto_aes_cmac(in_key, m, len, out);
 	if (!memcmp(out, mac, 16)) {
 		LOG_DBG("%s: Success", prefix);
 	} else {
@@ -4955,7 +4977,7 @@ static int smp_aes_cmac_test(void)
 	return 0;
 }
 
-static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
+static int sign_test(const char *prefix, const uint8_t *sign_key, const uint8_t *m,
 		     uint16_t len, const uint8_t *sig)
 {
 	uint8_t msg[len + sizeof(uint32_t) + 8];
@@ -4971,7 +4993,7 @@ static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
 
 	memcpy(orig, msg, sizeof(msg));
 
-	err = smp_sign_buf(key, msg, len);
+	err = smp_sign_buf(sign_key, msg, len);
 	if (err) {
 		return err;
 	}

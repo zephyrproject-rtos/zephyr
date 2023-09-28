@@ -239,17 +239,6 @@ static int gpio_sc18im_port_toggle_bits(const struct device *port, gpio_port_pin
 	return gpio_sc18im_port_set_raw(port, 0, 0, (uint8_t)pins);
 }
 
-static int gpio_sc18im_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
-					       enum gpio_int_mode mode, enum gpio_int_trig trig)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-}
-
 static int gpio_sc18im_init(const struct device *dev)
 {
 	const struct gpio_sc18im_config *cfg = dev->config;
@@ -272,7 +261,6 @@ static const struct gpio_driver_api gpio_sc18im_driver_api = {
 	.port_set_bits_raw = gpio_sc18im_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_sc18im_port_clear_bits_raw,
 	.port_toggle_bits = gpio_sc18im_port_toggle_bits,
-	.pin_interrupt_configure = gpio_sc18im_pin_interrupt_configure,
 };
 
 #define CHECK_COMPAT(node)									\

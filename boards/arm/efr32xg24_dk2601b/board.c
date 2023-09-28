@@ -28,7 +28,7 @@ static int efr32xg24_dk2601b_init(void)
 		GPIO_DT_SPEC_GET(DT_NODELABEL(wake_up_trigger), gpios);
 
 
-	if (!device_is_ready(wake_up_gpio_dev.port)) {
+	if (!gpio_is_ready_dt(&wake_up_gpio_dev)) {
 		LOG_ERR("Wake-up GPIO device was not found!\n");
 		return -ENODEV;
 	}

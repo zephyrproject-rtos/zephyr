@@ -101,6 +101,10 @@ struct btp_gap_set_bondable_rp {
 	uint32_t current_settings;
 } __packed;
 
+#define BTP_GAP_ADDR_TYPE_IDENTITY			0
+#define BTP_GAP_ADDR_TYPE_RESOLVABLE_PRIVATE		1
+#define BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE	2
+
 #define BTP_GAP_START_ADVERTISING		0x0a
 struct btp_gap_start_advertising_cmd {
 	uint8_t adv_data_len;
@@ -233,7 +237,7 @@ struct btp_gap_set_mitm {
 #define BTP_GAP_SET_FILTER_LIST			0x1c
 struct btp_gap_set_filter_list {
 	uint8_t cnt;
-	bt_addr_le_t addr[0];
+	bt_addr_le_t addr[];
 } __packed;
 
 #define BTP_GAP_SET_PRIVACY			0x1d
@@ -247,6 +251,69 @@ struct btp_gap_set_extended_advertising_cmd {
 } __packed;
 struct btp_gap_set_extended_advertising_rp {
 	uint32_t current_settings;
+} __packed;
+
+#define BTP_GAP_PADV_CONFIGURE			0x22
+/* bitmap of flags*/
+#define BTP_GAP_PADV_INCLUDE_TX_POWER		BIT(0)
+struct btp_gap_padv_configure_cmd {
+	uint8_t flags;
+	uint16_t interval_min;
+	uint16_t interval_max;
+} __packed;
+struct btp_gap_padv_configure_rp {
+	uint32_t current_settings;
+} __packed;
+
+#define BTP_GAP_PADV_START			0x23
+struct btp_gap_padv_start_cmd {
+	uint8_t flags;
+} __packed;
+struct btp_gap_padv_start_rp {
+	uint32_t current_settings;
+} __packed;
+
+#define BTP_GAP_PADV_STOP			0x24
+struct btp_gap_padv_stop_cmd {
+} __packed;
+struct btp_gap_padv_stop_rp {
+	uint32_t current_settings;
+} __packed;
+
+#define BTP_GAP_PADV_SET_DATA			0x25
+struct btp_gap_padv_set_data_cmd {
+	uint16_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define BTP_GAP_PADV_CREATE_SYNC		0x26
+struct btp_gap_padv_create_sync_cmd {
+	bt_addr_le_t address;
+	uint8_t advertiser_sid;
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t flags;
+} __packed;
+
+#define BTP_GAP_PADV_SYNC_TRANSFER_SET_INFO	0x27
+struct btp_gap_padv_sync_transfer_set_info_cmd {
+	bt_addr_le_t address;
+	uint16_t service_data;
+} __packed;
+
+#define BTP_GAP_PADV_SYNC_TRANSFER_START	0x28
+struct btp_gap_padv_sync_transfer_start_cmd {
+	uint16_t sync_handle;
+	bt_addr_le_t address;
+	uint16_t service_data;
+} __packed;
+
+#define BTP_GAP_PADV_SYNC_TRANSFER_RECV		0x29
+struct btp_gap_padv_sync_transfer_recv_cmd {
+	bt_addr_le_t address;
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t flags;
 } __packed;
 
 /* events */
@@ -337,3 +404,57 @@ struct btp_gap_bond_pairing_failed_ev {
 	bt_addr_le_t address;
 	uint8_t reason;
 } __packed;
+
+#define BTP_GAP_EV_PERIODIC_SYNC_ESTABLISHED	0x8d
+struct btp_gap_ev_periodic_sync_established_ev {
+	bt_addr_le_t address;
+	uint16_t sync_handle;
+	uint8_t status;
+} __packed;
+
+#define BTP_GAP_EV_PERIODIC_SYNC_LOST		0x8e
+struct btp_gap_ev_periodic_sync_lost_ev {
+	uint16_t sync_handle;
+	uint8_t reason;
+} __packed;
+
+#define BTP_GAP_EV_PERIODIC_REPORT		0x8f
+struct btp_gap_ev_periodic_report_ev {
+	uint16_t sync_handle;
+	uint8_t tx_power;
+	uint8_t rssi;
+	uint8_t cte_type;
+	uint8_t data_status;
+	uint8_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define BTP_GAP_EV_PERIODIC_TRANSFER_RECEIVED	0x90
+struct btp_gap_ev_periodic_transfer_received_ev {
+	uint16_t sync_handle;
+	uint8_t tx_power;
+	uint8_t rssi;
+	uint8_t cte_type;
+	uint8_t data_status;
+	uint8_t data_len;
+	uint8_t data[];
+} __packed;
+
+#if defined(CONFIG_BT_EXT_ADV)
+struct bt_le_per_adv_param;
+struct bt_le_per_adv_sync_param;
+struct bt_le_adv_param;
+struct bt_data;
+struct bt_le_ext_adv *tester_gap_ext_adv_get(void);
+struct bt_le_per_adv_sync *tester_gap_padv_get(void);
+int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_addr_type,
+				   const struct bt_data *ad, size_t ad_len,
+				   const struct bt_data *sd, size_t sd_len, uint32_t *settings);
+int tester_gap_stop_ext_adv(void);
+int tester_gap_start_ext_adv(void);
+int tester_gap_padv_configure(const struct bt_le_per_adv_param *param);
+int tester_gap_padv_set_data(struct bt_data *per_ad, uint8_t ad_len);
+int tester_gap_padv_start(void);
+int tester_gap_padv_stop(void);
+int tester_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
+#endif /* defined(CONFIG_BT_EXT_ADV) */

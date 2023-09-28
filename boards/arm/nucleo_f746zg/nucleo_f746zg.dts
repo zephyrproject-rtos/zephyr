@@ -30,7 +30,7 @@
 		zephyr,canbus = &can1;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
@@ -177,6 +177,8 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <2>;
 	status = "okay";
 };
 

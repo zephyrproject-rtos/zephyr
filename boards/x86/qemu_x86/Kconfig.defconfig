@@ -24,6 +24,10 @@ config FLASH_SIMULATOR
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
 config MULTIBOOT
 	default y
 
@@ -49,6 +53,10 @@ config BOARD
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
+config HEAP_MEM_POOL_SIZE
+	default 32768 if ACPI
+	depends on KERNEL_MEM_POOL
+
 endif # BOARD_QEMU_X86_64
 
 if BOARD_QEMU_X86_LAKEMONT
@@ -72,9 +80,6 @@ config QEMU_ICOUNT
 
 config QEMU_ICOUNT_SHIFT
 	default 5
-
-config UART_NS16550_ACCESS_IOPORT
-	default y if UART_NS16550
 
 endif # BOARD_QEMU_X86_LAKEMONT
 

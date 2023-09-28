@@ -303,8 +303,6 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
-		int err;
-
 		err = bt_smp_sign(chan->att->conn, buf);
 		if (err) {
 			LOG_ERR("Error signing data");
@@ -672,10 +670,12 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 
 	switch (att_op_get_type(op)) {
 	case ATT_RESPONSE:
-	case ATT_CONFIRMATION:
-		/* Use a timeout only when responding/confirming */
+		/* Use a timeout only when responding */
 		timeout = BT_ATT_TIMEOUT;
 		re_use = true;
+		break;
+	case ATT_CONFIRMATION:
+		timeout = BT_ATT_TIMEOUT;
 		break;
 	default:
 		timeout = K_FOREVER;
@@ -703,7 +703,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 			 * This is better than an assert as an assert would
 			 * allow a peer to DoS us.
 			 */
-			LOG_ERR("already processing a transaction on chan %p", chan);
+			LOG_ERR("already processing a REQ/RSP on chan %p", chan);
 
 			return NULL;
 		}
@@ -3054,7 +3054,7 @@ static void att_reset(struct bt_att *att)
 	 * and `bt_conn_unref` to follow convention.
 	 */
 	att->conn = NULL;
-	k_mem_slab_free(&att_slab, (void **)&att);
+	k_mem_slab_free(&att_slab, (void *)att);
 }
 
 static void att_chan_detach(struct bt_att_chan *chan)
@@ -3290,7 +3290,7 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 
 	LOG_DBG("chan %p", chan);
 
-	k_mem_slab_free(&chan_slab, (void **)&chan);
+	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
 #if defined(CONFIG_BT_EATT)
@@ -3725,7 +3725,8 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 #endif /* CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_EATT */
 
-static int bt_eatt_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int bt_eatt_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			  struct bt_l2cap_chan **chan)
 {
 	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
 	struct bt_att *att = att_chan->att;
@@ -3864,7 +3865,7 @@ void bt_att_req_free(struct bt_att_req *req)
 		req->buf = NULL;
 	}
 
-	k_mem_slab_free(&req_slab, (void **)&req);
+	k_mem_slab_free(&req_slab, (void *)req);
 }
 
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf)

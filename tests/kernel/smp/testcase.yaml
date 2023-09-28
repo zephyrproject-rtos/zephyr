@@ -5,3 +5,12 @@ tests:
       - smp
     ignore_faults: true
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+  kernel.multiprocessing.smp.minimallibc:
+    tags:
+      - kernel
+      - smp
+      - libc
+    ignore_faults: true
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1) and CONFIG_MINIMAL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

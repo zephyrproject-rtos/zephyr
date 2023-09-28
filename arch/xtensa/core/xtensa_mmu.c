@@ -8,13 +8,12 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <xtensa/corebits.h>
 #include <xtensa_mmu_priv.h>
 
 #include <kernel_arch_func.h>
-
-/* Kernel specific ASID. Ring field in the PTE */
-#define MMU_KERNEL_RING 0
+#include <mmu.h>
 
 /* Fixed data TLB way to map the page table */
 #define MMU_PTE_WAY 7
@@ -76,22 +75,25 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	 * cacheable, read / write and non-executable
 	 */
 	{
-		.start = (uint32_t)__data_start,
-		.end   = (uint32_t)__data_end,
+		/* This includes .data, .bss and various kobject sections. */
+		.start = (uint32_t)_image_ram_start,
+		.end   = (uint32_t)_image_ram_end,
+#ifdef CONFIG_XTENSA_RPO_CACHE
 		.attrs = Z_XTENSA_MMU_W,
+#else
+		.attrs = Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB,
+#endif
 		.name = "data",
-	},
-	{
-		.start = (uint32_t)_bss_start,
-		.end   = (uint32_t)_bss_end,
-		.attrs = Z_XTENSA_MMU_W,
-		.name = "bss",
 	},
 	/* System heap memory */
 	{
 		.start = (uint32_t)_heap_start,
 		.end   = (uint32_t)_heap_end,
+#ifdef CONFIG_XTENSA_RPO_CACHE
 		.attrs = Z_XTENSA_MMU_W,
+#else
+		.attrs = Z_XTENSA_MMU_W | Z_XTENSA_MMU_CACHED_WB,
+#endif
 		.name = "heap",
 	},
 	/* Mark text segment cacheable, read only and executable */
@@ -129,7 +131,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	uint32_t page, *table;
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
-		uint32_t pte = Z_XTENSA_PTE(page, MMU_KERNEL_RING, attrs);
+		uint32_t pte = Z_XTENSA_PTE(page, Z_XTENSA_KERNEL_RING, attrs);
 		uint32_t l2_pos = Z_XTENSA_L2_POS(page);
 		uint32_t l1_pos = page >> 22;
 
@@ -140,7 +142,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 				"map 0x%08x\n", page);
 
 			l1_page_table[l1_pos] =
-				Z_XTENSA_PTE((uint32_t)table, MMU_KERNEL_RING,
+				Z_XTENSA_PTE((uint32_t)table, Z_XTENSA_KERNEL_RING,
 						Z_XTENSA_MMU_CACHED_WT);
 		}
 
@@ -206,6 +208,11 @@ static void xtensa_init_page_tables(void)
 	sys_cache_data_flush_all();
 }
 
+__weak void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+}
+
 static void xtensa_mmu_init(bool is_core0)
 {
 	volatile uint8_t entry;
@@ -237,7 +244,7 @@ static void xtensa_mmu_init(bool is_core0)
 	 * Lets use one of the wired entry, so we never have tlb miss for
 	 * the top level table.
 	 */
-	xtensa_dtlb_entry_write(Z_XTENSA_PTE((uint32_t)l1_page_table, MMU_KERNEL_RING,
+	xtensa_dtlb_entry_write(Z_XTENSA_PTE((uint32_t)l1_page_table, Z_XTENSA_KERNEL_RING,
 				Z_XTENSA_MMU_CACHED_WT),
 			Z_XTENSA_TLB_ENTRY(Z_XTENSA_PAGE_TABLE_VADDR, MMU_PTE_WAY));
 
@@ -248,13 +255,13 @@ static void xtensa_mmu_init(bool is_core0)
 	__asm__ volatile("rsr.vecbase %0" : "=r"(vecbase));
 
 	xtensa_itlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_TLB_ENTRY(
 			Z_XTENSA_PTEVADDR + MB(4), 3));
 
 	xtensa_dtlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
 			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
 		Z_XTENSA_TLB_ENTRY(
 			Z_XTENSA_PTEVADDR + MB(4), 3));
@@ -272,25 +279,36 @@ static void xtensa_mmu_init(bool is_core0)
 			:: "a"(Z_XTENSA_PTEVADDR + MB(4)));
 
 
-	/* Finally, lets invalidate entries in the way 6 that are no longer
-	 * needed. We keep 0x00000000 to 0x200000000 since
-	 * this region is directly accessed elsewhere
-	 * and remove them now is not gonna work. TODO: Map whathever is necessary
-	 * into the kernel virtual space and unmap these regions.
+	/* Finally, lets invalidate all entries in way 6 as the page tables
+	 * should have already mapped the regions we care about for boot.
 	 */
-	for (entry = 1; entry < 8; entry++) {
+	for (entry = 0; entry < BIT(XCHAL_ITLB_ARF_ENTRIES_LOG2); entry++) {
+		__asm__ volatile("iitlb %[idx]\n\t"
+				 "isync"
+				 :: [idx] "a"((entry << 29) | 6));
+	}
+
+	for (entry = 0; entry < BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2); entry++) {
 		__asm__ volatile("idtlb %[idx]\n\t"
-				"iitlb %[idx]\n\t"
-				"dsync\n\t"
-				"isync"
-				:: [idx] "a"((entry << 29) | 6));
+				 "dsync"
+				 :: [idx] "a"((entry << 29) | 6));
 	}
 
 	/* Map VECBASE to a fixed data TLB */
 	xtensa_dtlb_entry_write(
 			Z_XTENSA_PTE((uint32_t)vecbase,
-				     MMU_KERNEL_RING, Z_XTENSA_MMU_CACHED_WB),
+				     Z_XTENSA_KERNEL_RING, Z_XTENSA_MMU_CACHED_WB),
 			Z_XTENSA_TLB_ENTRY((uint32_t)vecbase, MMU_VECBASE_WAY));
+
+	/*
+	 * Pre-load TLB for vecbase so exception handling won't result
+	 * in TLB miss during boot, and that we can handle single
+	 * TLB misses.
+	 */
+	xtensa_itlb_entry_write_sync(
+		Z_XTENSA_PTE(vecbase, Z_XTENSA_KERNEL_RING,
+			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
+		Z_XTENSA_AUTOFILL_TLB_ENTRY(vecbase));
 
 	/* To finish, just restore vecbase and invalidate TLB entries
 	 * used to map the relocated vecbase.
@@ -308,15 +326,7 @@ static void xtensa_mmu_init(bool is_core0)
 	xtensa_dtlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
 	xtensa_itlb_entry_invalidate_sync(Z_XTENSA_TLB_ENTRY(Z_XTENSA_PTEVADDR + MB(4), 3));
 
-	/*
-	 * Pre-load TLB for vecbase so exception handling won't result
-	 * in TLB miss during boot, and that we can handle single
-	 * TLB misses.
-	 */
-	xtensa_itlb_entry_write_sync(
-		Z_XTENSA_PTE(vecbase, MMU_KERNEL_RING,
-			Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WT),
-		Z_XTENSA_AUTOFILL_TLB_ENTRY(vecbase));
+	arch_xtensa_mmu_post_init(is_core0);
 }
 
 void z_xtensa_mmu_init(void)
@@ -329,10 +339,33 @@ void z_xtensa_mmu_smp_init(void)
 	xtensa_mmu_init(false);
 }
 
+#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+/* Zephyr's linker scripts for Xtensa usually puts
+ * something before z_mapped_start (aka .text),
+ * i.e. vecbase, so that we need to reserve those
+ * space or else k_mem_map() would be mapping those,
+ * resulting in faults.
+ */
+__weak void arch_reserved_pages_update(void)
+{
+	uintptr_t page;
+	struct z_page_frame *pf;
+	int idx;
+
+	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
+	     page < (uintptr_t)z_mapped_start;
+	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
+		pf = &z_page_frames[idx];
+
+		pf->flags |= Z_PAGE_FRAME_RESERVED;
+	}
+}
+#endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
+
 static bool l2_page_table_map(void *vaddr, uintptr_t phys, uint32_t flags)
 {
 	uint32_t l1_pos = (uint32_t)vaddr >> 22;
-	uint32_t pte = Z_XTENSA_PTE(phys, MMU_KERNEL_RING, flags);
+	uint32_t pte = Z_XTENSA_PTE(phys, Z_XTENSA_KERNEL_RING, flags);
 	uint32_t l2_pos = Z_XTENSA_L2_POS((uint32_t)vaddr);
 	uint32_t *table;
 
@@ -343,7 +376,7 @@ static bool l2_page_table_map(void *vaddr, uintptr_t phys, uint32_t flags)
 			return false;
 		}
 
-		l1_page_table[l1_pos] = Z_XTENSA_PTE((uint32_t)table, MMU_KERNEL_RING,
+		l1_page_table[l1_pos] = Z_XTENSA_PTE((uint32_t)table, Z_XTENSA_KERNEL_RING,
 				Z_XTENSA_MMU_CACHED_WT);
 	}
 

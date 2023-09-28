@@ -25,7 +25,7 @@ static struct net_buf *backup;
  * buffer the pointer to allow a test case to free it with use of the mcumgr net_buf
  * management.
  */
-void smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
+void smp_rx_req(struct smp_transport *transport, struct net_buf *nb)
 {
 	backup = nb;
 }

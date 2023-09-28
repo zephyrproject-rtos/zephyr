@@ -19,6 +19,7 @@ menuconfig MCUMGR_GRP_IMG
 	depends on !MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
 	help
 	  Enables MCUmgr handlers for image management
 
@@ -45,7 +46,7 @@ endif
 config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
 	int "Number of supported images"
 	default UPDATEABLE_IMAGE_NUMBER
-	range 1 2
+	range 1 3
 	help
 	  Sets how many application images are supported (pairs of secondary and primary slots).
 	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
@@ -60,6 +61,35 @@ config MCUMGR_GRP_IMG_VERBOSE_ERR
 	help
 	  Add additional "rsn" key to SMP responses, where provided, explaining
 	  non-0 "rc" codes.
+
+config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
+	bool "Allow to confirm secondary slot of non-active image"
+	default y
+	help
+	  Allows to confirm secondary (non-active) slot of non-active image.
+	  Normally it should not be allowed to confirm any slots of non-active
+	  image, via MCUmgr commands, to prevent confirming something that is
+	  broken and may not boot in other slot; instead application should
+	  have means to test and confirm the image.
+
+config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
+	bool "Allow to confirm slots of non-active image"
+	select MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
+	help
+	  Allows to confirm any slot of non-active image.
+	  Normally it should not be allowed to confirm any slots of non-active
+	  image, via MCUmgr commands, to prevent confirming something that is
+	  broken and may not boot in other slot; instead application should
+	  have means to test and confirm the image.
+
+if !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
+	bool "Allow to erase pending slot"
+	help
+	  Allows erasing secondary slot which is marked for test or confirmed; this allows
+	  erasing slots that have been set for next boot but the device has not
+	  reset yet, so has not yet been swapped.
+endif
 
 config MCUMGR_GRP_IMG_DIRECT_UPLOAD
 	bool "Allow direct image upload"

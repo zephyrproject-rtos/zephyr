@@ -24,69 +24,17 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules
 
 project(sysbuild LANGUAGES)
 
-# Global list of images enabled in this multi image build system.
-set(IMAGES)
-
 get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
-
-# Include zephyr modules generated sysbuild CMake file.
-foreach(SYSBUILD_CURRENT_MODULE_NAME ${SYSBUILD_MODULE_NAMES})
-  # Note the second, binary_dir parameter requires the added
-  # subdirectory to have its own, local cmake target(s). If not then
-  # this binary_dir is created but stays empty. Object files land in
-  # the main binary dir instead.
-  # https://cmake.org/pipermail/cmake/2019-June/069547.html
-  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${SYSBUILD_CURRENT_MODULE_NAME})
-  if(NOT ${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
-    set(SYSBUILD_CURRENT_MODULE_DIR ${SYSBUILD_${MODULE_NAME_UPPER}_MODULE_DIR})
-    set(SYSBUILD_CURRENT_CMAKE_DIR ${SYSBUILD_${MODULE_NAME_UPPER}_CMAKE_DIR})
-    add_subdirectory(${SYSBUILD_CURRENT_CMAKE_DIR} ${CMAKE_BINARY_DIR}/modules/${SYSBUILD_CURRENT_MODULE_NAME})
-  endif()
-endforeach()
-# Done processing modules, clear SYSBUILD_CURRENT_MODULE_DIR and SYSBUILD_CURRENT_CMAKE_DIR.
-set(SYSBUILD_CURRENT_MODULE_DIR)
-set(SYSBUILD_CURRENT_CMAKE_DIR)
-
-# This adds the primary application to the build.
-ExternalZephyrProject_Add(
-  APPLICATION ${app_name}
-  SOURCE_DIR ${APP_DIR}
-  APP_TYPE MAIN
-)
-list(APPEND IMAGES "${app_name}")
 set(DEFAULT_IMAGE "${app_name}")
 
-add_subdirectory(bootloader)
+# This is where all Zephyr applications are added to the multi-image build.
+sysbuild_add_subdirectory(images)
 
-# This allows for board and app specific images to be included.
-include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
-
-# This allows image specific sysbuild.cmake to be processed.
-list(LENGTH IMAGES images_length)
-while(NOT "${images_length}" EQUAL "${processed_length}")
-  foreach(image ${IMAGES})
-    if(NOT image IN_LIST images_sysbuild_processed)
-      ExternalProject_Get_property(${image} SOURCE_DIR)
-      include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
-      list(APPEND images_sysbuild_processed ${image})
-    endif()
-  endforeach()
-
-  list(LENGTH IMAGES images_length)
-  list(LENGTH images_sysbuild_processed processed_length_new)
-
-  # Check for any duplicate entries in image names to prevent an infinite loop
-  if("${processed_length_new}" EQUAL "${processed_length}")
-    # Image length was different than processed length, but no new images are processed.
-    message(FATAL_ERROR "A duplicate image name was provided, image names must be unique.")
-  endif()
-  set(processed_length ${processed_length_new})
-endwhile()
-
+get_property(IMAGES GLOBAL PROPERTY sysbuild_images)
 sysbuild_module_call(PRE_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
-foreach(image ${IMAGES})
-  include(image_config.cmake)
+sysbuild_images_order(IMAGES_CONFIGURATION_ORDER CONFIGURE IMAGES ${IMAGES})
+foreach(image ${IMAGES_CONFIGURATION_ORDER})
   ExternalZephyrProject_Cmake(APPLICATION ${image})
 endforeach()
 sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})

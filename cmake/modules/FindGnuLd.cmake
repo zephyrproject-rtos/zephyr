@@ -79,7 +79,6 @@ if(GNULD_LINKER)
     RESULT_VARIABLE gnuld_status
     )
 
-  set(GNULD_VERSION_STRING)
   if(${gnuld_status} EQUAL 0)
     # Extract GNU ld version. Different distros have their
     # own version scheme so we need to account for that.
@@ -90,7 +89,7 @@ if(GNULD_LINKER)
     string(REGEX MATCH
            "GNU ld \\(.+\\) ([0-9]+[.][0-9]+[.]?[0-9]*).*"
            out_var ${gnuld_version_output})
-    set(GNULD_VERSION_STRING ${CMAKE_MATCH_1})
+    set(GNULD_VERSION_STRING ${CMAKE_MATCH_1} CACHE STRING "GNU ld version" FORCE)
   endif()
 endif()
 

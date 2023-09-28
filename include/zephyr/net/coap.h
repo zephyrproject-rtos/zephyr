@@ -372,6 +372,17 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num);
 
 /**
+ * @brief Parses provided coap path (with/without query) or query and appends
+ * that as options to the @a cpkt.
+ *
+ * @param cpkt Packet to append path and query options for.
+ * @param path Null-terminated string of coap path, query or both.
+ *
+ * @retval 0 in case of success or negative in case of error.
+ */
+int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
+
+/**
  * @brief Creates a new CoAP Packet from input data.
  *
  * @param cpkt New packet to be initialized using the storage from @a data.
@@ -701,6 +712,20 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  * or negative in case of error.
  */
 int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
+
+/**
+ * @brief Get values from CoAP block2 option.
+ *
+ * Decode block number and block size from option. Ignore the has_more flag
+ * as it should always be zero on queries.
+ *
+ * @param cpkt Packet to be inspected
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates

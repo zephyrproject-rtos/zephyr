@@ -50,6 +50,9 @@ static struct {
 	size_t num;
 } service_handler[BTP_SERVICE_ID_MAX + 1];
 
+static struct net_buf_simple *rsp_buf = NET_BUF_SIMPLE(BTP_MTU);
+static K_MUTEX_DEFINE(rsp_buf_mutex);
+
 static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,
 				   const uint8_t *data, size_t len);
 static void tester_rsp_with_index(uint8_t service, uint8_t opcode, uint8_t index,
@@ -161,7 +164,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		return buf;
 	}
 
-	k_fifo_put(&cmds_queue, CONTAINER_OF(buf, struct btp_buf, data));
+	k_fifo_put(&cmds_queue, CONTAINER_OF(buf, struct btp_buf, data[0]));
 
 	*off = 0;
 	return new_buf->data;
@@ -239,6 +242,34 @@ void tester_init(void)
 
 	tester_send_with_index(BTP_SERVICE_ID_CORE, BTP_CORE_EV_IUT_READY,
 			      BTP_INDEX_NONE, NULL, 0);
+}
+
+int tester_rsp_buffer_lock(void)
+{
+	if (k_mutex_lock(&rsp_buf_mutex, Z_FOREVER) != 0) {
+		LOG_ERR("Cannot lock rsp_ring_buf");
+
+		return -EACCES;
+	}
+
+	return 0;
+}
+
+void tester_rsp_buffer_unlock(void)
+{
+	k_mutex_unlock(&rsp_buf_mutex);
+}
+
+void tester_rsp_buffer_free(void)
+{
+	net_buf_simple_init(rsp_buf, 0);
+}
+
+void tester_rsp_buffer_allocate(size_t len, uint8_t **data)
+{
+	tester_rsp_buffer_free();
+
+	*data = net_buf_simple_add(rsp_buf, len);
 }
 
 static void tester_send_with_index(uint8_t service, uint8_t opcode, uint8_t index,

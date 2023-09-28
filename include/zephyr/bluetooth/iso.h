@@ -808,10 +808,17 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig);
  */
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 
-/** @brief Disconnect ISO channel
+/** @brief Disconnect connected ISO channel
  *
- *  Disconnect ISO channel, if the connection is pending it will be
- *  canceled and as a result the channel disconnected() callback is called.
+ *  Disconnect connected ISO channel.
+ *
+ *  If the device is a central and the connection is pending it will be
+ *  canceled and as a result the channel bt_iso_chan_ops.disconnected() callback is called.
+ *
+ *  If the device is a peripheral and the connection is pending it will be rejected, as a peripheral
+ *  shall wait for a CIS Established event (which may trigger a bt_iso_chan_ops.disconnected()
+ *  callback in case of an error).
+ *
  *  Regarding to input parameter, to get details see reference description
  *  to bt_iso_chan_connect() API above.
  *

@@ -18,11 +18,8 @@ config DEVICE_CONFIGURATION_DATA
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
 
-config KSCAN
-	default y if LVGL
-
 config INPUT
-	default y if KSCAN
+	default y if LVGL
 
 if INPUT
 
@@ -42,9 +39,6 @@ config ETH_MCUX_PHY_RESET
 endif # NETWORKING
 
 if LVGL
-
-config LV_Z_POINTER_KSCAN
-	default y
 
 config LV_Z_VDB_SIZE
 	default 16

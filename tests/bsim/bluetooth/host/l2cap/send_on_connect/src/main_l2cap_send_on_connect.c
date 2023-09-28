@@ -40,7 +40,7 @@ static void chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 	/* Try to send data */
 	err = bt_l2cap_chan_send(l2cap_chan, buf);
-	if (err) {
+	if (err < 0) {
 		FAIL("Could not send data, error %d\n", err);
 	}
 
@@ -75,7 +75,8 @@ static const struct bt_l2cap_chan_ops l2cap_ops = {
 
 static struct bt_l2cap_le_chan channel;
 
-static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
+static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+		  struct bt_l2cap_chan **l2cap_chan)
 {
 	channel.chan.ops = &l2cap_ops;
 	*l2cap_chan = &channel.chan;

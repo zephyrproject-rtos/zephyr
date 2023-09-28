@@ -58,8 +58,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
 
-#define PHY_SHR_DURATION 160 /* duration of SHR in us */
-
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
@@ -397,7 +395,7 @@ void transmit_message(struct k_work *tx_job)
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
-				 sTransmitFrame.mInfo.mTxInfo.mTxDelay + PHY_SHR_DURATION;
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		struct net_ptp_time timestamp =
 			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 		net_pkt_set_timestamp(tx_pkt, &timestamp);
@@ -573,14 +571,14 @@ void platformRadioProcess(otInstance *aInstance)
 	bool event_pending = false;
 
 	if (is_pending_event_set(PENDING_EVENT_FRAME_TO_SEND)) {
-		struct net_pkt *tx_pkt;
+		struct net_pkt *evt_pkt;
 
 		reset_pending_event(PENDING_EVENT_FRAME_TO_SEND);
-		while ((tx_pkt = (struct net_pkt *) k_fifo_get(&tx_pkt_fifo, K_NO_WAIT)) != NULL) {
+		while ((evt_pkt = (struct net_pkt *) k_fifo_get(&tx_pkt_fifo, K_NO_WAIT)) != NULL) {
 			if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR_RCP)) {
-				net_pkt_unref(tx_pkt);
+				net_pkt_unref(evt_pkt);
 			} else {
-				openthread_handle_frame_to_send(aInstance, tx_pkt);
+				openthread_handle_frame_to_send(aInstance, evt_pkt);
 			}
 		}
 	}
@@ -829,7 +827,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
 	int8_t ret_rssi = INT8_MAX;
 	int error = 0;
-	const uint16_t energy_detection_time = 1;
+	const uint16_t detection_time = 1;
 	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 
@@ -846,7 +844,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 		 * Blocking implementation of get RSSI
 		 * using no-blocking ed_scan
 		 */
-		error = radio_api->ed_scan(radio_dev, energy_detection_time,
+		error = radio_api->ed_scan(radio_dev, detection_time,
 					   get_rssi_energy_detected);
 
 		if (error == 0) {

@@ -92,4 +92,6 @@ source "drivers/counter/Kconfig.gd32"
 
 source "drivers/counter/Kconfig.dw"
 
+source "drivers/counter/Kconfig.rpi_pico"
+
 endif # COUNTER

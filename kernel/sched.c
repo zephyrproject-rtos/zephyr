@@ -7,7 +7,7 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel/sched_priq.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
 #include <zephyr/syscall_handler.h>
@@ -65,6 +65,11 @@ static inline int is_preempt(struct k_thread *thread)
 	/* explanation in kernel_struct.h */
 	return thread->base.preempt <= _PREEMPT_THRESHOLD;
 }
+
+BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
+	     "You need to provide at least as many CONFIG_NUM_COOP_PRIORITIES as "
+	     "CONFIG_NUM_METAIRQ_PRIORITIES as Meta IRQs are just a special class of cooperative "
+	     "threads.");
 
 static inline int is_metairq(struct k_thread *thread)
 {
@@ -322,7 +327,8 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	/* MetaIRQs must always attempt to return back to a
 	 * cooperative thread they preempted and not whatever happens
 	 * to be highest priority now. The cooperative thread was
@@ -542,7 +548,8 @@ void z_time_slice(void)
  */
 static void update_metairq_preempt(struct k_thread *thread)
 {
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
+	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	if (is_metairq(thread) && !is_metairq(_current) &&
 	    !is_preempt(_current)) {
 		/* Record new preemption */
@@ -1614,8 +1621,8 @@ static inline int z_vrfy_k_is_preempt_thread(void)
 
 #ifdef CONFIG_SCHED_CPU_MASK
 # ifdef CONFIG_SMP
-/* Right now we use a single byte for this mask */
-BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 8, "Too many CPUs for mask word");
+/* Right now we use a two byte for this mask */
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 16, "Too many CPUs for mask word");
 # endif
 
 

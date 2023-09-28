@@ -331,11 +331,10 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	/* SPI mode */
 	hal_dev->mode = 0;
-	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
 		hal_dev->mode = BIT(0);
 	}
-
-	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
 		hal_dev->mode |= BIT(1);
 	}
 

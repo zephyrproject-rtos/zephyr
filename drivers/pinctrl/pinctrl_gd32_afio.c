@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/gd32.h>
 #include <zephyr/drivers/pinctrl.h>

@@ -27,7 +27,7 @@ called with a ``-DZEPHYR_SCA_VARIANT=codechecker`` parameter, e.g.
 
 .. code-block:: shell
 
-    west build -b mimxrt1064_evk -s samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker
+    west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker
 
 
 Configuring CodeChecker
@@ -38,8 +38,26 @@ To configure CodeChecker or analyzers used, arguments can be passed using the
 
 .. code-block:: shell
 
-    west build -b mimxrt1064_evk -s samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
+    west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
     -DCODECHECKER_ANALYZE_OPTS="--config;$CODECHECKER_CONFIG_FILE;--timeout;60"
+
+
+Storing CodeChecker results
+***************************
+
+If a CodeChecker server is active the results can be uploaded and stored for tracking purposes.
+Storing is done using the optional ``CODECHECKER_STORE=y`` or ``CODECHECKER_STORE_OPTS="arg;list"``
+parameters, e.g.
+
+.. code-block:: shell
+
+    west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
+    -DCODECHECKER_STORE_OPTS="--name;build;--url;localhost:8001/Default"
+
+.. note::
+
+    If ``--name`` isn't passed to either ``CODECHECKER_ANALYZE_OPTS`` or ``CODECHECKER_STORE_OPTS``,
+    the default ``zephyr`` is used.
 
 
 Exporting CodeChecker reports
@@ -54,5 +72,5 @@ Optional parser configuration arguments can be passed using the
 
 .. code-block:: shell
 
-    west build -b mimxrt1064_evk -s samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
+    west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
     -DCODECHECKER_EXPORT=html,json -DCODECHECKER_PARSE_OPTS="--trim-path-prefix;$PWD"

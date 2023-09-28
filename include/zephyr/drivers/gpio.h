@@ -846,6 +846,7 @@ static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
  * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
  *
  * @retval 0 If successful.
+ * @retval -ENOSYS If the operation is not implemented by the driver.
  * @retval -ENOTSUP If any of the configuration options is not supported
  *                  (unless otherwise directed by flag documentation).
  * @retval -EINVAL  Invalid argument.
@@ -870,6 +871,10 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		(const struct gpio_driver_data *)port->data;
 	enum gpio_int_trig trig;
 	enum gpio_int_mode mode;
+
+	if (api->pin_interrupt_configure == NULL) {
+		return -ENOSYS;
+	}
 
 	__ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE))
 		 != (GPIO_INT_DISABLE | GPIO_INT_ENABLE),
@@ -1695,7 +1700,9 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @brief Add an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid Application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 If successful
+ * @retval -ENOSYS If driver does not implement the operation
+ * @retval -errno Other negative errno code on failure.
  *
  * @note Callbacks may be added to the device from within a callback
  * handler invocation, but whether they are invoked for the current
@@ -1710,7 +1717,7 @@ static inline int gpio_add_callback(const struct device *port,
 		(const struct gpio_driver_api *)port->api;
 
 	if (api->manage_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->manage_callback(port, callback, true);
@@ -1737,7 +1744,9 @@ static inline int gpio_add_callback_dt(const struct gpio_dt_spec *spec,
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 If successful
+ * @retval -ENOSYS If driver does not implement the operation
+ * @retval -errno Other negative errno code on failure.
  *
  * @warning It is explicitly permitted, within a callback handler, to
  * remove the registration for the callback that is running, i.e. @p
@@ -1756,7 +1765,7 @@ static inline int gpio_remove_callback(const struct device *port,
 		(const struct gpio_driver_api *)port->api;
 
 	if (api->manage_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->manage_callback(port, callback, false);
@@ -1791,6 +1800,7 @@ static inline int gpio_remove_callback_dt(const struct gpio_dt_spec *spec,
  *
  * @retval status != 0 if at least one gpio interrupt is pending.
  * @retval 0 if no gpio interrupt is pending.
+ * @retval -ENOSYS If driver does not implement the operation
  */
 __syscall int gpio_get_pending_int(const struct device *dev);
 
@@ -1800,7 +1810,7 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 		(const struct gpio_driver_api *)dev->api;
 
 	if (api->get_pending_int == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->get_pending_int(dev);

@@ -57,6 +57,8 @@
 	};
 
 	soc {
+		compatible = "nuvoton,npcx7", "nuvoton,npcx", "simple-bus";
+
 		/* Specific soc devices in npcx7 series */
 		itims: timer@400bc000 {
 			compatible = "nuvoton,npcx-itim-timer";
@@ -94,6 +96,13 @@
 			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
 			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
 			ram-pd-depth = <12>; /* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xfb /* No FIU_PD */
+					 0xff
+					 0x1f /* No GDMA_PD */
+					 0xff
+					 0xfa
+					 0x7f /* No ESPI_PD */
+					 0xe7>;
 		};
 
 		/* Wake-up input source mapping for GPIOs in npcx7 series */
@@ -228,7 +237,6 @@
 		/* ADC0 comparator configuration in npcx7 series */
 		adc0: adc@400d1000 {
 			channel-count = <10>;
-			threshold-reg-offset = <0x14>;
 			threshold-count = <3>;
 		};
 

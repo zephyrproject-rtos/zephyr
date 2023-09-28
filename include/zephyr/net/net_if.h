@@ -33,6 +33,9 @@
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/dhcpv4.h>
 #endif
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+#include <zephyr/net/dhcpv6.h>
+#endif
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/ipv4_autoconf.h>
 #endif
@@ -275,6 +278,69 @@ struct net_if_ipv6 {
 	uint8_t hop_limit;
 };
 
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+struct net_if_dhcpv6 {
+	/** Used for timer list. */
+	sys_snode_t node;
+
+	/** Generated Client ID. */
+	struct net_dhcpv6_duid_storage clientid;
+
+	/** Server ID of the selected server. */
+	struct net_dhcpv6_duid_storage serverid;
+
+	/** DHCPv6 client state. */
+	enum net_dhcpv6_state state;
+
+	/** DHCPv6 client configuration parameters. */
+	struct net_dhcpv6_params params;
+
+	/** Timeout for the next event, absolute time, milliseconds. */
+	uint64_t timeout;
+
+	/** Time of the current exchange start, absolute time, milliseconds */
+	uint64_t exchange_start;
+
+	/** Renewal time, absolute time, milliseconds. */
+	uint64_t t1;
+
+	/** Rebinding time, absolute time, milliseconds. */
+	uint64_t t2;
+
+	/** The time when the last lease expires (terminates rebinding,
+	 *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
+	 */
+	uint64_t expire;
+
+	/** Generated IAID for IA_NA. */
+	uint32_t addr_iaid;
+
+	/** Generated IAID for IA_PD. */
+	uint32_t prefix_iaid;
+
+	/** Retransmit timeout for the current message, milliseconds. */
+	uint32_t retransmit_timeout;
+
+	/** Current best server preference received. */
+	int16_t server_preference;
+
+	/** Retransmission counter. */
+	uint8_t retransmissions;
+
+	/** Transaction ID for current exchange. */
+	uint8_t tid[DHCPV6_TID_SIZE];
+
+	/** Prefix length. */
+	uint8_t prefix_len;
+
+	/** Assigned IPv6 prefix. */
+	struct in6_addr prefix;
+
+	/** Assigned IPv6 address. */
+	struct in6_addr addr;
+};
+#endif /* defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6) */
+
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
@@ -413,6 +479,10 @@ struct net_if_config {
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
 
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
+
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
@@ -424,6 +494,14 @@ struct net_if_config {
 	 */
 	sys_slist_t virtual_interfaces;
 #endif /* CONFIG_NET_L2_VIRTUAL */
+
+#if defined(CONFIG_NET_INTERFACE_NAME)
+	/**
+	 * Network interface can have a name and it is possible
+	 * to search a network interface using this name.
+	 */
+	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+#endif
 };
 
 /**
@@ -764,6 +842,15 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 	return false;
 #endif
 }
+
+/**
+ * @brief Return offload status of a given network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return True if IP or socket offloading is active, false otherwise.
+ */
+bool net_if_is_offloaded(struct net_if *iface);
 
 /**
  * @brief Return the IP offload plugin
@@ -2575,6 +2662,46 @@ bool net_if_is_wifi(struct net_if *iface);
  */
 struct net_if *net_if_get_first_wifi(void);
 
+/**
+ * @brief Get network interface name.
+ *
+ * @details If interface name support is not enabled, empty string is returned.
+ *
+ * @param iface Pointer to network interface
+ * @param buf User supplied buffer
+ * @param len Length of the user supplied buffer
+ *
+ * @return Length of the interface name copied to buf,
+ *         -EINVAL if invalid parameters,
+ *         -ERANGE if name cannot be copied to the user supplied buffer,
+ *         -ENOTSUP if interface name support is disabled,
+ */
+int net_if_get_name(struct net_if *iface, char *buf, int len);
+
+/**
+ * @brief Set network interface name.
+ *
+ * @details Normally this function is not needed to call as the system
+ *          will automatically assign a name to the network interface.
+ *
+ * @param iface Pointer to network interface
+ * @param buf User supplied name
+ *
+ * @return 0 name is set correctly
+ *         -ENOTSUP interface name support is disabled
+ *         -EINVAL if invalid parameters are given,
+ *         -ENAMETOOLONG if name is too long
+ */
+int net_if_set_name(struct net_if *iface, const char *buf);
+
+/**
+ * @brief Get interface index according to its name
+ *
+ * @param name Name of the network interface
+ *
+ * @return Interface index
+ */
+int net_if_get_by_name(const char *name);
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {

@@ -276,7 +276,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
 	test_ase_control_client_release(conn, ase_id);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -440,10 +440,9 @@ ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_releasing)
 
 ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_enabling)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
 	};
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
@@ -506,10 +505,9 @@ ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_streaming)
 
 ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_streaming)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
 	};
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
@@ -566,7 +564,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_releasing)
 	zassert_false(err < 0, "bt_bap_stream_release returned err %d", err);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -814,8 +812,9 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_releasing)
 	test_preamble_state_streaming(conn, ase_id, stream, &chan, true);
 
 	test_ase_control_client_release(conn, ase_id);
+
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);
@@ -1022,10 +1021,9 @@ ZTEST_F(test_source_ase_state_transition, test_server_enabling_to_releasing)
 
 ZTEST_F(test_source_ase_state_transition, test_server_enabling_to_enabling)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
 	};
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
@@ -1065,10 +1063,9 @@ ZTEST_F(test_source_ase_state_transition, test_server_enabling_to_disabling)
 
 ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_streaming)
 {
-	struct bt_audio_codec_data meta[] = {
+	const uint8_t meta[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-			      (BT_AUDIO_CONTEXT_TYPE_MEDIA & 0xFFU),
-			      ((BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8) & 0xFFU)),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
 	};
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
@@ -1125,7 +1122,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_releasing)
 	zassert_false(err < 0, "bt_bap_stream_release returned err %d", err);
 
 	/* Client disconnects the ISO */
-	mock_bt_iso_disconnect(chan);
+	mock_bt_iso_disconnected(chan, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_release_called_once(stream);

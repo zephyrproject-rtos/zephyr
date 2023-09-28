@@ -22,7 +22,7 @@
 	};
 
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -138,6 +138,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 	vref-mv = <3300>;
 };

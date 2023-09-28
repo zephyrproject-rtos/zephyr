@@ -20,51 +20,65 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 #define INA237_CAL_SCALING 8192ULL
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
-#define INA237_BUS_VOLTAGE_UV_LSB 3125
+#define INA237_BUS_VOLTAGE_TO_uV(x) ((x) * 3125U)
 
-/** @brief Power scaling (scaled by 10) */
-#define INA237_POWER_SCALING 2
+/** @brief Power scaling (need factor of 0.2) */
+#define INA237_POWER_TO_uW(x) ((x) / 5ULL)
+
+/**
+ * @brief Scale die temperture from 0.125 degC/bit to micro-degrees C
+ *  Note that the bottom 4 bits are reserved and are always zero.
+ */
+#define INA237_DIETEMP_TO_uDegC(x) (((x) >> 4) * 125000)
+
+static void micro_s32_to_sensor_value(struct sensor_value *val, int32_t value_microX)
+{
+	val->val1 = value_microX / 1000000L;
+	val->val2 = value_microX % 1000000L;
+}
+
+static void micro_u64_to_sensor_value(struct sensor_value *val, uint64_t value_microX)
+{
+	val->val1 = value_microX / 1000000U;
+	val->val2 = value_microX % 1000000U;
+}
 
 static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ina237_data *data = dev->data;
+	const struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
-	uint32_t bus_uv, current_ua, power_uw;
-	int32_t sign;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = data->bus_voltage * INA237_BUS_VOLTAGE_UV_LSB;
-
-		val->val1 = bus_uv / 1000000U;
-		val->val2 = bus_uv % 1000000U;
+		micro_s32_to_sensor_value(val, INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage));
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (data->current & INA23X_CURRENT_SIGN_BIT) {
-			current_ua = ~data->current + 1U;
-			sign = -1;
-		} else {
-			current_ua = data->current;
-			sign = 1;
-		}
-
 		/* see datasheet "Current and Power calculations" section */
-		current_ua = current_ua * config->current_lsb;
-
-		/* convert to fractional amperes */
-		val->val1 = sign * (int32_t)(current_ua / 1000000U);
-		val->val2 = sign * (int32_t)(current_ua % 1000000U);
+		micro_s32_to_sensor_value(val, data->current * config->current_lsb);
 		break;
 
 	case SENSOR_CHAN_POWER:
-		/* see datasheet "Current and Power calculations" section */
-		power_uw = (data->power * INA237_POWER_SCALING * config->current_lsb) / 10000U;
+		/* power in uW is power_reg * current_lsb * 0.2 */
+		micro_u64_to_sensor_value(val,
+			INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
+		break;
 
-		/* convert to fractional watts */
-		val->val1 = (int32_t)(power_uw / 1000000U);
-		val->val2 = (int32_t)(power_uw % 1000000U);
+#ifdef CONFIG_INA237_VSHUNT
+	case SENSOR_CHAN_VSHUNT:
+		if (config->config & INA237_CFG_HIGH_PRECISION) {
+			/* high-resolution mode - 1.25 uV/bit, sensor value is in mV */
+			micro_s32_to_sensor_value(val, data->shunt_voltage * 1250);
+		} else {
+			/* standard-resolution - 5 uV/bit -> nano-volts */
+			micro_s32_to_sensor_value(val, data->shunt_voltage * 5000);
+		}
+		break;
+#endif /* CONFIG_INA237_VSHUNT */
+
+	case SENSOR_CHAN_DIE_TEMP:
+		micro_s32_to_sensor_value(val, INA237_DIETEMP_TO_uDegC(data->die_temp));
 		break;
 
 	default:
@@ -155,6 +169,24 @@ static int ina237_read_data(const struct device *dev)
 		}
 	}
 
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_DIE_TEMP)) {
+		ret = ina23x_reg_read_16(&config->bus, INA237_REG_DIETEMP, &data->die_temp);
+		if (ret < 0) {
+			LOG_ERR("Failed to read temperature");
+			return ret;
+		}
+	}
+
+#ifdef CONFIG_INA237_VSHUNT
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_VSHUNT)) {
+		ret = ina23x_reg_read_16(&config->bus, INA237_REG_SHUNT_VOLT, &data->shunt_voltage);
+		if (ret < 0) {
+			LOG_ERR("Failed to read shunt voltage");
+			return ret;
+		}
+	}
+#endif /* CONFIG_INA237_VSHUNT */
+
 	return 0;
 }
 
@@ -169,7 +201,11 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct ina237_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER) {
+		chan != SENSOR_CHAN_POWER &&
+#ifdef CONFIG_INA237_VSHUNT
+		chan != SENSOR_CHAN_VSHUNT &&
+#endif /* CONFIG_INA237_VSHUNT */
+		chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
@@ -360,15 +396,25 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
+/* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
+#define CAL_PRECISION_MULTIPLIER(config) \
+	(((config & INA237_CFG_HIGH_PRECISION) >> 4) * 3 + 1)
+
 #define INA237_DRIVER_INIT(inst)                                                                   \
 	static struct ina237_data ina237_data_##inst;                                              \
 	static const struct ina237_config ina237_config_##inst = {                                 \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.config = DT_INST_PROP(inst, config),                                              \
-		.adc_config = DT_INST_PROP(inst, adc_config),                                      \
+		.adc_config = DT_INST_PROP(inst, adc_config) |                                     \
+			(DT_INST_ENUM_IDX(inst, adc_mode) << 12) |                             \
+			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 9) |                 \
+			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 6) |               \
+			(DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |                 \
+			DT_INST_ENUM_IDX(inst, avg_count),                                        \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.cal = INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *            \
-		       DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000000ULL,                     \
+		.cal = CAL_PRECISION_MULTIPLIER(DT_INST_PROP(inst, config)) *                      \
+			INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *       \
+			DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL,                   \
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),                         \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 	};                                                                                         \

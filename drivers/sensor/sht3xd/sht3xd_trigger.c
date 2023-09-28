@@ -187,7 +187,7 @@ int sht3xd_init_interrupt(const struct device *dev)
 	const struct sht3xd_config *cfg = dev->config;
 	int rc;
 
-	if (!device_is_ready(cfg->alert_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->alert_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

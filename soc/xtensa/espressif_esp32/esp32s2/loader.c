@@ -18,7 +18,7 @@
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 
 #define BOOT_LOG_INF(_fmt, ...) \
-	ets_printf("[" CONFIG_SOC "] [INF] " _fmt "\n\r", ##__VA_ARGS__)
+	ets_printf("[" CONFIG_SOC_SERIES "] [INF] " _fmt "\n\r", ##__VA_ARGS__)
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 

@@ -67,13 +67,13 @@
  */
 
 /* Control registers for packers */
-#define OUTCONTROL0		0x0000
+#define OUTCONTROL		0x0000
 
 /* Status Register for FIFO interface */
-#define OUTSTAT0		0x0004
+#define OUTSTAT			0x0004
 
 /* Data read/Write port for FIFO */
-#define OUTDATA0		0x0008
+#define OUTDATA			0x0008
 
 /* (crossed out)	000Ch		LOCAL_OFFS		Offset Counter
  * (crossed out)	0010h		LOCAL_TSC0		64-bit Wall Clock timestamp
@@ -81,44 +81,23 @@
  *			001Ch - 00FFh				Reserved space for extensions
  */
 
+/* Offset to PDM Secondary Channel */
+#define PDM_CHANNEL_REGS_SIZE	0x100
 
-/* PDM Secondary Channel */
-
-/* Control registers for packers */
-#define OUTCONTROL1		0x0100
-
-/* Status Register for FIFO interface */
-#define OUTSTAT1		0x0104
-
-/* Data read/Write port for FIFO */
-#define OUTDATA1		0x0108
-
-/* (crossed out)	010Ch		LOCAL_OFFS		Offset Counter
- * (crossed out)	0110h		LOCAL_TSC0		64-bit Wall Clock timestamp
- * (crossed out)	0118h		LOCAL_SAMPLE0		64-bit Sample Count
- *			011Ch - 0FFFh				Reserved space for extensions
- */
 
 #define GLOBAL_CAPABILITIES	0x200
 
+#define PDM_COEFFICIENT_A	0x400
+#define PDM_COEF_RAM_A_LENGTH	0x400
+
+#define PDM_COEFFICIENT_B	0x800
+#define PDM_COEF_RAM_B_LENGTH	0x400
+
 #define PDM0			0x1000
-#define PDM0_COEFFICIENT_A	0x1400
-#define PDM0_COEFFICIENT_B	0x1800
-
 #define PDM1			0x2000
-#define PDM1_COEFFICIENT_A	0x2400
-#define PDM1_COEFFICIENT_B	0x2800
-
 #define PDM2			0x3000
-#define PDM2_COEFFICIENT_A	0x3400
-#define PDM2_COEFFICIENT_B	0x3800
-
 #define PDM3			0x4000
-#define PDM3_COEFFICIENT_A	0x4400
-#define PDM3_COEFFICIENT_B	0x4800
 
-#define PDM_COEF_RAM_A_LENGTH	0x0400
-#define PDM_COEF_RAM_B_LENGTH	0x0400
 
 /* Local registers in each PDMx */
 
@@ -133,44 +112,26 @@
 
 /* FIR config */
 
-/* Control for the FIR decimator (channel A) */
-#define FIR_CONTROL_A		0x020
+/* Control for the FIR decimator */
+#define FIR_CONTROL		0x020
 
-/* Configuration of FIR decimator parameters (channel A) */
-#define FIR_CONFIG_A		0x024
-
-/* DC offset for left channel */
-#define DC_OFFSET_LEFT_A	0x028
-
-/* DC offset for right channel */
-#define DC_OFFSET_RIGHT_A	0x02c
-
-/* Gain for left channel */
-#define OUT_GAIN_LEFT_A		0x030
-
-/* Gain for right channel */
-#define OUT_GAIN_RIGHT_A	0x034
-
-/* Control for the FIR decimator (channel B) */
-#define FIR_CONTROL_B		0x040
-
-/* Configuration of FIR decimator parameters (channel B) */
-#define FIR_CONFIG_B		0x044
+/* Configuration of FIR decimator parameters */
+#define FIR_CONFIG		0x024
 
 /* DC offset for left channel */
-#define DC_OFFSET_LEFT_B	0x048
+#define DC_OFFSET_LEFT		0x028
 
 /* DC offset for right channel */
-#define DC_OFFSET_RIGHT_B	0x04c
+#define DC_OFFSET_RIGHT		0x02c
 
 /* Gain for left channel */
-#define OUT_GAIN_LEFT_B		0x050
+#define OUT_GAIN_LEFT		0x030
 
 /* Gain for right channel */
-#define OUT_GAIN_RIGHT_B	0x054
+#define OUT_GAIN_RIGHT		0x034
 
-#define PDM_COEFFICIENT_A	0x400
-#define PDM_COEFFICIENT_B	0x800
+/* Offset to secondary FIR */
+#define FIR_CHANNEL_REGS_SIZE	0x20
 
 
 /* Digital Mic Shim Registers */

@@ -43,7 +43,7 @@ int main(void)
 		return 0;
 	}
 
-	if (!device_is_ready(led0.port)) {
+	if (!gpio_is_ready_dt(&led0)) {
 		printk("led0 device not ready\n");
 		return 0;
 	}

@@ -26,3 +26,8 @@
 &timer3 {
 	status = "okay";
 };
+
+&sip_smc {
+	status = "okay";
+	zephyr,num-clients = <2>;
+};

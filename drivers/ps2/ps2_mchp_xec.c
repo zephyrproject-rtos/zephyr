@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_ps2
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>

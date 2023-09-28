@@ -1047,6 +1047,8 @@ void kernel_only_thread_entry(void *p1, void *p2, void *p3)
 
 #ifdef CONFIG_MMU
 #define KERNEL_ONLY_THREAD_STACK_SIZE (ROUND_UP(1024, CONFIG_MMU_PAGE_SIZE))
+#elif CONFIG_64BIT
+#define KERNEL_ONLY_THREAD_STACK_SIZE (2048)
 #else
 #define KERNEL_ONLY_THREAD_STACK_SIZE (1024)
 #endif

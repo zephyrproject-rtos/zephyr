@@ -16,3 +16,8 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 conf=prj_mesh1d1_conf
 RunTest sar_test \
 	sar_cli_max_len_sdu_send sar_srv_max_len_sdu_receive
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest sar_test_psa \
+	sar_cli_max_len_sdu_send sar_srv_max_len_sdu_receive

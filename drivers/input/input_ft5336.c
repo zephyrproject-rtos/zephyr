@@ -174,7 +174,7 @@ static int ft5336_init(const struct device *dev)
 
 #ifdef CONFIG_INPUT_FT5336_INTERRUPT
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
 	}

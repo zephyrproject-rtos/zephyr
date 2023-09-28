@@ -41,3 +41,5 @@ if (CONFIG_MODEM_SIM7080)
 	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(simcom-sim7080.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)

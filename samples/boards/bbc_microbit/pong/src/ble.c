@@ -360,35 +360,35 @@ static void create_conn(const bt_addr_le_t *addr)
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 struct net_buf_simple *ad)
+			 struct net_buf_simple *ad_buf)
 {
 	if (type != BT_GAP_ADV_TYPE_ADV_IND) {
 		return;
 	}
 
-	while (ad->len > 1) {
-		uint8_t len = net_buf_simple_pull_u8(ad);
-		uint8_t type;
+	while (ad_buf->len > 1) {
+		uint8_t len = net_buf_simple_pull_u8(ad_buf);
+		uint8_t ad_type;
 
 		/* Check for early termination */
 		if (len == 0U) {
 			return;
 		}
 
-		if (len > ad->len) {
+		if (len > ad_buf->len) {
 			printk("AD malformed\n");
 			return;
 		}
 
-		type = net_buf_simple_pull_u8(ad);
-		if (type == BT_DATA_UUID128_ALL &&
-		    pong_uuid_match(ad->data, len - 1)) {
+		ad_type = net_buf_simple_pull_u8(ad_buf);
+		if (ad_type == BT_DATA_UUID128_ALL &&
+		    pong_uuid_match(ad_buf->data, len - 1)) {
 			bt_le_scan_stop();
 			create_conn(addr);
 			return;
 		}
 
-		net_buf_simple_pull(ad, len - 1);
+		net_buf_simple_pull(ad_buf, len - 1);
 	}
 }
 

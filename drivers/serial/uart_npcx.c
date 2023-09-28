@@ -424,8 +424,9 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev, struct npcx_w
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
 static void uart_npcx_rx_refresh_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct uart_npcx_data *data =
-		CONTAINER_OF(work, struct uart_npcx_data, rx_refresh_timeout_work);
+		CONTAINER_OF(dwork, struct uart_npcx_data, rx_refresh_timeout_work);
 
 	uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_RX_FLAG);
 }

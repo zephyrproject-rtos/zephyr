@@ -8,3 +8,4 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+vendor: adafruit

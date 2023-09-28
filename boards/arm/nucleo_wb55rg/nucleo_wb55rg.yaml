@@ -22,3 +22,4 @@ supported:
   - arduino_spi
   - usb_device
   - nvs
+vendor: st

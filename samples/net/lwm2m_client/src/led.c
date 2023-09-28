@@ -53,7 +53,7 @@ int init_led_device(void)
 {
 	int ret;
 
-	if (!device_is_ready(led_gpio.port)) {
+	if (!gpio_is_ready_dt(&led_gpio)) {
 		return -ENODEV;
 	}
 

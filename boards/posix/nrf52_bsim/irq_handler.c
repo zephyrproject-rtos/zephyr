@@ -25,7 +25,7 @@ static bool CPU_will_be_awaken_from_WFE;
 typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);
 
-static struct _isr_list irq_vector_table[NRF_HW_NBR_IRQs];
+static struct _isr_list irq_vector_table[NHW_INTCTRL_MAX_INTLINES];
 
 static int currently_running_irq = -1;
 
@@ -43,7 +43,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	}
 
 	bs_trace_raw_time(6, "Vectoring to irq %i (%s)\n", irq_nbr,
-			  hw_irq_ctrl_get_name(irq_nbr));
+			  hw_irq_ctrl_get_name(CONFIG_NATIVE_SIMULATOR_CPU_N, irq_nbr));
 
 	sys_trace_isr_enter();
 
@@ -69,7 +69,8 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 
 	sys_trace_isr_exit();
 
-	bs_trace_raw_time(7, "Irq %i (%s) ended\n", irq_nbr, hw_irq_ctrl_get_name(irq_nbr));
+	bs_trace_raw_time(7, "Irq %i (%s) ended\n", irq_nbr,
+			  hw_irq_ctrl_get_name(CONFIG_NATIVE_SIMULATOR_CPU_N, irq_nbr));
 }
 
 /**
@@ -85,8 +86,9 @@ void posix_irq_handler(void)
 	uint64_t irq_lock;
 	int irq_nbr;
 	static int may_swap;
+	const int cpu_n = CONFIG_NATIVE_SIMULATOR_CPU_N;
 
-	irq_lock = hw_irq_ctrl_get_current_lock();
+	irq_lock = hw_irq_ctrl_get_current_lock(cpu_n);
 
 	if (irq_lock) {
 		/* "spurious" wakes can happen with interrupts locked */
@@ -99,20 +101,20 @@ void posix_irq_handler(void)
 
 	_kernel.cpus[0].nested++;
 
-	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
-		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();
+	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq(cpu_n)) != -1) {
+		int last_current_running_prio = hw_irq_ctrl_get_cur_prio(cpu_n);
 		int last_running_irq = currently_running_irq;
 
-		hw_irq_ctrl_set_cur_prio(hw_irq_ctrl_get_prio(irq_nbr));
-		hw_irq_ctrl_clear_irq(irq_nbr);
+		hw_irq_ctrl_set_cur_prio(cpu_n, hw_irq_ctrl_get_prio(cpu_n, irq_nbr));
+		hw_irq_ctrl_clear_irq(cpu_n, irq_nbr);
 
 		currently_running_irq = irq_nbr;
 		vector_to_irq(irq_nbr, &may_swap);
 		currently_running_irq = last_running_irq;
 
-		hw_irq_ctrl_reeval_level_irq(irq_nbr);
+		hw_irq_ctrl_reeval_level_irq(cpu_n, irq_nbr);
 
-		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
+		hw_irq_ctrl_set_cur_prio(cpu_n, last_current_running_prio);
 	}
 
 	_kernel.cpus[0].nested--;
@@ -124,7 +126,7 @@ void posix_irq_handler(void)
 	 * 4) we are in a irq postfix (not just in a WFE)
 	 */
 	if (may_swap
-		&& (hw_irq_ctrl_get_cur_prio() == 256)
+		&& (hw_irq_ctrl_get_cur_prio(cpu_n) == 256)
 		&& (CPU_will_be_awaken_from_WFE == false)
 		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != _current)) {
 
@@ -144,7 +146,7 @@ void posix_irq_handler_im_from_sw(void)
 	 * pending we go immediately into irq_handler() to vector into its
 	 * handler
 	 */
-	if (hw_irq_ctrl_get_highest_prio_irq() != -1) {
+	if (hw_irq_ctrl_get_highest_prio_irq(CONFIG_NATIVE_SIMULATOR_CPU_N) != -1) {
 		if (!posix_is_cpu_running()) { /* LCOV_EXCL_BR_LINE */
 			/* LCOV_EXCL_START */
 			posix_print_error_and_exit("programming error: %s "
@@ -189,7 +191,7 @@ void posix_irq_handler_im_from_sw(void)
  */
 unsigned int posix_irq_lock(void)
 {
-	return hw_irq_ctrl_change_lock(true);
+	return hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, true);
 }
 
 /**
@@ -203,27 +205,27 @@ unsigned int posix_irq_lock(void)
  */
 void posix_irq_unlock(unsigned int key)
 {
-	hw_irq_ctrl_change_lock(key);
+	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, key);
 }
 
 void posix_irq_full_unlock(void)
 {
-	hw_irq_ctrl_change_lock(false);
+	hw_irq_ctrl_change_lock(CONFIG_NATIVE_SIMULATOR_CPU_N, false);
 }
 
 void posix_irq_enable(unsigned int irq)
 {
-	hw_irq_ctrl_enable_irq(irq);
+	hw_irq_ctrl_enable_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, irq);
 }
 
 void posix_irq_disable(unsigned int irq)
 {
-	hw_irq_ctrl_disable_irq(irq);
+	hw_irq_ctrl_disable_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, irq);
 }
 
 int posix_irq_is_enabled(unsigned int irq)
 {
-	return hw_irq_ctrl_is_irq_enabled(irq);
+	return hw_irq_ctrl_is_irq_enabled(CONFIG_NATIVE_SIMULATOR_CPU_N, irq);
 }
 
 int posix_get_current_irq(void)
@@ -264,7 +266,7 @@ void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
  */
 void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	hw_irq_ctrl_prio_set(irq, prio);
+	hw_irq_ctrl_prio_set(CONFIG_NATIVE_SIMULATOR_CPU_N, irq, prio);
 }
 
 /**
@@ -277,7 +279,7 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  */
 void posix_sw_set_pending_IRQ(unsigned int IRQn)
 {
-	hw_irq_ctrl_raise_im_from_sw(IRQn);
+	hw_irq_ctrl_raise_im_from_sw(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
 }
 
 /**
@@ -286,7 +288,7 @@ void posix_sw_set_pending_IRQ(unsigned int IRQn)
  */
 void posix_sw_clear_pending_IRQ(unsigned int IRQn)
 {
-	hw_irq_ctrl_clear_irq(IRQn);
+	hw_irq_ctrl_clear_irq(CONFIG_NATIVE_SIMULATOR_CPU_N, IRQn);
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD

@@ -28,15 +28,15 @@ extern "C" {
 /**
  * Command result codes for OS management group.
  */
-enum os_mgmt_ret_code_t {
+enum os_mgmt_err_code_t {
 	/** No error, this is implied if there is no ret value in the response */
-	OS_MGMT_RET_RC_OK = 0,
+	OS_MGMT_ERR_OK = 0,
 
 	/** Unknown error occurred. */
-	OS_MGMT_RET_RC_UNKNOWN,
+	OS_MGMT_ERR_UNKNOWN,
 
 	/** The provided format value is not valid. */
-	OS_MGMT_RET_RC_INVALID_FORMAT,
+	OS_MGMT_ERR_INVALID_FORMAT,
 };
 
 /* Bitmask values used by the os info command handler. Note that the width of this variable is

@@ -1079,7 +1079,18 @@ int main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+#ifdef CONFIG_ZTEST_NO_YIELD
+	/*
+	 * Rather than yielding to idle thread, keep the part awake so debugger can
+	 * still access it, since some SOCs cannot be debugged in low power states.
+	 */
+	uint32_t key = irq_lock();
 
+	while (1) {
+		; /* Spin */
+	}
+	irq_unlock(key);
+#endif
 	return test_status;
 }
 #else
@@ -1124,6 +1135,18 @@ int main(void)
 			state.boots = 0;
 		}
 	}
+#ifdef CONFIG_ZTEST_NO_YIELD
+	/*
+	 * Rather than yielding to idle thread, keep the part awake so debugger can
+	 * still access it, since some SOCs cannot be debugged in low power states.
+	 */
+	uint32_t key = irq_lock();
+
+	while (1) {
+		; /* Spin */
+	}
+	irq_unlock(key);
+#endif
 	return 0;
 }
 #endif

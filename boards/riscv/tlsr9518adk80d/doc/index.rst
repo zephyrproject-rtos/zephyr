@@ -7,7 +7,7 @@ Overview
 ********
 
 The TLSR9518A Generic Starter Kit is a hardware platform which
-can be used to verify the `Telink TLSR9 series chipset`_ and develop applications
+can be used to verify the `Telink TLSR951x series chipset`_ and develop applications
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
@@ -151,7 +151,7 @@ Building
 .. important::
 
    These instructions assume you've set up a development environment as
-   described in the `Zephyr Getting Started Guide`_.
+   described in the :ref:`getting_started`.
 
 To build applications using the default RISC-V toolchain from Zephyr SDK, just run the west build command.
 Here is an example for the "hello_world" application.
@@ -259,10 +259,9 @@ References
 
 .. target-notes::
 
-.. _Telink TLSR9 series chipset: http://wiki.telink-semi.cn/wiki/chip-series/TLSR9-Series/
-.. _Telink B91 Generic Starter Kit Hardware Guide: http://wiki.telink-semi.cn/wiki/Hardware/B91_Generic_Starter_Kit_Hardware_Guide/
-.. _Telink RISC-V Linux Toolchain: http://wiki.telink-semi.cn/tools_and_sdk/Tools/IDE/telink_riscv_linux_toolchain.zip
-.. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
-.. _Burning and Debugging Tools for TLSR9 Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/
-.. _Burning and Debugging Tools for TLSR9 Series in Linux: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/BDT_for_TLSR9_Series_in_Linux/
-.. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html
+.. _Telink TLSR951x series chipset: https://wiki.telink-semi.cn/wiki/chip-series/TLSR951x-Series/
+.. _Telink B91 Generic Starter Kit Hardware Guide: https://wiki.telink-semi.cn/wiki/Hardware/B91_Generic_Starter_Kit_Hardware_Guide/
+.. _Telink RISC-V Linux Toolchain: https://wiki.telink-semi.cn/tools_and_sdk/Tools/IDE/telink_riscv_linux_toolchain.zip
+.. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
+.. _Burning and Debugging Tools for TLSR9 Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/
+.. _Burning and Debugging Tools for TLSR9 Series in Linux: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/BDT_for_TLSR9_Series_in_Linux/

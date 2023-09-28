@@ -12,4 +12,4 @@ toolchain:
 ram: 2048
 flash: 64
 testing:
-  timeout_multiplier: 2
+  timeout_multiplier: 15

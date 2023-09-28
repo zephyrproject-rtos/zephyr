@@ -130,3 +130,6 @@ set_compiler_property(PROPERTY no_position_independent)
 # gen_kobject_list.py is does not understand it and end up identifying objects as if
 # they had the same address.
 set_compiler_property(PROPERTY no_global_merge)
+
+# Compiler flag for warning about shadow variables
+set_compiler_property(PROPERTY warning_shadow_variables)

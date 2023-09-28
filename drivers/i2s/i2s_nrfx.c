@@ -213,13 +213,13 @@ static bool get_next_rx_buffer(struct i2s_nrfx_drv_data *drv_data,
 static void free_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
 			   const void *buffer)
 {
-	k_mem_slab_free(drv_data->tx.cfg.mem_slab, (void **)&buffer);
+	k_mem_slab_free(drv_data->tx.cfg.mem_slab, (void *)buffer);
 	LOG_DBG("Freed TX %p", buffer);
 }
 
 static void free_rx_buffer(struct i2s_nrfx_drv_data *drv_data, void *buffer)
 {
-	k_mem_slab_free(drv_data->rx.cfg.mem_slab, &buffer);
+	k_mem_slab_free(drv_data->rx.cfg.mem_slab, buffer);
 	LOG_DBG("Freed RX %p", buffer);
 }
 

@@ -361,7 +361,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx, pdu));
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
+						RADIO_PKT_CONF_PDU_TYPE_BIS,
+						pdu));
 	} else {
 		uint8_t pkt_flags;
 
@@ -691,7 +693,9 @@ static void isr_tx_common(void *param,
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_tx.iv, lll->ccm_tx.iv, access_addr);
 
-		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx, pdu));
+		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
+						RADIO_PKT_CONF_PDU_TYPE_BIS,
+						pdu));
 	} else {
 		radio_pkt_tx_set(pdu);
 	}
@@ -713,7 +717,7 @@ static void isr_tx_common(void *param,
 					    pkt_flags);
 		}
 
-		radio_switch_complete_and_disable();
+		radio_switch_complete_and_b2b_tx_disable();
 
 		radio_isr_set(isr_done_term, lll);
 	} else {

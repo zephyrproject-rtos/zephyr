@@ -44,15 +44,15 @@ ZTEST(spinlock, test_spinlock_basic)
 	k_spinlock_key_t key;
 	static struct k_spinlock l;
 
-	zassert_true(!l.locked, "Spinlock initialized to locked");
+	zassert_true(!z_spin_is_locked(&l), "Spinlock initialized to locked");
 
 	key = k_spin_lock(&l);
 
-	zassert_true(l.locked, "Spinlock failed to lock");
+	zassert_true(z_spin_is_locked(&l), "Spinlock failed to lock");
 
 	k_spin_unlock(&l, key);
 
-	zassert_true(!l.locked, "Spinlock failed to unlock");
+	zassert_true(!z_spin_is_locked(&l), "Spinlock failed to unlock");
 }
 
 void bounce_once(int id, bool trylock)
@@ -164,7 +164,7 @@ ZTEST(spinlock, test_spinlock_mutual_exclusion)
 
 	key = k_spin_lock(&lock_runtime);
 
-	zassert_true(lock_runtime.locked, "Spinlock failed to lock");
+	zassert_true(z_spin_is_locked(&lock_runtime), "Spinlock failed to lock");
 
 	/* check irq has not locked */
 	zassert_true(arch_irq_unlocked(key.key),
@@ -184,7 +184,7 @@ ZTEST(spinlock, test_spinlock_mutual_exclusion)
 
 	k_spin_unlock(&lock_runtime, key);
 
-	zassert_true(!lock_runtime.locked, "Spinlock failed to unlock");
+	zassert_true(!z_spin_is_locked(&lock_runtime), "Spinlock failed to unlock");
 }
 
 void trylock_fn(void *p1, void *p2, void *p3)

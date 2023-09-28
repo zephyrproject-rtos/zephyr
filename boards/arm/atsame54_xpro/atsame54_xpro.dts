@@ -136,6 +136,5 @@ zephyr_udc0: &usb0 {
 		compatible = "ethernet-phy";
 		status = "okay";
 		address = <0>;
-		mdio = <&mdio>;
 	};
 };

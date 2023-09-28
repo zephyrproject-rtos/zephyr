@@ -9,3 +9,4 @@ toolchain:
   - xtools
 supported:
   - netif
+vendor: gaisler

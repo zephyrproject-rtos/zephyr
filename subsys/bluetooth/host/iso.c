@@ -378,7 +378,6 @@ void bt_iso_connected(struct bt_conn *iso)
 		} else if (iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
 			   iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 			struct bt_iso_big *big;
-			int err;
 
 			big = lookup_big_by_handle(iso->iso.big_handle);
 
@@ -971,6 +970,14 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 		return -EALREADY;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_ISO_PERIPHERAL) && chan->iso->role == BT_HCI_ROLE_PERIPHERAL &&
+	    chan->state == BT_ISO_STATE_CONNECTING) {
+		/* A CIS peripheral is not allowed to disconnect a CIS in the connecting state - It
+		 * has to wait for a CIS Established event
+		 */
+		return -EAGAIN;
+	}
+
 	err = bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err == 0) {
 		bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
@@ -1028,13 +1035,14 @@ void hci_le_cis_established(struct net_buf *buf)
 	/* ISO connection handles are already assigned at this point */
 	iso = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ISO);
 	if (!iso) {
-		LOG_ERR("No connection found for handle %u", handle);
-		return;
-	}
+		/* If it is a local disconnect, then we may have received the disconnect complete
+		 * event before this event, and in which case we do not expect to find the CIS
+		 * object
+		 */
+		if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+			LOG_ERR("No connection found for handle %u", handle);
+		}
 
-	CHECKIF(iso->type != BT_CONN_TYPE_ISO) {
-		LOG_DBG("Invalid connection type %u", iso->type);
-		bt_conn_unref(iso);
 		return;
 	}
 
@@ -1105,10 +1113,11 @@ void hci_le_cis_established(struct net_buf *buf)
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 		bt_conn_unref(iso);
 		return;
-	}
+	} else if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+		iso->err = evt->status;
+		bt_iso_disconnected(iso);
+	} /* else we wait for disconnect event */
 
-	iso->err = evt->status;
-	bt_iso_disconnected(iso);
 	bt_conn_unref(iso);
 }
 
@@ -1377,7 +1386,7 @@ static int hci_le_remove_iso_data_path(struct bt_conn *iso, uint8_t dir)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = iso->handle;
+	cp->handle = sys_cpu_to_le16(iso->handle);
 	cp->path_dir = dir;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REMOVE_ISO_PATH, buf, &rsp);
@@ -1711,7 +1720,7 @@ static bool is_advanced_cig_param(const struct bt_iso_cig_param *param)
 
 static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
 {
-	if (iso_chan->iso == NULL) {
+	if (iso_chan == NULL || iso_chan->iso == NULL) {
 		return NULL;
 	}
 
@@ -1742,6 +1751,10 @@ static struct bt_iso_cig *get_free_cig(void)
 static bool cis_is_in_cig(const struct bt_iso_cig *cig,
 			  const struct bt_iso_chan *cis)
 {
+	if (cig == NULL || cis == NULL || cis->iso == NULL) {
+		return false;
+	}
+
 	return cig->id == cis->iso->iso.cig_id;
 }
 
@@ -1790,7 +1803,8 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	memset(cig, 0, sizeof(*cig));
 }
 
-static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
+static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
+			    const struct bt_iso_cig *cig)
 {
 	if (param == NULL) {
 		return false;
@@ -1804,8 +1818,8 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced)
 			return false;
 		}
 
-		if (cis->iso != NULL) {
-			LOG_DBG("cis_channels[%d]: already allocated", i);
+		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
+			LOG_DBG("cis_channels[%d]: already allocated to CIG %p", i, get_cig(cis));
 			return false;
 		}
 
@@ -1921,7 +1935,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 	advanced = is_advanced_cig_param(param);
 #endif /* CONFIG_BT_ISO_ADVANCED */
 
-	CHECKIF(!valid_cig_param(param, advanced)) {
+	CHECKIF(!valid_cig_param(param, advanced, NULL)) {
 		LOG_DBG("Invalid CIG params");
 		return -EINVAL;
 	}
@@ -2006,11 +2020,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 {
 	struct bt_hci_rp_le_set_cig_params *cig_rsp;
 	uint8_t existing_num_cis;
-	struct bt_iso_chan *cis;
 	bool advanced = false;
 	struct net_buf *rsp;
 	int err;
-	int i;
 
 	CHECKIF(cig == NULL) {
 		LOG_DBG("cig is NULL");
@@ -2026,20 +2038,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 	advanced = is_advanced_cig_param(param);
 #endif /* CONFIG_BT_ISO_ADVANCED */
 
-	CHECKIF(!valid_cig_param(param, advanced)) {
+	CHECKIF(!valid_cig_param(param, advanced, cig)) {
 		LOG_DBG("Invalid CIG params");
 		return -EINVAL;
-	}
-
-	for (uint8_t i = 0; i < param->num_cis; i++) {
-		struct bt_iso_chan *cis = param->cis_channels[i];
-
-		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
-			LOG_DBG("Cannot reconfigure other CIG's (id 0x%02X) CIS "
-			       "with this CIG (id 0x%02X)",
-			       cis->iso->iso.cig_id, cig->id);
-			return -EINVAL;
-		}
 	}
 
 	/* Used to restore CIG in case of error */
@@ -2069,18 +2070,27 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 
 	cig_rsp = (void *)rsp->data;
 
-	if (rsp->len < sizeof(cig_rsp) ||
-	    cig_rsp->num_handles != param->num_cis) {
-		LOG_WRN("Unexpected response to hci_le_set_cig_params");
+	if (rsp->len < sizeof(*cig_rsp)) {
+		LOG_WRN("Unexpected response len to hci_le_set_cig_params %u != %zu", rsp->len,
+			sizeof(*cig_rsp));
 		err = -EIO;
 		net_buf_unref(rsp);
 		restore_cig(cig, existing_num_cis);
 		return err;
 	}
 
-	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
-		const uint16_t handle = cig_rsp->handle[i++];
+	if (cig_rsp->num_handles != param->num_cis) {
+		LOG_WRN("Unexpected response num_handles to hci_le_set_cig_params %u != %u",
+			cig_rsp->num_handles, param->num_cis);
+		err = -EIO;
+		net_buf_unref(rsp);
+		restore_cig(cig, existing_num_cis);
+		return err;
+	}
+
+	for (uint8_t i = 0u; i < param->num_cis; i++) {
+		const uint16_t handle = cig_rsp->handle[i];
+		struct bt_iso_chan *cis = param->cis_channels[i];
 
 		/* Assign the connection handle */
 		cis->iso->handle = sys_le16_to_cpu(handle);
@@ -3175,24 +3185,24 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	}
 
 	for (uint8_t i = 0; i < param->num_bis; i++) {
-		struct bt_iso_chan *bis = param->bis_channels[i];
+		struct bt_iso_chan *param_bis = param->bis_channels[i];
 
-		CHECKIF(bis == NULL) {
+		CHECKIF(param_bis == NULL) {
 			LOG_DBG("bis_channels[%u]: NULL channel", i);
 			return -EINVAL;
 		}
 
-		if (bis->iso) {
+		if (param_bis->iso) {
 			LOG_DBG("bis_channels[%u]: already allocated", i);
 			return -EALREADY;
 		}
 
-		CHECKIF(bis->qos == NULL) {
+		CHECKIF(param_bis->qos == NULL) {
 			LOG_DBG("bis_channels[%u]: qos is NULL", i);
 			return -EINVAL;
 		}
 
-		CHECKIF(bis->qos->rx == NULL) {
+		CHECKIF(param_bis->qos->rx == NULL) {
 			LOG_DBG("bis_channels[%u]: qos->rx is NULL", i);
 			return -EINVAL;
 		}

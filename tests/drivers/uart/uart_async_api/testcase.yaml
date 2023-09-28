@@ -1,26 +1,8 @@
 common:
   platform_exclude:
-    - seeeduino_xiao
-    - serpente
-    - arduino_nano_33_iot
-    - atsamr21_xpro
-    - adafruit_itsybitsy_m4_express
-    - atsame54_xpro
-    - atsamc21n_xpro
-    - adafruit_trinket_m0
-    - arduino_nano_33_iot
-    - arduino_zero
-    - atsamd21_xpro
-    - adafruit_feather_m0_basic_proto
-    - adafruit_feather_m0_lora
-    - arduino_mkrzero
-    - atsaml21_xpro
-    - atsamr34_xpro
     - stamp_c3
     - wio_terminal
     - xiao_esp32c3
-    - atsamd20_xpro
-    - ev11l78a
   tags:
     - drivers
     - uart
@@ -31,6 +13,18 @@ tests:
     harness_config:
       fixture: gpio_loopback
     depends_on: gpio
+  drivers.uart.wide:
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    extra_configs:
+      - CONFIG_UART_WIDE_DATA=y
+    arch_allow: arm
+    platform_allow: nucleo_h743zi
+    integration_platforms:
+      - nucleo_h743zi
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
@@ -58,3 +52,16 @@ tests:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
     harness: ztest
     depends_on: dma
+  drivers.uart.async_api.sam0:
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_SAM0
+    platform_allow:
+      - atsamc21n_xpro
+      - atsamd21_xpro
+      - atsaml21_xpro
+      - atsamr21_xpro
+      - atsamr34_xpro
+      - atsame54_xpro
+    extra_configs:
+      - CONFIG_UART_SAM0_ASYNC=y
+      - CONFIG_DMA=y
+    build_only: true

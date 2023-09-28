@@ -132,6 +132,15 @@ extern void z_enable_sys_clock(void);
 /* number of milliseconds per second */
 #define MSEC_PER_SEC 1000U
 
+/* number of seconds per minute */
+#define SEC_PER_MIN 60U
+
+/* number of minutes per hour */
+#define MIN_PER_HOUR 60U
+
+/* number of hours per day */
+#define HOUR_PER_DAY 24U
+
 /* number of microseconds per second */
 #define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
 

@@ -8,3 +8,9 @@
 	wakerx-gpios = <MCHP_GPIO_DECODE_115 GPIO_ACTIVE_HIGH>;
 	wakeup-source;
 };
+
+/ {
+	aliases {
+		ps2-port0 = &ps2_0;
+	};
+};

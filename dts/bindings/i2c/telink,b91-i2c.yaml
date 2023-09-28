@@ -3,7 +3,7 @@
 
 description: Telink B91 I2C
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 compatible: "telink,b91-i2c"
 
@@ -12,5 +12,4 @@ properties:
     required: true
 
   pinctrl-0:
-    type: phandles
     required: true

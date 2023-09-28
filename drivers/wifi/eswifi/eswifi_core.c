@@ -755,14 +755,14 @@ static int eswifi_init(const struct device *dev)
 	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
-	if (!device_is_ready(cfg->resetn.port)) {
+	if (!gpio_is_ready_dt(&cfg->resetn)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->resetn.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->resetn, GPIO_OUTPUT_INACTIVE);
 
-	if (!device_is_ready(cfg->wakeup.port)) {
+	if (!gpio_is_ready_dt(&cfg->wakeup)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->wakeup.port->name);
 		return -ENODEV;

@@ -329,7 +329,7 @@ The following peripherals are currently provided with this board:
   be created if needed. The IP address configuration can be specified for each
   network interface instance.
   See :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT` option for more details.
-  The :ref:`eth-native-posix-sample` sample app provides
+  The :zephyr:code-sample:`eth-native-posix` sample app provides
   some use examples and more information about this driver configuration.
 
   Note that this device can only be used with Linux hosts, and that the user
@@ -344,6 +344,15 @@ The following peripherals are currently provided with this board:
   ``zephyr.exe`` needs to be run through ``sudo``. The chosen HCI device
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
+
+  Another possibility is to use a HCI TCP server which acts as a
+  :ref:`virtual Bluetooth controller<bluetooth_virtual_posix>` over TCP.
+  To connect to a HCI TCP server its IP address and port number must
+  be specified. For example, to connect to a HCI TCP server with IP
+  address 127.0.0.0 and port number 1020 use ``zephyr.exe --bt-dev=127.0.0.1:1020``.
+  This alternative option is mainly aimed for testing Bluetooth connectivity over
+  a virtual Bluetooth controller that does not depend on the Linux Bluetooth
+  stack and its HCI interface.
 
 **USB controller**:
   It's possible to use the Virtual USB controller working over USB/IP
@@ -421,6 +430,9 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
 
+This driver only supports poll mode. Interrupt and async mode are not supported.
+Neither runtime configuration or line control are supported.
+
 .. _native_tty_uart:
 
 TTY UART
@@ -454,8 +466,11 @@ Interaction with serial ports can be configured in several different ways:
 
 Multiple instances of such uart drivers are supported.
 
-The :ref:`sample-uart-native-tty` sample app provides a working example of the
+The :zephyr:code-sample:`uart-native-tty` sample app provides a working example of the
 driver.
+
+This driver only supports poll mode. Interrupt and async mode are not supported.
+It has runtime configuration support, but no line control support.
 
 Subsystems backends
 *******************

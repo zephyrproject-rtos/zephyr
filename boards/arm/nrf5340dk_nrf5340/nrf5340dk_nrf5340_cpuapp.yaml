@@ -18,3 +18,4 @@ supported:
   - usb_device
   - netif:openthread
   - gpio
+vendor: nordic

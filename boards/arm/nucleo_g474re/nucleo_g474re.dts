@@ -22,7 +22,7 @@
 		zephyr,canbus = &fdcan1;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -189,6 +189,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

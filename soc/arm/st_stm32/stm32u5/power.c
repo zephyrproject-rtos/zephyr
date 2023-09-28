@@ -54,13 +54,6 @@ void set_mode_standby(uint8_t substate_id)
 	LL_PWR_SetPowerMode(LL_PWR_STANDBY_MODE);
 }
 
-void set_mode_shutdown(uint8_t substate_id)
-{
-	ARG_UNUSED(substate_id);
-	/* Select shutdown mode */
-	LL_PWR_SetPowerMode(LL_PWR_SHUTDOWN_MODE);
-}
-
 /* Invoke Low Power/System Off specific Tasks */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -71,9 +64,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		/* To be tested */
 		set_mode_standby(substate_id);
-		break;
-	case PM_STATE_SOFT_OFF:
-		set_mode_shutdown(substate_id);
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -102,9 +92,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_STANDBY:
 		/* To be tested */
 		LL_LPM_EnableSleep();
-	case PM_STATE_SOFT_OFF:
-		/* We should not get there */
-		__fallthrough;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
@@ -130,11 +117,6 @@ static int stm32_power_init(void)
 
 	/* enable Power clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
-
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during all and any Low power mode */
-	LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
 
 	return 0;
 }

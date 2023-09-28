@@ -15,7 +15,7 @@
 #ifndef __SOC_GPIO_H_
 #define __SOC_GPIO_H_
 
-#define GPIO_INTEL_NR_SUBDEVS		15
+#define GPIO_INTEL_NR_SUBDEVS		10
 
 #define REG_PAD_OWNER_BASE              0x0020
 #define REG_GPI_INT_STS_BASE            0x0100

@@ -123,8 +123,7 @@ groups. The following table presents a list of common groups:
     +---------------+-----------------------------------------------+
     | ``2``         | :ref:`mcumgr_smp_group_2`                     |
     +---------------+-----------------------------------------------+
-    | ``3``         | Application/system configuration              |
-    |               | (currently not used by Zephyr)                |
+    | ``3``         | :ref:`mcumgr_smp_group_3`                     |
     +---------------+-----------------------------------------------+
     | ``4``         | Application/system log management             |
     |               | (currently not used by Zephyr)                |
@@ -164,22 +163,50 @@ non-responsive.
 Minimal response SMP data
 =========================
 
-Minimal response is CBOR directory:
+Minimal response is:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc" : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+--------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`   |
-    +-----------------------+--------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
+
+Note that in the case of a successful command, an empty map will be returned (``rc``/``err`` is
+only returned if there is an error condition, therefore if only an empty map is returned or a
+response lacks these, the request can be considered as being successful. For SMP version 2,
+errors relating to SMP itself that are not group specific will still be returned as ``rc``
+errors, SMP version 2 clients must therefore be able to handle both types of errors.
 
 Specifications of management groups supported by Zephyr
 *******************************************************
@@ -190,5 +217,6 @@ Specifications of management groups supported by Zephyr
     smp_groups/smp_group_0.rst
     smp_groups/smp_group_1.rst
     smp_groups/smp_group_2.rst
+    smp_groups/smp_group_3.rst
     smp_groups/smp_group_8.rst
     smp_groups/smp_group_9.rst

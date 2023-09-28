@@ -234,17 +234,17 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		conn_snk_cnt = sink_cnt;
-		for (size_t i = 0U; i < sink_cnt; i++) {
+		for (size_t j = 0U; j < sink_cnt; j++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
-			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][i];
+			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][j];
 
 			if (snk_ep == NULL) {
 				shell_info(sh, "Could only setup %zu/%zu sink endpoints",
-					   i, sink_cnt);
-				conn_snk_cnt = i;
+					   j, sink_cnt);
+				conn_snk_cnt = j;
 				break;
 			}
 
@@ -252,14 +252,11 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = snk_ep;
 			copy_unicast_stream_preset(uni_stream, default_sink_preset);
-			stream_param[start_param.count].codec_cfg  = &uni_stream->codec_cfg;
-			stream_param[start_param.count].qos = &uni_stream->qos;
+			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 
-			group_stream_params[start_param.count].qos =
-				stream_param[start_param.count].qos;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
-			pair_params[pair_cnt + i].tx_param =
+			pair_params[pair_cnt + j].tx_param =
 				&group_stream_params[start_param.count];
 
 			start_param.count++;
@@ -268,17 +265,17 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		conn_src_cnt = source_cnt;
-		for (size_t i = 0U; i < source_cnt; i++) {
+		for (size_t j = 0U; j < source_cnt; j++) {
 			struct bt_cap_stream *stream =
 				&unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
-			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][i];
+			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][j];
 
 			if (src_ep == NULL) {
 				shell_info(sh, "Could only setup %zu/%zu source endpoints",
-					   i, source_cnt);
-				conn_src_cnt = i;
+					   j, source_cnt);
+				conn_src_cnt = j;
 				break;
 			}
 
@@ -286,14 +283,10 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].stream = stream;
 			stream_param[start_param.count].ep = src_ep;
 			copy_unicast_stream_preset(uni_stream, default_source_preset);
-			stream_param[start_param.count].codec_cfg  = &uni_stream->codec_cfg;
-			stream_param[start_param.count].qos = &uni_stream->qos;
-
-			group_stream_params[start_param.count].qos =
-				stream_param[start_param.count].qos;
+			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
 				&stream_param[start_param.count].stream->bap_stream;
-			pair_params[pair_cnt + i].rx_param =
+			pair_params[pair_cnt + j].rx_param =
 				&group_stream_params[start_param.count];
 
 			start_param.count++;
@@ -392,7 +385,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			}
 
 			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_count = uni_stream->codec_cfg.meta_count;
+			params[count].meta_len = uni_stream->codec_cfg.meta_len;
 
 			count++;
 		}
@@ -434,7 +427,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			}
 
 			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_count = uni_stream->codec_cfg.meta_count;
+			params[count].meta_len = uni_stream->codec_cfg.meta_len;
 
 			count++;
 		}
@@ -501,8 +494,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	struct bt_audio_codec_cfg *src_codec_cfgs[BAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_stream *snk_cap_streams[BAP_UNICAST_AC_MAX_SNK] = {0};
 	struct bt_cap_stream *src_cap_streams[BAP_UNICAST_AC_MAX_SRC] = {0};
-	struct bt_audio_codec_qos *snk_qos[BAP_UNICAST_AC_MAX_SNK] = {0};
-	struct bt_audio_codec_qos *src_qos[BAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_unicast_audio_start_param start_param = {0};
 	struct bt_bap_ep *snk_eps[BAP_UNICAST_AC_MAX_SNK] = {0};
 	struct bt_bap_ep *src_eps[BAP_UNICAST_AC_MAX_SRC] = {0};
@@ -559,13 +550,11 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	 */
 	for (size_t i = 0U; i < snk_cnt; i++) {
 		snk_cap_streams[i] = &snk_uni_streams[i]->stream;
-		snk_qos[i] = &snk_uni_streams[i]->qos;
 		snk_codec_cfgs[i] = &snk_uni_streams[i]->codec_cfg;
 	}
 
 	for (size_t i = 0U; i < src_cnt; i++) {
 		src_cap_streams[i] = &src_uni_streams[i]->stream;
-		src_qos[i] = &src_uni_streams[i]->qos;
 		src_codec_cfgs[i] = &src_uni_streams[i]->codec_cfg;
 	}
 
@@ -578,7 +567,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_param->member.member = connected_conns[i];
 			stream_param->codec_cfg = snk_codec_cfgs[snk_stream_cnt];
 			stream_param->ep = snk_eps[snk_stream_cnt];
-			stream_param->qos = snk_qos[snk_stream_cnt];
 			stream_param->stream = snk_cap_streams[snk_stream_cnt];
 
 			snk_stream_cnt++;
@@ -606,7 +594,6 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_param->member.member = connected_conns[i];
 			stream_param->codec_cfg = src_codec_cfgs[src_stream_cnt];
 			stream_param->ep = src_eps[src_stream_cnt];
-			stream_param->qos = src_qos[src_stream_cnt];
 			stream_param->stream = src_cap_streams[src_stream_cnt];
 
 			src_stream_cnt++;
@@ -1048,15 +1035,15 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 {
 	/* TODO: Use CAP API when the CAP shell has broadcast support */
 	struct bt_bap_broadcast_source_stream_param stream_params[BAP_UNICAST_AC_MAX_SRC] = {0};
-	struct bt_audio_codec_data stereo_data =
+	uint8_t stereo_data[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
-				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT);
-	struct bt_audio_codec_data right_data = BT_AUDIO_CODEC_DATA(
-		BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_RIGHT);
-	struct bt_audio_codec_data left_data = BT_AUDIO_CODEC_DATA(
-		BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_LEFT);
+				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param = {0};
-	struct bt_bap_broadcast_source_create_param create_param = {0};
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -1083,14 +1070,16 @@ static int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
 		stream_params[i].stream = &broadcast_source_streams[i].stream.bap_stream;
-		stream_params[i].data_count = 1U;
 
 		if (param->stream_cnt == 1U) {
-			stream_params[i].data = &stereo_data;
+			stream_params[i].data_len = ARRAY_SIZE(stereo_data);
+			stream_params[i].data = stereo_data;
 		} else if (i == 0U) {
-			stream_params[i].data = &left_data;
+			stream_params[i].data_len = ARRAY_SIZE(left_data);
+			stream_params[i].data = left_data;
 		} else if (i == 1U) {
-			stream_params[i].data = &right_data;
+			stream_params[i].data_len = ARRAY_SIZE(right_data);
+			stream_params[i].data = right_data;
 		}
 	}
 

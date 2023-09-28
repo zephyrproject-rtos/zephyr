@@ -171,7 +171,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	/* If cancelling the timer fails, we'll exit early in the work handler. */
 	(void)k_work_cancel_delayable(&frnd->timer);
 
-	for (int i = 0; i < ARRAY_SIZE(frnd->cred); i++) {
+	for (i = 0; i < ARRAY_SIZE(frnd->cred); i++) {
 		if (frnd->subnet->keys[i].valid) {
 			bt_mesh_friend_cred_destroy(&frnd->cred[i]);
 		}

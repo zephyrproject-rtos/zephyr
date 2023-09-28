@@ -16,3 +16,12 @@ RunTest dfu_all_tgts_lost_on_update_get \
 	dfu_target_fail_on_update_get \
 	dfu_target_fail_on_update_get \
 	-- -argstest targets=3
+
+conf=prj_mesh1d1_conf
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest dfu_all_tgts_lost_on_update_get_psa \
+	dfu_cli_all_targets_lost_on_update_get \
+	dfu_target_fail_on_update_get \
+	dfu_target_fail_on_update_get \
+	dfu_target_fail_on_update_get \
+	-- -argstest targets=3

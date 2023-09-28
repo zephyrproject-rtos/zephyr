@@ -54,6 +54,7 @@ class TestInstance:
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
+        self.dut = None
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
 
         self.domains = None

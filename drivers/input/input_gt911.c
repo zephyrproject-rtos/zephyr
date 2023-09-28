@@ -118,7 +118,7 @@ static int gt911_process(const struct device *dev)
 
 	points = status & TOUCH_POINTS_MSK;
 	if (points != 0U && points != 1U && (0 != (status & TOUCH_STATUS_MSK))) {
-		return 0;
+		points = 1;
 	}
 
 	if (!(status & TOUCH_STATUS_MSK)) {

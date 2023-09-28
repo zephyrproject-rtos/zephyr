@@ -29,7 +29,7 @@ PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
 DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_init, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
 		 NULL, NULL, POST_KERNEL, 80, NULL);
 
-ZTEST(device_power_domain, test_demo)
+ZTEST(device_power_domain, test_device_power_domain)
 {
 	const struct device *const reg_0 = DEVICE_DT_GET(DT_NODELABEL(test_reg_0));
 	const struct device *const reg_1 = DEVICE_DT_GET(DT_NODELABEL(test_reg_1));

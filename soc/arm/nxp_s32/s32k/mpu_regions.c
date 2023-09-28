@@ -6,7 +6,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 
 #if !defined(CONFIG_XIP)
 extern char _rom_attr[];
@@ -35,9 +35,6 @@ static struct arm_mpu_region mpu_regions[] = {
 		.attr = {(uint32_t)_rom_attr},
 	},
 #endif
-
-	/* DT-defined regions */
-	DT_MEMORY_ATTR_APPLY(ARM_MPU_REGION_INIT)
 };
 
 const struct arm_mpu_config mpu_config = {

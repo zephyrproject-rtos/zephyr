@@ -506,7 +506,7 @@ static void xfer_work_handler(struct k_work *item)
 		}
 
 xfer_work_error:
-		k_mem_slab_free(&usbfsotg_ee_slab, (void **)&ev);
+		k_mem_slab_free(&usbfsotg_ee_slab, (void *)ev);
 	}
 }
 

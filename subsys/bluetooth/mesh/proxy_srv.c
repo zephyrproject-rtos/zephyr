@@ -51,11 +51,12 @@ LOG_MODULE_REGISTER(bt_mesh_gatt);
 #define ADV_OPT_USE_NAME 0
 #endif
 
-#define ADV_OPT_USE_NRPA(private) ((private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
+#define ADV_OPT_ADDR(private) (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR) ?                      \
+			       BT_LE_ADV_OPT_USE_IDENTITY : (private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
 
 #define ADV_OPT_PROXY(private)                                                                     \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_USE_NRPA(private) |         \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY | ADV_OPT_USE_NAME)
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private) |             \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_NAME)
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,

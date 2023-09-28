@@ -24,10 +24,7 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
-#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 #include <zephyr/logging/log_ctrl.h>
-#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
-
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hci_rpmsg, CONFIG_BT_LOG_LEVEL);
@@ -314,6 +311,9 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 
 #endif /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
 
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
+
 	while (true) {
 	};
 }
@@ -322,8 +322,6 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
-	LOG_PANIC();
-
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
@@ -343,6 +341,9 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 	}
 
 	LOG_ERR("Halting system");
+
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
 
 	while (true) {
 	};

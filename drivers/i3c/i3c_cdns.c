@@ -371,12 +371,13 @@
 #define I3C_CONTROLLER_ADDR 0x08
 
 /* Maximum i3c devices that the IP can be built with */
-#define I3C_MAX_DEVS		  11
-#define I3C_MAX_MSGS		  10
-#define I3C_SIR_DEFAULT_DA	  0x7F
-#define I3C_MAX_IDLE_WAIT_RETRIES 50
-#define I3C_PRESCL_REG_SCALE	  (4)
-#define I2C_PRESCL_REG_SCALE	  (5)
+#define I3C_MAX_DEVS				11
+#define I3C_MAX_MSGS				10
+#define I3C_SIR_DEFAULT_DA			0x7F
+#define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES	50
+#define I3C_MAX_IDLE_WAIT_RETRIES		5000
+#define I3C_PRESCL_REG_SCALE			(4)
+#define I2C_PRESCL_REG_SCALE			(5)
 
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
@@ -606,30 +607,6 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 			return -EIO;
 		}
 		val = sys_le32_to_cpu(sys_read32(config->base + RX_FIFO));
-		memcpy(ptr, &val, remain);
-	}
-
-	return 0;
-}
-
-static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
-{
-	uint32_t *ptr = buf;
-	uint32_t remain, val;
-
-	for (remain = len; remain >= 4; remain -= 4) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
-		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
-		*ptr++ = val;
-	}
-
-	if (remain > 0) {
-		if (cdns_i3c_ibi_fifo_empty(config)) {
-			return -EIO;
-		}
-		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
 		memcpy(ptr, &val, remain);
 	}
 
@@ -875,8 +852,9 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
 
 	/* Ignore if no pending transfer */
-	if (data->xfer.num_cmds == 0)
+	if (data->xfer.num_cmds == 0) {
 		return;
+	}
 
 	data->xfer.num_cmds = 0;
 
@@ -888,7 +866,7 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
 	while (retry_count--) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
@@ -1017,6 +995,22 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	dcmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
 	dcmd->cmd0 = CMD0_FIFO_IS_CCC;
 	dcmd->len = 0;
@@ -1070,7 +1064,6 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	data->xfer.num_cmds = num_cmds;
 
 	cdns_i3c_start_transfer(dev);
-
 	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
 		cdns_i3c_cancel_transfer(dev);
 	}
@@ -1080,6 +1073,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1302,7 +1296,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	}
 
 	for (int i = 0; i < data->xfer.num_cmds; i++) {
-		switch (data->xfer.cmds->error) {
+		switch (data->xfer.cmds[i].error) {
 		case CMDR_NO_ERROR:
 			break;
 
@@ -1389,6 +1383,22 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		struct cdns_i3c_cmd *cmd = &data->xfer.cmds[i];
 
@@ -1422,6 +1432,7 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1433,8 +1444,9 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 	const struct cdns_i3c_config *config = dev->config;
 
 	if (dyn_addr == 0) {
-		if (!data->free_rr_slots)
+		if (!data->free_rr_slots) {
 			return -ENOSPC;
+		}
 
 		return find_lsb_set(data->free_rr_slots) - 1;
 	}
@@ -1664,6 +1676,22 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
+
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
+		retry_count--;
+	}
+	if (retry_count == 0) {
+		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
+		ret = -EAGAIN;
+		goto error;
+	}
+
 	/*
 	 * Prepare transfer commands. Currently there is only a single transfer
 	 * in-flight but it would be possible to keep a queue of transfers. If so,
@@ -1716,9 +1744,35 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	}
 
 	ret = data->xfer.ret;
+error:
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
+}
+
+#ifdef CONFIG_I3C_USE_IBI
+static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
+{
+	uint32_t *ptr = buf;
+	uint32_t remain, val;
+
+	for (remain = len; remain >= 4; remain -= 4) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		*ptr++ = val;
+	}
+
+	if (remain > 0) {
+		if (cdns_i3c_ibi_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+		memcpy(ptr, &val, remain);
+	}
+
+	return 0;
 }
 
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
@@ -1815,6 +1869,7 @@ static void cdns_i3c_target_ibi_hj_complete(const struct device *dev)
 
 	k_sem_give(&data->ibi_hj_complete);
 }
+#endif
 
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
@@ -1853,7 +1908,12 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		/* In-band interrupt */
 		if (int_st & MST_INT_IBIR_THR) {
 			sys_write32(MST_INT_IBIR_THR, config->base + MST_ICR);
+#ifdef CONFIG_I3C_USE_IBI
 			cnds_i3c_master_demux_ibis(dev);
+#else
+			LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled",
+				dev->name);
+#endif
 		}
 
 		/* In-band interrupt data */
@@ -1948,7 +2008,9 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			/* HJ could send a DISEC which would trigger the SLV_INT_EVENT_UP bit,
 			 * but it's still expected to eventually send a DAA
 			 */
+#ifdef CONFIG_I3C_USE_IBI
 			cdns_i3c_target_ibi_hj_complete(dev);
+#endif
 		}
 
 		/* HJ complete and DA has been assigned */
@@ -2406,8 +2468,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	if (!ctrl_config->is_secondary) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
+#ifdef CONFIG_I3C_USE_IBI
 		/* Bus Initialization Complete, allow HJ ACKs */
 		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+#endif
 	}
 
 	return 0;

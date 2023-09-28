@@ -16,3 +16,4 @@ testing:
     - heap
     - net
     - bluetooth
+vendor: espressif

@@ -11,6 +11,7 @@ tests:
   drivers.i2c.target_api.dual_role:
     platform_allow:
       - nucleo_f746zg
+      - nucleo_g474re
       - nucleo_f091rc
       - stm32f072b_disco
       - nucleo_g071rb
@@ -18,6 +19,7 @@ tests:
       - nucleo_f429zi
       - nucleo_wl55jc
       - nucleo_l073rz
+      - nucleo_l152re
       - rpi_pico
       - efr32bg22_brd4184a
       - mr_canhubk3

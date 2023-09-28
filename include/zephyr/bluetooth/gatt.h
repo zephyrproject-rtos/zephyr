@@ -736,11 +736,6 @@ struct bt_gatt_ccc_cfg {
 	uint8_t id;
 	/** Remote peer address. */
 	bt_addr_le_t peer;
-	/**
-	 * Separate storage for encrypted and unencrypted context. This
-	 * indicate that the link was encrypted when the CCC was written.
-	 */
-	bool link_encrypted;
 	/** Configuration value. */
 	uint16_t value;
 };
@@ -1463,10 +1458,10 @@ struct bt_gatt_discover_params {
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Only for stack-internal use, used for automatic discovery. */
 	struct bt_gatt_subscribe_params *sub_params;
-#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 #if defined(CONFIG_BT_EATT)
 	enum bt_att_chan_opt chan_opt;
 #endif /* CONFIG_BT_EATT */
@@ -1831,12 +1826,12 @@ struct bt_gatt_subscribe_params {
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
 	uint16_t ccc_handle;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Subscribe End handle (for automatic discovery) */
 	uint16_t end_handle;
 	/** Discover parameters used when ccc_handle = 0 */
 	struct bt_gatt_discover_params *disc_params;
-#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */
 	uint16_t value;
 #if defined(CONFIG_BT_SMP)

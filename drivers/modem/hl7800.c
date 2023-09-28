@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
@@ -261,6 +262,7 @@ struct xmodem_packet {
 #define PROFILE_LINE_2                                                         \
 	"S00:255 S01:255 S03:255 S04:255 S05:255 S07:255 S08:255 S10:255\r\n"
 
+#define ADDRESS_FAMILY_IP "IP"
 #define ADDRESS_FAMILY_IPV4 "IPV4"
 #if defined(CONFIG_MODEM_HL7800_ADDRESS_FAMILY_IPV4V6)
 #define MODEM_HL7800_ADDRESS_FAMILY "IPV4V6"
@@ -1761,9 +1763,9 @@ done:
  */
 static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 {
-	int ret;
 	char value[MDM_CCID_RESP_MAX_SIZE];
 	char *delim;
+	int iccid_len;
 	size_t out_len;
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
@@ -1782,9 +1784,13 @@ static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 		LOG_INF("EID: %s", delim + 1);
 	}
 
-	ret = snprintk(iface_ctx.mdm_iccid, sizeof(iface_ctx.mdm_iccid), "%s", value);
-	if (ret > MDM_HL7800_ICCID_MAX_STRLEN) {
-		LOG_WRN("ICCID too long: %d", ret);
+	iccid_len = strlen(value);
+	strncpy(iface_ctx.mdm_iccid, value, sizeof(iface_ctx.mdm_iccid));
+	len = MIN(iccid_len, sizeof(iface_ctx.mdm_iccid) - 1);
+	iface_ctx.mdm_iccid[len] = '\0';
+
+	if (iccid_len > len) {
+		LOG_WRN("ICCID too long: %d (max %d)", iccid_len, len);
 	}
 
 	LOG_INF("ICCID: %s", iface_ctx.mdm_iccid);
@@ -2708,6 +2714,13 @@ static bool on_cmd_atcmdinfo_pdp_context(struct net_buf **buf, uint16_t len)
 			while ((p != NULL) && (*p != '"') && (i < MDM_ADDR_FAM_MAX_LEN)) {
 				iface_ctx.mdm_pdp_addr_fam[i++] = *p++;
 			}
+
+			if (strcmp(iface_ctx.mdm_pdp_addr_fam, ADDRESS_FAMILY_IP) == 0) {
+				snprintk(iface_ctx.mdm_pdp_addr_fam,
+					 sizeof(iface_ctx.mdm_pdp_addr_fam), "%s",
+					 ADDRESS_FAMILY_IPV4);
+			}
+
 			LOG_DBG("PDP address family: %s", iface_ctx.mdm_pdp_addr_fam);
 
 			/* APN after second , " */
@@ -5138,6 +5151,8 @@ static int modem_reset_and_configure(void)
 {
 	int ret = 0;
 	bool sleep = false;
+	bool config_apn = false;
+	char *apn;
 #ifdef CONFIG_MODEM_HL7800_EDRX
 	int edrx_act_type;
 	char set_edrx_msg[sizeof("AT+CEDRXS=2,4,\"0000\"")];
@@ -5229,15 +5244,7 @@ reboot:
 	}
 #endif
 
-	/* If this isn't defined, then keep the current state.
-	 * If the bands are being reconfigured, this is overridden.
-	 */
-#ifdef CONFIG_MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
-	SEND_AT_CMD_EXPECT_OK("AT+CFUN=4,0");
-#endif
-
 	SEND_AT_CMD_EXPECT_OK("AT+KBNDCFG?");
-
 	/* Configure LTE bands */
 #if CONFIG_MODEM_HL7800_CONFIGURE_BANDS
 #if CONFIG_MODEM_HL7800_BAND_1
@@ -5330,6 +5337,12 @@ reboot:
 	}
 #endif
 
+	/**
+	 * Disable the radio until all config is done.
+	 * This ensures all settings are applied during this session instead of on the next reboot.
+	 */
+	SEND_AT_CMD_EXPECT_OK("AT+CFUN=4,0");
+
 	iface_ctx.low_power_mode = HL7800_LPM_NONE;
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 	/* enable GPIO6 low power monitoring */
@@ -5397,17 +5410,9 @@ reboot:
 
 	/* Query PDP context to get APN */
 	SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
+	apn = iface_ctx.mdm_apn.value;
 	if (strcmp(iface_ctx.mdm_pdp_addr_fam, MODEM_HL7800_ADDRESS_FAMILY)) {
-		/* set PDP context address family along with current APN */
-		ret = write_apn(iface_ctx.mdm_apn.value);
-		if (ret < 0) {
-			goto error;
-		}
-	}
-
-	ret = setup_gprs_connection(iface_ctx.mdm_apn.value);
-	if (ret < 0) {
-		goto error;
+		config_apn = true;
 	}
 
 	/* Query PDP authentication context to get APN username/password.
@@ -5420,15 +5425,25 @@ reboot:
 	if (!iface_ctx.configured) {
 		if (strncmp(iface_ctx.mdm_apn.value, CONFIG_MODEM_HL7800_APN_NAME,
 			    MDM_HL7800_APN_MAX_STRLEN) != 0) {
-			ret = write_apn(CONFIG_MODEM_HL7800_APN_NAME);
-			if (ret < 0) {
-				goto error;
-			} else {
-				goto reboot;
-			}
+			apn = CONFIG_MODEM_HL7800_APN_NAME;
+			config_apn = true;
 		}
 	}
 #endif
+
+	if (config_apn) {
+		/* set PDP context address family along with current APN */
+		ret = write_apn(apn);
+		if (ret < 0) {
+			goto error;
+		}
+		SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
+	}
+
+	ret = setup_gprs_connection(iface_ctx.mdm_apn.value);
+	if (ret < 0) {
+		goto error;
+	}
 
 	/* query the network status in case we already registered */
 	SEND_COMPLEX_AT_CMD("AT+CEREG?");
@@ -5441,6 +5456,11 @@ reboot:
 	 */
 	SEND_AT_CMD_EXPECT_OK("AT+KTCPCFG?");
 	SEND_AT_CMD_EXPECT_OK("AT+KUDPCFG?");
+
+	/* Enabled the LTE radio */
+#if !defined(CONFIG_MODEM_HL7800_BOOT_IN_AIRPLANE_MODE)
+	SEND_AT_CMD_EXPECT_OK("AT+CFUN=1,0");
+#endif
 
 	/* The modem has been initialized and now the network interface can be
 	 * started in the CEREG message handler.
@@ -5486,7 +5506,8 @@ static int write_apn(char *access_point_name)
 		strncat(cmd_string, "AT+CGDCONT=1,\"" MODEM_HL7800_ADDRESS_FAMILY "\",\"",
 			MDM_HL7800_APN_CMD_MAX_STRLEN);
 	} else {
-		strncat(cmd_string, "AT+CGDCONT=1,\"IP\",\"", MDM_HL7800_APN_CMD_MAX_STRLEN);
+		strncat(cmd_string, "AT+CGDCONT=1,\"" ADDRESS_FAMILY_IP "\",\"",
+			MDM_HL7800_APN_CMD_MAX_STRLEN);
 	}
 	strncat(cmd_string, access_point_name, MDM_HL7800_APN_CMD_MAX_STRLEN);
 	strncat(cmd_string, "\"", MDM_HL7800_APN_CMD_MAX_STRLEN);
@@ -6246,7 +6267,7 @@ static int hl7800_init(const struct device *dev)
 
 	/* setup port devices and pin directions */
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
-		if (!device_is_ready(hl7800_cfg.gpio[i].port)) {
+		if (!gpio_is_ready_dt(&hl7800_cfg.gpio[i])) {
 			LOG_ERR("gpio port (%s) not ready!",
 				hl7800_cfg.gpio[i].port->name);
 			return -ENODEV;

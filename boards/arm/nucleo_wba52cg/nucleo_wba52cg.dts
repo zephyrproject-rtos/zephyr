@@ -24,7 +24,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		blue_led_1: led_1 {
 			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
@@ -45,6 +45,10 @@
 		led0 = &blue_led_1;
 		sw0 = &user_button;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_lse {
@@ -74,6 +78,10 @@
 	apb7-prescaler = <1>;
 };
 
+&iwdg {
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
 	pinctrl-names = "default";
@@ -98,6 +106,8 @@
 &adc4 {
 	pinctrl-0 = <&adc4_in8_pa1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

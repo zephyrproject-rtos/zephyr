@@ -155,8 +155,7 @@ is 4 byte aligned.
   #define MEM_BLK_SIZE  16
   #define MEM_BLK_ALIGN 4
 
-  RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
-  RTIO_DEFINE_WITH_MEMPOOL(rtio_context, (struct rtio_executor *)&simple_exec,
+  RTIO_DEFINE_WITH_MEMPOOL(rtio_context,
       SQ_SIZE, CQ_SIZE, MEM_BLK_COUNT, MEM_BLK_SIZE, MEM_BLK_ALIGN);
 
 When a read is needed, the caller simply needs to replace the call

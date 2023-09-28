@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_XCC_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_XCC_H_
 
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
+#endif
+
 /* toolchain/gcc.h errors out if __BYTE_ORDER__ cannot be determined
  * there. However, __BYTE_ORDER__ is actually being defined later in
  * this file. So define __BYTE_ORDER__ to skip the check in gcc.h

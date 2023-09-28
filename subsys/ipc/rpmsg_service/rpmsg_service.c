@@ -9,7 +9,7 @@
 #include "rpmsg_backend.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>

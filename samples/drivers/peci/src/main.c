@@ -25,7 +25,7 @@
 
 static const struct device *const peci_dev = DEVICE_DT_GET(DT_ALIAS(peci_0));
 static bool peci_initialized;
-static uint8_t tjmax;
+static uint8_t cpu_tjmax;
 static uint8_t rx_fcs;
 static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3);
 
@@ -135,7 +135,7 @@ int peci_get_temp(int *temperature)
 	}
 
 	raw_cpu_temp = (raw_cpu_temp >> 6) | 0x7E00;
-	*temperature = raw_cpu_temp + tjmax;
+	*temperature = raw_cpu_temp + cpu_tjmax;
 
 	return 0;
 }
@@ -156,11 +156,11 @@ void get_max_temp(void)
 {
 	int ret;
 
-	ret = peci_get_tjmax(&tjmax);
+	ret = peci_get_tjmax(&cpu_tjmax);
 	if (ret) {
 		printk("Fail to obtain maximum temperature: %d\n", ret);
 	} else {
-		printk("Maximum temperature: %u\n", tjmax);
+		printk("Maximum temperature: %u\n", cpu_tjmax);
 	}
 }
 
@@ -197,7 +197,7 @@ int main(void)
 
 	peci_enable(peci_dev);
 
-	tjmax = 100;
+	cpu_tjmax = 100;
 
 	get_max_temp();
 	printk("Start thread...\n");

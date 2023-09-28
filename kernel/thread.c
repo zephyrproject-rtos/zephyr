@@ -16,7 +16,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys_clock.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
 #include <kswap.h>

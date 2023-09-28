@@ -5,16 +5,16 @@
  */
 
 /** @file
- * @brief OpenThread l2 stack public header
+ * @brief OpenThread L2 stack public header
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
 #define ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
 
 /**
- * @brief OpenThread l2 stack api
- * @defgroup OpenThread l2 layer
- * @ingroup networking
+ * @brief OpenThread Layer 2 abstraction layer
+ * @defgroup openthread OpenThread L2 abstraction layer
+ * @ingroup ieee802154
  * @{
  */
 

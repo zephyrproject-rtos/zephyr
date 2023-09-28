@@ -206,17 +206,20 @@ LinkServer Debug  Host Tools
 
 Linkserver is a utility for launching and managing GDB servers for NXP debug probes,
 which also provides a command-line target flash programming capabilities.
-Linkserver can be used with NXP MCUXpresso for Visual Studio Code implementation,
+Linkserver can be used with the `NXP MCUXpresso for Visual Studio Code`_ implementation,
 with custom debug configurations based on GNU tools or as part of a headless solution
-for continuous integration and test. Linkserver can be used with MCU-Link, LPC-Link2,
+for continuous integration and test. LinkServer can be used with MCU-Link, LPC-Link2,
 LPC11U35-based and OpenSDA based standalone or on-board debug probes from NXP.
-The Linkserver installer also includes the firmware update utilities for MCU-Link and
-the LPCScrypt utility for use with LPC-Link2. Linkserver can also be installed using
-the MCUXpresso Installer.
+
+NXP recommends installing LinkServer by using NXP's `MCUXpresso Installer`_.
+This method will also install the tools supporting the debug probes below,
+including NXP's MCU-Link and LPCScrypt tools.
 
 LinkServer is compatible with the following debug probes:
 
 - :ref:`lpclink2-cmsis-onboard-debug-probe`
+- :ref:`mcu-link-cmsis-onboard-debug-probe`
+- :ref:`opensda-daplink-onboard-debug-probe`
 
 Supported west commands:
 
@@ -234,13 +237,14 @@ Notes:
 
    LinkServer probes
 
-2. Use the LinkServer west runner   ``--probe`` option to pass the probe index.
+2. With multiple debug probes attached to the host, use the
+LinkServer west runner   ``--probe`` option to pass the probe index.
 
 .. code-block:: console
 
    west flash --runner=linkserver --probe=3
 
-3. device specific settings can be overridden with the west runner for LinkServer with
+3. Device-specific settings can be overridden with the west runner for LinkServer with
    the option '--override'. May be used multiple times. The format is dictated
    by LinkServer, e.g.:
 
@@ -265,6 +269,7 @@ These debug host tools are compatible with the following debug probes:
 
 - :ref:`lpclink2-jlink-onboard-debug-probe`
 - :ref:`opensda-jlink-onboard-debug-probe`
+- :ref:`mcu-link-jlink-onboard-debug-probe`
 - :ref:`jlink-external-debug-probe`
 - :ref:`stlink-v21-onboard-debug-probe`
 
@@ -405,3 +410,9 @@ To enable Zephyr RTOS awareness follow the steps described in
 
 .. _BOSSA official releases:
 	https://github.com/shumatech/BOSSA/releases
+
+.. _NXP MCUXpresso for Visual Studio Code:
+	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
+
+.. _MCUXpresso Installer:
+	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe

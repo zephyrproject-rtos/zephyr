@@ -234,7 +234,7 @@ int bmg160_trigger_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

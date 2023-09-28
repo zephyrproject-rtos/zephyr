@@ -41,12 +41,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-	case PM_STATE_SOFT_OFF:
-		LL_PWR_ClearFlag_WU();
-		LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-		LL_LPM_EnableDeepSleep();
-		k_cpu_idle();
-		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -67,9 +61,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		/* Restore the clock setup. */
 		stm32_clock_control_init(NULL);
 		break;
-	case PM_STATE_SOFT_OFF:
-		/* Nothing to do. */
-		break;
 	default:
 		LOG_DBG("Unsupported power substate-id %u", state);
 		break;
@@ -88,13 +79,6 @@ static int stm32_power_init(void)
 
 	/* Enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during STOP mode */
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-	LL_DBGMCU_EnableDBGStopMode();
-	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
-#endif /* CONFIG_DEBUG */
 
 	return 0;
 }

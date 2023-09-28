@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_TEST_CONN_IMPL_H_
 #define ZEPHYR_INCLUDE_TEST_CONN_IMPL_H_
 
-#include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_connectivity_impl.h>
 #include <zephyr/net/net_if.h>
 
 #ifdef __cplusplus

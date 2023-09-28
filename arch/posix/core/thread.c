@@ -16,7 +16,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
 
 #include "posix_core.h"
 #include <zephyr/arch/posix/posix_soc_if.h>

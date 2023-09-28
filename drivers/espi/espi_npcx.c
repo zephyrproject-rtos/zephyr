@@ -163,6 +163,8 @@ static const struct npcx_vw_out_config vw_out_tbl[] = {
 
 /*  Virtual wire GPIOs for platform level usage (High at Reset state) */
 static const struct npcx_vw_out_config vw_out_gpio_tbl1[] = {
+/* Only NPCX9 and later series support this feature */
+#if !defined(CONFIG_SOC_SERIES_NPCX7)
 	/* index 50h (Out) */
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_slv_gpio_0),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_slv_gpio_1),
@@ -173,6 +175,7 @@ static const struct npcx_vw_out_config vw_out_gpio_tbl1[] = {
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_slv_gpio_5),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_slv_gpio_6),
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_slv_gpio_7),
+#endif
 };
 
 /* Callbacks for eSPI bus reset and Virtual Wire signals. */

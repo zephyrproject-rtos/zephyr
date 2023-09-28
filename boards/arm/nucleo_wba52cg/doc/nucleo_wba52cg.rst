@@ -175,6 +175,8 @@ The Zephyr nucleo_wba52cg board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
 
@@ -230,7 +232,7 @@ as flashing tool by default.
 Flashing an application to Nucleo WBA52CG
 -----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

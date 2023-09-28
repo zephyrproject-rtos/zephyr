@@ -85,15 +85,11 @@ static void option_handler(struct net_dhcpv4_option_callback *cb,
 
 int main(void)
 {
-	struct net_if *iface;
-
 	LOG_INF("Run dhcpv4 client");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
 	net_mgmt_add_event_callback(&mgmt_cb);
-
-	iface = net_if_get_default();
 
 	net_dhcpv4_init_option_callback(&dhcp_cb, option_handler,
 					DHCP_OPTION_NTP, ntp_server,

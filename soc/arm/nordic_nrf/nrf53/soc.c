@@ -14,7 +14,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
@@ -33,6 +32,8 @@
 #include <hal/nrf_vmc.h>
 #endif
 #include <soc_secure.h>
+
+#include <cmsis_core.h>
 
 #define PIN_XL1 0
 #define PIN_XL2 1

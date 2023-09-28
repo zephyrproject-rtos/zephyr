@@ -33,7 +33,7 @@ void memorymap_test(void)
 				"Error: Slab allocation failed.", alloc_status);
 			break;
 		}
-		k_mem_slab_free(&MAP1, &p);
+		k_mem_slab_free(&MAP1, p);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();

@@ -716,7 +716,7 @@ static void lp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 			/* Clear terminate ack flag, used to signal CIS Terminated */
 			conn->llcp.cis.terminate_ack = 0U;
 			llcp_cis_stop_by_id(ctx->data.cis_term.cig_id, ctx->data.cis_term.cis_id,
-					    ctx->data.cis_term.error_code);
+					    BT_HCI_ERR_LOCALHOST_TERM_CONN);
 		}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 		lp_comm_send_req(conn, ctx, evt, param);

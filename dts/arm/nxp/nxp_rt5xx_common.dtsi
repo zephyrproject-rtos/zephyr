@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	chosen {
@@ -69,6 +70,20 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/* RT5XX SRAM partitions are shared
+	 * between code and data. Boards can
+	 * override the reg properties of either sram0 or sram_code nodes to
+	 * change the balance of SRAM allocation.
+	 *
+	 * Note that the sram code region starts at an offset of 0x1B000,
+	 * as the boot ROM will not load code before 0x1C000. The first
+	 * 0x1000 of the image will contain the boot header.
+	 */
+	sram_code: memory@1b000 {
+		compatible = "mmio-sram";
+		reg = <0x1b000 DT_SIZE_K(1428)>;
+	};
+
 	sram0: memory@20180000 {
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
@@ -78,7 +93,7 @@
 		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM1";
-		zephyr,memory-attr = "RAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 };
 
@@ -403,6 +418,7 @@
 		status = "disabled";
 		prescaler = <8>;
 		#pwm-cells = <3>;
+		clocks = <&clkctl1 MCUX_SCTIMER_CLK>;
 	};
 
 	wwdt0: watchdog@e000 {
@@ -458,6 +474,15 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+	};
+
+	smartdma: dma@27020 {
+		compatible = "nxp,smartdma";
+		reg = <0x27020 0x1000>;
+		program-mem = <0x24100000>;
+		interrupts = <73 0>;
+		status = "disabled";
+		#dma-cells = <0>;
 	};
 
 	ctimer0: ctimer@28000 {
@@ -544,6 +569,15 @@
 		status = "disabled";
 		#address-cells = <3>;
 		#size-cells = <0>;
+	};
+
+	mbox:mbox@110000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x110000 0x100>;
+		interrupts = <34 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
 	};
 };
 

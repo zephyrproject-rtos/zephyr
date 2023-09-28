@@ -609,7 +609,6 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 		struct net_buf *buf;
 		const size_t data_len = MIN(BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN, stream.remaining_size);
 		const size_t cmd_size = sizeof(*set_data) + data_len;
-		int err;
 
 		buf = bt_hci_cmd_create(hci_op, cmd_size);
 		if (!buf) {
@@ -717,7 +716,6 @@ static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
 		struct net_buf *buf;
 		const size_t data_len = MIN(BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, stream.remaining_size);
 		const size_t cmd_size = sizeof(*set_data) + data_len;
-		int err;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, cmd_size);
 		if (!buf) {

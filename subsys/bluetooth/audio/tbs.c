@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stdlib.h>
 
@@ -1753,7 +1752,7 @@ static void signal_interval_timeout(struct k_work *work)
 	}
 }
 
-static int bt_tbs_init(const struct device *unused)
+static int bt_tbs_init(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
 		int err;
@@ -1798,8 +1797,7 @@ static int bt_tbs_init(const struct device *unused)
 	return 0;
 }
 
-DEVICE_DEFINE(bt_tbs, "bt_tbs", &bt_tbs_init, NULL, NULL, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+SYS_INIT(bt_tbs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /***************************** Profile API *****************************/
 int bt_tbs_accept(uint8_t call_index)

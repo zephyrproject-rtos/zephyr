@@ -14,10 +14,11 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <string.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/init.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 

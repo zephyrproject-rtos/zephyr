@@ -29,9 +29,9 @@ int main(void)
 
 	printk("PWM-based RGB LED control\n");
 
-	if (!device_is_ready(red_pwm_led.dev) ||
-	    !device_is_ready(green_pwm_led.dev) ||
-	    !device_is_ready(blue_pwm_led.dev)) {
+	if (!pwm_is_ready_dt(&red_pwm_led) ||
+	    !pwm_is_ready_dt(&green_pwm_led) ||
+	    !pwm_is_ready_dt(&blue_pwm_led)) {
 		printk("Error: one or more PWM devices not ready\n");
 		return 0;
 	}

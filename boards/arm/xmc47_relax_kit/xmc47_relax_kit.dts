@@ -130,6 +130,20 @@
 	#size-cells = <0>;
 };
 
+&usic1ch1 {
+	compatible = "infineon,xmc4xxx-i2c";
+	status = "okay";
+
+	pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_sda_p3_15_u1c1>;
+	pinctrl-names = "default";
+	scl-src = "DX1B";
+	sda-src = "DX0A";
+	interrupts = <94 1>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
 &adc0 {
 	vref-internal-mv = <3300>;
 };

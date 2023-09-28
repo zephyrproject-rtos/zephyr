@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Raytac Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "raytac_mdbt53_db_40_nrf5340_cpunet-pinctrl.dtsi"
+#include "raytac_mdbt53_db_40_nrf5340_cpunet_common.dts"
+
+/ {
+	model = "Raytac MDBT53-DB-40 NRF5340 Network";
+	compatible = "raytac,raytac-mdbt53-db-40-nrf5340-cpunet";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};

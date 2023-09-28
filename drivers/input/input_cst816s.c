@@ -172,7 +172,7 @@ static void cst816s_chip_reset(const struct device *dev)
 	const struct cst816s_config *config = dev->config;
 	int ret;
 
-	if (device_is_ready(config->rst_gpio.port)) {
+	if (gpio_is_ready_dt(&config->rst_gpio)) {
 		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure reset GPIO pin");
@@ -229,7 +229,7 @@ static int cst816s_init(const struct device *dev)
 	const struct cst816s_config *config = dev->config;
 	int ret;
 
-	if (!device_is_ready(config->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
 		return -ENODEV;
 	}

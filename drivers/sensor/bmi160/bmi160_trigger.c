@@ -264,7 +264,7 @@ int bmi160_trigger_mode_init(const struct device *dev)
 	const struct bmi160_cfg *cfg = dev->config;
 	int ret;
 
-	if (!device_is_ready(cfg->interrupt.port)) {
+	if (!gpio_is_ready_dt(&cfg->interrupt)) {
 		LOG_DBG("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -EINVAL;
 	}

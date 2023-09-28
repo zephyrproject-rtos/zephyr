@@ -51,31 +51,12 @@
 #define CONN_MGR_IPV4_EVENTS_MASK	(NET_EVENT_IPV4_ADDR_ADD	| \
 					 NET_EVENT_IPV4_ADDR_DEL)
 
-extern struct k_sem conn_mgr_event_signal;
-extern struct k_mutex conn_mgr_lock;
+extern struct k_sem conn_mgr_mon_updated;
+extern struct k_mutex conn_mgr_mon_lock;
 
 void conn_mgr_init_events_handler(void);
 
-/**
- * @brief Retrieves the conn_mgr binding struct for a provided iface if it exists.
- *
- * Bindings for connectivity implementations with missing API structs are ignored.
- *
- * @param iface - bound network interface to obtain the binding struct for.
- * @return struct conn_mgr_conn_binding* Pointer to the retrieved binding struct if it exists,
- *	   NULL otherwise.
- */
-static inline struct conn_mgr_conn_binding *conn_mgr_if_get_binding(struct net_if *iface)
-{
-	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
-		if (iface == binding->iface) {
-			if (binding->impl->api) {
-				return binding;
-			}
-			return NULL;
-		}
-	}
-	return NULL;
-}
+/* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
+void conn_mgr_conn_init(void);
 
 #endif /* __CONN_MGR_PRV_H__ */

@@ -23,7 +23,7 @@ Note that Zephyr only supports DHCP client functionality.
 Sample usage
 ************
 
-See :ref:`dhcpv4-client-sample` for details.
+See :zephyr:code-sample:`dhcpv4-client` sample application for details.
 
 API Reference
 *************

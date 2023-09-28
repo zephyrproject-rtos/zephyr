@@ -39,6 +39,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32mp157", "st,stm32mp1", "simple-bus";
+
 		rcc: rcc@50000000 {
 			compatible = "st,stm32mp1-rcc";
 			reg = <0x50000000 0x1000>;

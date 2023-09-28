@@ -669,12 +669,16 @@ static inline bool pm_device_on_power_domain(const struct device *dev)
 static inline int pm_device_power_domain_add(const struct device *dev,
 					     const struct device *domain)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
 	return -ENOSYS;
 }
 
 static inline int pm_device_power_domain_remove(const struct device *dev,
 						const struct device *domain)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
 	return -ENOSYS;
 }
 

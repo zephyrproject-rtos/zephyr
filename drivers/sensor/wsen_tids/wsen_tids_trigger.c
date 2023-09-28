@@ -179,7 +179,7 @@ int tids_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(cfg->gpio_threshold.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_threshold)) {
 		LOG_ERR("Device %s is not ready", cfg->gpio_threshold.port->name);
 		return -ENODEV;
 	}

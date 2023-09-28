@@ -242,6 +242,37 @@ followed by trial and error. If you want to understand details, you will need
 to read the rest of the devicetree documentation and the devicetree
 specification.
 
+Board extensions
+****************
+
+Board extensions are board fragments that can be present in a board root
+folder, under ``${BOARD_ROOT}/boards/extensions``. The extension folder must
+follow the naming structure of the original board to extend. The board extension
+directory may contain Kconfig fragments and/or devicetree overlays. Board
+extensions are, by default, automatically loaded and applied on top of board
+files, before anything else. There is no guarantee on which order extensions are
+applied, in case multiple exist. This feature shall be disabled by passing
+``-DBOARD_EXTENSIONS=OFF`` when building.
+
+Board extensions are designed for downstream users, for example,
+``example-application`` or vendor SDKs. In some situations, certain hardware
+description or `choices <devicetree-chosen-nodes>`_ can not be added in the
+upstream Zephyr repository, but they can be in a downstream project, where
+custom bindings or driver classes can also be created. This feature may also be
+useful in development phases, when the board skeleton lives upstream, but other
+features are developed in a downstream module.
+
+Note that board extensions need to follow the
+:ref:`same guidelines <porting-general-recommendations>` as regular boards. For
+example, it is wrong to enable extra peripherals or subsystems in a board
+extension.
+
+.. warning::
+
+   Board extensions are not allowed in any module referenced in Zephyr's
+   ``west.yml`` manifest file. Any board changes are required to be submitted to
+   the main Zephyr repository.
+
 .. _dt_k6x_example:
 
 Example: FRDM-K64F and Hexiwear K64

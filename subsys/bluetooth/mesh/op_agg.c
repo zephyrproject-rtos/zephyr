@@ -17,10 +17,7 @@ LOG_MODULE_REGISTER(bt_mesh_op_agg);
 #define LENGTH_SHORT_MAX BIT_MASK(7)
 
 NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
-
-#if IS_ENABLED(CONFIG_BT_MESH_OP_AGG_CLI)
 NET_BUF_SIMPLE_DEFINE_STATIC(srcs, BT_MESH_TX_SDU_MAX);
-#endif
 
 static struct op_agg_ctx agg_ctx = {
 	.sdu = &sdu,

@@ -122,7 +122,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(cfg->gpio_drdy.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
 		LOG_ERR("Cannot get pointer to drdy_gpio device");
 		return -EINVAL;
 	}

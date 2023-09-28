@@ -7,7 +7,7 @@
 #include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <zephyr/exc_handle.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 #include <mmu.h>

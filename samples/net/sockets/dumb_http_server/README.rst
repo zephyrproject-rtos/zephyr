@@ -1,7 +1,8 @@
-.. _sockets-dumb-http-server-sample:
+.. zephyr:code-sample:: socket-dumb-http-server
+   :name: Dumb HTTP server
+   :relevant-api: bsd_sockets net_pkt
 
-Socket Dumb HTTP Server
-#######################
+   Implement a simple, portable, HTTP server using BSD sockets.
 
 Overview
 ********

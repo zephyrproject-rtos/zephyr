@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,18 +11,19 @@
 
 void lvgl_flush_cb_24bit(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
 {
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
 	uint16_t w = area->x2 - area->x1 + 1;
 	uint16_t h = area->y2 - area->y1 + 1;
-	struct display_buffer_descriptor desc;
+	struct lvgl_display_flush flush;
 
-	desc.buf_size = w * 3U * h;
-	desc.width = w;
-	desc.pitch = w;
-	desc.height = h;
-	display_write(data->display_dev, area->x1, area->y1, &desc, (void *)color_p);
-
-	lv_disp_flush_ready(disp_drv);
+	flush.disp_drv = disp_drv;
+	flush.x = area->x1;
+	flush.y = area->y1;
+	flush.desc.buf_size = w * 3U * h;
+	flush.desc.width = w;
+	flush.desc.pitch = w;
+	flush.desc.height = h;
+	flush.buf = (void *)color_p;
+	lvgl_flush_display(&flush);
 }
 
 void lvgl_set_px_cb_24bit(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,

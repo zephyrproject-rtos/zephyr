@@ -145,6 +145,9 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 
+#if defined(CONFIG_PWM_MCUX_SCTIMER)
+	case MCUX_SCTIMER_CLK:
+#endif
 	case MCUX_BUS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;

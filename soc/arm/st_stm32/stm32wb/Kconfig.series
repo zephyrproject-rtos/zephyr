@@ -14,5 +14,6 @@ config SOC_SERIES_STM32WBX
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_PM
+	select HAS_POWEROFF
 	help
 	  Enable support for STM32WB MCU series

@@ -893,7 +893,7 @@ struct bt_mesh_model {
 	uint16_t * const groups;
 	const uint16_t groups_cnt;
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
+#if (CONFIG_BT_MESH_LABEL_COUNT > 0) || defined(__DOXYGEN__)
 	/** List of Label UUIDs the model is subscribed to. */
 	const uint8_t ** const uuids;
 #endif
@@ -909,7 +909,7 @@ struct bt_mesh_model {
 	struct bt_mesh_model *next;
 #endif
 
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV) || defined(__DOXYGEN__)
 	/* Pointer to the array of model metadata entries. */
 	struct bt_mesh_models_metadata_entry **metadata;
 #endif
@@ -1136,6 +1136,51 @@ struct bt_mesh_comp {
 	size_t elem_count; /**< The number of elements in this device. */
 	struct bt_mesh_elem *elem; /**< List of elements. */
 };
+
+/** Composition data page 2 record. */
+struct bt_mesh_comp2_record {
+	/** Mesh profile ID. */
+	uint16_t id;
+	/** Mesh Profile Version. */
+	struct {
+		/** Major version. */
+		uint8_t x;
+		/** Minor version. */
+		uint8_t y;
+		/** Z version. */
+		uint8_t z;
+	} version;
+	/** Element offset count. */
+	uint8_t elem_offset_cnt;
+	/** Element offset list. */
+	const uint8_t *elem_offset;
+	/** Length of additional data. */
+	uint16_t data_len;
+	/** Additional data. */
+	const void *data;
+};
+
+/** Node Composition data page 2 */
+struct bt_mesh_comp2 {
+	/** The number of Mesh Profile records on a device. */
+	size_t record_cnt;
+	/** List of records. */
+	const struct bt_mesh_comp2_record *record;
+};
+
+/** @brief Register composition data page 2 of the device.
+ *
+ *  Register Mesh Profiles information (Ref section 3.12 in
+ *  Bluetooth SIG Assigned Numbers) for composition data
+ *  page 2 of the device.
+ *
+ *  @note There must be at least one record present in @c comp2
+ *
+ *  @param comp2 Pointer to composition data page 2.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_comp2_register(const struct bt_mesh_comp2 *comp2);
 
 #ifdef __cplusplus
 }

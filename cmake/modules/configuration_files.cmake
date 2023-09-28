@@ -83,7 +83,7 @@ if(CONF_FILE_INCLUDE_FRAGMENTS)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
 
-set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder")
+set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder" FORCE)
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\

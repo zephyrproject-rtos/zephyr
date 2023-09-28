@@ -17,8 +17,7 @@
 #define BQ27427_DEVICE_ID  0x0427
 
 /*** Standard Commands ***/
-#define BQ274XX_CMD_CONTROL_LOW    0x00 /* Control() low register */
-#define BQ274XX_CMD_CONTROL_HIGH   0x01 /* Control() high register */
+#define BQ274XX_CMD_CONTROL        0x00 /* Control() register */
 #define BQ274XX_CMD_TEMP           0x02 /* Temperature() */
 #define BQ274XX_CMD_VOLTAGE        0x04 /* Voltage() */
 #define BQ274XX_CMD_FLAGS          0x06 /* Flags() */

@@ -34,9 +34,9 @@ static const uint8_t debug_public_key[BT_PUB_KEY_LEN] = {
 	0x6d, 0xeb, 0x2a, 0x65, 0x49, 0x9c, 0x80, 0xdc
 };
 
-bool bt_pub_key_is_debug(uint8_t *pub_key)
+bool bt_pub_key_is_debug(uint8_t *cmp_pub_key)
 {
-	return memcmp(pub_key, debug_public_key, BT_PUB_KEY_LEN) == 0;
+	return memcmp(cmp_pub_key, debug_public_key, BT_PUB_KEY_LEN) == 0;
 }
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)

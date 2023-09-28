@@ -16,7 +16,7 @@
 #include <zephyr/arch/syscall.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
-#include <zephyr/exc_handle.h>
+#include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 #include <zephyr/sys/mem_manage.h>

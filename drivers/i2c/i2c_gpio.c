@@ -136,7 +136,7 @@ static int i2c_gpio_init(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int err;
 
-	if (!device_is_ready(config->scl_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->scl_gpio)) {
 		LOG_ERR("SCL GPIO device not ready");
 		return -ENODEV;
 	}
@@ -147,7 +147,7 @@ static int i2c_gpio_init(const struct device *dev)
 		return err;
 	}
 
-	if (!device_is_ready(config->sda_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->sda_gpio)) {
 		LOG_ERR("SDA GPIO device not ready");
 		return -ENODEV;
 	}

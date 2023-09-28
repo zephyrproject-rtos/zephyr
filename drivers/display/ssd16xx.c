@@ -932,7 +932,7 @@ static int ssd16xx_init(const struct device *dev)
 	data->read_supported =
 		(config->bus.config.operation & SPI_HALF_DUPLEX) != 0;
 
-	if (!device_is_ready(config->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
@@ -943,7 +943,7 @@ static int ssd16xx_init(const struct device *dev)
 		return err;
 	}
 
-	if (!device_is_ready(config->dc_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->dc_gpio)) {
 		LOG_ERR("DC GPIO device not ready");
 		return -ENODEV;
 	}
@@ -954,7 +954,7 @@ static int ssd16xx_init(const struct device *dev)
 		return err;
 	}
 
-	if (!device_is_ready(config->busy_gpio.port)) {
+	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
 		return -ENODEV;
 	}

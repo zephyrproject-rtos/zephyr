@@ -294,7 +294,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -308,7 +308,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://www.st.com/resource/en/user_manual/um3115-stm32h5-nucleo144-board-mb1404-stmicroelectronics.pdf
 
 .. _STM32H563ZI on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32h563zi.html
+   https://www.st.com/en/microcontrollers/stm32h563zi.html
 
 .. _STM32H563 reference manual:
    https://www.st.com/resource/en/reference_manual/rm0481-stm32h563h573-and-stm32h562-armbased-32bit-mcus-stmicroelectronics.pdf

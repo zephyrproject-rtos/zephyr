@@ -34,6 +34,11 @@ function(load_cache)
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND PROPERTY "CACHE:VARIABLES" "${CMAKE_MATCH_1}")
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}:TYPE" "${CMAKE_MATCH_2}")
       set_property(TARGET ${LOAD_CACHE_IMAGE}_cache PROPERTY "${CMAKE_MATCH_1}" "${variable_value}")
+      if("${CMAKE_MATCH_1}" MATCHES "^BYPRODUCT_.*")
+        set_property(TARGET ${LOAD_CACHE_IMAGE}_cache APPEND
+                     PROPERTY "EXTRA_BYPRODUCTS" "${variable_value}"
+        )
+      endif()
     endif()
   endforeach()
 endfunction()
@@ -140,6 +145,13 @@ function(ExternalZephyrProject_Add)
     )
   endif()
 
+  if(TARGET ${ZBUILD_APPLICATION})
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(APPLICATION ${ZBUILD_APPLICATION} ...) "
+      "already exists. Application names must be unique."
+    )
+  endif()
+
   if(DEFINED ZBUILD_APP_TYPE)
     if(NOT ZBUILD_APP_TYPE IN_LIST app_types)
       message(FATAL_ERROR
@@ -149,6 +161,21 @@ function(ExternalZephyrProject_Add)
     endif()
 
   endif()
+
+  if(NOT DEFINED SYSBUILD_CURRENT_SOURCE_DIR)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(${ARGV0} <val> ...) must not be called outside of"
+      " sysbuild_add_subdirectory(). SYSBUILD_CURRENT_SOURCE_DIR is undefined."
+    )
+  endif()
+  set_property(
+    DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
+  set_property(
+    GLOBAL
+    APPEND PROPERTY sysbuild_images ${ZBUILD_APPLICATION}
+  )
 
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
   set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
@@ -266,6 +293,11 @@ function(ExternalZephyrProject_Add)
     set_target_properties(${ZBUILD_APPLICATION} PROPERTIES MAIN_APP True)
   endif()
 
+  if(DEFINED ZBUILD_APP_TYPE)
+    set(image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
+    set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT ${image_default})
+  endif()
+
   if(DEFINED ZBUILD_BOARD)
     # Only set image specific board if provided.
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
@@ -296,6 +328,17 @@ endfunction()
 #
 # If the application is not due to ExternalZephyrProject_Add() being called,
 # then an error is raised.
+#
+# The image output files are added as target properties on the image target as:
+# ELF_OUT: property specifying the generated elf file.
+# BIN_OUT: property specifying the generated bin file.
+# HEX_OUT: property specifying the generated hex file.
+# S19_OUT: property specifying the generated s19 file.
+# UF2_OUT: property specifying the generated uf2 file.
+# EXE_OUT: property specifying the generated exe file.
+#
+# the property is only set if the image is configured to generate the output
+# format. Elf files are always created.
 #
 # APPLICATION: <name>: Name of the application.
 #
@@ -332,6 +375,10 @@ function(ExternalZephyrProject_Cmake)
   get_target_property(${ZCMAKE_APPLICATION}_CACHE_FILE ${ZCMAKE_APPLICATION} CACHE_FILE)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
   get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
+
+  get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
+               PROPERTY IMAGE_CONF_SCRIPT
+  )
 
   # Update ROOT variables with relative paths to use absolute paths based on
   # the source application directory.
@@ -384,6 +431,10 @@ function(ExternalZephyrProject_Cmake)
                    ${${ZCMAKE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
   )
 
+  foreach(script ${${ZCMAKE_APPLICATION}_CONF_SCRIPT})
+    include(${script})
+  endforeach()
+
   set(dotconfigsysbuild ${BINARY_DIR}/zephyr/.config.sysbuild)
   get_target_property(config_content ${ZCMAKE_APPLICATION} CONFIG)
   string(CONFIGURE "${config_content}" config_content)
@@ -408,6 +459,15 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+
+  # This custom target informs CMake how the BYPRODUCTS are generated if a target
+  # depends directly on the BYPRODUCT instead of depending on the image target.
+  get_target_property(${ZCMAKE_APPLICATION}_byproducts ${ZCMAKE_APPLICATION}_cache EXTRA_BYPRODUCTS)
+  add_custom_target(${ZCMAKE_APPLICATION}_extra_byproducts
+                    COMMAND ${CMAKE_COMMAND} -E true
+                    BYPRODUCTS ${${ZCMAKE_APPLICATION}_byproducts}
+                    DEPENDS ${ZCMAKE_APPLICATION}
+  )
 endfunction()
 
 # Usage:
@@ -521,4 +581,109 @@ endfunction()
 
 function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
+endfunction()
+
+# Usage:
+#   sysbuild_add_subdirectory(<source_dir> [<binary_dir>])
+#
+# This function extends the standard add_subdirectory() command with additional,
+# recursive processing of the sysbuild images added via <source_dir>.
+#
+# After exiting <source_dir>, this function will take every image added so far,
+# and include() its sysbuild.cmake file (if found). If more images get added at
+# this stage, their sysbuild.cmake files will be included as well, and so on.
+# This continues until all expected images have been added, before returning.
+#
+function(sysbuild_add_subdirectory source_dir)
+  if(ARGC GREATER 2)
+    message(FATAL_ERROR
+      "sysbuild_add_subdirectory(...) called with incorrect number of arguments"
+      " (expected at most 2, got ${ARGC})"
+    )
+  endif()
+  set(binary_dir ${ARGV1})
+
+  # Update SYSBUILD_CURRENT_SOURCE_DIR in this scope, to support nesting
+  # of sysbuild_add_subdirectory() and even regular add_subdirectory().
+  cmake_path(ABSOLUTE_PATH source_dir NORMALIZE OUTPUT_VARIABLE SYSBUILD_CURRENT_SOURCE_DIR)
+  add_subdirectory(${source_dir} ${binary_dir})
+
+  while(TRUE)
+    get_property(added_images DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}" PROPERTY sysbuild_images)
+    if(NOT added_images)
+      break()
+    endif()
+    set_property(DIRECTORY "${SYSBUILD_CURRENT_SOURCE_DIR}" PROPERTY sysbuild_images "")
+
+    foreach(image ${added_images})
+      ExternalProject_Get_property(${image} SOURCE_DIR)
+      include(${SOURCE_DIR}/sysbuild.cmake OPTIONAL)
+    endforeach()
+  endwhile()
+endfunction()
+
+# Usage:
+#   sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
+#
+# This function makes an image depend on other images in the configuration or
+# flashing order. Each image named "<image-dependency>" will be ordered before
+# the image named "<image>".
+#
+# CONFIGURE: Add CMake configuration dependencies. This will determine the order
+#            in which `ExternalZephyrProject_Cmake()` will be called.
+# FLASH:     Add flashing dependencies. This will determine the order in which
+#            all images will appear in `domains.yaml`.
+#
+function(sysbuild_add_dependencies dependency_type image)
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_add_dependencies(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  if(NOT TARGET ${image})
+    message(FATAL_ERROR
+      "${image} does not exist. Remember to call "
+      "ExternalZephyrProject_Add(APPLICATION ${image} ...) first."
+    )
+  endif()
+
+  get_target_property(image_is_build_only ${image} BUILD_ONLY)
+  if(image_is_build_only AND dependency_type STREQUAL "FLASH")
+    message(FATAL_ERROR
+      "sysbuild_add_dependencies(...) cannot add FLASH dependencies to "
+      "BUILD_ONLY image ${image}."
+    )
+  endif()
+
+  set(property_name ${dependency_type}_DEPENDS)
+  set_property(TARGET ${image} APPEND PROPERTY ${property_name} ${ARGN})
+endfunction()
+
+# Usage:
+#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
+#
+# This function will sort the provided `<images>` to satisfy the dependencies
+# specified using `sysbuild_add_dependencies()`. The result will be returned in
+# `<variable>`.
+#
+function(sysbuild_images_order variable dependency_type)
+  cmake_parse_arguments(SIS "" "" "IMAGES" ${ARGN})
+  zephyr_check_arguments_required_all("sysbuild_images_order" SIS IMAGES)
+
+  set(valid_dependency_types CONFIGURE FLASH)
+  if(NOT dependency_type IN_LIST valid_dependency_types)
+    list(JOIN valid_dependency_types ", " valid_dependency_types)
+    message(FATAL_ERROR "sysbuild_images_order(...) dependency type "
+                        "${dependency_type} must be one of the following: "
+                        "${valid_dependency_types}"
+    )
+  endif()
+
+  set(property_name ${dependency_type}_DEPENDS)
+  topological_sort(TARGETS ${SIS_IMAGES} PROPERTY_NAME ${property_name} RESULT sorted)
+  set(${variable} ${sorted} PARENT_SCOPE)
 endfunction()

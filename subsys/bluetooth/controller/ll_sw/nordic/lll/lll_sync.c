@@ -301,8 +301,6 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	if (false) {
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	} else if (cfg->is_enabled) {
-		int err;
-
 		/* In case of call in create_prepare_cb, new sync event starts hence discard
 		 * previous incomplete state.
 		 */
@@ -312,8 +310,8 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 		err = lll_df_iq_report_no_resources_prepare(lll);
 		if (!err) {
 			err = lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
-							cfg->ant_ids, chan_idx, CTE_INFO_IN_PAYLOAD,
-							lll->phy);
+							cfg->ant_ids, chan_idx,
+							CTE_INFO_IN_PAYLOAD, lll->phy);
 			if (err) {
 				lll->is_cte_incomplete = true;
 			}
@@ -388,8 +386,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
 
 	if (cfg->is_enabled) {
-		int err;
-
 		/* In case of call in prepare, new sync event starts hence discard previous
 		 * incomplete state.
 		 */
@@ -399,8 +395,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 		err = lll_df_iq_report_no_resources_prepare(lll);
 		if (!err) {
 			err = lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
-							cfg->ant_ids, chan_idx, CTE_INFO_IN_PAYLOAD,
-							lll->phy);
+							cfg->ant_ids, chan_idx,
+							CTE_INFO_IN_PAYLOAD, lll->phy);
 			if (err) {
 				lll->is_cte_incomplete = true;
 			}

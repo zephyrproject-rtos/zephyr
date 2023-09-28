@@ -81,9 +81,10 @@ int sdmmc_wait_ready(struct sd_card *card)
 }
 
 static inline void sdmmc_decode_csd(struct sd_csd *csd, uint32_t *raw_csd, uint32_t *blk_count,
-				    uint32_t *blk_size)
+				    uint16_t *blk_size)
 {
-	uint32_t tmp_blk_count, tmp_blk_size;
+	uint32_t tmp_blk_count;
+	uint16_t tmp_blk_size;
 
 	csd->csd_structure = (uint8_t)((raw_csd[3U] & 0xC0000000U) >> 30U);
 	csd->read_time1 = (uint8_t)((raw_csd[3U] & 0xFF0000U) >> 16U);
@@ -247,9 +248,9 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 int sdmmc_read_csd(struct sd_card *card)
 {
 	int ret;
-	uint32_t csd[4];
+	uint32_t csd[4] = {0};
 	/* Keep CSD on stack for reduced RAM usage */
-	struct sd_csd card_csd;
+	struct sd_csd card_csd = {0};
 
 	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
 		ret = sdmmc_spi_read_cxd(card, SD_SEND_CSD, csd);
@@ -270,11 +271,11 @@ int sdmmc_read_csd(struct sd_card *card)
 /* Reads card identification register, and decodes it */
 int card_read_cid(struct sd_card *card)
 {
-	uint32_t cid[4];
+	uint32_t cid[4] = {0};
 	int ret;
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 	/* Keep CID on stack for reduced RAM usage */
-	struct sd_cid card_cid;
+	struct sd_cid card_cid = {0};
 #endif
 
 	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {

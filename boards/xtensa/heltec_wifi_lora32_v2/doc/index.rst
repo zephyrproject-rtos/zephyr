@@ -188,7 +188,7 @@ Onboard OLED display
 
 The onboard OLED display is of type ``ssd1306``, has 128*64 pixels and is
 connected via I2C. It can therefore be used by enabling the
-:ref:`ssd1306_128_shield` as shown in the following for the :ref:`lvgl-sample`:
+:ref:`ssd1306_128_shield` as shown in the following for the :zephyr:code-sample:`lvgl` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)

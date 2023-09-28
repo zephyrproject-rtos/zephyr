@@ -270,8 +270,14 @@ static int send_response(struct net_context *ctx,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
 		const struct in_addr *addr;
 
-		addr = net_if_ipv4_select_src_addr(iface,
-			family == AF_INET ? (struct in_addr *)src_addr : NULL);
+		if (family == AF_INET) {
+			addr = net_if_ipv4_select_src_addr(iface, (struct in_addr *)src_addr);
+		} else {
+			struct sockaddr_in tmp_addr;
+
+			create_ipv4_addr(&tmp_addr);
+			addr = net_if_ipv4_select_src_addr(iface, &tmp_addr.sin_addr);
+		}
 
 		ret = create_answer(ctx, query, qtype, sizeof(struct in_addr), (uint8_t *)addr);
 		if (ret != 0) {
@@ -280,8 +286,14 @@ static int send_response(struct net_context *ctx,
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && qtype == DNS_RR_TYPE_AAAA) {
 		const struct in6_addr *addr;
 
-		addr = net_if_ipv6_select_src_addr(iface,
-			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
+		if (family == AF_INET6) {
+			addr = net_if_ipv6_select_src_addr(iface, (struct in6_addr *)src_addr);
+		} else {
+			struct sockaddr_in6 tmp_addr;
+
+			create_ipv6_addr(&tmp_addr);
+			addr = net_if_ipv6_select_src_addr(iface, &tmp_addr.sin6_addr);
+		}
 
 		ret = create_answer(ctx, query, qtype, sizeof(struct in6_addr), (uint8_t *)addr);
 		if (ret != 0) {
@@ -361,14 +373,26 @@ static void send_sd_response(struct net_context *ctx,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* Look up the local IPv4 address */
-		addr4 = net_if_ipv4_select_src_addr(iface,
-			family == AF_INET ? (struct in_addr *)src_addr : NULL);
+		if (family == AF_INET) {
+			addr4 = net_if_ipv4_select_src_addr(iface, (struct in_addr *)src_addr);
+		} else {
+			struct sockaddr_in tmp_addr;
+
+			create_ipv4_addr(&tmp_addr);
+			addr4 = net_if_ipv4_select_src_addr(iface, &tmp_addr.sin_addr);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* Look up the local IPv6 address */
-		addr6 = net_if_ipv6_select_src_addr(iface,
-			family == AF_INET6 ? (struct in6_addr *)src_addr : NULL);
+		if (family == AF_INET6) {
+			addr6 = net_if_ipv6_select_src_addr(iface, (struct in6_addr *)src_addr);
+		} else {
+			struct sockaddr_in6 tmp_addr;
+
+			create_ipv6_addr(&tmp_addr);
+			addr6 = net_if_ipv6_select_src_addr(iface, &tmp_addr.sin6_addr);
+		}
 	}
 
 	ret = dns_sd_query_extract(dns_msg->msg,

@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/att.h>
 
 #include "common/assert.h"
+#include "common/bt_str.h"
 
 #include "addr_internal.h"
 #include "hci_core.h"
@@ -1498,15 +1499,24 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		}
 		return 0;
 	case BT_CONN_CONNECTING:
+		if (conn->type == BT_CONN_TYPE_LE) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+				k_work_cancel_delayable(&conn->deferred_work);
+				return bt_le_create_conn_cancel();
+			}
+		}
+#if defined(CONFIG_BT_ISO)
+		else if (conn->type == BT_CONN_TYPE_ISO) {
+			return conn_disconnect(conn, reason);
+		}
+#endif /* CONFIG_BT_ISO */
 #if defined(CONFIG_BT_BREDR)
-		if (conn->type == BT_CONN_TYPE_BR) {
+		else if (conn->type == BT_CONN_TYPE_BR) {
 			return bt_hci_connect_br_cancel(conn);
 		}
 #endif /* CONFIG_BT_BREDR */
-
-		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			k_work_cancel_delayable(&conn->deferred_work);
-			return bt_le_create_conn_cancel();
+		else {
+			__ASSERT(false, "Invalid conn type %u", conn->type);
 		}
 
 		return 0;
@@ -1522,9 +1532,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 static void notify_connected(struct bt_conn *conn)
 {
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {
 			cb->connected(conn, conn->err);
 		}
@@ -1539,9 +1547,7 @@ static void notify_connected(struct bt_conn *conn)
 
 static void notify_disconnected(struct bt_conn *conn)
 {
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->disconnected) {
 			cb->disconnected(conn, conn->err);
 		}
@@ -1558,7 +1564,6 @@ static void notify_disconnected(struct bt_conn *conn)
 void notify_remote_info(struct bt_conn *conn)
 {
 	struct bt_conn_remote_info remote_info;
-	struct bt_conn_cb *cb;
 	int err;
 
 	err = bt_conn_get_remote_info(conn, &remote_info);
@@ -1567,7 +1572,7 @@ void notify_remote_info(struct bt_conn *conn)
 		return;
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->remote_info_available) {
 			cb->remote_info_available(conn, &remote_info);
 		}
@@ -1583,8 +1588,6 @@ void notify_remote_info(struct bt_conn *conn)
 
 void notify_le_param_updated(struct bt_conn *conn)
 {
-	struct bt_conn_cb *cb;
-
 	/* If new connection parameters meet requirement of pending
 	 * parameters don't send peripheral conn param request anymore on timeout
 	 */
@@ -1596,7 +1599,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->le_param_updated) {
 			cb->le_param_updated(conn, conn->le.interval,
 					     conn->le.latency,
@@ -1616,9 +1619,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 void notify_le_data_len_updated(struct bt_conn *conn)
 {
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->le_data_len_updated) {
 			cb->le_data_len_updated(conn, &conn->le.data_len);
 		}
@@ -1635,9 +1636,7 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 void notify_le_phy_updated(struct bt_conn *conn)
 {
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->le_phy_updated) {
 			cb->le_phy_updated(conn, &conn->le.phy);
 		}
@@ -1653,13 +1652,11 @@ void notify_le_phy_updated(struct bt_conn *conn)
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	struct bt_conn_cb *cb;
-
 	if (!bt_le_conn_params_valid(param)) {
 		return false;
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (!cb->le_param_req) {
 			continue;
 		}
@@ -2149,7 +2146,6 @@ bool bt_conn_ltk_present(const struct bt_conn *conn)
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
-	struct bt_conn_cb *cb;
 
 	if (conn->role == BT_HCI_ROLE_CENTRAL) {
 		rpa = &conn->le.resp_addr;
@@ -2157,7 +2153,7 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 		rpa = &conn->le.init_addr;
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->identity_resolved) {
 			cb->identity_resolved(conn, rpa, &conn->le.dst);
 		}
@@ -2261,15 +2257,13 @@ static void reset_pairing(struct bt_conn *conn)
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err)
 {
-	struct bt_conn_cb *cb;
-
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
 	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
 		bt_iso_security_changed(conn, hci_err);
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->security_changed) {
 			cb->security_changed(conn, conn->sec_level, err);
 		}
@@ -2374,7 +2368,8 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 		 * still has valid references. The last reference of the stack
 		 * is released after the disconnected callback.
 		 */
-		LOG_WRN("Found valid connection in %s state", state2str(conn->state));
+		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
+			bt_addr_le_str(peer), state2str(conn->state));
 		bt_conn_unref(conn);
 		return true;
 	}
@@ -3366,7 +3361,6 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 {
 	struct bt_df_conn_iq_samples_report iq_report;
 	struct bt_conn *conn;
-	struct bt_conn_cb *cb;
 	int err;
 
 	if (event == BT_HCI_EVT_LE_CONNECTION_IQ_REPORT) {
@@ -3387,7 +3381,7 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 		return;
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->cte_report_cb) {
 			cb->cte_report_cb(conn, &iq_report);
 		}
@@ -3421,7 +3415,6 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 {
 	struct bt_df_conn_iq_samples_report iq_report;
 	struct bt_conn *conn;
-	struct bt_conn_cb *cb;
 	int err;
 
 	err = hci_df_prepare_conn_cte_req_failed(buf, &iq_report, &conn);
@@ -3430,7 +3423,7 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 		return;
 	}
 
-	for (cb = callback_list; cb; cb = cb->_next) {
+	for (struct bt_conn_cb *cb = callback_list; cb; cb = cb->_next) {
 		if (cb->cte_report_cb) {
 			cb->cte_report_cb(conn, &iq_report);
 		}

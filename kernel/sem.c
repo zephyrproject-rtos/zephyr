@@ -21,7 +21,7 @@
 #include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
 #include <zephyr/init.h>

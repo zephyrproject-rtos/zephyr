@@ -10,7 +10,7 @@ Networking with QEMU Ethernet
 This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in QEMU.
 
-In this example, the :ref:`sockets-echo-server-sample` sample application from
+In this example, the :zephyr:code-sample:`sockets-echo-server` sample application from
 the Zephyr source distribution is run in QEMU. The Zephyr instance is
 connected to a Linux host using a tuntap device which is modeled in Linux as
 an Ethernet network interface.
@@ -45,6 +45,8 @@ driver for QEMU connectivity:
   Ethernet driver. Driver is called ``stellaris`` in Zephyr source tree.
 * For ``mps2_an385``, select ``SMSC911x/9220 Ethernet driver`` Ethernet driver.
   Driver is called ``smsc911x`` in Zephyr source tree.
+* For ``qemu_cortex_a53``, ``Intel(R) PRO/1000 Gigabit Ethernet driver``
+  Ethernet driver is selected by default.
 
 Step 1 - Create Ethernet interface
 ==================================
@@ -69,7 +71,7 @@ by running ``net-setup.sh`` like this:
 Step 2 - Start app in QEMU board
 ================================
 
-Build and start the :ref:`sockets-echo-server-sample` sample application.
+Build and start the :zephyr:code-sample:`sockets-echo-server` sample application.
 In this example, the qemu_x86 board is used.
 
 In terminal #2, type:

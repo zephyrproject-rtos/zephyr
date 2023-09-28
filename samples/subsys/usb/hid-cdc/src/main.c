@@ -132,7 +132,7 @@ static const uint8_t hid_kbd_report_desc[] = HID_KEYBOARD_REPORT_DESC();
 
 static K_SEM_DEFINE(evt_sem, 0, 1);	/* starts off "not available" */
 static K_SEM_DEFINE(usb_sem, 1, 1);	/* starts off "available" */
-static struct gpio_callback callback[4];
+static struct gpio_callback gpio_callbacks[4];
 
 static char data_buf_mouse[64], data_buf_kbd[64];
 static char string[64];
@@ -567,27 +567,27 @@ int main(void)
 		}
 	}
 
-	if (callbacks_configure(&sw0_gpio, &btn0, &callback[0])) {
+	if (callbacks_configure(&sw0_gpio, &btn0, &gpio_callbacks[0])) {
 		LOG_ERR("Failed configuring button 0 callback.");
 		return 0;
 	}
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-	if (callbacks_configure(&sw1_gpio, &btn1, &callback[1])) {
+	if (callbacks_configure(&sw1_gpio, &btn1, &gpio_callbacks[1])) {
 		LOG_ERR("Failed configuring button 1 callback.");
 		return 0;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-	if (callbacks_configure(&sw2_gpio, &btn2, &callback[2])) {
+	if (callbacks_configure(&sw2_gpio, &btn2, &gpio_callbacks[2])) {
 		LOG_ERR("Failed configuring button 2 callback.");
 		return 0;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-	if (callbacks_configure(&sw3_gpio, &btn3, &callback[3])) {
+	if (callbacks_configure(&sw3_gpio, &btn3, &gpio_callbacks[3])) {
 		LOG_ERR("Failed configuring button 3 callback.");
 		return 0;
 	}
@@ -680,10 +680,10 @@ int main(void)
 				/* Send string on HID keyboard */
 				write_data(cdc_dev[1], gpio2, strlen(gpio2));
 				if (strlen(string) > 0) {
-					struct app_evt_t *ev = app_evt_alloc();
+					struct app_evt_t *ev2 = app_evt_alloc();
 
-					ev->event_type = HID_KBD_STRING,
-					app_evt_put(ev);
+					ev2->event_type = HID_KBD_STRING,
+					app_evt_put(ev2);
 					str_pointer = 0U;
 					k_sem_give(&evt_sem);
 				}
@@ -813,10 +813,10 @@ int main(void)
 				str_pointer++;
 
 				if (strlen(string) > str_pointer) {
-					struct app_evt_t *ev = app_evt_alloc();
+					struct app_evt_t *ev2 = app_evt_alloc();
 
-					ev->event_type = HID_KBD_STRING,
-					app_evt_put(ev);
+					ev2->event_type = HID_KBD_STRING,
+					app_evt_put(ev2);
 					k_sem_give(&evt_sem);
 				} else if (strlen(string) == str_pointer) {
 					clear_kbd_report();

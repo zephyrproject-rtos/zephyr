@@ -226,13 +226,13 @@ You can debug an application in the usual way.  Here is an example for the
 
 
 .. _32F7508-DK website:
-   http://www.st.com/en/evaluation-tools/stm32f7508-dk.html
+   https://www.st.com/en/evaluation-tools/stm32f7508-dk.html
 
 .. _32F7508-DK board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00537062-discovery-kit-for-stm32f7-series-with-stm32f750n8-mcu-stmicroelectronics.pdf
+   https://www.st.com/resource/en/user_manual/dm00537062-discovery-kit-for-stm32f7-series-with-stm32f750n8-mcu-stmicroelectronics.pdf
 
 .. _STM32F750x8 on www.st.com:
    https://www.st.com/resource/en/datasheet/stm32f750z8.pdf
 
 .. _STM32F74xxx reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00124865.pdf
+   https://www.st.com/resource/en/reference_manual/dm00124865.pdf

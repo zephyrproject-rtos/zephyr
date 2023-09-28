@@ -1,0 +1,9 @@
+# Copyright (c) 2023 benjamin@zephyrproject.org
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Seeed Studio HM330x dust particle sensor
+
+compatible: "seeed,hm330x"
+
+include: [sensor-device.yaml, i2c-device.yaml]

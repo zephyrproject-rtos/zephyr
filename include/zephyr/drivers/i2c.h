@@ -227,7 +227,7 @@ typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 i2c_callback_t cb,
 				 void *userdata);
 #endif /* CONFIG_I2C_CALLBACK */
-#if defined(CONFIG_I2C_RTIO) || defined(DOXYGEN)
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
 /**
  * @typedef i2c_api_iodev_submit
@@ -488,33 +488,33 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * D:    R len=01: 6c
  * @endcode
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
  */
-void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
-		      uint8_t num_msgs, uint16_t addr, bool dump_read);
+void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
+		      uint16_t addr, bool dump_read);
 
 /**
  * @brief Dump out an I2C message, before it is executed.
  *
  * This is equivalent to:
  *
- *     i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+ *     i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
  *
  * The read messages' data isn't dumped.
  *
- * @param name Name of this dump, displayed at the top.
+ * @param dev Target for the messages being sent. Its name will be printed in the log.
  * @param msgs Array of messages to dump.
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  */
-static inline void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+static inline void i2c_dump_msgs(const struct device *dev, const struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
-	i2c_dump_msgs_rw(name, msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
 }
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
@@ -772,13 +772,13 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	i2c_xfer_stats(dev, msgs, num_msgs);
 
 	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev->name, msgs, num_msgs, addr, true);
+		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
 	}
 
 	return res;
 }
 
-#ifdef CONFIG_I2C_CALLBACK
+#if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
@@ -787,7 +787,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * to another I2C device asynchronously with a callback completion.
  *
  * @see i2c_transfer()
- * @funcprop \isr_ok
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
@@ -915,7 +915,7 @@ static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2
 				 read_buf, num_read, cb, userdata);
 }
 
-#ifdef CONFIG_POLL
+#if defined(CONFIG_POLL) || defined(__DOXYGEN__)
 
 /** @cond INTERNAL_HIDDEN */
 void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userdata);
@@ -928,14 +928,14 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * to another I2C device asynchronously with a k_poll_signal completion.
  *
  * @see i2c_transfer_cb()
- * @funcprop \isr_ok
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
  * @param msgs Array of messages to transfer, must live until callback completes.
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
- * @param signal Signal to notify of transfer completion.
+ * @param sig Signal to notify of transfer completion.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
@@ -962,7 +962,7 @@ static inline int i2c_transfer_signal(const struct device *dev,
 #endif /* CONFIG_I2C_CALLBACK */
 
 
-#if defined(CONFIG_I2C_RTIO) || defined(DOXYGEN)
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
 /**
  * @brief Submit request(s) to an I2C device with RTIO
@@ -987,7 +987,8 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * These do not need to be shared globally but doing so
  * will save a small amount of memory.
  *
- * @param node DT_NODE
+ * @param name Symbolic name of the iodev to define
+ * @param node_id Devicetree node identifier
  */
 #define I2C_DT_IODEV_DEFINE(name, node_id)					\
 	const struct i2c_dt_spec _i2c_dt_spec_##name =				\

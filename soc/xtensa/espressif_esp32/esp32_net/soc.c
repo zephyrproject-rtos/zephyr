@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>

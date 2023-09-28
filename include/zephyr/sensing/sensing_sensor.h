@@ -114,7 +114,7 @@ static inline int sensing_sensor_dev_init(
 		};									\
 	DEVICE_DT_DEFINE(node_id, sensing_sensor_dev_init, NULL,			\
 			&_CONCAT(__sensing_sensor_ctx_, Z_DEVICE_DT_DEV_ID(node_id)),	\
-			NULL, APPLICATION, 10, api_ptr)
+			NULL, POST_KERNEL, 99, api_ptr)
 
 /**
  * @brief Get registered context data pointer for a sensor instance.

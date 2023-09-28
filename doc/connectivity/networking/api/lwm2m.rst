@@ -227,7 +227,7 @@ The full list of registered objects and resource IDs can be found in the
 
 Zephyr's LwM2M library lives in the :zephyr_file:`subsys/net/lib/lwm2m`, with a
 client sample in :zephyr_file:`samples/net/lwm2m_client`.  For more information
-about the provided sample see: :ref:`lwm2m-client-sample`  The sample can be
+about the provided sample see: :zephyr:code-sample:`lwm2m-client`. The sample can be
 configured to use normal unsecure network sockets or sockets secured via DTLS.
 
 The Zephyr LwM2M library implements the following items:
@@ -444,7 +444,7 @@ value of 1 is ok here).
 	client.tls_tag = 1; /* <---- */
 	lwm2m_rd_client_start(&client, "endpoint-name", 0, rd_client_event);
 
-For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
+For a more detailed LwM2M client sample see: :zephyr:code-sample:`lwm2m-client`.
 
 Multi-thread usage
 ******************
@@ -633,40 +633,58 @@ required actions from the server side.
 
 .. code-block:: console
 
-   uart:~$ lwm2m
-   lwm2m - LwM2M commands
-   Subcommands:
-   exec    :Execute a resource
-            exec PATH
+  uart:~$ lwm2m
+  lwm2m - LwM2M commands
+  Subcommands:
+    send    :send PATHS
+            LwM2M SEND operation
 
-   read    :Read value from LwM2M resource
-            read PATH [OPTIONS]
-            -s   Read value as string (default)
+    exec    :exec PATH [PARAM]
+            Execute a resource
+
+    read    :read PATH [OPTIONS]
+            Read value from LwM2M resource
+            -x   Read value as hex stream (default)
+            -s   Read value as string
             -b   Read value as bool (1/0)
             -uX  Read value as uintX_t
             -sX  Read value as intX_t
             -f   Read value as float
+            -t   Read value as time_t
 
-   write   :Write into LwM2M resource
-            write PATH [OPTIONS] VALUE
-            -s   Value as string (default)
-            -b   Value as bool
-            -uX  Value as uintX_t
-            -sX  Value as intX_t
-            -f   Value as float
+    write   :write PATH [OPTIONS] VALUE
+            Write into LwM2M resource
+            -s   Write value as string (default)
+            -b   Write value as bool
+            -uX  Write value as uintX_t
+            -sX  Write value as intX_t
+            -f   Write value as float
+            -t   Write value as time_t
 
-   start   :Start the LwM2M RD (Registration / Discovery) Client
-            start EP_NAME [BOOTSTRAP FLAG]
+    create  :create PATH
+            Create object instance
+
+    cache   :cache PATH NUM
+            Enable data cache for resource
+            PATH is LwM2M path
+            NUM how many elements to cache
+
+    start   :start EP_NAME [BOOTSTRAP FLAG]
+            Start the LwM2M RD (Registration / Discovery) Client
             -b   Set the bootstrap flag (default 0)
 
-   stop    :Stop the LwM2M RD (De-register) Client
-            stop [OPTIONS]
+    stop    :stop [OPTIONS]
+            Stop the LwM2M RD (De-register) Client
             -f   Force close the connection
 
-   update  :Trigger Registration Update of the LwM2M RD Client
+    update  :Trigger Registration Update of the LwM2M RD Client
 
-   pause   :LwM2M engine thread pause
-   resume  :LwM2M engine thread resume
+    pause   :LwM2M engine thread pause
+    resume  :LwM2M engine thread resume
+    lock    :Lock the LwM2M registry
+    unlock  :Unlock the LwM2M registry
+
+
 
 
 .. _lwm2m_api_reference:

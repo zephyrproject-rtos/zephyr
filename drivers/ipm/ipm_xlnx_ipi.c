@@ -6,13 +6,14 @@
 
 #define DT_DRV_COMPAT xlnx_zynqmp_ipi_mailbox
 
+#include "ipm_xlnx_ipi.h"
+
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/irq.h>
-#include <zephyr/logging/log.h>
 
-#include "ipm_xlnx_ipi.h"
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_xlnx_ipi, CONFIG_IPM_LOG_LEVEL);
 
 #define XLNX_IPI_MAX_BUF_SIZE_BYTES 32
@@ -108,15 +109,6 @@ static void xlnx_mailbox_rx_isr(const struct device *dev)
 		}
 		sys_set_bit(config->host_ipi_reg + IPI_ISR, remote_ipi_ch_bit);
 	}
-}
-
-static int xlnx_ipi_child_init(const struct device *dev)
-{
-	const struct xlnx_ipi_child_config *cdev_conf;
-
-	cdev_conf = dev->config;
-
-	return 0;
 }
 
 static int xlnx_ipi_send(const struct device *ipmdev, int wait, uint32_t id, const void *data,
@@ -231,7 +223,7 @@ static struct ipm_driver_api xlnx_ipi_api = {
 			xlnx_ipi_reg_info_zynqmp[DT_PROP(ch_node, remote_ipi_id)].ipi_ch_bit,      \
 		.host_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), host_ipi_reg),             \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(ch_node, &xlnx_ipi_child_init, NULL, &xlnx_ipi_child_data##ch_node,       \
+	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &xlnx_ipi_child_data##ch_node,			   \
 			 &xlnx_ipi_child_config##ch_node, POST_KERNEL,                             \
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &xlnx_ipi_api);
 

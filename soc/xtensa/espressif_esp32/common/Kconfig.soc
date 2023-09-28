@@ -37,6 +37,14 @@ config ESP_HEAP_SEARCH_ALL_REGIONS
 	  regions. If the region of desired capability is exhausted,
 	  memory will be allocated from other available region.
 
+config ESP_SPIRAM_HEAP_SIZE
+	int "Size of SPIRAM heap"
+	default 262134 if SYS_HEAP_SMALL_ONLY
+	default 1048576 if !SYS_HEAP_SMALL_ONLY
+	depends on ESP_SPIRAM
+	help
+	  Specify size of SPIRAM heap.
+
 menu "SPI RAM config"
 	depends on ESP_SPIRAM
 

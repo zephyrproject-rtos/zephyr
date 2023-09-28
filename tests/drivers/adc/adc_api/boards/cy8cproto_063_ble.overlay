@@ -24,7 +24,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <0>;   /* P10.0 */
+		zephyr,input-positive = <2>;   /* P10.2 */
 	};
 
 	channel@1 {
@@ -33,6 +33,6 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <1>;   /* P10.1 */
+		zephyr,input-positive = <3>;   /* P10.3 */
 	};
 };

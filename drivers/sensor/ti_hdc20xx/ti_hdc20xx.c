@@ -192,7 +192,7 @@ static int ti_hdc20xx_init(const struct device *dev)
 
 	/* Configure the interrupt GPIO if available */
 	if (config->gpio_int.port) {
-		if (!device_is_ready(config->gpio_int.port)) {
+		if (!gpio_is_ready_dt(&config->gpio_int)) {
 			LOG_ERR("Cannot get pointer to gpio interrupt device");
 			return -ENODEV;
 		}

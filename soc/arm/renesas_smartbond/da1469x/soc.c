@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/init.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 #include <DA1469xAB.h>
@@ -14,6 +13,7 @@
 #include <da1469x_pd.h>
 #include <da1469x_pdc.h>
 #include <da1469x_trimv.h>
+#include <cmsis_core.h>
 
 #define REMAP_ADR0_QSPI           0x2
 

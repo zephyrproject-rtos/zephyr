@@ -821,8 +821,9 @@ static void it82xx2_usb_dc_isr(void)
 
 static void suspended_check_handler(struct k_work *item)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct usb_it82xx2_data *udata =
-		CONTAINER_OF(item, struct usb_it82xx2_data, check_suspended_work);
+		CONTAINER_OF(dwork, struct usb_it82xx2_data, check_suspended_work);
 
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();

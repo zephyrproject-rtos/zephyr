@@ -34,7 +34,7 @@
  *   "sleep/deep sleep" power state if CONFIG_PM is enabled.
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>

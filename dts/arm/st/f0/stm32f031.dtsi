@@ -60,8 +60,3 @@
 		status = "disabled";
 	};
 };
-
-/* All STM32F0 series have ADC VBAT channel, except STM32F0x0 value line */
-&adc1 {
-	vbat-channel = <18>;
-};

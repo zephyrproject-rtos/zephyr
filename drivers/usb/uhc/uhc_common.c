@@ -139,7 +139,7 @@ int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer)
 		uhc_xfer_buf_free(dev, buf);
 	}
 
-	k_mem_slab_free(&uhc_xfer_pool, (void **)&xfer);
+	k_mem_slab_free(&uhc_xfer_pool, (void *)xfer);
 
 xfer_free_error:
 	api->unlock(dev);

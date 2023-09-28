@@ -124,3 +124,17 @@ zephyr_udc0: &usbotg_fs {
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
+
+&sdmmc1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>,
+		 <&rcc STM32_SRC_PLL_Q CLK48M_SEL(0)>;
+	status = "okay";
+	pinctrl-0 = <&sdio_d0_pc8
+		     &sdio_d1_pc9
+		     &sdio_d2_pc10
+		     &sdio_d3_pc11
+		     &sdio_ck_pc12
+		     &sdio_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiog 2 GPIO_ACTIVE_LOW>;
+};

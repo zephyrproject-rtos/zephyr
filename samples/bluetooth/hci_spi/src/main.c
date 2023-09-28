@@ -269,7 +269,7 @@ static int hci_spi_init(void)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(irq.port)) {
+	if (!gpio_is_ready_dt(&irq)) {
 		LOG_ERR("IRQ GPIO port %s is not ready", irq.port->name);
 		return -EINVAL;
 	}

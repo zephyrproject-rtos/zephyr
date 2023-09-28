@@ -139,7 +139,7 @@ static int cap1203_init(const struct device *dev)
 	k_work_init(&data->work, cap1203_work_handler);
 
 	if (config->int_gpio.port != NULL) {
-		if (!device_is_ready(config->int_gpio.port)) {
+		if (!gpio_is_ready_dt(&config->int_gpio)) {
 			LOG_ERR("Interrupt GPIO controller device not ready");
 			return -ENODEV;
 		}

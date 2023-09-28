@@ -228,16 +228,23 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	}
 }
 
-static void init_lc3(const struct bt_bap_stream *stream)
+static int init_lc3(const struct bt_bap_stream *stream)
 {
 	size_t num_samples;
+	int ret;
 
 	if (stream == NULL || stream->codec_cfg == NULL) {
 		shell_error(ctx_shell, "invalid stream to init LC3");
-		return;
+		return -EINVAL;
 	}
 
-	lc3_freq_hz = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	if (ret > 0) {
+		lc3_freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		return ret;
+	}
+
 	lc3_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 	lc3_frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
@@ -245,17 +252,17 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 	if (lc3_freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	lc3_frame_duration_100us = lc3_frame_duration_us / 100;
@@ -274,7 +281,10 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 static void lc3_audio_send_data(struct k_work *work)
@@ -506,11 +516,11 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+		      struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
-		    meta_count);
+	shell_print(ctx_shell, "Enable: stream %p meta_len %zu", stream,
+		    meta_len);
 
 	return 0;
 }
@@ -523,65 +533,26 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 }
 
 
-static bool valid_metadata_type(uint8_t type, uint8_t len)
+static bool meta_data_func_cb(struct bt_data *data, void *user_data)
 {
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
+	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 2 - 255 octets */
-		/* At least Extended Metadata Type / Company_ID should be there */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
+		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 		return false;
 	}
+
+	return true;
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			struct bt_bap_ascs_rsp *rsp)
 {
-	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
-		    meta_count);
+	shell_print(ctx_shell, "Metadata: stream %p meta_len %zu", stream,
+		    meta_len);
 
-	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_audio_codec_data *data = &meta[i];
-
-		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
-			shell_print(ctx_shell,
-				    "Invalid metadata type %u or length %u",
-				    data->data.type, data->data.data_len);
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-					       data->data.type);
-			return -EINVAL;
-		}
-	}
-
-	return 0;
+	return bt_audio_data_parse(meta, meta_len, meta_data_func_cb, rsp);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -676,7 +647,7 @@ static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_s
 	}
 
 	/* TODO: Check the type and only overwrite the streaming context */
-	sys_put_le16(context, codec_cfg->meta[0].value);
+	sys_put_le16(context, codec_cfg->meta);
 
 	return 0;
 }
@@ -970,7 +941,7 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!cbs_registered) {
-		int err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
+		err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 
 		if (err != 0) {
 			shell_error(sh, "Failed to register unicast client callbacks: %d", err);
@@ -1128,18 +1099,37 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	/* If location has been modifed, we update the location in the codec configuration */
 	if (location != BT_AUDIO_LOCATION_PROHIBITED) {
-		for (size_t i = 0U; i < uni_stream->codec_cfg.data_count; i++) {
-			struct bt_audio_codec_data *data = &uni_stream->codec_cfg.data[i];
+		struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
-			/* Overwrite the location value */
-			if (data->data.type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
+		for (size_t i = 0U; i < codec_cfg->data_len;) {
+			const uint8_t len = codec_cfg->data[i++];
+			uint8_t *value;
+			uint8_t data_len;
+			uint8_t type;
+
+			if (len == 0 || len > codec_cfg->data_len - i) {
+				/* Invalid len field */
+				return false;
+			}
+
+			type = codec_cfg->data[i++];
+			value = &codec_cfg->data[i];
+
+			if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
 				const uint32_t loc_32 = location;
 
-				sys_put_le32(loc_32, data->value);
+				sys_put_le32(loc_32, value);
 
 				shell_print(sh, "Setting location to 0x%08X", location);
 				break;
 			}
+
+			data_len = len - sizeof(type);
+
+			/* Since we are incrementing i by the value_len, we don't need to increment
+			 * it further in the `for` statement
+			 */
+			i += data_len;
 		}
 	}
 
@@ -1395,7 +1385,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_count);
+	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_len);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -1465,9 +1455,6 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#define MAX_META_DATA                                                                              \
-	(CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_COUNT * sizeof(struct bt_audio_codec_data))
-
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_codec_cfg *codec_cfg;
@@ -1488,7 +1475,7 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_count);
+	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_len);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
@@ -1708,6 +1695,14 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	}
 }
 
+static bool print_data_func_cb(struct bt_data *data, void *user_data)
+{
+	shell_print(ctx_shell, "type 0x%02x len %u", data->type, data->data_len);
+	shell_hexdump(ctx_shell, data->data, data->data_len);
+
+	return true;
+}
+
 static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
 {
 	uint8_t bis_indexes[BROADCAST_SNK_STREAM_CNT] = { 0 };
@@ -1741,16 +1736,17 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 			shell_print(ctx_shell, "%4sBIS[%d] index 0x%02x", "", i, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
-			for (int k = 0; k < bis_data->data_count; k++) {
-				const struct bt_audio_codec_data *codec_data;
+			if (subgroup->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
+				const int err =
+					bt_audio_data_parse(bis_data->data, bis_data->data_len,
+							    print_data_func_cb, NULL);
 
-				codec_data = &bis_data->data[k];
-
-				shell_print(ctx_shell, "%6sdata #%u: type 0x%02x len %u", "", i,
-					    codec_data->data.type, codec_data->data.data_len);
-				shell_hexdump(ctx_shell, codec_data->data.data,
-					      codec_data->data.data_len -
-						sizeof(codec_data->data.type));
+				if (err != 0) {
+					shell_error(ctx_shell,
+						    "Failed to parse BIS codec config: %d", err);
+				}
+			} else {
+				shell_hexdump(ctx_shell, bis_data->data, bis_data->data_len);
 			}
 		}
 	}
@@ -1981,12 +1977,13 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 		bool group_can_be_deleted = true;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-			const struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
+			const struct bt_bap_stream *bap_stream =
+				&unicast_streams[i].stream.bap_stream;
 
-			if (stream->ep != NULL) {
+			if (bap_stream->ep != NULL) {
 				struct bt_bap_ep_info ep_info;
 
-				bt_bap_ep_get_info(stream->ep, &ep_info);
+				bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 
 				if (ep_info.state != BT_BAP_EP_STATE_CODEC_CONFIGURED &&
 				    ep_info.state != BT_BAP_EP_STATE_IDLE) {
@@ -2065,7 +2062,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
-	struct bt_bap_broadcast_source_create_param create_param = {0};
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	int err;
 
@@ -2285,7 +2282,6 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	stream_cnt = 0U;
 	for (int i = 1; i < argc; i++) {
 		unsigned long val;
-		int err = 0;
 
 		val = shell_strtoul(argv[i], 0, &err);
 		if (err != 0) {
@@ -2617,7 +2613,6 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 {
 	int stream_frame_duration_us;
 	struct bt_bap_ep_info info;
-	int stream_freq_hz;
 	int err;
 
 	if (bap_stream == NULL || bap_stream->qos == NULL) {
@@ -2633,8 +2628,12 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	stream_freq_hz = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
-	if (stream_freq_hz != lc3_freq_hz) {
+	err = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
+	if (err > 0) {
+		if (bt_audio_codec_cfg_freq_to_freq_hz(err) != lc3_freq_hz) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 
@@ -2685,7 +2684,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			struct bt_bap_stream *bap_stream = &unicast_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2708,7 +2713,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 				&broadcast_source_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2731,7 +2742,12 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		init_lc3(default_stream);
+		err = init_lc3(default_stream);
+		if (err != 0) {
+			shell_error(sh, "Failed to init LC3 %d", err);
+
+			return -ENOEXEC;
+		}
 
 		err = stream_start_sine(default_stream);
 		if (err != 0) {

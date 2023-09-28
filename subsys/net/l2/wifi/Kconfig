@@ -40,12 +40,29 @@ config WIFI_MGMT_TWT_CHECK_IP
 	  interface has a valid IP address might be desirable in most scenarios.
 
 config WIFI_MGMT_FORCED_PASSIVE_SCAN
-	bool "Force Passive scan"
+	bool "Force passive Wi-Fi scanning"
 	help
-	  Force passive scan (typically used to reduce power consumption),
-	  the scan type is always sent as passive.
-	  This doesn't guarantee that passive scan will be used, it depends
-	  on the underlying chip implementation to support and honour scan type.
+	  Always request a passive scan, regardless of the user supplied parameters.
+	  This is typically used when the underlying hardware is not certified for
+	  RF transmissions. This doesn't guarantee that passive scan will be used,
+	  it depends on the underlying chip implementation to support and honour
+	  scan type.
+
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	int "Maximum number of SSIDs that can be specified for SSID filtering"
+	default 1
+	range 1 4
+	help
+	  Maximum number of SSIDs that can be specified for SSID filtering.
+	  This can be set based on the underlying chipsets limitations.
+
+config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+	int "Maximum number of channels that can be manually specified"
+	range 1 110
+	default 3
+	help
+	  There are approximately 100 channels allocated across the three supported bands.
+	  The default of 3 allows the 3 most common channels (2.4GHz: 1, 6, 11) to be specified.
 
 config WIFI_NM
 	bool "Wi-Fi Network manager support"

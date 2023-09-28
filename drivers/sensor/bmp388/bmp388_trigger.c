@@ -117,7 +117,7 @@ int bmp388_trigger_mode_init(const struct device *dev)
 	const struct bmp388_config *cfg = dev->config;
 	int ret;
 
-	if (!device_is_ready(cfg->gpio_int.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		LOG_ERR("INT device is not ready");
 		return -ENODEV;
 	}

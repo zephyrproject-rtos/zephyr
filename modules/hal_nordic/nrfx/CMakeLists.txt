@@ -3,7 +3,7 @@
 
 zephyr_library()
 
-set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx)
+set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx CACHE PATH "nrfx Directory")
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(MDK_DIR ${NRFX_DIR}/mdk)
@@ -28,7 +28,9 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52833            NRF52833_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF52833 NRF52833_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840            NRF52840_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP NRF5340_XXAA_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET NRF5340_XXAA_NETWORK)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
@@ -108,4 +110,22 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_WDT     ${SRC_DIR}/nrfx_wdt.c)
 
 if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
+endif()
+
+# Inject HAL "CONFIG_NFCT_PINS_AS_GPIOS" definition if user requests to
+# configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
+# to configure the reset GPIO as nRESET. This way, the HAL will take care of
+# doing the proper configuration sequence during system init
+
+dt_nodelabel(uicr_path NODELABEL "uicr")
+if(${uicr_path})
+  dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
+  if(${nfct_pins_as_gpios})
+    zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
+  endif()
+
+  dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
+  if(${gpio_as_nreset})
+    zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
+  endif()
 endif()

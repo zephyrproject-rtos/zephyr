@@ -258,8 +258,6 @@ static void test_srv_cfg_store(void)
 	struct bt_mesh_sar_rx rx_cfg;
 	struct bt_mesh_sar_tx tx_cfg;
 
-	bt_mesh_test_host_files_remove();
-
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
 	prov_and_conf(SRV_ADDR, &test_sar_rx, &test_sar_tx);

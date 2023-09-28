@@ -35,3 +35,9 @@
 
 	status = "disabled";
 };
+
+&gpio0 {
+	interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};

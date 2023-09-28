@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio_prt9 4 0>;
+		in-gpios = <&gpio_prt9 2 0>;
+	};
+};
+
+&gpio_prt9 {
+	status = "okay";
+};

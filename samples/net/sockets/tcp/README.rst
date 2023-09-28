@@ -1,7 +1,8 @@
-.. _sockets-tcp-sample:
+.. zephyr:code-sample:: sockets-tcp-sample
+   :name: TCP sample for TTCN-3 based sanity check
+   :relevant-api: bsd_sockets
 
-TCP Sample for TTCN-3 based Sanity Check
-########################################
+   Use TTCN-3 to validate the functionality of the TCP stack.
 
 Overview
 ********

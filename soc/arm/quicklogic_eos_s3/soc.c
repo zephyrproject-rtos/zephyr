@@ -8,7 +8,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <soc_pinmap.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <cmsis_core.h>
 
 void eos_s3_lock_enable(void)
 {

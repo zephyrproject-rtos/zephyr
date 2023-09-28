@@ -1339,6 +1339,25 @@ This has been fixed in main for v3.4.0
 - `PR 56709 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
 
+CVE-2023-4258
+-------------
+
+bt: mesh: vulnerability in provisioning protocol implementation on provisionee side
+
+- `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 59467 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/59467>`_
+
+- `PR 60078 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60078>`_
+
+- `PR 60079 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60079>`_
+
 CVE-2023-4265
 -------------
 

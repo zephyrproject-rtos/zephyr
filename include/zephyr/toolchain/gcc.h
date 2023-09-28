@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
+#endif
+
 /**
  * @file
  * @brief GCC toolchain abstraction
@@ -29,6 +33,8 @@
 #if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
+
+#define TOOLCHAIN_HAS_ZLA 1
 
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually

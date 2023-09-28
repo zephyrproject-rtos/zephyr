@@ -23,7 +23,7 @@
 
 /* For O-QPSK the physical and MAC timing symbol rates are the same, see section 12.3.3. */
 #define IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND                                                \
-	IEEE802154_PHY_SYMBOLS_PER_SECOND(IEEE802154_PHY_OQPSK_2450MHZ_SYMBOL_PERIOD_US)
+	IEEE802154_PHY_SYMBOLS_PER_SECOND(IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS)
 
 /* PHY PIB attribute phyCcaMode - CCA Mode 3: Carrier sense with energy above threshold, see
  * section 11.3, table 11-2 and section 10.2.8
@@ -65,7 +65,7 @@ struct ieee802154_cc13xx_cc26xx_data {
 
 	struct net_if *iface;
 
-	uint8_t mac[8];
+	uint8_t mac[8]; /* in big endian */
 
 	struct k_mutex tx_mutex;
 

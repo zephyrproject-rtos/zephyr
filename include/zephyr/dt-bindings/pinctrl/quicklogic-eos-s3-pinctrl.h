@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_QUICKLOGIC_EOS_S3_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_QUICKLOGIC_EOS_S3_PINCTRL_H_
 
-#include <zephyr/sys/util_macro.h>
+#include <zephyr/dt-bindings/dt-util.h>
 
 #define IO_MUX_REG_MAX_OFFSET	107
 #define IO_MUX_MAX_PAD_NR	45

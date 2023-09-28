@@ -92,10 +92,11 @@ which is comprised of the following devices:
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
    :ref:`QEMU <application_run_qemu>` emulator or the ``native_posix`` native
    port of Zephyr
-#. A Controller, which can be one of two types:
+#. A Controller, which can be one of the following types:
 
    * A commercially available Controller
    * A :ref:`Controller-only <bluetooth-build-types>` build of Zephyr
+   * A Virtual controller
 
 .. warning::
    Certain external Controllers are either unable to accept the Host to
@@ -129,11 +130,12 @@ The :ref:`Native POSIX <native_posix>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 This executable is a normal Linux program, which can be debugged and
-instrumented like any other, and it communicates with a physical external
-Controller.
+instrumented like any other, and it communicates with a physical or virtual
+external Controller.
 
 Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
-run an application in this setup.
+run an application with a physical controller. For the virtual controller refer
+to :ref:`bluetooth_virtual_posix`.
 
 Simulated nRF52 with BabbleSim
 ==============================

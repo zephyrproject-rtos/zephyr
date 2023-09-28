@@ -8,7 +8,7 @@
 #define DT_DRAM_BASE		0
 #endif
 #ifndef DT_DRAM_SIZE
-#define DT_DRAM_SIZE		DT_SIZE_K(4096)
+#define DT_DRAM_SIZE		DT_SIZE_M(32)
 #endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 

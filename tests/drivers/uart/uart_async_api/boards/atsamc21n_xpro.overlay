@@ -18,10 +18,6 @@ dut: &sercom0 {
 	status = "disabled";
 };
 
-&sercom3 {
-	status = "disabled";
-};
-
 &sercom4 {
 	/* configure DMA channels for async operation */
 	dmas = <&dmac 10 0x0A>, <&dmac 11 0x0B>;

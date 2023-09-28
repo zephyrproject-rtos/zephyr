@@ -13,7 +13,7 @@ config SPI_STM32_INTERRUPT
 	depends on SPI
 
 config INPUT
-	default y if KSCAN
+	default y if LVGL
 
 if NETWORKING
 

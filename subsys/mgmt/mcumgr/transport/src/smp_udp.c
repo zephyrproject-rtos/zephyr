@@ -26,7 +26,7 @@
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include <errno.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
@@ -93,9 +93,7 @@ static struct configs configs = {
 #endif
 };
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 static struct net_mgmt_event_callback smp_udp_mgmt_cb;
-#endif
 
 static const char *smp_udp_proto_to_name(enum proto_type proto)
 {
@@ -339,7 +337,7 @@ int smp_udp_open(void)
 
 	if (started) {
 		/* One or more threads were started, send interface notifications */
-		conn_mgr_resend_status();
+		conn_mgr_mon_resend_status();
 	}
 
 	return 0;

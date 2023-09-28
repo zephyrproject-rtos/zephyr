@@ -1,7 +1,8 @@
-.. _fs_sample:
+.. zephyr:code-sample:: fs
+   :name: File system manipulation
+   :relevant-api: file_system_api disk_access_interface
 
-Filesystems Sample Application
-###################################
+   Use file system API with various filesystems and storage devices.
 
 Overview
 ********

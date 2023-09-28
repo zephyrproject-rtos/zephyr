@@ -1,7 +1,8 @@
-.. _logger_ble_backend:
+.. zephyr:code-sample:: logging-ble-backend
+   :name: BLE logging backend
+   :relevant-api: log_api log_backend bt_gatt
 
-Logging: BLE Backend
-########################
+   Send log messages over BLE using the BLE logging backend.
 
 Overview
 ********

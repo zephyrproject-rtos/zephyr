@@ -414,7 +414,7 @@ Flashing an Application to OLIMEXINO-STM32
 
 To upload an application to the OLIMEXINO-STM32 board a TTL(3.3V)
 serial adapter is required. This tutorial uses the
-:ref:`button-sample` sample application.
+:zephyr:code-sample:`button` sample application.
 
 #. Connect the serial cable to the UEXT lines of the UART
    interface (pin #3=TX and pin #4=RX).
@@ -458,7 +458,7 @@ serial adapter is required. This tutorial uses the
    https://www.olimex.com/Products/Duino/STM32/OLIMEXINO-STM32/resources/OLIMEXINO-STM32.pdf
 
 .. _ST STM32F103xB Datasheet:
-   http://www.st.com/resource/en/datasheet/stm32f103tb.pdf
+   https://www.st.com/resource/en/datasheet/stm32f103tb.pdf
 
 .. _stm32flash tool:
    https://sourceforge.net/p/stm32flash/wiki/Home/

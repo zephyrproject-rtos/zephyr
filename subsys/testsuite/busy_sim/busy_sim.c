@@ -172,7 +172,7 @@ static int busy_sim_init(const struct device *dev)
 	const struct busy_sim_config *config = dev->config;
 	struct busy_sim_data *data = dev->data;
 
-	if ((config->pin_spec.port && !device_is_ready(config->pin_spec.port)) ||
+	if ((config->pin_spec.port && !gpio_is_ready_dt(&config->pin_spec)) ||
 	    !device_is_ready(config->counter) ||
 	    (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR) &&
 	    !device_is_ready(config->entropy))) {
@@ -204,5 +204,5 @@ static int busy_sim_init(const struct device *dev)
 
 DEVICE_DT_DEFINE(DT_BUSY_SIM, busy_sim_init, NULL,
 	      &sim_data, &sim_config,
-	      APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,
+	      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 	      NULL);

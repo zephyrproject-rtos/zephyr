@@ -60,7 +60,7 @@ struct k_mem_domain app_a_domain;
 
 /* used for interrupt events, see wait_for_int() */
 APP_A_BSS static struct ivshmem_irq irq;
-APP_A_BSS static struct ivshmem_ctx ctx;
+APP_A_BSS static struct ivshmem_ctx shmem_ctx;
 
 /* signal structure necessary for ivshmem API */
 APP_A_BSS static struct k_poll_signal *sig;
@@ -140,27 +140,27 @@ static int setup_ivshmem(bool in_kernel)
 	int ret;
 	size_t i;
 
-	ctx.dev = DEVICE_DT_GET(DT_NODELABEL(ivshmem0));
-	if (!device_is_ready(ctx.dev)) {
+	shmem_ctx.dev = DEVICE_DT_GET(DT_NODELABEL(ivshmem0));
+	if (!device_is_ready(shmem_ctx.dev)) {
 		printf("Could not get ivshmem device\n");
 		return -1;
 	}
 
-	ctx.size = ivshmem_get_mem(ctx.dev, (uintptr_t *)&ctx.mem);
-	if (ctx.size == 0) {
+	shmem_ctx.size = ivshmem_get_mem(shmem_ctx.dev, (uintptr_t *)&shmem_ctx.mem);
+	if (shmem_ctx.size == 0) {
 		printf("Size cannot not be 0");
 		return -1;
 	}
-	if (ctx.mem == NULL) {
+	if (shmem_ctx.mem == NULL) {
 		printf("Shared memory cannot be null\n");
 		return -1;
 	}
 
-	ctx.id = ivshmem_get_id(ctx.dev);
-	LOG_DBG("id for doorbell: %u", ctx.id);
+	shmem_ctx.id = ivshmem_get_id(shmem_ctx.dev);
+	LOG_DBG("id for doorbell: %u", shmem_ctx.id);
 
-	ctx.vectors = ivshmem_get_vectors(ctx.dev);
-	if (ctx.vectors == 0) {
+	shmem_ctx.vectors = ivshmem_get_vectors(shmem_ctx.dev);
+	if (shmem_ctx.vectors == 0) {
 		printf("ivshmem-doorbell must have vectors\n");
 		return -1;
 	}
@@ -174,8 +174,8 @@ static int setup_ivshmem(bool in_kernel)
 		k_poll_signal_init(sig);
 	}
 
-	for (i = 0; i < ctx.vectors; i++) {
-		ret = ivshmem_register_handler(ctx.dev, sig, i);
+	for (i = 0; i < shmem_ctx.vectors; i++) {
+		ret = ivshmem_register_handler(shmem_ctx.dev, sig, i);
 		if (ret < 0) {
 			printf("registering handlers must be supported\n");
 			return -1;
@@ -199,7 +199,7 @@ static void ivshmem_sample_doorbell(void)
 	ret = setup_ivshmem(true);
 	if (ret < 0)
 		return;
-	ivshmem_event_loop(&ctx);
+	ivshmem_event_loop(&shmem_ctx);
 	/*
 	 * if ivshmem_event_loop() returns, it means the function failed
 	 *
@@ -217,7 +217,7 @@ static void user_entry(void *a, void *b, void *c)
 	if (ret < 0) {
 		goto fail;
 	}
-	ivshmem_event_loop(&ctx);
+	ivshmem_event_loop(&shmem_ctx);
 	/* if ivshmem_event_loop() returns, it means the function failed */
 fail:
 	k_object_release(sig);

@@ -13,13 +13,22 @@ properties:
     description: Resynchronization jump width for the data phase. (ISO11898-1:2015)
   prop-seg-data:
     type: int
-    description: Time quantums of propagation segment for the data phase. (ISO11898-1:2015)
+    deprecated: true
+    description: |
+      Time quantums of propagation segment for the data phase (ISO11898-1:2015). Deprecated in favor
+      of setting advanced timing parameters from the application.
   phase-seg1-data:
     type: int
-    description: Time quantums of phase buffer 1 segment for the data phase. (ISO11898-1:2015)
+    deprecated: true
+    description: |
+      Time quantums of phase buffer 1 segment for the data phase (ISO11898-1:2015). Deprecated in
+      favor of setting advanced timing parameters from the application.
   phase-seg2-data:
     type: int
-    description: Time quantums of phase buffer 2 segment for the data phase. (ISO11898-1:2015)
+    deprecated: true
+    description: |
+      Time quantums of phase buffer 2 segment for the data phase (ISO11898-1:2015). Deprecated in
+      favor of setting advanced timing parameters from the application.
   sample-point-data:
     type: int
     description: >

@@ -24,7 +24,7 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		blue_led_1: led_0 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
@@ -177,6 +177,8 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in3_pc2>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 

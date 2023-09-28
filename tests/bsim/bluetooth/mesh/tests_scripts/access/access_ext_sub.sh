@@ -10,3 +10,8 @@ RunTest mesh_access_extended_model_subs \
 conf=prj_mesh1d1_conf
 RunTest mesh_access_extended_model_subs_1d1 \
 	access_tx_ext_model access_sub_ext_model
+
+conf=prj_mesh1d1_conf
+overlay=overlay_psa_conf
+RunTest mesh_access_extended_model_subs_psa \
+	access_tx_ext_model access_sub_ext_model

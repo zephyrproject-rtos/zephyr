@@ -63,8 +63,10 @@ static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming data channel %p len %u, seq: %d, ts: %d",
-		    chan, buf->len, info->seq_num, info->ts);
+	if (info->flags & BT_ISO_FLAGS_VALID) {
+		shell_print(ctx_shell, "Incoming data channel %p len %u, seq: %d, ts: %d",
+			    chan, buf->len, info->seq_num, info->ts);
+	}
 }
 
 static void iso_connected(struct bt_iso_chan *chan)

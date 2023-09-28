@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/time_units.h>

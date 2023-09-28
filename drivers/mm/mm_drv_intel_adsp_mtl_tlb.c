@@ -668,7 +668,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 		__ASSERT(false,
 			 "unused l2 pointer is outside of l2 sram range %p\n",
-			 UNUSED_L2_START_ALIGNED);
+			 (void *)UNUSED_L2_START_ALIGNED);
 		return -EFAULT;
 	}
 

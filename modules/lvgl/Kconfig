@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_LVGL_MODULE
@@ -52,6 +53,29 @@ endchoice
 
 config LV_COLOR_16_SWAP
 	bool
+
+config LV_Z_FLUSH_THREAD
+	bool "Flush LVGL frames in a separate thread"
+	help
+	  Flush LVGL frames in a separate thread, while the primary thread
+	  renders the next LVGL frame. Can be disabled if the performance
+	  gain this approach offers is not required
+
+if LV_Z_FLUSH_THREAD
+
+config LV_Z_FLUSH_THREAD_STACK_SIZE
+	int "Stack size for flushing thread"
+	default 1024
+	help
+	  Stack size for LVGL flush thread, which will call display_write
+
+config LV_Z_FLUSH_THREAD_PRIO
+	int "LVGL flush thread priority"
+	default 0
+	help
+	  Cooperative priority of LVGL flush thread.
+
+endif # LV_Z_FLUSH_THREAD
 
 rsource "Kconfig.memory"
 rsource "Kconfig.input"

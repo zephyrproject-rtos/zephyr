@@ -20,6 +20,7 @@
 #define ADIN2111_PHYID				0x01U
 /* PHY Identification Register Reset Value */
 #define ADIN2111_PHYID_RST_VAL			0x0283BCA1U
+#define ADIN1110_PHYID_RST_VAL			0x0283BC91U
 
 /* Reset Control and Status Register */
 #define ADIN2111_RESET				0x03U
@@ -157,7 +158,13 @@
 /* Number of buffer bytes in TxFIFO to provide frame margin upon writes */
 #define ADIN2111_TX_FIFO_BUFFER_MARGIN		4U
 
+enum adin2111_chips_id {
+	ADIN2111_MAC = 0,
+	ADIN1110_MAC,
+};
+
 struct adin2111_config {
+	enum adin2111_chips_id id;
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;

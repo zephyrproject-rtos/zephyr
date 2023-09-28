@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -360,25 +360,24 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_IDLE);
 
+	sink = broadcast_sink_lookup_iso_chan(chan);
+	if (sink == NULL) {
+		LOG_ERR("Could not lookup sink by iso %p", chan);
+	} else {
+		if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
+			LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);
+		}
+
+		/* Clear sink->big if not already cleared */
+		if (sys_slist_is_empty(&sink->streams) && sink->big) {
+			broadcast_sink_clear_big(sink, reason);
+		}
+	}
+
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
-	}
-
-	sink = broadcast_sink_lookup_iso_chan(chan);
-	if (sink == NULL) {
-		LOG_ERR("Could not lookup sink by iso %p", chan);
-		return;
-	}
-
-	if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
-		LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);
-	}
-
-	/* Clear sink->big if not already cleared */
-	if (sys_slist_is_empty(&sink->streams) && sink->big) {
-		broadcast_sink_clear_big(sink, reason);
 	}
 }
 
@@ -450,34 +449,10 @@ static int update_recv_state_base_copy_meta(const struct bt_bap_base *base,
 	for (uint8_t i = 0U; i < base->subgroup_count; i++) {
 		struct bt_bap_scan_delegator_subgroup *subgroup_param = &param->subgroups[i];
 		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
-		uint8_t *metadata_param = subgroup_param->metadata;
-		size_t total_len;
 
-		/* Copy metadata into subgroup_param, changing it from an array
-		 * of bt_audio_codec_data to a uint8_t buffer
-		 */
-		total_len = 0U;
-		for (size_t j = 0; j < subgroup->codec_cfg.meta_count; j++) {
-			const struct bt_audio_codec_data *meta = &subgroup->codec_cfg.meta[j];
-			const struct bt_data *data = &meta->data;
-			const uint8_t len = data->data_len;
-			const uint8_t type = data->type;
-			const size_t ltv_len = sizeof(len) + sizeof(type) + len;
-
-			if (total_len + ltv_len > sizeof(subgroup_param->metadata)) {
-				LOG_WRN("Could not fit entire metadata for subgroup[%u]", i);
-
-				return -ENOMEM;
-			}
-
-			metadata_param[total_len++] = len + 1;
-			metadata_param[total_len++] = type;
-			(void)memcpy(&metadata_param[total_len], data->data,
-				     len);
-			total_len += len;
-		}
-
-		subgroup_param->metadata_len = total_len;
+		subgroup_param->metadata_len = subgroup->codec_cfg.meta_len;
+		memcpy(subgroup_param->metadata, subgroup->codec_cfg.meta,
+		       subgroup->codec_cfg.meta_len);
 	}
 
 	return 0;

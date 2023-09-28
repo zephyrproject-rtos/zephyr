@@ -19,44 +19,27 @@ extern enum bst_result_t bst_result;
 
 #define PREF_CONTEXT (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
-#define LONG_META 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, \
-		  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
-		  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, \
-		  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, \
-		  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, \
-		  0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, \
-		  0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, \
-		  0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, \
-		  0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, \
-		  0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, \
-		  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, \
-		  0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, \
-		  0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, \
-		  0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, \
-		  0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, \
-		  0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f
-
-#define LONG_META_LEN (sizeof((uint8_t []){LONG_META}) + 1U) /* Size of data + type */
-
 static const struct bt_audio_codec_cap lc3_codec_cap = {
 	.path_id = BT_ISO_DATA_PATH_HCI,
-	.id = BT_AUDIO_CODEC_LC3_ID,
+	.id = BT_HCI_CODING_FORMAT_LC3,
 	.cid = 0x0000U,
 	.vid = 0x0000U,
 	.data_len = (3 + 1) + (2 + 1) + (2 + 1) + (5 + 1) + (2 + 1),
 	.data = {
-			3, BT_AUDIO_CODEC_LC3_FREQ,
-			   BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_LC3_FREQ_16KHZ),
-			2, BT_AUDIO_CODEC_LC3_DURATION, BT_AUDIO_CODEC_LC3_DURATION_10,
-			2, BT_AUDIO_CODEC_LC3_CHAN_COUNT, CHANNEL_COUNT_1,
-			5, BT_AUDIO_CODEC_LC3_FRAME_LEN, BT_BYTES_LIST_LE16(40U),
-							 BT_BYTES_LIST_LE16(40U),
-			2, BT_AUDIO_CODEC_LC3_FRAME_COUNT, 1U,
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FREQ,
+					    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_LC3_FREQ_16KHZ)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_DURATION,
+					    BT_AUDIO_CODEC_LC3_DURATION_10),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_CHAN_COUNT, CHANNEL_COUNT_1),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_LEN, BT_BYTES_LIST_LE16(40U),
+					    BT_BYTES_LIST_LE16(40U)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_LC3_FRAME_COUNT, 1U),
 		},
 	.meta_len = (5 + 1) + (LONG_META_LEN + 1U),
 	.meta = {
-			5, BT_AUDIO_METADATA_TYPE_PREF_CONTEXT, BT_BYTES_LIST_LE32(PREF_CONTEXT),
-			LONG_META_LEN, BT_AUDIO_METADATA_TYPE_VENDOR, LONG_META,
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PREF_CONTEXT,
+					    BT_BYTES_LIST_LE32(PREF_CONTEXT)),
+			BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_VENDOR, LONG_META),
 		},
 };
 
@@ -65,11 +48,20 @@ static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASC
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
-/* TODO: Expand with BAP data */
+static uint8_t unicast_server_addata[] = {
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
+	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
+	BT_BYTES_LIST_LE16(PREF_CONTEXT),
+	BT_BYTES_LIST_LE16(PREF_CONTEXT),
+	0x00, /* Metadata length */
+};
+
 static const struct bt_data unicast_server_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
+static struct bt_le_ext_adv *ext_adv;
 
 CREATE_FLAG(flag_stream_configured);
 
@@ -143,10 +135,10 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos
 	return 0;
 }
 
-static int lc3_enable(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-		      size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+		      struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
+	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
 
 	return 0;
 }
@@ -158,63 +150,25 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 	return 0;
 }
 
-static bool valid_metadata_type(uint8_t type, uint8_t len)
+static bool data_func_cb(struct bt_data *data, void *user_data)
 {
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
+	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 2 - 255 octets */
-		/* At least Extended Metadata Type / Company_ID should be there */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
+	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
+		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 		return false;
 	}
+
+	return true;
 }
 
-static int lc3_metadata(struct bt_bap_stream *stream, const struct bt_audio_codec_data *meta,
-			size_t meta_count, struct bt_bap_ascs_rsp *rsp)
+static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
+	printk("Metadata: stream %p meta_len %zu\n", stream, meta_len);
 
-	for (size_t i = 0; i < meta_count; i++) {
-		const struct bt_audio_codec_data *data = &meta[i];
-
-		if (!valid_metadata_type(data->data.type, data->data.data_len)) {
-			printk("Invalid metadata type %u or length %u\n", data->data.type,
-			       data->data.data_len);
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-					       data->data.type);
-			return -EINVAL;
-		}
-	}
-
-	return 0;
+	return bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
 }
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
@@ -285,47 +239,6 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv
 };
 
-static void init(void)
-{
-	static struct bt_pacs_cap cap = {
-		.codec_cap = &lc3_codec_cap,
-	};
-	int err;
-
-	err = bt_enable(NULL);
-	if (err != 0) {
-		FAIL("Bluetooth enable failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
-
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err != 0) {
-		FAIL("Failed to register capabilities: %d", err);
-		return;
-	}
-
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
-	if (err != 0) {
-		FAIL("Failed to register capabilities: %d", err);
-		return;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_bap_stream_cb_register(&streams[i], &stream_ops);
-	}
-
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
-			      NULL, 0);
-	if (err != 0) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-}
-
 static void set_location(void)
 {
 	int err;
@@ -387,25 +300,160 @@ static void set_available_contexts(void)
 	printk("Available contexts successfully set\n");
 }
 
-static void test_main(void)
+static void init(void)
 {
-	init();
+	static struct bt_pacs_cap cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
 
 	set_location();
 	set_available_contexts();
+
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		bt_bap_stream_cb_register(&streams[i], &stream_ops);
+	}
+
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &ext_adv);
+	if (err != 0) {
+		FAIL("Failed to create advertising set (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_set_data(ext_adv, unicast_server_ad, ARRAY_SIZE(unicast_server_ad),
+				     NULL, 0);
+	if (err != 0) {
+		FAIL("Failed to set advertising data (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+		return;
+	}
+	printk("Advertising started\n");
+}
+
+static void test_main(void)
+{
+	init();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 
 	WAIT_FOR_FLAG(flag_connected);
 	WAIT_FOR_FLAG(flag_stream_configured);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
 	PASS("Unicast server passed\n");
 }
 
-static const struct bst_test_instance test_unicast_server[] = {{.test_id = "unicast_server",
-								.test_post_init_f = test_init,
-								.test_tick_f = test_tick,
-								.test_main_f = test_main},
-							       BSTEST_END_MARKER};
+static void restart_adv_cb(struct k_work *work)
+{
+	int err;
+
+	printk("Restarting ext_adv after disconnect\n");
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+		return;
+	}
+}
+
+static K_WORK_DEFINE(restart_adv_work, restart_adv_cb);
+
+static void acl_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	if (conn != default_conn) {
+		return;
+	}
+
+	k_work_submit(&restart_adv_work);
+}
+
+static void test_main_acl_disconnect(void)
+{
+	struct bt_le_ext_adv *dummy_ext_adv[CONFIG_BT_MAX_CONN - 1];
+	static struct bt_conn_cb conn_callbacks = {
+		.disconnected = acl_disconnected,
+	};
+
+	init();
+
+	/* Create CONFIG_BT_MAX_CONN - 1 dummy advertising sets, to ensure that we only have 1 free
+	 * connection when attempting to restart advertising, which should ensure that the
+	 * bt_conn object is properly unref'ed by the stack
+	 */
+	for (size_t i = 0U; i < ARRAY_SIZE(dummy_ext_adv); i++) {
+		const struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(
+			(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONNECTABLE),
+			BT_GAP_ADV_SLOW_INT_MAX, BT_GAP_ADV_SLOW_INT_MAX, NULL);
+		int err;
+
+		err = bt_le_ext_adv_create(&param, NULL, &dummy_ext_adv[i]);
+		if (err != 0) {
+			FAIL("Failed to create advertising set[%zu] (err %d)\n", i, err);
+			return;
+		}
+
+		err = bt_le_ext_adv_start(dummy_ext_adv[i], BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start advertising set[%zu] (err %d)\n", i, err);
+			return;
+		}
+	}
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_stream_configured);
+
+	/* The client will reconnect */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_connected);
+	PASS("Unicast server ACL disconnect  passed\n");
+}
+
+static const struct bst_test_instance test_unicast_server[] = {
+	{
+		.test_id = "unicast_server",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main,
+	},
+	{
+		.test_id = "unicast_server_acl_disconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_acl_disconnect,
+	},
+	BSTEST_END_MARKER,
+};
 
 struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 {

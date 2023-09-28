@@ -59,7 +59,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 
 		mslab->pool = k_calloc(block_count, block_size);
 		if (mslab->pool == NULL) {
-			k_mem_slab_free(&cv2_mem_slab, (void *) &mslab);
+			k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
 			return NULL;
 		}
 		mslab->is_dynamic_allocation = TRUE;
@@ -71,7 +71,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	int rc = k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
 
 	if (rc != 0) {
-		k_mem_slab_free(&cv2_mem_slab, (void *) &mslab);
+		k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
 		if (attr->mp_mem == NULL) {
 			k_free(mslab->pool);
 		}
@@ -143,7 +143,7 @@ osStatus_t osMemoryPoolFree(osMemoryPoolId_t mp_id, void *block)
 	 *       is in an invalid memory pool state.
 	 */
 
-	k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)&block);
+	k_mem_slab_free((struct k_mem_slab *)(&mslab->z_mslab), (void *)block);
 
 	return osOK;
 }
@@ -241,7 +241,7 @@ osStatus_t osMemoryPoolDelete(osMemoryPoolId_t mp_id)
 	if (mslab->is_dynamic_allocation) {
 		k_free(mslab->pool);
 	}
-	k_mem_slab_free(&cv2_mem_slab, (void *)&mslab);
+	k_mem_slab_free(&cv2_mem_slab, (void *)mslab);
 
 	return osOK;
 }

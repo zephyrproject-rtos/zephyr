@@ -296,7 +296,7 @@ int main(void)
 #if defined(HAS_LED)
 	printk("Get reference to LED device...");
 
-	if (!device_is_ready(led_gpio.port)) {
+	if (!gpio_is_ready_dt(&led_gpio)) {
 		printk("LED gpio device not ready.\n");
 		return 0;
 	}

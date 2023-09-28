@@ -11,6 +11,8 @@ import datetime
 from github import Github, GithubException
 from github.GithubException import UnknownObjectException
 from collections import defaultdict
+from west.manifest import Manifest
+from west.manifest import ManifestProject
 
 TOP_DIR = os.path.join(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(TOP_DIR, "scripts"))
@@ -28,10 +30,16 @@ def parse_args():
 
     parser.add_argument("-M", "--maintainer-file", required=False, default="MAINTAINERS.yml",
                         help="Maintainer file to be used.")
-    parser.add_argument("-P", "--pull_request", required=False, default=None, type=int,
-                        help="Operate on one pull-request only.")
-    parser.add_argument("-s", "--since", required=False,
-                        help="Process pull-requests since date.")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-P", "--pull_request", required=False, default=None, type=int,
+                       help="Operate on one pull-request only.")
+    group.add_argument("-I", "--issue", required=False, default=None, type=int,
+                       help="Operate on one issue only.")
+    group.add_argument("-s", "--since", required=False,
+                       help="Process pull-requests since date.")
+    group.add_argument("-m", "--modules", action="store_true",
+                       help="Process pull-requests from modules.")
 
     parser.add_argument("-y", "--dry-run", action="store_true", default=False,
                         help="Dry run only.")
@@ -205,6 +213,116 @@ def process_pr(gh, maintainer_file, number):
 
     time.sleep(1)
 
+
+def process_issue(gh, maintainer_file, number):
+    gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
+    issue = gh_repo.get_issue(number)
+
+    log(f"Working on {issue.url}: {issue.title}")
+
+    if issue.assignees:
+        print(f"Already assigned {issue.assignees}, bailing out")
+        return
+
+    label_to_maintainer = defaultdict(set)
+    for _, area in maintainer_file.areas.items():
+        if not area.labels:
+            continue
+
+        labels = set()
+        for label in area.labels:
+            labels.add(label.lower())
+        labels = tuple(sorted(labels))
+
+        for maintainer in area.maintainers:
+            label_to_maintainer[labels].add(maintainer)
+
+    # Add extra entries for areas with multiple labels so they match with just
+    # one label if it's specific enough.
+    for areas, maintainers in dict(label_to_maintainer).items():
+        for area in areas:
+            if tuple([area]) not in label_to_maintainer:
+                label_to_maintainer[tuple([area])] = maintainers
+
+    issue_labels = set()
+    for label in issue.labels:
+        label_name = label.name.lower()
+        if tuple([label_name]) not in label_to_maintainer:
+            print(f"Ignoring label: {label}")
+            continue
+        issue_labels.add(label_name)
+    issue_labels = tuple(sorted(issue_labels))
+
+    print(f"Using labels: {issue_labels}")
+
+    if issue_labels not in label_to_maintainer:
+        print(f"no match for the label set, not assigning")
+        return
+
+    for maintainer in label_to_maintainer[issue_labels]:
+        log(f"Adding {maintainer} to {issue.html_url}")
+        if not args.dry_run:
+            issue.add_to_assignees(maintainer)
+
+
+def process_modules(gh, maintainers_file):
+    manifest = Manifest.from_file()
+
+    repos = {}
+    for project in manifest.get_projects([]):
+        if not manifest.is_active(project):
+            continue
+
+        if isinstance(project, ManifestProject):
+            continue
+
+        area = f"West project: {project.name}"
+        if area not in maintainers_file.areas:
+            log(f"No area for: {area}")
+            continue
+
+        maintainers = maintainers_file.areas[area].maintainers
+        if not maintainers:
+            log(f"No maintainers for: {area}")
+            continue
+
+        collaborators = maintainers_file.areas[area].collaborators
+
+        log(f"Found {area}, maintainers={maintainers}, collaborators={collaborators}")
+
+        repo_name = f"{args.org}/{project.name}"
+        repos[repo_name] = maintainers_file.areas[area]
+
+    query = f"is:open is:pr no:assignee"
+    for repo in repos:
+        query += f" repo:{repo}"
+
+    issues = gh.search_issues(query=query)
+    for issue in issues:
+        pull = issue.as_pull_request()
+
+        if pull.draft:
+            continue
+
+        if pull.assignees:
+            log(f"ERROR: {pull.html_url} should have no assignees, found {pull.assignees}")
+            continue
+
+        repo_name = f"{args.org}/{issue.repository.name}"
+        area = repos[repo_name]
+
+        for maintainer in area.maintainers:
+            log(f"Assigning {maintainer} to {pull.html_url}")
+            if not args.dry_run:
+                pull.add_to_assignees(maintainer)
+                pull.create_review_request(maintainer)
+
+        for collaborator in area.collaborators:
+            log(f"Adding {collaborator} to {pull.html_url}")
+            if not args.dry_run:
+                pull.create_review_request(collaborator)
+
+
 def main():
     parse_args()
 
@@ -218,6 +336,10 @@ def main():
 
     if args.pull_request:
         process_pr(gh, maintainer_file, args.pull_request)
+    elif args.issue:
+        process_issue(gh, maintainer_file, args.issue)
+    elif args.modules:
+        process_modules(gh, maintainer_file)
     else:
         if args.since:
             since = args.since

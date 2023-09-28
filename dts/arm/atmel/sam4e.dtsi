@@ -294,6 +294,13 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
 			status = "disabled";
 		};
+
+		hsmci: hsmci@40080000 {
+			compatible = "atmel,sam-hsmci";
+			reg = <0x40080000 0x1000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 16>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -440,7 +440,7 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 /**
  * @brief Assign the system heap as a thread's resource pool
  *
- * Similar to z_thread_heap_assign(), but the thread will use
+ * Similar to k_thread_heap_assign(), but the thread will use
  * the kernel heap to draw memory.
  *
  * Use with caution, as a malicious thread could perform DoS attacks on the
@@ -675,9 +675,6 @@ static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
 /**
  * @cond INTERNAL_HIDDEN
  */
-
-/* timeout has timed out and is not on _timeout_q anymore */
-#define _EXPIRED (-2)
 
 struct _static_thread_data {
 	struct k_thread *init_thread;
@@ -1822,10 +1819,6 @@ static inline uint64_t k_cycle_get_64(void)
  * @}
  */
 
-/**
- * @cond INTERNAL_HIDDEN
- */
-
 struct k_queue {
 	sys_sflist_t data_q;
 	struct k_spinlock lock;
@@ -1836,6 +1829,10 @@ struct k_queue {
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
@@ -1843,8 +1840,6 @@ struct k_queue {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	_POLL_EVENT_OBJ_INIT(obj)		\
 	}
-
-extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -5151,9 +5146,9 @@ extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * associated memory slab.
  *
  * @param slab Address of the memory slab.
- * @param mem Pointer to block address area (as set by k_mem_slab_alloc()).
+ * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
-extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
+extern void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
 
 /**
  * @brief Get the number of used blocks in a memory slab.
@@ -5770,11 +5765,6 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
 
-/**
- * @internal
- */
-extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
-
 /** @} */
 
 /**
@@ -5824,6 +5814,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 
 /**
+ * @cond INTERNAL_HIDDEN
  * @internal
  */
 #ifdef ARCH_EXCEPT
@@ -5850,6 +5841,9 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 	} while (false)
 
 #endif /* _ARCH__EXCEPT */
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Fatally terminate a thread
@@ -5873,6 +5867,10 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  * will be called will reason code K_ERR_KERNEL_PANIC.
  */
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 /*
  * private APIs that are utilized by one or more public APIs
@@ -5911,6 +5909,9 @@ void z_smp_thread_swap(void);
  * @internal
  */
 extern void z_timer_expiration_handler(struct _timeout *t);
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 #ifdef CONFIG_PRINTK
 /**

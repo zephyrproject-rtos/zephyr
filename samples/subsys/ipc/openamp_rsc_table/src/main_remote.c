@@ -106,11 +106,11 @@ static int rpmsg_recv_cs_callback(struct rpmsg_endpoint *ept, void *data,
 static int rpmsg_recv_tty_callback(struct rpmsg_endpoint *ept, void *data,
 				   size_t len, uint32_t src, void *priv)
 {
-	struct rpmsg_rcv_msg *tty_msg = priv;
+	struct rpmsg_rcv_msg *msg = priv;
 
 	rpmsg_hold_rx_buffer(ept, data);
-	tty_msg->data = data;
-	tty_msg->len = len;
+	msg->data = data;
+	msg->len = len;
 	k_sem_give(&data_tty_sem);
 
 	return RPMSG_SUCCESS;

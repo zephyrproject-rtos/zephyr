@@ -53,7 +53,7 @@ The Uniform Resource Identifier shall follow the format specified in the
 Bluetooth Core Specification Supplement. The URI must start with a URI scheme,
 encoded as a single utf-8 data point, or the special ``none`` scheme, encoded
 as ``0x01``. The available schemes are listed on the `Bluetooth website
-<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+<https://www.bluetooth.com/specifications/assigned-numbers/>`_.
 
 Examples of encoded URIs:
 

@@ -70,7 +70,7 @@ static int codec_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(dev_cfg->reset_gpio.port)) {
+	if (!gpio_is_ready_dt(&dev_cfg->reset_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

@@ -189,6 +189,8 @@ struct isoal_sdu_tx {
 	uint16_t iso_sdu_length;
 	/** Time stamp from HCI or vendor specific path (us) */
 	uint32_t time_stamp;
+	/** Capture time stamp from controller (us) */
+	uint32_t cntr_time_stamp;
 	/** CIG Reference of target event (us, compensated for drift) */
 	uint32_t grp_ref_point;
 	/** Target Event of SDU */
@@ -376,8 +378,6 @@ struct isoal_source_session {
 	uint8_t                    burst_number;
 	uint8_t                    pdus_per_sdu;
 	uint8_t                    max_pdu_size;
-	int32_t                    latency_unframed;
-	int32_t                    latency_framed;
 };
 
 struct isoal_pdu_production {
@@ -392,6 +392,8 @@ struct isoal_pdu_production {
 	uint64_t                  seg_hdr_sc:1;
 	uint64_t                  seg_hdr_length:8;
 	uint64_t                  sdu_fragments:8;
+	uint64_t                  initialized:1;
+	uint64_t                  pdu_allocated:1;
 	isoal_pdu_len_t           pdu_written;
 	isoal_pdu_len_t           pdu_available;
 	/* Location (byte index) of last segmentation header */

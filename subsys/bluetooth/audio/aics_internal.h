@@ -88,6 +88,13 @@ struct bt_aics_gain_settings {
 	int8_t maximum;
 } __packed;
 
+enum bt_aics_notify {
+	AICS_NOTIFY_STATE,
+	AICS_NOTIFY_DESCRIPTION,
+	AICS_NOTIFY_STATUS,
+	AICS_NOTIFY_NUM,
+};
+
 struct bt_aics_server {
 	struct bt_aics_state state;
 	struct bt_aics_gain_settings gain_settings;
@@ -99,6 +106,9 @@ struct bt_aics_server {
 	struct bt_aics_cb *cb;
 
 	struct bt_gatt_service *service_p;
+
+	ATOMIC_DEFINE(notify, AICS_NOTIFY_NUM);
+	struct k_work_delayable notify_work;
 };
 
 /* Struct used as a common type for the api */

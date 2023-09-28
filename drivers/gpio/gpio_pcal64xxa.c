@@ -774,7 +774,7 @@ int pcal64xxa_init(const struct device *dev)
 	 * this driver.
 	 */
 	if (drv_cfg->gpio_reset.port != NULL) {
-		if (!device_is_ready(drv_cfg->gpio_reset.port)) {
+		if (!gpio_is_ready_dt(&drv_cfg->gpio_reset)) {
 			LOG_ERR("reset gpio device is not ready");
 			return -ENODEV;
 		}
@@ -833,7 +833,7 @@ int pcal64xxa_init(const struct device *dev)
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_interrupt.port != NULL) {
-		if (!device_is_ready(drv_cfg->gpio_interrupt.port)) {
+		if (!gpio_is_ready_dt(&drv_cfg->gpio_interrupt)) {
 			LOG_ERR("interrupt gpio device is not ready");
 			return -ENODEV;
 		}

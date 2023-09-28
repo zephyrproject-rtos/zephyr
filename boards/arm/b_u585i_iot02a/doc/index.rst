@@ -327,7 +327,7 @@ Debugging
 =========
 
 Default flasher for this board is openocd. It could be used in the usual way.
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

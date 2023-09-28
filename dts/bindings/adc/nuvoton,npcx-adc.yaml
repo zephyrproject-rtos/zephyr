@@ -16,14 +16,14 @@ properties:
     required: true
   pinctrl-names:
     required: true
+  vref-mv:
+    type: int
+    required: true
+    description: ADC reference voltage (Unit:mV)
   channel-count:
     type: int
     required: true
     description: the number of ADC channels
-  threshold-reg-offset:
-    type: int
-    required: true
-    description: the offset of threshold detector register address
   threshold-count:
     type: int
     required: true

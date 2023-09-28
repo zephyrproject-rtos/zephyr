@@ -15,6 +15,7 @@ if ICP10125
 
 config ICP10125_CHECK_CRC
 	bool "Check the CRC of measument data"
+	imply CRC
 	default y
 	help
 	  Verify the CRC checksum that appended to the measurement data.
