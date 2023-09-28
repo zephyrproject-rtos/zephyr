@@ -79,6 +79,36 @@ typedef struct {
  */
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
+/** number of nanoseconds per micorsecond */
+#define NSEC_PER_USEC 1000U
+
+/** number of nanoseconds per millisecond */
+#define NSEC_PER_MSEC 1000000U
+
+/** number of microseconds per millisecond */
+#define USEC_PER_MSEC 1000U
+
+/** number of milliseconds per second */
+#define MSEC_PER_SEC 1000U
+
+/** number of seconds per minute */
+#define SEC_PER_MIN 60U
+
+/** number of minutes per hour */
+#define MIN_PER_HOUR 60U
+
+/** number of hours per day */
+#define HOUR_PER_DAY 24U
+
+/** number of microseconds per second */
+#define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
+
+/** number of nanoseconds per second */
+#define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
+
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 #define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
@@ -111,39 +141,15 @@ typedef struct {
  */
 #define Z_TICK_ABS(t) (K_TICKS_FOREVER - 1 - (t))
 
-/** @} */
+/* added tick needed to account for tick in progress */
+#define _TICK_ALIGN 1
+
+/** @endcond */
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
-
-/* number of nsec per usec */
-#define NSEC_PER_USEC 1000U
-
-/* number of nsec per msec */
-#define NSEC_PER_MSEC 1000000U
-
-/* number of microseconds per millisecond */
-#define USEC_PER_MSEC 1000U
-
-/* number of milliseconds per second */
-#define MSEC_PER_SEC 1000U
-
-/* number of seconds per minute */
-#define SEC_PER_MIN 60U
-
-/* number of minutes per hour */
-#define MIN_PER_HOUR 60U
-
-/* number of hours per day */
-#define HOUR_PER_DAY 24U
-
-/* number of microseconds per second */
-#define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
-
-/* number of nanoseconds per second */
-#define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
 
 
 /* kernel clocks */
@@ -152,6 +158,10 @@ typedef struct {
  * We default to using 64-bit intermediates in timescale conversions,
  * but if the HW timer cycles/sec, ticks/sec and ms/sec are all known
  * to be nicely related, then we can cheat with 32 bits instead.
+ */
+/**
+ * @addtogroup clock_apis
+ * @{
  */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -164,10 +174,7 @@ typedef struct {
 
 #endif
 
-/* added tick needed to account for tick in progress */
-#define _TICK_ALIGN 1
-
-/*
+/**
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
  * and calculates the average cycle time
  */
@@ -322,6 +329,7 @@ static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
 	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
 }
 
+/** @} */
 
 #ifdef __cplusplus
 }
