@@ -14,12 +14,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	chosen {
-		zephyr,console = &uart2;
-		zephyr,shell-uart = &uart2;
-		zephyr,sram = &sram0;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
