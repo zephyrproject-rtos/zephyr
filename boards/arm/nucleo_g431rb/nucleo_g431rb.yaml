@@ -19,5 +19,6 @@ supported:
   - usb device
   - counter
   - spi
+  - rng
   - dac
   - watchdog
