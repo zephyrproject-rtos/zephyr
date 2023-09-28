@@ -305,6 +305,7 @@ Networking
   * Added support for tickless mode. This removes the 500 ms timeout from the socket loop
     so the engine does not constantly wake up the CPU. This can be enabled by
     :kconfig:option:`CONFIG_LWM2M_TICKLESS`.
+  * Added new :c:macro:`LWM2M_RD_CLIENT_EVENT_DEREGISTER` event.
 
 * Wi-Fi
   * Added Passive scan support.
