@@ -40,8 +40,9 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
-      bsim_bluetooth_test_results_file: ./bsim_bluetooth/bsim_results.xml
-      bsim_networking_test_results_file: ./bsim_net/bsim_results.xml
+      bsim_bt_52_test_results_file: ./bsim_bt/52_bsim_results.xml
+      bsim_bt_53_test_results_file: ./bsim_bt/53_bsim_results.xml
+      bsim_net_52_test_results_file: ./bsim_net/52_bsim_results.xml
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -133,16 +134,22 @@ jobs:
         if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export ZEPHYR_BASE=${PWD}
-          WORK_DIR=${ZEPHYR_BASE}/bsim_bluetooth nice tests/bsim/bluetooth/compile.sh
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bluetooth_test_results_file} \
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bt nice tests/bsim/bluetooth/compile.sh
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_52_test_results_file} \
           SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
+          # Run the BT controller tests also for the nrf5340
+          BOARD=nrf5340bsim_nrf5340_cpunet \
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bt nice tests/bsim/bluetooth/ll/compile.sh
+          BOARD=nrf5340bsim_nrf5340_cpunet \
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_53_test_results_file} \
+          SEARCH_PATH=tests/bsim/bluetooth/ll/ tests/bsim/run_parallel.sh
 
       - name: Run Networking Tests with BSIM
         if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
         run: |
           export ZEPHYR_BASE=${PWD}
           WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
-          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_networking_test_results_file} \
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_net_52_test_results_file} \
           SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
 
       - name: Upload Test Results
@@ -151,8 +158,9 @@ jobs:
         with:
           name: bsim-test-results
           path: |
-            ./bsim_bluetooth/bsim_results.xml
-            ./bsim_net/bsim_results.xml
+            ./bsim_bt/52_bsim_results.xml
+            ./bsim_bt/53_bsim_results.xml
+            ./bsim_net/52_bsim_results.xml
             ${{ github.event_path }}
           if-no-files-found: warn
 
