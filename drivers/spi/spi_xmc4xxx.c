@@ -123,9 +123,9 @@ static void spi_xmc4xxx_shift_frames(const struct device *dev)
 				   XMC_SPI_CH_STATUS_FLAG_RECEIVE_INDICATION |
 				   XMC_SPI_CH_STATUS_FLAG_ALTERNATIVE_RECEIVE_INDICATION);
 
-	XMC_SPI_CH_Transmit(config->spi, tx_data, XMC_SPI_CH_MODE_STANDARD);
-
 	spi_context_update_tx(ctx, 1, 1);
+
+	XMC_SPI_CH_Transmit(config->spi, tx_data, XMC_SPI_CH_MODE_STANDARD);
 
 #if defined(CONFIG_SPI_XMC4XXX_INTERRUPT)
 	return;
