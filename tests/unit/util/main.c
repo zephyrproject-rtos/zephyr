@@ -86,6 +86,10 @@ ZTEST(util_cxx, test_IS_EQ) {
 	run_IS_EQ();
 }
 
+ZTEST(util_cxx, test_IS_NEQ) {
+	run_IS_NEQ();
+}
+
 ZTEST(util_cxx, test_LIST_DROP_EMPTY) {
 	run_LIST_DROP_EMPTY();
 }
@@ -232,6 +236,10 @@ ZTEST(util_cc, test_IS_EMPTY) {
 
 ZTEST(util_cc, test_IS_EQ) {
 	run_IS_EQ();
+}
+
+ZTEST(util_cc, test_IS_NEQ) {
+	run_IS_NEQ();
 }
 
 ZTEST(util_cc, test_LIST_DROP_EMPTY) {

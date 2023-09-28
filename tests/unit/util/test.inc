@@ -382,6 +382,17 @@ void run_IS_EQ(void)
 	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
 }
 
+void run_IS_NEQ(void)
+{
+	zassert_false(IS_NEQ(0, 0), "Unexpected IS_NEQ result");
+	zassert_false(IS_NEQ(1, 1), "Unexpected IS_NEQ result");
+	zassert_false(IS_NEQ(7, 7), "Unexpected IS_NEQ result");
+
+	zassert_true(IS_NEQ(0, 1), "Unexpected IS_NEQ result");
+	zassert_true(IS_NEQ(1, 7), "Unexpected IS_NEQ result");
+	zassert_true(IS_NEQ(7, 0), "Unexpected IS_NEQ result");
+}
+
 void run_LIST_DROP_EMPTY(void)
 {
 	/*

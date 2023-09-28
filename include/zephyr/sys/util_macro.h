@@ -262,6 +262,15 @@ extern "C" {
 #define IS_EQ(a, b) Z_IS_EQ(a, b)
 
 /**
+ * @brief Like <tt>a != b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 255.
+ *
+ */
+#define IS_NEQ(a, b) IS_EQ(IS_EQ(a, b), 0)
+
+/**
  * @brief Remove empty arguments from list.
  *
  * During macro expansion, `__VA_ARGS__` and other preprocessor
