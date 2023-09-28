@@ -45,13 +45,8 @@ struct net_shell_user_data {
 #define ADDR_LEN NET_IPV6_ADDR_LEN
 #endif
 
-#define MAX_IFACE_HELP_STR_LEN sizeof("longbearername (0xabcd0123)")
-#define MAX_IFACE_STR_LEN sizeof("xxx")
-
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 #define IFACE_DYN_CMD &iface_index
-
-void iface_index_get(size_t idx, struct shell_static_entry *entry);
 #else
 #define IFACE_DYN_CMD NULL
 #endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
