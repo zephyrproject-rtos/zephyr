@@ -1232,10 +1232,8 @@ void ll_rx_dequeue(void)
 			/* FIXME: use the correct adv and scan set to get
 			 * enabled status bitmask
 			 */
-			bm = (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-			      (ull_scan_is_enabled(0) << 1)) |
-			     (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-			      ull_adv_is_enabled(0));
+			bm = (IS_ENABLED(CONFIG_BT_OBSERVER)?(ull_scan_is_enabled(0) << 1):0) |
+			     (IS_ENABLED(CONFIG_BT_BROADCASTER)?ull_adv_is_enabled(0):0);
 
 			if (!bm) {
 				ull_filter_adv_scan_state_cb(0);
