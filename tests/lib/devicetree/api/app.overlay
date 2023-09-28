@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/sensor/sensor.h>
+
 / {
 	aliases {
 		test-alias = &test_nodelabel;
@@ -63,6 +65,9 @@
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 			pwm-names = "red", "green";
+			sensors = <&test_sensor1 SENSOR_CHAN_DIE_TEMP>,
+				  <&test_sensor2 SENSOR_CHAN_AMBIENT_TEMP>;
+			sensor-names = "cpu", "ambient";
 			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
 			baz-names = "john", "doe";
 		};
@@ -470,6 +475,20 @@
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
 			reg = < 0x55552222 0x1000 >;
+			status = "okay";
+		};
+
+		test_sensor1: sensor@66661111 {
+			compatible = "vnd,sensor-device";
+			reg = <0x66661111 0x1000>;
+			#sensor-cells = <1>;
+			status = "okay";
+		};
+
+		test_sensor2: sensor@66662222 {
+			compatible = "vnd,sensor-device";
+			reg = <0x66662222 0x1000>;
+			#sensor-cells = <1>;
 			status = "okay";
 		};
 

@@ -17,6 +17,8 @@ properties:
   foo-names: {type: "string-array"}
   pwms: {type: "phandle-array"}
   pwm-names: {type: "string-array"}
+  sensors: {type: "phandle-array"}
+  sensor-names: {type: "string-array"}
   bar:
     type: "phandle-array"
     specifier-space: baz

@@ -24,6 +24,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mbox.h>
+#include <zephyr/drivers/sensor.h>
 
 #include <stdlib.h>
 
@@ -77,6 +78,9 @@
 
 #define TEST_PWM_CTLR_1 DT_NODELABEL(test_pwm1)
 #define TEST_PWM_CTLR_2 DT_NODELABEL(test_pwm2)
+
+#define TEST_SENSOR_DEV_1 DT_NODELABEL(test_sensor1)
+#define TEST_SENSOR_DEV_2 DT_NODELABEL(test_sensor2)
 
 #define TEST_CAN_CTRL_0 DT_NODELABEL(test_can0)
 #define TEST_CAN_CTRL_1 DT_NODELABEL(test_can1)
@@ -1309,6 +1313,31 @@ ZTEST(devicetree_api, test_pwms)
 
 	/* DT_INST_PWMS_FLAGS */
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "");
+}
+
+ZTEST(devicetree_api, test_sensors)
+{
+	/* DT_SENSOR_DEV_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_SENSOR_DEV_BY_IDX(TEST_PH, 0), TEST_SENSOR_DEV_1));
+	zassert_true(DT_SAME_NODE(DT_SENSOR_DEV_BY_IDX(TEST_PH, 1), TEST_SENSOR_DEV_2));
+
+	/* DT_SENSOR_DEV */
+	zassert_true(DT_SAME_NODE(DT_SENSOR_DEV(TEST_PH), TEST_SENSOR_DEV_1));
+
+	/* DT_SENSOR_DEV_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_SENSOR_DEV_BY_NAME(TEST_PH, cpu), TEST_SENSOR_DEV_1));
+	zassert_true(DT_SAME_NODE(DT_SENSOR_DEV_BY_NAME(TEST_PH, ambient), TEST_SENSOR_DEV_2));
+
+	/* DT_SENSOR_CHANNEL_BY_IDX */
+	zassert_equal(DT_SENSOR_CHANNEL_BY_IDX(TEST_PH, 0), SENSOR_CHAN_DIE_TEMP);
+	zassert_equal(DT_SENSOR_CHANNEL_BY_IDX(TEST_PH, 1), SENSOR_CHAN_AMBIENT_TEMP);
+
+	/* DT_SENSOR_CHANNEL */
+	zassert_equal(DT_SENSOR_CHANNEL(TEST_PH), SENSOR_CHAN_DIE_TEMP);
+
+	/* DT_SENSOR_CHANNEL_BY_NAME */
+	zassert_equal(DT_SENSOR_CHANNEL_BY_NAME(TEST_PH, cpu), SENSOR_CHAN_DIE_TEMP);
+	zassert_equal(DT_SENSOR_CHANNEL_BY_NAME(TEST_PH, ambient), SENSOR_CHAN_AMBIENT_TEMP);
 }
 
 #undef DT_DRV_COMPAT
