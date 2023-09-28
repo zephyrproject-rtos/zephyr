@@ -18,24 +18,26 @@
 #include <zephyr/logging/log.h>
 #include <kernel_arch_data.h>
 #include <zephyr/arch/arc/v2/exception.h>
+#include <err_dump_handling.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_arc_esf(const z_arch_esf_t *esf)
 {
-	LOG_ERR(" r0: 0x%" PRIxPTR "  r1: 0x%" PRIxPTR "  r2: 0x%" PRIxPTR "  r3: 0x%" PRIxPTR "",
-		esf->r0, esf->r1, esf->r2, esf->r3);
-	LOG_ERR(" r4: 0x%" PRIxPTR "  r5: 0x%" PRIxPTR "  r6: 0x%" PRIxPTR "  r7: 0x%" PRIxPTR "",
-		esf->r4, esf->r5, esf->r6, esf->r7);
-	LOG_ERR(" r8: 0x%" PRIxPTR "  r9: 0x%" PRIxPTR " r10: 0x%" PRIxPTR " r11: 0x%" PRIxPTR "",
-		esf->r8, esf->r9, esf->r10, esf->r11);
-	LOG_ERR("r12: 0x%" PRIxPTR " r13: 0x%" PRIxPTR "  pc: 0x%" PRIxPTR "",
+	ARC_EXCEPTION_DUMP(" r0: 0x%" PRIxPTR "  r1: 0x%" PRIxPTR "  r2: 0x%" PRIxPTR
+		"  r3: 0x%" PRIxPTR "", esf->r0, esf->r1, esf->r2, esf->r3);
+	ARC_EXCEPTION_DUMP(" r4: 0x%" PRIxPTR "  r5: 0x%" PRIxPTR "  r6: 0x%" PRIxPTR
+		"  r7: 0x%" PRIxPTR "", esf->r4, esf->r5, esf->r6, esf->r7);
+	ARC_EXCEPTION_DUMP(" r8: 0x%" PRIxPTR "  r9: 0x%" PRIxPTR " r10: 0x%" PRIxPTR
+		" r11: 0x%" PRIxPTR "", esf->r8, esf->r9, esf->r10, esf->r11);
+	ARC_EXCEPTION_DUMP("r12: 0x%" PRIxPTR " r13: 0x%" PRIxPTR "  pc: 0x%" PRIxPTR "",
 		esf->r12, esf->r13, esf->pc);
-	LOG_ERR(" blink: 0x%" PRIxPTR " status32: 0x%" PRIxPTR "", esf->blink, esf->status32);
+	ARC_EXCEPTION_DUMP(" blink: 0x%" PRIxPTR " status32: 0x%" PRIxPTR "",
+		esf->blink, esf->status32);
 #ifdef CONFIG_ARC_HAS_ZOL
-	LOG_ERR("lp_end: 0x%" PRIxPTR " lp_start: 0x%" PRIxPTR " lp_count: 0x%" PRIxPTR "",
-		esf->lp_end, esf->lp_start, esf->lp_count);
+	ARC_EXCEPTION_DUMP("lp_end: 0x%" PRIxPTR " lp_start: 0x%" PRIxPTR
+			" lp_count: 0x%" PRIxPTR "", esf->lp_end, esf->lp_start, esf->lp_count);
 #endif /* CONFIG_ARC_HAS_ZOL */
 }
 #endif
