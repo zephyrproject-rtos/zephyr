@@ -711,6 +711,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	/* Fragments never have a TX completion callback */
 	tx_data(frag)->tx = NULL;
 	tx_data(frag)->is_cont = false;
+	tx_data(frag)->iso_has_ts = tx_data(buf)->iso_has_ts;
 
 	return frag;
 }
