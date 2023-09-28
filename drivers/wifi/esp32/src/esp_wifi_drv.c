@@ -495,6 +495,7 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 		if (mode == ESP32_WIFI_MODE_STA) {
 			esp_wifi_get_config(ESP_IF_WIFI_STA, &conf);
 			esp_wifi_sta_get_ap_info(&ap_info);
+
 			status->iface_mode = WIFI_MODE_INFRA;
 			status->channel = ap_info.primary;
 			status->rssi = ap_info.rssi;
@@ -508,11 +509,14 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 				status->link_mode = WIFI_1;
 			}
 
+			status->beacon_interval = conf.sta.listen_interval;
 		} else if (mode == ESP32_WIFI_MODE_AP) {
 			esp_wifi_get_config(ESP_IF_WIFI_AP, &conf);
 			status->iface_mode = WIFI_MODE_AP;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 			status->channel = conf.ap.channel;
+			status->beacon_interval = conf.ap.beacon_interval;
+
 		} else {
 			status->iface_mode = WIFI_MODE_UNKNOWN;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
