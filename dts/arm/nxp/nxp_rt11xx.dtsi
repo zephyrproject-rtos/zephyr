@@ -619,7 +619,7 @@
 			reg = <0x40194000 0x4000>;
 			interrupts =  <186 0>;
 
-			flexpwm3_pwm0: pwm0 {
+			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <182 0>;
