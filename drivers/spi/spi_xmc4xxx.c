@@ -195,7 +195,8 @@ static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_conf
 	bool CPOL = SPI_MODE_GET(settings) & SPI_MODE_CPOL;
 	bool CPHA = SPI_MODE_GET(settings) & SPI_MODE_CPHA;
 	XMC_SPI_CH_CONFIG_t usic_cfg = {.baudrate = spi_cfg->frequency};
-	XMC_SPI_CH_BRG_SHIFT_CLOCK_PASSIVE_LEVEL_t clock_settings;
+	XMC_SPI_CH_BRG_SHIFT_CLOCK_PASSIVE_LEVEL_t clock_settings =
+		XMC_SPI_CH_BRG_SHIFT_CLOCK_PASSIVE_LEVEL_0_DELAY_ENABLED;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
