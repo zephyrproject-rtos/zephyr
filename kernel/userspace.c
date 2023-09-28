@@ -785,7 +785,7 @@ void z_object_recycle(const void *obj)
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
-		z_thread_perms_set(ko, k_current_get());
+		z_thread_perms_set(ko, _current);
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
 }
