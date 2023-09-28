@@ -64,13 +64,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_util.h"
 
 #define LWM2M_RD_CLIENT_URI "rd"
-#define SECONDS_TO_UPDATE_EARLY	CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY
 #define CLIENT_EP_LEN		CONFIG_LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 #define CLIENT_BINDING_LEN sizeof("UQ")
 #define CLIENT_QUEUE_LEN sizeof("Q")
 #define DELAY_BEFORE_CLOSING	(1 * MSEC_PER_SEC)
 #define DELAY_FOR_ACK		100U
 #define EXCHANGE_LIFETIME	247U
+#define MINIMUM_PERIOD		15
 
 static void sm_handle_registration_update_failure(void);
 static int sm_send_registration_msg(void);
@@ -1104,11 +1104,21 @@ static int sm_do_registration(void)
 
 static int64_t next_update(void)
 {
-	/*
-	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
-	 * so that we can update early and avoid lifetime timeout
-	 */
-	return client.last_update + (client.lifetime - SECONDS_TO_UPDATE_EARLY) * MSEC_PER_SEC;
+	int64_t next;
+	int64_t period = CONFIG_LWM2M_UPDATE_PERIOD;
+	int64_t early = CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY;
+
+	if (period == 0) {
+		period = client.lifetime;
+	}
+	if (early > client.lifetime) {
+		early = client.lifetime;
+	}
+
+	next = MIN(period, client.lifetime - early);
+	next = MAX(next, MINIMUM_PERIOD);
+
+	return client.last_update + next * MSEC_PER_SEC;
 }
 
 static int64_t next_rx_off(void)
