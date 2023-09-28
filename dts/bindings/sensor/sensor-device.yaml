@@ -24,3 +24,9 @@ properties:
       Number of items to expect in a sensor specifier. Only one cell is
       supported by the sensor API. It's used to describe the sensor channel
       used by a consumer.
+
+  supported-channels:
+    type: array
+    description: |
+      List of sensor channels supported by this device. Example:
+      <SENSOR_CHAN_ACCEL SENSOR_CHAN_GYRO>

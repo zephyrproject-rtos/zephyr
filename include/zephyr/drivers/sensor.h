@@ -1104,14 +1104,18 @@ struct sensor_info {
 	const char *vendor;
 	const char *model;
 	const char *friendly_name;
+	enum sensor_channel *const channels;
+	size_t num_channels;
 };
 
-#define SENSOR_INFO_INITIALIZER(_dev, _vendor, _model, _friendly_name)	\
-	{								\
-		.dev = _dev,						\
-		.vendor = _vendor,					\
-		.model = _model,					\
-		.friendly_name = _friendly_name,			\
+#define SENSOR_INFO_INITIALIZER(_dev, _vendor, _model, _friendly_name, _channels, _num_channels)\
+	{										\
+		.dev = _dev,								\
+		.vendor = _vendor,							\
+		.model = _model,							\
+		.friendly_name = _friendly_name,					\
+		.channels = _channels,							\
+		.num_channels = _num_channels						\
 	}
 
 #define SENSOR_INFO_DEFINE(name, ...)					\
@@ -1121,13 +1125,34 @@ struct sensor_info {
 #define SENSOR_INFO_DT_NAME(node_id)					\
 	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
-#define SENSOR_INFO_DT_DEFINE(node_id)					\
-	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),		\
-			   DEVICE_DT_GET(node_id),			\
-			   DT_NODE_VENDOR_OR(node_id, NULL),		\
-			   DT_NODE_MODEL_OR(node_id, NULL),		\
-			   DT_PROP_OR(node_id, friendly_name, NULL))	\
+#define SENSOR_INFO_DT_CHANNELS_NAME(node_id)					\
+	_CONCAT(__channels__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
+#define SENSOR_INFO_DT_DEFINE_CHANNELS(node_id)						\
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, supported_channels),			\
+	(BUILD_ASSERT(DT_PROP_LEN(node_id, supported_channels) > 0, "Invalid prop len");\
+	static enum sensor_channel SENSOR_INFO_DT_CHANNELS_NAME(node_id)[] =		\
+	{										\
+		DT_FOREACH_PROP_ELEM_SEP(node_id, supported_channels, DT_PROP_BY_IDX, (,))\
+	};))
+
+#define SENSOR_INFO_DT_GET_CHANNELS(node_id)			\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, supported_channels),	\
+	(SENSOR_INFO_DT_CHANNELS_NAME(node_id)), (NULL))
+
+#define SENSOR_INFO_DT_GET_CHANNELS_COUNT(node_id)			\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, supported_channels),	\
+	(ARRAY_SIZE(SENSOR_INFO_DT_CHANNELS_NAME(node_id))), (0))
+
+#define SENSOR_INFO_DT_DEFINE(node_id)						\
+	SENSOR_INFO_DT_DEFINE_CHANNELS(node_id)					\
+	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),			\
+			   DEVICE_DT_GET(node_id),				\
+			   DT_NODE_VENDOR_OR(node_id, NULL),			\
+			   DT_NODE_MODEL_OR(node_id, NULL),			\
+			   DT_PROP_OR(node_id, friendly_name, NULL),		\
+			   SENSOR_INFO_DT_GET_CHANNELS(node_id),		\
+			   SENSOR_INFO_DT_GET_CHANNELS_COUNT(node_id))
 #else
 
 #define SENSOR_INFO_DEFINE(name, ...)
