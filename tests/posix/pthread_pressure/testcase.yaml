@@ -5,8 +5,6 @@ common:
     - posix
   integration_platforms:
     - qemu_riscv64_smp
-  platform_exclude:
-    - qemu_leon3
 tests:
   portability.posix.pthread_pressure:
     extra_configs:
