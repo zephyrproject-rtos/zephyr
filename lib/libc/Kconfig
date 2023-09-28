@@ -10,6 +10,15 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
+config REQUIRES_FLOAT_PRINTF
+	bool "Requires floating point support in printf"
+	select PICOLIBC_IO_FLOAT if PICOLIBC
+	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
+	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
+	help
+	  Select a printf implementation that provides a complete
+	  implementation including floating point support.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
