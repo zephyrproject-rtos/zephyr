@@ -21,6 +21,12 @@ void z_arm_platform_init(void)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 
+	/*
+	 * Take exceptions in Arm mode because Zephyr ASM code for Cortex-R Aarch32
+	 * is written for Arm
+	 */
+	__set_SCTLR(__get_SCTLR() & ~SCTLR_TE_Msk);
+
 	if (IS_ENABLED(CONFIG_ICACHE)) {
 		if (!(__get_SCTLR() & SCTLR_I_Msk)) {
 			L1C_InvalidateICacheAll();
