@@ -290,7 +290,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 #define _LOG_LEVEL_RESOLVE(...) LOG_LEVEL_NONE
 #else
 #define _LOG_LEVEL_RESOLVE(...) \
-	Z_LOG_EVAL(LOG_LEVEL, \
+	Z_LOG_EVAL(COND_CODE_0(LOG_LEVEL, (1), (LOG_LEVEL)), \
 		  (GET_ARG_N(2, __VA_ARGS__, LOG_LEVEL)), \
 		  (GET_ARG_N(2, __VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)))
 #endif
