@@ -69,6 +69,29 @@ mgmt_find_handler(uint16_t group_id, uint16_t command_id)
 	return &group->mg_handlers[command_id];
 }
 
+const struct mgmt_group *
+mgmt_find_group(uint16_t group_id)
+{
+	struct mgmt_group *group = NULL;
+	sys_snode_t *snp, *sns;
+
+	/*
+	 * Find the group with the specified group id
+	 * from the registered group list, if one exists
+	 * return the matching mgmt group pointer, otherwise return NULL
+	 */
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
+		struct mgmt_group *loop_group =
+			CONTAINER_OF(snp, struct mgmt_group, node);
+		if (loop_group->mg_group_id == group_id) {
+			group = loop_group;
+			break;
+		}
+	}
+
+	return group;
+}
+
 #if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
 {
