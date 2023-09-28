@@ -994,9 +994,9 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, u
 /**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
- * @retval Bitfield of supported frequencies if 0 or positive
+ * @retval Bitfield of supported frequencies (@ref bt_audio_codec_cap_freq) if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
@@ -1004,21 +1004,47 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, u
 int bt_audio_codec_cap_get_freq(const struct bt_audio_codec_cap *codec_cap);
 
 /**
+ * @brief Set the supported frequencies of a codec capability.
+ *
+ * @param codec_cap The codec capabilities to set data for.
+ * @param freq      The supported frequencies to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_freq(struct bt_audio_codec_cap *codec_cap,
+				enum bt_audio_codec_cap_freq freq);
+
+/**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Bitfield of supported frame durations if 0 or positive
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size or value
  */
-int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec_cap);
+int bt_audio_codec_cap_get_frame_dur(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the frame duration of a codec capability.
+ *
+ * @param codec_cap The codec capabilities to set data for.
+ * @param frame_dur The frame duration to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
+				     enum bt_audio_codec_cap_frame_dur frame_dur);
 
 /**
  * @brief Extract the frequency from a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Bitfield of supported channel counts if 0 or positive
  * @retval -EINVAL if arguments are invalid
@@ -1028,9 +1054,22 @@ int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec
 int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Set the channel count of a codec capability.
  *
- * @param[in]  codec_cap   The codec configuration to extract data from.
+ * @param codec_cap The codec capabilities to set data for.
+ * @param chan_count The channel count frequency to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_supported_audio_chan_counts(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_codec_cap_chan_count chan_count);
+
+/**
+ * @brief Extract the supported octets per codec frame from a codec capability.
+ *
+ * @param[in]  codec_cap   The codec capabilities to extract data from.
  * @param[out] codec_frame Struct to place the resulting values in
  *
  * @retval 0 on success
@@ -1043,9 +1082,23 @@ int bt_audio_codec_cap_get_octets_per_frame(
 	struct bt_audio_codec_octets_per_codec_frame *codec_frame);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Set the octets per codec frame of a codec capability.
  *
- * @param codec_cap The codec configuration to extract data from.
+ * @param codec_cap   The codec capabilities to set data for.
+ * @param codec_frame The octets per codec frame to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_octets_per_frame(
+	struct bt_audio_codec_cap *codec_cap,
+	const struct bt_audio_codec_octets_per_codec_frame *codec_frame);
+
+/**
+ * @brief Extract the maximum codec frames per SDU from a codec capability.
+ *
+ * @param codec_cap The codec capabilities to extract data from.
  *
  * @retval Maximum number of codec frames per SDU supported
  * @retval -EINVAL if arguments are invalid
@@ -1053,6 +1106,19 @@ int bt_audio_codec_cap_get_octets_per_frame(
  * @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the maximum codec frames per SDU of a codec capability.
+ *
+ * @param codec_cap            The codec capabilities to set data for.
+ * @param codec_frames_per_sdu The maximum codec frames per SDU to set.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_set_max_codec_frames_per_sdu(struct bt_audio_codec_cap *codec_cap,
+						    uint8_t codec_frames_per_sdu);
 
 /** @brief Lookup a specific metadata value based on type
  *
@@ -1214,6 +1280,7 @@ int bt_audio_codec_cap_meta_get_extended(const struct bt_audio_codec_cap *codec_
  */
 int bt_audio_codec_cap_meta_get_vendor(const struct bt_audio_codec_cap *codec_cap,
 				       const uint8_t **vendor_meta);
+
 /** @} */ /* End of bt_audio_codec_cap */
 
 #ifdef __cplusplus
