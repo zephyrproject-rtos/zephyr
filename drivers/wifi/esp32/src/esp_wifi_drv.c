@@ -501,10 +501,12 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
-			if (ap_info.phy_11n) {
+			if (ap_info.phy_11ax) {
+				status->link_mode = WIFI_6;
+			} else if (ap_info.phy_11n) {
 				status->link_mode = WIFI_4;
 			} else if (ap_info.phy_11g) {
-				status->link_mode |= WIFI_3;
+				status->link_mode = WIFI_3;
 			} else if (ap_info.phy_11b) {
 				status->link_mode = WIFI_1;
 			}
