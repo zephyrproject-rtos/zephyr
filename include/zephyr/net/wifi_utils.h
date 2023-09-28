@@ -57,12 +57,9 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
 
 
 /**
- * @brief Convert a string containing a list of SSIDs to an array of SSID strings.
+ * @brief Append a string containing an SSID to an array of SSID strings.
  *
- * @details The function will parse a string which specifies Wi-Fi SSIDs
- * as a comma separated string and convert it to an array.
- *
- * @param scan_ssids_str List of SSIDs expressed as a comma separated list.
+ * @param scan_ssids_str string to be appended in the list of scanned SSIDs.
  * @param ssids Pointer to an array where the SSIDs pointers are to be stored.
  * @param num_ssids Maximum number of SSIDs that can be stored.
  *
