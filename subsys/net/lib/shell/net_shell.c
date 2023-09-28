@@ -218,7 +218,7 @@ const char *iface2str(struct net_if *iface, const char **extra)
 
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
-SHELL_DYNAMIC_CMD_CREATE(iface_index, iface_index_get);
+#include "iface_dynamic.h"
 
 #endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
 
