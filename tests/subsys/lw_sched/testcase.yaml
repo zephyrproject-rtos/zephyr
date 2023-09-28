@@ -1,0 +1,4 @@
+tests:
+  subsys.lw_sched:
+    tags:
+      - kernel
