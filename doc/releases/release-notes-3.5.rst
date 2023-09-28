@@ -393,6 +393,11 @@ MCUboot
     with downgrade  prevention enabled. This option is automatically selected for
     DirectXIP mode and is available for both swap modes.
 
+  * Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY`
+    that allows to inform application that the on-board MCUboot will overwrite
+    the primary slot with secondary slot contents, without saving the original
+    image in primary slot.
+
 Storage
 *******
 
