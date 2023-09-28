@@ -770,10 +770,25 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
+		if (!LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR)) {
+			/* Enable the power interface clock */
+			LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
+		}
+
+		if (!LL_PWR_IsEnabledBkUpAccess()) {
+			/* Enable write access to Backup domain */
+			LL_PWR_EnableBkUpAccess();
+			while (!LL_PWR_IsEnabledBkUpAccess()) {
+				/* Wait for Backup domain access */
+			}
+		}
+
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() != 1) {
 		}
+
+		LL_PWR_DisableBkUpAccess();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
