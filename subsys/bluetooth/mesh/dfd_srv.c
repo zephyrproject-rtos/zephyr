@@ -477,7 +477,9 @@ static int handle_upload_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 	/* This will be a no-op if the slot state isn't RESERVED, which is
 	 * what we want.
 	 */
-	bt_mesh_dfu_slot_release(srv->upload.slot);
+	if (srv->upload.slot) {
+		bt_mesh_dfu_slot_release(srv->upload.slot);
+	}
 
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
 	srv->upload.is_oob = false;
