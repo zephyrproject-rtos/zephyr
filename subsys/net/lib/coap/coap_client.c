@@ -369,7 +369,7 @@ static void report_callback_error(struct coap_client_internal_request *internal_
 static bool timeout_expired(struct coap_client_internal_request *internal_req)
 {
 	return (internal_req->request_ongoing &&
-		internal_req->pending.timeout <= k_uptime_get_32());
+		internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0));
 }
 
 static int resend_request(struct coap_client *client,
@@ -649,7 +649,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	/* Separate response coming */
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
 	    response_code == COAP_CODE_EMPTY) {
-		internal_req->pending.t0 = k_uptime_get_32();
+		internal_req->pending.t0 = k_uptime_get();
 		internal_req->pending.timeout = internal_req->pending.t0 + COAP_SEPARATE_TIMEOUT;
 		internal_req->pending.retries = 0;
 		return 1;
