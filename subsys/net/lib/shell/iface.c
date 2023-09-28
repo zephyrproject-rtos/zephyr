@@ -654,6 +654,12 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
+
+#include "iface_dynamic.h"
+
+#endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(up, IFACE_DYN_CMD,
 		  "'net iface up <index>' takes network interface up.",
