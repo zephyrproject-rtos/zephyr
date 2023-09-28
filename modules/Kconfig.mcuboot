@@ -175,6 +175,18 @@ config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
 	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
 
+config MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+	bool "MCUboot has been configured to just overwrite primary slot"
+	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
+	help
+	  MCUboot will take contents of secondary slot of an image and will
+	  overwrite primary slot with it.
+	  In this mode it is not possible to revert back to previous version
+	  as it is not stored in the secondary slot.
+	  This mode supports MCUBOOT_BOOTLOADER_NO_DOWNGRADE which means
+	  that the overwrite will not happen unless the version of secondary
+	  slot is higher than the version in primary slot.
+
 config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 	bool "MCUboot has been configured for DirectXIP operation"
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
