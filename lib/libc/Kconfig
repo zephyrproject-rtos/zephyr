@@ -19,6 +19,12 @@ config REQUIRES_FLOAT_PRINTF
 	  Select a printf implementation that provides a complete
 	  implementation including floating point support.
 
+config REQUIRES_MALLOC
+	bool "Requires malloc APIs"
+	help
+	  Indicates that the malloc family of functions are required by the
+	  application.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
