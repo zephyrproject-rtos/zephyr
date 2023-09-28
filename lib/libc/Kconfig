@@ -92,6 +92,7 @@ config MINIMAL_LIBC
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	select COMMON_LIBC_MALLOC if REQUIRES_MALLOC
 	help
 	  Build with minimal C library.
 
