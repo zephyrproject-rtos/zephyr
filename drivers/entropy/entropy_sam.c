@@ -53,19 +53,8 @@ static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 	int timeout = 1000000;
 
 	while (!_ready(trng)) {
-		if (timeout-- == 0) {
+		if ((timeout-- == 0) || ((flags & ENTROPY_BUSYWAIT) == 0U)) {
 			return -ETIMEDOUT;
-		}
-
-		if ((flags & ENTROPY_BUSYWAIT) == 0U) {
-			/* This internal function is used by both get_entropy,
-			 * and get_entropy_isr APIs. The later may call this
-			 * function with the ENTROPY_BUSYWAIT flag set. In
-			 * that case make no assumption that the kernel is
-			 * initialized when the function is called; so, just
-			 * do busy-wait for the random data to be ready.
-			 */
-			k_yield();
 		}
 	}
 
