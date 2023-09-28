@@ -63,6 +63,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
 	status = "okay";
@@ -84,6 +88,12 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x04000000>,
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+	status = "okay";
 };
 
 &usart1 {
