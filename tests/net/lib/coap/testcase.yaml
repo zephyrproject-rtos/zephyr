@@ -1,5 +1,3 @@
-common:
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   net.coap.simple:
     min_ram: 16
