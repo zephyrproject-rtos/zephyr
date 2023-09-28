@@ -1,0 +1,45 @@
+# Cryptography primitive options for TinyCrypt version 2.0
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WEB3_IOT_SDK
+	bool "web3 iot sdk Support"
+	#select MBEDTLS
+	help
+		This option enables the Web3 IoT SDK.
+
+if WEB3_IOT_SDK
+config CRYPTO_IMPL
+	string "the crypto library to use"
+	default "Extern" if WEB3_IOT_SDK
+	help
+		the crypto library to use. 
+		Possible values: "MbedTLS" , "TinyCrypt or Zephyr os". 
+
+config BUILD_IOTEX_F
+	bool "build the Iotex Firmware component"
+	default  y
+	help
+		build the Iotex Firmware component. Defaults to ON.
+
+config BUILD_PSA_TEST_SUITE
+	bool "build the PSA Architecture test suite"
+	default  n
+	help
+		build the PSA Architecture test suite. Defaults to OFF.
+
+config BUILD_EXAMPLE_DEVICE_REGISTRATION
+	bool "build the device registration example"
+	default  n
+	depends on TINYCRYPT_SHA256_HMAC
+	help
+		build the device registration example. Defaults to OFF.
+
+config GIT_SUBMODULE_UPDATE
+	bool "download or update any dependencies specified as submodules"
+	default  n
+	help
+		download or update any dependencies specified as submodules. Defaults to ON.
+
+endif

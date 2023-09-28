@@ -1,0 +1,4 @@
+
+
+#define MBEDTLS_PSA_CRYPTO_SPM
+#define MBEDTLS_USE_PSA_CRYPTO

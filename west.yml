@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: machinefi
+      url-base: https://github.com/machinefi
 
   group-filter: [-babblesim]
 
@@ -333,6 +335,18 @@ manifest:
     - name: tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
       path: modules/crypto/tinycrypt
+      groups:
+        - crypto
+    - name: web3-iot-sdk
+      remote: machinefi
+      revision: f67d26d63b99c244e5a999d9ad5b74864d52ff1d
+      path: modules/crypto/web3-iot-sdk
+      groups:
+        - crypto
+    - name: iotex-f
+      remote: machinefi
+      revision: d7fb3a75374180f54f9678e72536d7268be7e8a8
+      path: modules/crypto/web3-iot-sdk/component/services/iotex-f
       groups:
         - crypto
     - name: trusted-firmware-m

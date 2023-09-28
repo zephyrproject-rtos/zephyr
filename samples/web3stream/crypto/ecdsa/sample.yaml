@@ -1,0 +1,7 @@
+sample:
+  description: Web3-iot-sdk sample
+    application
+  name: ecdsa
+tests:
+  sample.web3stream.crypto.ecdsa:
+    tags: introduction

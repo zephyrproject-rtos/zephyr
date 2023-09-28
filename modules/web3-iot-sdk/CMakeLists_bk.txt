@@ -1,0 +1,194 @@
+#
+# Copyright (c) 2023 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+if(CONFIG_WEB3_IOT_SDK)
+
+set(CRYPTO_IMPL ${CONFIG_CRYPTO_IMPL})
+
+if(CONFIG_BUILD_IOTEX_F)
+#    set(BUILD_IOTEX_F ON)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_IOTEX_F=ON)
+else()
+    #set(BUILD_IOTEX_F OFF)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_IOTEX_F=OFF)
+endif()
+
+if(CONFIG_BUILD_PSA_TEST_SUITE)
+    #set(BUILD_PSA_TEST_SUITE ON)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_PSA_TEST_SUITE=ON)
+else()
+    #set(BUILD_PSA_TEST_SUITE OFF)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_PSA_TEST_SUITE=OFF)
+endif()
+
+if(CONFIG_BUILD_EXAMPLE_DEVICE_REGISTRATION)
+    #set(BUILD_EXAMPLE_DEVICE_REGISTRATION ON)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_EXAMPLE_DEVICE_REGISTRATION=ON)
+else()
+    #set(BUILD_EXAMPLE_DEVICE_REGISTRATION OFF)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DBUILD_EXAMPLE_DEVICE_REGISTRATION=OFF)
+endif()
+
+if(CONFIG_GIT_SUBMODULE_UPDATE)
+    #set(GIT_SUBMODULE_UPDATE ON)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DGIT_SUBMODULE_UPDATE=ON)
+else()
+    #set(GIT_SUBMODULE_UPDATE OFF)
+    list(APPEND WEB3_IOT_SDK_CMAKE_ARGS -DGIT_SUBMODULE_UPDATE=OFF)
+endif()
+
+if("${ARCH}" STREQUAL "x86")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+
+endif()
+
+message(ZEPHYR_MBEDTLS_MODULE_DIR = "${ZEPHYR_MBEDTLS_MODULE_DIR}")
+message(ZEPHYR_CURRENT_MOZEPHYR_TINYCRYPT_MODULE_DIRDULE_DIR = "${ZEPHYR_TINYCRYPT_MODULE_DIR}")
+message(symbolic_link = "${ZEPHYR_CURRENT_MODULE_DIR}/component/crypto/mbedtls")
+
+
+#ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${ZEPHYR_TINYCRYPT_MODULE_DIR} "${ZEPHYR_CURRENT_MODULE_DIR}/component/crypto/tinycrypt")
+
+#ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${ZEPHYR_MBEDTLS_MODULE_DIR} "${ZEPHYR_CURRENT_MODULE_DIR}/component/crypto/mbedtls")
+#execute_process(COMMAND sh -c "/usr/bin/touch  /tmp/testsssss" RESULT_VARIABLE myoutput OUTPUT_STRIP_TRAILING_WHITESPACE)
+#message("Output: ${myoutput}")
+
+#execute_process(COMMAND sh -c "ln -s ${ZEPHYR_MBEDTLS_MODULE_DIR}  ${ZEPHYR_CURRENT_MODULE_DIR}/component/crypto/mbedtls")
+#execute_process(COMMAND sh -c "ln -s ${ZEPHYR_TINYCRYPT_MODULE_DIR}  ${ZEPHYR_CURRENT_MODULE_DIR}/component/crypto/tinycrypt")
+
+get_filename_component(MODULE_NAME ${ZEPHYR_CURRENT_MODULE_DIR} NAME)
+
+set(WEB3_IOT_SDK_BINARY_DIR ${CMAKE_BINARY_DIR}/modules/${MODULE_NAME})
+
+file(MAKE_DIRECTORY ${WEB3_IOT_SDK_BINARY_DIR})
+
+
+zephyr_library_compile_definitions(MBEDTLS)
+zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/component/layer/include)
+zephyr_library_link_libraries(mbedTLS)
+#add_library(mbedTLS STATIC IMPORTED GLOBAL)
+#add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/component/layer)
+include_directories(${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+link_libraries(${CMAKE_BINARY_DIR}/modules/mbedtls/libmbedTLSCrypto.a)
+add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/component/layer  iotex_psa_layer)
+
+
+zephyr_library_link_libraries(${WEB3_IOT_SDK_BINARY_DIR}/iotex_psa_layer/libiotex_psa_layer.a)
+
+#add_custom_target(web3_iot_sdk_cmake
+#    DEPENDS ${WEB3_IOT_SDK_BINARY_DIR}/CMakeCache.txt
+#)
+
+#set(WS_MBEDTLS ${WEB3_IOT_SDK_BINARY_DIR}/component/crypto/mbedtls/library/libmbedtls.a)
+#set(WS_MBEDTLS_CRYPTO ${CMAKE_BINARY_DIR}/modules/mbedtls/libmbedTLSCrypto.a)
+#set(WS_MBEDTLS_CRYPTO_INCLUDE ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+#set(WS_MBEDTLS_X509 ${WEB3_IOT_SDK_BINARY_DIR}/component/crypto/mbedtls/library/libmbedx509.a)
+#set(WS_IOTEX_SDK_INTERFACE ${WEB3_IOT_SDK_BINARY_DIR}/component/services/iotex-f/interface/libiotex_sdk_interface.a)
+#set(WS_IOTEX_SDK_TFM_SERVICE ${WEB3_IOT_SDK_BINARY_DIR}/component/services/iotex-f/secure_fw/services/audit_logging/libtfm_service_audit.a)
+#set(WS_IOTEX_SDK_TFM_PSA_ROT_CRYPTO ${WEB3_IOT_SDK_BINARY_DIR}/component/services/iotex-f/secure_fw/services/crypto/libtfm_psa_rot_partition_crypto.a)
+#set(WS_IOTEX_SDK_TFM_SPM_CORE ${WEB3_IOT_SDK_BINARY_DIR}/component/services/iotex-f/secure_fw/core/libtfm_spm_core.a)
+#set(WS_IOTEX_SDK_INCLUDE ${ZEPHYR_CURRENT_MODULE_DIR}/include)
+
+#set(BUILD_BYPRODUCTS
+#    ${WS_IOTEX_SDK_INTERFACE}
+#    ${WS_IOTEX_SDK_TFM_SERVICE}
+#    ${WS_IOTEX_SDK_TFM_PSA_ROT_CRYPTO}
+#    ${WS_IOTEX_SDK_TFM_SPM_CORE}
+#)
+
+#zephyr_library_compile_definitions(MBEDTLS)
+
+#add_custom_command(
+#    OUTPUT ${WEB3_IOT_SDK_BINARY_DIR}/CMakeCache.txt
+#    COMMAND ${CMAKE_COMMAND}
+#        -DCRYPTO_IMPL=${CONFIG_CRYPTO_IMPL}
+#        ${WEB3_IOT_SDK_CMAKE_ARGS}
+#        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+#        -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+#        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+#        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+#        -DCMAKE_LINKER=${CMAKE_LINKER}
+#        -DEXTERN_MBEDTLS_CRYPTO_LIB=${WS_MBEDTLS_CRYPTO}
+#        -DEXTERN_MBEDTLS_CRYPTO_INCLUDE=${WS_MBEDTLS_CRYPTO_INCLUDE}
+#        -S ${ZEPHYR_CURRENT_MODULE_DIR}
+#        -B ${WEB3_IOT_SDK_BINARY_DIR}
+#    WORKING_DIRECTORY ${WEB3_IOT_SDK_BINARY_DIR}
+#    COMMAND_EXPAND_LISTS
+#)
+
+#execute_process(COMMAND ${CMAKE_COMMAND}
+#    ${WEB3_IOT_SDK_CMAKE_ARGS}
+#    -S ${ZEPHYR_CURRENT_MODULE_DIR}
+#    -B ${WEB3_IOT_SDK_BINARY_DIR}
+#)
+
+#ExternalProject_Add(
+#    web3_iot_sdk_prj
+#    SOURCE_DIR ${ZEPHYR_CURRENT_MODULE_DIR}
+#    BINARY_DIR ${WEB3_IOT_SDK_BINARY_DIR}
+#    CONFIGURE_COMMAND ""
+#    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target all ${PARALLEL_JOBS}
+#    INSTALL_COMMAND ""
+#    BUILD_ALWAYS True
+#    USES_TERMINAL_BUILD Fals
+#    DEPENDS web3_iot_sdk_cmake
+#    BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
+#)
+
+#execute_process(COMMAND ${CMAKE_COMMAND}
+#   --build  ${WEB3_IOT_SDK_BINARY_DIR}
+#)
+#string(REGEX MATCHALL "[0-9A-Za-z_]" "" ${ZEPHYR_CURRENT_MODULE_DIR} ${MODULE_NAME})
+
+#message("--------------xx${ZEPHYR_TOOLCHAIN_VARIANT}--------vv${ARCH}-------------")
+
+
+#set(WS_MBEDTLS ${WEB3_IOT_SDK_BINARY_DIR}/component/crypto/mbedtls/library/libmbedtls.a CACHE PATH "lib include path" FORCE)
+#set(WS_MBEDTLS_CRYPTO ${WEB3_IOT_SDK_BINARY_DIR}/component/crypto/mbedtls/library/libmbedcrypto.a CACHE PATH "lib include path" FORCE)
+#set(WS_MBEDTLS_X509 ${WEB3_IOT_SDK_BINARY_DIR}/component/crypto/mbedtls/library/libmbedx509.a CACHE PATH "lib include path" FORCE)
+#set(WS_IOTEX_SDK_INTERFACE ${WEB3_IOT_SDK_BINARY_DIR}/component/services/iotex-f/interface/libiotex_sdk_interface.a CACHE PATH "lib include path" FORCE)
+#set(WS_IOTEX_SDK_INCLUDE ${ZEPHYR_CURRENT_MODULE_DIR}/include CACHE PATH "include path" FORCE)
+
+#add_dependencies(zephyr_interface web3_iot_sdk_prj)
+
+#add_dependencies(${ZEPHYR_CURRENT_LIBRARY} web3_iot_sdk_prj)
+
+
+#add_library(iot_sdk_lib STATIC IMPORTED GLOBAL)
+#add_dependencies(iot_sdk_lib web3_iot_sdk_prj)
+#set_target_properties(iot_sdk_lib PROPERTIES    IMPORTED_LOCATION     ${WS_IOTEX_SDK_INTERFACE})
+#set_target_properties(iot_sdk_lib PROPERTIES    IMPORTED_LOCATION     ${WS_IOTEX_SDK_TFM_PSA_ROT_CRYPTO})
+##set_target_properties(iot_sdk_lib PROPERTIES    IMPORTED_LOCATION     ${WS_IOTEX_SDK_TFM_SPM_CORE})
+#set_target_properties(iot_sdk_lib PROPERTIES    IMPORTED_LOCATION     ${WS_IOTEX_SDK_TFM_SERVICE})
+#set_target_properties(iot_sdk_lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${WS_IOTEX_SDK_INCLUDE})
+
+#zephyr_include_directories(
+#    ${WS_IOTEX_SDK_INCLUDE}
+#)
+
+#zephyr_library_link_libraries(
+#    ${WS_MBEDTLS}
+#    ${WS_MBEDTLS_CRYPTO}
+#    ${WS_MBEDTLS_X509}
+#    ${WS_IOTEX_SDK_INTERFACE}
+#    ${WS_IOTEX_SDK_TFM_SERVICE}
+#)
+#zephyr_library_link_libraries(mbedTLS)
+#zephyr_library_link_libraries(
+#    iot_sdk_lib
+#    ${WS_MBEDTLS_CRYPTO}
+#    ${WS_MBEDTLS_X509}
+#    ${WS_IOTEX_SDK_INTERFACE}
+#    ${WS_IOTEX_SDK_TFM_SERVICE}
+#    ${WS_IOTEX_SDK_TFM_PSA_ROT_CRYPTO}
+#    ${WS_IOTEX_SDK_TFM_SPM_CORE}
+#)
+
+endif()
+
+
+
