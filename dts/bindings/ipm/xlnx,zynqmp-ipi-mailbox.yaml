@@ -10,11 +10,6 @@ compatible: "xlnx,zynqmp-ipi-mailbox"
 include: base.yaml
 
 properties:
-
-  reg:
-    type: array
-    description: IPI control and status register space
-
   local-ipi-id:
     type: int
     description: Host Xilinx IPI agent ID of which the mailbox is connected to.
