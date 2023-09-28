@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_PPP
-	bool "Point-to-point (PPP) support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Point-to-point (PPP) support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help
