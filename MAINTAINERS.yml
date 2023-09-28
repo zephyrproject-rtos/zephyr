@@ -193,6 +193,18 @@ Ambiq Platforms:
   labels:
     - "platform: Ambiq"
 
+Binary Descriptors:
+  status: maintained
+  maintainers:
+    - yonsch
+  files:
+    - subsys/bindesc/
+    - include/zephyr/bindesc.h
+    - samples/subsys/bindesc/
+    - scripts/west_commands/bindesc.py
+  labels:
+    - "area: Binary Descriptors"
+
 Bluetooth:
   status: maintained
   maintainers:
