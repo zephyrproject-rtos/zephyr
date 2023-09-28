@@ -27,6 +27,7 @@ config TEST_DELAY_US
 config TEST_STACK_SIZE
 	int "Size of each thread stack in this test"
 	default 1024 if 64BIT
+	default 1024 if SPARC
 	default 512
 	help
 	  The minimal stack size required to run a minimal thread.
