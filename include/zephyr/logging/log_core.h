@@ -84,8 +84,6 @@ extern "C" {
 #define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
-#define _LOG_ZZZZ0  _LOG_YYYY,
-#define _LOG_ZZZZ0U _LOG_YYYY,
 #define _LOG_ZZZZ1  _LOG_YYYY,
 #define _LOG_ZZZZ1U _LOG_YYYY,
 #define _LOG_ZZZZ2  _LOG_YYYY,
