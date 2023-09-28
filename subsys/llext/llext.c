@@ -433,8 +433,10 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
 			sym_tab->syms[j].name = name;
-			sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem]
-							 + sym.st_value);
+			sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem] +
+							 sym.st_value -
+							 (ldr->hdr.e_type == ET_REL ? 0 :
+							  ldr->sects[sect_idx].sh_addr));
 			LOG_DBG("function symbol %d name %s addr %p",
 				j, name, sym_tab->syms[j].addr);
 			j++;
