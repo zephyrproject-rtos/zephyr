@@ -9,10 +9,17 @@
 #define LL_BIS_ADV_HANDLE_BASE BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE
 #define LL_BIS_ADV_IDX_FROM_HANDLE(conn_handle) \
 	((conn_handle) - (LL_BIS_ADV_HANDLE_BASE))
+/* Conditional compile to prevent coverity issue CWE570, comparison of unsigned int to 0 */
+#if (LL_BIS_ADV_HANDLE_BASE > 0)
 #define IS_ADV_ISO_HANDLE(conn_handle) \
 	(((conn_handle) >= (LL_BIS_ADV_HANDLE_BASE)) && \
 	 ((conn_handle) <= ((LL_BIS_ADV_HANDLE_BASE) + \
 			    (BT_CTLR_ADV_ISO_STREAM_MAX) - 1U)))
+#else
+#define IS_ADV_ISO_HANDLE(conn_handle) \
+	((conn_handle) <= ((LL_BIS_ADV_HANDLE_BASE) + \
+			   (BT_CTLR_ADV_ISO_STREAM_MAX) - 1U))
+#endif /* LL_BIS_ADV_HANDLE_BASE */
 #else
 #define LL_BIS_ADV_IDX_FROM_HANDLE(conn_handle) 0U
 #define IS_ADV_ISO_HANDLE(conn_handle) 0U
@@ -23,10 +30,17 @@
 #define LL_BIS_SYNC_HANDLE_BASE BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE
 #define LL_BIS_SYNC_IDX_FROM_HANDLE(conn_handle) \
 	((conn_handle) - (LL_BIS_SYNC_HANDLE_BASE))
+/* Conditional compile to prevent coverity issue CWE570, comparison of unsigned int to 0 */
+#if (LL_BIS_SYNC_HANDLE_BASE > 0)
 #define IS_SYNC_ISO_HANDLE(conn_handle) \
 	(((conn_handle) >= (LL_BIS_SYNC_HANDLE_BASE)) && \
 	 ((conn_handle) <= ((LL_BIS_SYNC_HANDLE_BASE) + \
 			    (BT_CTLR_SYNC_ISO_STREAM_MAX) - 1U)))
+#else
+#define IS_SYNC_ISO_HANDLE(conn_handle) \
+	((conn_handle) <= ((LL_BIS_SYNC_HANDLE_BASE) + \
+			   (BT_CTLR_SYNC_ISO_STREAM_MAX) - 1U))
+#endif /* LL_BIS_SYNC_HANDLE_BASE */
 #else
 #define LL_BIS_SYNC_IDX_FROM_HANDLE(conn_handle) 0U
 #define IS_SYNC_ISO_HANDLE(conn_handle) 0U
