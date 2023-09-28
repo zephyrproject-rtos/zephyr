@@ -215,6 +215,8 @@ static void set_sm_state_delayed(uint8_t sm_state, int64_t delay_ms)
 		}
 	} else if (sm_state == ENGINE_UPDATE_REGISTRATION) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE;
+	} else if (sm_state == ENGINE_DEREGISTER) {
+		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER;
 	}
 
 	if (sm_is_suspended()) {
