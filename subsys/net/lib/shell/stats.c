@@ -639,65 +639,15 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
-static char iface_stats_help_buffer[MAX_IFACE_COUNT][MAX_IFACE_HELP_STR_LEN];
-static char iface_stats_index_buffer[MAX_IFACE_COUNT][MAX_IFACE_STR_LEN];
-
-static void iface_stats_index_get(size_t idx, struct shell_static_entry *entry);
-
-SHELL_DYNAMIC_CMD_CREATE(iface_stats_index, iface_stats_index_get);
-
-static char *set_iface_stats_index_buffer(size_t idx)
-{
-	struct net_if *iface = net_if_get_by_index(idx);
-
-	if (!iface) {
-		return NULL;
-	}
-
-	snprintk(iface_stats_index_buffer[idx], MAX_IFACE_STR_LEN, "%zu", idx);
-
-	return iface_stats_index_buffer[idx];
-}
-
-static char *set_iface_stats_index_help(size_t idx)
-{
-	struct net_if *iface = net_if_get_by_index(idx);
-
-	if (!iface) {
-		return NULL;
-	}
-
-	snprintk(iface_stats_help_buffer[idx], MAX_IFACE_HELP_STR_LEN,
-		 "%s (%p)", iface2str(iface, NULL), iface);
-
-	return iface_stats_help_buffer[idx];
-}
-
-static void iface_stats_index_get(size_t idx, struct shell_static_entry *entry)
-{
-	entry->handler = NULL;
-	entry->help  = set_iface_stats_index_help(idx);
-	entry->subcmd = &iface_stats_index;
-	entry->syntax = set_iface_stats_index_buffer(idx);
-}
+#include "iface_dynamic.h"
 
 #endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
-
-#if defined(CONFIG_NET_STATISTICS) && \
-	defined(CONFIG_NET_STATISTICS_PER_INTERFACE) && \
-	defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
-#define STATS_IFACE_CMD &iface_stats_index
-#else
-#define STATS_IFACE_CMD NULL
-#endif /* CONFIG_NET_STATISTICS && CONFIG_NET_STATISTICS_PER_INTERFACE &&
-	* CONFIG_NET_SHELL_DYN_CMD_COMPLETION
-	*/
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_stats,
 	SHELL_CMD(all, NULL,
 		  "Show network statistics for all network interfaces.",
 		  cmd_net_stats_all),
-	SHELL_CMD(iface, STATS_IFACE_CMD,
+	SHELL_CMD(iface, IFACE_DYN_CMD,
 		  "'net stats <index>' shows network statistics for "
 		  "one specific network interface.",
 		  cmd_net_stats_iface),
