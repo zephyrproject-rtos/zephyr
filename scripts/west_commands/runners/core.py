@@ -22,6 +22,7 @@ import shutil
 import signal
 import subprocess
 import re
+from dataclasses import dataclass, field
 from functools import partial
 from enum import Enum
 from inspect import isabstract
@@ -199,6 +200,9 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
+_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach'}
+
+@dataclass
 class RunnerCaps:
     '''This class represents a runner class's capabilities.
 
@@ -235,34 +239,23 @@ class RunnerCaps:
     - tool_opt: whether the runner supports a --tool-opt (-O) option, which
       can be given multiple times and is passed on to the underlying tool
       that the runner wraps.
+
+    - file: whether the runner supports a --file option, which specifies
+      exactly the file that should be used to flash, overriding any default
+      discovered in the build directory.
     '''
 
-    def __init__(self,
-                 commands: Set[str] = {'flash', 'debug',
-                                       'debugserver', 'attach'},
-                 dev_id: bool = False,
-                 flash_addr: bool = False,
-                 erase: bool = False,
-                 reset: bool = False,
-                 tool_opt: bool = False,
-                 file: bool = False):
-        self.commands = commands
-        self.dev_id = dev_id
-        self.flash_addr = bool(flash_addr)
-        self.erase = bool(erase)
-        self.reset = bool(reset)
-        self.tool_opt = bool(tool_opt)
-        self.file = bool(file)
+    commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
+    dev_id: bool = False
+    flash_addr: bool = False
+    erase: bool = False
+    reset: bool = False
+    tool_opt: bool = False
+    file: bool = False
 
-    def __str__(self):
-        return (f'RunnerCaps(commands={self.commands}, '
-                f'dev_id={self.dev_id}, '
-                f'flash_addr={self.flash_addr}, '
-                f'erase={self.erase}, '
-                f'reset={self.reset}, '
-                f'tool_opt={self.tool_opt}, '
-                f'file={self.file}'
-                ')')
+    def __post_init__(self):
+        if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
+            raise ValueError(f'{self.commands=} contains invalid command')
 
 
 def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
