@@ -195,6 +195,106 @@ enum sensor_attribute {
 };
 
 /**
+ * @brief Container for sensor information specified in devicetree.
+ *
+ * This type contains a pointer to a sensor device and the sensor channel number
+ * to read the data from.
+ *
+ * @see SENSOR_DT_SPEC_GET_BY_IDX
+ * @see SENSOR_DT_SPEC_GET
+ */
+struct sensor_dt_channel_spec {
+	/** Sensor device instance. */
+	const struct device *dev;
+	/** Channel number. */
+	enum sensor_channel channel;
+};
+
+/**
+ * @brief Static initializer for a struct sensor_dt_channel_spec
+ *
+ * This returns a static initializer for a struct sensor_dt_channel_spec given a devicetree
+ * node identifier and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node {
+ *             sensors = <&temp_cpu SENSOR_CHAN_DIE_TEMP>,
+ *                       <&temp_amb SENSOR_CHAN_AMBIENT_TEMP>;
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct sensor_dt_channel_spec spec =
+ *        SENSOR_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), 1);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(temp_amb)),
+ *    //         .channel = SENSOR_CHAN_AMBIENT_TEMP,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'sensors' property, and that 'sensors' property specifies a sensor device
+ * and a sensor channel.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param idx Logical index into 'sensors' property.
+ *
+ * @return Static initializer for a struct sensor_dt_channel_spec for the property.
+ *
+ * @see SENSOR_DT_SPEC_INST_GET_BY_IDX
+ */
+#define SENSOR_DT_SPEC_GET_BY_IDX(node_id, idx)					\
+	{									\
+		.dev = DEVICE_DT_GET(DT_SENSOR_DEV_BY_IDX(node_id, idx)),	\
+		.channel = DT_SENSOR_CHANNEL_BY_IDX(node_id, idx),		\
+	}
+
+/**
+ * @brief Static initializer for a struct sensor_dt_channel_spec from a DT_DRV_COMPAT
+ *        instance.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx Logical index into 'sensors' property.
+ *
+ * @return Static initializer for a struct sensor_dt_channel_spec for the property.
+ *
+ * @see SENSOR_DT_SPEC_GET_BY_IDX
+ */
+#define SENSOR_DT_SPEC_INST_GET_BY_IDX(inst, idx)	\
+	SENSOR_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Equivalent to <tt>SENSOR_DT_SPEC_GET_BY_IDX(node_id, 0)</tt>.
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for a struct sensor_dt_channel_spec for the property.
+ *
+ * @see SENSOR_DT_SPEC_GET_BY_IDX
+ * @see SENSOR_DT_SPEC_INST_GET
+ */
+#define SENSOR_DT_SPEC_GET(node_id) SENSOR_DT_SPEC_GET_BY_IDX(node_id, 0)
+
+/**
+ * @brief Equivalent to <tt>SENSOR_DT_SPEC_INST_GET_BY_IDX(inst, 0)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ *
+ * @return Static initializer for a struct sensor_dt_channel_spec for the property.
+ *
+ * @see SENSOR_DT_SPEC_INST_GET_BY_IDX
+ * @see SENSOR_DT_SPEC_GET
+ */
+#define SENSOR_DT_SPEC_INST_GET(inst) SENSOR_DT_SPEC_GET(DT_DRV_INST(inst))
+
+/**
  * @typedef sensor_trigger_handler_t
  * @brief Callback API upon firing of a trigger
  *

@@ -4315,5 +4315,6 @@
 #include <zephyr/devicetree/can.h>
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
+#include <zephyr/devicetree/sensors.h>
 
 #endif /* DEVICETREE_H */
