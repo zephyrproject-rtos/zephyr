@@ -138,6 +138,7 @@ ARM arch:
     - stephanosio
     - bbolen
     - povergoing
+    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
