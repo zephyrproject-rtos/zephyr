@@ -97,6 +97,25 @@ struct llext_loader {
 	/** @endcond */
 };
 
+static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
+{
+	return l->read(l, buf, len);
+}
+
+static inline int llext_seek(struct llext_loader *l, size_t pos)
+{
+	return l->seek(l, pos);
+}
+
+static inline void *llext_peek(struct llext_loader *l, size_t pos)
+{
+	if (l->peek) {
+		return l->peek(l, pos);
+	}
+
+	return NULL;
+}
+
 /**
  * @}
  */
