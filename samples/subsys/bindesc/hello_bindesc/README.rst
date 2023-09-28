@@ -1,12 +1,13 @@
-.. _hello_bindesc-sample:
+.. zephyr:code-sample:: hello-bindesc
+   :name: Binary descriptors "Hello World"
+   :relevant-api: bindesc_define
 
-hello_bindesc Sample Application
-################################
+   Set and access binary descriptors for a basic Zephyr application.
 
 Overview
 ********
 
-A simple sample of binary descriptor definition and usage.
+A simple sample of :ref:`binary descriptor <binary_descriptors>` definition and usage.
 
 Building and Running
 ********************
