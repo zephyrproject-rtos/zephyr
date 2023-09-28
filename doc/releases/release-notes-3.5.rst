@@ -378,6 +378,10 @@ Libraries / Subsystems
 
   * Added the :ref:`blinfo_api` subsystem.
 
+* Binary descriptors
+
+  * Added the :ref:`binary_descriptors` (``bindesc``) subsystem.
+
 HALs
 ****
 
