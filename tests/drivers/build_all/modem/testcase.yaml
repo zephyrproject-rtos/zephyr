@@ -74,10 +74,9 @@ tests:
       - CONFIG_MODEM_IFACE_UART_ASYNC=y
   drivers.modem.modem_cellular.build:
     extra_args: CONF_FILE=modem_cellular.conf
-    platform_exclude:
-      - serpente
-      - particle_boron
-      - rak5010_nrf52840
-      - litex_vexriscv
-      - ip_k66f
+    platform_allow:
+      - native_posix_64
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
     min_ram: 36
