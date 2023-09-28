@@ -658,12 +658,31 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 	const char *null_str = "(null)";
 
 	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
-		shell_print(sh,
+		/*
+		 * shell_fprintf is a must here as we need to calll the printf
+		 * multiple times, without having a newline char inserted
+		 * between invocations.
+		 */
+		shell_fprintf(sh, SHELL_NORMAL,
 			    "device name: %s, vendor: %s, model: %s, "
 			    "friendly name: %s",
 			    sensor->dev->name, sensor->vendor ? sensor->vendor : null_str,
 			    sensor->model ? sensor->model : null_str,
 			    sensor->friendly_name ? sensor->friendly_name : null_str);
+		if (sensor->num_channels > 0) {
+			/* Can't use shell_print here as it appends '\n'. */
+			shell_fprintf(sh, SHELL_NORMAL, ", supported channels:");
+			for (int i = 0; i < sensor->num_channels; i++) {
+				if (sensor->channels[i] < ARRAY_SIZE(sensor_channel_name)) {
+					shell_fprintf(sh, SHELL_NORMAL, " %s",
+						      sensor_channel_name[sensor->channels[i]]);
+				} else {
+					shell_fprintf(sh, SHELL_NORMAL, " unknown(%d)",
+						      sensor->channels[i]);
+				}
+			}
+		}
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}
 	return 0;
 #else
