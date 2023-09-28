@@ -2908,6 +2908,7 @@ West:
     - scripts/west-commands.yml
     - scripts/west_commands/
     - doc/develop/west/
+    - scripts/pylib/build_helpers/domains.py
   labels:
     - "area: West"
 
