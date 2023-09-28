@@ -111,7 +111,7 @@ class Bindesc(WestCommand):
                                          help=self.help,
                                          description=self.description)
 
-        subparsers = parser.add_subparsers(help='sub-command to run')
+        subparsers = parser.add_subparsers(help='sub-command to run', required=True)
 
         dump_parser = subparsers.add_parser('dump', help='Dump all binary descriptors in the image')
         dump_parser.add_argument('file', type=str, help='Executable file')
