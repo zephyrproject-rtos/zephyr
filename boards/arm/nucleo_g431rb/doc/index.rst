@@ -119,6 +119,8 @@ The Zephyr nucleo_g431rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | rng                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
