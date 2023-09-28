@@ -112,6 +112,11 @@ int bt_audio_codec_cfg_frame_dur_us_to_frame_dur(uint32_t frame_dur_us)
 	}
 }
 
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 ||                                                 \
+	CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 ||                                         \
+	CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 ||                                             \
+	CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
+
 struct search_type_param {
 	bool found;
 	uint8_t type;
@@ -133,6 +138,94 @@ static bool parse_cb(struct bt_data *data, void *user_data)
 
 	return true;
 }
+
+static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *data,
+		       size_t data_len)
+{
+	for (uint16_t i = 0U; i < buf->len;) {
+		uint8_t *len = &buf->data[i++];
+		const uint8_t data_type = buf->data[i++];
+		const uint8_t value_len = *len - sizeof(data_type);
+
+		if (data_type == type) {
+			uint8_t *value = &buf->data[i];
+
+			if (data_len == value_len) {
+				memcpy(value, data, data_len);
+			} else {
+				const int16_t diff = data_len - value_len;
+				uint8_t *old_next_data_start;
+				uint8_t *new_next_data_start;
+				uint8_t data_len_to_move;
+
+				/* Check if this is the last value in the buffer */
+				if (value + value_len == buf->data + buf->len) {
+					data_len_to_move = 0U;
+				} else {
+					old_next_data_start = value + value_len + 1;
+					new_next_data_start = value + data_len + 1;
+					data_len_to_move =
+						buf->len - (old_next_data_start - buf->data);
+				}
+
+				if (diff < 0) {
+					/* In this case we need to move memory around after the copy
+					 * to fit the new shorter data
+					 */
+
+					memcpy(value, data, data_len);
+					if (data_len_to_move > 0U) {
+						memmove(new_next_data_start, old_next_data_start,
+							data_len_to_move);
+					}
+				} else {
+					/* In this case we need to move memory around before
+					 * the copy to fit the new longer data
+					 */
+					if ((buf->len + diff) > buf->size) {
+						LOG_DBG("Cannot fit data_len %zu in buf with len "
+							"%u and size %u",
+							data_len, buf->len, buf->size);
+						return -ENOMEM;
+					}
+
+					if (data_len_to_move > 0) {
+						memmove(new_next_data_start, old_next_data_start,
+							data_len_to_move);
+					}
+					memcpy(value, data, data_len);
+				}
+
+				buf->len += diff;
+				*len += diff;
+			}
+
+			return buf->len;
+		}
+
+		i += value_len;
+	}
+
+	/* If we reach here, we did not find the data in the buffer, so we simply add it */
+	if ((buf->len + data_len) <= buf->size) {
+		net_buf_simple_add_u8(buf, data_len + sizeof(type));
+		net_buf_simple_add_u8(buf, type);
+		if (data_len > 0) {
+			net_buf_simple_add_mem(buf, data, data_len);
+		}
+	} else {
+		LOG_DBG("Cannot fit data_len %zu in codec_cfg with len %u and size %u", data_len,
+			buf->len, buf->size);
+		return -ENOMEM;
+	}
+
+	return buf->len;
+}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 ||                                           \
+	* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 ||                                       \
+	* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 ||                                           \
+	* CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0                                          \
+	*/
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 
@@ -185,6 +278,9 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, u
 int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
 			       const uint8_t *data, size_t data_len)
 {
+	struct net_buf_simple buf;
+	int ret;
+
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec_cfg is NULL");
 		return -EINVAL;
@@ -200,92 +296,14 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 		return -EINVAL;
 	}
 
-	for (uint16_t i = 0U; i < codec_cfg->data_len;) {
-		uint8_t *len = &codec_cfg->data[i++];
-		const uint8_t data_type = codec_cfg->data[i++];
-		const uint8_t value_len = *len - sizeof(data_type);
+	init_net_buf_simple_from_codec_cfg(&buf, codec_cfg);
 
-		if (data_type == type) {
-			uint8_t *value = &codec_cfg->data[i];
-
-			if (data_len == value_len) {
-				memcpy(value, data, data_len);
-			} else {
-				const int16_t diff = data_len - value_len;
-				uint8_t *old_next_data_start;
-				uint8_t *new_next_data_start;
-				uint8_t data_len_to_move;
-
-				/* Check if this is the last value in the buffer */
-				if (value + value_len == codec_cfg->data + codec_cfg->data_len) {
-					data_len_to_move = 0U;
-				} else {
-					old_next_data_start = value + value_len + 1;
-					new_next_data_start = value + data_len + 1;
-					data_len_to_move = codec_cfg->data_len -
-							   (old_next_data_start - codec_cfg->data);
-				}
-
-				if (diff < 0) {
-					/* In this case we need to move memory around after the copy
-					 * to fit the new shorter data
-					 */
-
-					memcpy(value, data, data_len);
-					if (data_len_to_move > 0U) {
-						memmove(new_next_data_start, old_next_data_start,
-							data_len_to_move);
-					}
-				} else {
-					/* In this case we need to move memory around before
-					 * the copy to fit the new longer data
-					 */
-					if ((codec_cfg->data_len + diff) >
-					    ARRAY_SIZE(codec_cfg->data)) {
-						LOG_DBG("Cannot fit data_len %zu in buf with len "
-							"%u and size %u",
-							data_len, codec_cfg->data_len,
-							ARRAY_SIZE(codec_cfg->data));
-						return -ENOMEM;
-					}
-
-					if (data_len_to_move > 0) {
-						memmove(new_next_data_start, old_next_data_start,
-							data_len_to_move);
-					}
-
-					memcpy(value, data, data_len);
-				}
-
-				codec_cfg->data_len += diff;
-				*len += diff;
-			}
-
-			return codec_cfg->data_len;
-		}
-
-		i += value_len;
+	ret = ltv_set_val(&buf, type, data, data_len);
+	if (ret >= 0) {
+		codec_cfg->data_len = ret;
 	}
 
-	/* If we reach here, we did not find the data in the buffer, so we simply add it */
-	if ((codec_cfg->data_len + data_len) <= ARRAY_SIZE(codec_cfg->data)) {
-		struct net_buf_simple buf;
-
-		init_net_buf_simple_from_codec_cfg(&buf, codec_cfg);
-
-		net_buf_simple_add_u8(&buf, data_len + sizeof(type));
-		net_buf_simple_add_u8(&buf, type);
-		if (data_len > 0) {
-			net_buf_simple_add_mem(&buf, data, data_len);
-		}
-		codec_cfg->data_len = buf.len;
-	} else {
-		LOG_DBG("Cannot fit data_len %zu in codec_cfg with len %u and size %u", data_len,
-			codec_cfg->data_len, ARRAY_SIZE(codec_cfg->data));
-		return -ENOMEM;
-	}
-
-	return codec_cfg->data_len;
+	return ret;
 }
 
 int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg)
