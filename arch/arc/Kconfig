@@ -265,21 +265,6 @@ config ARC_CURRENT_THREAD_USE_NO_TLS
 	  TLS pointer via _current variable does not provide significant advantages
 	  in case of MetaWare.
 
-config FAULT_DUMP
-	int "Fault dump level"
-	default 2
-	range 0 2
-	help
-	  Different levels for display information when a fault occurs.
-
-	  2: The default. Display specific and verbose information. Consumes
-		the most memory (long strings).
-
-	  1: Display general and short information. Consumes less memory
-		(short strings).
-
-	  0: Off.
-
 config GEN_ISR_TABLES
 	default y
 
