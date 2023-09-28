@@ -1074,6 +1074,15 @@ int bt_audio_codec_cap_meta_get_vendor(const struct bt_audio_codec_cap *codec_ca
 
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
 
+static void init_net_buf_simple_from_codec_cap(struct net_buf_simple *buf,
+					       struct bt_audio_codec_cap *codec_cap)
+{
+	buf->__buf = codec_cap->data;
+	buf->data = codec_cap->data;
+	buf->size = sizeof(codec_cap->data);
+	buf->len = codec_cap->data_len;
+}
+
 uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, uint8_t type,
 				   const uint8_t **data)
 {
@@ -1110,6 +1119,37 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap, u
 	return param.data_len;
 }
 
+int bt_audio_codec_cap_set_val(struct bt_audio_codec_cap *codec_cap, uint8_t type,
+			       const uint8_t *data, size_t data_len)
+{
+	struct net_buf_simple buf;
+	int ret;
+
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data == NULL) {
+		LOG_DBG("data is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data_len == 0U || data_len > UINT8_MAX) {
+		LOG_DBG("Invalid data_len %zu", data_len);
+		return -EINVAL;
+	}
+
+	init_net_buf_simple_from_codec_cap(&buf, codec_cap);
+
+	ret = ltv_set_val(&buf, type, data, data_len);
+	if (ret >= 0) {
+		codec_cap->data_len = ret;
+	}
+
+	return ret;
+}
+
 int bt_audio_codec_cap_get_freq(const struct bt_audio_codec_cap *codec_cap)
 {
 	const uint8_t *data;
@@ -1132,7 +1172,28 @@ int bt_audio_codec_cap_get_freq(const struct bt_audio_codec_cap *codec_cap)
 	return sys_get_le16(data);
 }
 
-int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec_cap)
+int bt_audio_codec_cap_set_freq(struct bt_audio_codec_cap *codec_cap,
+				enum bt_audio_codec_cap_freq freq)
+{
+	uint16_t freq_le16;
+
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	if ((freq & BT_AUDIO_CODEC_LC3_FREQ_ANY) != freq) {
+		LOG_DBG("Invalid freq value: %d", freq);
+		return -EINVAL;
+	}
+
+	freq_le16 = sys_cpu_to_le16((uint16_t)freq);
+
+	return bt_audio_codec_cap_set_val(codec_cap, BT_AUDIO_CODEC_LC3_FREQ, (uint8_t *)&freq_le16,
+					  sizeof(freq_le16));
+}
+
+int bt_audio_codec_cap_get_frame_dur(const struct bt_audio_codec_cap *codec_cap)
 {
 	const uint8_t *data;
 	uint8_t data_len;
@@ -1152,6 +1213,45 @@ int bt_audio_codec_cap_get_frame_duration(const struct bt_audio_codec_cap *codec
 	}
 
 	return data[0];
+}
+
+int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
+				     enum bt_audio_codec_cap_frame_dur frame_dur)
+{
+	uint8_t frame_dur_u8;
+
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	if ((frame_dur & BT_AUDIO_CODEC_LC3_DURATION_ANY) == 0) {
+		LOG_DBG("Invalid frame_dur value: %d", frame_dur);
+		return -EINVAL;
+	}
+
+	if ((frame_dur & BT_AUDIO_CODEC_LC3_DURATION_PREFER_7_5) != 0) {
+		if ((frame_dur & BT_AUDIO_CODEC_LC3_DURATION_PREFER_10) != 0) {
+			LOG_DBG("Cannot prefer both 7.5 and 10ms: %d", frame_dur);
+			return -EINVAL;
+		}
+
+		if ((frame_dur & BT_AUDIO_CODEC_LC3_DURATION_7_5) == 0) {
+			LOG_DBG("Cannot prefer 7.5ms when not supported: %d", frame_dur);
+			return -EINVAL;
+		}
+	}
+
+	if ((frame_dur & BT_AUDIO_CODEC_LC3_DURATION_PREFER_10) != 0 &&
+	    (frame_dur & BT_AUDIO_CODEC_LC3_DURATION_10) == 0) {
+		LOG_DBG("Cannot prefer 10ms when not supported: %d", frame_dur);
+		return -EINVAL;
+	}
+
+	frame_dur_u8 = (uint8_t)frame_dur;
+
+	return bt_audio_codec_cap_set_val(codec_cap, BT_AUDIO_CODEC_LC3_DURATION, &frame_dur_u8,
+					  sizeof(frame_dur_u8));
 }
 
 int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_codec_cap *codec_cap)
@@ -1174,6 +1274,27 @@ int bt_audio_codec_cap_get_supported_audio_chan_counts(const struct bt_audio_cod
 	}
 
 	return data[0];
+}
+
+int bt_audio_codec_cap_set_supported_audio_chan_counts(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_codec_cap_chan_count chan_count)
+{
+	uint8_t chan_count_u8;
+
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	if ((chan_count & BT_AUDIO_CODEC_CAP_CHAN_COUNT_ALL) != chan_count) {
+		LOG_DBG("Invalid chan_count value: %d", chan_count);
+		return -EINVAL;
+	}
+
+	chan_count_u8 = (uint8_t)chan_count;
+
+	return bt_audio_codec_cap_set_val(codec_cap, BT_AUDIO_CODEC_LC3_CHAN_COUNT, &chan_count_u8,
+					  sizeof(chan_count_u8));
 }
 
 int bt_audio_codec_cap_get_octets_per_frame(
@@ -1208,6 +1329,34 @@ int bt_audio_codec_cap_get_octets_per_frame(
 	return 0;
 }
 
+int bt_audio_codec_cap_set_octets_per_frame(
+	struct bt_audio_codec_cap *codec_cap,
+	const struct bt_audio_codec_octets_per_codec_frame *codec_frame)
+{
+	uint8_t codec_frame_le32[4];
+
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(codec_frame == NULL) {
+		LOG_DBG("codec_frame is NULL");
+		return -EINVAL;
+	}
+
+	if (codec_frame->min > codec_frame->max) {
+		LOG_DBG("Invalid codec_frame values: %u/%u", codec_frame->min, codec_frame->max);
+		return -EINVAL;
+	}
+
+	sys_put_le16(codec_frame->min, codec_frame_le32);
+	sys_put_le16(codec_frame->max, codec_frame_le32 + 2);
+
+	return bt_audio_codec_cap_set_val(codec_cap, BT_AUDIO_CODEC_LC3_FRAME_LEN, codec_frame_le32,
+					  sizeof(codec_frame_le32));
+}
+
 int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_cap *codec_cap)
 {
 	const uint8_t *data;
@@ -1228,6 +1377,18 @@ int bt_audio_codec_cap_get_max_codec_frames_per_sdu(const struct bt_audio_codec_
 	}
 
 	return data[0];
+}
+
+int bt_audio_codec_cap_set_max_codec_frames_per_sdu(struct bt_audio_codec_cap *codec_cap,
+						    uint8_t codec_frames_per_sdu)
+{
+	CHECKIF(codec_cap == NULL) {
+		LOG_DBG("codec_cap is NULL");
+		return -EINVAL;
+	}
+
+	return bt_audio_codec_cap_set_val(codec_cap, BT_AUDIO_CODEC_LC3_FRAME_COUNT,
+					  &codec_frames_per_sdu, sizeof(codec_frames_per_sdu));
 }
 
 #endif /* CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0 */

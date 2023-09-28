@@ -376,7 +376,26 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_freq)
 	zassert_equal(ret, 4, "Unexpected return value %d", ret);
 }
 
-ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_frame_duration)
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_freq)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
+		BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40U, 120U, 2U,
+		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+
+	int ret;
+
+	ret = bt_audio_codec_cap_get_freq(&codec_cap);
+	zassert_equal(ret, 4, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_set_freq(&codec_cap, BT_AUDIO_CODEC_LC3_FREQ_22KHZ);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_get_freq(&codec_cap);
+	zassert_equal(ret, 8, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_frame_dur)
 {
 	const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
@@ -385,8 +404,27 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_frame_duration)
 
 	int ret;
 
-	ret = bt_audio_codec_cap_get_frame_duration(&codec_cap);
+	ret = bt_audio_codec_cap_get_frame_dur(&codec_cap);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_frame_dur)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
+		BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40U, 120U, 2U,
+		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+
+	int ret;
+
+	ret = bt_audio_codec_cap_get_frame_dur(&codec_cap);
+	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_set_frame_dur(&codec_cap, BT_AUDIO_CODEC_LC3_DURATION_7_5);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_get_frame_dur(&codec_cap);
+	zassert_equal(ret, 1, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_supported_audio_chan_counts)
@@ -399,6 +437,26 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_supported_audio_chan_c
 	int ret;
 
 	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap);
+	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_supported_audio_chan_counts)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
+		BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40U, 120U, 2U,
+		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+
+	int ret;
+
+	ret = bt_audio_codec_cap_get_supported_audio_chan_counts(&codec_cap);
+	zassert_equal(ret, 1, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_set_frame_dur(&codec_cap,
+					       BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(2));
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_get_frame_dur(&codec_cap);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
 }
 
@@ -424,6 +482,31 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_octets_per_frame)
 		      codec_frame.max);
 }
 
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_octets_per_frame)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
+		BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40U, 120U, 2U,
+		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	struct bt_audio_codec_octets_per_codec_frame codec_frame;
+	int ret;
+
+	ret = bt_audio_codec_cap_get_octets_per_frame(&codec_cap, &codec_frame);
+	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(codec_frame.min, 40U, "Unexpected minimum value %d", codec_frame.min);
+	zassert_equal(codec_frame.max, 120U, "Unexpected maximum value %d", codec_frame.max);
+
+	codec_frame.min = 50U;
+	codec_frame.max = 100U;
+	ret = bt_audio_codec_cap_set_octets_per_frame(&codec_cap, &codec_frame);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_get_octets_per_frame(&codec_cap, &codec_frame);
+	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(codec_frame.min, 50U, "Unexpected minimum value %d", codec_frame.min);
+	zassert_equal(codec_frame.max, 100U, "Unexpected maximum value %d", codec_frame.max);
+}
+
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_max_codec_frames_per_sdu)
 {
 	const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
@@ -435,6 +518,25 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_max_codec_frames_per_s
 
 	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
 	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+}
+
+ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_max_codec_frames_per_sdu)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_LC3_FREQ_16KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
+		BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40U, 120U, 2U,
+		(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+
+	int ret;
+
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
+	zassert_equal(ret, 2, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_set_max_codec_frames_per_sdu(&codec_cap, 4U);
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_get_max_codec_frames_per_sdu(&codec_cap);
+	zassert_equal(ret, 4, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_pref_context)
