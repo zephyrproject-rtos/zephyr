@@ -410,6 +410,11 @@
 			status = "okay";
 		};
 
+		test_compat: compat {
+			compatible = "zephyr,model1", "gpio", "zephyr,model2";
+			status = "okay";
+		};
+
 		test_intc: interrupt-controller@bbbbcccc  {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;

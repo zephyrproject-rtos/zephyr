@@ -3018,6 +3018,58 @@
 	DT_NODE_HAS_STATUS_INTERNAL(node_id, status)
 
 /**
+ * @brief Get compatible of a node by index.
+ *
+ * The compatible returned can be used directly in other DT macros that requires
+ * `compat` as argument
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node {
+ *             compatible = "vnd,specific-device", "generic-device";
+ *     }
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_COMPAT_BY_IDX(DT_NODELABEL(n), 0) // vnd_specific_device
+ *     DT_COMPAT_BY_IDX(DT_NODELABEL(n), 1) // generic_device
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx the index to get
+ * @return the compat at idx
+ */
+#define DT_COMPAT_BY_IDX(node_id, idx) DT_STRING_TOKEN_BY_IDX(node_id, compatible, idx)
+
+/**
+ * @brief Get the first compatible of a node
+ *
+ * The compatible returned can be used directly in other DT macros that requires
+ * `compat` as argument
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node {
+ *             compatible = "vnd,specific-device", "generic-device";
+ *     }
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_COMPAT(DT_NODELABEL(n)) // vnd_specific_device
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the compat of node_id
+ */
+#define DT_COMPAT(node_id) DT_COMPAT_BY_IDX(node_id, 0)
+
+/**
  * @brief Does the devicetree have a status `okay` node with a compatible?
  *
  * Test for whether the devicetree has any nodes with status `okay`

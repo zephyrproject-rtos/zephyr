@@ -525,6 +525,19 @@ ZTEST(devicetree_api, test_vendor)
 	zassert_true(!strcmp(DT_NODE_VENDOR_OR(TEST_VENDOR, NULL), VND_VENDOR), "");
 }
 
+ZTEST(devicetree_api, test_compat)
+{
+
+	zassert_mem_equal(STRINGIFY(DT_COMPAT(DT_NODELABEL(test_compat))), "zephyr_model1",
+				    sizeof("zephyr_model1"));
+	zassert_mem_equal(STRINGIFY(DT_COMPAT_BY_IDX(DT_NODELABEL(test_compat), 0)),
+				    "zephyr_model1", sizeof("zephyr_model1"));
+	zassert_mem_equal(STRINGIFY(DT_COMPAT_BY_IDX(DT_NODELABEL(test_compat), 1)), "gpio",
+				    sizeof("gpio"));
+	zassert_mem_equal(STRINGIFY(DT_COMPAT_BY_IDX(DT_NODELABEL(test_compat), 2)),
+				    "zephyr_model2", sizeof("zephyr_model2"));
+}
+
 #define VND_MODEL "model1"
 #define ZEP_MODEL "model2"
 
