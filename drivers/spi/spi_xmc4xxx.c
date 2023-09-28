@@ -468,7 +468,9 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 		spi_context_cs_control(ctx, false);
 	}
 
+#if defined(CONFIG_SPI_XMC4XXX_INTERRUPT)
 	irq_enable(config->irq_num_rx);
+#endif
 	spi_context_release(ctx, ret);
 
 	return ret;
