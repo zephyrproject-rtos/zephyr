@@ -9,9 +9,9 @@ tests:
   net.socket.socketpair:
     platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
   net.socket.socketpair.newlib:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_REQUIRES_FULL_LIBC=y
     platform_exclude: vmu_rt1170 mimxrt1160_evk_cm7 # See #61246
   net.socket.socketpair.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED

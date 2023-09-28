@@ -2,10 +2,9 @@ common:
   tags:
     - thrift
     - cpp
-    - newlib
   modules:
     - thrift
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED
   # qemu_x86 exluded due to missing long double functions in SDK
   # See https://github.com/zephyrproject-rtos/sdk-ng/issues/603
   platform_allow:
