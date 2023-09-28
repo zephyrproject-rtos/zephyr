@@ -123,6 +123,16 @@ void mgmt_unregister_group(struct mgmt_group *group);
  */
 const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command_id);
 
+/**
+ * @brief Finds a registered command group.
+ *
+ * @param group_id	The command group id to find.
+ *
+ * @return	The requested command group on success;
+ *		NULL on failure.
+ */
+const struct mgmt_group *mgmt_find_group(uint16_t group_id);
+
 #if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 /**
  * @brief		Finds a registered error translation function for converting from SMP
