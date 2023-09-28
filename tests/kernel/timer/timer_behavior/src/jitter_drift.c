@@ -136,6 +136,17 @@ static void do_test_using(void (*sample_collection_fn)(void))
 
 	periodic_idx = 0;
 	k_sem_init(&periodic_sem, 0, 1);
+
+	/* Align to tick boundary. Otherwise the first handler execution
+	 * might turn out to be significantly late and cause the test to
+	 * fail. This can happen if k_timer_start() is called right before
+	 * the upcoming tick boundary and in consequence the tick passes
+	 * between the moment when the kernel decides what tick to use for
+	 * the next timeout and the moment when the system timer actually
+	 * sets up that timeout.
+	 */
+	k_sleep(K_TICKS(1));
+
 	sample_collection_fn();
 	k_sem_take(&periodic_sem, K_FOREVER);
 
