@@ -136,6 +136,9 @@ jobs:
           WORK_DIR=${ZEPHYR_BASE}/bsim_bluetooth nice tests/bsim/bluetooth/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bluetooth_test_results_file} \
           SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
+          BOARD=nrf5340bsim_nrf5340_cpunet WORK_DIR=${ZEPHYR_BASE}/bsim_bluetooth nice tests/bsim/bluetooth/compile.sh
+          BOARD=nrf5340bsim_nrf5340_cpunet RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bluetooth_test_results_file} \
+          SEARCH_PATH=tests/bsim/bluetooth/ tests/bsim/run_parallel.sh
 
       - name: Run Networking Tests with BSIM
         if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
@@ -143,6 +146,9 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
           RESULTS_FILE=${ZEPHYR_BASE}/${bsim_networking_test_results_file} \
+          SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
+          BOARD=nrf5340bsim_nrf5340_cpunet WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
+          BOARD=nrf5340bsim_nrf5340_cpunet RESULTS_FILE=${ZEPHYR_BASE}/${bsim_networking_test_results_file} \
           SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
 
       - name: Upload Test Results
