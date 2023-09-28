@@ -67,67 +67,129 @@ enum bt_audio_codec_capability_type {
 	BT_AUDIO_CODEC_LC3_FRAME_COUNT = 0x05,
 };
 
-/**
- *  @brief LC3 8 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_8KHZ           BIT(0)
-/**
- *  @brief LC3 11.025 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_11KHZ          BIT(1)
-/**
- *  @brief LC3 16 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_16KHZ          BIT(2)
-/**
- *  @brief LC3 22.05 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_22KHZ          BIT(3)
-/**
- *  @brief LC3 24 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_24KHZ          BIT(4)
-/**
- *  @brief LC3 32 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_32KHZ          BIT(5)
-/**
- *  @brief LC3 44.1 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_44KHZ          BIT(6)
-/**
- *  @brief LC3 48 Khz frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_48KHZ          BIT(7)
-/**
- *  @brief LC3 any frequency capability
- */
-#define BT_AUDIO_CODEC_LC3_FREQ_ANY                                                                \
-	(BT_AUDIO_CODEC_LC3_FREQ_8KHZ | BT_AUDIO_CODEC_LC3_FREQ_16KHZ |                            \
-	 BT_AUDIO_CODEC_LC3_FREQ_24KHZ | BT_AUDIO_CODEC_LC3_FREQ_32KHZ |                           \
-	 BT_AUDIO_CODEC_LC3_FREQ_44KHZ | BT_AUDIO_CODEC_LC3_FREQ_48KHZ)
+/** @brief Supported frequencies bitfield */
+enum bt_audio_codec_cap_freq {
+	/**
+	 *  @brief LC3 8 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_8KHZ = BIT(0),
+	/**
+	 *  @brief LC3 11.025 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_11KHZ = BIT(1),
+	/**
+	 *  @brief LC3 16 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_16KHZ = BIT(2),
+	/**
+	 *  @brief LC3 22.05 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_22KHZ = BIT(3),
+	/**
+	 *  @brief LC3 24 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_24KHZ = BIT(4),
+	/**
+	 *  @brief LC3 32 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_32KHZ = BIT(5),
+	/**
+	 *  @brief LC3 44.1 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_44KHZ = BIT(6),
+	/**
+	 *  @brief LC3 48 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_48KHZ = BIT(7),
+	/**
+	 *  @brief LC3 88.2 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_88KHZ = BIT(8),
+	/**
+	 *  @brief LC3 96 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_96KHZ = BIT(9),
+	/**
+	 *  @brief LC3 176.4 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_176KHZ = BIT(10),
+	/**
+	 *  @brief LC3 192 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_192KHZ = BIT(11),
+	/**
+	 *  @brief LC3 384 Khz frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_384KHZ = BIT(12),
+	/**
+	 *  @brief LC3 any frequency capability
+	 */
+	BT_AUDIO_CODEC_LC3_FREQ_ANY =
+		(BT_AUDIO_CODEC_LC3_FREQ_8KHZ | BT_AUDIO_CODEC_LC3_FREQ_11KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_22KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_24KHZ | BT_AUDIO_CODEC_LC3_FREQ_32KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_44KHZ | BT_AUDIO_CODEC_LC3_FREQ_48KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_88KHZ | BT_AUDIO_CODEC_LC3_FREQ_96KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_176KHZ | BT_AUDIO_CODEC_LC3_FREQ_192KHZ |
+		 BT_AUDIO_CODEC_LC3_FREQ_384KHZ),
+};
 
-/**
- *  @brief LC3 7.5 msec frame duration capability
- */
-#define BT_AUDIO_CODEC_LC3_DURATION_7_5        BIT(0)
-/**
- *  @brief LC3 10 msec frame duration capability
- */
-#define BT_AUDIO_CODEC_LC3_DURATION_10         BIT(1)
-/**
- *  @brief LC3 any frame duration capability
- */
-#define BT_AUDIO_CODEC_LC3_DURATION_ANY                                                            \
-	(BT_AUDIO_CODEC_LC3_DURATION_7_5 | BT_AUDIO_CODEC_LC3_DURATION_10)
-/**
- *  @brief LC3 7.5 msec preferred frame duration capability
- */
-#define BT_AUDIO_CODEC_LC3_DURATION_PREFER_7_5 BIT(4)
-/**
- *  @brief LC3 10 msec preferred frame duration capability
- */
-#define BT_AUDIO_CODEC_LC3_DURATION_PREFER_10  BIT(5)
+/** @brief Supported frame durations bitfield */
+enum bt_audio_codec_cap_frame_dur {
+	/**
+	 * @brief LC3 7.5 msec frame duration capability
+	 */
+	BT_AUDIO_CODEC_LC3_DURATION_7_5 = BIT(0),
+	/**
+	 * @brief LC3 10 msec frame duration capability
+	 */
+	BT_AUDIO_CODEC_LC3_DURATION_10 = BIT(1),
+	/**
+	 * @brief LC3 any frame duration capability
+	 */
+	BT_AUDIO_CODEC_LC3_DURATION_ANY =
+		(BT_AUDIO_CODEC_LC3_DURATION_7_5 | BT_AUDIO_CODEC_LC3_DURATION_10),
+
+	/**
+	 * @brief LC3 7.5 msec preferred frame duration capability.
+	 *
+	 * This shall only be set if @ref BT_AUDIO_CODEC_LC3_DURATION_7_5 is also set, and if @ref
+	 * BT_AUDIO_CODEC_LC3_DURATION_PREFER_10 is not set.
+	 */
+	BT_AUDIO_CODEC_LC3_DURATION_PREFER_7_5 = BIT(4),
+	/**
+	 * @brief LC3 10 msec preferred frame duration capability
+	 *
+	 * This shall only be set if @ref BT_AUDIO_CODEC_LC3_DURATION_10 is also set, and if @ref
+	 * BT_AUDIO_CODEC_LC3_DURATION_PREFER_7_5 is not set.
+	 */
+	BT_AUDIO_CODEC_LC3_DURATION_PREFER_10 = BIT(5),
+};
+
+enum bt_audio_codec_cap_chan_count {
+	/** Supporting 1 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_1 = BIT(0),
+	/** Supporting 2 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_2 = BIT(1),
+	/** Supporting 3 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_3 = BIT(2),
+	/** Supporting 4 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_4 = BIT(3),
+	/** Supporting 5 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_5 = BIT(4),
+	/** Supporting 6 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_6 = BIT(5),
+	/** Supporting 7 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_7 = BIT(6),
+	/** Supporting 8 channel */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_8 = BIT(7),
+	/** Supporting all channels */
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_ALL =
+		(BT_AUDIO_CODEC_CAP_CHAN_COUNT_1 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_2 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_3 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_4 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_5 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_6 |
+		 BT_AUDIO_CODEC_CAP_CHAN_COUNT_7 | BT_AUDIO_CODEC_CAP_CHAN_COUNT_8),
+};
 
 /**
  *  @brief LC3 minimum supported channel counts
@@ -148,7 +210,7 @@ enum bt_audio_codec_capability_type {
  *    BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 3)
  */
 #define BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(...)                                                 \
-	((uint8_t)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
+	((enum bt_audio_codec_cap_chan_count)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
 
 struct BT_AUDIO_CODEC_LC3_frame_len {
 	uint16_t min;
