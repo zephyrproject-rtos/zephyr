@@ -1751,6 +1751,10 @@ struct ieee802154_radio_api {
 	 *
 	 * See @ref net_time_t for semantic details.
 	 *
+	 * @note This is an alias for `radio_api->get_time_reference()
+	 * ->get_time()` for drivers that support the network uptime
+	 * reference API.
+	 *
 	 * @note requires IEEE802154_HW_TXTIME and/or IEEE802154_HW_RXTIME
 	 * capabilities. Implementations SHALL be **isr-ok** and MUST NOT
 	 * **sleep**. MAY be called in any interface state once the driver is
@@ -1762,6 +1766,21 @@ struct ieee802154_radio_api {
 	 * -1 if an error occurred or the operation is not supported
 	 */
 	net_time_t (*get_time)(const struct device *dev);
+
+	/**
+	 * @brief Provides access to the full API of the underlying network
+	 * uptime reference of the driver.
+	 *
+	 * @note Implementations SHALL be **isr-ok** and MUST NOT **sleep**. MAY
+	 * be called in any interface state once the driver is fully initialized
+	 * ("ready").
+	 *
+	 * @param dev pointer to IEEE 802.15.4 driver device
+	 *
+	 * @returns a pointer to the driver's underlying network uptime
+	 * reference or NULL if not supported.
+	 */
+	const struct net_time_reference_api *(*get_time_reference)(const struct device *dev);
 
 	/**
 	 * @brief Get the current estimated worst case accuracy (maximum ±

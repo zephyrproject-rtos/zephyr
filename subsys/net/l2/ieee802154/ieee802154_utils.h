@@ -278,6 +278,13 @@ static inline void ieee802154_radio_remove_pan_id(struct net_if *iface, uint16_t
 	}
 }
 
+static inline const struct net_time_reference_api *
+ieee802154_radio_get_time_reference(struct net_if *iface)
+{
+	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
+
+	return radio->get_time_reference(net_if_get_device(iface));
+}
 
 /**
  * MAC utilities

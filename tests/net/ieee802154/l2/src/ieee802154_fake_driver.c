@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_time.h>
 
 /** FAKE ieee802.15.4 driver **/
 #include <zephyr/net/ieee802154_radio.h>
@@ -133,6 +134,11 @@ static int fake_attr_get(const struct device *dev, enum ieee802154_attr attr,
 		&drv_attr.phy_supported_channels, value);
 }
 
+static net_time_t fake_get_time(const struct device *dev)
+{
+	return 0;
+}
+
 static void fake_iface_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -167,6 +173,7 @@ static struct ieee802154_radio_api fake_radio_api = {
 	.stop			= fake_stop,
 	.tx			= fake_tx,
 	.attr_get		= fake_attr_get,
+	.get_time		= fake_get_time,
 };
 
 NET_DEVICE_INIT(fake, "fake_ieee802154",

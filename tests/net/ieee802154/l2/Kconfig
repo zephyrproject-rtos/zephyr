@@ -1,0 +1,10 @@
+# Copyright 2023, Florian Grandel, Zephyr Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config IEEE802154_FAKE_DRIVER
+	bool "A fake driver for IEEE 802.15.4 L2 tests"
+	select NET_TIME_REFERENCE_CLOCK
+	default y
+
+source "Kconfig.zephyr"
