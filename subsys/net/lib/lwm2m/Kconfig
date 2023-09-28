@@ -471,9 +471,19 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	  This is also a minimum lifetime that client accepts. If server sets lifetime
 	  less than this value, client automatically raises it.
 
+config LWM2M_UPDATE_PERIOD
+	int "LwM2M engine update period"
+	default 0
+	range 0 4294967295
+	help
+	  Time period after the previous update or registration when to send the next update message.
+	  This allows modifying lifetime without affecting the update period.
+	  Set to zero, to allow LWM2M_SECONDS_TO_UPDATE_EARLY and lifetime to control when to
+	  send the update. When both values are set, smallest period will be used.
+
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
-	default 6
+	default 10
 	range 1 4294967295
 	help
 	  Time in seconds before the registration timeout, when the LWM2M
