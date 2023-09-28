@@ -34,6 +34,9 @@
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
 #define BOOT_HEADER_SIZE_V1 32
 
+/* Get active partition. zephyr,code-partition chosen node must be defined */
+#define ACTIVE_SLOT_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
+
 /*
  * Raw (on-flash) representation of the v1 image header.
  */
@@ -213,14 +216,18 @@ bool boot_is_img_confirmed(void)
 
 int boot_write_img_confirmed(void)
 {
-	int rc;
+	const struct flash_area *fa;
+	int rc = 0;
 
-	rc = boot_set_confirmed();
-	if (rc) {
+	if (flash_area_open(ACTIVE_SLOT_FLASH_AREA_ID, &fa) != 0) {
 		return -EIO;
 	}
 
-	return 0;
+	rc = boot_set_next(fa, true, true);
+
+	flash_area_close(fa);
+
+	return rc;
 }
 
 int boot_write_img_confirmed_multi(int image_index)

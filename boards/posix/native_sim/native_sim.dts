@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,display = &sdl_dc;
 		zephyr,canbus = &can_loopback0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
