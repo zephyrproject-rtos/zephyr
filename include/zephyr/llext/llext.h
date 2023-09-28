@@ -143,6 +143,17 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
 void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
 
 /**
+ * @brief Architecture specific function for updating addresses via relocation table
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to call function in
+ * @param[in] rel Relocation data provided by elf
+ * @param[in] got_offset Offset within a relocation table
+ */
+void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
+			     elf_rela_t *rel, size_t got_offset);
+
+/**
  * @}
  */
 

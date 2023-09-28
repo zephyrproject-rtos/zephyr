@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_SYSCALL_USE_HELPER syscall_helper.c)
+zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK

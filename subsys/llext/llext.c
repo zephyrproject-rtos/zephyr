@@ -462,6 +462,11 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 	return offset;
 }
 
+__weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
+				    elf_rela_t *rel, size_t got_offset)
+{
+}
+
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr)
 {
 	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
@@ -514,6 +519,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		}
 
 		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
+		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
 		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
@@ -522,8 +528,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 		size_t got_offset = llext_file_offset(ldr, rela.r_offset) -
 			ldr->sects[LLEXT_SECT_TEXT].sh_offset;
 
-		if (stt == STT_NOTYPE && sym_tbl.st_shndx == SHN_UNDEF && name[0] != '\0') {
-			const void *link_addr = llext_find_sym(NULL, name);
+		if (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)
+			continue;
+
+		const void *link_addr;
+
+		switch (stb) {
+		case STB_GLOBAL:
+			link_addr = llext_find_sym(NULL, name);
 
 			if (!link_addr) {
 				LOG_WRN("PLT: cannot find idx %u name %s", j, name);
@@ -541,6 +553,9 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 
 			/* Resolve the symbol */
 			*(const void **)(text + got_offset) = link_addr;
+			break;
+		case  STB_LOCAL:
+			arch_elf_relocate_local(ldr, ext, &rela, got_offset);
 		}
 	}
 }
