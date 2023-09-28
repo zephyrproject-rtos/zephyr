@@ -245,4 +245,6 @@ source "drivers/serial/Kconfig.kb1200"
 
 source "drivers/serial/Kconfig.bcm2711"
 
+source "drivers/serial/Kconfig.kb1200"
+
 endif # SERIAL
