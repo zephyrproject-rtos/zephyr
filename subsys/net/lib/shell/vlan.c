@@ -209,14 +209,14 @@ usage:
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
-	SHELL_CMD(add, NULL,
-		  "'net vlan add <tag> <index>' adds VLAN tag to the "
-		  "network interface.",
-		  cmd_net_vlan_add),
-	SHELL_CMD(del, NULL,
-		  "'net vlan del <tag>' deletes VLAN tag from the network "
-		  "interface.",
-		  cmd_net_vlan_del),
+	SHELL_CMD_ARG(add, NULL,
+		      "'net vlan add <tag> <index>' adds VLAN tag to the "
+		      "network interface.",
+		      cmd_net_vlan_add, 3, 0),
+	SHELL_CMD_ARG(del, NULL,
+		      "'net vlan del <tag>' deletes VLAN tag from the network "
+		      "interface.",
+		      cmd_net_vlan_del, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
