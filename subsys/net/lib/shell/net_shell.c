@@ -216,12 +216,6 @@ const char *iface2str(struct net_if *iface, const char **extra)
 	return "<unknown type>";
 }
 
-#if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
-
-#include "iface_dynamic.h"
-
-#endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
-
 /* Placeholder for net commands that are configured in the rest of the .c files */
 SHELL_SUBCMD_SET_CREATE(net_cmds, (net));
 
