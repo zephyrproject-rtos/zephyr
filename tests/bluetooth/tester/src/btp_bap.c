@@ -1173,7 +1173,7 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup,	uint8_t subgroup
 		stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_subgroup_param
 		subgroup_param[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
-	struct bt_bap_broadcast_source_create_param create_param;
+	struct bt_bap_broadcast_source_param create_param;
 
 	if (streams_per_subgroup * subgroups > CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT ||
 	    subgroups >	CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT) {
@@ -1203,11 +1203,20 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup,	uint8_t subgroup
 	LOG_DBG("Creating broadcast source with %zu subgroups with %zu streams",
 		subgroups, subgroups * streams_per_subgroup);
 
-	err = bt_bap_broadcast_source_create(&create_param, source);
-	if (err != 0) {
-		LOG_DBG("Unable to create broadcast source: %d", err);
+	if (*source == NULL) {
+		err = bt_bap_broadcast_source_create(&create_param, source);
+		if (err != 0) {
+			LOG_DBG("Unable to create broadcast source: %d", err);
 
-		return err;
+			return err;
+		}
+	} else {
+		err = bt_bap_broadcast_source_reconfig(*source, &create_param);
+		if (err != 0) {
+			LOG_DBG("Unable to reconfig broadcast source: %d", err);
+
+			return err;
+		}
 	}
 
 	return 0;
@@ -1247,14 +1256,7 @@ static uint8_t broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	broadcaster->qos.pd = sys_get_le24(cp->presentation_delay);
 	broadcaster->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
 
-	if (broadcast_source == NULL) {
-		err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups,
-					     &broadcast_source);
-	} else {
-		err = bt_bap_broadcast_source_reconfig(broadcast_source, &broadcaster->codec_cfg,
-						       &broadcaster->qos);
-	}
-
+	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, &broadcast_source);
 	if (err != 0) {
 		LOG_DBG("Unable to setup broadcast source: %d", err);
 
