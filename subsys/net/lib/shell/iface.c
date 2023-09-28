@@ -20,50 +20,6 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "common.h"
 
-#if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
-
-static char iface_help_buffer[MAX_IFACE_COUNT][MAX_IFACE_HELP_STR_LEN];
-static char iface_index_buffer[MAX_IFACE_COUNT][MAX_IFACE_STR_LEN];
-
-SHELL_DYNAMIC_CMD_CREATE(iface_index, iface_index_get);
-
-static char *set_iface_index_buffer(size_t idx)
-{
-	struct net_if *iface = net_if_get_by_index(idx);
-
-	if (!iface) {
-		return NULL;
-	}
-
-	snprintk(iface_index_buffer[idx], MAX_IFACE_STR_LEN, "%zu", idx);
-
-	return iface_index_buffer[idx];
-}
-
-static char *set_iface_index_help(size_t idx)
-{
-	struct net_if *iface = net_if_get_by_index(idx);
-
-	if (!iface) {
-		return NULL;
-	}
-
-	snprintk(iface_help_buffer[idx], MAX_IFACE_HELP_STR_LEN,
-		 "%s (%p)", iface2str(iface, NULL), iface);
-
-	return iface_help_buffer[idx];
-}
-
-void iface_index_get(size_t idx, struct shell_static_entry *entry)
-{
-	entry->handler = NULL;
-	entry->help  = set_iface_index_help(idx);
-	entry->subcmd = &iface_index;
-	entry->syntax = set_iface_index_buffer(idx);
-}
-
-#endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
-
 #if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
 	enum ethernet_hw_caps capability;
