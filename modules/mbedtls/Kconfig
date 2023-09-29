@@ -27,6 +27,7 @@ choice MBEDTLS_IMPLEMENTATION
 
 config MBEDTLS_BUILTIN
 	bool "Use Zephyr in-tree mbedTLS version"
+	select REQUIRES_MALLOC
 	help
 	  Link with mbedTLS sources included with Zephyr distribution.
 	  Included mbedTLS version is well integrated with and supported

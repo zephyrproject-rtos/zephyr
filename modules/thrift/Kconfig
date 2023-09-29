@@ -7,6 +7,7 @@ config ZEPHYR_THRIFT_MODULE
 menuconfig THRIFT
 	bool "Support for Thrift [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select REQUIRES_MALLOC
 	depends on CPP
 	depends on STD_CPP17
 	depends on CPP_EXCEPTIONS
