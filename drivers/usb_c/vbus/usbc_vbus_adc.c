@@ -146,13 +146,12 @@ static int adc_vbus_init(const struct device *dev)
 
 	/* Configure VBUS Measurement enable pin if defined */
 	if (gcp->port) {
-		ret = device_is_ready(gcp->port);
-		if (ret < 0) {
+		if (!device_is_ready(gcp->port)) {
 			LOG_ERR("%s: device not ready", gcp->port->name);
-			return ret;
+			return -EIO;
 		}
 		ret = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
 				gcp->port->name, gcp->pin, ret);
 			return ret;
@@ -161,13 +160,12 @@ static int adc_vbus_init(const struct device *dev)
 
 	/* Configure VBUS Discharge pin if defined */
 	if (gcd->port) {
-		ret = device_is_ready(gcd->port);
-		if (ret == false) {
+		if (!device_is_ready(gcd->port)) {
 			LOG_ERR("%s: device not ready", gcd->port->name);
-			return ret;
+			return -EIO;
 		}
 		ret = gpio_pin_configure_dt(gcd, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("Failed to control feed %s.%u: %d",
 				gcd->port->name, gcd->pin, ret);
 			return ret;
@@ -179,13 +177,13 @@ static int adc_vbus_init(const struct device *dev)
 	data->sequence.buffer_size = sizeof(data->sample);
 
 	ret = adc_channel_setup_dt(&config->adc_channel);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_INF("Could not setup channel (%d)\n", ret);
 		return ret;
 	}
 
 	ret = adc_sequence_init_dt(&config->adc_channel, &data->sequence);
-	if (ret < 0) {
+	if (ret != 0) {
 		LOG_INF("Could not init sequence (%d)\n", ret);
 		return ret;
 	}
