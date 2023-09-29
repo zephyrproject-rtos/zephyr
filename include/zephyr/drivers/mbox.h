@@ -148,6 +148,13 @@ struct mbox_channel {
 typedef void (*mbox_callback_t)(const struct device *dev, uint32_t channel,
 				void *user_data, struct mbox_msg *data);
 
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 /**
  * @typedef mbox_send_t
  *
@@ -224,6 +231,10 @@ __subsystem struct mbox_driver_api {
 	mbox_max_channels_get_t max_channels_get;
 	mbox_set_enabled_t set_enabled;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Initialize a channel struct
