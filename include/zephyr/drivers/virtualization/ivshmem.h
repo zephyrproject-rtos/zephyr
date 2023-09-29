@@ -26,6 +26,12 @@ extern "C" {
 #define IVSHMEM_V2_PROTO_UNDEFINED	0x0000
 #define IVSHMEM_V2_PROTO_NET		0x0001
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 typedef size_t (*ivshmem_get_mem_f)(const struct device *dev,
 				    uintptr_t *memmap);
 
@@ -80,6 +86,8 @@ __subsystem struct ivshmem_driver_api {
 	ivshmem_enable_interrupts_f enable_interrupts;
 #endif
 };
+
+/** @endcond */
 
 /**
  * @brief Get the inter-VM shared memory
