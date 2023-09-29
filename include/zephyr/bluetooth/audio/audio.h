@@ -566,16 +566,49 @@ struct bt_audio_codec_qos_pref {
  * @{
  */
 
+/**
+ * @brief Convert assigned numbers frequency to frequency value.
+ *
+ * @param freq The assigned numbers frequency to convert.
+ *
+ * @retval -EINVAL if arguments are invalid.
+ * @retval The converted frequency value in Hz.
+ */
+int bt_audio_codec_cfg_freq_to_freq_hz(enum bt_audio_codec_config_freq freq);
+
+/**
+ * @brief Convert frequency value to assigned numbers frequency.
+ *
+ * @param freq_hz The frequency value to convert.
+ *
+ * @retval -EINVAL if arguments are invalid.
+ * @retval The assigned numbers frequency (@ref bt_audio_codec_config_freq).
+ */
+int bt_audio_codec_cfg_freq_hz_to_freq(uint32_t freq_hz);
+
 /**@brief Extract the frequency from a codec configuration.
  *
  * @param codec_cfg The codec configuration to extract data from.
  *
- *  @retval The frequency in Hz
+ *  @retval A @ref bt_audio_codec_config_freq value
  *  @retval -EINVAL if arguments are invalid
  *  @retval -ENODATA if not found
  *  @retval -EBADMSG if found value has invalid size or value
  */
 int bt_audio_codec_cfg_get_freq(const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the frequency of a codec configuration.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param freq      The assigned numbers frequency to set.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_freq(struct bt_audio_codec_cfg *codec_cfg,
+				enum bt_audio_codec_config_freq freq);
 
 /** @brief Extract frame duration from BT codec config
  *
@@ -660,6 +693,21 @@ int bt_audio_codec_cfg_get_frame_blocks_per_sdu(const struct bt_audio_codec_cfg 
  */
 uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
 				   const uint8_t **data);
+
+/**
+ * @brief Set or add a specific codec configuration value
+ *
+ * @param codec_cfg  The codec data to set the value in.
+ * @param type       The type id to set
+ * @param data       Pointer to the data-pointer to set
+ * @param data_len   Length of @p data
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t type,
+			       const uint8_t *data, size_t data_len);
 
 /** @} */ /* End of bt_audio_codec_cfg */
 

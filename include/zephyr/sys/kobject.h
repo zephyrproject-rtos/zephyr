@@ -192,6 +192,19 @@ __syscall void k_object_release(const void *object);
  */
 void k_object_access_all_grant(const void *object);
 
+/**
+ * Check if a kernel object is of certain type and is valid.
+ *
+ * This checks if the kernel object exists, of certain type,
+ * and has been initialized.
+ *
+ * @param obj Address of the kernel object
+ * @param otype Object type (use K_OBJ_ANY for ignoring type checking)
+ * @return True if kernel object (@a obj) exists, of certain type, and
+ *         has been initialized. False otherwise.
+ */
+bool k_object_is_valid(const void *obj, enum k_objects otype);
+
 #else
 /* LCOV_EXCL_START */
 #define K_THREAD_ACCESS_GRANT(thread, ...)
@@ -236,6 +249,15 @@ static inline void k_object_access_all_grant(const void *object)
 {
 	ARG_UNUSED(object);
 }
+
+static inline bool k_object_is_valid(const void *obj, enum k_objects otype)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(otype);
+
+	return true;
+}
+
 /* LCOV_EXCL_STOP */
 #endif /* !CONFIG_USERSPACE */
 

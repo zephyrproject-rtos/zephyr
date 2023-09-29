@@ -97,224 +97,6 @@ static bool parse_number(const struct shell *sh, long *param, char *str, long mi
 	return true;
 }
 
-const char * const wifi_security_txt(enum wifi_security_type security)
-{
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		return "OPEN";
-	case WIFI_SECURITY_TYPE_WEP:
-		return "WEP";
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		return "WPA-PSK";
-	case WIFI_SECURITY_TYPE_PSK:
-		return "WPA2-PSK";
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		return "WPA2-PSK-SHA256";
-	case WIFI_SECURITY_TYPE_SAE:
-		return "WPA3-SAE";
-	case WIFI_SECURITY_TYPE_WAPI:
-		return "WAPI";
-	case WIFI_SECURITY_TYPE_EAP:
-		return "EAP";
-	case WIFI_SECURITY_TYPE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
-{
-	switch (mfp) {
-	case WIFI_MFP_DISABLE:
-		return "Disable";
-	case WIFI_MFP_OPTIONAL:
-		return "Optional";
-	case WIFI_MFP_REQUIRED:
-		return "Required";
-	case WIFI_MFP_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_band_txt(enum wifi_frequency_bands band)
-{
-	switch (band) {
-	case WIFI_FREQ_BAND_2_4_GHZ:
-		return "2.4GHz";
-	case WIFI_FREQ_BAND_5_GHZ:
-		return "5GHz";
-	case WIFI_FREQ_BAND_6_GHZ:
-		return "6GHz";
-	case WIFI_FREQ_BAND_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_state_txt(enum wifi_iface_state state)
-{
-	switch (state) {
-	case WIFI_STATE_DISCONNECTED:
-		return "DISCONNECTED";
-	case WIFI_STATE_INACTIVE:
-		return "INACTIVE";
-	case WIFI_STATE_INTERFACE_DISABLED:
-		return "INTERFACE_DISABLED";
-	case WIFI_STATE_SCANNING:
-		return "SCANNING";
-	case WIFI_STATE_AUTHENTICATING:
-		return "AUTHENTICATING";
-	case WIFI_STATE_ASSOCIATING:
-		return "ASSOCIATING";
-	case WIFI_STATE_ASSOCIATED:
-		return "ASSOCIATED";
-	case WIFI_STATE_4WAY_HANDSHAKE:
-		return "4WAY_HANDSHAKE";
-	case WIFI_STATE_GROUP_HANDSHAKE:
-		return "GROUP_HANDSHAKE";
-	case WIFI_STATE_COMPLETED:
-		return "COMPLETED";
-	case WIFI_STATE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_mode_txt(enum wifi_iface_mode mode)
-{
-	switch (mode) {
-	case WIFI_MODE_INFRA:
-		return "STATION";
-	case WIFI_MODE_IBSS:
-		return "ADHOC";
-	case WIFI_MODE_AP:
-		return "ACCESS POINT";
-	case WIFI_MODE_P2P_GO:
-		return "P2P GROUP OWNER";
-	case WIFI_MODE_P2P_GROUP_FORMATION:
-		return "P2P GROUP FORMATION";
-	case WIFI_MODE_MESH:
-		return "MESH";
-	case WIFI_MODE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
-{
-	switch (link_mode) {
-	case WIFI_0:
-		return "WIFI 0 (802.11)";
-	case WIFI_1:
-		return "WIFI 1 (802.11b)";
-	case WIFI_2:
-		return "WIFI 2 (802.11a)";
-	case WIFI_3:
-		return "WIFI 3 (802.11g)";
-	case WIFI_4:
-		return "WIFI 4 (802.11n/HT)";
-	case WIFI_5:
-		return "WIFI 5 (802.11ac/VHT)";
-	case WIFI_6:
-		return "WIFI 6 (802.11ax/HE)";
-	case WIFI_6E:
-		return "WIFI 6E (802.11ax 6GHz/HE)";
-	case WIFI_7:
-		return "WIFI 7 (802.11be/EHT)";
-	case WIFI_LINK_MODE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_ps_txt(enum wifi_ps ps_name)
-{
-	switch (ps_name) {
-	case WIFI_PS_DISABLED:
-		return "Power save disabled";
-	case WIFI_PS_ENABLED:
-		return "Power save enabled";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
-{
-	switch (ps_mode) {
-	case WIFI_PS_MODE_LEGACY:
-		return "Legacy power save";
-	case WIFI_PS_MODE_WMM:
-		return "WMM power save";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
-{
-	switch (twt_operation) {
-	case WIFI_TWT_SETUP:
-		return "TWT setup";
-	case WIFI_TWT_TEARDOWN:
-		return "TWT teardown";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
-{
-	switch (twt_negotiation) {
-	case WIFI_TWT_INDIVIDUAL:
-		return "TWT individual negotiation";
-	case WIFI_TWT_BROADCAST:
-		return "TWT broadcast negotiation";
-	case WIFI_TWT_WAKE_TBTT:
-		return "TWT wake TBTT negotiation";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
-{
-	switch (twt_setup) {
-	case WIFI_TWT_SETUP_CMD_REQUEST:
-		return "TWT request";
-	case WIFI_TWT_SETUP_CMD_SUGGEST:
-		return "TWT suggest";
-	case WIFI_TWT_SETUP_CMD_DEMAND:
-		return "TWT demand";
-	case WIFI_TWT_SETUP_CMD_GROUPING:
-		return "TWT grouping";
-	case WIFI_TWT_SETUP_CMD_ACCEPT:
-		return "TWT accept";
-	case WIFI_TWT_SETUP_CMD_ALTERNATE:
-		return "TWT alternate";
-	case WIFI_TWT_SETUP_CMD_DICTATE:
-		return "TWT dictate";
-	case WIFI_TWT_SETUP_CMD_REJECT:
-		return "TWT reject";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-const char * const wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
-{
-	switch (ps_wakeup_mode) {
-	case WIFI_PS_WAKEUP_MODE_DTIM:
-		return "PS wakeup mode DTIM";
-	case WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL:
-		return "PS wakeup mode listen interval";
-	default:
-		return "UNKNOWN";
-	}
-}
-
 static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_scan_result *entry =
@@ -698,7 +480,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 					       {"bands", required_argument, 0, 'b'},
 					       {"dwell_time_active", required_argument, 0, 'a'},
 					       {"dwell_time_passive", required_argument, 0, 'p'},
-					       {"ssids", required_argument, 0, 's'},
+					       {"ssid", required_argument, 0, 's'},
 					       {"max_bss", required_argument, 0, 'm'},
 					       {"chans", required_argument, 0, 'c'},
 					       {"help", no_argument, 0, 'h'},
@@ -755,7 +537,9 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 's':
-			if (wifi_utils_parse_scan_ssids(optarg, params->ssids)) {
+			if (wifi_utils_parse_scan_ssids(optarg,
+							params->ssids,
+							ARRAY_SIZE(params->ssids))) {
 				shell_fprintf(sh, SHELL_ERROR, "Invalid SSID(s)\n");
 				return -ENOEXEC;
 			}
@@ -1871,7 +1655,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.\n"
 		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
 		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
-		    "[-s, --ssids <Comma separate list of SSIDs>] : SSID list to scan for.\n"
+		    "[-s, --ssid : SSID to scan for. Can be provided multiple times.\n"
 		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.\n"
 		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44\n"
 		    "[-h, --help] : Print out the help for the scan command.",

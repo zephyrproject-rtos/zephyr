@@ -527,11 +527,20 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 					     FIR_CONTROL_MUTE, 0);
 		}
 
-		val = FIELD_PREP(OUT_GAIN, gval);
-		dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
-			       dmic->dai_config_params.dai_index + OUT_GAIN_LEFT, val);
-		dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
-			       dmic->dai_config_params.dai_index + OUT_GAIN_RIGHT, val);
+		if (gval != 0) {
+			val = FIELD_PREP(OUT_GAIN, gval);
+			dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				       dmic->dai_config_params.dai_index + OUT_GAIN_LEFT, val);
+			dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				       dmic->dai_config_params.dai_index + OUT_GAIN_RIGHT, val);
+		} else {
+			dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				       dmic->dai_config_params.dai_index + OUT_GAIN_LEFT,
+				       dmic->gain_left);
+			dai_dmic_write(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
+				       dmic->dai_config_params.dai_index + OUT_GAIN_RIGHT,
+				       dmic->gain_right);
+		}
 	}
 
 	k_spin_unlock(&dmic->lock, key);

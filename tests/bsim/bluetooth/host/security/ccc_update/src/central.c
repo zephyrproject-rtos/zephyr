@@ -248,7 +248,7 @@ static void connect_unsubscribe(void)
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 }
 
-static void connect_restore_sec_unsubscribe(void)
+static void connect_restore_sec(void)
 {
 	int err;
 
@@ -270,10 +270,7 @@ static void connect_restore_sec_unsubscribe(void)
 	/* wait for server to check that the subscribtion has been restored */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 
-	/* send unsubscribtion request */
-	ccc_unsubscribe();
-
-	/* wait for server to check that the unsubscribtion has been well registered */
+	/* wait for server to check that the subscription no longer exist */
 	backchannel_sync_send(SERVER_CLIENT_CHAN, SERVER_ID);
 }
 
@@ -347,7 +344,7 @@ void run_central(void)
 	backchannel_sync_send(CLIENT_CLIENT_CHAN, BAD_CLIENT_ID);
 	backchannel_sync_wait(CLIENT_CLIENT_CHAN, BAD_CLIENT_ID);
 
-	connect_restore_sec_unsubscribe();
+	connect_restore_sec();
 	disconnect();
 
 	PASS("Central test passed\n");

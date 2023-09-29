@@ -14,6 +14,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/icmp.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
@@ -30,6 +31,9 @@ union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
+#if defined(CONFIG_NET_DHCPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
 #if defined(CONFIG_NET_L2_WIFI_MGMT)
 	union wifi_mgmt_events wifi;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
@@ -54,6 +58,13 @@ extern void net_if_stats_reset(struct net_if *iface);
 extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt *pkt);
 extern void net_process_tx_packet(struct net_pkt *pkt);
+
+extern int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+				       struct net_ipv4_hdr *ipv4_hdr,
+				       struct net_icmp_hdr *icmp_hdr);
+extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+				       struct net_ipv6_hdr *ipv6_hdr,
+				       struct net_icmp_hdr *icmp_hdr);
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);

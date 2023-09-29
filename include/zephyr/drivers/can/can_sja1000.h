@@ -176,7 +176,6 @@ struct can_sja1000_data {
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
-	uint32_t sjw;
 	void *custom;
 };
 

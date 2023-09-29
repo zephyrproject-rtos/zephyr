@@ -9,6 +9,7 @@ zephyr_library_compile_definitions_ifdef(
 zephyr_library_sources(
   ieee802154.c
   ieee802154_frame.c
+  ieee802154_utils.c
   )
 
 zephyr_library_sources_ifdef(

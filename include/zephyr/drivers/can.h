@@ -234,11 +234,6 @@ struct can_bus_err_cnt {
 	uint8_t rx_err_cnt;
 };
 
-/** Synchronization Jump Width (SJW) value to indicate that the SJW should not
- * be changed by the timing calculation.
- */
-#define CAN_SJW_NO_CHANGE 0
-
 /**
  * @brief CAN bus timing structure
  *
@@ -865,8 +860,6 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
 /**
  * @brief Configure the bus timing for the data phase of a CAN-FD controller.
  *
- * If the sjw equals CAN_SJW_NO_CHANGE, the sjw parameter is not changed.
- *
  * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
  * available.
  *
@@ -935,8 +928,6 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 
 /**
  * @brief Configure the bus timing of a CAN controller.
- *
- * If the sjw equals CAN_SJW_NO_CHANGE, the sjw parameter is not changed.
  *
  * @see can_set_timing_data()
  *

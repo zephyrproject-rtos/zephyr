@@ -53,6 +53,14 @@ config NET_OFFLOAD
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
+config NET_OFFLOADING_SUPPORT
+	bool
+	default y if NET_OFFLOAD || NET_SOCKETS_OFFLOAD
+	help
+	  Hidden option that is set if either NET_OFFLOAD or
+	  NET_SOCKETS_OFFLOAD is set. This allows us to check
+	  only one option instead of two.
+
 if NET_OFFLOAD
 module = NET_OFFLOAD
 module-dep = NET_LOG

@@ -36,12 +36,12 @@
 @brief Connectivity
 @defgroup connectivity Connectivity
 @{
+@}
 
 @brief USB
 @defgroup usb USB
+@ingroup connectivity
 @{
-@}
-
 @}
 
 @brief Utilities

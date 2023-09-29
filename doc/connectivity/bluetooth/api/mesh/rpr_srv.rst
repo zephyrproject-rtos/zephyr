@@ -17,9 +17,9 @@ model only accepts messages encrypted with the node's device key.
 
 If present, the Remote Provisioning Server model must be instantiated on the primary element.
 
-Note that after refreshing the device key, node address or Composition Data through a Node Provisioning Protocol
-Interface (NPPI) procedure, the :c:member:`bt_mesh_prov.reprovisioned` callback is triggered. See section
-:ref:`bluetooth_mesh_models_rpr_cli` for further details.
+Note that after refreshing the device key, node address or Composition Data through a Node
+Provisioning Protocol Interface (NPPI) procedure, the :c:member:`bt_mesh_prov.reprovisioned`
+callback is triggered. See section :ref:`bluetooth_mesh_models_rpr_cli` for further details.
 
 API reference
 *************

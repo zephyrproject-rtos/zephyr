@@ -66,21 +66,40 @@
 		}                                                              \
 	} while (0)
 
-#define ASSERT_TRUE(cond, ...)                                                 \
+#define ASSERT_TRUE(cond)                                                      \
 	do {                                                                   \
 		if (!(cond)) {                                                 \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
-				#cond " is false.", ##__VA_ARGS__);             \
+				#cond " is false.\n");                         \
 		}                                                              \
 	} while (0)
 
-#define ASSERT_FALSE(cond, ...)                                                \
+#define ASSERT_TRUE_MSG(cond, fmt, ...)                                        \
+	do {                                                                   \
+		if (!(cond)) {                                                 \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " is false. " fmt, ##__VA_ARGS__);       \
+		}                                                              \
+	} while (0)
+
+
+#define ASSERT_FALSE(cond)                                                     \
 	do {                                                                   \
 		if (cond) {                                                    \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
-				#cond " is true.", ##__VA_ARGS__);             \
+				#cond " is true.\n");                          \
+		}                                                              \
+	} while (0)
+
+#define ASSERT_FALSE_MSG(cond, fmt, ...)                                       \
+	do {                                                                   \
+		if (cond) {                                                    \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " is true. " fmt, ##__VA_ARGS__);        \
 		}                                                              \
 	} while (0)
 
@@ -94,6 +113,14 @@
 		}                                                              \
 	} while (0)
 
+#define ASSERT_IN_RANGE(got, min, max)                                                             \
+	do {                                                                                       \
+		if (!IN_RANGE(got, min, max)) {                                            \
+			bst_result = Failed;                                                       \
+			bs_trace_error_time_line(#got " not in range %d <-> %d, " #got " = %d\n",  \
+						 (min), (max), (got));                             \
+		}                                                                                  \
+	} while (0)
 
 struct bt_mesh_test_cfg {
 	uint16_t addr;

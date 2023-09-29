@@ -37,6 +37,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.4
 
+   * - :ref:`blinfo_api`
+     - Experimental
+     - 3.5
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
@@ -164,6 +168,18 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`i3c_api`
      - Experimental
      - 3.2
+
+   * - :ref:`ieee802154_driver_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_l2_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_mgmt_api`
+     - Unstable
+     - 1.0
 
    * - :ref:`input`
      - Experimental

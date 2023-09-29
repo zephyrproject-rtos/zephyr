@@ -86,6 +86,20 @@ ZBUS_CHAN_DEFINE(stuck_chan,      /* Name */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
+ZBUS_CHAN_DEFINE(msg_sub_fail_chan,                        /* Name */
+		 int,                                      /* Message type */
+		 NULL,                                     /* Validator */
+		 NULL,                                     /* User data */
+		 ZBUS_OBSERVERS(foo_msg_sub, invalid_obs), /* observers */
+		 ZBUS_MSG_INIT(0) /* Initial value major 0, minor 1, build 1023 */
+);
+ZBUS_CHAN_DEFINE(msg_sub_no_pool_chan,                      /* Name */
+		 int,                                       /* Message type */
+		 NULL,                                      /* Validator */
+		 NULL,                                      /* User data */
+		 ZBUS_OBSERVERS(foo_msg_sub, foo2_msg_sub), /* observers */
+		 ZBUS_MSG_INIT(0) /* Initial value major 0, minor 1, build 1023 */
+);
 static int count_fast;
 
 static void callback(const struct zbus_channel *chan)
@@ -207,6 +221,15 @@ static void wq_dh_cb(struct k_work *item)
 }
 
 ZBUS_SUBSCRIBER_DEFINE(sub1, 1);
+ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(foo_msg_sub, false);
+ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(foo2_msg_sub, false);
+static K_FIFO_DEFINE(_zbus_observer_fifo_invalid_obs);
+STRUCT_SECTION_ITERABLE(zbus_observer, invalid_obs) = {
+	ZBUS_OBSERVER_NAME_INIT(invalid_obs) /* Name field */
+		.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE + 10,
+	.enabled = false,
+	.message_fifo = &_zbus_observer_fifo_invalid_obs,
+};
 
 ZTEST(basic, test_specification_based__zbus_chan)
 {
@@ -268,6 +291,14 @@ ZTEST(basic, test_specification_based__zbus_chan)
 
 	zassert_equal(0, zbus_chan_finish(&aux2_chan), "It must finish correctly");
 
+	int fail = 10;
+
+	zbus_obs_set_enable(&invalid_obs, true);
+	int err = zbus_chan_pub(&msg_sub_fail_chan, &fail, K_MSEC(200));
+
+	zassert_equal(-EFAULT, err, "It must reach the default on the switch. Err %d", err);
+	zbus_obs_set_enable(&invalid_obs, false);
+
 	struct action_msg repeated = {.status = false};
 
 	zbus_chan_pub(&aux3_on_change_chan, &repeated, K_NO_WAIT);
@@ -307,6 +338,19 @@ ZTEST(basic, test_specification_based__zbus_chan)
 	ISR_OP(ADD_OBS_ISR_INVAL, -EFAULT);
 	ISR_OP(RM_OBS_ISR, -EFAULT);
 	ISR_OP(RM_OBS_ISR_INVAL, -EFAULT);
+
+	int msg;
+	const struct zbus_channel *chan;
+
+	zbus_obs_set_enable(&foo_msg_sub, true);
+	zbus_obs_set_enable(&foo2_msg_sub, true);
+	zassert_equal(-ENOMEM, zbus_chan_notify(&msg_sub_no_pool_chan, K_MSEC(200)),
+		      "It must return an error, the pool only have 2 slots. For publishing to "
+		      "MSG_SUBSCRIBERS it is necessary at least one per each and a spare one.");
+
+	zassert_equal(0, zbus_sub_wait_msg(&foo_msg_sub, &chan, &msg, K_MSEC(500)), NULL);
+	zbus_obs_set_enable(&foo_msg_sub, false);
+	zbus_obs_set_enable(&foo2_msg_sub, false);
 }
 
 static bool always_true_chan_iterator(const struct zbus_channel *chan)
@@ -353,9 +397,17 @@ static bool check_chan_iterator(const struct zbus_channel *chan, void *user_data
 		zassert_mem_equal__(zbus_chan_name(chan), "hard_chan", 9, "Must be equal");
 		break;
 	case 5:
-		zassert_mem_equal__(zbus_chan_name(chan), "stuck_chan", 10, "Must be equal");
+		zassert_mem_equal__(zbus_chan_name(chan), "msg_sub_fail_chan",
+				    sizeof("msg_sub_fail_chan"), "Must be equal");
 		break;
 	case 6:
+		zassert_mem_equal__(zbus_chan_name(chan), "msg_sub_no_pool_chan",
+				    sizeof("msg_sub_no_pool_chan"), "Must be equal");
+		break;
+	case 7:
+		zassert_mem_equal__(zbus_chan_name(chan), "stuck_chan", 10, "Must be equal");
+		break;
+	case 8:
 		zassert_mem_equal__(zbus_chan_name(chan), "version_chan", 12, "Must be equal");
 		break;
 	default:
@@ -380,12 +432,31 @@ static bool check_obs_iterator(const struct zbus_observer *obs, void *user_data)
 		zassert_mem_equal__(zbus_obs_name(obs), "fast_lis", 8, "Must be equal");
 		break;
 	case 2:
-		zassert_mem_equal__(zbus_obs_name(obs), "foo_sub", 7, "Must be equal");
+		zassert_mem_equal__(zbus_obs_name(obs), "foo2_msg_sub", sizeof("foo2_msg_sub"),
+				    "Must be equal");
 		break;
 	case 3:
-		zassert_mem_equal__(zbus_obs_name(obs), "rt_fast_lis", 11, "Must be equal");
+		zassert_mem_equal__(zbus_obs_name(obs), "foo_msg_sub", 11, "Must be equal");
 		break;
 	case 4:
+		zassert_mem_equal__(zbus_obs_name(obs), "foo_sub", 7, "Must be equal");
+		break;
+	case 5:
+		zassert_mem_equal__(zbus_obs_name(obs), "invalid_obs", strlen("invalid_obs"),
+				    "Must be equal");
+		break;
+	case 6:
+		zassert_mem_equal__(zbus_obs_name(obs), "invalid_sub", strlen("invalid_sub"),
+				    "Must be equal");
+		break;
+	case 7:
+		zassert_mem_equal__(zbus_obs_name(obs), "not_observing_sub",
+				    strlen("not_observing_sub"), "Must be equal");
+		break;
+	case 8:
+		zassert_mem_equal__(zbus_obs_name(obs), "rt_fast_lis", 11, "Must be equal");
+		break;
+	case 9:
 		zassert_mem_equal__(zbus_obs_name(obs), "sub1", 4, "Must be equal");
 		break;
 	default:
@@ -570,9 +641,12 @@ ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 	zassert_equal(0, zbus_chan_rm_obs(&aux1_chan, &rt_fast_lis, K_MSEC(200)), NULL);
 }
 
+ZBUS_SUBSCRIBER_DEFINE(not_observing_sub, 0);
+
 ZTEST(basic, test_specification_based__zbus_obs_set_chan_notification_mask)
 {
 	bool enabled = false;
+	bool masked = false;
 
 	count_fast = 0;
 
@@ -583,6 +657,24 @@ ZTEST(basic, test_specification_based__zbus_obs_set_chan_notification_mask)
 	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(&fast_lis, NULL, true), NULL);
 
 	zassert_equal(-EFAULT, zbus_obs_set_chan_notification_mask(NULL, &aux1_chan, true), NULL);
+
+	zassert_equal(-ESRCH,
+		      zbus_obs_set_chan_notification_mask(&not_observing_sub, &aux1_chan, true),
+		      NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_is_chan_notification_masked(NULL, NULL, NULL), NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_is_chan_notification_masked(NULL, NULL, &masked), NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_is_chan_notification_masked(&fast_lis, NULL, &masked),
+		      NULL);
+
+	zassert_equal(-EFAULT, zbus_obs_is_chan_notification_masked(NULL, &aux1_chan, &masked),
+		      NULL);
+
+	zassert_equal(-ESRCH,
+		      zbus_obs_is_chan_notification_masked(&not_observing_sub, &aux1_chan, &masked),
+		      NULL);
 
 	zbus_obs_set_chan_notification_mask(&fast_lis, &aux1_chan, true);
 
@@ -608,6 +700,10 @@ ZTEST(basic, test_specification_based__zbus_obs_set_chan_notification_mask)
 
 ZBUS_SUBSCRIBER_DEFINE(foo_sub, 1);
 
+STRUCT_SECTION_ITERABLE(zbus_observer,
+			invalid_sub) = {ZBUS_OBSERVER_NAME_INIT(invalid_sub) /* Name field */
+						.type = ZBUS_OBSERVER_SUBSCRIBER_TYPE,
+					.enabled = false, .queue = NULL};
 static void isr_sub_wait(const void *operation)
 {
 	const struct zbus_channel *chan;
@@ -616,6 +712,7 @@ static void isr_sub_wait(const void *operation)
 	zassert_equal(-EFAULT, zbus_sub_wait(NULL, NULL, K_NO_WAIT), NULL);
 	zassert_equal(-EFAULT, zbus_sub_wait(&foo_sub, NULL, K_NO_WAIT), NULL);
 	zassert_equal(-EFAULT, zbus_sub_wait(&foo_sub, &chan, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait(&invalid_sub, &chan, K_NO_WAIT), NULL);
 }
 
 ZTEST(basic, test_specification_based__zbus_sub_wait)
@@ -625,11 +722,42 @@ ZTEST(basic, test_specification_based__zbus_sub_wait)
 
 	zassert_equal(-EFAULT, zbus_sub_wait(NULL, NULL, K_NO_WAIT), NULL);
 	zassert_equal(-EFAULT, zbus_sub_wait(&foo_sub, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait(&foo_msg_sub, NULL, K_NO_WAIT), NULL);
 
 	/* It must run but return a -ENOMSG because of the K_NO_WAIT */
 	zassert_equal(-ENOMSG, zbus_sub_wait(&foo_sub, &chan, K_NO_WAIT), NULL);
+	zassert_equal(-EAGAIN, zbus_sub_wait(&foo_sub, &chan, K_MSEC(200)), NULL);
 
 	irq_offload(isr_sub_wait, NULL);
+}
+
+static void isr_sub_wait_msg(const void *operation)
+{
+	const struct zbus_channel *chan;
+
+	/* All the calls must not work. Zbus cannot work in IRSs */
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(NULL, NULL, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(&foo_sub, NULL, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait(&foo_msg_sub, NULL, K_NO_WAIT), NULL);
+	int a = 0;
+
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(&foo_msg_sub, &chan, &a, K_NO_WAIT), NULL);
+}
+ZTEST(basic, test_specification_based__zbus_sub_wait_msg)
+{
+	count_fast = 0;
+	const struct zbus_channel *chan;
+
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(NULL, NULL, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(&foo_sub, NULL, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(&foo_msg_sub, NULL, NULL, K_NO_WAIT), NULL);
+	zassert_equal(-EFAULT, zbus_sub_wait_msg(&foo_msg_sub, &chan, NULL, K_NO_WAIT), NULL);
+	int a = 0;
+
+	zassert_equal(-ENOMSG, zbus_sub_wait_msg(&foo_msg_sub, &chan, &a, K_NO_WAIT), NULL);
+	zassert_equal(-ENOMSG, zbus_sub_wait_msg(&foo_msg_sub, &chan, &a, K_MSEC(200)), NULL);
+
+	irq_offload(isr_sub_wait_msg, NULL);
 }
 
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);

@@ -200,6 +200,23 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * A new mandatory method attr_get() was introduced into ieee802154_radio_api.
+    Drivers need to implement at least
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES and
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES.
+  * The hardware capabilities IEEE802154_HW_2_4_GHZ and IEEE802154_HW_SUB_GHZ
+    were removed as they were not aligned with the standard and some already
+    existing drivers couldn't properly express their channel page and channel
+    range (notably SUN FSK and HRP UWB drivers). The capabilities were replaced
+    by the standard conforming new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES that fits all in-tree drivers.
+  * The method get_subg_channel_count() was removed from ieee802154_radio_api.
+    This method could not properly express the channel range of existing drivers
+    (notably SUN FSK drivers that implement channel pages > 0 and may not have
+    zero-based channel ranges or UWB drivers that could not be represented at
+    all). The method was replaced by the new driver attribute
+    IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES that fits all in-tree drivers.
+
 * Interrupt Controller
 
   * GIC: Architecture version selection is now based on the device tree
@@ -357,6 +374,14 @@ Libraries / Subsystems
     operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
     because we can avoid extra copy of data from card bffer to read/prog buffer.
 
+* Retention
+
+  * Added the :ref:`blinfo_api` subsystem.
+
+* Binary descriptors
+
+  * Added the :ref:`binary_descriptors` (``bindesc``) subsystem.
+
 HALs
 ****
 
@@ -371,6 +396,11 @@ MCUboot
     that allows to inform application that the on-board MCUboot has been configured
     with downgrade  prevention enabled. This option is automatically selected for
     DirectXIP mode and is available for both swap modes.
+
+  * Added :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY`
+    that allows to inform application that the on-board MCUboot will overwrite
+    the primary slot with secondary slot contents, without saving the original
+    image in primary slot.
 
 Storage
 *******

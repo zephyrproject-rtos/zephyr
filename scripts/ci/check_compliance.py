@@ -617,6 +617,7 @@ flagged.
                               # visible to compliance.
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
+        "BINDESC_", # Used in documentation as a prefix
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
@@ -624,11 +625,14 @@ flagged.
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
         "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
         "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
-        "BOOT_SIGNATURE_KEY_FILE", # MCUboot setting used by sysbuild
+        "BOOT_SHARE_DATA",           # Used in Kconfig text
+        "BOOT_SHARE_DATA_BOOTINFO", # Used in (sysbuild-based) test
+        "BOOT_SHARE_BACKEND_RETENTION", # Used in Kconfig text
+        "BOOT_SIGNATURE_KEY_FILE",   # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_ECDSA_P256", # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_ED25519", # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_NONE", # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_RSA", # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_ED25519",    # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_NONE",       # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
         "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
         "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
         "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester

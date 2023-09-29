@@ -23,6 +23,7 @@ config CPU_CORTEX_M
 	select ARCH_SUPPORTS_ARCH_HW_INIT
 	select ARCH_HAS_SUSPEND_TO_RAM
 	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_SUPPORTS_ROM_START
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
@@ -37,6 +38,7 @@ config CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
+	select ARCH_SUPPORTS_ROM_START
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 

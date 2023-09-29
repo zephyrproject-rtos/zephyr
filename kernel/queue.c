@@ -88,6 +88,9 @@ static inline void handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
 	z_handle_obj_poll_events(&queue->poll_events, state);
+#else
+	ARG_UNUSED(queue);
+	ARG_UNUSED(state);
 #endif
 }
 

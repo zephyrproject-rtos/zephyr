@@ -16,7 +16,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,elkhart_lake";
+			compatible = "intel,elkhart-lake";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
@@ -204,7 +204,7 @@
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x4b23>;
-			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "okay";
