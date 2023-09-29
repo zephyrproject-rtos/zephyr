@@ -35,6 +35,12 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
  */
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef	retained_mem_size_api
  * @brief	Callback API to get size of retained memory area.
  * See retained_mem_size() for argument description.
@@ -81,6 +87,11 @@ __subsystem struct retained_mem_driver_api {
 	retained_mem_write_api write;
 	retained_mem_clear_api clear;
 };
+
+/**
+ * @endcond
+ */
+
 
 /**
  * @brief		Returns the size of the retained memory area.
