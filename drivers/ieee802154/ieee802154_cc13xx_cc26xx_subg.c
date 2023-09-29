@@ -376,12 +376,17 @@ ieee802154_cc13xx_cc26xx_subg_get_capabilities(const struct device *dev)
 static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
+	bool was_rx_on = false;
 	RF_EventMask events;
-	bool was_rx_on;
 	int ret;
 
 	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
 		return -EWOULDBLOCK;
+	}
+
+	if (!drv_data->is_up) {
+		ret = -ENETDOWN;
+		goto out;
 	}
 
 	drv_data->cmd_prop_cs.status = IDLE;
@@ -389,7 +394,7 @@ static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
 	if (was_rx_on) {
 		ret = drv_stop_rx(dev);
-		if (ret < 0) {
+		if (ret) {
 			ret = -EIO;
 			goto out;
 		}
@@ -493,8 +498,8 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	const struct device *dev, uint16_t channel)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
-	RF_EventMask events;
 	uint16_t freq, fract;
+	RF_EventMask events;
 	bool was_rx_on;
 	int ret;
 
@@ -507,7 +512,6 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 		return -EWOULDBLOCK;
 	}
 
-	/* Abort FG and BG processes */
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
 	if (was_rx_on) {
 		ret = drv_stop_rx(dev);
@@ -529,9 +533,11 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	}
 
 out:
-	/* Re-enable RX if we found it on initially. */
 	if (was_rx_on) {
+		/* Re-enable RX if we found it on initially. */
 		(void)drv_start_rx(dev);
+	} else if (!drv_data->is_up) {
+		ret = drv_power_down(dev);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -555,11 +561,12 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 	const struct device *dev, int16_t dbm)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
+	RF_TxPowerTable_Value power_table_value;
 	RF_Stat status;
+	int ret = 0;
 
-	RF_TxPowerTable_Value power_table_value = RF_TxPowerTable_findValue(
+	power_table_value = RF_TxPowerTable_findValue(
 		(RF_TxPowerTable_Entry *)ieee802154_cc13xx_subg_power_table, dbm);
-
 	if (power_table_value.rawValue == RF_TxPowerTable_INVALID_VALUE) {
 		LOG_DBG("RF_TxPowerTable_findValue() failed");
 		return -EINVAL;
@@ -572,7 +579,17 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 		return -EIO;
 	}
 
-	return 0;
+	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+		return -EWOULDBLOCK;
+	}
+
+	if (!drv_data->is_up) {
+		ret = drv_power_down(dev);
+	}
+
+	k_sem_give(&drv_data->lock);
+
+	return ret;
 }
 
 /* See IEEE 802.15.4 section 6.7.1 and TRM section 25.5.4.3 */
@@ -594,6 +611,19 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 		return -EIO;
 	}
 
+	if (!drv_data->is_up) {
+		ret = -ENETDOWN;
+		goto out;
+	}
+
+	if (drv_data->cmd_prop_rx_adv.status == ACTIVE) {
+		ret = drv_stop_rx(dev);
+		if (ret) {
+			ret = -EIO;
+			goto out;
+		}
+	}
+
 	/* Complete the SUN FSK PHY header, see IEEE 802.15.4, section 19.2.4. */
 	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
 
@@ -604,16 +634,6 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	drv_data->cmd_prop_tx_adv.pktLen = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 
 	drv_data->cmd_prop_tx_adv.status = IDLE;
-
-	/* Abort FG and BG processes */
-	if (drv_data->cmd_prop_rx_adv.status == ACTIVE) {
-		ret = drv_stop_rx(dev);
-		if (ret < 0) {
-			ret = -EIO;
-			goto out;
-		}
-	}
-
 	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_prop_tx_adv,
 			   RF_PriorityNormal, cmd_prop_tx_adv_callback, RF_EventLastCmdDone);
 	if ((events & RF_EventLastCmdDone) == 0) {
@@ -629,6 +649,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 
 out:
 	(void)drv_start_rx(dev);
+
 	k_sem_give(&drv_data->lock);
 	return ret;
 }
@@ -653,9 +674,9 @@ static int ieee802154_cc13xx_cc26xx_subg_attr_get(const struct device *dev,
 
 static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 {
+	int8_t rssi, status;
 	struct net_pkt *pkt;
 	uint8_t len;
-	int8_t rssi, status;
 	uint8_t *sdu;
 
 	/* No need for locking as only immutable data is accessed from drv_data.
@@ -725,7 +746,28 @@ static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 
 static int ieee802154_cc13xx_cc26xx_subg_start(const struct device *dev)
 {
-	return drv_start_rx(dev);
+	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
+	int ret;
+
+	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+		return -EIO;
+	}
+
+	if (drv_data->is_up) {
+		ret = -EALREADY;
+		goto out;
+	}
+
+	ret = drv_start_rx(dev);
+	if (ret) {
+		goto out;
+	}
+
+	drv_data->is_up = true;
+
+out:
+	k_sem_give(&drv_data->lock);
+	return ret;
 }
 
 /* Aborts all radio commands in the RF queue. Requires the lock to be held. */
@@ -752,14 +794,33 @@ static int drv_abort_commands(const struct device *dev)
  */
 static int ieee802154_cc13xx_cc26xx_subg_stop_if(const struct device *dev)
 {
+	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	int ret;
 
-	ret = drv_abort_commands(dev);
-	if (ret < 0) {
-		return ret;
+	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+		return -EIO;
 	}
 
-	return drv_power_down(dev);
+	if (!drv_data->is_up) {
+		ret = -EALREADY;
+		goto out;
+	}
+
+	ret = drv_abort_commands(dev);
+	if (ret) {
+		goto out;
+	}
+
+	ret = drv_power_down(dev);
+	if (ret) {
+		goto out;
+	}
+
+	drv_data->is_up = false;
+
+ out:
+	k_sem_give(&drv_data->lock);
+	return ret;
 }
 
 static int
@@ -862,9 +923,9 @@ static struct ieee802154_radio_api
 
 static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 {
+	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Params rf_params;
 	RF_EventMask events;
-	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 
 	/* No need for locking - initialization is exclusive. */
 
@@ -896,7 +957,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return 0;
+	return drv_power_down(dev);
 }
 
 static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_data = {

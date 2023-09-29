@@ -41,6 +41,8 @@ struct ieee802154_cc13xx_cc26xx_subg_data {
 	struct net_if *iface;
 	uint8_t mac[8]; /* in big endian */
 
+	bool is_up;
+
 	dataQueue_t rx_queue;
 	rfc_dataEntryPointer_t rx_entry[CC13XX_CC26XX_NUM_RX_BUF];
 	uint8_t rx_data[CC13XX_CC26XX_NUM_RX_BUF][CC13XX_CC26XX_RX_BUF_SIZE];
