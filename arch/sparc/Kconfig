@@ -26,6 +26,12 @@ config NUM_IRQS
 	int
 	default 32
 
+config SPARC_SVT
+	bool "Single-vector trapping"
+	help
+	  Use Single-vector trapping (SVT). Defined by SPARC-V8 Embedded (V8E)
+	  Architecture Specification and available in some LEON processors.
+
 config SPARC_CASA
 	bool "CASA instructions"
 	help
