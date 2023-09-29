@@ -198,7 +198,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	port_ds = GPTP_PORT_DS(port);
 	sync = GPTP_SYNC(pkt);
@@ -254,7 +254,7 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	hdr = GPTP_HDR(pkt);
 	fup = GPTP_FOLLOW_UP(pkt);
@@ -318,7 +318,7 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	port_ds = GPTP_PORT_DS(port);
 	req = GPTP_PDELAY_REQ(pkt);
@@ -373,7 +373,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	port_ds = GPTP_PORT_DS(port);
 
@@ -434,7 +434,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	port_ds = GPTP_PORT_DS(port);
 
@@ -503,7 +503,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 		return NULL;
 	}
 
-	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	hdr = GPTP_HDR(pkt);
 	ann = GPTP_ANNOUNCE(pkt);
