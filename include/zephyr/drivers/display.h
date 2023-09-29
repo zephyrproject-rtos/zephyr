@@ -127,6 +127,12 @@ struct display_buffer_descriptor {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef display_blanking_on_api
  * @brief Callback API to turn on display blanking
  * See display_blanking_on() for argument description
@@ -212,6 +218,7 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 
 /**
  * @brief Display driver API
+ *
  * API which a display driver should expose
  */
 struct display_driver_api {
@@ -226,6 +233,10 @@ struct display_driver_api {
 	display_set_pixel_format_api set_pixel_format;
 	display_set_orientation_api set_orientation;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Write data to display
