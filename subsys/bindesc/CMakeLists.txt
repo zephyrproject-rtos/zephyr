@@ -9,9 +9,19 @@ else()
   zephyr_linker_sources(ROM_START SORT_KEY 0x1bindesc bindesc.ld)
 endif()
 
+# Wrapper macro around string(TIMESTAMP ...), that returns the time
+# in either local time or UTC, depending on CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME.
+macro(get_time out_var format)
+  if(CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME)
+    string(TIMESTAMP ${out_var} ${format})
+  else()
+    string(TIMESTAMP ${out_var} ${format} UTC)
+  endif()
+endmacro()
+
 macro(gen_build_time_int_definition def_name format)
   if(CONFIG_BINDESC_${def_name})
-    string(TIMESTAMP ${def_name} ${format})
+    get_time(${def_name} ${format})
     # remove leading zeros so that the output will not be interpreted as octal
     math(EXPR ${def_name} ${${def_name}})
     zephyr_library_compile_definitions(${def_name}=${${def_name}})
@@ -20,7 +30,7 @@ endmacro()
 
 macro(gen_build_time_str_definition def_name format)
   if(CONFIG_BINDESC_${def_name})
-    string(TIMESTAMP ${def_name} ${${format}})
+    get_time(${def_name} ${${format}})
     zephyr_library_compile_definitions(${def_name}="${${def_name}}")
   endif()
 endmacro()
