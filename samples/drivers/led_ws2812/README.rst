@@ -74,6 +74,9 @@ For example devicetree configurations for each compatible, see
 Some boards are already supported out of the box; see the :file:`boards`
 directory for this sample for details.
 
+The sample updates the LED strip periodically. The update frequency can be
+modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
+
 Then build and flash the application:
 
 .. zephyr-app-commands::
