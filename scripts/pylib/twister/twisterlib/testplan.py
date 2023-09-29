@@ -110,6 +110,7 @@ class TestPlan:
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = []
+        self.snippet_roots = []
 
         self.run_individual_testsuite = []
         self.levels = []
@@ -309,6 +310,16 @@ class TestPlan:
         modules_meta = parse_modules(ZEPHYR_BASE)
         self.modules = [module.meta.get('name') for module in modules_meta]
 
+        # Check for valid modules with a snippet_root set
+        for module in modules_meta:
+            build = module.meta.get('build')
+            if build is not None and 'settings' in build:
+                settings = build.get('settings')
+                if settings is not None and 'snippet_root' in settings:
+                    snippet_root = module.project + '/' + settings['snippet_root']
+
+                    if os.path.exists(snippet_root):
+                        self.snippet_roots.append(Path(snippet_root))
 
     def report(self):
         if self.options.test_tree:
@@ -836,7 +847,7 @@ class TestPlan:
                 if ts.required_snippets:
                     missing_snippet = False
                     snippet_args = {"snippets": ts.required_snippets}
-                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)])
+                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)]  + self.snippet_roots)
 
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
