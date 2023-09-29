@@ -102,6 +102,12 @@ union charger_propval {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef charger_get_property_t
  * @brief Callback API for getting a charger property.
  *
@@ -128,6 +134,10 @@ __subsystem struct charger_driver_api {
 	charger_get_property_t get_property;
 	charger_set_property_t set_property;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Fetch a battery charger property
