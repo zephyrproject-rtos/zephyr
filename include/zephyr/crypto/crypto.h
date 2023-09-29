@@ -62,6 +62,12 @@
 
 /* More flags to be added as necessary */
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 /** @brief Crypto driver API definition. */
 __subsystem struct crypto_driver_api {
 	int (*query_hw_caps)(const struct device *dev);
@@ -87,6 +93,10 @@ __subsystem struct crypto_driver_api {
 	int (*hash_async_callback_set)(const struct device *dev,
 					 hash_completion_cb cb);
 };
+
+/**
+ * @endcond
+ */
 
 /* Following are the public API a user app may call.
  * The first two relate to crypto "session" setup / teardown. Further we
