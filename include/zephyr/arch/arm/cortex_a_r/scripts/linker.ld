@@ -81,6 +81,8 @@ _region_min_align = 4;
 
 #define BSS_ALIGN ALIGN(_region_min_align)
 
+#define MMU_ALIGN    . = ALIGN(_region_min_align)
+
 MEMORY
 {
     FLASH    (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
