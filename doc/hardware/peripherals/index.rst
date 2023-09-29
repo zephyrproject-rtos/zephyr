@@ -29,7 +29,6 @@ Peripherals
    edac/index.rst
    flash.rst
    fuel_gauge.rst
-   gna.rst
    gpio.rst
    hwinfo.rst
    i2c_eeprom_target.rst

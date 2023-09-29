@@ -43,7 +43,6 @@
 /* drivers/espi_saf.h requires SoC specific header */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/fpga.h>
-#include <zephyr/drivers/gna.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/i2c_emul.h>

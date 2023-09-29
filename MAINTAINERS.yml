@@ -1147,15 +1147,6 @@ Release Notes:
   labels:
     - "area: Modem"
 
-"Drivers: Neural Networks":
-  status: odd fixes
-  collaborators:
-    - nashif
-  files:
-    - drivers/neural_net/
-  labels:
-    - "area: Neural Networks"
-
 "Drivers: Regulators":
   status: maintained
   maintainers:
