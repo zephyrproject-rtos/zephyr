@@ -11,7 +11,6 @@ tests:
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
     arch_exclude:
       - nios2
-      - sparc
       - mips
       - posix
     platform_exclude:
@@ -25,7 +24,6 @@ tests:
     # FIXME: Exclude systems whereby the processor type is not known and emits a warning
     arch_exclude:
       - nios2
-      - sparc
       - mips
       - posix
     platform_exclude:
