@@ -1,0 +1,18 @@
+# Copyright 2021 HNU
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROC_RK3568_PC
+	bool "Rockchip ROC-RK3568-PC"
+	depends on SOC_SERIES_RK3568
+	select SOC_PART_NUMBER_ROCRK3568PC
+	select ARM64
+
+config NS16650_EARLYPRINT_DEBUG
+	bool "RK3568's Early Print Function"
+	default n
+	depends on BOARD_ROC_RK3568_PC
+	help
+	  For debug hardware system, there must be a early printk mechanism to 
+	  output the system info, which is usefull for development. In rk3568 
+	  borads, this print function using ns16650 to debug hardware.
