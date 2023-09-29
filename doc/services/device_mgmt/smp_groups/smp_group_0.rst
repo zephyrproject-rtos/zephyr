@@ -985,7 +985,7 @@ where:
 Bootloader Information: MCUboot
 ===============================
 
-In case when MCUboot is application bootloader empty request will
+In case when MCUboot is application bootloader, empty request will
 be responded with:
 
 .. code-block:: none
@@ -1034,8 +1034,8 @@ where "mode" is one of:
     |  6  | MCUboot is in RAM loader mode.                      |
     +-----+-----------------------------------------------------+
 
-The "no-downgrade" is a flag, which is always sent when true, indicating that
-mode has downgrade prevention enabled; downgrade prevention means that
-if uploaded image has lower version than running, it will notbe taken
-for exectuion by MCUboot.
-MCUmgr may reject image with lower version in that MCUboot configuration.
+The ``no-downgrade`` field is a flag, which is always sent when true, indicating that MCUboot has
+downgrade prevention enabled; downgrade prevention means that if the uploaded image has a lower
+version than the currently running application, it will not be used for an update by MCUboot.
+
+MCUmgr may reject images with a lower version in this configuration.
