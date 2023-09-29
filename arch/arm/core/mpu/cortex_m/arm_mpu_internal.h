@@ -10,23 +10,11 @@
  */
 static inline uint8_t get_num_regions(void)
 {
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4)
-	/* Cortex-M0+, Cortex-M3, and Cortex-M4 MCUs may
-	 * have a fixed number of 8 MPU regions.
-	 */
-	return 8;
-#elif defined(NUM_MPU_REGIONS)
-	/* Retrieve the number of regions from DTS configuration. */
-	return NUM_MPU_REGIONS;
-#else
 	uint32_t type = MPU->TYPE;
 
 	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
 	return (uint8_t)type;
-#endif /* CPU_CORTEX_M0PLUS | CPU_CORTEX_M3 | CPU_CORTEX_M4 */
 }
 
 static inline void set_region_number(uint32_t index)

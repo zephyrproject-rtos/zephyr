@@ -30,10 +30,6 @@ LOG_MODULE_DECLARE(mpu);
 #define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
 #endif
 
-#if DT_NODE_HAS_PROP(MPU_NODEID, arm_num_mpu_regions)
-#define NUM_MPU_REGIONS   DT_PROP(MPU_NODEID, arm_num_mpu_regions)
-#endif
-
 #define NODE_HAS_PROP_AND_OR(node_id, prop) \
 	DT_NODE_HAS_PROP(node_id, prop) ||
 
@@ -526,11 +522,6 @@ int z_arm_mpu_init(void)
 	defined(CONFIG_CPU_CORTEX_M4)
 	__ASSERT(
 		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
-		"Invalid number of MPU regions\n");
-#elif defined(NUM_MPU_REGIONS)
-	__ASSERT(
-		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos ==
-		NUM_MPU_REGIONS,
 		"Invalid number of MPU regions\n");
 #endif /* CORTEX_M0PLUS || CPU_CORTEX_M3 || CPU_CORTEX_M4 */
 

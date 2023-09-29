@@ -7,7 +7,3 @@ include: base.yaml
 properties:
   reg:
     required: true
-
-  arm,num-mpu-regions:
-    type: int
-    description: number of MPU regions supported by hardware
