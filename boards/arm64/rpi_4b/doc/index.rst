@@ -28,7 +28,7 @@ Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file:
 
-        ``boards/arm/rpi_4b/rpi_4b_defconfig``
+        ``boards/arm64/rpi_4b/rpi_4b_defconfig``
 
 Programming and Debugging
 *************************
@@ -38,7 +38,7 @@ Flashing
 
 1. Install Raspberry Pi OS using Raspberry Pi Imager. see <https://www.raspberrypi.com/software/>.
 
-2. add `kernel=zephyr.bin` in `config.txt`. see <https://www.raspberrypi.com/documentation/computers/config_txt.html#kernel>
+2. Add `kernel=zephyr.bin` and `arm_64bit=1` in `config.txt`. see <https://www.raspberrypi.com/documentation/computers/config_txt.html#kernel>
 
 .. code-block:: console
 
