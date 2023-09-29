@@ -637,11 +637,11 @@ static void kb1200_uart_isr_wrap(const struct device *dev)
 {
 	for (int i = 0; i < ser_device_count; i++)
 	{
-		struct device* dev = ser_device[i];
-		const struct kb1200_uart_config *config = dev->config;
+		struct device* dev_ = ser_device[i];
+		const struct kb1200_uart_config *config = dev_->config;
 		SER_T* ser = (SER_T *)config->base_addr;
 		if (ser->SERIE & ser->SERPF)
-			kb1200_uart_irq_handler(dev);
+			kb1200_uart_irq_handler(dev_);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN*/
