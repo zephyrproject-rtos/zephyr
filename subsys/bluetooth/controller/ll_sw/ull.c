@@ -2582,18 +2582,10 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 			/* We must count each SDU HCI fragment */
 			tx_node = tx->node;
 			if (IS_NODE_TX_PTR(tx_node)) {
-				if (IS_ADV_ISO_HANDLE(tx->handle)) {
-					/* FIXME: ADV_ISO shall be updated to
-					 * use ISOAL for TX. Until then, assume
-					 * 1 node equals 1 fragment.
-					 */
-					sdu_fragments = 1U;
-				} else {
-					/* We count each SDU fragment completed
-					 * by this PDU.
-					 */
-					sdu_fragments = tx_node->sdu_fragments;
-				}
+				/* We count each SDU fragment completed
+				 * by this PDU.
+				 */
+				sdu_fragments = tx_node->sdu_fragments;
 
 				/* Replace node reference with fragments
 				 * count
