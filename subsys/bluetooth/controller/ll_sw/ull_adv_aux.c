@@ -1804,7 +1804,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* TODO: need aux_chain_ind support */
 	if ((sec_len + ad_len + ad_fragment_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* return excess length */
-		*(uint8_t *)hdr_data = sec_len + ad_len -
+		*(uint8_t *)hdr_data = sec_len + ad_len + ad_fragment_len -
 				       PDU_AC_PAYLOAD_SIZE_MAX;
 
 		if (pri_pdu == pri_pdu_prev) {
@@ -2272,7 +2272,7 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 	/* Check AdvData overflow */
 	if ((len + ad_len + ad_fragment_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* return excess length */
-		*(uint8_t *)hdr_data = len + ad_len -
+		*(uint8_t *)hdr_data = len + ad_len + ad_fragment_len -
 				       PDU_AC_PAYLOAD_SIZE_MAX;
 
 		/* Will use packet too long error to determine fragmenting
