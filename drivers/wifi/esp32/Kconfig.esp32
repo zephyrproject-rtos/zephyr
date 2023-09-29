@@ -266,4 +266,50 @@ config ESP32_WIFI_SOFTAP_SUPPORT
 	help
 	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
 
+config ESP32_WIFI_MBEDTLS_CRYPTO
+	bool "Use MbedTLS crypto APIs"
+	default n
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_ECDSA_C
+	select MBEDTLS_PKCS5_C
+	select MBEDTLS_PK_WRITE_C
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+
+config ESP32_WIFI_ENABLE_WPA3_SAE
+	bool "WPA3-Personal"
+	default n
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	help
+	  Select this option to allow the device to establish a WPA3-Personal connection.
+
+config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+	bool "OWE STA"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to allow the device to establish OWE connection with eligible AP's.
+
+config ESP32_WIFI_ENABLE_SAE_PK
+	bool "SAE-PK"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to enable SAE-PK
+
+config ESP32_WIFI_DEBUG_PRINT
+	bool "Print debug messages from WPA Supplicant"
+	default n
+	help
+	  Select this option to print logging information from WPA supplicant,
+	  this includes handshake information and key hex dumps depending
+	  on the project logging level.
+
+	  Enabling this could increase the build size ~60kb
+	  depending on the project logging level.
+
 endif # WIFI_ESP32

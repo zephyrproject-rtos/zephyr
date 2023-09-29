@@ -181,9 +181,31 @@ static void scan_done_handler(void)
 			strncpy(res.ssid, ap_list_buffer[k].ssid, ssid_len);
 			res.rssi = ap_list_buffer[k].rssi;
 			res.channel = ap_list_buffer[k].primary;
-			res.security = WIFI_SECURITY_TYPE_NONE;
-			if (ap_list_buffer[k].authmode > WIFI_AUTH_OPEN) {
+			switch (ap_list_buffer[k].authmode) {
+			case WIFI_AUTH_OPEN:
+				res.security = WIFI_SECURITY_TYPE_NONE;
+				break;
+			case WIFI_AUTH_WPA2_PSK:
 				res.security = WIFI_SECURITY_TYPE_PSK;
+				break;
+			case WIFI_AUTH_WPA3_PSK:
+				res.security = WIFI_SECURITY_TYPE_SAE;
+				break;
+			case WIFI_AUTH_WAPI_PSK:
+				res.security = WIFI_SECURITY_TYPE_WAPI;
+				break;
+			case WIFI_AUTH_WPA2_ENTERPRISE:
+				res.security = WIFI_SECURITY_TYPE_EAP;
+				break;
+			case WIFI_AUTH_WEP:
+				res.security = WIFI_SECURITY_TYPE_WEP;
+				break;
+			case WIFI_AUTH_WPA_PSK:
+				res.security = WIFI_SECURITY_TYPE_WPA_PSK;
+				break;
+			default:
+				res.security = WIFI_SECURITY_TYPE_UNKNOWN;
+				break;
 			}
 
 			if (esp32_data.scan_cb) {
@@ -205,8 +227,9 @@ out:
 	esp32_data.scan_cb = NULL;
 }
 
-static void esp_wifi_handle_connect_event(void)
+static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
+	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
@@ -215,7 +238,7 @@ static void esp_wifi_handle_connect_event(void)
 #endif
 }
 
-static void esp_wifi_handle_disconnect_event(void *event_data)
+static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
 
@@ -253,9 +276,28 @@ static void esp_wifi_handle_disconnect_event(void *event_data)
 	}
 }
 
+static void esp_wifi_handle_ap_connect_event(void *event_data)
+{
+	wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+
+	LOG_DBG("Station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+
+}
+
+static void esp_wifi_handle_ap_disconnect_event(void *event_data)
+{
+	wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
+
+	LOG_DBG("station "MACSTR" leave, AID=%d", MAC2STR(event->mac), event->aid);
+	wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+
+}
+
 void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *event_data,
 			    size_t event_data_size, uint32_t ticks_to_wait)
 {
+	LOG_DBG("Wi-Fi event: %d", event_id);
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
 		esp32_data.state = ESP32_STA_STARTED;
@@ -266,10 +308,10 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		net_eth_carrier_off(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
-		esp_wifi_handle_connect_event();
+		esp_wifi_handle_sta_connect_event(event_data);
 		break;
 	case WIFI_EVENT_STA_DISCONNECTED:
-		esp_wifi_handle_disconnect_event();
+		esp_wifi_handle_sta_disconnect_event(event_data);
 		break;
 	case WIFI_EVENT_SCAN_DONE:
 		scan_done_handler();
@@ -281,10 +323,12 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	case WIFI_EVENT_AP_STACONNECTED:
 		esp32_data.state = ESP32_AP_CONNECTED;
 		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, eth_esp32_rx);
+		esp_wifi_handle_ap_connect_event(event_data);
 		break;
 	case WIFI_EVENT_AP_STADISCONNECTED:
 		esp32_data.state = ESP32_AP_DISCONNECTED;
 		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
+		esp_wifi_handle_ap_disconnect_event(event_data);
 		break;
 	default:
 		break;
@@ -332,16 +376,39 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	memcpy(wifi_config.sta.ssid, params->ssid, params->ssid_length);
 	wifi_config.sta.ssid[params->ssid_length] = '\0';
-
-	if (params->security == WIFI_SECURITY_TYPE_PSK) {
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+		data->status.security = WIFI_AUTH_OPEN;
+		wifi_config.sta.pmf_cfg.required = false;
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		wifi_config.sta.pmf_cfg.required = false;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
-	} else if (params->security == WIFI_SECURITY_TYPE_NONE) {
-		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
-		data->status.security = WIFI_AUTH_OPEN;
-	} else {
+		break;
+	case WIFI_SECURITY_TYPE_SAE:
+#if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
+		if (params->sae_password) {
+			memcpy(wifi_config.sta.password, params->sae_password,
+			       params->sae_password_length);
+			wifi_config.sta.password[params->sae_password_length] = '\0';
+		} else {
+			memcpy(wifi_config.sta.password, params->psk, params->psk_length);
+			wifi_config.sta.password[params->psk_length] = '\0';
+		}
+		data->status.security = WIFI_AUTH_WPA3_PSK;
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
+		wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		break;
+#else
+		LOG_ERR("WPA3 not supported for STA mode. Enable "
+			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		return -EINVAL;
+#endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
+	default:
 		LOG_ERR("Authentication method not supported");
 		return -EIO;
 	}
@@ -354,15 +421,21 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.channel = params->channel;
 	}
 
-	wifi_config.sta.pmf_cfg.capable = true;
-	wifi_config.sta.pmf_cfg.required = false;
-
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
-	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-	ret |= esp_wifi_connect();
+	if (ret) {
+		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		return -EINVAL;
+	}
 
-	if (ret != ESP_OK) {
-		LOG_ERR("Failed to connect to Wi-Fi access point");
+	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+	if (ret) {
+		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		return -EINVAL;
+	}
+
+	ret = esp_wifi_connect();
+	if (ret) {
+		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
 		return -EAGAIN;
 	}
 
@@ -405,7 +478,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
-	esp_err_t ret = 0;
+	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
 	wifi_config_t wifi_config = {
@@ -420,22 +493,41 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	data->status.ssid[params->ssid_length] = '\0';
 
 	strncpy((char *) wifi_config.ap.ssid, params->ssid, params->ssid_length);
+	wifi_config.ap.ssid_len = params->ssid_length;
 
-	if (params->psk_length == 0) {
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
 		memset(wifi_config.ap.password, 0, sizeof(wifi_config.ap.password));
 		wifi_config.ap.authmode = WIFI_AUTH_OPEN;
 		data->status.security = WIFI_AUTH_OPEN;
-	} else {
+		wifi_config.ap.pmf_cfg.required = false;
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
+		wifi_config.ap.pmf_cfg.required = false;
+		break;
+	default:
+		LOG_ERR("Authentication method not supported");
+		return -EINVAL;
 	}
 
 	/* Start Wi-Fi in AP mode with configuration built above */
-	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_AP);
-	ret |= esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
-	ret |= esp_wifi_start();
-	if (ret != ESP_OK) {
+	err = esp_wifi_set_mode(ESP32_WIFI_MODE_AP);
+	if (err) {
+		LOG_ERR("Failed to set Wi-Fi mode (%d)", err);
+		return -EINVAL;
+	}
+
+	err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+	if (err) {
+		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
+		return -EINVAL;
+	}
+
+	err = esp_wifi_start();
+	if (err) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
 	}
@@ -501,14 +593,14 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
-			if (ap_info.phy_11ax) {
-				status->link_mode = WIFI_6;
-			} else if (ap_info.phy_11n) {
-				status->link_mode = WIFI_4;
+			if (ap_info.phy_11b) {
+				status->link_mode = WIFI_1;
 			} else if (ap_info.phy_11g) {
 				status->link_mode = WIFI_3;
-			} else if (ap_info.phy_11b) {
-				status->link_mode = WIFI_1;
+			} else if (ap_info.phy_11n) {
+				status->link_mode = WIFI_4;
+			} else if (ap_info.phy_11ax) {
+				status->link_mode = WIFI_6;
 			}
 
 			status->beacon_interval = conf.sta.listen_interval;
@@ -532,6 +624,9 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 		break;
 	case WIFI_AUTH_WPA2_PSK:
 		status->security = WIFI_SECURITY_TYPE_PSK;
+		break;
+	case WIFI_AUTH_WPA3_PSK:
+		status->security = WIFI_SECURITY_TYPE_SAE;
 		break;
 	default:
 		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
