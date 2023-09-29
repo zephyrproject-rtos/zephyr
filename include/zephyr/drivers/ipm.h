@@ -46,6 +46,12 @@ typedef void (*ipm_callback_t)(const struct device *ipmdev, void *user_data,
 			       uint32_t id, volatile void *data);
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef ipm_send_t
  * @brief Callback API to send IPM messages
  *
@@ -105,6 +111,10 @@ __subsystem struct ipm_driver_api {
 	ipm_complete_t complete;
 #endif
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Try to send a message over the IPM device.
