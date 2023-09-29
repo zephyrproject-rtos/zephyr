@@ -123,6 +123,12 @@ typedef	int (*tcpc_vconn_discharge_cb_t)(const struct device *dev,
 typedef void (*tcpc_alert_handler_cb_t)(const struct device *dev, void *data,
 		enum tcpc_alert alert);
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 __subsystem struct tcpc_driver_api {
 	int (*init)(const struct device *dev);
 	int (*get_cc)(const struct device *dev, enum tc_cc_voltage_state *cc1,
@@ -161,6 +167,10 @@ __subsystem struct tcpc_driver_api {
 	int (*set_alert_handler_cb)(const struct device *dev, tcpc_alert_handler_cb_t handler,
 			void *data);
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Returns whether the sink has detected a Rp resistor on the other side

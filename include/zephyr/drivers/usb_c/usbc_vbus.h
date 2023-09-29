@@ -30,12 +30,22 @@
 extern "C" {
 #endif
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 struct usbc_vbus_driver_api {
 	bool (*check_level)(const struct device *dev, enum tc_vbus_level level);
 	int (*measure)(const struct device *dev, int *vbus_meas);
 	int (*discharge)(const struct device *dev, bool enable);
 	int (*enable)(const struct device *dev, bool enable);
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Checks if VBUS is at a particular level
