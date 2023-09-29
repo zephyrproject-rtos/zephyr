@@ -208,4 +208,6 @@ source "drivers/gpio/Kconfig.sedi"
 
 source "drivers/gpio/Kconfig.altera"
 
+source "drivers/gpio/Kconfig.bcm2711"
+
 endif # GPIO
