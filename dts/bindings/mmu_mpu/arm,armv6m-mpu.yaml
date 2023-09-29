@@ -10,8 +10,3 @@ include: base.yaml
 properties:
   reg:
     required: true
-
-  arm,num-mpu-regions:
-    type: int
-    const: 8
-    description: number of MPU regions supported by hardware
