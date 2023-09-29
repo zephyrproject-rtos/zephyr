@@ -29,6 +29,12 @@ extern "C" {
 #endif
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * API template to get the base address of the syscon region.
  *
  * @see syscon_get_base
@@ -65,6 +71,10 @@ __subsystem struct syscon_driver_api {
 	syscon_api_get_base get_base;
 	syscon_api_get_size get_size;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Get the syscon base address
