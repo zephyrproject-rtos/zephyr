@@ -8,6 +8,12 @@ menuconfig BINDESC_DEFINE_BUILD_TIME
 
 if BINDESC_DEFINE_BUILD_TIME
 
+config BINDESC_BUILD_TIME_USE_LOCAL_TIME
+	bool "Use local time"
+	help
+	  If enabled, the build time used for the descriptors will express
+	  the local time, rather than UTC.
+
 config BINDESC_BUILD_TIME_ALWAYS_REBUILD
 	bool "Always rebuild"
 	default y
@@ -55,52 +61,57 @@ config BINDESC_BUILD_TIME_UNIX
 config BINDESC_BUILD_DATE_TIME_STRING
 	bool "Build date and time as string"
 	help
-	  The date and time of compilation as a string, such as "2023/02/05 00:07:04"
+	  The date and time of compilation as a string, such as "2023-09-29T17:43:14+0000"
 
 config BINDESC_BUILD_DATE_STRING
 	bool "Build date as string"
 	help
-	  The date of compilation as a string, such as "2023/02/05"
+	  The date of compilation as a string, such as "2023-09-29"
 
 config BINDESC_BUILD_TIME_STRING
 	bool "Build time as string"
 	help
-	  The time of compilation as a string, such as "00:07:04"
+	  The time of compilation as a string, such as "T17:43:14+0000"
 
 config BINDESC_BUILD_DATE_TIME_STRING_FORMAT
 	depends on BINDESC_BUILD_DATE_TIME_STRING
 	string "Date-Time format"
-	default "%Y/%m/%d %H:%M:%S"
+	default "%Y-%m-%dT%H:%M:%S%z"
 	help
 	  Format of the build time string. This value is passed to cmake's string(TIMESTAMP ...)
 	  function, so refer to string's documentation for more info on the different formats.
 	  This can also be used to set a specific time, when trying to reproduce an image. For
-	  example, setting the format to "2023/02/05 00:07:04" will set it as the build time,
+	  example, setting the format to "2023-02-05T00:07:04+0000" will set it as the build time,
 	  regardless of the actual build time.
-	  Example of the default format: 2023/02/05 00:07:04
+	  If BINDESC_BUILD_TIME_USE_LOCAL_TIME is enabled, the time is the local time, else
+	  it is UTC time.
+	  Example of the default format: 2023-09-29T17:43:14+0000.
+	  Note: the default format complies with ISO-8601.
 
 config BINDESC_BUILD_DATE_STRING_FORMAT
 	depends on BINDESC_BUILD_DATE_STRING
 	string "Date format"
-	default "%Y/%m/%d"
+	default "%Y-%m-%d"
 	help
 	  Format of the build date string. This value is passed to cmake's string(TIMESTAMP ...)
 	  function, so refer to string's documentation for more info on the different formats.
 	  This can also be used to set a specific time, when trying to reproduce an image. For
-	  example, setting the format to "2023/02/05" will set it as the build time,
+	  example, setting the format to "2023-02-05" will set it as the build time,
 	  regardless of the actual build time.
-	  Example of the default format: 2023/02/05
+	  Example of the default format: 2023-02-05
+	  Note: the default format complies with ISO-8601.
 
 config BINDESC_BUILD_TIME_STRING_FORMAT
 	depends on BINDESC_BUILD_TIME_STRING
 	string "Time format"
-	default "%H:%M:%S"
+	default "T%H:%M:%S%z"
 	help
 	  Format of the build time string. This value is passed to cmake's string(TIMESTAMP ...)
 	  function, so refer to string's documentation for more info on the different formats.
 	  This can also be used to set a specific time, when trying to reproduce an image. For
-	  example, setting the format to "00:07:04" will set it as the build time,
+	  example, setting the format to "T00:07:04+0000" will set it as the build time,
 	  regardless of the actual build time.
-	  Example of the default format: 00:07:04
+	  Example of the default format: T00:07:04+0000.
+	  Note: the default format complies with ISO-8601.
 
 endif # BINDESC_DEFINE_BUILD_TIME
