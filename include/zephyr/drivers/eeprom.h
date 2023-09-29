@@ -32,6 +32,12 @@
 extern "C" {
 #endif
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 typedef int (*eeprom_api_read)(const struct device *dev, off_t offset,
 			       void *data,
 			       size_t len);
@@ -44,6 +50,10 @@ __subsystem struct eeprom_driver_api {
 	eeprom_api_write write;
 	eeprom_api_size size;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  *  @brief Read data from EEPROM
