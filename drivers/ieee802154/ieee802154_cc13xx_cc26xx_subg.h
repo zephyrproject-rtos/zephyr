@@ -53,6 +53,8 @@ struct ieee802154_cc13xx_cc26xx_subg_data {
 	volatile rfc_CMD_PROP_TX_ADV_t cmd_prop_tx_adv;
 	volatile rfc_propRxOutput_t cmd_prop_rx_adv_output;
 	volatile rfc_CMD_PROP_CS_t cmd_prop_cs;
+
+	RF_CmdHandle rx_cmd_handle;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_SUBG_H_ */
