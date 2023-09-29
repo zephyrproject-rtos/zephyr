@@ -9,7 +9,6 @@ tests:
       - mips
       - nios2
       - posix
-      - sparc
     # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
     # because of following chain of dependencies:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
@@ -33,7 +32,6 @@ tests:
       - mips
       - nios2
       - posix
-      - sparc
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_ENABLE=n
