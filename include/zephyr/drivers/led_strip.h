@@ -52,6 +52,12 @@ struct led_rgb {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef led_api_update_rgb
  * @brief Callback API for updating an RGB LED strip
  *
@@ -80,6 +86,9 @@ struct led_strip_driver_api {
 	led_api_update_rgb update_rgb;
 	led_api_update_channels update_channels;
 };
+
+/** @endcond */
+
 
 /**
  * @brief Update an LED strip made of RGB pixels
