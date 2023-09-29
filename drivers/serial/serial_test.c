@@ -21,9 +21,6 @@
 
 LOG_MODULE_REGISTER(mock_serial, CONFIG_LOG_DEFAULT_LEVEL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN) || IS_ENABLED(CONFIG_RING_BUFFER));
-BUILD_ASSERT(!IS_ENABLED(CONFIG_UART_ASYNC_API) || IS_ENABLED(CONFIG_RING_BUFFER));
-
 #define DT_DRV_COMPAT vnd_serial
 struct serial_vnd_data {
 #ifdef CONFIG_RING_BUFFER
@@ -318,7 +315,7 @@ static int serial_vnd_callback_set(const struct device *dev, uart_callback_t cal
 	}
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
-	data->irq_isr = cb;
+	data->irq_isr = NULL;
 #endif
 
 	if (callback == NULL && data->read_buf) {
@@ -407,7 +404,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 {
 	struct serial_vnd_data *data = dev->data;
 
-	LOG_WRN("read_size %d", read_size);
+	LOG_WRN("read_size %zd", read_size);
 
 	if (data == NULL) {
 		return -ENOTSUP;

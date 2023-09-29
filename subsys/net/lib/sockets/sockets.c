@@ -78,14 +78,7 @@ static inline void *get_sock_vtable(int sock,
 
 #ifdef CONFIG_USERSPACE
 	if (ctx != NULL && z_is_in_user_syscall()) {
-		struct z_object *zo;
-		int ret;
-
-		zo = z_object_find(ctx);
-		ret = z_object_validate(zo, K_OBJ_NET_SOCKET, _OBJ_INIT_TRUE);
-
-		if (ret != 0) {
-			z_dump_object_error(ret, ctx, zo, K_OBJ_NET_SOCKET);
+		if (!k_object_is_valid(ctx, K_OBJ_NET_SOCKET)) {
 			/* Invalidate the context, the caller doesn't have
 			 * sufficient permission or there was some other
 			 * problem with the net socket object

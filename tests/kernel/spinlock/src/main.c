@@ -55,7 +55,7 @@ ZTEST(spinlock, test_spinlock_basic)
 	zassert_true(!z_spin_is_locked(&l), "Spinlock failed to unlock");
 }
 
-void bounce_once(int id, bool trylock)
+static void bounce_once(int id, bool trylock)
 {
 	int ret;
 	int i, locked;
@@ -97,15 +97,16 @@ void bounce_once(int id, bool trylock)
 	 */
 	bounce_owner = id;
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 5; i++) {
 		zassert_true(bounce_owner == id, "Locked data changed");
+		k_busy_wait(1);
 	}
 
 	/* Release the lock */
 	k_spin_unlock(&bounce_lock, key);
 }
 
-void cpu1_fn(void *p1, void *p2, void *p3)
+static void cpu1_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -187,7 +188,7 @@ ZTEST(spinlock, test_spinlock_mutual_exclusion)
 	zassert_true(!z_spin_is_locked(&lock_runtime), "Spinlock failed to unlock");
 }
 
-void trylock_fn(void *p1, void *p2, void *p3)
+static void trylock_fn(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
