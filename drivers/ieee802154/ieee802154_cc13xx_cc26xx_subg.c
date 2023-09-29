@@ -595,8 +595,12 @@ static int ieee802154_cc13xx_cc26xx_subg_attr_get(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
+	/* We claim channel page nine with channel page zero channel range to
+	 * ensure SUN-FSK timing, see the TODO in
+	 * ieee802154_cc13xx_cc26xx_subg_channel_to_frequency().
+	 */
 	return ieee802154_attr_get_channel_page_and_range(
-		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_NINE_SUN_PREDEFINED,
 		&drv_attr.phy_supported_channels, value);
 }
 
@@ -896,7 +900,9 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 		/* see IEEE 802.15.4, section 11.3, table 11-1 and section 10.2.8 */
 		.csEndTime = RF_convertUsToRatTicks(
 			IEEE802154_PHY_A_CCA_TIME *
-				IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS),
+				(IEEE802154_PHY_SUN_FSK_863MHZ_915MHZ_SYMBOL_PERIOD_NS /
+					NSEC_PER_USEC)
+		),
 	},
 
 	.cmd_prop_tx_adv = {
