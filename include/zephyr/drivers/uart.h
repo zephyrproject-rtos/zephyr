@@ -31,11 +31,11 @@ extern "C" {
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
-	UART_LINE_CTRL_BAUD_RATE = BIT(0),
-	UART_LINE_CTRL_RTS = BIT(1),
-	UART_LINE_CTRL_DTR = BIT(2),
-	UART_LINE_CTRL_DCD = BIT(3),
-	UART_LINE_CTRL_DSR = BIT(4),
+	UART_LINE_CTRL_BAUD_RATE = BIT(0), /**< Baud rate */
+	UART_LINE_CTRL_RTS = BIT(1),       /**< Request To Send (RTS) */
+	UART_LINE_CTRL_DTR = BIT(2),       /**< Data Terminal Ready (DTR) */
+	UART_LINE_CTRL_DCD = BIT(3),       /**< Data Carrier Detect (DCD) */
+	UART_LINE_CTRL_DSR = BIT(4),       /**< Data Set Ready (DSR) */
 };
 
 /**
@@ -75,28 +75,28 @@ enum uart_rx_stop_reason {
 
 /** @brief Parity modes */
 enum uart_config_parity {
-	UART_CFG_PARITY_NONE,
-	UART_CFG_PARITY_ODD,
-	UART_CFG_PARITY_EVEN,
-	UART_CFG_PARITY_MARK,
-	UART_CFG_PARITY_SPACE,
+	UART_CFG_PARITY_NONE,   /**< No parity */
+	UART_CFG_PARITY_ODD,    /**< Odd parity */
+	UART_CFG_PARITY_EVEN,   /**< Even parity */
+	UART_CFG_PARITY_MARK,   /**< Mark parity */
+	UART_CFG_PARITY_SPACE,  /**< Space parity */
 };
 
 /** @brief Number of stop bits. */
 enum uart_config_stop_bits {
-	UART_CFG_STOP_BITS_0_5,
-	UART_CFG_STOP_BITS_1,
-	UART_CFG_STOP_BITS_1_5,
-	UART_CFG_STOP_BITS_2,
+	UART_CFG_STOP_BITS_0_5,  /**< 0.5 stop bit */
+	UART_CFG_STOP_BITS_1,    /**< 1 stop bit */
+	UART_CFG_STOP_BITS_1_5,  /**< 1.5 stop bits */
+	UART_CFG_STOP_BITS_2,    /**< 2 stop bits */
 };
 
 /** @brief Number of data bits. */
 enum uart_config_data_bits {
-	UART_CFG_DATA_BITS_5,
-	UART_CFG_DATA_BITS_6,
-	UART_CFG_DATA_BITS_7,
-	UART_CFG_DATA_BITS_8,
-	UART_CFG_DATA_BITS_9,
+	UART_CFG_DATA_BITS_5,    /**< 5 data bits */
+	UART_CFG_DATA_BITS_6,    /**< 6 data bits */
+	UART_CFG_DATA_BITS_7,    /**< 7 data bits */
+	UART_CFG_DATA_BITS_8,    /**< 8 data bits */
+	UART_CFG_DATA_BITS_9,    /**< 9 data bits */
 };
 
 /**
@@ -107,27 +107,21 @@ enum uart_config_data_bits {
  * In other cases, flow control is managed by hardware/driver.
  */
 enum uart_config_flow_control {
-	UART_CFG_FLOW_CTRL_NONE,
-	UART_CFG_FLOW_CTRL_RTS_CTS,
-	UART_CFG_FLOW_CTRL_DTR_DSR,
-	UART_CFG_FLOW_CTRL_RS485,
+	UART_CFG_FLOW_CTRL_NONE,     /**< No flow control */
+	UART_CFG_FLOW_CTRL_RTS_CTS,  /**< RTS/CTS flow control */
+	UART_CFG_FLOW_CTRL_DTR_DSR,  /**< DTR/DSR flow control */
+	UART_CFG_FLOW_CTRL_RS485,    /**< RS485 flow control */
 };
 
 /**
  * @brief UART controller configuration structure
- *
- * @param baudrate  Baudrate setting in bps
- * @param parity    Parity bit, use @ref uart_config_parity
- * @param stop_bits Stop bits, use @ref uart_config_stop_bits
- * @param data_bits Data bits, use @ref uart_config_data_bits
- * @param flow_ctrl Flow control setting, use @ref uart_config_flow_control
  */
 struct uart_config {
-	uint32_t baudrate;
-	uint8_t parity;
-	uint8_t stop_bits;
-	uint8_t data_bits;
-	uint8_t flow_ctrl;
+	uint32_t baudrate;  /**< Baudrate setting in bps */
+	uint8_t parity;     /**< Parity bit, use @ref uart_config_parity */
+	uint8_t stop_bits;  /**< Stop bits, use @ref uart_config_stop_bits */
+	uint8_t data_bits;  /**< Data bits, use @ref uart_config_data_bits */
+	uint8_t flow_ctrl;  /**< Flow control setting, use @ref uart_config_flow_control */
 };
 
 /**
@@ -285,7 +279,7 @@ struct uart_event_rx {
 
 /** @brief UART RX buffer released event data. */
 struct uart_event_rx_buf {
-	/* @brief Pointer to buffer that is no longer in use. */
+	/** @brief Pointer to buffer that is no longer in use. */
 	uint8_t *buf;
 };
 
