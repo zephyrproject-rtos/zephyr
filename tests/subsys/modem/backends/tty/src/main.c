@@ -122,10 +122,10 @@ static void test_modem_backend_tty_teardown(void *f)
 /*************************************************************************************************/
 ZTEST(modem_backend_tty_suite, test_close_open)
 {
-	zassert_true(modem_pipe_close(tty_pipe) == 0, "Failed to close pipe");
-	zassert_true(modem_pipe_close(tty_pipe) == -EALREADY, "Pipe should already be closed");
-	zassert_true(modem_pipe_open(tty_pipe) == 0, "Failed to open pipe");
-	zassert_true(modem_pipe_open(tty_pipe) == -EALREADY, "Pipe should already be open");
+	zassert_ok(modem_pipe_close(tty_pipe), "Failed to close pipe");
+	zassert_ok(modem_pipe_close(tty_pipe), "Pipe should already be closed");
+	zassert_ok(modem_pipe_open(tty_pipe), "Failed to open pipe");
+	zassert_ok(modem_pipe_open(tty_pipe), "Pipe should already be open");
 }
 
 ZTEST(modem_backend_tty_suite, test_receive_ready_event_not_raised)
