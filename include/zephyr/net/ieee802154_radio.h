@@ -61,7 +61,7 @@ extern "C" {
  */
 
 /**
- * @name MAC functional description (section 6)
+ * @name IEEE 802.15.4-2020, Section 6: MAC functional description
  * @{
  */
 
@@ -84,7 +84,7 @@ extern "C" {
 
 
 /**
- * @name MAC services (section 8)
+ * @name IEEE 802.15.4-2020, Section 8: MAC services
  * @{
  */
 
@@ -125,7 +125,7 @@ extern "C" {
 
 
 /**
- * @name General PHY requirements (section 10)
+ * @name IEEE 802.15.4-2020, Section 10: General PHY requirements
  * @{
  */
 
@@ -142,7 +142,7 @@ extern "C" {
  *   PIB attribute that represented channel page/number combinations as a
  *   bitmap. This attribute was removed in later versions of the standard as the
  *   number of channels increased beyond what could be represented by a bit map.
- *   That's the reason why we chose to represent supported channels as a
+ *   That's the reason why it was decided to represent supported channels as a
  *   combination of channel pages and ranges instead.
  * - In the 2020 version of the standard, 13 channel pages are explicitly
  *   defined, but up to 32 pages could in principle be supported. This was a
@@ -153,8 +153,8 @@ extern "C" {
  * - ASK PHY (channel page one) was deprecated in the 2015 version of the
  *   standard. The 2020 version of the standard is a bit ambivalent whether
  *   channel page one disappeared as well or should be interpreted as O-QPSK now
- *   (see section 10.1.3.3). We resolve this ambivalence by deprecating channel
- *   page one.
+ *   (see section 10.1.3.3). In Zephyr this ambivalence is resolved by
+ *   deprecating channel page one.
  * - For some PHYs the standard doesn't clearly specify a channel page, namely
  *   the GFSK, RS-GFSK, CMB and TASK PHYs. These are all rather new and left out
  *   in our list as long as no driver wants to implement them.
@@ -242,8 +242,8 @@ struct ieee802154_phy_supported_channels {
 	/**
 	 * @brief Pointer to an array of channel range structures.
 	 *
-	 * @warning The pointer must be stable and valid throughout the life of
-	 * the interface.
+	 * @warning The pointer must be valid and constant throughout the life
+	 * of the interface.
 	 */
 	const struct ieee802154_phy_channel_range *const ranges;
 
@@ -293,7 +293,7 @@ struct ieee802154_phy_supported_channels {
 
 
 /**
- * @name PHY services (section 11)
+ * @name IEEE 802.15.4-2020, Section 11: PHY services
  * @{
  */
 
@@ -321,7 +321,7 @@ struct ieee802154_phy_supported_channels {
 
 
 /**
- * @name O-QPSK PHY (section 12)
+ * @name IEEE 802.15.4-2020, Section 12: O-QPSK PHY
  * @{
  */
 
@@ -338,7 +338,7 @@ struct ieee802154_phy_supported_channels {
 
 
 /**
- * @name BPSK PHY (section 13)
+ * @name IEEE 802.15.4-2020, Section 13: BPSK PHY
  * @{
  */
 
@@ -352,7 +352,7 @@ struct ieee802154_phy_supported_channels {
 
 
 /**
- * @name HRP UWB PHY (section 15)
+ * @name IEEE 802.15.4-2020, Section 15: HRP UWB PHY
  *
  * @details For HRP UWB the symbol period is derived from the preamble symbol period
  * (T_psym), see section 11.3, table 11-1 and section 15.2.5, table 15-4
@@ -406,7 +406,7 @@ enum ieee802154_phy_hrp_uwb_nominal_prf {
 
 
 /**
- * @name SUN FSK PHY (section 19)
+ * @name IEEE 802.15.4-2020, Section 19: SUN FSK PHY
  * @{
  */
 
@@ -419,7 +419,7 @@ enum ieee802154_phy_hrp_uwb_nominal_prf {
 /** @} */
 
 /**
- * @name IEEE 802.15.4 driver
+ * @name IEEE 802.15.4 Driver API
  * @{
  */
 
@@ -517,7 +517,8 @@ enum ieee802154_event {
 	IEEE802154_EVENT_TX_STARTED,
 	/** Data reception failed */
 	IEEE802154_EVENT_RX_FAILED,
-	/** An RX slot ended, requires @ref IEEE802154_HW_RXTIME
+	/**
+	 * An RX slot ended, requires @ref IEEE802154_HW_RXTIME.
 	 *
 	 * @note This event SHALL not be triggered by drivers when RX is
 	 * synchronously switched of due to a call to `stop()` or an RX slot
@@ -620,194 +621,208 @@ enum ieee802154_fpb_mode {
 
 /** IEEE 802.15.4 driver configuration types. */
 enum ieee802154_config_type {
-	/** Indicates how the driver should set the Frame Pending bit in ACK
-	 *  responses for Data Requests. If enabled, the driver should determine
-	 *  whether to set the bit or not based on the information provided with
-	 *  @ref IEEE802154_CONFIG_ACK_FPB config and FPB address matching mode
-	 *  specified. Otherwise, Frame Pending bit should be set to ``1`` (see
-	 *  section 6.7.3).
+	/**
+	 * Indicates how the driver should set the Frame Pending bit in ACK
+	 * responses for Data Requests. If enabled, the driver should determine
+	 * whether to set the bit or not based on the information provided with
+	 * @ref IEEE802154_CONFIG_ACK_FPB config and FPB address matching mode
+	 * specified. Otherwise, Frame Pending bit should be set to ``1`` (see
+	 * section 6.7.3).
 	 *
-	 *  @note requires @ref IEEE802154_HW_TX_RX_ACK capability and is
-	 *  available in any interface operational state.
+	 * @note requires @ref IEEE802154_HW_TX_RX_ACK capability and is
+	 * available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_AUTO_ACK_FPB,
 
-	/** Indicates whether to set ACK Frame Pending bit for specific address
-	 *  or not. Disabling the Frame Pending bit with no address provided
-	 *  (NULL pointer) should disable it for all enabled addresses.
+	/**
+	 * Indicates whether to set ACK Frame Pending bit for specific address
+	 * or not. Disabling the Frame Pending bit with no address provided
+	 * (NULL pointer) should disable it for all enabled addresses.
 	 *
-	 *  @note requires @ref IEEE802154_HW_TX_RX_ACK capability and is
-	 *  available in any interface operational state.
+	 * @note requires @ref IEEE802154_HW_TX_RX_ACK capability and is
+	 * available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
 
-	/** Indicates whether the device is a PAN coordinator. This influences
-	 *  packet filtering.
+	/**
+	 * Indicates whether the device is a PAN coordinator. This influences
+	 * packet filtering.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_PAN_COORDINATOR,
 
-	/** Enable/disable promiscuous mode.
+	/**
+	 * Enable/disable promiscuous mode.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_PROMISCUOUS,
 
-	/** Specifies new IEEE 802.15.4 driver event handler. Specifying NULL as
-	 *  a handler will disable events notification.
+	/**
+	 * Specifies new IEEE 802.15.4 driver event handler. Specifying NULL as
+	 * a handler will disable events notification.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_EVENT_HANDLER,
 
-	/** Updates MAC keys, key index and the per-key frame counter for drivers
-	 *  supporting transmit security offloading, see section 9.5, tables 9-9
-	 *  and 9-10. The key configuration SHALL NOT be accepted if the frame
-	 *  counter (in case frame counter per key is true) is not strictly
-	 *  larger than the current frame counter associated with the same key,
-	 *  see sections 8.2.2, 9.2.4 g/h) and 9.4.3.
+	/**
+	 * Updates MAC keys, key index and the per-key frame counter for drivers
+	 * supporting transmit security offloading, see section 9.5, tables 9-9
+	 * and 9-10. The key configuration SHALL NOT be accepted if the frame
+	 * counter (in case frame counter per key is true) is not strictly
+	 * larger than the current frame counter associated with the same key,
+	 * see sections 8.2.2, 9.2.4 g/h) and 9.4.3.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_MAC_KEYS,
 
-	/** Sets the current MAC frame counter value associated with the
-	 *  interface for drivers supporting transmit security offloading, see
-	 *  section 9.5, table 9-8, secFrameCounter.
+	/**
+	 * Sets the current MAC frame counter value associated with the
+	 * interface for drivers supporting transmit security offloading, see
+	 * section 9.5, table 9-8, secFrameCounter.
 	 *
-	 *  @warning The frame counter MUST NOT be accepted if it is not
-	 *  strictly greater than the current frame counter associated with the
-	 *  interface, see sections 8.2.2, 9.2.4 g/h) and 9.4.3. Otherwise the
-	 *  replay protection provided by the frame counter may be compromised.
-	 *  Drivers SHALL return -EINVAL in case the configured frame counter
-	 *  does not conform to this requirement.
+	 * @warning The frame counter MUST NOT be accepted if it is not
+	 * strictly greater than the current frame counter associated with the
+	 * interface, see sections 8.2.2, 9.2.4 g/h) and 9.4.3. Otherwise the
+	 * replay protection provided by the frame counter may be compromised.
+	 * Drivers SHALL return -EINVAL in case the configured frame counter
+	 * does not conform to this requirement.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
-	/** Sets the current MAC frame counter value if the provided value is greater than
-	 *  the current one.
+	/**
+	 * Sets the current MAC frame counter value if the provided value is greater than
+	 * the current one.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 *
-	 *  @note This configuration option does not conform to the requirements
-	 *  specified in #61227 as it is redundant with @ref
-	 *  IEEE802154_CONFIG_FRAME_COUNTER, and will therefore be deprecated in
-	 *  the future.
+	 * @warning This configuration option does not conform to the
+	 * requirements specified in #61227 as it is redundant with @ref
+	 * IEEE802154_CONFIG_FRAME_COUNTER, and will therefore be deprecated in
+	 * the future.
 	 */
 	IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
 
-	/** Set or unset a radio reception window (RX slot). This can be used for
-	 *  any scheduled reception, e.g.: Zigbee GP device, CSL, TSCH, etc.
+	/**
+	 * Set or unset a radio reception window (RX slot). This can be used for
+	 * any scheduled reception, e.g.: Zigbee GP device, CSL, TSCH, etc.
 	 *
-	 *  @details The start and duration parameters of the RX slot are
-	 *  relative to the network subsystem's local clock. If the start
-	 *  parameter of the RX slot is -1 then any previously configured RX
-	 *  slot SHALL be canceled immediately. If the start parameter is any
-	 *  value in the past (including 0) or the duration parameter is zero
-	 *  then the receiver SHALL remain off forever until the RX slot has
-	 *  either been removed or re-configured to point to a future start
-	 *  time. If an RX slot is configured while the previous RX slot is
-	 *  still scheduled, then the previous slot SHALL be cancelled and the
-	 *  new slot scheduled instead.
+	 * @details The start and duration parameters of the RX slot are
+	 * relative to the network subsystem's local clock. If the start
+	 * parameter of the RX slot is -1 then any previously configured RX
+	 * slot SHALL be canceled immediately. If the start parameter is any
+	 * value in the past (including 0) or the duration parameter is zero
+	 * then the receiver SHALL remain off forever until the RX slot has
+	 * either been removed or re-configured to point to a future start
+	 * time. If an RX slot is configured while the previous RX slot is
+	 * still scheduled, then the previous slot SHALL be cancelled and the
+	 * new slot scheduled instead.
 	 *
-	 *  RX slots MAY be programmed while the driver is "DOWN". If any past
-	 *  or future RX slot is configured when calling `start()` then the
-	 *  interface SHALL be placed in "UP" state but the receiver SHALL not
-	 *  be started.
+	 * RX slots MAY be programmed while the driver is "DOWN". If any past
+	 * or future RX slot is configured when calling `start()` then the
+	 * interface SHALL be placed in "UP" state but the receiver SHALL not
+	 * be started.
 	 *
-	 *  The driver SHALL take care to start/stop the receiver autonomously,
-	 *  asynchronously and automatically around the RX slot. The driver
-	 *  SHALL resume power just before the RX slot and suspend it again
-	 *  after the slot unless another programmed event forces the driver not
-	 *  to suspend. The driver SHALL switch to the programmed channel
-	 *  before the RX slot and back to the channel set with set_channel()
-	 *  after the RX slot. If the driver interface is "DOWN" when the start
-	 *  time of an RX slot arrives, then the RX slot SHALL not be observed
-	 *  and the receiver SHALL remain off.
+	 * The driver SHALL take care to start/stop the receiver autonomously,
+	 * asynchronously and automatically around the RX slot. The driver
+	 * SHALL resume power just before the RX slot and suspend it again
+	 * after the slot unless another programmed event forces the driver not
+	 * to suspend. The driver SHALL switch to the programmed channel
+	 * before the RX slot and back to the channel set with set_channel()
+	 * after the RX slot. If the driver interface is "DOWN" when the start
+	 * time of an RX slot arrives, then the RX slot SHALL not be observed
+	 * and the receiver SHALL remain off.
 	 *
-	 *  If the driver is "UP" while configuring an RX slot, the driver SHALL
-	 *  turn off the receiver immediately and (possibly asynchronously) put
-	 *  the driver into the lowest possible power saving mode until the
-	 *  start of the RX slot. If the driver is "UP" while the RX slot is
-	 *  deleted, then the driver SHALL enable the receiver immediately. The
-	 *  receiver MUST be ready to receive packets before returning from the
-	 *  `configure()` operation in this case.
+	 * If the driver is "UP" while configuring an RX slot, the driver SHALL
+	 * turn off the receiver immediately and (possibly asynchronously) put
+	 * the driver into the lowest possible power saving mode until the
+	 * start of the RX slot. If the driver is "UP" while the RX slot is
+	 * deleted, then the driver SHALL enable the receiver immediately. The
+	 * receiver MUST be ready to receive packets before returning from the
+	 * `configure()` operation in this case.
 	 *
-	 *  This behavior means that setting an RX slot implicitly sets the MAC
-	 *  PIB attribute macRxOnWhenIdle (see section 8.4.3.1, table 8-94) to
-	 *  "true" while deleting the RX slot implicitly sets macRxOnWhenIdle to
-	 *  "false".
+	 * This behavior means that setting an RX slot implicitly sets the MAC
+	 * PIB attribute macRxOnWhenIdle (see section 8.4.3.1, table 8-94) to
+	 * "false" while deleting the RX slot implicitly sets macRxOnWhenIdle to
+	 * "true".
 	 *
-	 *  @note requires @ref IEEE802154_HW_RXTIME capability and is available
-	 *  in any interface operational state.
+	 * @note requires @ref IEEE802154_HW_RXTIME capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
-	/** Configure CSL receiver (Endpoint) period
+	/**
+	 * Configure CSL receiver (Endpoint) period.
 	 *
-	 *  @details In order to configure a CSL receiver the upper layer should combine several
-	 *  configuration options in the following way:
-	 *    1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once to inform the driver of the
-	 *       short and extended addresses of the peer to which it should inject CSL IEs.
-	 *    2. Use @ref IEEE802154_CONFIG_CSL_RX_TIME periodically, before each use of
-	 *       @ref IEEE802154_CONFIG_CSL_PERIOD setting parameters of the nearest CSL RX window,
-	 *       and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
-	 *       the nearest one) CSL RX window, to allow the driver to calculate the proper
-	 *       CSL Phase to the nearest CSL window to inject in the CSL IEs for both transmitted
-	 *       data and ACK frames.
-	 *    3. Use @ref IEEE802154_CONFIG_CSL_PERIOD on each value change to update the current
-	 *       CSL period value which will be injected in the CSL IEs together with the CSL Phase
-	 *       based on @ref IEEE802154_CONFIG_CSL_RX_TIME.
-	 *    4. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule the immediate receive
-	 *       window early enough before the expected window start time, taking into account
-	 *       possible clock drifts and scheduling uncertainties.
+	 * @details In order to configure a CSL receiver the upper layer should combine several
+	 * configuration options in the following way:
+	 * 1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once to inform the driver of the
+	 *    short and extended addresses of the peer to which it should inject CSL IEs.
+	 * 2. Use @ref IEEE802154_CONFIG_CSL_RX_TIME periodically, before each use of
+	 *    @ref IEEE802154_CONFIG_CSL_PERIOD setting parameters of the nearest CSL RX window,
+	 *    and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
+	 *    the nearest one) CSL RX window, to allow the driver to calculate the proper
+	 *    CSL phase to the nearest CSL window to inject in the CSL IEs for both transmitted
+	 *    data and ACK frames.
+	 * 3. Use @ref IEEE802154_CONFIG_CSL_PERIOD on each value change to update the current
+	 *    CSL period value which will be injected in the CSL IEs together with the CSL phase
+	 *    based on @ref IEEE802154_CONFIG_CSL_RX_TIME.
+	 * 4. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule the immediate receive
+	 *    window early enough before the expected window start time, taking into account
+	 *    possible clock drifts and scheduling uncertainties.
 	 *
-	 *  This diagram shows the usage of the four options over time:
-	 *        Start CSL                                  Schedule CSL window
+	 * This diagram shows the usage of the four options over time:
 	 *
-	 *    ENH_ACK_HEADER_IE                        CSL_RX_TIME (following window)
-	 *         |                                        |
-	 *         | CSL_RX_TIME (nearest window)           | RX_SLOT (nearest window)
-	 *         |    |                                   |   |
-	 *         |    | CSL_PERIOD                        |   |
-	 *         |    |    |                              |   |
-	 *         v    v    v                              v   v
-	 *    ----------------------------------------------------------[ CSL window ]-----+
-	 *                                            ^                                    |
-	 *                                            |                                    |
-	 *                                            +--------------------- loop ---------+
+	 *         Start CSL                                  Schedule CSL window
 	 *
-	 *  @note Available in any interface operational state.
+	 *     ENH_ACK_HEADER_IE                        CSL_RX_TIME (following window)
+	 *          |                                        |
+	 *          | CSL_RX_TIME (nearest window)           | RX_SLOT (nearest window)
+	 *          |    |                                   |   |
+	 *          |    | CSL_PERIOD                        |   |
+	 *          |    |    |                              |   |
+	 *          v    v    v                              v   v
+	 *     ----------------------------------------------------------[ CSL window ]-----+
+	 *                                             ^                                    |
+	 *                                             |                                    |
+	 *                                             +--------------------- loop ---------+
 	 *
-	 *  @note This configuration option does not conform to the requirements
-	 *  specified in #61227 as it is incompatible with standard primitives
-	 *  and may therefore be deprecated in the future.
+	 * @note Available in any interface operational state.
+	 *
+	 * @warning This configuration option does not conform to the
+	 * requirements specified in #61227 as it is incompatible with standard
+	 * primitives and may therefore be deprecated in the future.
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
-	/** Configure the next CSL receive window (i.e. "channel sample") center,
-	 *  in units of nanoseconds relative to the network subsystem's local clock.
+	/**
+	 * @brief Configure the next CSL receive window (i.e. "channel sample")
+	 * center, in units of nanoseconds relative to the network subsystem's
+	 * local clock.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 *
-	 *  @note This configuration option does not conform to the requirements
-	 *  specified in #61227 as it is incompatible with standard primitives
-	 *  and may therefore be deprecated in the future.
+	 * @warning This configuration option does not conform to the
+	 * requirements specified in #61227 as it is incompatible with standard
+	 * primitives and may therefore be deprecated in the future.
 	 */
 	IEEE802154_CONFIG_CSL_RX_TIME,
 
-	/** Indicates whether to inject IE into ENH ACK Frame for specific address
-	 *  or not. Disabling the ENH ACK with no address provided (NULL pointer)
-	 *  should disable it for all enabled addresses.
+	/**
+	 * Indicates whether to inject IE into ENH ACK Frame for specific address
+	 * or not. Disabling the ENH ACK with no address provided (NULL pointer)
+	 * should disable it for all enabled addresses.
 	 *
-	 *  @note Available in any interface operational state.
+	 * @note Available in any interface operational state.
 	 *
-	 *  @note This configuration option does not conform to the requirements
-	 *  specified in #61227 as it is incompatible with standard primitives
-	 *  and may therefore be modified in the future.
+	 * @warning This configuration option does not conform to the
+	 * requirements specified in #61227 as it is incompatible with standard
+	 * primitives and may therefore be modified in the future.
 	 */
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
 
@@ -860,16 +875,19 @@ struct ieee802154_config {
 		/** see @ref IEEE802154_CONFIG_EVENT_HANDLER */
 		ieee802154_event_cb_t event_handler;
 
-		/** see @ref IEEE802154_CONFIG_MAC_KEYS
-		 *  Pointer to an array containing a list of keys used
-		 *  for MAC encryption. Refer to secKeyIdLookupDescriptor and
-		 *  secKeyDescriptor in IEEE 802.15.4
+		/**
+		 * @brief see @ref IEEE802154_CONFIG_MAC_KEYS
 		 *
-		 *  key_value field points to a buffer containing the 16 byte
-		 *  key. The buffer is copied by the callee.
+		 * @details Pointer to an array containing a list of keys used
+		 * for MAC encryption. Refer to secKeyIdLookupDescriptor and
+		 * secKeyDescriptor in IEEE 802.15.4
 		 *
-		 *  The variable length array is terminated by key_value field
-		 *  set to NULL.
+		 * The key_value field points to a buffer containing the 16 byte
+		 * key. The buffer SHALL be copied by the driver before
+		 * returning from the call.
+		 *
+		 * The variable length array is terminated by key_value field
+		 * set to NULL.
 		 */
 		struct ieee802154_key *mac_keys;
 
@@ -929,7 +947,7 @@ struct ieee802154_config {
 		/** see @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE */
 		struct {
 			/**
-			 * header IEs to be added to the Enh-Ack frame
+			 * Header IEs to be added to the Enh-Ack frame.
 			 *
 			 * in little endian
 			 */
@@ -1005,28 +1023,29 @@ enum ieee802154_attr {
  * configuration data that originate from L2.
  *
  * @note To keep this union reasonably small, any attribute requiring a large
- * memory area, SHALL be provided pointing to stable memory allocated by the
- * driver.
+ * memory area, SHALL be provided pointing to static memory allocated by the
+ * driver and valid throughout the lifetime of the driver instance.
  */
 struct ieee802154_attr_value {
 	union {
+		/* TODO: Implement configuration of phyCurrentPage once drivers
+		 * need to support channel page switching at runtime.
+		 */
 		/**
 		 * @brief A bit field that represents the supported channel
 		 * pages, see @ref ieee802154_phy_channel_page.
 		 *
 		 * @note To keep the API extensible as required by the standard,
-		 * we model supported pages as a bitmap to support drivers that
-		 * implement runtime switching between multiple channel pages.
+		 * supported pages are modeled as a bitmap to support drivers
+		 * that implement runtime switching between multiple channel
+		 * pages.
 		 *
 		 * @note Currently none of the Zephyr drivers implements more
 		 * than one channel page at runtime, therefore only one bit will
-		 * be set and we consider the current channel page (see the PHY
-		 * PIB attribute phyCurrentPage, section 11.3, table 11-2) to be
-		 * read-only, fixed and "well known" via the supported channel
-		 * pages attribute.
-		 *
-		 * TODO: Implement configuration of phyCurrentPage once drivers
-		 * need to support channel page switching at runtime.
+		 * be set and the current channel page (see the PHY PIB
+		 * attribute phyCurrentPage, section 11.3, table 11-2) is
+		 * considered to be read-only, fixed and "well known" via the
+		 * supported channel pages attribute.
 		 */
 		uint32_t phy_supported_channel_pages;
 
@@ -1034,8 +1053,8 @@ struct ieee802154_attr_value {
 		 * @brief Pointer to a structure representing channel ranges
 		 * currently available on the selected channel page.
 		 *
-		 * @warning The pointer must be stable and valid throughout the
-		 * life of the interface.
+		 * @warning The pointer must be valid and constant throughout
+		 * the life of the interface.
 		 *
 		 * @details The selected channel page corresponds to the
 		 * phyCurrentPage PHY PIB attribute, see the description of
@@ -1067,6 +1086,9 @@ struct ieee802154_attr_value {
 		 */
 		const struct ieee802154_phy_supported_channels *phy_supported_channels;
 
+		/* TODO: Allow the PRF to be configured for each TX call once
+		 * drivers need to support PRF switching at runtime.
+		 */
 		/**
 		 * @brief A bit field representing supported HRP UWB pulse
 		 * repetition frequencies (PRF), see enum
@@ -1074,20 +1096,16 @@ struct ieee802154_attr_value {
 		 *
 		 * @note Currently none of the Zephyr HRP UWB drivers implements
 		 * more than one nominal PRF at runtime, therefore only one bit
-		 * will be set and we consider the current PRF (UwbPrf,
-		 * MCPS-DATA.request, section 8.3.2, table 8-88) to be
-		 * read-only, fixed and "well known" via the supported PRF
-		 * attribute.
-		 *
-		 * TODO: Allow the PRF to be configured for each TX call once
-		 * drivers need to support PRF switching at runtime.
+		 * will be set and the current PRF (UwbPrf, MCPS-DATA.request,
+		 * section 8.3.2, table 8-88) is considered to be read-only,
+		 * fixed and "well known" via the supported PRF attribute.
 		 */
 		uint32_t phy_hrp_uwb_supported_nominal_prfs;
 	};
 };
 
 /**
- * @brief Helper function to handle channel page and rank to be called from
+ * @brief Helper function to handle channel page and range to be called from
  * drivers' attr_get() implementation. This only applies to drivers with a
  * single channel page.
  *
@@ -1603,7 +1621,8 @@ BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
 /** INTERNAL_HIDDEN @endcond */
 
 /**
- * @brief Check if AR flag is set on the frame inside given net_pkt
+ * @brief Check if the AR flag is set on the frame inside the given @ref
+ * net_pkt.
  *
  * @param frag A valid pointer on a net_buf structure, must not be NULL,
  *        and its length should be at least 1 byte (ImmAck frames are the
@@ -1616,10 +1635,16 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 	return (*frag->data & IEEE802154_AR_FLAG_SET);
 }
 
+/** @} */
+
 /**
- * IEEE 802.15.4 driver callbacks
+ * @name IEEE 802.15.4 driver callbacks
+ * @{
  */
 
+/* TODO: Fix drivers to either unref the packet before they return NET_OK or to
+ * return NET_CONTINUE instead. See note below.
+ */
 /**
  * @brief IEEE 802.15.4 driver ACK handling callback into L2 that drivers must
  *        call when receiving an ACK package.
@@ -1638,10 +1663,9 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
  *
  * @return NET_OK if L2 handles the ACK package, NET_CONTINUE or NET_DROP otherwise.
  *
- *         Note: Deviating from other functions in the net stack returning net_verdict,
- *               this function will not unref the package even if it returns NET_OK.
- *
- *         TODO: Fix this deviating behavior.
+ * @warning Deviating from other functions in the net stack returning
+ * net_verdict, this function will not unref the package even if it returns
+ * NET_OK.
  */
 extern enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt);
 
