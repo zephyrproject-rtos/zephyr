@@ -372,8 +372,6 @@ static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 	int ret;
 
 	drv_data->cmd_prop_cs.status = IDLE;
-	drv_data->cmd_prop_cs.pNextOp = NULL;
-	drv_data->cmd_prop_cs.condition.rule = COND_NEVER;
 
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
 	if (was_rx_on) {
@@ -569,25 +567,16 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
-	/* Prepend data with the SUN FSK PHY header,
-	 * see IEEE 802.15.4, section 19.2.4.
-	 */
+	/* Complete the SUN FSK PHY header, see IEEE 802.15.4, section 19.2.4. */
 	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
-	drv_data->tx_data[1] = 0;
-	drv_data->tx_data[1] |= BIT(3); /* FCS Type: 2-octet FCS */
-	drv_data->tx_data[1] |= BIT(4); /* DW: Enable Data Whitening */
-
-	/* TODO: Zero-copy TX, see discussion in #49775. */
-	__ASSERT_NO_MSG(buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN <= CC13XX_CC26XX_TX_BUF_SIZE);
-	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 
 	/* Set TX data */
+	__ASSERT_NO_MSG(buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN <= CC13XX_CC26XX_TX_BUF_SIZE);
+	/* TODO: Zero-copy TX, see discussion in #49775. */
+	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 	drv_data->cmd_prop_tx_adv.pktLen = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
-	drv_data->cmd_prop_tx_adv.pPkt = drv_data->tx_data;
 
-	/* Reset command status */
 	drv_data->cmd_prop_tx_adv.status = IDLE;
-	drv_data->cmd_prop_tx_adv.pNextOp = NULL;
 
 	/* Abort FG and BG processes */
 	if (drv_data->cmd_prop_rx_adv.status == ACTIVE) {
@@ -863,12 +852,6 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 	 * If this is not done, then even CMD_ABORT fails.
 	 */
 	drv_data->cmd_fs.status = IDLE;
-	drv_data->cmd_fs.pNextOp = NULL;
-	drv_data->cmd_fs.condition.rule = COND_NEVER;
-	drv_data->cmd_fs.synthConf.bTxMode = false;
-	drv_data->cmd_fs.frequency = 0;
-	drv_data->cmd_fs.fractFreq = 0;
-
 	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
 	if (events != RF_EventLastCmdDone) {
@@ -919,12 +902,13 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 				.cmd_prop_rx_adv_output,
 	},
 
-	/* TODO: Support correlation CCA modes, see section 10.2.8. */
 	.cmd_prop_cs = {
 		.commandNo = CMD_PROP_CS,
 		.condition.rule = COND_NEVER,
 		.csConf = {
-			/* CCA Mode 1: Energy above threshold, see section 10.2.8. */
+			/* CCA Mode 1: Energy above threshold, see section 10.2.8.
+			 * CC13/26xx SubG does not support correlation mode.
+			 */
 			.bEnaRssi = true,
 			/* Abort as soon as any energy above the ED threshold is detected. */
 			.busyOp = true,
@@ -949,7 +933,8 @@ static struct ieee802154_cc13xx_cc26xx_subg_data ieee802154_cc13xx_cc26xx_subg_d
 		.pktConf.bUseCrc = true,
 		/* PHR field format, see IEEE 802.15.4, section 19.2.4 */
 		.numHdrBits = 16,
-		.preTrigger.triggerType = TRIG_REL_START,
+		.preTrigger.triggerType =
+			TRIG_REL_START, /* workaround for CC13_RF_ROM_FW_CPE--BUG00016 */
 		.preTrigger.pastTrig = true,
 		/* Last preamble byte and SFD for uncoded 2-FSK SUN PHY, phySunFskSfd = 0,
 		 * see IEEE 802.15.4, section 19.2.3.2, table 19-2.
