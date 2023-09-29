@@ -1,0 +1,14 @@
+sample:
+  description: Espressif Wi-Fi station sample app
+  name: Wi-Fi station
+tests:
+  sample.boards.esp32.wifi.sta:
+    build_only: true
+    tags:
+      - net
+      - wifi
+    platform_allow:
+      - esp32_devkitc_wrover
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm

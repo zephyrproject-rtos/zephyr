@@ -1,0 +1,44 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ESP32_STA_SAMPLE"
+
+config WIFI_SSID
+	string "Wi-Fi SSID"
+	default "myssid"
+	help
+		MQTT payload buffer is used for receiving large payload data. This buffer
+		is usually used to store data from MQTT_EVT_PUBLISH events.
+
+config WIFI_PSK
+	string "Wi-Fi PSK"
+	default "mypassword" if	!STA_AUTH_MODE_NONE
+	default "" if STA_AUTH_MODE_NONE
+	help
+		MQTT payload buffer is used for receiving large payload data. This buffer
+		is usually used to store data from MQTT_EVT_PUBLISH events.
+
+choice STA_AUTH_MODE_SELECT
+	prompt "Security Option"
+	default STA_AUTH_MODE_WPA3
+
+config STA_AUTH_MODE_NONE
+	bool "Open Security"
+	help
+	  Enable for Open Security
+
+config STA_AUTH_MODE_WPA2
+	bool "WPA2 Security"
+	help
+	  Enable for WPA2 Security
+
+config STA_AUTH_MODE_WPA3
+	bool "WPA3 Security"
+	select ESP_WIFI_ENABLE_WPA3_SAE
+	help
+		Enable for WPA3 Security
+
+endchoice
+
+endmenu
+source "Kconfig.zephyr"
