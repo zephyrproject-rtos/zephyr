@@ -34,6 +34,7 @@ tests:
       - qemu_arc_em
       - qemu_arc_hs
       - qemu_arc_hs6x
+      - qemu_leon3
     integration_platforms:
       - qemu_cortex_m3
       - nsim_em
