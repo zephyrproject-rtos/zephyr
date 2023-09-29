@@ -9,7 +9,7 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/buf_loader.h>
 
-#ifdef CONFIG_ARM /* ARMV7 */
+#if defined(CONFIG_ARM) /* ARMV7 */ || defined(CONFIG_XTENSA)
 const static uint8_t hello_world_elf[] __aligned(4) = {
 #include "hello_world.inc"
 };
@@ -24,7 +24,7 @@ const static uint8_t hello_world_elf[] __aligned(4) = {
  */
 ZTEST(llext, test_llext_simple)
 {
-	const char name[16] = {'h', 'e', 'l', 'l', 'o', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	const char name[16] = "hello";
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(hello_world_elf, ARRAY_SIZE(hello_world_elf));
 	struct llext_loader *loader = &buf_loader.loader;
