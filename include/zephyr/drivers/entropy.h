@@ -30,6 +30,13 @@ extern "C" {
 #endif
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+
+/**
  * @typedef entropy_get_entropy_t
  * @brief Callback API to get entropy.
  *
@@ -55,6 +62,10 @@ __subsystem struct entropy_driver_api {
 	entropy_get_entropy_t     get_entropy;
 	entropy_get_entropy_isr_t get_entropy_isr;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Fills a buffer with entropy. Blocks if required in order to
