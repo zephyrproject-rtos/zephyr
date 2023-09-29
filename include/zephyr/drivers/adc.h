@@ -568,6 +568,11 @@ struct adc_sequence {
 	bool calibrate;
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
 
 /**
  * @brief Type definition of ADC API function for configuring a channel.
@@ -605,6 +610,10 @@ __subsystem struct adc_driver_api {
 #endif
 	uint16_t ref_internal;	/* mV */
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Configure an ADC channel.
