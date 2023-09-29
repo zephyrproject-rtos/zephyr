@@ -63,6 +63,12 @@ typedef void *clock_control_subsys_t;
  */
 typedef void *clock_control_subsys_rate_t;
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 /** @brief Callback called on clock started.
  *
  * @param dev		Device structure whose driver controls the clock.
@@ -106,6 +112,10 @@ struct clock_control_driver_api {
 	clock_control_set		set_rate;
 	clock_control_configure_fn	configure;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Enable a clock controlled by the device
