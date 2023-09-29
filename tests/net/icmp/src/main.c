@@ -449,8 +449,6 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 	test->req_received = true;
 	k_sem_give(&test->tx_sem);
 
-	net_pkt_unref(pkt);
-
 	return 0;
 }
 

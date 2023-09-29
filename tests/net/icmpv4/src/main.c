@@ -131,7 +131,6 @@ static int handle_reply_msg(struct net_icmp_ctx *ctx,
 		return -ENOMSG;
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 

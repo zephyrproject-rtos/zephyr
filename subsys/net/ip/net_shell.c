@@ -4388,7 +4388,6 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 #else
@@ -4463,7 +4462,6 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 #else

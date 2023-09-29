@@ -491,8 +491,6 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 
 	net_stats_update_icmp_sent(net_pkt_iface(reply));
 
-	net_pkt_unref(pkt);
-
 	return 0;
 drop:
 	if (reply) {

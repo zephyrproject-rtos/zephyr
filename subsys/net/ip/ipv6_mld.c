@@ -356,8 +356,6 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 
 	send_mld_report(net_pkt_iface(pkt));
 
-	net_pkt_unref(pkt);
-
 	return 0;
 
 drop:
