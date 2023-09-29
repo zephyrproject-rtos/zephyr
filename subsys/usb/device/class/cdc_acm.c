@@ -126,6 +126,10 @@ struct cdc_acm_dev_data_t {
 	bool suspended;
 	/* CDC ACM paused flag */
 	bool rx_paused;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
 
 	struct usb_dev_data common;
 };
@@ -899,17 +903,18 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 static int cdc_acm_configure(const struct device *dev,
 			     const struct uart_config *cfg)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-	/*
-	 * We cannot implement configure API because there is
-	 * no notification of configuration changes provided
-	 * for the Abstract Control Model and the UART controller
-	 * is only emulated.
-	 * However, it allows us to use CDC ACM UART together with
-	 * subsystems like Modbus which require configure API for
-	 * real controllers.
-	 */
+	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		dev_data->flow_ctrl = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		dev_data->flow_ctrl = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -969,8 +974,8 @@ static int cdc_acm_config_get(const struct device *dev,
 		break;
 	};
 
-	/* USB CDC has no notion of flow control */
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	cfg->flow_ctrl = dev_data->flow_ctrl ? UART_CFG_FLOW_CTRL_RTS_CTS :
+					       UART_CFG_FLOW_CTRL_NONE;
 
 	return 0;
 }
@@ -991,13 +996,17 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 /*
  * @brief Output a character in polled mode.
  *
- * The poll function looks similar to cdc_acm_fifo_fill() and
- * tries to do the best to mimic behavior of a hardware UART controller
- * without flow control.
- * This function does not block, if the USB subsystem
- * is not ready, no data is transferred to the buffer, that is, c is dropped.
- * If the USB subsystem is ready and the buffer is full, the first character
- * from the tx_ringbuf is removed to make room for the new character.
+ * According to the UART API, the implementation of this routine should block
+ * if the transmitter is full. But blocking when the USB subsystem is not ready
+ * is considered highly undesirable behavior. Blocking may also be undesirable
+ * when CDC ACM UART is used as a logging backend.
+ *
+ * The behavior of CDC ACM poll out is:
+ *  - Block if the TX ring buffer is full, hw_flow_control property is enabled,
+ *    and called from a non-ISR context.
+ *  - Do not block if the USB subsystem is not ready, poll out implementation
+ *    is called from an ISR context, or hw_flow_control property is disabled.
+ *
  */
 static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
@@ -1010,13 +1019,13 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 
 	dev_data->tx_ready = false;
 
-	if (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
-		LOG_INF("Ring buffer full, drain buffer");
-		if (!ring_buf_get(dev_data->tx_ringbuf, NULL, 1) ||
-		    !ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
-			LOG_ERR("Failed to drain buffer");
-			return;
+	while (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+		if (k_is_in_isr() || !dev_data->flow_ctrl) {
+			LOG_INF("Ring buffer full, discard %c", c);
+			break;
 		}
+
+		k_msleep(1);
 	}
 
 	/* Schedule with minimal timeout to make it possible to send more than
@@ -1183,6 +1192,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
 		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
 		.tx_ringbuf = &cdc_acm_tx_rb_##x,			\
+		.flow_ctrl = DT_INST_PROP_OR(x, hw_flow_control, false),\
 	};
 
 #define DT_DRV_COMPAT zephyr_cdc_acm_uart
