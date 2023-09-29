@@ -23,6 +23,7 @@ config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
 
 config NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE
 	int "Newlib minimum required heap size"
+	default REQUIRED_MALLOC_ARENA_SIZE if REQUIRED_MALLOC_ARENA_SIZE >= 0
 	default 2048 if NEWLIB_LIBC_NANO
 	default 8192 if !NEWLIB_LIBC_NANO
 	help

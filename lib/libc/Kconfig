@@ -25,6 +25,17 @@ config REQUIRES_MALLOC
 	  Indicates that the malloc family of functions are required by the
 	  application.
 
+config REQUIRED_MALLOC_ARENA_SIZE
+	int "Required malloc arena size"
+	default -1
+	help
+	  Indicates the minimum desired size of the malloc arena. This is
+	  only a hint; some malloc implementations may not be able to
+	  guarantee that this amount will be available at runtime.
+
+	  If set to -1, then the underlying C library default value will
+	  be used.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help

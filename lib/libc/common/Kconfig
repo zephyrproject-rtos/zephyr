@@ -21,6 +21,7 @@ config COMMON_LIBC_MALLOC
 config COMMON_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the common C library malloc arena"
 	depends on COMMON_LIBC_MALLOC
+	default REQUIRED_MALLOC_ARENA_SIZE if REQUIRED_MALLOC_ARENA_SIZE >= 0
 	default 0 if MINIMAL_LIBC
 	default 16384 if MMU
 	default 2048 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
