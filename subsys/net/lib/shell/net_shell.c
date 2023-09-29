@@ -6721,7 +6721,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(net, &net_commands, "Networking commands", NULL);
+SHELL_CMD_REGISTER(net_old, &net_commands, "Networking commands", NULL);
+
+/* Placeholder for net commands that are configured in the rest of the .c files */
+SHELL_SUBCMD_SET_CREATE(net_cmds, (net));
+
+SHELL_CMD_REGISTER(net, &net_cmds, "Networking commands", NULL);
 
 int net_shell_init(void)
 {
