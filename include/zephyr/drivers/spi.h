@@ -577,6 +577,21 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 #endif /*CONFIG_SPI_STATS*/
 
 /**
+ * @brief SPI callback for asynchronous transfer requests
+ *
+ * @param dev SPI device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*spi_callback_t)(const struct device *dev, int result, void *data);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
@@ -585,15 +600,6 @@ typedef int (*spi_api_io)(const struct device *dev,
 			  const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs);
-
-/**
- * @brief SPI callback for asynchronous transfer requests
- *
- * @param dev SPI device which is notifying of transfer completion or error
- * @param result Result code of the transfer request. 0 is success, -errno for failure.
- * @param data Transfer requester supplied data which is passed along to the callback.
- */
-typedef void (*spi_callback_t)(const struct device *dev, int result, void *data);
 
 /**
  * @typedef spi_api_io
@@ -607,7 +613,7 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 				spi_callback_t cb,
 				void *userdata);
 
-#if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
+#if defined(CONFIG_SPI_RTIO)
 
 /**
  * @typedef spi_api_iodev_submit
@@ -640,6 +646,10 @@ __subsystem struct spi_driver_api {
 #endif /* CONFIG_SPI_RTIO */
 	spi_api_release release;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Check if SPI CS is controlled using a GPIO.
