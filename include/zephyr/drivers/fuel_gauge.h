@@ -199,6 +199,12 @@ struct sbs_gauge_device_chemistry {
 } __packed;
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef fuel_gauge_get_property_t
  * @brief Callback API for getting a fuel_gauge property.
  *
@@ -248,6 +254,10 @@ __subsystem struct fuel_gauge_driver_api {
 	fuel_gauge_get_buffer_property_t get_buffer_property;
 	fuel_gauge_battery_cutoff_t battery_cutoff;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Fetch a battery fuel-gauge property
