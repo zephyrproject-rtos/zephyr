@@ -36,19 +36,19 @@ extern "C" {
  */
 #define TFTP_HEADER_SIZE         4
 
-/* Maximum amount of data that can be sent or received */
+/** Maximum amount of data that can be sent or received */
 #define TFTPC_MAX_BUF_SIZE       (TFTP_BLOCK_SIZE + TFTP_HEADER_SIZE)
 
 /**
  * @name TFTP client error codes.
  * @{
  */
-#define TFTPC_SUCCESS             0
-#define TFTPC_DUPLICATE_DATA     -1
-#define TFTPC_BUFFER_OVERFLOW    -2
-#define TFTPC_UNKNOWN_FAILURE    -3
-#define TFTPC_REMOTE_ERROR       -4
-#define TFTPC_RETRIES_EXHAUSTED  -5
+#define TFTPC_SUCCESS             0 /**< Success. */
+#define TFTPC_DUPLICATE_DATA     -1 /**< Duplicate data received. */
+#define TFTPC_BUFFER_OVERFLOW    -2 /**< User buffer is too small. */
+#define TFTPC_UNKNOWN_FAILURE    -3 /**< Unknown failure. */
+#define TFTPC_REMOTE_ERROR       -4 /**< Remote server error. */
+#define TFTPC_RETRIES_EXHAUSTED  -5 /**< Retries exhausted. */
 /**
  * @}
  */
@@ -58,13 +58,15 @@ extern "C" {
  *        through the callback registered by the application.
  */
 enum tftp_evt_type {
-	/** DATA event when data is received from remote server.
+	/**
+	 * DATA event when data is received from remote server.
 	 *
 	 * @note DATA event structure contains payload data and size.
 	 */
 	TFTP_EVT_DATA,
 
-	/** ERROR event when error is received from remote server.
+	/**
+	 * ERROR event when error is received from remote server.
 	 *
 	 * @note ERROR event structure contains error code and message.
 	 */
@@ -132,17 +134,18 @@ struct tftpc {
 	uint8_t tftp_buf[TFTPC_MAX_BUF_SIZE];
 };
 
-/* @brief This function gets data from a "file" on the remote server.
+/**
+ * @brief This function gets data from a "file" on the remote server.
  *
  * @param client      Client information of type @ref tftpc.
  * @param remote_file Name of the remote file to get.
  * @param mode        TFTP Client "mode" setting.
  *
- * @return The size of data being received if the operation completed successfully.
- *         TFTPC_BUFFER_OVERFLOW if the file is larger than the user buffer.
- *         TFTPC_REMOTE_ERROR if the server failed to process our request.
- *         TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
- *         -EINVAL if `client` is NULL.
+ * @retval The size of data being received if the operation completed successfully.
+ * @retval TFTPC_BUFFER_OVERFLOW if the file is larger than the user buffer.
+ * @retval TFTPC_REMOTE_ERROR if the server failed to process our request.
+ * @retval TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
+ * @retval -EINVAL if `client` is NULL.
  *
  * @note This function blocks until the transfer is completed or network error happens. The
  *       integrity of the `client` structure must be ensured until the function returns.
@@ -150,7 +153,8 @@ struct tftpc {
 int tftp_get(struct tftpc *client,
 	     const char *remote_file, const char *mode);
 
-/* @brief This function puts data to a "file" on the remote server.
+/**
+ * @brief This function puts data to a "file" on the remote server.
  *
  * @param client      Client information of type @ref tftpc.
  * @param remote_file Name of the remote file to put.
@@ -158,10 +162,10 @@ int tftp_get(struct tftpc *client,
  * @param user_buf    Data buffer containing the data to put.
  * @param user_buf_size Length of the data to put.
  *
- * @return The size of data being sent if the operation completed successfully.
- *         TFTPC_REMOTE_ERROR if the server failed to process our request.
- *         TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
- *         -EINVAL if `client` or `user_buf` is NULL or if `user_buf_size` is zero.
+ * @retval The size of data being sent if the operation completed successfully.
+ * @retval TFTPC_REMOTE_ERROR if the server failed to process our request.
+ * @retval TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
+ * @retval -EINVAL if `client` or `user_buf` is NULL or if `user_buf_size` is zero.
  *
  * @note This function blocks until the transfer is completed or network error happens. The
  *       integrity of the `client` structure must be ensured until the function returns.
