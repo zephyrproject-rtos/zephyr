@@ -235,6 +235,12 @@ struct mipi_dsi_msg {
 	void *rx_buf;
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 /** MIPI-DSI host driver API. */
 __subsystem struct mipi_dsi_driver_api {
 	int (*attach)(const struct device *dev, uint8_t channel,
@@ -242,6 +248,10 @@ __subsystem struct mipi_dsi_driver_api {
 	ssize_t (*transfer)(const struct device *dev, uint8_t channel,
 			    struct mipi_dsi_msg *msg);
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Attach a new device to the MIPI-DSI bus.
