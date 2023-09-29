@@ -231,6 +231,12 @@ struct sdhc_host_props {
 	bool is_spi; /*!< Is the host using SPI mode */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 __subsystem struct sdhc_driver_api {
 	int (*reset)(const struct device *dev);
 	int (*request)(const struct device *dev,
@@ -243,6 +249,10 @@ __subsystem struct sdhc_driver_api {
 	int (*get_host_props)(const struct device *dev,
 				struct sdhc_host_props *props);
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief reset SDHC controller state
