@@ -359,7 +359,7 @@ class CMake:
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
         cmake_args.extend(cmake_opts)
 
-        if self.instance.testsuite.required_snippets:
+        if self.instance.testsuite.required_snippets and not filter_stages:
             cmake_opts = ['-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))]
             cmake_args.extend(cmake_opts)
 
