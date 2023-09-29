@@ -165,7 +165,7 @@ static void tcp_server_session(void)
 		if (!net_ipv4_is_addr_unspecified(addr)) {
 			memcpy(&in4_addr->sin_addr, addr,
 				sizeof(struct in_addr));
-		} else if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+		} else if (strlen(MY_IP4ADDR ? MY_IP4ADDR : "")) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
 						  &in4_addr->sin_addr);
@@ -217,7 +217,7 @@ use_existing_ipv4:
 		if (!net_ipv6_is_addr_unspecified(addr)) {
 			memcpy(&in6_addr->sin6_addr, addr,
 			       sizeof(struct in6_addr));
-		} else if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+		} else if (strlen(MY_IP6ADDR ? MY_IP6ADDR : "")) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,
