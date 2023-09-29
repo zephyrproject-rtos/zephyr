@@ -177,6 +177,12 @@ struct counter_config_info {
 	uint8_t channels;
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
 typedef int (*counter_api_start)(const struct device *dev);
 typedef int (*counter_api_stop)(const struct device *dev);
 typedef int (*counter_api_get_value)(const struct device *dev,
@@ -213,6 +219,10 @@ __subsystem struct counter_driver_api {
 	counter_api_set_guard_period set_guard_period;
 	counter_api_get_freq get_freq;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Function to check if counter is counting up.
