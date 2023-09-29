@@ -137,10 +137,6 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.11
 
-   * - :ref:`gna_api`
-     - Experimental
-     - 1.14
-
    * - :ref:`gpio_api`
      - Stable
      - 1.0
