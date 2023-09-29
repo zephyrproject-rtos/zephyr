@@ -23,6 +23,12 @@ extern "C" {
 #endif
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef bbram_api_check_invalid_t
  * @brief API template to check if the BBRAM is invalid.
  *
@@ -80,6 +86,10 @@ __subsystem struct bbram_driver_api {
 	bbram_api_read_t read;
 	bbram_api_write_t write;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Check if BBRAM is invalid
