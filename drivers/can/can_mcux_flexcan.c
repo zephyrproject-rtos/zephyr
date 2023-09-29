@@ -1205,6 +1205,13 @@ static int mcux_flexcan_init(const struct device *dev)
 		}
 	}
 
+	/* Validate initial timing parameters */
+	err = can_set_timing(dev, &data->timing);
+	if (err != 0) {
+		LOG_ERR("failed to set timing (err %d)", err);
+		return -ENODEV;
+	}
+
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
 		data->timing_data.sjw = config->sjw_data;
@@ -1230,6 +1237,14 @@ static int mcux_flexcan_init(const struct device *dev)
 			}
 		}
 	}
+
+	/* Validate initial data phase timing parameters */
+	err = can_set_timing_data(dev, &data->timing_data);
+	if (err != 0) {
+		LOG_ERR("failed to set data phase timing (err %d)", err);
+		return -ENODEV;
+	}
+
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
