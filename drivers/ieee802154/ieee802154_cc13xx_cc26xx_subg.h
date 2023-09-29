@@ -32,13 +32,14 @@
 #define CC13XX_CC26XX_INVALID_RSSI INT8_MIN
 
 struct ieee802154_cc13xx_cc26xx_subg_data {
+	/* protects writable data and serializes access to the API */
+	struct k_sem lock;
+
 	RF_Handle rf_handle;
 	RF_Object rf_object;
 
 	struct net_if *iface;
 	uint8_t mac[8]; /* in big endian */
-
-	struct k_mutex tx_mutex;
 
 	dataQueue_t rx_queue;
 	rfc_dataEntryPointer_t rx_entry[CC13XX_CC26XX_NUM_RX_BUF];
