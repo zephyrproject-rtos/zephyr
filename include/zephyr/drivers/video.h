@@ -140,6 +140,12 @@ enum video_signal_result {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef video_api_set_format_t
  * @brief Set video format
  *
@@ -262,6 +268,10 @@ struct video_driver_api {
 	video_api_set_ctrl_t get_ctrl;
 	video_api_set_signal_t set_signal;
 };
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Set video format.
