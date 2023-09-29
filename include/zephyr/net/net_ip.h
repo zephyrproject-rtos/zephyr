@@ -423,11 +423,11 @@ enum net_priority {
 	NET_PRIORITY_BK = 1, /**< Background (lowest)                */
 	NET_PRIORITY_BE = 0, /**< Best effort (default)              */
 	NET_PRIORITY_EE = 2, /**< Excellent effort                   */
-	NET_PRIORITY_CA = 3, /**< Critical applications (highest)    */
+	NET_PRIORITY_CA = 3, /**< Critical applications              */
 	NET_PRIORITY_VI = 4, /**< Video, < 100 ms latency and jitter */
 	NET_PRIORITY_VO = 5, /**< Voice, < 10 ms latency and jitter  */
 	NET_PRIORITY_IC = 6, /**< Internetwork control               */
-	NET_PRIORITY_NC = 7  /**< Network control                    */
+	NET_PRIORITY_NC = 7  /**< Network control (highest)          */
 } __packed;
 
 #define NET_MAX_PRIORITIES 8 /* How many priority values there are */

@@ -219,8 +219,8 @@ config NET_TC_RX_COUNT
 config NET_TC_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
 	help
-	  If this is set, then high priority (NET_PRIORITY_CA) net_pkt will be
-	  pushed directly to network driver and will skip the traffic class
+	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
+	  be pushed directly to network driver and will skip the traffic class
 	  queues. This is currently not enabled by default.
 
 choice NET_TC_THREAD_TYPE
