@@ -9,4 +9,8 @@ toolchain:
   - xtools
 supported:
   - netif
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
 vendor: gaisler
