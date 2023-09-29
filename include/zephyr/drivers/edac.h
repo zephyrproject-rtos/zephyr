@@ -35,6 +35,12 @@ enum edac_error_type {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @brief EDAC driver API
  *
  * This is the mandatory API any EDAC driver needs to expose.
@@ -63,6 +69,10 @@ __subsystem struct edac_driver_api {
 	int (*notify_cb_set)(const struct device *dev,
 			     edac_notify_callback_f cb);
 };
+
+/**
+ * @endcond
+ */
 
 /* Optional interfaces */
 
