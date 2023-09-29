@@ -50,6 +50,7 @@ static uint8_t priv_key[32];
 /* Configured provisioning data */
 static uint8_t dev_uuid[16];
 static uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
+static uint8_t static_auth_size;
 
 /* Vendor Model data */
 #define VND_MODEL_ID_1 0x1234
@@ -1127,13 +1128,21 @@ static uint8_t config_prov(const void *cmd, uint16_t cmd_len,
 
 	/* TODO consider fix BTP commands to avoid this */
 	if (cmd_len != sizeof(*cp) && cmd_len != (sizeof(*cp2))) {
+		LOG_DBG("wrong cmd size");
 		return BTP_STATUS_FAILED;
 	}
 
 	LOG_DBG("");
 
+	static_auth_size = cp->static_auth_size;
+
+	if (static_auth_size > BTP_MESH_PROV_AUTH_MAX_LEN || static_auth_size == 0) {
+		LOG_DBG("wrong static auth length");
+		return BTP_STATUS_FAILED;
+	}
+
 	memcpy(dev_uuid, cp->uuid, sizeof(dev_uuid));
-	memcpy(static_auth, cp->static_auth, sizeof(static_auth));
+	memcpy(static_auth, cp->static_auth, cp->static_auth_size);
 
 	prov.output_size = cp->out_size;
 	prov.output_actions = sys_le16_to_cpu(cp->out_actions);
@@ -1152,7 +1161,7 @@ static uint8_t config_prov(const void *cmd, uint16_t cmd_len,
 	} else if (cp->auth_method == AUTH_METHOD_INPUT) {
 		err = bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size);
 	} else if (cp->auth_method == AUTH_METHOD_STATIC) {
-		err = bt_mesh_auth_method_set_static(static_auth, sizeof(static_auth));
+		err = bt_mesh_auth_method_set_static(static_auth, static_auth_size);
 	}
 
 	if (err) {
