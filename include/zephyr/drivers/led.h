@@ -46,6 +46,12 @@ struct led_info {
 };
 
 /**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
+
+/**
  * @typedef led_api_blink()
  * @brief Callback API for blinking an LED
  *
@@ -121,6 +127,8 @@ __subsystem struct led_driver_api {
 	led_api_set_color set_color;
 	led_api_write_channels write_channels;
 };
+
+/** @endcond */
 
 /**
  * @brief Blink an LED
