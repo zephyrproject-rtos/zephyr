@@ -423,6 +423,10 @@ static int drv_start_rx(const struct device *dev)
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_CmdHandle cmd_handle;
 
+	if (drv_data->cmd_prop_rx_adv.status == ACTIVE) {
+		return -EALREADY;
+	}
+
 #ifdef CONFIG_ASSERT
 	if (CONFIG_ASSERT_LEVEL > 0) {
 		/* ensure that all RX buffers are initialized and pending. */
