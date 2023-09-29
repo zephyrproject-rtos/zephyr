@@ -82,6 +82,9 @@ But there are two important differences in behavior to a real UART controller:
   initialized and started, until then any data is discarded
 * If device is connected to the host, it still needs an application
   on the host side which requests the data
+* The CDC ACM poll out implementation follows the API and blocks when the TX
+  ring buffer is full only if the hw-flow-control property is enabled and
+  called from a non-ISR context.
 
 The devicetree compatible property for CDC ACM UART is
 :dtcompatible:`zephyr,cdc-acm-uart`.
