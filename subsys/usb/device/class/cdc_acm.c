@@ -301,8 +301,10 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 done:
-	usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
-		     USB_TRANS_READ, cdc_acm_read_cb, dev_data);
+	if (dev_data->configured) {
+		usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
+			     USB_TRANS_READ, cdc_acm_read_cb, dev_data);
+	}
 }
 
 /**
@@ -366,9 +368,9 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	case USB_DC_CONFIGURED:
 		LOG_INF("Device configured");
 		if (!dev_data->configured) {
+			dev_data->configured = true;
 			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
 					dev_data);
-			dev_data->configured = true;
 		}
 		if (!dev_data->tx_ready) {
 			dev_data->tx_ready = true;
