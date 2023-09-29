@@ -405,7 +405,7 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
-	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
+	if (location > BT_AUDIO_LOCATION_MASK) {
 		LOG_DBG("Invalid location value: 0x%08X", location);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
@@ -510,7 +510,7 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
-	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
+	if (location > BT_AUDIO_LOCATION_MASK) {
 		LOG_DBG("Invalid location value: 0x%08X", location);
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
