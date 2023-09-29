@@ -1,0 +1,12 @@
+sample:
+  description: Espressif Wi-Fi AP sample app
+  name: Wi-Fi AP
+tests:
+  sample.boards.esp32.wifi.ap:
+    build_only: true
+    tags: wifi
+    platform_allow:
+      - esp32_devkitc_wrover
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm
