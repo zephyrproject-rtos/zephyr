@@ -648,7 +648,8 @@ do {                                                                    \
  *
  * @note Only supported for GCC >= 11.0.0 or Clang >= 7.
  */
-#if (TOOLCHAIN_GCC_VERSION >= 110000) || (TOOLCHAIN_CLANG_VERSION >= 70000)
+#if (TOOLCHAIN_GCC_VERSION >= 110000) || \
+	(defined(TOOLCHAIN_CLANG_VERSION) && (TOOLCHAIN_CLANG_VERSION >= 70000))
 #define FUNC_NO_STACK_PROTECTOR __attribute__((no_stack_protector))
 #else
 #define FUNC_NO_STACK_PROTECTOR
