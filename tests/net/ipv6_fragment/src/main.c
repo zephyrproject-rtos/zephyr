@@ -2282,8 +2282,6 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		i++;
 	}
 
-	net_pkt_unref(pkt);
-
 	k_sem_give(&wait_data);
 
 	return NET_OK;
