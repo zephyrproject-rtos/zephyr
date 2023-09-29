@@ -242,6 +242,8 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 };
 #endif /* CONFIG_SOC_CC1352x power table */
 
+#define LOCK_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
+
 /** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
 static RF_Mode rf_mode = {
 	.rfMode = RF_MODE_MULTIPLE,
@@ -315,6 +317,7 @@ static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Op *op = RF_getCmdOp(h, ch);
 
+	/* No need for locking as the RX status is volatile and there's no race. */
 	LOG_DBG("ch: %u cmd: %04x cs st: %04x tx st: %04x e: 0x%" PRIx64, ch,
 		op->commandNo, op->status, drv_data->cmd_prop_tx_adv.status, e);
 }
@@ -337,8 +340,14 @@ static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 		|| op->status == PROP_ERROR_RXFULL
 		|| op->status == PROP_ERROR_RXOVF) {
 		LOG_DBG("RX Error %x", op->status);
+
 		/* Restart RX */
+		if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+			return;
+		}
+
 		(void)drv_start_rx(dev);
+		k_sem_give(&drv_data->lock);
 	}
 }
 
@@ -371,6 +380,10 @@ static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 	bool was_rx_on;
 	int ret;
 
+	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+		return -EWOULDBLOCK;
+	}
+
 	drv_data->cmd_prop_cs.status = IDLE;
 
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
@@ -396,7 +409,8 @@ static int ieee802154_cc13xx_cc26xx_subg_cca(const struct device *dev)
 		 * this usually means we want to TX directly after
 		 * and cannot afford any extra latency.
 		 */
-		return 0;
+		ret = 0;
+		break;
 	case PROP_DONE_BUSY:
 	case PROP_DONE_BUSYTIMEOUT:
 		ret = -EBUSY;
@@ -412,12 +426,15 @@ out:
 	 * and want to be able to receive packets in
 	 * the meantime.
 	 */
-	if (was_rx_on) {
+	if (ret && was_rx_on) {
 		drv_start_rx(dev);
 	}
+
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
+/* This method must be called with the lock held. */
 static int drv_start_rx(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
@@ -451,6 +468,7 @@ static int drv_start_rx(const struct device *dev)
 	return 0;
 }
 
+/* This method must be called with the lock held. */
 static int drv_stop_rx(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
@@ -485,6 +503,10 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 		return ret;
 	}
 
+	if (k_sem_take(&drv_data->lock, LOCK_TIMEOUT)) {
+		return -EWOULDBLOCK;
+	}
+
 	/* Abort FG and BG processes */
 	was_rx_on = drv_data->cmd_prop_rx_adv.status == ACTIVE;
 	if (was_rx_on) {
@@ -494,9 +516,6 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 			goto out;
 		}
 	}
-
-	/* Block TX while changing channel */
-	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
 
 	/* Set the frequency */
 	drv_data->cmd_fs.status = IDLE;
@@ -509,13 +528,14 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 		ret = -EIO;
 	}
 
-	k_mutex_unlock(&drv_data->tx_mutex);
-
 out:
 	/* Re-enable RX if we found it on initially. */
 	if (was_rx_on) {
 		(void)drv_start_rx(dev);
 	}
+
+	k_sem_give(&drv_data->lock);
+
 	return ret;
 }
 
@@ -545,6 +565,7 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 		return -EINVAL;
 	}
 
+	/* No need for locking: rf_handle is immutable after initialization. */
 	status = RF_setTxPower(drv_data->rf_handle, power_table_value);
 	if (status != RF_StatSuccess) {
 		LOG_DBG("RF_setTxPower() failed: %d", status);
@@ -569,7 +590,9 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 		NET_ERR("TX mode %d not supported - sending directly instead.", mode);
 	}
 
-	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
+	if (k_sem_take(&drv_data->lock, K_FOREVER)) {
+		return -EIO;
+	}
 
 	/* Complete the SUN FSK PHY header, see IEEE 802.15.4, section 19.2.4. */
 	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
@@ -602,12 +625,11 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
 		LOG_DBG("Transmit failed (0x%x)", drv_data->cmd_prop_tx_adv.status);
 		ret = -EIO;
-		goto out;
 	}
 
 out:
 	(void)drv_start_rx(dev);
-	k_mutex_unlock(&drv_data->tx_mutex);
+	k_sem_give(&drv_data->lock);
 	return ret;
 }
 
@@ -635,6 +657,11 @@ static void drv_rx_done(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 	uint8_t len;
 	int8_t rssi, status;
 	uint8_t *sdu;
+
+	/* No need for locking as only immutable data is accessed from drv_data.
+	 * The rx queue itself (entries and data) are managed and protected
+	 * internally by TI's RF driver.
+	 */
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
@@ -701,7 +728,7 @@ static int ieee802154_cc13xx_cc26xx_subg_start(const struct device *dev)
 	return drv_start_rx(dev);
 }
 
-/* Aborts all radio commands in the RF queue. */
+/* Aborts all radio commands in the RF queue. Requires the lock to be held. */
 static int drv_abort_commands(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
@@ -745,7 +772,9 @@ ieee802154_cc13xx_cc26xx_subg_configure(const struct device *dev,
 
 static void drv_setup_rx_buffers(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 {
-	/* No need to zero buffers as they are zeroed on initialization. */
+	/* No need to zero buffers as they are zeroed on initialization and no
+	 * need for locking as initialization is done with exclusive access.
+	 */
 
 	for (size_t i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; ++i) {
 		if (i < CC13XX_CC26XX_NUM_RX_BUF - 1) {
@@ -768,7 +797,9 @@ static void drv_setup_rx_buffers(struct ieee802154_cc13xx_cc26xx_subg_data *drv_
 
 static void drv_setup_tx_buffer(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 {
-	/* No need to zero buffers as they are zeroed on initialization. */
+	/* No need to zero buffers as they are zeroed on initialization and no
+	 * need for locking as initialization is done with exclusive access.
+	 */
 
 	/* Part of the SUN FSK PHY header, see IEEE 802.15.4, section 19.2.4. */
 	drv_data->tx_data[1] = BIT(3) | /* FCS Type: 2-octet FCS */
@@ -797,7 +828,7 @@ static void drv_data_init(struct ieee802154_cc13xx_cc26xx_subg_data *drv_data)
 	/* Setup TX buffer (TRM 25.10.2.1.1, table 25-171) */
 	drv_setup_tx_buffer(drv_data);
 
-	k_mutex_init(&drv_data->tx_mutex);
+	k_sem_init(&drv_data->lock, 1, 1);
 }
 
 static void ieee802154_cc13xx_cc26xx_subg_iface_init(struct net_if *iface)
@@ -834,6 +865,8 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 	RF_Params rf_params;
 	RF_EventMask events;
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
+
+	/* No need for locking - initialization is exclusive. */
 
 	/* Initialize driver data */
 	drv_data_init(drv_data);
