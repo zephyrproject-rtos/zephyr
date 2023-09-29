@@ -10,10 +10,17 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdint.h>
 
 int main(void)
 {
 	struct timeval tv;
+
+	if (sizeof(tv.tv_sec) < sizeof(uint64_t)) {
+		printf("Error: sizeof(time_t) (%d) is less than 64 bits\n",
+		       (int) sizeof(tv.tv_sec));
+		return 1;
+	}
 
 	while (1) {
 		int res = gettimeofday(&tv, NULL);
