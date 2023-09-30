@@ -248,7 +248,6 @@ portion of the message isn't used.
             send_msg.info = random_value;
             send_msg.size = 0;
             send_msg.tx_data = NULL;
-            send_msg.tx_block.data = NULL;
             send_msg.tx_target_thread = K_ANY;
 
             /* send message and wait until a consumer receives it */
@@ -284,7 +283,6 @@ the maximum size message buffer that each thread can handle.
             send_msg.info = buffer_bytes_used;
             send_msg.size = buffer_bytes_used;
             send_msg.tx_data = buffer;
-            send_msg.tx_block.data = NULL;
             send_msg.tx_target_thread = K_ANY;
 
             /* send message and wait until a consumer receives it */
