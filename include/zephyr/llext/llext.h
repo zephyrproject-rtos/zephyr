@@ -79,7 +79,7 @@ struct llext *llext_by_name(const char *name);
  * Only relocatable ELF files are currently supported (partially linked).
  *
  * @param[in] loader An extension loader that provides input data and context
- * @param[in] name A string identifier for the module
+ * @param[in] name A string identifier for the extension
  * @param[out] ext A pointer to a statically allocated llext struct
  *
  * @retval 0 Success
@@ -143,4 +143,4 @@ void arch_elf_relocate(elf_rel_t *rel, uintptr_t opaddr, uintptr_t opval);
 }
 #endif
 
-#endif /* ZEPHYR_MODULE_H */
+#endif /* ZEPHYR_LLEXT_H */
