@@ -8,13 +8,13 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(elf);
+LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 
 /**
  * @brief Architecture specific function for relocating partially linked (static) elf
  *
  * Elf files contain a series of relocations described in a section. These relocation
- * instructions are architecture specific and each architecture supporting modules
+ * instructions are architecture specific and each architecture supporting extensions
  * must implement this.
  *
  * The relocation codes for arm are well documented
