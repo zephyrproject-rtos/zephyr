@@ -4700,8 +4700,6 @@ struct k_mbox_msg {
 	uint32_t info;
 	/** sender's message data buffer */
 	void *tx_data;
-	/** message data block descriptor */
-	struct k_mem_block tx_block;
 	/** source thread id */
 	k_tid_t rx_source_thread;
 	/** target thread id */
@@ -4770,8 +4768,8 @@ extern void k_mbox_init(struct k_mbox *mbox);
  * @brief Send a mailbox message in a synchronous manner.
  *
  * This routine sends a message to @a mbox and waits for a receiver to both
- * receive and process it. The message data may be in a buffer, in a memory
- * pool block, or non-existent (i.e. an empty message).
+ * receive and process it. The message data may be in a buffer or non-existent
+ * (i.e. an empty message).
  *
  * @param mbox Address of the mailbox.
  * @param tx_msg Address of the transmit message descriptor.
@@ -4792,10 +4790,10 @@ extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @brief Send a mailbox message in an asynchronous manner.
  *
  * This routine sends a message to @a mbox without waiting for a receiver
- * to process it. The message data may be in a buffer, in a memory pool block,
- * or non-existent (i.e. an empty message). Optionally, the semaphore @a sem
- * will be given when the message has been both received and completely
- * processed by the receiver.
+ * to process it. The message data may be in a buffer or non-existent
+ * (i.e. an empty message). Optionally, the semaphore @a sem will be given
+ * when the message has been both received and completely processed by
+ * the receiver.
  *
  * @param mbox Address of the mailbox.
  * @param tx_msg Address of the transmit message descriptor.

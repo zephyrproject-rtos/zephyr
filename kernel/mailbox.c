@@ -140,14 +140,6 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
 
 		/* update data location fields for receiver only */
 		rx_msg->tx_data = tx_msg->tx_data;
-		rx_msg->tx_block = tx_msg->tx_block;
-		if (rx_msg->tx_data != NULL) {
-			rx_msg->tx_block.data = NULL;
-		} else if (rx_msg->tx_block.data != NULL) {
-			rx_msg->tx_data = rx_msg->tx_block.data;
-		} else {
-			/* no data */
-		}
 
 		/* update syncing thread field for receiver only */
 		rx_msg->_syncing_thread = tx_msg->_syncing_thread;
@@ -161,8 +153,7 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
 /**
  * @brief Dispose of received message.
  *
- * Releases any memory pool block still associated with the message,
- * then notifies the sender that message processing is complete.
+ * Notifies the sender that message processing is complete.
  *
  * @param rx_msg Pointer to receive message descriptor.
  */
@@ -174,10 +165,6 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	/* do nothing if message was disposed of when it was received */
 	if (rx_msg->_syncing_thread == NULL) {
 		return;
-	}
-
-	if (rx_msg->tx_block.data != NULL) {
-		rx_msg->tx_block.data = NULL;
 	}
 
 	/* recover sender info */
