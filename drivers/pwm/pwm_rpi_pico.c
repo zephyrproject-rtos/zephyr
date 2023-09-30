@@ -149,6 +149,11 @@ static int pwm_rpi_init(const struct device *dev)
 		return err;
 	}
 
+	err = reset_line_toggle_dt(&cfg->reset);
+	if (err < 0) {
+		return err;
+	}
+
 	for (slice_idx = 0; slice_idx < NUM_PWM_SLICES; slice_idx++) {
 		slice_cfg = pwm_get_default_config();
 		pwm_config_set_clkdiv_mode(&slice_cfg, PWM_DIV_FREE_RUNNING);
