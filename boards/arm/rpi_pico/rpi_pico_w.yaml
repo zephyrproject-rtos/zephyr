@@ -20,4 +20,5 @@ supported:
   - flash
   - dma
   - pio
+  - counter
   - clock
