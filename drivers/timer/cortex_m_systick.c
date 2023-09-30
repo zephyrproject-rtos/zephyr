@@ -101,10 +101,19 @@ static uint32_t elapsed(void)
 	uint32_t ctrl = SysTick->CTRL;	/* B */
 	uint32_t val2 = SysTick->VAL;	/* C */
 
-	/* SysTick behavior: The counter wraps at zero automatically,
-	 * setting the COUNTFLAG field of the CTRL register when it
-	 * does.  Reading the control register automatically clears
-	 * that field.
+	/* SysTick behavior: The counter wraps after zero automatically.
+	 * The COUNTFLAG field of the CTRL register is set when it
+	 * decrements from 1 to 0. Reading the control register
+	 * automatically clears that field. When a timer is started,
+	 * count begins at zero then wraps after the first cycle.
+	 * Reference:
+	 *  Armv6-m (B3.3.1) https://developer.arm.com/documentation/ddi0419
+	 *  Armv7-m (B3.3.1) https://developer.arm.com/documentation/ddi0403
+	 *  Armv8-m (B11.1)  https://developer.arm.com/documentation/ddi0553
+	 *
+	 * First, manually wrap/realign val1 and val2 from [0:last_load-1]
+	 * to [1:last_load]. This allows subsequent code to assume that
+	 * COUNTFLAG and wrapping occur on the same cycle.
 	 *
 	 * If the count wrapped...
 	 * 1) Before A then COUNTFLAG will be set and val1 >= val2
@@ -115,6 +124,13 @@ static uint32_t elapsed(void)
 	 * So the count in val2 is post-wrap and last_load needs to be
 	 * added if and only if COUNTFLAG is set or val1 < val2.
 	 */
+	if (val1 == 0) {
+		val1 = last_load;
+	}
+	if (val2 == 0) {
+		val2 = last_load;
+	}
+
 	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
 	    || (val1 < val2)) {
 		overflow_cyc += last_load;
