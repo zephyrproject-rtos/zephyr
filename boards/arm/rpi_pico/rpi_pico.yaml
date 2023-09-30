@@ -20,3 +20,4 @@ supported:
   - flash
   - dma
   - counter
+  - clock
