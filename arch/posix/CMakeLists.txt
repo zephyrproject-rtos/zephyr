@@ -58,6 +58,10 @@ else() # Linux.x86_64
     check_set_compiler_property(APPEND PROPERTY fpsse2 "SHELL:-msse2 -mfpmath=sse")
     zephyr_compile_options($<TARGET_PROPERTY:compiler,fpsse2>)
     target_compile_options(native_simulator INTERFACE "$<TARGET_PROPERTY:compiler,fpsse2>")
+
+    # Enable 64-bit time_t and 64-bit off_t in glibc to match other
+    # Zephyr environments.
+    zephyr_compile_definitions(_TIME_BITS=64 _FILE_OFFSET_BITS=64)
   endif ()
 endif()
 
