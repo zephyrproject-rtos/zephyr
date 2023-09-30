@@ -124,8 +124,12 @@ void z_arm64_el2_init(void)
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el2(reg);
 
+#ifdef CONFIG_SOC_RK3568
+	reg = HCR_RW_BIT;		/* Cortex-a55 cpu should clear other bits */
+#else
 	reg = read_hcr_el2();
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
+#endif
 	write_hcr_el2(reg);
 
 	reg = 0U;			/* RES0 */

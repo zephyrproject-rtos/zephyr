@@ -124,6 +124,14 @@ resetwait:
 	ldr	x0, =arm64_cpu_boot_params
 	get_cpu_id x1
 
+	/* RK3568 can not use ldaxr, which will cause a memory fault */
+#ifdef CONFIG_SOC_RK3568
+	ldr		x2, [x0, #BOOT_PARAM_MPID_OFFSET]
+	cmp	x2, #-1
+	bne	1f
+	str		x1, [x0]
+	b primary_core
+#else
 	/*
 	 * If the cores start up at the same time, we should atomically load and
 	 * store the mpid into arm64_cpu_boot_params.
@@ -135,6 +143,7 @@ resetwait:
 	stlxr	w3, x1, [x0]
 	/* If succeed, go to primary_core */
 	cbz	w3, primary_core
+#endif
 
 	/* loop until our turn comes */
 1:	dmb	ld
