@@ -4700,8 +4700,6 @@ struct k_mbox_msg {
 	uint32_t info;
 	/** sender's message data buffer */
 	void *tx_data;
-	/** internal use only - needed for legacy API support */
-	void *_rx_data;
 	/** message data block descriptor */
 	struct k_mem_block tx_block;
 	/** source thread id */
