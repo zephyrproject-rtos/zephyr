@@ -654,6 +654,35 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
+static int bmi270_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	int ret = -ENOTSUP;
+
+	if ((chan == SENSOR_CHAN_ACCEL_X) || (chan == SENSOR_CHAN_ACCEL_Y)
+	    || (chan == SENSOR_CHAN_ACCEL_Z)
+	    || (chan == SENSOR_CHAN_ACCEL_XYZ)) {
+		switch (attr) {
+		default:
+			ret = -ENOTSUP;
+		}
+	} else if ((chan == SENSOR_CHAN_GYRO_X) || (chan == SENSOR_CHAN_GYRO_Y)
+		   || (chan == SENSOR_CHAN_GYRO_Z)
+		   || (chan == SENSOR_CHAN_GYRO_XYZ)) {
+		switch (attr) {
+#ifdef CONFIG_BMI270_CRT
+		case SENSOR_ATTR_CALIBRATION:
+			ret = bmi270_get_gyro_user_gain(dev, val);
+			break;
+#endif /* CONFIG_BMI270_CRT */
+		default:
+			ret = -ENOTSUP;
+		}
+	}
+
+	return ret;
+}
+
 /**
  * @brief This function resets bmi2 sensor.
  * All registers are overwritten with their default values.
@@ -798,6 +827,7 @@ static const struct sensor_driver_api bmi270_driver_api = {
 	.sample_fetch = bmi270_sample_fetch,
 	.channel_get = bmi270_channel_get,
 	.attr_set = bmi270_attr_set,
+	.attr_get = bmi270_attr_get,
 #if defined(CONFIG_BMI270_TRIGGER)
 	.trigger_set = bmi270_trigger_set,
 #endif
