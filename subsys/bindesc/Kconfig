@@ -16,9 +16,28 @@ config BINDESC_DEFINE
 
 if BINDESC_DEFINE
 
+config BINDESC_DEFINE_DESCRIPTORS_SIZE
+	int "Binary descriptors descriptors size"
+	default 0
+	help
+	  Determines the total amount of bytes allocated to the descriptors.
+	  If the size is larger than the actual size of the descriptors, padding
+	  will be added to ensure that the total amount is equal to this symbol.
+	  If the size is smaller, it will have no effect.
+	  This might be useful to ensure that the checksum of the image remains
+	  the same even if the descriptors change in size (the descriptors themselves
+	  are not part of the checksum calculation).
+	  For example, if an app uses the host name descriptor and an md5 checksum descriptor,
+	  compiling on machines with names of different sizes will result in images
+	  with different checksums. By allocating a constant size for the descriptors, the
+	  descriptors have room to grow.
+	  The size should be set by the app to a value slightly larger than the size of the
+	  descriptors. Setting this to zero will disable this feature.
+
 source "subsys/bindesc/Kconfig.version"
 source "subsys/bindesc/Kconfig.build_time"
 source "subsys/bindesc/Kconfig.host_info"
+source "subsys/bindesc/Kconfig.checksums"
 
 endif # BINDESC_DEFINE
 

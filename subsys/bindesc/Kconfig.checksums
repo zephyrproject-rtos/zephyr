@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BINDESC_DEFINE_CHECKSUMS
+	bool "Checksum binary descriptors"
+	help
+	  Add checksum binary descriptors
+
+if BINDESC_DEFINE_CHECKSUMS
+
+config BINDESC_CHECKSUM_MD5_BYTES
+	bool "MD5 checksum as bytes"
+	help
+	  MD5 checksum as bytes
+
+config BINDESC_CHECKSUM_MD5_STRING
+	bool "MD5 checksum as a string"
+	help
+	  MD5 checksum as a string
+
+endif # BINDESC_DEFINE_CHECKSUMS

@@ -95,6 +95,8 @@ class Bindesc(WestCommand):
             self.bindesc_gen_tag(self.TYPE_STR, 0xb02): 'C_COMPILER_VERSION',
             self.bindesc_gen_tag(self.TYPE_STR, 0xb03): 'CXX_COMPILER_NAME',
             self.bindesc_gen_tag(self.TYPE_STR, 0xb04): 'CXX_COMPILER_VERSION',
+            self.bindesc_gen_tag(self.TYPE_BYTES, 0xc00): 'CHECKSUM_MD5_BYTES',
+            self.bindesc_gen_tag(self.TYPE_STR, 0xc01): 'CHECKSUM_MD5_STRING',
         }
         self.NAME_TO_TAG = {v: k for k, v in self.TAG_TO_NAME.items()}
 

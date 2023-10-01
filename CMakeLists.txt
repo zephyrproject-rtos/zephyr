@@ -1504,6 +1504,14 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 set(post_build_commands "")
 set(post_build_byproducts "")
 
+if(CONFIG_BINDESC_DEFINE_CHECKSUMS)
+  list(APPEND
+    post_build_commands
+    COMMAND
+    ${Python3_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_bindesc_checksums.py ${KERNEL_ELF_NAME}
+  )
+endif()
+
 list(APPEND
   post_build_commands
   COMMAND

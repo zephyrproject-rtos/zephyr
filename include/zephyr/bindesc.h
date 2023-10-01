@@ -108,6 +108,12 @@ extern "C" {
 /** The C++ compiler version */
 #define BINDESC_ID_CXX_COMPILER_VERSION 0xb04
 
+/** The MD5 checksum as bytes */
+#define BINDESC_ID_CHECKSUM_MD5_BYTES 0xc00
+
+/** The MD5 checksum as a string */
+#define BINDESC_ID_CHECKSUM_MD5_STRING 0xc01
+
 #define BINDESC_TAG_DESCRIPTORS_END BINDESC_TAG(DESCRIPTORS_END, 0x0fff)
 
 /**

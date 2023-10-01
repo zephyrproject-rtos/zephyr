@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Yonatan Schachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/bindesc.h>
+
+#if IS_ENABLED(CONFIG_BINDESC_CHECKSUM_MD5_BYTES)
+BINDESC_BYTES_DEFINE(checksum_md5_bytes, BINDESC_ID_CHECKSUM_MD5_BYTES,
+	({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+#endif /* IS_ENABLED(CONFIG_BINDESC_CHECKSUM_MD5_BYTES) */
+
+#if IS_ENABLED(CONFIG_BINDESC_CHECKSUM_MD5_STRING)
+BINDESC_STR_DEFINE(checksum_md5_string, BINDESC_ID_CHECKSUM_MD5_STRING,
+	"00000000000000000000000000000000");
+#endif /* IS_ENABLED(CONFIG_BINDESC_CHECKSUM_MD5_STRING) */
