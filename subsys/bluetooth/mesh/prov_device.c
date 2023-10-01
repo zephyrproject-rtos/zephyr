@@ -192,14 +192,16 @@ static void prov_start(const uint8_t *data)
 	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
+		/* Trim the Auth if it is longer than required length */
+		memcpy(bt_mesh_prov_link.auth, bt_mesh_prov->static_val,
+		       bt_mesh_prov->static_val_len > auth_size ? auth_size
+								: bt_mesh_prov->static_val_len);
 
-		uint8_t tail_size = bt_mesh_prov->static_val_len < auth_size
-					    ? auth_size - bt_mesh_prov->static_val_len
-					    : 0;
-
-		memcpy(bt_mesh_prov_link.auth + tail_size, bt_mesh_prov->static_val,
-		       tail_size ? bt_mesh_prov->static_val_len : auth_size);
-		memset(bt_mesh_prov_link.auth, 0, tail_size);
+		/* Padd with zeros if the Auth is shorter the required length*/
+		if (bt_mesh_prov->static_val_len < auth_size) {
+			memset(bt_mesh_prov_link.auth + bt_mesh_prov->static_val_len, 0,
+			       auth_size - bt_mesh_prov->static_val_len);
+		}
 	}
 }
 
