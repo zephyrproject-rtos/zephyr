@@ -389,17 +389,6 @@ static int mcp2515_set_timing(const struct device *dev,
 	const uint8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const uint8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT(timing->sjw <= 4, "1 <= SJW <= 4");
-	__ASSERT((timing->prop_seg >= 1) && (timing->prop_seg <= 8),
-		 "1 <= PROP <= 8");
-	__ASSERT((timing->phase_seg1 >= 1) && (timing->phase_seg1 <= 8),
-		 "1 <= BS1 <= 8");
-	__ASSERT((timing->phase_seg2 >= 2) && (timing->phase_seg2 <= 8),
-		 "2 <= BS2 <= 8");
-	__ASSERT(timing->prop_seg + timing->phase_seg1 >= timing->phase_seg2,
-		 "PROP + BS1 >= BS2");
-	__ASSERT(timing->phase_seg2 > timing->sjw, "BS2 > SJW");
-
 	config_buf[0] = cnf3;
 	config_buf[1] = cnf2;
 	config_buf[2] = cnf1;
