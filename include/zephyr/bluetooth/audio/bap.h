@@ -20,6 +20,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 #define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
 #define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
@@ -2078,5 +2084,9 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 					       uint8_t idx);
 
 /** @} */ /* end of bt_bap */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */
