@@ -13,7 +13,7 @@ extern "C" {
 struct utsname {
 	char sysname[sizeof("Zephyr")];
 	char nodename[CONFIG_POSIX_UNAME_NODENAME_LEN + 1];
-	char release[sizeof("99.99.99")];
+	char release[sizeof("99.99.99-rc1")];
 	char version[CONFIG_POSIX_UNAME_VERSION_LEN + 1];
 	char machine[sizeof(CONFIG_ARCH)];
 };
