@@ -5,7 +5,7 @@
  *
  */
 
-#include <zephyr/fpga_bridge/bridge.h>
+#include <zephyr/fpga_bridge/fpga_bridge.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 

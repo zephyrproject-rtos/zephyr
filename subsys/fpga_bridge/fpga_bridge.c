@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/fpga_bridge/bridge.h>
+#include <zephyr/fpga_bridge/fpga_bridge.h>
 
 __weak int32_t do_bridge_reset_plat(uint32_t action, uint32_t mask)
 {

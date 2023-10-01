@@ -8,7 +8,7 @@
  */
 
 #include <zephyr/shell/shell.h>
-#include <zephyr/fpga_bridge/bridge.h>
+#include <zephyr/fpga_bridge/fpga_bridge.h>
 
 #define BASE			10u
 #define ENABLE_STRING	"enable"
