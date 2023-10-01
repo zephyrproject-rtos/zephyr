@@ -474,6 +474,24 @@ int bmi270_nvm_prog(const struct device *dev);
  * @retval < 0 -> Fail
  */
 int bmi270_set_gyro_gain(const struct device *dev, const struct sensor_value *status);
+
+/**
+ * @brief This public method gets the compensated user-gain data of gyroscope
+ * converted into sensor_value type
+ *
+ * @param[in] dev : Structure instance of bmi270 device
+ * @param[in] gain : Compensated user-gain data of gyroscope
+ *                   converted into sensor_value type.
+ *                   sensor_value.val1 & 0xFF: x-axis
+ *                   (sensor_value.val1 >> 8) & 0xFF: y-axis
+ *                   (sensor_value.val1 >> 16) & 0xFF: z-axis
+ *
+ * @return Result of get compensated user-gain data of gyro
+ * @retval 0 -> Success
+ * @retval -EAGAIN -> CRT has not been performed yet.
+ * @retval < 0 -> Fail
+ */
+int bmi270_get_gyro_user_gain(const struct device *dev, struct sensor_value *gain);
 #endif /* CONFIG_BMI270_CRT */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

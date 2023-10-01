@@ -330,6 +330,54 @@ static int bmi270_read_gyro_user_gain(const struct device *dev)
 }
 
 /**
+ * @brief This public method gets the compensated user-gain data of gyroscope
+ * converted into sensor_value type
+ *
+ * @param[in] dev : Structure instance of bmi270 device
+ * @param[in] gain : Compensated user-gain data of gyroscope
+ *                   converted into sensor_value type.
+ *                   sensor_value.val1 & 0xFF: x-axis
+ *                   (sensor_value.val1 >> 8) & 0xFF: y-axis
+ *                   (sensor_value.val1 >> 16) & 0xFF: z-axis
+ *
+ * @return Result of get compensated user-gain data of gyro
+ * @retval 0 -> Success
+ * @retval -EAGAIN -> CRT has not been performed yet.
+ * @retval < 0 -> Fail
+ */
+int bmi270_get_gyro_user_gain(const struct device *dev, struct sensor_value *gain)
+{
+	int ret;
+	struct bmi270_data *data = dev->data;
+
+	/* Read user-gain data of gyroscope */
+	ret = bmi270_read_gyro_user_gain(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed in bmi270_read_gyro_user_gain: Error code %d", ret);
+		return ret;
+	}
+
+	/* Unchanged user-gain data means CRT has not been performed yet */
+	if ((data->crt_gain.x == 0) && (data->crt_gain.y == 0) && (data->crt_gain.z == 0)) {
+		LOG_ERR("CRT has not yet been performed");
+		return -EAGAIN;
+	}
+
+	/* Clean sensor value */
+	gain->val1 = 0;
+	gain->val2 = 0;
+
+	/* Convert compensated user-gain data
+	 * into sensor_value type
+	 */
+	gain->val1 |= data->crt_gain.x;
+	gain->val1 |= (uint32_t)data->crt_gain.y << 8;
+	gain->val1 |= (uint32_t)data->crt_gain.z << 16;
+
+	return ret;
+}
+
+/**
  * @brief Method to prepare the setup for crt processing
  *
  * @param[in] dev   : Structure instance of bmi270 device
