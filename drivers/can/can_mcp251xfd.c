@@ -425,12 +425,6 @@ static int mcp251xfd_set_timing(const struct device *dev, const struct can_timin
 		return -EBUSY;
 	}
 
-	__ASSERT_NO_MSG(timing->prop_seg == 0);
-	__ASSERT_NO_MSG(timing->sjw >= 1 && timing->sjw <= 128);
-	__ASSERT_NO_MSG(timing->phase_seg1 >= 2 && timing->phase_seg1 <= 256);
-	__ASSERT_NO_MSG(timing->phase_seg2 >= 1 && timing->phase_seg2 <= 128);
-	__ASSERT_NO_MSG(timing->prescaler >= 1 && timing->prescaler <= 256);
-
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
@@ -465,12 +459,6 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 	if (dev_data->started) {
 		return -EBUSY;
 	}
-
-	__ASSERT_NO_MSG(timing->prop_seg == 0);
-	__ASSERT_NO_MSG(timing->sjw >= 1 && timing->sjw <= 16);
-	__ASSERT_NO_MSG(timing->phase_seg1 >= 1 && timing->phase_seg1 <= 32);
-	__ASSERT_NO_MSG(timing->phase_seg2 >= 1 && timing->phase_seg2 <= 16);
-	__ASSERT_NO_MSG(timing->prescaler >= 1 && timing->prescaler <= 256);
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 

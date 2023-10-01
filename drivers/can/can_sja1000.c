@@ -108,12 +108,6 @@ int can_sja1000_set_timing(const struct device *dev, const struct can_timing *ti
 	uint8_t btr0;
 	uint8_t btr1;
 
-	__ASSERT_NO_MSG(timing->sjw >= 1 && timing->sjw <= 4);
-	__ASSERT_NO_MSG(timing->prop_seg == 0);
-	__ASSERT_NO_MSG(timing->phase_seg1 >= 1 && timing->phase_seg1 <= 16);
-	__ASSERT_NO_MSG(timing->phase_seg2 >= 1 && timing->phase_seg2 <= 8);
-	__ASSERT_NO_MSG(timing->prescaler >= 1 && timing->prescaler <= 64);
-
 	if (data->started) {
 		return -EBUSY;
 	}

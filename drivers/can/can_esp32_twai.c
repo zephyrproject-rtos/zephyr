@@ -119,12 +119,6 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	uint8_t btr0;
 	uint8_t btr1;
 
-	__ASSERT_NO_MSG(timing->sjw >= 0x1 && timing->sjw <= 0x4);
-	__ASSERT_NO_MSG(timing->prop_seg == 0);
-	__ASSERT_NO_MSG(timing->phase_seg1 >= 0x1 && timing->phase_seg1 <= 0x10);
-	__ASSERT_NO_MSG(timing->phase_seg2 >= 0x1 && timing->phase_seg2 <= 0x8);
-	__ASSERT_NO_MSG(timing->prescaler >= 0x1 && timing->prescaler <= 0x2000);
-
 	if (data->started) {
 		return -EBUSY;
 	}
