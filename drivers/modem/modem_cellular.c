@@ -1323,8 +1323,14 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(zephyr_gsm_ppp_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      /* The 300ms delay after sending the AT+CMUX command is required
+			       * for some modems to ensure they get enough time to enter CMUX
+			       * mode before sending the first CMUX command. If this delay is
+			       * too short, modems have been observed to simply deadlock,
+			       * refusing to respond to any CMUX command.
+			       */
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      0));
+							      300));
 
 MODEM_CHAT_SCRIPT_DEFINE(zephyr_gsm_ppp_init_chat_script, zephyr_gsm_ppp_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
