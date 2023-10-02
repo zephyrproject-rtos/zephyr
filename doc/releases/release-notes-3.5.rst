@@ -334,7 +334,7 @@ Libraries / Subsystems
 
   * MCUmgr SMP version 2 error translation (to legacy MCUmgr error code) is now
     supported in function handlers by setting ``mg_translate_error`` of
-    :c:struct:`mgmt_group` when registering a transport. See
+    :c:struct:`mgmt_group` when registering a group. See
     :c:type:`smp_translate_error_fn` for function details.
 
   * Fixed an issue with MCUmgr img_mgmt group whereby the size of the upload in
