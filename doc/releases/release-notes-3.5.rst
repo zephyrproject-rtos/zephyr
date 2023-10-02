@@ -397,6 +397,9 @@ Libraries / Subsystems
 
   * Added the :ref:`blinfo_api` subsystem.
 
+  * Added support for allowing mutex support to be forcibly disabled with
+    :kconfig:option:`CONFIG_RETENTION_MUTEX_FORCE_DISABLE`.
+
 * Binary descriptors
 
   * Added the :ref:`binary_descriptors` (``bindesc``) subsystem.
