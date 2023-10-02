@@ -436,8 +436,7 @@ def write_interrupts(node):
     # interrupts property: we have some hard-coded logic for interrupt
     # mapping here.
     #
-    # TODO: can we push map_arm_gic_irq_type() and
-    # encode_zephyr_multi_level_irq() out of Python and into C with
+    # TODO: can we push map_arm_gic_irq_type() out of Python and into C with
     # macro magic in devicetree.h?
 
     def map_arm_gic_irq_type(irq, irq_num):
@@ -453,21 +452,6 @@ def write_interrupts(node):
             return irq_num + 16
         err(f"Invalid interrupt type specified for {irq!r}")
 
-    def encode_zephyr_multi_level_irq(irq, irq_num):
-        # See doc/kernel/services/interrupts.rst for details
-        # on how this encoding works
-
-        irq_ctrl = irq.controller
-        # Look for interrupt controller parent until we have none
-        while irq_ctrl.interrupts:
-            irq_num = (irq_num + 1) << 8
-            if "irq" not in irq_ctrl.interrupts[0].data:
-                err(f"Expected binding for {irq_ctrl!r} to have 'irq' in "
-                    "interrupt-cells")
-            irq_num |= irq_ctrl.interrupts[0].data["irq"]
-            irq_ctrl = irq_ctrl.interrupts[0].controller
-        return irq_num
-
     idx_vals = []
     name_vals = []
     path_id = node.z_path_id
@@ -482,7 +466,6 @@ def write_interrupts(node):
             if cell_name == "irq":
                 if "arm,gic" in irq.controller.compats:
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
-                cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
 
             idx_vals.append((f"{path_id}_IRQ_IDX_{i}_EXISTS", 1))
             idx_macro = f"{path_id}_IRQ_IDX_{i}_VAL_{name}"
