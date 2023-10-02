@@ -12,38 +12,51 @@ NRF52 simulated board (BabbleSim)
 Overview
 ********
 
-This is a :ref:`POSIX architecture<Posix arch>`
-based simulated NRF52 board which uses `BabbleSim`_ to simulate the radio
-activity.
-This board models some of the NRF52 SOC peripherals:
+To allow simulating a nRF52833 SOC a Zephyr target boards is provided: the
+nrf52_bsim.
+
+This uses `BabbleSim`_ to simulate the radio activity, and the
+:ref:`POSIX architecture<Posix arch>` and the `native simulator`_ to
+run applications natively on the development system. This has the benefit of
+providing native code execution performance and easy debugging using
+native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
+
+This board includes models of some of the nRF52 SOC peripherals:
 
 * Radio
 * Timers
-* RTC (Real Time Counter)
-* RNG (Random Number Generator)
-* AES CCM & AES ECB encryption HW
 * AAR (Accelerated Address Resolver)
+* AES CCM & AES ECB encryption HW
 * CLOCK (Clock control)
-* PPI (Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
+* FICR (Factory Information Configuration Registers)
 * GPIO & GPIOTE
+* NVMC (Non-Volatile Memory Controller / Flash)
+* PPI (Programmable Peripheral Interconnect)
+* RNG (Random Number Generator)
+* RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * UICR (User Information Configuration Registers)
-* FICR (Factory Information Configuration Registers)
-* NVMC (Non-Volatile Memory Controller)
 
-The nrf52_bsim board definition uses the POSIX architecture and the native simulator to
-run applications natively on the development system, this has the benefit of
-providing native code execution performance and easy debugging using
-native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
+and will use the same drivers as the nrf52 dk targets for these.
+For more information on what is modelled to which level of detail,
+check the `HW models implementation status`_.
+
+Note that unlike a real nrf52 device, the nrf52_bsim has unlimited RAM and flash for code.
 
 .. _BabbleSim:
    https://BabbleSim.github.io
 
+.. _native simulator:
+   https://github.com/BabbleSim/native_simulator/blob/main/docs/README.md
+
+.. _HW models implementation status:
+   https://github.com/BabbleSim/ext_nRF_hw_models/blob/main/docs/README_impl_status.md
+
 .. _nrf52bsim_build_and_run:
 
 Building and running
-**********************
+********************
 
 This board requires the host 32 bit C library. See
 :ref:`POSIX Arch dependencies<posix_arch_deps>`.
@@ -156,6 +169,15 @@ Run them with ``-help`` for more information.
 
 You can find more information about how to run BabbleSim simulations in
 `this BabbleSim example <https://babblesim.github.io/example_2g4.html>`_.
+
+
+C library choice
+****************
+
+These nRF bsim boards use the `native simulator`_ at their core, so you can chose with which
+C library you want to build your embedded code.
+Check the :ref:`native simulator C library choice section<native_sim_Clib_choice>` for more info.
+
 
 Debugging, coverage and address sanitizer
 *****************************************
