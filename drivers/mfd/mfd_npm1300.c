@@ -297,6 +297,6 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,           \
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+			      POST_KERNEL, CONFIG_MFD_NPM1300_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1300_DEFINE)
