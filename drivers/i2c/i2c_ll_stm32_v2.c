@@ -1007,6 +1007,7 @@ void i2c_compute_presc_scldel_sdadel(uint32_t clock_src_freq, uint32_t i2c_speed
 int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t timing = 0U;
 	uint32_t idx;
@@ -1035,7 +1036,11 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		}
 	}
 
-	LOG_INF("I2C TIMING = 0x%x\n", timing);
+	/* Fill the current timing value in data structure at runtime */
+	data->current_timing.periph_clock = clock;
+	data->current_timing.i2c_speed = i2c_freq;
+	data->current_timing.timing_setting = timing;
+
 	LL_I2C_SetTiming(i2c, timing);
 
 	return 0;
