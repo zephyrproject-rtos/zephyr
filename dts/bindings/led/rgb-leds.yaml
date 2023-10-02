@@ -1,0 +1,38 @@
+# Copyright (c) 2023, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This allows you to define an emulated RGB LED by combining 3 individual LEDs.
+  The individual LEDs must have their own driver and be defined in the dts.
+
+  Here is an example
+  / {
+    rgb_leds {
+      compatible = "rgb-leds";
+      led_0 {
+        red-led = <&red_led>;
+        green-led = <&green_led>;
+        blue-led = <&blue_led>;
+      };
+    };
+  };
+
+compatible: "rgb-leds"
+
+child-binding:
+  description: RGB LED child node
+  properties:
+    red-led:
+      type: phandle
+      required: true
+      description: red led device
+
+    green-led:
+      type: phandle
+      required: true
+      description: green led device
+
+    blue-led:
+      type: phandle
+      required: true
+      description: blue led device

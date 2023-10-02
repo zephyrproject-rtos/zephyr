@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_RGB
+	bool "RGB LED driver"
+	default y
+	depends on LED && DT_HAS_RGB_LEDS_ENABLED
+	help
+	  Enable driver for emulating one RGB LED, using three individual LEDs.
+
+if LED_RGB
+
+config LED_RGB_INIT_PRIORITY
+	int "RGB LED init priority"
+	default 91
+	range 0 99
+	help
+	  RGB led initialization priority. Must initialize after the individual LED drivers
+
+endif
