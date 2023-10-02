@@ -723,12 +723,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
 
-	/* Set up indiviual enabled clocks */
-	set_up_fixed_clock_sources();
-
-	/* Set up PLLs */
-	set_up_plls();
-
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
@@ -739,11 +733,17 @@ int stm32_clock_control_init(const struct device *dev)
 	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				      STM32_FLASH_PRESCALER);
 
-	/* If freq increases, set flash latency before any clock setting */
+	/* If HCLK increases, set flash latency before any clock setting */
 	if (old_flash_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 #endif /* FLASH_ACR_LATENCY */
+
+	/* Set up indiviual enabled clocks */
+	set_up_fixed_clock_sources();
+
+	/* Set up PLLs */
+	set_up_plls();
 
 	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
 		(STM32_CORE_PRESCALER == LL_RCC_SYSCLK_DIV_1) &&
@@ -779,7 +779,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 #if defined(FLASH_ACR_LATENCY)
-	/* If freq not increased, set flash latency after all clock setting */
+	/* If HCLK not increased, set flash latency after all clock setting */
 	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
