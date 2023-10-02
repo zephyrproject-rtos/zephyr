@@ -2100,7 +2100,7 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 		goto out;
 	}
 
-	if (!params->request_addr && !params->request_addr) {
+	if (!params->request_addr && !params->request_prefix) {
 		NET_ERR("Information Request not supported yet");
 		goto out;
 	}
