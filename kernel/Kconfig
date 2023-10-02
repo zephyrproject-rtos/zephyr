@@ -201,7 +201,7 @@ config THREAD_CUSTOM_DATA
 config THREAD_USERSPACE_LOCAL_DATA
 	bool
 	depends on USERSPACE
-	default y if ERRNO && !ERRNO_IN_TLS
+	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
 
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
