@@ -44,25 +44,39 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 #define STM32_I2C_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
+int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (!data->is_configured) {
+		LOG_ERR("I2C controller not configured");
+		return -EIO;
+	}
+
+	*config = data->dev_config;
+
+	return 0;
+}
+
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t clock = 0U;
+	uint32_t i2c_clock = 0U;
 	int ret;
 
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					   (clock_control_subsys_t)&cfg->pclken[1],
-					   &clock) < 0) {
+					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					   (clock_control_subsys_t) &cfg->pclken[0],
-					   &clock) < 0) {
+					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
 		}
@@ -82,7 +96,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
-	ret = stm32_i2c_configure_timing(dev, clock);
+	ret = stm32_i2c_configure_timing(dev, i2c_clock);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
@@ -276,6 +290,7 @@ restore:
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
+	.get_config = i2c_stm32_get_config,
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	.recover_bus = i2c_stm32_recover_bus,
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
@@ -350,6 +365,8 @@ static int i2c_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 
+	data->is_configured = false;
+
 	/*
 	 * initialize mutex used when multiple transfers
 	 * are taking place to guarantee that each one is
@@ -397,6 +414,8 @@ static int i2c_stm32_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_enable(dev);
 #endif
+
+	data->is_configured = true;
 
 	return 0;
 }
