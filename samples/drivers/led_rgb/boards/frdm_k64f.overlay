@@ -1,0 +1,10 @@
+/ {
+	rgb_leds {
+		compatible = "rgb-leds";
+		rgb_led_gpio {
+			red-led = <&red_led>;
+			green-led = <&green_led>;
+			blue-led = <&blue_led>;
+		};
+	};
+};

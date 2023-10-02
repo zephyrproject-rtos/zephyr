@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the RGB LED driver
+  name: RGB LED sample
+tests:
+  sample.drivers.led.led_rgb:
+    filter: dt_compat_enabled("rgb-leds")
+    tags: LED
+    depends_on: led
