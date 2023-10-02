@@ -87,6 +87,6 @@ static int mfd_npm6001_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL,      \
-			      CONFIG_MFD_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_NPM6001_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM6001_DEFINE)
