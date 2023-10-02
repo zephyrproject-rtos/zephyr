@@ -28,6 +28,10 @@
 #define NPM6001_PADDRIVESTRENGTH_NINT_HIGH  BIT(3)
 #define NPM6001_PADDRIVESTRENGTH_SDA_HIGH   BIT(5)
 
+/* Startup timing values */
+#define NPM6001_STARTUP_POLL_INTERVAL_US 300
+#define NPM6001_STARTUP_TIMEOUT_MS 5
+
 struct mfd_npm6001_config {
 	struct i2c_dt_spec i2c;
 	uint8_t buck_pad_val;
@@ -38,13 +42,22 @@ static int mfd_npm6001_init(const struct device *dev)
 {
 	const struct mfd_npm6001_config *config = dev->config;
 	int ret;
+	int64_t t0;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		return -ENODEV;
 	}
 
-	/* always select BUCK3 DAC (does not increase power consumption) */
-	ret = i2c_reg_write_byte_dt(&config->i2c, NPM6001_BUCK3SELDAC, 1U);
+	/* Retry the first operation in case nPM6001 is starting up. This should take ~1 ms */
+	t0 = k_uptime_get();
+	do {
+		/* always select BUCK3 DAC (does not increase power consumption) */
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM6001_BUCK3SELDAC, 1U);
+		if (ret == 0) {
+			break;
+		}
+		k_usleep(NPM6001_STARTUP_POLL_INTERVAL_US);
+	} while (k_uptime_get() - t0 < NPM6001_STARTUP_TIMEOUT_MS);
 	if (ret < 0) {
 		return ret;
 	}
