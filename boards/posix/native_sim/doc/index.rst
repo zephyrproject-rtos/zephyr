@@ -65,6 +65,8 @@ The 64 bit version, ``native_sim_64``, compiles your code targeting the
 LP64 ABI (x86-64 in x86 systems), where pointers and longs are 64 bits.
 You can use this target if you cannot compile or run 32 bit binaries.
 
+.. _native_sim_Clib_choice:
+
 C library choice
 ****************
 
