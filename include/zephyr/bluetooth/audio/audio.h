@@ -823,6 +823,20 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg,
 			       enum bt_audio_codec_config_type type, const uint8_t *data,
 			       size_t data_len);
 
+/**
+ * @brief Unset a specific codec configuration value
+ *
+ * The type and the value will be removed from the codec configuration.
+ *
+ * @param codec_cfg  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cfg_unset_val(struct bt_audio_codec_cfg *codec_cfg,
+				 enum bt_audio_codec_config_type type);
+
 /** @brief Lookup a specific metadata value based on type
  *
  *
@@ -853,6 +867,19 @@ int bt_audio_codec_cfg_meta_set_val(struct bt_audio_codec_cfg *codec_cfg,
 				    enum bt_audio_metadata_type type, const uint8_t *data,
 				    size_t data_len);
 
+/**
+ * @brief Unset a specific codec configuration metadata value
+ *
+ * The type and the value will be removed from the codec configuration metadata.
+ *
+ * @param codec_cfg  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The meta_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cfg_meta_unset_val(struct bt_audio_codec_cfg *codec_cfg,
+				      enum bt_audio_metadata_type type);
 /** @brief Extract preferred contexts
  *
  *  See @ref BT_AUDIO_METADATA_TYPE_PREF_CONTEXT for more information about this value.
@@ -1189,6 +1216,20 @@ int bt_audio_codec_cap_set_val(struct bt_audio_codec_cap *codec_cap,
 			       size_t data_len);
 
 /**
+ * @brief Unset a specific codec capability value
+ *
+ * The type and the value will be removed from the codec capability.
+ *
+ * @param codec_cap  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cap_unset_val(struct bt_audio_codec_cap *codec_cap,
+				 enum bt_audio_codec_capability_type type);
+
+/**
  * @brief Extract the frequency from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
@@ -1345,6 +1386,20 @@ int bt_audio_codec_cap_meta_get_val(const struct bt_audio_codec_cap *codec_cap, 
 int bt_audio_codec_cap_meta_set_val(struct bt_audio_codec_cap *codec_cap,
 				    enum bt_audio_metadata_type type, const uint8_t *data,
 				    size_t data_len);
+
+/**
+ * @brief Unset a specific codec capability metadata value
+ *
+ * The type and the value will be removed from the codec capability metadata.
+ *
+ * @param codec_cap  The codec data to set the value in.
+ * @param type       The type id to unset.
+ *
+ * @retval The meta_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ */
+int bt_audio_codec_cap_meta_unset_val(struct bt_audio_codec_cap *codec_cap,
+				      enum bt_audio_metadata_type type);
 
 /** @brief Extract preferred contexts
  *
