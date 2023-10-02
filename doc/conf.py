@@ -172,7 +172,7 @@ html_context = {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
-        "West Projects": f"{reference_prefix}/develop/projects/index.html",
+        "West Projects": f"{reference_prefix}/develop/manifest/index.html",
     }
 }
 
