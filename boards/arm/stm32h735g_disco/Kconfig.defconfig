@@ -8,6 +8,13 @@ if BOARD_STM32H735G_DISCO
 config BOARD
 	default "stm32h735g_disco"
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
