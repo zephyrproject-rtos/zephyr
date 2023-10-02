@@ -47,7 +47,7 @@ struct uart_emul_data {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
+static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	struct uart_emul_data *drv_data = dev->data;
 	k_spinlock_key_t key;
@@ -65,7 +65,7 @@ int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
+static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 {
 	struct uart_emul_data *drv_data = dev->data;
 	const struct uart_emul_config *drv_cfg = dev->config;
@@ -90,13 +90,13 @@ void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 	}
 }
 
-int uart_emul_err_check(const struct device *dev)
+static int uart_emul_err_check(const struct device *dev)
 {
 	return 0;
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-int uart_emul_configure(const struct device *dev, const struct uart_config *cfg)
+static int uart_emul_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	struct uart_emul_data *drv_data = dev->data;
 
@@ -104,7 +104,7 @@ int uart_emul_configure(const struct device *dev, const struct uart_config *cfg)
 	return 0;
 }
 
-int uart_emul_config_get(const struct device *dev, struct uart_config *cfg)
+static int uart_emul_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	const struct uart_emul_data *drv_data = dev->data;
 
