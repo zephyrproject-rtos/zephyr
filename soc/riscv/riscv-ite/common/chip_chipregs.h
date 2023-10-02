@@ -481,8 +481,21 @@ enum usb_dc_endpoints {
 	MAX_NUM_ENDPOINTS
 };
 
+union ep_ctrl_reg {
+	volatile uint8_t value;
+	struct {
+		volatile uint8_t enable_bit: 1;
+		volatile uint8_t ready_bit: 1;
+		volatile uint8_t outdata_sequence_bit: 1;
+		volatile uint8_t send_stall_bit: 1;
+		volatile uint8_t iso_enable_bit: 1;
+		volatile uint8_t direction_bit: 1;
+		volatile uint8_t reserved: 2;
+	} __packed fields;
+} __packed;
+
 struct it82xx2_usb_ep_regs {
-	volatile uint8_t ep_ctrl;
+	union ep_ctrl_reg ep_ctrl;
 	volatile uint8_t ep_status;
 	volatile uint8_t ep_transtype_sts;
 	volatile uint8_t ep_nak_transtype_sts;
@@ -531,6 +544,20 @@ struct ep_ext_regs_7x {
  * the EP6 and EP7 share the same one, and the rest EPs are defined in the
  * same way.
  */
+union epn0n1_extend_ctrl_reg {
+	volatile uint8_t value;
+	struct {
+		volatile uint8_t epn0_outdata_sequence_bit: 1;
+		volatile uint8_t epn0_send_stall_bit: 1;
+		volatile uint8_t epn0_iso_enable_bit: 1;
+		volatile uint8_t reserved0: 1;
+		volatile uint8_t epn1_outdata_sequence_bit: 1;
+		volatile uint8_t epn1_send_stall_bit: 1;
+		volatile uint8_t epn1_iso_enable_bit: 1;
+		volatile uint8_t reserved1: 1;
+	} __packed fields;
+} __packed;
+
 struct ep_ext_regs_9x {
 	/* 0x95 Reserved */
 	volatile uint8_t ep_ext_ctrl_95;
@@ -539,7 +566,7 @@ struct ep_ext_regs_9x {
 	/* 0x97 Reserved */
 	volatile uint8_t ep_ext_ctrl_97;
 	/* 0x98 ~ 0x9D EP45/67/89/1011/1213/1415 Extended Control Registers */
-	volatile uint8_t epn0n1_ext_ctrl[6];
+	union epn0n1_extend_ctrl_reg epn0n1_ext_ctrl[6];
 	/* 0x9E Reserved */
 	volatile uint8_t ep_ext_ctrl_9e;
 	/* 0x9F Reserved */
@@ -602,9 +629,23 @@ struct ep_ext_regs_bx {
  * We classify them into 4 groups which each of them contains Control 1 and 2
  * according to the EP number as follows:
  */
+union epn_extend_ctrl1_reg {
+	volatile uint8_t value;
+	struct {
+		volatile uint8_t epn0_enable_bit: 1;
+		volatile uint8_t epn0_direction_bit: 1;
+		volatile uint8_t epn3_enable_bit: 1;
+		volatile uint8_t epn3_direction_bit: 1;
+		volatile uint8_t epn6_enable_bit: 1;
+		volatile uint8_t epn6_direction_bit: 1;
+		volatile uint8_t epn9_enable_bit: 1;
+		volatile uint8_t epn9_direction_bit: 1;
+	} __packed fields;
+} __packed;
+
 struct epn_ext_ctrl_regs {
 	/* 0xD6/0xD8/0xDA/0xDC EPN Extended Control1 Register */
-	volatile uint8_t epn_ext_ctrl1;
+	union epn_extend_ctrl1_reg epn_ext_ctrl1;
 	/* 0xD7/0xD9/0xDB/0xDD EPB Extended Control2 Register */
 	volatile uint8_t epn_ext_ctrl2;
 };
