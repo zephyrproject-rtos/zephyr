@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&pico_spi {
+&pico_spi0 {
 	status = "okay";
 	cs-gpios = <&pico_header 20 GPIO_ACTIVE_LOW>;
 
