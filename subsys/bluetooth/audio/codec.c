@@ -177,9 +177,9 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 	}
 
 	for (uint16_t i = 0U; i < codec_cfg->data_len;) {
-		const uint8_t len = codec_cfg->data[i++];
+		uint8_t *len = &codec_cfg->data[i++];
 		const uint8_t data_type = codec_cfg->data[i++];
-		const uint8_t value_len = len - sizeof(data_type);
+		const uint8_t value_len = *len - sizeof(data_type);
 
 		if (data_type == type) {
 			uint8_t *value = &codec_cfg->data[i];
@@ -187,12 +187,20 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 			if (data_len == value_len) {
 				memcpy(value, data, data_len);
 			} else {
-				const uint8_t *old_next_data_start = value + value_len + 1;
-				const uint8_t data_len_to_move =
-					codec_cfg->data_len -
-					(old_next_data_start - codec_cfg->data);
-				uint8_t *new_next_data_start = value + data_len + 1;
 				const int16_t diff = data_len - value_len;
+				uint8_t *old_next_data_start;
+				uint8_t *new_next_data_start;
+				uint8_t data_len_to_move;
+
+				/* Check if this is the last value in the buffer */
+				if (value + value_len == codec_cfg->data + codec_cfg->data_len) {
+					data_len_to_move = 0U;
+				} else {
+					old_next_data_start = value + value_len + 1;
+					new_next_data_start = value + data_len + 1;
+					data_len_to_move = codec_cfg->data_len -
+							   (old_next_data_start - codec_cfg->data);
+				}
 
 				if (diff < 0) {
 					/* In this case we need to move memory around after the copy
@@ -200,8 +208,10 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 					 */
 
 					memcpy(value, data, data_len);
-					memmove(new_next_data_start, old_next_data_start,
-						data_len_to_move);
+					if (data_len_to_move > 0U) {
+						memmove(new_next_data_start, old_next_data_start,
+							data_len_to_move);
+					}
 				} else {
 					/* In this case we need to move memory around before
 					 * the copy to fit the new longer data
@@ -215,12 +225,16 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 						return -ENOMEM;
 					}
 
-					memmove(new_next_data_start, old_next_data_start,
-						data_len_to_move);
+					if (data_len_to_move > 0) {
+						memmove(new_next_data_start, old_next_data_start,
+							data_len_to_move);
+					}
+
 					memcpy(value, data, data_len);
 				}
 
 				codec_cfg->data_len += diff;
+				*len += diff;
 			}
 
 			return codec_cfg->data_len;
@@ -237,7 +251,9 @@ int bt_audio_codec_cfg_set_val(struct bt_audio_codec_cfg *codec_cfg, uint8_t typ
 
 		net_buf_simple_add_u8(&buf, data_len + sizeof(type));
 		net_buf_simple_add_u8(&buf, type);
-		net_buf_simple_add_mem(&buf, data, data_len);
+		if (data_len > 0) {
+			net_buf_simple_add_mem(&buf, data, data_len);
+		}
 		codec_cfg->data_len = buf.len;
 	} else {
 		LOG_DBG("Cannot fit data_len %zu in codec_cfg with len %u and size %u", data_len,
