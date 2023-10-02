@@ -56,11 +56,16 @@ static struct broadcast_sink_stream {
 	size_t loss_cnt;
 	size_t error_cnt;
 	size_t valid_cnt;
+#if defined(CONFIG_LIBLC3)
+	struct net_buf *in_buf;
+	struct k_work_delayable lc3_decode_work;
+/* Internal lock for protecting net_buf from multiple access */
+	struct k_mutex lc3_decoder_mutex;
+#endif /* defined(CONFIG_LIBLC3) */
 } streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
-
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_24KHZ,
@@ -76,6 +81,100 @@ static uint32_t requested_bis_sync;
 static uint32_t bis_index_bitfield;
 static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 
+#if defined(CONFIG_LIBLC3)
+
+#include "lc3.h"
+
+#define MAX_SAMPLE_RATE       16000
+#define MAX_FRAME_DURATION_US 10000
+#define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
+
+static int16_t audio_buf[MAX_NUM_SAMPLES];
+static lc3_decoder_t lc3_decoder;
+static lc3_decoder_mem_16k_t lc3_decoder_mem;
+static int frames_per_sdu;
+
+static int lc3_enable(const struct bt_audio_codec_cfg *codec_cfg)
+{
+	int ret;
+	int freq_hz;
+	int frame_duration_us;
+
+	printk("Enable: stream with codec %p\n", codec_cfg);
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret > 0) {
+		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		printk("Error: Codec frequency not set, cannot start codec.");
+		return -1;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret > 0) {
+		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	} else {
+		printk("Error: Frame duration not set, cannot start codec.");
+		return ret;
+	}
+
+	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+
+	lc3_decoder = lc3_setup_decoder(frame_duration_us, freq_hz, 0, /* No resampling */
+					&lc3_decoder_mem);
+
+	if (lc3_decoder == NULL) {
+		printk("ERROR: Failed to setup LC3 decoder - wrong parameters?\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void lc3_decode_handler(struct k_work *work)
+{
+	int err = 0;
+	int offset = 0;
+	uint8_t *buf_data;
+	struct net_buf *ptr_net_buf;
+	int octets_per_frame;
+	struct broadcast_sink_stream *sink_stream = CONTAINER_OF(
+		k_work_delayable_from_work(work), struct broadcast_sink_stream, lc3_decode_work);
+
+	k_mutex_lock(&sink_stream->lc3_decoder_mutex, K_FOREVER);
+
+	if (sink_stream->in_buf == NULL) {
+		printk("buf data is NULL, nothing to be docoded\n");
+		k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
+		return;
+	}
+
+	ptr_net_buf = net_buf_ref(sink_stream->in_buf);
+	net_buf_unref(sink_stream->in_buf);
+	sink_stream->in_buf = NULL;
+	k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
+
+	buf_data = ptr_net_buf->data;
+	octets_per_frame = ptr_net_buf->len / frames_per_sdu;
+
+	for (int i = 0; i < frames_per_sdu; i++) {
+		err = lc3_decode(lc3_decoder, buf_data + offset, octets_per_frame,
+						 LC3_PCM_FORMAT_S16, audio_buf, 1);
+
+		if (err == 1) {
+			printk("  decoder performed PLC\n");
+		} else if (err < 0) {
+			printk("  decoder failed - wrong parameters?\n");
+		}
+
+		offset += octets_per_frame;
+	}
+
+	net_buf_unref(ptr_net_buf);
+}
+
+#endif /* defined(CONFIG_LIBLC3) */
+
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct broadcast_sink_stream *sink_stream =
@@ -88,6 +187,9 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	sink_stream->valid_cnt = 0U;
 	sink_stream->error_cnt = 0U;
 
+#if defined(CONFIG_LIBLC3)
+	k_work_init_delayable(&sink_stream->lc3_decode_work, lc3_decode_handler);
+#endif /* defined(CONFIG_LIBLC3) */
 	k_sem_give(&sem_bis_synced);
 }
 
@@ -103,8 +205,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 	}
 }
 
-static void stream_recv_cb(struct bt_bap_stream *stream,
-			   const struct bt_iso_recv_info *info,
+static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			   struct net_buf *buf)
 {
 	struct broadcast_sink_stream *sink_stream =
@@ -120,6 +221,17 @@ static void stream_recv_cb(struct bt_bap_stream *stream,
 
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		sink_stream->valid_cnt++;
+#if defined(CONFIG_LIBLC3)
+		k_mutex_lock(&sink_stream->lc3_decoder_mutex, K_FOREVER);
+		if (sink_stream->in_buf != NULL) {
+			net_buf_unref(sink_stream->in_buf);
+			sink_stream->in_buf = NULL;
+		}
+
+		sink_stream->in_buf = net_buf_ref(buf);
+		k_mutex_unlock(&sink_stream->lc3_decoder_mutex);
+		k_work_schedule(&sink_stream->lc3_decode_work, K_NO_WAIT);
+#endif /* defined(CONFIG_LIBLC3) */
 	}
 
 	sink_stream->recv_cnt++;
@@ -133,7 +245,7 @@ static void stream_recv_cb(struct bt_bap_stream *stream,
 static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
-	.recv = stream_recv_cb
+	.recv = stream_recv_cb,
 };
 
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
@@ -151,6 +263,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		const size_t bis_count = base->subgroups[i].bis_count;
 
 		printk("Subgroup[%zu] has %zu streams\n", i, bis_count);
+
 		for (size_t j = 0U; j < bis_count; j++) {
 			const uint8_t index = base->subgroups[i].bis_data[j].index;
 
@@ -158,6 +271,21 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 			base_bis_index_bitfield |= BIT(index);
 		}
+#if defined(CONFIG_LIBLC3)
+		int ret;
+		const struct bt_audio_codec_cfg *codec_cfg = &base->subgroups[i].codec_cfg;
+
+		if (codec_cfg->id != BT_HCI_CODING_FORMAT_LC3) {
+			printk("unsupported codec 0x%02x", codec_cfg->id);
+			return;
+		}
+
+		ret = lc3_enable(codec_cfg);
+		if (ret < 0) {
+			printk("Error: cannot enable LC3 codec: %d", ret);
+			return;
+		}
+#endif /* defined(CONFIG_LIBLC3) */
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
@@ -652,7 +780,6 @@ static int reset(void)
 	k_sem_reset(&sem_broadcast_code_received);
 	k_sem_reset(&sem_bis_sync_requested);
 	k_sem_reset(&sem_bis_synced);
-
 	return 0;
 }
 
@@ -739,6 +866,9 @@ int main(void)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
 		streams_p[i] = &streams[i].stream;
+#if defined(CONFIG_LIBLC3)
+		k_mutex_init(&streams[i].lc3_decoder_mutex);
+#endif /* defined(CONFIG_LIBLC3) */
 	}
 
 	while (true) {
