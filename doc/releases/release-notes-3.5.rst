@@ -405,6 +405,63 @@ MCUboot
     the primary slot with secondary slot contents, without saving the original
     image in primary slot.
 
+  * Fixed issue with serial recovery not showing image details for decrypted images.
+
+  * Fixed issue with serial recovery in single slot mode wrongly iterating over 2 image slots.
+
+  * Fixed an issue with boot_serial repeats not being processed when output was sent, this would
+    lead to a divergence of commands whereby later commands being sent would have the previous
+    command output sent instead.
+
+  * Fixed an issue with the boot_serial zcbor setup encoder function wrongly including the buffer
+    address in the size which caused serial recovery to fail on some platforms.
+
+  * Fixed wrongly building in optimize for debug mode by default, this saves a significant amount
+    of flash space.
+
+  * Fixed issue with serial recovery use of MBEDTLS having undefined operations which led to usage
+    faults when the secondary slot image was encrypted.
+
+  * Added error output when flash device fails to open and asserts are disabled, which will now
+    panic the bootloader.
+
+  * Added currently running slot ID and maximum application size to shared data function
+    definition.
+
+  * Added P384 and SHA384 support to imgtool.
+
+  * Added optional serial recovery image state and image set state commands.
+
+  * Added ``dumpinfo`` command for signed image parsing in imgtool.
+
+  * Added ``getpubhash`` command to dump the sha256 hash of the public key in imgtool.
+
+  * Added support for ``getpub`` to print the output to a file in imgtool.
+
+  * Added support for dumping the raw versions of the public keys in imgtool.
+
+  * Added support for sharing boot information with application via retention subsystem.
+
+  * Added support for serial recovery to read and handle encrypted seondary slot partitions.
+
+  * Removed ECDSA P224 support.
+
+  * Removed custom image list boot serial extension support.
+
+  * Reworked boot serial extensions so that they can be used by modules or from user repositories
+    by switching to iterable sections.
+
+  * Reworked image encryption support for Zephyr, static dummy key files are no longer in the code,
+    a pem file must be supplied to extract the private and public keys. The Kconfig menu has
+    changed to only show a single option for enabling encryption and selecting the key file.
+
+  * Reworked the ECDSA256 TLV curve agnostic and renamed it to ``ECDSA_SIG``.
+
+  * CDDL auto-generated function code has been replaced with zcbor function calls, this now allows
+    the parameters to be supplied in any order.
+
+  * The MCUboot version in this release is version ``2.0.0+0-rc1``.
+
 Storage
 *******
 
