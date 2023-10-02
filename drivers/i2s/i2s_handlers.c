@@ -33,7 +33,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	/* Ensure that the k_mem_slab's slabs are large enough for the
 	 * specified block size
 	 */
-	if (config.block_size > config.mem_slab->block_size) {
+	if (config.block_size > config.mem_slab->info.block_size) {
 		goto out;
 	}
 
