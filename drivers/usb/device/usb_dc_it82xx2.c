@@ -189,10 +189,10 @@ struct usb_it82xx2_data {
 	bool suspended;
 	usb_dc_status_callback usb_status_cb;
 
-	/* Check the EP interrupt status for (ep > 0) */
-	bool ep_ready[3];
+	/* FIFO_1/2/3 ready status */
+	bool fifo_ready[3];
 
-	struct k_sem ep_sem[3];
+	struct k_sem fifo_sem[3];
 	struct k_sem suspended_sem;
 	struct k_work_delayable check_suspended_work;
 };
@@ -541,191 +541,181 @@ static bool it82xx2_check_setup_following_out(void)
 		ff_regs[EP0].ep_rx_fifo_dcnt_lsb == SETUP_DATA_CNT));
 }
 
-static int it82xx2_setup_done(uint8_t ep_ctrl, uint8_t idx)
+static inline void it82xx2_handler_setup(uint8_t fifo_idx, uint8_t ep_ctrl)
 {
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
+	uint8_t ep_idx = fifo_idx;
 
-	LOG_DBG("SETUP(%d)", idx);
-	/* wrong trans*/
+	/* wrong trans */
 	if (ep_ctrl & EP_SEND_STALL) {
-		ep_regs[idx].ep_ctrl &= ~EP_SEND_STALL;
+		ep_regs[fifo_idx].ep_ctrl &= ~EP_SEND_STALL;
 		udata0.st_state = STALL_SEND;
-		ff_regs[idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
+		ff_regs[fifo_idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 		LOG_DBG("Clear Stall Bit & RX FIFO");
-		return -EINVAL;
+		return;
 	}
-	/* handle status interrupt */
-	/* status out */
+
 	if (udata0.st_state == DIN_ST) {
-		LOG_DBG("Status OUT");
+		/* setup -> in(data) -> out(status) */
 		udata0.last_token = udata0.now_token;
 		udata0.now_token = OUT_TOKEN;
 		udata0.st_state = STATUS_ST;
-		udata0.ep_data[idx].cb_out(idx, USB_DC_EP_DATA_OUT);
+		udata0.ep_data[ep_idx].cb_out(ep_idx | USB_EP_DIR_OUT, USB_DC_EP_DATA_OUT);
 
 	} else if (udata0.st_state == DOUT_ST || udata0.st_state == SETUP_ST) {
-		/* Status IN*/
-		LOG_DBG("Status IN");
+		/* setup -> out(data) -> in(status)
+		 * or
+		 * setup -> in(status)
+		 */
 		udata0.last_token = udata0.now_token;
 		udata0.now_token = IN_TOKEN;
 		udata0.st_state = STATUS_ST;
-		udata0.ep_data[idx].cb_in(idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
+		udata0.ep_data[ep_idx].cb_in(ep_idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
 	}
 
 	udata0.last_token = udata0.now_token;
 	udata0.now_token = SETUP_TOKEN;
 	udata0.st_state = SETUP_ST;
 
-	ep_regs[idx].ep_ctrl |= EP_OUTDATA_SEQ;
-	udata0.ep_data[idx].cb_out(USB_EP_DIR_OUT, USB_DC_EP_SETUP);
+	ep_regs[fifo_idx].ep_ctrl |= EP_OUTDATA_SEQ;
+	udata0.ep_data[ep_idx].cb_out(ep_idx | USB_EP_DIR_OUT, USB_DC_EP_SETUP);
 
 	/* Set ready bit to no-data control in */
 	if (udata0.no_data_ctrl) {
-		ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
+		ep_regs[fifo_idx].ep_ctrl |= ENDPOINT_RDY;
 		udata0.no_data_ctrl = false;
 	}
-
-	return 0;
 }
 
-static int it82xx2_in_done(uint8_t ep_ctrl, uint8_t idx)
+static inline void it82xx2_handler_in(uint8_t fifo_idx, uint8_t ep_ctrl)
 {
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-
-	/* stall send check */
-	if (ep_ctrl & EP_SEND_STALL) {
-		ep_regs[EP0].ep_ctrl &= ~EP_SEND_STALL;
-		udata0.st_state = STALL_SEND;
-		LOG_DBG("Clear Stall Bit");
-		return -EINVAL;
-	}
-
-	if (udata0.st_state >= STATUS_ST) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("IN(%d)(%d)", idx, !!(ep_regs[idx].ep_ctrl & EP_OUTDATA_SEQ));
-
-	udata0.last_token = udata0.now_token;
-	udata0.now_token = IN_TOKEN;
-
-	if (udata0.addr != DC_ADDR_NULL &&
-		udata0.addr != usb_regs->dc_address) {
-		usb_regs->dc_address = udata0.addr;
-		LOG_DBG("Address Is Set Successfully");
-	}
-
-	/* set setup stage */
-	if (udata0.st_state == DOUT_ST) {
-		udata0.st_state = STATUS_ST;
-		/* no data status in */
-	} else if (udata0.ep_data[EP0].remaining == 0 &&
-	udata0.st_state == SETUP_ST) {
-		udata0.st_state = STATUS_ST;
-	} else {
-		udata0.st_state = DIN_ST;
-	}
-
-	if (!!(ep_regs[idx].ep_ctrl & EP_OUTDATA_SEQ)) {
-		ep_regs[idx].ep_ctrl &= ~EP_OUTDATA_SEQ;
-	} else {
-		ep_regs[idx].ep_ctrl |= EP_OUTDATA_SEQ;
-	}
-	udata0.ep_data[idx].cb_in(idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
-
-	/* set ready bit for status out */
-	LOG_DBG("Remaining Bytes: %d, Stage: %d",
-	udata0.ep_data[EP0].remaining, udata0.st_state);
-
-	if (udata0.st_state == DIN_ST && udata0.ep_data[EP0].remaining == 0) {
-		ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
-	}
-
-	return 0;
-}
-
-static int it82xx2_out_done(uint8_t idx)
-{
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
-	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-
-	/* ep0 wrong enter check */
-	if (udata0.st_state >= STATUS_ST) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("OUT(%d)", idx);
-
-	udata0.last_token = udata0.now_token;
-	udata0.now_token = OUT_TOKEN;
-
-	if (udata0.st_state == SETUP_ST) {
-		udata0.st_state = DOUT_ST;
-	} else {
-		udata0.st_state = STATUS_ST;
-	}
-
-	udata0.ep_data[idx].cb_out(idx, USB_DC_EP_DATA_OUT);
-
-	/* SETUP_TOKEN follow OUT_TOKEN */
-	if (it82xx2_check_setup_following_out()) {
-		LOG_DBG("[%s] OUT => SETUP", __func__);
-		udata0.last_token = udata0.now_token;
-		udata0.now_token = SETUP_TOKEN;
-		udata0.st_state = SETUP_ST;
-		ep_regs[EP0].ep_ctrl |= EP_OUTDATA_SEQ;
-		udata0.ep_data[EP0].cb_out(USB_EP_DIR_OUT, USB_DC_EP_SETUP);
-
-		/* NOTE: set ready bit to no-data control in */
-		if (udata0.no_data_ctrl) {
-			ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
-			udata0.no_data_ctrl = false;
-		}
-	}
-
-	return 0;
-}
-
-/* Functions it82xx2_ep_in_out_config():
- * Dealing with the ep_ctrl configurations in this subroutine when it's
- * invoked in the it82xx2_usb_dc_trans_done().
- */
-static void it82xx2_ep_in_out_config(uint8_t idx)
-{
-	struct usb_it82xx2_regs *const usb_regs =
-		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
-	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-	struct epn_ext_ctrl_regs *epn_ext_ctrl =
+	volatile struct epn_ext_ctrl_regs *epn_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
+	uint8_t ep_idx;
 
-	uint8_t ep_idx = (epn_ext_ctrl[idx].epn_ext_ctrl2 & COMPLETED_TRANS) >> 4;
-
-	if (udata0.ep_data[ep_idx].ep_status == EP_CONFIG_IN) {
-		if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-			if (!!(ep_regs[idx].ep_ctrl & EP_OUTDATA_SEQ)) {
-				ep_regs[idx].ep_ctrl &= ~EP_OUTDATA_SEQ;
-			} else {
-				ep_regs[idx].ep_ctrl |= EP_OUTDATA_SEQ;
-			}
-		} else {
-			it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_DATA_SEQ_INV);
+	if (fifo_idx != 0) {
+		if (!udata0.fifo_ready[fifo_idx - 1]) {
+			return;
 		}
 
-		if (udata0.ep_data[ep_idx].cb_in) {
-			udata0.ep_data[ep_idx].cb_in(ep_idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
+		ep_idx = (epn_ext_ctrl[fifo_idx].epn_ext_ctrl2 & COMPLETED_TRANS) >> 4;
+		if (ep_idx == 0 || udata0.ep_data[ep_idx].ep_status != EP_CONFIG_IN) {
+			return;
 		}
-
-		k_sem_give(&udata0.ep_sem[idx - 1]);
-
+		udata0.fifo_ready[fifo_idx - 1] = false;
 	} else {
-		if (udata0.ep_data[ep_idx].cb_out) {
-			udata0.ep_data[ep_idx].cb_out(ep_idx, USB_DC_EP_DATA_OUT);
+		ep_idx = 0;
+		if (ep_ctrl & EP_SEND_STALL) {
+			ep_regs[0].ep_ctrl &= ~EP_SEND_STALL;
+			udata0.st_state = STALL_SEND;
+			LOG_DBG("Clear Stall Bit");
+			return;
+		}
+
+		if (udata0.st_state >= STATUS_ST) {
+			return;
+		}
+
+		udata0.last_token = udata0.now_token;
+		udata0.now_token = IN_TOKEN;
+
+		if (udata0.addr != DC_ADDR_NULL && udata0.addr != usb_regs->dc_address) {
+			usb_regs->dc_address = udata0.addr;
+			LOG_DBG("Address Is Set Successfully");
+		}
+
+		if (udata0.st_state == DOUT_ST) {
+			/* setup -> out(data) -> in(status) */
+			udata0.st_state = STATUS_ST;
+		} else if (udata0.ep_data[0].remaining == 0 && udata0.st_state == SETUP_ST) {
+			/* setup -> in(status) */
+			udata0.st_state = STATUS_ST;
+		} else {
+			/* setup -> in(data) */
+			udata0.st_state = DIN_ST;
+		}
+	}
+
+	if (!!(ep_regs[fifo_idx].ep_ctrl & EP_OUTDATA_SEQ)) {
+		ep_regs[fifo_idx].ep_ctrl &= ~EP_OUTDATA_SEQ;
+	} else {
+		ep_regs[fifo_idx].ep_ctrl |= EP_OUTDATA_SEQ;
+	}
+
+	if (udata0.ep_data[ep_idx].cb_in) {
+		udata0.ep_data[ep_idx].cb_in(ep_idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
+	}
+
+	if (fifo_idx != 0) {
+		k_sem_give(&udata0.fifo_sem[fifo_idx - 1]);
+	} else {
+		if (udata0.st_state == DIN_ST && udata0.ep_data[ep_idx].remaining == 0) {
+			ep_regs[fifo_idx].ep_ctrl |= ENDPOINT_RDY;
+		}
+	}
+}
+
+static inline void it82xx2_handler_out(uint8_t fifo_idx)
+{
+	struct usb_it82xx2_regs *const usb_regs =
+		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
+	volatile struct epn_ext_ctrl_regs *epn_ext_ctrl =
+		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
+	uint8_t ep_idx;
+
+	if (fifo_idx != 0) {
+		if (!udata0.fifo_ready[fifo_idx - 1]) {
+			return;
+		}
+
+		ep_idx = (epn_ext_ctrl[fifo_idx].epn_ext_ctrl2 & COMPLETED_TRANS) >> 4;
+		if (ep_idx == 0 || udata0.ep_data[ep_idx].ep_status != EP_CONFIG_OUT) {
+			return;
+		}
+		udata0.fifo_ready[fifo_idx - 1] = false;
+	} else {
+		ep_idx = 0;
+		/* ep0 wrong enter check */
+		if (udata0.st_state >= STATUS_ST) {
+			return;
+		}
+
+		udata0.last_token = udata0.now_token;
+		udata0.now_token = OUT_TOKEN;
+
+		if (udata0.st_state == SETUP_ST) {
+			/* setup -> out(data) */
+			udata0.st_state = DOUT_ST;
+		} else {
+			/* setup -> in(data) -> out(status) */
+			udata0.st_state = STATUS_ST;
+		}
+	}
+
+	if (udata0.ep_data[ep_idx].cb_out) {
+		udata0.ep_data[ep_idx].cb_out(ep_idx, USB_DC_EP_DATA_OUT);
+	}
+
+	if (fifo_idx == 0) {
+		/* SETUP_TOKEN follow OUT_TOKEN */
+		if (it82xx2_check_setup_following_out()) {
+			udata0.last_token = udata0.now_token;
+			udata0.now_token = SETUP_TOKEN;
+			udata0.st_state = SETUP_ST;
+			ep_regs[fifo_idx].ep_ctrl |= EP_OUTDATA_SEQ;
+			udata0.ep_data[ep_idx].cb_out(ep_idx | USB_EP_DIR_OUT, USB_DC_EP_SETUP);
+
+			if (udata0.no_data_ctrl) {
+				ep_regs[fifo_idx].ep_ctrl |= ENDPOINT_RDY;
+				udata0.no_data_ctrl = false;
+			}
 		}
 	}
 }
@@ -735,55 +725,26 @@ static void it82xx2_usb_dc_trans_done(void)
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-	struct epn_ext_ctrl_regs *epn_ext_ctrl =
-		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 
-	int ret;
-
-	for (uint8_t idx = 0; idx < 4; idx++) {
-		uint8_t ep_ctrl = ep_regs[idx].ep_ctrl;
+	for (uint8_t fifo_idx = 0; fifo_idx < 4; fifo_idx++) {
+		uint8_t ep_ctrl = ep_regs[fifo_idx].ep_ctrl;
 
 		/* check ready bit ,will be 0 when trans done */
 		if ((ep_ctrl & ENDPOINT_EN) && !(ep_ctrl & ENDPOINT_RDY)) {
-			if (idx == EP0) {
-				uint8_t ep_trans_type = ep_regs[idx].ep_transtype_sts &
-					DC_ALL_TRANS;
-
-				/* set up*/
-				if (ep_trans_type == DC_SETUP_TRANS) {
-					ret = it82xx2_setup_done(ep_ctrl, idx);
-
-					if (ret != 0) {
-						continue;
-					}
-				} else if (ep_trans_type == DC_IN_TRANS) {
-					/* in */
-					ret = it82xx2_in_done(ep_ctrl, idx);
-
-					if (ret != 0) {
-						continue;
-					}
-				} else if (ep_trans_type == DC_OUTDATA_TRANS) {
-					/* out */
-					ret = it82xx2_out_done(idx);
-
-					if (ret != 0) {
-						continue;
-					}
+			switch (ep_regs[fifo_idx].ep_transtype_sts & DC_ALL_TRANS) {
+			case DC_SETUP_TRANS:
+				if (fifo_idx == 0) {
+					it82xx2_handler_setup(fifo_idx, ep_ctrl);
 				}
-			} else {
-				/* prevent wrong entry */
-				if (!udata0.ep_ready[idx - 1]) {
-					continue;
-				}
-
-				if ((epn_ext_ctrl[idx].epn_ext_ctrl2 &
-					COMPLETED_TRANS) == 0) {
-					continue;
-				}
-
-				udata0.ep_ready[idx - 1] = false;
-				it82xx2_ep_in_out_config(idx);
+				break;
+			case DC_IN_TRANS:
+				it82xx2_handler_in(fifo_idx, ep_ctrl);
+				break;
+			case DC_OUTDATA_TRANS:
+				it82xx2_handler_out(fifo_idx);
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -886,14 +847,14 @@ int usb_dc_attach(void)
 
 	udata0.attached = 1U;
 
-	/* init ep ready status */
-	udata0.ep_ready[0] = false;
-	udata0.ep_ready[1] = false;
-	udata0.ep_ready[2] = false;
+	/* init fifo ready status */
+	udata0.fifo_ready[0] = false;
+	udata0.fifo_ready[1] = false;
+	udata0.fifo_ready[2] = false;
 
-	k_sem_init(&udata0.ep_sem[0], 1, 1);
-	k_sem_init(&udata0.ep_sem[1], 1, 1);
-	k_sem_init(&udata0.ep_sem[2], 1, 1);
+	k_sem_init(&udata0.fifo_sem[0], 1, 1);
+	k_sem_init(&udata0.fifo_sem[1], 1, 1);
+	k_sem_init(&udata0.fifo_sem[2], 1, 1);
 	k_sem_init(&udata0.suspended_sem, 0, 1);
 
 	k_work_init_delayable(&udata0.check_suspended_work, suspended_check_handler);
@@ -1316,7 +1277,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 			udata0.st_state = DIN_ST;
 		}
 	} else {
-		k_sem_take(&udata0.ep_sem[ep_fifo-1], K_FOREVER);
+		k_sem_take(&udata0.fifo_sem[ep_fifo - 1], K_FOREVER);
 		it82xx2_usb_fifo_ctrl(ep);
 	}
 
@@ -1349,7 +1310,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 	ep_regs[ep_fifo].ep_ctrl |= ENDPOINT_RDY;
 
 	if (ep_fifo > EP0) {
-		udata0.ep_ready[ep_fifo - 1] = true;
+		udata0.fifo_ready[ep_fifo - 1] = true;
 	}
 
 	LOG_DBG("Set EP%d Ready(%d)", ep_idx, __LINE__);
@@ -1437,7 +1398,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		if (ep_fifo > EP0) {
 			ep_regs[ep_fifo].ep_ctrl |= ENDPOINT_RDY;
 			it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_READY);
-			udata0.ep_ready[ep_fifo - 1] = true;
+			udata0.fifo_ready[ep_fifo - 1] = true;
 		} else if (udata0.now_token == SETUP_TOKEN) {
 			if (!(buf[0] & USB_EP_DIR_MASK)) {
 				/* request type: host-to-device transfer direction */
@@ -1520,7 +1481,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 
 	it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_READY);
 	ep_regs[ep_fifo].ep_ctrl |= ENDPOINT_RDY;
-	udata0.ep_ready[ep_fifo - 1] = true;
+	udata0.fifo_ready[ep_fifo - 1] = true;
 	LOG_DBG("EP(%d) Read Continue", ep_idx);
 	return 0;
 }
