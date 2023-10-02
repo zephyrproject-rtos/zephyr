@@ -1302,7 +1302,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			mode->mode |= WIFI_SOFTAP_MODE;
 			break;
 		case 'g':
-			mode->oper = true;
+			mode->oper = WIFI_MGMT_GET;
 			break;
 		case 'i':
 			mode->if_index = (uint8_t)atoi(optarg);
