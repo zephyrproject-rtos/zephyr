@@ -343,13 +343,6 @@ allow the user to specify at what time during the boot sequence the init
 function will be executed. Any driver will specify one of four
 initialization levels:
 
-``EARLY``
-        Used very early in the boot process, right after entering the C domain
-        (``z_cstart()``). This can be used in architectures and SoCs that extend
-        or implement architecture code and use drivers or system services that
-        have to be initialized before the Kernel calls any architecture specific
-        initialization code.
-
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
@@ -367,12 +360,6 @@ initialization levels:
 ``POST_KERNEL``
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
-
-``APPLICATION``
-        Used for application components (i.e. non-kernel components) that need
-        automatic configuration. These devices can use all services provided by
-        the kernel during configuration. Init functions at this level run on
-        the kernel main task.
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
