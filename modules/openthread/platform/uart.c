@@ -170,26 +170,11 @@ otError otPlatUartEnable(void)
 
 	if (DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_ot_uart), zephyr_cdc_acm_uart)) {
 		int ret;
-		uint32_t dtr = 0U;
 
 		ret = usb_enable(NULL);
 		if (ret != 0 && ret != -EALREADY) {
 			LOG_ERR("Failed to enable USB");
 			return OT_ERROR_FAILED;
-		}
-
-		LOG_INF("Waiting for host to be ready to communicate");
-
-		/* Data Terminal Ready - check if host is ready to communicate */
-		while (!dtr) {
-			ret = uart_line_ctrl_get(ot_uart.dev,
-						 UART_LINE_CTRL_DTR, &dtr);
-			if (ret) {
-				LOG_ERR("Failed to get Data Terminal Ready line state: %d",
-					ret);
-				continue;
-			}
-			k_msleep(100);
 		}
 
 		/* Data Carrier Detect Modem - mark connection as established */
