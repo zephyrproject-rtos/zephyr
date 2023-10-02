@@ -29,4 +29,4 @@ int boot_complete(void)
 	return 0;
 }
 
-SYS_INIT(boot_complete, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(boot_complete, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
