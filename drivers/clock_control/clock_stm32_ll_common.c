@@ -734,8 +734,8 @@ int stm32_clock_control_init(const struct device *dev)
 				      STM32_FLASH_PRESCALER);
 
 	/* If HCLK increases, set flash latency before any clock setting */
-	if (old_flash_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	if (old_flash_freq < new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
@@ -780,8 +780,8 @@ int stm32_clock_control_init(const struct device *dev)
 
 #if defined(FLASH_ACR_LATENCY)
 	/* If HCLK not increased, set flash latency after all clock setting */
-	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	if (old_flash_freq >= new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
