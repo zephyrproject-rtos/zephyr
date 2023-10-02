@@ -369,6 +369,15 @@ Libraries / Subsystems
   * Added ``user_data`` as an optional field to :c:struct:`mgmt_handler` when
     :kconfig:option:`CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA` is enabled.
 
+  * Added optional ``force`` parameter to os mgmt reset command, this can be checked in the
+    :c:enum:`MGMT_EVT_OP_OS_MGMT_RESET` notification callback whose data structure is
+    :c:struct:`os_mgmt_reset_data`.
+
+  * Added configurable number of SMP encoding levels via
+    :kconfig:option:`CONFIG_MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS`, which automatically increments
+    minimum encoding levels for in-tree groups if :kconfig:option:`CONFIG_ZCBOR_CANONICAL` is
+    enabled.
+
 * File systems
 
   * Added support for ext2 file system.
