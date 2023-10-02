@@ -115,7 +115,8 @@ static void dma_mcux_lpc_irq_handler(const struct device *dev)
 static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 					   struct dma_block_config *block,
 					   uint8_t src_inc,
-					   uint8_t dest_inc)
+					   uint8_t dest_inc,
+					   bool callback_en)
 {
 	uint32_t xfer_config = 0U;
 	dma_descriptor_t *next_descriptor = NULL;
@@ -191,7 +192,8 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		if (local_block.block_size > max_xfer_bytes) {
 			enable_interrupt = 0;
 		} else {
-			enable_interrupt = 1;
+			/* Enable or disable interrupt based on user configuration */
+			enable_interrupt = callback_en;
 		}
 
 		/* Reload if we have more descriptors */
@@ -241,8 +243,10 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		/* Leave curr pointer unchanged so we start queuing new data from
 		 * this descriptor
 		 */
-		/* Enable interrupt and reload for the descriptor */
-		xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 1U, 0U,
+		/* Enable or disable interrupt based on user request.
+		 * Reload for the descriptor.
+		 */
+		xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, callback_en, 0U,
 					width,
 					src_inc,
 					dest_inc,
@@ -286,6 +290,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	uint8_t width;
 	uint32_t max_xfer_bytes;
 	uint8_t reload = 0;
+	bool complete_callback;
 
 	if (NULL == dev || NULL == config) {
 		return -EINVAL;
@@ -473,6 +478,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	k_spin_unlock(&configuring_otrigs, otrigs_key);
 
+	complete_callback = config->complete_callback_en;
+
 	/* Check if we need to queue DMA descriptors */
 	if ((block_config->block_size > max_xfer_bytes) ||
 		(block_config->next_block != NULL)) {
@@ -489,9 +496,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					dst_inc,
 					max_xfer_bytes);
 		} else {
-			/* Enable interrupt and reload for the descriptor
-			 */
-			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 1UL, 0UL,
+			/* Enable interrupt if user requested and reload for the descriptor */
+			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, complete_callback, 0UL,
 					width,
 					src_inc,
 					dst_inc,
@@ -539,7 +545,13 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			local_block.next_block = block_config->next_block;
 			local_block.source_reload_en = reload;
 
-			if (dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc)) {
+			if (block_config->next_block == NULL) {
+				/* This is the last block, enable callback. */
+				complete_callback = true;
+			}
+
+			if (dma_mcux_lpc_queue_descriptors(data, &local_block,
+					src_inc, dst_inc, complete_callback)) {
 				return -ENOMEM;
 			}
 		}
@@ -555,7 +567,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			assert(block_config->dest_address ==
 			       ROUND_UP(block_config->dest_address, width));
 
-			if (dma_mcux_lpc_queue_descriptors(data, block_config, src_inc, dst_inc)) {
+			if (block_config->next_block == NULL) {
+				/* This is the last block. Enable callback if not enabled. */
+				complete_callback = true;
+			}
+			if (dma_mcux_lpc_queue_descriptors(data, block_config,
+				src_inc, dst_inc, complete_callback)) {
 				return -ENOMEM;
 			}
 
@@ -686,7 +703,7 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		local_block.dest_address = dst;
 		local_block.block_size = size;
 		local_block.source_reload_en = 1;
-		dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc);
+		dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc, true);
 	}
 
 	return 0;
