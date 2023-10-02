@@ -3801,7 +3801,7 @@ static void dfu_slot_add(size_t size, uint8_t *fwid, size_t fwid_len,
 		return;
 	}
 
-	bt_mesh_dfu_slot_commit(slot);
+	err = bt_mesh_dfu_slot_commit(slot);
 	if (err) {
 		LOG_ERR("Failed to commit slot: %d", err);
 		return;
