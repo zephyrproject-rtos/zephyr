@@ -36,7 +36,7 @@ config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
 	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
-	depends on !(CPP && ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y"))
+	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
 	default y
 	select FULL_LIBC_SUPPORTED
 	help

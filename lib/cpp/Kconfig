@@ -107,7 +107,12 @@ config ARCMWDT_LIBCPP
 config EXTERNAL_LIBCPP
 	bool "External C++ standard library"
 	help
-	  Build with an external/user-provided C++ standard library.
+	  Build and link with an external/user-provided C++ standard library.
+
+config EXTERNAL_MODULE_LIBCPP
+	bool "External C++ standard library module"
+	help
+	  Build an external/user-provided C++ standard library.
 
 endchoice # LIBCPP_IMPLEMENTATION
 
