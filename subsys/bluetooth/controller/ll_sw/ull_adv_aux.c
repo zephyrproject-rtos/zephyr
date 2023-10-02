@@ -411,12 +411,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			/* We could not fit all the data, append as much as possible
 			 * ad_len_overflow is how much overflows with the AUX ptr
 			 */
-			uint8_t ad_len_overflow_first_try;
 			const uint16_t chain_add_fields = ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND |
 							  ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-
-			ad_len_overflow_first_try = hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
-							     ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
 
 			val_ptr = hdr_data;
 			*val_ptr++ = len;
@@ -427,18 +423,18 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			chain_err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
 							      chain_add_fields,
 							      0U, hdr_data);
-			ad_len_overflow = hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
-						   ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
-						   ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
-						   ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
+			ad_len_chain = hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
+						ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
+						ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
+						ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
 
-			/* ad_len_overflow - ad_len_overflow_first_try is the size of
-			 * the aux pointer
-			 * ad_len_prev is how much data is already present, ad_len is how
-			 * much data we can add to this PDU
+			/* len is the total amount of datawe want to add
+			 * ad_len_chain is the amount of data that does
+			 * not fit in the current PDU
+			 * the difference of the two is the amount that
+			 * we can fit in the current PDU
 			 */
-			ad_len = PDU_AC_PAYLOAD_SIZE_MAX - ad_len_prev -
-				(ad_len_overflow - ad_len_overflow_first_try) - 4;
+			ad_len = len - ad_len_chain;
 
 			val_ptr = hdr_data;
 			*val_ptr++ =  ad_len;
@@ -457,9 +453,10 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			/*
 			 * in the next PDU we still need to add ad_len_chain bytes of data
 			 * but we do not have overflow, since we already added
-			 * the exact amount that would fit
+			 * the exact amount that would fit. We explicitly set overflow to 0.
+			 * FIXME: ad_len_overflow already should be 0, to be verified. We wait
+			 * fixing this until rewriting this whole function
 			 */
-			ad_len_chain = len - ad_len;
 			ad_len_overflow = 0U;
 		} else {
 			ad_len_overflow = 0U;
