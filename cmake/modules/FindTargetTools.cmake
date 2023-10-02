@@ -92,6 +92,8 @@ endif()
 # re-set it.
 unset(CMAKE_C_COMPILER)
 unset(CMAKE_C_COMPILER CACHE)
+unset(CMAKE_CXX_COMPILER)
+unset(CMAKE_CXX_COMPILER CACHE)
 
 # A toolchain consist of a compiler and a linker.
 # In Zephyr, toolchains require a port under cmake/toolchain/.
