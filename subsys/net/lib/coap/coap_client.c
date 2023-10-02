@@ -308,12 +308,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	reset_internal_request(internal_req);
 
-	if (retries == -1) {
-		internal_req->retry_count = DEFAULT_RETRY_AMOUNT;
-	} else {
-		internal_req->retry_count = retries;
-	}
-
 	if (k_mutex_lock(&client->send_mutex, K_NO_WAIT)) {
 		return -EAGAIN;
 	}
@@ -332,16 +326,25 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		goto out;
 	}
 
-	ret = coap_pending_init(&internal_req->pending, &internal_req->request, &client->address,
-				internal_req->retry_count);
+	/* only TYPE_CON messages need pending tracking */
+	if (coap_header_get_type(&internal_req->request) == COAP_TYPE_CON) {
+		if (retries == -1) {
+			internal_req->retry_count = DEFAULT_RETRY_AMOUNT;
+		} else {
+			internal_req->retry_count = retries;
+		}
 
-	if (ret < 0) {
-		LOG_ERR("Failed to initialize pending struct");
-		k_mutex_unlock(&client->send_mutex);
-		goto out;
+		ret = coap_pending_init(&internal_req->pending, &internal_req->request,
+					&client->address, internal_req->retry_count);
+
+		if (ret < 0) {
+			LOG_ERR("Failed to initialize pending struct");
+			k_mutex_unlock(&client->send_mutex);
+			goto out;
+		}
+
+		coap_pending_cycle(&internal_req->pending);
 	}
-
-	coap_pending_cycle(&internal_req->pending);
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
 			  &client->address, client->socklen);
@@ -368,6 +371,10 @@ static void report_callback_error(struct coap_client_internal_request *internal_
 
 static bool timeout_expired(struct coap_client_internal_request *internal_req)
 {
+	if (internal_req->pending.timeout == 0) {
+		return false;
+	}
+
 	return (internal_req->request_ongoing &&
 		internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0));
 }
@@ -547,35 +554,6 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 	return 0;
 }
 
-static int send_reset(struct coap_client *client, const struct coap_packet *req,
-		      uint8_t response_code)
-{
-	int ret;
-	uint16_t id;
-	uint8_t token[COAP_TOKEN_MAX_LEN];
-	uint8_t tkl;
-	struct coap_packet reset;
-
-	id = coap_header_get_id(req);
-	tkl = response_code ? coap_header_get_token(req, token) : 0;
-	ret = coap_packet_init(&reset, client->send_buf, MAX_COAP_MSG_LEN, COAP_VERSION,
-			       COAP_TYPE_RESET, tkl, token, response_code, id);
-
-	if (ret < 0) {
-		LOG_ERR("Error creating CoAP reset message");
-		return ret;
-	}
-
-	ret = send_request(client->fd, reset.data, reset.offset, 0,
-			   &client->address, client->socklen);
-	if (ret < 0) {
-		LOG_ERR("Error sending CoAP reset message");
-		return ret;
-	}
-
-	return 0;
-}
-
 struct coap_client_internal_request *get_request_with_id(struct coap_client *client,
 							 uint16_t message_id)
 {
@@ -631,7 +609,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	 */
 	response_type = coap_header_get_type(response);
 
-	internal_req = get_request_with_id(client, coap_header_get_id(response));
+	internal_req = get_request_with_token(client, response);
 	/* Reset and Ack need to match the message ID with request */
 	if ((response_type == COAP_TYPE_ACK || response_type == COAP_TYPE_RESET) &&
 	     internal_req == NULL)  {
@@ -655,17 +633,8 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		return 1;
 	}
 
-	/* Check for tokens
-	 * Separate response doesn't match with message ID,
-	 * check if there is a separate request waiting with matching token
-	 */
-	if (internal_req == NULL) {
-		internal_req = get_request_with_token(client, response);
-	}
-
 	if (internal_req == NULL || !token_compare(internal_req, response)) {
-		LOG_ERR("Not matching tokens, respond with reset");
-		ret = send_reset(client, response, COAP_RESPONSE_CODE_NOT_FOUND);
+		LOG_WRN("Not matching tokens");
 		return 1;
 	}
 
@@ -795,7 +764,7 @@ void coap_client_recv(void *coap_cl, void *a, void *b)
 
 				ret = handle_response(clients[i], &response);
 				if (ret < 0) {
-					LOG_ERR("Error handling respnse");
+					LOG_ERR("Error handling response");
 				}
 
 				clients[i]->response_ready = false;
