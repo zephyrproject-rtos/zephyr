@@ -251,6 +251,13 @@ Drivers and Sensors
 
   * Added support for Nuvoton NuMaker M46x
 
+* Retained memory
+
+  * Added support for allowing mutex support to be forcibly disabled with
+    :kconfig:option:`CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE`.
+
+  * Fixed issue with user mode support not working.
+
 * SDHC
 
 * Sensor
