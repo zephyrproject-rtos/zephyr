@@ -66,7 +66,6 @@ tests:
     platform_allow: native_posix
     extra_args: CONF_FILE="prj_native_posix_ctf.conf"
   sample.tracing.percepio:
-    skip: true
     platform_allow: frdm_k64f
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
