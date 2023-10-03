@@ -35,15 +35,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk
-    platform_allow:
-      - qemu_x86
-      - mimxrt1060_evk
-      - it8xxx2_evb
-      - mimxrt685_evk_cm33
-      - mimxrt595_evk_cm33
-      - nrf52_bsim
-      - nrf5340bsim_nrf5340_cpunet
-      - nrf5340bsim_nrf5340_cpuapp
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
