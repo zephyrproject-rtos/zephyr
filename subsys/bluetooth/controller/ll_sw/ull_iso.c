@@ -491,11 +491,11 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 					  pdu_release, &source_handle);
 
 		if (!err) {
-			if (cis) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && cis != NULL) {
 				cis->hdr.datapath_in = dp;
 			}
 
-			if (adv_stream) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && adv_stream != NULL) {
 				adv_stream->dp = dp;
 			}
 
