@@ -48,8 +48,13 @@ if(CONFIG_ETH_NATIVE_POSIX)
   set_source_files_properties(${native_posix_source_files}
     PROPERTIES COMPILE_DEFINITIONS
     "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
-  )
-  zephyr_library_sources(${native_posix_source_files})
+    )
+  if (CONFIG_NATIVE_APPLICATION)
+    zephyr_library_sources(${native_posix_source_files})
+  else()
+    zephyr_library_sources(eth_native_posix.c)
+    target_sources(native_simulator INTERFACE eth_native_posix_adapt.c)
+  endif()
 endif()
 
 add_subdirectory(phy)
