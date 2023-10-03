@@ -389,7 +389,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	} else if ((path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) &&
 		   (cis || sync_stream)) {
 		isoal_sink_handle_t sink_handle;
-		isoal_status_t err;
+		isoal_status_t err = ISOAL_STATUS_OK;
 
 		if (path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* Not vendor specific, thus alloc and emit functions
