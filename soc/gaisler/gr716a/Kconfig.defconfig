@@ -6,6 +6,9 @@ if SOC_GR716A
 config SPARC_NWIN
 	default 31
 
+config SPARC_SVT
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 50000000
 
