@@ -477,7 +477,8 @@ enum usb_dc_endpoints {
 	EP12,
 	EP13,
 	EP14,
-	EP15
+	EP15,
+	MAX_NUM_ENDPOINTS
 };
 
 struct it82xx2_usb_ep_regs {
