@@ -327,21 +327,21 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 	uint8_t *data_loc = get_data_loc(pb, flags);
 
 	rd_idx = ROUND_UP(rd_idx, sizeof(uint32_t));
-	cache_inv(&data_loc[rd_idx], sizeof(uint8_t), flags);
 	/* Handle wrapping or the fact that next packet is a padding. */
-	if (rd_idx == pblen) {
-		rd_idx = 0;
-	} else if (data_loc[rd_idx] == PADDING_MARK) {
-		cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
-		/* We may hit the case when producer is in the middle of adding
-		 * a padding (which happens in 2 steps: writing padding, resetting
-		 * write index) and in that case we cannot consume this padding.
-		 */
-		if (rd_idx != *wr_idx_loc) {
-			rd_idx = 0;
+	if (rd_idx != pblen) {
+		cache_inv(&data_loc[rd_idx], sizeof(uint8_t), flags);
+		if (data_loc[rd_idx] == PADDING_MARK) {
+			cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
+			/* We may hit the case when producer is in the middle of adding
+			 * a padding (which happens in 2 steps: writing padding, resetting
+			 * write index) and in that case we cannot consume this padding.
+			 */
+			if (rd_idx != *wr_idx_loc) {
+				rd_idx = 0;
+			}
 		}
 	} else {
-		/* empty */
+		rd_idx = 0;
 	}
 
 	*rd_idx_loc = rd_idx;
