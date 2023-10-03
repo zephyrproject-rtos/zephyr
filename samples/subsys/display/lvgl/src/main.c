@@ -42,12 +42,14 @@ static const struct device *lvgl_encoder =
 	DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_lvgl_encoder_input));
 #endif /* CONFIG_LV_Z_ENCODER_INPUT */
 
+#if defined(CONFIG_LV_Z_POINTER_KSCAN) || defined(CONFIG_LV_Z_POINTER_INPUT)
 static void lv_btn_click_callback(lv_event_t *e)
 {
 	ARG_UNUSED(e);
 
 	count = 0;
 }
+#endif
 
 int main(void)
 {
@@ -103,17 +105,17 @@ int main(void)
 	lv_indev_set_group(lvgl_input_get_indev(lvgl_encoder), arc_group);
 #endif /* CONFIG_LV_Z_ENCODER_INPUT */
 
-	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN) || IS_ENABLED(CONFIG_LV_Z_POINTER_INPUT)) {
-		lv_obj_t *hello_world_button;
+#if defined(CONFIG_LV_Z_POINTER_KSCAN) || defined(CONFIG_LV_Z_POINTER_INPUT)
+	lv_obj_t *hello_world_button;
 
-		hello_world_button = lv_btn_create(lv_scr_act());
-		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
-		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
-						NULL);
-		hello_world_label = lv_label_create(hello_world_button);
-	} else {
-		hello_world_label = lv_label_create(lv_scr_act());
-	}
+	hello_world_button = lv_btn_create(lv_scr_act());
+	lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
+					NULL);
+	hello_world_label = lv_label_create(hello_world_button);
+#else
+	hello_world_label = lv_label_create(lv_scr_act());
+#endif
 
 	lv_label_set_text(hello_world_label, "Hello world!");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
