@@ -20,6 +20,22 @@ config GNSS_DUMP
 	help
 	  Enable GNSS dump library
 
+config GNSS_DUMP_TO_LOG
+	bool "Dump GNSS events to log"
+	select GNSS_DUMP
+	help
+	  Enable GNSS dump to log.
+
+if GNSS_DUMP_TO_LOG
+
+config GNSS_DUMP_TO_LOG_BUF_SIZE
+	int "GNSS log dump buffer size"
+	default 128
+	help
+	  Size of GNSS log dump buffer
+
+endif
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
