@@ -971,6 +971,8 @@ static inline int z_impl_can_get_capabilities(const struct device *dev, can_mode
  * enable the CAN controller to participate in CAN communication, and enable the CAN tranceiver, if
  * supported.
  *
+ * Starting the CAN controller resets all the CAN controller statistics.
+ *
  * @see can_stop()
  * @see can_transceiver_enable()
  *
@@ -1330,6 +1332,162 @@ static inline void can_set_state_change_callback(const struct device *dev,
 
 	api->set_state_change_callback(dev, callback, user_data);
 }
+
+/** @} */
+
+/**
+ * @name CAN statistics
+ *
+ * @{
+ */
+
+/**
+ * @brief Get the bit0 error counter for a CAN device
+ *
+ * The bit0 error counter is incremented when the CAN controller is unable to
+ * transmit a dominant bit.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return bit0 error counter
+ */
+__syscall uint32_t can_stats_get_bit0_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_bit0_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).bit0_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the bit1 error counter for a CAN device
+ *
+ * The bit1 error counter is incremented when the CAN controller is unable to
+ * transmit a recessive bit.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return bit1 error counter
+ */
+__syscall uint32_t can_stats_get_bit1_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_bit1_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).bit1_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the stuffing error counter for a CAN device
+ *
+ * The stuffing error counter is incremented when the CAN controller detects a
+ * bit stuffing error.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return stuffing error counter
+ */
+__syscall uint32_t can_stats_get_stuff_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_stuff_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).stuff_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the CRC error counter for a CAN device
+ *
+ * The CRC error counter is incremented when the CAN controller detects a frame
+ * with an invalid CRC.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return CRC error counter
+ */
+__syscall uint32_t can_stats_get_crc_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_crc_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).crc_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the form error counter for a CAN device
+ *
+ * The form error counter is incremented when the CAN controller detects a
+ * fixed-form bit field containing illegal bits.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return form error counter
+ */
+__syscall uint32_t can_stats_get_form_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_form_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).form_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the acknowledge error counter for a CAN device
+ *
+ * The acknowledge error counter is incremented when the CAN controller does not
+ * monitor a dominant bit in the ACK slot.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return acknowledge error counter
+ */
+__syscall uint32_t can_stats_get_ack_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_ack_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).ack_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Get the RX overrun counter for a CAN device
+ *
+ * The RX overrun counter is incremented when the CAN controller receives a CAN
+ * frame matching an installed filter but lacks the capacity to store it (either
+ * due to an already full RX mailbox or a full RX FIFO).
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return RX overrun counter
+ */
+__syscall uint32_t can_stats_get_rx_overruns(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_rx_overruns(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).rx_overrun;
+}
+#endif /* CONFIG_CAN_STATS */
 
 /** @} */
 
