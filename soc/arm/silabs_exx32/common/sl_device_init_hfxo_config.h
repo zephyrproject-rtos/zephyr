@@ -7,8 +7,10 @@
 #ifndef SL_DEVICE_INIT_HFXO_CONFIG_H
 #define SL_DEVICE_INIT_HFXO_CONFIG_H
 
+#include <zephyr/devicetree.h>
+
 #define SL_DEVICE_INIT_HFXO_MODE           cmuHfxoOscMode_Crystal
-#define SL_DEVICE_INIT_HFXO_FREQ           39000000
-#define SL_DEVICE_INIT_HFXO_CTUNE          140
+#define SL_DEVICE_INIT_HFXO_FREQ           DT_PROP(DT_NODELABEL(clk_hfxo), clock_frequency)
+#define SL_DEVICE_INIT_HFXO_CTUNE          DT_PROP(DT_NODELABEL(clk_hfxo), ctune)
 
 #endif /* SL_DEVICE_INIT_HFXO_CONFIG_H */
