@@ -17,6 +17,30 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led0 {
+			gpios = <&gpio19 6 0>;
+			label = "led0";
+		};
+		led1: led1 {
+			gpios = <&gpio19 4 0>;
+			label = "led1";
+		};
+		led2: led2 {
+			gpios = <&gpio20 0 0>;
+			label = "led2";
+		};
+		led3: led3 {
+			gpios = <&gpio23 4 0>;
+			label = "led3";
+		};
+	};
 };
 
 
