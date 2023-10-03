@@ -1,0 +1,11 @@
+/*
+ * Copyright 2023 Jonas Otto
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+&port1 {
+	power-role = "sink";
+	sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+};
