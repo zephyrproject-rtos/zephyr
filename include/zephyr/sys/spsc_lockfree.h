@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#ifndef ZEPHYR_RTIO_SPSC_H_
-#define ZEPHYR_RTIO_SPSC_H_
+#ifndef ZEPHYR_SYS_SPSC_LOCKFREE_H_
+#define ZEPHYR_SYS_SPSC_LOCKFREE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,14 +14,14 @@
 #include <zephyr/sys/util_macro.h>
 
 /**
- * @brief RTIO Single Producer Single Consumer (SPSC) Queue API
- * @defgroup rtio_spsc RTIO SPSC API
- * @ingroup rtio
+ * @brief Single Producer Single Consumer (SPSC) Lockfree Queue API
+ * @defgroup spsc_lockfree SPSC API
+ * @ingroup datastructure_apis
  * @{
  */
 
 /**
- * @file rtio_spsc.h
+ * @file spsc_lockfree.h
  *
  * @brief A lock-free and type safe power of 2 fixed sized single producer
  * single consumer (SPSC) queue using a ringbuffer and atomics to ensure
@@ -57,7 +56,7 @@
  *
  * @warning Not to be manipulated without the macros!
  */
-struct rtio_spsc {
+struct spsc {
 	/* private value only the producer thread should mutate */
 	unsigned long acquire;
 
@@ -75,53 +74,54 @@ struct rtio_spsc {
 };
 
 /**
- * @brief Statically initialize an rtio_spsc
+ * @brief Statically initialize an spsc
  *
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  * @param buf Buffer pointer
  */
-#define RTIO_SPSC_INITIALIZER(sz, buf)		\
-	{					\
-		._spsc = {			\
-			.acquire = 0,		\
-			.consume = 0,		\
-			.in = ATOMIC_INIT(0),	\
-			.out = ATOMIC_INIT(0),	\
-			.mask = sz - 1,		\
-		},				\
-		.buffer = buf,			\
+#define SPSC_INITIALIZER(sz, buf)                                                                  \
+	{                                                                                          \
+		._spsc =                                                                           \
+			{                                                                          \
+				.acquire = 0,                                                      \
+				.consume = 0,                                                      \
+				.in = ATOMIC_INIT(0),                                              \
+				.out = ATOMIC_INIT(0),                                             \
+				.mask = sz - 1,                                                    \
+			},                                                                         \
+		.buffer = buf,                                                                     \
 	}
 
 /**
- * @brief Declare an anonymous struct type for an rtio_spsc
+ * @brief Declare an anonymous struct type for an spsc
  *
  * @param name Name of the spsc symbol to be provided
  * @param type Type stored in the spsc
  */
-#define RTIO_SPSC_DECLARE(name, type)		\
-	static struct rtio_spsc_##name {	\
-		struct rtio_spsc _spsc;	\
-		type * const buffer;		\
+#define SPSC_DECLARE(name, type)                                                                   \
+	static struct spsc_##name {                                                                \
+		struct spsc _spsc;                                                                 \
+		type * const buffer;                                                               \
 	}
 
 /**
- * @brief Define an rtio_spsc with a fixed size
+ * @brief Define an spsc with a fixed size
  *
  * @param name Name of the spsc symbol to be provided
  * @param type Type stored in the spsc
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
-#define RTIO_SPSC_DEFINE(name, type, sz)				\
-	BUILD_ASSERT(IS_POWER_OF_TWO(sz));				\
-	static type __spsc_buf_##name[sz];				\
-	RTIO_SPSC_DECLARE(name, type) name = RTIO_SPSC_INITIALIZER(sz, __spsc_buf_##name);
+#define SPSC_DEFINE(name, type, sz)                                                                \
+	BUILD_ASSERT(IS_POWER_OF_TWO(sz));                                                         \
+	static type __spsc_buf_##name[sz];                                                         \
+	SPSC_DECLARE(name, type) name = SPSC_INITIALIZER(sz, __spsc_buf_##name);
 
 /**
  * @brief Size of the SPSC queue
  *
  * @param spsc SPSC reference
  */
-#define rtio_spsc_size(spsc) ((spsc)->_spsc.mask + 1)
+#define spsc_size(spsc) ((spsc)->_spsc.mask + 1)
 
 /**
  * @private
@@ -130,20 +130,19 @@ struct rtio_spsc {
  * @param spsc SPSC reference
  * @param i Value to modulo to the size of the spsc
  */
-#define z_rtio_spsc_mask(spsc, i) ((i) & (spsc)->_spsc.mask)
-
+#define z_spsc_mask(spsc, i) ((i) & (spsc)->_spsc.mask)
 
 /**
  * @private
  * @brief Load the current "in" index from the spsc as an unsigned long
  */
-#define z_rtio_spsc_in(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.in)
+#define z_spsc_in(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.in)
 
 /**
  * @private
  * @brief Load the current "out" index from the spsc as an unsigned long
  */
-#define z_rtio_spsc_out(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.out)
+#define z_spsc_out(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.out)
 
 /**
  * @brief Initialize/reset a spsc such that its empty
@@ -153,7 +152,7 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to initialize/reset
  */
-#define rtio_spsc_reset(spsc)                                                                      \
+#define spsc_reset(spsc)                                                                           \
 	({                                                                                         \
 		(spsc)->_spsc.consume = 0;                                                         \
 		(spsc)->_spsc.acquire = 0;                                                         \
@@ -168,14 +167,14 @@ struct rtio_spsc {
  *
  * @return A pointer to the acquired element or null if the spsc is full
  */
-#define rtio_spsc_acquire(spsc)                                                                    \
+#define spsc_acquire(spsc)                                                                         \
 	({                                                                                         \
-		unsigned long idx = z_rtio_spsc_in(spsc) + (spsc)->_spsc.acquire;                  \
-		bool spsc_acq = (idx - z_rtio_spsc_out(spsc)) < rtio_spsc_size(spsc);              \
+		unsigned long idx = z_spsc_in(spsc) + (spsc)->_spsc.acquire;                       \
+		bool spsc_acq = (idx - z_spsc_out(spsc)) < spsc_size(spsc);                        \
 		if (spsc_acq) {                                                                    \
 			(spsc)->_spsc.acquire += 1;                                                \
 		}                                                                                  \
-		spsc_acq ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;                  \
+		spsc_acq ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                       \
 	})
 
 /**
@@ -185,7 +184,7 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to produce the previously acquired element or do nothing
  */
-#define rtio_spsc_produce(spsc)                                                                    \
+#define spsc_produce(spsc)                                                                         \
 	({                                                                                         \
 		if ((spsc)->_spsc.acquire > 0) {                                                   \
 			(spsc)->_spsc.acquire -= 1;                                                \
@@ -201,7 +200,7 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to produce all previously acquired elements or do nothing
  */
-#define rtio_spsc_produce_all(spsc)                                                                \
+#define spsc_produce_all(spsc)                                                                     \
 	({                                                                                         \
 		if ((spsc)->_spsc.acquire > 0) {                                                   \
 			unsigned long acquired = (spsc)->_spsc.acquire;                            \
@@ -217,9 +216,9 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to drop all previously acquired elements or do nothing
  */
-#define rtio_spsc_drop_all(spsc)		\
-	do {					\
-		(spsc)->_spsc.acquire = 0;	\
+#define spsc_drop_all(spsc)                                                                        \
+	do {                                                                                       \
+		(spsc)->_spsc.acquire = 0;                                                         \
 	} while (false)
 
 /**
@@ -229,14 +228,14 @@ struct rtio_spsc {
  *
  * @return Pointer to element or null if no consumable elements left
  */
-#define rtio_spsc_consume(spsc)                                                                    \
+#define spsc_consume(spsc)                                                                         \
 	({                                                                                         \
-		unsigned long idx = z_rtio_spsc_out(spsc) + (spsc)->_spsc.consume;                 \
-		bool has_consumable = (idx != z_rtio_spsc_in(spsc));                               \
+		unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;                      \
+		bool has_consumable = (idx != z_spsc_in(spsc));                                    \
 		if (has_consumable) {                                                              \
 			(spsc)->_spsc.consume += 1;                                                \
 		}                                                                                  \
-		has_consumable ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;            \
+		has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                 \
 	})
 
 /**
@@ -244,7 +243,7 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to release consumed element or do nothing
  */
-#define rtio_spsc_release(spsc)                                                                    \
+#define spsc_release(spsc)                                                                         \
 	({                                                                                         \
 		if ((spsc)->_spsc.consume > 0) {                                                   \
 			(spsc)->_spsc.consume -= 1;                                                \
@@ -252,13 +251,12 @@ struct rtio_spsc {
 		}                                                                                  \
 	})
 
-
 /**
  * @brief Release all consumed elements
  *
  * @param spsc SPSC to release consumed elements or do nothing
  */
-#define rtio_spsc_release_all(spsc)                                                                \
+#define spsc_release_all(spsc)                                                                     \
 	({                                                                                         \
 		if ((spsc)->_spsc.consume > 0) {                                                   \
 			unsigned long consumed = (spsc)->_spsc.consume;                            \
@@ -272,19 +270,15 @@ struct rtio_spsc {
  *
  * @param spsc SPSC to get item count for
  */
-#define rtio_spsc_acquirable(spsc)                                                                 \
-	({                                                                                         \
-		(((spsc)->_spsc.in + (spsc)->_spsc.acquire) - (spsc)->_spsc.out) -                 \
-			rtio_spsc_size(spsc);                                                      \
-	})
+#define spsc_acquirable(spsc)                                                                      \
+	({ (((spsc)->_spsc.in + (spsc)->_spsc.acquire) - (spsc)->_spsc.out) - spsc_size(spsc); })
 
 /**
  * @brief Count of consumables in spsc
  *
  * @param spsc SPSC to get item count for
  */
-#define rtio_spsc_consumable(spsc)                                                                 \
-	({ (spsc)->_spsc.in - (spsc)->_spsc.out - (spsc)->_spsc.consume; })
+#define spsc_consumable(spsc) ({ (spsc)->_spsc.in - (spsc)->_spsc.out - (spsc)->_spsc.consume; })
 
 /**
  * @brief Peek at the first available item in queue
@@ -293,11 +287,11 @@ struct rtio_spsc {
  *
  * @return Pointer to element or null if no consumable elements left
  */
-#define rtio_spsc_peek(spsc)                                                                       \
+#define spsc_peek(spsc)                                                                            \
 	({                                                                                         \
-		unsigned long idx = z_rtio_spsc_out(spsc) + (spsc)->_spsc.consume;                 \
-		bool has_consumable = (idx != z_rtio_spsc_in(spsc));                               \
-		has_consumable ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx)]) : NULL;            \
+		unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;                      \
+		bool has_consumable = (idx != z_spsc_in(spsc));                                    \
+		has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                 \
 	})
 
 /**
@@ -309,12 +303,12 @@ struct rtio_spsc {
  *
  * @return Pointer to element or null if none left
  */
-#define rtio_spsc_next(spsc, item)                                                                 \
+#define spsc_next(spsc, item)                                                                      \
 	({                                                                                         \
 		unsigned long idx = ((item) - (spsc)->buffer);                                     \
-		bool has_next = z_rtio_spsc_mask(spsc, (idx + 1)) !=                               \
-				(z_rtio_spsc_mask(spsc, z_rtio_spsc_in(spsc)));                    \
-		has_next ? &((spsc)->buffer[z_rtio_spsc_mask((spsc), idx + 1)]) : NULL;            \
+		bool has_next =                                                                    \
+			z_spsc_mask(spsc, (idx + 1)) != (z_spsc_mask(spsc, z_spsc_in(spsc)));      \
+		has_next ? &((spsc)->buffer[z_spsc_mask((spsc), idx + 1)]) : NULL;                 \
 	})
 
 /**
@@ -325,15 +319,15 @@ struct rtio_spsc {
  *
  * @return Pointer to element or null if none left
  */
-#define rtio_spsc_prev(spsc, item)                                                                 \
+#define spsc_prev(spsc, item)                                                                      \
 	({                                                                                         \
 		unsigned long idx = ((item) - &(spsc)->buffer[0]) / sizeof((spsc)->buffer[0]);     \
-		bool has_prev = idx != z_rtio_spsc_mask(spsc, z_rtio_spsc_out(spsc));              \
-		has_prev ? &((spsc)->buffer[z_rtio_spsc_mask(spsc, idx - 1)]) : NULL;              \
+		bool has_prev = idx != z_spsc_mask(spsc, z_spsc_out(spsc));                        \
+		has_prev ? &((spsc)->buffer[z_spsc_mask(spsc, idx - 1)]) : NULL;                   \
 	})
 
 /**
  * @}
  */
 
-#endif /* ZEPHYR_RTIO_SPSC_H_ */
+#endif /* ZEPHYR_SYS_SPSC_LOCKFREE_H_ */
