@@ -286,29 +286,6 @@ static inline void copy_broadcast_source_preset(struct broadcast_source *source,
 	memcpy(&source->qos, &named_preset->preset.qos, sizeof(source->qos));
 	memcpy(&source->codec_cfg, &named_preset->preset.codec_cfg, sizeof(source->codec_cfg));
 }
-
-static inline int codec_set_chan_alloc(struct bt_audio_codec_cfg *codec_cfg,
-				       enum bt_audio_location loc)
-{
-	for (size_t i = 0U; i < codec_cfg->data_len;) {
-		const uint8_t len = codec_cfg->data[i++];
-		const uint8_t type = codec_cfg->data[i++];
-		uint8_t *value = &codec_cfg->data[i];
-		const uint8_t value_len = len - sizeof(type);
-
-		if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
-			const uint32_t loc_32 = loc;
-
-			sys_put_le32(loc_32, value);
-
-			return 0;
-		}
-		i += value_len;
-	}
-
-	return -ENODATA;
-}
-
 #endif /* CONFIG_BT_AUDIO */
 
 #endif /* __AUDIO_H */
