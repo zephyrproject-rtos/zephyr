@@ -46,7 +46,7 @@ static int process_mpu6050(const struct device *dev)
 					gyro);
 	}
 	if (rc == 0) {
-		rc = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
+		rc = sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP,
 					&temperature);
 	}
 	if (rc == 0) {
