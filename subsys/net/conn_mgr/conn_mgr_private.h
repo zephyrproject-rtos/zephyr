@@ -59,11 +59,23 @@ extern struct k_sem conn_mgr_mon_updated;
 extern struct k_mutex conn_mgr_mon_lock;
 
 void conn_mgr_init_events_handler(void);
+struct net_if *conn_mgr_mon_get_if_by_index(int index);
+int conn_mgr_get_index_for_if(struct net_if *iface);
+
+int conn_mgr_get_iface_states(uint16_t **states);
 
 /* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
 void conn_mgr_conn_init(void);
 
 /* Internal helper function to allow the shell net cm command to safely read conn_mgr state. */
 uint16_t conn_mgr_if_state(struct net_if *iface);
+
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+void conn_mgr_online_connectivity_check(void);
+#else
+static inline void conn_mgr_online_connectivity_check(void)
+{
+}
+#endif
 
 #endif /* __CONN_MGR_PRV_H__ */
