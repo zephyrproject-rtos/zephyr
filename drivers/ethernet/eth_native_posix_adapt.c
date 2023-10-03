@@ -25,26 +25,12 @@
 #include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
-#include <zephyr/arch/posix/posix_trace.h>
+#include <inttypes.h>
+#include <nsi_tracing.h>
 
 #ifdef __linux
+#include <linux/if.h>
 #include <linux/if_tun.h>
-#endif
-
-/* Zephyr include files. Be very careful here and only include minimum
- * things needed.
- */
-#define LOG_MODULE_NAME eth_posix_adapt
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
-#include <zephyr/types.h>
-#include <zephyr/sys_clock.h>
-
-#if defined(CONFIG_NET_GPTP)
-#include <zephyr/net/gptp.h>
 #endif
 
 #include "eth_native_posix_priv.h"
@@ -52,12 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Note that we cannot create the TUN/TAP device from the setup script
  * as we need to get a file descriptor to communicate with the interface.
  */
-int eth_iface_create(const char *if_name, bool tun_only)
+int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 {
 	struct ifreq ifr;
 	int fd, ret = -EINVAL;
 
-	fd = open(ETH_NATIVE_POSIX_DEV_NAME, O_RDWR);
+	fd = open(dev_name, O_RDWR);
 	if (fd < 0) {
 		return -errno;
 	}
@@ -98,7 +84,7 @@ static int ssystem(const char *fmt, ...)
 	vsnprintf(cmd, sizeof(cmd), fmt, ap);
 	va_end(ap);
 
-	posix_print_trace("%s\n", cmd);
+	nsi_print_trace("%s\n", cmd);
 
 	ret = system(cmd);
 
@@ -140,8 +126,7 @@ ssize_t eth_write_data(int fd, void *buf, size_t buf_len)
 	return write(fd, buf, buf_len);
 }
 
-#if defined(CONFIG_NET_GPTP)
-int eth_clock_gettime(struct net_ptp_time *time)
+int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond)
 {
 	struct timespec tp;
 	int ret;
@@ -151,17 +136,14 @@ int eth_clock_gettime(struct net_ptp_time *time)
 		return -errno;
 	}
 
-	time->second = tp.tv_sec;
-	time->nanosecond = tp.tv_nsec;
+	*second = (uint64_t)tp.tv_sec;
+	*nanosecond = (uint32_t)tp.tv_nsec;
 
 	return 0;
 }
-#endif /* CONFIG_NET_GPTP */
 
-#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int eth_promisc_mode(const char *if_name, bool enable)
 {
 	return ssystem("ip link set dev %s promisc %s",
 		       if_name, enable ? "on" : "off");
 }
-#endif /* CONFIG_NET_PROMISCUOUS_MODE */
