@@ -61,7 +61,15 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		"mrs %0, BASEPRI;"
 		"msr BASEPRI_MAX, %1;"
 		"isb;"
-		: "=r"(key), "=r"(tmp)
+		: "=r"(key),
+#if defined(CONFIG_ARMV8_M_BASELINE)
+		/* armv8-m.baseline's mov is limited to registers r0-r7.
+		 * Let the compiler know we have this constraint on tmp.
+		 */
+		"=l"(tmp)
+#else
+		"=r"(tmp)
+#endif
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
