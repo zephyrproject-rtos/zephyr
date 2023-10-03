@@ -41,17 +41,17 @@
 #define FLASH_SIZE CONFIG_FLASH_SIZE
 #else
 #define FLASH_SIZE 0x400000
-#endif
+#endif /* CONFIG_FLASH_SIZE */
 
 #ifdef CONFIG_BOOTLOADER_ESP_IDF
 #define IROM_SEG_ORG 0x40080020
 #define IROM_SEG_LEN (FLASH_SIZE-0x20)
 #define IROM_SEG_ALIGN 0x4
 #else
-#define IROM_SEG_ORG 0x40080000
+#define IROM_SEG_ORG 0x40080040
 #define IROM_SEG_LEN FLASH_SIZE
 #define IROM_SEG_ALIGN 0x10000
-#endif
+#endif /* CONFIG_BOOTLOADER_ESP_IDF */
 
 /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
  * Executing directly from LMA is not possible. */
@@ -60,9 +60,12 @@
 
 MEMORY
 {
+#ifndef CONFIG_SIMPLE_BOOT
   mcuboot_hdr (RX): org = 0x0, len = 0x20
   metadata (RX): org = 0x20, len = 0x20
-  ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
+#endif /* CONFIG_SIMPLE_BOOT */
+
+  ROM (RX): org = 0x0, len = FLASH_SIZE - 0x40
   iram0_0_seg(RX): org = IRAM_ORG, len = I_D_RAM_SIZE
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   dram0_0_seg(RW): org = DRAM_ORG, len = I_D_RAM_SIZE
@@ -70,12 +73,14 @@ MEMORY
 
   rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
-#if defined(CONFIG_ESP_SPIRAM)
-  ext_ram_seg(RW): org = 0x3f500000, len = CONFIG_ESP_SPIRAM_SIZE
-#endif
+
+#ifdef CONFIG_ESP_SPIRAM
+  ext_data_ram_seg(RW): org = 0x3f500000, len = CONFIG_ESP_SPIRAM_SIZE
+#endif /* CONFIG_ESP_SPIRAM */
+
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
-#endif
+#endif /* CONFIG_GEN_ISR_TABLES */
 }
 
 /*  Default entry point:  */
@@ -87,6 +92,7 @@ _heap_sentry = 0x3fffe710;
 
 SECTIONS
 {
+#ifndef CONFIG_SIMPLE_BOOT
   /* Reserve space for MCUboot header in the binary */
   .mcuboot_header :
   {
@@ -121,6 +127,7 @@ SECTIONS
     LONG(LOADADDR(.dram0.data))
     LONG(LOADADDR(.dummy.dram.data) + SIZEOF(.dummy.dram.data) - LOADADDR(.dram0.data))
   } > metadata
+#endif /* !CONFIG_SIMPLE_BOOT */
 
 #include <zephyr/linker/rel-sections.ld>
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
@@ -142,8 +149,59 @@ SECTIONS
     #include <snippets-rodata.ld>
 
     . = ALIGN(4);
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata)
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata.*)
+    *(EXCLUDE_FILE (
+      *libarch__xtensa__core.a:*
+      *libkernel.a:fatal.*
+      *libkernel.a:init.*
+      *libzephyr.a:cbprintf_complete*
+      *libzephyr.a:log_core.*
+      *libzephyr.a:log_backend_uart.*
+      *libdrivers__flash.a:esp32_mp.*
+      *libzephyr.a:log_output.*
+      *libzephyr.a:loader.*
+      *libdrivers__flash.a:flash_esp32.*
+      *libdrivers__serial.a:uart_esp32.*
+      *libzephyr.a:spi_flash_rom_patch.*
+#ifdef CONFIG_SIMPLE_BOOT
+       *libzephyr.a:clk.*
+       *libzephyr.a:esp_clk.*
+       *libzephyr.a:rtc_clk.*
+       *libzephyr.a:rtc_clk_init.*
+       *libzephyr.a:regi2c_ctrl.*
+       *libzephyr.a:bootloader_init.*
+       *libzephyr.a:bootloader_init_common.*
+       *libzephyr.a:bootloader_clock_init.*
+       *libzephyr.a:bootloader_wdt.*
+       *libzephyr.a:bootloader_mem.*
+#endif /* CONFIG_SIMPLE_BOOT */
+      ) .rodata)
+
+    *(EXCLUDE_FILE (
+      *libarch__xtensa__core.a:*
+      *libkernel.a:fatal.*
+      *libkernel.a:init.*
+      *libzephyr.a:cbprintf_complete*
+      *libzephyr.a:log_core.*
+      *libzephyr.a:log_backend_uart.*
+      *libdrivers__flash.a:esp32_mp.*
+      *libzephyr.a:log_output.*
+      *libzephyr.a:loader.*
+      *libdrivers__flash.a:flash_esp32.*
+      *libdrivers__serial.a:uart_esp32.*
+      *libzephyr.a:spi_flash_rom_patch.*
+#ifdef CONFIG_SIMPLE_BOOT
+       *libzephyr.a:clk.*
+       *libzephyr.a:esp_clk.*
+       *libzephyr.a:rtc_clk.*
+       *libzephyr.a:rtc_clk_init.*
+       *libzephyr.a:regi2c_ctrl.*
+       *libzephyr.a:bootloader_init.*
+       *libzephyr.a:bootloader_init_common.*
+       *libzephyr.a:bootloader_clock_init.*
+       *libzephyr.a:bootloader_wdt.*
+       *libzephyr.a:bootloader_mem.*
+#endif /* CONFIG_SIMPLE_BOOT */
+      ) .rodata.*)
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
@@ -260,8 +318,8 @@ SECTIONS
     *libsubsys__net.a:(.literal .text .literal.* .text.*)
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
-    *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
-    *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
@@ -283,15 +341,59 @@ SECTIONS
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
 
-#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+#ifdef CONFIG_SIMPLE_BOOT
+    *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_flash_config_esp32s2.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_mem.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_init_common.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_random.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
+    *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
+    *libzephyr.a:bootloader_efuse_esp32s2.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_utility.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_panic.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_clock_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:bootloader_wdt.*(.literal .text .literal.* .text.*)
+    
+    *libzephyr.a:esp_image_format.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_encrypt.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_table.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_fields.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_api.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_api_key_esp32xx.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:app_cpu_start.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mpu_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
+
+    *libzephyr.a:rtc_clk.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_time.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:rtc_clk_init.*(.literal .text .literal.* .text.*)
+
+#endif /* CONFIG_SIMPLE_BOOT */
+
+#ifdef CONFIG_ESP32_WIFI_IRAM_OPT
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
-#endif
+#endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
-#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+#ifdef CONFIG_ESP32_WIFI_RX_IRAM_OPT
     *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-#endif
+#endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
     /* align + add 16B for CPU dummy speculative instr. fetch */
     . = ALIGN(4) + 16;
@@ -312,8 +414,8 @@ SECTIONS
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
   {
     . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
     __bss_start = ABSOLUTE(.);
+    _bss_start = ABSOLUTE(.);
 
     *(.dynsbss)
     *(.sbss)
@@ -331,31 +433,33 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
+    _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-#if defined(CONFIG_ESP_SPIRAM)
+#ifdef CONFIG_ESP_SPIRAM
   .ext_ram.bss (NOLOAD):
   {
     _ext_ram_data_start = ABSOLUTE(.);
     _ext_ram_bss_start = ABSOLUTE(.);
 
-#if defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
     *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
     *libsubsys__net__lib__config.a:(.noinit .noinit.*)
     *libsubsys__net__ip.a:(.noinit .noinit.*)
     *libsubsys__net.a:(.noinit .noinit.*)
-#endif
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+
     _spiram_heap_start = ABSOLUTE(.);
     . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
 
     *(.ext_ram.bss*)
     . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.);
 
+    _ext_ram_bss_end = ABSOLUTE(.);
     _ext_ram_data_end = ABSOLUTE(.);
-  } > ext_ram_seg
-#endif
+  } > ext_data_ram_seg
+#endif /* CONFIG_ESP_SPIRAM */
 
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
@@ -369,6 +473,7 @@ SECTIONS
   {
     . = ALIGN (8);
     __data_start = ABSOLUTE(.);
+    _data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -393,6 +498,18 @@ SECTIONS
     *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     *libzephyr.a:spi_flash_rom_patch.*(.rodata  .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
+#ifdef CONFIG_SIMPLE_BOOT
+    *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
+    *libzephyr.a:rtc_clk_init.*(.rodata .rodata.*)
+    *libzephyr.a:esp_clk.*(.rodata .rodata.*)
+    *libzephyr.a:clk.*(.rodata .rodata.*)
+    *libzephyr.a:regi2c_ctrl.*(.rodata .rodata.*)
+    *libzephyr.a:cpu_util.*(.rodata .rodata.*)
+    *libzephyr.a:bootloader_init_common.*(.rodata .rodata.*)
+    *libzephyr.a:bootloader_clock_init.*(.rodata .rodata.*)
+    *libzephyr.a:bootloader_init.*(.rodata .rodata.*)
+    *libzephyr.a:bootloader_wdt.*(.rodata .rodata.*)
+#endif /* CONFIG_SIMPLE_BOOT */
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
@@ -419,6 +536,7 @@ SECTIONS
     . = ALIGN(4);
     _end = ABSOLUTE(.);
     __data_end = ABSOLUTE(.);
+    _data_end = __data_end;
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
   .iram0.text_end (NOLOAD) :
@@ -439,24 +557,28 @@ SECTIONS
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
-    . = ALIGN(8);
+    . = ALIGN(4);
+#ifdef CONFIG_SIMPLE_BOOT
+    FILL(0xff)
+    . += 4K;
+#endif
     _stext = .;
     _text_start = ABSOLUTE(.);
 
-#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+#ifndef CONFIG_ESP32_WIFI_IRAM_OPT
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
-#endif
+#endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
     . = ALIGN(8);
-#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+#ifndef CONFIG_ESP32_WIFI_RX_IRAM_OPT
     *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-#endif
+#endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
-    . = ALIGN(8);
+    . = ALIGN(16);
     *(.literal .text .literal.* .text.*)
-    . = ALIGN(8);
+    . = ALIGN(16);
     _text_end = ABSOLUTE(.);
     _etext = .;
 
@@ -517,7 +639,7 @@ SECTIONS
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
-#endif
+#endif /* CONFIG_GEN_ISR_TABLES */
 
 #include <zephyr/linker/debug-sections.ld>
 
@@ -562,7 +684,7 @@ ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
 
-#if defined(CONFIG_ESP_SPIRAM)
+#ifdef CONFIG_ESP_SPIRAM
 ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif /* CONFIG_ESP_SPIRAM */
