@@ -106,16 +106,6 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 
 
 	max_error = 0;
-	/* Conversion not supported with minimal_libc without
-	 * CBPRINTF_FP_SUPPORT.
-	 *
-	 * Conversion not supported without FPU except on POSIX arch based targets.
-	 */
-	if (!(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_ARCH_POSIX))) {
-		ztest_test_skip();
-		return;
-	}
 
 	/* test the special cases of 0.0, NAN, -NAN, INF, -INF,  and -10.0 */
 	zassert_true(sqrtf(0.0f) == 0.0f, "sqrtf(0.0)");
@@ -175,14 +165,6 @@ int64_t *p_root_squared = (int64_t *)&root_squared;
 
 
 	max_error = 0;
-	/*
-	 * sqrt is not supported without FPU except on POSIX arch based targets.
-	 */
-	if (!(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_ARCH_POSIX))) {
-		ztest_test_skip();
-		return;
-	}
 
 	/* test the special cases of 0.0, NAN, -NAN, INF, -INF,  and -10.0 */
 	zassert_true(sqrt(0.0) == 0.0, "sqrt(0.0)");
