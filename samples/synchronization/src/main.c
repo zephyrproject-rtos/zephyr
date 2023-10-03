@@ -1,4 +1,4 @@
-/* main.c - Hello World demo */
+/* main.c - Synchronization demo */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -10,10 +10,10 @@
 #include <zephyr/sys/printk.h>
 
 /*
- * The hello world demo has two threads that utilize semaphores and sleeping
+ * The synchronization demo has two threads that utilize semaphores and sleeping
  * to take turns printing a greeting message at a controlled rate. The demo
- * shows both the static and dynamic approaches for spawning a thread; a real
- * world application would likely use the static approach for both threads.
+ * shows only the dynamic approach for spawning a thread. Alternatively,
+ * a thread can be declared at compile time by calling K_THREAD_DEFINE.
  */
 
 #define PIN_THREADS (IS_ENABLED(CONFIG_SMP) && IS_ENABLED(CONFIG_SCHED_CPU_MASK))
@@ -34,7 +34,7 @@
  * @param other_sem    other thread's semaphore
  */
 void helloLoop(const char *my_name,
-	       struct k_sem *my_sem, struct k_sem *other_sem)
+		   struct k_sem *my_sem, struct k_sem *other_sem)
 {
 	const char *tname;
 	uint8_t cpu;
@@ -68,13 +68,24 @@ void helloLoop(const char *my_name,
 }
 
 /* define semaphores */
-
 K_SEM_DEFINE(threadA_sem, 1, 1);	/* starts off "available" */
 K_SEM_DEFINE(threadB_sem, 0, 1);	/* starts off "not available" */
 
+/* threadA is a dynamic thread that is spawned in main */
+void threadA(void *dummy1, void *dummy2, void *dummy3)
+{
+	ARG_UNUSED(dummy1);
+	ARG_UNUSED(dummy2);
+	ARG_UNUSED(dummy3);
 
-/* threadB is a dynamic thread that is spawned by threadA */
+	/* invoke routine to ping-pong hello messages with threadB */
+	helloLoop(__func__, &threadA_sem, &threadB_sem);
+}
 
+K_THREAD_STACK_DEFINE(threadB_stack_area, STACKSIZE);
+static struct k_thread threadB_data;
+
+/* threadB is a dynamic thread that is spawned in main */
 void threadB(void *dummy1, void *dummy2, void *dummy3)
 {
 	ARG_UNUSED(dummy1);
@@ -87,21 +98,6 @@ void threadB(void *dummy1, void *dummy2, void *dummy3)
 
 K_THREAD_STACK_DEFINE(threadA_stack_area, STACKSIZE);
 static struct k_thread threadA_data;
-
-K_THREAD_STACK_DEFINE(threadB_stack_area, STACKSIZE);
-static struct k_thread threadB_data;
-
-/* threadA is a static thread that is spawned automatically */
-
-void threadA(void *dummy1, void *dummy2, void *dummy3)
-{
-	ARG_UNUSED(dummy1);
-	ARG_UNUSED(dummy2);
-	ARG_UNUSED(dummy3);
-
-	/* invoke routine to ping-pong hello messages with threadB */
-	helloLoop(__func__, &threadA_sem, &threadB_sem);
-}
 
 int main(void)
 {
