@@ -13,6 +13,24 @@
 	model = "OtterPill";
 	compatible = "otterpill";
 
+	vbus1: fusb302b-vbus {
+		compatible = "fcs,fusb302b-vbus";
+		fusb302b = <&fusb>;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&fusb>;
+			vbus = <&vbus1>;
+			power-role = "sink";
+		};
+	};
+
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
@@ -21,6 +39,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_status: led_status {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "Status LED";
@@ -29,6 +48,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		dfu_button: button {
 			label = "DFU";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -86,14 +106,20 @@ zephyr_udc0: &usb {
 
 &i2c2 {
 	/*
-	 * Board-internal I2C bus, connects to FUSB302B
-	 * (for which there exists no Zephyr driver yet)
+	 * Board-internal I2C bus
 	 */
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
 	/* Timing configuration generated with STM32CubeMX */
 	timings = <DT_FREQ_M(48) I2C_BITRATE_FAST_PLUS 0x20000209>;
 	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
+	status = "okay";
+
+	fusb: fusb302b@22 {
+		compatible = "fcs,fusb302b";
+		status = "okay";
+		reg = <0x22>;
+	};
 };
 
 &spi2 {
