@@ -123,10 +123,12 @@ config INIT_PLL0
 config INIT_PLL1
 	bool "Initialize PLL1"
 	default "y"
-	depends on !SOC_LPC55S06
+	depends on !(SOC_LPC55S06 || FLASH)
 	help
 	  In the LPC55XXX Family, this is currently being used to set the
 	  core clock value at it's highest frequency which clocks at 150MHz.
+	  Note that flash programming operations are limited to 100MHz, and
+	  this PLL should not be used as the core clock in those cases.
 
 config SECOND_CORE_MCUX
 	bool "LPC55xxx's second core"
