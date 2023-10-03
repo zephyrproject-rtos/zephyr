@@ -103,6 +103,10 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 
 	stm32_i2c_disable_transfer_interrupts(dev);
 
+	if (LL_I2C_IsEnabledReloadMode(i2c)) {
+		LL_I2C_DisableReloadMode(i2c);
+	}
+
 #if defined(CONFIG_I2C_TARGET)
 	data->master_active = false;
 	if (!data->slave_attached) {
