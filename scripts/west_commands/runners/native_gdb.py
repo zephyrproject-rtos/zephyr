@@ -36,11 +36,11 @@ class NativeGDBBinaryRunner(ZephyrBinaryRunner):
         if self.cfg.gdb is None:
             raise ValueError("The provided RunnerConfig is missing the required field 'gdb'.")
 
-        if self.cfg.elf_file is None:
-            raise ValueError("The provided RunnerConfig is missing the required field 'elf_file'.")
+        if self.cfg.exe_file is None:
+            raise ValueError("The provided RunnerConfig is missing the required field 'exe_file'.")
 
         self.call([
             self.cfg.gdb,
             '--quiet',
-            self.cfg.elf_file,
+            self.cfg.exe_file,
         ])
