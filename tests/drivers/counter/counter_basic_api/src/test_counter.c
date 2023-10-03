@@ -310,6 +310,7 @@ ZTEST_USER(counter_no_callback, test_set_top_value_without_alarm)
 			   set_top_value_capable);
 }
 
+static volatile uint32_t last_alarm_handler;
 static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			  uint32_t counter,
 			  void *user_data)
@@ -327,6 +328,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
 		     dev->name, err);
 
+	last_alarm_handler = now;
 	top = counter_get_top_value(dev);
 	if (counter_is_counting_up(dev)) {
 		diff =  (now < counter) ?
@@ -921,9 +923,19 @@ static void test_cancelled_alarm_does_not_expire_instance(const struct device *d
 
 		cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
 			alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
-		zassert_equal(0, cnt,
+		/* For slower processors it may happen that alarm expires before
+		 * it is canceled. That is accepted scenario and it is detected
+		 * by checking that timestamp in the last alarm handler was for
+		 * the current alarm.
+		 */
+		zassert_true((cnt == 0) || (last_alarm_handler >= alarm_cfg.ticks),
 				"%s: Expected %d callbacks, got %d (i:%d)\n",
 				dev->name, 0, cnt, i);
+		if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+			alarm_cnt = 0;
+		} else {
+			k_sem_reset(&alarm_cnt_sem);
+		}
 	}
 }
 
