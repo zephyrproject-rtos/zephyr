@@ -14,6 +14,12 @@ config GNSS_SATELLITES
 	help
 	  Enable GNSS sattelites callback.
 
+config GNSS_DUMP
+	bool "GNSS dump support"
+	depends on LOG
+	help
+	  Enable GNSS dump library
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"
