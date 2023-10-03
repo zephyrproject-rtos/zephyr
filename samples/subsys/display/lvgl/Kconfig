@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LV_USE_ARC
+	bool
+	default y if LV_Z_ENCODER_INPUT
+
+config LV_USE_BTN
+	bool
+	default y if (LV_Z_POINTER_KSCAN || LV_Z_POINTER_INPUT)
+
+source "Kconfig.zephyr"
