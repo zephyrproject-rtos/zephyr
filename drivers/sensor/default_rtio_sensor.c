@@ -12,6 +12,12 @@
 
 LOG_MODULE_REGISTER(sensor_compat, CONFIG_SENSOR_LOG_LEVEL);
 
+/*
+ * Ensure that the size of the generic header aligns with the sensor channel enum. If it doesn't,
+ * then cores that require aligned memory access will fail to read channel[0].
+ */
+BUILD_ASSERT((sizeof(struct sensor_data_generic_header) % sizeof(enum sensor_channel)) == 0);
+
 static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
 static void sensor_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
@@ -50,6 +56,21 @@ static inline int compute_num_samples(const enum sensor_channel *channels, size_
 }
 
 /**
+ * @brief Compute the required header size
+ *
+ * This function takes into account alignment of the q31 values that will follow the header.
+ *
+ * @param[in] num_output_samples The number of samples to represent
+ * @return The number of bytes needed for this sample frame's header
+ */
+static inline uint32_t compute_header_size(int num_output_samples)
+{
+	uint32_t size = sizeof(struct sensor_data_generic_header) +
+			(num_output_samples * sizeof(enum sensor_channel));
+	return (size + 3) & ~0x3;
+}
+
+/**
  * @brief Compute the minimum number of bytes needed
  *
  * @param[in] num_output_samples The number of samples to represent
@@ -57,8 +78,7 @@ static inline int compute_num_samples(const enum sensor_channel *channels, size_
  */
 static inline uint32_t compute_min_buf_len(int num_output_samples)
 {
-	return sizeof(struct sensor_data_generic_header) + (num_output_samples * sizeof(q31_t)) +
-	       (num_output_samples * sizeof(enum sensor_channel));
+	return compute_header_size(num_output_samples) + (num_output_samples * sizeof(q31_t));
 }
 
 /**
@@ -121,8 +141,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 	header->num_channels = num_output_samples;
 	header->shift = 0;
 
-	q31_t *q = (q31_t *)(buf + sizeof(struct sensor_data_generic_header) +
-			     num_output_samples * sizeof(enum sensor_channel));
+	q31_t *q = (q31_t *)(buf + compute_header_size(num_output_samples));
 
 	/* Populate values, update shift, and set channels */
 	for (size_t i = 0, sample_idx = 0; i < cfg->count; ++i) {
