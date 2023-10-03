@@ -215,9 +215,6 @@ static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
  */
 void z_page_frames_dump(void);
 
-/* Number of free page frames. This information may go stale immediately */
-extern size_t z_free_page_count;
-
 /* Convenience macro for iterating over all page frames */
 #define Z_PAGE_FRAME_FOREACH(_phys, _pageframe) \
 	for (_phys = Z_PHYS_RAM_START, _pageframe = z_page_frames; \
