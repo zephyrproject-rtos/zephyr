@@ -97,8 +97,23 @@ extern "C" {
  * @{
  */
 
-#define IEEE802154_MAX_PHY_PACKET_SIZE	127 /**< see section 11.3, aMaxPhyPacketSize */
-#define IEEE802154_FCS_LENGTH		2   /**< see section 7.2.1.1 */
+/**
+ * @brief Represents the PHY constant aMaxPhyPacketSize, see section 11.3.
+ *
+ * @note Currently only 127 byte sized packets are supported although some PHYs
+ * (e.g. SUN, MSK, LECIM, ...) support larger packet sizes. Needs to be changed
+ * once those PHYs should be fully supported.
+ */
+#define IEEE802154_MAX_PHY_PACKET_SIZE	127
+
+/**
+ * @brief Represents the frame check sequence length, see section 7.2.1.1.
+ *
+ * @note Currently only a 2 byte FCS is supported although some PHYs (e.g. SUN,
+ * TVWS, ...) optionally support a 4 byte FCS. Needs to be changed once those
+ * PHYs should be fully supported.
+ */
+#define IEEE802154_FCS_LENGTH		2
 
 /**
  * @brief IEEE 802.15.4 "hardware" MTU (not to be confused with L3/IP MTU), i.e.
@@ -110,9 +125,9 @@ extern "C" {
  * concept in Linux and Zephyr's L3. It is not a concept from the IEEE 802.15.4
  * standard.
  *
- * @note Currently we only support the original frame size from the 2006
- * standard version and earlier. The 2015+ standard introduced PHYs with larger
- * PHY payload. These are not (yet) supported in Zephyr.
+ * @note Currently only the original frame size from the 2006 standard version
+ * and earlier is supported. The 2015+ standard introduced PHYs with larger PHY
+ * payload. These are not (yet) supported in Zephyr.
  */
 #define IEEE802154_MTU			(IEEE802154_MAX_PHY_PACKET_SIZE - IEEE802154_FCS_LENGTH)
 
@@ -134,23 +149,42 @@ extern "C" {
 #define IEEE802154_NO_CHANNEL		USHRT_MAX
 
 /**
- * @{
- * See sections 6.1 and 7.3.5
+ * Represents the IEEE 802.15.4 broadcast short address, see sections 6.1 and
+ * 8.4.3, table 8-94, macShortAddress.
  */
 #define IEEE802154_BROADCAST_ADDRESS	     0xffff
-#define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xfffe
-/** @} */
 
-/* See section 6.1 */
+/**
+ * Represents a special IEEE 802.15.4 short address that indicates that a device
+ * has been associated with a coordinator but did not receive a short address,
+ * see sections 6.4.1 and 8.4.3, table 8-94, macShortAddress.
+ */
+#define IEEE802154_NO_SHORT_ADDRESS_ASSIGNED 0xfffe
+
+/** Represents the IEEE 802.15.4 broadcast PAN ID, see section 6.1. */
 #define IEEE802154_BROADCAST_PAN_ID 0xffff
 
-/* See section 7.3.5 */
+/**
+ * Represents a special value of the macShortAddress MAC PIB attribute, while the
+ * device is not associated, see section 8.4.3, table 8-94.
+ */
 #define IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED IEEE802154_BROADCAST_ADDRESS
+
+/**
+ * Represents a special value of the macPanId MAC PIB attribute, while the
+ * device is not associated, see section 8.4.3, table 8-94.
+ */
 #define IEEE802154_PAN_ID_NOT_ASSOCIATED	IEEE802154_BROADCAST_PAN_ID
 
-/** interface-level security attributes, see section 9.5. */
+/** Interface-level security attributes, see section 9.5. */
 struct ieee802154_security_ctx {
-	/** section 9.5, secFrameCounter */
+	/**
+	 * Interface-level outgoing frame counter, section 9.5, table 9-8,
+	 * secFrameCounter.
+	 *
+	 * Only used when the driver does not implement key-specific frame
+	 * counters.
+	 */
 	uint32_t frame_counter;
 
 	/** @cond INTERNAL_HIDDEN */
@@ -159,41 +193,40 @@ struct ieee802154_security_ctx {
 	/** INTERNAL_HIDDEN @endcond */
 
 	/**
-	 * @brief frame-level security key material
+	 * @brief Interface-level frame encryption security key material
 	 *
 	 * @details Currently native L2 only supports a single secKeySource, see
 	 * section 9.5, table 9-9, in combination with secKeyMode zero (implicit
 	 * key mode), see section 9.4.2.3, table 9-7.
 	 *
-	 * @warning This is no longer in accordance with the current version of
+	 * @warning This is no longer in accordance with the 2015+ versions of
 	 * the standard and needs to be extended in the future for full security
 	 * procedure compliance.
 	 */
 	uint8_t key[16];
 
-	/** frame-level security key material */
+	/** Length in bytes of the interface-level security key material. */
 	uint8_t key_len;
 
 	/**
-	 * @brief security level
+	 * @brief Frame security level, possible values are defined in section
+	 * 9.4.2.2, table 9-6.
 	 *
-	 * @details Currently native L2 supports a single security level for all
-	 * frame types, commands and information elements, see section 9.4.2.2,
-	 * table 9-6 and ieee802154_security_level.
-	 *
-	 * @warning This is no longer in accordance with the current version of
-	 * the standard and needs to be extended in the future for full security
-	 * procedure compliance.
+	 * @warning Currently native L2 allows to configure one common security
+	 * level for all frame types, commands and information elements. This is
+	 * no longer in accordance with the 2015+ versions of the standard and
+	 * needs to be extended in the future for full security procedure
+	 * compliance.
 	 */
 	uint8_t level	: 3;
 
 	/**
-	 * @brief key_mode
+	 * @brief Frame security key mode
 	 *
 	 * @details Currently only implicit key mode is partially supported, see
 	 * section 9.4.2.3, table 9-7, secKeyMode.
 	 *
-	 * @warning This is no longer in accordance with the current version of
+	 * @warning This is no longer in accordance with the 2015+ versions of
 	 * the standard and needs to be extended in the future for full security
 	 * procedure compliance.
 	 */
@@ -305,14 +338,14 @@ struct ieee802154_context {
 	uint16_t coord_short_addr;
 #endif
 
-	/** transmission power */
+	/** Transmission power in dBm. */
 	int16_t tx_power;
 
 	/** L2 flags */
 	enum net_l2_flags flags;
 
 	/**
-	 * @brief DSN
+	 * @brief Data sequence number
 	 *
 	 * @details The sequence number added to the transmitted Data frame or
 	 * MAC command, see section 8.4.3.1, table 8-94, macDsn.
@@ -322,8 +355,10 @@ struct ieee802154_context {
 	/**
 	 * @brief Device Role
 	 *
-	 * @details See section 6.1: A device may be operating as end device (0
-	 * - default), coordinator (1), or PAN coordinator (2).
+	 * @details See section 6.1: A device may be operating as end device
+	 * (0), coordinator (1), or PAN coordinator (2). If no device role is
+	 * explicitly configured then the device will be treated as an end
+	 * device.
 	 *
 	 * A value of 3 is undefined.
 	 *
@@ -349,8 +384,8 @@ struct ieee802154_context {
 	/**
 	 * @brief Context lock
 	 *
-	 * @details guards all mutable context attributes unless otherwise
-	 * mentioned on attribute level
+	 * @details This lock guards all mutable context attributes unless
+	 * otherwise mentioned on attribute level.
 	 */
 	struct k_sem ctx_lock;
 };

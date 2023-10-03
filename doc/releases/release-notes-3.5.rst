@@ -9,6 +9,8 @@ We are pleased to announce the release of Zephyr version 3.5.0.
 
 Major enhancements with this release include:
 
+* Added native_sim (successor to native_posix)
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
@@ -44,6 +46,16 @@ Architectures
 * RISC-V
 
 * Xtensa
+
+* POSIX
+
+  * Has been reworked to use the native simulator.
+  * New boards have been added.
+  * For the new boards, embedded C libraries can be used, and conflicts with the host symbols
+    and libraries avoided.
+  * The :ref:`POSIX OS abstraction<posix_support>` is supported in these new boards.
+  * AMP targets are now supported.
+  * Added support for LLVM source profiling/coverage.
 
 Bluetooth
 *********
@@ -91,6 +103,12 @@ Boards & SoC Support
 
 * Added support for these Xtensa boards:
 
+* Added support for these POSIX boards:
+
+  * :ref:`native_sim(_64) <native_sim>`
+  * nrf5340bsim_nrf5340_cpu(net|app). A simulated nrf5340 SOC, which uses Babblesim for its radio
+    traffic.
+
 * Made these changes for ARC boards:
 
 * Made these changes for ARM boards:
@@ -102,6 +120,13 @@ Boards & SoC Support
 * Made these changes for X86 boards:
 
 * Made these changes for Xtensa boards:
+
+* Made these changes for POSIX boards:
+
+  * nrf52_bsim:
+
+    * Has been reworked to use the native simulator as its runner.
+    * Multiple HW models improvements and fixes. GPIO & GPIOTE peripherals added.
 
 * Removed support for these ARC boards:
 

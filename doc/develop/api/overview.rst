@@ -53,7 +53,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.10
 
-   * - ``conn_mgr``
+   * - :ref:`conn_mgr_docs`
      - Experimental
      - 3.4.0
 

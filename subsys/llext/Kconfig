@@ -20,6 +20,13 @@ config LLEXT_SHELL
 	help
 	  Manage llext with shell commands for loading, unloading, and introspection
 
+config LLEXT_SHELL_MAX_SIZE
+	int "Maximum size of llext in bytes"
+	depends on LLEXT_SHELL
+	default 8192
+	help
+	  When loading llext with shell it is stored in a temporary buffer of this size
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

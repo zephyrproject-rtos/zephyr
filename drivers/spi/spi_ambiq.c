@@ -46,10 +46,16 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_ambiq_data *data = dev->data;
 	const struct spi_ambiq_config *cfg = dev->config;
+	struct spi_context *ctx = &(data->ctx);
 
 	data->iom_cfg.eInterfaceMode = AM_HAL_IOM_SPI_MODE;
 
 	int ret = 0;
+
+	if (spi_context_configured(ctx, config)) {
+		/* Already configured. No need to do it again. */
+		return 0;
+	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -76,12 +82,14 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		if (config->operation & (SPI_MODE_CPOL && SPI_MODE_CPHA)) {
+	if (config->operation & SPI_MODE_CPOL) {
+		if (config->operation & SPI_MODE_CPHA) {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_3;
-		} else if (config->operation & SPI_MODE_CPOL) {
+		} else {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_2;
-		} else if (config->operation & SPI_MODE_CPHA) {
+		}
+	} else {
+		if (config->operation & SPI_MODE_CPHA) {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_1;
 		} else {
 			data->iom_cfg.eSpiMode = AM_HAL_IOM_SPI_MODE_0;
@@ -103,6 +111,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	data->iom_cfg.ui32ClockFreq = cfg->clock_freq;
+	ctx->config = config;
 
 	/* Disable IOM instance as it cannot be configured when enabled*/
 	ret = am_hal_iom_disable(data->IOMHandle);
@@ -121,33 +130,51 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 	int ret = 0;
 
 	am_hal_iom_transfer_t trans = {0};
-	uint8_t *buf3;
 
-	trans.eDirection = AM_HAL_IOM_FULLDUPLEX;
-
-	uint16_t cmd = *ctx->tx_buf;
-
-	trans.ui32InstrLen = ctx->tx_len;
-	spi_context_update_tx(ctx, 1, 1);
-	cmd = __bswap_16(cmd | *ctx->tx_buf << 8);
-	trans.ui64Instr = cmd;
-
-	if (ctx->rx_buf != NULL) {
-		trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-		spi_context_update_rx(ctx, 1, ctx->rx_len);
-		buf3 = (uint8_t *)malloc(sizeof(uint8_t) * ctx->rx_len);
-		trans.ui32NumBytes = ctx->rx_len;
-		trans.pui32RxBuffer = (uint32_t *)&buf3;
-		ret = am_hal_iom_spi_blocking_fullduplex(data->IOMHandle, &trans);
-
-		memcpy(ctx->rx_buf, &buf3, (ctx->rx_len * sizeof(uint8_t)));
-
-	} else if (ctx->tx_buf != NULL) {
+	if (ctx->tx_len) {
+		trans.ui64Instr = *ctx->tx_buf;
+		trans.ui32InstrLen = 1;
 		spi_context_update_tx(ctx, 1, 1);
-		trans.ui32NumBytes = ctx->tx_len;
-		trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-		trans.pui32RxBuffer = (uint32_t *)ctx->tx_buf;
-		ret = am_hal_iom_spi_blocking_fullduplex(data->IOMHandle, &trans);
+
+		if (ctx->rx_buf != NULL) {
+			if (ctx->tx_len > 0) {
+				/* The instruction length can only be 0~5. */
+				if (ctx->tx_len > 4) {
+					spi_context_complete(ctx, dev, 0);
+					return -ENOTSUP;
+				}
+
+				/* Put the remaining TX data in instruction. */
+				trans.ui32InstrLen += ctx->tx_len;
+				for (int i = 0; i < trans.ui32InstrLen - 1; i++) {
+					trans.ui64Instr = (trans.ui64Instr << 8) | (*ctx->tx_buf);
+					spi_context_update_tx(ctx, 1, 1);
+				}
+			}
+
+			/* Set RX direction and hold CS to continue to receive data. */
+			trans.eDirection = AM_HAL_IOM_RX;
+			trans.bContinue = true;
+			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
+			trans.ui32NumBytes = ctx->rx_len;
+			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
+		} else if (ctx->tx_buf != NULL) {
+			/* Set TX direction to send data and release CS after transmission. */
+			trans.eDirection = AM_HAL_IOM_TX;
+			trans.bContinue = false;
+			trans.ui32NumBytes = ctx->tx_len;
+			trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
+			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
+		}
+	} else {
+		/* Set RX direction to receive data and release CS after transmission. */
+		trans.ui64Instr = 0;
+		trans.ui32InstrLen = 0;
+		trans.eDirection = AM_HAL_IOM_RX;
+		trans.bContinue = false;
+		trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
+		trans.ui32NumBytes = ctx->rx_len;
+		ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
 	}
 
 	spi_context_complete(ctx, dev, 0);

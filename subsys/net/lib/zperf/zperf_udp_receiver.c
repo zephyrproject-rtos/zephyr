@@ -257,7 +257,7 @@ static void udp_server_session(void)
 		if (!net_ipv4_is_addr_unspecified(in4_addr)) {
 			memcpy(&in4_addr_my->sin_addr, in4_addr,
 				sizeof(struct in_addr));
-		} else if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+		} else if (strlen(MY_IP4ADDR ? MY_IP4ADDR : "")) {
 			/* Use setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
 						  &in4_addr_my->sin_addr);
@@ -312,7 +312,7 @@ static void udp_server_session(void)
 		if (!net_ipv6_is_addr_unspecified(in6_addr)) {
 			memcpy(&in6_addr_my->sin6_addr, in6_addr,
 				sizeof(struct in6_addr));
-		} else if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+		} else if (strlen(MY_IP6ADDR ? MY_IP6ADDR : "")) {
 			/* Use setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,

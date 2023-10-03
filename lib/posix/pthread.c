@@ -646,9 +646,8 @@ void pthread_exit(void *retval)
  */
 int pthread_join(pthread_t pthread, void **status)
 {
-	int err;
-	int ret;
 	struct posix_thread *t;
+	int ret;
 
 	if (pthread == pthread_self()) {
 		LOG_ERR("Pthread attempted to join itself (%x)", pthread);
@@ -668,14 +667,12 @@ int pthread_join(pthread_t pthread, void **status)
 		if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
 			ret = EINVAL;
 			K_SPINLOCK_BREAK;
-			LOG_ERR("Pthread %p is not a joinable", &t->thread);
 		}
 
 		if (t->qid == POSIX_THREAD_READY_Q) {
 			/* in case thread has moved to ready_q between to_posix_thread() and here */
 			ret = ESRCH;
 			K_SPINLOCK_BREAK;
-			LOG_ERR("Pthread %p has already been joined", &t->thread);
 		}
 
 		/*
@@ -685,13 +682,20 @@ int pthread_join(pthread_t pthread, void **status)
 		t->detachstate = PTHREAD_CREATE_DETACHED;
 	}
 
-	if (ret != 0) {
+	switch (ret) {
+	case ESRCH:
+		LOG_ERR("Pthread %p has already been joined", &t->thread);
 		return ret;
+	case EINVAL:
+		LOG_ERR("Pthread %p is not a joinable", &t->thread);
+		return ret;
+	case 0:
+		break;
 	}
 
-	err = k_thread_join(&t->thread, K_FOREVER);
+	ret = k_thread_join(&t->thread, K_FOREVER);
 	/* other possibilities? */
-	__ASSERT_NO_MSG(err == 0);
+	__ASSERT_NO_MSG(ret == 0);
 
 	LOG_DBG("Joined pthread %p", &t->thread);
 
