@@ -227,6 +227,11 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         else:
             self.logger.info('Recovering and erasing all flash memory.')
 
+        # The network core needs to be recovered first due to the fact that
+        # recovering it erases the flash of *both* cores. Since a recover
+        # operation unlocks the core and then flashes a small image that keeps
+        # the debug access port open, recovering the network core last would
+        # result in that small image being deleted from the app core.
         if self.family == 'NRF53_FAMILY':
             self.exec_op('recover', core='NRFDL_DEVICE_CORE_NETWORK')
 
