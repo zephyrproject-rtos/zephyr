@@ -283,6 +283,7 @@ class RunnerConfig(NamedTuple):
     build_dir: str                  # application build directory
     board_dir: str                  # board definition directory
     elf_file: Optional[str]         # zephyr.elf path, or None
+    exe_file: Optional[str]         # zephyr.exe path, or None
     hex_file: Optional[str]         # zephyr.hex path, or None
     bin_file: Optional[str]         # zephyr.bin path, or None
     uf2_file: Optional[str]         # zephyr.uf2 path, or None
