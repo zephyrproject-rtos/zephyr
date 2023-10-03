@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+#include <freq.h>
+
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
@@ -19,9 +22,10 @@
 		};
 	};
 
+	interrupt-parent = <&gic>;
+
 	timer {
 		compatible = "arm,armv8-timer";
-		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 14 IRQ_TYPE_LEVEL
@@ -51,10 +55,9 @@
 		uart1: uart@fe215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0xfe215040 0x40>;
-			clock-frequency = <500000000>;
-			interrupt-parent = <&gic>;
+			clock-frequency = <DT_FREQ_M(500)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 	};
