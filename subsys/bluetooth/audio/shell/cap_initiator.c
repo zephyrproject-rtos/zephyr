@@ -573,10 +573,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_cnt++;
 
 			if (param->conn_cnt > 1) {
-				const int err =
-					codec_set_chan_alloc(stream_param->codec_cfg, BIT(i));
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
+					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
-				if (err != 0) {
+				if (err < 0) {
 					shell_error(ctx_shell,
 						    "Failed to set channel allocation for "
 						    "snk[%zu][%zu]: %d",
@@ -600,10 +600,10 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 			stream_cnt++;
 
 			if (param->conn_cnt > 1) {
-				const int err =
-					codec_set_chan_alloc(stream_param->codec_cfg, BIT(i));
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
+					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
-				if (err != 0) {
+				if (err < 0) {
 					shell_error(ctx_shell,
 						    "Failed to set channel allocation for "
 						    "src[%zu][%zu]: %d",
