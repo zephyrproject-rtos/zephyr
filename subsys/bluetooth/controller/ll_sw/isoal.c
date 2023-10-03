@@ -226,8 +226,17 @@ static isoal_status_t isoal_sink_allocate(isoal_sink_handle_t *hdl)
  */
 static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 {
-	isoal_global.sink_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
-	(void)memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
+	if (hdl < ARRAY_SIZE(isoal_global.sink_allocated)) {
+		isoal_global.sink_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	} else {
+		LL_ASSERT(0);
+	}
+
+	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
+		(void)memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
+	} else {
+		LL_ASSERT(0);
+	}
 }
 
 /**
@@ -365,12 +374,16 @@ isoal_status_t isoal_sink_create(
  */
 void isoal_sink_enable(isoal_sink_handle_t hdl)
 {
-	/* Reset bookkeeping state */
-	memset(&isoal_global.sink_state[hdl].sdu_production, 0,
-	       sizeof(isoal_global.sink_state[hdl].sdu_production));
+	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
+		/* Reset bookkeeping state */
+		memset(&isoal_global.sink_state[hdl].sdu_production, 0,
+		       sizeof(isoal_global.sink_state[hdl].sdu_production));
 
-	/* Atomically enable */
-	isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+		/* Atomically enable */
+		isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+	} else {
+		LL_ASSERT(0);
+	}
 }
 
 /**
@@ -379,8 +392,12 @@ void isoal_sink_enable(isoal_sink_handle_t hdl)
  */
 void isoal_sink_disable(isoal_sink_handle_t hdl)
 {
-	/* Atomically disable */
-	isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
+		/* Atomically disable */
+		isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+	} else {
+		LL_ASSERT(0);
+	}
 }
 
 /**
@@ -1442,7 +1459,13 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
 	struct isoal_pdu_production *pp;
 	struct isoal_source *source;
 
-	source = &isoal_global.source_state[hdl];
+	if (hdl < ARRAY_SIZE(isoal_global.source_state)) {
+		source = &isoal_global.source_state[hdl];
+	} else {
+		LL_ASSERT(0);
+		return;
+	}
+
 	pp = &source->pdu_production;
 
 	if (pp->pdu_available > 0) {
@@ -1454,8 +1477,13 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
 		}
 	}
 
-	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
-	(void)memset(&isoal_global.source_state[hdl], 0, sizeof(struct isoal_source));
+	if (hdl < ARRAY_SIZE(isoal_global.source_allocated)) {
+		isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+	} else {
+		LL_ASSERT(0);
+	}
+
+	(void)memset(source, 0, sizeof(struct isoal_source));
 }
 
 /**
@@ -1465,8 +1493,8 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
  */
 static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
 {
-	if (hdl < CONFIG_BT_CTLR_ISOAL_SOURCES &&
-		isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN) {
+	if (hdl < ARRAY_SIZE(isoal_global.source_allocated) &&
+	    isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN) {
 		return ISOAL_STATUS_OK;
 	}
 
@@ -1560,12 +1588,16 @@ isoal_status_t isoal_source_create(
  */
 void isoal_source_enable(isoal_source_handle_t hdl)
 {
-	/* Reset bookkeeping state */
-	memset(&isoal_global.source_state[hdl].pdu_production, 0,
-	       sizeof(isoal_global.source_state[hdl].pdu_production));
+	if (hdl < ARRAY_SIZE(isoal_global.source_state)) {
+		/* Reset bookkeeping state */
+		memset(&isoal_global.source_state[hdl].pdu_production, 0,
+		       sizeof(isoal_global.source_state[hdl].pdu_production));
 
-	/* Atomically enable */
-	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+		/* Atomically enable */
+		isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+	} else {
+		LL_ASSERT(0);
+	}
 }
 
 /**
@@ -1574,8 +1606,12 @@ void isoal_source_enable(isoal_source_handle_t hdl)
  */
 void isoal_source_disable(isoal_source_handle_t hdl)
 {
-	/* Atomically disable */
-	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+	if (hdl < ARRAY_SIZE(isoal_global.source_state)) {
+		/* Atomically disable */
+		isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+	} else {
+		LL_ASSERT(0);
+	}
 }
 
 /**
