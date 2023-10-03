@@ -104,6 +104,7 @@ static int mpu6050_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		mpu6050_convert_temp(val, drv_data->temp);
+		break;
 	default:
 		return -ENOTSUP;
 	}
