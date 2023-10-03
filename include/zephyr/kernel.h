@@ -707,8 +707,8 @@ struct _static_thread_data {
 	.init_p3 = (void *)p3,                                   \
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
-	.init_delay = SYS_TIMEOUT_MS(delay),			 \
 	.init_name = STRINGIFY(tname),                           \
+	.init_delay = SYS_TIMEOUT_MS(delay),			 \
 	}
 
 /*
