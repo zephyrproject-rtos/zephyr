@@ -43,7 +43,6 @@ LOG_MODULE_REGISTER(usb_dc_it82xx2, CONFIG_USB_DRIVER_LOG_LEVEL);
 #define RX_LINE_RESET			0x00
 
 /* EPN Extend Control 2 Register Mask Definition */
-#define READY_BITS			0x0F
 #define COMPLETED_TRANS			0xF0
 
 /* Bit [1:0] represents the TRANSACTION_TYPE as follows: */
@@ -302,35 +301,40 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 	IRQ_CONNECT(IT8XXX2_WU90_IRQ, 0, it82xx2_wu90_isr, 0, 0);
 }
 
-/* Function it82xx2_get_ep_fifo_ctrl_reg_idx(uint8_t ep_idx):
- *
- * Calculate the register offset index which determines the corresponding
- * EP FIFO Ctrl Registers which is defined as ep_fifo_ctrl[reg_idx] here
- *
- * The ep_fifo_res[ep_idx % FIFO_NUM] represents the EP mapping because when
- * (ep_idx % FIFO_NUM) is 3, it actually means the EP0.
- */
-static uint8_t it82xx2_get_ep_fifo_ctrl_reg_idx(uint8_t ep_idx)
+static int it82xx2_usb_fifo_ctrl(uint8_t ep)
 {
+	struct usb_it82xx2_regs *const usb_regs = (struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
+	volatile uint8_t *ep_fifo_ctrl = usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint8_t fifon_ctrl = (ep_fifo_res[ep_idx % FIFO_NUM] - 1) * 2;
+	int ret = 0;
 
-	uint8_t reg_idx = (ep_idx < EP8) ?
-		((ep_fifo_res[ep_idx % FIFO_NUM] - 1) * 2) :
-		((ep_fifo_res[ep_idx % FIFO_NUM] - 1) * 2 + 1);
+	if (ep_idx == 0) {
+		LOG_ERR("Invalid endpoint 0x%x", ep);
+		return -EINVAL;
+	}
 
-	return reg_idx;
-}
+	if (USB_EP_DIR_IS_IN(ep) && udata0.ep_data[ep_idx].ep_status == EP_CONFIG_IN) {
+		if (ep_idx < 8) {
+			ep_fifo_ctrl[fifon_ctrl] = BIT(ep_idx);
+			ep_fifo_ctrl[fifon_ctrl + 1] = 0x0;
+		} else {
+			ep_fifo_ctrl[fifon_ctrl] = 0x0;
+			ep_fifo_ctrl[fifon_ctrl + 1] = BIT(ep_idx - 8);
+		}
+	} else if (USB_EP_DIR_IS_OUT(ep) &&
+		   udata0.ep_data[ep_idx].ep_status == EP_CONFIG_OUT) {
+		if (ep_idx < 8) {
+			ep_fifo_ctrl[fifon_ctrl] |= BIT(ep_idx);
+		} else {
+			ep_fifo_ctrl[fifon_ctrl + 1] |= BIT(ep_idx - 8);
+		}
+	} else {
+		LOG_ERR("Failed to set fifo control register for ep 0x%x", ep);
+		ret = -EINVAL;
+	}
 
-/* Function it82xx2_get_ep_fifo_ctrl_reg_val(uint8_t ep_idx):
- *
- * Calculate the register value written to the ep_fifo_ctrl which is defined as
- * ep_fifo_ctrl[reg_idx] here for selecting the corresponding control bit.
- */
-static uint8_t it82xx2_get_ep_fifo_ctrl_reg_val(uint8_t ep_idx)
-{
-	uint8_t reg_val = (ep_idx < EP8) ?
-		(1 << ep_idx) : (1 << (ep_idx - EP8));
-
-	return reg_val;
+	return ret;
 }
 
 /*
@@ -687,31 +691,28 @@ static void it82xx2_ep_in_out_config(uint8_t idx)
 	struct epn_ext_ctrl_regs *epn_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl;
 
-	uint8_t ep_trans = (epn_ext_ctrl[idx].epn_ext_ctrl2 >> 4) & READY_BITS;
+	uint8_t ep_idx = (epn_ext_ctrl[idx].epn_ext_ctrl2 & COMPLETED_TRANS) >> 4;
 
-	if (udata0.ep_data[ep_trans].ep_status == EP_CONFIG_IN) {
-		if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_trans)) {
+	if (udata0.ep_data[ep_idx].ep_status == EP_CONFIG_IN) {
+		if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 			if (!!(ep_regs[idx].ep_ctrl & EP_OUTDATA_SEQ)) {
 				ep_regs[idx].ep_ctrl &= ~EP_OUTDATA_SEQ;
 			} else {
 				ep_regs[idx].ep_ctrl |= EP_OUTDATA_SEQ;
 			}
 		} else {
-			it82xx2_usb_extend_ep_ctrl(ep_trans,
-				EXT_EP_DATA_SEQ_INV);
+			it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_DATA_SEQ_INV);
 		}
 
-		if (udata0.ep_data[ep_trans].cb_in) {
-			udata0.ep_data[ep_trans].cb_in(ep_trans | USB_EP_DIR_IN,
-				USB_DC_EP_DATA_IN);
+		if (udata0.ep_data[ep_idx].cb_in) {
+			udata0.ep_data[ep_idx].cb_in(ep_idx | USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
 		}
 
 		k_sem_give(&udata0.ep_sem[idx - 1]);
 
 	} else {
-		if (udata0.ep_data[ep_trans].cb_out) {
-			udata0.ep_data[ep_trans].cb_out(ep_trans,
-				USB_DC_EP_DATA_OUT);
+		if (udata0.ep_data[ep_idx].cb_out) {
+			udata0.ep_data[ep_idx].cb_out(ep_idx, USB_DC_EP_DATA_OUT);
 		}
 	}
 }
@@ -1012,12 +1013,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
-	volatile uint8_t *ep_fifo_ctrl =
-		usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
-	uint8_t reg_idx = it82xx2_get_ep_fifo_ctrl_reg_idx(ep_idx);
-	uint8_t reg_val = it82xx2_get_ep_fifo_ctrl_reg_val(ep_idx);
 	bool in = USB_EP_DIR_IS_IN(cfg->ep_addr);
 
 	if (!udata0.attached || ep_idx >= MAX_NUM_ENDPOINTS) {
@@ -1059,7 +1056,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	(in) ? (udata0.ep_data[ep_idx].ep_status = EP_CONFIG_IN) :
 		(udata0.ep_data[ep_idx].ep_status = EP_CONFIG_OUT);
 
-	ep_fifo_ctrl[reg_idx] |= reg_val;
+	if (!in) {
+		it82xx2_usb_fifo_ctrl(cfg->ep_addr);
+	}
 
 	switch (cfg->ep_type) {
 
@@ -1265,19 +1264,16 @@ int usb_dc_ep_flush(uint8_t ep)
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
 		return -EINVAL;
 	}
 
-	if (ep_idx > FIFO_NUM) {
-		ep_idx = ep_fifo_res[ep_idx % FIFO_NUM];
-	}
-
 	if (USB_EP_DIR_IS_IN(ep)) {
-		ff_regs[ep_idx].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
+		ff_regs[ep_fifo].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
 	} else {
-		ff_regs[ep_idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
+		ff_regs[ep_fifo].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 	}
 
 	return 0;
@@ -1290,14 +1286,9 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
-	volatile uint8_t *ep_fifo_ctrl =
-		usb_regs->fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
-	uint8_t reg_idx = it82xx2_get_ep_fifo_ctrl_reg_idx(ep_idx);
-	uint8_t reg_val = it82xx2_get_ep_fifo_ctrl_reg_val(ep_idx);
-	uint8_t ep_fifo = (ep_idx > EP0) ?
-		(ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
+	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 	uint32_t idx;
 
 	/* status IN */
@@ -1321,11 +1312,8 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 
 	/* select FIFO */
 	if (ep_idx > EP0) {
-
 		k_sem_take(&udata0.ep_sem[ep_fifo-1], K_FOREVER);
-
-		/* select FIFO */
-		ep_fifo_ctrl[reg_idx] |= reg_val;
+		it82xx2_usb_fifo_ctrl(ep);
 	}
 
 	if (data_len > udata0.ep_data[ep_idx].mps) {
@@ -1375,15 +1363,15 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
-	uint8_t ep_fifo = 0;
+	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 	uint16_t rx_fifo_len;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
 		return -EINVAL;
 	}
 
-	if (ep_regs[ep_idx].ep_status & EP_STATUS_ERROR) {
-		LOG_WRN("EP Error Flag: 0x%02x", ep_regs[ep_idx].ep_status);
+	if (ep_regs[ep_fifo].ep_status & EP_STATUS_ERROR) {
+		LOG_WRN("fifo_%d error status: 0x%02x", ep_fifo, ep_regs[ep_fifo].ep_status);
 	}
 
 	if (max_data_len == 0) {
@@ -1396,10 +1384,6 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		}
 
 		return 0;
-	}
-
-	if (ep_idx > EP0) {
-		ep_fifo = ep_fifo_res[ep_idx % FIFO_NUM];
 	}
 
 	rx_fifo_len = (uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_lsb +
@@ -1509,7 +1493,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
-	uint8_t ep_fifo = 0;
+	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 	uint16_t rx_fifo_len;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
@@ -1522,12 +1506,8 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		return -EINVAL;
 	}
 
-	if (ep_idx > EP0) {
-		ep_fifo = ep_fifo_res[ep_idx % FIFO_NUM];
-	}
-
 	if (ep_regs[ep_fifo].ep_status & EP_STATUS_ERROR) {
-		LOG_WRN("EP error flag(%02x)", ep_regs[ep_fifo].ep_status);
+		LOG_WRN("fifo_%d error status(%02x)", ep_fifo, ep_regs[ep_fifo].ep_status);
 	}
 
 	rx_fifo_len = (uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_lsb +
@@ -1558,7 +1538,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
-	uint8_t ep_fifo = 2;
+	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
 		LOG_ERR("(%d): Wrong Endpoint Index/Address", __LINE__);
@@ -1568,10 +1548,6 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	if (USB_EP_DIR_IS_IN(ep)) {
 		LOG_ERR("Wrong Endpoint Direction");
 		return -EINVAL;
-	}
-
-	if (ep_idx > EP0) {
-		ep_fifo = ep_fifo_res[ep_idx % FIFO_NUM];
 	}
 
 	it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_READY);
