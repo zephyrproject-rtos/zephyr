@@ -1511,7 +1511,7 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	reg = CAN_MCAN_ILS_RF0NL | CAN_MCAN_ILS_RF1NL;
+	reg = CAN_MCAN_ILS_RF0NL | CAN_MCAN_ILS_RF1NL | CAN_MCAN_ILS_RF0LL | CAN_MCAN_ILS_RF1LL;
 	err = can_mcan_write_reg(dev, CAN_MCAN_ILS, reg);
 	if (err != 0) {
 		return err;
