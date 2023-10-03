@@ -115,6 +115,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#if defined(CONFIG_SOC_MIMX93_A55) && defined(CONFIG_DAI_NXP_SAI)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		clock_root = kCLOCK_Root_Sai1 + instance;
+		uint32_t mux = CLOCK_GetRootClockMux(clock_root);
+		uint32_t divider = CLOCK_GetRootClockDiv(clock_root);
+
+		/* assumption: SAI's SRC is AUDIO_PLL */
+		if (mux != 1) {
+			return -EINVAL;
+		}
+
+		/* assumption: AUDIO_PLL's frequency is 393216000 Hz */
+		*rate = 393216000 / divider;
+
+		return 0;
+#endif
 	default:
 		return -EINVAL;
 	}
