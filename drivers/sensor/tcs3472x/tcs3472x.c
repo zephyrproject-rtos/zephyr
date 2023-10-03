@@ -7,18 +7,14 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/__assert.h>
-
 #include <zephyr/logging/log.h>
+#include <sys/errno.h>
 
 #include "tcs3472x.h"
-#include "zephyr/drivers/i2c.h"
-#include <stdint.h>
-#include <stdlib.h>
 
 LOG_MODULE_REGISTER(TCS3472X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -26,15 +22,7 @@ LOG_MODULE_REGISTER(TCS3472X, CONFIG_SENSOR_LOG_LEVEL);
 #warning "TCS3472x driver enabled without any devices"
 #endif
 
-struct tcs3472x_data {
-	uint16_t c_chan;
-	uint16_t r_chan;
-	uint16_t g_chan;
-	uint16_t b_chan;
-	uint8_t chip_id;
-};
-
-int tcs3472x_reg_read(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t *buf, uint8_t size)
+static int tcs3472x_reg_read(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t *buf, uint8_t size)
 {
 	int ret;
 
@@ -45,7 +33,7 @@ int tcs3472x_reg_read(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t *buf, 
 	return ret;
 }
 
-int tcs3472x_reg_write(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t val)
+static int tcs3472x_reg_write(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t val)
 {
 	int ret;
 
@@ -56,7 +44,7 @@ int tcs3472x_reg_write(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t val)
 	return ret;
 }
 
-int tcs3472x_enable(const struct i2c_dt_spec *i2c)
+static int tcs3472x_enable(const struct i2c_dt_spec *i2c)
 {
 	int ret;
 
@@ -64,26 +52,9 @@ int tcs3472x_enable(const struct i2c_dt_spec *i2c)
 	if (ret < 0) {
 		return -EIO;
 	}
+	/* There is a 2.4ms warm-up delay when PON was enabled */
 	k_sleep(K_USEC(2400));
 	ret = tcs3472x_reg_write(i2c, TCS3472X_ENABLE, TCS3472X_ENABLE_PON | TCS3472X_ENABLE_AEN);
-	if (ret < 0) {
-		return -EIO;
-	}
-	k_sleep(K_MSEC(CONFIG_TCS3472X_INT_TIME_SCALE * 12 / 5 + 1));
-	return ret;
-}
-
-int tcs3472x_disable(const struct i2c_dt_spec *i2c)
-{
-	int ret;
-	uint8_t reg = 0;
-
-	ret = tcs3472x_reg_read(i2c, TCS3472X_ENABLE, &reg, 1);
-	if (ret < 0) {
-		return -EIO;
-	}
-	ret = tcs3472x_reg_write(i2c, TCS3472X_ENABLE,
-				 reg & ~(TCS3472X_ENABLE_PON | TCS3472X_ENABLE_AEN));
 	if (ret < 0) {
 		return -EIO;
 	}
@@ -94,21 +65,16 @@ static int tcs3472x_sample_fetch(const struct device *dev, enum sensor_channel c
 {
 	struct tcs3472x_data *data = dev->data;
 	const struct tcs3472x_config *config = dev->config;
-	uint8_t buf[8];
-	int size = 8;
-	int ret;
+	
+	/* Wait one ADC integration cycle */
+	k_sleep(K_USEC(config->int_time));
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-	ret = tcs3472x_reg_read(&config->i2c, TCS3472X_CDATAL, buf, size);
-	if (ret < 0) {
-		return ret;
+	if (i2c_burst_read_dt(&config->i2c,
+			      TCS3472X_COMMAND_BIT | TCS3472X_CDATAL,
+			      (uint8_t *)&data->sample_crgb,
+                              sizeof(data->sample_crgb))) {
+		return -EIO;
 	}
-
-	data->c_chan = (buf[1] << 8) | (buf[0] & 0xFF);
-	data->r_chan = (buf[3] << 8) | (buf[2] & 0xFF);
-	data->g_chan = (buf[5] << 8) | (buf[4] & 0xFF);
-	data->b_chan = (buf[7] << 8) | (buf[6] & 0xFF);
 
 	return 0;
 }
@@ -121,23 +87,23 @@ static int tcs3472x_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_LIGHT:
-		val->val1 = data->c_chan;
-		val->val2 = data->c_chan;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[0]);
+		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_RED:
-		val->val1 = (uint16_t)((float)(data->r_chan) / data->c_chan * 255) / 100;
-		val->val2 = (uint16_t)((float)(data->r_chan) / data->c_chan * 255) % 100 * 10000;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[1]);
+		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_GREEN:
-		val->val1 = (uint16_t)((float)(data->g_chan) / data->c_chan * 255) / 100;
-		val->val2 = (uint16_t)((float)(data->g_chan) / data->c_chan * 255) % 100 * 10000;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[2]);
+		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_BLUE:
-		val->val1 = (uint16_t)((float)(data->b_chan) / data->c_chan * 255) / 100;
-		val->val2 = (uint16_t)((float)(data->b_chan) / data->c_chan * 255) % 100 * 10000;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[3]);
+		val->val2 = 0;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -149,25 +115,29 @@ static const struct sensor_driver_api tcs3472x_driver_api = {
 	.channel_get = tcs3472x_channel_get,
 };
 
-int tcs3472x_init(const struct device *dev)
+static int tcs3472x_init(const struct device *dev)
 {
 
 	struct tcs3472x_data *data = dev->data;
 	const struct tcs3472x_config *config = dev->config;
-	uint8_t id = 0U;
 
-	if (!device_is_ready(config->i2c.bus)) {
+	uint8_t chip_id = 0U;
+	uint8_t again = 0U;
+
+	(void)memset(data->sample_crgb, 0, sizeof(data->sample_crgb));
+
+	if (!i2c_is_ready_dt(&config->i2c)) {
 		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
 	/* read device ID */
-	if (tcs3472x_reg_read(&config->i2c, TCS3472X_REG_ID, &data->chip_id, 1) < 0) {
+	if (tcs3472x_reg_read(&config->i2c, TCS3472X_REG_ID, &chip_id, 1) < 0) {
 		LOG_ERR("Could not read id");
 		return -EIO;
 	}
 
-	switch (data->chip_id) {
+	switch (chip_id) {
 	case TCS_34721_34725: {
 		LOG_INF("TCS34721/TCS34725 detected");
 		break;
@@ -177,17 +147,32 @@ int tcs3472x_init(const struct device *dev)
 		break;
 		}
 	default: {
-		LOG_ERR("Unexpected id (%x)", id);
+		LOG_ERR("Unexpected id (%x)", chip_id);
 		return -EIO;
 		}
 	}
 
-	if (tcs3472x_reg_write(&config->i2c, TCS3472X_ATIME, TCS3472X_INT_TIME) < 0) {
+	if (tcs3472x_reg_write(&config->i2c, TCS3472X_ATIME, config->atime) < 0) {
 		LOG_ERR("Could not set integration time");
 		return -EIO;
 	}
 
-	if (tcs3472x_reg_write(&config->i2c, TCS3472X_CONTROL, TCS3472X_GAIN) < 0) {
+	switch(config->again) {
+	case TCS3472X_GAIN_1X:
+		again = TCS3472X_AGAIN_1X;
+		break;
+	case TCS3472X_GAIN_4X:
+		again = TCS3472X_AGAIN_4X;
+		break;
+	case TCS3472X_GAIN_16X:
+		again = TCS3472X_AGAIN_16X;
+		break;
+	case TCS3472X_GAIN_60X:
+		again = TCS3472X_AGAIN_60X;
+		break;
+	}
+
+	if (tcs3472x_reg_write(&config->i2c, TCS3472X_CONTROL, again) < 0) {
 		LOG_ERR("Could not set gain");
 		return -EIO;
 	}
@@ -198,19 +183,25 @@ int tcs3472x_init(const struct device *dev)
 	return EXIT_SUCCESS;
 }
 
-#define TCS3472X_DEFINE(inst)						\
-	static struct tcs3472x_data tcs3472x_data_##inst;		\
-	static const struct tcs3472x_config tcs3472x_config##inst = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-	};								\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			      tcs3472x_init,				\
-			      NULL,					\
-			      &tcs3472x_data_##inst,			\
-			      &tcs3472x_config##inst,			\
-			      POST_KERNEL,				\
-			      CONFIG_APPLICATION_INIT_PRIORITY,		\
-			      &tcs3472x_driver_api);			\
+#define TCS3472X_DEFINE(inst)							\
+	static struct tcs3472x_data tcs3472x_data_##inst;			\
+	static const struct tcs3472x_config tcs3472x_config##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),				\
+		.again = DT_PROP(DT_DRV_INST(inst), again),			\
+		/*								\
+		 * Calculating ATIME according to TCS3472 datasheet page 15	\
+		 */								\
+		.atime = 256 - DT_PROP(DT_DRV_INST(inst), int_time) / 2400 + 1,	\
+		.int_time = DT_PROP(DT_DRV_INST(inst), int_time),		\
+	};									\
+										\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,					\
+			      tcs3472x_init,					\
+			      NULL,						\
+			      &tcs3472x_data_##inst,				\
+			      &tcs3472x_config##inst,				\
+			      POST_KERNEL,					\
+			      CONFIG_SENSOR_INIT_PRIORITY,			\
+			      &tcs3472x_driver_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(TCS3472X_DEFINE)

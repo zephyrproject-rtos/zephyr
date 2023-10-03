@@ -28,5 +28,6 @@
 	tcs34725@29 {
 		compatible = "ams,tcs3472x";
 		reg = <0x29>;
+		again = <16>;
 	};
 };

@@ -6,3 +6,22 @@ description: TCS3472X color sensor
 compatible: "ams,tcs3472x"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  again:
+    type: int
+    enum:
+      - 1
+      - 4
+      - 16
+      - 60
+    default: 1
+    description: ADC gain.
+
+  int-time:
+    type: int
+    default: 100000
+    description: ADC Integration time.
+
+      The integration time of TCS3472X is possible in the
+      range of 2.4ms to 614ms.

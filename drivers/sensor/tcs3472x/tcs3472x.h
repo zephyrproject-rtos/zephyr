@@ -16,8 +16,15 @@
 
 #define TCS3472X_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
+struct tcs3472x_data {
+	uint16_t sample_crgb[4];
+};
+
 struct tcs3472x_config {
 	struct i2c_dt_spec i2c;
+	uint32_t again;
+	uint32_t atime;
+	uint32_t int_time;
 };
 
 #define TCS_34721_34725 (0x44)
@@ -71,22 +78,13 @@ struct tcs3472x_config {
 #define TCS3472X_BDATAL (0x1A)
 #define TCS3472X_BDATAH (0x1B)
 
-#if defined CONFIG_TCS3472X_GAIN_1X
-#define TCS3472X_GAIN (0x00)
-#elif defined CONFIG_TCS3472X_GAIN_4X
-#define TCS3472X_GAIN (0x01)
-#elif defined CONFIG_TCS3472X_GAIN_16X
-#define TCS3472X_GAIN (0x02)
-#elif defined CONFIG_TCS3472X_GAIN_60X
-#define TCS3472X_GAIN (0x03)
-#else
-#define TCS3472X_GAIN (0x00)
-#endif
-
-#if defined CONFIG_TCS3472X_INT_TIME_SCALE
-#define TCS3472X_INT_TIME (256 - CONFIG_TCS3472X_INT_TIME_SCALE)
-#else
-#define TCS3472X_INT_TIME (214)
-#endif
+#define TCS3472X_GAIN_1X (0)
+#define TCS3472X_GAIN_4X (4)
+#define TCS3472X_GAIN_16X (16)
+#define TCS3472X_GAIN_60X (60)
+#define TCS3472X_AGAIN_1X (0x00)
+#define TCS3472X_AGAIN_4X (0x01)
+#define TCS3472X_AGAIN_16X (0x02)
+#define TCS3472X_AGAIN_60X (0x03)
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_TCS3472X_TCS3472X_H_ */
