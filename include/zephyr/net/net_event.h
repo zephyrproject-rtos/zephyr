@@ -121,6 +121,7 @@ enum net_event_l4_cmd {
 	NET_EVENT_L4_CMD_HOSTNAME_CHANGED,
 	NET_EVENT_L4_CMD_CAPTURE_STARTED,
 	NET_EVENT_L4_CMD_CAPTURE_STOPPED,
+	NET_EVENT_L4_CMD_ONLINE,
 };
 
 /** @endcond */
@@ -347,6 +348,11 @@ enum net_event_l4_cmd {
 /** Network packet capture is stopped. */
 #define NET_EVENT_CAPTURE_STOPPED			\
 	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_CAPTURE_STOPPED)
+
+#define NET_EVENT_CONNECTIVITY_ONLINE			\
+	(_NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_ONLINE)
+
+/** @endcond */
 
 /**
  * @brief Network Management event information structure
