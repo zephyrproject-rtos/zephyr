@@ -451,6 +451,8 @@ static int mcp2515_start(const struct device *dev)
 		}
 	}
 
+	CAN_STATS_RESET(dev);
+
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	ret = mcp2515_set_mode_int(dev, dev_data->mcp2515_mode);
@@ -761,6 +763,20 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 		err_cnt->tx_err_cnt = err_cnt_buf[0];
 		err_cnt->rx_err_cnt = err_cnt_buf[1];
 	}
+
+#ifdef CONFIG_CAN_STATS
+	if ((eflg & (MCP2515_EFLG_RX0OVR | MCP2515_EFLG_RX1OVR)) != 0U) {
+		CAN_STATS_RX_OVERRUN_INC(dev);
+
+		ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_EFLG,
+					     eflg & (MCP2515_EFLG_RX0OVR | MCP2515_EFLG_RX1OVR),
+					     0U);
+		if (ret < 0) {
+			LOG_ERR("Failed to clear RX overrun flags [%d]", ret);
+			return -EIO;
+		}
+	}
+#endif /* CONFIG_CAN_STATS */
 
 	return 0;
 }
