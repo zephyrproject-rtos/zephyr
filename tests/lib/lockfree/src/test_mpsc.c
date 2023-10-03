@@ -4,32 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/irq.h"
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_loops.h>
 #include <zephyr/timing/timing.h>
-#include <zephyr/rtio/rtio_spsc.h>
-#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/sys/spsc_lockfree.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 
-#include "rtio_api.h"
-
-static struct rtio_mpsc push_pop_q;
-static struct rtio_mpsc_node push_pop_nodes[2];
+static struct mpsc push_pop_q;
+static struct mpsc_node push_pop_nodes[2];
 
 /*
  * @brief Push and pop one element
  *
- * @see rtio_mpsc_push(), rtio_mpsc_pop()
+ * @see mpsc_push(), mpsc_pop()
  *
- * @ingroup rtio_tests
+ * @ingroup tests
  */
-ZTEST(rtio_mpsc, test_push_pop)
+ZTEST(mpsc, test_push_pop)
 {
 
 	mpsc_ptr_t node, head;
-	struct rtio_mpsc_node *stub, *next, *tail;
+	struct mpsc_node *stub, *next, *tail;
 
-	rtio_mpsc_init(&push_pop_q);
+	mpsc_init(&push_pop_q);
 
 	head = mpsc_ptr_get(push_pop_q.head);
 	tail = push_pop_q.tail;
@@ -40,10 +39,10 @@ ZTEST(rtio_mpsc, test_push_pop)
 	zassert_equal(tail, stub, "Tail should point at stub");
 	zassert_is_null(next, "Next should be null");
 
-	node = rtio_mpsc_pop(&push_pop_q);
+	node = mpsc_pop(&push_pop_q);
 	zassert_is_null(node, "Pop on empty queue should return null");
 
-	rtio_mpsc_push(&push_pop_q, &push_pop_nodes[0]);
+	mpsc_push(&push_pop_q, &push_pop_nodes[0]);
 
 	head = mpsc_ptr_get(push_pop_q.head);
 
@@ -56,7 +55,7 @@ ZTEST(rtio_mpsc, test_push_pop)
 	stub = &push_pop_q.stub;
 	zassert_equal(tail, stub, "Tail should point at stub");
 
-	node = rtio_mpsc_pop(&push_pop_q);
+	node = mpsc_pop(&push_pop_q);
 	stub = &push_pop_q.stub;
 
 	zassert_not_equal(node, stub, "Pop should not return stub");
@@ -65,7 +64,7 @@ ZTEST(rtio_mpsc, test_push_pop)
 		      "Pop should return push_pop_node %p, instead was %p",
 		      &push_pop_nodes[0], node);
 
-	node = rtio_mpsc_pop(&push_pop_q);
+	node = mpsc_pop(&push_pop_q);
 	zassert_is_null(node, "Pop on empty queue should return null");
 }
 
@@ -74,31 +73,38 @@ ZTEST(rtio_mpsc, test_push_pop)
 #define MPSC_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define MPSC_THREADS_NUM 4
 
+struct thread_info {
+	k_tid_t tid;
+	int executed;
+	int priority;
+	int cpu_id;
+};
+
 static struct thread_info mpsc_tinfo[MPSC_THREADS_NUM];
 static struct k_thread mpsc_thread[MPSC_THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(mpsc_stack, MPSC_THREADS_NUM, MPSC_STACK_SIZE);
 
-struct mpsc_node {
+struct test_mpsc_node {
 	uint32_t id;
-	struct rtio_mpsc_node n;
+	struct mpsc_node n;
 };
 
 
-struct rtio_spsc_node_sq {
-	struct rtio_spsc _spsc;
-	struct mpsc_node *const buffer;
+struct spsc_node_sq {
+	struct spsc _spsc;
+	struct test_mpsc_node *const buffer;
 };
 
-#define SPSC_DEFINE(n, sz) RTIO_SPSC_DEFINE(_spsc_##n, struct mpsc_node, sz)
-#define SPSC_NAME(n, _) (struct rtio_spsc_node_sq *)&_spsc_##n
+#define TEST_SPSC_DEFINE(n, sz) SPSC_DEFINE(_spsc_##n, struct test_mpsc_node, sz)
+#define SPSC_NAME(n, _) (struct spsc_node_sq *)&_spsc_##n
 
-LISTIFY(MPSC_THREADS_NUM, SPSC_DEFINE, (;), MPSC_FREEQ_SZ)
+LISTIFY(MPSC_THREADS_NUM, TEST_SPSC_DEFINE, (;), MPSC_FREEQ_SZ)
 
-struct rtio_spsc_node_sq *node_q[MPSC_THREADS_NUM] = {
+struct spsc_node_sq *node_q[MPSC_THREADS_NUM] = {
 	LISTIFY(MPSC_THREADS_NUM, SPSC_NAME, (,))
 };
 
-static struct rtio_mpsc mpsc_q;
+static struct mpsc mpsc_q;
 
 static void mpsc_consumer(void *p1, void *p2, void *p3)
 {
@@ -106,12 +112,12 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct rtio_mpsc_node *n;
-	struct mpsc_node *nn;
+	struct mpsc_node *n;
+	struct test_mpsc_node *nn;
 
 	for (int i = 0; i < (MPSC_ITERATIONS)*(MPSC_THREADS_NUM - 1); i++) {
 		do {
-			n = rtio_mpsc_pop(&mpsc_q);
+			n = mpsc_pop(&mpsc_q);
 			if (n == NULL) {
 				k_yield();
 			}
@@ -119,10 +125,10 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 
 		zassert_not_equal(n, &mpsc_q.stub, "mpsc should not produce stub");
 
-		nn = CONTAINER_OF(n, struct mpsc_node, n);
+		nn = CONTAINER_OF(n, struct test_mpsc_node, n);
 
-		rtio_spsc_acquire(node_q[nn->id]);
-		rtio_spsc_produce(node_q[nn->id]);
+		spsc_acquire(node_q[nn->id]);
+		spsc_produce(node_q[nn->id]);
 	}
 }
 
@@ -132,20 +138,20 @@ static void mpsc_producer(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct mpsc_node *n;
+	struct test_mpsc_node *n;
 	uint32_t id = (uint32_t)(uintptr_t)p1;
 
 	for (int i = 0; i < MPSC_ITERATIONS; i++) {
 		do {
-			n = rtio_spsc_consume(node_q[id]);
+			n = spsc_consume(node_q[id]);
 			if (n == NULL) {
 				k_yield();
 			}
 		} while (n == NULL);
 
-		rtio_spsc_release(node_q[id]);
+		spsc_release(node_q[id]);
 		n->id = id;
-		rtio_mpsc_push(&mpsc_q, &n->n);
+		mpsc_push(&mpsc_q, &n->n);
 	}
 }
 
@@ -155,17 +161,17 @@ static void mpsc_producer(void *p1, void *p2, void *p3)
  * This can and should be validated on SMP machines where incoherent
  * memory could cause issues.
  */
-ZTEST(rtio_mpsc, test_mpsc_threaded)
+ZTEST(mpsc, test_mpsc_threaded)
 {
-	rtio_mpsc_init(&mpsc_q);
+	mpsc_init(&mpsc_q);
 
 	TC_PRINT("setting up mpsc producer free queues\n");
 	/* Setup node free queues */
 	for (int i = 0; i < MPSC_THREADS_NUM; i++) {
 		for (int j = 0; j < MPSC_FREEQ_SZ; j++) {
-			rtio_spsc_acquire(node_q[i]);
+			spsc_acquire(node_q[i]);
 		}
-		rtio_spsc_produce_all(node_q[i]);
+		spsc_produce_all(node_q[i]);
 	}
 
 	TC_PRINT("starting consumer\n");
@@ -194,22 +200,26 @@ ZTEST(rtio_mpsc, test_mpsc_threaded)
 
 #define THROUGHPUT_ITERS 100000
 
-ZTEST(rtio_mpsc, test_mpsc_throughput)
+ZTEST(mpsc, test_mpsc_throughput)
 {
-	struct rtio_mpsc_node node;
+	struct mpsc_node node;
 	timing_t start_time, end_time;
 
-	rtio_mpsc_init(&mpsc_q);
+	mpsc_init(&mpsc_q);
 	timing_init();
 	timing_start();
 
 	start_time = timing_counter_get();
 
-	for (int i = 0; i < THROUGHPUT_ITERS; i++) {
-		rtio_mpsc_push(&mpsc_q, &node);
+	int key = irq_lock();
 
-		rtio_mpsc_pop(&mpsc_q);
+	for (int i = 0; i < THROUGHPUT_ITERS; i++) {
+		mpsc_push(&mpsc_q, &node);
+
+		mpsc_pop(&mpsc_q);
 	}
+
+	irq_unlock(key);
 
 	end_time = timing_counter_get();
 
@@ -220,4 +230,4 @@ ZTEST(rtio_mpsc, test_mpsc_throughput)
 		 THROUGHPUT_ITERS, ns/THROUGHPUT_ITERS);
 }
 
-ZTEST_SUITE(rtio_mpsc, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(mpsc, NULL, NULL, NULL, NULL, NULL);

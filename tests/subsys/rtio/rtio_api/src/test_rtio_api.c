@@ -672,7 +672,6 @@ void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void 
  */
 void test_rtio_callback_chaining_(struct rtio *r)
 {
-
 	int res;
 	int32_t userdata[4] = {0, 1, 2, 3};
 	int32_t ordering[4] = { -1, -1, -1, -1};
