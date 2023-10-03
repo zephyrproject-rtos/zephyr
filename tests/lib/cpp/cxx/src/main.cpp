@@ -79,8 +79,8 @@
 
 /* Add RTIO headers to make sure they're CXX compatible */
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/rtio/rtio_spsc.h>
-#include <zephyr/rtio/rtio_mpsc.h>
+#include <zephyr/sys/spsc_lockfree.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 
 #include <zephyr/ztest.h>
 
