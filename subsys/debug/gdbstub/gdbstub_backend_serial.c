@@ -21,6 +21,10 @@ int z_gdb_backend_init(void)
 		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
 	};
 
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub_serial:%s enter\n", __func__);
+#endif
+
 	if (uart_dev == NULL) {
 		uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_gdbstub_uart));
 
@@ -30,6 +34,9 @@ int z_gdb_backend_init(void)
 		__ASSERT(ret == 0, "Could not configure uart device");
 	}
 
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub_serial:%s exit\n", __func__);
+#endif
 	return ret;
 }
 
