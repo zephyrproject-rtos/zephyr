@@ -2823,7 +2823,7 @@ static void notify_message_timeout_cb(struct lwm2m_message *msg)
 						   msg->token, msg->tkl);
 
 		if (obs) {
-			obs->active_tx_operation = false;
+			obs->active_notify = NULL;
 			if (client_ctx->observe_cb) {
 				client_ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
 						       &msg->path, msg->reply->user_data);
@@ -2895,7 +2895,7 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 						   reply->token, reply->tkl);
 
 		if (obs) {
-			obs->active_tx_operation = false;
+			obs->active_notify = NULL;
 			if (msg->ctx->observe_cb) {
 				msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
 						     lwm2m_read_first_path_ptr(&obs->path_list),
@@ -3068,7 +3068,7 @@ msg_init:
 		goto cleanup;
 	}
 
-	obs->active_tx_operation = true;
+	obs->active_notify = msg;
 	obs->resource_update = false;
 	lwm2m_information_interface_send(msg);
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
