@@ -189,6 +189,24 @@ Required changes
   previous implementation, any application using them has to be changed
   accordingly.
 
+* The configuration options for the SSD1306 display driver can now be provided
+  via the Devicetree binding :dtcompatible:`solomon,ssd1306fb`. The following
+  Kconfig options: ``CONFIG_SSD1306_DEFAULT``,
+  ``CONFIG_SSD1306_SH1106_COMPATIBLE``, and ``CONFIG_SSD1306_REVERSE_MODE`` have
+  been removed.
+
+  * You can remove ``CONFIG_SSD1306_DEFAULT`` without any other modification.
+
+  * ``CONFIG_SSD1306_SH1106_COMPATIBLE`` was used to assert that the device is
+    (compatible with) SH1106. This has been replaced by a dedicated dts
+    compatible declaration. You may update an existing sh1106 node to change the
+    ``compatible`` designation from :dtcompatible:`solomon,ssd1306fb` to
+    :dtcompatible:`sinowealth,sh1106`.
+
+  * ``CONFIG_SSD1306_REVERSE_MODE`` is now set using the ``inversion-on``
+    property of the devicetree node.
+
+
 Recommended Changes
 *******************
 
