@@ -76,10 +76,8 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 		page = 2U;
 	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
 		page = 1U;
-	} else if (page != 0U) {
-		LOG_DBG("Composition page %u not available", page);
-		page = 0U;
 	}
+
 	LOG_DBG("Preparing Composition data page %d", page);
 
 	bt_mesh_model_msg_init(&sdu, OP_DEV_COMP_DATA_STATUS);
