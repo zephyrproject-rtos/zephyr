@@ -6,7 +6,13 @@
 
 #include "gnss_dump.h"
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
 #include <string.h>
+
+#if CONFIG_GNSS_DUMP_TO_LOG
+static char dump_buf[CONFIG_GNSS_DUMP_TO_LOG_BUF_SIZE];
+#endif /* CONFIG_GNSS_DUMP_TO_LOG */
 
 static const char *gnss_fix_status_to_str(enum gnss_fix_status fix_status)
 {
@@ -131,4 +137,45 @@ int gnss_dump_satellite(char *str, uint16_t strsize, const struct gnss_satellite
 
 	return (strsize < ret) ? -ENOMEM : 0;
 }
+#endif
+
+#if CONFIG_GNSS_DUMP_TO_LOG
+static void gnss_dump_data_to_log(const struct device *dev, const struct gnss_data *data)
+{
+	if (gnss_dump_info(dump_buf, sizeof(dump_buf), &data->info) < 0) {
+		return;
+	}
+
+	LOG_PRINTK("%s: %s\r\n", dev->name, dump_buf);
+
+	if (gnss_dump_nav_data(dump_buf, sizeof(dump_buf), &data->nav_data) < 0) {
+		return;
+	}
+
+	LOG_PRINTK("%s: %s\r\n", dev->name, dump_buf);
+
+	if (gnss_dump_time(dump_buf, sizeof(dump_buf), &data->utc) < 0) {
+		return;
+	}
+
+	LOG_PRINTK("%s: %s\r\n", dev->name, dump_buf);
+}
+
+GNSS_DATA_CALLBACK_DEFINE(NULL, gnss_dump_data_to_log);
+#endif
+
+#if defined(CONFIG_GNSS_DUMP_TO_LOG) && defined(CONFIG_GNSS_SATELLITES)
+static void gnss_dump_satellites_to_log(const struct device *dev,
+					const struct gnss_satellite *satellites, uint16_t size)
+{
+	for (uint16_t i = 0; i < size; i++) {
+		if (gnss_dump_satellite(dump_buf, sizeof(dump_buf), &satellites[i]) < 0) {
+			return;
+		}
+
+		LOG_PRINTK("%s: %s\r\n", dev->name, dump_buf);
+	}
+}
+
+GNSS_SATELLITES_CALLBACK_DEFINE(NULL, gnss_dump_satellites_to_log);
 #endif
