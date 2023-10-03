@@ -153,7 +153,7 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 	struct gptp_hdr *hdr;
 	int ret;
 
-	ret = eth_clock_gettime(&timestamp);
+	ret = eth_clock_gettime(&timestamp.second, &timestamp.nanosecond);
 	if (ret < 0) {
 		return;
 	}
@@ -460,7 +460,7 @@ static void eth_iface_init(struct net_if *iface)
 	 * change the documentation etc. and break things.
 	 */
 	if (CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT == 1) {
-		ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
+		ctx->if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME;
 	}
 
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name);
@@ -468,7 +468,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
+	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_POSIX_DEV_NAME, ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
 		LOG_ERR("Cannot create %s (%d)", ctx->if_name, -errno);
 	} else {
@@ -642,7 +642,7 @@ static int ptp_clock_get_native_posix(const struct device *clk,
 {
 	ARG_UNUSED(clk);
 
-	return eth_clock_gettime(tm);
+	return eth_clock_gettime(&tm->second, &tm->nanosecond);
 }
 
 static int ptp_clock_adjust_native_posix(const struct device *clk,
