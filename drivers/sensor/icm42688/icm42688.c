@@ -251,12 +251,11 @@ int icm42688_init(const struct device *dev)
 	}
 #endif
 
-	memset(&data->cfg, 0, sizeof(struct icm42688_cfg));
 	data->cfg.accel_mode = ICM42688_ACCEL_LN;
-	data->cfg.gyro_mode = ICM42688_GYRO_LN;
 	data->cfg.accel_fs = ICM42688_ACCEL_FS_2G;
-	data->cfg.gyro_fs = ICM42688_GYRO_FS_125;
 	data->cfg.accel_odr = ICM42688_ACCEL_ODR_1000;
+	data->cfg.gyro_mode = ICM42688_GYRO_LN;
+	data->cfg.gyro_fs = ICM42688_GYRO_FS_125;
 	data->cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
 	data->cfg.fifo_en = false;
 
