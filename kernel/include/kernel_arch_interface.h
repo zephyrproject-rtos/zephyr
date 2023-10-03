@@ -562,9 +562,6 @@ int arch_printk_char_out(int c);
  *
  * This function is invoked near the top of _Cstart, for additional
  * architecture-specific setup before the rest of the kernel is brought up.
- *
- * TODO: Deprecate, most arches are using a prep_c() function to do the same
- * thing in a simpler way
  */
 static inline void arch_kernel_init(void);
 
