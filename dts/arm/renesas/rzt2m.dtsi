@@ -117,6 +117,32 @@
 			compatible = "renesas,rzt2m-pinctrl";
 			reg = <0x800a0000 0x1000 0x81030c00 0x1000>;
 			reg-names = "port_nsr", "ptadr";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio19: gpio@13 {
+				compatible = "renesas,rzt2m-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				reg = <0x13>;
+			};
+
+			gpio20: gpio@14 {
+				compatible = "renesas,rzt2m-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				reg = <0x14>;
+			};
+
+			gpio23: gpio@17 {
+				compatible = "renesas,rzt2m-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				reg = <0x17>;
+			};
 		};
 	};
 };
