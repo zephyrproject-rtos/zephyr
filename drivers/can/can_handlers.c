@@ -243,3 +243,63 @@ static inline int z_vrfy_can_recover(const struct device *dev, k_timeout_t timeo
 }
 #include <syscalls/can_recover_mrsh.c>
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+
+#ifdef CONFIG_CAN_STATS
+
+static inline uint32_t z_vrfy_can_stats_get_bit0_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_bit0_errors(dev);
+}
+#include <syscalls/can_stats_get_bit0_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_bit1_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_bit1_errors(dev);
+}
+#include <syscalls/can_stats_get_bit1_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_stuff_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_stuff_errors(dev);
+}
+#include <syscalls/can_stats_get_stuff_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_crc_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_crc_errors(dev);
+}
+#include <syscalls/can_stats_get_crc_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_form_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_form_errors(dev);
+}
+#include <syscalls/can_stats_get_form_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_ack_errors(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_ack_errors(dev);
+}
+#include <syscalls/can_stats_get_ack_errors_mrsh.c>
+
+static inline uint32_t z_vrfy_can_stats_get_rx_overruns(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_stats_get_rx_overruns(dev);
+}
+#include <syscalls/can_stats_get_rx_overruns_mrsh.c>
+
+#endif /* CONFIG_CAN_STATS */
