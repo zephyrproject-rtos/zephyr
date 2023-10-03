@@ -202,7 +202,6 @@ struct ll_conn {
 #if defined(CONFIG_BT_CTLR_CONN_META)
 			uint8_t  is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
-			uint8_t terminate_ack:1;
 		} central;
 #endif /* CONFIG_BT_CENTRAL */
 	};
