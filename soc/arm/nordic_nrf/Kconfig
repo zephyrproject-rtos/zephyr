@@ -25,6 +25,13 @@ config NRF_SOC_SECURE_SUPPORTED
 	  For non-secure the functions must redirect to secure services exposed
 	  by the secure firmware.
 
+config TFM_LOG_LEVEL_SILENCE
+	default y if !$(dt_nodelabel_has_prop,uart1,pinctrl-names)
+	depends on BUILD_WITH_TFM
+	help
+	  Disable TF-M secure output if the uart1 node has not assigned GPIO
+	  pins using pinctrl.
+
 config NRF_MPU_FLASH_REGION_SIZE
 	hex
 	default 0x1000
