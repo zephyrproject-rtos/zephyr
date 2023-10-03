@@ -1,0 +1,13 @@
+# Copyright 2023 Jonas Otto
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB-C VBUS measurement using FUSB302B
+
+compatible: "fcs,fusb302b-vbus"
+
+include: base.yaml
+
+properties:
+  fusb302b:
+    type: phandle
+    required: true

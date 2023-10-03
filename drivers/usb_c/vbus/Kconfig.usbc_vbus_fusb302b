@@ -1,0 +1,6 @@
+config USBC_VBUS_FUSB302B
+	bool "FUSB203B vbus"
+	default y
+	depends on DT_HAS_FCS_FUSB302B_VBUS_ENABLED
+	help
+	  Measure VBUS with FUSB302B
