@@ -1015,40 +1015,6 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 	return bt_bap_unicast_group_create(&group_param, unicast_group);
 }
 
-static int set_chan_alloc(enum bt_audio_location loc, struct bt_audio_codec_cfg *codec_cfg)
-{
-	for (size_t i = 0U; i < codec_cfg->data_len;) {
-		const uint8_t len = codec_cfg->data[i++];
-		uint8_t value_len;
-		uint8_t *value;
-		uint8_t type;
-
-		if (len == 0 || len > codec_cfg->data_len - i) {
-			/* Invalid len field */
-			return false;
-		}
-
-		type = codec_cfg->data[i++];
-		value = &codec_cfg->data[i];
-		value_len = len - sizeof(type);
-
-		if (type == BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC) {
-			const uint32_t loc_32 = loc;
-
-			sys_put_le32(loc_32, value);
-
-			return 0;
-		}
-
-		/* Since we are incrementing i by the value_len, we don't need to increment it
-		 * further in the `for` statement
-		 */
-		i += value_len;
-	}
-
-	return -ENOENT;
-}
-
 static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_param *param,
 					      struct unicast_stream *snk_uni_streams[],
 					      size_t snk_cnt,
@@ -1138,7 +1104,13 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			stream_cnt++;
 
 			if (param->conn_cnt > 1) {
-				set_chan_alloc(BIT(i), stream_param->codec_cfg);
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
+					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+
+				if (err < 0) {
+					FAIL("Failed to set channel allocation: %d\n", err);
+					return err;
+				}
 			}
 		}
 
@@ -1155,7 +1127,13 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			stream_cnt++;
 
 			if (param->conn_cnt > 1) {
-				set_chan_alloc(BIT(i), stream_param->codec_cfg);
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
+					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+
+				if (err < 0) {
+					FAIL("Failed to set channel allocation: %d\n", err);
+					return err;
+				}
 			}
 		}
 	}
