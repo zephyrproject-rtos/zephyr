@@ -597,7 +597,7 @@ uint16_t arch_coredump_tgt_code_get(void);
  * @brief Setup Architecture-specific TLS area in stack
  *
  * This sets up the stack area for thread local storage.
- * The structure inside in area is architecture specific.
+ * The structure inside TLS area is architecture specific.
  *
  * @param new_thread New thread object
  * @param stack_ptr Stack pointer
