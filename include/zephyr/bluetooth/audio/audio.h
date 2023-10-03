@@ -802,10 +802,13 @@ int bt_audio_codec_cfg_set_frame_blocks_per_sdu(struct bt_audio_codec_cfg *codec
  *  @param[in] codec_cfg The codec data to search in.
  *  @param[in] type The type id to look for
  *  @param[out] data Pointer to the data-pointer to update when item is found
- *  @return Length of found @p data or 0 if not found
+ *
+ *  @retval Length of found @p data (may be 0)
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
  */
-uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
-				   enum bt_audio_codec_config_type type, const uint8_t **data);
+int bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
+			       enum bt_audio_codec_config_type type, const uint8_t **data);
 
 /**
  * @brief Set or add a specific codec configuration value
@@ -1194,10 +1197,12 @@ int bt_audio_codec_cfg_meta_set_vendor(struct bt_audio_codec_cfg *codec_cfg,
  * @param[in]  type The type id to look for
  * @param[out] data Pointer to the data-pointer to update when item is found
  *
- * @return Length of found @p data or 0 if not found
+ *  @retval Length of found @p data (may be 0)
+ *  @retval -EINVAL if arguments are invalid
+ *  @retval -ENODATA if not found
  */
-uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
-				   enum bt_audio_codec_capability_type type, const uint8_t **data);
+int bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
+			       enum bt_audio_codec_capability_type type, const uint8_t **data);
 
 /**
  * @brief Set or add a specific codec capability value

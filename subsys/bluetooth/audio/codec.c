@@ -279,8 +279,8 @@ static void init_net_buf_simple_from_codec_cfg(struct net_buf_simple *buf,
 	buf->len = codec_cfg->data_len;
 }
 
-uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
-				   enum bt_audio_codec_config_type type, const uint8_t **data)
+int bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
+			       enum bt_audio_codec_config_type type, const uint8_t **data)
 {
 	struct search_type_param param = {
 		.found = false,
@@ -292,12 +292,12 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
 
 	CHECKIF(codec_cfg == NULL) {
 		LOG_DBG("codec is NULL");
-		return 0;
+		return -EINVAL;
 	}
 
 	CHECKIF(data == NULL) {
 		LOG_DBG("data is NULL");
-		return 0;
+		return -EINVAL;
 	}
 
 	*data = NULL;
@@ -305,12 +305,12 @@ uint8_t bt_audio_codec_cfg_get_val(const struct bt_audio_codec_cfg *codec_cfg,
 	err = bt_audio_data_parse(codec_cfg->data, codec_cfg->data_len, parse_cb, &param);
 	if (err != 0 && err != -ECANCELED) {
 		LOG_DBG("Could not parse the data: %d", err);
-		return 0;
+		return err;
 	}
 
-	if (param.data == NULL) {
+	if (!param.found) {
 		LOG_DBG("Could not find the type %u", type);
-		return 0;
+		return -ENODATA;
 	}
 
 	return param.data_len;
@@ -591,12 +591,12 @@ static void init_net_buf_simple_from_meta(struct net_buf_simple *buf, uint8_t me
 	buf->len = meta_len;
 }
 
-static int codec_meta_get_val(const uint8_t meta[], size_t meta_len, uint8_t type,
-			      const uint8_t **data)
+static int codec_meta_get_val(const uint8_t meta[], size_t meta_len,
+			      enum bt_audio_metadata_type type, const uint8_t **data)
 {
 	struct search_type_param param = {
 		.found = false,
-		.type = type,
+		.type = (uint8_t)type,
 		.data_len = 0,
 		.data = data,
 	};
@@ -1793,8 +1793,8 @@ static void init_net_buf_simple_from_codec_cap(struct net_buf_simple *buf,
 	buf->len = codec_cap->data_len;
 }
 
-uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
-				   enum bt_audio_codec_capability_type type, const uint8_t **data)
+int bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
+			       enum bt_audio_codec_capability_type type, const uint8_t **data)
 {
 	struct search_type_param param = {
 		.found = false,
@@ -1806,12 +1806,12 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
 
 	CHECKIF(codec_cap == NULL) {
 		LOG_DBG("codec_cap is NULL");
-		return 0;
+		return -EINVAL;
 	}
 
 	CHECKIF(data == NULL) {
 		LOG_DBG("data is NULL");
-		return 0;
+		return -EINVAL;
 	}
 
 	*data = NULL;
@@ -1819,12 +1819,12 @@ uint8_t bt_audio_codec_cap_get_val(const struct bt_audio_codec_cap *codec_cap,
 	err = bt_audio_data_parse(codec_cap->data, codec_cap->data_len, parse_cb, &param);
 	if (err != 0 && err != -ECANCELED) {
 		LOG_DBG("Could not parse the data: %d", err);
-		return 0;
+		return err;
 	}
 
-	if (param.data == NULL) {
+	if (!param.found) {
 		LOG_DBG("Could not find the type %u", type);
-		return 0;
+		return -ENODATA;
 	}
 
 	return param.data_len;

@@ -65,7 +65,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_set_val_new_value)
 	int ret;
 
 	ret = bt_audio_codec_cfg_get_val(&codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &data);
-	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cfg_set_val(&codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
 					 &new_expected_data, sizeof(new_expected_data));
@@ -95,7 +95,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_unset_val)
 	zassert_true(ret >= 0, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cfg_get_val(&codec_cfg, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &data);
-	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_freq_to_freq_hz)
@@ -925,7 +925,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_set_val_new)
 	int ret;
 
 	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &data);
-	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cap_set_val(&codec_cap, BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
 					 &new_expected_data, sizeof(new_expected_data));
@@ -955,7 +955,7 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_unset_val)
 	zassert_true(ret >= 0, "Unexpected return value %d", ret);
 
 	ret = bt_audio_codec_cap_get_val(&codec_cap, BT_AUDIO_CODEC_CONFIG_LC3_FREQ, &data);
-	zassert_equal(ret, 0, "Unexpected return value %d", ret);
+	zassert_equal(ret, -ENODATA, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_get_freq)
