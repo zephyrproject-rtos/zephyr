@@ -510,7 +510,8 @@ int can_mcan_init(const struct device *dev)
 #ifdef CONFIG_CAN_STM32FD
 	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
 #else
-	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
+	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N |
+		CAN_MCAN_ILS_RF0L | CAN_MCAN_ILS_RF1L;
 #endif
 	can->ile = CAN_MCAN_ILE_EINT0 | CAN_MCAN_ILE_EINT1;
 	/* Interrupt on every TX fifo element*/
