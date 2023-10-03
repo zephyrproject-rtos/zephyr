@@ -559,6 +559,10 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 {
 	size_t size;
 
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s exception=0x%x\n", __func__, exception);
+#endif
+
 	*buf = 'T';
 	size = gdb_bin2hex(&exception, 1, buf + 1, len - 1);
 	if (size == 0) {
@@ -643,6 +647,10 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		}
 
 		ptr = buf;
+
+#ifdef CONFIG_GDBSTUB_TRACE
+		printk("gdbstub:%s got '%c'(0x%x) command\n", __func__, *ptr, *ptr);
+#endif
 
 		switch (*ptr++) {
 
@@ -823,13 +831,19 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 
 int gdb_init(void)
 {
-
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s enter\n", __func__);
+#endif
 	if (z_gdb_backend_init() == -1) {
 		LOG_ERR("Could not initialize gdbstub backend.");
 		return -1;
 	}
 
 	arch_gdb_init();
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s exit\n", __func__);
+#endif
 	return 0;
 }
 
