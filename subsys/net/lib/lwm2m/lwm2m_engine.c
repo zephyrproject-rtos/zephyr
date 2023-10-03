@@ -592,7 +592,7 @@ static void check_notifications(struct lwm2m_ctx *ctx, const int64_t timestamp)
 			continue;
 		}
 		/* Check That There is not pending process*/
-		if (obs->active_tx_operation) {
+		if (obs->active_notify != NULL) {
 			continue;
 		}
 
