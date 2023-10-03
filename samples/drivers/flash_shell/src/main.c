@@ -301,21 +301,20 @@ static int do_write_unaligned(const struct shell *sh, off_t offset, uint8_t *buf
 	if (!single_page_write) {
 		size_t middle_data_len = aligned_size;
 		off_t middle_page_start = start_page;
-		off_t data_offset = (off_t)buf;
+		char *data = buf;
 
 		/* Write the middle bit if available */
 		if (size_before > 0) {
 			middle_page_start += page_size;
 			middle_data_len -= page_size;
-			data_offset += (page_size - size_before);
+			data += (page_size - size_before);
 		}
 		if (size_after > 0) {
 			middle_data_len -= page_size;
 		}
 		if (middle_data_len > 0) {
 			flash_write(flash_device, middle_page_start,
-					 (const void *)data_offset,
-					 middle_data_len);
+					 data, middle_data_len);
 		}
 
 		/* Write the last page if needed. */
