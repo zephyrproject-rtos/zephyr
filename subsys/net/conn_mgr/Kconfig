@@ -24,6 +24,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE
 	int "Size of the stack allocated for the conn_mgr_monitor thread"
+	default 2048 if NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
 	default 512
 	help
 	  Sets the stack size which will be used by the connection manager for connectivity monitoring.
@@ -57,5 +58,70 @@ config CONNECTIVITY_WIFI_MGMT_APPLICATION
 	  The application defines its own implementation of CONNECTIVITY_WIFI_MGMT.
 
 endchoice
+
+config NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	bool "Try to connect to Internet to check the connectivity status [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  If enabled, then we try to connect to a user defined host in order to
+	  verify that we have connectivity to at least to that host. If the host
+	  is connected to Internet, then this verifies that we can have an Internet
+	  connectivity. This is disabled by default as it requires that user configures
+	  the host to connect to.
+
+choice NET_CONNECTION_MANAGER_ONLINE_CHECK_STRATEGY
+	prompt "How to check online connectivity"
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	help
+	  Currently two strategies are defined:
+	  1. Do a ping (ICMP Echo-Request) to verify that we have connectivity to Internet
+	  2. Do a HTTP(S) request to external server
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING
+	bool "Use Ping (ICMPv4/6 Echo-Request) for connectivity check"
+	default y
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	help
+	  Do a connectivity check using an ICMPv4/6 Echo-Request (both IPv4 and
+	  IPv6 are supported).
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP
+	bool "HTTP(S) GET request"
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	select HTTP_CLIENT
+	help
+	  Do a connectivity check by a HTTP or HTTPS GET request to a server.
+
+endchoice
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_PING_HOST
+	string "Ping request to host"
+	depends on NET_CONNECTION_MANAGER_ONLINE_CHECK_PING
+	help
+	  Do a connectivity check by a ping request to a host.
+	  The host can be either a IP address or a hostname.
+	  If hostname is set here, you need to enable DNS resolving by setting DNS_RESOLVER option.
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP_URL
+	string "HTTP(S) GET request URL"
+	depends on NET_CONNECTION_MANAGER_ONLINE_CHECK_HTTP
+	help
+	  Do a connectivity check by a HTTP GET request to a server.
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_MAX_HOSTNAME_LEN
+	int "Max hostname length to use for online check"
+	default 64
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	help
+	  Size of the hostname buffer if user supplies a hostname instead
+	  if IP address. We need to resolve the address and the result is
+	  placed into this size buffer.
+
+config NET_CONNECTION_MANAGER_ONLINE_CHECK_TIMEOUT
+	int "Online check timeout (ms)"
+	default 5000
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	help
+	  How long to wait for a HTTP GET or ping response in milliseconds.
 
 endif # NET_CONNECTION_MANAGER

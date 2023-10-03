@@ -1,11 +1,14 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_INCLUDE_CONN_MGR_H_
 #define ZEPHYR_INCLUDE_CONN_MGR_H_
+
+#include <zephyr/net/tls_credentials.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +88,55 @@ void conn_mgr_ignore_l2(const struct net_l2 *l2);
 void conn_mgr_watch_l2(const struct net_l2 *l2);
 
 /**
+ * @typedef net_conn_mgr_online_checker_t
+ * @brief Handler function that is called when network stack needs
+ * to do a HTTPS request and needs to ask application to setup TLS
+ * credentials and return them to the caller.
+ *
+ * @param iface Network interface where the online check is sent.
+ * @param sec_tag_list Array of TLS security tags returned to the connection manager.
+ * @param sec_tag_size Size of the returned tags array.
+ * @param tls_hostname User needs to set this and it is returned to the connection
+ *        manager. The value is used to set TLS_HOSTNAME socket option. If the value
+ *        is empty, the TLS connection most like will not work. The returned pointer
+ *        should point to a NULL terminated buffer that is valid when the callback
+ *        returns.
+ * @param url URL where the HTTPS request is sent.
+ * @param host Hostname where the HTTPS request is sent.
+ * @param port Port where the HTTPS request is sent.
+ * @param dst Destination address where the HTTPS request is sent.
+ * @param user_data A valid pointer to user data or NULL
+ *
+ * @retval <0 if this online check request is cancelled and not done.
+ * @retval  0 the online check is done by the connection manager.
+ */
+typedef int (*net_conn_mgr_online_checker_t)(struct net_if *iface,
+					     const sec_tag_t **sec_tag_list,
+					     size_t *sec_tag_size,
+					     const char **tls_hostname,
+					     const char *url,
+					     const char *host,
+					     const char *port,
+					     struct sockaddr *dst,
+					     void *user_data);
+
+/**
+ * @brief Register online checker socket configuration callback.
+ *
+ * Application wishing to use Online Checker should register a setup
+ * callback function. The connection manager will call this function
+ * if HTTPS checker needs to be setup. Typically application would need
+ * to setup TLS credentials etc. for the checker socket.
+ *
+ * @param cb Callback function to be called.
+ * @param user_data Application specific user data is returned in callback.
+ *
+ * @return Return 0 if checker registration succeed, <0 otherwise.
+ */
+int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,
+					void *user_data);
+
+/**
  * @}
  */
 
@@ -95,6 +147,7 @@ void conn_mgr_watch_l2(const struct net_l2 *l2);
 #define conn_mgr_watch_iface(...)
 #define conn_mgr_ignore_l2(...)
 #define conn_mgr_watch_l2(...)
+#define conn_mgr_register_online_checker_cb(...)
 
 #endif /* CONFIG_NET_CONNECTION_MANAGER */
 
