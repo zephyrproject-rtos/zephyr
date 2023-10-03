@@ -141,7 +141,15 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
+	/* Acquire spinlock to ensure safety during concurrent calls to
+	 * k_timer_start for scheduling or rescheduling. This is necessary
+	 * since k_timer_start can be preempted, especially for the same
+	 * timer instance.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
@@ -168,6 +176,8 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 		     duration);
+
+	k_spin_unlock(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
