@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2010-2011 Dmitry Vyukov
- * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_RTIO_MPSC_H_
-#define ZEPHYR_RTIO_MPSC_H_
+#ifndef ZEPHYR_SYS_MPSC_LOCKFREE_H_
+#define ZEPHYR_SYS_MPSC_LOCKFREE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,48 +18,14 @@ extern "C" {
 #endif
 
 /**
- * @brief RTIO Multiple Producer Single Consumer (MPSC) Queue API
- * @defgroup rtio_mpsc RTIO MPSC API
- * @ingroup rtio
+ * @brief Multiple Producer Single Consumer (MPSC) Lockfree Queue API
+ * @defgroup mpsc_lockfree MPSC Lockfree Queue API
+ * @ingroup datastructure_apis
  * @{
  */
 
-/*
- * On single core systems atomics are unnecessary
- * and cause a lot of unnecessary cache invalidation
- *
- * Using volatile to at least ensure memory is read/written
- * by the compiler generated op codes is enough.
- *
- * On SMP atomics *must* be used to ensure the pointers
- * are updated in the correct order and the values are
- * updated core caches correctly.
- */
-#if defined(CONFIG_SMP)
-
-typedef atomic_ptr_t mpsc_ptr_t;
-
-#define mpsc_ptr_get(ptr)	   atomic_ptr_get(&(ptr))
-#define mpsc_ptr_set(ptr, val)	   atomic_ptr_set(&(ptr), val)
-#define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
-
-#else
-
-typedef struct rtio_mpsc_node *mpsc_ptr_t;
-
-#define mpsc_ptr_get(ptr)      ptr
-#define mpsc_ptr_set(ptr, val) ptr = val
-#define mpsc_ptr_set_get(ptr, val)                                                                 \
-	({                                                                                         \
-		mpsc_ptr_t tmp = ptr;                                                              \
-		ptr = val;                                                                         \
-		tmp;                                                                               \
-	})
-
-#endif
-
 /**
- * @file rtio_mpsc.h
+ * @file mpsc_lockfree.h
  *
  * @brief A wait-free intrusive multi producer single consumer (MPSC) queue using
  * a singly linked list. Ordering is First-In-First-Out.
@@ -74,20 +40,54 @@ typedef struct rtio_mpsc_node *mpsc_ptr_t;
  * @warning MPSC is *not* safe to consume in multiple execution contexts.
  */
 
+/*
+ * On single core systems atomics are unnecessary
+ * and cause a lot of unnecessary cache invalidation
+ *
+ * Using volatile to at least ensure memory is read/written
+ * by the compiler generated op codes is enough.
+ *
+ * On SMP atomics *must* be used to ensure the pointers
+ * are updated in the correct order and the values are
+ * updated core caches correctly.
+ */
+#if IS_ENABLED(CONFIG_SMP)
+
+typedef atomic_ptr_t mpsc_ptr_t;
+
+#define mpsc_ptr_get(ptr)          atomic_ptr_get(&(ptr))
+#define mpsc_ptr_set(ptr, val)     atomic_ptr_set(&(ptr), val)
+#define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
+
+#else /* IS_ENABLED(CONFIG_SMP) */
+
+typedef struct mpsc_node *mpsc_ptr_t;
+
+#define mpsc_ptr_get(ptr)      ptr
+#define mpsc_ptr_set(ptr, val) ptr = val
+#define mpsc_ptr_set_get(ptr, val)                                                                 \
+	({                                                                                         \
+		mpsc_ptr_t tmp = ptr;                                                              \
+		ptr = val;                                                                         \
+		tmp;                                                                               \
+	})
+
+#endif /* IS_ENABLED(CONFIG_SMP) */
+
 /**
  * @brief Queue member
  */
-struct rtio_mpsc_node {
+struct mpsc_node {
 	mpsc_ptr_t next;
 };
 
 /**
  * @brief MPSC Queue
  */
-struct rtio_mpsc {
+struct mpsc {
 	mpsc_ptr_t head;
-	struct rtio_mpsc_node *tail;
-	struct rtio_mpsc_node stub;
+	struct mpsc_node *tail;
+	struct mpsc_node stub;
 };
 
 /**
@@ -97,10 +97,10 @@ struct rtio_mpsc {
  *
  * @param symbol name of the queue
  */
-#define RTIO_MPSC_INIT(symbol)                                                                     \
+#define MPSC_INIT(symbol)                                                                          \
 	{                                                                                          \
-		.head = (struct rtio_mpsc_node *)&symbol.stub,                                     \
-		.tail = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+		.head = (struct mpsc_node *)&symbol.stub,                                          \
+		.tail = (struct mpsc_node *)&symbol.stub,                                          \
 		.stub = {                                                                          \
 			.next = NULL,                                                              \
 		},                                                                                 \
@@ -111,7 +111,7 @@ struct rtio_mpsc {
  *
  * @param q Queue to initialize or reset
  */
-static inline void rtio_mpsc_init(struct rtio_mpsc *q)
+static inline void mpsc_init(struct mpsc *q)
 {
 	mpsc_ptr_set(q->head, &q->stub);
 	q->tail = &q->stub;
@@ -124,15 +124,15 @@ static inline void rtio_mpsc_init(struct rtio_mpsc *q)
  * @param q Queue to push the node to
  * @param n Node to push into the queue
  */
-static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_node *n)
+static ALWAYS_INLINE void mpsc_push(struct mpsc *q, struct mpsc_node *n)
 {
-	struct rtio_mpsc_node *prev;
+	struct mpsc_node *prev;
 	int key;
 
 	mpsc_ptr_set(n->next, NULL);
 
 	key = arch_irq_lock();
-	prev = (struct rtio_mpsc_node *)mpsc_ptr_set_get(q->head, n);
+	prev = (struct mpsc_node *)mpsc_ptr_set_get(q->head, n);
 	mpsc_ptr_set(prev->next, n);
 	arch_irq_unlock(key);
 }
@@ -143,11 +143,11 @@ static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_n
  * @retval NULL When no node is available
  * @retval node When node is available
  */
-static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
+static inline struct mpsc_node *mpsc_pop(struct mpsc *q)
 {
-	struct rtio_mpsc_node *head;
-	struct rtio_mpsc_node *tail = q->tail;
-	struct rtio_mpsc_node *next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
+	struct mpsc_node *head;
+	struct mpsc_node *tail = q->tail;
+	struct mpsc_node *next = (struct mpsc_node *)mpsc_ptr_get(tail->next);
 
 	/* Skip over the stub/sentinel */
 	if (tail == &q->stub) {
@@ -157,7 +157,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 
 		q->tail = next;
 		tail = next;
-		next = (struct rtio_mpsc_node *)mpsc_ptr_get(next->next);
+		next = (struct mpsc_node *)mpsc_ptr_get(next->next);
 	}
 
 	/* If next is non-NULL then a valid node is found, return it */
@@ -166,7 +166,7 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 		return tail;
 	}
 
-	head = (struct rtio_mpsc_node *)mpsc_ptr_get(q->head);
+	head = (struct mpsc_node *)mpsc_ptr_get(q->head);
 
 	/* If next is NULL, and the tail != HEAD then the queue has pending
 	 * updates that can't yet be accessed.
@@ -175,9 +175,9 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 		return NULL;
 	}
 
-	rtio_mpsc_push(q, &q->stub);
+	mpsc_push(q, &q->stub);
 
-	next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
+	next = (struct mpsc_node *)mpsc_ptr_get(tail->next);
 
 	if (next != NULL) {
 		q->tail = next;
@@ -195,4 +195,4 @@ static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
 }
 #endif
 
-#endif /* ZEPHYR_RTIO_MPSC_H_ */
+#endif /* ZEPHYR_SYS_MPSC_LOCKFREE_H_ */
