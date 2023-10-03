@@ -1,0 +1,8 @@
+# Copyright 2023 Jonas Otto
+# SPDX-License-Identifier: Apache-2.0
+
+description: FUSB302B Programmable USB Type-C Controller with PD
+
+compatible: "fcs,fusb302b"
+
+include: i2c-device.yaml

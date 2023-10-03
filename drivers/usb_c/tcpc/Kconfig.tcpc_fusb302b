@@ -1,0 +1,7 @@
+config USBC_TCPC_FUSB302B
+	bool "USB-C Enable FUSB302 Driver"
+	default y
+	depends on DT_HAS_FCS_FUSB302B_ENABLED
+	select I2C
+	help
+	  FUSB302B driver
