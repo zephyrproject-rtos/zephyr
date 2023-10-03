@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+ /* This partition table could be used along with TFM configuration:
+  * - TEST_S=ON (REGRESSION)
+  * - TFM_PSA_API=ON (IPC)
+  *
+  */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+			read-only;
+		};
+		/* Secure image primary slot */
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(224)>;
+		};
+		/* Non-secure image primary slot */
+		slot1_partition: partition@4c000 {
+			label = "image-1";
+			reg = <0x0004c000 DT_SIZE_K(172)>;
+		};
+		/*
+		 * The flash starting at 0x7F000 and ending at
+		 * 0x80000 is reserved for the application.
+		 */
+		storage_partition: partition@77000 {
+			label = "storage";
+			reg = <0x0007F000 DT_SIZE_K(40)>;
+		};
+	};
+};
