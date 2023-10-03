@@ -381,8 +381,10 @@ static void *virt_region_alloc(size_t size, size_t align)
  */
 static sys_slist_t free_page_frame_list;
 
-/* Number of unused and available free page frames */
-size_t z_free_page_count;
+/* Number of unused and available free page frames.
+ * This information may go stale immediately.
+ */
+static size_t z_free_page_count;
 
 #define PF_ASSERT(pf, expr, fmt, ...) \
 	__ASSERT(expr, "page frame 0x%lx: " fmt, z_page_frame_to_phys(pf), \
