@@ -162,7 +162,7 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	zassert_equal(fs_tell(&file), stat.size,
 		      "verify hello read middle tell failed");
 
-	zassert_equal(fs_seek(&file, -stat.size, FS_SEEK_CUR),
+	zassert_equal(fs_seek(&file, -(off_t)stat.size, FS_SEEK_CUR),
 		      0,
 		      "verify hello seek back from cur failed");
 
