@@ -77,6 +77,10 @@ struct btp_mesh_provision_node_cmd_v2 {
 } __packed;
 
 #define BTP_MESH_INIT				0x04
+struct btp_mesh_init_cmd {
+	bool comp_alt;
+} __packed;
+
 #define BTP_MESH_RESET				0x05
 #define BTP_MESH_INPUT_NUMBER			0x06
 struct btp_mesh_input_number_cmd {

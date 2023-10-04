@@ -1242,7 +1242,23 @@ static uint8_t provision_adv(const void *cmd, uint16_t cmd_len,
 static uint8_t init(const void *cmd, uint16_t cmd_len,
 		    void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_mesh_init_cmd *cp = cmd;
 	int err;
+
+	if (!cp->comp_alt) {
+		LOG_WRN("Loading default comp data");
+		err = bt_mesh_init(&prov, &comp);
+	} else {
+		LOG_WRN("Loading alternative comp data");
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+		health_srv.metadata = health_srv_meta_alt;
+#endif
+		err = bt_mesh_init(&prov, &comp_alt);
+	}
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
 
 	LOG_DBG("");
 
@@ -4403,7 +4419,7 @@ static const struct btp_handler handlers[] = {
 	},
 	{
 		.opcode = BTP_MESH_INIT,
-		.expect_len = 0,
+		.expect_len = sizeof(struct btp_mesh_init_cmd),
 		.func = init,
 	},
 	{
@@ -5208,26 +5224,12 @@ BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
 
 uint8_t tester_init_mesh(void)
 {
-	int err;
-
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
 		bt_test_cb_register(&bt_test_cb);
 	}
 
 	tester_register_command_handlers(BTP_SERVICE_ID_MESH, handlers,
 					 ARRAY_SIZE(handlers));
-	if (default_comp) {
-		err = bt_mesh_init(&prov, &comp);
-	} else {
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
-		health_srv.metadata = health_srv_meta_alt;
-#endif
-		err = bt_mesh_init(&prov, &comp_alt);
-	}
-
-	if (err) {
-		return BTP_STATUS_FAILED;
-	}
 
 	return BTP_STATUS_SUCCESS;
 }
