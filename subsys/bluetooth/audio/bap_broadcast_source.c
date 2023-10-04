@@ -306,7 +306,6 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 	struct bt_bap_stream *stream;
 	const struct bt_audio_codec_cfg *codec_cfg;
 	uint8_t stream_count;
-	uint8_t bis_index;
 	uint8_t len;
 
 	stream_count = 0;
@@ -350,9 +349,10 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 
 	/* Create BIS index bitfield */
-	bis_index = 0;
 	for (uint8_t i = 0U; i < stream_count; i++) {
-		bis_index++;
+		/* Set the bis_index to *streams_encoded plus 1 as the indexes start from 1 */
+		const uint8_t bis_index = *streams_encoded + 1;
+
 		if ((buf->size - buf->len) < (sizeof(bis_index) + sizeof(uint8_t))) {
 			LOG_DBG("No room for BIS[%d] index", i);
 
@@ -378,7 +378,7 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		net_buf_simple_add_mem(buf, stream_data[i].data, stream_data[i].data_len);
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
-		streams_encoded++;
+		(*streams_encoded)++;
 	}
 
 	return true;
