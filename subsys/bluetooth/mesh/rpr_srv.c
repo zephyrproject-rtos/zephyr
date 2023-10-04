@@ -1337,7 +1337,6 @@ static void rpr_srv_reset(struct bt_mesh_model *mod)
 	atomic_clear(srv.flags);
 	srv.link.dev = NULL;
 	srv.scan.dev = NULL;
-	srv.mod = NULL;
 }
 
 const struct bt_mesh_model_cb _bt_mesh_rpr_srv_cb = {
