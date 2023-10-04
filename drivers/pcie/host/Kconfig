@@ -73,6 +73,13 @@ config PCIE_PTM
 	  This will enable support both PTM root and PTM requester features.
 	  Up to the PCIe device driver to enable its PTM requester capability.
 
+config PCIE_PRT
+	bool "Support for IRQ information retrieve via ACPI PRT (PCI Routing Table)"
+	default y if ACPI_DSDT_SUPPORT
+	help
+	  This will enable retrieve interrupt routing information for PCI legacy
+	  interrupt via ACPI PRT (PCI Routing Table)
+
 config PCIE_SHELL
 	bool "PCIe/new PCI Shell"
 	default y
