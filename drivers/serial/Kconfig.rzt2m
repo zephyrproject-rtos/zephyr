@@ -7,5 +7,6 @@ config UART_RZT2M
 	depends on DT_HAS_RENESAS_RZT2M_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  Enable Renesas RZ/T2M UART Driver.
