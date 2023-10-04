@@ -24,6 +24,10 @@ K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_msleep(SLEEP_MS);
 }
 
@@ -48,7 +52,7 @@ void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
 	if (create_thread) {
 		in_callback_tid = k_thread_create(&tdata1, tstack1,
 					STACK_SIZE,
-					(k_thread_entry_t)thread_entry,
+					thread_entry,
 					NULL, NULL, NULL, K_PRIO_PREEMPT(0),
 					0, K_NO_WAIT);
 		create_thread = false;
@@ -98,7 +102,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 
 	/* Create new thread which should add a new entry to the thread list */
 	k_tid_t tid = k_thread_create(&tdata, tstack,
-			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
+			STACK_SIZE, thread_entry, NULL,
 			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	k_msleep(1);
 
@@ -147,7 +151,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 
 	/* Create new thread which should add a new entry to the thread list */
 	k_tid_t tid = k_thread_create(&tdata, tstack,
-			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
+			STACK_SIZE, thread_entry, NULL,
 			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	k_msleep(1);
 

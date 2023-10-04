@@ -776,8 +776,12 @@ ZTEST(net_iface, test_v4_addr_add_rm)
 #define MY_ADDR_V4_USER      { { { 10, 0, 0, 2 } } }
 #define UNKNOWN_ADDR_V4_USER { { { 5, 6, 7, 8 } } }
 
-static void v4_addr_add_user(void)
+static void v4_addr_add_user(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	bool ret;
 
@@ -788,7 +792,7 @@ static void v4_addr_add_user(void)
 static void v4_addr_add_user_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)v4_addr_add_user, NULL,
+	k_thread_user_mode_enter(v4_addr_add_user, NULL,
 				 NULL, NULL);
 }
 
@@ -805,8 +809,12 @@ static void v4_addr_lookup_user(void)
 	zassert_equal(ret, 0, "IPv4 address found");
 }
 
-static void v4_addr_rm_user(void)
+static void v4_addr_rm_user(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	bool ret;
 
@@ -817,7 +825,7 @@ static void v4_addr_rm_user(void)
 static void v4_addr_rm_user_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)v4_addr_rm_user, NULL,
+	k_thread_user_mode_enter(v4_addr_rm_user, NULL,
 				 NULL, NULL);
 }
 
@@ -940,8 +948,12 @@ ZTEST(net_iface, test_v6_addr_add_rm_solicited)
 #define UNKNOWN_ADDR_V6_USER { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			      0, 0, 0, 0, 0, 0, 0, 0x66 } } }
 
-static void v6_addr_add_user(void)
+static void v6_addr_add_user(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in6_addr my_addr = MY_ADDR_V6_USER;
 	bool ret;
 
@@ -952,7 +964,7 @@ static void v6_addr_add_user(void)
 static void v6_addr_add_user_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)v6_addr_add_user, NULL,
+	k_thread_user_mode_enter(v6_addr_add_user, NULL,
 				 NULL, NULL);
 }
 
@@ -969,8 +981,12 @@ static void v6_addr_lookup_user(void)
 	zassert_equal(ret, 0, "IPv6 address found");
 }
 
-static void v6_addr_rm_user(void)
+static void v6_addr_rm_user(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in6_addr my_addr = MY_ADDR_V6_USER;
 	bool ret;
 
@@ -984,7 +1000,7 @@ static void v6_addr_rm_user(void)
 static void v6_addr_rm_user_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)v6_addr_rm_user, NULL,
+	k_thread_user_mode_enter(v6_addr_rm_user, NULL,
 				 NULL, NULL);
 }
 
@@ -995,8 +1011,12 @@ ZTEST(net_iface, test_v6_addr_add_rm_user_from_userspace)
 	v6_addr_rm_user_from_userspace();
 }
 
-static void netmask_addr_add(void)
+static void netmask_addr_add(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
 	bool ret;
 
@@ -1006,13 +1026,13 @@ static void netmask_addr_add(void)
 
 ZTEST(net_iface, test_netmask_addr_add)
 {
-	netmask_addr_add();
+	netmask_addr_add(NULL, NULL, NULL);
 }
 
 static void netmask_addr_add_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)netmask_addr_add, NULL,
+	k_thread_user_mode_enter(netmask_addr_add, NULL,
 				 NULL, NULL);
 }
 
@@ -1021,8 +1041,12 @@ ZTEST(net_iface, test_netmask_addr_add_from_userspace)
 	netmask_addr_add_from_userspace();
 }
 
-static void gw_addr_add(void)
+static void gw_addr_add(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct in_addr my_gw = { { { 192, 0, 2, 254 } } };
 	bool ret;
 
@@ -1032,13 +1056,13 @@ static void gw_addr_add(void)
 
 ZTEST(net_iface, test_gw_addr_add)
 {
-	gw_addr_add();
+	gw_addr_add(NULL, NULL, NULL);
 }
 
 static void gw_addr_add_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)gw_addr_add, NULL,
+	k_thread_user_mode_enter(gw_addr_add, NULL,
 				 NULL, NULL);
 }
 
@@ -1047,21 +1071,25 @@ ZTEST(net_iface, test_gw_addr_add_from_userspace)
 	gw_addr_add_from_userspace();
 }
 
-static void get_by_index(void)
+static void get_by_index(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	zassert_not_null(net_if_get_by_index(1),
 			 "Cannot get interface at index 1");
 }
 
 ZTEST(net_iface, test_get_by_index)
 {
-	get_by_index();
+	get_by_index(NULL, NULL, NULL);
 }
 
 static void get_by_index_from_userspace(void)
 {
 	k_thread_access_grant(k_current_get(), net_if_get_by_index(1));
-	k_thread_user_mode_enter((k_thread_entry_t)get_by_index, NULL,
+	k_thread_user_mode_enter(get_by_index, NULL,
 				 NULL, NULL);
 }
 

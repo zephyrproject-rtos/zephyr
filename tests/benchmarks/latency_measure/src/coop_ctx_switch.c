@@ -51,8 +51,12 @@ K_SEM_DEFINE(sync_sema, 0, 1);
  * gets the first timestamp and invokes the software interrupt.
  *
  */
-static void thread_one(void)
+static void thread_one(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_take(&sync_sema, K_FOREVER);
 
 	timestamp_start = timing_counter_get();
@@ -75,8 +79,12 @@ static void thread_one(void)
  *
  * @return 0 on success
  */
-static void thread_two(void)
+static void thread_two(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_give(&sync_sema);
 	while (ctx_switch_counter < NCTXSWITCH) {
 		k_yield();
@@ -104,10 +112,10 @@ int coop_ctx_switch(void)
 	bench_test_start();
 
 	k_thread_create(&thread_one_data, thread_one_stack, STACKSIZE,
-			(k_thread_entry_t)thread_one, NULL, NULL, NULL,
+			thread_one, NULL, NULL, NULL,
 			K_PRIO_COOP(6), 0, K_NO_WAIT);
 	k_thread_create(&thread_two_data, thread_two_stack, STACKSIZE,
-			(k_thread_entry_t)thread_two, NULL, NULL, NULL,
+			thread_two, NULL, NULL, NULL,
 			K_PRIO_COOP(6), 0, K_NO_WAIT);
 
 	end = bench_test_end();

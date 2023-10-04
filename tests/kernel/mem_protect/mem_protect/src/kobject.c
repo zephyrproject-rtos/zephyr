@@ -1084,6 +1084,10 @@ ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 
 static void tThread_object_free_error(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* a K_ERR_CPU_EXCEPTION expected */
 	set_fault_valid(true);
 	k_object_free(NULL);
@@ -1108,7 +1112,7 @@ ZTEST(mem_protect_kobj, test_kobject_free_error)
 
 	k_tid_t tid = k_thread_create(&child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack),
-			(k_thread_entry_t)&tThread_object_free_error,
+			tThread_object_free_error,
 			(void *)&tid, NULL, NULL,
 			K_PRIO_PREEMPT(1), perm, K_NO_WAIT);
 
@@ -1325,6 +1329,9 @@ struct k_condvar condvar;
 
 static void entry_error_perm(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	set_fault_valid(true);
 	k_object_access_grant(p1, k_current_get());
 }
@@ -1364,7 +1371,7 @@ ZTEST(mem_protect_kobj, test_kobject_perm_error)
 
 		k_tid_t tid = k_thread_create(&child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack),
-			(k_thread_entry_t)entry_error_perm,
+			entry_error_perm,
 			kobj[i], NULL, NULL,
 			1, K_USER, K_NO_WAIT);
 

@@ -527,10 +527,16 @@ static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
-static void spi_async_call_cb(struct k_poll_event *evt,
-			      struct k_sem *caller_sem,
-			      void *unused)
+static void spi_async_call_cb(void *p1,
+			      void *p2,
+			      void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_poll_event *evt = p1;
+	struct k_sem *caller_sem = p2;
 	int ret;
 
 	LOG_DBG("Polling...");
@@ -636,7 +642,7 @@ ZTEST(spi_loopback, test_spi_loopback)
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
-					  (k_thread_entry_t)spi_async_call_cb,
+					  spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif

@@ -150,6 +150,8 @@ ZTEST(net_buf_tests, test_net_buf_2)
 
 static void test_3_thread(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg3);
+
 	struct k_fifo *fifo = (struct k_fifo *)arg1;
 	struct k_sem *sema = (struct k_sem *)arg2;
 	struct net_buf *buf;
@@ -192,7 +194,7 @@ ZTEST(net_buf_tests, test_net_buf_3)
 
 	k_thread_create(&test_3_thread_data, test_3_thread_stack,
 			K_THREAD_STACK_SIZEOF(test_3_thread_stack),
-			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
+			test_3_thread, &fifo, &sema, NULL,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,

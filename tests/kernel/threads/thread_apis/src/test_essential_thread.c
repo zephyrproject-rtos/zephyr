@@ -22,6 +22,10 @@ static bool fatal_error_signaled;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	z_thread_essential_set();
 
 	if (z_is_thread_essential()) {
@@ -47,7 +51,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 ZTEST(threads_lifecycle, test_essential_thread_operation)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack,
-				      STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
+				      STACKSIZE, thread_entry, NULL,
 				      NULL, NULL, K_PRIO_PREEMPT(0), 0,
 				      K_NO_WAIT);
 
@@ -68,6 +72,10 @@ void k_sys_fatal_error_handler(unsigned int reason,
 
 static void abort_thread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	z_thread_essential_set();
 
 	if (z_is_thread_essential()) {
@@ -94,7 +102,7 @@ static void abort_thread_entry(void *p1, void *p2, void *p3)
 ZTEST(threads_lifecycle, test_essential_thread_abort)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread1, kthread_stack, STACKSIZE,
-				      (k_thread_entry_t)abort_thread_entry,
+				      abort_thread_entry,
 				      NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0,
 				      K_NO_WAIT);
 

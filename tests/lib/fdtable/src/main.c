@@ -133,9 +133,12 @@ ZTEST(fdtable, test_z_free_fd)
 	zassert_equal_ptr(obj, NULL, "obj is not NULL after freeing");
 }
 
-static void test_cb(void *fd_ptr)
+static void test_cb(void *p1, void *p2, void *p3)
 {
-	int fd = POINTER_TO_INT(fd_ptr);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	int fd = POINTER_TO_INT(p1);
 	const struct fd_op_vtable *vtable;
 	int *obj;
 
@@ -163,7 +166,7 @@ ZTEST(fdtable, test_z_fd_multiple_access)
 
 	k_thread_create(&fd_thread, fd_thread_stack,
 			K_THREAD_STACK_SIZEOF(fd_thread_stack),
-			(k_thread_entry_t)test_cb,
+			test_cb,
 			INT_TO_POINTER(shared_fd), NULL, NULL,
 			CONFIG_ZTEST_THREAD_PRIORITY, 0, K_NO_WAIT);
 

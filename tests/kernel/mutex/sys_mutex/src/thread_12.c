@@ -29,8 +29,12 @@ extern struct sys_mutex private_mutex;
  *
  */
 
-void thread_12(void)
+void thread_12(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	/* Wait for private mutex to be released */
