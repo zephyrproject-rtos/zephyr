@@ -24,9 +24,6 @@ The raytac_mdbt53v_db_40_nrf5340_cpuapp build target provides support for the ap
 core on the nRF5340 SoC. The raytac_mdbt53v_db_40_nrf5340_cpuapp build target provides
 support for the network core on the nRF5340 SoC.
 
-.. note::
-   Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
-
 nRF5340 SoC provides support for the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
