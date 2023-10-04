@@ -268,6 +268,8 @@ Required changes
        };
 
 
+* The :kconfig:option:`CONFIG_RISCV_MTVEC_VECTORED_MODE` Kconfig option was renamed to
+  :kconfig:option:`CONFIG_RISCV_VECTORED_MODE`.
 
 Recommended Changes
 *******************
