@@ -244,6 +244,12 @@ config COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS
 	help
 	  The number of data blocks to reserve for pending messages to retransmit.
 
+config COAP_SERVER_SHELL
+	bool "CoAP service shell commands"
+	depends on SHELL
+	help
+	  Enable CoAP service shell commands.
+
 endif
 
 module = COAP
