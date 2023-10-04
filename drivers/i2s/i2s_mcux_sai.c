@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP Semiconductor INC.
+ * Copyright 2021,2023 NXP Semiconductor INC.
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -1254,9 +1254,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 									\
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {	\
 		.base = (I2S_Type *)DT_INST_REG_ADDR(i2s_id),		\
-		.clk_src =						\
-			DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(i2s_id),	\
-				0, bits),				\
+		.clk_src = DT_INST_PROP(i2s_id, clock_mux),		\
 		.clk_pre_div = DT_INST_PROP(i2s_id, pre_div),		\
 		.clk_src_div = DT_INST_PROP(i2s_id, podf),		\
 		.pll_src =						\
