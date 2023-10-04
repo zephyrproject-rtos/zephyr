@@ -975,6 +975,7 @@ menu "Security Options"
 config STACK_CANARIES
 	bool "Compiler stack canaries"
 	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
 	help
 	  This option enables compiler stack canaries.
 
