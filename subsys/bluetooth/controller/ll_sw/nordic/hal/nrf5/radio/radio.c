@@ -382,7 +382,7 @@ void radio_whiten_iv_set(uint32_t iv)
 			    RADIO_PCNF1_WHITEEN_Msk;
 }
 
-void radio_aa_set(uint8_t *aa)
+void radio_aa_set(const uint8_t *aa)
 {
 	NRF_RADIO->TXADDRESS =
 	    (((0UL) << RADIO_TXADDRESS_TXADDRESS_Pos) &
