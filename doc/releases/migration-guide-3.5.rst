@@ -169,6 +169,14 @@ Required changes
         };
     };
 
+* The :dtcompatible:`goodix,gt911`, :dtcompatible:`xptek,xpt2046` and
+  :dtcompatible:`hynitron,cst816s` drivers have been converted from Kscan to
+  Input, they can still be used with Kscan applications by adding a
+  :dtcompatible:`zephyr,kscan-input` node.
+
+* The ``zephyr,gpio-keys`` binding has been merged into
+  :dtcompatible:`gpio-keys` and the callback definition has been renamed from
+  ``INPUT_LISTENER_CB_DEFINE`` to :c:macro:`INPUT_CALLBACK_DEFINE`.
 
 Recommended Changes
 *******************
