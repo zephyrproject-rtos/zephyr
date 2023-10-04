@@ -29,6 +29,8 @@ static inline uint32_t cmsis_to_zephyr_priority(int32_t c_prio)
 
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg2);
+
 	void * (*fun_ptr)(void *) = arg3;
 
 	fun_ptr(arg1);
@@ -109,7 +111,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 
 	tid = k_thread_create(&cm_thread[instance],
 			stk_ptr[instance], stacksz,
-			(k_thread_entry_t)zephyr_thread_wrapper,
+			zephyr_thread_wrapper,
 			(void *)arg, NULL, thread_def->pthread,
 			prio, 0, K_NO_WAIT);
 
