@@ -101,7 +101,6 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 /* Thread that processes one pair of sender/receiver queue */
 void queue_thread(void *arg1, void *arg2, void *arg3)
 {
-
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -117,7 +116,7 @@ void queue_thread(void *arg1, void *arg2, void *arg3)
 	for (int i = 0; i < THREADS_NUM; i++)
 		k_thread_create(&tthread[i+THREADS_NUM*queue_num],
 			tstack[i+THREADS_NUM*queue_num], STACK_SIZE,
-			(k_thread_entry_t)test_thread,
+			test_thread,
 			(void *)&sender[queue_num],
 			(void *)&receiver[queue_num], (void *)&queue_num,
 			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
@@ -156,7 +155,7 @@ int main(void)
 
 	for (int i = 0; i < QUEUE_NUM; i++)
 		k_thread_create(&qthread[i], qstack[i], STACK_SIZE,
-				(k_thread_entry_t)queue_thread,
+				queue_thread,
 				(void *)&sender[i], (void *)&receiver[i],
 				(void *)&i, K_PRIO_PREEMPT(11), 0, K_NO_WAIT);
 

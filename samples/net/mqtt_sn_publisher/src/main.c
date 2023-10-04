@@ -83,12 +83,16 @@ static void init_app(void)
 	}
 }
 
-static int start_client(void)
+static void start_client(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* Wait for connection */
 	k_sem_take(&run_app, K_FOREVER);
 
-	return start_thread();
+	start_thread();
 }
 
 int main(void)
@@ -107,9 +111,9 @@ int main(void)
 	k_thread_access_grant(k_current_get(), &run_app);
 	k_mem_domain_add_thread(&app_domain, k_current_get());
 
-	k_thread_user_mode_enter((k_thread_entry_t)start_client, NULL, NULL, NULL);
+	k_thread_user_mode_enter(start_client, NULL, NULL, NULL);
 #else
-	exit(start_client());
+	start_client(NULL, NULL, NULL);
 #endif
 	return 0;
 }

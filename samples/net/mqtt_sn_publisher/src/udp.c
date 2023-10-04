@@ -141,23 +141,28 @@ static void process_thread(void)
 	LOG_ERR("Exiting thread: %d", err);
 }
 
-int start_thread(void)
+void start_thread(void)
 {
 	int rc;
 #if defined(CONFIG_USERSPACE)
 	rc = k_mem_domain_add_thread(&app_domain, udp_thread_id);
 	if (rc < 0) {
-		return rc;
+		LOG_ERR("Failed: k_mem_domain_add_thread() %d", rc);
+		return;
 	}
 #endif
 
 	rc = k_thread_name_set(udp_thread_id, "udp");
 	if (rc < 0 && rc != -ENOSYS) {
 		LOG_ERR("Failed: k_thread_name_set() %d", rc);
-		return rc;
+		return;
 	}
 
 	k_thread_start(udp_thread_id);
 
-	return k_thread_join(udp_thread_id, K_FOREVER);
+	rc = k_thread_join(udp_thread_id, K_FOREVER);
+
+	if (rc != 0) {
+		LOG_ERR("Failed: k_thread_join() %d", rc);
+	}
 }

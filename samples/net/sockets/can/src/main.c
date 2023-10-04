@@ -39,8 +39,12 @@ static const struct can_filter zfilter = {
 
 static struct socketcan_filter sock_filter;
 
-static void tx(int *can_fd)
+static void tx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	int *can_fd = p1;
 	int fd = POINTER_TO_INT(can_fd);
 	struct can_frame zframe = {0};
 	struct socketcan_frame sframe = {0};
@@ -95,9 +99,11 @@ static int create_socket(const struct socketcan_filter *sfilter)
 	return fd;
 }
 
-static void rx(int *can_fd, int *do_close_period,
-	       const struct socketcan_filter *sfilter)
+static void rx(void *p1, void *p2, void *p3)
 {
+	int *can_fd = p1;
+	int *do_close_period = p2;
+	const struct socketcan_filter *sfilter = p3;
 	int close_period = POINTER_TO_INT(do_close_period);
 	int fd = POINTER_TO_INT(can_fd);
 	struct sockaddr_can can_addr;
@@ -205,7 +211,7 @@ static int setup_socket(void)
 	/* Delay TX startup so that RX is ready to receive */
 	tx_tid = k_thread_create(&tx_data, tx_stack,
 				 K_THREAD_STACK_SIZEOF(tx_stack),
-				 (k_thread_entry_t)tx, INT_TO_POINTER(fd),
+				 tx, INT_TO_POINTER(fd),
 				 NULL, NULL, PRIORITY, 0, K_SECONDS(1));
 	if (!tx_tid) {
 		ret = -ENOENT;
@@ -225,7 +231,7 @@ static int setup_socket(void)
 	if (fd >= 0) {
 		rx_tid = k_thread_create(&rx_data, rx_stack,
 					 K_THREAD_STACK_SIZEOF(rx_stack),
-					 (k_thread_entry_t)rx,
+					 rx,
 					 INT_TO_POINTER(fd),
 					 INT_TO_POINTER(CLOSE_PERIOD),
 					 &sock_filter, PRIORITY, 0, K_NO_WAIT);
