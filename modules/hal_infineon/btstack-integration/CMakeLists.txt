@@ -30,13 +30,13 @@ if(CONFIG_CYW4373_STERLING_LWB5PLUS)
   set(blob_hcd_file  ${hal_blobs_dir}/COMPONENT_4373/COMPONENT_STERLING-LWB5plus/bt_firmware.hcd)
 endif()
 
-# use user provided FIRMWARE HCD file (path must be defined in CONFIG_CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB)
-if(CONFIG_CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB)
+# use user provided FIRMWARE HCD file (path must be defined in CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB)
+if(CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB)
   # Allowed to pass absolute path to HCD blob file, or relative path from Application folder.
-  if(IS_ABSOLUTE ${CONFIG_CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB})
-    set(blob_hcd_file  ${CONFIG_CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB})
+  if(IS_ABSOLUTE ${CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB})
+    set(blob_hcd_file  ${CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB})
   else()
-    set(blob_hcd_file  ${APPLICATION_SOURCE_DIR}/${CONFIG_CYW43XX_CUSTOM_FIRMWARE_HCD_BLOB})
+    set(blob_hcd_file  ${APPLICATION_SOURCE_DIR}/${CONFIG_AIROC_CUSTOM_FIRMWARE_HCD_BLOB})
   endif()
 endif()
 
