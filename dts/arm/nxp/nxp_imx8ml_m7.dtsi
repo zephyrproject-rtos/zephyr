@@ -168,7 +168,7 @@
 		};
 
 		mailbox0: mailbox@30ab0000 {
-			compatible = "nxp,imx-mu";
+			compatible = "nxp,imx-mu-rev2";
 			reg = <0x30ab0000 DT_SIZE_K(64)>;
 			interrupts = <97 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
