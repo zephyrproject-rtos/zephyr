@@ -35,6 +35,17 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config PTHREAD_CREATE_BARRIER
+	bool "Use a pthread_barrier_t to serialize pthread_create()"
+	help
+	  When running several SMP applications in parallel instances of Qemu,
+	  e.g. via twister, explicit serialization may be required between
+	  pthread_create() and zephyr_thread_wrapper() when spawning and joining
+	  many pthreads concurrently.
+
+	  On such systems, say Y here to introduce explicit serialization
+	  via pthread_barrier_wait().
+
 config MAX_PTHREAD_MUTEX_COUNT
 	int "Maximum simultaneously active mutex count in POSIX application"
 	default 5
@@ -51,6 +62,13 @@ config MAX_PTHREAD_COND_COUNT
 
 config MAX_PTHREAD_KEY_COUNT
 	int "Maximum simultaneously active keys in a POSIX application"
+	default 5
+	range 0 255
+	help
+	  Maximum number of simultaneously active keys in a POSIX application.
+
+config MAX_PTHREAD_BARRIER_COUNT
+	int "Maximum simultaneously active barriers in a POSIX application"
 	default 5
 	range 0 255
 	help
@@ -78,6 +96,14 @@ config MAX_TIMER_COUNT
 	range 0 255
 	help
 	  Mention maximum number of timers in POSIX compliant application.
+
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
 
 config POSIX_MQUEUE
 	bool "POSIX message queue"
@@ -135,6 +161,8 @@ config APP_LINK_WITH_POSIX_SUBSYS
 config EVENTFD
 	bool "Support for eventfd"
 	depends on !ARCH_POSIX
+	select POLL
+	default y if POSIX_API
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
@@ -147,3 +175,10 @@ config EVENTFD_MAX
 	range 1 4096
 	help
 	  The maximum number of supported event file descriptors.
+
+config FNMATCH
+	bool "Support for fnmatch"
+	default y if POSIX_API
+	help
+	  Match filenames using the the fnmatch function. For example, the pattern
+	  "*.c" matches the filename "hello.c".

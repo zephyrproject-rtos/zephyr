@@ -30,13 +30,13 @@ static const char *now_str(void)
 	return buf;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dht22 = DEVICE_DT_GET_ONE(aosong_dht);
 
 	if (!device_is_ready(dht22)) {
 		printf("Device %s is not ready\n", dht22->name);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -67,4 +67,5 @@ void main(void)
 		       sensor_value_to_double(&humidity));
 		k_sleep(K_SECONDS(2));
 	}
+	return 0;
 }

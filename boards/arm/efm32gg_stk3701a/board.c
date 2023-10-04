@@ -11,11 +11,10 @@
 #include <zephyr/sys/printk.h>
 #include "em_cmu.h"
 
-static int efm32gg_stk3701a_init(const struct device *dev)
+static int efm32gg_stk3701a_init(void)
 {
 	const struct device *cur_dev;
 
-	ARG_UNUSED(dev);
 
 	/* Enable the board controller to be able to use the serial port */
 	cur_dev = DEVICE_DT_GET(BC_ENABLE_GPIO_NODE);

@@ -277,7 +277,7 @@ void modulate_tx_power(void *p1, void *p2, void *p3)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int8_t txp_get = 0xFF;
 	int err;
@@ -312,4 +312,5 @@ void main(void)
 		hrs_notify();
 		k_sleep(K_SECONDS(2));
 	}
+	return 0;
 }

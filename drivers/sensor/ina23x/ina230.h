@@ -42,6 +42,7 @@ struct ina230_data {
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	sensor_trigger_handler_t handler_alert;
+	const struct sensor_trigger *trig_alert;
 #endif  /* CONFIG_INA230_TRIGGER */
 };
 

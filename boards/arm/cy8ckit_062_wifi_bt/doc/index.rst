@@ -1,7 +1,7 @@
 .. _cy8ckit_062_wifi_bt:
 
-PSoC6 WiFi-BT Pioneer Kit
-#########################
+INFINEON PSoC6 WiFi-BT Pioneer Kit
+##################################
 
 Overview
 ********
@@ -99,7 +99,7 @@ The board configuration supports the following hardware features:
 
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/cy8ckit_062_wifi_bt_m0/cy8ckit_062_wifi_bt_m0_defconfig`.
+:zephyr_file:`boards/arm/cy8ckit_062_wifi_bt/cy8ckit_062_wifi_bt_m0_defconfig`.
 
 
 System Clock

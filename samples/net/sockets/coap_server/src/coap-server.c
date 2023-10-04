@@ -1427,7 +1427,7 @@ static int process_client_request(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int r;
 
@@ -1458,8 +1458,9 @@ void main(void)
 	}
 
 	LOG_DBG("Done");
-	return;
+	return 0;
 
 quit:
 	LOG_ERR("Quit");
+	return 0;
 }

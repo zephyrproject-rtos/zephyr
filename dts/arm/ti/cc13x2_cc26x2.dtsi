@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -148,6 +149,13 @@
 				compatible = "ti,cc13xx-cc26xx-ieee802154-subghz";
 				status = "disabled";
 			};
+		};
+
+		wdt0: watchdog@40080000 {
+			compatible = "ti,cc13xx-cc26xx-watchdog";
+			reg = <0x40080000 0x1000>;
+			interrupts = <14 0>;  /* interrupt #30 = 14 + 16 */
+			status = "disabled";
 		};
 
 		adc0: adc@400cb008 {

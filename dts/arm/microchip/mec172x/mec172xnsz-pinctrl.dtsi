@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Microchip Technology Inc.
+ * Copyright (c) 2023 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -709,6 +709,10 @@
 		pinmux = < MCHP_XEC_PINMUX(022, MCHP_AF4) >;
 	};
 
+	/omit-if-no-ref/ tst_clk_out_gpio060: tst_clk_out_gpio060 {
+		pinmux = < MCHP_XEC_PINMUX(060, MCHP_AF2) >;
+	};
+
 	/* PROCHOT */
 	/omit-if-no-ref/ prochot_in_n_alt_gpio222: prochot_in_n_alt_gpio222 {
 		pinmux = < MCHP_XEC_PINMUX(0222, MCHP_AF2) >;
@@ -1068,4 +1072,34 @@
 		pinmux = < MCHP_XEC_PINMUX(0106, MCHP_AF2) >;
 	};
 
+};
+
+/* Add Sleep Pin Control */
+&pinctrl {
+	adc00_gpio200_sleep: adc00_gpio200_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0200, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc03_gpio203_sleep: adc03_gpio203_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0203, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc04_gpio204_sleep: adc04_gpio204_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0204, MCHP_AF1) >;
+		low-power-enable;
+	};
+	adc05_gpio205_sleep: adc05_gpio205_sleep {
+		pinmux = < MCHP_XEC_PINMUX(0205, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	peci_dat_gpio042_sleep: peci_dat_gpio042_sleep {
+		pinmux = < MCHP_XEC_PINMUX(042, MCHP_AF1) >;
+		low-power-enable;
+	};
+
+	vref_vtt_gpio044_sleep: vref_vtt_gpio044_sleep {
+		pinmux = < MCHP_XEC_PINMUX(044, MCHP_AF1) >;
+		low-power-enable;
+	};
 };

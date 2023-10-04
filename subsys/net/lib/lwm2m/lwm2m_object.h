@@ -135,6 +135,12 @@ BUILD_ASSERT(CONFIG_LWM2M_COAP_BLOCK_SIZE <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE,
 #define MAX_PACKET_SIZE		(CONFIG_LWM2M_COAP_MAX_MSG_SIZE + \
 				 CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE)
 
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+BUILD_ASSERT(CONFIG_LWM2M_COAP_ENCODE_BUFFER_SIZE >
+		     (CONFIG_LWM2M_COAP_BLOCK_SIZE + CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE),
+	     "The buffer for serializing message needs to be bigger than a message with one block");
+#endif
+
 /* buffer util macros */
 #define CPKT_BUF_WRITE(cpkt)	(cpkt)->data, &(cpkt)->offset, (cpkt)->max_len
 #define CPKT_BUF_READ(cpkt)	(cpkt)->data, (cpkt)->max_len
@@ -436,17 +442,18 @@ struct lwm2m_block_context {
 	struct lwm2m_opaque_context opaque;
 	int64_t timestamp;
 	uint32_t expected;
-	uint8_t token[8];
-	uint8_t tkl;
 	bool last_block : 1;
-	uint8_t  level;  /* 3/4 (4 = resource instance) */
-	uint16_t res_id;
-	uint16_t res_inst_id;
+	struct lwm2m_obj_path path;
 };
 
 struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
+
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	/* Corresponding block context. NULL if block transfer is not used. */
+	struct coap_block_context *block_ctx;
+#endif
 
 	/* private output data */
 	void *user_data;
@@ -489,6 +496,11 @@ struct lwm2m_message {
 	/** Buffer data related outgoing message */
 	uint8_t msg_data[MAX_PACKET_SIZE];
 
+#if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	/** Buffer data containing complete message */
+	struct coap_packet body_encode_buffer;
+#endif
+
 	/** Message transmission handling for TYPE_CON */
 	struct coap_pending *pending;
 	struct coap_reply *reply;
@@ -500,6 +512,7 @@ struct lwm2m_message {
 	uint8_t *token;
 	coap_reply_t reply_cb;
 	lwm2m_message_timeout_cb_t message_timeout_cb;
+	lwm2m_send_cb_t send_status_cb;
 	uint16_t mid;
 	uint8_t type;
 	uint8_t code;

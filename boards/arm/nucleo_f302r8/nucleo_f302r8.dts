@@ -8,6 +8,7 @@
 #include <st/f3/stm32f302X8.dtsi>
 #include <st/f3/stm32f302r(6-8)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F302R8-NUCLEO board";
@@ -39,6 +40,8 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -119,5 +122,13 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

@@ -11,6 +11,11 @@ tests:
     min_flash: 250
     min_ram: 32
     harness: none
-    tags: samples display gui
+    tags:
+      - samples
+      - display
+      - gui
     modules:
       - lvgl
+    integration_platforms:
+      - native_posix_64

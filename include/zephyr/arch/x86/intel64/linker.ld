@@ -220,7 +220,7 @@ SECTIONS
 /*
  * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
  */
-#if !defined(CONFIG_EXCEPTIONS)
+#if !defined(CONFIG_CPP_EXCEPTIONS)
 	/DISCARD/ : { *(.eh_frame) }
 #endif
 

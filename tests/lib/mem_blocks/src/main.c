@@ -427,12 +427,9 @@ ZTEST(lib_mem_block, test_mem_block_alloc_free_contiguous)
 
 	/* all blocks should be taken */
 	for (i = 0; i < NUM_BLOCKS; i++) {
-		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
-					    i, &val);
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap, i, &val);
 		zassert_equal(val, 1,
 		     "sys_mem_blocks_alloc_contiguous failed, bit %i should be set", i);
-		break;
-
 	}
 
 	/* free first 3 memory blocks, use a pointer provided by previous case */

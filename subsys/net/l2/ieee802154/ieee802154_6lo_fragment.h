@@ -21,9 +21,10 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-static inline bool ieee802154_6lo_requires_fragmentation(struct net_pkt *pkt, uint8_t ll_hdr_size)
+static inline bool ieee802154_6lo_requires_fragmentation(struct net_pkt *pkt, uint8_t ll_hdr_len,
+							 uint8_t authtag_len)
 {
-	return (net_pkt_get_len(pkt) + ll_hdr_size > IEEE802154_MTU);
+	return (ll_hdr_len + net_pkt_get_len(pkt) + authtag_len > IEEE802154_MTU);
 }
 
 static inline void ieee802154_6lo_fragment_ctx_init(struct ieee802154_6lo_fragment_ctx *ctx,

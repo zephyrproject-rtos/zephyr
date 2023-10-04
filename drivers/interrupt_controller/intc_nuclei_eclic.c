@@ -159,7 +159,7 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 	ECLIC_CTRL[irq].INTATTR.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
 }
 
-static int nuclei_eclic_init(const struct device *dev)
+static int nuclei_eclic_init(void)
 {
 	/* check hardware support required interrupt levels */
 	__ASSERT_NO_MSG(ECLIC_INFO.b.intctlbits >= INTERRUPT_LEVEL);

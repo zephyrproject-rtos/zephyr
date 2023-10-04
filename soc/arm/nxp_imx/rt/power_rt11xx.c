@@ -320,9 +320,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize RT11xx Power */
-static int rt11xx_power_init(const struct device *dev)
+static int rt11xx_power_init(void)
 {
-	ARG_UNUSED(dev);
 	/* Drop SOC target voltage to 1.0 V */
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P0V);
 	/* Initialize general power controller */

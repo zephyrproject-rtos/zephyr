@@ -17,9 +17,6 @@ if BOOTLOADER_MCUBOOT
 
 	config ROM_START_OFFSET
 		default 0x20
-
-	config HAS_DYNAMIC_DEVICE_HANDLES
-		default y
 endif
 
 config SOC
@@ -44,6 +41,12 @@ endif
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
 
 if GDBSTUB
 

@@ -31,23 +31,6 @@
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
 /**
- * @brief Used for debugging to print ip addresses.
- *
- * @param addr sockaddr for socket using ipv4 or ipv6
- * @return ip address in readable form
- */
-char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
-
-/**
- * @brief Converts the token to a printable format.
- *
- * @param[in] token Token to be printed
- * @param[in] tkl Lenghts of token
- * @return char buffer with the string representation of the token
- */
-char *sprint_token(const uint8_t *token, uint8_t tkl);
-
-/**
  * @brief Validates that writing is a legal operation on the field given by the object in
  * @p obj_inst and the resource id in @p msg. Returns the field to obj_field (if it exists).
  *

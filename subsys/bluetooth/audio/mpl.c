@@ -1848,38 +1848,58 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
-		if (pl.track_pos - PREV_MARGIN <
-		    pl.group->track->segment->pos) {
-			do_prev_segment(&pl);
+		if (pl.group->track->segment != NULL) {
+			if (pl.track_pos - PREV_MARGIN < pl.group->track->segment->pos) {
+				do_prev_segment(&pl);
+			}
+
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-		do_next_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_next_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-		do_first_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_first_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
-		do_last_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (pl.group->track->segment != NULL) {
+			do_last_segment(&pl);
+			pl.track_pos = pl.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(pl.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
-		if (command->use_param) {
+		if (command->use_param && pl.group->track->segment != NULL) {
 			if (command->param != 0) {
 				do_goto_segment(&pl, command->param);
 				pl.track_pos = pl.group->track->segment->pos;
@@ -2459,7 +2479,6 @@ void set_current_track_id(uint64_t id)
 	LOG_DBG_OBJ_ID("Track ID to set: ", id);
 
 	if (find_track_by_id(&pl, id, &group, &track)) {
-
 		if (pl.group != group) {
 			pl.group = group;
 			do_group_change_notifications(&pl);
@@ -2603,43 +2622,41 @@ uint32_t get_commands_supported(void)
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
+
+static bool parse_sci(struct bt_data *data, void *user_data)
+{
+	LOG_DBG("type: %u len %u", data->type, data->data_len);
+	LOG_HEXDUMP_DBG(data->data, data->data_len, "param:");
+
+	if (data->type < MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME ||
+	    data->type > MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS) {
+		LOG_DBG("Invalid search type: %u", data->type);
+		return false;
+	}
+
+	return true;
+}
+
 static void parse_search(const struct mpl_search *search)
 {
-	uint8_t index = 0;
-	struct mpl_sci sci;
-	uint8_t sci_num = 0;
 	bool search_failed = false;
 
 	if (search->len > SEARCH_LEN_MAX) {
 		LOG_WRN("Search too long (%d) - aborting", search->len);
 		search_failed = true;
 	} else {
-		LOG_DBG("Parsing %d octets search", search->len);
+		uint8_t search_ltv[SEARCH_LEN_MAX];
+		struct net_buf_simple buf;
 
-		while (search->len - index > 0) {
-			sci.len = (uint8_t)search->search[index++];
-			if (sci.len < SEARCH_SCI_LEN_MIN) {
-				LOG_WRN("Invalid length field - too small");
-				search_failed = true;
-				break;
-			}
-			if (sci.len > (search->len - index)) {
-				LOG_WRN("Incomplete search control item");
-				search_failed = true;
-				break;
-			}
-			sci.type = (uint8_t)search->search[index++];
-			if (sci.type <  MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME ||
-			    sci.type > MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS) {
-				search_failed = true;
-				break;
-			}
-			(void)memcpy(&sci.param, &search->search[index], sci.len - 1);
-			index += sci.len - 1;
+		/* Copy so that we can parse it using the net_buf_simple when search is const */
+		memcpy(search_ltv, search->search, search->len);
 
-			LOG_DBG("SCI # %d: type: %d", sci_num, sci.type);
-			LOG_HEXDUMP_DBG(sci.param, sci.len - 1, "param:");
-			sci_num++;
+		net_buf_simple_init_with_data(&buf, search_ltv, search->len);
+
+		bt_data_parse(&buf, parse_sci, NULL);
+
+		if (buf.len != 0U) {
+			search_failed = true;
 		}
 	}
 
@@ -2886,6 +2903,16 @@ void mpl_test_media_state_set(uint8_t state)
 {
 	pl.state = state;
 	media_proxy_pl_media_state_cb(pl.state);
+}
+
+void mpl_test_player_name_changed_cb(void)
+{
+	media_proxy_pl_name_cb(pl.name);
+}
+
+void mpl_test_player_icon_url_changed_cb(void)
+{
+	media_proxy_pl_icon_url_cb(pl.icon_url);
 }
 
 void mpl_test_track_changed_cb(void)

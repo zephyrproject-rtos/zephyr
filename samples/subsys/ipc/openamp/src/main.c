@@ -281,7 +281,7 @@ _cleanup:
 	printk("OpenAMP demo ended.\n");
 }
 
-void main(void)
+int main(void)
 {
 	printk("Starting application thread!\n");
 	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
@@ -293,12 +293,13 @@ void main(void)
 	wakeup_cpu1();
 	k_msleep(500);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
+	return 0;
 }
 
 /* Make sure we clear out the status flag very early (before we bringup the
  * secondary core) so the secondary core see's the proper status
  */
-int init_status_flag(const struct device *arg)
+int init_status_flag(void)
 {
 	virtio_set_status(NULL, 0);
 

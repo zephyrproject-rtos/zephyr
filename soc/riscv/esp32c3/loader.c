@@ -16,6 +16,10 @@
 #include <stdlib.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
+
+#define BOOT_LOG_INF(_fmt, ...) \
+	ets_printf("[" CONFIG_SOC "] [INF] " _fmt "\n\r", ##__VA_ARGS__)
+
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
@@ -64,9 +68,16 @@ static int map_rom_segments(void)
 
 	esp_rom_Cache_Resume_ICache(autoload);
 
+	/* Show map segments continue using same log format as during MCUboot phase */
+	BOOT_LOG_INF("DROM segment: paddr=%08Xh, vaddr=%08Xh, size=%05Xh (%6d) map",
+		_app_drom_start, _app_drom_vaddr, _app_drom_size, _app_drom_size);
+	BOOT_LOG_INF("IROM segment: paddr=%08Xh, vaddr=%08Xh, size=%05Xh (%6d) map\r\n",
+		_app_irom_start, _app_irom_vaddr, _app_irom_size, _app_irom_size);
+	esp_rom_uart_tx_wait_idle(0);
+
 	return rc;
 }
-#endif
+#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
 void __start(void)
 {

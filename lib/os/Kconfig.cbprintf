@@ -36,8 +36,10 @@ config CBPRINTF_FULL_INTEGRAL
 	  Build cbprintf with buffers sized to support converting the full
 	  range of all integral and pointer values.
 
-	  Selecting this has no effect on code size, but will increase call
-	  stack size by a few words.
+	  Selecting this may increase code size on 32-bit systems as
+	  GCC's __udivdi3 helper could end up being pulled into the
+	  final binary. In any case, this will increase call stack size
+	  by a few words.
 
 # 00:
 config CBPRINTF_REDUCED_INTEGRAL

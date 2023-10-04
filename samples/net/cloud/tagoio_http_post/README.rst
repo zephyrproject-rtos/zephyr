@@ -68,7 +68,7 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: disco_l475_iot1
-   :gen-args: -DOVERLAY_CONFIG=overlay-wifi.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash
    :compact:
 
@@ -76,7 +76,7 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: [sam_v71_xult | frdm_k64f | nucleo_f767zi]
    :shield: [esp_8266_arduino | inventek_eswifi_arduino_uart]
-   :gen-args: -DOVERLAY_CONFIG=overlay-wifi.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
    :goals: build flash
    :compact:
 
@@ -97,14 +97,14 @@ a special designator like defined at ``arduino.overlay``.
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: sam4e_xpro
-   :gen-args: -DOVERLAY_CONFIG=overlay-modem.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf
    :goals: build flash
    :compact:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: frdm_k64f
-   :gen-args: -DOVERLAY_CONFIG=overlay-modem.conf -DDTC_OVERLAY_FILE=arduino.overlay
+   :gen-args: -DEXTRA_CONF_FILE=overlay-modem.conf -DDTC_OVERLAY_FILE=arduino.overlay
    :goals: build flash
    :compact:
 

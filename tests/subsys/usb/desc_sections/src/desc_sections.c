@@ -10,7 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
-
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
@@ -33,7 +33,7 @@ struct usb_test_config {
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
-#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#if defined(CONFIG_USB_DC_HAS_HS_SUPPORT)
 #define TEST_BULK_EP_MPS		512
 #else
 #define TEST_BULK_EP_MPS		64

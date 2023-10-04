@@ -1,7 +1,7 @@
 .. _cy8ckit_062_ble:
 
-PSoC63 BLE Pioneer Kit
-######################
+INFINEON PSoC63 BLE Pioneer Kit
+###############################
 
 Overview
 ********

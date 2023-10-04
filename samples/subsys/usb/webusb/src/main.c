@@ -299,7 +299,7 @@ static struct webusb_req_handlers req_handlers = {
 	.vendor_handler = vendor_handle_req,
 };
 
-void main(void)
+int main(void)
 {
 	int ret;
 
@@ -315,6 +315,7 @@ void main(void)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
+	return 0;
 }

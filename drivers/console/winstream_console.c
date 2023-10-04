@@ -46,9 +46,8 @@ int arch_printk_char_out(int c)
 	return 0;
 }
 
-static int winstream_console_init(const struct device *d)
+static int winstream_console_init(void)
 {
-	ARG_UNUSED(d);
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(dev)) {

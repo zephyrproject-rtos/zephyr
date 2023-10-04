@@ -112,9 +112,8 @@ uint32_t sys_clock_cycle_get_32(void)
 	return get_cp0_count();
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(MIPS_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
 	last_count = get_cp0_count();

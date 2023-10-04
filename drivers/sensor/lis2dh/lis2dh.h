@@ -257,7 +257,9 @@ struct lis2dh_data {
 	struct gpio_callback gpio_int2_cb;
 
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trig_drdy;
 	sensor_trigger_handler_t handler_anymotion;
+	const struct sensor_trigger *trig_anymotion;
 	atomic_t trig_flags;
 	enum sensor_channel chan_drdy;
 

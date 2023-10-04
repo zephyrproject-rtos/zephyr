@@ -8,7 +8,7 @@
 	status = "okay";
 };
 
-&sercom1 {
+dut: &sercom1 {
 	/* internally loop-back Tx and Rx on PAD0 */
 	rxpo = <0>;
 	txpo = <0>;

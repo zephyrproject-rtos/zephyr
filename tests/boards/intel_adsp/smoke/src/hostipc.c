@@ -72,18 +72,16 @@ ZTEST(intel_adsp, test_host_ipc)
 	AWAIT(msg_flag);
 
 	/* Same, but we'll complete it asynchronously (1.8+ only) */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
-		printk("Return message request, async...\n");
-		done_flag = false;
-		msg_flag = false;
-		ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
-					RETURN_MSG_ASYNC_VAL);
-		zassert_true(ret, "send failed");
-		AWAIT(done_flag);
-		AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
-		AWAIT(msg_flag);
-		intel_adsp_ipc_complete(INTEL_ADSP_IPC_HOST_DEV);
-	}
+	printk("Return message request, async...\n");
+	done_flag = false;
+	msg_flag = false;
+	ret = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_RETURN_MSG,
+				RETURN_MSG_ASYNC_VAL);
+	zassert_true(ret, "send failed");
+	AWAIT(done_flag);
+	AWAIT(intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV));
+	AWAIT(msg_flag);
+	intel_adsp_ipc_complete(INTEL_ADSP_IPC_HOST_DEV);
 
 	/* Now make a synchronous call with (on the host) a delayed
 	 * completion and make sure the interrupt fires and wakes us

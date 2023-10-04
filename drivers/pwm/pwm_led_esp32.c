@@ -235,7 +235,6 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-/* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_idx,
 				    uint32_t period_cycles,
 				    uint32_t pulse_cycles, pwm_flags_t flags)

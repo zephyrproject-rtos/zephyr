@@ -46,17 +46,17 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define SPI_NOR_MAX_ADDR_WIDTH 4
 
 #if DT_INST_NODE_HAS_PROP(0, t_enter_dpd)
-#define T_DP_MS ceiling_fraction(DT_INST_PROP(0, t_enter_dpd), NSEC_PER_MSEC)
+#define T_DP_MS DIV_ROUND_UP(DT_INST_PROP(0, t_enter_dpd), NSEC_PER_MSEC)
 #else /* T_ENTER_DPD */
 #define T_DP_MS 0
 #endif /* T_ENTER_DPD */
 #if DT_INST_NODE_HAS_PROP(0, t_exit_dpd)
-#define T_RES1_MS ceiling_fraction(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
+#define T_RES1_MS DIV_ROUND_UP(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
 #endif /* T_EXIT_DPD */
 #if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
-#define T_DPDD_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
-#define T_CRDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
-#define T_RDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
+#define T_DPDD_MS DIV_ROUND_UP(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
+#define T_CRDP_MS DIV_ROUND_UP(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
+#define T_RDP_MS DIV_ROUND_UP(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
 #else /* DPD_WAKEUP_SEQUENCE */
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
@@ -740,7 +740,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 
 	/* erase area must be subregion of device */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	/* address must be sector-aligned */
@@ -835,7 +835,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	return ret;
 }
 
-#if defined(CONFIG_FLASH_JESD216_API)
+#if defined(CONFIG_FLASH_JESD216_API) || defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
 static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 			     void *dest, size_t size)
@@ -849,7 +849,7 @@ static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 	return ret;
 }
 
-#endif /* CONFIG_FLASH_JESD216_API */
+#endif /* CONFIG_FLASH_JESD216_API || CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 static int spi_nor_read_jedec_id(const struct device *dev,
 				 uint8_t *id)
@@ -1139,7 +1139,7 @@ static int spi_nor_configure(const struct device *dev)
 	int rc;
 
 	/* Validate bus and CS is ready */
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		return -ENODEV;
 	}
 

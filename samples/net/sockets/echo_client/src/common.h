@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
+
 /* Value of 0 will cause the IP stack to select next free port */
 #define MY_PORT 0
 
@@ -21,23 +23,29 @@ extern struct k_mem_domain app_domain;
 #define APP_DMEM
 #endif
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+#if defined(CONFIG_NET_TC_THREAD_PREEMPTIVE)
 #define THREAD_PRIORITY K_PRIO_PREEMPT(8)
 #else
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #endif
+
+#define UDP_STACK_SIZE 2048
+
+struct udp_control {
+	struct k_poll_signal tx_signal;
+	struct k_timer tx_timer;
+	struct k_timer rx_timer;
+};
 
 struct data {
 	const char *proto;
 
 	struct {
 		int sock;
-		/* Work controlling udp data sending */
-		struct k_work_delayable recv;
-		struct k_work_delayable transmit;
 		uint32_t expecting;
 		uint32_t counter;
 		uint32_t mtu;
+		struct udp_control *ctrl;
 	} udp;
 
 	struct {
@@ -65,6 +73,10 @@ extern const char lorem_ipsum[];
 extern const int ipsum_len;
 extern struct configs conf;
 
+/* init_udp initializes kernel objects, hence it has to be called from
+ * supervisor thread.
+ */
+void init_udp(void);
 int start_udp(void);
 int process_udp(void);
 void stop_udp(void);

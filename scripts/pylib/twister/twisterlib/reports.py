@@ -136,7 +136,7 @@ class Reporting:
                     name, classname, status, ts_status, reason, tc_duration, runnable,
                     (fails, passes, errors, skips), log, True)
 
-            total = (errors + passes + fails + skips)
+            total = errors + passes + fails + skips
 
             eleTestsuite.attrib['time'] = f"{duration}"
             eleTestsuite.attrib['failures'] = f"{fails}"
@@ -220,7 +220,7 @@ class Reporting:
                         name, classname, ts_status, ts_status, reason, duration, runnable,
                         (fails, passes, errors, skips), log, False)
 
-            total = (errors + passes + fails + skips)
+            total = errors + passes + fails + skips
 
             eleTestsuite.attrib['time'] = f"{duration}"
             eleTestsuite.attrib['failures'] = f"{fails}"
@@ -414,6 +414,31 @@ class Reporting:
             logger.warning("Deltas based on metrics from last %s" %
                            ("release" if not last_metrics else "run"))
 
+    def synopsis(self):
+        cnt = 0
+        example_instance = None
+        for instance in self.instances.values():
+            if instance.status not in ["passed", "filtered", "skipped"]:
+                cnt = cnt + 1
+                if cnt == 1:
+                    logger.info("-+" * 40)
+                    logger.info("The following issues were found (showing the top 10 items):")
+
+                logger.info(f"{cnt}) {instance.testsuite.name} on {instance.platform.name} {instance.status} ({instance.reason})")
+                example_instance = instance
+            if cnt == 10:
+                break
+
+        if cnt and example_instance:
+            logger.info("")
+            logger.info("To rerun the tests, call twister using the following commandline:")
+            logger.info("west twister -p <PLATFORM> -s <TEST ID>, for example:")
+            logger.info("")
+            logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}")
+            logger.info(f"or with west:")
+            logger.info(f"west build -p -b {example_instance.platform.name} -T {example_instance.testsuite.name}")
+            logger.info("-+" * 40)
+
     def summary(self, results, unrecognized_sections, duration):
         failed = 0
         run = 0
@@ -437,14 +462,17 @@ class Reporting:
             pass_rate = 0
 
         logger.info(
-            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
+            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {}{}{} errored, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
                 results.total,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if results.failed else Fore.RESET,
-                results.failed + results.error,
+                results.failed,
+                Fore.RESET,
+                Fore.RED if results.error else Fore.RESET,
+                results.error,
                 Fore.RESET,
                 results.skipped_configs,
                 Fore.YELLOW if self.plan.warnings else Fore.RESET,

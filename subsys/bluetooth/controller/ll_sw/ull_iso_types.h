@@ -28,26 +28,17 @@
 	 ((conn_handle) <= ((LL_BIS_SYNC_HANDLE_BASE) + \
 			    (BT_CTLR_SYNC_ISO_STREAM_MAX) - 1U)))
 #else
+#define LL_BIS_SYNC_IDX_FROM_HANDLE(conn_handle) 0U
 #define IS_SYNC_ISO_HANDLE(conn_handle) 0U
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 /* CIS */
-#define LL_CIS_HANDLE_BASE (BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE)
-
-#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
-#define LAST_VALID_CIS_HANDLE \
-	(CONFIG_BT_CTLR_CONN_ISO_STREAMS + LL_CIS_HANDLE_BASE - 1)
-#else
-#define LAST_VALID_CIS_HANDLE (LL_CIS_HANDLE_BASE - 1)
-#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
-
-#define LL_CIS_IDX_FROM_HANDLE(_handle) \
-	((_handle) - LL_CIS_HANDLE_BASE)
-
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define LL_CIS_HANDLE_LAST \
+	(CONFIG_BT_CTLR_CONN_ISO_STREAMS + LL_CIS_HANDLE_BASE - 1)
 #define IS_CIS_HANDLE(_handle) \
 	(((_handle) >= LL_CIS_HANDLE_BASE) && \
-	((_handle) <= LAST_VALID_CIS_HANDLE))
+	((_handle) <= LL_CIS_HANDLE_LAST))
 #else
 #define IS_CIS_HANDLE(_handle) 0
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
@@ -66,9 +57,9 @@ struct ll_iso_test_mode_data {
 
 /* Common members for ll_conn_iso_stream and ll_broadcast_iso_stream */
 struct ll_iso_stream_hdr {
+	struct ll_iso_test_mode_data test_mode;
 	struct ll_iso_datapath *datapath_in;
 	struct ll_iso_datapath *datapath_out;
-	struct ll_iso_test_mode_data test_mode;
 };
 
 struct ll_iso_datapath {

@@ -8,8 +8,8 @@ compatible: "ite,it8xxx2-i2c"
 include: ite,common-i2c.yaml
 
 properties:
-    fifo-enable:
-      type: boolean
-      description: |
-        FIFO1 supports channel A.
-        FIFO2 only supports one channel of B or C.
+  fifo-enable:
+    type: boolean
+    description: |
+      FIFO1 supports channel A.
+      FIFO2 only supports one channel of B or C.

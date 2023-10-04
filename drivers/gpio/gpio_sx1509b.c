@@ -724,21 +724,22 @@ int sx1509b_led_intensity_pin_set(const struct device *dev, gpio_pin_t pin,
 	return rc;
 }
 
-static const struct sx1509b_config sx1509b_cfg = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
-	.bus = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-	.nint_gpio = GPIO_DT_SPEC_INST_GET(0, nint_gpios),
-#endif
-};
+#define GPIO_SX1509B_DEFINE(inst)                                              \
+	static const struct sx1509b_config sx1509b_cfg##inst = {               \
+		.common = {                                                    \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),\
+		},                                                             \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                             \
+		IF_ENABLED(CONFIG_GPIO_SX1509B_INTERRUPT,                      \
+			   (GPIO_DT_SPEC_INST_GET(inst, nint_gpios)))          \
+	};                                                                     \
+                                                                               \
+	static struct sx1509b_drv_data sx1509b_drvdata##inst = {               \
+		.lock = Z_SEM_INITIALIZER(sx1509b_drvdata##inst.lock, 1, 1),   \
+	};                                                                     \
+                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, sx1509b_init, NULL, &sx1509b_drvdata##inst,\
+			      &sx1509b_cfg##inst, POST_KERNEL,                 \
+			      CONFIG_GPIO_SX1509B_INIT_PRIORITY, &api_table);
 
-static struct sx1509b_drv_data sx1509b_drvdata = {
-	.lock = Z_SEM_INITIALIZER(sx1509b_drvdata.lock, 1, 1),
-};
-
-DEVICE_DT_INST_DEFINE(0, sx1509b_init, NULL,
-		 &sx1509b_drvdata, &sx1509b_cfg,
-		 POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
-		 &api_table);
+DT_INST_FOREACH_STATUS_OKAY(GPIO_SX1509B_DEFINE)

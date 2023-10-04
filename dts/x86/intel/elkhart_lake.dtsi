@@ -189,6 +189,18 @@
 			current-speed = <115200>;
 		};
 
+		smbus0: smbus0 {
+			compatible = "intel,pch-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			vendor-id = <0x8086>;
+			device-id = <0x4b23>;
+			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+		};
+
 		i2c0: i2c0 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -677,11 +689,15 @@
 			status = "okay";
 		};
 
-		counter: counter@70 {
+		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
 
 			status = "okay";
 		};
+
 	};
 };

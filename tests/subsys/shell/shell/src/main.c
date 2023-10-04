@@ -43,7 +43,7 @@ ZTEST(shell_1cpu, test_cmd_help)
 	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_clear)
+ZTEST(sh, test_cmd_clear)
 {
 	test_shell_execute_cmd("clear", 0);
 	test_shell_execute_cmd("clear -h", 1);
@@ -52,7 +52,7 @@ ZTEST(shell, test_cmd_clear)
 	test_shell_execute_cmd("clear dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_shell)
+ZTEST(sh, test_cmd_shell)
 {
 	test_shell_execute_cmd("shell -h", 1);
 	test_shell_execute_cmd("shell --help", 1);
@@ -135,7 +135,7 @@ ZTEST(shell, test_cmd_shell)
 	test_shell_execute_cmd("shell stats show dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_history)
+ZTEST(sh, test_cmd_history)
 {
 	test_shell_execute_cmd("history", 0);
 	test_shell_execute_cmd("history -h", 1);
@@ -144,7 +144,7 @@ ZTEST(shell, test_cmd_history)
 	test_shell_execute_cmd("history dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_cmd_resize)
+ZTEST(sh, test_cmd_resize)
 {
 	test_shell_execute_cmd("resize -h", 1);
 	test_shell_execute_cmd("resize --help", 1);
@@ -159,7 +159,7 @@ ZTEST(shell, test_cmd_resize)
 	test_shell_execute_cmd("resize default dummy dummy", -EINVAL);
 }
 
-ZTEST(shell, test_shell_module)
+ZTEST(sh, test_shell_module)
 {
 	test_shell_execute_cmd("test_shell_cmd", 0);
 	test_shell_execute_cmd("test_shell_cmd -h", 1);
@@ -172,7 +172,7 @@ ZTEST(shell, test_shell_module)
 }
 
 /* test wildcard and static subcommands */
-ZTEST(shell, test_shell_wildcards_static)
+ZTEST(sh, test_shell_wildcards_static)
 {
 	test_shell_execute_cmd("test_wildcard", 0);
 	test_shell_execute_cmd("test_wildcard argument_1", 1);
@@ -186,7 +186,7 @@ ZTEST(shell, test_shell_wildcards_static)
 }
 
 /* test wildcard and dynamic subcommands */
-ZTEST(shell, test_shell_wildcards_dynamic)
+ZTEST(sh, test_shell_wildcards_dynamic)
 {
 	test_shell_execute_cmd("test_dynamic", 0);
 	test_shell_execute_cmd("test_dynamic d*", 1);
@@ -195,7 +195,7 @@ ZTEST(shell, test_shell_wildcards_dynamic)
 }
 
 
-static int cmd_test_module(const struct shell *shell, size_t argc, char **argv)
+static int cmd_test_module(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
@@ -205,7 +205,7 @@ static int cmd_test_module(const struct shell *shell, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(test_shell_cmd, NULL, "help", cmd_test_module, 1, 0);
 
 
-static int cmd_wildcard(const struct shell *shell, size_t argc, char **argv)
+static int cmd_wildcard(const struct shell *sh, size_t argc, char **argv)
 {
 	int valid_arguments = 0;
 	for (size_t i = 1; i < argc; i++) {
@@ -234,7 +234,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_test_shell_cmdl,
 SHELL_CMD_REGISTER(test_wildcard, &m_sub_test_shell_cmdl, NULL, cmd_wildcard);
 
 
-static int cmd_dynamic(const struct shell *shell, size_t argc, char **argv)
+static int cmd_dynamic(const struct shell *sh, size_t argc, char **argv)
 {
 	int valid_arguments = 0;
 
@@ -276,12 +276,12 @@ SHELL_CMD_REGISTER(test_dynamic, &m_sub_test_dynamic, NULL, cmd_dynamic);
 static void unselect_cmd(void)
 {
 	/* Unselecting command <shell color> */
-	const struct shell *shell = shell_backend_dummy_get_ptr();
+	const struct shell *sh = shell_backend_dummy_get_ptr();
 
-	shell->ctx->selected_cmd = NULL;
+	sh->ctx->selected_cmd = NULL;
 }
 
-ZTEST(shell, test_cmd_select)
+ZTEST(sh, test_cmd_select)
 {
 	unselect_cmd();
 	test_shell_execute_cmd("select -h", 1);
@@ -296,7 +296,7 @@ ZTEST(shell, test_cmd_select)
 	test_shell_execute_cmd("on", -ENOEXEC);
 }
 
-ZTEST(shell, test_set_root_cmd)
+ZTEST(sh, test_set_root_cmd)
 {
 	int err;
 
@@ -317,22 +317,22 @@ ZTEST(shell, test_set_root_cmd)
 	test_shell_execute_cmd("shell colors on", 0);
 }
 
-ZTEST(shell, test_shell_fprintf)
+ZTEST(sh, test_shell_fprintf)
 {
 	static const char expect[] = "testing 1 2 3";
-	const struct shell *shell;
+	const struct shell *sh;
 	const char *buf;
 	size_t size;
 
-	shell = shell_backend_dummy_get_ptr();
-	zassert_not_null(shell, "Failed to get shell");
+	sh = shell_backend_dummy_get_ptr();
+	zassert_not_null(sh, "Failed to get shell");
 
 	/* Clear the output buffer */
-	shell_backend_dummy_clear_output(shell);
+	shell_backend_dummy_clear_output(sh);
 
-	shell_fprintf(shell, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
+	shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
 		      1, "2", '3');
-	buf = shell_backend_dummy_get_output(shell, &size);
+	buf = shell_backend_dummy_get_output(sh, &size);
 	zassert_true(size >= sizeof(expect), "Expected size > %u, got %d",
 		     sizeof(expect), size);
 
@@ -366,7 +366,7 @@ static int cmd_mand_1_opt_raw_handler(const struct shell *sh, size_t argc, char 
 SHELL_CMD_ARG_REGISTER(CMD_MAND_1_OPT_RAW_NAME, NULL, NULL, cmd_mand_1_opt_raw_handler, 1,
 		       SHELL_OPT_ARG_RAW);
 
-ZTEST(shell, test_cmd_mand_1_opt_raw)
+ZTEST(sh, test_cmd_mand_1_opt_raw)
 {
 	test_shell_execute_cmd("cmd_mand_1_opt_raw aaa \"\" bbb", 0);
 	test_shell_execute_cmd("cmd_mand_1_opt_raw", 0);
@@ -401,7 +401,7 @@ static int cmd_mand_2_opt_raw_handler(const struct shell *sh, size_t argc, char 
 SHELL_CMD_ARG_REGISTER(CMD_MAND_2_OPT_RAW_NAME, NULL, NULL, cmd_mand_2_opt_raw_handler, 2,
 		       SHELL_OPT_ARG_RAW);
 
-ZTEST(shell, test_mand_2_opt_raw)
+ZTEST(sh, test_mand_2_opt_raw)
 {
 	test_shell_execute_cmd("cmd_mand_2_opt_raw", -EINVAL);
 	test_shell_execute_cmd("cmd_mand_2_opt_raw mandatory", 0);
@@ -413,14 +413,14 @@ ZTEST(shell, test_mand_2_opt_raw)
 	shell_set_root_cmd(NULL);
 }
 
-static int cmd_dummy(const struct shell *shell, size_t argc, char **argv)
+static int cmd_dummy(const struct shell *sh, size_t argc, char **argv)
 {
 	return 0;
 }
 
 SHELL_CMD_REGISTER(dummy, NULL, NULL, cmd_dummy);
 
-ZTEST(shell, test_max_argc)
+ZTEST(sh, test_max_argc)
 {
 	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 20,
 		     "Unexpected test configuration.");
@@ -451,7 +451,7 @@ SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1, "one"), (two, 2
 SHELL_CMD_REGISTER(dict1, &dict1, NULL, NULL);
 SHELL_CMD_REGISTER(dict2, &dict2, NULL, NULL);
 
-ZTEST(shell, test_cmd_dict)
+ZTEST(sh, test_cmd_dict)
 {
 	test_shell_execute_cmd("dict1 one", 1);
 	test_shell_execute_cmd("dict1 two", 2);
@@ -480,7 +480,7 @@ SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_h
 SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
 		   "Demo command using section for subcommand registration", NULL);
 
-ZTEST(shell, test_section_cmd)
+ZTEST(sh, test_section_cmd)
 {
 	test_shell_execute_cmd("section_cmd", SHELL_CMD_HELP_PRINTED);
 	test_shell_execute_cmd("section_cmd cmd1", 10);
@@ -503,4 +503,4 @@ static void *shell_setup(void)
 ZTEST_SUITE(shell_1cpu, NULL, shell_setup, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
 
-ZTEST_SUITE(shell, NULL, shell_setup, NULL, NULL, NULL);
+ZTEST_SUITE(sh, NULL, shell_setup, NULL, NULL, NULL);

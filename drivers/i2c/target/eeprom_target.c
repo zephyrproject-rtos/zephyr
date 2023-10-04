@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT atmel_at24
+#define DT_DRV_COMPAT zephyr_i2c_target_eeprom
 
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>

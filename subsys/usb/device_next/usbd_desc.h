@@ -23,4 +23,17 @@
 void *usbd_get_descriptor(struct usbd_contex *uds_ctx,
 			  const uint8_t type, const uint8_t idx);
 
+/**
+ * @brief Remove all descriptors from an USB device context
+ *
+ * This removes all loose descriptors like string descriptors.
+ * Descriptors like configuration, or interface are not touched
+ * by this.
+ *
+ * @param[in] uds_ctx Pointer to device context
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_desc_remove_all(struct usbd_contex *const uds_ctx);
+
 #endif /* ZEPHYR_INCLUDE_USBD_DESC_H */

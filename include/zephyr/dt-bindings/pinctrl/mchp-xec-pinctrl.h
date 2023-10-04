@@ -20,32 +20,28 @@
 #define MCHP_AF7	0x7
 #define MCHP_AFMAX	0x8
 
-#define MCHP_XEC_PUPDR_POS		0
-#define MCHP_XEC_PUPDR_MASK		0x3
-#define MCHP_XEC_FUNC_INV_POS		2
-#define MCHP_XEC_FUNC_INV_MSK		0x4
-#define MCHP_XEC_OTYPER_POS		4
-#define MCHP_XEC_OTYPER_MASK		0x1
-#define MCHP_XEC_OTYPER_PUSHPULL	0
-#define MCHP_XEC_OTYPER_OPENDRAIN	0x1
-#define MCHP_XEC_OVAL_POS		6
-#define MCHP_XEC_OVAL_MASK		0x3
-#define MCHP_XEC_OVAL_DRV_LOW		0x1
-#define MCHP_XEC_OVAL_DRV_HIGH		0x2
-#define MCHP_XEC_OSPEEDR_POS		8
-#define MCHP_XEC_OSPEEDR_MASK		0x3
-#define MCHP_XEC_OSPEEDR_SLOW		0x0
-#define MCHP_XEC_OSPEEDR_FAST		0x1
-#define MCHP_XEC_OSPEEDR_NO_CHG		0x3 /* Do not modify slew rate */
-#define MCHP_XEC_ODRVSTR_POS		12
-#define MCHP_XEC_ODRVSTR_MASK		0x7
-#define MCHP_XEC_ODRVSTR_1X		0x0 /* 2 or 4(PIO-24) mA */
-#define MCHP_XEC_ODRVSTR_2X		0x1 /* 4 or 8(PIO-24) mA */
-#define MCHP_XEC_ODRVSTR_4X		0x2 /* 8 or 16(PIO-24) mA */
-#define MCHP_XEC_ODRVSTR_6X		0x3 /* 12 or 24(PIO-24) mA */
-#define MCHP_XEC_ODRVSTR_NO_CHG		0x7 /* Do not modify drive strength */
-#define MCHP_XEC_PIN_LOW_POWER_POS	15
-#define MCHP_XEC_PIN_LOW_POWER		1
+#define MCHP_XEC_NO_PUD_POS		12
+#define MCHP_XEC_PD_POS			13
+#define MCHP_XEC_PU_POS			14
+#define MCHP_XEC_PUSH_PULL_POS		15
+#define MCHP_XEC_OPEN_DRAIN_POS		16
+#define MCHP_XEC_OUT_DIS_POS		17
+#define MCHP_XEC_OUT_EN_POS		18
+#define MCHP_XEC_OUT_HI_POS		19
+#define MCHP_XEC_OUT_LO_POS		20
+/* bit[21] unused */
+#define MCHP_XEC_SLEW_RATE_POS		22
+#define MCHP_XEC_SLEW_RATE_MSK0		0x3
+#define MCHP_XEC_SLEW_RATE_SLOW0	0x1
+#define MCHP_XEC_SLEW_RATE_FAST0	0x2
+#define MCHP_XEC_DRV_STR_POS		24
+#define MCHP_XEC_DRV_STR_MSK0		0x7
+#define MCHP_XEC_DRV_STR0_1X		0x1 /* 2 or 4(PIO-24) mA */
+#define MCHP_XEC_DRV_STR0_2X		0x2 /* 4 or 8(PIO-24) mA */
+#define MCHP_XEC_DRV_STR0_4X		0x3 /* 8 or 16(PIO-24) mA */
+#define MCHP_XEC_DRV_STR0_6X		0x4 /* 12 or 24(PIO-24) mA */
+#define MCHP_XEC_PIN_LOW_POWER_POS	27
+#define MCHP_XEC_FUNC_INV_POS		29
 
 #define MCHP_XEC_PINMUX_PORT_POS	0
 #define MCHP_XEC_PINMUX_PORT_MSK	0xf

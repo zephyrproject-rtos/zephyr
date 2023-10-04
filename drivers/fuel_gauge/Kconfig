@@ -13,6 +13,14 @@ module = FUEL_GAUGE
 module-str = fuel_gauge
 source "subsys/logging/Kconfig.template.log_config"
 
+config FUEL_GAUGE_INIT_PRIORITY
+	int "Battery Fuel Gauge init priority"
+	default 90
+	help
+	  Battery fuel gauge initialization priority.
+
+source "drivers/fuel_gauge/max17048/Kconfig"
+
 source "drivers/fuel_gauge/sbs_gauge/Kconfig"
 
 endif # FUEL_GAUGE

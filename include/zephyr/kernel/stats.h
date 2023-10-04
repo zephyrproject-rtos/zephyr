@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Intel Corporation
+ * Copyright (c) 2021,2023, Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_KERNEL_STATS_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*
  * [k_cycle_stats] is used to track internal statistics about both thread

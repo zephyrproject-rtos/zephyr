@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include "spi_ll_stm32.h"
 
+#define WAIT_1US	1U
+
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
@@ -61,7 +63,7 @@ static void dma_callback(const struct device *dev, void *arg,
 	/* arg directly holds the spi device */
 	struct spi_stm32_data *data = arg;
 
-	if (status != 0) {
+	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
@@ -206,14 +208,14 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 	int ret;
 	size_t dma_segment_len;
 
-	dma_segment_len = len / data->dma_rx.dma_cfg.dest_data_size;
+	dma_segment_len = len * data->dma_rx.dma_cfg.dest_data_size;
 	ret = spi_stm32_dma_rx_load(dev, data->ctx.rx_buf, dma_segment_len);
 
 	if (ret != 0) {
 		return ret;
 	}
 
-	dma_segment_len = len / data->dma_tx.dma_cfg.source_data_size;
+	dma_segment_len = len * data->dma_tx.dma_cfg.source_data_size;
 	ret = spi_stm32_dma_tx_load(dev, data->ctx.tx_buf, dma_segment_len);
 
 	return ret;
@@ -541,7 +543,7 @@ static int spi_stm32_configure(const struct device *dev,
 
 	LL_SPI_DisableCRC(spi);
 
-	if (config->cs || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
+	if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
@@ -628,7 +630,11 @@ static int transceive(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -638,6 +644,14 @@ static int transceive(const struct device *dev,
 #endif
 
 	LL_SPI_Enable(spi);
+
+#if CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * Add a small delay after enabling to prevent transfer stalling at high
+	 * system clock frequency (see errata sheet ES0392).
+	 */
+	k_busy_wait(WAIT_1US);
+#endif
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
@@ -729,7 +743,11 @@ static int transceive_dma(const struct device *dev,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */

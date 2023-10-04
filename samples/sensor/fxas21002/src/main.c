@@ -16,14 +16,14 @@ static void trigger_handler(const struct device *dev,
 	k_sem_give(&sem);
 }
 
-void main(void)
+int main(void)
 {
 	struct sensor_value gyro[3];
 	const struct device *const dev = DEVICE_DT_GET_ANY(nxp_fxas21002);
 
 	if (dev == NULL || !device_is_ready(dev)) {
 		printf("Could not get fxas21002 device\n");
-		return;
+		return 0;
 	}
 
 	struct sensor_trigger trig = {
@@ -33,7 +33,7 @@ void main(void)
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 		printf("Could not set trigger\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -47,4 +47,5 @@ void main(void)
 		       sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
 	}
+	return 0;
 }

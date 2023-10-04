@@ -366,9 +366,8 @@ static const struct log_backend_api monitor_log_api = {
 LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
 #endif /* CONFIG_LOG_MODE_MINIMAL */
 
-static int bt_monitor_init(const struct device *d)
+static int bt_monitor_init(void)
 {
-	ARG_UNUSED(d);
 
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
 	static uint8_t rtt_up_buf[RTT_BUF_SIZE];

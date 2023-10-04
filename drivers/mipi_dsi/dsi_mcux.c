@@ -32,6 +32,7 @@ struct display_mcux_mipi_dsi_config {
 	MIPI_DSI_Type base;
 	dsi_dpi_config_t dpi_config;
 	bool auto_insert_eotp;
+	uint32_t phy_clock;
 };
 
 struct display_mcux_mipi_dsi_data {
@@ -69,7 +70,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	 * Note that the DSI output pixel is 24bit per pixel.
 	 */
 	uint32_t mipi_dsi_dpi_clk_hz = CLOCK_GetRootClockFreq(kCLOCK_Root_Lcdif);
-	uint32_t mipi_dsi_dphy_bit_clk_hz = mipi_dsi_dpi_clk_hz * (24 / mdev->data_lanes);
+	uint32_t mipi_dsi_dphy_bit_clk_hz = config->phy_clock;
 
 	mipi_dsi_dphy_bit_clk_hz = MIPI_DPHY_BIT_CLK_ENLARGE(mipi_dsi_dphy_bit_clk_hz);
 
@@ -80,7 +81,6 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	mipi_dsi_dphy_bit_clk_hz = DSI_InitDphy((MIPI_DSI_Type *)&config->base,
 						&dphy_config, mipi_dsi_dphy_ref_clk_hz);
-
 	/* Init DPI interface. */
 	DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base, &config->dpi_config, mdev->data_lanes,
 					mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
@@ -186,15 +186,25 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 			.bllpMode = DT_INST_ENUM_IDX(id, dpi_bllp_mode),			\
 			.pixelPayloadSize = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, width),	\
 			.panelHeight = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, height),		\
-			.polarityFlags = DT_INST_PROP_BY_PHANDLE_IDX(				\
-					id, nxp_lcdif, id, polarity) >> 2,			\
-			.hfp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hfp),			\
-			.hbp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hbp),			\
-			.hsw = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, hsync),			\
-			.vfp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vfp),			\
-			.vbp = DT_INST_PROP_BY_PHANDLE(id, nxp_lcdif, vbp),			\
+			.polarityFlags = (DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
+					display_timings), hsync_active) ?			\
+					kDSI_DpiHsyncActiveHigh : kDSI_DpiHsyncActiveLow) |	\
+					(DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),	\
+					display_timings), vsync_active) ?			\
+					kDSI_DpiVsyncActiveHigh : kDSI_DpiVsyncActiveLow),	\
+			.hfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings), hfront_porch),		\
+			.hbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+							display_timings), hback_porch),		\
+			.hsw = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+							display_timings), hsync_len),		\
+			.vfp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+						display_timings), vfront_porch),		\
+			.vbp = DT_PROP(DT_CHILD(DT_INST_PHANDLE(id, nxp_lcdif),			\
+							display_timings), vback_porch),		\
 		},										\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
+		.phy_clock = DT_INST_PROP(id, phy_clock),					\
 	};											\
 	static struct display_mcux_mipi_dsi_data display_mcux_mipi_dsi_data_##id;		\
 	DEVICE_DT_INST_DEFINE(id,								\

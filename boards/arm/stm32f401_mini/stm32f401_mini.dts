@@ -38,6 +38,8 @@
 	aliases {
 		led0 = &user_led;
 		sw0 = &boot1;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -140,4 +142,12 @@ zephyr_udc0: &usbotg_fs {
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

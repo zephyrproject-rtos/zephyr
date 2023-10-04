@@ -70,9 +70,8 @@ const struct arm_mmu_config mmu_config = {
  *
  * @return 0
  */
-static int soc_intel_cyclonev_init(const struct device *arg)
+static int soc_intel_cyclonev_init(void)
 {
-	ARG_UNUSED(arg);
 	NMI_INIT();
 	unsigned int sctlr = __get_SCTLR(); /* modifying some registers prior to initialization */
 

@@ -513,7 +513,7 @@ static void configure_buttons(void)
 	gpio_add_callback(sw0_gpio.port, &button_cb_data);
 }
 
-void main(void)
+int main(void)
 {
 	struct mb_display *disp = mb_display_get();
 
@@ -523,7 +523,7 @@ void main(void)
 
 	if (!device_is_ready(pwm.dev)) {
 		printk("%s: device not ready.\n", pwm.dev->name);
-		return;
+		return 0;
 	}
 
 	ble_init();
@@ -551,4 +551,5 @@ void main(void)
 		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
 				 SYS_FOREVER_MS, &img, 1);
 	}
+	return 0;
 }

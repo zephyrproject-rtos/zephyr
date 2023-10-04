@@ -96,7 +96,7 @@ config BT_ISO_TX_FRAG_COUNT
 config BT_ISO_TX_MTU
 	int "Maximum supported MTU for Isochronous TX buffers"
 	default 251
-	range 23 4095
+	range 1 4095
 	help
 	  Maximum MTU for Isochronous channels TX buffers.
 

@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <zephyr/sys/check.h>
 #include <zephyr/bluetooth/hci.h>
 
 #include "ecc.h"
@@ -60,6 +61,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 			LOG_WRN("ECC Debug keys HCI command not available");
 		} else {
 			atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+			__ASSERT_NO_MSG(new_cb->func != NULL);
 			new_cb->func(debug_public_key);
 			return 0;
 		}
@@ -236,3 +238,25 @@ void bt_hci_evt_le_dhkey_complete(struct net_buf *buf)
 		cb(evt->status ? NULL : evt->dhkey);
 	}
 }
+
+#ifdef ZTEST_UNITTEST
+uint8_t const *bt_ecc_get_public_key(void)
+{
+	return pub_key;
+}
+
+uint8_t const *bt_ecc_get_internal_debug_public_key(void)
+{
+	return debug_public_key;
+}
+
+sys_slist_t *bt_ecc_get_pub_key_cb_slist(void)
+{
+	return &pub_key_cb_slist;
+}
+
+bt_dh_key_cb_t *bt_ecc_get_dh_key_cb(void)
+{
+	return &dh_key_cb;
+}
+#endif /* ZTEST_UNITTEST */

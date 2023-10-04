@@ -19,5 +19,6 @@ supported:
   - adc
   - dac
   - pwm
+  - counter
   - rng
   - eeprom

@@ -70,10 +70,6 @@ static void modbus_rx_handler(struct k_work *item)
 	struct modbus_context *ctx;
 
 	ctx = CONTAINER_OF(item, struct modbus_context, server_work);
-	if (ctx == NULL) {
-		LOG_ERR("Failed to obtain context pointer?");
-		return;
-	}
 
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
@@ -342,6 +338,7 @@ init_client_error:
 int modbus_disable(const uint8_t iface)
 {
 	struct modbus_context *ctx;
+	struct k_work_sync work_sync;
 
 	ctx = modbus_get_context(iface);
 	if (ctx == NULL) {
@@ -362,6 +359,7 @@ int modbus_disable(const uint8_t iface)
 		LOG_ERR("Unknown MODBUS mode");
 	}
 
+	k_work_cancel_sync(&ctx->server_work, &work_sync);
 	ctx->rxwait_to = 0;
 	ctx->unit_id = 0;
 	ctx->mode = MODBUS_MODE_RTU;

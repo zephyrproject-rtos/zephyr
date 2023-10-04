@@ -27,11 +27,11 @@
 static const struct gpio_dt_spec button =
 	GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
 
-void main(void)
+int main(void)
 {
 	if (!device_is_ready(button.port)) {
 		printk("Error: button device %s is not ready\n", button.port->name);
-		return;
+		return 0;
 	}
 
 	const int wakeup_level = (button.dt_flags & GPIO_ACTIVE_LOW) ? 0 : 1;
@@ -91,4 +91,5 @@ void main(void)
 				wakeup_reason, t_after_ms, (t_after_ms - t_before_ms));
 	}
 
+	return 0;
 }

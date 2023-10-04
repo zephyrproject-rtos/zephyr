@@ -86,8 +86,8 @@ static void vtd_flush_irte_from_cache(const struct device *dev,
 	struct vtd_ictl_data *data = dev->data;
 
 	if (!data->pwc) {
-		sys_cache_data_range(&data->irte[irte_idx],
-				     sizeof(union vtd_irte), K_CACHE_WB);
+		cache_data_flush_range(&data->irte[irte_idx],
+				       sizeof(union vtd_irte));
 	}
 }
 

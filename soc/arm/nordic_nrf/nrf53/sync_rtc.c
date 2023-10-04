@@ -226,10 +226,8 @@ static int mbox_rx_init(void *user_data)
 }
 
 /* Setup RTC synchronization. */
-static int sync_rtc_setup(const struct device *unused)
+static int sync_rtc_setup(void)
 {
-	ARG_UNUSED(unused);
-
 	nrfx_err_t err;
 	union rtc_sync_channels channels;
 	int32_t sync_rtc_ch;

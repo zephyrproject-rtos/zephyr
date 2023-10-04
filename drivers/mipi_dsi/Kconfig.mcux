@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config MIPI_DSI_MCUX
@@ -7,3 +7,10 @@ config MIPI_DSI_MCUX
 	depends on DT_HAS_NXP_IMX_MIPI_DSI_ENABLED
 	help
 	  NXP MIPI DSI controller driver
+
+config MIPI_DSI_MCUX_2L
+	bool "NXP MCUX MIPI-DSI 2L Controller"
+	default y
+	depends on DT_HAS_NXP_MIPI_DSI_2L_ENABLED
+	help
+	  NXP MIPI DSI 2L controller driver

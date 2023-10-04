@@ -4,6 +4,6 @@ tests:
   sample.sensor.fxas21002:
     harness: sensor
     tags: sensors
-    platform_allow: hexiwear_k64 warp7_m4
+    platform_allow: hexiwear_k64
     integration_platforms:
-      - warp7_m4
+      - hexiwear_k64

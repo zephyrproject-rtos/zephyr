@@ -140,14 +140,14 @@ static int i2c_parsing_return_value(const struct device *dev)
 		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
 			config->port, data->addr_16bit);
 	} else {
-		LOG_ERR("I2C ch%d Address:0x%X Host error bits message:",
+		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:",
 			config->port, data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
 			LOG_ERR("Time-out error: hardware time-out error.");
 		}
 		if (data->err & HOSTA_NACK) {
-			LOG_ERR("NACK error: device does not response ACK.");
+			LOG_DBG("NACK error: device does not response ACK.");
 		}
 		if (data->err & HOSTA_FAIL) {
 			LOG_ERR("Fail: a processing transmission is killed.");
@@ -926,7 +926,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
-	int res;
+	int res, ret;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -1051,10 +1051,12 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Save return value. */
+	ret = i2c_parsing_return_value(dev);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return i2c_parsing_return_value(dev);
+	return ret;
 }
 
 static void i2c_it8xxx2_isr(const struct device *dev)
@@ -1088,13 +1090,6 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg;
 	int error, status;
-
-	/*
-	 * This register is a pre-define hardware slave A and can
-	 * be accessed through I2C0. It is not currently used, so
-	 * it can be disabled to avoid illegal access.
-	 */
-	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
@@ -1277,7 +1272,7 @@ BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
 				  &i2c_it8xxx2_data_##inst,                     \
 				  &i2c_it8xxx2_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE,           \
+				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_it8xxx2_driver_api);                     \
 										\
 	static void i2c_it8xxx2_config_func_##inst(void)                        \

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import inspect
 import os
 import pickle
 import sys
@@ -11,8 +12,6 @@ from pathlib import Path
 ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
-
-from devicetree import edtlib
 
 # Types we support
 # 'string', 'int', 'hex', 'bool'
@@ -26,6 +25,7 @@ if not doc_mode:
     if EDT_PICKLE is not None and os.path.isfile(EDT_PICKLE):
         with open(EDT_PICKLE, 'rb') as f:
             edt = pickle.load(f)
+            edtlib = inspect.getmodule(edt)
     else:
         edt = None
 
@@ -425,6 +425,17 @@ def dt_nodelabel_bool_prop(kconf, _, label, prop):
 
     return _dt_node_bool_prop_generic(edt.label2node.get, label, prop)
 
+def dt_chosen_bool_prop(kconf, _, chosen, prop):
+    """
+    This function takes a /chosen node property named 'chosen', and
+    looks for the chosen node. If that node exists and has a boolean
+    property 'prop', it returns "y". Otherwise, it returns "n".
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    return _dt_node_bool_prop_generic(edt.chosen_node, chosen, prop)
+
 def _dt_node_has_prop_generic(node_search_function, search_arg, prop):
     """
     This function takes the 'node_search_function' and uses it to search for
@@ -645,6 +656,25 @@ def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
     return "n"
 
 
+def dt_nodelabel_array_prop_has_val(kconf, _, label, prop, val):
+    """
+    This function looks for a node with node label 'label'.
+    If the node exists, it checks if the node node has a property
+    'prop' with type "array". If so, and the property contains
+    an element equal to the integer 'val', it returns "y".
+    Otherwise, it returns "n".
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.label2node.get(label)
+
+    if not node or (prop not in node.props) or (node.props[prop].type != "array"):
+        return "n"
+    else:
+        return "y" if int(val, base=0) in node.props[prop].val else "n"
+
+
 def dt_nodelabel_path(kconf, _, label):
     """
     This function takes a node label (not a label property) and
@@ -677,6 +707,19 @@ def dt_node_parent(kconf, _, path):
         return ""
 
     return node.parent.path if node.parent else ""
+
+def dt_gpio_hogs_enabled(kconf, _):
+    """
+    Return "y" if any GPIO hog node is enabled. Otherwise, return "n".
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.nodes:
+        if node.gpio_hogs and node.status == "okay":
+            return "y"
+
+    return "n"
 
 def shields_list_contains(kconf, _, shield):
     """
@@ -723,6 +766,7 @@ functions = {
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_node_bool_prop": (dt_node_bool_prop, 2, 2),
         "dt_nodelabel_bool_prop": (dt_nodelabel_bool_prop, 2, 2),
+        "dt_chosen_bool_prop": (dt_chosen_bool_prop, 2, 2),
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
         "dt_nodelabel_has_prop": (dt_nodelabel_has_prop, 2, 2),
         "dt_node_int_prop_int": (dt_node_int_prop, 2, 3),
@@ -734,5 +778,7 @@ functions = {
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "dt_node_parent": (dt_node_parent, 1, 1),
+        "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
+        "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }

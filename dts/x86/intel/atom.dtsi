@@ -68,11 +68,15 @@
 			status = "disabled";
 		};
 
-		counter: counter@70 {
+		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;
+			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			alarms-count = <1>;
 
 			status = "okay";
 		};
+
 	};
 };

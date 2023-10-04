@@ -9,6 +9,7 @@
 #include <zephyr/wait_q.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/iterable_sections.h>
 
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {
@@ -18,9 +19,8 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 	SYS_PORT_TRACING_OBJ_INIT(k_heap, h);
 }
 
-static int statics_init(const struct device *unused)
+static int statics_init(void)
 {
-	ARG_UNUSED(unused);
 	STRUCT_SECTION_FOREACH(k_heap, h) {
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 		/* Some heaps may not present at boot, so we need to wait for

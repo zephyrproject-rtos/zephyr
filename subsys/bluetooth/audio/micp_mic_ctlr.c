@@ -1,4 +1,4 @@
-/*  Bluetooth MICP - Microphone Input Control Profile - Microphone Controller */
+/*  Bluetooth MICP - Microphone Control Profile - Microphone Controller */
 
 /*
  * Copyright (c) 2020 Bose Corporation

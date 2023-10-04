@@ -15,8 +15,10 @@ static PORT_Type *ports[] = {
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porta)),
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portb)),
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portc)),
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 5
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portd)),
+#endif
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 4
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porte)),
 #endif
 };
@@ -46,7 +48,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
  * and handles clock init. Only bind to these nodes if pinmux driver
  * is disabled.
  */
-#ifndef CONFIG_PINMUX
 static int pinctrl_mcux_init(const struct device *dev)
 {
 	const struct pinctrl_mcux_config *config = dev->config;
@@ -79,4 +80,3 @@ static int pinctrl_mcux_init(const struct device *dev)
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)
-#endif

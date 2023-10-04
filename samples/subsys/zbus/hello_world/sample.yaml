@@ -26,9 +26,12 @@ tests:
         - "I: From listener -> Acc x=2, y=2, z=2"
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
-    arch_exclude: posix xtensa
+    arch_exclude:
+      - xtensa
     platform_exclude: qemu_leon3
     tags: zbus
+    integration_platforms:
+      - qemu_x86
   sample.zbus.hello_world_no_iterable_sections:
     harness: console
     harness_config:
@@ -42,5 +45,6 @@ tests:
         - "I: From listener -> Acc x=2, y=2, z=2"
         - "I: Pub a valid value to a channel with validator successfully."
         - "I: Pub an invalid value to a channel with validator successfully."
-    arch_allow: posix xtensa
+    arch_allow:
+      - xtensa
     tags: zbus

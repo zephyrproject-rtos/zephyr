@@ -16,6 +16,7 @@
 #ifndef _ASMLANGUAGE
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
+extern void z_arm_nmi_set_handler(void (*pHandler)(void));
 #define NMI_INIT() z_arm_nmi_init()
 #else
 #define NMI_INIT()

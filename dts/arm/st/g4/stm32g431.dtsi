@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g431", "st,stm32g4", "simple-bus";
+
 		dma1: dma@40020000 {
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0>;
 			dma-requests = <6>;

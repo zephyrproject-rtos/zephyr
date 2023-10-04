@@ -1,12 +1,7 @@
 tests:
   kernel.multiprocessing.smp:
-    tags: kernel smp
-    ignore_faults: true
-    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
-  kernel.multiprocessing.smp.linker_generator:
-    platform_allow: qemu_x86_64
-    extra_configs:
-      - CONFIG_CMAKE_LINKER_GENERATOR=y
-    tags: linker_generator
+    tags:
+      - kernel
+      - smp
     ignore_faults: true
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)

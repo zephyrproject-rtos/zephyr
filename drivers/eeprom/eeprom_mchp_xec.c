@@ -11,9 +11,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_xec, CONFIG_EEPROM_LOG_LEVEL);
@@ -64,9 +62,7 @@ struct eeprom_xec_regs {
 struct eeprom_xec_config {
 	struct eeprom_xec_regs * const regs;
 	size_t size;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct eeprom_xec_data {
@@ -307,14 +303,12 @@ static int eeprom_xec_init(const struct device *dev)
 
 	k_mutex_init(&data->lock_mtx);
 
-#ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
 		LOG_ERR("XEC EEPROM pinctrl init failed (%d)", ret);
 		return ret;
 	}
-#endif
 
 	regs->mode |= XEC_EEPROM_MODE_ACTIVATE;
 
@@ -327,16 +321,12 @@ static const struct eeprom_driver_api eeprom_xec_api = {
 	.size = eeprom_xec_size,
 };
 
-#ifdef CONFIG_PINCTRL
 PINCTRL_DT_INST_DEFINE(0);
-#endif
 
 static const struct eeprom_xec_config eeprom_config = {
 	.regs = (struct eeprom_xec_regs * const)DT_INST_REG_ADDR(0),
 	.size = DT_INST_REG_SIZE(0),
-#ifdef CONFIG_PINCTRL
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#endif
 };
 
 static struct eeprom_xec_data eeprom_data;

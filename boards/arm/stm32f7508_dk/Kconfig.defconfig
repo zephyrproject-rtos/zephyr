@@ -27,12 +27,15 @@ config MEMC
 
 endif # DISPLAY
 
-if KSCAN
+config INPUT
+	default y if KSCAN
 
-config KSCAN_FT5336_INTERRUPT
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS

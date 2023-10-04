@@ -245,6 +245,19 @@ config SHELL_LOG_FORMAT_TIMESTAMP
 	help
 	  Enable timestamp formatting.
 
+config SHELL_AUTOSTART
+	bool "Auto-start shell at boot"
+	default y
+	help
+	  If enabled, shell will be automatically started.
+
+config SHELL_CMDS_RETURN_VALUE
+	bool "Retval command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  This option enables the retval command. It is used to retrieve
+	  the return value from the most recently executed command.
 
 source "subsys/shell/modules/Kconfig"
 

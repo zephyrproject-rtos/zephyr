@@ -257,7 +257,7 @@ Device dependencies
     :width: 80%
 
 When :kconfig:option:`CONFIG_GEN_ISR_TABLES` is enabled:
-   The *gen_isr_tables.py* script scant the fixed size binary and creates
+   The *gen_isr_tables.py* script scans the fixed size binary and creates
    an isr_tables.c source file with a hardware vector table and/or software
    IRQ table.
 
@@ -407,5 +407,14 @@ The following is a detailed description of the scripts used during the build pro
 --------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_app_partitions.py
+   :start-after: """
+   :end-before: """
+
+.. _check_init_priorities.py:
+
+:zephyr_file:`scripts/build/check_init_priorities.py`
+-----------------------------------------------------
+
+.. include:: ../../../scripts/build/check_init_priorities.py
    :start-after: """
    :end-before: """

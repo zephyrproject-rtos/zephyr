@@ -11,11 +11,11 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#ifdef CONFIG_MCUMGR_GRP_FS
 #include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
+#ifdef CONFIG_MCUMGR_GRP_IMG
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt_callbacks.h>
 #endif
 
@@ -48,24 +48,54 @@ extern "C" {
 #define MGMT_EVT_GET_ID(event) (event & MGMT_EVT_OP_ID_ALL)
 
 /**
+ * MGMT event callback return value.
+ */
+enum mgmt_cb_return {
+	/** No error. */
+	MGMT_CB_OK,
+
+	/** SMP protocol error and ``ret_rc`` contains the #mcumgr_err_t error code. */
+	MGMT_CB_ERROR_RC,
+
+	/**
+	 * Group (application-level) error and ``ret_group`` contains the group ID that caused
+	 * the error and ``ret_rc`` contians the error code of that group to return.
+	 */
+	MGMT_CB_ERROR_RET,
+};
+
+/**
  * @typedef mgmt_cb
  * @brief Function to be called on MGMT notification/event.
  *
- * This callback function is used to notify an application or system about a mcumgr mgmt event.
+ * This callback function is used to notify an application or system about a MCUmgr mgmt event.
  *
  * @param event		#mcumgr_op_t.
- * @param rc		#mcumgr_err_t of the previous handler calls, if it is an error then it
+ * @param prev_status	#mgmt_cb_return of the previous handler calls, if it is an error then it
  *			will be the first error that was returned by a handler (i.e. this handler
  *			is being called for a notification only, the return code will be ignored).
+ * @param rc		If ``prev_status`` is #MGMT_CB_ERROR_RC then this is the SMP error that
+ *			was returned by the first handler that failed. If ``prev_status`` is
+ *			#MGMT_CB_ERROR_RET then this will be the group error rc code returned by
+ *			the first handler that failed. If the handler wishes to raise an SMP
+ *			error, this must be set to the #mcumgr_err_t status and #MGMT_CB_ERROR_RC
+ *			must be returned by the function, if the handler wishes to raise a ret
+ *			error, this must be set to the group ret status and #MGMT_CB_ERROR_RET
+ *			must be returned by the function.
+ * @param group		If ``prev_status`` is #MGMT_CB_ERROR_RET then this is the group of the
+ *			ret error that was returned by the first handler that failed. If the
+ *			handler wishes to raise a ret error, this must be set to the group ret
+ *			status and #MGMT_CB_ERROR_RET must be returned by the function.
  * @param abort_more	Set to true to abort further processing by additional handlers.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if no data is provided).
  *
- * @return		#mcumgr_err_t of the status to return to the calling code (only checked
- *			when failed is false).
+ * @return		#mgmt_cb_return indicating the status to return to the calling code (only
+ *			checked when this is the first failure reported by a handler).
  */
-typedef int32_t (*mgmt_cb)(uint32_t event, int32_t rc, bool *abort_more, void *data,
-			   size_t data_size);
+typedef enum mgmt_cb_return (*mgmt_cb)(uint32_t event, enum mgmt_cb_return prev_status,
+				       int32_t *rc, uint16_t *group, bool *abort_more, void *data,
+				       size_t data_size);
 
 /**
  * MGMT event callback group IDs. Note that this is not a 1:1 mapping with #mcumgr_group_t values.
@@ -146,6 +176,12 @@ enum os_mgmt_group_events {
 	/** Callback when a reset command has been received. */
 	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
 
+	/** Callback when an info command is processed, data is os_mgmt_info_check. */
+	MGMT_EVT_OP_OS_MGMT_INFO_CHECK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 1),
+
+	/** Callback when an info command needs to output data, data is os_mgmt_info_append. */
+	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
+
 	/** Used to enable all os_mgmt_group events. */
 	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),
 };
@@ -160,7 +196,15 @@ struct mgmt_callback {
 	/** Callback that will be called. */
 	mgmt_cb callback;
 
-	/** MGMT_EVT_[...] Event ID for handler to be called on. */
+	/**
+	 * MGMT_EVT_[...] Event ID for handler to be called on. This has special meaning if
+	 * #MGMT_EVT_OP_ALL is used (which will cover all events for all groups), or
+	 * MGMT_EVT_OP_*_MGMT_ALL (which will cover all events for a single group). For events
+	 * that are part of a single group, they can be or'd together for this to have one
+	 * registration trigger on multiple events, please note that this will only work for
+	 * a single group, to register for events in different groups, they must be registered
+	 * separately.
+	 */
 	uint32_t event_id;
 };
 
@@ -189,11 +233,18 @@ struct mgmt_evt_op_cmd_arg {
  * @param event		#mcumgr_op_t.
  * @param data		Optional event argument.
  * @param data_size	Size of optional event argument (0 if none).
+ * @param ret_rc	Pointer to rc value.
+ * @param ret_group	Pointer to group value.
  *
- * @return		#mcumgr_err_t either #MGMT_ERR_EOK if all handlers returned it, or the
- *			error code of the first handler that returned an error.
+ * @return		#mgmt_cb_return either #MGMT_CB_OK if all handlers returned it, or
+ *			#MGMT_CB_ERROR_RC if the first failed handler returned an SMP error (in
+ *			which case ``ret_rc`` will be updated with the SMP error) or
+ *			#MGMT_CB_ERROR_RET if the first failed handler returned a ret group and
+ *			error (in which case ``ret_group`` will be updated with the failed group
+ *			ID and ``ret_rc`` will be updated with the group-specific error code).
  */
-int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size);
+enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data_size,
+					 int32_t *ret_rc, uint16_t *ret_group);
 
 /**
  * @brief Register event callback function.

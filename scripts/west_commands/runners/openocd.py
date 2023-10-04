@@ -253,12 +253,20 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             post_verify_cmd.append("-c")
             post_verify_cmd.append(i)
 
+        load_image = []
+        if not self.do_verify_only:
+            load_image = ['-c', self.reset_halt_cmd,
+                          '-c', self.load_cmd + ' ' + hex_name]
+
+        verify_image = []
+        if self.do_verify or self.do_verify_only:
+            verify_image = ['-c', self.reset_halt_cmd,
+                            '-c', self.verify_cmd + ' ' + hex_name]
+
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + ['-c', self.reset_halt_cmd,
-                               '-c', self.load_cmd + ' ' + hex_name,
-                               '-c', self.reset_halt_cmd] +
-               ['-c', self.verify_cmd + ' ' + hex_name] +
+               pre_load_cmd + load_image +
+               verify_image +
                post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])

@@ -1,7 +1,7 @@
 .. _uart_api:
 
-UART
-####
+Universal Asynchronous Receiver-Transmitter (UART)
+##################################################
 
 Overview
 ********

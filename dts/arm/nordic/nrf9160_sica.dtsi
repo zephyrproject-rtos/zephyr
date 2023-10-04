@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <nordic/nrf9160.dtsi>
+#include <nordic/nrf91.dtsi>
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_K(1024)>;

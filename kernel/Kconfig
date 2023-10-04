@@ -156,8 +156,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 1024 if TEST_ARM_CORTEX_M
-	default 512 if ZTEST && !(RISCV || X86)
+	default 512 if ZTEST && !(RISCV || X86 || ARM)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -451,6 +450,21 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 	  cooperative and a sequence of work items is expected to complete
 	  without yielding.
 
+endmenu
+
+menu "Barrier Operations"
+config BARRIER_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for barrier operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config BARRIER_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
 endmenu
 
 menu "Atomic Operations"
@@ -842,6 +856,7 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
+	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -875,7 +890,7 @@ config SMP_BOOT_DELAY
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
 	default MP_MAX_NUM_CPUS
-	range 1 4
+	range 1 5
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
@@ -883,7 +898,7 @@ config MP_NUM_CPUS
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 4
+	range 1 5
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.

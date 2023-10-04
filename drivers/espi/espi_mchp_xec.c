@@ -80,9 +80,6 @@ struct espi_xec_data {
 	struct k_sem tx_lock;
 	struct k_sem rx_lock;
 	struct k_sem flash_lock;
-	uint8_t plt_rst_asserted;
-	uint8_t espi_rst_asserted;
-	uint8_t sx_state;
 };
 
 struct xec_signal {
@@ -853,12 +850,11 @@ static void espi_rst_isr(const struct device *dev)
 
 	if (rst_sts & MCHP_ESPI_RST_ISTS) {
 		if (rst_sts & MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
-			data->espi_rst_asserted = 1;
+			evt.evt_data = 1;
 		} else {
-			data->espi_rst_asserted = 0;
+			evt.evt_data = 0;
 		}
 
-		evt.evt_data = data->espi_rst_asserted;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 		espi_init_oob(dev);
@@ -1108,12 +1104,8 @@ static void vw_pltrst_isr(const struct device *dev)
 		setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
 	}
 
-	/* PLT_RST will be received several times */
-	if (status != data->plt_rst_asserted) {
-		data->plt_rst_asserted = status;
-		evt.evt_data = status;
-		espi_send_callbacks(&data->callbacks, dev, evt);
-	}
+	evt.evt_data = status;
+	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
 /* Send callbacks if enabled and track eSPI host system state */
@@ -1125,10 +1117,6 @@ static void notify_system_state(const struct device *dev,
 	uint8_t status = 0;
 
 	espi_xec_receive_vwire(dev, signal, &status);
-	if (!status) {
-		data->sx_state = signal;
-	}
-
 	evt.evt_details = signal;
 	evt.evt_data = status;
 	espi_send_callbacks(&data->callbacks, dev, evt);
@@ -1487,8 +1475,6 @@ static int espi_xec_init(const struct device *dev)
 		LOG_ERR("XEC eSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
-
-	data->plt_rst_asserted = 0;
 
 	/* Configure eSPI_PLTRST# to cause nSIO_RESET reset */
 	PCR_REGS->PWR_RST_CTRL = MCHP_PCR_PR_CTRL_USE_ESPI_PLTRST;

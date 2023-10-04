@@ -112,8 +112,9 @@ static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpi
 	}
 
 	/* Set level 0:low 1:high */
-	nct38xx_reg_read_byte(config->nct38xx_dev, NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port),
-			      &reg);
+	ret = nct38xx_reg_read_byte(config->nct38xx_dev,
+				    NCT38XX_REG_GPIO_DATA_OUT(config->gpio_port),
+				    &reg);
 	if (ret < 0) {
 		goto done;
 	}

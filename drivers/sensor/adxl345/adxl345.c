@@ -39,7 +39,7 @@ static int adxl345_reg_access_i2c(const struct device *dev, uint8_t cmd, uint8_t
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 static bool adxl345_bus_is_ready_spi(const union adxl345_bus *bus)
 {
-	return spi_is_ready(&bus->spi);
+	return spi_is_ready_dt(&bus->spi);
 }
 
 static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_addr,

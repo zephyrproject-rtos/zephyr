@@ -12,6 +12,7 @@ config SOC_SERIES_EFR32MG21
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_EXX32
+	select SOC_GECKO_SERIES2
 	select HAS_SILABS_GECKO
 	select HAS_SWO
 	select SOC_GECKO_CMU

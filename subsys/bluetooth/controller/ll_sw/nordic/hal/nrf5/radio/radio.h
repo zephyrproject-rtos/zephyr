@@ -9,8 +9,10 @@
 /* PDU type, 1 bit field*/
 #define RADIO_PKT_CONF_PDU_TYPE_POS (0U)
 #define RADIO_PKT_CONF_PDU_TYPE_MSK BIT(RADIO_PKT_CONF_PDU_TYPE_POS)
-#define RADIO_PKT_CONF_PDU_TYPE_AC (0U)
-#define RADIO_PKT_CONF_PDU_TYPE_DC (1U)
+#define RADIO_PKT_CONF_PDU_TYPE_AC  (0U)
+#define RADIO_PKT_CONF_PDU_TYPE_DC  (1U)
+#define RADIO_PKT_CONF_PDU_TYPE_BIS (1U)
+#define RADIO_PKT_CONF_PDU_TYPE_CIS (1U)
 /* PHY type, three bit field */
 #define RADIO_PKT_CONF_PHY_POS (1U)
 #define RADIO_PKT_CONF_PHY_MSK (BIT_MASK(3U))
@@ -92,6 +94,7 @@ uint32_t radio_crc_is_valid(void);
 void *radio_pkt_empty_get(void);
 void *radio_pkt_scratch_get(void);
 void *radio_pkt_decrypt_get(void);
+void *radio_pkt_big_ctrl_get(void);
 
 void radio_switch_complete_and_rx(uint8_t phy_rx);
 void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx,
@@ -124,6 +127,12 @@ void radio_bc_status_reset(void);
 uint32_t radio_bc_has_match(void);
 
 void radio_tmr_status_reset(void);
+void radio_tmr_tx_status_reset(void);
+void radio_tmr_rx_status_reset(void);
+void radio_tmr_tx_enable(void);
+void radio_tmr_rx_enable(void);
+void radio_tmr_tx_disable(void);
+void radio_tmr_rx_disable(void);
 void radio_tmr_tifs_set(uint32_t tifs);
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder);
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick);

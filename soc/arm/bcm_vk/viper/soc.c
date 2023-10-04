@@ -18,12 +18,11 @@
  *
  * @return 0
  */
-static int viper_init(const struct device *arg)
+static int viper_init(void)
 {
 	uint32_t key;
 	uint32_t data;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

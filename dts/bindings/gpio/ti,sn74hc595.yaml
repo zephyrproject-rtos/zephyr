@@ -8,19 +8,19 @@ compatible: "ti,sn74hc595"
 include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      required: true
-      description: Reset pin
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset pin
 
-    ngpios:
-      type: int
-      required: true
-      const: 8
-      description: Number of supported gpios
+  ngpios:
+    type: int
+    required: true
+    const: 8
+    description: Number of supported gpios
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

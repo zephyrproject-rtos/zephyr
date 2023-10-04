@@ -1,0 +1,11 @@
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  drivers.flash.stm32.default:
+    platform_allow:
+      - nucleo_f429zi
+      - google_dragonclaw
+    filter: dt_compat_enabled("st,stm32-flash-controller") and
+            dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")

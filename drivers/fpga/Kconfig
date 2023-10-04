@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig FPGA
-	bool "FPGA Drivers"
+	bool "Field-Programmable Gate Array (FPGA) drivers"
 	help
 	  Enable support for FPGA drivers.
 

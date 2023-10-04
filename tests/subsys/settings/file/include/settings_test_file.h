@@ -28,8 +28,6 @@ extern int test_set_called;
 extern int test_commit_called;
 extern int test_export_block;
 
-extern int c2_var_count;
-
 extern struct settings_handler c_test_handlers[];
 
 void ctest_clear_call_state(void);

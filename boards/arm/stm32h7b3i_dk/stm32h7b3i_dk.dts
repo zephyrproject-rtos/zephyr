@@ -7,7 +7,6 @@
 /dts-v1/;
 #include <st/h7/stm32h7b3Xi.dtsi>
 #include <st/h7/stm32h7b3lihxq-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -21,7 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
 		zephyr,canbus = &can1;
-		zephyr,keyboard-scan = &touch_controller;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	leds {
@@ -49,6 +48,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-region-mpu = "RAM";
 	};
 
 	transceiver0: can-phy0 {
@@ -62,7 +62,8 @@
 		led0 = &blue_led;
 		led1 = &red_led;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
+		kscan0 = &kscan_input;
+		spi-flash0 = &mx25lm51245;
 	};
 };
 
@@ -128,10 +129,14 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	touch_controller: ft5336@38 {
+	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&gpioh 2 0>;
+
+		kscan_input: kscan-input {
+			compatible = "zephyr,kscan-input";
+		};
 	};
 };
 
@@ -214,16 +219,20 @@
 
 	width = <480>;
 	height = <272>;
-	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
-	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
-	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
-	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
-	hsync-duration = <1>;
-	vsync-duration = <10>;
-	hbp-duration = <43>;
-	vbp-duration = <12>;
-	hfp-duration = <8>;
-	vfp-duration = <4>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

@@ -280,9 +280,8 @@ int xen_consoleio_putc(int c)
 
 
 
-int consoleio_hooks_set(const struct device *dev)
+int consoleio_hooks_set(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Will be replaced with poll_in/poll_out by uart_console.c later on boot */
 	__stdout_hook_install(xen_consoleio_putc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2021-2023 Arm Limited (or its affiliates). All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,10 +7,8 @@
 
 #include <zephyr/arch/arm64/cortex_r/arm_mpu.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/sys/util.h>
-
-#define DEVICE_REGION_START 0x80000000UL
-#define DEVICE_REGION_END   0xFFFFFFFFUL
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */
@@ -42,11 +40,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 (uintptr_t)__kernel_ram_end,
 			 REGION_RAM_ATTR),
 
-	/* Region 4 device region */
-	MPU_REGION_ENTRY("DEVICE",
-			 DEVICE_REGION_START,
-			 DEVICE_REGION_END,
-			 REGION_DEVICE_ATTR)
+	/* Extra regions defined in device tree */
+	LINKER_DT_REGION_MPU(MPU_REGION_ENTRY_FROM_DTS)
 };
 
 const struct arm_mpu_config mpu_config = {

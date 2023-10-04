@@ -6,15 +6,15 @@
 include: base.yaml
 
 properties:
-    clock-frequency:
-      type: int
-      description: Clock frequency in Hz
-    cpu-power-states:
-       type: phandles
-       description: List of power management states supported by this cpu
-    i-cache-line-size:
-      type: int
-      description: i-cache line size
-    d-cache-line-size:
-      type: int
-      description: d-cache line size
+  clock-frequency:
+    type: int
+    description: Clock frequency in Hz
+  cpu-power-states:
+    type: phandles
+    description: List of power management states supported by this cpu
+  i-cache-line-size:
+    type: int
+    description: i-cache line size
+  d-cache-line-size:
+    type: int
+    description: d-cache line size

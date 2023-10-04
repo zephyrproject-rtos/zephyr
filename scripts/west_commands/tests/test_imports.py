@@ -32,12 +32,15 @@ def test_runner_imports():
                     'misc-flasher',
                     'nios2',
                     'nrfjprog',
+                    'nrfutil',
                     'openocd',
                     'pyocd',
                     'qemu',
+                    'silabs_commander',
                     'spi_burn',
                     'stm32cubeprogrammer',
                     'stm32flash',
                     'trace32',
+                    'uf2',
                     'xtensa'))
     assert runner_names == expected

@@ -27,7 +27,9 @@ void z_pm_save_idle_exit(void)
 	 */
 	pm_system_resume();
 #endif	/* CONFIG_PM */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	sys_clock_idle_exit();
+#endif
 }
 
 void idle(void *unused1, void *unused2, void *unused3)
@@ -103,4 +105,12 @@ void idle(void *unused1, void *unused2, void *unused3)
 # endif
 #endif
 	}
+}
+
+void __weak arch_spin_relax(void)
+{
+	__ASSERT(!arch_irq_unlocked(arch_irq_lock()),
+		 "this is meant to be called with IRQs disabled");
+
+	arch_nop();
 }

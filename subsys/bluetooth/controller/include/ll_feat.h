@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_3
+#define LL_VERSION_NUMBER BT_HCI_VERSION_5_4
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #define LL_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)
@@ -189,6 +189,16 @@
 #define LL_FEAT_BIT_CIS_PERIPHERAL 0
 #endif /* !CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#define LL_CIS_OCTETS_TX_MAX MIN(CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX, \
+				 CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE)
+#define LL_CIS_OCTETS_RX_MAX CONFIG_BT_CTLR_CONN_ISO_PDU_LEN_MAX
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO && !CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#define LL_CIS_OCTETS_TX_MAX 0
+#define LL_CIS_OCTETS_RX_MAX 0
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO && !CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 #define LL_FEAT_BIT_ISO_BROADCASTER BIT64(BT_LE_FEAT_BIT_ISO_BROADCASTER)
 #if defined(CONFIG_BT_ISO_TX_MTU)
@@ -233,9 +243,6 @@
 /* Mask to filter away octet 0 for feature exchange */
 #define LL_FEAT_FILTER_OCTET0    (LL_FEAT_BIT_MASK & ~0xFFULL)
 
-/* Mask for host controlled features */
-#define LL_FEAT_HOST_BIT_MASK    0x4100000000ULL
-
 /* Feature bits of this controller */
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
 				  LL_FEAT_BIT_CONN_PARAM_REQ | \
@@ -266,3 +273,17 @@
 				  LL_FEAT_BIT_ISO_BROADCASTER | \
 				  LL_FEAT_BIT_SYNC_RECEIVER | \
 				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT)
+
+/* Connected Isochronous Stream (Host Support) bit is controlled by host */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define LL_FEAT_HOST_BITS_ISO_CHANNELS BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS)
+#else /* !CONFIG_BT_CTLR_CONN_ISO */
+#define LL_FEAT_HOST_BITS_ISO_CHANNELS 0U
+#endif /* !CONFIG_BT_CTLR_CONN_ISO */
+
+/* Connection subrating not supported and bit thus cannot be set by host */
+#define LL_FEAT_HOST_BITS_CONN_SUBRATING 0U
+
+/* Mask for host controlled features */
+#define LL_FEAT_HOST_BIT_MASK  (LL_FEAT_HOST_BITS_ISO_CHANNELS |\
+				LL_FEAT_HOST_BITS_CONN_SUBRATING)

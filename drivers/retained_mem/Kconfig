@@ -1,0 +1,35 @@
+# Copyright (c) Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RETAINED_MEM
+	bool "Retained memory drivers"
+	help
+	  Enables support for drivers that can retain their data whilst the
+	  device is powered (may be lost in low power states).
+
+if RETAINED_MEM
+
+config RETAINED_MEM_INIT_PRIORITY
+	int "Retained memory devices init priority"
+	default 40
+	help
+	  Retained memory devices initialization priority,
+
+config RETAINED_MEM_MUTEXES
+	bool "Retained memory mutex support"
+	default y
+	depends on MULTITHREADING
+	help
+	  Use mutexes to prevent issues with concurrent retained memory access.
+	  Should only be disabled whereby retained memory access is required
+	  in an ISR or for special use cases.
+
+module = RETAINED_MEM
+module-str = retained_mem
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/retained_mem/Kconfig.nrf"
+
+source "drivers/retained_mem/Kconfig.zephyr"
+
+endif # RETAINED_MEM

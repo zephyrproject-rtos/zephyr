@@ -136,11 +136,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_PM */
 
 /* Initialize TI Power module */
-static int power_initialize(const struct device *dev)
+static int power_initialize(void)
 {
 	unsigned int ret;
 
-	ARG_UNUSED(dev);
 
 	ret = irq_lock();
 	Power_init();
@@ -154,7 +153,7 @@ static int power_initialize(const struct device *dev)
  * This needs to be called during POST_KERNEL in order for "Booting Zephyr"
  * message to show up
  */
-static int unlatch_pins(const struct device *dev)
+static int unlatch_pins(void)
 {
 	/* Get the reason for reset. */
 	uint32_t rSrc = SysCtrlResetSourceGet();

@@ -53,9 +53,8 @@
 #include <usb_descriptor.h>
 #include <usb_work_q.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_dfu);
+LOG_MODULE_REGISTER(usb_dfu, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define SLOT0_PARTITION			slot0_partition
 #define SLOT1_PARTITION			slot1_partition
@@ -67,19 +66,19 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define INTERMITTENT_CHECK_DELAY	50
 
-#if IS_ENABLED(CONFIG_USB_DFU_REBOOT)
+#if defined(CONFIG_USB_DFU_REBOOT)
 #define DFU_DESC_ATTRIBUTES_MANIF_TOL 0
 #else
 #define DFU_DESC_ATTRIBUTES_MANIF_TOL DFU_ATTR_MANIFESTATION_TOLERANT
 #endif
 
-#if IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)
+#if defined(CONFIG_USB_DFU_ENABLE_UPLOAD)
 #define DFU_DESC_ATTRIBUTES_CAN_UPLOAD	 DFU_ATTR_CAN_UPLOAD
 #else
 #define DFU_DESC_ATTRIBUTES_CAN_UPLOAD 0
 #endif
 
-#if IS_ENABLED(CONFIG_USB_DFU_WILL_DETACH)
+#if defined(CONFIG_USB_DFU_WILL_DETACH)
 #define DFU_DESC_ATTRIBUTES_WILL_DETACH DFU_ATTR_WILL_DETACH
 #else
 #define DFU_DESC_ATTRIBUTES_WILL_DETACH 0
@@ -92,7 +91,7 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
-static struct k_timer dfu_timer;
+static struct k_work_delayable dfu_timer_work;
 
 static struct k_work dfu_work;
 
@@ -418,8 +417,10 @@ static void dfu_enter_idle(void)
 	}
 }
 
-static void dfu_timer_expired(struct k_timer *timer)
+static void dfu_timer_work_handler(struct k_work *item)
 {
+	ARG_UNUSED(item);
+
 	if (dfu_data.state == appDETACH) {
 		if (IS_ENABLED(CONFIG_USB_DFU_WILL_DETACH)) {
 			if (usb_dc_detach()) {
@@ -471,7 +472,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 
 		if (dfu_data.state == dfuMANIFEST_SYNC) {
 
-#if IS_ENABLED(CONFIG_USB_DFU_REBOOT)
+#if defined(CONFIG_USB_DFU_REBOOT)
 			dfu_data.state = dfuMANIFEST_WAIT_RST;
 			reboot_schedule();
 #else
@@ -694,7 +695,7 @@ static int dfu_class_handle_to_device(struct usb_setup_packet *setup,
 			/* Begin detach timeout timer */
 			timeout = MIN(setup->wValue, CONFIG_USB_DFU_DETACH_TIMEOUT);
 		}
-		k_timer_start(&dfu_timer, K_MSEC(timeout), K_FOREVER);
+		k_work_reschedule_for_queue(&USB_WORK_Q, &dfu_timer_work, K_MSEC(timeout));
 		break;
 	default:
 		LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
@@ -748,7 +749,7 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		LOG_DBG("USB device reset detected, state %d", dfu_data.state);
 		if (!IS_ENABLED(CONFIG_USB_DFU_WILL_DETACH)) {
 			/* Stop the appDETACH timeout timer */
-			k_timer_stop(&dfu_timer);
+			k_work_cancel_delayable(&dfu_timer_work);
 			if (dfu_data.state == appDETACH) {
 				dfu_enter_idle();
 			}
@@ -897,15 +898,14 @@ static void dfu_work_handler(struct k_work *item)
 	}
 }
 
-static int usb_dfu_init(const struct device *dev)
+static int usb_dfu_init(void)
 {
 	const struct flash_area *fa;
 
-	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
-	k_timer_init(&dfu_timer, dfu_timer_expired, NULL);
+	k_work_init_delayable(&dfu_timer_work, dfu_timer_work_handler);
 
 #ifdef CONFIG_USB_DFU_REBOOT
 	k_work_init_delayable(&reboot_work, reboot_work_handler);

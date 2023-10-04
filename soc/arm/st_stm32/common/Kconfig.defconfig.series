@@ -29,10 +29,6 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
 
-config PINMUX_STM32
-	default y
-	depends on PINMUX
-
 config MEMC_STM32
 	default y
 	depends on MEMC

@@ -86,7 +86,7 @@ static void partner_fn(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	z_waitq_init(&waitq);
 
@@ -149,4 +149,5 @@ void main(void)
 		       whole, avg);
 	}
 	printk("fin\n");
+	return 0;
 }

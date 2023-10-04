@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,101 @@ extern "C" {
 #define IMG_MGMT_ID_ERASE	5
 
 /**
+ * Command result codes for image management group.
+ */
+enum img_mgmt_ret_code_t {
+	/** No error, this is implied if there is no ret value in the response */
+	IMG_MGMT_RET_RC_OK = 0,
+
+	/** Unknown error occurred. */
+	IMG_MGMT_RET_RC_UNKNOWN,
+
+	/** Failed to query flash area configuration. */
+	IMG_MGMT_RET_RC_FLASH_CONFIG_QUERY_FAIL,
+
+	/** There is no image in the slot. */
+	IMG_MGMT_RET_RC_NO_IMAGE,
+
+	/** The image in the slot has no TLVs (tag, length, value). */
+	IMG_MGMT_RET_RC_NO_TLVS,
+
+	/** The image in the slot has an invalid TLV type and/or length. */
+	IMG_MGMT_RET_RC_INVALID_TLV,
+
+	/** The image in the slot has multiple hash TLVs, which is invalid. */
+	IMG_MGMT_RET_RC_TLV_MULTIPLE_HASHES_FOUND,
+
+	/** The image in the slot has an invalid TLV size. */
+	IMG_MGMT_RET_RC_TLV_INVALID_SIZE,
+
+	/** The image in the slot does not have a hash TLV, which is required.  */
+	IMG_MGMT_RET_RC_HASH_NOT_FOUND,
+
+	/** There is no free slot to place the image. */
+	IMG_MGMT_RET_RC_NO_FREE_SLOT,
+
+	/** Flash area opening failed. */
+	IMG_MGMT_RET_RC_FLASH_OPEN_FAILED,
+
+	/** Flash area reading failed. */
+	IMG_MGMT_RET_RC_FLASH_READ_FAILED,
+
+	/** Flash area writing failed. */
+	IMG_MGMT_RET_RC_FLASH_WRITE_FAILED,
+
+	/** Flash area erase failed. */
+	IMG_MGMT_RET_RC_FLASH_ERASE_FAILED,
+
+	/** The provided slot is not valid. */
+	IMG_MGMT_RET_RC_INVALID_SLOT,
+
+	/** Insufficient heap memory (malloc failed). */
+	IMG_MGMT_RET_RC_NO_FREE_MEMORY,
+
+	/** The flash context is already set. */
+	IMG_MGMT_RET_RC_FLASH_CONTEXT_ALREADY_SET,
+
+	/** The flash context is not set. */
+	IMG_MGMT_RET_RC_FLASH_CONTEXT_NOT_SET,
+
+	/** The device for the flash area is NULL. */
+	IMG_MGMT_RET_RC_FLASH_AREA_DEVICE_NULL,
+
+	/** The offset for a page number is invalid. */
+	IMG_MGMT_RET_RC_INVALID_PAGE_OFFSET,
+
+	/** The offset parameter was not provided and is required. */
+	IMG_MGMT_RET_RC_INVALID_OFFSET,
+
+	/** The length parameter was not provided and is required. */
+	IMG_MGMT_RET_RC_INVALID_LENGTH,
+
+	/** The image length is smaller than the size of an image header. */
+	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER,
+
+	/** The image header magic value does not match the expected value. */
+	IMG_MGMT_RET_RC_INVALID_IMAGE_HEADER_MAGIC,
+
+	/** The hash parameter provided is not valid. */
+	IMG_MGMT_RET_RC_INVALID_HASH,
+
+	/** The image load address does not match the address of the flash area. */
+	IMG_MGMT_RET_RC_INVALID_FLASH_ADDRESS,
+
+	/** Failed to get version of currently running application. */
+	IMG_MGMT_RET_RC_VERSION_GET_FAILED,
+
+	/** The currently running application is newer than the version being uploaded. */
+	IMG_MGMT_RET_RC_CURRENT_VERSION_IS_NEWER,
+
+	/** There is already an image operating pending. */
+	IMG_MGMT_RET_RC_IMAGE_ALREADY_PENDING,
+
+	/** The image vector table is invalid. */
+	IMG_MGMT_RET_RC_INVALID_IMAGE_VECTOR_TABLE,
+};
+
+/**
  * IMG_MGMT_ID_UPLOAD statuses.
  */
 enum img_mgmt_id_upload_t {
@@ -106,21 +201,11 @@ struct img_mgmt_upload_action {
 	bool proceed;
 	/** Whether to erase the destination flash area. */
 	bool erase;
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 	/** "rsn" string to be sent as explanation for "rc" code */
 	const char *rc_rsn;
 #endif
 };
-
-/**
- * @brief Register the image management command handler group.
- */
-void img_mgmt_register_group(void);
-
-/**
- * @brief Unregister the image management command handler group.
- */
-void img_mgmt_unregister_group(void);
 
 /*
  * @brief Read info of an image at the specified slot number
@@ -152,6 +237,24 @@ int img_mgmt_my_version(struct image_version *ver);
  * @return Non-negative on success, negative value on error.
  */
 int img_mgmt_ver_str(const struct image_version *ver, char *dst);
+
+/**
+ * @brief Get active, running application slot number for an image
+ *
+ * @param image		image number to get active slot for.
+ *
+ * @return Non-negative slot number
+ */
+int img_mgmt_active_slot(int image);
+
+/**
+ * @brief Get active image number
+ *
+ * Gets 0 based number for running application.
+ *
+ * @return Non-negative image number.
+ */
+int img_mgmt_active_image(void);
 
 /**
  * @brief Check if the image slot is in use.
@@ -229,7 +332,18 @@ int img_mgmt_state_confirm(void);
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
-#ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate IMG mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#img_mgmt_ret_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+int img_mgmt_translate_error_code(uint16_t ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))
 #define IMG_MGMT_UPLOAD_ACTION_RC_RSN(action) ((action)->rc_rsn)
 int img_mgmt_error_rsp(struct smp_streamer *ctxt, int rc, const char *rsn);

@@ -8,8 +8,8 @@ compatible: "renesas,pwm-rcar"
 include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-    "#pwm-cells":
-      const: 3
+  "#pwm-cells":
+    const: 3
 
 pwm-cells:
   - channel

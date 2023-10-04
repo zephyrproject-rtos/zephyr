@@ -168,12 +168,19 @@ The MIMXRT1024 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_10 | ADC1            | ADC1 Channel 10           |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_10 | FLEXPWM1        | FLEXPWM1 Channel A2       |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
 
-The MIMXRT1024 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1024 SoC is configured to use SysTick as the system clock source,
+running at 500MHz.
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
 
 Serial Port
 ===========

@@ -5,4 +5,6 @@ tests:
     depends_on: usb_device
     platform_allow: frdm_k64f
     harness: usb
-    tags: usb sensors
+    tags:
+      - usb
+      - sensors

@@ -99,7 +99,7 @@ static void bma280_thread_cb(const struct device *dev)
 	    drv_data->data_ready_handler != NULL &&
 	    err == 0) {
 		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->data_ready_trigger);
 	}
 
 	/* check for any motion */
@@ -109,7 +109,7 @@ static void bma280_thread_cb(const struct device *dev)
 	    drv_data->any_motion_handler != NULL &&
 	    err == 0) {
 		drv_data->any_motion_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->any_motion_trigger);
 
 		/* clear latched interrupt */
 		err = i2c_reg_update_byte_dt(&config->i2c,
@@ -170,7 +170,7 @@ int bma280_trigger_set(const struct device *dev,
 		if (handler == NULL) {
 			return 0;
 		}
-		drv_data->data_ready_trigger = *trig;
+		drv_data->data_ready_trigger = trig;
 
 		/* enable data ready interrupt */
 		if (i2c_reg_update_byte_dt(&config->i2c,
@@ -193,7 +193,7 @@ int bma280_trigger_set(const struct device *dev,
 		if (handler == NULL) {
 			return 0;
 		}
-		drv_data->any_motion_trigger = *trig;
+		drv_data->any_motion_trigger = trig;
 
 		/* enable any-motion interrupt */
 		if (i2c_reg_update_byte_dt(&config->i2c,

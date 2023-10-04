@@ -11,9 +11,8 @@
 #define MODE_PIN	4 /* P1.04 */
 #define A_SEL_PIN	2 /* P1.02 */
 
-static int bmd345_fem_init(const struct device *dev)
+static int bmd345_fem_init(void)
 {
-	ARG_UNUSED(dev);
 
 	int ret;
 	const struct device *mode_asel_port_dev;

@@ -8,8 +8,8 @@
 /** @file
  * @brief Dummy transport for the mcumgr SMP protocol for unit testing.
  */
-#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_DUMMY_H_
-#define ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_DUMMY_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
@@ -98,4 +98,4 @@ void smp_dummy_disable(void);
  */
 bool smp_dummy_get_status(void);
 
-#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_DUMMY_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_ */

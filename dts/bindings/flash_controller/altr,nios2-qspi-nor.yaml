@@ -10,8 +10,8 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 on-bus: qspi
 
 properties:
-    reg:
-      required: true
-    size:
-      required: true
-      description: Flash Memory size in bits
+  reg:
+    required: true
+  size:
+    required: true
+    description: Flash Memory size in bits

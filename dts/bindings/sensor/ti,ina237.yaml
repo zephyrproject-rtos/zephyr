@@ -15,13 +15,13 @@ compatible: "ti,ina237"
 include: ti,ina23x-common.yaml
 
 properties:
-    adc-config:
-      type: int
-      required: true
-      description: |
-        Value of the ADC configuration register (ADC conversion times,
-        averaging, operating mode and etc).
+  adc-config:
+    type: int
+    required: true
+    description: |
+      Value of the ADC configuration register (ADC conversion times,
+      averaging, operating mode and etc).
 
-    alert-config:
-      type: int
-      description: Diag alert register, default matches the power-on reset value
+  alert-config:
+    type: int
+    description: Diag alert register, default matches the power-on reset value

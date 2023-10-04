@@ -146,11 +146,23 @@
 	 * memory.
 	 */
 	dma-channels = <20>;
+	nxp,dma-num-of-otrigs = <4>;
+	status = "okay";
+};
+
+&dma1 {
+	dma-channels = <10>;
+	nxp,dma-num-of-otrigs = <4>;
 	status = "okay";
 };
 
 &mailbox0 {
 	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&pinmux_usbfs>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usbhs {

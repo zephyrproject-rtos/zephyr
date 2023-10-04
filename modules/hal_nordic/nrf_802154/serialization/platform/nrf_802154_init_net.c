@@ -9,7 +9,7 @@
 #include "nrf_802154.h"
 #include "nrf_802154_serialization.h"
 
-static int serialization_init(const struct device *dev)
+static int serialization_init(void)
 {
 	/* On NET core we don't use Zephyr's shim layer so we have to call inits manually */
 	nrf_802154_init();

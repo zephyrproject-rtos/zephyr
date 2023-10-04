@@ -22,7 +22,7 @@ static const struct pwm_dt_spec blue_pwm_led =
 
 #define STEP_SIZE PWM_USEC(2000)
 
-void main(void)
+int main(void)
 {
 	uint32_t pulse_red, pulse_green, pulse_blue; /* pulse widths */
 	int ret;
@@ -33,7 +33,7 @@ void main(void)
 	    !device_is_ready(green_pwm_led.dev) ||
 	    !device_is_ready(blue_pwm_led.dev)) {
 		printk("Error: one or more PWM devices not ready\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -42,7 +42,7 @@ void main(void)
 			ret = pwm_set_pulse_dt(&red_pwm_led, pulse_red);
 			if (ret != 0) {
 				printk("Error %d: red write failed\n", ret);
-				return;
+				return 0;
 			}
 
 			for (pulse_green = 0U;
@@ -53,7 +53,7 @@ void main(void)
 				if (ret != 0) {
 					printk("Error %d: green write failed\n",
 					       ret);
-					return;
+					return 0;
 				}
 
 				for (pulse_blue = 0U;
@@ -65,11 +65,12 @@ void main(void)
 						printk("Error %d: "
 						       "blue write failed\n",
 						       ret);
-						return;
+						return 0;
 					}
 					k_sleep(K_SECONDS(1));
 				}
 			}
 		}
 	}
+	return 0;
 }

@@ -6,4 +6,7 @@
 tests:
   mgmt.mcumgr.all.options:
     platform_allow: nrf52840dk_nrf52840
-    tags: mgmt mcumgr all_options
+    tags:
+      - mgmt
+      - mcumgr
+      - all_options

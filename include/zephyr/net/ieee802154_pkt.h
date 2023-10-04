@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 struct net_pkt_cb_ieee802154 {
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NET_L2_OPENTHREAD)
 	uint32_t ack_fc;   /* Frame counter set in the ACK */
 	uint8_t ack_keyid; /* Key index set in the ACK */
 #endif
@@ -58,7 +58,7 @@ struct net_pkt_cb_ieee802154 {
 				    * it requires further modifications,
 				    * e.g. Frame Counter injection.
 				    */
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NET_L2_OPENTHREAD)
 	uint8_t fv2015 : 1;  /* Frame version is IEEE 802.15.4-2015 or later */
 	uint8_t ack_seb : 1; /* Security Enabled Bit was set in the ACK */
 #endif
@@ -144,7 +144,7 @@ static inline void net_pkt_set_ieee802154_mac_hdr_rdy(struct net_pkt *pkt, bool 
 	net_pkt_cb_ieee802154(pkt)->mac_hdr_rdy = rdy;
 }
 
-#if defined(CONFIG_IEEE802154_2015)
+#if defined(CONFIG_NET_L2_OPENTHREAD)
 static inline uint32_t net_pkt_ieee802154_ack_fc(struct net_pkt *pkt)
 {
 	return net_pkt_cb_ieee802154(pkt)->ack_fc;
@@ -184,7 +184,7 @@ static inline void net_pkt_set_ieee802154_ack_seb(struct net_pkt *pkt, bool seb)
 {
 	net_pkt_cb_ieee802154(pkt)->ack_seb = seb;
 }
-#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 
 /** @endcond */
 

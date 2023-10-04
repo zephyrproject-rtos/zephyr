@@ -7,5 +7,5 @@ toolchain:
 ram: 2048
 testing:
   ignore_tags:
-     - net
-     - bluetooth
+    - net
+    - bluetooth

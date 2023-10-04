@@ -685,9 +685,8 @@ int lorawan_start(void)
 	return 0;
 }
 
-static int lorawan_init(const struct device *dev)
+static int lorawan_init(void)
 {
-	ARG_UNUSED(dev);
 
 	sys_slist_init(&dl_callbacks);
 
@@ -709,4 +708,4 @@ static int lorawan_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(lorawan_init, POST_KERNEL, 0);

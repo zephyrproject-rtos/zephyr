@@ -11,8 +11,8 @@
 
 /* Macros for data cache operations */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	z_xtensa_cache_flush((addr), (size))
+	sys_cache_data_flush_range((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	z_xtensa_cache_inv((addr), (size))
+	sys_cache_data_invd_range((addr), (size))
 
 #endif

@@ -6,7 +6,7 @@
 #
 
 identifier: cy8ckit_062_ble_m0
-name: Cypress PSoC6 BLE Pioneer Kit
+name: Cypress PSoC6 BLE Pioneer Kit (M0)
 type: mcu
 arch: arm
 ram: 288

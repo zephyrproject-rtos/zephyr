@@ -133,7 +133,7 @@ void queue_thread(void *arg1, void *arg2, void *arg3)
 	k_mutex_unlock(&fetch_queue_mtx);
 }
 
-void main(void)
+int main(void)
 {
 	uint32_t start_time, stop_time, cycles_spent, nanoseconds_spent;
 
@@ -201,4 +201,5 @@ void main(void)
 	}
 
 	k_sleep(K_MSEC(10));
+	return 0;
 }

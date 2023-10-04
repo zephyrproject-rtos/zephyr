@@ -172,7 +172,7 @@ def main():
 def parse_args():
     # Parse command line arguments from sys.argv.
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument('-v', '--verbose', default=0, action='count',
                         help='increase verbosity; may be given multiple times')
     parser.add_argument('--vendor-prefixes', required=True,

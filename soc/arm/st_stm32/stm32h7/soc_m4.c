@@ -32,7 +32,7 @@
  *
  * @return 0
  */
-static int stm32h7_m4_init(const struct device *arg)
+static int stm32h7_m4_init(void)
 {
 	uint32_t key;
 

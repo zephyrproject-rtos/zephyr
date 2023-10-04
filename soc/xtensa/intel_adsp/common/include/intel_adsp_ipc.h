@@ -161,4 +161,17 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 	uint32_t data, uint32_t ext_data, k_timeout_t timeout);
 
+
+/** @brief Send an emergency IPC message.
+ *
+ * Sends a message to the other side of an IPC link. The data and ext_data parameters are passed
+ * using the IDR/IDD registers. Waits in a loop until it is possible to send a message.
+ *
+ * @param dev IPC device.
+ * @param data 30 bits value to transmit with the message (IDR register).
+ * @param ext_data Extended value to transmit with the message (IDD register).
+ */
+void intel_adsp_ipc_send_message_emergency(const struct device *dev, uint32_t data,
+					   uint32_t ext_data);
+
 #endif /* ZEPHYR_INCLUDE_INTEL_ADSP_IPC_H */

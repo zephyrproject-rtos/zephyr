@@ -74,12 +74,14 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #include <syscalls/k_sem_init_mrsh.c>
 #endif
 
-static inline void handle_poll_events(struct k_sem *sem)
+static inline bool handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
 	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
+	return true;
 #else
 	ARG_UNUSED(sem);
+	return false;
 #endif
 }
 
@@ -87,6 +89,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *thread;
+	bool resched = true;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
@@ -97,10 +100,14 @@ void z_impl_k_sem_give(struct k_sem *sem)
 		z_ready_thread(thread);
 	} else {
 		sem->count += (sem->count != sem->limit) ? 1U : 0U;
-		handle_poll_events(sem);
+		resched = handle_poll_events(sem);
 	}
 
-	z_reschedule(&lock, key);
+	if (resched) {
+		z_reschedule(&lock, key);
+	} else {
+		k_spin_unlock(&lock, key);
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
 }

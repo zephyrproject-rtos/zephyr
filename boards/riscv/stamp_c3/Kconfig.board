@@ -1,0 +1,8 @@
+# M5Stack STAMP-C3 board configuration
+
+# Copyright 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STAMP_C3
+	bool "M5Stack STAMP-C3 Board"
+	depends on SOC_ESP32C3

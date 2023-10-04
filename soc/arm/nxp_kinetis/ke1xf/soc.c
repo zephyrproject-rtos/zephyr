@@ -237,10 +237,9 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int ke1xf_init(const struct device *arg)
+static int ke1xf_init(void)
 
 {
-	ARG_UNUSED(arg);
 
 	unsigned int old_level; /* old interrupt lock level */
 #if !defined(CONFIG_ARM_MPU)
@@ -272,8 +271,9 @@ static int ke1xf_init(const struct device *arg)
 	 */
 	NMI_INIT();
 
-#ifdef CONFIG_KINETIS_KE1XF_ENABLE_CODE_CACHE
-	L1CACHE_EnableCodeCache();
+#ifndef CONFIG_KINETIS_KE1XF_ENABLE_CODE_CACHE
+	/* SystemInit will have enabled the code cache. Disable it here */
+	L1CACHE_DisableCodeCache();
 #endif
 	/* Restore interrupt state */
 	irq_unlock(old_level);
@@ -281,16 +281,25 @@ static int ke1xf_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+#ifdef CONFIG_WDOG_INIT
+
 void z_arm_watchdog_init(void)
 {
 	/*
-	 * NOTE: DO NOT SINGLE STEP THROUGH THIS FUNCTION!!! Watchdog
+	 * NOTE: DO NOT SINGLE STEP THROUGH THIS SECTION!!! Watchdog
 	 * reconfiguration must take place within 128 bus clocks from
 	 * unlocking. Single stepping through the code will cause the
 	 * watchdog to close the unlock window again.
 	 */
 
-	/* Unlock watchdog to enable reconfiguration after bootloader */
+	/*
+	 * Unlocking watchdog to enable reconfiguration after bootloader
+	 * watchdog reconfiguration is only required if the watchdog
+	 * is to be enabled, since SystemInit will disable
+	 * it at boot unless CONFIG_WDOG_ENABLE_AT_BOOT is set
+	 */
 	WDOG->CNT = WDOG_UPDATE_KEY;
 	while (!(WDOG->CS & WDOG_CS_ULK_MASK)) {
 		;
@@ -300,18 +309,23 @@ void z_arm_watchdog_init(void)
 	 * Watchdog reconfiguration only takes effect after writing to
 	 * both TOVAL and CS registers.
 	 */
-#ifdef CONFIG_WDOG_ENABLE_AT_BOOT
 	WDOG->TOVAL = CONFIG_WDOG_INITIAL_TIMEOUT >> 1;
 	WDOG->CS = WDOG_CS_PRES(1) | WDOG_CS_CLK(1) | WDOG_CS_WAIT(1) |
 		   WDOG_CS_EN(1) | WDOG_CS_UPDATE(1);
-#else /* !CONFIG_WDOG_ENABLE_AT_BOOT */
-	WDOG->TOVAL = 1024;
-	WDOG->CS = WDOG_CS_EN(0) | WDOG_CS_UPDATE(1);
-#endif /* !CONFIG_WDOG_ENABLE_AT_BOOT */
 
 	while (!(WDOG->CS & WDOG_CS_RCS_MASK)) {
 		;
 	}
 }
+
+#endif /* CONFIG_WDOG_INIT */
+
+void z_arm_platform_init(void)
+{
+	/* SystemInit is provided by the NXP SDK */
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(ke1xf_init, PRE_KERNEL_1, 0);

@@ -95,10 +95,11 @@ extern "C" {
 #define MDM_RECV_MAX_BUF	CONFIG_WIFI_ESP_AT_MDM_RX_BUF_COUNT
 #define MDM_RECV_BUF_SIZE	CONFIG_WIFI_ESP_AT_MDM_RX_BUF_SIZE
 
-#define ESP_CMD_TIMEOUT		K_SECONDS(10)
-#define ESP_SCAN_TIMEOUT	K_SECONDS(10)
-#define ESP_CONNECT_TIMEOUT	K_SECONDS(20)
-#define ESP_INIT_TIMEOUT	K_SECONDS(10)
+#define ESP_CMD_TIMEOUT			K_SECONDS(10)
+#define ESP_SCAN_TIMEOUT		K_SECONDS(10)
+#define ESP_CONNECT_TIMEOUT		K_SECONDS(20)
+#define ESP_IFACE_STATUS_TIMEOUT	K_SECONDS(10)
+#define ESP_INIT_TIMEOUT		K_SECONDS(10)
 
 #define ESP_MODE_NONE		0
 #define ESP_MODE_STA		1
@@ -251,10 +252,13 @@ struct esp_data {
 	struct k_work scan_work;
 	struct k_work connect_work;
 	struct k_work disconnect_work;
+	struct k_work iface_status_work;
 	struct k_work mode_switch_work;
 	struct k_work dns_work;
 
 	scan_result_cb_t scan_cb;
+	struct wifi_iface_status *wifi_status;
+	struct k_sem wifi_status_sem;
 
 	/* semaphores */
 	struct k_sem sem_tx_ready;

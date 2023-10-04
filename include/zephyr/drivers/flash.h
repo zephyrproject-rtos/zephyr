@@ -125,6 +125,8 @@ typedef void (*flash_api_pages_layout)(const struct device *dev,
 typedef int (*flash_api_sfdp_read)(const struct device *dev, off_t offset,
 				   void *data, size_t len);
 typedef int (*flash_api_read_jedec_id)(const struct device *dev, uint8_t *id);
+typedef int (*flash_api_ex_op)(const struct device *dev, uint16_t code,
+			       const uintptr_t in, void *out);
 
 __subsystem struct flash_driver_api {
 	flash_api_read read;
@@ -138,6 +140,9 @@ __subsystem struct flash_driver_api {
 	flash_api_sfdp_read sfdp_read;
 	flash_api_read_jedec_id read_jedec_id;
 #endif /* CONFIG_FLASH_JESD216_API */
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	flash_api_ex_op ex_op;
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 };
 
 /**
@@ -420,6 +425,67 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
 		(const struct flash_driver_api *)dev->api;
 
 	return api->get_parameters(dev);
+}
+
+/**
+ *  @brief Execute flash extended operation on given device
+ *
+ *  Besides of standard flash operations like write or erase, flash controllers
+ *  also support additional features like write protection or readout
+ *  protection. These features are not available in every flash controller,
+ *  what's more controllers can implement it in a different way.
+ *
+ *  It doesn't make sense to add a separate flash API function for every flash
+ *  controller feature, because it could be unique (supported on small number of
+ *  flash controllers) or the API won't be able to represent the same feature on
+ *  every flash controller.
+ *
+ *  @param dev Flash device
+ *  @param code Operation which will be executed on the device.
+ *  @param in Pointer to input data used by operation. If operation doesn't
+ *            need any input data it could be NULL.
+ *  @param out Pointer to operation output data. If operation doesn't produce
+ *             any output it could be NULL.
+ *
+ *  @retval 0 on success.
+ *  @retval -ENOTSUP if given device doesn't support extended operation.
+ *  @retval -ENOSYS if support for extended operations is not enabled in Kconfig
+ *  @retval negative value on extended operation errors.
+ */
+__syscall int flash_ex_op(const struct device *dev, uint16_t code,
+			  const uintptr_t in, void *out);
+
+/*
+ *  Extended operation interface provides flexible way for supporting flash
+ *  controller features. Code space is divided equally into Zephyr codes
+ *  (MSb == 0) and vendor codes (MSb == 1). This way we can easily add extended
+ *  operations to the drivers without cluttering the API or problems with API
+ *  incompatibility. Extended operation can be promoted from vendor codes to
+ *  Zephyr codes if the feature is available in most flash controllers and
+ *  can be represented in the same way.
+ *
+ *  It's not forbidden to have operation in Zephyr codes and vendor codes for
+ *  the same functionality. In this case, vendor operation could provide more
+ *  specific access when abstraction in Zephyr counterpart is insufficient.
+ */
+#define FLASH_EX_OP_VENDOR_BASE 0x8000
+#define FLASH_EX_OP_IS_VENDOR(c) ((c) & FLASH_EX_OP_VENDOR_BASE)
+
+static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
+				     const uintptr_t in, void *out)
+{
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->api;
+
+	if (api->ex_op == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->ex_op(dev, code, in, out);
+#else
+	return -ENOSYS;
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 }
 
 #ifdef __cplusplus

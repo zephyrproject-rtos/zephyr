@@ -89,9 +89,8 @@ struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
 {
 	struct net_buf *buf;
 
-	if (bt_dev.sent_cmd) {
-		buf = net_buf_ref(bt_dev.sent_cmd);
-
+	buf = (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)&bt_dev.sent_cmd);
+	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 		buf->len = 0U;
 		net_buf_reserve(buf, BT_BUF_RESERVE);

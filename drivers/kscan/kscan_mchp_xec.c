@@ -14,9 +14,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
 #include <zephyr/drivers/kscan.h>
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/atomic.h>
@@ -50,9 +48,7 @@ struct kscan_xec_config {
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
 	uint8_t rsvd[3];
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct kscan_xec_data {
@@ -465,14 +461,12 @@ static int kscan_xec_init(const struct device *dev)
 	struct kscan_xec_data *const data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
 
-#ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
 		LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
 		return ret;
 	}
-#endif
 
 	kscan_clr_slp_en(dev);
 
@@ -509,9 +503,7 @@ static int kscan_xec_init(const struct device *dev)
 
 static struct kscan_xec_data kbd_data;
 
-#ifdef CONFIG_PINCTRL
 PINCTRL_DT_INST_DEFINE(0);
-#endif
 
 static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
@@ -519,9 +511,7 @@ static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),
 	.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
 	.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
-#ifdef CONFIG_PINCTRL
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, kscan_xec_init,

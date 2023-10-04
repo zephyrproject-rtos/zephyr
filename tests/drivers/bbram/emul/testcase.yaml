@@ -3,7 +3,9 @@
 
 tests:
   drivers.bbram.emul:
-    tags: drivers bbram
+    tags:
+      - drivers
+      - bbram
     harness: ztest
     platform_allow: native_posix
     integration_platforms:

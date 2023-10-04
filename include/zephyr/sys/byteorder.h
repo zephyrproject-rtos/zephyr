@@ -453,12 +453,12 @@ static inline uint16_t sys_get_le16(const uint8_t src[2])
 }
 
 /**
- *  @brief Get a 24-bit integer stored in big-endian format.
+ *  @brief Get a 24-bit integer stored in little-endian format.
  *
- *  Get a 24-bit integer, stored in big-endian format in a potentially
+ *  Get a 24-bit integer, stored in little-endian format in a potentially
  *  unaligned memory location, and convert it to the host endianness.
  *
- *  @param src Location of the big-endian 24-bit integer to get.
+ *  @param src Location of the little-endian 24-bit integer to get.
  *
  *  @return 24-bit integer in host endianness.
  */

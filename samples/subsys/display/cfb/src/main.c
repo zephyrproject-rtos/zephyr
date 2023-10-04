@@ -9,7 +9,7 @@
 #include <zephyr/display/cfb.h>
 #include <stdio.h>
 
-void main(void)
+int main(void)
 {
 	const struct device *dev;
 	uint16_t rows;
@@ -20,19 +20,19 @@ void main(void)
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(dev)) {
 		printf("Device %s not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
 		printf("Failed to set required pixel format\n");
-		return;
+		return 0;
 	}
 
 	printf("Initialized %s\n", dev->name);
 
 	if (cfb_framebuffer_init(dev)) {
 		printf("Framebuffer initialization failed!\n");
-		return;
+		return 0;
 	}
 
 	cfb_framebuffer_clear(dev, true);
@@ -74,4 +74,5 @@ void main(void)
 #endif
 		}
 	}
+	return 0;
 }

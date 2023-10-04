@@ -15,12 +15,15 @@ endchoice
 config KSCAN
 	default y if LVGL
 
-if KSCAN
+config INPUT
+	default y if KSCAN
 
-config KSCAN_FT5336_INTERRUPT
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 if NETWORKING
 
@@ -40,7 +43,7 @@ config LV_Z_POINTER_KSCAN
 config LV_Z_VDB_SIZE
 	default 16
 
-config LV_Z_DPI
+config LV_DPI_DEF
 	default 128
 
 choice LV_COLOR_DEPTH

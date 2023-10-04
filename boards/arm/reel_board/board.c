@@ -10,9 +10,8 @@
 /* Peripheral voltage ON/OFF GPIO */
 #define PERIPH_PON_PIN		0
 
-static int board_reel_board_init(const struct device *dev)
+static int board_reel_board_init(void)
 {
-	ARG_UNUSED(dev);
 	volatile NRF_GPIO_Type *gpio = NRF_P1;
 
 	/*

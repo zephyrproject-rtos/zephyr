@@ -30,9 +30,8 @@
  * @return 0
  */
 
-static int ti_lm3s6965_init(const struct device *arg)
+static int ti_lm3s6965_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise

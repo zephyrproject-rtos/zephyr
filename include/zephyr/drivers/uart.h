@@ -69,6 +69,8 @@ enum uart_rx_stop_reason {
 	 * support collision checking.
 	 */
 	UART_ERROR_COLLISION = (1 << 4),
+	/** @brief Noise error */
+	UART_ERROR_NOISE = (1 << 5),
 };
 
 /** @brief Parity modes */
@@ -175,9 +177,10 @@ typedef void (*uart_irq_config_func_t)(const struct device *dev);
  *    generated. It can happen multiples times for the same buffer. RX timeout
  *    is counted from last byte received i.e. if no data was received, there
  *    won't be any timeout event.
- * 4. After buffer is filled #UART_RX_RDY will be generated, immediately
- *    followed by #UART_RX_BUF_RELEASED indicating that current buffer
- *    is no longer used.
+ * 4. #UART_RX_BUF_RELEASED event will be generated when the current buffer is
+ *    no longer used by the driver. It will immediately follow #UART_RX_RDY event.
+ *    Depending on the implementation buffer may be released when it is completely
+ *    or partially filled.
  * 5. If there was second buffer provided, it will become current buffer and
  *    we start again at point 2.
  *    If no second buffer was specified receiving is stopped and
@@ -1160,10 +1163,14 @@ static inline int z_impl_uart_irq_update(const struct device *dev)
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
  * @param user_data Data to pass to callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_user_data_set(const struct device *dev,
-						   uart_irq_callback_user_data_t cb,
-						   void *user_data)
+static inline int uart_irq_callback_user_data_set(const struct device *dev,
+						  uart_irq_callback_user_data_t cb,
+						  void *user_data)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api =
@@ -1171,11 +1178,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
 
 	if ((api != NULL) && (api->irq_callback_set != NULL)) {
 		api->irq_callback_set(dev, cb, user_data);
+		return 0;
+	} else {
+		return -ENOSYS;
 	}
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
+	return -ENOTSUP;
 #endif
 }
 
@@ -1187,11 +1198,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
  *
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_set(const struct device *dev,
+static inline int uart_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb)
 {
-	uart_irq_callback_user_data_set(dev, cb, NULL);
+	return uart_irq_callback_user_data_set(dev, cb, NULL);
 }
 
 /**

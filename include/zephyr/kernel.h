@@ -21,6 +21,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
 #include <zephyr/sys/mem_stats.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +43,6 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  */
 
 #define K_ANY NULL
-#define K_END NULL
 
 #if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
 #error Zero available thread priorities defined!
@@ -181,7 +181,8 @@ extern void k_thread_foreach_unlocked(
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
-#define K_FP_REGS (BIT(1))
+#define K_FP_IDX 1
+#define K_FP_REGS (BIT(K_FP_IDX))
 #endif
 
 /**
@@ -212,6 +213,37 @@ extern void k_thread_foreach_unlocked(
  * Effectively it serves as a tiny bit of zero-overhead TLS data.
  */
 #define K_CALLBACK_STATE (BIT(4))
+
+#ifdef CONFIG_ARC
+/* ARC processor Bitmask definitions for threads user options */
+
+#if defined(CONFIG_ARC_DSP_SHARING)
+/**
+ * @brief DSP registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the CPU's DSP registers.
+ * This instructs the kernel to take additional steps to save and
+ * restore the contents of these registers when scheduling the thread.
+ * No effect if @kconfig{CONFIG_ARC_DSP_SHARING} is not enabled.
+ */
+#define K_DSP_IDX 6
+#define K_ARC_DSP_REGS (BIT(K_DSP_IDX))
+#endif
+
+#if defined(CONFIG_ARC_AGU_SHARING)
+/**
+ * @brief AGU registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the ARC processor's XY
+ * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
+ * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
+ */
+#define K_AGU_IDX 7
+#define K_ARC_AGU_REGS (BIT(K_AGU_IDX))
+#endif
+#endif
 
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
@@ -628,7 +660,6 @@ struct _static_thread_data {
 	int init_prio;
 	uint32_t init_options;
 	int32_t init_delay;
-	void (*init_abort)(void);
 	const char *init_name;
 };
 
@@ -648,6 +679,22 @@ struct _static_thread_data {
 	.init_delay = (delay),                                   \
 	.init_name = STRINGIFY(tname),                           \
 	}
+
+/*
+ * Refer to K_THREAD_DEFINE() and K_KERNEL_THREAD_DEFINE() for
+ * information on arguments.
+ */
+#define Z_THREAD_COMMON_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	struct k_thread _k_thread_obj_##name;				\
+	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+				_k_thread_data_##name) =		\
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
+				     _k_thread_stack_##name, stack_size,\
+				     entry, p1, p2, p3, prio, options,	\
+				     delay, name);			\
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -676,23 +723,57 @@ struct _static_thread_data {
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), zero for no delay.
  *
- *
- * @internal It has been observed that the x86 compiler by default aligns
- * these _static_thread_data structures to 32-byte boundaries, thereby
- * wasting space. To work around this, force a 4-byte alignment.
- *
+ * @note Static threads with zero delay should not normally have
+ * MetaIRQ priority levels.  This can preempt the system
+ * initialization handling (depending on the priority of the main
+ * thread) and cause surprising ordering side effects.  It will not
+ * affect anything in the OS per se, but consider it bad practice.
+ * Use a SYS_INIT() callback if you need to run code before entrance
+ * to the application main().
  */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
-	struct k_thread _k_thread_obj_##name;				 \
-	STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
-		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
-				    _k_thread_stack_##name, stack_size,  \
-				entry, p1, p2, p3, prio, options, delay, \
-				name);					 \
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	 \
+			       prio, options, delay)
+
+/**
+ * @brief Statically define and initialize a thread intended to run only in kernel mode.
+ *
+ * The thread may be scheduled for immediate execution or a delayed start.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * The ID of the thread can be accessed using:
+ *
+ * @code extern const k_tid_t <name>; @endcode
+ *
+ * @note Threads defined by this can only run in kernel mode, and cannot be
+ *       transformed into user thread via k_thread_user_mode_enter().
+ *
+ * @warning Depending on the architecture, the stack size (@p stack_size)
+ *          may need to be multiples of CONFIG_MMU_PAGE_SIZE (if MMU)
+ *          or in power-of-two size (if MPU).
+ *
+ * @param name Name of the thread.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
+ */
+#define K_KERNEL_THREAD_DEFINE(name, stack_size,			\
+			       entry, p1, p2, p3,			\
+			       prio, options, delay)			\
+	K_KERNEL_STACK_DEFINE(_k_thread_stack_##name, stack_size);	\
+	Z_THREAD_COMMON_DEFINE(name, stack_size, entry, p1, p2, p3,	\
+			       prio, options, delay)
 
 /**
  * @brief Get a thread's priority.
@@ -1013,10 +1094,19 @@ static inline bool k_is_pre_kernel(void)
  *
  * This routine can be called recursively.
  *
- * @note k_sched_lock() and k_sched_unlock() should normally be used
- * when the operation being performed can be safely interrupted by ISRs.
- * However, if the amount of processing involved is very small, better
- * performance may be obtained by using irq_lock() and irq_unlock().
+ * Owing to clever implementation details, scheduler locks are
+ * extremely fast for non-userspace threads (just one byte
+ * inc/decrement in the thread struct).
+ *
+ * @note This works by elevating the thread priority temporarily to a
+ * cooperative priority, allowing cheap synchronization vs. other
+ * preemptible or cooperative threads running on the current CPU.  It
+ * does not prevent preemption or asynchrony of other types.  It does
+ * not prevent threads from running on other CPUs when CONFIG_SMP=y.
+ * It does not prevent interrupts from happening, nor does it prevent
+ * threads with MetaIRQ priorities from preempting the current thread.
+ * In general this is a historical API not well-suited to modern
+ * applications, use with care.
  */
 extern void k_sched_lock(void);
 
@@ -2080,6 +2170,8 @@ struct k_event {
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_event)
 };
 
 #define Z_EVENT_INITIALIZER(obj) \
@@ -3467,9 +3559,9 @@ extern int k_work_schedule(struct k_work_delayable *dwork,
 /** @brief Reschedule a work item to a queue after a delay.
  *
  * Unlike k_work_schedule_for_queue() this function can change the deadline of
- * a scheduled work item, and will schedule a work item that isn't idle
- * (e.g. is submitted or running).  This function does not affect ("unsubmit")
- * a work item that has been submitted to a queue.
+ * a scheduled work item, and will schedule a work item that is in any state
+ * (e.g. is idle, submitted, or running).  This function does not affect
+ * ("unsubmit") a work item that has been submitted to a queue.
  *
  * @funcprops \isr_ok
  *
@@ -4301,7 +4393,7 @@ struct k_msgq_attrs {
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
-				  q_msg_size, q_max_msgs)
+				  (q_msg_size), (q_max_msgs))
 
 /**
  * @brief Initialize a message queue.
@@ -4416,6 +4508,24 @@ __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
  * @retval -ENOMSG Returned when the queue has no message.
  */
 __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
+
+/**
+ * @brief Peek/read a message from a message queue at the specified index
+ *
+ * This routine reads a message from message queue at the specified index
+ * and leaves the message in the queue.
+ * k_msgq_peek_at(msgq, data, 0) is equivalent to k_msgq_peek(msgq, data)
+ *
+ * @funcprops \isr_ok
+ *
+ * @param msgq Address of the message queue.
+ * @param data Address of area to hold the message read from the queue.
+ * @param idx Message queue index at which to peek
+ *
+ * @retval 0 Message read.
+ * @retval -ENOMSG Returned when the queue has no message at index.
+ */
+__syscall int k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx);
 
 /**
  * @brief Purge a message queue.

@@ -40,6 +40,7 @@ uint32_t board_timing_freq_get_mhz(void);
 /**
  * @brief Timing Measurement APIs
  * @defgroup timing_api Timing APIs
+ * @ingroup os_services
  * @{
  */
 

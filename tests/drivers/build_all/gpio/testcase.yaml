@@ -1,8 +1,13 @@
 common:
   build_only: true
-  tags: drivers gpio
+  tags:
+    - drivers
+    - gpio
 tests:
   drivers.gpio.build:
     min_ram: 32
     platform_exclude: serpente
-    depends_on: gpio spi i2c
+    depends_on:
+      - gpio
+      - spi
+      - i2c

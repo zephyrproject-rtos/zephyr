@@ -22,6 +22,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - kscan:touch
   - mipi_dsi
   - netif:eth
   - pwm

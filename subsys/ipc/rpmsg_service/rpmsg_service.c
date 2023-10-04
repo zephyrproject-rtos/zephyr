@@ -75,11 +75,9 @@ static void ns_bind_cb(struct rpmsg_device *rdev,
 
 #endif
 
-static int rpmsg_service_init(const struct device *dev)
+static int rpmsg_service_init(void)
 {
 	int32_t err;
-
-	(void)dev;
 
 	LOG_DBG("RPMsg service initialization start");
 

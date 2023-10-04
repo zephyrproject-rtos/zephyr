@@ -5,20 +5,47 @@ description: Microchip XEC eSPI Virtual Wire routing
 
 compatible: "microchip,xec-espi-vw-routing"
 
+include: [base.yaml]
+
 child-binding:
-    description: |
-      Child node containing the routing of an eSPI virtual wire to the SoC
-      VW registers and ECIA GIRQ registers.
-    properties:
-       vw-reg:
-          type: array
-          required: true
-          description: vw signal's register index and vw bitmask.
+  description: |
+    Child node containing the routing of an eSPI virtual wire to the SoC
+    VW registers and ECIA GIRQ registers.
+  properties:
+    vw-reg:
+      type: array
+      required: true
+      description: vw signal's register index and vw bitmask.
 
-       vw-girq:
-        type: array
-        description: |
-            Routing of MSVW source to aggregated GIRQs
+    vw-girq:
+      type: array
+      description: |
+        Routing of MSVW source to aggregated GIRQs
 
-            Example: OOB_RST_WARN is source 2 of MSVW01 routed to GIRQ24 b[5]
-               vw-girq = <24 5>;
+        For example, OOB_RST_WARN is source 2 of MSVW01 routed
+        to GIRQ24 b[5]. vw-girq = <24 5>;
+
+    reset-state:
+      type: string
+      description: |
+        Optional default virtual wire state on reset (0 or 1).
+        If the property is not present hardware default is used.
+      enum:
+      - "HW_DFLT"
+      - "0"
+      - "1"
+
+    reset-source:
+      type: string
+      description: |
+        Optional reset source in addition to chip reset.
+        0 is ESPI_RESET, 1 is RESET_SYS, 2 is RESET_SIO,
+        and 3 is ESPI Platform Reset. If this property is not
+        present the hardware default is used. Note: reset source
+        affects all four virtual wires in the VW group.
+      enum:
+      - "HW_DFLT"
+      - "ESPI_RESET"
+      - "RESET_SYS"
+      - "RESET_SIO"
+      - "PLTRST"

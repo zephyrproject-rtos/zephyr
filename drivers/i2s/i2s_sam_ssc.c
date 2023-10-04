@@ -28,6 +28,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
@@ -69,8 +70,8 @@ struct i2s_sam_dev_cfg {
 	const struct device *dev_dma;
 	Ssc *regs;
 	void (*irq_config)(void);
+	const struct atmel_sam_pmc_config clock_cfg;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t periph_id;
 	uint8_t irq_id;
 };
 
@@ -974,8 +975,9 @@ static int i2s_sam_initialize(const struct device *dev)
 		return ret;
 	}
 
-	/* Enable module's clock */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id);
+	/* Enable SSC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset the module, disable receiver & transmitter */
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;
@@ -1015,7 +1017,7 @@ static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
 	.regs = (Ssc *)DT_INST_REG_ADDR(0),
 	.irq_config = i2s0_sam_irq_config,
-	.periph_id = DT_INST_PROP(0, peripheral_id),
+	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
 	.irq_id = DT_INST_IRQN(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };

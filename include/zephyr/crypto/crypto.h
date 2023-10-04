@@ -27,6 +27,7 @@
 /**
  * @brief Crypto APIs
  * @defgroup crypto Crypto
+ * @ingroup os_services
  * @{
  */
 
@@ -386,7 +387,6 @@ static inline int hash_begin_session(const struct device *dev,
 	struct crypto_driver_api *api;
 
 	api = (struct crypto_driver_api *) dev->api;
-	ctx->device = dev;
 	ctx->device = dev;
 
 	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));

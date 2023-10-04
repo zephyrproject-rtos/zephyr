@@ -38,17 +38,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #define SHORT_ADDRESS_SIZE 2
 
-#define FCS_SIZE 2
-#if defined(CONFIG_IEEE802154_2015)
-#define ACK_PKT_LENGTH 127
-#else
+#define FCS_SIZE     2
+#define PHR_DURATION 32
+#if defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 #define ACK_PKT_LENGTH 5
+#else
+#define ACK_PKT_LENGTH 127
 #endif
 
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
 
-#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define OT_WORKER_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #else
 #define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
@@ -83,7 +84,8 @@ static const struct device *const radio_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 static struct ieee802154_radio_api *radio_api;
 
-static int8_t tx_power;
+/* Get the default tx output power from Kconfig */
+static int8_t tx_power = CONFIG_OPENTHREAD_DEFAULT_TX_POWER;
 static uint16_t channel;
 static bool promiscuous;
 
@@ -184,8 +186,9 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
-	ack_frame.mInfo.mRxInfo.mTimestamp =
-		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+	/* OpenThread expects the timestamp to point to the end of SFD */
+	ack_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
+					     pkt_time->nanosecond / NSEC_PER_USEC - PHR_DURATION;
 #endif
 
 	return NET_OK;
@@ -393,11 +396,11 @@ static void openthread_handle_received_frame(otInstance *instance,
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
-	recv_frame.mInfo.mRxInfo.mTimestamp =
-		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+	/* OpenThread expects the timestamp to point to the end of SFD */
+	recv_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
+					      pkt_time->nanosecond / NSEC_PER_USEC - PHR_DURATION;
 #endif
 
-#if defined(CONFIG_IEEE802154_2015)
 	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
 		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
 			net_pkt_ieee802154_ack_seb(pkt);
@@ -406,7 +409,6 @@ static void openthread_handle_received_frame(otInstance *instance,
 		recv_frame.mInfo.mRxInfo.mAckKeyId =
 			net_pkt_ieee802154_ack_keyid(pkt);
 	}
-#endif
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance, &recv_frame, OT_ERROR_NONE);
@@ -525,7 +527,8 @@ void platformRadioProcess(otInstance *aInstance)
 	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
 		reset_pending_event(PENDING_EVENT_TX_DONE);
 
-		if (sState == OT_RADIO_STATE_TRANSMIT) {
+		if (sState == OT_RADIO_STATE_TRANSMIT ||
+		    radio_api->get_capabilities(radio_dev) & IEEE802154_HW_SLEEP_TO_TX) {
 			sState = OT_RADIO_STATE_RECEIVE;
 			handle_tx_done(aInstance);
 		}
@@ -630,9 +633,8 @@ otError otPlatRadioSleep(otInstance *aInstance)
 	    sState == OT_RADIO_STATE_RECEIVE ||
 	    sState == OT_RADIO_STATE_TRANSMIT) {
 		error = OT_ERROR_NONE;
-		if (radio_api->stop(radio_dev)) {
-			sState = OT_RADIO_STATE_SLEEP;
-		}
+		radio_api->stop(radio_dev);
+		sState = OT_RADIO_STATE_SLEEP;
 	}
 
 	return error;
@@ -672,6 +674,36 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
 #endif
+
+otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
+{
+	if (radio_api->continuous_carrier == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
+	if ((aEnable) && (sState == OT_RADIO_STATE_RECEIVE)) {
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+		if (radio_api->continuous_carrier(radio_dev) != 0) {
+			return OT_ERROR_FAILED;
+		}
+
+		sState = OT_RADIO_STATE_TRANSMIT;
+	} else if ((!aEnable) && (sState == OT_RADIO_STATE_TRANSMIT)) {
+		return otPlatRadioReceive(aInstance, channel);
+	} else {
+		return OT_ERROR_INVALID_STATE;
+	}
+
+	return OT_ERROR_NONE;
+}
+
+otRadioState otPlatRadioGetState(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return sState;
+}
 
 otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 {
@@ -770,7 +802,7 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 	}
 
-#if defined(CONFIG_IEEE802154_2015)
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 	if (radio_caps & IEEE802154_HW_TX_SEC) {
 		caps |= OT_RADIO_CAPS_TRANSMIT_SEC;
 	}
@@ -1033,7 +1065,7 @@ uint64_t otPlatRadioGetNow(otInstance *aInstance)
 }
 #endif
 
-#if defined(CONFIG_IEEE802154_2015)
+#if !defined(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)
 void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId,
 			  const otMacKeyMaterial *aPrevKey, const otMacKeyMaterial *aCurrKey,
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
@@ -1113,6 +1145,15 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
 	struct ieee802154_config config = { .frame_counter = aMacFrameCounter };
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER,
+				   &config);
+}
+
+void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .frame_counter = aMacFrameCounter };
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER,
 				   &config);
 }
 #endif

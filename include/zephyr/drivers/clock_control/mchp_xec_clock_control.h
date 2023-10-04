@@ -16,6 +16,8 @@
 int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 				uint8_t slp_en);
 
+int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos);
+
 #if defined(CONFIG_PM)
 void mchp_xec_clk_ctrl_sys_sleep_enable(bool is_deep);
 void mchp_xec_clk_ctrl_sys_sleep_disable(void);

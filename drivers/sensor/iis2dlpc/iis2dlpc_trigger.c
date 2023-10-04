@@ -67,6 +67,19 @@ static int iis2dlpc_enable_int(const struct device *dev,
 		return iis2dlpc_pin_int1_route_set(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
 #endif /* CONFIG_IIS2DLPC_TAP */
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	case SENSOR_TRIG_DELTA:
+		/* set interrupt for pin INT1 */
+		iis2dlpc_pin_int1_route_get(ctx,
+			    &int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_wu = enable;
+
+		iis2dlpc_act_mode_set(ctx, enable ? IIS2DLPC_DETECT_ACT_INACT
+						  : IIS2DLPC_NO_DETECTION);
+
+		return iis2dlpc_pin_int1_route_set(ctx,
+			   &int_route.ctrl4_int1_pad_ctrl);
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 	default:
 		LOG_ERR("Unsupported trigger interrupt route %d", type);
 		return -ENOTSUP;
@@ -89,6 +102,7 @@ int iis2dlpc_trigger_set(const struct device *dev,
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		iis2dlpc->drdy_handler = handler;
+		iis2dlpc->drdy_trig = trig;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
 			iis2dlpc_acceleration_raw_get(ctx, raw);
@@ -97,11 +111,19 @@ int iis2dlpc_trigger_set(const struct device *dev,
 #ifdef CONFIG_IIS2DLPC_TAP
 	case SENSOR_TRIG_TAP:
 		iis2dlpc->tap_handler = handler;
+		iis2dlpc->tap_trig = trig;
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_TAP, state);
 	case SENSOR_TRIG_DOUBLE_TAP:
 		iis2dlpc->double_tap_handler = handler;
+		iis2dlpc->double_tap_trig = trig;
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_IIS2DLPC_TAP */
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	case SENSOR_TRIG_DELTA:
+		iis2dlpc->activity_handler = handler;
+		iis2dlpc->activity_trig = trig;
+		return iis2dlpc_enable_int(dev, SENSOR_TRIG_DELTA, state);
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 	default:
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
@@ -112,17 +134,26 @@ static int iis2dlpc_handle_drdy_int(const struct device *dev)
 {
 	struct iis2dlpc_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+static int iis2dlpc_handle_activity_int(const struct device *dev)
+{
+	struct iis2dlpc_data *data = dev->data;
+	sensor_trigger_handler_t handler = data->activity_handler;
+
+	if (handler) {
+		handler(dev, data->activity_trig);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 
 #ifdef CONFIG_IIS2DLPC_TAP
 static int iis2dlpc_handle_single_tap_int(const struct device *dev)
@@ -130,13 +161,8 @@ static int iis2dlpc_handle_single_tap_int(const struct device *dev)
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
 
-	struct sensor_trigger tap_trig = {
-		.type = SENSOR_TRIG_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &tap_trig);
+		handler(dev, data->tap_trig);
 	}
 
 	return 0;
@@ -147,13 +173,8 @@ static int iis2dlpc_handle_double_tap_int(const struct device *dev)
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
 
-	struct sensor_trigger tap_trig = {
-		.type = SENSOR_TRIG_DOUBLE_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &tap_trig);
+		handler(dev, data->double_tap_trig);
 	}
 
 	return 0;
@@ -183,6 +204,11 @@ static void iis2dlpc_handle_interrupt(const struct device *dev)
 		iis2dlpc_handle_double_tap_int(dev);
 	}
 #endif /* CONFIG_IIS2DLPC_TAP */
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	if (sources.all_int_src.wu_ia) {
+		iis2dlpc_handle_activity_int(dev);
+	}
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					GPIO_INT_EDGE_TO_ACTIVE);

@@ -48,14 +48,8 @@ static const struct spi_driver_api vnd_spi_api = {
 	.release = vnd_spi_release,
 };
 
-static int vnd_spi_init(const struct device *dev)
-{
-	return 0;
-}
-
-#define VND_SPI_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, &vnd_spi_init, NULL,			\
-			      NULL, NULL, POST_KERNEL,			\
+#define VND_SPI_INIT(n)							\
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,	\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      &vnd_spi_api);
 

@@ -68,18 +68,73 @@ struct openthread_context {
 
 	/** Work object for OpenThread internal usage */
 	struct k_work api_work;
+
+	/** A list for state change callbacks */
+	sys_slist_t state_change_cbs;
 };
 /**
  * INTERNAL_HIDDEN @endcond
  */
+
+/** OpenThread state change callback  */
+
+/**
+ * @brief OpenThread state change callback structure
+ *
+ * Used to register a callback in the callback list. As many
+ * callbacks as needed can be added as long as each of them
+ * are unique pointers of struct openthread_state_changed_cb.
+ * Beware such structure should not be allocated on stack.
+ */
+struct openthread_state_changed_cb {
+	/**
+	 * @brief Callback for notifying configuration or state changes.
+	 *
+	 * @param flags as per OpenThread otStateChangedCallback() aFlags parameter.
+	 *        See https://openthread.io/reference/group/api-instance#otstatechangedcallback
+	 * @param ot_context the OpenThread context the callback is registered with.
+	 * @param user_data Data to pass to the callback.
+	 */
+	void (*state_changed_cb)(otChangedFlags flags, struct openthread_context *ot_context,
+				 void *user_data);
+
+	/** User data if required */
+	void *user_data;
+
+	/**
+	 * Internally used field for list handling
+	 *  - user must not directly modify
+	 */
+	sys_snode_t node;
+};
+
+/**
+ * @brief Registers callbacks which will be called when certain configuration
+ * or state changes occur within OpenThread.
+ *
+ * @param ot_context the OpenThread context to register the callback with.
+ * @param cb callback struct to register.
+ */
+int openthread_state_changed_cb_register(struct openthread_context *ot_context,
+					 struct openthread_state_changed_cb *cb);
+
+/**
+ * @brief Unregisters OpenThread configuration or state changed callbacks.
+ *
+ * @param ot_context the OpenThread context to unregister the callback from.
+ * @param cb callback struct to unregister.
+ */
+int openthread_state_changed_cb_unregister(struct openthread_context *ot_context,
+					   struct openthread_state_changed_cb *cb);
 
 /**
  * @brief Sets function which will be called when certain configuration or state
  * changes within OpenThread.
  *
  * @param cb function to call in callback procedure.
+ * @deprecated Use openthread_state_changed_cb_register() instead.
  */
-void openthread_set_state_changed_cb(otStateChangedCallback cb);
+__deprecated void openthread_set_state_changed_cb(otStateChangedCallback cb);
 
 /**
  * @brief Get OpenThread thread identification.

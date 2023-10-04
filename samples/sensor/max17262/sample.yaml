@@ -9,7 +9,7 @@ tests:
     tags: sensors
     platform_allow: nrf52840dk_nrf52840
     harness_config:
-        type: one_line
-        regex:
-            - "V: (.*) V; I: (.*) mA; T: (.*) °C"
-        fixture: fixture_i2c_max17262
+      type: one_line
+      regex:
+        - "V: (.*) V; I: (.*) mA; T: (.*) °C"
+      fixture: fixture_i2c_max17262

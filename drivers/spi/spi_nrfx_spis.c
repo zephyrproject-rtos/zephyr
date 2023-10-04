@@ -23,17 +23,9 @@ struct spi_nrfx_config {
 	nrfx_spis_t spis;
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
-#ifdef CONFIG_PINCTRL
+	uint16_t max_buf_len;
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
-
-/* Maximum buffer length (depends on the EasyDMA bits, equal for all instances) */
-#if defined(SPIS0_EASYDMA_MAXCNT_SIZE)
-#define MAX_BUF_LEN BIT_MASK(SPIS0_EASYDMA_MAXCNT_SIZE)
-#else
-#define MAX_BUF_LEN BIT_MASK(SPIS1_EASYDMA_MAXCNT_SIZE)
-#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -99,7 +91,7 @@ static int configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (spi_cfg->cs) {
+	if (spi_cs_is_gpio(spi_cfg)) {
 		LOG_ERR("CS control via GPIO is not supported");
 		return -EINVAL;
 	}
@@ -121,7 +113,8 @@ static void prepare_for_transfer(const struct device *dev,
 	const struct spi_nrfx_config *dev_config = dev->config;
 	int status;
 
-	if (tx_buf_len > MAX_BUF_LEN || rx_buf_len > MAX_BUF_LEN) {
+	if (tx_buf_len > dev_config->max_buf_len ||
+	    rx_buf_len > dev_config->max_buf_len) {
 		LOG_ERR("Invalid buffer sizes: Tx %d/Rx %d",
 			tx_buf_len, rx_buf_len);
 		status = -EINVAL;
@@ -238,15 +231,12 @@ static int spi_nrfx_init(const struct device *dev)
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
 	nrfx_err_t result;
-
-#ifdef CONFIG_PINCTRL
 	int err;
 
 	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
-#endif
 
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
@@ -274,22 +264,7 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIS(idx) DT_NODELABEL(spi##idx)
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
-#define SPI_NRFX_SPIS_PIN_CFG(idx)					\
-	COND_CODE_1(CONFIG_PINCTRL,					\
-		(.skip_gpio_cfg = true,					\
-		 .skip_psel_cfg = true,),				\
-		(.sck_pin    = SPIS_PROP(idx, sck_pin),			\
-		 .mosi_pin   = DT_PROP_OR(SPIS(idx), mosi_pin,		\
-					  NRFX_SPIS_PIN_NOT_USED),	\
-		 .miso_pin   = DT_PROP_OR(SPIS(idx), miso_pin,		\
-					  NRFX_SPIS_PIN_NOT_USED),	\
-		 .csn_pin    = SPIS_PROP(idx, csn_pin),			\
-		 .csn_pullup = NRF_GPIO_PIN_NOPULL,			\
-		 .miso_drive = NRF_GPIO_PIN_S0S1,))
-
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0,			       \
-				     sck_pin, mosi_pin, miso_pin, csn_pin);    \
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
@@ -299,22 +274,23 @@ static int spi_nrfx_init(const struct device *dev)
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIS(idx))));	       \
+	PINCTRL_DT_DEFINE(SPIS(idx));					       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spis = {						       \
 			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
 			.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,	       \
 		},							       \
 		.config = {						       \
-			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
+			.skip_gpio_cfg = true,				       \
+			.skip_psel_cfg = true,				       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
 			.orc       = SPIS_PROP(idx, overrun_character),	       \
 			.def       = SPIS_PROP(idx, def_char),		       \
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
-		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
+		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
 	};								       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \

@@ -149,6 +149,22 @@ storage. The model can retrieve the data by calling the ``read_cb`` passed as
 a parameter to the callback. See the :ref:`settings_api` module documentation for
 details.
 
+When model data changes frequently, storing it on every change may lead to
+increased wear of flash. To reduce the wear, the model can postpone storing of
+data by calling :c:func:`bt_mesh_model_data_store_schedule`. The stack will
+schedule a work item with delay defined by the
+:kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option. When the work item is
+running, the stack will call the :c:member:`bt_mesh_model_cb.pending_store`
+callback for every model that has requested storing of data. The model can
+then call :c:func:`bt_mesh_model_data_store` to store the data.
+
+If :kconfig:option:`CONFIG_BT_MESH_SETTINGS_WORKQ` is enabled, the
+:c:member:`bt_mesh_model_cb.pending_store` callback is called from a dedicated
+thread. This allows the stack to process other incoming and outgoing messages
+while model data is being stored. It is recommended to use this option and the
+:c:func:`bt_mesh_model_data_store_schedule` function when large amount of data
+needs to be stored.
+
 API reference
 *************
 

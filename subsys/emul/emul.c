@@ -11,13 +11,12 @@ LOG_MODULE_REGISTER(emul);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 const struct emul *emul_get_binding(const char *name)
 {
-	const struct emul *emul_it;
-
-	for (emul_it = __emul_list_start; emul_it < __emul_list_end; emul_it++) {
+	STRUCT_SECTION_FOREACH(emul, emul_it) {
 		if (strcmp(emul_it->dev->name, name) == 0) {
 			return emul_it;
 		}

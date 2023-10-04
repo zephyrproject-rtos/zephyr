@@ -30,11 +30,12 @@ include:
   - name: st,stm32f105-pll-clock.yaml
     property-blocklist:
       - mul
+      - otgfspre
 
 properties:
-    mul:
-      type: int
-      required: true
-      description: |
-          PLL multiplication factor for output clock
-          Valid range: 2 - 16
+  mul:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for output clock
+        Valid range: 2 - 16

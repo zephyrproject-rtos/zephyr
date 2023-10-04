@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+
 zephyr_library_sources_ifdef(CONFIG_GSM_MUX gsm_mux.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_CONSOLE_RECEIVER ipm_console_receiver.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_CONSOLE_SENDER ipm_console_sender.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_CONSOLE ipm_console.c)
 zephyr_library_sources_ifdef(CONFIG_JAILHOUSE_DEBUG_CONSOLE jailhouse_debug_console.c)
-zephyr_library_sources_ifdef(CONFIG_NATIVE_POSIX_CONSOLE native_posix_console.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_ARCH_CONSOLE posix_arch_console.c)
 zephyr_library_sources_ifdef(CONFIG_RAM_CONSOLE ram_console.c)
 zephyr_library_sources_ifdef(CONFIG_RTT_CONSOLE rtt_console.c)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST_CONSOLE semihost_console.c)

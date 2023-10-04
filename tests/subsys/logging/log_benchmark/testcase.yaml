@@ -20,7 +20,9 @@ tests:
     integration_platforms:
       - native_posix
     tags: logging
-    platform_allow: qemu_x86 native_posix
+    platform_allow:
+      - qemu_x86
+      - native_posix
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_CBPRINTF_COMPLETE=y

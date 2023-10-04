@@ -254,6 +254,15 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data);
 
+/* Thin wrapper over `bt_conn_send_cb`
+ *
+ * Used to set the TS_Flag bit in `buf`'s metadata.
+ *
+ * Return values & buf ownership same as parent.
+ */
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts);
+
 static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	return bt_conn_send_cb(conn, buf, NULL, NULL);
@@ -356,6 +365,9 @@ void notify_le_phy_updated(struct bt_conn *conn);
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BT_SMP)
+/* If role specific LTK is present */
+bool bt_conn_ltk_present(const struct bt_conn *conn);
+
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len);

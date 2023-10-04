@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig DISPLAY
-	bool "Display Drivers"
+	bool "Display controller drivers"
 	help
 	  Enable display drivers
 
@@ -36,5 +36,7 @@ source "drivers/display/Kconfig.ls0xx"
 source "drivers/display/Kconfig.rm68200"
 source "drivers/display/Kconfig.max7219"
 source "drivers/display/Kconfig.intel_multibootfb"
+source "drivers/display/Kconfig.mcux_dcnano_lcdif"
+source "drivers/display/Kconfig.otm8009a"
 
 endif # DISPLAY

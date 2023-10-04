@@ -1,4 +1,9 @@
 tests:
   kernel.multiprocessing.spinlock:
-    tags: kernel smp spinlock
+    tags:
+      - kernel
+      - smp
+      - spinlock
     filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1 and CONFIG_MP_MAX_NUM_CPUS <= 4
+    depends_on:
+      - smp

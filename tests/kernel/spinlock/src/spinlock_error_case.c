@@ -173,8 +173,11 @@ ZTEST(spinlock, test_spinlock_lock_time_limit)
 
 	key = k_spin_lock(&timeout_lock);
 
-	/* spin here for at least 2x the cycle limit */
-	for (volatile int i = 0; i < CONFIG_SPIN_LOCK_TIME_LIMIT*2; i++) {
+	/* spin here a while, the spin lock limit is in terms of system clock
+	 * not core clock. So a multiplier is needed here to ensure things
+	 * go well past the time limit.
+	 */
+	for (volatile int i = 0; i < CONFIG_SPIN_LOCK_TIME_LIMIT*10; i++) {
 	}
 
 	set_assert_valid(true, false);

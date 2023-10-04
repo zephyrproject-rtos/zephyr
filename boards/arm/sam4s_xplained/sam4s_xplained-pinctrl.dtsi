@@ -48,6 +48,12 @@
 				 <PA14B_PWM_PWMH3>;
 		};
 	};
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PB0X_ADC_AD4>,
+				 <PB1X_ADC_AD5>;
+		};
+	};
 	smc_default: smc_default {
 		group1 {
 			pinmux = <PC18A_EBI_A0>,

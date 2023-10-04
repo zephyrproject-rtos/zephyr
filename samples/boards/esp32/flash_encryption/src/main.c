@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(flash_encryption, CONFIG_LOG_DEFAULT_LEVEL);
 #error Flash encryption feature is only available for ESP32 SOC yet.
 #endif
 
-void main(void)
+int main(void)
 {
 	uint8_t buffer[32];
 	const struct device *flash_device;
@@ -29,7 +29,7 @@ void main(void)
 	flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_device)) {
 		printk("%s: device not ready.\n", flash_device->name);
-		return;
+		return 0;
 	}
 
 	for (int k = 0; k < 32; k++) {
@@ -52,4 +52,5 @@ void main(void)
 	memset(buffer, 0, sizeof(buffer));
 	flash_read(flash_device, address, &buffer, sizeof(buffer));
 	LOG_HEXDUMP_INF(buffer, sizeof(buffer), "FLASH DECRYPTED DATA");
+	return 0;
 }

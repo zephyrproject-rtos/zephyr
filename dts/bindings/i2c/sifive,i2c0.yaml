@@ -8,5 +8,5 @@ compatible: "sifive,i2c0"
 include: i2c-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true

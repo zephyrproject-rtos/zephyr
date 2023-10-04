@@ -7,7 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_
 
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <stdbool.h>
 
 #define DAIFSET_FIQ_BIT		BIT(0)
 #define DAIFSET_IRQ_BIT		BIT(1)
@@ -62,11 +63,12 @@
 #define SCR_HCE_BIT		BIT(8)
 #define SCR_RW_BIT		BIT(10)
 #define SCR_ST_BIT		BIT(11)
+#define SCR_EEL2_BIT		BIT(18)
 
 #define SCR_RES1		(BIT(4) | BIT(5))
 
 /* MPIDR */
-#define MPIDR_AFFLVL_MASK	(0xff)
+#define MPIDR_AFFLVL_MASK	(0xffULL)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)

@@ -100,19 +100,24 @@ static void print_phil_state(int id, const char *fmt, int32_t delay)
 	int prio = osThreadGetPriority(osThreadGetId());
 
 	set_phil_state_pos(id);
+#define STATE_LEN 80
+	char state[STATE_LEN];
+	int p = 0;
 
-	printk("Philosopher %d [%s:%s%d] ",
-	       id, prio < 0 ? "C" : "P",
-	       prio < 0 ? "" : " ",
-	       prio);
+	p += snprintk(state + p, STATE_LEN - p, "Philosopher %d [%s:%s%d] ",
+		     id, prio < 0 ? "C" : "P",
+		     prio < 0 ? "" : " ",
+		     prio);
 
 	if (delay) {
-		printk(fmt, delay < 1000 ? " " : "", delay);
+		p += snprintk(state + p, STATE_LEN - p, fmt,
+			      delay < 1000 ? " " : "", delay);
 	} else {
-		printk(fmt, "");
+		p += snprintk(state + p, STATE_LEN - p, fmt, "");
 	}
 
-	printk("\n");
+	p += snprintk(state + p, STATE_LEN - p, "\n");
+	printk("%s", state);
 }
 
 static int32_t get_random_delay(int id, int period_in_ms)
@@ -213,8 +218,9 @@ static void display_demo_description(void)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	display_demo_description();
 	start_threads();
+	return 0;
 }

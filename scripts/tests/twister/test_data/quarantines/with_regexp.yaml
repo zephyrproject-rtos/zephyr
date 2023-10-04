@@ -1,0 +1,9 @@
+- scenarios:
+  - test_(a|c).check_2
+  architectures:
+  - x86.*
+  comment: "a2 and c2 on x86"
+
+- scenarios:
+  - test_d.*
+  comment: "all test_d"

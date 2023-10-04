@@ -20,11 +20,9 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 /*
  * FIXME: buffer count per device.
- * FIXME: Due to a bug in UDC transfer processing the number of buffers
- * is temporarily set to 1.
  */
 NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
-			  1, 512,
+			  2, 512,
 			  sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
@@ -395,6 +393,12 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 {
+	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+
+	desc->iad_cdc.bFirstInterface = desc->if0.bInterfaceNumber;
+	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
+	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+
 	return 0;
 }
 
@@ -927,7 +931,7 @@ static int cdc_acm_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int usbd_cdc_acm_init_wq(const struct device *dev)
+static int usbd_cdc_acm_init_wq(void)
 {
 	k_work_queue_init(&cdc_acm_work_q);
 	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,

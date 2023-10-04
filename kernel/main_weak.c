@@ -21,16 +21,10 @@
 
 #include <kernel_internal.h>
 
-#ifdef CONFIG_CPP_MAIN
 int __weak main(void)
-#else
-void __weak main(void)
-#endif
 {
 	/* NOP default main() if the application does not provide one. */
 	arch_nop();
 
-#ifdef CONFIG_CPP_MAIN
 	return 0;
-#endif
 }

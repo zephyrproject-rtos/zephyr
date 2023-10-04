@@ -180,6 +180,16 @@ alreadyOnIntStack:
 	popl	%eax
 #endif
 
+#if defined(CONFIG_X86_RUNTIME_IRQ_STATS)
+	/*
+	 *  The runtime_irq_stats() function should be implemented
+	 *  by platform with this config.
+	 */
+	pushl	%eax
+	call	runtime_irq_stats
+	popl	%eax
+#endif
+
 	xorl	%eax, %eax
 #if defined(CONFIG_X2APIC)
 	xorl	%edx, %edx

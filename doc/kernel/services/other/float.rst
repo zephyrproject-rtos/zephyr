@@ -190,34 +190,37 @@ of stack space is required to load and store floating point registers.
 RISC-V architecture
 -------------------
 
-On the RISC-V architecture, the kernel treats each thread as a non-user
-or FPU user and the thread must be tagged by one of the
-following techniques:
+On the RISC-V architecture the kernel treats each thread as an FPU
+user on a case-by-case basis with the FPU access allocated on demand.
+A "lazy save" algorithm is used during context switching which updates
+the floating point registers only when it is absolutely necessary.
+For example, the FPU registers are *not* saved when switching from an
+FPU user to a non-user thread (or an FPU user that doesn't touch the FPU
+during its scheduling slot), and then back to the original FPU user.
 
-* A statically-created RISC-V thread can be tagged by passing the
-  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
+FPU register usage by ISRs is supported although not recommended. When an
+ISR uses floating point or SIMD registers, then the access is trapped, the
+current FPU user context is saved in the thread object and the ISR is resumed
+with interrupts disabled so to prevent another IRQ from interrupting the ISR
+and potentially requesting FPU usage. Because ISR don't have a persistent
+register context, there are no provision for saving an ISR's FPU context
+either, hence the IRQ disabling.
 
-* A dynamically-created RISC-V thread can be tagged by passing the
-  :c:macro:`K_FP_REGS` to :c:func:`k_thread_create`.
+As an optimization, the FPU context is preemptively restored upon scheduling
+back an "active FPU user" thread that had its FPU context saved away due to
+FPU usage by another thread. Active FPU users are so designated when they
+make the FPU state "dirty" during their most recent scheduling slot before
+being scheduled out. So if a thread doesn't modify the FPU state within its
+scheduling slot and another thread claims the FPU for itself afterwards then
+that first thread will be subjected to the on-demand regime and won't have
+its FPU context restored until it attempts to access it again. But if that
+thread does modify the FPU before being scheduled out then it is likely to
+continue using it when scheduled back in and preemptively restoring its FPU
+context saves on the exception trap overhead that would occur otherwise.
 
-* A running RISC-V thread can be tagged by calling :c:func:`k_float_enable`.
-  This function can only be called from the thread itself.
-
-If a RISC-V thread no longer requires the use of the floating point registers,
-it can call :c:func:`k_float_disable`. This instructs the kernel not to
-save or restore its FP context during thread context switching. This function
-can only be called from the thread itself.
-
-During thread context switching the RISC-V kernel saves the *callee-saved*
-floating point registers, if the switched-out thread is tagged with
-:c:macro:`K_FP_REGS`. Additionally, the *caller-saved* floating point
-registers are saved on the thread's stack. If the switched-in thread has been
-tagged with :c:macro:`K_FP_REGS`, then the kernel restores the *callee-saved*
-FP registers of the switched-in thread and the *caller-saved* FP context is
-restored from the thread's stack. Thus, the kernel does not save or restore the
-FP context of threads that are not using the FP registers. An extra 84 bytes
-(single floating point hardware) or 164 bytes (double floating point hardware)
-of stack space is required to load and store floating point registers.
+Each thread object becomes 136 bytes (single-precision floating point
+hardware) or 264 bytes (double-precision floating point hardware) larger
+when Shared FP registers mode is enabled.
 
 SPARC architecture
 ------------------

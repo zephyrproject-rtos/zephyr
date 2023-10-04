@@ -147,9 +147,8 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int kw2xd_init(const struct device *arg)
+static int kw2xd_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 
@@ -172,5 +171,14 @@ static int kw2xd_init(const struct device *arg)
 	irq_unlock(oldLevel);
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	SystemInit();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
 
 SYS_INIT(kw2xd_init, PRE_KERNEL_1, 0);

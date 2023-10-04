@@ -75,7 +75,7 @@ void watch_count(void *p1, void *p2, void *p3)
 	k_mutex_unlock(&count_mutex);
 }
 
-void main(void)
+int main(void)
 {
 	long t1 = 1, t2 = 2, t3 = 3;
 	int i;
@@ -101,4 +101,5 @@ void main(void)
 
 	printk("Main(): Waited and joined with %d threads. Final value of count = %d. Done.\n",
 	       NUM_THREADS, count);
+	return 0;
 }

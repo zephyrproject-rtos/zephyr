@@ -9,7 +9,7 @@ description: |
   rising and/or falling edges of an input signal.
 
   The ESP32's PCNT module has 8 independent counting “units” numbered from 0 to 7.
-  The ESP32S2's PCNT module has 4 independent counting “units” numbered from 0 to 3.
+  ESP32S2 and ESP32S3 have 4 independent counting “units” numbered from 0 to 3.
 
   Each pulse counter unit has a 16-bit signed counter register.
 
@@ -88,7 +88,7 @@ child-binding:
 
       description: |
         The PCNT unit index.
-        The ESP32 has 8 PCNT units. ESP32S2 has 4 PCNT units.
+        The ESP32 has 8 PCNT units. ESP32S2/S3 have 4 PCNT units.
 
     filter:
       type: int

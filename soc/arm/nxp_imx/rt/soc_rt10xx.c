@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 NXP
+ * Copyright  2017-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,12 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput500M = true,
 #endif
 #ifdef CONFIG_ETH_MCUX
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	.enableClkOutput = true,
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
+	.enableClkOutput1 = true,
+#endif
 #endif
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	.enableClkOutput25M = true,
@@ -177,9 +182,15 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	/* MUX selects video PLL, which is initialized to 93MHz */
 	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
-	CLOCK_SetDiv(kCLOCK_LcdifPreDiv, 4);
+	/* Divide output by 2 */
 	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
+	/* Set final div based on LCDIF clock-frequency */
+	CLOCK_SetDiv(kCLOCK_LcdifPreDiv,
+		((CLOCK_GetPllFreq(kCLOCK_PllVideo) / 2) /
+		DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings),
+			clock_frequency)) - 1);
 #endif
 
 
@@ -281,17 +292,30 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
  * @return 0
  */
 
-static int imxrt_init(const struct device *arg)
+static int imxrt_init(void)
 {
-	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
-		SCB_EnableDCache();
+#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
+	/* SystemInit enables code cache, disable it here */
+	SCB_DisableICache();
+#else
+	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
+	 * enable it here.
+	 */
+	SCB_EnableICache();
+#endif
+
+	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
+		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
+			SCB_EnableDCache();
+		}
+	} else {
+		SCB_DisableDCache();
 	}
 
 	/* Initialize system clock */

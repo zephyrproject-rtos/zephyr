@@ -36,6 +36,8 @@
 	aliases {
 		led0 = &yellow_led_1;
 		led1 = &blue_led_2;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 
 };
@@ -177,5 +179,13 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rng {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

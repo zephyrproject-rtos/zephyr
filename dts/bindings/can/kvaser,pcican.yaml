@@ -8,5 +8,5 @@ compatible: "kvaser,pcican"
 include: [can-controller.yaml, pcie-device.yaml]
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true

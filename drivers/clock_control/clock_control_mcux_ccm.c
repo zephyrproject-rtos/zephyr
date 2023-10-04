@@ -30,30 +30,74 @@ static const clock_root_control_t uart_clk_root[] = {
 	kCLOCK_RootUart3,
 	kCLOCK_RootUart4,
 };
+
+static const clock_ip_name_t uart_clocks[] = {
+	kCLOCK_Uart1,
+	kCLOCK_Uart2,
+	kCLOCK_Uart3,
+	kCLOCK_Uart4,
+};
+#endif
+#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX93_A55)
+static const clock_root_t lpuart_clk_root[] = {
+	kCLOCK_Root_Lpuart1,
+	kCLOCK_Root_Lpuart2,
+	kCLOCK_Root_Lpuart3,
+	kCLOCK_Root_Lpuart4,
+	kCLOCK_Root_Lpuart5,
+	kCLOCK_Root_Lpuart6,
+	kCLOCK_Root_Lpuart7,
+	kCLOCK_Root_Lpuart8,
+};
 #endif
 
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
-	return 0;
+	uint32_t clock_name = (uintptr_t)sub_system;
+	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+
+	switch (clock_name) {
+#ifdef CONFIG_UART_MCUX_IUART
+	case IMX_CCM_UART1_CLK:
+	case IMX_CCM_UART2_CLK:
+	case IMX_CCM_UART3_CLK:
+	case IMX_CCM_UART4_CLK:
+		CLOCK_EnableClock(uart_clocks[instance]);
+		return 0;
+#endif
+	default:
+		(void)instance;
+		return 0;
+	}
 }
 
 static int mcux_ccm_off(const struct device *dev,
 			       clock_control_subsys_t sub_system)
 {
-	return 0;
+	uint32_t clock_name = (uintptr_t)sub_system;
+	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+
+	switch (clock_name) {
+#ifdef CONFIG_UART_MCUX_IUART
+	case IMX_CCM_UART1_CLK:
+	case IMX_CCM_UART2_CLK:
+	case IMX_CCM_UART3_CLK:
+	case IMX_CCM_UART4_CLK:
+		CLOCK_DisableClock(uart_clocks[instance]);
+		return 0;
+#endif
+	default:
+		(void)instance;
+		return 0;
+	}
 }
 
 static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    uint32_t *rate)
 {
-#ifdef CONFIG_ARM64
-	uint32_t clock_name = (uint32_t)(uint64_t) sub_system;
-#else
-	uint32_t clock_name = (uint32_t) sub_system;
-#endif
-	uint32_t mux __unused;
+	uint32_t clock_name = (uintptr_t)sub_system;
 
 	switch (clock_name) {
 
@@ -83,6 +127,29 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_LPUART
+#ifdef CONFIG_SOC_MIMX93_A55
+	case IMX_CCM_LPUART1_CLK:
+	case IMX_CCM_LPUART2_CLK:
+	case IMX_CCM_LPUART3_CLK:
+	case IMX_CCM_LPUART4_CLK:
+	case IMX_CCM_LPUART5_CLK:
+	case IMX_CCM_LPUART6_CLK:
+	case IMX_CCM_LPUART7_CLK:
+	case IMX_CCM_LPUART8_CLK:
+	{
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+		clock_root_t clk_root = lpuart_clk_root[instance];
+		uint32_t uart_mux = CLOCK_GetRootClockMux(clk_root);
+		uint32_t divider = CLOCK_GetRootClockDiv(clk_root);
+
+		if (uart_mux == 0)
+			*rate = MHZ(24) / divider;
+		else
+			LOG_ERR("LPUART Clock is not supported\r\n");
+
+	} break;
+
+#else
 	case IMX_CCM_LPUART_CLK:
 		if (CLOCK_GetMux(kCLOCK_UartMux) == 0) {
 			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6
@@ -93,6 +160,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		}
 
 		break;
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
@@ -195,20 +263,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ccm_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.on = mcux_ccm_on,
 	.off = mcux_ccm_off,
 	.get_rate = mcux_ccm_get_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_ccm_init,
-		    NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_ccm_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &mcux_ccm_driver_api);

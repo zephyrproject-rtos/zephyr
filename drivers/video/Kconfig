@@ -7,7 +7,7 @@
 # VIDEO Drivers
 #
 menuconfig VIDEO
-	bool "VIDEO hardware support"
+	bool "Video drivers"
 	help
 	  Enable support for the VIDEO.
 
@@ -15,7 +15,7 @@ if VIDEO
 
 config VIDEO_INIT_PRIORITY
 	int "Video initialization priority"
-	default 90
+	default 60
 	help
 	  System initialization priority for video drivers.
 

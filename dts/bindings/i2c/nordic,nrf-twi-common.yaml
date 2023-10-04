@@ -7,37 +7,11 @@
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    sda-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The SDA pin to use.
-
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for SDA, set:
-
-            sda-pin = <16>;
-
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for SDA, set:
-
-            sda-pin = <34>;  /* 32 + 2 */
-
-    scl-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The SCL pin to use. The pin numbering scheme is the same as
-        the sda-pin property's.
+  pinctrl-0:
+    required: true

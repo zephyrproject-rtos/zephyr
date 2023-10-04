@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_EAD
+	bool "Encrypted Advertising Data [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_HOST_CCM
+	help
+	  Enable the Encrypted Advertising Data library

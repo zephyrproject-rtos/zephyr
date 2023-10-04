@@ -128,7 +128,7 @@ static int set_random_address(const bt_addr_t *addr)
 	LOG_DBG("%s", bt_addr_str(addr));
 
 	/* Do nothing if we already have the right address */
-	if (!bt_addr_cmp(addr, &bt_dev.random_addr.a)) {
+	if (bt_addr_eq(addr, &bt_dev.random_addr.a)) {
 		return 0;
 	}
 
@@ -207,6 +207,9 @@ static void adv_rpa_expired(struct bt_le_ext_adv *adv)
 	if (atomic_test_bit(adv->flags, BT_ADV_RPA_VALID) &&
 	    adv->cb && adv->cb->rpa_expired) {
 		rpa_invalid = adv->cb->rpa_expired(adv);
+		if (rpa_invalid) {
+			bt_addr_copy(&bt_dev.rpa[adv->id], BT_ADDR_NONE);
+		}
 	}
 #endif
 	if (rpa_invalid) {
@@ -320,7 +323,6 @@ int bt_id_set_private_addr(uint8_t id)
 
 int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 {
-	bt_addr_t rpa;
 	int err;
 
 	CHECKIF(adv == NULL) {
@@ -361,12 +363,16 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 		return 0;
 	}
 
-	err = bt_rpa_create(bt_dev.irk[adv->id], &rpa);
-	if (!err) {
-		err = bt_id_set_adv_random_addr(adv, &rpa);
-		if (!err) {
-			atomic_set_bit(adv->flags, BT_ADV_RPA_VALID);
+	if (bt_addr_eq(&bt_dev.rpa[adv->id], BT_ADDR_NONE)) {
+		err = bt_rpa_create(bt_dev.irk[adv->id], &bt_dev.rpa[adv->id]);
+		if (err) {
+			return err;
 		}
+	}
+
+	err = bt_id_set_adv_random_addr(adv, &bt_dev.rpa[adv->id]);
+	if (!err) {
+		atomic_set_bit(adv->flags, BT_ADV_RPA_VALID);
 	}
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
@@ -378,7 +384,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("RPA: %s", bt_addr_str(&rpa));
+		LOG_INF("RPA: %s", bt_addr_str(&bt_dev.rpa[adv->id]));
 	}
 
 	return 0;
@@ -1214,6 +1220,7 @@ static int id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 				memcpy(irk, &bt_dev.irk[id], 16);
 			}
 		}
+		bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);
 	}
 #endif
 	/* Only store if stack was already initialized. Before initialization
@@ -1266,12 +1273,11 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 		}
 	}
 
-	new_id = bt_dev.id_count;
+	new_id = bt_dev.id_count++;
 	err = id_create(new_id, addr, irk);
 	if (err) {
+		bt_dev.id_count--;
 		return err;
-	} else {
-		bt_dev.id_count++;
 	}
 
 	return new_id;
@@ -1434,8 +1440,8 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 
 	rp = (void *)rsp->data;
 
-	if (!bt_addr_cmp(&rp->bdaddr, BT_ADDR_ANY) ||
-	    !bt_addr_cmp(&rp->bdaddr, BT_ADDR_NONE)) {
+	if (bt_addr_eq(&rp->bdaddr, BT_ADDR_ANY) ||
+	    bt_addr_eq(&rp->bdaddr, BT_ADDR_NONE)) {
 		LOG_DBG("Controller has no public address");
 		net_buf_unref(rsp);
 		return 0U;
@@ -1724,6 +1730,8 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			if (err) {
 				return err;
 			}
+		} else {
+			LOG_DBG("Not changing the address");
 		}
 	}
 
@@ -2026,6 +2034,11 @@ int bt_id_init(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_PRIVACY)
+	bt_addr_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
+	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
+#endif
+
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
 		LOG_DBG("No user identity. Trying to set public.");
 
@@ -2056,10 +2069,6 @@ int bt_id_init(void)
 			return err;
 		}
 	}
-
-#if defined(CONFIG_BT_PRIVACY)
-	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
-#endif
 
 	return 0;
 }

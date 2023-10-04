@@ -1,0 +1,34 @@
+# Copyright (c) 2021 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Cypress PSoC™ 6 MCU lines
+config SOC_SERIES_PSOC_60
+	bool "Infineon PSoC™ 60 series MCU(Value Line)"
+	select SOC_FAMILY_INFINEON_CAT1
+	help
+	  Enable support for Infineon PSoC™ 60 MCU series
+
+config SOC_SERIES_PSOC_61
+	bool "Infineon PSoC™ 61 series MCU (Programmable Line)"
+	select SOC_FAMILY_INFINEON_CAT1
+	help
+	  Enable support for Infineon PSoC™ 61 MCU series
+
+config SOC_SERIES_PSOC_62
+	bool "Infineon PSoC™ 62 series MCU (Performance Line)"
+	select SOC_FAMILY_INFINEON_CAT1
+	help
+	  Enable support for Infineon PSoC™ 62 MCU series
+
+config SOC_SERIES_PSOC_63
+	bool "Infineon PSoC™ 63 series MCU (Connectivity Line)"
+	select SOC_FAMILY_INFINEON_CAT1
+	help
+	  Enable support for Infineon PSoC™ 63 MCU series
+
+config SOC_SERIES_PSOC_64
+	bool "Infineon PSoC™ 64 series MCU (Security Line)"
+	select SOC_FAMILY_INFINEON_CAT1
+	help
+	  Enable support for Infineon PSoC™ 64 MCU series

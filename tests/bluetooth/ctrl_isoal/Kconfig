@@ -40,4 +40,9 @@ config BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN
 	  Minimum number of payload bytes that would make inserting a new
 	  segment into a PDU worthwhile.
 
+config BT_CTLR_ISOAL_SN_STRICT
+	bool "Enforce Strict Tx ISO Data Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default y
+
 source "Kconfig.zephyr"

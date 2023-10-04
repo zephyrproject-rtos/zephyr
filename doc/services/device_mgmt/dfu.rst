@@ -18,6 +18,34 @@ or management protocols themselves required to send the image to the target
 device. For information on these protocols and frameworks please refer to the
 :ref:`device_mgmt` section.
 
+.. _flash_img_api:
+
+Flash Image
+===========
+
+The flash image API as part of the Device Firmware Upgrade (DFU) subsystem
+provides an abstraction on top of Flash Stream to simplify writing firmware
+image chunks to flash.
+
+API Reference
+-------------
+
+.. doxygengroup:: flash_img_api
+
+.. _mcuboot_api:
+
+MCUBoot API
+===========
+
+The MCUboot API is provided to get version information and boot status of
+application images. It allows to select application image and boot type
+for the next boot.
+
+API Reference
+-------------
+
+.. doxygengroup:: mcuboot_api
+
 Bootloaders
 ***********
 
@@ -58,5 +86,5 @@ More detailed information regarding the use of MCUboot with Zephyr  can be found
 in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
 
 .. _MCUboot boot loader: https://mcuboot.com/
-.. _MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
+.. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr
 .. _MCUboot GitHub Project: https://github.com/runtimeco/mcuboot

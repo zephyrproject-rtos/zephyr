@@ -9,9 +9,9 @@ compatible: "intel,adsp-imr"
 include: [mm_drv.yaml, "zephyr,memory-region.yaml"]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    block-size:
-      required: true
-      type: int
+  block-size:
+    required: true
+    type: int

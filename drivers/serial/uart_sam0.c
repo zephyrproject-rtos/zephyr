@@ -62,6 +62,7 @@ struct uart_sam0_dev_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
+	uint8_t txc_cache;
 #endif
 #if CONFIG_UART_ASYNC_API
 	const struct device *dev;
@@ -823,9 +824,10 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 static int uart_sam0_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
+	struct uart_sam0_dev_data *const dev_data = dev->data;
 	SercomUsart * const regs = config->regs;
 
-	return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
+	return (dev_data->txc_cache != 0) && (regs->INTENSET.bit.TXC != 0);
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -904,13 +906,23 @@ static int uart_sam0_irq_update(const struct device *dev)
 	/* Clear sticky interrupts */
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
+
 #if defined(SERCOM_REV500)
-	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_ERROR
-			   |	SERCOM_USART_INTENCLR_RXBRK
-			   |	SERCOM_USART_INTENCLR_CTSIC
-			   |	SERCOM_USART_INTENCLR_RXS;
+	/*
+	 * Cache the TXC flag, and use this cached value to clear the interrupt
+	 * if we do not used the cached value, there is a chance TXC will set
+	 * after caching...this will cause TXC to never cached.
+	 */
+	struct uart_sam0_dev_data *const dev_data = dev->data;
+
+	dev_data->txc_cache = regs->INTFLAG.bit.TXC;
+	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_ERROR
+			  | SERCOM_USART_INTENCLR_RXBRK
+			  | SERCOM_USART_INTENCLR_CTSIC
+			  | SERCOM_USART_INTENCLR_RXS
+			  | (dev_data->txc_cache << SERCOM_USART_INTENCLR_TXC_Pos);
 #else
-	regs->INTFLAG.reg =	SERCOM_USART_INTENCLR_RXS;
+	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
 }

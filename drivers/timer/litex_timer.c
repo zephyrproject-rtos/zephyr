@@ -77,9 +77,8 @@ uint32_t sys_clock_elapsed(void)
 	return 0;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),
 			litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);

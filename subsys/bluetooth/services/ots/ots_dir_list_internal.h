@@ -28,7 +28,7 @@ extern "C" {
  * object record at a time so the buffer must be a multiple of object record length.
  */
 #define OTS_DIR_LIST_BUFFER_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * \
-	ceiling_fraction(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU, DIR_LIST_OBJ_RECORD_MAX_SIZE))
+	DIV_ROUND_UP(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU, DIR_LIST_OBJ_RECORD_MAX_SIZE))
 
 struct bt_ots_dir_list {
 	struct net_buf_simple net_buf;

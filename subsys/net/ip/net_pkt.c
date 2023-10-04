@@ -870,7 +870,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
-	while (size) {
+	do {
 		struct net_buf *new;
 
 		new = net_buf_alloc_fixed(pool, timeout);
@@ -911,7 +911,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 			pool2str(pool), get_name(pool), get_frees(pool),
 			new, new->ref, caller, line);
 #endif
-	}
+	} while (size);
 
 	return first;
 error:
@@ -1254,13 +1254,13 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 		net_pkt_set_ipv6_next_hdr(pkt, 255);
 	}
 
-#if IS_ENABLED(CONFIG_NET_TX_DEFAULT_PRIORITY)
+#if defined(CONFIG_NET_TX_DEFAULT_PRIORITY)
 #define TX_DEFAULT_PRIORITY CONFIG_NET_TX_DEFAULT_PRIORITY
 #else
 #define TX_DEFAULT_PRIORITY 0
 #endif
 
-#if IS_ENABLED(CONFIG_NET_RX_DEFAULT_PRIORITY)
+#if defined(CONFIG_NET_RX_DEFAULT_PRIORITY)
 #define RX_DEFAULT_PRIORITY CONFIG_NET_RX_DEFAULT_PRIORITY
 #else
 #define RX_DEFAULT_PRIORITY 0
@@ -1623,7 +1623,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 			len = d_len;
 		}
 
-		if (copy) {
+		if (copy && data) {
 			memcpy(write ? c_op->pos : data,
 			       write ? data : c_op->pos,
 			       len);
@@ -1775,15 +1775,17 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 
 static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
 {
-	struct net_buf *buf = pkt->buffer;
+	struct net_buf *buf;
 	uint32_t ret = -EINVAL;
 	uint16_t offset;
 
-	if (!(ptr && pkt && buf)) {
+	if (!ptr || !pkt || !pkt->buffer) {
 		return ret;
 	}
 
 	offset = 0U;
+	buf = pkt->buffer;
+
 	while (buf) {
 		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
 			ret = offset + (ptr - buf->data);

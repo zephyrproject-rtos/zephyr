@@ -6,7 +6,10 @@ simulation_exec: mdb
 arch: arc
 toolchain:
   - zephyr
+  - cross-compile
   - arcmwdt
+supported:
+  - smp
 testing:
   timeout_multiplier: 1.5
   default: true

@@ -16,11 +16,6 @@
 #define DUMMY_PM_DRIVER_NAME	"dummy_pm_driver"
 #define DUMMY_DRIVER_NAME	"dummy_driver"
 
-static int dummy_init(const struct device *dev)
-{
-	return 0;
-}
-
 static int dummy_device_pm_action(const struct device *dev,
 				  enum pm_device_action action)
 {
@@ -30,13 +25,12 @@ static int dummy_device_pm_action(const struct device *dev,
 /* Define a driver with and without power management enabled */
 PM_DEVICE_DEFINE(dummy_pm_driver, dummy_device_pm_action);
 
-DEVICE_DEFINE(dummy_pm_driver, DUMMY_PM_DRIVER_NAME, &dummy_init,
-		    PM_DEVICE_GET(dummy_pm_driver), NULL, NULL, APPLICATION,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_DEFINE(dummy_pm_driver, DUMMY_PM_DRIVER_NAME, NULL,
+	      PM_DEVICE_GET(dummy_pm_driver), NULL, NULL, APPLICATION,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
-DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    NULL, NULL, NULL, APPLICATION,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, NULL, NULL, NULL, NULL,
+	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 void run_pm_device(void)
 {

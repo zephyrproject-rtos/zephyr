@@ -7,6 +7,10 @@
 #include <offsets.h>
 #include <zsr.h>
 
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+#include <xtensa/simcall.h>
+#endif
+
 /*
  * xtensa_spill_reg_windows
  *
@@ -147,35 +151,39 @@ _high_restore_done:
 _restore_context:
 	call0 xtensa_restore_high_regs
 
-	l32i a0, a1, BSA_PC_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	wsr a0, ZSR_EPC
-	l32i a0, a1, BSA_PS_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	wsr a0, ZSR_EPS
 
-	l32i a0, a1, BSA_SAR_OFF
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_RESTORE
+#endif
+
+	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
-	l32i a0, a1, BSA_LBEG_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
 	wsr a0, LBEG
-	l32i a0, a1, BSA_LEND_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
 	wsr a0, LEND
-	l32i a0, a1, BSA_LCOUNT_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
 	wsr a0, LCOUNT
 #endif
 #if XCHAL_HAVE_S32C1I
-	l32i a0, a1, BSA_SCOMPARE1_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 	wsr a0, SCOMPARE1
 #endif
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-	l32i a0, a1, BSA_THREADPTR_OFF
+	l32i a0, a1, ___xtensa_irq_bsa_t_threadptr_OFFSET
 	wur a0, THREADPTR
 #endif
 	rsync
 
-	l32i a0, a1, BSA_A0_OFF
-	l32i a2, a1, BSA_A2_OFF
-	l32i a3, a1, BSA_A3_OFF
-	addi a1, a1, BASE_SAVE_AREA_SIZE
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	l32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
+	l32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
 
 	rfi ZSR_RFI_LEVEL
 
@@ -206,7 +214,7 @@ xtensa_arch_except_epc:
 xtensa_switch:
 	entry a1, 16
 	SPILL_ALL_WINDOWS
-	addi a1, a1, -BASE_SAVE_AREA_SIZE
+	addi a1, a1, -___xtensa_irq_bsa_t_SIZEOF
 
 	/* Stash our A0/2/3 and the shift/loop registers into the base
 	 * save area so they get restored as they are now.  A2/A3
@@ -214,16 +222,16 @@ xtensa_switch:
 	 * stashed across the xtensa_save_high_regs call and this is a
 	 * convenient place.
 	 */
-	s32i a0, a1, BSA_A0_OFF
-	s32i a2, a1, BSA_A2_OFF
-	s32i a3, a1, BSA_A3_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
+	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 	ODD_REG_SAVE
 
 	/* Stash our PS register contents and a "restore" PC. */
 	rsr a0, PS
-	s32i a0, a1, BSA_PS_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	movi a0, _switch_restore_pc
-	s32i a0, a1, BSA_PC_OFF
+	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
@@ -247,7 +255,7 @@ noflush:
 	 * stack to the "new" context out of the A2 spill slot.
 	 */
 	l32i a2, a1, 0
-	l32i a3, a2, BSA_A3_OFF
+	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
 
 	/* Switch stack pointer and restore.  The jump to
@@ -255,7 +263,7 @@ noflush:
 	 * for the restored "next" address to be immediately after for
 	 * sanity.
 	 */
-	l32i a1, a2, BSA_A2_OFF
+	 l32i a1, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call4 z_thread_mark_switched_in
@@ -270,7 +278,7 @@ _switch_restore_pc:
  */
 .align 4
 _handle_excint:
-	EXCINT_HANDLER ZSR_CPU, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
+	EXCINT_HANDLER ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
 
 /* Define the actual vectors for the hardware-defined levels with
  * DEF_EXCINT.  These load a C handler address and jump to our handler
@@ -337,6 +345,7 @@ _Level1RealVector:
 	wsr a0, ZSR_ALLOCA
 	rsr.exccause a0
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
+
 	j _xt_alloca_exc
 _not_alloca:
 	rsr a0, ZSR_ALLOCA
@@ -354,19 +363,115 @@ _not_alloca:
 .pushsection .KernelExceptionVector.text, "ax"
 .global _KernelExceptionVector
 _KernelExceptionVector:
+#ifdef CONFIG_XTENSA_MMU
+	wsr a0, ZSR_ALLOCA
+	rsr.exccause a0
+	beqi a0, EXCCAUSE_ITLB_MISS, _handle_tlb_miss_kernel
+	addi a0, a0, -EXCCAUSE_DTLB_MISS
+	beqz a0, _handle_tlb_miss_kernel
+	rsr a0, ZSR_ALLOCA
+#endif
 	j _Level1Vector
+#ifdef CONFIG_XTENSA_MMU
+_handle_tlb_miss_kernel:
+	/* The TLB miss handling is used only during z_xtensa_mmu_init()
+	 * where vecbase is at a different address, as the offset used
+	 * in the jump ('j') instruction will not jump to correct
+	 * address (... remember the vecbase is moved).
+	 * So we handle TLB misses in a very simple way here until
+	 * we move back to using UserExceptionVector above.
+	 */
+	rsr.ptevaddr a0
+	l32i a0, a0, 0
+	rsr a0, ZSR_ALLOCA
+	rfe
+#endif
 .popsection
 
 #ifdef XCHAL_DOUBLEEXC_VECTOR_VADDR
 .pushsection .DoubleExceptionVector.text, "ax"
 .global _DoubleExceptionVector
 _DoubleExceptionVector:
-#if XCHAL_HAVE_DEBUG
+#ifdef CONFIG_XTENSA_MMU
+	wsr a0, ZSR_ALLOCA
+	wsr a1, ZSR_EXTRA0
+
+	rsr.exccause a0
+	addi a0, a0, -EXCCAUSE_DTLB_MISS
+	beqz a0, _handle_tlb_miss_dblexc
+
+_not_handle_tlb_miss_dblexc:
+	rsr a1, ZSR_EXTRA0
+	rsr a0, ZSR_ALLOCA
+#endif
+#if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)
+1:
+/* Tell simulator to stop executing here, instead of trying to do
+ * an infinite loop (see below). Greatly help with using tracing in
+ * simulator so that traces will not have infinite iterations of
+ * jumps.
+ */
+	movi a3, 1
+	movi a2, SYS_exit
+	simcall
+#elif XCHAL_HAVE_DEBUG
 /* Signals an unhandled double exception */
 1:	break	1, 4
 #else
 1:
 #endif
 	j	1b
+
+#ifdef CONFIG_XTENSA_MMU
+_handle_tlb_miss_dblexc:
+	/* The tiny space reserved for each vector is not enough
+	 * to accommodate code below, and beqz cannot jump too far.
+	 * So we have this here as a trampoline.
+	 */
+	j _handle_tlb_miss_dblexc_helper
+#endif
 .popsection
+
+#ifdef CONFIG_XTENSA_MMU
+.pushsection .iram.text, "ax"
+_handle_tlb_miss_dblexc_helper:
+	/* It is possible that VECBASE is not mapped in TLB
+	 * so TLB misses would be raised. We will need to
+	 * map it and return so it can continue handling
+	 * the original exception.
+	 */
+
+	/* Find the address of mapped region of this PTE page.
+	 * Since each PTE page maps 1024 of 4K pages, we simply
+	 * need to multiply by 1024 (shift left by 10).
+	 */
+	rsr.ptevaddr a0
+	slli a0, a0, 10
+
+	/* Get the beginning address of the 4K page mapped for
+	 * VECBASE. Shift 12 bits right and left as a way to zero
+	 * the lower 11 bits.
+	 */
+	rsr.vecbase a1
+	srli a1, a1, 12
+	slli a1, a1, 12
+
+	/* If it is VECBASE causing TLB miss, we load the PTE page
+	 * and continue.
+	 */
+	beq a0, a1, _dblexc_load_pte
+
+	/* Ignore TLB miss is not on VECBASE page. */
+	j _not_handle_tlb_miss_dblexc
+
+_dblexc_load_pte:
+	rsr.ptevaddr a0
+	l32i a0, a0, 0
+
+	rsr a1, ZSR_EXTRA0
+	rsr a0, ZSR_ALLOCA
+	rfde
+.popsection
+#endif
+
 #endif

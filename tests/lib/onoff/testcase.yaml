@@ -1,5 +1,7 @@
 tests:
   libraries.onoff:
-    tags: onoff timer
+    tags:
+      - onoff
+      - timer
     integration_platforms:
       - native_posix

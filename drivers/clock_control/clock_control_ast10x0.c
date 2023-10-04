@@ -146,12 +146,6 @@ static int aspeed_clock_control_get_rate(const struct device *dev,
 	return 0;
 }
 
-static int aspeed_clock_control_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
 static const struct clock_control_driver_api aspeed_clk_api = {
 	.on = aspeed_clock_control_on,
 	.off = aspeed_clock_control_off,
@@ -162,7 +156,7 @@ static const struct clock_control_driver_api aspeed_clk_api = {
 	static const struct clock_aspeed_config clock_aspeed_cfg_##n = {                           \
 		.syscon = DEVICE_DT_GET(DT_NODELABEL(syscon)),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &aspeed_clock_control_init, NULL, NULL, &clock_aspeed_cfg_##n,    \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &aspeed_clk_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &clock_aspeed_cfg_##n, PRE_KERNEL_1,            \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &aspeed_clk_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ASPEED_CLOCK_INIT)

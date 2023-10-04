@@ -10,9 +10,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
-#if IS_ENABLED(CONFIG_PINCTRL)
+#if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
+#endif
+#if defined(CONFIG_SPI_PL022_DMA)
+#include <zephyr/drivers/dma.h>
 #endif
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -227,6 +231,7 @@ LOG_MODULE_REGISTER(spi_pl022);
  */
 #define SSP_READ_REG(reg) (*((volatile uint32_t *)reg))
 #define SSP_WRITE_REG(reg, val) (*((volatile uint32_t *)reg) = val)
+#define SSP_CLEAR_REG(reg, val) (*((volatile uint32_t *)reg) &= ~(val))
 
 /*
  * Status check macros
@@ -235,6 +240,28 @@ LOG_MODULE_REGISTER(spi_pl022);
 #define SSP_RX_FIFO_NOT_EMPTY(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_RNE)
 #define SSP_TX_FIFO_EMPTY(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TFE)
 #define SSP_TX_FIFO_NOT_FULL(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TNF)
+
+#if defined(CONFIG_SPI_PL022_DMA)
+enum spi_pl022_dma_direction {
+	TX = 0,
+	RX,
+	NUM_OF_DIRECTION
+};
+
+struct spi_pl022_dma_config {
+	const struct device *dev;
+	uint32_t channel;
+	uint32_t channel_config;
+	uint32_t slot;
+};
+
+struct spi_pl022_dma_data {
+	struct dma_config config;
+	struct dma_block_config block;
+	uint32_t count;
+	bool callbacked;
+};
+#endif
 
 /*
  * Max frequency
@@ -245,11 +272,15 @@ LOG_MODULE_REGISTER(spi_pl022);
 struct spi_pl022_cfg {
 	const uint32_t reg;
 	const uint32_t pclk;
-#if IS_ENABLED(CONFIG_PINCTRL)
+	const bool dma_enabled;
+#if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+#if defined(CONFIG_SPI_PL022_INTERRUPT)
 	void (*irq_config)(const struct device *port);
+#endif
+#if defined(CONFIG_SPI_PL022_DMA)
+	const struct spi_pl022_dma_config dma[NUM_OF_DIRECTION];
 #endif
 };
 
@@ -257,7 +288,16 @@ struct spi_pl022_data {
 	struct spi_context ctx;
 	uint32_t tx_count;
 	uint32_t rx_count;
+	struct k_spinlock lock;
+#if defined(CONFIG_SPI_PL022_DMA)
+	struct spi_pl022_dma_data dma[NUM_OF_DIRECTION];
+#endif
 };
+
+#if defined(CONFIG_SPI_PL022_DMA)
+static uint32_t dummy_tx;
+static uint32_t dummy_rx;
+#endif
 
 /* Helper Functions */
 
@@ -350,9 +390,11 @@ static int spi_pl022_configure(const struct device *dev,
 	SSP_WRITE_REG(SSP_CR0(cfg->reg), cr0);
 	SSP_WRITE_REG(SSP_CR1(cfg->reg), cr1);
 
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
-	SSP_WRITE_REG(SSP_IMSC(cfg->reg),
-			SSP_IMSC_MASK_RORIM | SSP_IMSC_MASK_RTIM | SSP_IMSC_MASK_RXIM);
+#if defined(CONFIG_SPI_PL022_INTERRUPT)
+	if (!cfg->dma_enabled) {
+		SSP_WRITE_REG(SSP_IMSC(cfg->reg),
+			      SSP_IMSC_MASK_RORIM | SSP_IMSC_MASK_RTIM | SSP_IMSC_MASK_RXIM);
+	}
 #endif
 
 	data->ctx.config = spicfg;
@@ -365,7 +407,210 @@ static inline bool spi_pl022_transfer_ongoing(struct spi_pl022_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+#if defined(CONFIG_SPI_PL022_DMA)
+static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+				   int status);
+
+static size_t spi_pl022_dma_enabled_num(const struct device *dev)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+
+	return cfg->dma_enabled ? 2 : 0;
+}
+
+static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+	struct spi_pl022_data *data = dev->data;
+	struct dma_config *dma_cfg = &data->dma[dir].config;
+	struct dma_block_config *block_cfg = &data->dma[dir].block;
+	const struct spi_pl022_dma_config *dma = &cfg->dma[dir];
+	int ret;
+
+	memset(dma_cfg, 0, sizeof(struct dma_config));
+	memset(block_cfg, 0, sizeof(struct dma_block_config));
+
+	dma_cfg->source_burst_length = 1;
+	dma_cfg->dest_burst_length = 1;
+	dma_cfg->user_data = (void *)dev;
+	dma_cfg->block_count = 1U;
+	dma_cfg->head_block = block_cfg;
+	dma_cfg->dma_slot = cfg->dma[dir].slot;
+	dma_cfg->channel_direction = dir == TX ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
+
+	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+		dma_cfg->source_data_size = 1;
+		dma_cfg->dest_data_size = 1;
+	} else {
+		dma_cfg->source_data_size = 2;
+		dma_cfg->dest_data_size = 2;
+	}
+
+	block_cfg->block_size = spi_context_max_continuous_chunk(&data->ctx);
+
+	if (dir == TX) {
+		dma_cfg->dma_callback = spi_pl022_dma_callback;
+		block_cfg->dest_address = SSP_DR(cfg->reg);
+		block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		if (spi_context_tx_buf_on(&data->ctx)) {
+			block_cfg->source_address = (uint32_t)data->ctx.tx_buf;
+			block_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		} else {
+			block_cfg->source_address = (uint32_t)&dummy_tx;
+			block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+	}
+
+	if (dir == RX) {
+		dma_cfg->dma_callback = spi_pl022_dma_callback;
+		block_cfg->source_address = SSP_DR(cfg->reg);
+		block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			block_cfg->dest_address = (uint32_t)data->ctx.rx_buf;
+			block_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		} else {
+			block_cfg->dest_address = (uint32_t)&dummy_rx;
+			block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+	}
+
+	ret = dma_config(dma->dev, dma->channel, dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("dma_config %p failed %d\n", dma->dev, ret);
+		return ret;
+	}
+
+	data->dma[dir].callbacked = false;
+
+	ret = dma_start(dma->dev, dma->channel);
+	if (ret < 0) {
+		LOG_ERR("dma_start %p failed %d\n", dma->dev, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int spi_pl022_start_dma_transceive(const struct device *dev)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+	int ret = 0;
+
+	SSP_CLEAR_REG(SSP_DMACR(cfg->reg), SSP_DMACR_MASK_RXDMAE | SSP_DMACR_MASK_TXDMAE);
+
+	for (size_t i = 0; i < spi_pl022_dma_enabled_num(dev); i++) {
+		ret = spi_pl022_dma_setup(dev, i);
+		if (ret < 0) {
+			goto on_error;
+		}
+	}
+
+	SSP_WRITE_REG(SSP_DMACR(cfg->reg), SSP_DMACR_MASK_RXDMAE | SSP_DMACR_MASK_TXDMAE);
+
+on_error:
+	if (ret < 0) {
+		for (size_t i = 0; i < spi_pl022_dma_enabled_num(dev); i++) {
+			dma_stop(cfg->dma[i].dev, cfg->dma[i].channel);
+		}
+	}
+	return ret;
+}
+
+static bool spi_pl022_chunk_transfer_finished(const struct device *dev)
+{
+	struct spi_pl022_data *data = dev->data;
+	struct spi_pl022_dma_data *dma = data->dma;
+	const size_t chunk_len = spi_context_max_continuous_chunk(&data->ctx);
+
+	return (MIN(dma[TX].count, dma[RX].count) >= chunk_len);
+}
+
+static void spi_pl022_complete(const struct device *dev, int status)
+{
+	struct spi_pl022_data *data = dev->data;
+	const struct spi_pl022_cfg *cfg = dev->config;
+
+	for (size_t i = 0; i < spi_pl022_dma_enabled_num(dev); i++) {
+		dma_stop(cfg->dma[i].dev, cfg->dma[i].channel);
+	}
+
+	spi_context_complete(&data->ctx, dev, status);
+}
+
+static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+				   int status)
+{
+	const struct device *dev = (const struct device *)arg;
+	const struct spi_pl022_cfg *cfg = dev->config;
+	struct spi_pl022_data *data = dev->data;
+	bool complete = false;
+	k_spinlock_key_t key;
+	size_t chunk_len;
+	int err = 0;
+
+	if (status < 0) {
+		key = k_spin_lock(&data->lock);
+
+		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+		spi_pl022_complete(dev, status);
+
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+
+	chunk_len = spi_context_max_continuous_chunk(&data->ctx);
+	for (size_t i = 0; i < ARRAY_SIZE(cfg->dma); i++) {
+		if (dma_dev == cfg->dma[i].dev && channel == cfg->dma[i].channel) {
+			data->dma[i].count += chunk_len;
+			data->dma[i].callbacked = true;
+		}
+	}
+	/* Check transfer finished.
+	 * The transmission of this chunk is complete if both the dma[TX].count
+	 * and the dma[RX].count reach greater than or equal to the chunk_len.
+	 * chunk_len is zero here means the transfer is already complete.
+	 */
+	if (spi_pl022_chunk_transfer_finished(dev)) {
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			spi_context_update_tx(&data->ctx, 1, chunk_len);
+			spi_context_update_rx(&data->ctx, 1, chunk_len);
+		} else {
+			spi_context_update_tx(&data->ctx, 2, chunk_len);
+			spi_context_update_rx(&data->ctx, 2, chunk_len);
+		}
+
+		if (spi_pl022_transfer_ongoing(data)) {
+			/* Next chunk is available, reset the count and
+			 * continue processing
+			 */
+			data->dma[TX].count = 0;
+			data->dma[RX].count = 0;
+		} else {
+			/* All data is processed, complete the process */
+			complete = true;
+		}
+	}
+
+	if (!complete && data->dma[TX].callbacked && data->dma[RX].callbacked) {
+		err = spi_pl022_start_dma_transceive(dev);
+		if (err) {
+			complete = true;
+		}
+	}
+
+	if (complete) {
+		spi_pl022_complete(dev, err);
+	}
+
+	k_spin_unlock(&data->lock, key);
+}
+
+#endif /* DMA */
+
+#if defined(CONFIG_SPI_PL022_INTERRUPT)
 
 static void spi_pl022_async_xfer(const struct device *dev)
 {
@@ -522,6 +767,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 				     spi_callback_t cb,
 				     void *userdata)
 {
+	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
@@ -537,19 +783,46 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 
 	spi_context_cs_control(ctx, true);
 
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
-	spi_pl022_start_async_xfer(dev);
-	ret = spi_context_wait_for_completion(ctx);
-#else
-	do {
-		spi_pl022_xfer(dev);
-		spi_context_update_tx(ctx, 1, data->tx_count);
-		spi_context_update_rx(ctx, 1, data->rx_count);
-	} while (spi_pl022_transfer_ongoing(data));
+	if (cfg->dma_enabled) {
+#if defined(CONFIG_SPI_PL022_DMA)
+		for (size_t i = 0; i < ARRAY_SIZE(data->dma); i++) {
+			const struct spi_pl022_cfg *cfg = dev->config;
+			struct dma_status stat = {.busy = true};
 
-#ifdef CONFIG_SPI_ASYNC
-	spi_context_complete(&data->ctx, dev, ret);
+			dma_stop(cfg->dma[i].dev, cfg->dma[i].channel);
+
+			while (stat.busy) {
+				dma_get_status(cfg->dma[i].dev, cfg->dma[i].channel, &stat);
+			}
+
+			data->dma[i].count = 0;
+		}
+
+		ret = spi_pl022_start_dma_transceive(dev);
+		if (ret < 0) {
+			spi_context_cs_control(ctx, false);
+			goto error;
+		}
+		ret = spi_context_wait_for_completion(ctx);
 #endif
+	} else
+#if defined(CONFIG_SPI_PL022_INTERRUPT)
+	{
+		spi_pl022_start_async_xfer(dev);
+		ret = spi_context_wait_for_completion(ctx);
+	}
+#else
+	{
+		do {
+			spi_pl022_xfer(dev);
+			spi_context_update_tx(ctx, 1, data->tx_count);
+			spi_context_update_rx(ctx, 1, data->rx_count);
+		} while (spi_pl022_transfer_ongoing(data));
+
+#if defined(CONFIG_SPI_ASYNC)
+		spi_context_complete(&data->ctx, dev, ret);
+#endif
+	}
 #endif
 
 	spi_context_cs_control(ctx, false);
@@ -570,7 +843,7 @@ static int spi_pl022_transceive(const struct device *dev,
 	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL, NULL);
 }
 
-#if IS_ENABLED(CONFIG_SPI_ASYNC)
+#if defined(CONFIG_SPI_ASYNC)
 
 static int spi_pl022_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
@@ -596,7 +869,7 @@ static int spi_pl022_release(const struct device *dev,
 
 static struct spi_driver_api spi_pl022_api = {
 	.transceive = spi_pl022_transceive,
-#if IS_ENABLED(CONFIG_SPI_ASYNC)
+#if defined(CONFIG_SPI_ASYNC)
 	.transceive_async = spi_pl022_transceive_async,
 #endif
 	.release = spi_pl022_release
@@ -610,12 +883,11 @@ static int spi_pl022_init(const struct device *dev)
 		.operation = SPI_WORD_SET(8),
 		.slave = 0,
 	};
+	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
 	int ret;
 
-#if IS_ENABLED(CONFIG_PINCTRL)
-	const struct spi_pl022_cfg *cfg = dev->config;
-
+#if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		LOG_ERR("Failed to apply pinctrl state");
@@ -623,9 +895,28 @@ static int spi_pl022_init(const struct device *dev)
 	}
 #endif
 
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
-	cfg->irq_config(dev);
+	if (cfg->dma_enabled) {
+#if defined(CONFIG_SPI_PL022_DMA)
+		for (size_t i = 0; i < spi_pl022_dma_enabled_num(dev); i++) {
+			uint32_t ch_filter = BIT(cfg->dma[i].channel);
+
+			if (!device_is_ready(cfg->dma[i].dev)) {
+				LOG_ERR("DMA %s not ready", cfg->dma[i].dev->name);
+				return -ENODEV;
+			}
+
+			ret = dma_request_channel(cfg->dma[i].dev, &ch_filter);
+			if (ret < 0) {
+				LOG_ERR("dma_request_channel failed %d", ret);
+				return ret;
+			}
+		}
 #endif
+	} else {
+#if defined(CONFIG_SPI_PL022_INTERRUPT)
+		cfg->irq_config(dev);
+#endif
+	}
 
 	ret = spi_pl022_configure(dev, &spicfg);
 	if (ret < 0) {
@@ -645,50 +936,46 @@ static int spi_pl022_init(const struct device *dev)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_PINCTRL)
-#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define PINCTRL_DEFINE(n)
-#define PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
-
-#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
-#define DECLARE_IRQ_CONFIGURE(idx)					 \
-	static void spi_pl022_irq_config_##idx(const struct device *dev) \
-	{								 \
-		IRQ_CONNECT(DT_INST_IRQN(idx),				 \
-			    DT_INST_IRQ(idx, priority),			 \
-			    spi_pl022_isr, DEVICE_DT_INST_GET(idx), 0);	 \
-		irq_enable(DT_INST_IRQN(idx));				 \
+#define DMA_INITIALIZER(idx, dir)                                                                  \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),                         \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),                           \
+		.slot = DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot),                                 \
+		.channel_config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel_config),             \
 	}
-#define IRQ_HANDLER(idx) .irq_config = spi_pl022_irq_config_##idx,
-#else
-#define DECLARE_IRQ_CONFIGURE(idx)
-#define IRQ_HANDLER(idx)
-#endif
 
-#define SPI_PL022_INIT(idx)						       \
-	PINCTRL_DEFINE(idx)						       \
-	DECLARE_IRQ_CONFIGURE(idx)					       \
-	static struct spi_pl022_data spi_pl022_data_##idx = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),	       \
-		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),	       \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	       \
-	};								       \
-	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {		       \
-		.reg = DT_INST_REG_ADDR(idx),				       \
-		.pclk = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency), \
-		IRQ_HANDLER(idx)					       \
-		PINCTRL_INIT(idx)					       \
-	};								       \
-	DEVICE_DT_INST_DEFINE(idx,					       \
-			      spi_pl022_init,				       \
-			      NULL,					       \
-			      &spi_pl022_data_##idx,			       \
-			      &spi_pl022_cfg_##idx,			       \
-			      POST_KERNEL,				       \
-			      CONFIG_SPI_INIT_PRIORITY,			       \
+#define DMAS_DECL(idx)                                                                             \
+	{                                                                                          \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx), (DMA_INITIALIZER(idx, tx)), ({0})),    \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx), (DMA_INITIALIZER(idx, rx)), ({0})),    \
+	}
+
+#define DMAS_ENABLED(idx) (DT_INST_DMAS_HAS_NAME(idx, tx) && DT_INST_DMAS_HAS_NAME(idx, rx))
+
+#define SPI_PL022_INIT(idx)                                                                        \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(idx);))                                 \
+	IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                                     \
+		   (static void spi_pl022_irq_config_##idx(const struct device *dev)               \
+		    {                                                                              \
+			   IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),              \
+				       spi_pl022_isr, DEVICE_DT_INST_GET(idx), 0);                 \
+			   irq_enable(DT_INST_IRQN(idx));                                          \
+		    }))                                                                            \
+	static struct spi_pl022_data spi_pl022_data_##idx = {                                      \
+		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),                                  \
+		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),                                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                           \
+	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {                                        \
+		.reg = DT_INST_REG_ADDR(idx),                                                      \
+		.pclk = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),                     \
+		IF_ENABLED(CONFIG_PINCTRL, (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),))       \
+		IF_ENABLED(CONFIG_SPI_PL022_DMA, (.dma = DMAS_DECL(idx),)) COND_CODE_1(            \
+				CONFIG_SPI_PL022_DMA, (.dma_enabled = DMAS_ENABLED(idx),),         \
+				(.dma_enabled = false,))                                           \
+		IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                             \
+					   (.irq_config = spi_pl022_irq_config_##idx,))};          \
+	DEVICE_DT_INST_DEFINE(idx, spi_pl022_init, NULL, &spi_pl022_data_##idx,                    \
+			      &spi_pl022_cfg_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
 			      &spi_pl022_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PL022_INIT)

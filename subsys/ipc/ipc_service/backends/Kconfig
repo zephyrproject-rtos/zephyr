@@ -28,10 +28,10 @@ config IPC_SERVICE_BACKEND_ICMSG
 
 config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
 	bool "ICMSG backend with multi-endpoint support in initiator role"
+	default y
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_INITIATOR_ENABLED
-	select IPC_SERVICE_ICMSG
-	select EVENTS
+	select IPC_SERVICE_ICMSG_ME
 	help
 	  Chosing this backend results in multi endpoint implementation based
 	  on circular packet buffer. This enables enpoint discovery initiator
@@ -39,10 +39,10 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
 
 config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
 	bool "ICMSG backend with multi-endpoint support in follower role"
+	default y
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_FOLLOWER_ENABLED
-	select IPC_SERVICE_ICMSG
-	select EVENTS
+	select IPC_SERVICE_ICMSG_ME
 	help
 	  Chosing this backend results in multi endpoint implementation based
 	  on circular packet buffer. This enables enpoint discovery follower

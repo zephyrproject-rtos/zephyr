@@ -54,7 +54,7 @@ int send_msg_thread(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	osTimerId timer_id;
 	uint32_t counter = 10U;
@@ -90,4 +90,5 @@ exit:
 	} else {
 		printk("Error in execution\n");
 	}
+	return 0;
 }

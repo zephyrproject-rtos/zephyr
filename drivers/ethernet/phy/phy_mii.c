@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 IP-Logix Inc.
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <soc.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
@@ -33,7 +33,11 @@ struct phy_mii_dev_data {
 	struct k_work_delayable monitor_work;
 	struct phy_link_state state;
 	struct k_sem sem;
+	bool gigabit_supported;
 };
+
+/* Offset to align capabilities bits of 1000BASE-T Control and Status regs */
+#define MII_1KSTSR_OFFSET 2
 
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);
@@ -52,6 +56,29 @@ static inline int reg_write(const struct device *dev, uint16_t reg_addr,
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
+}
+
+static bool is_gigabit_supported(const struct device *dev)
+{
+	uint16_t bmsr_reg;
+	uint16_t estat_reg;
+
+	if (reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
+
+	if (bmsr_reg & MII_BMSR_EXTEND_STATUS) {
+		if (reg_read(dev, MII_ESTAT, &estat_reg) < 0) {
+			return -EIO;
+		}
+
+		if (estat_reg & (MII_ESTAT_1000BASE_T_HALF
+				 | MII_ESTAT_1000BASE_T_FULL)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static int reset(const struct device *dev)
@@ -112,6 +139,8 @@ static int update_link_state(const struct device *dev)
 	uint16_t bmcr_reg = 0;
 	uint16_t bmsr_reg = 0;
 	uint16_t anlpar_reg = 0;
+	uint16_t c1kt_reg = 0;
+	uint16_t s1kt_reg = 0;
 	uint32_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
 
 	if (reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
@@ -178,8 +207,23 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Determine best link speed */
-	if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
+	if (data->gigabit_supported) {
+		if (reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+			return -EIO;
+		}
+		if (reg_read(dev, MII_1KSTSR, &s1kt_reg) < 0) {
+			return -EIO;
+		}
+		s1kt_reg = (uint16_t)(s1kt_reg >> MII_1KSTSR_OFFSET);
+	}
+
+	if (data->gigabit_supported &&
+			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
+		data->state.speed = LINK_FULL_1000BASE_T;
+	} else if (data->gigabit_supported &&
+			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
+		data->state.speed = LINK_HALF_1000BASE_T;
+	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
 		data->state.speed = LINK_FULL_100BASE_T;
 	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_HALF) {
 		data->state.speed = LINK_HALF_100BASE_T;
@@ -189,9 +233,10 @@ static int update_link_state(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE_T;
 	}
 
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
+	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n",
 		cfg->phy_addr,
-		PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10",
+		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
+		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
 		PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
 
 	return 0;
@@ -250,8 +295,10 @@ static int phy_mii_write(const struct device *dev, uint16_t reg_addr,
 static int phy_mii_cfg_link(const struct device *dev,
 			    enum phy_link_speed adv_speeds)
 {
+	struct phy_mii_dev_data *const data = dev->data;
 	uint16_t anar_reg;
 	uint16_t bmcr_reg;
+	uint16_t c1kt_reg;
 
 	if (reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
@@ -259,6 +306,12 @@ static int phy_mii_cfg_link(const struct device *dev,
 
 	if (reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
+	}
+
+	if (data->gigabit_supported) {
+		if (reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+			return -EIO;
+		}
 	}
 
 	if (adv_speeds & LINK_FULL_10BASE_T) {
@@ -283,6 +336,22 @@ static int phy_mii_cfg_link(const struct device *dev,
 		anar_reg |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar_reg &= ~MII_ADVERTISE_100_HALF;
+	}
+
+	if (data->gigabit_supported) {
+		if (adv_speeds & LINK_FULL_1000BASE_T)
+			c1kt_reg |= MII_ADVERTISE_1000_FULL;
+		else
+			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
+
+		if (adv_speeds & LINK_HALF_1000BASE_T)
+			c1kt_reg |= MII_ADVERTISE_1000_HALF;
+		else
+			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
+
+		if (reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+			return -EIO;
+		}
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
@@ -351,6 +420,8 @@ static int phy_mii_initialize(const struct device *dev)
 			LINK_FULL_10BASE_T,
 			LINK_HALF_100BASE_T,
 			LINK_FULL_100BASE_T,
+			LINK_HALF_1000BASE_T,
+			LINK_FULL_1000BASE_T,
 		};
 
 		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
@@ -372,14 +443,18 @@ static int phy_mii_initialize(const struct device *dev)
 				return -EINVAL;
 			}
 
-			LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
+			LOG_INF("PHY (%d) ID %X\n", cfg->phy_addr, phy_id);
 		}
+
+		data->gigabit_supported = is_gigabit_supported(dev);
 
 		/* Advertise all speeds */
 		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T |
 				      LINK_FULL_10BASE_T |
 				      LINK_HALF_100BASE_T |
-				      LINK_FULL_100BASE_T);
+				      LINK_FULL_100BASE_T |
+				      LINK_HALF_1000BASE_T |
+				      LINK_FULL_1000BASE_T);
 
 		k_work_init_delayable(&data->monitor_work,
 					monitor_work_handler);

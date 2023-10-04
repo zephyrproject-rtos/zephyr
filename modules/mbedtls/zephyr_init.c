@@ -83,9 +83,8 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
 }
 #endif /* CONFIG_MBEDTLS_ZEPHYR_ENTROPY */
 
-static int _mbedtls_init(const struct device *device)
+static int _mbedtls_init(void)
 {
-	ARG_UNUSED(device);
 
 	init_heap();
 

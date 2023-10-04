@@ -13,24 +13,21 @@
  * for the Raspberry Pi RP2040 family processor.
  */
 
+#include <stdio.h>
+
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/fatal.h>
 
 #include <hardware/regs/resets.h>
 #include <hardware/clocks.h>
 #include <hardware/resets.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int rp2040_init(const struct device *arg)
+static int rp2040_init(void)
 {
 	uint32_t key;
 
@@ -47,7 +44,6 @@ static int rp2040_init(const struct device *arg)
 
 	unreset_block_wait(RESETS_RESET_BITS);
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 
@@ -59,6 +55,20 @@ static int rp2040_init(const struct device *arg)
 	irq_unlock(key);
 
 	return 0;
+}
+
+/*
+ * Some pico-sdk drivers call panic on fatal error.
+ * This alternative implementation of panic handles the panic
+ * through Zephyr.
+ */
+void __attribute__((noreturn)) panic(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	k_fatal_halt(K_ERR_CPU_EXCEPTION);
 }
 
 SYS_INIT(rp2040_init, PRE_KERNEL_1, 0);

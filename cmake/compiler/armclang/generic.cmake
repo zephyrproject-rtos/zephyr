@@ -6,6 +6,8 @@ find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}armclang PATHS ${TOOLCHAIN_HOME}/b
 
 set(triple arm-arm-none-eabi)
 
+find_package(armclang 6.17 REQUIRED)
+
 set(CMAKE_DTS_PREPROCESSOR
       ${CMAKE_C_COMPILER}
       "--target=${triple}"

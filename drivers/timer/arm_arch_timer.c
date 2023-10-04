@@ -11,13 +11,23 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/cpu.h>
 
-#define CYC_PER_TICK	((uint64_t)sys_clock_hw_cycles_per_sec() \
-			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS	INT32_MAX
-#define MIN_DELAY	(1000)
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+/* precompute CYC_PER_TICK at driver init to avoid runtime double divisions */
+static uint32_t cyc_per_tick;
+#define CYC_PER_TICK cyc_per_tick
+#else
+#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
+				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif
+
+/* the unsigned long cast limits divisors to native CPU register width */
+#define cycle_diff_t unsigned long
 
 static struct k_spinlock lock;
 static uint64_t last_cycle;
+static uint64_t last_tick;
+static uint32_t last_elapsed;
+
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = ARM_ARCH_TIMER_IRQ;
 #endif
@@ -47,16 +57,16 @@ static void arm_arch_timer_compare_isr(const void *arg)
 #endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
 
 	uint64_t curr_cycle = arm_arch_timer_count();
-	uint32_t delta_ticks = (uint32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
+	uint64_t delta_cycles = curr_cycle - last_cycle;
+	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
-	last_cycle += delta_ticks * CYC_PER_TICK;
+	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
+	last_tick += delta_ticks;
+	last_elapsed = 0;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint64_t next_cycle = last_cycle + CYC_PER_TICK;
 
-		if ((uint64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
-			next_cycle += CYC_PER_TICK;
-		}
 		arm_arch_timer_set_compare(next_cycle);
 		arm_arch_timer_set_irq_mask(false);
 	} else {
@@ -93,36 +103,30 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 
-	if (ticks == K_TICKS_FOREVER && idle) {
-		return;
+	if (ticks == K_TICKS_FOREVER) {
+		if (idle) {
+			return;
+		}
+		ticks = INT32_MAX;
 	}
-
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : \
-		MIN(MAX_TICKS,  MAX(ticks - 1,  0));
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t curr_cycle = arm_arch_timer_count();
-	uint64_t req_cycle = ticks * CYC_PER_TICK;
 
 	/*
-	 * Round up to next tick boundary, but an edge case should be handled.
-	 * Fast hardware with slow timer hardware can trigger and enter an
-	 * interrupt and reach this spot before the counter has advanced.
-	 * That defeats the "round up" logic such that we end up scheduling
-	 * timeouts a tick too soon (e.g. if the kernel requests an interrupt
-	 * at the "X" tick, we would end up computing a comparator value
-	 * representing the "X-1" tick!). Choose the bigger one between 1 and
-	 * "curr_cycle - last_cycle" to correct.
+	 * Clamp the max period length to a number of cycles that can fit
+	 * in half the range of a cycle_diff_t for native width divisions
+	 * to be usable elsewhere. Also clamp it to half the range of an
+	 * int32_t as this is the type used for elapsed tick announcements.
+	 * The half range gives us one bit of extra room to cope with the
+	 * unavoidable IRQ servicing latency (we never need as much but this
+	 * is simple). The compiler should optimize away the least restrictive
+	 * of those tests automatically.
 	 */
-	req_cycle += MAX(curr_cycle - last_cycle, 1) + (CYC_PER_TICK - 1);
+	ticks = CLAMP(ticks, 0, (cycle_diff_t)-1 / 2 / CYC_PER_TICK);
+	ticks = CLAMP(ticks, 0, INT32_MAX / 2);
 
-	req_cycle = (req_cycle / CYC_PER_TICK) * CYC_PER_TICK;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
 
-	if ((req_cycle + last_cycle - curr_cycle) < MIN_DELAY) {
-		req_cycle += CYC_PER_TICK;
-	}
-
-	arm_arch_timer_set_compare(req_cycle + last_cycle);
+	arm_arch_timer_set_compare(next_cycle);
 	arm_arch_timer_set_irq_mask(false);
 	k_spin_unlock(&lock, key);
 
@@ -139,11 +143,13 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = (uint32_t)((arm_arch_timer_count() - last_cycle)
-		    / CYC_PER_TICK);
+	uint64_t curr_cycle = arm_arch_timer_count();
+	uint64_t delta_cycles = curr_cycle - last_cycle;
+	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
+	last_elapsed = delta_ticks;
 	k_spin_unlock(&lock, key);
-	return ret;
+	return delta_ticks;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -184,23 +190,26 @@ void smp_timer_init(void)
 	/*
 	 * set the initial status of timer0 of each secondary core
 	 */
-	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
+	arm_arch_timer_set_compare(last_cycle + CYC_PER_TICK);
 	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
 	arm_arch_timer_set_irq_mask(false);
 }
 #endif
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
 	arm_arch_timer_init();
-	last_cycle = arm_arch_timer_count();
-	arm_arch_timer_set_compare(last_cycle + CYC_PER_TICK);
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#endif
 	arm_arch_timer_enable(true);
+	last_tick = arm_arch_timer_count() / CYC_PER_TICK;
+	last_cycle = last_tick * CYC_PER_TICK;
+	arm_arch_timer_set_compare(last_cycle + CYC_PER_TICK);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
 	arm_arch_timer_set_irq_mask(false);
 

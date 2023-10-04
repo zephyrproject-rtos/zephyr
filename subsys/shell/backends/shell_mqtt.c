@@ -716,7 +716,7 @@ static int enable(const struct shell_transport *transport, bool blocking)
 
 	/* Listen for network connection status */
 	net_mgmt_add_event_callback(&sh_mqtt->mgmt_cb);
-	net_conn_mgr_resend_status();
+	conn_mgr_resend_status();
 
 	return 0;
 }
@@ -812,9 +812,8 @@ const struct shell_transport_api shell_mqtt_transport_api = { .init = init,
 							      .write = write,
 							      .read = read };
 
-static int enable_shell_mqtt(const struct device *arg)
+static int enable_shell_mqtt(void)
 {
-	ARG_UNUSED(arg);
 
 	bool log_backend = CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?

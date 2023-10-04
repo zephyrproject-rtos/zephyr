@@ -27,26 +27,38 @@
 
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 
 #include <zcbor_common.h>
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** SMP MCUmgr protocol version, part of the SMP header */
+enum smp_mcumgr_version_t {
+	/** Version 1: the original protocol */
+	SMP_MCUMGR_VERSION_1 = 0,
+
+	/** Version 2: adds more detailed error reporting capabilities */
+	SMP_MCUMGR_VERSION_2,
+};
+
 struct cbor_nb_reader {
 	struct net_buf *nb;
-	/* CONFIG_MGMT_MAX_DECODING_LEVELS + 2 translates to minimal
+	/* CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2 translates to minimal
 	 * zcbor backup states.
 	 */
-	zcbor_state_t zs[CONFIG_MGMT_MAX_DECODING_LEVELS + 2];
+	zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
 };
 
 struct cbor_nb_writer {
 	struct net_buf *nb;
 	zcbor_state_t zs[2];
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	uint16_t error_group;
+	uint16_t error_ret;
+#endif
 };
 
 /**
@@ -72,7 +84,7 @@ struct smp_streamer {
 	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
 
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	const char *rc_rsn;
 #endif
 };
@@ -92,6 +104,21 @@ struct smp_streamer {
  * @return 0 on success, #mcumgr_err_t code on failure.
  */
 int smp_process_request_packet(struct smp_streamer *streamer, void *req);
+
+/**
+ * @brief Appends a "ret" response
+ *
+ * This appends a ret response to a pending outgoing response which contains a
+ * result code for a specific group. Note that error codes are specific to the
+ * command group they are emitted from).
+ *
+ * @param zse		The zcbor encoder to use.
+ * @param group		The group which emitted the error.
+ * @param ret		The command result code to add.
+ *
+ * @return true on success, false on failure (memory error).
+ */
+bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret);
 
 #ifdef __cplusplus
 }

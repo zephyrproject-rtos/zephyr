@@ -113,6 +113,38 @@ config LWM2M_COAP_MAX_MSG_SIZE
 	  CoAP message size used by LWM2M. Minimum is the block size used
 	  in blockwise transfers.
 
+config LWM2M_COAP_BLOCK_TRANSFER
+	bool "CoAP block transfer support for big outgoing LwM2M messages [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  LwM2M messages with a big body that exceed the block size will be split
+	  into blocks for sending.
+
+if LWM2M_COAP_BLOCK_TRANSFER
+config LWM2M_COAP_ENCODE_BUFFER_SIZE
+	int "LwM2M CoAP buffer size for encoding the full message for block-wise transfer"
+	default 1024
+	help
+	  Size of buffers for serializing big LwM2M CoAP messages that need to be
+	  split into blocks for sending.
+
+config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
+	int "Maximum # of LWM2M block contexts used for outgoing messages"
+	default 3
+	help
+	  Maximum number of CoAP block contexts needed to split messages into blocks for
+	  sending. This limits the numer of messages that need block transfer that can be
+	  handled at the same time.
+
+config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
+	bool "Log allocations of encode buffers for block wise transfer"
+	select MEM_SLAB_TRACE_MAX_UTILIZATION
+	help
+	  The allocation of encode buffers can be tracked to analyse the usage and
+	  to optimize the configuration of number of block contexts and indirectly
+	  the number of available encode buffers.
+endif # LWM2M_COAP_BLOCK_TRANSFER
+
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"
 	default 64
@@ -158,7 +190,9 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	default 30
 	range 15 4294967295
 	help
-	  Set the default lifetime (in seconds) for the LWM2M library engine
+	  Set the default lifetime (in seconds) for the LWM2M library engine.
+	  This is also a minimum lifetime that client accepts. If server sets lifetime
+	  less than this value, client automatically raises it.
 
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
@@ -190,18 +224,28 @@ config LWM2M_TLS_SESSION_CACHING
 	help
 	  Enabling this only when feature is supported in TLS library.
 
+choice
+prompt "Socket handling at idle state"
+
+config LWM2M_RD_CLIENT_CLOSE_SOCKET_AT_IDLE
+	bool "Close socket when entering RX idle"
+
 config LWM2M_RD_CLIENT_SUSPEND_SOCKET_AT_IDLE
-	bool "Socket close is skipped at RX_ON_IDLE state"
-	depends on LWM2M_RD_CLIENT_SUPPORT
-	help
-	  This config suspend socket handler which skip socket polling process.
+	bool "Stop polling on RX idle and close only when resuming"
+
+config  LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE
+	bool "Stop polling the socket on RX idle"
+
+config  LWM2M_RD_CLIENT_LISTEN_AT_IDLE
+	bool "Keep open and listening"
+
+endchoice
 
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
-	default y
+	select DEPRECATED
 	help
-	  Client will use registration state machine to locate and connect to
-	  LWM2M servers (including bootstrap server support)
+	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
 
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Bootstrap support"
@@ -210,7 +254,6 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 
 config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 	int "Maximum length of client endpoint name"
-	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 33
 	help
 	  Default: room for 32 hexadecimal digits (UUID) + NULL
@@ -245,7 +288,6 @@ config LWM2M_SERVER_DEFAULT_SSID
 
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
-	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 5683
 	help
 	  This is the default server port to connect to for LWM2M communication.
@@ -547,11 +589,17 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 
 config LWM2M_GATEWAY_OBJ_SUPPORT
 	bool "LwM2M Gateway Object (25) [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	bool "LwM2M Event Log Object (20)"
 	help
 	  Include support for LWM2M Event Log Object (ID 20)
+
+config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+	bool "LwM2M BinaryAppDataContainer Object (19)"
+	help
+	  Include support for LWM2M BinaryAppDataContainer Object (ID 19)
 
 if LWM2M_GATEWAY_OBJ_SUPPORT
 

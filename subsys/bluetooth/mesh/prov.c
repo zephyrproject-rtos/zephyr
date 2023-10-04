@@ -17,9 +17,6 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/uuid.h>
 
-#include "host/ecc.h"
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "mesh.h"
 #include "net.h"
@@ -38,34 +35,16 @@ const struct bt_mesh_prov *bt_mesh_prov;
 BUILD_ASSERT(sizeof(bt_mesh_prov_link.conf_inputs) == 145,
 	     "Confirmation inputs shall be 145 bytes");
 
-static void pub_key_ready(const uint8_t *pkey)
-{
-	if (!pkey) {
-		LOG_WRN("Public key not available");
-		return;
-	}
-
-	LOG_DBG("Local public key ready");
-}
-
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]))
+int bt_mesh_prov_reset_state(void)
 {
 	int err;
-	static struct bt_pub_key_cb pub_key_cb;
 	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
-
-	pub_key_cb.func = func ? func : pub_key_ready;
-
-	/* Disable Attention Timer if it was set */
-	if (bt_mesh_prov_link.conf_inputs.invite[0]) {
-		bt_mesh_attention(NULL, 0);
-	}
 
 	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
 		     sizeof(bt_mesh_prov_link) - offset);
 
-	err = bt_pub_key_gen(&pub_key_cb);
+	err = bt_mesh_pub_key_gen();
 	if (err) {
 		LOG_ERR("Failed to generate public key (%d)", err);
 		return err;
@@ -169,6 +148,7 @@ static uint32_t get_auth_number(bt_mesh_output_action_t output,
 {
 	const uint32_t divider[PROV_IO_OOB_SIZE_MAX] = { 10, 100, 1000, 10000,
 			100000, 1000000, 10000000, 100000000 };
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	uint32_t num = 0;
 
 	bt_rand(&num, sizeof(num));
@@ -188,8 +168,8 @@ static uint32_t get_auth_number(bt_mesh_output_action_t output,
 		num %= divider[size - 1];
 	}
 
-	sys_put_be32(num, &bt_mesh_prov_link.auth[12]);
-	memset(bt_mesh_prov_link.auth, 0, 12);
+	sys_put_be32(num, &bt_mesh_prov_link.auth[auth_size - sizeof(num)]);
+	memset(bt_mesh_prov_link.auth, 0, auth_size - sizeof(num));
 
 	return num;
 }
@@ -198,7 +178,14 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 {
 	bt_mesh_output_action_t output;
 	bt_mesh_input_action_t input;
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	int err;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
+	    (method == AUTH_METHOD_NO_OOB ||
+	    bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) {
+		return -EINVAL;
+	}
 
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:
@@ -206,7 +193,7 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 			return -EINVAL;
 		}
 
-		(void)memset(bt_mesh_prov_link.auth, 0, sizeof(bt_mesh_prov_link.auth));
+		(void)memset(bt_mesh_prov_link.auth, 0, auth_size);
 		return 0;
 	case AUTH_METHOD_STATIC:
 		if (action || size) {
@@ -287,13 +274,15 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8
 
 int bt_mesh_input_number(uint32_t num)
 {
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
+
 	LOG_DBG("%u", num);
 
 	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_NUMBER)) {
 		return -EINVAL;
 	}
 
-	sys_put_be32(num, &bt_mesh_prov_link.auth[12]);
+	sys_put_be32(num, &bt_mesh_prov_link.auth[auth_size - sizeof(num)]);
 
 	bt_mesh_prov_link.role->input_complete();
 
@@ -363,7 +352,14 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 		return;
 	}
 
-	if (1 + op_len[type] != buf->len) {
+	uint8_t expected = 1 + op_len[type];
+
+	if (type == PROV_CONFIRM || type == PROV_RANDOM) {
+		/* Expected length depends on Auth size */
+		expected = 1 + bt_mesh_prov_auth_size_get();
+	}
+
+	if (buf->len != expected) {
 		LOG_ERR("Invalid length %u for type 0x%02x", buf->len, type);
 		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_FMT);
 		return;
@@ -393,7 +389,7 @@ static void prov_link_closed(const struct prov_bearer *bearer, void *cb_data,
 	LOG_DBG("%u", reason);
 
 	if (bt_mesh_prov_link.role->link_closed) {
-		bt_mesh_prov_link.role->link_closed();
+		bt_mesh_prov_link.role->link_closed(reason);
 	}
 
 	if (bt_mesh_prov->link_close) {
@@ -438,7 +434,7 @@ void bt_mesh_prov_reset(void)
 		bt_mesh_pb_gatt_reset();
 	}
 
-	bt_mesh_prov_reset_state(NULL);
+	bt_mesh_prov_reset_state();
 
 	if (bt_mesh_prov->reset) {
 		bt_mesh_prov->reset();
@@ -462,5 +458,5 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 		bt_mesh_pb_gatt_init();
 	}
 
-	return bt_mesh_prov_reset_state(NULL);
+	return bt_mesh_prov_reset_state();
 }

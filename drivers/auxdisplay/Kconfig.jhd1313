@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_JHD1313
+	bool "Jinghua Display JHD1313 driver"
+	default y
+	select I2C
+	depends on DT_HAS_JHD_JHD1313_ENABLED
+	help
+	  Enable driver for Jinghua Display JHD1313 display.

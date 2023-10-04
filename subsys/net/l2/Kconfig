@@ -110,6 +110,7 @@ module-dep = NET_LOG
 module-str = Log level for Wi-Fi management layer
 module-help = Enables Wi-Fi management interface to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+source "subsys/net/l2/wifi/Kconfig"
 endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL

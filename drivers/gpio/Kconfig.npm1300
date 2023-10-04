@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NPM1300
+	bool "nPM1300 GPIO driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM1300_GPIO_ENABLED
+	select I2C
+	help
+	  Enable the nPM1300 GPIO driver.
+
+config GPIO_NPM1300_INIT_PRIORITY
+	int "nPM1300 GPIO driver initialization priority"
+	depends on GPIO_NPM1300
+	default 80
+	help
+	  Initialization priority for the nPM1300 GPIO driver. It must be
+	  greater than the I2C controller init priority.

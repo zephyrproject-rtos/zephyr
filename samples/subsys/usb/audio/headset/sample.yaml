@@ -4,10 +4,10 @@ tests:
   sample.usb.audio.headset:
     depends_on: usb_device
     tags: usb
-    platform_exclude: native_posix native_posix_64
+    arch_exclude: posix
     integration_platforms:
-        - nrf52840dk_nrf52840
-        - nrf5340dk_nrf5340_cpuapp
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
     harness: console
     harness_config:
       type: multi_line

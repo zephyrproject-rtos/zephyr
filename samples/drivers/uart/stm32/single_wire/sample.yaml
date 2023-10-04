@@ -3,7 +3,9 @@ sample:
 tests:
   sample.drivers.uart.stm32.single_wire:
     platform_allow: stm32f3_disco
-    tags: drivers uart
+    tags:
+      - drivers
+      - uart
     harness: console
     harness_config:
       fixture: single_line_uart_loopback

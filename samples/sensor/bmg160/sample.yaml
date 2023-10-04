@@ -4,5 +4,7 @@ tests:
   sample.sensor.bmg160:
     harness: sensor
     tags: sensors
-    depends_on: i2c gpio
+    depends_on:
+      - i2c
+      - gpio
     filter: dt_compat_enabled("bosch,bmg160")

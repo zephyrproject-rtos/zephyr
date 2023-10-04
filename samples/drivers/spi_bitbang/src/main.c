@@ -27,7 +27,7 @@ void test_basic_write_9bit_words(const struct device *dev,
 	config.frequency = 125000;
 	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(9);
 	config.slave = 0;
-	config.cs = cs;
+	config.cs = *cs;
 
 	uint16_t buff[5] = { 0x0101, 0x00ff, 0x00a5, 0x0000, 0x0102};
 	int len = 5 * sizeof(buff[0]);
@@ -54,7 +54,7 @@ void test_9bit_loopback_partial(const struct device *dev,
 	config.frequency = 125000;
 	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(9);
 	config.slave = 0;
-	config.cs = cs;
+	config.cs = *cs;
 
 	enum { datacount = 5 };
 	uint16_t buff[datacount] = { 0x0101, 0x0102, 0x0003, 0x0004, 0x0105};
@@ -93,7 +93,7 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 	config.frequency = 1000000;
 	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
 	config.slave = 0;
-	config.cs = cs;
+	config.cs = *cs;
 
 	enum { datacount = 5 };
 	uint8_t buff[datacount] = { 0x01, 0x02, 0x03, 0x04, 0x05};
@@ -118,13 +118,13 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 	       rxdata[0], rxdata[1], rxdata[2], rxdata[3], rxdata[4]);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);
-		return;
+		return 0;
 	}
 
 	struct spi_cs_control cs_ctrl = (struct spi_cs_control){
@@ -147,4 +147,5 @@ void main(void)
 		test_8bit_xfer(dev, &cs_ctrl);
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

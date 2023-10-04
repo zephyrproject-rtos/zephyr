@@ -47,79 +47,6 @@ static void node_reset_pending_handler(struct k_work *work)
 
 static K_WORK_DEFINE(node_reset_pending, node_reset_pending_handler);
 
-static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
-			 bool primary)
-{
-	struct bt_mesh_model *mod;
-	int i;
-
-	if (net_buf_simple_tailroom(buf) <
-	    4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
-		LOG_ERR("Too large device composition");
-		return -E2BIG;
-	}
-
-	net_buf_simple_add_le16(buf, elem->loc);
-
-	net_buf_simple_add_u8(buf, elem->model_count);
-	net_buf_simple_add_u8(buf, elem->vnd_model_count);
-
-	for (i = 0; i < elem->model_count; i++) {
-		mod = &elem->models[i];
-		net_buf_simple_add_le16(buf, mod->id);
-	}
-
-	for (i = 0; i < elem->vnd_model_count; i++) {
-		mod = &elem->vnd_models[i];
-		net_buf_simple_add_le16(buf, mod->vnd.company);
-		net_buf_simple_add_le16(buf, mod->vnd.id);
-	}
-
-	return 0;
-}
-
-static int comp_get_page_0(struct net_buf_simple *buf)
-{
-	uint16_t feat = 0U;
-	const struct bt_mesh_comp *comp;
-	int i;
-
-	comp = bt_mesh_comp_get();
-
-	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
-		feat |= BT_MESH_FEAT_RELAY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		feat |= BT_MESH_FEAT_PROXY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		feat |= BT_MESH_FEAT_FRIEND;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		feat |= BT_MESH_FEAT_LOW_POWER;
-	}
-
-	net_buf_simple_add_le16(buf, comp->cid);
-	net_buf_simple_add_le16(buf, comp->pid);
-	net_buf_simple_add_le16(buf, comp->vid);
-	net_buf_simple_add_le16(buf, CONFIG_BT_MESH_CRPL);
-	net_buf_simple_add_le16(buf, feat);
-
-	for (i = 0; i < comp->elem_count; i++) {
-		int err;
-
-		err = comp_add_elem(buf, &comp->elem[i], i == 0);
-		if (err) {
-			return err;
-		}
-	}
-
-	return 0;
-}
-
 static int dev_comp_data_get(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
@@ -132,18 +59,41 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	page = net_buf_simple_pull_u8(buf);
-	if (page != 0U) {
+
+	if (page >= 128U && atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY)) {
+		page = 128U;
+	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		page = 1U;
+	} else if (page != 0U) {
 		LOG_DBG("Composition page %u not available", page);
 		page = 0U;
 	}
+	LOG_DBG("Preparing Composition data page %d", page);
 
 	bt_mesh_model_msg_init(&sdu, OP_DEV_COMP_DATA_STATUS);
 
 	net_buf_simple_add_u8(&sdu, page);
-	err = comp_get_page_0(&sdu);
-	if (err) {
-		LOG_ERR("Unable to get composition page 0");
-		return err;
+	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) && page == 1) {
+		err = bt_mesh_comp_data_get_page_1(&sdu);
+		if (err < 0) {
+			LOG_ERR("Unable to get composition page 1");
+			return err;
+		}
+	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) == (page == 0U)) {
+		sdu.size -= BT_MESH_MIC_SHORT;
+		err = bt_mesh_comp_read(&sdu);
+		if (err) {
+			LOG_ERR("Unable to get stored composition data");
+			return err;
+		}
+
+		sdu.size += BT_MESH_MIC_SHORT;
+	} else {
+		err = bt_mesh_comp_data_get_page_0(&sdu, 0);
+		if (err < 0) {
+			LOG_ERR("Unable to get composition page 0");
+			return err;
+		}
 	}
 
 	if (bt_mesh_model_send(model, ctx, &sdu, NULL, NULL)) {
@@ -279,6 +229,7 @@ static uint8_t mod_bind(struct bt_mesh_model *model, uint16_t key_idx)
 	}
 
 	for (i = 0; i < model->keys_cnt; i++) {
+		LOG_DBG("model %p id 0x%04x i %d key 0x%03x", model, model->id, i, model->keys[i]);
 		/* Treat existing binding as success */
 		if (model->keys[i] == key_idx) {
 			return STATUS_SUCCESS;
@@ -603,6 +554,13 @@ static int gatt_proxy_set(struct bt_mesh_model *model,
 	}
 
 	(void)bt_mesh_gatt_proxy_set(buf->data[0]);
+
+	/** 4.2.46.1: If the value of the Node Identity state of the node for any subnet is 0x01,
+	 * then the value of the Private Node Identity state shall be Disable (0x00).
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS) && buf->data[0]) {
+		(void)bt_mesh_priv_gatt_proxy_set(BT_MESH_FEATURE_DISABLED);
+	}
 
 	return send_gatt_proxy_status(model, ctx);
 }
@@ -1893,9 +1851,9 @@ static int mod_app_bind(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	/* Configuration Server only allows device key based access */
-	if (model == mod) {
-		LOG_ERR("Client tried to bind AppKey to Configuration Model");
+	/* Some models only allow device key based access */
+	if (mod->flags & BT_MESH_MOD_DEVKEY_ONLY) {
+		LOG_ERR("Client tried to bind AppKey to DevKey based model");
 		status = STATUS_CANNOT_BIND;
 		goto send_status;
 	}
@@ -2240,12 +2198,23 @@ static int krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return send_krp_status(model, ctx, idx, phase, status);
 }
 
+static uint8_t hb_sub_count_log(uint32_t val)
+{
+	if (val == 0xffff) {
+		return 0xff;
+	} else {
+		return bt_mesh_hb_log(val);
+	}
+}
+
 static uint8_t hb_pub_count_log(uint16_t val)
 {
 	if (!val) {
 		return 0x00;
 	} else if (val == 0x01) {
 		return 0x01;
+	} else if (val == 0xfffe) {
+		return 0x11;
 	} else if (val == 0xffff) {
 		return 0xff;
 	} else {
@@ -2312,8 +2281,19 @@ static int heartbeat_pub_set(struct bt_mesh_model *model,
 	LOG_DBG("src 0x%04x", ctx->addr);
 
 	pub.dst = sys_le16_to_cpu(param->dst);
-	pub.count = bt_mesh_hb_pwr2(param->count_log);
-	pub.period = bt_mesh_hb_pwr2(param->period_log);
+	if (param->count_log == 0x11) {
+		/* Special case defined in Mesh Profile Errata 11737 */
+		pub.count = 0xfffe;
+	} else {
+		pub.count = bt_mesh_hb_pwr2(param->count_log);
+	}
+
+	if (param->period_log == 0x11) {
+		pub.period = 0x10000;
+	} else {
+		pub.period = bt_mesh_hb_pwr2(param->period_log);
+	}
+
 	pub.ttl = param->ttl;
 	pub.feat = sys_le16_to_cpu(param->feat);
 	pub.net_idx = sys_le16_to_cpu(param->net_idx);
@@ -2329,7 +2309,7 @@ static int heartbeat_pub_set(struct bt_mesh_model *model,
 		goto rsp;
 	}
 
-	if (param->period_log > 0x10) {
+	if (param->period_log > 0x11) {
 		status = STATUS_CANNOT_SET;
 		goto rsp;
 	}
@@ -2364,7 +2344,7 @@ static int hb_sub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, sub->src);
 	net_buf_simple_add_le16(&msg, sub->dst);
 	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(sub->remaining));
-	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(sub->count));
+	net_buf_simple_add_u8(&msg, hb_sub_count_log(sub->count));
 	net_buf_simple_add_u8(&msg, sub->min_hops);
 	net_buf_simple_add_u8(&msg, sub->max_hops);
 
@@ -2411,7 +2391,11 @@ static int heartbeat_sub_set(struct bt_mesh_model *model,
 		return -EINVAL;
 	}
 
-	period = bt_mesh_hb_pwr2(period_log);
+	if (period_log == 0x11) {
+		period = 0x10000;
+	} else {
+		period = bt_mesh_hb_pwr2(period_log);
+	}
 
 	status = bt_mesh_hb_sub_set(sub_src, sub_dst, period);
 	if (status != STATUS_SUCCESS) {
@@ -2509,6 +2493,7 @@ static int cfg_srv_init(struct bt_mesh_model *model)
 	 * device-key is allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
+	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

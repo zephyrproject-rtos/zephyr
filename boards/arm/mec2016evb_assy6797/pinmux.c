@@ -10,9 +10,8 @@
 
 #include "soc.h"
 
-static int board_pinmux_init(const struct device *dev)
+static int board_pinmux_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* See table 2-4 from the Data sheet*/
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)

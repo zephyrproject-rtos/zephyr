@@ -83,6 +83,7 @@ Zephyr.
    :header: Requirements, Supported
    :widths: 50,10
 
+    _POSIX_BARRIERS,yes
     _POSIX_CLOCK_SELECTION,
     _POSIX_FSYNC,
     _POSIX_MEMLOCK,
@@ -93,8 +94,8 @@ Zephyr.
     _POSIX_SEMAPHORES,yes
     _POSIX_SHARED_MEMORY_OBJECTS,
     _POSIX_SYNCHRONIZED_IO,
-    _POSIX_THREAD_ATTR_STACKADDR,
-    _POSIX_THREAD_ATTR_STACKSIZE,
+    _POSIX_THREAD_ATTR_STACKADDR,yes
+    _POSIX_THREAD_ATTR_STACKSIZE,yes
     _POSIX_THREAD_CPUTIME,
     _POSIX_THREAD_PRIO_INHERIT,yes
     _POSIX_THREAD_PRIO_PROTECT,
@@ -134,11 +135,18 @@ multiple processes.
     pthread_attr_init(),yes
     pthread_attr_setdetachstate(),yes
     pthread_attr_setschedparam(),yes
+    pthread_barrier_destroy(),yes
+    pthread_barrier_init(),yes
+    pthread_barrier_wait(),yes
+    pthread_barrierattr_destroy(),
+    pthread_barrierattr_getpshared(),
+    pthread_barrierattr_init(),
+    pthread_barrierattr_setpshared(),
     pthread_cancel(),yes
     pthread_cleanup_pop(),
     pthread_cleanup_push(),
     pthread_cond_broadcast(),yes
-    pthread_cond_destroy(),
+    pthread_cond_destroy(),yes
     pthread_cond_init(),yes
     pthread_cond_signal(),yes
     pthread_cond_timedwait(),yes
@@ -163,7 +171,7 @@ multiple processes.
     pthread_mutexattr_init(),
     pthread_once(),yes
     pthread_self(),yes
-    pthread_setcalcelstate(),
+    pthread_setcancelstate(),yes
     pthread_setcanceltype(),
     pthread_setspecific(),yes
     pthread_sigmask(),
@@ -254,7 +262,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     isalnum(),yes
     isalpha(),yes
     isblank(),
-    iscntrl(),
+    iscntrl(),yes
     isdigit(),yes
     isgraph(),yes
     islower(),
@@ -277,9 +285,9 @@ This is implemented as part of the minimal C library available in Zephyr.
     memmove(),yes
     memset(),yes
     mktime(),yes
-    qsort(),
+    qsort(),yes
     rand(),yes
-    rand_r(),
+    rand_r(),yes
     realloc(),yes
     setlocale(),
     snprintf(),yes
@@ -291,7 +299,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     strcmp(),yes
     strcoll(),
     strcpy(),yes
-    strcspn(),
+    strcspn(),yes
     strerror(),yes
     strerror_r(),yes
     strftime(),
@@ -301,12 +309,12 @@ This is implemented as part of the minimal C library available in Zephyr.
     strncpy(),yes
     strpbrk(),
     strrchr(),yes
-    strspn(),
+    strspn(),yes
     strstr(),yes
     strtod(),
     strtof(),
     strtoimax(),
-    strtok(),
+    strtok(),yes
     strtok_r(),yes
     strtol(),yes
     strtold(),
@@ -320,10 +328,10 @@ This is implemented as part of the minimal C library available in Zephyr.
     toupper(),yes
     tzname(),
     tzset(),
-    va_arg(),
-    va_copy(),
-    va_end(),
-    va_start(),
+    va_arg(),yes
+    va_copy(),yes
+    va_end(),yes
+    va_start(),yes
     vsnprintf(),yes
     vsprintf(),yes
     vsscanf(),
@@ -341,7 +349,7 @@ process applications.
 
     confstr(),
     environ,
-    errno,
+    errno,yes
     getenv(),
     setenv(),
     sysconf(),
@@ -389,11 +397,11 @@ POSIX_DEVICE_IO
     ftrylockfile(),
     funlockfile(),
     getc_unlocked(),
-    getchar_unlocked(),
+    getchar_unlocked(),yes
     putc_unlocked(),
     putchar_unlocked()
     clearerr(),
-    close(),
+    close(),yes
     fclose(),
     fdopen(),
     feof(),
@@ -417,18 +425,18 @@ POSIX_DEVICE_IO
     perror(),yes
     printf(),yes
     putc(),yes
-    putchar(),
+    putchar(),yes
     puts(),yes
     read(),yes
     scanf(),
     setbuf(),
     etvbuf(),
-    stderr,
-    stdin,
-    stdout,
+    stderr,yes
+    stdin,yes
+    stdout,yes
     ungetc(),
     vfprintf(),yes
     vfscanf(),
     vprintf(),yes
     vscanf(),
-    write(),
+    write(),yes

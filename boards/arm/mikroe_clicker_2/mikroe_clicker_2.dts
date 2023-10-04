@@ -49,6 +49,8 @@
 		led1 = &ld2;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -141,6 +143,14 @@ zephyr_udc0: &usbotg_fs {
 	status ="okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 	pinctrl-names = "default";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };
 
 mikrobus_1_i2c: &i2c3 {};

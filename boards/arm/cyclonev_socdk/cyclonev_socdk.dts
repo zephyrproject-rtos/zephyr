@@ -45,6 +45,10 @@
 	};
 
 	soc {
+		gmac1: ethernet@ff702000  {
+			status = "okay";
+			local-mac-address = [e6 88 2d 82 1f d4];
+		};
 		gpio0: gpio@ff708000 {
 			status = "okay";
 		};
@@ -83,4 +87,9 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm		= &ocram;
 	};
+};
+
+zephyr_udc0: &usb1 {
+	compatible = "snps,dwc2";
+	status = "okay";
 };

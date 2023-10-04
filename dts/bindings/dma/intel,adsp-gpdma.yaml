@@ -8,12 +8,12 @@ compatible: "intel,adsp-gpdma"
 include: snps,designware-dma.yaml
 
 properties:
-    shim:
-      type: array
-      required: true
+  shim:
+    type: array
+    required: true
 
-    dma-buf-size-alignment:
-      required: true
+  dma-buf-size-alignment:
+    required: true
 
-    dma-copy-alignment:
-      required: true
+  dma-copy-alignment:
+    required: true

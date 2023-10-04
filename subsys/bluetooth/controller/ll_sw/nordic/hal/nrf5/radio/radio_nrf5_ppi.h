@@ -34,28 +34,54 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 	/* No need to configure anything for the pre-programmed channels.
 	 * Just enable and disable them accordingly.
 	 */
-	nrf_ppi_channels_disable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
-	nrf_ppi_channels_enable(
-		NRF_PPI,
-		trx ? BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI)
-		    : BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	if (trx) {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
+	} else {
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 #else
 
 static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 {
-	uint32_t event_address = (trx ? (uint32_t)&(NRF_RADIO->TASKS_TXEN)
-				   : (uint32_t)&(NRF_RADIO->TASKS_RXEN));
-	nrf_ppi_channel_endpoint_setup(
-		NRF_PPI,
-		HAL_RADIO_ENABLE_ON_TICK_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
-		event_address);
-	nrf_ppi_channels_enable(NRF_PPI, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+	if (trx) {
+		nrf_ppi_channel_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_TX_ON_TICK_PPI,
+			(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
+			(uint32_t)&(NRF_RADIO->TASKS_TXEN));
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		NRF_PPI->CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX] =
+			BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
+
+		nrf_ppi_fork_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_TX_ON_TICK_PPI,
+			(uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX].DIS));
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI));
+	} else {
+		nrf_ppi_channel_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_RX_ON_TICK_PPI,
+			(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[0]),
+			(uint32_t)&(NRF_RADIO->TASKS_RXEN));
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		NRF_PPI->CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX] =
+			BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI);
+
+		nrf_ppi_fork_endpoint_setup(NRF_PPI,
+			HAL_RADIO_ENABLE_RX_ON_TICK_PPI,
+			(uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_SINGLE_TIMER_TASK_GROUP_IDX].DIS));
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+		nrf_ppi_channels_enable(NRF_PPI,
+					BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
+	}
 }
 
 #endif /* (EVENT_TIMER_ID == 0) */
@@ -138,7 +164,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_RADIO_END_TIME_CAPTURE_PPI,
-		(uint32_t)&(NRF_RADIO->EVENTS_END),
+		(uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT),
 		(uint32_t)&(EVENT_TIMER->TASKS_CAPTURE[2]));
 }
 

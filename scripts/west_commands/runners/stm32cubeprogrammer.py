@@ -89,7 +89,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             if x86_path.exists():
                 return x86_path
 
-            return Path(os.environ["PROGRAMFILES"]) / cli
+            return Path(os.environ["PROGRAMW6432"]) / cli
 
         if platform.system() == "Darwin":
             return (

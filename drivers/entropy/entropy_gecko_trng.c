@@ -11,8 +11,28 @@
  #include "soc.h"
  #include "em_cmu.h"
 
+#if defined(CONFIG_CRYPTO_ACC_GECKO_TRNG)
+/**
+ * Series 2 SoCs have different TRNG register definitions
+ */
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2)	/* xG22 */
+#define S2_FIFO_BASE	(CRYPTOACC_RNGOUT_FIFO_S_MEM_BASE)
+#define S2_FIFO_LEVEL	(CRYPTOACC_RNGCTRL->FIFOLEVEL)
+#define S2_CTRL		(CRYPTOACC_RNGCTRL->RNGCTRL)
+#define S2_CTRL_ENABLE	(CRYPTOACC_RNGCTRL_ENABLE)
+#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)	/* xG27 */
+#define S2_FIFO_BASE	(CRYPTOACC_RNGOUT_FIFO_S_MEM_BASE)
+#define S2_FIFO_LEVEL	(CRYPTOACC->NDRNG_FIFOLEVEL)
+#define S2_CTRL		(CRYPTOACC->NDRNG_CONTROL)
+#define S2_CTRL_ENABLE	(CRYPTOACC_NDRNG_CONTROL_ENABLE)
+#else	/* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
+#error "Building for unsupported Series 2 SoC"
+#endif	/* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
+#endif	/* CONFIG_CRYPTO_ACC_GECKO_TRNG */
+
 static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 {
+#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 	uint32_t tmp;
 	uint32_t *data = (uint32_t *) output;
 
@@ -28,6 +48,9 @@ static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 		tmp = TRNG0->FIFO;
 		memcpy(data, (const uint8_t *) &tmp, len);
 	}
+#else
+	memcpy(output, ((const uint8_t *) S2_FIFO_BASE), len);
+#endif
 }
 
 static int entropy_gecko_trng_get_entropy(const struct device *dev,
@@ -40,7 +63,11 @@ static int entropy_gecko_trng_get_entropy(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	while (length) {
+#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 		available = TRNG0->FIFOLEVEL * 4;
+#else
+		available = S2_FIFO_LEVEL * 4;
+#endif
 		if (available == 0) {
 			return -EINVAL;
 		}
@@ -63,7 +90,11 @@ static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
 
 		/* No busy wait; return whatever data is available. */
 		size_t count;
+#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 		size_t available = TRNG0->FIFOLEVEL * 4;
+#else
+		size_t available = S2_FIFO_LEVEL * 4;
+#endif
 
 		if (available == 0) {
 			return -ENODATA;
@@ -87,10 +118,19 @@ static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
 static int entropy_gecko_trng_init(const struct device *dev)
 {
 	/* Enable the TRNG0 clock. */
+#ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 	CMU_ClockEnable(cmuClock_TRNG0, true);
 
 	/* Enable TRNG0. */
 	TRNG0->CONTROL = TRNG_CONTROL_ENABLE;
+#else
+	/* Enable the CRYPTO ACC clock. */
+	CMU_ClockEnable(cmuClock_CRYPTOACC, true);
+
+	/* Enable TRNG */
+	S2_CTRL |= S2_CTRL_ENABLE;
+#endif
+
 	return 0;
 }
 

@@ -12,6 +12,7 @@ if BT_AUDIO
 config BT_TBS
 	bool "Telephone Bearer Service Support"
 	select BT_CCID
+	select BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Telephone Bearer Service.
 
@@ -125,21 +126,6 @@ config BT_TBS_AUTHORIZATION
 	help
 	  If set to true, then any writable characteristics will require
 	  authorization per connection.
-
-
-############# DEBUG #############
-
-config BT_DEBUG_TBS
-	bool "Telephone Bearer Service debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Telephone Bearer Service debug logs for the
-	  Bluetooth Audio functionality.
-
-module = BT_TBS
-legacy-debug-sym = BT_DEBUG_TBS
-module-str = "Telephone Bearer Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_TBS
 
@@ -321,20 +307,6 @@ config BT_TBS_CLIENT_CALL_FRIENDLY_NAME
 	default !BT_TBS_CLIENT_MINIMAL
 	help
 	  This option enables support for reading Call Friendly Name.
-
-############# DEBUG #############
-
-config BT_DEBUG_TBS_CLIENT
-	bool "Telephone Bearer Service client debug"
-	select DEPRECATED
-	help
-	  Use this option to enable Telephone Bearer Service client debug logs
-	  for the Bluetooth Audio functionality.
-
-module = BT_TBS_CLIENT
-legacy-debug-sym = BT_DEBUG_TBS_CLIENT
-module-str = "Telephone Bearer Service client"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_TBS_CLIENT
 

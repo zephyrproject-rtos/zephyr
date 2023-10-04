@@ -1,4 +1,7 @@
 tests:
   boards.esp32.cache_coex:
-    platform_allow: esp32
-    tags: spiram spiflash cache
+    platform_allow: esp32 esp32s2_saola
+    tags:
+      - spiram
+      - spiflash
+      - cache

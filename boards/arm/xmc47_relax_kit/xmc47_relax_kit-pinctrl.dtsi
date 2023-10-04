@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 Schlumberger
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/xmc4700_F144x2048-pinctrl.dtsi>
+
+&uart_tx_p1_5_u0c0 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&uart_rx_p1_4_u0c0 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};

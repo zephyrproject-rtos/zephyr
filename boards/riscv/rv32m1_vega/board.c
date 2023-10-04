@@ -8,13 +8,12 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-static int rv32m1_vega_board_init(const struct device *dev)
+static int rv32m1_vega_board_init(void)
 {
 	const struct device *const gpiob = DEVICE_DT_GET(DT_NODELABEL(gpiob));
 	const struct device *const gpioc = DEVICE_DT_GET(DT_NODELABEL(gpioc));
 	const struct device *const gpiod = DEVICE_DT_GET(DT_NODELABEL(gpiod));
 
-	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(device_is_ready(gpiob));
 	__ASSERT_NO_MSG(device_is_ready(gpioc));

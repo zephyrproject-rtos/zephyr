@@ -142,6 +142,8 @@ packet buffer.
 
 :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
+:kconfig:option:`CONFIG_LOG_CUSTOM_HEADER`: Injects an application provided header into log.h
+
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
 Formatting options:
@@ -312,7 +314,7 @@ Following snippet shows how logging can be processed in simple forever loop.
 
    #include <zephyr/log_ctrl.h>
 
-   void main(void)
+   int main(void)
    {
    	LOG_INIT();
    	/* If multithreading is enabled provide thread id to the logging. */
@@ -483,6 +485,10 @@ If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message
 created and no backend is handled. Otherwise, custom frontend can coexist with
 backends.
 
+In some cases, logs need to be redirected at the macro level. For these cases,
+:kconfig:option:`CONFIG_LOG_CUSTOM_HEADER` can be used to inject an application provided
+header named `zephyr_custom_log.h` at the end of :zephyr_file:`include/zephyr/logging/log.h`.
+
 .. _logging_strings:
 
 Logging strings
@@ -529,15 +535,13 @@ There are three types of domains in a multi-domain system:
 
 See the following image for an example of a multi-domain setup:
 
-.. _logging-multidomain-example:
-
 .. figure:: images/multidomain.png
 
     Multi-domain example
 
 In this architecture, a link can handle multiple domains.
 For example, let's consider an SoC with two ARM Cortex-M33 cores with TrustZone: cores A and B (see
-:numref:`logging-multidomain-example`). There are four domains in the system, as
+the example illustrated above). There are four domains in the system, as
 each core has both a Secure and a Nonsecure domain. If *core A nonsecure* (A_NS) is the
 root domain, it has two links: one to *core A secure* (A_NS-A_S) and one to
 *core B nonsecure* (A_NS-B_NS). *B_NS* domain has one link, to *core B secure*
@@ -545,7 +549,7 @@ root domain, it has two links: one to *core A secure* (A_NS-A_S) and one to
 
 Since in all instances there is a standard logging subsystem, it is always possible
 to have multiple backends and simultaneously output messages to them. An example of this is shown
-on :numref:`logging-multidomain-example` as a dotted UART backend on the *B_NS* domain.
+in the illustration above as a dotted UART backend on the *B_NS* domain.
 
 Domain ID
 ---------
@@ -563,10 +567,9 @@ The first link has the offset set to 1.
 The following offset equals the previous link offset plus the number of domains in the previous
 link.
 
-The following example is shown on :numref:`logging-domain-ids-example`, where
+The following example is shown below, where
 the assigned ``domain_ids`` are shown for each domain:
 
-.. _logging-domain-ids-example:
 .. figure:: images/domain_ids.png
 
     Domain IDs assigning example

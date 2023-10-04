@@ -15,6 +15,7 @@ from twisterlib.testsuite import TestCase
 from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.handlers import Handler, SimulationHandler, BinaryHandler, QEMUHandler, DeviceHandler, SUPPORTED_SIMS
+from twisterlib.harness import SUPPORTED_SIMS_IN_PYTEST
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -27,6 +28,8 @@ class TestInstance:
     @param base_outdir Base directory for all test results. The actual
         out directory used is <outdir>/<platform>/<test case name>
     """
+
+    __test__ = False
 
     def __init__(self, testsuite, platform, outdir):
 
@@ -44,6 +47,8 @@ class TestInstance:
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
+
+        self.domains = None
 
         self.run = False
         self.testcases = []
@@ -73,7 +78,9 @@ class TestInstance:
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
-            if not case.status:
+            if case.status == 'started':
+                case.status = "failed"
+            elif not case.status:
                 case.status = status
                 if reason:
                     case.reason = reason
@@ -123,13 +130,13 @@ class TestInstance:
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
+        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test', 'gtest', 'robot']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
             fixture = testsuite.harness_config.get('fixture')
             if fixture:
-                can_run = (fixture in fixtures)
+                can_run = fixture in fixtures
 
         return can_run
 
@@ -139,7 +146,11 @@ class TestInstance:
 
         options = env.options
         handler = Handler(self, "")
-        if self.platform.simulation != "na":
+        if options.device_testing:
+            handler = DeviceHandler(self, "device")
+            handler.call_make_run = False
+            handler.ready = True
+        elif self.platform.simulation != "na":
             if self.platform.simulation == "qemu":
                 handler = QEMUHandler(self, "qemu")
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
@@ -154,10 +165,6 @@ class TestInstance:
             handler.binary = os.path.join(self.build_dir, "testbinary")
             if options.enable_coverage:
                 handler.args.append("COVERAGE=1")
-            handler.call_make_run = False
-            handler.ready = True
-        elif options.device_testing:
-            handler = DeviceHandler(self, "device")
             handler.call_make_run = False
             handler.ready = True
 
@@ -189,14 +196,16 @@ class TestInstance:
                         self.platform.simulation in SUPPORTED_SIMS or \
                         filter == 'runnable')
 
-        for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']:
-            if self.platform.simulation == sim and self.platform.simulation_exec:
-                if not shutil.which(self.platform.simulation_exec):
-                    target_ready = False
-                break
-            else:
-                target_ready = True
+        # check if test is runnable in pytest
+        if self.testsuite.harness == 'pytest':
+            target_ready = bool(filter == 'runnable' or self.platform.simulation in SUPPORTED_SIMS_IN_PYTEST)
 
+        SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']
+        if filter != 'runnable' and \
+                self.platform.simulation in SUPPORTED_SIMS_WITH_EXEC and \
+                self.platform.simulation_exec:
+            if not shutil.which(self.platform.simulation_exec):
+                target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
 
@@ -212,7 +221,22 @@ class TestInstance:
         content = ""
 
         if self.testsuite.extra_configs:
-            content = "\n".join(self.testsuite.extra_configs)
+            new_config_list = []
+            # some configs might be conditional on arch or platform, see if we
+            # have a namespace defined and apply only if the namespace matches.
+            # we currently support both arch: and platform:
+            for config in self.testsuite.extra_configs:
+                cond_config = config.split(":")
+                if cond_config[0] == "arch" and len(cond_config) == 3:
+                    if self.platform.arch == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                elif cond_config[0] == "platform" and len(cond_config) == 3:
+                    if self.platform.name == cond_config[1]:
+                        new_config_list.append(cond_config[2])
+                else:
+                    new_config_list.append(config)
+
+            content = "\n".join(new_config_list)
 
         if enable_coverage:
             if platform.name in coverage_platform:
@@ -251,12 +275,21 @@ class TestInstance:
                             generate_warning=generate_warning)
 
     def get_elf_file(self) -> str:
-        fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
-        fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
-        fns = [x for x in fns if '_pre' not in x]
-        # EFI elf files
-        fns = [x for x in fns if 'zefi' not in x]
-        if len(fns) != 1:
+
+        if self.testsuite.sysbuild:
+            build_dir = self.domains.get_default_domain().build_dir
+        else:
+            build_dir = self.build_dir
+
+        fns = glob.glob(os.path.join(build_dir, "zephyr", "*.elf"))
+        fns.extend(glob.glob(os.path.join(build_dir, "zephyr", "*.exe")))
+        fns.extend(glob.glob(os.path.join(build_dir, "testbinary")))
+        blocklist = [
+                'remapped', # used for xtensa plaforms
+                'zefi', # EFI for Zephyr
+                '_pre' ]
+        fns = [x for x in fns if not any(bad in os.path.basename(x) for bad in blocklist)]
+        if len(fns) != 1 and self.platform.type != 'native':
             raise BuildError("Missing/multiple output ELF binary")
         return fns[0]
 

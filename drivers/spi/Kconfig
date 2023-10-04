@@ -7,7 +7,7 @@
 # SPI Drivers
 #
 menuconfig SPI
-	bool "SPI hardware bus support"
+	bool "Serial Peripheral Interface (SPI) bus drivers"
 	help
 	  Enable support for the SPI hardware bus.
 
@@ -18,6 +18,14 @@ config SPI_ASYNC
 	select POLL
 	help
 	  This option enables the asynchronous API calls.
+
+config SPI_RTIO
+	bool "RTIO support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  This option enables the RTIO API calls. RTIO support is
+	  experimental as the API itself is unstable.
 
 config SPI_SLAVE
 	bool "Slave support [EXPERIMENTAL]"
@@ -46,6 +54,12 @@ config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	default 200
 	help
 	  The tolerance value in ms for the SPI completion timeout logic.
+
+config SPI_STATS
+	bool "SPI device statistics"
+	depends on STATS
+	help
+	  Enable SPI device statistics.
 
 module = SPI
 module-str = spi
@@ -106,5 +120,13 @@ source "drivers/spi/Kconfig.pl022"
 source "drivers/spi/Kconfig.andes_atcspi200"
 
 source "drivers/spi/Kconfig.nxp_s32"
+
+source "drivers/spi/Kconfig.xmc4xxx"
+
+source "drivers/spi/Kconfig.pw"
+
+source "drivers/spi/Kconfig.smartbond"
+
+source "drivers/spi/Kconfig.opentitan"
 
 endif # SPI

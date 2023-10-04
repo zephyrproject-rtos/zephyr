@@ -126,6 +126,31 @@ ZTEST(util_cxx, test_ARRAY_INDEX_FLOOR)
 	run_ARRAY_INDEX_FLOOR();
 }
 
+ZTEST(util_cxx, test_BIT_MASK)
+{
+	run_BIT_MASK();
+}
+
+ZTEST(util_cxx, test_BIT_MASK64)
+{
+	run_BIT_MASK64();
+}
+
+ZTEST(util_cxx, test_IS_BIT_MASK)
+{
+	run_IS_BIT_MASK();
+}
+
+ZTEST(util_cxx, test_IS_SHIFTED_BIT_MASK)
+{
+	run_IS_SHIFTED_BIT_MASK();
+}
+
+ZTEST(util_cxx, test_DIV_ROUND_UP)
+{
+	run_DIV_ROUND_UP();
+}
+
 ZTEST_SUITE(util_cxx, NULL, NULL, NULL, NULL, NULL);
 
 #if __cplusplus
@@ -242,6 +267,31 @@ ZTEST(util_cc, test_PART_OF_ARRAY)
 ZTEST(util_cc, test_ARRAY_INDEX_FLOOR)
 {
 	run_ARRAY_INDEX_FLOOR();
+}
+
+ZTEST(util_cc, test_BIT_MASK)
+{
+	run_BIT_MASK();
+}
+
+ZTEST(util_cc, test_BIT_MASK64)
+{
+	run_BIT_MASK64();
+}
+
+ZTEST(util_cc, test_IS_BIT_MASK)
+{
+	run_IS_BIT_MASK();
+}
+
+ZTEST(util_cc, test_IS_SHIFTED_BIT_MASK)
+{
+	run_IS_SHIFTED_BIT_MASK();
+}
+
+ZTEST(util_cc, test_DIV_ROUND_UP)
+{
+	run_DIV_ROUND_UP();
 }
 
 ZTEST_SUITE(util_cc, NULL, NULL, NULL, NULL, NULL);

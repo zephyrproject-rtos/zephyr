@@ -5,7 +5,7 @@
 
 config SOC_FAMILY_SAM0
 	bool
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 if SOC_FAMILY_SAM0
 

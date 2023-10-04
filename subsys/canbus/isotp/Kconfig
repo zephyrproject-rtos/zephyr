@@ -129,4 +129,58 @@ config ISOTP_TX_CONTEXT_BUF_COUNT
 	  This defines the size of the memory slab where the buffers are
 	  allocated from.
 
+config ISOTP_CUSTOM_FIXED_ADDR
+	bool "Use fixed address not compatible with SAE J1939"
+	default n
+	help
+	  This option allow to use an alternative CAN frame id format.
+	  If not set ISO-TP fixed addressing use SAE J1939 standard.
+
+menu "Fixed address definition"
+	visible if ISOTP_CUSTOM_FIXED_ADDR
+
+config ISOTP_FIXED_ADDR_SA_POS
+	int "Position of fixed source address (SA)"
+	default 0
+	help
+	  Source address position in bits.
+
+config ISOTP_FIXED_ADDR_SA_MASK
+	hex "Mask to obtain fixed source address (SA)"
+	default 0xFF
+	help
+	  Source address mask.
+
+config ISOTP_FIXED_ADDR_TA_POS
+	int "Position of fixed target address (TA)"
+	default 8
+	help
+	  Target address position in bits.
+
+config ISOTP_FIXED_ADDR_TA_MASK
+	hex "Mask to obtain fixed target address (TA)"
+	default 0xFF00
+	help
+	  Target address mask.
+
+config ISOTP_FIXED_ADDR_PRIO_POS
+	int "Position of priority in fixed addressing mode"
+	default 26
+	help
+	  Priority address position in bits.
+
+config ISOTP_FIXED_ADDR_PRIO_MASK
+	hex "Mask for priority in fixed addressing mode"
+	default 0x1C000000
+	help
+	  Priority address mask.
+
+config ISOTP_FIXED_ADDR_RX_MASK
+	hex "CAN filter RX mask to match any priority and source address (SA)"
+	default 0x03FFFF00
+	help
+	  CAN filter RX mask
+
+endmenu
+
 endif # ISOTP

@@ -206,9 +206,7 @@ static void performance_showcase(void)
 		start_timestamp = timestamp_get();
 
 		while (start_timestamp == timestamp_get()) {
-	#if (CONFIG_ARCH_POSIX)
-			k_busy_wait(100);
-	#endif
+			Z_SPIN_DELAY(100);
 		}
 
 		start_timestamp = timestamp_get();
@@ -217,9 +215,7 @@ static void performance_showcase(void)
 			LOG_INF("performance test - log message %d", cnt);
 			cnt++;
 			current_timestamp = timestamp_get();
-	#if (CONFIG_ARCH_POSIX)
-			k_busy_wait(100);
-	#endif
+			Z_SPIN_DELAY(100);
 		} while (current_timestamp < (start_timestamp + window));
 
 		wait_on_log_flushed();

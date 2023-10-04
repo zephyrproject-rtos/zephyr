@@ -1,0 +1,44 @@
+#
+# Schema to validate a YAML file describing a Zephyr test configuration.
+#
+
+type: map
+mapping:
+  "platforms":
+    type: map
+    required: false
+    mapping:
+      "override_default_platforms":
+        type: bool
+        required: false
+      "increased_platform_scope":
+        type: bool
+        required: false
+      "default_platforms":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+  "levels":
+    type: seq
+    required: false
+    sequence:
+      - type: map
+        required: false
+        mapping:
+          "name":
+            type: str
+            required: true
+          "description":
+            type: str
+            required: false
+          "adds":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "inherits":
+            type: seq
+            required: false
+            sequence:
+              - type: str

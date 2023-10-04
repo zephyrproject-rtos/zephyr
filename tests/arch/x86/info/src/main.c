@@ -21,7 +21,7 @@ __weak void acpi(void)
 	printk("ACPI: Not supported in this build.\n\n");
 }
 
-void main(void)
+int main(void)
 {
 	printk("\n\ninfo: the Zephyr x86 platform information tool\n\n");
 
@@ -31,4 +31,5 @@ void main(void)
 	timer();
 
 	printk("info: complete\n");
+	return 0;
 }

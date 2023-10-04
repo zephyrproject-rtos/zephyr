@@ -3,7 +3,7 @@
 
 config SOC_FAMILY_LPC
 	bool
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 if SOC_FAMILY_LPC
 

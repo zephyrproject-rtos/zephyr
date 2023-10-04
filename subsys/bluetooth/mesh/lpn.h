@@ -48,5 +48,6 @@ void bt_mesh_lpn_group_add(uint16_t group);
 void bt_mesh_lpn_group_del(uint16_t *groups, size_t group_count);
 
 void bt_mesh_lpn_disable(bool force);
+void bt_mesh_lpn_friendship_end(void);
 
 int bt_mesh_lpn_init(void);

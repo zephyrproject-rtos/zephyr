@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT bosch_bmm150
-
 #include <zephyr/logging/log.h>
 #include "bmm150.h"
 
@@ -36,15 +34,59 @@ static const struct bmm150_preset {
 	[BMM150_HIGH_ACCURACY_PRESET] = { 47, 83, 20 }
 };
 
+static inline int bmm150_bus_check(const struct device *dev)
+{
+	const struct bmm150_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
+}
+
+static inline int bmm150_reg_read(const struct device *dev,
+				  uint8_t start, uint8_t *buf, int size)
+{
+	const struct bmm150_config *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, start, buf, size);
+}
+
+static inline int bmm150_reg_write(const struct device *dev, uint8_t reg,
+				   uint8_t val)
+{
+	const struct bmm150_config *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, val);
+}
+
+int bmm150_reg_update_byte(const struct device *dev, uint8_t reg,
+				  uint8_t mask, uint8_t value)
+{
+	int ret = 0;
+	uint8_t old_value, new_value;
+
+	ret = bmm150_reg_read(dev, reg, &old_value, 1);
+
+	if (ret < 0) {
+		goto failed;
+	}
+
+	new_value = (old_value & ~mask) | (value & mask);
+
+	if (new_value == old_value) {
+		return 0;
+	}
+
+	return bmm150_reg_write(dev, reg, new_value);
+failed:
+	return ret;
+}
+
 static int bmm150_set_power_mode(const struct device *dev,
 				 enum bmm150_power_modes mode,
 				 int state)
 {
-	const struct bmm150_config *config = dev->config;
-
 	switch (mode) {
 	case BMM150_POWER_MODE_SUSPEND:
-		if (i2c_reg_update_byte_dt(&config->i2c,
+		if (bmm150_reg_update_byte(dev,
 					   BMM150_REG_POWER,
 					   BMM150_MASK_POWER_CTL,
 					   !state) < 0) {
@@ -54,14 +96,14 @@ static int bmm150_set_power_mode(const struct device *dev,
 
 		return 0;
 	case BMM150_POWER_MODE_SLEEP:
-		return i2c_reg_update_byte_dt(&config->i2c,
+		return bmm150_reg_update_byte(dev,
 					      BMM150_REG_OPMODE_ODR,
 					      BMM150_MASK_OPMODE,
 					      BMM150_MODE_SLEEP <<
 					      BMM150_SHIFT_OPMODE);
 		break;
 	case BMM150_POWER_MODE_NORMAL:
-		return i2c_reg_update_byte_dt(&config->i2c,
+		return bmm150_reg_update_byte(dev,
 					      BMM150_REG_OPMODE_ODR,
 					      BMM150_MASK_OPMODE,
 					      BMM150_MODE_NORMAL <<
@@ -75,12 +117,11 @@ static int bmm150_set_power_mode(const struct device *dev,
 
 static int bmm150_set_odr(const struct device *dev, uint8_t val)
 {
-	const struct bmm150_config *config = dev->config;
 	uint8_t i;
 
 	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
 		if (val <= bmm150_samp_freq_table[i].freq) {
-			return i2c_reg_update_byte_dt(&config->i2c,
+			return bmm150_reg_update_byte(dev,
 						      BMM150_REG_OPMODE_ODR,
 						      BMM150_MASK_ODR,
 						      (bmm150_samp_freq_table[i].reg_val <<
@@ -97,8 +138,7 @@ static int bmm150_read_rep_xy(const struct device *dev)
 	const struct bmm150_config *config = dev->config;
 	uint8_t reg_val;
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 BMM150_REG_REP_XY, &reg_val) < 0) {
+	if (bmm150_reg_read(dev, BMM150_REG_REP_XY, &reg_val, 1) < 0) {
 		return -EIO;
 	}
 
@@ -113,8 +153,7 @@ static int bmm150_read_rep_z(const struct device *dev)
 	const struct bmm150_config *config = dev->config;
 	uint8_t reg_val;
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 BMM150_REG_REP_Z, &reg_val) < 0) {
+	if (bmm150_reg_read(dev, BMM150_REG_REP_Z, &reg_val, 1) < 0) {
 		return -EIO;
 	}
 
@@ -160,8 +199,7 @@ static int bmm150_read_odr(const struct device *dev)
 	const struct bmm150_config *config = dev->config;
 	uint8_t i, odr_val, reg_val;
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 BMM150_REG_OPMODE_ODR, &reg_val) < 0) {
+	if (bmm150_reg_read(dev, BMM150_REG_OPMODE_ODR, &reg_val, 1) < 0) {
 		return -EIO;
 	}
 
@@ -184,7 +222,7 @@ static int bmm150_write_rep_xy(const struct device *dev, int val)
 	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *config = dev->config;
 
-	if (i2c_reg_update_byte_dt(&config->i2c,
+	if (bmm150_reg_update_byte(dev,
 				   BMM150_REG_REP_XY,
 				   BMM150_REG_REP_DATAMASK,
 				   BMM150_REPXY_TO_REGVAL(val)) < 0) {
@@ -203,7 +241,7 @@ static int bmm150_write_rep_z(const struct device *dev, int val)
 	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *config = dev->config;
 
-	if (i2c_reg_update_byte_dt(&config->i2c,
+	if (bmm150_reg_update_byte(dev,
 				   BMM150_REG_REP_Z,
 				   BMM150_REG_REP_DATAMASK,
 				   BMM150_REPZ_TO_REGVAL(val)) < 0) {
@@ -286,7 +324,6 @@ static int bmm150_sample_fetch(const struct device *dev,
 {
 
 	struct bmm150_data *drv_data = dev->data;
-	const struct bmm150_config *config = dev->config;
 	uint16_t values[BMM150_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
@@ -294,9 +331,7 @@ static int bmm150_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_MAGN_XYZ);
 
-	if (i2c_burst_read_dt(&config->i2c,
-			      BMM150_REG_X_L, (uint8_t *)values,
-			      sizeof(values)) < 0) {
+	if (bmm150_reg_read(dev, BMM150_REG_X_L, (uint8_t *)values, sizeof(values)) < 0) {
 		LOG_ERR("failed to read sample");
 		return -EIO;
 	}
@@ -483,28 +518,31 @@ static const struct sensor_driver_api bmm150_api_funcs = {
 static int bmm150_init_chip(const struct device *dev)
 {
 	struct bmm150_data *data = dev->data;
-	const struct bmm150_config *config = dev->config;
 	uint8_t chip_id;
 	struct bmm150_preset preset;
 
-	if (bmm150_set_power_mode(dev, BMM150_POWER_MODE_NORMAL, 0) < 0) {
-		LOG_ERR("failed to bring up device from normal mode");
-		return -EIO;
+	/* Soft reset chip */
+	if (bmm150_reg_update_byte(dev, BMM150_REG_POWER, BMM150_MASK_SOFT_RESET,
+				   BMM150_SOFT_RESET) < 0) {
+		LOG_ERR("failed reset chip");
+		goto err_poweroff;
 	}
 
-	if (bmm150_set_power_mode(dev, BMM150_POWER_MODE_SUSPEND, 1) < 0) {
-		LOG_ERR("failed to bring up device in suspend mode");
-		return -EIO;
-	}
+	/* Sleep for 1ms after software reset */
+	k_sleep(K_MSEC(1));
 
+	/* Suspend mode to sleep mode */
 	if (bmm150_set_power_mode(dev, BMM150_POWER_MODE_SUSPEND, 0)
 	    < 0) {
 		LOG_ERR("failed to bring up device from suspend mode");
 		return -EIO;
 	}
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 BMM150_REG_CHIP_ID, &chip_id) < 0) {
+	/* Sleep for 3ms from suspend to sleep mode */
+	k_sleep(K_MSEC(3));
+
+	/* Read chip ID */
+	if (bmm150_reg_read(dev, BMM150_REG_CHIP_ID, &chip_id, 1) < 0) {
 		LOG_ERR("failed reading chip id");
 		goto err_poweroff;
 	}
@@ -514,6 +552,7 @@ static int bmm150_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
+	/* Setting preset mode */
 	preset = bmm150_presets_table[BMM150_DEFAULT_PRESET];
 	if (bmm150_set_odr(dev, preset.odr) < 0) {
 		LOG_ERR("failed to set ODR to %d",
@@ -521,30 +560,27 @@ static int bmm150_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-				  BMM150_REG_REP_XY,
-				  BMM150_REPXY_TO_REGVAL(preset.rep_xy))
+	if (bmm150_reg_write(dev, BMM150_REG_REP_XY, BMM150_REPXY_TO_REGVAL(preset.rep_xy))
 	    < 0) {
 		LOG_ERR("failed to set REP XY to %d",
 			    preset.rep_xy);
 		goto err_poweroff;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-				  BMM150_REG_REP_Z,
-				  BMM150_REPZ_TO_REGVAL(preset.rep_z)) < 0) {
+	if (bmm150_reg_write(dev, BMM150_REG_REP_Z, BMM150_REPZ_TO_REGVAL(preset.rep_z)) < 0) {
 		LOG_ERR("failed to set REP Z to %d",
 			    preset.rep_z);
 		goto err_poweroff;
 	}
 
+	/* Set chip normal mode */
 	if (bmm150_set_power_mode(dev, BMM150_POWER_MODE_NORMAL, 1)
 	    < 0) {
 		LOG_ERR("failed to power on device");
 	}
 
-	if (i2c_burst_read_dt(&config->i2c,
-			      BMM150_REG_TRIM_START, (uint8_t *)&data->tregs,
+	/* Reads the trim registers of the sensor */
+	if (bmm150_reg_read(dev, BMM150_REG_TRIM_START, (uint8_t *)&data->tregs,
 			      sizeof(data->tregs)) < 0) {
 		LOG_ERR("failed to read trim regs");
 		goto err_poweroff;
@@ -574,12 +610,12 @@ err_poweroff:
 
 static int bmm150_init(const struct device *dev)
 {
-	const struct bmm150_config *const config =
-		dev->config;
+	int err = 0;
 
-	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
-		return -ENODEV;
+	err = bmm150_bus_check(dev);
+	if (err < 0) {
+		LOG_DBG("bus check failed: %d", err);
+		return err;
 	}
 
 	if (bmm150_init_chip(dev) < 0) {
@@ -590,15 +626,37 @@ static int bmm150_init(const struct device *dev)
 	return 0;
 }
 
-#define BMM150_DEFINE(inst)								\
-	static struct bmm150_data bmm150_data_##inst;					\
-											\
-	static const struct bmm150_config bmm150_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmm150_init, NULL,				\
-			      &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);		\
+/* Initializes a struct bmm150_config for an instance on a SPI bus. */
+#define BMM150_CONFIG_SPI(inst)						\
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMM150_SPI_OPERATION, 0),	\
+	.bus_io = &bmm150_bus_io_spi,
 
+/* Initializes a struct bmm150_config for an instance on an I2C bus. */
+#define BMM150_CONFIG_I2C(inst)			       \
+	.bus.i2c = I2C_DT_SPEC_INST_GET(inst),	       \
+	.bus_io = &bmm150_bus_io_i2c,
+
+#define BMM150_BUS_CFG(inst)			\
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
+		    (BMM150_CONFIG_I2C(inst)),	\
+		    (BMM150_CONFIG_SPI(inst)))
+
+/*
+ * Main instantiation macro, which selects the correct bus-specific
+ * instantiation macros for the instance.
+ */
+#define BMM150_DEFINE(inst)						\
+	static struct bmm150_data bmm150_data_##inst;			\
+	static const struct bmm150_config bmm150_config_##inst = {	\
+		BMM150_BUS_CFG(inst)					\
+	};								\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+				     bmm150_init, NULL,			\
+				     &bmm150_data_##inst,		\
+				     &bmm150_config_##inst,		\
+				     POST_KERNEL,			\
+				     CONFIG_SENSOR_INIT_PRIORITY,	\
+				     &bmm150_api_funcs);
+
+/* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(BMM150_DEFINE)

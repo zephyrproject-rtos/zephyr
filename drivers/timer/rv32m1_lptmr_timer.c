@@ -71,11 +71,10 @@ uint32_t sys_clock_elapsed(void)
 	return 0;
 }
 
-static int sys_clock_driver_init(const struct device *unused)
+static int sys_clock_driver_init(void)
 {
 	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 
-	ARG_UNUSED(unused);
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    0, lptmr_irq_handler, NULL, 0);
 

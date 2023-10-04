@@ -656,7 +656,7 @@ static int enc424j600_init(const struct device *dev)
 	context->dev = dev;
 
 	/* SPI config */
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}

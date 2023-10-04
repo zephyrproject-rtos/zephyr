@@ -2,4 +2,6 @@ tests:
   kernel.work.user:
     min_flash: 34
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: kernel userspace
+    tags:
+      - kernel
+      - userspace

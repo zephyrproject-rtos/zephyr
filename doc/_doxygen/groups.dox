@@ -1,8 +1,14 @@
 /**
 
-@defgroup subsys Subsystems
-@brief Zephyr Subsystems
+@defgroup os_services Operating System Services
+@brief Operating System Services
 @{
+
+@brief MCUmgr
+@defgroup mcumgr MCUmgr
+@{
+@}
+
 @}
 
 @brief Device Driver APIs
@@ -13,6 +19,38 @@
 @brief Miscellaneous Drivers APIs
 @defgroup misc_interfaces Miscellaneous Drivers APIs
 @ingroup io_interfaces
+@{
+@}
+
+@brief Testing
+@defgroup testing Testing
+@{
+@}
+
+@brief Connectivity
+@defgroup connectivity Connectivity
+@{
+
+@brief USB
+@defgroup usb USB
+@{
+@}
+
+@}
+
+@brief Utilities
+@defgroup utilities Utilities
+@{
+
+@brief Data Structure APIs
+@defgroup datastructure_apis Data Structure APIs
+@{
+@}
+
+@}
+
+@brief APIs to interact with third-party services or applications
+@defgroup third_party Third-party
 @{
 @}
 

@@ -45,6 +45,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* Reinitialize SCTLR from scratch in EL3 */
 	ldr	w0, =(SCTLR_EL3_RES1 | SCTLR_I_BIT | SCTLR_SA_BIT)
 	msr	sctlr_el3, x0
+	isb
 
 	/* Custom plat prep_c init */
 	bl	z_arm64_el3_plat_prep_c
@@ -58,6 +59,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	mrs	x0, sctlr_el2
 	bic	x0, x0, SCTLR_A_BIT
 	msr	sctlr_el2, x0
+	isb
 
 	/* Custom plat prep_c init */
 	bl	z_arm64_el2_plat_prep_c
@@ -71,6 +73,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	mrs	x0, sctlr_el1
 	bic	x0, x0, SCTLR_A_BIT
 	msr	sctlr_el1, x0
+	isb
 
 	/* Custom plat prep_c init */
 	bl	z_arm64_el1_plat_prep_c
@@ -155,7 +158,8 @@ primary_core:
 	 * so that we don't clobber any data.
 	 */
 #ifdef CONFIG_INIT_STACKS
-	ldr	x0, =(z_interrupt_stacks)
+	mov_imm	x0, CONFIG_ISR_STACK_SIZE
+	sub	x0, sp, x0
 	sub     x9, sp, #8
 	mov     x10, 0xaaaaaaaaaaaaaaaa
 stack_init_loop:

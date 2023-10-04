@@ -1,7 +1,9 @@
 common:
   harness: net
   depends_on: netif
-  tags: net syslog
+  tags:
+    - net
+    - syslog
 sample:
   description: syslog network backend
   name: syslog_net

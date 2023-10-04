@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -20,6 +20,8 @@
 #include "util/mayfly.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -31,9 +33,7 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #include "ll_sw/ull_tx_queue.h"
-#endif
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -1493,7 +1493,7 @@ static void target_resolve(struct k_work *work)
 	idx = twork->idx;
 	search_rpa = &(twork->rpa);
 
-	if (rl[idx].taken && !bt_addr_cmp(&(rl[idx].target_rpa), search_rpa)) {
+	if (rl[idx].taken && bt_addr_eq(&(rl[idx].target_rpa), search_rpa)) {
 		j = idx;
 	} else {
 		/* No match - so not in list Need to see if we can resolve */
@@ -1618,7 +1618,7 @@ static uint8_t prpa_cache_find(bt_addr_t *rpa)
 {
 	for (uint8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
 		if (prpa_cache[i].taken &&
-		    !bt_addr_cmp(&(prpa_cache[i].rpa), rpa)) {
+		    bt_addr_eq(&(prpa_cache[i].rpa), rpa)) {
 			return i;
 		}
 	}

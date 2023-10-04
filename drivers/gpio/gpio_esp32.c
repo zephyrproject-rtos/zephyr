@@ -394,6 +394,12 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	}
 
 	key = irq_lock();
+	if (cfg->gpio_port == 0) {
+		gpio_ll_clear_intr_status(cfg->gpio_base, BIT(pin));
+	} else {
+		gpio_ll_clear_intr_status_high(cfg->gpio_base, BIT(pin));
+	}
+
 	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, intr_trig_mode);
 	gpio_ll_intr_enable_on_core(cfg->gpio_base, CPU_ID(), io_pin);
 	irq_unlock(key);

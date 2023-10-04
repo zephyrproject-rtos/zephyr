@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8.dtsi>
+#include <nxp/nxp_imx8m.dtsi>
 
 / {
 	model = "nxp_adsp_imx8m";

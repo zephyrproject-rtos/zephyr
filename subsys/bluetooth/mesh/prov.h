@@ -19,6 +19,7 @@
 #define PROV_ERR_DECRYPT       0x06
 #define PROV_ERR_UNEXP_ERR     0x07
 #define PROV_ERR_ADDR          0x08
+#define PROV_ERR_INVALID_DATA  0x09
 
 #define AUTH_METHOD_NO_OOB     0x00
 #define AUTH_METHOD_STATIC     0x01
@@ -57,8 +58,8 @@
 #define PDU_LEN_START          5
 #define PDU_LEN_PUB_KEY        64
 #define PDU_LEN_INPUT_COMPLETE 0
-#define PDU_LEN_CONFIRM        16
-#define PDU_LEN_RANDOM         16
+#define PDU_LEN_CONFIRM        32 /* Max size */
+#define PDU_LEN_RANDOM         32 /* Max size */
 #define PDU_LEN_DATA           33
 #define PDU_LEN_COMPLETE       0
 #define PDU_LEN_FAILED         1
@@ -69,11 +70,21 @@
 
 #define PROV_IO_OOB_SIZE_MAX   8  /* in bytes */
 
-#define PROV_BUF(name, len) \
-	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len)
+#define PRIV_KEY_SIZE 32
+#define PUB_KEY_SIZE  PDU_LEN_PUB_KEY
+#define DH_KEY_SIZE   32
+
+#define PROV_BUF(name, len)                                                                        \
+	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len +                  \
+					    PROV_BEARER_BUF_TAILROOM)
+
+#if IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)
+#define PROV_AUTH_MAX_LEN   32
+#else
+#define PROV_AUTH_MAX_LEN   16
+#endif
 
 enum {
-	WAIT_PUB_KEY,           /* Waiting for local PubKey to be generated */
 	LINK_ACTIVE,            /* Link has been opened */
 	WAIT_NUMBER,            /* Waiting for number input from user */
 	WAIT_STRING,            /* Waiting for string input from user */
@@ -86,7 +97,8 @@ enum {
 	WAIT_CONFIRM,           /* Wait for send confirm */
 	WAIT_AUTH,              /* Wait for auth response */
 	OOB_STATIC_KEY,         /* OOB Static Authentication */
-	WAIT_DH_KEY,            /* Wait for DH Key */
+	REPROVISION,            /* The link was opened as a reprovision target */
+	COMPLETE,               /* The provisioning process completed. */
 
 	NUM_FLAGS,
 };
@@ -95,7 +107,7 @@ enum {
 struct bt_mesh_prov_role {
 	void (*link_opened)(void);
 
-	void (*link_closed)(void);
+	void (*link_closed)(enum prov_bearer_link_status status);
 
 	void (*error)(uint8_t reason);
 
@@ -110,19 +122,22 @@ struct bt_mesh_prov_link {
 	const struct prov_bearer *bearer;
 	const struct bt_mesh_prov_role *role;
 
-	uint8_t oob_method;             /* Authen method */
-	uint8_t oob_action;             /* Authen action */
-	uint8_t oob_size;               /* Authen size */
-	uint8_t auth[16];               /* Authen value */
+	uint16_t addr;                        /* Assigned address */
 
-	uint8_t dhkey[BT_DH_KEY_LEN];   /* Calculated DHKey */
-	uint8_t expect;                 /* Next expected PDU */
+	uint8_t algorithm;                    /* Authen algorithm */
+	uint8_t oob_method;                   /* Authen method */
+	uint8_t oob_action;                   /* Authen action */
+	uint8_t oob_size;                     /* Authen size */
+	uint8_t auth[PROV_AUTH_MAX_LEN];      /* Authen value */
 
-	uint8_t conf[16];               /* Local/Remote Confirmation */
-	uint8_t rand[16];               /* Local Random */
+	uint8_t dhkey[DH_KEY_SIZE];	          /* Calculated DHKey */
+	uint8_t expect;                       /* Next expected PDU */
 
-	uint8_t conf_salt[16];          /* ConfirmationSalt */
-	uint8_t conf_key[16];           /* ConfirmationKey */
+	uint8_t conf[PROV_AUTH_MAX_LEN];      /* Local/Remote Confirmation */
+	uint8_t rand[PROV_AUTH_MAX_LEN];      /* Local Random */
+
+	uint8_t conf_salt[PROV_AUTH_MAX_LEN]; /* ConfirmationSalt */
+	uint8_t conf_key[PROV_AUTH_MAX_LEN];  /* ConfirmationKey */
 	/* ConfirmationInput fields: */
 	struct {
 		uint8_t invite[PDU_LEN_INVITE];
@@ -131,7 +146,7 @@ struct bt_mesh_prov_link {
 		uint8_t pub_key_provisioner[PDU_LEN_PUB_KEY]; /* big-endian */
 		uint8_t pub_key_device[PDU_LEN_PUB_KEY]; /* big-endian */
 	} conf_inputs;
-	uint8_t prov_salt[16];          /* Provisioning Salt */
+	uint8_t prov_salt[16];                /* Provisioning Salt */
 };
 
 extern struct bt_mesh_prov_link bt_mesh_prov_link;
@@ -149,11 +164,25 @@ static inline void bt_mesh_prov_buf_init(struct net_buf_simple *buf, uint8_t typ
 	net_buf_simple_add_u8(buf, type);
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
+
+static inline uint8_t bt_mesh_prov_auth_size_get(void)
+{
+	return bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM ? 16 : 32;
+}
+
+int bt_mesh_prov_reset_state(void);
 
 bool bt_mesh_prov_active(void);
 
 int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, uint8_t size);
+
+int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
+			   const struct bt_mesh_rpr_node *srv, const uint8_t uuid[16],
+			   uint16_t net_idx, uint16_t addr);
+
+int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
+				struct bt_mesh_rpr_node *srv,
+				uint16_t addr, bool composition_change);
 
 const struct bt_mesh_prov *bt_mesh_prov_get(void);
 

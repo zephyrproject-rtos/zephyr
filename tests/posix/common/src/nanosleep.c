@@ -181,7 +181,7 @@ static void common(const uint32_t s, uint32_t ns)
 	uint64_t actual_ns = k_cyc_to_ns_ceil64((now - then));
 	uint64_t exp_ns = (uint64_t)s * NSEC_PER_SEC + ns;
 	/* round up to the nearest microsecond for k_busy_wait() */
-	exp_ns = ceiling_fraction(exp_ns, NSEC_PER_USEC) * NSEC_PER_USEC;
+	exp_ns = DIV_ROUND_UP(exp_ns, NSEC_PER_USEC) * NSEC_PER_USEC;
 
 	/* lower bounds check */
 	zassert_true(actual_ns >= exp_ns,

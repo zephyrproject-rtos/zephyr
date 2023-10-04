@@ -13,7 +13,6 @@
 	compatible = "espressif,esp32";
 
 	aliases {
-		sw0 = &user_button;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		sw0 = &button0;
@@ -51,13 +50,6 @@
 		};
 	};
 
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_button: user_button {
-			label = "BOOT";
-			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-		};
-	};
 };
 
 &cpu0 {

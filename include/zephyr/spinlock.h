@@ -57,7 +57,7 @@ struct k_spinlock {
 #endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
+#if defined(CONFIG_CPP) && !defined(CONFIG_SMP) && \
 	!defined(CONFIG_SPIN_VALIDATE)
 	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
 	 * the k_spinlock struct will have no members. The result
@@ -153,6 +153,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 #ifdef CONFIG_SMP
 	while (!atomic_cas(&l->locked, 0, 1)) {
+		arch_spin_relax();
 	}
 #endif
 

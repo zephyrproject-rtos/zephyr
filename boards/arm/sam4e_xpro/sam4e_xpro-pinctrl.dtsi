@@ -1,11 +1,24 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <dt-bindings/pinctrl/sam4eXe-pinctrl.h>
 
 &pinctrl {
+	afec0_default: afec0_default {
+		group1 {
+			pinmux = <PA17X_AFEC0_AD0>,
+				 <PC13X_AFEC0_AD6>;
+		};
+	};
+	afec1_default: afec1_default {
+		group1 {
+			pinmux = <PB2X_AFEC1_AD0>,
+				 <PB3X_AFEC1_AD1>;
+		};
+	};
+
 	gmac_mii: gmac_mii {
 		group1 {
 			pinmux = <PD0A_GMAC_GTXCK>,
@@ -72,6 +85,13 @@
 		group2 {
 			pinmux = <PA22A_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PD20A_PWM_PWMH0>,
+				 <PD24A_PWM_PWML0>;
 		};
 	};
 };

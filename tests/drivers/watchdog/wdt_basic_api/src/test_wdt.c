@@ -103,6 +103,10 @@
 #define WDT_TEST_MAX_WINDOW 20000U
 #define TIMEOUTS 0
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 3000U
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1

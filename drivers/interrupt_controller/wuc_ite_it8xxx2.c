@@ -99,11 +99,6 @@ void it8xxx2_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 	}
 }
 
-static int it8xxx2_wuc_init(const struct device *dev)
-{
-	return 0;
-}
-
 #define IT8XXX2_WUC_INIT(inst)						       \
 									       \
 	static const struct it8xxx2_wuc_cfg it8xxx2_wuc_cfg_##inst = {	       \
@@ -114,7 +109,7 @@ static int it8xxx2_wuc_init(const struct device *dev)
 	};								       \
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
-			      &it8xxx2_wuc_init,			       \
+			      NULL,					       \
 			      NULL,					       \
 			      NULL,					       \
 			      &it8xxx2_wuc_cfg_##inst,			       \

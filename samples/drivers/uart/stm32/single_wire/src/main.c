@@ -15,13 +15,13 @@
 const struct device *const sl_uart1 = DEVICE_DT_GET(UART_NODE1);
 const struct device *const sl_uart2 = DEVICE_DT_GET(UART_NODE2);
 
-void main(void)
+int main(void)
 {
 	unsigned char recv;
 
 	if (!device_is_ready(sl_uart1) || !device_is_ready(sl_uart2)) {
 		printk("uart devices not ready\n");
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -41,4 +41,5 @@ void main(void)
 
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

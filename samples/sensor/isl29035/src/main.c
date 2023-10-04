@@ -100,13 +100,13 @@ static void process_sample(const struct device *dev)
 	       sensor_value_to_double(&val));
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_ONE(isil_isl29035);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");
-		return;
+		return 0;
 	}
 
 	k_sem_init(&sem, 0, 1);
@@ -120,4 +120,5 @@ void main(void)
 			k_sleep(K_SECONDS(1));
 		}
 	}
+	return 0;
 }

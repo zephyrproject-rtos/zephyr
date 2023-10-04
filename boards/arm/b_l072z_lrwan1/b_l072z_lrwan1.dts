@@ -71,7 +71,7 @@
 	cpu-power-states = <&stop>;
 };
 
-&clk_lsi {
+&clk_lse {
 	status = "okay";
 };
 
@@ -158,7 +158,7 @@ arduino_i2c: &i2c1 {};
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
-		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

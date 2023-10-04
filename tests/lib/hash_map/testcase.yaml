@@ -1,0 +1,23 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  min_ram: 24
+  integration_platforms:
+    - native_posix
+
+tests:
+  libraries.hash_map.separate_chaining.djb2:
+    extra_configs:
+      - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+  libraries.hash_map.open_addressing.djb2:
+    extra_configs:
+      - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+  libraries.hash_map.cxx.djb2:
+    # need newlib for the c++ runtime
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_SYS_HASH_MAP_CHOICE_CXX=y

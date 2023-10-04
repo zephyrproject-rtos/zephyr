@@ -96,7 +96,7 @@
 };
 
 &i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

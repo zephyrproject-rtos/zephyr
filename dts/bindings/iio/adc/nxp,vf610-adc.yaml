@@ -1,0 +1,50 @@
+# Copyright (c) 2021, Antonio Tessarolo
+# SPDX-License-Identifier: Apache-2.0
+
+description: Vf610 Adc
+
+compatible: "nxp,vf610-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: |
+      Select adc clock source: 0 clock from IPG, 1 clock from IPG divided 2, 2 async clock
+
+  clk-divider:
+    type: int
+    required: true
+    description: |
+      Select clock divider: 0 clock divided by 1, 1 clock divided by 2, 2 clock divided by 4,
+      3 clock divided by 8
+
+  "#io-channel-cells":
+    const: 1
+
+  rdc:
+    type: int
+    required: true
+    description: |
+      Set the RDC permission for this peripheral: the RDC controls which
+      processor can access to this peripheral. User can select to assign this
+      peripheral to the M4 processor, A9 processor or both with R/W or RW
+      permissions. To set wanted permission a user should use the helper
+      macro RDC_DOMAIN_PERM(domain,permission) where domain must be one of
+      M4_DOMAIN_ID or A9_DOMAIN_ID and permission one among
+      RDC_DOMAIN_PERM_NONE, RDC_DOMAIN_PERM_W, RDC_DOMAIN_PERM_R,
+      RDC_DOMAIN_PERM_RW. Example to allow both processor to read/write to
+      this peripheral a user should put:
+      rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+              RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+
+io-channel-cells:
+  - input

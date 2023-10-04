@@ -18,11 +18,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
 
 #define SLEEP_BETWEEN_PRINTS 3
 
-#if IS_ENABLED(CONFIG_LOG_BACKEND_NET)
+#if defined(CONFIG_LOG_BACKEND_NET)
 extern const struct log_backend *log_backend_net_get(void);
 #endif
 
-void main(void)
+int main(void)
 {
 	int i, count, sleep;
 
@@ -76,4 +76,5 @@ void main(void)
 		k_msleep(1000);
 		exit(0);
 	}
+	return 0;
 }

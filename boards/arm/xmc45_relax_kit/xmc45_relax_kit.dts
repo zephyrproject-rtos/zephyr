@@ -9,6 +9,7 @@
 /dts-v1/;
 
 #include <infineon/xmc4500_F100x1024.dtsi>
+#include <infineon/xmc4500_F100x1024-intc.dtsi>
 #include "xmc45_relax_kit-pinctrl.dtsi"
 
 / {
@@ -18,6 +19,7 @@
 
 	aliases {
 		led0 = &led1;
+		die-temp0 = &die_temp;
 	};
 
 	leds {
@@ -73,12 +75,28 @@
 	pinctrl-0 = <&uart_tx_p0_1_u1c1 &uart_rx_p0_0_u1c1>;
 	pinctrl-names = "default";
 	input-src = "DX0D";
-	interrupts = <90 1>;
-	interrupt-names = "tx-rx";
+	interrupts = <90 1 91 1>;
+	interrupt-names = "tx", "rx";
 	fifo-start-offset = <0>;
 	fifo-tx-size = <16>;
 	fifo-rx-size = <16>;
 	status = "okay";
+};
+
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
 };
 
 &gpio1 {

@@ -10,16 +10,16 @@ compatible: "zephyr,bt-hci-spi"
 include: spi-device.yaml
 
 properties:
-    irq-gpios:
-      type: phandle-array
-      required: true
+  irq-gpios:
+    type: phandle-array
+    required: true
 
-    reset-gpios:
-      type: phandle-array
-      required: true
+  reset-gpios:
+    type: phandle-array
+    required: true
 
-    reset-assert-duration-ms:
-      type: int
-      description:
-        Minimum duration to hold the reset-gpios pin low for.
-        If not specified no delay beyond the code path execution time is guaranteed.
+  reset-assert-duration-ms:
+    type: int
+    description:
+      Minimum duration to hold the reset-gpios pin low for.
+      If not specified no delay beyond the code path execution time is guaranteed.

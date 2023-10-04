@@ -29,3 +29,6 @@ config HAS_MSP432P4XXSDK
 
 config HAS_CC13X2_CC26X2_SDK
 	bool
+
+config HAS_CC13X2X7_CC26X2X7_SDK
+	bool

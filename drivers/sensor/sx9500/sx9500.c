@@ -120,12 +120,14 @@ int sx9500_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_SX9500_TRIGGER
 	if (cfg->int_gpio.port) {
 		if (sx9500_setup_interrupt(dev) < 0) {
 			LOG_DBG("sx9500: failed to setup interrupt");
 			return -EINVAL;
 		}
 	}
+#endif
 
 	return 0;
 }

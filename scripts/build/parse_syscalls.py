@@ -33,11 +33,11 @@ import json
 regex_flags = re.MULTILINE | re.VERBOSE
 
 syscall_regex = re.compile(r'''
-__syscall\s+                    # __syscall attribute, must be first
-([^(]+)                         # type and name of system call (split later)
-[(]                             # Function opening parenthesis
-([^)]*)                         # Arg list (split later)
-[)]                             # Closing parenthesis
+(?:__syscall|__syscall_always_inline)\s+   # __syscall attribute, must be first
+([^(]+)                                    # type and name of system call (split later)
+[(]                                        # Function opening parenthesis
+([^)]*)                                    # Arg list (split later)
+[)]                                        # Closing parenthesis
 ''', regex_flags)
 
 struct_tags = ["__subsystem", "__net_socket"]
@@ -77,7 +77,11 @@ def analyze_headers(multiple_directories):
                     continue
 
                 with open(path, "r", encoding="utf-8") as fp:
-                    contents = fp.read()
+                    try:
+                        contents = fp.read()
+                    except Exception:
+                        sys.stderr.write("Error decoding %s\n" % path)
+                        raise
 
                 try:
                     syscall_result = [(mo.groups(), fn)
@@ -110,7 +114,7 @@ def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-i", "--include", required=True, action='append',
                         help='''include directories recursively scanned

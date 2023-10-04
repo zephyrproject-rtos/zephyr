@@ -104,25 +104,25 @@
  */
 
 /** Position of fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_POS         (0U)
+#define ISOTP_FIXED_ADDR_SA_POS         (CONFIG_ISOTP_FIXED_ADDR_SA_POS)
 
 /** Mask to obtain fixed source address (SA) */
-#define ISOTP_FIXED_ADDR_SA_MASK        (0xFF << ISOTP_FIXED_ADDR_SA_POS)
+#define ISOTP_FIXED_ADDR_SA_MASK        (CONFIG_ISOTP_FIXED_ADDR_SA_MASK)
 
 /** Position of fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_POS         (8U)
+#define ISOTP_FIXED_ADDR_TA_POS         (CONFIG_ISOTP_FIXED_ADDR_TA_POS)
 
 /** Mask to obtain fixed target address (TA) */
-#define ISOTP_FIXED_ADDR_TA_MASK        (0xFF << ISOTP_FIXED_ADDR_TA_POS)
+#define ISOTP_FIXED_ADDR_TA_MASK        (CONFIG_ISOTP_FIXED_ADDR_TA_MASK)
 
 /** Position of priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_POS       (26U)
+#define ISOTP_FIXED_ADDR_PRIO_POS       (CONFIG_ISOTP_FIXED_ADDR_PRIO_POS)
 
 /** Mask for priority in fixed addressing mode */
-#define ISOTP_FIXED_ADDR_PRIO_MASK      (0x7 << ISOTP_FIXED_ADDR_PRIO_POS)
+#define ISOTP_FIXED_ADDR_PRIO_MASK      (CONFIG_ISOTP_FIXED_ADDR_PRIO_MASK)
 
 /* CAN filter RX mask to match any priority and source address (SA) */
-#define ISOTP_FIXED_ADDR_RX_MASK        (0x03FFFF00)
+#define ISOTP_FIXED_ADDR_RX_MASK        (CONFIG_ISOTP_FIXED_ADDR_RX_MASK)
 
 #ifdef __cplusplus
 extern "C" {
@@ -228,7 +228,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * @param timeout Timeout for incoming data.
  *
  * @retval Number of bytes copied on success
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
 int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
@@ -249,7 +249,7 @@ int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
  * @param timeout Timeout for incoming data.
  *
  * @retval Remaining data length for this transfer if BS > 0, 0 for BS = 0
- * @retval ISOTP_WAIT_TIMEOUT when "timeout" timed out
+ * @retval ISOTP_RECV_TIMEOUT when "timeout" timed out
  * @retval ISOTP_N_* on error
  */
 int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,

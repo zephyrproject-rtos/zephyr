@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/device.h>
 #include <soc.h>
-#include <ethernet/eth_stats.h>
 #include "esp_networking_priv.h"
 #include "esp_private/wifi.h"
 #include "esp_event.h"
@@ -42,12 +41,22 @@ enum esp32_state_flag {
 	ESP32_AP_STOPPED,
 };
 
+struct esp32_wifi_status {
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+	char pass[WIFI_PSK_MAX_LEN + 1];
+	wifi_auth_mode_t security;
+	bool connected;
+	uint8_t channel;
+	int rssi;
+};
+
 struct esp32_wifi_runtime {
 	uint8_t mac_addr[6];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	struct net_stats_eth stats;
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	struct net_stats_wifi stats;
 #endif
+	struct esp32_wifi_status status;
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 };
@@ -103,15 +112,30 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
-		return -EIO;
+		goto out;
 	}
 
 	/* Enqueue packet for transmission */
-	esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf, pkt_len);
+	if (esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf,
+			pkt_len) != ESP_OK) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	data->stats.bytes.sent += pkt_len;
+	data->stats.pkts.tx++;
+#endif
 
 	LOG_DBG("pkt sent %p len %d", pkt, pkt_len);
-
 	return 0;
+
+out:
+
+	LOG_ERR("Failed to send packet");
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	data->stats.errors.tx++;
+#endif
+	return -EIO;
 }
 
 static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
@@ -139,11 +163,21 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 		goto pkt_unref;
 	}
 
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	esp32_data.stats.bytes.received += len;
+	esp32_data.stats.pkts.rx++;
+#endif
+
 	esp_wifi_internal_free_rx_buffer(eb);
 	return 0;
 
 pkt_unref:
 	net_pkt_unref(pkt);
+
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	esp32_data.stats.errors.rx++;
+#endif
+
 	return -EIO;
 }
 
@@ -308,6 +342,9 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	data->state = ESP32_STA_CONNECTING;
 
+	memcpy(data->status.ssid, params->ssid, params->ssid_length);
+	data->status.ssid[params->ssid_length] = '\0';
+
 	wifi_config_t wifi_config;
 
 	memset(&wifi_config, 0, sizeof(wifi_config_t));
@@ -319,11 +356,21 @@ static int esp32_wifi_connect(const struct device *dev,
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		data->status.security = WIFI_AUTH_WPA2_PSK;
 	} else if (params->security == WIFI_SECURITY_TYPE_NONE) {
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+		data->status.security = WIFI_AUTH_OPEN;
 	} else {
 		LOG_ERR("Authentication method not supported");
 		return -EIO;
+	}
+
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		wifi_config.sta.channel = 0U;
+		data->status.channel = 0U;
+	} else {
+		wifi_config.sta.channel = params->channel;
+		data->status.channel = params->channel;
 	}
 
 	wifi_config.sta.pmf_cfg.capable = true;
@@ -369,24 +416,30 @@ static int esp32_wifi_scan(const struct device *dev, scan_result_cb_t cb)
 static int esp32_wifi_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
 {
-	struct esp32_wifi_data *data = dev->data;
+	struct esp32_wifi_runtime *data = dev->data;
 	esp_err_t ret = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
 	wifi_config_t wifi_config = {
 		.ap = {
 			.max_connection = 5,
+			.channel = params->channel
 		},
 	};
+
+	memcpy(data->status.ssid, params->ssid, params->ssid_length);
+	data->status.ssid[params->ssid_length] = '\0';
 
 	strncpy((char *) wifi_config.ap.ssid, params->ssid, params->ssid_length);
 
 	if (params->psk_length == 0) {
 		memset(wifi_config.ap.password, 0, sizeof(wifi_config.ap.password));
 		wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+		data->status.security = WIFI_AUTH_OPEN;
 	} else {
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
+		data->status.security = WIFI_AUTH_WPA2_PSK;
 	}
 
 	/* Start Wi-Fi in AP mode with configuration built above */
@@ -403,8 +456,6 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 
 static int esp32_wifi_ap_disable(const struct device *dev)
 {
-	struct esp32_wifi_data *data = dev->data;
-
 	esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
 	ret |= esp_wifi_start();
@@ -415,6 +466,82 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 
 	return 0;
 };
+
+static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	struct esp32_wifi_runtime *data = dev->data;
+	wifi_mode_t mode;
+	wifi_config_t conf;
+	wifi_ap_record_t ap_info;
+
+	switch (data->state) {
+	case ESP32_STA_STOPPED:
+	case ESP32_AP_STOPPED:
+		status->state = WIFI_STATE_INACTIVE;
+		break;
+	case ESP32_STA_STARTED:
+	case ESP32_AP_DISCONNECTED:
+		status->state = WIFI_STATE_DISCONNECTED;
+		break;
+	case ESP32_STA_CONNECTING:
+		status->state = WIFI_STATE_SCANNING;
+		break;
+	case ESP32_STA_CONNECTED:
+	case ESP32_AP_CONNECTED:
+		status->state = WIFI_STATE_COMPLETED;
+		break;
+	default:
+		break;
+	}
+
+	strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
+	status->ssid_len = strnlen(data->status.ssid, WIFI_SSID_MAX_LEN);
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+	status->mfp = WIFI_MFP_DISABLE;
+
+	if (esp_wifi_get_mode(&mode) == ESP_OK) {
+		if (mode == ESP32_WIFI_MODE_STA) {
+			esp_wifi_get_config(ESP_IF_WIFI_STA, &conf);
+			esp_wifi_sta_get_ap_info(&ap_info);
+			status->iface_mode = WIFI_MODE_INFRA;
+			status->channel = ap_info.primary;
+			status->rssi = ap_info.rssi;
+			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
+
+			if (ap_info.phy_11n) {
+				status->link_mode = WIFI_4;
+			} else if (ap_info.phy_11g) {
+				status->link_mode |= WIFI_3;
+			} else if (ap_info.phy_11b) {
+				status->link_mode = WIFI_1;
+			}
+
+		} else if (mode == ESP32_WIFI_MODE_AP) {
+			esp_wifi_get_config(ESP_IF_WIFI_AP, &conf);
+			status->iface_mode = WIFI_MODE_AP;
+			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+			status->channel = conf.ap.channel;
+		} else {
+			status->iface_mode = WIFI_MODE_UNKNOWN;
+			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+			status->channel = 0;
+		}
+	}
+
+	switch (data->status.security) {
+	case WIFI_AUTH_OPEN:
+		status->security = WIFI_SECURITY_TYPE_NONE;
+		break;
+	case WIFI_AUTH_WPA2_PSK:
+		status->security = WIFI_SECURITY_TYPE_PSK;
+		break;
+	default:
+		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	}
+
+	return 0;
+}
 
 static void esp32_wifi_init(struct net_if *iface)
 {
@@ -433,15 +560,38 @@ static void esp32_wifi_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
+	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
+	esp_err_t ret = esp_wifi_init(&config);
+
 	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+
+	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+	ret |= esp_wifi_start();
+
+	if (ret != ESP_OK) {
+		LOG_ERR("Failed to start Wi-Fi driver");
+	}
 }
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *esp32_wifi_stats(const struct device *dev)
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 
-	return &(data->stats);
+	stats->bytes.received = data->stats.bytes.received;
+	stats->bytes.sent = data->stats.bytes.sent;
+	stats->pkts.rx = data->stats.pkts.rx;
+	stats->pkts.tx = data->stats.pkts.tx;
+	stats->errors.rx = data->stats.errors.rx;
+	stats->errors.tx = data->stats.errors.tx;
+	stats->broadcast.rx = data->stats.broadcast.rx;
+	stats->broadcast.tx = data->stats.broadcast.tx;
+	stats->multicast.rx = data->stats.multicast.rx;
+	stats->multicast.tx = data->stats.multicast.tx;
+	stats->sta_mgmt.beacons_rx = data->stats.sta_mgmt.beacons_rx;
+	stats->sta_mgmt.beacons_miss = data->stats.sta_mgmt.beacons_miss;
+
+	return 0;
 }
 #endif
 
@@ -462,35 +612,25 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}
 
-	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
-	esp_err_t ret = esp_wifi_init(&config);
-
-	ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-	ret |= esp_wifi_start();
-
-	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi driver");
-		return -EIO;
-	}
-
 	return 0;
 }
 
 static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_iface.iface_api.init = esp32_wifi_init,
 	.wifi_iface.send = esp32_wifi_send,
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.wifi_iface.get_stats = esp32_wifi_stats,
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	.get_stats			 = esp32_wifi_stats,
  #endif
-	.scan				 = esp32_wifi_scan,
-	.connect			 = esp32_wifi_connect,
-	.disconnect			 = esp32_wifi_disconnect,
-	.ap_enable			 = esp32_wifi_ap_enable,
-	.ap_disable			 = esp32_wifi_ap_disable,
+	.scan			   = esp32_wifi_scan,
+	.connect		   = esp32_wifi_connect,
+	.disconnect		   = esp32_wifi_disconnect,
+	.ap_enable		   = esp32_wifi_ap_enable,
+	.ap_disable		   = esp32_wifi_ap_disable,
+	.iface_status		   = esp32_wifi_status,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,
 		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
 		&esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

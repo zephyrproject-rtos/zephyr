@@ -145,6 +145,17 @@ struct adc_channel_cfg {
 	 */
 	uint8_t input_negative;
 #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	uint8_t current_source_pin_set : 1;
+	/**
+	 * Output pin for the current sources.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
+	 * The meaning itself is then defined by the driver itself.
+	 */
+	uint8_t current_source_pin[2];
+#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
 };
 
 /**
@@ -217,11 +228,12 @@ struct adc_channel_cfg {
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-		(.differential   = true, \
-		 .input_positive = DT_PROP(node_id, zephyr_input_positive), \
-		 .input_negative = DT_PROP(node_id, zephyr_input_negative),), \
-		(.input_positive = DT_PROP(node_id, zephyr_input_positive),)))) \
+	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
+	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
+	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
+	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
 }
 
 /**

@@ -16,6 +16,7 @@ supported:
   - spi
   - gpio
   - watchdog
+  - adc
 testing:
   ignore_tags:
     - net

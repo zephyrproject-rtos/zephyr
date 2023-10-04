@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/infineon-xmc4xxx-gpio.h>
 
@@ -18,19 +19,6 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
-	};
-
-	/* TODO: Add psram1 & dsram2 to MEMORY layout of linker */
-	psram1: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram1: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	dsram2: memory@30000000 {
-		compatible = "mmio-sram";
 	};
 
 	flash_controller: flash_controller@58001000 {
@@ -51,8 +39,19 @@
 	};
 
 	soc {
+		intc: eru@40044000 {
+			compatible = "infineon,xmc4xxx-intc";
+			reg = <0x40044000 0xff>, <0x50004800 0xff>;
+			/* naming order is intentional. eru1 maps to a lower address than eru0 */
+			reg-names = "eru1", "eru0";
+			interrupts = <1 1>, <2 1>, <3 1>, <4 1>, <5 1>, <6 1>, <7 1>, <8 1>;
+			interrupt-names = "eru0sr0", "eru0sr1", "eru0sr2", "eru0sr3",
+					"eru1sr0", "eru1sr1", "eru1sr2", "eru1sr3";
+		};
+
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
+			reg = <0x48028000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -80,6 +79,39 @@
 				status = "disabled";
 			};
 
+			gpio14: gpio@48028e00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028e00 0x100>;
+				status = "disabled";
+			};
+
+			gpio15: gpio@48028f00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48028f00 0x100>;
+				status = "disabled";
+			};
+		};
+
+		dma0: dma0@50014000{
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50014000 0x2bc>;
+			interrupts = <105 1>;
+			dma-channels = <8>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		dma1: dma1@50018000 {
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50018000 0x15c>;
+			interrupts = <110 1>;
+			dma-channels = <4>;
+			#dma-cells = <3>;
+			status = "disabled";
 		};
 
 		usic0ch0: usic@40030000 {
@@ -115,6 +147,44 @@
 		usic2ch1: usic@48024200 {
 			reg = <0x48024200 0x1ff>;
 			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		adc0: adc@40004400 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004400 0x400>;
+			interrupts = <18 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@40004800 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004800 0x400>;
+			interrupts = <22 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@40004c00 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004C00 0x400>;
+			interrupts = <26 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc3: adc@40005000 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40005000 0x400>;
+			interrupts = <30 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		die_temp: die_temp@5000408c {
+			reg = <0x5000408c 0x8>;
+			compatible = "infineon,xmc4xxx-temp";
 			status = "disabled";
 		};
 	};

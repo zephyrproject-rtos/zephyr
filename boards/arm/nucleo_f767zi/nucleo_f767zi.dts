@@ -60,6 +60,8 @@
 		led2 = &red_led;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -75,19 +77,19 @@
 
 &pll {
 	div-m = <4>;
-	mul-n = <72>;
+	mul-n = <216>;
 	div-p = <2>;
-	div-q = <3>;
+	div-q = <9>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(72)>;
+	clock-frequency = <DT_FREQ_M(216)>;
 	ahb-prescaler = <1>;
-	apb1-prescaler = <2>;
-	apb2-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
 };
 
 &usart2 {
@@ -249,4 +251,12 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x001C0000 DT_SIZE_K(256)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

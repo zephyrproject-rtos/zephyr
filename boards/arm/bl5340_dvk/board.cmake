@@ -11,7 +11,7 @@ board_runner_args(jlink "--device=nrf5340_xxaa_app" "--speed=4000")
 endif()
 
 if(CONFIG_TFM_FLASH_MERGED_BINARY)
-  set_property(TARGET runners_yaml_props_target PROPERTY hex_file "${CMAKE_BINARY_DIR}/tfm_merged.hex")
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()
 
 if(CONFIG_BOARD_BL5340_DVK_CPUNET)

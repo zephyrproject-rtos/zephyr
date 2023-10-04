@@ -19,6 +19,11 @@ cmake_minimum_required(VERSION 3.20.0)
 
 message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 
+# Different CMake versions can have very subtle differences, for
+# instance CMake 3.21 links object files in a different order compared
+# to CMake 3.20; this produces different binaries.
+message(STATUS "CMake version: ${CMAKE_VERSION}")
+
 find_package(ZephyrBuildConfiguration
   QUIET NO_POLICY_SCOPE
   NAMES ZephyrBuild
@@ -76,8 +81,10 @@ list(APPEND zephyr_cmake_modules zephyr_module)
 
 list(APPEND zephyr_cmake_modules boards)
 list(APPEND zephyr_cmake_modules shields)
+list(APPEND zephyr_cmake_modules snippets)
 list(APPEND zephyr_cmake_modules arch)
 list(APPEND zephyr_cmake_modules configuration_files)
+list(APPEND zephyr_cmake_modules generated_file_directories)
 
 # Include board specific device-tree flags before parsing.
 set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)

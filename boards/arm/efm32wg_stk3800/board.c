@@ -9,11 +9,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
-static int efm32wg_stk3800_init(const struct device *dev)
+static int efm32wg_stk3800_init(void)
 {
 	const struct device *bce_dev; /* Board Controller Enable Gpio Device */
 
-	ARG_UNUSED(dev);
 
 	/* Enable the board controller to be able to use the serial port */
 	bce_dev = DEVICE_DT_GET(BC_ENABLE_GPIO_NODE);

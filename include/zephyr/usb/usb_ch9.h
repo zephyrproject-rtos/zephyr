@@ -14,6 +14,7 @@
 
 #include <version.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/usb/class/usb_hub.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
 #define ZEPHYR_INCLUDE_USB_CH9_H_
@@ -75,7 +76,7 @@ struct usb_setup_packet {
  * @param setup Pointer to USB Setup packet
  * @return true If transfer direction is to host
  */
-static inline bool usb_reqtype_is_to_host(struct usb_setup_packet *setup)
+static inline bool usb_reqtype_is_to_host(const struct usb_setup_packet *setup)
 {
 	return setup->RequestType.direction == USB_REQTYPE_DIR_TO_HOST;
 }
@@ -86,7 +87,7 @@ static inline bool usb_reqtype_is_to_host(struct usb_setup_packet *setup)
  * @param setup Pointer to USB Setup packet
  * @return true If transfer direction is to device
  */
-static inline bool usb_reqtype_is_to_device(struct usb_setup_packet *setup)
+static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup)
 {
 	return setup->RequestType.direction == USB_REQTYPE_DIR_TO_DEVICE;
 }

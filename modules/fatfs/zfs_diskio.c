@@ -41,7 +41,7 @@ DSTATUS disk_initialize(BYTE pdrv)
 }
 
 /* Read Sector(s) */
-DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count)
 {
 	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
 
@@ -54,7 +54,7 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 }
 
 /* Write Sector(s) */
-DRESULT disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count)
 {
 	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
 

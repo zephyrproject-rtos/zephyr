@@ -1,5 +1,5 @@
 identifier: esp32s2_franzininho
-name: ESP32-S2
+name: ESP32-S2 Franzininho
 type: mcu
 arch: xtensa
 toolchain:

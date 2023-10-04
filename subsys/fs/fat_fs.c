@@ -521,11 +521,10 @@ static const struct fs_file_system_t fatfs_fs = {
 #endif
 };
 
-static int fatfs_init(const struct device *dev)
+static int fatfs_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return fs_register(FS_FATFS, &fatfs_fs);
 }
 
-SYS_INIT(fatfs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(fatfs_init, POST_KERNEL, 99);

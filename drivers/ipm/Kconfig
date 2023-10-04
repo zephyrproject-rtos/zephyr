@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig IPM
-	bool "IPM drivers"
+	bool "Inter-Processor Mailbox (IPM) drivers"
 	help
 	  Include interrupt-based inter-processor mailboxes
 	  drivers in system configuration

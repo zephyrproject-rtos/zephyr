@@ -4,7 +4,6 @@ sample:
   name: Synchronization Sample
 tests:
   sample.kernel.synchronization:
-    build_on_all: true
     tags: synchronization
     harness: console
     harness_config:

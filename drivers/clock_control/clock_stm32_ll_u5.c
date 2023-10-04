@@ -13,9 +13,9 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_system.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
-#include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
@@ -78,6 +78,10 @@ static uint32_t get_startup_frequency(void)
 		return get_msis_frequency();
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
 		return STM32_HSI_FREQ;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
+		return STM32_HSE_FREQ;
+	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
+		return get_pllsrc_frequency(PLL1_ID);
 	default:
 		__ASSERT(0, "Unexpected startup freq");
 		return 0;
@@ -121,6 +125,7 @@ static int enabled_clock(uint32_t src_clk)
 	if ((src_clk == STM32_SRC_SYSCLK) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
++	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_MSIS) && IS_ENABLED(STM32_MSIS_ENABLED)) ||
@@ -144,8 +149,6 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -154,10 +157,8 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val |= pclken->enr;
-	*reg = reg_val;
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		     pclken->enr);
 
 	return 0;
 }
@@ -166,8 +167,6 @@ static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
@@ -176,10 +175,8 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	reg_val = *reg;
-	reg_val &= ~pclken->enr;
-	*reg = reg_val;
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
+		       pclken->enr);
 
 	return 0;
 }
@@ -189,8 +186,6 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	volatile uint32_t *reg;
-	uint32_t reg_val, dt_val;
 	int err;
 
 	ARG_UNUSED(dev);
@@ -202,13 +197,10 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	dt_val = STM32_CLOCK_VAL_GET(pclken->enr) <<
-					STM32_CLOCK_SHIFT_GET(pclken->enr);
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) +
-					STM32_CLOCK_REG_GET(pclken->enr));
-	reg_val = *reg;
-	reg_val |= dt_val;
-	*reg = reg_val;
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		       STM32_CLOCK_MASK_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_REG_GET(pclken->enr),
+		     STM32_CLOCK_VAL_GET(pclken->enr) << STM32_CLOCK_SHIFT_GET(pclken->enr));
 
 	return 0;
 }
@@ -283,6 +275,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI48_ENABLED)
+	case STM32_SRC_HSI48:
+		*rate = STM32_HSI48_FREQ;
+		break;
+#endif /* STM32_HSI48_ENABLED */
 #if defined(STM32_PLL_ENABLED)
 	case STM32_SRC_PLL1_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
@@ -458,12 +455,12 @@ static void clock_switch_to_hsi(void)
 		}
 	}
 
-	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
+
+	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 }
 
 __unused

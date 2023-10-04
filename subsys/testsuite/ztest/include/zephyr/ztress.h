@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ *
+ * @brief Zephyr testing framework ztress macros
+ */
+
 #ifndef TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 #define TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 
@@ -16,6 +23,15 @@ extern "C" {
 /** @internal Internal ID's to distinguish context type. */
 #define ZTRESS_ID_THREAD 0
 #define ZTRESS_ID_K_TIMER 1
+
+/**
+ * @defgroup ztest_ztress Ztest ztress macros
+ * @ingroup ztest
+ *
+ * This module provides test stress when using Ztest.
+ *
+ * @{
+ */
 
 /** @brief Descriptor of a k_timer handler execution context.
  *
@@ -153,8 +169,9 @@ struct ztress_context_data {
  * @param ... List of contexts. Contexts are configured using @ref ZTRESS_TIMER
  * and @ref ZTRESS_THREAD macros. @ref ZTRESS_TIMER must be the first argument if
  * used. Each thread context has an assigned priority. The priority is assigned in
- * a descending order (first listed thread context has the highest priority). The
- * number of supported thread contexts is configurable in Kconfig.
+ * a descending order (first listed thread context has the highest priority).
+ * The maximum number of supported thread contexts, including the timer context,
+ * is configurable in Kconfig (ZTRESS_MAX_THREADS).
  */
 #define ZTRESS_EXECUTE(...) do {							\
 	Z_ZTRESS_TIMER_CONTEXT_VALIDATE(__VA_ARGS__);					\
@@ -236,6 +253,10 @@ int ztress_preempt_count(uint32_t id);
  * @return Optimized timeout base.
  */
 uint32_t ztress_optimized_ticks(uint32_t id);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -51,8 +51,12 @@
 
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
+#if defined(CONFIG_USERSPACE)
+#define __stackmem Z_GENERIC_SECTION(.user_stacks)
+#else
 #define __stackmem __incoherent
-#define __kstackmem __stackmem
+#endif /* CONFIG_USERSPACE */
+#define __kstackmem __incoherent
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)

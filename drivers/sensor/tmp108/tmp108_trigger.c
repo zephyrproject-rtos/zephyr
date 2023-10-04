@@ -24,11 +24,6 @@ void tmp108_trigger_handle_one_shot(struct k_work *work)
 						    struct tmp108_data,
 						    scheduled_work);
 
-	struct sensor_trigger sensor_trigger_type = {
-		.chan = SENSOR_CHAN_AMBIENT_TEMP,
-		.type = SENSOR_TRIG_DATA_READY
-	};
-
 	uint16_t config = 0;
 	bool shutdown_mode = false;
 
@@ -54,7 +49,7 @@ void tmp108_trigger_handle_one_shot(struct k_work *work)
 	/* Successful read, call set callbacks */
 	if (drv_data->data_ready_handler) {
 		drv_data->data_ready_handler(drv_data->tmp108_dev,
-					     &sensor_trigger_type);
+					     drv_data->data_ready_trigger);
 	}
 }
 
@@ -67,15 +62,10 @@ void tmp108_trigger_handle_alert(const struct device *gpio,
 						    struct tmp108_data,
 						    temp_alert_gpio_cb);
 
-	struct sensor_trigger sensor_trigger_type = {
-		.chan = SENSOR_CHAN_AMBIENT_TEMP,
-		.type = SENSOR_TRIG_THRESHOLD
-	};
-
 	/* Successful read, call set callbacks */
 	if (drv_data->temp_alert_handler) {
 		drv_data->temp_alert_handler(drv_data->tmp108_dev,
-					     &sensor_trigger_type);
+					     drv_data->temp_alert_trigger);
 	}
 }
 
@@ -87,13 +77,13 @@ int tmp_108_trigger_set(const struct device *dev,
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		drv_data->data_ready_handler = handler;
-		drv_data->data_ready_trigger = *trig;
+		drv_data->data_ready_trigger = trig;
 		return 0;
 	}
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->temp_alert_handler = handler;
-		drv_data->temp_alert_trigger = *trig;
+		drv_data->temp_alert_trigger = trig;
 		return 0;
 	}
 

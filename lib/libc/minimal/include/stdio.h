@@ -30,6 +30,10 @@ typedef int  FILE;
 #define stdout ((FILE *) 2)
 #define stderr ((FILE *) 3)
 
+#define SEEK_SET	0	/* Seek from beginning of file.  */
+#define SEEK_CUR	1	/* Seek from current position.  */
+#define SEEK_END	2	/* Seek from end of file.  */
+
 int __printf_like(1, 2) printf(const char *ZRESTRICT format, ...);
 int __printf_like(3, 4) snprintf(char *ZRESTRICT str, size_t len,
 				 const char *ZRESTRICT format, ...);
@@ -56,14 +60,8 @@ int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 	      FILE *ZRESTRICT stream);
-static inline int putc(int c, FILE *stream)
-{
-	return fputc(c, stream);
-}
-static inline int putchar(int c)
-{
-	return putc(c, stdout);
-}
+#define putc(c, stream) fputc(c, stream)
+#define putchar(c) putc(c, stdout)
 
 #ifdef __cplusplus
 }

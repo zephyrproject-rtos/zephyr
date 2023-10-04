@@ -34,6 +34,10 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include <zephyr/drivers/serial/uart_ns16550.h>
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
@@ -200,32 +204,12 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
-#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
-#define INBYTE(x) sys_in8(x)
-#define INWORD(x) sys_in32(x)
-#define OUTBYTE(x, d) sys_out8(d, x)
-#define OUTWORD(x, d) sys_out32(d, x)
-#else
-#define INBYTE(x) sys_read8(x)
-#define INWORD(x) sys_read32(x)
-#define OUTBYTE(x, d) sys_write8(d, x)
-#define OUTWORD(x, d) sys_write32(d, x)
-#endif /* CONFIG_UART_NS16550_ACCESS_IOPORT */
-
-#ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY
-#undef INBYTE
-#define INBYTE(x) INWORD(x)
-#undef OUTBYTE
-#define OUTBYTE(x, d) OUTWORD(x, d)
-#endif
-
 /* device config */
 struct uart_ns16550_device_config {
-#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
-	DEVICE_MMIO_ROM;
-#else
-	uint32_t port;
-#endif
+	union {
+		DEVICE_MMIO_ROM;
+		uint32_t port;
+	};
 	uint32_t sys_clk_freq;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -239,13 +223,17 @@ struct uart_ns16550_device_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+	bool io_map;
+#endif
 };
 
 /** Device data structure */
 struct uart_ns16550_dev_data {
-#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 	DEVICE_MMIO_RAM;
-#endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
 	uint8_t fifo_size;
@@ -265,6 +253,82 @@ struct uart_ns16550_dev_data {
 #endif
 };
 
+static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
+			    uintptr_t port, uint8_t val)
+{
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+	if (cfg->io_map) {
+		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+			sys_out32(val, port);
+		} else {
+			sys_out8(val, port);
+		}
+	} else {
+#else
+	{
+#endif
+		/* MMIO mapped */
+		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+			sys_write32(val, port);
+		} else {
+			sys_write8(val, port);
+		}
+	}
+}
+
+static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
+			      uintptr_t port)
+{
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+	if (cfg->io_map) {
+		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+			return sys_in32(port);
+		} else {
+			return sys_in8(port);
+		}
+	} else {
+#else
+	{
+#endif
+		/* MMIO mapped */
+		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+			return sys_read32(port);
+		} else {
+			return sys_read8(port);
+		}
+	}
+	return 0;
+}
+
+#if UART_NS16550_PCP_ENABLED
+static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
+			    uintptr_t port, uint32_t val)
+{
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+	if (cfg->io_map) {
+		sys_out32(val, port);
+	} else {
+#else
+	{
+#endif
+		/* MMIO mapped */
+		sys_write32(val, port);
+	}
+}
+
+static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
+			      uintptr_t port)
+{
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+	if (cfg->io_map) {
+		return sys_in32(port);
+	}
+#endif
+	/* MMIO mapped */
+	return sys_read32(port);
+}
+#endif
+
 static inline uint8_t reg_interval(const struct device *dev)
 {
 	const struct uart_ns16550_device_config *config = dev->config;
@@ -276,18 +340,26 @@ static const struct uart_driver_api uart_ns16550_driver_api;
 
 static inline uintptr_t get_port(const struct device *dev)
 {
-#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
-	return DEVICE_MMIO_GET(dev);
-#else
+	uintptr_t port;
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
 	const struct uart_ns16550_device_config *config = dev->config;
 
-	return config->port;
+	if (config->io_map) {
+		port = config->port;
+	} else {
+#else
+	{
 #endif
+		port = DEVICE_MMIO_GET(dev);
+	}
+
+	return port;
 }
 
 static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t pclk)
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t lcr_cache;
 
@@ -300,13 +372,13 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 					/ baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
-		lcr_cache = INBYTE(LCR(dev));
-		OUTBYTE(LCR(dev), LCR_DLAB | lcr_cache);
-		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
-		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
+		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
+		ns16550_outbyte(dev_cfg, BRDL(dev), (unsigned char)(divisor & 0xff));
+		ns16550_outbyte(dev_cfg, BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 
 		/* restore the DLAB to access the baud rate divisor registers */
-		OUTBYTE(LCR(dev), lcr_cache);
+		ns16550_outbyte(dev_cfg, LCR(dev), lcr_cache);
 
 		dev_data->uart_config.baudrate = baud_rate;
 	}
@@ -325,38 +397,18 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	ARG_UNUSED(dev_data);
-	ARG_UNUSED(dev_cfg);
-
-#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-	if (dev_cfg->pcie) {
-		struct pcie_bar mbar;
-
-		if (dev_cfg->pcie->bdf == PCIE_BDF_NONE) {
-			ret = -EINVAL;
-			goto out;
-		}
-
-		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
-
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
-			   K_MEM_CACHE_NONE);
-	} else
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
-	{
-		/* Map directly from DTS */
-		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+#if defined(CONFIG_PINCTRL)
+	if (dev_cfg->pincfg != NULL) {
+		pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	}
-#endif /* UART_NS15660_ACCESS_IOPORT */
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_data->iir_cache = 0U;
 #endif
 
 #if UART_NS16550_DLF_ENABLED
-	OUTBYTE(DLF(dev), dev_data->dlf);
+	ns16550_outbyte(dev_cfg, DLF(dev), dev_data->dlf);
 #endif
 
 #if UART_NS16550_PCP_ENABLED
@@ -364,8 +416,8 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	if (pcp) {
 		pcp |= PCP_EN;
-		OUTWORD(PCP(dev), pcp & ~PCP_UPDATE);
-		OUTWORD(PCP(dev), pcp | PCP_UPDATE);
+		ns16550_outbyte(dev_cfg, PCP(dev), pcp & ~PCP_UPDATE);
+		ns16550_outbyte(dev_cfg, PCP(dev), pcp | PCP_UPDATE);
 	}
 #endif
 
@@ -387,7 +439,7 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	set_baud_rate(dev, cfg->baudrate, pclk);
 
-	/* Local structure to hold temporary values to pass to OUTBYTE() */
+	/* Local structure to hold temporary values to pass to ns16550_outbyte() */
 	struct uart_config uart_cfg;
 
 	switch (cfg->data_bits) {
@@ -435,8 +487,8 @@ static int uart_ns16550_configure(const struct device *dev,
 	dev_data->uart_config = *cfg;
 
 	/* data bits, stop bits, parity, clear DLAB */
-	OUTBYTE(LCR(dev),
-		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
+	ns16550_outbyte(dev_cfg, LCR(dev),
+			uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
 #if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
@@ -446,21 +498,21 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 #endif
 
-	OUTBYTE(MDC(dev), mdc);
+	ns16550_outbyte(dev_cfg, MDC(dev), mdc);
 
 	/*
 	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),
 	 * generate the interrupt at 8th byte
 	 * Clear TX and RX FIFO
 	 */
-	OUTBYTE(FCR(dev),
-		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
+	ns16550_outbyte(dev_cfg, FCR(dev),
+			FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
 #ifdef CONFIG_UART_NS16550_VARIANT_NS16750
-		| FCR_FIFO_64
+			| FCR_FIFO_64
 #endif
-		);
+			);
 
-	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
+	if ((ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_FE) == IIR_FE) {
 #ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		dev_data->fifo_size = 64;
 #elif defined(CONFIG_UART_NS16550_VARIANT_NS16950)
@@ -473,10 +525,10 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 
 	/* clear the port */
-	INBYTE(RDR(dev));
+	ns16550_inbyte(dev_cfg, RDR(dev));
 
 	/* disable interrupts  */
-	OUTBYTE(IER(dev), 0x00);
+	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
 
 out:
 	k_spin_unlock(&dev_data->lock, key);
@@ -511,7 +563,36 @@ static int uart_ns16550_config_get(const struct device *dev,
 static int uart_ns16550_init(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config *dev_cfg = dev->config;
 	int ret;
+
+	ARG_UNUSED(dev_cfg);
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+	if (dev_cfg->pcie) {
+		struct pcie_bar mbar;
+
+		if (dev_cfg->pcie->bdf == PCIE_BDF_NONE) {
+			return -EINVAL;
+		}
+
+		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
+		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
+			   K_MEM_CACHE_NONE);
+	} else
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
+	{
+#if defined(CONFIG_UART_NS16550_ACCESS_IOPORT) || defined(CONFIG_UART_NS16550_SIMULT_ACCESS)
+		/* Map directly from DTS */
+		if (!dev_cfg->io_map) {
+#else
+		{
+#endif
+			DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+		}
+	}
 
 	ret = uart_ns16550_configure(dev, &data->uart_config);
 	if (ret != 0) {
@@ -519,9 +600,7 @@ static int uart_ns16550_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct uart_ns16550_device_config *config = dev->config;
-
-	config->irq_config_func(dev);
+	dev_cfg->irq_config_func(dev);
 #endif
 
 	return 0;
@@ -538,12 +617,13 @@ static int uart_ns16550_init(const struct device *dev)
 static int uart_ns16550_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	int ret = -1;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if ((INBYTE(LSR(dev)) & LSR_RXRDY) != 0) {
+	if ((ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_RXRDY) != 0) {
 		/* got a character */
-		*c = INBYTE(RDR(dev));
+		*c = ns16550_inbyte(dev_cfg, RDR(dev));
 		ret = 0;
 	}
 
@@ -568,12 +648,13 @@ static void uart_ns16550_poll_out(const struct device *dev,
 					   unsigned char c)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	while ((INBYTE(LSR(dev)) & LSR_THRE) == 0) {
+	while ((ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_THRE) == 0) {
 	}
 
-	OUTBYTE(THR(dev), c);
+	ns16550_outbyte(dev_cfg, THR(dev), c);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -589,8 +670,9 @@ static void uart_ns16550_poll_out(const struct device *dev,
 static int uart_ns16550_err_check(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	int check = (INBYTE(LSR(dev)) & LSR_EOB_MASK);
+	int check = (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_EOB_MASK);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -613,11 +695,12 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 				  int size)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	for (i = 0; (i < size) && (i < data->fifo_size); i++) {
-		OUTBYTE(THR(dev), tx_data[i]);
+		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -638,11 +721,12 @@ static int uart_ns16550_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	for (i = 0; (i < size) && (INBYTE(LSR(dev)) & LSR_RXRDY) != 0; i++) {
-		rx_data[i] = INBYTE(RDR(dev));
+	for (i = 0; (i < size) && (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_RXRDY) != 0; i++) {
+		rx_data[i] = ns16550_inbyte(dev_cfg, RDR(dev));
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -658,6 +742,7 @@ static int uart_ns16550_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void uart_ns16550_irq_tx_enable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
@@ -680,7 +765,7 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 		}
 	}
 #endif
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
+	ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) | IER_TBE);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -693,9 +778,11 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 static void uart_ns16550_irq_tx_disable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
+	ns16550_outbyte(dev_cfg, IER(dev),
+			ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
 	struct uart_ns16550_dev_data *const dev_data = dev->data;
@@ -749,9 +836,10 @@ static int uart_ns16550_irq_tx_ready(const struct device *dev)
 static int uart_ns16550_irq_tx_complete(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	int ret = ((INBYTE(LSR(dev)) & (LSR_TEMT | LSR_THRE))
+	int ret = ((ns16550_inbyte(dev_cfg, LSR(dev)) & (LSR_TEMT | LSR_THRE))
 				== (LSR_TEMT | LSR_THRE)) ? 1 : 0;
 
 	k_spin_unlock(&data->lock, key);
@@ -767,9 +855,10 @@ static int uart_ns16550_irq_tx_complete(const struct device *dev)
 static void uart_ns16550_irq_rx_enable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_RXRDY);
+	ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) | IER_RXRDY);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -782,9 +871,11 @@ static void uart_ns16550_irq_rx_enable(const struct device *dev)
 static void uart_ns16550_irq_rx_disable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_RXRDY));
+	ns16550_outbyte(dev_cfg, IER(dev),
+			ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_RXRDY));
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -816,9 +907,11 @@ static int uart_ns16550_irq_rx_ready(const struct device *dev)
 static void uart_ns16550_irq_err_enable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_LSR);
+	ns16550_outbyte(dev_cfg, IER(dev),
+			ns16550_inbyte(dev_cfg, IER(dev)) | IER_LSR);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -833,9 +926,11 @@ static void uart_ns16550_irq_err_enable(const struct device *dev)
 static void uart_ns16550_irq_err_disable(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_LSR));
+	ns16550_outbyte(dev_cfg, IER(dev),
+			ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_LSR));
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -869,9 +964,10 @@ static int uart_ns16550_irq_is_pending(const struct device *dev)
 static int uart_ns16550_irq_update(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	IIRC(dev) = INBYTE(IIR(dev));
+	IIRC(dev) = ns16550_inbyte(dev_cfg, IIR(dev));
 
 	k_spin_unlock(&data->lock, key);
 
@@ -913,10 +1009,11 @@ static void uart_ns16550_isr(const struct device *dev)
 	}
 
 #ifdef CONFIG_UART_NS16550_WA_ISR_REENABLE_INTERRUPT
-	uint8_t cached_ier = INBYTE(IER(dev));
+	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
+	uint8_t cached_ier = ns16550_inbyte(dev_cfg, IER(dev));
 
-	OUTBYTE(IER(dev), 0U);
-	OUTBYTE(IER(dev), cached_ier);
+	ns16550_outbyte(dev_cfg, IER(dev), 0U);
+	ns16550_outbyte(dev_cfg, IER(dev), cached_ier);
 #endif
 }
 
@@ -937,18 +1034,27 @@ static int uart_ns16550_line_ctrl_set(const struct device *dev,
 				      uint32_t ctrl, uint32_t val)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
-	uint32_t mdc, chg;
+	const struct uart_ns16550_device_config *const dev_cfg = dev->config;
+	uint32_t mdc, chg, pclk = 0U;
 	k_spinlock_key_t key;
+
+	if (dev_cfg->sys_clk_freq != 0U) {
+		pclk = dev_cfg->sys_clk_freq;
+	} else {
+		if (device_is_ready(dev_cfg->clock_dev)) {
+			clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys, &pclk);
+		}
+	}
 
 	switch (ctrl) {
 	case UART_LINE_CTRL_BAUD_RATE:
-		set_baud_rate(dev, val);
+		set_baud_rate(dev, val, pclk);
 		return 0;
 
 	case UART_LINE_CTRL_RTS:
 	case UART_LINE_CTRL_DTR:
 		key = k_spin_lock(&data->lock);
-		mdc = INBYTE(MDC(dev));
+		mdc = ns16550_inbyte(dev_cfg, MDC(dev));
 
 		if (ctrl == UART_LINE_CTRL_RTS) {
 			chg = MCR_RTS;
@@ -961,7 +1067,7 @@ static int uart_ns16550_line_ctrl_set(const struct device *dev,
 		} else {
 			mdc &= ~(chg);
 		}
-		OUTBYTE(MDC(dev), mdc);
+		ns16550_outbyte(dev_cfg, MDC(dev), mdc);
 		k_spin_unlock(&data->lock, key);
 		return 0;
 	}
@@ -988,10 +1094,11 @@ static int uart_ns16550_drv_cmd(const struct device *dev, uint32_t cmd,
 #if UART_NS16550_DLF_ENABLED
 	if (cmd == CMD_SET_DLF) {
 		struct uart_ns16550_dev_data * const dev_data = dev->data;
+		const struct uart_ns16550_device_config * const dev_cfg = dev->config;
 		k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
 		dev_data->dlf = p;
-		OUTBYTE(DLF(dev), dev_data->dlf);
+		ns16550_outbyte(dev_cfg, DLF(dev), dev_data->dlf);
 		k_spin_unlock(&dev_data->lock, key);
 		return 0;
 	}
@@ -1077,13 +1184,27 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	}
 
 #ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
-#define DEV_CONFIG_REG_INIT(n) \
-	.port = DT_INST_REG_ADDR(n),
+#define REG_INIT(n) \
+	.port = DT_INST_REG_ADDR(n), \
+	.io_map = true,
 #else
-#define DEV_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
-#define DEV_CONFIG_REG_INIT_PCIE1(n)
-#define DEV_CONFIG_REG_INIT(n) \
-	_CONCAT(DEV_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+#define REG_INIT_PCIE1(n)
+#define REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
+
+#define DEV_REG_PORT_IO_1(n) \
+	.port = DT_INST_REG_ADDR(n),
+#define DEV_REG_PORT_IO_0(n) \
+	_CONCAT(REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+#ifdef CONFIG_UART_NS16550_SIMULT_ACCESS
+#define DEV_IO_INIT(n) \
+	.io_map = DT_INST_PROP(n, io_mapped),
+#else
+#define DEV_IO_INIT(n)
+#endif
+
+#define REG_INIT(n) \
+	_CONCAT(DEV_REG_PORT_IO_, DT_INST_PROP(n, io_mapped))(n) \
+	DEV_IO_INIT(n)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -1130,8 +1251,10 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	DEV_PCIE_DECLARE(n);                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                              \
+		(PINCTRL_DT_INST_DEFINE(n)));                                        \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
-		DEV_CONFIG_REG_INIT(n)                                               \
+		REG_INIT(n)							     \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (             \
 				.sys_clk_freq = DT_INST_PROP(n, clock_frequency),    \
 				.clock_dev = NULL,                                   \
@@ -1147,6 +1270,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		DEV_CONFIG_PCP_INIT(n)                                               \
 		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                      \
+			(.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),))      \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \

@@ -232,6 +232,16 @@ static inline void net_ipv4_set_dscp(uint8_t *tos, uint8_t dscp)
 }
 
 /**
+ * @brief Convert DSCP value to priority.
+ *
+ * @param dscp DSCP value.
+ */
+static inline uint8_t net_ipv4_dscp_to_priority(uint8_t dscp)
+{
+	return dscp >> 3;
+}
+
+/**
  * @brief Decode ECN value from ToS field.
  *
  * @param tos ToS field value from the IPv4 header.

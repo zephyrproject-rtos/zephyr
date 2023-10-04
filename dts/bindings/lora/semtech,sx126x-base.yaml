@@ -5,57 +5,57 @@
 include: spi-device.yaml
 
 properties:
-    reset-gpios:
-      type: phandle-array
-      description: |
-        GPIO connected to the modem's NRESET signal.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the modem's NRESET signal.
 
-        This signal is open-drain, active-low as interpreted by the
-        modem.
+      This signal is open-drain, active-low as interpreted by the
+      modem.
 
-    busy-gpios:
-      type: phandle-array
-      description: |
-        GPIO connected to the modem's BUSY signal.
+  busy-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the modem's BUSY signal.
 
-    antenna-enable-gpios:
-      type: phandle-array
-      description: |
-        Antenna power enable pin.
+  antenna-enable-gpios:
+    type: phandle-array
+    description: |
+      Antenna power enable pin.
 
-    tx-enable-gpios:
-      type: phandle-array
-      description: |
-        Antenna switch TX enable GPIO. If set, the driver tracks the
-        state of the radio and controls the RF switch.
+  tx-enable-gpios:
+    type: phandle-array
+    description: |
+      Antenna switch TX enable GPIO. If set, the driver tracks the
+      state of the radio and controls the RF switch.
 
-    rx-enable-gpios:
-      type: phandle-array
-      description: |
-        Antenna switch RX enable GPIO. If set, the driver tracks the
-        state of the radio and controls the RF switch.
+  rx-enable-gpios:
+    type: phandle-array
+    description: |
+      Antenna switch RX enable GPIO. If set, the driver tracks the
+      state of the radio and controls the RF switch.
 
-    dio1-gpios:
-      type: phandle-array
-      description: |
-        GPIO connected to DIO1. This GPIO will be used as a generic
-        IRQ line from the chip.
+  dio1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to DIO1. This GPIO will be used as a generic
+      IRQ line from the chip.
 
-    dio2-tx-enable:
-      type: boolean
-      description: |
-        Use DIO2 to drive an RF switch selecting between the TX and RX
-        paths. When enabled, DIO2 goes high when the chip is
-        transmitting.
+  dio2-tx-enable:
+    type: boolean
+    description: |
+      Use DIO2 to drive an RF switch selecting between the TX and RX
+      paths. When enabled, DIO2 goes high when the chip is
+      transmitting.
 
-    dio3-tcxo-voltage:
-      type: int
-      description: |
-        TCXO supply voltage controlled by DIO3 if present.
+  dio3-tcxo-voltage:
+    type: int
+    description: |
+      TCXO supply voltage controlled by DIO3 if present.
 
-        See constants in dt-bindings/lora/sx126x.h.
+      See constants in dt-bindings/lora/sx126x.h.
 
-    tcxo-power-startup-delay-ms:
-      type: int
-      description: |
-        Startup delay to let the TCXO stabilize after TCXO power on.
+  tcxo-power-startup-delay-ms:
+    type: int
+    description: |
+      Startup delay to let the TCXO stabilize after TCXO power on.

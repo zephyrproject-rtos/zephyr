@@ -4,4 +4,7 @@ common:
 tests:
   net.socket.get_name_info:
     min_ram: 21
-    tags: net socket userspace
+    tags:
+      - net
+      - socket
+      - userspace

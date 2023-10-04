@@ -472,7 +472,7 @@
 				     <15 0>, <16 0>, <17 0>;
 			clocks = <&cctl GD32_CLOCK_DMA0>;
 			dma-channels = <7>;
-			#dma-cells = <1>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 
@@ -483,7 +483,7 @@
 				     <60 0>;
 			clocks = <&cctl GD32_CLOCK_DMA1>;
 			dma-channels = <5>;
-			#dma-cells = <1>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 

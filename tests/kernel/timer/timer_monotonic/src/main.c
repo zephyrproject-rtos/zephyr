@@ -61,8 +61,6 @@ ZTEST(timer_fn, test_timer)
 	TC_PRINT("sys_clock_hw_cycles_per_sec() = %d\n",
 		 sys_clock_hw_cycles_per_sec());
 
-	TC_START("test monotonic timer");
-
 	t_last = k_cycle_get_32();
 
 	for (i = 0U; i < 1000000; i++) {

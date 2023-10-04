@@ -2,6 +2,8 @@ common:
   tags: coredump
   ignore_faults: true
   ignore_qemu_crash: true
+  integration_platforms:
+    - qemu_x86
 tests:
   coredump.backends.logging:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP

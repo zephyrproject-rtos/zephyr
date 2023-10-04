@@ -1,11 +1,23 @@
+common:
+  harness: ztest
+  tags: disk
 tests:
   drivers.disk.usdhc:
-    harness: ztest
     harness_config:
       fixture: fixture_sdhc
     filter: CONFIG_SDHC
-    tags: disk mcux
+    extra_configs:
+      - CONFIG_DISK_DRIVER_SDMMC=y
+    tags: mcux
     integration_platforms:
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1064_evk
+  drivers.disk.ram:
+    extra_configs:
+      - CONFIG_DISK_DRIVER_RAM=y
+    platform_allow: qemu_x86_64
+  drivers.disk.nvme:
+    extra_configs:
+      - CONFIG_NVME=y
+    platform_allow: qemu_x86_64

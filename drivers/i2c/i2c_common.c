@@ -25,20 +25,28 @@ void z_i2c_transfer_signal_cb(const struct device *dev,
 }
 #endif
 
-void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
-		   uint8_t num_msgs, uint16_t addr)
+void i2c_dump_msgs_rw(const char *name, const struct i2c_msg *msgs,
+		      uint8_t num_msgs, uint16_t addr, bool dump_read)
 {
 	LOG_DBG("I2C msg: %s, addr=%x", name, addr);
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		const struct i2c_msg *msg = &msgs[i];
+		const bool is_read = msg->flags & I2C_MSG_READ;
+		const bool dump_data = dump_read || !is_read;
 
-		LOG_DBG("   %c %s%s len=%02x: ",
-			msg->flags & I2C_MSG_READ ? 'R' : 'W',
-			msg->flags & I2C_MSG_RESTART ? "Sr " : "",
-			msg->flags & I2C_MSG_STOP ? "P" : "",
-			msg->len);
-		if (!(msg->flags & I2C_MSG_READ)) {
-			LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
+		if (msg->len == 1 && dump_data) {
+			LOG_DBG("   %c %s%s len=01: %02x", is_read ? 'R' : 'W',
+				msg->flags & I2C_MSG_RESTART ? "Sr " : "",
+				msg->flags & I2C_MSG_STOP ? "P" : "",
+				msg->buf[0]);
+		} else {
+			LOG_DBG("   %c %s%s len=%02x: ", is_read ? 'R' : 'W',
+				msg->flags & I2C_MSG_RESTART ? "Sr " : "",
+				msg->flags & I2C_MSG_STOP ? "P" : "",
+				msg->len);
+			if (dump_data) {
+				LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
+			}
 		}
 	}
 }

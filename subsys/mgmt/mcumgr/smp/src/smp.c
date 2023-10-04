@@ -25,6 +25,65 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_FS
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_IMG
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_SHELL
+#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_STAT
+#include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
+#endif
+#ifdef CONFIG_MCUMGR_GRP_ZBASIC
+#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+static int smp_translate_error_code(uint16_t group, uint16_t ret)
+{
+	switch (group) {
+#ifdef CONFIG_MCUMGR_GRP_OS
+	case MGMT_GROUP_ID_OS:
+	return os_mgmt_translate_error_code(ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_IMG
+	case MGMT_GROUP_ID_IMAGE:
+	return img_mgmt_translate_error_code(ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_STAT
+	case MGMT_GROUP_ID_STAT:
+	return stat_mgmt_translate_error_code(ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_FS
+	case MGMT_GROUP_ID_FS:
+	return fs_mgmt_translate_error_code(ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_SHELL
+	case MGMT_GROUP_ID_SHELL:
+	return shell_mgmt_translate_error_code(ret);
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_ZBASIC
+	case ZEPHYR_MGMT_GRP_BASIC:
+	return zephyr_basic_group_translate_error_code(ret);
+#endif
+
+	default:
+	return MGMT_ERR_EUNKNOWN;
+	}
+}
+#endif
+
 static void cbor_nb_reader_init(struct cbor_nb_reader *cnr, struct net_buf *nb)
 {
 	/* Skip the smp_hdr */
@@ -65,6 +124,8 @@ static void smp_make_rsp_hdr(const struct smp_hdr *req_hdr, struct smp_hdr *rsp_
 		.nh_group = sys_cpu_to_be16(req_hdr->nh_group),
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
+		.nh_version = (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2 :
+			       req_hdr->nh_version),
 	};
 }
 
@@ -99,7 +160,7 @@ static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr
 	     zcbor_tstr_put_lit(zsp, "rc")		&&
 	     zcbor_int32_put(zsp, status);
 
-#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	if (ok && rc_rsn != NULL) {
 		ok = zcbor_tstr_put_lit(zsp, "rsn")			&&
 		     zcbor_tstr_put_term(zsp, rc_rsn);
@@ -141,6 +202,8 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 	int rc;
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	struct mgmt_evt_op_cmd_arg cmd_recv;
+	int32_t ret_rc;
+	uint16_t ret_group;
 #endif
 
 	handler = mgmt_find_handler(req_hdr->nh_group, req_hdr->nh_id);
@@ -163,21 +226,24 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 
 	if (handler_fn) {
 		*handler_found = true;
-		zcbor_map_start_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES);
+		zcbor_map_start_encode(cbuf->writer->zs,
+				       CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
 		cmd_recv.id = req_hdr->nh_id;
 		cmd_recv.err = MGMT_ERR_EOK;
 
-		(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv));
+		(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv),
+					   &ret_rc, &ret_group);
 #endif
 
 		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
 		rc = handler_fn(cbuf);
 
 		/* End response payload. */
-		if (!zcbor_map_end_encode(cbuf->writer->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
+		if (!zcbor_map_end_encode(cbuf->writer->zs,
+					  CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES) &&
 		    rc == 0) {
 			rc = MGMT_ERR_EMSGSIZE;
 		}
@@ -207,12 +273,36 @@ static int smp_handle_single_req(struct smp_streamer *streamer, const struct smp
 	zcbor_state_t *zsp = nbw->zs;
 	int rc;
 
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	nbw->error_group = 0;
+	nbw->error_ret = 0;
+#else
+	if (req_hdr->nh_version == SMP_MCUMGR_VERSION_1) {
+		/* Support for the original version is excluded in this build */
+		return MGMT_ERR_UNSUPPORTED_TOO_OLD;
+	}
+#endif
+
+	/* We do not currently support future versions of the protocol */
+	if (req_hdr->nh_version > SMP_MCUMGR_VERSION_2) {
+		return MGMT_ERR_UNSUPPORTED_TOO_NEW;
+	}
+
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(streamer, req_hdr, handler_found);
 	if (rc != 0) {
 		*rsn = MGMT_CTXT_RC_RSN(streamer);
 		return rc;
 	}
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	/* If using the legacy protocol, translate the error code to a return code */
+	if (nbw->error_ret != 0 && req_hdr->nh_version == 0) {
+		rc = smp_translate_error_code(nbw->error_group, nbw->error_ret);
+		*rsn = MGMT_CTXT_RC_RSN(streamer);
+		return rc;
+	}
+#endif
 
 	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
 			 zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
@@ -253,7 +343,7 @@ static void smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
-		streamer->smpt->output(rsp);
+		streamer->smpt->functions.output(rsp);
 		rsp = NULL;
 	}
 
@@ -294,6 +384,8 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 	struct mgmt_evt_op_cmd_arg cmd_done_arg;
+	int32_t ret_rc;
+	uint16_t ret_group;
 #endif
 
 	rsp = NULL;
@@ -332,7 +424,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		/* Send the response. */
-		rc = streamer->smpt->output(rsp);
+		rc = streamer->smpt->functions.output(rsp);
 		rsp = NULL;
 		if (rc != 0) {
 			break;
@@ -347,7 +439,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		cmd_done_arg.err = MGMT_ERR_EOK;
 
 		(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-					   sizeof(cmd_done_arg));
+					   sizeof(cmd_done_arg), &ret_rc, &ret_group);
 #endif
 	}
 
@@ -361,7 +453,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			cmd_done_arg.err = rc;
 
 			(void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-						   sizeof(cmd_done_arg));
+						   sizeof(cmd_done_arg), &ret_rc, &ret_group);
 #endif
 		}
 
@@ -372,4 +464,28 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 	smp_free_buf(rsp, streamer->smpt);
 
 	return rc;
+}
+
+bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret)
+{
+	bool ok = true;
+
+	if (ret != 0) {
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+		struct cbor_nb_writer *container = CONTAINER_OF(zse, struct cbor_nb_writer, zs);
+
+		container->error_group = group;
+		container->error_ret = ret;
+#endif
+
+		ok = zcbor_tstr_put_lit(zse, "ret")		&&
+		     zcbor_map_start_encode(zse, 2)		&&
+		     zcbor_tstr_put_lit(zse, "group")		&&
+		     zcbor_uint32_put(zse, (uint32_t)group)	&&
+		     zcbor_tstr_put_lit(zse, "rc")		&&
+		     zcbor_uint32_put(zse, (uint32_t)ret)	&&
+		     zcbor_map_end_encode(zse, 2);
+	}
+
+	return ok;
 }

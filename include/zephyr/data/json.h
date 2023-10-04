@@ -18,14 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Structured Data
- * @defgroup structured_data Structured Data
- */
-
-
-/**
  * @defgroup json JSON
- * @ingroup structured_data
+ * @ingroup utilities
  * @{
  */
 
@@ -150,7 +144,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *     struct foo {
- *         int some_int;
+ *         int32_t some_int;
  *     };
  *
  *     struct json_obj_descr foo[] = {
@@ -176,9 +170,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct nested {
- *          int foo;
+ *          int32_t foo;
  *          struct {
- *             int baz;
+ *             int32_t baz;
  *          } bar;
  *      };
  *
@@ -266,7 +260,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Here's an example of use:
  *
  *      struct example {
- *          int foo[10];
+ *          int32_t foo[10];
  *          size_t foo_len;
  *      };
  *
@@ -307,7 +301,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -359,7 +353,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct person_heights_array {
@@ -513,7 +507,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct person_height {
  *          const char *name;
- *          int height;
+ *          int32_t height;
  *      };
  *
  *      struct people_heights {
@@ -560,7 +554,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
@@ -577,14 +571,14 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param len Length of JSON-encoded value
  * @param descr Pointer to the descriptor array
  * @param descr_len Number of elements in the descriptor array. Must be less
- * than 31 due to implementation detail reasons (if more fields are
+ * than 63 due to implementation detail reasons (if more fields are
  * necessary, use two descriptors)
  * @param val Pointer to the struct to hold the decoded values
  *
  * @return < 0 if error, bitmap of decoded fields on success (bit 0
  * is set if first field in the descriptor has been properly decoded, etc).
  */
-int json_obj_parse(char *json, size_t len,
+int64_t json_obj_parse(char *json, size_t len,
 	const struct json_obj_descr *descr, size_t descr_len,
 	void *val);
 
@@ -594,7 +588,7 @@ int json_obj_parse(char *json, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int foo; char *bar; }
+ *    struct s { int32_t foo; char *bar; }
  *    struct json_obj_descr descr[] = {
  *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
  *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
@@ -694,6 +688,18 @@ size_t json_calc_escaped_len(const char *str, size_t len);
  */
 ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
 			      size_t descr_len, const void *val);
+
+/**
+ * @brief Calculates the string length to fully encode an array
+ *
+ * @param descr Pointer to the descriptor array
+ * @param val Struct holding the values
+ *
+ * @return Number of bytes necessary to encode the values if >0,
+ * an error code is returned.
+ */
+ssize_t json_calc_encoded_arr_len(const struct json_obj_descr *descr,
+				  const void *val);
 
 /**
  * @brief Encodes an object in a contiguous memory location

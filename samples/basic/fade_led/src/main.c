@@ -19,7 +19,7 @@ static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 #define NUM_STEPS	50U
 #define SLEEP_MSEC	25U
 
-void main(void)
+int main(void)
 {
 	uint32_t pulse_width = 0U;
 	uint32_t step = pwm_led0.period / NUM_STEPS;
@@ -31,14 +31,14 @@ void main(void)
 	if (!device_is_ready(pwm_led0.dev)) {
 		printk("Error: PWM device %s is not ready\n",
 		       pwm_led0.dev->name);
-		return;
+		return 0;
 	}
 
 	while (1) {
 		ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
-			return;
+			return 0;
 		}
 
 		if (dir) {
@@ -58,4 +58,5 @@ void main(void)
 
 		k_sleep(K_MSEC(SLEEP_MSEC));
 	}
+	return 0;
 }

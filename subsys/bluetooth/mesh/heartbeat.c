@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/iterable_sections.h>
+
 #include "net.h"
 #include "rpl.h"
 #include "access.h"
@@ -231,8 +233,10 @@ static void pub_disable(void)
 
 	pub.dst = BT_MESH_ADDR_UNASSIGNED;
 	pub.count = 0U;
-	pub.ttl = 0U;
 	pub.period = 0U;
+	pub.ttl = 0U;
+	pub.feat = 0U;
+	pub.net_idx = 0U;
 
 	/* Try to cancel, but it's OK if this still runs (or is
 	 * running) as the handler will be a no-op if it hasn't

@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright 2023 NXP */
+/ {
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&flexpwm2_pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;    /* FMU_CH1 */
+		      /* <&flexpwm2_pwm1 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>, */ /* FMU_CH2 */
+		      /* <&flexpwm2_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>, */ /* FMU_CH3 */
+		      /* <&flexpwm2_pwm3 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>, */ /* FMU_CH4 */
+		      /*  <&flexpwm3_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>,*/ /* FMU_CH5 */
+		      /* <&flexpwm3_pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>; */ /* FMU_CH6 */
+		      /* <&flexpwm4_pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>; */ /* FMU_CH7 */
+		      /* <&flexpwm4_pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>; */ /* FMU_CH8 */
+		min-pulse = <PWM_USEC(700)>;
+		max-pulse = <PWM_USEC(2500)>;
+	};
+};

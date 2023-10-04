@@ -16,7 +16,6 @@ LOG_MODULE_DECLARE(INA230, CONFIG_SENSOR_LOG_LEVEL);
 static void ina230_gpio_callback(const struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
 {
-	struct sensor_trigger ina230_trigger;
 	struct ina230_data *ina230 = CONTAINER_OF(cb, struct ina230_data, gpio_cb);
 	const struct device *dev = (const struct device *)ina230->dev;
 
@@ -25,8 +24,7 @@ static void ina230_gpio_callback(const struct device *port,
 	ARG_UNUSED(cb);
 
 	if (ina230->handler_alert) {
-		ina230_trigger.type = SENSOR_TRIG_DATA_READY;
-		ina230->handler_alert(dev, &ina230_trigger);
+		ina230->handler_alert(dev, ina230->trig_alert);
 	}
 }
 
@@ -39,6 +37,7 @@ int ina230_trigger_set(const struct device *dev,
 	ARG_UNUSED(trig);
 
 	ina230->handler_alert = handler;
+	ina230->trig_alert = trig;
 
 	return 0;
 }

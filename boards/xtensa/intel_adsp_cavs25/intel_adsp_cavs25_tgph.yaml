@@ -9,5 +9,5 @@ supported:
   - dma
 testing:
   ignore_tags:
-     - net
-     - bluetooth
+    - net
+    - bluetooth

@@ -81,19 +81,19 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 	k_work_submit(&beep_work);
 }
 
-void main(void)
+int main(void)
 {
 	static struct gpio_callback button_cb_data;
 
 	if (!device_is_ready(pwm.dev)) {
 		printk("%s: device not ready.\n", pwm.dev->name);
-		return;
+		return 0;
 	}
 
 	/* since sw0_gpio.port == sw1_gpio.port, we only need to check ready once */
 	if (!device_is_ready(sw0_gpio.port)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
-		return;
+		return 0;
 	}
 
 	period = pwm.period;
@@ -112,4 +112,5 @@ void main(void)
 	k_work_submit(&beep_work);
 
 	gpio_add_callback(sw0_gpio.port, &button_cb_data);
+	return 0;
 }

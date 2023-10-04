@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright (c) 2019, NXP
+ * Copyright 2019-2023, NXP
  * Copyright (c) 2022 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,9 +15,7 @@
 #include <zephyr/irq.h>
 #include <fsl_lpi2c.h>
 
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif /* CONFIG_PINCTRL */
 
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -41,9 +39,7 @@ struct mcux_lpi2c_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
-#endif /* CONFIG_PINCTRL */
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -55,6 +51,14 @@ struct mcux_lpi2c_data {
 	struct k_sem lock;
 	struct k_sem device_sync_sem;
 	status_t callback_status;
+#ifdef CONFIG_I2C_TARGET
+	lpi2c_slave_handle_t target_handle;
+	struct i2c_target_config *target_cfg;
+	bool target_attached;
+	bool first_tx;
+	bool read_active;
+	bool send_ack;
+#endif
 };
 
 static int mcux_lpi2c_configure(const struct device *dev,
@@ -297,11 +301,178 @@ restore:
 }
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
+#ifdef CONFIG_I2C_TARGET
+static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
+{
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	int ret;
+	uint32_t flags;
+	uint8_t i2c_data;
+
+	/* Note- the HAL provides a callback-based I2C slave API, but
+	 * the API expects the user to provide a transmit buffer of
+	 * a fixed length at the first byte received, and will not signal
+	 * the user callback until this buffer is exhausted. This does not
+	 * work well with the Zephyr API, which requires callbacks for
+	 * every byte. For these reason, we handle the LPI2C IRQ
+	 * directly.
+	 */
+	flags = LPI2C_SlaveGetStatusFlags(config->base);
+
+	if (flags & kLPI2C_SlaveAddressValidFlag) {
+		/* Read Slave address to clear flag */
+		LPI2C_SlaveGetReceivedAddress(config->base);
+		data->first_tx = true;
+		/* Reset to sending ACK, in case we NAK'ed before */
+		data->send_ack = true;
+	}
+
+	if (flags & kLPI2C_SlaveRxReadyFlag) {
+		/* RX data is available, read it and issue callback */
+		i2c_data = (uint8_t)config->base->SRDR;
+		if (data->first_tx) {
+			data->first_tx = false;
+			if (target_cb->write_requested) {
+				ret = target_cb->write_requested(data->target_cfg);
+				if (ret < 0) {
+					/* NAK further bytes */
+					data->send_ack = false;
+				}
+			}
+		}
+		if (target_cb->write_received) {
+			ret = target_cb->write_received(data->target_cfg,
+							i2c_data);
+			if (ret < 0) {
+				/* NAK further bytes */
+				data->send_ack = false;
+			}
+		}
+	}
+
+	if (flags & kLPI2C_SlaveTxReadyFlag) {
+		/* Space is available in TX fifo, issue callback and write out */
+		if (data->first_tx) {
+			data->read_active = true;
+			data->first_tx = false;
+			if (target_cb->read_requested) {
+				ret = target_cb->read_requested(data->target_cfg,
+								&i2c_data);
+				if (ret < 0) {
+					/* Disable TX */
+					data->read_active = false;
+				} else {
+					/* Send I2C data */
+					config->base->STDR = i2c_data;
+				}
+			}
+		} else if (data->read_active) {
+			if (target_cb->read_processed) {
+				ret = target_cb->read_processed(data->target_cfg,
+								&i2c_data);
+				if (ret < 0) {
+					/* Disable TX */
+					data->read_active = false;
+				} else {
+					/* Send I2C data */
+					config->base->STDR = i2c_data;
+				}
+			}
+		}
+	}
+
+	if (flags & kLPI2C_SlaveStopDetectFlag) {
+		LPI2C_SlaveClearStatusFlags(config->base, flags);
+		if (target_cb->stop) {
+			target_cb->stop(data->target_cfg);
+		}
+	}
+
+	if (flags & kLPI2C_SlaveTransmitAckFlag) {
+		LPI2C_SlaveTransmitAck(config->base, data->send_ack);
+	}
+}
+
+static int mcux_lpi2c_target_register(const struct device *dev,
+				      struct i2c_target_config *target_config)
+{
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
+	lpi2c_slave_config_t slave_config;
+	uint32_t clock_freq;
+
+	LPI2C_MasterDeinit(config->base);
+
+	/* Get the clock frequency */
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
+
+	if (!target_config) {
+		return -EINVAL;
+	}
+
+	if (data->target_attached) {
+		return -EBUSY;
+	}
+
+	data->target_attached = true;
+	data->target_cfg = target_config;
+	data->first_tx = false;
+
+	LPI2C_SlaveGetDefaultConfig(&slave_config);
+	slave_config.address0 = target_config->address;
+	/* Note- this setting enables clock stretching to allow the
+	 * slave to respond to each byte with an ACK/NAK.
+	 * this behavior may cause issues with some I2C controllers.
+	 */
+	slave_config.sclStall.enableAck = true;
+	LPI2C_SlaveInit(config->base, &slave_config, clock_freq);
+	/* Clear all flags. */
+	LPI2C_SlaveClearStatusFlags(config->base, (uint32_t)kLPI2C_SlaveClearFlags);
+	/* Enable interrupt */
+	LPI2C_SlaveEnableInterrupts(config->base,
+					(kLPI2C_SlaveTxReadyFlag |
+					kLPI2C_SlaveRxReadyFlag |
+					kLPI2C_SlaveStopDetectFlag |
+					kLPI2C_SlaveAddressValidFlag |
+					kLPI2C_SlaveTransmitAckFlag));
+	return 0;
+}
+
+static int mcux_lpi2c_target_unregister(const struct device *dev,
+					struct i2c_target_config *target_config)
+{
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
+
+	if (!data->target_attached) {
+		return -EINVAL;
+	}
+
+	data->target_cfg = NULL;
+	data->target_attached = false;
+
+	LPI2C_SlaveDeinit(config->base);
+
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
+
 static void mcux_lpi2c_isr(const struct device *dev)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
+
+ #ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		mcux_lpi2c_slave_irq_handler(dev);
+	}
+#endif /* CONFIG_I2C_TARGET */
 
 	LPI2C_MasterTransferHandleIRQ(base, &data->handle);
 }
@@ -342,12 +513,10 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
-#ifdef CONFIG_PINCTRL
 	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (error) {
 		return error;
 	}
-#endif /* CONFIG_PINCTRL */
 
 	config->irq_config_func(dev);
 
@@ -360,15 +529,11 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	.recover_bus = mcux_lpi2c_recover_bus,
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
+#if CONFIG_I2C_TARGET
+	.target_register = mcux_lpi2c_target_register,
+	.target_unregister = mcux_lpi2c_target_unregister,
+#endif /* CONFIG_I2C_TARGET */
 };
-
-#ifdef CONFIG_PINCTRL
-#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define I2C_MCUX_LPI2C_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
-#else
-#define I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)
-#define I2C_MCUX_LPI2C_PINCTRL_INIT(n)
-#endif /* CONFIG_PINCTRL */
 
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #define I2C_MCUX_LPI2C_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
@@ -379,7 +544,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #define I2C_MCUX_LPI2C_INIT(n)						\
-	I2C_MCUX_LPI2C_PINCTRL_DEFINE(n)				\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
 									\
@@ -390,7 +555,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
-		I2C_MCUX_LPI2C_PINCTRL_INIT(n)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\
 		.bus_idle_timeout_ns =					\

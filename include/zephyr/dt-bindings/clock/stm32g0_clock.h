@@ -10,10 +10,10 @@
 #define STM32_CLOCK_BUS_IOP     0x034
 #define STM32_CLOCK_BUS_AHB1    0x038
 #define STM32_CLOCK_BUS_APB1    0x03c
-#define STM32_CLOCK_BUS_APB2    0x040
+#define STM32_CLOCK_BUS_APB1_2  0x040
 
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_IOP
-#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1_2
 
 /** Domain clocks */
 /* RM0444, §5.4.21/22 Clock configuration register (RCC_CCIPRx) */
@@ -92,7 +92,7 @@
 #define USB_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
-
-
+/** Dummy: Add a specificier when no selection is possible */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32G0_CLOCK_H_ */

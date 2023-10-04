@@ -1,0 +1,71 @@
+/* Copyright (c) 2018 SiFive, Inc. */
+/* Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com> */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <sifive/riscv32-fe310.dtsi>
+#include "sparkfun_red_v_things_plus-pinctrl.dtsi"
+
+/ {
+	model = "SparkFun RED-V Things Plus";
+	compatible = "sparkfun,red-v_things_plus";
+
+	aliases {
+		led0 = &led0;
+		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dtim;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+/* disabled (used by Flash ROM by default) */
+&spi0 {
+	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
+	flash0: flash@0 {
+		compatible = "issi,is25lp032", "jedec,spi-nor";
+		status = "disabled";
+		size = <33554432>;
+		jedec-id = [96 60 16];
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_cs0_default &spi1_cs2_default &spi1_cs3_default
+		     &spi1_mosi_default &spi1_miso_default &spi1_sck_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
+	pinctrl-names = "default";
+};

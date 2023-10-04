@@ -7,7 +7,10 @@
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
@@ -82,14 +85,17 @@ void mgmt_callback_unregister(struct mgmt_callback *callback)
 	(void)sys_slist_find_and_remove(&mgmt_callback_list, &callback->node);
 }
 
-int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
+enum mgmt_cb_return mgmt_callback_notify(uint32_t event, void *data, size_t data_size,
+					 int32_t *ret_rc, uint16_t *ret_group)
 {
 	sys_snode_t *snp, *sns;
 	bool failed = false;
 	bool abort_more = false;
-	int32_t rc;
-	int32_t return_rc = MGMT_ERR_EOK;
 	uint16_t group = MGMT_EVT_GET_GROUP(event);
+	enum mgmt_cb_return return_status = MGMT_CB_OK;
+
+	*ret_rc = MGMT_ERR_EOK;
+	*ret_group = 0;
 
 	/*
 	 * Search through the linked list for entries that have registered for this event and
@@ -104,14 +110,29 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 		struct mgmt_callback *loop_group =
 			CONTAINER_OF(snp, struct mgmt_callback, node);
 
-		if (loop_group->event_id == event || loop_group->event_id == MGMT_EVT_OP_ALL ||
+		if (loop_group->event_id == MGMT_EVT_OP_ALL ||
 		    (MGMT_EVT_GET_GROUP(loop_group->event_id) == group &&
-		     MGMT_EVT_GET_ID(loop_group->event_id) == MGMT_EVT_OP_ID_ALL)) {
-			rc = loop_group->callback(event, return_rc, &abort_more, data, data_size);
+		     (MGMT_EVT_GET_ID(event) & MGMT_EVT_GET_ID(loop_group->event_id)) ==
+		     MGMT_EVT_GET_ID(event))) {
+			int32_t cached_rc = *ret_rc;
+			uint16_t cached_group = *ret_group;
+			enum mgmt_cb_return status;
 
-			if (rc != MGMT_ERR_EOK && failed == false) {
+			status = loop_group->callback(event, return_status, &cached_rc,
+						      &cached_group, &abort_more, data,
+						      data_size);
+
+			__ASSERT((status <= MGMT_CB_ERROR_RET),
+				 "Invalid status returned by MCUmgr handler: %d", status);
+
+			if (status != MGMT_CB_OK && failed == false) {
 				failed = true;
-				return_rc = rc;
+				return_status = status;
+				*ret_rc = cached_rc;
+
+				if (status == MGMT_CB_ERROR_RET) {
+					*ret_group = cached_group;
+				}
 			}
 
 			if (abort_more == true) {
@@ -120,6 +141,21 @@ int32_t mgmt_callback_notify(uint32_t event, void *data, size_t data_size)
 		}
 	}
 
-	return return_rc;
+	return return_status;
 }
 #endif
+
+/* Processes all registered MCUmgr handlers at start up and registers them */
+static int mcumgr_handlers_init(void)
+{
+
+	STRUCT_SECTION_FOREACH(mcumgr_handler, handler) {
+		if (handler->init) {
+			handler->init();
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(mcumgr_handlers_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

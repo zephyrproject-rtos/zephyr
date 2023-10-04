@@ -124,9 +124,9 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 	/* Choose the right slave from the address match code */
 	slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-	if (slave_address == data->slave_cfg->address) {
+	if (data->slave_cfg != NULL && slave_address == data->slave_cfg->address) {
 		slave_cfg = data->slave_cfg;
-	} else if (slave_address == data->slave2_cfg->address) {
+	} else if (data->slave2_cfg != NULL && slave_address == data->slave2_cfg->address) {
 		slave_cfg = data->slave2_cfg;
 	} else {
 		__ASSERT_NO_MSG(0);
@@ -284,7 +284,8 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	}
 
 	/* Return if there is a slave remaining */
-	if (!data->slave_cfg || !data->slave2_cfg) {
+	if (data->slave_cfg || data->slave2_cfg) {
+		LOG_DBG("i2c: target#%c still registered", data->slave_cfg?'1':'2');
 		return 0;
 	}
 

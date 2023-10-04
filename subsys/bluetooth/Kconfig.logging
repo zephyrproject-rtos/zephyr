@@ -1,0 +1,1085 @@
+# Bluetooth logging configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_LOG
+	# convenience symbol, _no touchy_
+	bool
+	default y if LOG && BT
+	select BT_LOG_LEGACY
+
+if BT_LOG
+
+menu "Bluetooth logging"
+
+config BT_LOG_LEGACY
+	bool
+
+if BT_LOG_LEGACY
+
+menu "Bluetooth legacy logging options"
+
+# COMMON
+
+config BT_DEBUG_HCI_DRIVER
+	bool "[DEPRECATED] Bluetooth HCI driver debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for the active
+	  Bluetooth HCI driver, including the Controller-side HCI layer
+	  when included in the build.
+
+config BT_DEBUG_RPA
+	bool "[DEPRECATED] Bluetooth Resolvable Private Address (RPA) debug"
+	select DEPRECATED
+	depends on BT_RPA
+	help
+	  This option enables debug support for the Bluetooth
+	  Resolvable Private Address (RPA) generation and resolution.
+
+menu "[DEPRECATED] Audio"
+
+# AICS
+
+config BT_DEBUG_AICS
+	bool "[DEPRECATED] Audio Input Control Service debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Audio Input Control Service debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_DEBUG_AICS_CLIENT
+	bool "[DEPRECATED] Audio Input Control Service client debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Audio Input Control Service client debug
+	  logs for the Bluetooth Audio functionality.
+
+# BAP
+
+config BT_BAP_DEBUG_STREAM
+	bool "[DEPRECATED] Basic Audio Profile Stream debug"
+	select DEPRECATED
+	depends on BT_BAP_STREAM
+	help
+	  Use this option to enable Basic Audio Profile Stream debug logs.
+
+config BT_DEBUG_ASCS
+	bool "[DEPRECATED] Audio Stream Control Service debug"
+	select DEPRECATED
+	depends on BT_ASCS
+	help
+	  Use this option to enable Audio Stream Control Service debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_UNICAST_SERVER
+	bool "[DEPRECATED] Bluetooth Audio Unicast Server debug"
+	select DEPRECATED
+	depends on BT_BAP_UNICAST_SERVER
+	help
+	  Use this option to enable Bluetooth Audio Unicast Server debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_UNICAST_CLIENT
+	bool "[DEPRECATED] Basic Audio Profile client debug"
+	select DEPRECATED
+	depends on BT_BAP_UNICAST_CLIENT
+	help
+	  Use this option to enable Basic Audio Profile debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_BROADCAST_SOURCE
+	bool "[DEPRECATED] Bluetooth Audio Broadcast Source debug"
+	select DEPRECATED
+	depends on BT_BAP_BROADCAST_SOURCE
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Source debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_BROADCAST_SINK
+	bool "[DEPRECATED] Bluetooth Audio Broadcast Sink debug"
+	select DEPRECATED
+	depends on BT_BAP_BROADCAST_SINK
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_SCAN_DELEGATOR
+	bool "[DEPRECATED] Broadcast Audio Scan Service debug"
+	select DEPRECATED
+	depends on BT_BAP_SCAN_DELEGATOR
+	help
+	  Use this option to enable Broadcast Audio Scan Service debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_DEBUG_BAP_BROADCAST_ASSISTANT
+	bool "[DEPRECATED] Broadcast Audio Scan Service client debug"
+	select DEPRECATED
+	depends on BT_BAP_BROADCAST_ASSISTANT
+	help
+	  Use this option to enable Broadcast Audio Scan Service client
+	  debug logs for the Bluetooth Audio functionality.
+
+# CAP
+
+config BT_DEBUG_CAP_ACCEPTOR
+	bool "[DEPRECATED] Common Audio Profile debug"
+	select DEPRECATED
+	depends on BT_CAP_ACCEPTOR
+	help
+	  Use this option to enable CAP debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_CAP_INITIATOR
+	bool "[DEPRECATED] Common Audio Profile Initiator debug"
+	select DEPRECATED
+	depends on BT_CAP_INITIATOR
+	help
+	  Use this option to enable CAP Initiator debug logs for the
+	  Bluetooth Audio functionality.
+
+# CISP
+
+config BT_DEBUG_CSIP_SET_MEMBER
+	bool "[DEPRECATED] Coordinated Set Identification Service debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Coordinated Set Identification Service debug
+	  logs for the Bluetooth Audio functionality.
+
+config BT_DEBUG_CSIP_SET_COORDINATOR
+	bool "[DEPRECATED] Coordinated Set Identification Profile Set Coordinator debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Coordinated Set Identification Profile
+	  Set Coordinator debug logs for the Bluetooth Audio functionality.
+
+config BT_DEBUG_CSIP_SET_MEMBER_CRYPTO
+	bool "[DEPRECATED] Coordinated Set Identification Profile crypto functions debug"
+	select DEPRECATED
+	depends on BT_CSIP_SET_COORDINATOR || BT_CSIP_SET_MEMBER
+	help
+	  Use this option to enable Coordinated Set Identification Profile
+	  crypto functions debug logs for the Bluetooth Audio functionality.
+
+# HAS
+
+config BT_DEBUG_HAS
+	bool "[DEPRECATED] Hearing Access Service debug"
+	select DEPRECATED
+	help
+	  This option enables enables Hearing Access Service debug logs.
+
+config BT_DEBUG_HAS_CLIENT
+	bool "[DEPRECATED] Hearing Access Service Client debug"
+	select DEPRECATED
+	depends on BT_HAS_CLIENT
+	help
+	  This option enables enables Hearing Access Service Client debug logs.
+
+# MCS
+
+config BT_DEBUG_MCS
+	bool "[DEPRECATED] Media Control Service debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Media Control Service debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_MCC
+	bool "[DEPRECATED] Media Control Client debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Media Control Client debug logs for the
+	  Bluetooth Audio functionality.
+
+# MCTL
+
+config MCTL_DEBUG
+	bool "[DEPRECATED] Media control debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Media control debug logs
+
+# MICP
+
+config BT_DEBUG_MICP_MIC_DEV
+	bool "[DEPRECATED] Microphone Control Profile Microphone Device debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Microphone Control Profile
+	  Microphone Device debug logs for the Bluetooth Audio functionality.
+
+config BT_DEBUG_MICP_MIC_CTLR
+	bool "[DEPRECATED] Microphone Control Profile Microphone Controller debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Microphone Control Profile Microphone
+	  Controller debug logs for the Bluetooth Audio functionality.
+
+# MPL
+
+config BT_DEBUG_MPL
+	bool "[DEPRECATED] Media player debug"
+	select DEPRECATED
+	help
+	  Enables debug logs for the media player
+
+# PACS
+
+config BT_DEBUG_PACS
+	bool "[DEPRECATED] Published Audio Capabilities Service debug"
+	select DEPRECATED
+	depends on BT_PACS
+	help
+	  Use this option to enable Published Audio Capabilities Service debug
+	  logs for the Bluetooth Audio functionality.
+
+# TBS
+
+config BT_DEBUG_TBS
+	bool "[DEPRECATED] Telephone Bearer Service debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Telephone Bearer Service debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_TBS_CLIENT
+	bool "[DEPRECATED] Telephone Bearer Service client debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Telephone Bearer Service client debug logs
+	  for the Bluetooth Audio functionality.
+
+# VCP
+
+config BT_DEBUG_VCP_VOL_REND
+	bool "[DEPRECATED] Volume Control Profile Volume Renderer debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Volume Control Profile debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_VCP_VOL_CTLR
+	bool "[DEPRECATED] Volume Control Profile Volume Controller debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Volume Control Profile Volume Controller
+	  debug logs for the Bluetooth Audio functionality.
+
+# VOCS
+
+config BT_DEBUG_VOCS
+	bool "[DEPRECATED] Volume Offset Control Service debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Volume Offset Control Service debug logs for
+	  the Bluetooth Audio functionality.
+
+config BT_DEBUG_VOCS_CLIENT
+	bool "[DEPRECATED] Volume Offset Control Service client debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Volume Offset Control Service client debug
+	  logs for the Bluetooth Audio functionality.
+
+endmenu # [DEPRECATED] Audio
+
+menu "[DEPRECATED] Others"
+
+# CRYPTO (subsys/bluetooth/crypto/Kconfig)
+
+config BT_DEBUG_CRYPTO
+	bool "[DEPRECATED] Bluetooth Cryptographic Toolbox debug"
+	select DEPRECATED
+	depends on BT_CRYPTO
+	help
+	  This option enables debug log output for the Bluetooth
+	  Cryptographic Toolbox.
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
+
+# GATT
+
+config BT_DEBUG_ATT
+	bool "[DEPRECATED] Bluetooth Attribute Protocol (ATT) debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for the Bluetooth
+	  Attribute Protocol (ATT).
+
+config BT_DEBUG_GATT
+	bool "[DEPRECATED] Bluetooth Generic Attribute Profile (GATT) debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Attribute Profile (GATT).
+
+# L2CAP
+
+config BT_DEBUG_L2CAP
+	bool "[DEPRECATED] Bluetooth L2CAP debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for the Bluetooth
+	  L2ACP layer.
+
+# HOST (subsys/bluetooth/host/Kconfig)
+
+config BT_DEBUG_DF
+	bool "[DEPRECATED] Bluetooth Direction Finding debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for Bluetooth Direction Finding
+
+config BT_DEBUG_SETTINGS
+	bool "[DEPRECATED] Bluetooth storage debug"
+	select DEPRECATED
+	depends on BT_SETTINGS
+	help
+	  This option enables debug support for Bluetooth storage.
+
+config BT_DEBUG_HCI_CORE
+	bool "[DEPRECATED] Bluetooth HCI core debug"
+	select DEPRECATED
+	help
+	  This option enables debug support for Bluetooth HCI
+	  core.
+
+config BT_DEBUG_CONN
+	bool "[DEPRECATED] Bluetooth connection debug"
+	select DEPRECATED
+	depends on BT_CONN || BT_ISO
+	help
+	  This option enables debug support for Bluetooth
+	  connection handling.
+
+config BT_DEBUG_ISO
+	bool "[DEPRECATED] ISO channel debug"
+	select DEPRECATED
+	help
+	  Use this option to enable ISO channels debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_DEBUG_KEYS
+	bool "[DEPRECATED] Bluetooth security keys debug"
+	select DEPRECATED
+	depends on BT_HCI_HOST
+	depends on BT_SMP
+	help
+	  This option enables debug support for the handling of
+	  Bluetooth security keys.
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
+
+config BT_DEBUG_SMP
+	bool "[DEPRECATED] Bluetooth Security Manager Protocol (SMP) debug"
+	select DEPRECATED
+	depends on BT_HCI_HOST
+	depends on BT_SMP
+	help
+	  This option enables debug support for the Bluetooth
+	  Security Manager Protocol (SMP).
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
+
+config BT_DEBUG_SERVICE
+	bool "[DEPRECATED] Bluetooth Services debug"
+	select DEPRECATED
+	depends on BT_CONN
+	help
+	  This option enables debug support for the Bluetooth
+	  Services.
+
+endmenu # [DEPRECATED] Others
+
+menu "[DEPRECATED] BR/EDR"
+
+config BT_DEBUG_RFCOMM
+	bool "[DEPRECATED] Bluetooth RFCOMM debug"
+	select DEPRECATED
+	depends on BT_RFCOMM
+	help
+	  This option enables debug support for the Bluetooth
+	  RFCOMM layer.
+
+config BT_DEBUG_HFP_HF
+	bool "[DEPRECATED] Bluetooth Hands Free Profile (HFP) debug"
+	select DEPRECATED
+	depends on BT_HFP_HF
+	help
+	  This option enables debug support for the Bluetooth
+	  Hands Free Profile (HFP).
+
+config BT_DEBUG_AVDTP
+	bool "[DEPRECATED] Bluetooth AVDTP debug"
+	select DEPRECATED
+	depends on BT_AVDTP
+	help
+	  This option enables debug support for the Bluetooth AVDTP.
+
+config BT_DEBUG_A2DP
+	bool "[DEPRECATED] Bluetooth A2DP debug"
+	select DEPRECATED
+	depends on BT_A2DP
+	help
+	  This option enables debug support for the Bluetooth
+	  A2DP profile.
+
+config BT_DEBUG_SDP
+	bool "[DEPRECATED] Bluetooth Service Discovery Protocol (SDP) debug"
+	select DEPRECATED
+	depends on BT_BREDR
+	help
+	  This option enables debug support for the Bluetooth
+	  Service Discovery Protocol (SDP).
+
+endmenu # [DEPRECATED] BR/EDR
+
+# MESH (subsys/bluetooth/mesh/Kconfig)
+
+menu "[DEPRECATED] Mesh"
+
+config BT_MESH_DEBUG
+	bool "[DEPRECATED] Debug logs"
+	select DEPRECATED
+	help
+	  Use this option to enable debug logs for the Bluetooth
+	  Mesh functionality.
+
+config BT_MESH_DEBUG_NET
+	bool "[DEPRECATED] Network layer debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Network layer debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_RPL
+	bool "[DEPRECATED] Replay protection list debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Replay protection list debug logs
+	  for the Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_TRANS
+	bool "[DEPRECATED] Transport layer debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Transport layer debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_BEACON
+	bool "[DEPRECATED] Beacon debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Beacon-related debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_CRYPTO
+	bool "[DEPRECATED] Crypto debug"
+	select DEPRECATED
+	help
+	  Use this option to enable cryptographic debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_KEYS
+	bool "[DEPRECATED] Key management debug"
+	select DEPRECATED
+	help
+	  Use this option to enable key management debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV
+	bool "[DEPRECATED] Provisioning debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Provisioning debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROVISIONER
+	bool "[DEPRECATED] Provisioner debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Provisioner debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "[DEPRECATED] Provisioning device debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Provisioning device debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_ACCESS
+	bool "[DEPRECATED] Access layer debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Access layer and device composition
+	  related debug logs for Bluetooth mesh.
+
+config BT_MESH_DEBUG_MODEL
+	bool "[DEPRECATED] Foundation model debug"
+	select DEPRECATED
+	help
+	  Use this option to enable debug logs for the Foundation
+	  Models.
+
+config BT_MESH_DEBUG_ADV
+	bool "[DEPRECATED] Advertising debug"
+	select DEPRECATED
+	help
+	  Use this option to enable advertising debug logs for
+	  the Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_LOW_POWER
+	bool "[DEPRECATED] Low Power debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Low Power debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_FRIEND
+	bool "[DEPRECATED] Friend debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Friend debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROXY
+	bool "[DEPRECATED] Proxy debug"
+	select DEPRECATED
+	depends on BT_MESH_GATT
+	help
+	  Use this option to enable Proxy protocol debug logs.
+
+config BT_MESH_DEBUG_SETTINGS
+	bool "[DEPRECATED] Persistent settings debug"
+	select DEPRECATED
+	depends on BT_SETTINGS
+	help
+	  Use this option to enable persistent settings debug logs.
+
+config BT_MESH_DEBUG_CDB
+	bool "[DEPRECATED] Configuration database debug"
+	select DEPRECATED
+	depends on BT_MESH_CDB
+	help
+	  Use this option to enable configuration database debug logs.
+
+config BT_MESH_DEBUG_CFG
+	bool "[DEPRECATED] Configuration debug"
+	select DEPRECATED
+	help
+	  Use this option to enable node configuration debug logs for the
+	  Bluetooth mesh functionality.
+
+endmenu # [DEPRECATED] Mesh
+
+menu "[DEPRECATED] Services"
+
+# IAS
+
+config BT_DEBUG_IAS_CLIENT
+	bool "[DEPRECATED] Immediate Alert Service Client debug"
+	select DEPRECATED
+	depends on BT_IAS_CLIENT
+	help
+	  This option enables enables Immediate Alert Service Client debug logs.
+
+# OTS
+
+# TODO: Unify logging for OTS server and client - the client uses
+# "BT" debugging, the server does not.
+
+config BT_DEBUG_OTS_CLIENT
+	bool "[DEPRECATED] Object Transfer Service Client debug"
+	select DEPRECATED
+	help
+	  Use this option to enable Object Transfer Client debug logs
+
+endmenu # [DEPRECATED] Services
+
+endmenu # Bluetooth legacy logging options
+
+endif # BT_LOG_LEGACY
+
+# (subsys/bluetooth/Kconfig)
+
+module = BT
+module-str = "Bluetooth"
+source "subsys/logging/Kconfig.template.log_config"
+
+# COMMON (subsys/bluetooth/common/Kconfig)
+
+module = BT_HCI_DRIVER
+legacy-debug-sym = BT_DEBUG_HCI_DRIVER
+module-str = "Bluetooth HCI driver"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_RPA
+legacy-debug-sym = BT_DEBUG_RPA
+module-str = "Bluetooth Resolvable Private Address (RPA)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+menu "Audio"
+
+# AICS
+
+module = BT_AICS
+legacy-debug-sym = BT_DEBUG_AICS
+module-str = "Audio Input Control Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_AICS_CLIENT
+legacy-debug-sym = BT_DEBUG_AICS_CLIENT
+module-str = "Audio Input Control Service client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# BAP
+
+module = BT_BAP_STREAM
+legacy-debug-sym = BT_BAP_DEBUG_STREAM
+module-str = "Bluetooth Audio Stream"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+parent-module = BT
+module = BT_AUDIO_CODEC
+module-str = "Bluetooth Audio Codec"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_ASCS
+legacy-debug-sym = BT_DEBUG_ASCS
+module-str = "Audio Stream Control Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_UNICAST_SERVER
+legacy-debug-sym = BT_DEBUG_BAP_UNICAST_SERVER
+module-str = "Bluetooth Audio Unicast Server"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_UNICAST_CLIENT
+legacy-debug-sym = BT_DEBUG_BAP_UNICAST_CLIENT
+module-str = "Basic Audio Profile"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_BROADCAST_SOURCE
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SOURCE
+module-str = "Bluetooth Audio Broadcast Source"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_BROADCAST_SINK
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_SINK
+module-str = "Bluetooth Audio Broadcast Sink"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_SCAN_DELEGATOR
+legacy-debug-sym = BT_DEBUG_BAP_SCAN_DELEGATOR
+module-str = "Broadcast Audio Scan Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_BAP_BROADCAST_ASSISTANT
+legacy-debug-sym = BT_DEBUG_BAP_BROADCAST_ASSISTANT
+module-str = "Broadcast Audio Scan Service client debug"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+parent-module = BT
+module = BT_BAP_ISO
+module-str = "Bluetooth Audio ISO"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# CAP
+
+module = BT_CAP_ACCEPTOR
+legacy-debug-sym = BT_DEBUG_CAP_ACCEPTOR
+module-str = "Common Audio Profile Acceptor"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_CAP_INITIATOR
+legacy-debug-sym = BT_DEBUG_CAP_INITIATOR
+module-str = "Common Audio Profile Initiator"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+parent-module = BT
+module = BT_CAP_STREAM
+module-str = "Common Audio Profile Stream"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# CSIP
+
+module = BT_CSIP_SET_MEMBER
+legacy-debug-sym = BT_DEBUG_CSIP_SET_MEMBER
+module-str = "Coordinated Set Identification Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_CSIP_SET_COORDINATOR
+legacy-debug-sym = BT_DEBUG_CSIP_SET_COORDINATOR
+module-str = "Coordinated Set Identification Profile Set Coordinator"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_CSIP_SET_MEMBER_CRYPTO
+legacy-debug-sym = BT_DEBUG_CSIP_SET_MEMBER_CRYPTO
+module-str = "Coordinated Set Identification Profile crypto functions"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# HAS
+
+module = BT_HAS
+legacy-debug-sym = BT_DEBUG_HAS
+module-str = "Hearing Access Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_HAS_CLIENT
+legacy-debug-sym = BT_DEBUG_HAS_CLIENT
+module-str = "Hearing Access Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# MCS
+
+module = BT_MCS
+legacy-debug-sym = BT_DEBUG_MCS
+module-str = "Media Control Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MCC
+legacy-debug-sym = BT_DEBUG_MCC
+module-str = "Media Control Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# MCTL
+
+module = MCTL
+legacy-debug-sym = MCTL_DEBUG
+module-str = "Media control"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# MICP
+
+module = BT_MICP_MIC_DEV
+legacy-debug-sym = BT_DEBUG_MICP_MIC_DEV
+module-str = "Microphone Control Profile Microphone Device"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MICP_MIC_CTLR
+legacy-debug-sym = BT_DEBUG_MICP_MIC_CTLR
+module-str = "Microphone Control Profile Microphone Controller"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# MPL
+
+module = BT_MPL
+legacy-debug-sym = BT_DEBUG_MPL
+module-str = "Media player"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# PACS
+
+module = BT_PACS
+legacy-debug-sym = BT_DEBUG_PACS
+module-str = "Published Audio Capabilities Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# TBS
+
+module = BT_TBS
+legacy-debug-sym = BT_DEBUG_TBS
+module-str = "Telephone Bearer Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_TBS_CLIENT
+legacy-debug-sym = BT_DEBUG_TBS_CLIENT
+module-str = "Telephone Bearer Service client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# VCP
+
+module = BT_VCP_VOL_REND
+legacy-debug-sym = BT_DEBUG_VCP_VOL_REND
+module-str = "Volume Control Profile Voluem Renderer"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_VCP_VOL_CTLR
+legacy-debug-sym = BT_DEBUG_VCP_VOL_CTLR
+module-str = "Volume Control Profile Volume Controller"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# VOCS
+
+module = BT_VOCS
+legacy-debug-sym = BT_DEBUG_VOCS
+module-str = "Volume Offset Control Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_VOCS_CLIENT
+legacy-debug-sym = BT_DEBUG_VOCS_CLIENT
+module-str = "Volume Offset Control Service client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+endmenu # Audio
+
+menu "Others"
+
+# CRYPTO (subsys/bluetooth/crypto/Kconfig)
+
+module = BT_CRYPTO
+legacy-debug-sym = BT_DEBUG_CRYPTO
+module-str = "Bluetooth Cryptographic Toolbox"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# GATT
+
+module = BT_ATT
+legacy-debug-sym = BT_DEBUG_ATT
+module-str = "Bluetooth Attribute Protocol (ATT)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_GATT
+legacy-debug-sym = BT_DEBUG_GATT
+module-str = "Bluetooth Generic Attribute Profile (GATT)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# L2CAP
+
+module = BT_L2CAP
+legacy-debug-sym = BT_DEBUG_L2CAP
+module-str = "Bluetooth L2CAP"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+# LIB (subsys/bluetooth/lib/Kconfig)
+
+parent-module = BT
+module = BT_EAD
+module-str = "Bluetooth Encrypted Advertising Data"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+# HOST (subsys/bluetooth/host/Kconfig)
+
+module = BT_DF
+legacy-debug-sym = BT_DEBUG_DF
+module-str = "Bluetooth Direction Finding"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_SETTINGS
+legacy-debug-sym = BT_DEBUG_SETTINGS
+module-str = "Bluetooth storage"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_HCI_CORE
+legacy-debug-sym = BT_DEBUG_HCI_CORE
+module-str = "Bluetooth HCI core"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_CONN
+legacy-debug-sym = BT_DEBUG_CONN
+module-str = "Bluetooth connection"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_ISO
+legacy-debug-sym = BT_DEBUG_ISO
+module-str = "ISO channel"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_KEYS
+legacy-debug-sym = BT_DEBUG_KEYS
+module-str = "Bluetooth security keys"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_SMP
+legacy-debug-sym = BT_DEBUG_SMP
+module-str = "Bluetooth Security Manager Protocol"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_SERVICE
+legacy-debug-sym = BT_DEBUG_SERVICE
+module-str = "Bluetooth Services"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+endmenu # Others
+
+menu "BR/EDR"
+
+module = BT_RFCOMM
+legacy-debug-sym = BT_DEBUG_RFCOMM
+module-str = "Bluetooth RFCOMM"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_HFP_HF
+legacy-debug-sym = BT_DEBUG_HFP_HF
+module-str = "Bluetooth Hands Free Profile (HFP)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_AVDTP
+legacy-debug-sym = BT_DEBUG_AVDTP
+module-str = "Bluetooth AVDTP debug"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_A2DP
+legacy-debug-sym = BT_DEBUG_A2DP
+module-str = "Bluetooth A2DP"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_SDP
+legacy-debug-sym = BT_DEBUG_SDP
+module-str = "Bluetooth Service Discovery Protocol (SDP)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+endmenu # BR/EDR
+
+# MESH (subsys/bluetooth/mesh/Kconfig)
+
+menu "Mesh"
+
+module = BT_MESH
+legacy-debug-sym = BT_MESH_DEBUG
+module-str = "Debug logs"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_NET
+legacy-debug-sym = BT_MESH_DEBUG_NET
+module-str = "Network layer"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_RPL
+legacy-debug-sym = BT_MESH_DEBUG_RPL
+module-str = "Replay protection list"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_TRANS
+legacy-debug-sym = BT_MESH_DEBUG_TRANS
+module-str = "Transport layer"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_BEACON
+legacy-debug-sym = BT_MESH_DEBUG_BEACON
+module-str = "Beacon"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_CRYPTO
+legacy-debug-sym = BT_MESH_DEBUG_CRYPTO
+module-str = "Crypto"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_KEYS
+legacy-debug-sym = BT_MESH_DEBUG_KEYS
+module-str = "Key management"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_PROV
+legacy-debug-sym = BT_MESH_DEBUG_PROV
+module-str = "Provisioning"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_PROVISIONER
+legacy-debug-sym = BT_MESH_DEBUG_PROVISIONER
+module-str = "Provisioner"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_PROV_DEVICE
+legacy-debug-sym = BT_MESH_DEBUG_PROV_DEVICE
+module-str = "Provisioning device"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_ACCESS
+legacy-debug-sym = BT_MESH_DEBUG_ACCESS
+module-str = "Access layer"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_MODEL
+legacy-debug-sym = BT_MESH_DEBUG_MODEL
+module-str = "Foundation model"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_DFU
+module-str = "DFU model"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_ADV
+legacy-debug-sym = BT_MESH_DEBUG_ADV
+module-str = "Advertising"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_LOW_POWER
+legacy-debug-sym = BT_MESH_DEBUG_LOW_POWER
+module-str = "Low Power"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_FRIEND
+legacy-debug-sym = BT_MESH_DEBUG_FRIEND
+module-str = "Friend"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_PROXY
+legacy-debug-sym = BT_MESH_DEBUG_PROXY
+module-str = "Proxy"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_SETTINGS
+legacy-debug-sym = BT_MESH_DEBUG_SETTINGS
+module-str = "Persistent settings"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_CDB
+legacy-debug-sym = BT_MESH_DEBUG_CDB
+module-str = "Configuration database"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_MESH_CFG
+legacy-debug-sym = BT_MESH_DEBUG_CFG
+module-str = "Configuration"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+endmenu # Mesh
+
+menu "Services"
+
+# BAS
+
+module = BT_BAS
+module-str = BAS
+source "subsys/logging/Kconfig.template.log_config"
+
+# HRS
+
+module = BT_HRS
+module-str = HRS
+source "subsys/logging/Kconfig.template.log_config"
+
+# TPS
+
+module = BT_TPS
+module-str = TPS
+source "subsys/logging/Kconfig.template.log_config"
+
+# IAS
+
+module = BT_IAS_CLIENT
+legacy-debug-sym = BT_DEBUG_IAS_CLIENT
+module-str = "Immediate Alert Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_IAS
+module-str = IAS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+# OTS (subsys/bluetooth/services/ots/Kconfig)
+
+module = BT_OTS_CLIENT
+legacy-debug-sym = BT_DEBUG_OTS_CLIENT
+module-str = "Object Transfer Service Client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+module = BT_OTS
+module-str = BT_OTS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endmenu # Services
+
+endmenu # Bluetooth logging
+
+endif # BT_LOG

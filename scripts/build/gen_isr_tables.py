@@ -13,7 +13,7 @@ import os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-ISR_FLAG_DIRECT = (1 << 0)
+ISR_FLAG_DIRECT = 1 << 0
 
 # The below few hardware independent magic numbers represent various
 # levels of interrupts in a multi-level interrupt system.
@@ -105,7 +105,7 @@ def parse_args():
     global args
 
     parser = argparse.ArgumentParser(description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+            formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-e", "--big-endian", action="store_true",
             help="Target encodes data in big-endian format (little endian is "
@@ -313,7 +313,7 @@ def main():
                 debug('IRQ = ' + hex(irq))
                 irq3 = (irq & THIRD_LVL_INTERRUPTS) >> 16
                 irq2 = (irq & SECND_LVL_INTERRUPTS) >> 8
-                irq1 = (irq & FIRST_LVL_INTERRUPTS)
+                irq1 = irq & FIRST_LVL_INTERRUPTS
 
                 if irq3:
                     irq_parent = irq2

@@ -57,7 +57,7 @@ static const struct usb_audio_ops ops = {
 	.feature_update_cb = feature_update,
 };
 
-void main(void)
+int main(void)
 {
 	const struct device *hs_dev;
 	int ret;
@@ -67,7 +67,7 @@ void main(void)
 
 	if (!device_is_ready(hs_dev)) {
 		LOG_ERR("Device USB Headset is not ready");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Found USB Headset Device");
@@ -77,8 +77,9 @@ void main(void)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return 0;
 	}
 
 	LOG_INF("USB enabled");
+	return 0;
 }

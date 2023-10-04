@@ -11,7 +11,8 @@
 #include <soc.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/irq.h>
-#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#include <zephyr/sys/barrier.h>
+#if defined(CONFIG_IPM_IMX_REV2)
 #define DT_DRV_COMPAT nxp_imx_mu_rev2
 #include "fsl_mu.h"
 #else
@@ -37,7 +38,7 @@ struct imx_mu_data {
 	void *user_data;
 };
 
-#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#if defined(CONFIG_IPM_IMX_REV2)
 /*!
  * @brief Check RX full status.
  *
@@ -126,7 +127,7 @@ static void imx_mu_isr(const struct device *dev)
 			}
 			if (all_registers_full) {
 				for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
-#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#if defined(CONFIG_IPM_IMX_REV2)
 					data32[i] = MU_ReceiveMsg(base,
 						(id * IMX_IPM_DATA_REGS) + i);
 #else
@@ -155,7 +156,7 @@ static void imx_mu_isr(const struct device *dev)
 	 * with errata 838869.
 	 */
 #if (defined __CORTEX_M) && ((__CORTEX_M == 4U) || (__CORTEX_M == 7U))
-	__DSB();
+	barrier_dsync_fence_full();
 #endif
 }
 
@@ -181,7 +182,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	/* Actual message is passing using 32 bits registers */
 	memcpy(data32, data, size);
 
-#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#if defined(CONFIG_IPM_IMX_REV2)
 	if (wait) {
 		for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
 			MU_SendMsgNonBlocking(base, id * IMX_IPM_DATA_REGS + i,
@@ -248,7 +249,7 @@ static int imx_mu_ipm_set_enabled(const struct device *dev, int enable)
 {
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-#if IS_ENABLED(CONFIG_IPM_IMX_REV2)
+#if defined(CONFIG_IPM_IMX_REV2)
 #if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
 	if (enable) {
 		MU_EnableInterrupts(base, kMU_Rx0FullInterruptEnable);

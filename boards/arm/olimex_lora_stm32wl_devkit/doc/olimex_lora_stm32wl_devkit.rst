@@ -116,6 +116,15 @@ Connect the board to your host computer and build and flash an application.
    :board: olimex_lora_stm32wl_devkit
    :goals: build flash
 
+If you're using devkit revision C or higher, you'll need to specify the
+appropriate revision letter to enable the VDDIO supply to the UEXT1 connector and
+CON1 pin header.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_lora_stm32wl_devkit@D
+   :goals: build flash
+
 Run a serial terminal to connect with your board. By default, ``usart1`` is
 accessible via the the built-in USB to UART converter.
 
@@ -132,6 +141,14 @@ You can debug an application in the usual way.  Here is an example for the
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: olimex_lora_stm32wl_devkit
+   :maybe-skip-config:
+   :goals: debug
+
+On board revisions C or newer:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: olimex_lora_stm32wl_devkit@D
    :maybe-skip-config:
    :goals: debug
 

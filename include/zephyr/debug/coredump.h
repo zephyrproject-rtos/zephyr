@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 /* Query ID */
@@ -233,6 +234,7 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
 
 /**
  * @defgroup coredump_apis Coredump APIs
+ * @ingroup os_services
  * @brief Coredump APIs
  * @{
  */

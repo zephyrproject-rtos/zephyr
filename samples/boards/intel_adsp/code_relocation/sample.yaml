@@ -1,3 +1,7 @@
 sample:
   description: Code relocation sample for Intel ADSP Cavs.
   name: cavs_code_reloc
+tests:
+  sample.intel_adsp.code_relocation:
+    platform_allow: intel_adsp_cavs25
+    tags: linker

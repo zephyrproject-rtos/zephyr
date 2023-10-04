@@ -17,21 +17,8 @@ static struct adsp_clock_info platform_clocks[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock lock;
 
 int adsp_clock_freq_enc[] = ADSP_CLOCK_FREQ_ENC;
-#ifndef CONFIG_SOC_INTEL_CAVS_V15
 int adsp_clock_freq_mask[] = ADSP_CLOCK_FREQ_MASK;
-#endif
 
-#ifdef CONFIG_SOC_INTEL_CAVS_V15
-static void select_cpu_clock_hw(uint32_t freq)
-{
-	uint8_t cpu_id = _current_cpu->id;
-	uint32_t enc = adsp_clock_freq_enc[freq] << (8 + cpu_id * 2);
-	uint32_t mask = CAVS_CLKCTL_DPCS_MASK(cpu_id);
-
-	ADSP_CLKCTL &= ~CAVS_CLKCTL_HDCS;
-	ADSP_CLKCTL = (ADSP_CLKCTL & ~mask) | (enc & mask);
-}
-#else
 static void select_cpu_clock_hw(uint32_t freq_idx)
 {
 	uint32_t enc = adsp_clock_freq_enc[freq_idx];
@@ -52,7 +39,6 @@ static void select_cpu_clock_hw(uint32_t freq_idx)
 	/* Release other clocks */
 	ADSP_CLKCTL &= ~ADSP_CLKCTL_OSC_REQUEST_MASK | enc;
 }
-#endif
 
 int adsp_clock_set_freq(uint32_t freq_idx)
 {

@@ -43,7 +43,7 @@ static void bossa_reset(const struct device *dev, uint32_t rate)
 	NVIC_SystemReset();
 }
 
-static int bossa_init(const struct device *unused)
+static int bossa_init(void)
 {
 	const struct device *dev =
 		device_get_binding(CONFIG_BOOTLOADER_BOSSA_DEVICE_NAME);

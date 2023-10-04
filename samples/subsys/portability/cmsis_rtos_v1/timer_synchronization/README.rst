@@ -1,7 +1,7 @@
 .. _cmsis_rtos_v1-sync_sample:
 
-Synchronization using CMSI RTOS V1 APIs
-#######################################
+Synchronization using CMSIS RTOS V1 APIs
+########################################
 
 Overview
 ********

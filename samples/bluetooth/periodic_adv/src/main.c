@@ -12,7 +12,7 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, 3),
 };
 
-void main(void)
+int main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -23,14 +23,14 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Set periodic advertising parameters */
@@ -38,14 +38,14 @@ void main(void)
 	if (err) {
 		printk("Failed to set periodic advertising parameters"
 		       " (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
 	if (err) {
 		printk("Failed to enable periodic advertising (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	while (true) {
@@ -54,7 +54,7 @@ void main(void)
 		if (err) {
 			printk("Failed to start extended advertising "
 			       "(err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("done.\n");
 
@@ -67,7 +67,7 @@ void main(void)
 			err = bt_le_per_adv_set_data(adv, ad, ARRAY_SIZE(ad));
 			if (err) {
 				printk("Failed (err %d)\n", err);
-				return;
+				return 0;
 			}
 			printk("done.\n");
 		}
@@ -79,10 +79,11 @@ void main(void)
 		if (err) {
 			printk("Failed to stop extended advertising "
 			       "(err %d)\n", err);
-			return;
+			return 0;
 		}
 		printk("done.\n");
 
 		k_sleep(K_SECONDS(10));
 	}
+	return 0;
 }

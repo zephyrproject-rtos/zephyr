@@ -32,7 +32,7 @@ void new_message_callback(const struct device *dev, void *user_data,
 	ipm_data->led_is_on = !ipm_data->led_is_on;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const ipm = DEVICE_DT_GET(DT_NODELABEL(mailbox));
 
@@ -40,12 +40,12 @@ void main(void)
 
 	if (!device_is_ready(ipm)) {
 		printk("ipm device not ready\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(led0.port)) {
 		printk("led0 device not ready\n");
-		return;
+		return 0;
 	}
 
 	gpio_pin_configure_dt(&led0, GPIO_OUTPUT_INACTIVE);
@@ -61,4 +61,5 @@ void main(void)
 		ipm_send(ipm, 0, 0, NULL, 0);
 		k_msleep(SLEEP_TIME_MS);
 	}
+	return 0;
 }

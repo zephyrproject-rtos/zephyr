@@ -59,6 +59,8 @@ config GIC_V3_ITS
 	select DYNAMIC_INTERRUPTS
 	help
 	  Support for the optional Interrupt Translation Service used to translate
-	  hardware interrupt from PCIe MSI messages for example.
+	  hardware interrupt from PCIe MSI messages for example. Please note
+	  that ITS uses dynamic memory, so HEAP_MEM_POOL_SIZE should be
+	  enough to allocate ITS tables (size is probed at runtime).
 
 endif # CPU_CORTEX

@@ -15,10 +15,11 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -737,15 +738,15 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 MODEM_CMD_DEFINE(on_cmd_sockcreate)
 {
 	struct modem_socket *sock = NULL;
+	int id;
 
 	/* look up new socket by special id */
 	sock = modem_socket_from_newid(&mdata.socket_config);
 	if (sock) {
-		sock->id = ATOI(argv[0],
-				mdata.socket_config.base_socket_num - 1,
-				"socket_id");
+		id = ATOI(argv[0], -1, "socket_id");
+
 		/* on error give up modem socket */
-		if (sock->id == mdata.socket_config.base_socket_num - 1) {
+		if (modem_socket_id_assign(&mdata.socket_config, sock, id) < 0) {
 			modem_socket_put(&mdata.socket_config, sock->sock_fd);
 		}
 	}
@@ -939,9 +940,9 @@ static void modem_rx(void)
 {
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&mdata.iface_data.rx_sem, K_FOREVER);
+		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
 
-		mctx.cmd_handler.process(&mctx.cmd_handler, &mctx.iface);
+		modem_cmd_handler_process(&mctx.cmd_handler, &mctx.iface);
 
 		/* give up time if we have a solid stream of data */
 		k_yield();
@@ -1488,8 +1489,8 @@ static int offload_close(void *obj)
 	char buf[sizeof("AT+USOCL=#\r")];
 	int ret;
 
-	/* make sure we assigned an id */
-	if (sock->id < mdata.socket_config.base_socket_num) {
+	/* make sure socket is allocated and assigned an id */
+	if (modem_socket_id_is_assigned(&mdata.socket_config, sock) == false) {
 		return 0;
 	}
 
@@ -1517,7 +1518,7 @@ static int offload_bind(void *obj, const struct sockaddr *addr,
 	memcpy(&sock->src, addr, sizeof(*addr));
 
 	/* make sure we've created the socket */
-	if (sock->id == mdata.socket_config.sockets_len + 1) {
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == true) {
 		if (create_socket(sock, addr) < 0) {
 			return -1;
 		}
@@ -1540,7 +1541,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		return -1;
 	}
 
-	if (sock->id < mdata.socket_config.base_socket_num - 1) {
+	/* make sure socket has been allocated */
+	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
 			sock->id, sock->sock_fd);
 		errno = EINVAL;
@@ -1548,7 +1550,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* make sure we've created the socket */
-	if (sock->id == mdata.socket_config.sockets_len + 1) {
+	if (modem_socket_id_is_assigned(&mdata.socket_config, sock) == false) {
 		if (create_socket(sock, NULL) < 0) {
 			return -1;
 		}
@@ -2032,7 +2034,7 @@ static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 	res = NULL;
 }
 
-const struct socket_dns_offload offload_dns_ops = {
+static const struct socket_dns_offload offload_dns_ops = {
 	.getaddrinfo = offload_getaddrinfo,
 	.freeaddrinfo = offload_freeaddrinfo,
 };
@@ -2103,8 +2105,8 @@ static void modem_net_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
-static struct net_if_api api_funcs = {
-	.init = modem_net_iface_init,
+static struct offloaded_if_api api_funcs = {
+	.iface_api.init = modem_net_iface_init,
 };
 
 static const struct modem_cmd response_cmds[] = {
@@ -2138,38 +2140,41 @@ static int modem_init(const struct device *dev)
 #endif
 
 	/* socket config */
-	mdata.socket_config.sockets = &mdata.sockets[0];
-	mdata.socket_config.sockets_len = ARRAY_SIZE(mdata.sockets);
-	mdata.socket_config.base_socket_num = MDM_BASE_SOCKET_NUM;
-	ret = modem_socket_init(&mdata.socket_config,
-				&offload_socket_fd_op_vtable);
+	ret = modem_socket_init(&mdata.socket_config, &mdata.sockets[0], ARRAY_SIZE(mdata.sockets),
+				MDM_BASE_SOCKET_NUM, false, &offload_socket_fd_op_vtable);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* cmd handler */
-	mdata.cmd_handler_data.cmds[CMD_RESP] = response_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	mdata.cmd_handler_data.cmds[CMD_UNSOL] = unsol_cmds;
-	mdata.cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	mdata.cmd_handler_data.match_buf = &mdata.cmd_match_buf[0];
-	mdata.cmd_handler_data.match_buf_len = sizeof(mdata.cmd_match_buf);
-	mdata.cmd_handler_data.buf_pool = &mdm_recv_pool;
-	mdata.cmd_handler_data.alloc_timeout = K_NO_WAIT;
-	mdata.cmd_handler_data.eol = "\r";
-	ret = modem_cmd_handler_init(&mctx.cmd_handler,
-				     &mdata.cmd_handler_data);
+	const struct modem_cmd_handler_config cmd_handler_config = {
+		.match_buf = &mdata.cmd_match_buf[0],
+		.match_buf_len = sizeof(mdata.cmd_match_buf),
+		.buf_pool = &mdm_recv_pool,
+		.alloc_timeout = K_NO_WAIT,
+		.eol = "\r",
+		.user_data = NULL,
+		.response_cmds = response_cmds,
+		.response_cmds_len = ARRAY_SIZE(response_cmds),
+		.unsol_cmds = unsol_cmds,
+		.unsol_cmds_len = ARRAY_SIZE(unsol_cmds),
+	};
+
+	ret = modem_cmd_handler_init(&mctx.cmd_handler, &mdata.cmd_handler_data,
+				     &cmd_handler_config);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* modem interface */
-	mdata.iface_data.hw_flow_control = DT_PROP(MDM_UART_NODE,
-						   hw_flow_control);
-	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
-	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
-	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
-				    MDM_UART_DEV);
+	const struct modem_iface_uart_config uart_config = {
+		.rx_rb_buf = &mdata.iface_rb_buf[0],
+		.rx_rb_buf_len = sizeof(mdata.iface_rb_buf),
+		.dev = MDM_UART_DEV,
+		.hw_flow_control = DT_PROP(MDM_UART_NODE, hw_flow_control),
+	};
+
+	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data, &uart_config);
 	if (ret < 0) {
 		goto error;
 	}

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,6 +106,10 @@ size_t _kernel_thread_info_offsets[] = {
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_ARM)
 	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempt_float),
+	[THREAD_INFO_OFFSET_T_COOP_FLOAT] = THREAD_INFO_UNIMPLEMENTED,
+#elif defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_ARM64)
+	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
+							saved_fp_context),
 	[THREAD_INFO_OFFSET_T_COOP_FLOAT] = THREAD_INFO_UNIMPLEMENTED,
 #elif defined(CONFIG_FPU) && defined(CONFIG_X86)
 #if defined(CONFIG_X86_64)

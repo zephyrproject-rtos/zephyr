@@ -9,19 +9,21 @@
 #include <zephyr/sys/printk.h>
 
 /* This pin is used to enable the serial port using the board controller */
-#ifdef CONFIG_BOARD_EFR32_RADIO_BRD4180A
+#if defined(CONFIG_BOARD_EFR32_RADIO_BRD4180A)
 #define VCOM_ENABLE_GPIO_NODE  DT_NODELABEL(gpiod)
 #define VCOM_ENABLE_GPIO_PIN   4
+#elif defined(CONFIG_BOARD_EFR32_RADIO_BRD4187C)
+#define VCOM_ENABLE_GPIO_NODE  DT_NODELABEL(gpiob)
+#define VCOM_ENABLE_GPIO_PIN   0
 #else
 #define VCOM_ENABLE_GPIO_NODE  DT_NODELABEL(gpioa)
 #define VCOM_ENABLE_GPIO_PIN   5
-#endif /* CONFIG_BOARD_EFR32_RADIO_BRD4180A */
+#endif
 
-static int efr32_radio_init(const struct device *dev)
+static int efr32_radio_init(void)
 {
 	const struct device *vce_dev; /* Virtual COM Port Enable GPIO Device */
 
-	ARG_UNUSED(dev);
 
 	/* Enable the board controller to be able to use the serial port */
 	vce_dev = DEVICE_DT_GET(VCOM_ENABLE_GPIO_NODE);

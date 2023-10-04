@@ -1,0 +1,14 @@
+# Nordic Semiconductor nRF9161 MCU
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9161_SICA
+
+config SOC
+	default "nRF9161_SICA"
+
+config NUM_IRQS
+	default 65
+
+endif # SOC_NRF9161_SICA

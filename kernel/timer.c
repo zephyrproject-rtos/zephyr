@@ -26,6 +26,24 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	/* In sys_clock_announce(), when a timeout expires, it is first removed
+	 * from the timeout list, then its expiration handler is called (with
+	 * unlocked interrupts). For kernel timers, the expiration handler is
+	 * this function. Usually, the timeout structure related to the timer
+	 * that is handled here will not be linked to the timeout list at this
+	 * point. But it may happen that before this function is executed and
+	 * interrupts are locked again, a given timer gets restarted from an
+	 * interrupt context that has a priority higher than the system timer
+	 * interrupt. Then, the timeout structure for this timer will turn out
+	 * to be linked to the timeout list. And in such case, since the timer
+	 * was restarted, its expiration handler should not be executed then,
+	 * so the function exits immediately.
+	 */
+	if (sys_dnode_is_linked(&t->node)) {
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
 	 * since we're already aligned to a tick boundary
@@ -33,6 +51,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
+
+		/* see note about z_add_timeout() in z_impl_k_timer_start() */
+		next.ticks = MAX(next.ticks - 1, 0);
 
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
@@ -46,8 +67,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * beginning of a tick, so need to defeat the "round
 		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1
-					   + timer->period.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
 #endif
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
@@ -121,8 +141,8 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * to round up to the next tick (by convention it waits for
 	 * "at least as long as the specified timeout"), but the
 	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired.  Subtract
-	 * one.
+	 * within the timer ISR, so no round up is desired and 1 is
+	 * subtracted in there.
 	 *
 	 * Note that the duration (!) value gets the same treatment
 	 * for backwards compatibility.  This is unfortunate
@@ -130,10 +150,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * argument the same way k_sleep() does), but historical.  The
 	 * timer_api test relies on this behavior.
 	 */
-	if (!K_TIMEOUT_EQ(period, K_FOREVER) && period.ticks != 0 &&
-	    Z_TICK_ABS(period.ticks) < 0) {
-		period.ticks = MAX(period.ticks - 1, 1);
-	}
 	if (Z_TICK_ABS(duration.ticks) < 0) {
 		duration.ticks = MAX(duration.ticks - 1, 0);
 	}

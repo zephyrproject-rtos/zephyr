@@ -200,6 +200,7 @@ struct dai_properties {
  * @param options Dai specific configuration options.
  * @param word_size Number of bits representing one data word.
  * @param block_size Size of one RX/TX memory block (buffer) in bytes.
+ * @param link_config Dai specific link configuration.
  */
 struct dai_config {
 	enum dai_type type;
@@ -210,6 +211,7 @@ struct dai_config {
 	uint8_t options;
 	uint8_t word_size;
 	size_t block_size;
+	uint16_t link_config;
 };
 
 struct dai_ts_cfg {
@@ -238,8 +240,8 @@ __subsystem struct dai_driver_api {
 	int (*remove)(const struct device *dev);
 	int (*config_set)(const struct device *dev, const struct dai_config *cfg,
 			  const void *bespoke_cfg);
-	const struct dai_config *(*config_get)(const struct device *dev,
-					       enum dai_dir dir);
+	int (*config_get)(const struct device *dev, struct dai_config *cfg,
+			  enum dai_dir dir);
 
 	const struct dai_properties *(*get_properties)(const struct device *dev,
 						       enum dai_dir dir,
@@ -328,16 +330,17 @@ static inline int dai_config_set(const struct device *dev,
  * @brief Fetch configuration information of a DAI driver
  *
  * @param dev Pointer to the device structure for the driver instance
+ * @param cfg Pointer to the config structure to be filled by the instance
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
- * @retval Pointer to the structure containing configuration parameters,
- *         or NULL if un-configured
+ * @retval 0 if success, negative if invalid parameters or dai un-configured
  */
-static inline const struct dai_config *dai_config_get(const struct device *dev,
-						      enum dai_dir dir)
+static inline int dai_config_get(const struct device *dev,
+				 struct dai_config *cfg,
+				 enum dai_dir dir)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	return api->config_get(dev, dir);
+	return api->config_get(dev, cfg, dir);
 }
 
 /**

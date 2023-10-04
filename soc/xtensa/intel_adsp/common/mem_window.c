@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/cpu.h>
@@ -10,7 +10,7 @@
 #include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <mem_window.h>
-#include <soc.h>
+#include <soc_util.h>
 
 /* host windows */
 #define DMWBA(win_base) (win_base + 0x0)

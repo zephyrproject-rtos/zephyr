@@ -13,6 +13,8 @@
 #include <_soc_inthandlers.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
+#include <offsets.h>
+#include <zsr.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -22,6 +24,9 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
+	void *ret;
+	_xtensa_irq_stack_frame_a11_t *frame;
+
 	/* Not-a-cpu ID Ensures that the first time this is run, the
 	 * stack will be invalidated.  That covers the edge case of
 	 * restarting a thread on a stack that had previously been run
@@ -37,16 +42,17 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	 * stack pointer 16 bytes above the top, so its ENTRY at the
 	 * start will decrement the stack pointer by 16.
 	 */
-	const int bsasz = BASE_SAVE_AREA_SIZE - 16;
-	void *ret, **bsa = (void **) (((char *) stack_top) - bsasz);
+	const int bsasz = sizeof(*frame) - 16;
 
-	(void)memset(bsa, 0, bsasz);
+	frame = (void *)(((char *) stack_top) - bsasz);
 
-	bsa[BSA_PC_OFF/4] = z_thread_entry;
-	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));
+	(void)memset(frame, 0, bsasz);
+
+	frame->bsa.pc = (uintptr_t)z_thread_entry;
+	frame->bsa.ps = PS_WOE | PS_UM | PS_CALLINC(1);
 
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
-	bsa[BSA_THREADPTR_OFF/4] = UINT_TO_POINTER(thread->tls);
+	frame->bsa.threadptr = thread->tls;
 #endif
 
 	/* Arguments to z_thread_entry().  Remember these start at A6,
@@ -54,21 +60,21 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	 * begins the C function.  And A4-A7 and A8-A11 are optional
 	 * quads that live below the BSA!
 	 */
-	bsa[-1] = arg1;  /* a7 */
-	bsa[-2] = entry; /* a6 */
-	bsa[-3] = 0;     /* a5 */
-	bsa[-4] = 0;     /* a4 */
+	frame->a7 = (uintptr_t)arg1;  /* a7 */
+	frame->a6 = (uintptr_t)entry; /* a6 */
+	frame->a5 = 0;                /* a5 */
+	frame->a4 = 0;                /* a4 */
 
-	bsa[-5] = 0;     /* a11 */
-	bsa[-6] = 0;     /* a10 */
-	bsa[-7] = arg3;  /* a9 */
-	bsa[-8] = arg2;  /* a8 */
+	frame->a11 = 0;                /* a11 */
+	frame->a10 = 0;                /* a10 */
+	frame->a9  = (uintptr_t)arg3;  /* a9 */
+	frame->a8  = (uintptr_t)arg2;  /* a8 */
 
 	/* Finally push the BSA pointer and return the stack pointer
 	 * as the handle
 	 */
-	bsa[-9] = bsa;
-	ret = &bsa[-9];
+	frame->ptr_to_bsa = (void *)&frame->bsa;
+	ret = &frame->ptr_to_bsa;
 
 	return ret;
 }
@@ -83,7 +89,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
 	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
-	z_xtensa_cache_flush_inv(stack, (char *)stack_ptr - (char *)stack);
+	sys_cache_data_flush_and_invd_range(stack, (char *)stack_ptr - (char *)stack);
 #endif
 }
 
@@ -102,39 +108,72 @@ void z_irq_spurious(const void *arg)
 
 void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 {
-	int *bsa = *(int **)stack;
+	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
+	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
+	uintptr_t num_high_regs;
+	int reg_blks_remaining;
+
+	/* Calculate number of high registers. */
+	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs /= sizeof(uintptr_t);
+
+	/* And high registers are always comes in 4 in a block. */
+	reg_blks_remaining = (int)num_high_regs / 4;
 
 	LOG_ERR(" **  A0 %p  SP %p  A2 %p  A3 %p",
-		(void *)bsa[BSA_A0_OFF/4],
-		((char *)bsa) + BASE_SAVE_AREA_SIZE,
-		(void *)bsa[BSA_A2_OFF/4], (void *)bsa[BSA_A3_OFF/4]);
+		(void *)bsa->a0,
+		((char *)bsa + sizeof(*bsa)),
+		(void *)bsa->a2, (void *)bsa->a3);
 
-	if (bsa - stack > 4) {
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
 		LOG_ERR(" **  A4 %p  A5 %p  A6 %p  A7 %p",
-			(void *)bsa[-4], (void *)bsa[-3],
-			(void *)bsa[-2], (void *)bsa[-1]);
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
 	}
 
-	if (bsa - stack > 8) {
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
 		LOG_ERR(" **  A8 %p  A9 %p A10 %p A11 %p",
-			(void *)bsa[-8], (void *)bsa[-7],
-			(void *)bsa[-6], (void *)bsa[-5]);
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
 	}
 
-	if (bsa - stack > 12) {
+	if (reg_blks_remaining > 0) {
+		reg_blks_remaining--;
+
 		LOG_ERR(" ** A12 %p A13 %p A14 %p A15 %p",
-			(void *)bsa[-12], (void *)bsa[-11],
-			(void *)bsa[-10], (void *)bsa[-9]);
+			(void *)frame->blks[reg_blks_remaining].r0,
+			(void *)frame->blks[reg_blks_remaining].r1,
+			(void *)frame->blks[reg_blks_remaining].r2,
+			(void *)frame->blks[reg_blks_remaining].r3);
 	}
 
 #if XCHAL_HAVE_LOOPS
 	LOG_ERR(" ** LBEG %p LEND %p LCOUNT %p",
-		(void *)bsa[BSA_LBEG_OFF/4],
-		(void *)bsa[BSA_LEND_OFF/4],
-		(void *)bsa[BSA_LCOUNT_OFF/4]);
+		(void *)bsa->lbeg,
+		(void *)bsa->lend,
+		(void *)bsa->lcount);
 #endif
 
-	LOG_ERR(" ** SAR %p", (void *)bsa[BSA_SAR_OFF/4]);
+	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
+
+#ifdef CONFIG_XTENSA_MMU
+	uint32_t vaddrstatus, vaddr0, vaddr1;
+
+	__asm__ volatile("rsr.vaddrstatus %0" : "=r"(vaddrstatus));
+	__asm__ volatile("rsr.vaddr0 %0" : "=r"(vaddr0));
+	__asm__ volatile("rsr.vaddr1 %0" : "=r"(vaddr1));
+
+	LOG_ERR(" ** VADDRSTATUS %p VADDR0 %p VADDR1 %p",
+		(void *)vaddrstatus, (void *)vaddr0, (void *)vaddr1);
+#endif /* CONFIG_XTENSA_MMU */
 }
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
@@ -153,10 +192,22 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
-static inline void *return_to(void *interrupted)
+#ifdef CONFIG_MULTITHREADING
+void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
 {
 	return _current_cpu->nested <= 1 ?
 		z_get_next_switch_handle(interrupted) : interrupted;
+}
+#else
+void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
+{
+	return interrupted;
+}
+#endif /* CONFIG_MULTITHREADING */
+
+static inline void *return_to(void *interrupted)
+{
+	return z_arch_get_next_switch_handle(interrupted);
 }
 
 /* The wrapper code lives here instead of in the python script that
@@ -214,26 +265,87 @@ static inline DEF_INT_C_HANDLER(1)
  */
 void *xtensa_excint1_c(int *interrupted_stack)
 {
-	int cause, vaddr, *bsa = *(int **)interrupted_stack;
+	int cause, vaddr;
+	_xtensa_irq_bsa_t *bsa = (void *)*(int **)interrupted_stack;
+	bool is_fatal_error = false;
+	uint32_t ps;
+	void *pc;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
-	if (cause == EXCCAUSE_LEVEL1_INTERRUPT) {
+#ifdef CONFIG_XTENSA_MMU
+	/* TLB miss exception comes through level 1 interrupt also.
+	 * We need to preserve execution context after we have handled
+	 * the TLB miss, so we cannot unconditionally unmask interrupts.
+	 * For other cause, we can unmask interrupts so this would act
+	 * the same as if there is no MMU.
+	 */
+	switch (cause) {
+	case EXCCAUSE_ITLB_MISS:
+		/* Instruction TLB miss */
+		__fallthrough;
+	case EXCCAUSE_DTLB_MISS:
+		/* Data TLB miss */
+
+		/* Do not unmask interrupt while handling TLB misses. */
+		break;
+	default:
+		/* For others, we can unmask interrupts. */
+		bsa->ps &= ~PS_INTLEVEL_MASK;
+		break;
+	}
+#endif /* CONFIG_XTENSA_MMU */
+
+	switch (cause) {
+	case EXCCAUSE_LEVEL1_INTERRUPT:
 		return xtensa_int1_c(interrupted_stack);
-	} else if (cause == EXCCAUSE_SYSCALL) {
+	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
-			(void *)bsa[BSA_PS_OFF/4], (void *)bsa[BSA_PC_OFF/4]);
+			(void *)bsa->ps, (void *)bsa->pc);
 		z_xtensa_dump_stack(interrupted_stack);
 
 		/* Xtensa exceptions don't automatically advance PC,
 		 * have to skip the SYSCALL instruction manually or
 		 * else it will just loop forever
 		 */
-		bsa[BSA_PC_OFF/4] += 3;
-	} else {
-		uint32_t ps = bsa[BSA_PS_OFF/4];
-		void *pc = (void *)bsa[BSA_PC_OFF/4];
+		bsa->pc += 3;
+		break;
+#ifdef CONFIG_XTENSA_MMU
+	case EXCCAUSE_ITLB_MISS:
+		/* Instruction TLB miss */
+		__fallthrough;
+	case EXCCAUSE_DTLB_MISS:
+		/* Data TLB miss */
+
+		/**
+		 * The way it works is, when we try to access an address
+		 * that is not mapped, we will have a miss. The HW then
+		 * will try to get the correspondent memory in the page
+		 * table. As the page table is not mapped in memory we will
+		 * have a second miss, which will trigger an exception.
+		 * In the exception (here) what we do is to exploit this
+		 * hardware capability just trying to load the page table
+		 * (not mapped address), which will cause a miss, but then
+		 * the hardware will automatically map it again from
+		 * the page table. This time it will work since the page
+		 * necessary to map the page table itself are wired map.
+		 */
+		__asm__ volatile("wsr a0, " ZSR_EXTRA0_STR "\n\t"
+				 "rsr.ptevaddr a0\n\t"
+				 "l32i a0, a0, 0\n\t"
+				 "rsr a0, " ZSR_EXTRA0_STR "\n\t"
+				 "rsync"
+				 : : : "a0", "memory");
+
+		/* Since we are dealing with TLB misses, we will probably not
+		 * want to switch to another thread.
+		 */
+		return interrupted_stack;
+#endif /* CONFIG_XTENSA_MMU */
+	default:
+		ps = bsa->ps;
+		pc = (void *)bsa->pc;
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
@@ -252,10 +364,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		if ((pc ==  (void *) &xtensa_arch_except_epc) && (cause == 0)) {
 			cause = 63;
 			__asm__ volatile("wsr.exccause %0" : : "r"(cause));
-			reason = bsa[BSA_A2_OFF/4];
-			/* Skip ILL to RETW */
-			bsa[BSA_PC_OFF/4] += 3;
-			pc = (void *)bsa[BSA_PC_OFF/4];
+			reason = bsa->a2;
 		}
 
 		LOG_ERR(" ** FATAL EXCEPTION");
@@ -264,7 +373,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 			z_xtensa_exccause(cause));
 		LOG_ERR(" **  PC %p VADDR %p",
 			pc, (void *)vaddr);
-		LOG_ERR(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);
+		LOG_ERR(" **  PS %p", (void *)bsa->ps);
 		LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
 			get_bits(0, 4, ps), get_bits(4, 1, ps),
 			get_bits(5, 1, ps), get_bits(6, 2, ps),
@@ -278,6 +387,50 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		z_xtensa_fatal_error(reason,
 				     (void *)interrupted_stack);
+		break;
+	}
+
+
+	switch (cause) {
+	case EXCCAUSE_SYSCALL:
+	case EXCCAUSE_LEVEL1_INTERRUPT:
+	case EXCCAUSE_ALLOCA:
+	case EXCCAUSE_ITLB_MISS:
+	case EXCCAUSE_DTLB_MISS:
+		is_fatal_error = false;
+		break;
+	default:
+		is_fatal_error = true;
+		break;
+	}
+
+	if (is_fatal_error) {
+		uint32_t ignore;
+
+		/* We are going to manipulate _current_cpu->nested manually.
+		 * Since the error is fatal, for recoverable errors, code
+		 * execution must not return back to the current thread as
+		 * it is being terminated (via above z_xtensa_fatal_error()).
+		 * So we need to prevent more interrupts coming in which
+		 * will affect the nested value as we are going outside of
+		 * normal interrupt handling procedure.
+		 *
+		 * Setting nested to 1 has two effects:
+		 * 1. Force return_to() to choose a new thread.
+		 *    Since the current thread is being terminated, it will
+		 *    not be chosen again.
+		 * 2. When context switches to the newly chosen thread,
+		 *    nested must be zero for normal code execution,
+		 *    as that is not in interrupt context at all.
+		 *    After returning from this function, the rest of
+		 *    interrupt handling code will decrement nested,
+		 *    resulting it being zero before switching to another
+		 *    thread.
+		 */
+		__asm__ volatile("rsil %0, %1"
+				: "=r" (ignore) : "i"(XCHAL_NMILEVEL));
+
+		_current_cpu->nested = 1;
 	}
 
 	return return_to(interrupted_stack);

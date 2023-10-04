@@ -247,7 +247,7 @@ static void iis3dhhc_config(const struct device *iis3dhhc)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	static const struct gpio_dt_spec led0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 	static const struct gpio_dt_spec led1_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
@@ -258,7 +258,7 @@ void main(void)
 
 	/* Application must enable USB by itself */
 	if (!device_is_ready(dev) || usb_enable(NULL)) {
-		return;
+		return 0;
 	}
 
 	/* Poll if the DTR flag was set, optional */
@@ -268,13 +268,13 @@ void main(void)
 
 	if (!device_is_ready(led0_gpio.port)) {
 		printk("%s: device not ready.\n", led0_gpio.port->name);
-		return;
+		return 0;
 	}
 	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
 	if (!device_is_ready(led1_gpio.port)) {
 		printk("%s: device not ready.\n", led1_gpio.port->name);
-		return;
+		return 0;
 	}
 	gpio_pin_configure_dt(&led1_gpio, GPIO_OUTPUT_INACTIVE);
 
@@ -300,31 +300,31 @@ void main(void)
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lis2dw12)) {
 		printk("%s: device not ready.\n", lis2dw12->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lps22hh)) {
 		printk("%s: device not ready.\n", lps22hh->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lsm6dso)) {
 		printk("%s: device not ready.\n", lsm6dso->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(stts751)) {
 		printk("%s: device not ready.\n", stts751->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(iis3dhhc)) {
 		printk("%s: device not ready.\n", iis3dhhc->name);
-		return;
+		return 0;
 	}
 	if (!device_is_ready(lis2mdl)) {
 		printk("%s: device not ready.\n", lis2mdl->name);
-		return;
+		return 0;
 	}
 
 	lis2dw12_config(lis2dw12);
@@ -345,48 +345,48 @@ void main(void)
 		/* handle HTS221 sensor */
 		if (sensor_sample_fetch(hts221) < 0) {
 			printf("HTS221 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 
 #ifndef CONFIG_LIS2DW12_TRIGGER
 		/* handle LIS2DW12 sensor */
 		if (sensor_sample_fetch(lis2dw12) < 0) {
 			printf("LIS2DW12 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 #ifndef CONFIG_LSM6DSO_TRIGGER
 		if (sensor_sample_fetch(lsm6dso) < 0) {
 			printf("LSM6DSO Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 #ifndef CONFIG_LPS22HH_TRIGGER
 		if (sensor_sample_fetch(lps22hh) < 0) {
 			printf("LPS22HH Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 #ifndef CONFIG_STTS751_TRIGGER
 		if (sensor_sample_fetch(stts751) < 0) {
 			printf("STTS751 Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 #ifndef CONFIG_IIS3DHHC_TRIGGER
 		if (sensor_sample_fetch(iis3dhhc) < 0) {
 			printf("IIS3DHHC Sensor sample update error\n");
-			return;
+			return 0;
 		}
 #endif
 
 		if (sensor_sample_fetch(lis2mdl) < 0) {
 			printf("LIS2MDL Sensor sample update error\n");
-			return;
+			return 0;
 		}
 
 		sensor_channel_get(hts221, SENSOR_CHAN_HUMIDITY, &hts221_hum);

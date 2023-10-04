@@ -1,10 +1,12 @@
 sample:
-  description: This app provides an example of how to integrate
-    RPMsg Service with Zephyr.
+  description: This app provides an example of how to integrate RPMsg Service with
+    Zephyr.
   name: RPMsg Service example integration
 tests:
   sample.ipc.rpmsg_service:
-    platform_allow: mps2_an521 v2m_musca_b1
+    platform_allow:
+      - mps2_an521
+      - v2m_musca_b1
     integration_platforms:
       - mps2_an521
     tags: ipm

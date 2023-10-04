@@ -30,11 +30,10 @@
  *
  * @return 0
  */
-static int arm_beetle_init(const struct device *arg)
+static int arm_beetle_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

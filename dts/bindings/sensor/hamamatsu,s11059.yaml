@@ -1,0 +1,28 @@
+# Copyright (c) 2022, Hiroki Tada
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Hamamatsu Photonics S11059 Color Sensor.  See datasheet at
+  https://datasheetspdf.com/pdf/1323325/Hamamatsu/S11059-02DT/1
+
+compatible: "hamamatsu,s11059"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  high-gain:
+    type: boolean
+    description: |
+      When present, the high gain is enabled.
+      The gain ratio is 10 times from low to high.
+
+  integration-time:
+    type: int
+    default: 546000
+    description: |
+      Integration time (unit is us).
+      By setting this value to the desired integration time,
+      the Integration time setting and Manual timing register
+      values are set automatically.
+
+      The default value is 546ms. See datasheet, bottom of page 3.

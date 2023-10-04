@@ -30,9 +30,8 @@
  * @return 0
  */
 
-static int nxp_lpc11u6x_init(const struct device *arg)
+static int nxp_lpc11u6x_init(void)
 {
-	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
 	unsigned int old_level;

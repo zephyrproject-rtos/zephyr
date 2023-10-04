@@ -16,4 +16,11 @@ config GPIO_INIT_PRIORITY
 
 endif # GPIO
 
+if SPI
+
+config SPI_DW
+	default y
+
+endif # SPI
+
 endif # BOARD_EMSDP

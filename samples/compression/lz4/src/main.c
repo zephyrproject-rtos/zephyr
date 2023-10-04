@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include "lz4.h"
 
-void main(void)
+int main(void)
 {
 	static const char *src = "Lorem ipsum dolor sit amet, consectetur "
 	"adipiscing elit. Quisque sodales lorem lorem, sed congue enim "
@@ -40,7 +40,7 @@ void main(void)
 
 	if (compressed_data == NULL) {
 		printk("Failed to allocate memory for compressed data\n");
-		return;
+		return 0;
 	}
 
 	const int compressed_data_size = LZ4_compress_default(src,
@@ -48,7 +48,7 @@ void main(void)
 					max_dst_size);
 	if (compressed_data_size <= 0) {
 		printk("Failed to compress the data\n");
-		return;
+		return 0;
 	}
 
 	printk("Original Data size: %d\n", src_size);
@@ -58,14 +58,14 @@ void main(void)
 					  (size_t)compressed_data_size);
 	if (compressed_data == NULL) {
 		printk("Failed to re-alloc memory for compressed data\n");
-		return;
+		return 0;
 	}
 
 	char * const decompressed_data = malloc(src_size);
 
 	if (decompressed_data == NULL) {
 		printk("Failed to allocate memory to decompress data\n");
-		return;
+		return 0;
 	}
 
 	const int decompressed_size = LZ4_decompress_safe(compressed_data,
@@ -73,7 +73,7 @@ void main(void)
 				      src_size);
 	if (decompressed_size < 0) {
 		printk("Failed to decompress the data\n");
-		return;
+		return 0;
 	}
 
 	free(compressed_data);
@@ -84,15 +84,16 @@ void main(void)
 
 	if (decompressed_size != src_size) {
 		printk("Decompressed data is different from original\n");
-		return;
+		return 0;
 	}
 
 	if (memcmp(src, decompressed_data, src_size) != 0) {
 		printk("Validation failed.\n");
 		printk("*src and *new_src are not identical\n");
-		return;
+		return 0;
 	}
 
 	printk("Validation done. The string we ended up with is:\n%s\n",
 			decompressed_data);
+	return 0;
 }

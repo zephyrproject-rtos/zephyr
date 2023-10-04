@@ -1,0 +1,13 @@
+# Private config options to the ISO-TP sample
+
+# Copyright (c) 2023 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ISO-TP sample"
+
+config SAMPLE_LOOPBACK_MODE
+	bool "Use CAN loopback mode"
+	help
+	  Set the CAN controller to loopback mode. This allows testing without a second board.
+
+source "Kconfig.zephyr"

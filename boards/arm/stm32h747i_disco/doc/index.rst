@@ -75,6 +75,9 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | IPM       | on-chip    | virtual mailbox based on HSEM       |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | MIPI DSI Host with shield (MP1166)  |
+|           |            | st_b_lcd40_dsi1_mb1166              |
++-----------+------------+-------------------------------------+
 
 (*) From UM2411 Rev 4:
    With the default setting, the Ethernet feature is not working because of
@@ -151,6 +154,20 @@ Following two images shows necessary changes on the board marked:
 .. image:: img/disco_h747i_ethernet_modification_2.jpg
      :align: center
      :alt: STM32H747I-DISCO - Ethernet modification 2 (**SB21**, **R87**, **SB22**, **SB17** and **SB8**)
+
+Display
+=======
+
+The STM32H747I Discovery kit has a dedicated DSI LCD connector **CN15**, where
+the MB1166 (B-LCD40-DSI1) display extension board can be mounted. Enable display
+support in Zephyr by adding the shield ``st_b_lcd40_dsi1_mb1166`` to your build
+command, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/display
+   :board: stm32h747i_disco_m7
+   :shield: st_b_lcd40_dsi1_mb1166
+   :goals: build flash
 
 Resources sharing
 =================

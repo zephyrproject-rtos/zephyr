@@ -6,62 +6,33 @@
 include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    max-frequency:
-      type: int
-      required: true
-      description: |
-        Maximum data rate the SPI peripheral can be driven at, in Hz. This
-        property must be set at SoC level DTS files.
+  pinctrl-0:
+    required: true
 
-    overrun-character:
-      type: int
-      default: 0xff
-      description: |
-        The overrun character (ORC) is used when all bytes from the TX buffer
-        are sent, but the transfer continues due to RX. Defaults to 0xff
-        (line high), the most common value used in SPI transfers.
+  max-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum data rate the SPI peripheral can be driven at, in Hz. This
+      property must be set at SoC level DTS files.
 
-    sck-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  overrun-character:
+    type: int
+    default: 0xff
+    description: |
+      The overrun character (ORC) is used when all bytes from the TX buffer
+      are sent, but the transfer continues due to RX. Defaults to 0xff
+      (line high), the most common value used in SPI transfers.
 
-        The SCK pin to use.
-
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for SCK, set:
-
-            sck-pin = <16>;
-
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for SCK, set:
-
-            sck-pin = <34>;  /* 32 + 2 */
-
-    mosi-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The MOSI pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
-
-    miso-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The MISO pin to use. The pin numbering scheme is the same as
-        the sck-pin property's.
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.

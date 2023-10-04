@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2020-2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # This file includes extra build system logic that is enabled when
@@ -25,6 +25,9 @@ function(zephyr_mcuboot_tasks)
     if("${keyfile}" STREQUAL "")
       # No signature key file, no signed binaries. No error, though:
       # this is the documented behavior.
+      message(WARNING "Neither CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE or "
+                      "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
+                      "bootable by MCUboot unless it is signed manually/externally.")
       return()
     endif()
   endif()
@@ -71,7 +74,9 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'west sign' command and output format independent arguments.
-  set(west_sign ${WEST} sign --quiet --tool imgtool
+  separate_arguments(west_sign_extra UNIX_COMMAND ${CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS})
+  set(west_sign ${WEST} sign ${west_sign_extra}
+    --tool imgtool
     --tool-path "${imgtool_path}"
     --build-dir "${APPLICATION_BINARY_DIR}")
 

@@ -109,4 +109,4 @@ memory reading using proper spi_flash call, which decrypts the content as expect
    https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/flash-encryption.html
 
 .. _MCUBoot Readme:
-   https://www.mcuboot.com/documentation/readme-espressif/
+   https://docs.mcuboot.com/readme-espressif

@@ -79,7 +79,7 @@ static void intel_gna_interrupt_handler(const struct device *dev)
 	if (k_msgq_get(&gna->request_queue, &pending_req, K_NO_WAIT) != 0) {
 		LOG_ERR("Pending request queue is empty");
 	} else {
-		SOC_DCACHE_INVALIDATE(pending_req.model->output,
+		sys_cache_data_invd_range(pending_req.model->output,
 				pending_req.output_len);
 		/* copy output from the model buffer to application buffer */
 		memcpy(pending_req.output, pending_req.model->output,
@@ -194,7 +194,7 @@ static int intel_gna_initialize(const struct device *dev)
 			dev->name, gna_config_desc.vamaxaddr);
 
 	/* flush cache */
-	SOC_DCACHE_FLUSH((void *)&gna_config_desc, sizeof(gna_config_desc));
+	sys_cache_data_flush_range((void *)&gna_config_desc, sizeof(gna_config_desc));
 
 	LOG_INF("%s: initialized (max %u models & max %u pending requests)",
 			dev->name, GNA_MAX_NUM_MODELS,
@@ -334,7 +334,7 @@ static int intel_gna_register_model(const struct device *dev,
 
 		intel_gna_setup_page_table(model->rw_region, rw_size,
 				virtual_base);
-		SOC_DCACHE_FLUSH(model->rw_region, rw_size);
+		sys_cache_data_flush_range(model->rw_region, rw_size);
 	}
 
 	if (model->ro_region == NULL) {
@@ -352,8 +352,8 @@ static int intel_gna_register_model(const struct device *dev,
 	intel_gna_setup_page_table(ro_region, ro_size,
 			(void *)((uint32_t)virtual_base + rw_size));
 
-	SOC_DCACHE_FLUSH(ro_region, ro_size);
-	SOC_DCACHE_FLUSH(gna_page_table, sizeof(gna_page_table));
+	sys_cache_data_flush_range(ro_region, ro_size);
+	sys_cache_data_flush_range(gna_page_table, sizeof(gna_page_table));
 
 	/* copy the model pointers */
 	gna_model->model = *model;
@@ -461,12 +461,12 @@ static int intel_gna_infer(const struct device *dev,
 
 	/* copy input */
 	memcpy(handle->input, req->input, input_size);
-	SOC_DCACHE_FLUSH(handle->input, input_size);
+	sys_cache_data_flush_range(handle->input, input_size);
 
 	/* assign layer descriptor base address to configuration descriptor */
 	gna_config_desc.labase = (uint32_t)handle->vabase;
 	gna_config_desc.lacnt = (uint16_t)header->layer_count;
-	SOC_DCACHE_FLUSH(&gna_config_desc, sizeof(gna_config_desc));
+	sys_cache_data_flush_range(&gna_config_desc, sizeof(gna_config_desc));
 
 	gna->state = GNA_STATE_ACTIVE;
 	regs->gnactrl = (regs->gnactrl & ~GNA_CTRL_INTR_DISABLE) |

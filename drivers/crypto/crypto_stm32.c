@@ -48,6 +48,10 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define STM32_CRYPTO_TYPEDEF            AES_TypeDef
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#define CRYP_DATATYPE_8B CRYP_BYTE_SWAP
+#endif
+
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 static void copy_reverse_words(uint8_t *dst_buf, int dst_len,
@@ -458,7 +462,7 @@ static int crypto_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}

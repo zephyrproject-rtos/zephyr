@@ -57,6 +57,20 @@ mapping:
         required: false
         type: bool
         default: false
+      sysbuild-cmake:
+        required: false
+        type: str
+      sysbuild-kconfig:
+        required: false
+        type: str
+      sysbuild-cmake-ext:
+        required: false
+        type: bool
+        default: false
+      sysbuild-kconfig-ext:
+        required: false
+        type: bool
+        default: false
       depends:
         required: false
         type: seq
@@ -72,6 +86,9 @@ mapping:
           dts_root:
             required: false
             type: str
+          snippet_root:
+            required: false
+            type: str
           soc_root:
             required: false
             type: str
@@ -79,6 +96,9 @@ mapping:
             required: false
             type: str
           module_ext_root:
+            required: false
+            type: str
+          sca_root:
             required: false
             type: str
   tests:
@@ -213,13 +233,47 @@ def process_cmake(module, meta):
                        module_path.as_posix()))
 
 
+def process_sysbuildcmake(module, meta):
+    section = meta.get('build', dict())
+    module_path = PurePath(module)
+    module_yml = module_path.joinpath('zephyr/module.yml')
+
+    cmake_extern = section.get('sysbuild-cmake-ext', False)
+    if cmake_extern:
+        return('\"{}\":\"{}\":\"{}\"\n'
+               .format(meta['name'],
+                       module_path.as_posix(),
+                       "${SYSBUILD_" + meta['name-sanitized'].upper() + "_CMAKE_DIR}"))
+
+    cmake_setting = section.get('sysbuild-cmake', None)
+    if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
+        sys.exit('ERROR: "cmake" key in {} has folder value "{}" which '
+                 'does not contain a CMakeLists.txt file.'
+                 .format(module_yml.as_posix(), cmake_setting))
+
+    if cmake_setting is None:
+        return ""
+
+    cmake_path = os.path.join(module, cmake_setting or 'zephyr')
+    cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
+    if os.path.isfile(cmake_file):
+        return('\"{}\":\"{}\":\"{}\"\n'
+               .format(meta['name'],
+                       module_path.as_posix(),
+                       Path(cmake_path).resolve().as_posix()))
+    else:
+        return('\"{}\":\"{}\":\"\"\n'
+               .format(meta['name'],
+                       module_path.as_posix()))
+
+
 def process_settings(module, meta):
     section = meta.get('build', dict())
     build_settings = section.get('settings', None)
     out_text = ""
 
     if build_settings is not None:
-        for root in ['board', 'dts', 'soc', 'arch', 'module_ext']:
+        for root in ['board', 'dts', 'snippet', 'soc', 'arch', 'module_ext', 'sca']:
             setting = build_settings.get(root+'_root', None)
             if setting is not None:
                 root_path = PurePath(module) / setting
@@ -257,13 +311,14 @@ def process_blobs(module, meta):
     return blobs
 
 
-def kconfig_snippet(meta, path, kconfig_file=None, blobs=False):
+def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, sysbuild=False):
     name = meta['name']
     name_sanitized = meta['name-sanitized']
 
     snippet = [f'menu "{name} ({path.as_posix()})"',
                f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
-               else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
+               else f'osource "$(SYSBUILD_{name_sanitized.upper()}_KCONFIG)"' if sysbuild is True
+	       else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
                f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
                '	bool',
                '	default y',
@@ -294,6 +349,30 @@ def process_kconfig(module, meta):
     if os.path.isfile(kconfig_file):
         return kconfig_snippet(meta, module_path, Path(kconfig_file),
                                blobs=taint_blobs)
+    else:
+        return ""
+
+
+def process_sysbuildkconfig(module, meta):
+    section = meta.get('build', dict())
+    module_path = PurePath(module)
+    module_yml = module_path.joinpath('zephyr/module.yml')
+    kconfig_extern = section.get('sysbuild-kconfig-ext', False)
+    if kconfig_extern:
+        return kconfig_snippet(meta, module_path, sysbuild=True)
+
+    kconfig_setting = section.get('sysbuild-kconfig', None)
+    if not validate_setting(kconfig_setting, module):
+        sys.exit('ERROR: "kconfig" key in {} has value "{}" which does '
+                 'not point to a valid Kconfig file.'
+                 .format(module_yml, kconfig_setting))
+
+    if kconfig_setting is None:
+        return ""
+
+    kconfig_file = os.path.join(module, kconfig_setting)
+    if os.path.isfile(kconfig_file):
+        return kconfig_snippet(meta, module_path, Path(kconfig_file))
     else:
         return ""
 
@@ -443,11 +522,20 @@ def west_projects(manifest = None):
     # if user is providing a specific modules list.
     try:
         from west.manifest import Manifest
-        from west.util import WestNotFound
-        from west.version import __version__ as WestVersion
     except ImportError:
         # West is not installed, so don't return any projects.
         return None
+
+    # If west *is* installed, we need all of the following imports to
+    # work. West versions that are excessively old may fail here:
+    # west.configuration.MalformedConfig was
+    # west.manifest.MalformedConfig until west v0.14.0, for example.
+    # These should be hard errors.
+    from west.manifest import \
+        ManifestImportFailed, MalformedManifest, ManifestVersionError
+    from west.configuration import MalformedConfig
+    from west.util import WestNotFound
+    from west.version import __version__ as WestVersion
 
     from packaging import version
     try:
@@ -460,6 +548,9 @@ def west_projects(manifest = None):
             projects = manifest.get_projects([])
         manifest_path = manifest.path
         return {'manifest_path': manifest_path, 'projects': projects}
+    except (ManifestImportFailed, MalformedManifest,
+            ManifestVersionError, MalformedConfig) as e:
+        sys.exit(f'ERROR: {e}')
     except WestNotFound:
         # Only accept WestNotFound, meaning we are not in a west
         # workspace. Such setup is allowed, as west may be installed
@@ -539,7 +630,7 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
 def main():
     parser = argparse.ArgumentParser(description='''
     Process a list of projects and create Kconfig / CMake include files for
-    projects which are also a Zephyr module''')
+    projects which are also a Zephyr module''', allow_abbrev=False)
 
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import
@@ -548,6 +639,12 @@ def main():
                         help="""File to write with resulting twister
                              parameters.""")
     parser.add_argument('--cmake-out',
+                        help="""File to write with resulting <name>:<path>
+                             values to use for including in CMake""")
+    parser.add_argument('--sysbuild-kconfig-out',
+                        help="""File to write with resulting KConfig import
+                             statements.""")
+    parser.add_argument('--sysbuild-cmake-out',
                         help="""File to write with resulting <name>:<path>
                              values to use for including in CMake""")
     parser.add_argument('--meta-out',
@@ -573,6 +670,8 @@ def main():
 
     kconfig = ""
     cmake = ""
+    sysbuild_kconfig = ""
+    sysbuild_cmake = ""
     settings = ""
     twister = ""
 
@@ -583,6 +682,8 @@ def main():
     for module in modules:
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
+        sysbuild_kconfig += process_sysbuildkconfig(module.project, module.meta)
+        sysbuild_cmake += process_sysbuildcmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
         twister += process_twister(module.project, module.meta)
 
@@ -593,6 +694,14 @@ def main():
     if args.cmake_out:
         with open(args.cmake_out, 'w', encoding="utf-8") as fp:
             fp.write(cmake)
+
+    if args.sysbuild_kconfig_out:
+        with open(args.sysbuild_kconfig_out, 'w', encoding="utf-8") as fp:
+            fp.write(sysbuild_kconfig)
+
+    if args.sysbuild_cmake_out:
+        with open(args.sysbuild_cmake_out, 'w', encoding="utf-8") as fp:
+            fp.write(sysbuild_cmake)
 
     if args.settings_out:
         with open(args.settings_out, 'w', encoding="utf-8") as fp:

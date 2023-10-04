@@ -4,7 +4,7 @@
 # Common fields for PWM controllers
 
 properties:
-    "#pwm-cells":
-      type: int
-      required: true
-      description: Number of items to expect in a pwm specifier
+  "#pwm-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a pwm specifier

@@ -47,7 +47,6 @@
  *                  r0-r3 unmodified.
  */
 #define __TZ_WRAP_FUNC_RAW(preface, name, postface, store_lr, load_lr) \
-	do { \
 		__asm__ volatile( \
 			".global "#preface"; .type "#preface", %function"); \
 		__asm__ volatile( \
@@ -64,8 +63,7 @@
 			"bl " #postface "\n\t" \
 			"pop {r0-r3}\n\t" \
 			load_lr "\n\t" \
-			::); \
-	} while (false)
+			::);
 
 /**
  * @brief Macro for "sandwiching" a function call (@p name) in two other calls

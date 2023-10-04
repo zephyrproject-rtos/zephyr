@@ -15,6 +15,12 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
+#if defined(RCC_CFGR_USBPRE)
+#define STM32_USB_PRE_ENABLED	RCC_CFGR_USBPRE
+#elif defined(RCC_CFGR_OTGFSPRE)
+#define STM32_USB_PRE_ENABLED	RCC_CFGR_OTGFSPRE
+#endif
+
 #if defined(STM32_PLL_ENABLED)
 
 /*
@@ -93,6 +99,12 @@ void config_pll_sysclock(void)
 	}
 
 	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul);
+
+#ifdef STM32_USB_PRE_ENABLED
+	/* Prescaler is enabled: PLL clock is not divided */
+	LL_RCC_SetUSBClockSource(IS_ENABLED(STM32_PLL_USBPRE) ?
+				 STM32_USB_PRE_ENABLED : 0);
+#endif
 }
 
 #endif /* defined(STM32_PLL_ENABLED) */
@@ -146,5 +158,9 @@ void config_pll2(void)
  */
 void config_enable_default_clocks(void)
 {
-	/* Nothing for now */
+	if (IS_ENABLED(STM32_LSE_ENABLED)) {
+		/* Set the PWREN and BKPEN bits in the RCC_APB1ENR register */
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_BKP);
+	}
 }

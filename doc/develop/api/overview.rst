@@ -29,6 +29,14 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 1.13
 
+   * - :ref:`auxdisplay_api`
+     - Experimental
+     - 3.4
+
+   * - :ref:`barriers_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
@@ -42,7 +50,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.10
 
    * - :ref:`can_api`
-     - Unstable
+     - Stable
      - 1.14
 
    * - :ref:`counter_api`
@@ -54,7 +62,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 1.7
 
    * - :ref:`dac_api`
-     - Experimental
+     - Unstable
      - 2.3
 
    * - :ref:`dai_api`
@@ -81,12 +89,12 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.14
 
-   * - :ref:`ec_host_cmd_periph_api`
+   * - :ref:`ec_host_cmd_backend_api`
      - Experimental
      - 2.4
 
    * - :ref:`edac_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`eeprom_api`
@@ -149,6 +157,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.2
 
+   * - :ref:`input`
+     - Experimental
+     - 3.4
+
    * - :ref:`ipm_api`
      - Stable
      - 1.0
@@ -184,6 +196,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`mbox_api`
      - Experimental
      - 1.0
+
+   * - :ref:`mcu_mgr`
+     - Stable
+     - 1.11
 
    * - :ref:`mqtt_socket_interface`
      - Unstable
@@ -221,10 +237,6 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.0
 
-   * - :ref:`pinmux_api`
-     - Stable
-     - 1.0
-
    * - :ref:`pm_api`
      - Experimental
      - 1.2
@@ -241,9 +253,25 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.1
 
+   * - :ref:`retained_mem_api`
+     - Experimental
+     - 3.4
+
+   * - :ref:`retention_api`
+     - Experimental
+     - 3.4
+
+   * - :ref:`rtc_api`
+     - Experimental
+     - 3.4
+
    * - :ref:`rtio_api`
      - Experimental
      - 3.2
+
+   * - :ref:`smbus_api`
+     - Experimental
+     - 3.4
 
    * - :ref:`spi_api`
      - Stable
@@ -270,7 +298,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 3.1
 
    * - :ref:`task_wdt_api`
-     - Experimental
+     - Unstable
      - 2.5
 
    * - :ref:`tcpc_api`

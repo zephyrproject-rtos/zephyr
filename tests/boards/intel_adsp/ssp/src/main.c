@@ -83,7 +83,7 @@ static __aligned(32) int32_t rx_data[XFERS][BUF_SIZE] = { { 0 } };
 static void dma_callback(const struct device *dma_dev, void *user_data,
 			 uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("tx callback status %d\n", status);
 	} else {
 		TC_PRINT("tx giving up\n");
@@ -93,7 +93,7 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 static void dma_callback_rx(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
-	if (status) {
+	if (status < 0) {
 		TC_PRINT("rx callback status %d\n", status);
 	} else {
 		TC_PRINT("rx giving xfer_sem\n");
@@ -108,10 +108,10 @@ static int config_output_dma(const struct dai_properties *props, uint32_t *chan_
 	dma_cfg.dest_handshake = 0;
 	dma_cfg.source_handshake = 0;
 	dma_cfg.cyclic = 1;
-	dma_cfg.source_data_size = ssp_config.tdm_slot_width / 8;
-	dma_cfg.dest_data_size = ssp_config.tdm_slot_width / 8;
-	dma_cfg.source_burst_length = ssp_config.tdm_slots;
-	dma_cfg.dest_burst_length = ssp_config.tdm_slots;
+	dma_cfg.source_data_size = 1;
+	dma_cfg.dest_data_size = 1;
+	dma_cfg.source_burst_length = 1;
+	dma_cfg.dest_burst_length = 1;
 	dma_cfg.user_data = NULL;
 	dma_cfg.dma_callback = dma_callback;
 	dma_cfg.block_count = XFERS;
@@ -148,10 +148,10 @@ static int config_input_dma(const struct dai_properties *props, uint32_t *chan_i
 	dma_cfg_rx.dest_handshake = 0;
 	dma_cfg_rx.source_handshake = 0;
 	dma_cfg_rx.cyclic = 1;
-	dma_cfg_rx.source_data_size = ssp_config.tdm_slot_width / 8;
-	dma_cfg_rx.dest_data_size = ssp_config.tdm_slot_width / 8;
-	dma_cfg_rx.source_burst_length = ssp_config.tdm_slots;
-	dma_cfg_rx.dest_burst_length = ssp_config.tdm_slots;
+	dma_cfg_rx.source_data_size = 1;
+	dma_cfg_rx.dest_data_size = 1;
+	dma_cfg_rx.source_burst_length = 1;
+	dma_cfg_rx.dest_burst_length = 1;
 	dma_cfg_rx.user_data = NULL;
 	dma_cfg_rx.dma_callback = dma_callback_rx;
 	dma_cfg_rx.block_count = XFERS;

@@ -10,14 +10,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
 #include "manifest.h"
 
 #ifdef CONFIG_PM
-
+#ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
 #define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
 __asm__(".section .imr.boot_entry_d3_restore, \"x\"\n\t"
@@ -55,4 +55,5 @@ __imr void boot_d3_restore(void)
 	extern void pm_state_imr_restore(void);
 	pm_state_imr_restore();
 }
+#endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
 #endif /* CONFIG_PM */

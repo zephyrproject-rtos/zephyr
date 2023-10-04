@@ -8,18 +8,18 @@ compatible: "nordic,mbox-nrf-ipc"
 include: [base.yaml, mailbox-controller.yaml]
 
 properties:
-    tx-mask:
-      type: int
-      required: true
-      description: TX supported channels mask
+  tx-mask:
+    type: int
+    required: true
+    description: TX supported channels mask
 
-    rx-mask:
-      type: int
-      required: true
-      description: RX supported channels mask
+  rx-mask:
+    type: int
+    required: true
+    description: RX supported channels mask
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
 mbox-cells:
   - channel

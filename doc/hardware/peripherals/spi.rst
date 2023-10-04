@@ -1,7 +1,7 @@
 .. _spi_api:
 
-SPI
-###
+Serial Peripheral Interface (SPI) Bus
+#####################################
 
 Overview
 ********

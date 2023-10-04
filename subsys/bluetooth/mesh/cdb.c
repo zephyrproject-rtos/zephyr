@@ -75,7 +75,8 @@ struct net_val {
 	uint16_t lowest_avail_addr;
 } __packed;
 
-static struct node_update cdb_node_updates[CONFIG_BT_MESH_CDB_NODE_COUNT];
+/* One more entry for the node's address update. */
+static struct node_update cdb_node_updates[CONFIG_BT_MESH_CDB_NODE_COUNT + 1];
 static struct key_update cdb_key_updates[CONFIG_BT_MESH_CDB_SUBNET_COUNT +
 					 CONFIG_BT_MESH_CDB_APP_KEY_COUNT];
 
@@ -690,6 +691,21 @@ static void update_cdb_app_key_settings(const struct bt_mesh_cdb_app_key *key,
 	schedule_cdb_store(BT_MESH_CDB_KEYS_PENDING);
 }
 
+static uint16_t addr_assign(uint16_t addr, uint8_t num_elem)
+{
+	if (addr == BT_MESH_ADDR_UNASSIGNED) {
+		addr = find_lowest_free_addr(num_elem);
+	} else if (addr < bt_mesh_cdb.lowest_avail_addr) {
+		return BT_MESH_ADDR_UNASSIGNED;
+	} else if (addr_is_free(addr, num_elem, NULL) < 0) {
+		LOG_DBG("Address range 0x%04x-0x%04x is not free", addr,
+			addr + num_elem - 1);
+		return BT_MESH_ADDR_UNASSIGNED;
+	}
+
+	return addr;
+}
+
 int bt_mesh_cdb_create(const uint8_t key[16])
 {
 	struct bt_mesh_cdb_subnet *sub;
@@ -841,15 +857,8 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t
 {
 	int i;
 
+	addr = addr_assign(addr, num_elem);
 	if (addr == BT_MESH_ADDR_UNASSIGNED) {
-		addr = find_lowest_free_addr(num_elem);
-		if (addr == BT_MESH_ADDR_UNASSIGNED) {
-			return NULL;
-		}
-	} else if (addr < bt_mesh_cdb.lowest_avail_addr) {
-		return NULL;
-	} else if (addr_is_free(addr, num_elem, NULL) < 0) {
-		LOG_DBG("Address range 0x%04x-0x%04x is not free", addr, addr + num_elem - 1);
 		return NULL;
 	}
 
@@ -867,6 +876,11 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t
 	}
 
 	return NULL;
+}
+
+uint16_t bt_mesh_cdb_free_addr_get(uint8_t num_elem)
+{
+	return find_lowest_free_addr(num_elem);
 }
 
 void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
@@ -887,6 +901,24 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 
 	node->addr = BT_MESH_ADDR_UNASSIGNED;
 	memset(node->dev_key, 0, sizeof(node->dev_key));
+}
+
+void bt_mesh_cdb_node_update(struct bt_mesh_cdb_node *node, uint16_t addr,
+			     uint8_t num_elem)
+{
+	/* Address is used as a key to the nodes array. Remove the current entry first, then store
+	 * new address.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		update_cdb_node_settings(node, false);
+	}
+
+	node->addr = addr;
+	node->num_elem = num_elem;
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		update_cdb_node_settings(node, true);
+	}
 }
 
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr)
@@ -1023,27 +1055,29 @@ static void store_cdb_pending_nodes(void)
 
 	for (i = 0; i < ARRAY_SIZE(cdb_node_updates); ++i) {
 		struct node_update *update = &cdb_node_updates[i];
+		uint16_t addr;
 
 		if (update->addr == BT_MESH_ADDR_UNASSIGNED) {
 			continue;
 		}
 
-		LOG_DBG("addr: 0x%04x, clear: %d", update->addr, update->clear);
+		addr = update->addr;
+		update->addr = BT_MESH_ADDR_UNASSIGNED;
+
+		LOG_DBG("addr: 0x%04x, clear: %d", addr, update->clear);
 
 		if (update->clear) {
-			clear_cdb_node(update->addr);
+			clear_cdb_node(addr);
 		} else {
 			struct bt_mesh_cdb_node *node;
 
-			node = bt_mesh_cdb_node_get(update->addr);
+			node = bt_mesh_cdb_node_get(addr);
 			if (node) {
 				store_cdb_node(node);
 			} else {
-				LOG_WRN("Node 0x%04x not found", update->addr);
+				LOG_WRN("Node 0x%04x not found", addr);
 			}
 		}
-
-		update->addr = BT_MESH_ADDR_UNASSIGNED;
 	}
 }
 
@@ -1057,6 +1091,8 @@ static void store_cdb_pending_keys(void)
 		if (!update->valid) {
 			continue;
 		}
+
+		update->valid = 0U;
 
 		if (update->clear) {
 			if (update->app_key) {
@@ -1085,8 +1121,6 @@ static void store_cdb_pending_keys(void)
 				}
 			}
 		}
-
-		update->valid = 0U;
 	}
 }
 

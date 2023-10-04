@@ -25,12 +25,6 @@ struct soc_gpio_pin {
 	unsigned int out;       /** out register value */
 };
 
-/**
- * @brief Configure GPIO pin
- * @param[in] pin configuration data
- */
-void soc_gpio_configure(const struct soc_gpio_pin *pin);
-
 #ifdef __cplusplus
 }
 #endif

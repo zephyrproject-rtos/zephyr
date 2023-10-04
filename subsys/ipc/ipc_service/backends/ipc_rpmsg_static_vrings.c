@@ -95,7 +95,7 @@ static bool check_endpoints_freed(struct ipc_rpmsg_instance *rpmsg_inst)
 	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
 		rpmsg_ept = &rpmsg_inst->endpoint[i];
 
-		if (strcmp("", rpmsg_ept->name) != 0) {
+		if (rpmsg_ept->bound == true) {
 			return false;
 		}
 	}
@@ -776,7 +776,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
 #define BACKEND_CONFIG_INIT(n) &backend_config_##n,
 
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
-static int shared_memory_prepare(const struct device *arg)
+static int shared_memory_prepare(void)
 {
 	static const struct backend_config_t *config[] = {
 		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_INIT)

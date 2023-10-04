@@ -100,14 +100,7 @@ uint32_t critical_loop(const char *tag, uint32_t count)
 		k_work_init(&work_item, critical_rtn);
 		k_work_submit_to_queue(&offload_work_q, &work_item);
 		count++;
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-		/*
-		 * For the POSIX arch this loop and critical_rtn would otherwise
-		 * run in 0 time and therefore would never finish.
-		 * => We purposely waste 50us per loop
-		 */
-#endif
+		Z_SPIN_DELAY(50);
 	}
 	TC_PRINT("End %s at %u\n", tag, (uint32_t)now);
 

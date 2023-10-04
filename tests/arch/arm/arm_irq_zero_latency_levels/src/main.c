@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/sys/barrier.h>
 
 
 #define EXECUTION_TRACE_LENGTH 6
@@ -86,8 +87,8 @@ void isr_a_handler(const void *args)
 
 	/* Set higher prior irq b pending */
 	NVIC_SetPendingIRQ(irq_b);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	execution_trace_add(STEP_ISR_A_END);
 }
@@ -182,8 +183,8 @@ ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 
 	/* Trigger irq_a */
 	NVIC_SetPendingIRQ(irq_a);
-	__DSB();
-	__ISB();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
 	execution_trace_add(STEP_MAIN_END);
 

@@ -97,13 +97,14 @@ int ism330dhcx_spi_init(const struct device *dev)
 	struct ism330dhcx_data *data = dev->data;
 	const struct ism330dhcx_config *cfg = dev->config;
 
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	};
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) ism330dhcx_spi_read,
-	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write,
+	data->ctx_spi.read_reg = (stmdev_read_ptr) ism330dhcx_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write;
+	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = data;

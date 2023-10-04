@@ -166,8 +166,7 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
-	# LE Set Extended Advertising Data command
-	default 255 if (BT_EXT_ADV || BT_BREDR)
+	default 255 if (BT_EXT_ADV || BT_BREDR || BT_ISO_CENTRAL)
 	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
 	# of antenna ids for platforms other than Nordic.
 	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
@@ -282,10 +281,6 @@ config BT_ASSERT_PANIC
 
 endif # BT_ASSERT
 
-config BT_DEBUG
-	# Hidden option to make the conditions more intuitive
-	bool
-
 config BT_MONITOR
 	bool
 
@@ -299,8 +294,8 @@ config BT_DEBUG_NONE
 	  Select this to disable all Bluetooth debug logs.
 
 config BT_DEBUG_LOG
-	bool "Normal printf-style to console"
-	select BT_DEBUG
+	bool "[DEPRECATED] Normal printf-style to console"
+	select DEPRECATED
 	select LOG
 	imply LOG_FUNC_NAME_PREFIX_INF
 	imply LOG_FUNC_NAME_PREFIX_WRN
@@ -311,7 +306,6 @@ config BT_DEBUG_LOG
 
 config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
@@ -331,7 +325,6 @@ config BT_DEBUG_MONITOR_RTT
 	bool "Monitor protocol over RTT"
 	depends on USE_SEGGER_RTT
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
-	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
@@ -368,33 +361,3 @@ config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 endif # BT_DEBUG_MONITOR_RTT
 
 endchoice # Bluetooth debug type
-
-if BT_DEBUG
-
-config BT_DEBUG_HCI_DRIVER
-	bool "Bluetooth HCI driver debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the active
-	  Bluetooth HCI driver, including the Controller-side HCI layer
-	  when included in the build.
-
-module = BT_HCI_DRIVER
-legacy-debug-sym = BT_DEBUG_HCI_DRIVER
-module-str = "Bluetooth HCI driver"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_RPA
-	bool "Bluetooth Resolvable Private Address (RPA) debug"
-	select DEPRECATED
-	depends on BT_RPA
-	help
-	  This option enables debug support for the Bluetooth
-	  Resolvable Private Address (RPA) generation and resolution.
-
-module = BT_RPA
-legacy-debug-sym = BT_DEBUG_RPA
-module-str = "Bluetooth Resolvable Private Address (RPA)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG

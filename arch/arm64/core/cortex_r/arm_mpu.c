@@ -13,6 +13,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/barrier.h>
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
@@ -75,8 +76,8 @@ void arm_core_mpu_enable(void)
 	val = read_sctlr_el1();
 	val |= SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /**
@@ -87,13 +88,13 @@ void arm_core_mpu_disable(void)
 	uint64_t val;
 
 	/* Force any outstanding transfers to complete before disabling MPU */
-	dmb();
+	barrier_dmem_fence_full();
 
 	val = read_sctlr_el1();
 	val &= ~SCTLR_M_BIT;
 	write_sctlr_el1(val);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /* ARM MPU Driver Initial Setup
@@ -111,19 +112,19 @@ static void mpu_init(void)
 	uint64_t mair = MPU_MAIR_ATTRS;
 
 	write_mair_el1(mair);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 static inline void mpu_set_region(uint32_t rnr, uint64_t rbar,
 				  uint64_t rlar)
 {
 	write_prselr_el1(rnr);
-	dsb();
+	barrier_dsync_fence_full();
 	write_prbar_el1(rbar);
 	write_prlar_el1(rlar);
-	dsb();
-	isb();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
 
 /* This internal functions performs MPU region initialization. */
@@ -179,8 +180,6 @@ void z_arm64_mm_init(bool is_primary_core)
 			 get_num_regions());
 		return;
 	}
-
-	LOG_DBG("total region count: %d", get_num_regions());
 
 	arm_core_mpu_disable();
 

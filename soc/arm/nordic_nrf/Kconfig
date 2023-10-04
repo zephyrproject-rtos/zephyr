@@ -63,7 +63,8 @@ config NFCT_PINS_AS_GPIOS
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"
 	depends on SOC_SERIES_NRF52X || SOC_NRF5340_CPUNET || \
-		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE)
+		   (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) || \
+		   SOC_SERIES_NRF91X
 	default NRF_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function should handle the APPROTECT
@@ -134,5 +135,18 @@ config NRF_TRACE_PORT
 	  Enable this option to initialize the TPIU (Trace Port Interface
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
+
+config NRF_STORE_REBOOT_TYPE_GPREGRET
+	bool "Set GPREGRET to reboot type (DEPRECATED)"
+	depends on SOC_SERIES_NRF51X || SOC_SERIES_NRF52X
+	depends on REBOOT
+	depends on !RETENTION_BOOT_MODE
+	select DEPRECATED
+	help
+	  If this option is enabled, then the parameter supplied to the
+	  sys_reboot() function will be set in the GPREGRET register.
+
+	  This has been replaced with the bootmode part of the retention
+	  subsystem, which should be used instead.
 
 endif # SOC_FAMILY_NRF

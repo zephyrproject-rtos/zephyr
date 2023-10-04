@@ -108,7 +108,7 @@ static void bt_ready(int err)
 	printk("Beacon stopped\n");
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -148,4 +148,5 @@ void main(void)
 
 	printk("Shutdown\n");
 	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	return 0;
 }

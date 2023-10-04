@@ -78,9 +78,8 @@ const struct arm_mmu_config mmu_config = {
  *
  * @return 0
  */
-static int soc_xlnx_zynq7000s_init(const struct device *arg)
+static int soc_xlnx_zynq7000s_init(void)
 {
-	ARG_UNUSED(arg);
 	NMI_INIT();
 
 	return 0;

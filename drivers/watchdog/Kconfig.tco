@@ -1,0 +1,11 @@
+# Intel TCO WDT support
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_TCO
+	bool "Intel TCO Watchdog driver"
+	default y
+	depends on DT_HAS_INTEL_TCO_WDT_ENABLED
+	help
+	  Enable support for Intel TCO WDT driver.

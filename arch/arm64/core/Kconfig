@@ -23,6 +23,9 @@ config CPU_AARCH64_CORTEX_R
 	select HAS_FLASH_LOAD_OFFSET
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 
@@ -109,6 +112,22 @@ config WAIT_AT_RESET_VECTOR
 	help
 	  Spin at reset vector waiting for debugger to attach and resume
 	  execution
+
+config ARM64_SAFE_EXCEPTION_STACK
+	bool "To enable the safe exception stack"
+	help
+	  The safe exception stack is used for checking whether the kernel stack
+	  overflows during the exception happens from EL1. This stack is not
+	  used for user stack overflow checking, because kernel stack support
+	  the checking work.
+
+config ARM64_SAFE_EXCEPTION_STACK_SIZE
+	int "The stack size of the safe exception stack"
+	default 4096
+	depends on ARM64_SAFE_EXCEPTION_STACK
+	help
+	  The stack size of the safe exception stack. The safe exception stack
+	  requires to be enough to do the stack overflow check.
 
 if CPU_CORTEX_A
 

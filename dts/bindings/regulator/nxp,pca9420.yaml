@@ -28,20 +28,9 @@ description: |
 
 compatible: "nxp,pca9420"
 
-include:
-  - name: base.yaml
-  - name: regulator.yaml
-    property-allowlist:
-      - regulator-allowed-modes
-      - regulator-initial-mode
+include: base.yaml
 
 properties:
-  regulator-allowed-modes:
-    default: [0, 1, 2, 3]
-
-  regulator-initial-mode:
-    default: 0
-
   nxp,enable-modesel-pins:
     type: boolean
     description:
@@ -78,24 +67,39 @@ child-binding:
   include:
     - name: regulator.yaml
       property-allowlist:
+        - regulator-always-on
         - regulator-boot-on
         - regulator-min-microvolt
         - regulator-max-microvolt
-        - regulator-max-microamp
 
   description: Voltage output of PMIC controller regulator
   properties:
-      regulator-min-microvolt:
-        required: true
+    enable-inverted:
+      type: boolean
+      description: |
+        If the enable bit should be zero to turn the regulator on, add this
+        property.
 
-      regulator-max-microvolt:
-          required: true
+    nxp,mode0-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 0, in microvolts. Setting
+        this value to zero will disable the source in mode 0.
 
-      regulator-max-microamp:
-          required: true
+    nxp,mode1-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 1, in microvolts. Setting
+        this value to zero will disable the source in mode 1.
 
-      enable-inverted:
-          type: boolean
-          description: |
-            If the enable bit should be zero to turn the regulator on, add this
-            property.
+    nxp,mode2-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 2, in microvolts. Setting
+        this value to zero will disable the source in mode 2.
+
+    nxp,mode3-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for mode 3, in microvolts. Setting
+        this value to zero will disable the source in mode 3.

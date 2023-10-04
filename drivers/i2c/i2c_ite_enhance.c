@@ -854,13 +854,13 @@ static int i2c_enhance_transfer(const struct device *dev,
 				uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_enhance_data *data = dev->data;
-
-	data->num_msgs = num_msgs;
-	data->addr_16bit = addr;
+	int ret;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
+	data->num_msgs = num_msgs;
+	data->addr_16bit = addr;
 	/*
 	 * If the transaction of write to read is divided into two
 	 * transfers, the repeat start transfer uses this flag to
@@ -891,11 +891,12 @@ static int i2c_enhance_transfer(const struct device *dev,
 	{
 		data->err = i2c_enhance_pio_transfer(dev, msgs);
 	}
-
+	/* Save return value. */
+	ret = i2c_parsing_return_value(dev);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return i2c_parsing_return_value(dev);
+	return ret;
 }
 
 static void i2c_enhance_isr(void *arg)
@@ -1085,7 +1086,7 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 				  &i2c_enhance_data_##inst,                     \
 				  &i2c_enhance_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE,           \
+				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_enhance_driver_api);                     \
 										\
 	static void i2c_enhance_config_func_##inst(void)                        \

@@ -8,6 +8,7 @@ menuconfig KSCAN_XEC
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_KSCAN_ENABLED
 	select MULTITHREADING
+	select PINCTRL
 	help
 	  Enable the Microchip XEC Kscan IO driver.
 

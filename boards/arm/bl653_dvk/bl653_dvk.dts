@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Laird Connectivity
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +78,7 @@
 		mcuboot-button0 = &button1;
 		mcuboot-led0 = &led1;
 		watchdog0 = &wdt0;
+		bbram0 = &extrtc0;
 	};
 };
 
@@ -118,6 +120,12 @@
 		reg = <0x60>;
 		#io-channel-cells = <1>;
 		status = "disabled";
+	};
+
+	extrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6f>;
+		status = "okay";
 	};
 };
 

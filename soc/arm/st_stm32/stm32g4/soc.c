@@ -30,11 +30,10 @@
  *
  * @return 0
  */
-static int stm32g4_init(const struct device *arg)
+static int stm32g4_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

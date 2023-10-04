@@ -24,7 +24,7 @@
 #include "stm32_hsem.h"
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
-static int stm32h7_m4_wakeup(const struct device *arg)
+static int stm32h7_m4_wakeup(void)
 {
 
 	/* HW semaphore and SysCfg Clock enable */
@@ -37,7 +37,7 @@ static int stm32h7_m4_wakeup(const struct device *arg)
 		 * then Cortex-M7 takes HSEM so that CM4 can continue running.
 		 */
 		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
-	} else {
+	} else if (IS_ENABLED(CONFIG_STM32H7_BOOT_M4_AT_INIT)) {
 		/* CM4 is not started at boot, start it now */
 		LL_RCC_ForceCM4Boot();
 	}
@@ -54,11 +54,10 @@ static int stm32h7_m4_wakeup(const struct device *arg)
  *
  * @return 0
  */
-static int stm32h7_init(const struct device *arg)
+static int stm32h7_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

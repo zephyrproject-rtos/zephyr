@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief IEEE 802.15.4 MAC layer implementation
+ *
+ * All references to the spec refer to IEEE 802.15.4-2020.
  */
 
 #include <zephyr/logging/log.h>
@@ -94,9 +96,9 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 #define ieee802154_acknowledge(...)
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
-static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
-				   enum ieee802154_addressing_mode mode,
-				   struct ieee802154_address_field *ll)
+static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
+					    enum ieee802154_addressing_mode mode,
+					    struct ieee802154_address_field *ll)
 {
 	addr->type = NET_LINK_IEEE802154;
 
@@ -127,8 +129,9 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 		addr->addr = NULL;
 	}
 
-	/* Swap address byte order in place from little to big endian.
-	 * This is ok as the ll address field comes from the header
+	/* The net stack expects link layer addresses to be in
+	 * big endian format for posix compliance so we must swap it.
+	 * This is ok as the L2 address field comes from the header
 	 * part of the packet buffer which will not be directly accessible
 	 * once the packet reaches the upper layers.
 	 */
@@ -138,8 +141,9 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 }
 
 /**
- * Filters the destination address of the frame (used when IEEE802154_HW_FILTER
- * is not available).
+ * Filters the destination address of the frame.
+ *
+ * This is done before deciphering and authenticating encrypted frames.
  */
 static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
@@ -147,12 +151,17 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ret = false;
 
-	/*
-	 * Apply filtering requirements from chapter 6.7.2 of the IEEE
-	 * 802.15.4-2015 standard:
+	/* Apply filtering requirements from section 6.7.2 c)-e). For a)-b),
+	 * see ieee802154_parse_fcf_seq()
 	 */
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		if (mhr->fs->fc.frame_version < IEEE802154_VERSION_802154 &&
+		    mhr->fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
+			/* See IEEE 802.15.4-2015, section 7.3.1.1. */
+			return true;
+		}
+
 		/* TODO: apply d.4 and d.5 when PAN coordinator is implemented */
 		/* also, macImplicitBroadcast is not implemented */
 		return false;
@@ -160,9 +169,8 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
-	/*
-	 * c. If a destination PAN ID is included in the frame, it shall match
-	 * macPanId or shall be the broadcastPAN ID
+	/* c) If a destination PAN ID is included in the frame, it shall match
+	 * macPanId or shall be the broadcast PAN ID.
 	 */
 	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
 	      dst_plain->pan_id == ctx->pan_id)) {
@@ -171,8 +179,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	}
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
-		/*
-		 * d.1. A short destination address is included in the frame,
+		/* d.1) A short destination address is included in the frame,
 		 * and it matches either macShortAddress or the broadcast
 		 * address.
 		 */
@@ -183,17 +190,23 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 		}
 
 	} else if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_EXTENDED) {
-		/*
-		 * An extended destination address is included in the frame and
-		 * matches either macExtendedAddress or, if macGroupRxMode is
-		 * set to TRUE, an 64-bit extended unique identifier (EUI-64)
-		 * group address.
+		/* d.2) An extended destination address is included in the frame and
+		 * matches [...] macExtendedAddress [...].
 		 */
 		if (memcmp(dst_plain->addr.ext_addr, ctx->ext_addr,
 				IEEE802154_EXT_ADDR_LENGTH) != 0) {
 			LOG_DBG("Frame dst address (ext) does not match!");
 			goto out;
 		}
+
+		/* TODO: d.3) The Destination Address field and the Destination PAN ID
+		 *       field are not included in the frame and macImplicitBroadcast is TRUE.
+		 */
+
+		/* TODO: d.4) The device is the PAN coordinator, only source addressing fields
+		 *       are included in a Data frame or MAC command and the source PAN ID
+		 *       matches macPanId.
+		 */
 	}
 	ret = true;
 
@@ -206,7 +219,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 {
 	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
 	struct ieee802154_mpdu mpdu;
+	enum net_verdict verdict;
 	size_t hdr_len;
+
+	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
+	__ASSERT_NO_MSG(pkt->buffer && pkt->buffer->frags == NULL);
 
 	if (!ieee802154_validate_frame(net_pkt_data(pkt), net_pkt_get_len(pkt), &mpdu)) {
 		return NET_DROP;
@@ -223,7 +240,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
-		return ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
+		verdict = ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
+		if (verdict == NET_OK) {
+			net_pkt_unref(pkt);
+		}
+		return verdict;
 	}
 
 	if (ieee802154_is_scanning(iface)) {
@@ -231,24 +252,32 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
-		return ieee802154_handle_mac_command(iface, &mpdu);
+		verdict = ieee802154_handle_mac_command(iface, &mpdu);
+		if (verdict == NET_OK) {
+			net_pkt_unref(pkt);
+		}
+		return verdict;
 	}
 
-	/* At this point the frame has to be a DATA one */
+	/* At this point the frame has to be a data frame. */
 
 	ieee802154_acknowledge(iface, &mpdu);
-
-	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
-
-	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
-			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
-
-	set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, mpdu.mhr.fs->fc.dst_addr_mode,
-			mpdu.mhr.dst_addr);
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
 		return NET_DROP;
 	}
+
+	/* Setting L2 addresses must be done after packet authentication and internal
+	 * packet handling as it will mangle the package header to comply with upper
+	 * network layers' (POSIX) requirement to represent network addresses in big endian.
+	 */
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
+				 mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
+
+	swap_and_set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false, mpdu.mhr.fs->fc.dst_addr_mode,
+				 mpdu.mhr.dst_addr);
+
+	net_pkt_set_ll_proto_type(pkt, ETH_P_IEEE802154);
 
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
@@ -256,20 +285,30 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	net_buf_pull(pkt->buffer, hdr_len);
 
 #ifdef CONFIG_NET_6LO
-	enum net_verdict verdict = ieee802154_6lo_decode_pkt(iface, pkt);
+	verdict = ieee802154_6lo_decode_pkt(iface, pkt);
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true);
 	return verdict;
 #else
 	return NET_CONTINUE;
 #endif /* CONFIG_NET_6LO */
+
+	/* At this point the call amounts to (part of) an
+	 * MCPS-DATA.indication primitive, see section 8.3.3.
+	 */
 }
 
+/**
+ * Implements (part of) the MCPS-DATA.request/confirm primitives, see sections 8.3.2/3.
+ */
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	static struct net_buf *frame_buf;
-	uint8_t ll_hdr_len = 0;
+	static struct net_buf *buf;
 	bool send_raw = false;
+	int len;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	struct ieee802154_6lo_fragment_ctx f_ctx;
 	int requires_fragmentation = 0;
@@ -279,23 +318,20 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
 
-#if defined(CONFIG_NET_SOCKETS_PACKET)
-	uint8_t pkt_family = net_pkt_family(pkt);
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == AF_PACKET) {
+		enum net_sock_type socket_type;
+		struct net_context *context;
 
-	if (pkt_family == AF_PACKET) {
-		struct net_context *context = net_pkt_context(pkt);
-
+		context = net_pkt_context(pkt);
 		if (!context) {
 			return -EINVAL;
 		}
 
-		switch (net_context_get_type(context)) {
-		case SOCK_RAW:
+		socket_type = net_context_get_type(context);
+		if (socket_type == SOCK_RAW) {
 			send_raw = true;
-			break;
-
-#if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
-		case SOCK_DGRAM: {
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+			   socket_type == SOCK_DGRAM) {
 			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
 			struct sockaddr_ll_ptr *src_addr =
 				(struct sockaddr_ll_ptr *)&context->local;
@@ -304,36 +340,33 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_dst(pkt)->len = dst_addr->sll_halen;
 			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
 			net_pkt_lladdr_src(pkt)->len = src_addr->sll_halen;
-			break;
-		}
-#endif
-		default:
+		} else {
 			return -EINVAL;
 		}
 	}
-#endif /* CONFIG_NET_SOCKETS_PACKET */
 
 	if (!send_raw) {
-		ll_hdr_len = ieee802154_compute_header_and_authtag_size(
-			iface, net_pkt_lladdr_dst(pkt), net_pkt_lladdr_src(pkt));
+		ieee802154_compute_header_and_authtag_len(iface, net_pkt_lladdr_dst(pkt),
+							  net_pkt_lladdr_src(pkt), &ll_hdr_len,
+							  &authtag_len);
 
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-		requires_fragmentation = ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len);
+		requires_fragmentation =
+			ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len, authtag_len);
 		if (requires_fragmentation < 0) {
 			return requires_fragmentation;
 		}
 #else
-		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len);
+		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len, authtag_len);
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 #endif /* CONFIG_NET_6LO */
 	}
 
 	net_capture_pkt(iface, pkt);
 
-	int len = 0;
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct net_buf *buf = pkt->buffer;
+	len = 0;
+	buf = pkt->buffer;
 	while (buf) {
 		int ret;
 
@@ -349,14 +382,16 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			buf = buf->frags;
 		}
 #else
-
-		if (buf->len > IEEE802154_MTU) {
-			NET_ERR("Wrong packet length: %d", buf->len);
+		if (ll_hdr_len + buf->len + authtag_len > IEEE802154_MTU) {
+			NET_ERR("Frame too long: %d", buf->len);
 			return -EINVAL;
 		}
 		net_buf_add_mem(frame_buf, buf->data, buf->len);
 		buf = buf->frags;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
+
+		__ASSERT_NO_MSG(authtag_len <= net_buf_tailroom(frame_buf));
+		net_buf_add(frame_buf, authtag_len);
 
 		if (!(send_raw || ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
 							       net_pkt_lladdr_src(pkt),

@@ -37,13 +37,8 @@ static int fxas21002_handle_drdy_int(const struct device *dev)
 {
 	struct fxas21002_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
@@ -113,6 +108,7 @@ int fxas21002_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_DATA_READY:
 		mask = FXAS21002_CTRLREG2_CFG_EN_MASK;
 		data->drdy_handler = handler;
+		data->drdy_trig = trig;
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");

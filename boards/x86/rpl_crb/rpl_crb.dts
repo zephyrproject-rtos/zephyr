@@ -20,4 +20,9 @@
 		zephyr,console = &uart_ec_0;
 		zephyr,shell-uart = &uart_ec_0;
 	};
+
+	aliases {
+		watchdog0 = &tco_wdt;
+		rtc = &rtc;
+	};
 };

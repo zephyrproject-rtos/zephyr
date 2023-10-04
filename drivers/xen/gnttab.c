@@ -23,6 +23,7 @@
 #include <zephyr/xen/public/grant_table.h>
 #include <zephyr/xen/public/memory.h>
 #include <zephyr/xen/public/xen.h>
+#include <zephyr/sys/barrier.h>
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -86,7 +87,7 @@ static void gnttab_grant_permit_access(grant_ref_t gref, domid_t domid,
 	gnttab.table[gref].frame = gfn;
 	gnttab.table[gref].domid = domid;
 	/* Need to be sure that gfn and domid will be set before flags */
-	__DMB();
+	barrier_dmem_fence_full();
 
 	gnttab.table[gref].flags = flags;
 }
@@ -287,7 +288,7 @@ const char *gnttabop_error(int16_t status)
 	}
 }
 
-static int gnttab_init(const struct device *d)
+static int gnttab_init(void)
 {
 	grant_ref_t gref;
 	struct xen_add_to_physmap xatp;

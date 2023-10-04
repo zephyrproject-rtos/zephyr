@@ -92,6 +92,11 @@ int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id)
 
 int bt_mesh_shell_mdl_cmds_help(const struct shell *sh, size_t argc, char **argv)
 {
+	shell_print(
+		sh,
+		"\nFor a detailed description of the commands and arguments in this shell module,\n"
+		"please refer to the Zephyr Project documentation online.\n");
+
 	if (argc == 1) {
 		shell_help(sh);
 		return 0;

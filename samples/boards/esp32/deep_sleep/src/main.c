@@ -25,7 +25,7 @@ static const struct gpio_dt_spec wakeup_button = GPIO_DT_SPEC_GET(DT_ALIAS(wakeu
 #endif
 #endif
 
-void main(void)
+int main(void)
 {
 	switch (esp_sleep_get_wakeup_cause()) {
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
@@ -87,7 +87,7 @@ void main(void)
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
 	if (!device_is_ready(wakeup_button.port)) {
 		printk("Error: wakeup button device %s is not ready\n", wakeup_button.port->name);
-		return;
+		return 0;
 	}
 
 	int ret = gpio_pin_configure_dt(&wakeup_button, GPIO_INPUT);
@@ -95,7 +95,7 @@ void main(void)
 	if (ret != 0) {
 		printk("Error %d: failed to configure %s pin %d\n",
 				ret, wakeup_button.port->name, wakeup_button.pin);
-		return;
+		return 0;
 	}
 
 	esp_deep_sleep_enable_gpio_wakeup(BIT(wakeup_button.pin), ESP_GPIO_WAKEUP_GPIO_HIGH);

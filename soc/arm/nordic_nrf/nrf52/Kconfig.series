@@ -13,7 +13,7 @@ config SOC_SERIES_NRF52X
 	select XIP
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_SWO
 	help
 	  Enable support for NRF52 MCU series

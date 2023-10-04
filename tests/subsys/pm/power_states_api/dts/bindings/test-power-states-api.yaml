@@ -8,7 +8,6 @@ description: |
 compatible: "test-power-states-api"
 
 properties:
-    cpu-power-states:
-       type: phandles
-       required: false
-       description: List of power management states supported by this cpu.
+  cpu-power-states:
+    type: phandles
+    description: List of power management states supported by this cpu.

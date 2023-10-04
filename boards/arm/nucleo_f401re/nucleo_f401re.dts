@@ -50,6 +50,9 @@
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &wwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -175,5 +178,13 @@
 };
 
 &wwdg {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };

@@ -12,9 +12,8 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int soc_init(const struct device *dev)
+static int soc_init(void)
 {
-	ARG_UNUSED(dev);
 
 	return 0;
 }

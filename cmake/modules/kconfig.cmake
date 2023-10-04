@@ -55,6 +55,9 @@ foreach(root ${kconfig_board_root})
 endforeach()
 
 if(KCONFIG_ROOT)
+  # Perform any variable substitutions if they are present
+  string(CONFIGURE "${KCONFIG_ROOT}" KCONFIG_ROOT)
+
   zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
@@ -65,6 +68,9 @@ else()
 endif()
 
 set_ifndef(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
+if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+  set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+endif()
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
@@ -73,15 +79,11 @@ if(CONF_FILE)
   string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
 endif()
 
-zephyr_get(OVERLAY_CONFIG SYSBUILD LOCAL)
-if(OVERLAY_CONFIG)
-  string(CONFIGURE "${OVERLAY_CONFIG}" OVERLAY_CONFIG_EXPANDED)
-  string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG_EXPANDED}")
+if(EXTRA_CONF_FILE)
+  string(CONFIGURE "${EXTRA_CONF_FILE}" EXTRA_CONF_FILE_EXPANDED)
+  string(REPLACE " " ";" EXTRA_CONF_FILE_AS_LIST "${EXTRA_CONF_FILE_EXPANDED}")
 endif()
 
-if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
-  list(INSERT CONF_FILE_AS_LIST 0 ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
-endif()
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
@@ -113,10 +115,17 @@ string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
 # cmake commands are escaped differently
 string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
 
+if(TOOLCHAIN_HAS_NEWLIB)
+  set(_local_TOOLCHAIN_HAS_NEWLIB y)
+else()
+  set(_local_TOOLCHAIN_HAS_NEWLIB n)
+endif()
+
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
+  APPVERSION=${APP_VERSION_STRING}
   CONFIG_=${KCONFIG_NAMESPACE}_
   KCONFIG_CONFIG=${DOTCONFIG}
   # Set environment variables so that Kconfig can prune Kconfig source
@@ -126,9 +135,10 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   BOARD_DIR=${BOARD_DIR}
   BOARD_REVISION=${BOARD_REVISION}
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
+  APPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
   ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
-  TOOLCHAIN_HAS_NEWLIB=$<IF:$<BOOL:${TOOLCHAIN_HAS_NEWLIB}>,y,n>
+  TOOLCHAIN_HAS_NEWLIB=${_local_TOOLCHAIN_HAS_NEWLIB}
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}
@@ -238,9 +248,10 @@ list(SORT config_files)
 set(
   merge_config_files
   ${BOARD_DEFCONFIG}
+  ${BOARD_REVISION_CONFIG}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
-  ${OVERLAY_CONFIG_AS_LIST}
+  ${EXTRA_CONF_FILE_AS_LIST}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )
@@ -295,10 +306,14 @@ if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
 endif()
 
 if(CREATE_NEW_DOTCONFIG)
-  set(input_configs_are_handwritten --handwritten-input-configs)
-  set(input_configs ${merge_config_files})
+  set(input_configs_flags --handwritten-input-configs)
+  set(input_configs ${merge_config_files} ${FORCED_CONF_FILE})
 else()
-  set(input_configs ${DOTCONFIG})
+  set(input_configs ${DOTCONFIG} ${FORCED_CONF_FILE})
+endif()
+
+if(DEFINED FORCED_CONF_FILE)
+  list(APPEND input_configs_flags --forced-input-configs)
 endif()
 
 cmake_path(GET AUTOCONF_H PARENT_PATH autoconf_h_path)
@@ -313,7 +328,7 @@ execute_process(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}
-  ${input_configs_are_handwritten}
+  ${input_configs_flags}
   ${KCONFIG_ROOT}
   ${DOTCONFIG}
   ${AUTOCONF_H}

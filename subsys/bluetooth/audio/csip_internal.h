@@ -25,7 +25,7 @@ struct csip_pending_notifications {
  * the array containing this struct, if the security manager overwrites
  * the oldest keys, we also overwrite the oldest entry
  */
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };

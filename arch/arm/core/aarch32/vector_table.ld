@@ -37,6 +37,16 @@
 . = ALIGN( 1 << LOG2CEIL(4 * (16 + CONFIG_NUM_IRQS)) );
 #endif
 
+#ifdef CONFIG_ARM_ZIMAGE_HEADER
+/*
+ * For AArch32 (A/R), VBAR has Bits [4:0] = RES0.
+ * For AArch32 (M), VTOR has Bits [6:0] = RES0. Thus, vector start address
+ * should be aligned in such a way so that it satisfies the requirements of
+ * VBAR and VTOR ie Bits [6:0] = 0.
+ */
+. = ALIGN( 0x80 );
+#endif
+
 _vector_start = .;
 KEEP(*(.exc_vector_table))
 KEEP(*(".exc_vector_table.*"))

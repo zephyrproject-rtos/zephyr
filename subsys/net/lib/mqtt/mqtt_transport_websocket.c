@@ -150,14 +150,17 @@ int mqtt_client_websocket_read(struct mqtt_client *client, uint8_t *data,
 
 	ret = websocket_recv_msg(client->transport.websocket.sock,
 				 data, buflen, &message_type, NULL, timeout);
-	if (ret > 0 && message_type > 0) {
+	if (ret >= 0 && message_type > 0) {
 		if (message_type & WEBSOCKET_FLAG_CLOSE) {
 			return 0;
 		}
 
-		if (!(message_type & WEBSOCKET_FLAG_BINARY)) {
+		if ((ret == 0) || !(message_type & WEBSOCKET_FLAG_BINARY)) {
 			return -EAGAIN;
 		}
+	}
+	if (ret == -ENOTCONN) {
+		ret = 0;
 	}
 
 	return ret;

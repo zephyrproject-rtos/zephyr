@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CDB_H_
 
-#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
@@ -118,6 +120,9 @@ void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update);
  *
  *  Allocate a new node in the CDB.
  *
+ *  If @c addr is 0, @ref bt_mesh_cdb_free_addr_get will be used to allocate
+ *  a free address.
+ *
  *  @param uuid UUID of the node.
  *  @param addr Address of the node's primary element. If 0, the lowest
  *              possible address available will be assigned to the node.
@@ -132,6 +137,15 @@ void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update);
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t addr,
 						uint8_t num_elem, uint16_t net_idx);
 
+/** @brief Get the first available address for the given element count.
+ *
+ *  @param num_elem Number of elements to accommodate.
+ *
+ *  @return The first unicast address in an address range that allows a node
+ *          with the given number of elements to fit.
+ */
+uint16_t bt_mesh_cdb_free_addr_get(uint8_t num_elem);
+
 /** @brief Delete a node.
  *
  *  Delete a node from the CDB. When deleting the node and the address of the
@@ -144,6 +158,18 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t
  *  @param store If true, the node will be cleared from persistent storage.
  */
 void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store);
+
+/** @brief Update a node.
+ *
+ *  Assigns the node a new address and clears the previous persistent storage
+ *  entry.
+ *
+ *  @param node The node to be deleted.
+ *  @param addr New unicast address for the node.
+ *  @param num_elem Updated number of elements in the node.
+ */
+void bt_mesh_cdb_node_update(struct bt_mesh_cdb_node *node, uint16_t addr,
+			     uint8_t num_elem);
 
 /** @brief Get a node by address.
  *

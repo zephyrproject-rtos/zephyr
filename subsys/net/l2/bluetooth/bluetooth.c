@@ -136,13 +136,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 static int net_bt_enable(struct net_if *iface, bool state)
 {
-	struct bt_if_conn *conn = net_bt_get_conn(iface);
-
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
-
-	if (state && conn->ipsp_chan.state != BT_L2CAP_CONNECTED) {
-		return -ENETDOWN;
-	}
 
 	return 0;
 }

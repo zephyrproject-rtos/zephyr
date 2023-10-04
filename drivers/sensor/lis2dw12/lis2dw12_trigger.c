@@ -124,6 +124,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		lis2dw12->drdy_handler = handler;
+		lis2dw12->drdy_trig = trig;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
 			lis2dw12_acceleration_raw_get(ctx, raw);
@@ -144,11 +145,13 @@ int lis2dw12_trigger_set(const struct device *dev,
 		/* Set single TAP trigger  */
 		if (trig->type == SENSOR_TRIG_TAP) {
 			lis2dw12->tap_handler = handler;
+			lis2dw12->tap_trig = trig;
 			return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
 		}
 
 		/* Set double TAP trigger  */
 		lis2dw12->double_tap_handler = handler;
+		lis2dw12->double_tap_trig = trig;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 #endif /* CONFIG_LIS2DW12_TAP */
 #ifdef CONFIG_LIS2DW12_THRESHOLD
@@ -156,6 +159,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 	{
 		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
 		lis2dw12->threshold_handler = handler;
+		lis2dw12->threshold_trig = trig;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
 	}
 #endif
@@ -163,6 +167,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_FREEFALL:
 	LOG_DBG("Set freefall %d (handler: %p)\n", trig->type, handler);
 		lis2dw12->freefall_handler = handler;
+		lis2dw12->freefall_trig = trig;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_FREEFALL, state);
 	break;
 #endif /* CONFIG_LIS2DW12_FREEFALL */
@@ -176,13 +181,8 @@ static int lis2dw12_handle_drdy_int(const struct device *dev)
 {
 	struct lis2dw12_data *data = dev->data;
 
-	struct sensor_trigger drdy_trig = {
-		.type = SENSOR_TRIG_DATA_READY,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (data->drdy_handler) {
-		data->drdy_handler(dev, &drdy_trig);
+		data->drdy_handler(dev, data->drdy_trig);
 	}
 
 	return 0;
@@ -194,13 +194,8 @@ static int lis2dw12_handle_single_tap_int(const struct device *dev)
 	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
 
-	struct sensor_trigger pulse_trig = {
-		.type = SENSOR_TRIG_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &pulse_trig);
+		handler(dev, data->tap_trig);
 	}
 
 	return 0;
@@ -211,13 +206,8 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
 	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
 
-	struct sensor_trigger pulse_trig = {
-		.type = SENSOR_TRIG_DOUBLE_TAP,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &pulse_trig);
+		handler(dev, data->double_tap_trig);
 	}
 
 	return 0;
@@ -230,13 +220,8 @@ static int lis2dw12_handle_wu_ia_int(const struct device *dev)
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	sensor_trigger_handler_t handler = lis2dw12->threshold_handler;
 
-	struct sensor_trigger thresh_trig = {
-		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &thresh_trig);
+		handler(dev, lis2dw12->threshold_trig);
 	}
 
 	return 0;
@@ -249,13 +234,8 @@ static int lis2dw12_handle_ff_ia_int(const struct device *dev)
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	sensor_trigger_handler_t handler = lis2dw12->freefall_handler;
 
-	struct sensor_trigger freefall_trig = {
-		.type = SENSOR_TRIG_FREEFALL,
-		.chan = SENSOR_CHAN_ALL,
-	};
-
 	if (handler) {
-		handler(dev, &freefall_trig);
+		handler(dev, lis2dw12->freefall_trig);
 	}
 
 	return 0;

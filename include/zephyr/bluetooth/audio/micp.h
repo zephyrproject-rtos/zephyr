@@ -8,9 +8,9 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_
 
 /**
- * @brief Microphone Input Control Profile (MICP)
+ * @brief Microphone Control Profile (MICP)
  *
- * @defgroup bt_gatt_micp Microphone Input Control Profile (MICP)
+ * @defgroup bt_gatt_micp Microphone Control Profile (MICP)
  *
  * @ingroup bluetooth
  * @{
@@ -19,7 +19,8 @@
  * as a part of ongoing development.
  */
 
-#include <zephyr/types.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/aics.h>
 
 #ifdef __cplusplus
@@ -36,7 +37,7 @@ extern "C" {
 #define BT_MICP_ERR_MUTE_DISABLED                  0x80
 #define BT_MICP_ERR_VAL_OUT_OF_RANGE               0x81
 
-/** Microphone Input Control Profile mute states */
+/** Microphone Control Profile mute states */
 #define BT_MICP_MUTE_UNMUTED                       0x00
 #define BT_MICP_MUTE_MUTED                         0x01
 #define BT_MICP_MUTE_DISABLED                      0x02
@@ -44,21 +45,21 @@ extern "C" {
 /** @brief Opaque Microphone Controller instance. */
 struct bt_micp_mic_ctlr;
 
-/** @brief Register parameters structure for Microphone Input Control Service */
+/** @brief Register parameters structure for Microphone Control Service */
 struct bt_micp_mic_dev_register_param {
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	/** Register parameter structure for Audio Input Control Services */
 	struct bt_aics_register_param aics_param[BT_MICP_MIC_DEV_AICS_CNT];
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
-	/** Microphone Input Control Profile callback structure. */
+	/** Microphone Control Profile callback structure. */
 	struct bt_micp_mic_dev_cb *cb;
 };
 
 /**
- * @brief Microphone Input Control Profile included services
+ * @brief Microphone Control Profile included services
  *
- * Used for to represent the Microphone Input Control Profile included service
+ * Used for to represent the Microphone Control Profile included service
  * instances, for either a Microphone Controller or a Microphone Device.
  * The instance pointers either represent local service instances,
  * or remote service instances.
@@ -71,9 +72,9 @@ struct bt_micp_included {
 };
 
 /**
- * @brief Initialize the Microphone Input Control Profile Microphone Device
+ * @brief Initialize the Microphone Control Profile Microphone Device
  *
- * This will enable the Microphone Input Control Service instance and make it
+ * This will enable the Microphone Control Service instance and make it
  * discoverable by Microphone Controllers.
  *
  * @param param Pointer to an initialization structure.
@@ -104,7 +105,7 @@ struct bt_micp_mic_dev_cb {
 	 * or if the value is changed by either the Microphone Device or a
 	 * Microphone Controller.
 	 *
-	 * @param mute     The mute setting of the Microphone Input Control Service.
+	 * @param mute     The mute setting of the Microphone Control Service.
 	 */
 	void (*mute)(uint8_t mute);
 };
@@ -141,7 +142,7 @@ int bt_micp_mic_dev_mute_get(void);
 
 struct bt_micp_mic_ctlr_cb {
 	/**
-	 * @brief Callback function for Microphone Input Control Profile mute.
+	 * @brief Callback function for Microphone Control Profile mute.
 	 *
 	 * Called when the value is read,
 	 * or if the value is changed by either the Microphone Device or a
@@ -150,7 +151,7 @@ struct bt_micp_mic_ctlr_cb {
 	 * @param mic_ctlr Microphone Controller instance pointer.
 	 * @param err      Error value. 0 on success, GATT error or errno on fail.
 	 *                 For notifications, this will always be 0.
-	 * @param mute     The mute setting of the Microphone Input Control Service.
+	 * @param mute     The mute setting of the Microphone Control Service.
 	 */
 	void (*mute)(struct bt_micp_mic_ctlr *mic_ctlr, int err, uint8_t mute);
 
@@ -166,7 +167,7 @@ struct bt_micp_mic_ctlr_cb {
 			 uint8_t aics_count);
 
 	/**
-	 * @brief Callback function for Microphone Input Control Profile mute/unmute.
+	 * @brief Callback function for Microphone Control Profile mute/unmute.
 	 *
 	 * @param mic_ctlr  Microphone Controller instance pointer.
 	 * @param err       Error value. 0 on success, GATT error or errno on fail.
@@ -174,7 +175,7 @@ struct bt_micp_mic_ctlr_cb {
 	void (*mute_written)(struct bt_micp_mic_ctlr *mic_ctlr, int err);
 
 	/**
-	 * @brief Callback function for Microphone Input Control Profile mute/unmute.
+	 * @brief Callback function for Microphone Control Profile mute/unmute.
 	 *
 	 * @param mic_ctlr  Microphone Controller instance pointer.
 	 * @param err       Error value. 0 on success, GATT error or errno on fail.
@@ -188,10 +189,10 @@ struct bt_micp_mic_ctlr_cb {
 };
 
 /**
- * @brief Get Microphone Input Control Profile included services
+ * @brief Get Microphone Control Profile included services
  *
  * Returns a pointer to a struct that contains information about the
- * Microphone Input Control Profile included services instances, such as
+ * Microphone Control Profile included services instances, such as
  * pointers to the Audio Input Control Service instances.
  *
  * Requires that @kconfig{CONFIG_BT_MICP_MIC_CTLR_AICS} is enabled.
@@ -218,7 +219,7 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
 			      struct bt_conn **conn);
 
 /**
- * @brief Discover Microphone Input Control Service
+ * @brief Discover Microphone Control Service
  *
  * This will start a GATT discovery and setup handles and subscriptions.
  * This shall be called once before any other actions can be executed for the

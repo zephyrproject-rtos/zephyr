@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Łukasz Hejnak (LeHack) <lehack-ghub@lehack.pl>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+        sdhc0: sdhc@0 {
+                compatible = "zephyr,sdhc-spi-slot";
+                reg = <0>;
+                status = "okay";
+                mmc {
+                    compatible = "zephyr,sdmmc-disk";
+                    status = "okay";
+                };
+                spi-max-frequency = <25000000>;
+                spi-clock-mode-cpol;
+                spi-clock-mode-cpha;
+        };
+};

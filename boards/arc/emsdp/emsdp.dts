@@ -7,7 +7,9 @@
 /dts-v1/;
 
 #include <synopsys/emsdp.dtsi>
+#include <mem.h>
 #include "board.dtsi"
+#include "emsdp-pinctrl.dtsi"
 
 / {
 	model = "emsdp";
@@ -15,6 +17,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		spi-flash0 = &s25fl256s;
 	};
 
 	chosen {
@@ -40,5 +43,26 @@
 			interrupts = <85 1>;
 		};
 
+		spi@f0008000 {
+			interrupts = <83 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <84 1>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
+		};
+
+		spi@80010000 {
+			interrupts = <63 2>, <64 2>, <65 2>;
+			pinctrl-0 = <&arduino_CFG5_spi>;
+			pinctrl-names = "default";
+		};
+
+		spi@80010100 {
+			interrupts = <67 2>, <68 2>, <69 2>;
+			pinctrl-0 = <&pmodA_spi1_cs0>;
+			pinctrl-names = "default";
+		};
 	};
 };

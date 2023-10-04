@@ -9,10 +9,13 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/intc_xmc4xxx.h>
 #include <zephyr/dt-bindings/gpio/infineon-xmc4xxx-gpio.h>
 #include <xmc_gpio.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+
+#define PORT_TO_PORT_ID(port)      ((int)(port) >> 8 & 0xf)
 
 struct gpio_xmc4xxx_config {
 	/* gpio_driver_config needs to be first, required by Zephyr */
@@ -23,6 +26,9 @@ struct gpio_xmc4xxx_config {
 struct gpio_xmc4xxx_data {
 	/* gpio_driver_data needs to be first, required by Zephyr */
 	struct gpio_driver_data common;
+#if defined(CONFIG_XMC4XXX_INTC)
+	sys_slist_t callbacks;
+#endif
 };
 
 static int gpio_xmc4xxx_convert_flags(XMC_GPIO_CONFIG_t *pin_config, gpio_flags_t flags)
@@ -88,6 +94,11 @@ static int gpio_xmc4xxx_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		return -EINVAL;
 	}
 
+	if ((port == (XMC_GPIO_PORT_t *)PORT14_BASE || port == (XMC_GPIO_PORT_t *)PORT15_BASE) &&
+	    (flags & GPIO_OUTPUT)) {
+		return -EINVAL;
+	}
+
 	ret = gpio_xmc4xxx_convert_flags(&pin_config, flags);
 	if (ret) {
 		return ret;
@@ -97,16 +108,38 @@ static int gpio_xmc4xxx_pin_configure(const struct device *dev, gpio_pin_t pin, 
 	return 0;
 }
 
+#if defined(CONFIG_XMC4XXX_INTC)
+static void gpio_xmc4xxx_isr(const struct device *dev, int pin)
+{
+	struct gpio_xmc4xxx_data *data = dev->data;
+
+	gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
+}
+#endif
+
 static int gpio_xmc4xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
+#if defined(CONFIG_XMC4XXX_INTC)
+	const struct gpio_xmc4xxx_config *config = dev->config;
+	int port_id = PORT_TO_PORT_ID(config->port);
+
+	if (mode & GPIO_INT_ENABLE) {
+		return intc_xmc4xxx_gpio_enable_interrupt(port_id, pin, mode, trig,
+							  gpio_xmc4xxx_isr, (void *)dev);
+	} else if (mode & GPIO_INT_DISABLE) {
+		return intc_xmc4xxx_gpio_disable_interrupt(port_id, pin);
+	} else {
+		return -EINVAL;
+	}
+#else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
 	ARG_UNUSED(mode);
 	ARG_UNUSED(trig);
 
-	/* TODO: interrupt controller */
 	return -ENOTSUP;
+#endif
 }
 
 static int gpio_xmc4xxx_get_raw(const struct device *dev, gpio_port_value_t *value)
@@ -118,6 +151,16 @@ static int gpio_xmc4xxx_get_raw(const struct device *dev, gpio_port_value_t *val
 	*value = port->IN & pin_mask;
 	return 0;
 }
+
+#if defined(CONFIG_XMC4XXX_INTC)
+static int gpio_xmc4xxx_manage_callback(const struct device *dev, struct gpio_callback *callback,
+					bool set)
+{
+	struct gpio_xmc4xxx_data *data = dev->data;
+
+	return gpio_manage_callback(&data->callbacks, callback, set);
+}
+#endif
 
 static int gpio_xmc4xxx_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 				       gpio_port_value_t value)
@@ -173,6 +216,7 @@ static const struct gpio_driver_api gpio_xmc4xxx_driver_api = {
 	.port_clear_bits_raw = gpio_xmc4xxx_clear_bits_raw,
 	.port_toggle_bits = gpio_xmc4xxx_toggle_bits,
 	.pin_interrupt_configure = gpio_xmc4xxx_pin_interrupt_configure,
+	.manage_callback = IS_ENABLED(CONFIG_XMC4XXX_INTC) ? gpio_xmc4xxx_manage_callback : NULL,
 };
 
 #define GPIO_XMC4XXX_INIT(index)                                                                   \

@@ -8,7 +8,9 @@ toolchain:
 ram: 2048
 supported:
   - gpio
+  - smbus
+  - rtc
 testing:
   ignore_tags:
-     - net
-     - bluetooth
+    - net
+    - bluetooth

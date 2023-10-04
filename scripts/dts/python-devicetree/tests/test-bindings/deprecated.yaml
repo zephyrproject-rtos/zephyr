@@ -5,11 +5,11 @@ description: Property deprecated value test
 compatible: "test-deprecated"
 
 properties:
-    oldprop:
-        type: int
-        deprecated: true
-        required: false
+  oldprop:
+    type: int
+    deprecated: true
+    required: false
 
-    curprop:
-        type: int
-        required: false
+  curprop:
+    type: int
+    required: false

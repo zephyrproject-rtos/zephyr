@@ -1,5 +1,9 @@
 tests:
   kernel.timer.starve:
     slow: true
-    timeout: 3600
-    tags: kernel timer
+    timeout: 3700
+    tags:
+      - kernel
+      - timer
+    integration_platforms:
+      - qemu_x86

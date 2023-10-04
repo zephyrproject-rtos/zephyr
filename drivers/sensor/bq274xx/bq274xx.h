@@ -97,6 +97,7 @@ struct bq274xx_data {
 	const struct device *dev;
 	struct gpio_callback ready_callback;
 	sensor_trigger_handler_t ready_handler;
+	const struct sensor_trigger *ready_trig;
 
 #ifdef CONFIG_BQ274XX_TRIGGER_OWN_THREAD
 	struct k_sem sem;
@@ -114,7 +115,7 @@ struct bq274xx_config {
 	uint16_t design_capacity;
 	uint16_t taper_current;
 	uint16_t terminate_voltage;
-#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_BQ274XX_TRIGGER)
+#if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 	struct gpio_dt_spec int_gpios;
 #endif
 	bool lazy_loading;

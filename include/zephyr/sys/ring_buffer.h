@@ -52,10 +52,6 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 }
 
 /**
- * @brief Data Structure APIs
- * @defgroup datastructure_apis Data Structure APIs
- */
-/**
  * @defgroup ring_buffer_apis Ring Buffer APIs
  * @ingroup datastructure_apis
  * @{
@@ -141,8 +137,7 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
  *
  * @param expr Expression or type to compute the size of
  */
-#define RING_BUF_ITEM_SIZEOF(expr) \
-	((sizeof(expr) + sizeof(uint32_t) - 1) / sizeof(uint32_t))
+#define RING_BUF_ITEM_SIZEOF(expr) DIV_ROUND_UP(sizeof(expr), sizeof(uint32_t))
 
 /**
  * @brief Initialize a ring buffer for byte data.

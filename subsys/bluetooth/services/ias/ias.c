@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ias.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #define LOG_LEVEL CONFIG_BT_IAS_LOG_LEVEL
 LOG_MODULE_REGISTER(ias);
@@ -53,6 +54,8 @@ static void set_alert_level(void)
 		return;
 	}
 
+	curr_lvl = alert_level;
+
 	if (alert_level == BT_IAS_ALERT_LVL_HIGH_ALERT) {
 		STRUCT_SECTION_FOREACH(bt_ias_cb, cb) {
 			if (cb->high_alert) {
@@ -75,7 +78,6 @@ static void set_alert_level(void)
 		}
 		LOG_DBG("No alert");
 	}
-	curr_lvl = alert_level;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

@@ -38,7 +38,7 @@ static void can_tx_callback(const struct device *dev, int error, void *user_data
 	k_sem_give(tx_queue_sem);
 }
 
-void main(void)
+int main(void)
 {
 #if DT_NODE_EXISTS(BUTTON_NODE)
 	const struct gpio_dt_spec btn = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
@@ -54,21 +54,21 @@ void main(void)
 
 	if (!device_is_ready(dev)) {
 		printk("CAN device not ready");
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
 		err = can_set_mode(dev, CAN_MODE_FD);
 		if (err != 0) {
 			printk("Error setting CAN-FD mode (err %d)", err);
-			return;
+			return 0;
 		}
 	}
 
 	err = can_start(dev);
 	if (err != 0) {
 		printk("Error starting CAN controller (err %d)", err);
-		return;
+		return 0;
 	}
 
 #if DT_NODE_EXISTS(BUTTON_NODE)
@@ -76,19 +76,19 @@ void main(void)
 
 	if (!device_is_ready(btn.port)) {
 		printk("button device not ready\n");
-		return;
+		return 0;
 	}
 
 	err = gpio_pin_configure_dt(&btn, GPIO_INPUT);
 	if (err != 0) {
 		printk("failed to configure button GPIO (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&btn, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
 		printk("failed to configure button interrupt (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	gpio_init_callback(&btn_cb_ctx.callback, button_callback, BIT(btn.pin));
@@ -132,7 +132,7 @@ void main(void)
 #if DT_NODE_EXISTS(BUTTON_NODE)
 		if (k_sem_take(&btn_cb_ctx.sem, K_NO_WAIT) == 0) {
 			printk("button press detected, babbling stopped\n");
-			return;
+			return 0;
 		}
 #endif /* DT_NODE_EXISTS(BUTTON_NODE) */
 	}

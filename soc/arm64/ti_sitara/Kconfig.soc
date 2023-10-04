@@ -1,0 +1,4 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm64/ti_sitara/*/Kconfig.series"

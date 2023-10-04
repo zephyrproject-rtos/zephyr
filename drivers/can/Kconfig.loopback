@@ -7,7 +7,6 @@ config CAN_LOOPBACK
 	bool "Emulated CAN loopback driver"
 	default y
 	depends on DT_HAS_ZEPHYR_CAN_LOOPBACK_ENABLED
-	select CAN_HAS_CANFD
 	help
 	  This is an emulated driver that can only loopback messages.
 

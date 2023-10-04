@@ -176,6 +176,18 @@
 	pinctrl-names = "default";
 };
 
+&adc0 {
+	status = "okay";
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+
+	prescaler = <9>;
+	startup-time = <64>;
+	settling-time = <3>;
+	tracking-time = <2>;
+};
+
 &wdt {
 	status = "okay";
 };

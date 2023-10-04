@@ -5,27 +5,28 @@
  */
 
 #include "arduino_r3_connector.dtsi"
+#include "pmod_connector.dtsi"
 
 / {
 	leds {
 		compatible = "gpio-leds";
 		green_led_1:led_1 {
-			gpios = <&gpioi 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioi 12 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 			status = "disabled";
 		};
 		orange_led_2:led_2 {
-			gpios = <&gpioi 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 			status = "disabled";
 		};
 		red_led_3:led_3 {
-			gpios = <&gpioi 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioi 14 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 			status = "disabled";
 		};
 		blue_led_4:led_4 {
-			gpios = <&gpioi 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
 			label = "User LD4";
 			status = "disabled";
 		};
@@ -63,6 +64,24 @@
 			gpios = <&gpiok 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			status = "disabled";
 		};
+	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpiok 7 0>,	/* TOUCH_INT */
+			   <35 0 &gpioe 5 0>,	/* SCLK/MCLK */
+			   <37 0 &gpioe 4 0>,	/* LRCLK */
+			   <39 0 &gpioe 6 0>,	/* I2S */
+			   <40 0 &gpiod 13 0>,	/* I2C4_SDA */
+			   <44 0 &gpiod 12 0>,	/* I2C4_SCL */
+			   <45 0 &gpioa 8 0>,	/* CEC_CLK */
+			   <47 0 &gpiob 6 0>,	/* CEC */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioj 12 0>,	/* LCD_BL_CTRL */
+			   <57 0 &gpiog 3 0>;	/* DSI_RESET */
 	};
 };
 

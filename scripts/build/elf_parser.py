@@ -117,6 +117,7 @@ class ZephyrElf:
     """
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
+        self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
@@ -147,15 +148,18 @@ class ZephyrElf:
         """
         Retrieve the raw bytes associated with a symbol from the elf file.
         """
+        # Symbol data parameters
         addr = sym.entry.st_value
-        len = sym.entry.st_size
-        for section in self.elf.iter_sections():
-            start = section['sh_addr']
-            end = start + section['sh_size']
-
-            if (start <= addr) and (addr + len) <= end:
-                offset = addr - section['sh_addr']
-                return bytes(section.data()[offset:offset + len])
+        length = sym.entry.st_size
+        # Section associated with the symbol
+        section = self.elf.get_section(sym.entry['st_shndx'])
+        data = section.data()
+        # Relocatable data does not appear to be shifted
+        offset = addr - (0 if self.relocatable else section['sh_addr'])
+        # Validate data extraction
+        assert offset + length <= len(data)
+        # Extract symbol bytes from section
+        return bytes(data[offset:offset + length])
 
     def _symbols_find_value(self, names):
         symbols = {}

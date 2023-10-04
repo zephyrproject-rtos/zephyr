@@ -13,11 +13,11 @@ description: |
 compatible: "nxp,imx-iomuxc"
 
 include:
-    - name: base.yaml
+  - name: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
 child-binding:
   description: MCUX RT pin mux option

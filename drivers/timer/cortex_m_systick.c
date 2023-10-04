@@ -9,13 +9,14 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
 /* Minimum cycles in the future to try to program.  Note that this is
@@ -27,7 +28,7 @@
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
+#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
@@ -198,8 +199,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		/* Round delay up to next tick boundary */
 		delay += unannounced;
-		delay =
-		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
 		delay -= unannounced;
 		delay = MAX(delay, MIN_DELAY);
 		if (delay > MAX_CYCLES) {
@@ -267,9 +267,8 @@ void sys_clock_disable(void)
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK - 1;

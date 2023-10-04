@@ -17,6 +17,8 @@
 #define __MVE_FP                  1U        /* MVE floating point present */
 #define __ICACHE_PRESENT          1U        /* ICACHE present */
 #define __DCACHE_PRESENT          1U        /* DCACHE present */
+#define __PMU_PRESENT             1U        /* PMU present */
+#define __PMU_NUM_EVENTCNT        8U        /* PMU Event Counters */
 #endif
 
 

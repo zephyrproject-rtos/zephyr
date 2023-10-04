@@ -7,12 +7,10 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/kobject.h>
 #include <zephyr/syscall_handler.h>
-
-extern const struct device __device_start[];
-extern const struct device __device_end[];
-
+#include <zephyr/toolchain.h>
 
 /**
  * @brief Initialize state for all static devices.
@@ -22,18 +20,13 @@ extern const struct device __device_end[];
  */
 void z_device_state_init(void)
 {
-	const struct device *dev = __device_start;
-
-	while (dev < __device_end) {
+	STRUCT_SECTION_FOREACH(device, dev) {
 		z_object_init(dev);
-		++dev;
 	}
 }
 
 const struct device *z_impl_device_get_binding(const char *name)
 {
-	const struct device *dev;
-
 	/* A null string identifies no device.  So does an empty
 	 * string.
 	 */
@@ -46,13 +39,13 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 * with CONFIG_* macros), only cheap pointer comparisons will be
 	 * performed. Reserve string comparisons for a fallback.
 	 */
-	for (dev = __device_start; dev != __device_end; dev++) {
+	STRUCT_SECTION_FOREACH(device, dev) {
 		if (z_device_is_ready(dev) && (dev->name == name)) {
 			return dev;
 		}
 	}
 
-	for (dev = __device_start; dev != __device_end; dev++) {
+	STRUCT_SECTION_FOREACH(device, dev) {
 		if (z_device_is_ready(dev) && (strcmp(name, dev->name) == 0)) {
 			return dev;
 		}
@@ -86,8 +79,12 @@ static inline bool z_vrfy_device_is_ready(const struct device *dev)
 
 size_t z_device_get_all_static(struct device const **devices)
 {
-	*devices = __device_start;
-	return __device_end - __device_start;
+	size_t cnt;
+
+	STRUCT_SECTION_GET(device, 0, devices);
+	STRUCT_SECTION_COUNT(device, &cnt);
+
+	return cnt;
 }
 
 bool z_device_is_ready(const struct device *dev)

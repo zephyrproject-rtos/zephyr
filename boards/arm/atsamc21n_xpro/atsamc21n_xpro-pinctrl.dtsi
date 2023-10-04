@@ -25,6 +25,20 @@
 		};
 	};
 
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PA25G_CAN0_RX>,
+				 <PA24G_CAN0_TX>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PB15G_CAN1_RX>,
+				 <PB14G_CAN1_TX>;
+		};
+	};
+
 	sercom0_uart_default: sercom0_uart_default {
 		group1 {
 			pinmux = <PB25C_SERCOM0_PAD1>,

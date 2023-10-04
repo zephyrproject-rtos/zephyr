@@ -79,22 +79,25 @@ config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
 	bool "Support for IEEE802.15.4 radio link"
 	default y
 
-config OPENTHREAD_RADIO_LINK_TREL_ENABLE
-	bool "Thread Radio Encapsulation Link (TREL)"
-
 config OPENTHREAD_CSL_AUTO_SYNC
 	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
 
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
-	int "CSL receiver wake up margin in units of 10 symbols"
-	default 480
+	int "CSL receiver wake up margin in microseconds"
+	default 5000
 
-config OPENTHREAD_CSL_MIN_RECEIVE_ON
-	int "Minimum CSL receive window"
-	default 5696
+config OPENTHREAD_MIN_RECEIVE_ON_AHEAD
+	int "Minimum receiving time before start of MHR"
+	default 192
 	help
-	  The minimum CSL receive window (in microseconds) required to receive a full IEEE 802.15.4 frame
+	  The minimum time (microseconds) that radio has to be in receive mode before the start of the MHR.
+
+config OPENTHREAD_MIN_RECEIVE_ON_AFTER
+	int "Minimum receiving time after start of MHR"
+	default 5504
+	help
+	  The minimum time (microseconds) that radio should be in receive mode after the start of the MHR.
 
 config OPENTHREAD_PLATFORM_CSL_UNCERT
 	int "CSL uncertainty"
@@ -102,6 +105,12 @@ config OPENTHREAD_PLATFORM_CSL_UNCERT
 	range 0 255
 	help
 	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
+
+config OPENTHREAD_CSL_TIMEOUT
+	int "CSL timeout in seconds"
+	default 100
+	help
+	  The default CSL timeout in seconds.
 
 config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
 	bool "Software transmission security logic"
@@ -153,7 +162,7 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	default 2
 
 config OPENTHREAD_TCP_ENABLE
-	bool "TCP"
+	bool "TCP support"
 
 config OPENTHREAD_CLI_TCP_ENABLE
 	bool "TCP in the CLI tool"
@@ -167,3 +176,10 @@ config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 	bool "Stay awake between packet fragments"
 	help
 	  This optimization is done at the expense of power consumption on SED/SSED devices.
+
+config OPENTHREAD_DEFAULT_TX_POWER
+	int "OpenThread default tx power in dBm"
+	range -40 20 if NRF_802154_RADIO_DRIVER
+	default 0
+	help
+	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.

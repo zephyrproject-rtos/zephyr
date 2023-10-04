@@ -114,7 +114,7 @@ static void dh3_cb(const struct zbus_channel *chan)
 
 ZBUS_LISTENER_DEFINE(delay_handler3_lis, dh3_cb);
 
-void main(void)
+int main(void)
 {
 	k_work_init(&wq_handler1.work, wq_dh_cb);
 	k_work_init(&wq_handler2.work, wq_dh_cb);
@@ -123,6 +123,7 @@ void main(void)
 	struct version_msg *v = zbus_chan_msg(&version_chan);
 
 	LOG_DBG("Sensor sample started, version %u.%u-%u!", v->major, v->minor, v->build);
+	return 0;
 }
 
 ZBUS_SUBSCRIBER_DEFINE(thread_handler1_sub, 4);

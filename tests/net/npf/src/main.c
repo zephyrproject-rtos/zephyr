@@ -76,17 +76,10 @@ static struct net_pkt *build_test_pkt(int type, int size, struct net_if *iface)
  * Declare some fake interfaces and test their filter conditions.
  */
 
-static int eth_fake_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", eth_fake_init, NULL,
+ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", NULL, NULL,
 		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    NULL, NET_ETH_MTU);
-ETH_NET_DEVICE_INIT(dummy_iface_b, "dummy_b", eth_fake_init, NULL,
+ETH_NET_DEVICE_INIT(dummy_iface_b, "dummy_b", NULL, NULL,
 		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    NULL, NET_ETH_MTU);
 #define dummy_iface_a NET_IF_GET_NAME(dummy_iface_a, 0)[0]

@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* libc headers */
-#include <fcntl.h>
-
 /* Zephyr headers */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -17,9 +14,15 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
+#ifdef CONFIG_ARCH_POSIX
+#include <fcntl.h>
+#else
+#include <zephyr/posix/fcntl.h>
+#endif
 #include <zephyr/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #if defined(CONFIG_SOCKS)
 #include "socks.h"
@@ -151,6 +154,9 @@ static void zsock_flush_queue(struct net_context *ctx)
 
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
+
+	/* Wake reader if it was sleeping */
+	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
 #if defined(CONFIG_NET_NATIVE)
@@ -259,6 +265,9 @@ int zsock_close_ctx(struct net_context *ctx)
 		(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 	}
 
+	ctx->user_data = INT_TO_POINTER(EINTR);
+	sock_set_error(ctx);
+
 	zsock_flush_queue(ctx);
 
 	SET_ERRNO(net_context_put(ctx));
@@ -361,7 +370,10 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 		 * closing handshake for stack to perform.
 		 */
 		net_context_ref(new_ctx);
+
+		(void)k_condvar_signal(&parent->cond.recv);
 	}
+
 }
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -415,7 +427,7 @@ unlock:
 		(void)k_mutex_unlock(ctx->cond.lock);
 	}
 
-	/* Let reader to wake if it was sleeping */
+	/* Wake reader if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
@@ -431,9 +443,6 @@ int zsock_shutdown_ctx(struct net_context *ctx, int how)
 		sock_set_eof(ctx);
 
 		zsock_flush_queue(ctx);
-
-		/* Let reader to wake if it was sleeping */
-		(void)k_condvar_signal(&ctx->cond.recv);
 	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
 		SET_ERRNO(-ENOTSUP);
 	} else {
@@ -479,9 +488,18 @@ static inline int z_vrfy_zsock_bind(int sock, const struct sockaddr *addr,
 #include <syscalls/zsock_bind_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+static void zsock_connected_cb(struct net_context *ctx, int status, void *user_data)
+{
+	if (status < 0) {
+		ctx->user_data = INT_TO_POINTER(-status);
+		sock_set_error(ctx);
+	}
+}
+
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
+
 #if defined(CONFIG_SOCKS)
 	if (net_context_is_proxy_enabled(ctx)) {
 		SET_ERRNO(net_socks5_connect(ctx, addr, addrlen));
@@ -490,11 +508,28 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		return 0;
 	}
 #endif
-	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL,
-			      K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
-			      NULL));
-	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
-				   ctx->user_data));
+	if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTED) {
+		return 0;
+	} else if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
+		if (sock_is_error(ctx)) {
+			SET_ERRNO(-POINTER_TO_INT(ctx->user_data));
+		} else {
+			SET_ERRNO(-EALREADY);
+		}
+	} else {
+		k_timeout_t timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
+		net_context_connect_cb_t cb = NULL;
+
+		if (sock_is_nonblock(ctx)) {
+			timeout = K_NO_WAIT;
+			cb = zsock_connected_cb;
+		}
+
+		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
+					   ctx->user_data));
+		SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb, timeout,
+					      ctx->user_data));
+	}
 
 	return 0;
 }
@@ -544,38 +579,33 @@ static inline int z_vrfy_zsock_listen(int sock, int backlog)
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
-	k_timeout_t timeout = K_FOREVER;
 	struct net_context *ctx;
 	struct net_pkt *last_pkt;
-	int fd;
+	int fd, ret;
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
-	if (sock_is_nonblock(parent)) {
-		timeout = K_NO_WAIT;
+	if (!sock_is_nonblock(parent)) {
+		k_timeout_t timeout = K_FOREVER;
+
+		/* accept() can reuse zsock_wait_data(), as underneath it's
+		 * monitoring the same queue (accept_q is an alias for recv_q).
+		 */
+		ret = zsock_wait_data(parent, &timeout);
+		if (ret < 0) {
+			z_free_fd(fd);
+			errno = -ret;
+			return -1;
+		}
 	}
 
-	ctx = k_fifo_get(&parent->accept_q, timeout);
+	ctx = k_fifo_get(&parent->accept_q, K_NO_WAIT);
 	if (ctx == NULL) {
 		z_free_fd(fd);
-		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			/* For non-blocking sockets return EAGAIN because it
-			 * just means the fifo is empty at this time
-			 */
-			errno = EAGAIN;
-		} else {
-			/* For blocking sockets return EINVAL because it means
-			 * the socket was closed while we were waiting for
-			 * connections. This is the same error code returned
-			 * under Linux when calling shutdown on a blocked accept
-			 * call
-			 */
-			errno = EINVAL;
-		}
-
+		errno = EAGAIN;
 		return -1;
 	}
 
@@ -586,7 +616,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			sock_set_eof(ctx);
 			z_free_fd(fd);
 			zsock_flush_queue(ctx);
-			net_context_unref(ctx);
+			net_context_put(ctx);
 			errno = ECONNABORTED;
 			return -1;
 		}
@@ -596,7 +626,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		errno = ECONNABORTED;
 		z_free_fd(fd);
 		zsock_flush_queue(ctx);
-		net_context_unref(ctx);
+		net_context_put(ctx);
 		return -1;
 	}
 
@@ -618,7 +648,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			z_free_fd(fd);
 			errno = ENOTSUP;
 			zsock_flush_queue(ctx);
-			net_context_unref(ctx);
+			net_context_put(ctx);
 			return -1;
 		}
 	}
@@ -667,7 +697,7 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 {
 	int64_t remaining;
 
-	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		goto out;
 	}
 
@@ -693,6 +723,11 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 		goto out;
 	}
 
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		*retry_timeout =
+			MIN(*retry_timeout, k_ticks_to_ms_floor32(timeout.ticks));
+	}
+
 	if (ctx->cond.lock) {
 		(void)k_mutex_unlock(ctx->cond.lock);
 	}
@@ -704,7 +739,8 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 
 	if (status == -EAGAIN) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			struct k_poll_event event;
 
 			k_poll_event_init(&event,
@@ -733,6 +769,20 @@ out:
 	return -1;
 }
 
+static void timeout_recalc(uint64_t end, k_timeout_t *timeout)
+{
+	if (!K_TIMEOUT_EQ(*timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
+		int64_t remaining = end - sys_clock_tick_get();
+
+		if (remaining <= 0) {
+			*timeout = K_NO_WAIT;
+		} else {
+			*timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
+}
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
@@ -740,6 +790,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
+	uint64_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -748,6 +799,8 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
@@ -775,6 +828,9 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			if (status < 0) {
 				return status;
 			}
+
+			/* Update the timeout value in case loop is repeated. */
+			timeout_recalc(end, &timeout);
 
 			continue;
 		}
@@ -830,6 +886,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
+	uint64_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -838,6 +895,8 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
+
+	end = sys_clock_timeout_end_calc(timeout);
 
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
@@ -849,6 +908,9 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 				if (status < 0) {
 					return status;
 				}
+
+				/* Update the timeout value in case loop is repeated. */
+				timeout_recalc(end, &timeout);
 
 				continue;
 			}
@@ -1089,6 +1151,8 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
+	int ret;
+
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
 		 * when called by fdtable.c:z_finalize_fd()
@@ -1101,8 +1165,15 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 
 	if (k_fifo_is_empty(&ctx->recv_q)) {
 		/* Wait for the data to arrive but without holding a lock */
-		return k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
-				      *timeout);
+		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
+				     *timeout);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (sock_is_error(ctx)) {
+			return -POINTER_TO_INT(ctx->user_data);
+		}
 	}
 
 	return 0;
@@ -1338,16 +1409,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		/* Update the timeout value in case loop is repeated. */
-		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - sys_clock_tick_get();
-
-			if (remaining <= 0) {
-				timeout = K_NO_WAIT;
-			} else {
-				timeout = Z_TIMEOUT_TICKS(remaining);
-			}
-		}
+		timeout_recalc(end, &timeout);
 	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
@@ -1469,12 +1531,18 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			if (*pev == pev_end) {
 				return -ENOMEM;
 			}
 
-			(*pev)->obj = net_tcp_tx_sem_get(ctx);
+			if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
+				(*pev)->obj = net_tcp_conn_sem_get(ctx);
+			} else {
+				(*pev)->obj = net_tcp_tx_sem_get(ctx);
+			}
+
 			(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
 			(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
 			(*pev)->state = K_POLL_STATE_NOT_READY;
@@ -1509,9 +1577,11 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	}
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
-		    net_context_get_type(ctx) == SOCK_STREAM) {
+		    net_context_get_type(ctx) == SOCK_STREAM &&
+		    !net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			if ((*pev)->state != K_POLL_STATE_NOT_READY &&
-			    !sock_is_eof(ctx)) {
+			    !sock_is_eof(ctx) &&
+			    (net_context_get_state(ctx) == NET_CONTEXT_CONNECTED)) {
 				pfd->revents |= ZSOCK_POLLOUT;
 			}
 			(*pev)++;
@@ -1627,16 +1697,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 					    fds, nfds, poll_timeout);
 	}
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - sys_clock_tick_get();
-
-		if (remaining <= 0) {
-			timeout = K_NO_WAIT;
-		} else {
-			timeout = Z_TIMEOUT_TICKS(remaining);
-		}
-	}
+	timeout_recalc(end, &timeout);
 
 	do {
 		ret = k_poll(poll_events, pev - poll_events, timeout);
@@ -1695,18 +1756,10 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 				break;
 			}
 
+			timeout_recalc(end, &timeout);
+
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				break;
-			}
-
-			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				int64_t remaining = end - sys_clock_tick_get();
-
-				if (remaining <= 0) {
-					break;
-				} else {
-					timeout = Z_TIMEOUT_TICKS(remaining);
-				}
 			}
 		}
 	} while (retry);
@@ -2167,6 +2220,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
+		case SO_LINGER:
+			/* ignored. for compatibility purposes only */
+			return 0;
 		}
 
 		break;

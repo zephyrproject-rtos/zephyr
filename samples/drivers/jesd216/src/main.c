@@ -276,13 +276,13 @@ static void dump_bytes(const struct jesd216_param_header *php,
 	printf("];\n");
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(FLASH_NODE);
 
 	if (!device_is_ready(dev)) {
 		printf("%s: device not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	const uint8_t decl_nph = 5;
@@ -296,14 +296,14 @@ void main(void)
 	if (rc != 0) {
 		printf("Read SFDP not supported: device not JESD216-compliant "
 		       "(err %d)\n", rc);
-		return;
+		return 0;
 	}
 
 	uint32_t magic = jesd216_sfdp_magic(hp);
 
 	if (magic != JESD216_SFDP_MAGIC) {
 		printf("SFDP magic %08x invalid", magic);
-		return;
+		return 0;
 	}
 
 	printf("%s: SFDP v %u.%u AP %x with %u PH\n", dev->name,
@@ -325,7 +325,7 @@ void main(void)
 		rc = flash_sfdp_read(dev, addr, dw, sizeof(dw));
 		if (rc != 0) {
 			printf("Read failed: %d\n", rc);
-			return;
+			return 0;
 		}
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
@@ -352,4 +352,5 @@ void main(void)
 	} else {
 		printf("JEDEC ID read failed: %d\n", rc);
 	}
+	return 0;
 }

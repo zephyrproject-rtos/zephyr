@@ -111,13 +111,6 @@ config SETTINGS_FCB_MAGIC
 	help
 	  Magic 32-bit word for to identify valid settings area
 
-config SETTINGS_FILE_DIR
-	string "Serialization directory"
-	default "/settings"
-	depends on SETTINGS_FILE
-	help
-	  Directory where the settings data is stored
-
 config SETTINGS_FILE_PATH
 	string "Default settings file"
 	default "/settings/run"
@@ -137,7 +130,7 @@ config SETTINGS_FS_DIR
 	default "/settings"
 	depends on SETTINGS_FS
 	help
-	  This is deprecated. Use SETTINGS_FILE_DIR instead.
+	  This is deprecated. Use SETTINGS_FILE_PATH instead.
 
 config SETTINGS_FS_FILE
 	string "Default settings file (DEPRECATED)"

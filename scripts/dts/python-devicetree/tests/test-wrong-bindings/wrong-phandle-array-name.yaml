@@ -5,5 +5,5 @@ description: Device.wrong_phandle_array_name test
 compatible: "wrong_phandle_array_name"
 
 properties:
-    wrong-phandle-array-name:
-        type: phandle-array
+  wrong-phandle-array-name:
+    type: phandle-array

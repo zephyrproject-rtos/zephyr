@@ -65,6 +65,24 @@
 			reg = <0x41005000 0x1000>;
 			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpregret1: gpregret1@4100551c {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x4100551c 0x1>;
+				status = "okay";
+			};
+
+			gpregret2: gpregret2@41005520 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "nordic,nrf-gpregret";
+				reg = <0x41005520 0x1>;
+				status = "okay";
+			};
 		};
 
 		radio: radio@41008000 {
@@ -109,6 +127,7 @@
 			status = "disabled";
 			reg = <0x4100c000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -146,7 +165,7 @@
 			reg = <0x41011000 0x1000>;
 			cc-num = <4>;
 			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		mbox: ipc: mbox@41012000 {
@@ -188,6 +207,7 @@
 			reg = <0x41013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
+			easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -210,7 +230,7 @@
 			reg = <0x41016000 0x1000>;
 			cc-num = <4>;
 			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		timer1: timer@41018000 {
@@ -218,6 +238,7 @@
 			status = "disabled";
 			reg = <0x41018000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};
@@ -227,6 +248,7 @@
 			status = "disabled";
 			reg = <0x41019000 0x1000>;
 			cc-num = <8>;
+			max-bit-width = <32>;
 			interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 		};

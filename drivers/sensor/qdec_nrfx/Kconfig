@@ -5,7 +5,7 @@ config QDEC_NRFX
 	bool "Nordic QDEC nrfx driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_QDEC_ENABLED
-	depends on HAS_HW_NRF_QDEC0
-	select NRFX_QDEC
+	select NRFX_QDEC0 if HAS_HW_NRF_QDEC0
+	select NRFX_QDEC1 if HAS_HW_NRF_QDEC1
 	help
 	  Enable support for nrfx QDEC driver for nRF MCU series.

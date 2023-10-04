@@ -150,7 +150,6 @@ static uint16_t upper_layer_total_size;
 static uint8_t tmp_buf[256];
 static uint8_t net_iface_dummy_data;
 
-static int net_iface_dev_init(const struct device *dev);
 static void net_iface_init(struct net_if *iface);
 static int sender_iface(const struct device *dev, struct net_pkt *pkt);
 
@@ -162,7 +161,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface_dummy_data,
 			 NULL,
@@ -172,11 +171,6 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),
 			 NET_IPV4_MTU);
 
-
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
 
 static void net_iface_init(struct net_if *iface)
 {

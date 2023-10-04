@@ -38,7 +38,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-void main(void)
+int main(void)
 {
 	int rc;
 
@@ -46,8 +46,9 @@ void main(void)
 
 	if (rc < 0) {
 		LOG_ERR("Format failed");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Format successful");
+	return 0;
 }

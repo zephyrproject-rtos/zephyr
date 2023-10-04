@@ -3,14 +3,21 @@ sample:
   name: sntp_client
 common:
   harness: net
-  platform_allow: qemu_x86
   tags: net
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   sample.net.sockets.sntp_client:
+    platform_allow: qemu_x86
+  sample.net.sockets.sntp_client.posix_names:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=y
   sample.net.sockets.sntp_client.posix:
+    platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
+  sample.net.sockets.sntp_client.native_posix:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
+      - CONFIG_POSIX_API=n

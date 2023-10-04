@@ -6,6 +6,7 @@
 
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output_custom.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/cbprintf.h>
@@ -194,10 +195,10 @@ static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
 		output_date->year++;
 	}
 	/* compute the proper month */
-	for (i = 0; i < sizeof(days_in_month); i++) {
+	for (i = 0; i < ARRAY_SIZE(days_in_month); i++) {
 		tmp = ((i == 1) && is_leap_year(output_date->year)) ?
-					(days_in_month[i] + 1) * SECONDS_IN_DAY :
-					days_in_month[i] * SECONDS_IN_DAY;
+					((uint64_t)days_in_month[i] + 1) * SECONDS_IN_DAY :
+					(uint64_t)days_in_month[i] * SECONDS_IN_DAY;
 		if (tmp > seconds) {
 			output_date->month += i;
 			break;
@@ -215,7 +216,8 @@ static int timestamp_print(const struct log_output *output,
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
-		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP);
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
 
 
 	if (!format) {
@@ -249,8 +251,10 @@ static int timestamp_print(const struct log_output *output,
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+			length = log_custom_timestamp_print(output, timestamp, print_formatted);
+		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_NEWLIB_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
 			struct tm *tm;
@@ -276,7 +280,11 @@ static int timestamp_print(const struct log_output *output,
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
 				length = print_formatted(output,
-							"[%5ld.%06d] ",
+#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
+							"[%5llu.%06d] ",
+#else
+							"[%5lu.%06d] ",
+#endif
 							total_seconds, ms * 1000U + us);
 			} else {
 				length = print_formatted(output,
@@ -393,7 +401,7 @@ static void hexdump_line_print(const struct log_output *output,
 			unsigned char c = (unsigned char)data[i];
 
 			print_formatted(output, "%c",
-			      isprint((int)c) ? c : '.');
+			      isprint((int)c) != 0 ? c : '.');
 		} else {
 			print_formatted(output, " ");
 		}
@@ -424,6 +432,7 @@ static uint32_t prefix_print(const struct log_output *output,
 			     const char *source,
 			     uint8_t level)
 {
+	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
 	uint32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
@@ -588,7 +597,7 @@ void log_output_timestamp_freq_set(uint32_t frequency)
 	freq = frequency;
 }
 
-uint64_t log_output_timestamp_to_us(uint32_t timestamp)
+uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp)
 {
 	timestamp /= timestamp_div;
 

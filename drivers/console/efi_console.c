@@ -66,10 +66,9 @@ static void efi_console_hook_install(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int efi_console_init(const struct device *arg)
+static int efi_console_init(void)
 {
 
-	ARG_UNUSED(arg);
 
 	efi_console_hook_install();
 

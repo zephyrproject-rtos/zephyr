@@ -11,6 +11,9 @@
 #include <zephyr/net/buf.h>
 
 #include "util/memq.h"
+
+#include "ll_sw/pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
 #include "hci/hci_user_ext.h"

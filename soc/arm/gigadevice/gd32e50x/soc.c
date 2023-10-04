@@ -6,11 +6,10 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 
-static int gd32e50x_soc_init(const struct device *dev)
+static int gd32e50x_soc_init(void)
 {
 	uint32_t key;
 
-	ARG_UNUSED(dev);
 
 	key = irq_lock();
 

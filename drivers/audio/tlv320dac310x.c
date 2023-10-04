@@ -13,7 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
-
+#include <zephyr/sys/util.h>
 #include <zephyr/audio/codec.h>
 #include "tlv320dac310x.h"
 
@@ -290,7 +290,7 @@ static int codec_configure_clocks(const struct device *dev,
 
 	/* round mix and max values to the required multiple */
 	osr_max = (osr_max / osr_multiple) * osr_multiple;
-	osr_min = (osr_min + osr_multiple - 1) / osr_multiple;
+	osr_min = DIV_ROUND_UP(osr_min, osr_multiple);
 
 	osr = osr_max;
 	while (osr >= osr_min) {
@@ -344,7 +344,7 @@ static int codec_configure_clocks(const struct device *dev,
 	}
 
 	/* calculate MCLK divider to get ~1MHz */
-	mclk_div = (cfg->mclk_freq + 1000000 - 1) / 1000000U;
+	mclk_div = DIV_ROUND_UP(cfg->mclk_freq, 1000000);
 	/* setup timer clock to be MCLK divided */
 	codec_write_reg(dev, TIMER_MCLK_DIV_ADDR,
 			TIMER_MCLK_DIV_EN_EXT | TIMER_MCLK_DIV_VAL(mclk_div));

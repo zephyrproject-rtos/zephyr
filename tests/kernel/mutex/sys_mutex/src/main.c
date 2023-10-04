@@ -322,8 +322,6 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 	int priority[4] = { 9, 8, 7, 5 };
 	int droppri[3] = { 8, 8, 9 };
 
-	TC_START("Test kernel Mutex API");
-
 	PRINT_LINE;
 
 	/*

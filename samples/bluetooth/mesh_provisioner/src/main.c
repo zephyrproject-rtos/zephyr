@@ -328,7 +328,7 @@ static void button_init(void)
 }
 #endif
 
-void main(void)
+int main(void)
 {
 	char uuid_hex_str[32 + 1];
 	int err;
@@ -339,7 +339,7 @@ void main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -388,4 +388,5 @@ void main(void)
 
 		printk("Added node 0x%04x\n", node_addr);
 	}
+	return 0;
 }

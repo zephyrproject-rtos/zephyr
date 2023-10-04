@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
@@ -105,21 +106,20 @@ static int power_domain_add_or_remove(const struct device *dev,
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
 	device_handle_t *rv = domain->handles;
 	device_handle_t dev_handle = -1;
-	extern const struct device __device_start[];
-	extern const struct device __device_end[];
-	size_t i, region = 0;
-	size_t numdev = __device_end - __device_start;
+	size_t i = 0, region = 0;
 
 	/*
 	 * Supported devices are stored as device handle and not
 	 * device pointers. So, it is necessary to find what is
 	 * the handle associated to the given device.
 	 */
-	for (i = 0; i < numdev; i++) {
-		if (&__device_start[i] == dev) {
+	STRUCT_SECTION_FOREACH(device, iter_dev) {
+		if (iter_dev == dev) {
 			dev_handle = i + 1;
 			break;
 		}
+
+		i++;
 	}
 
 	/*
@@ -174,38 +174,36 @@ int pm_device_power_domain_add(const struct device *dev,
 	return power_domain_add_or_remove(dev, domain, true);
 }
 
+struct pm_visitor_context {
+	pm_device_action_failed_cb_t failure_cb;
+	enum pm_device_action action;
+};
+
+static int pm_device_children_visitor(const struct device *dev, void *context)
+{
+	struct pm_visitor_context *visitor_context = context;
+	int rc;
+
+	rc = pm_device_action_run(dev, visitor_context->action);
+	if ((visitor_context->failure_cb != NULL) && (rc < 0)) {
+		/* Stop the iteration if the callback requests it */
+		if (!visitor_context->failure_cb(dev, rc)) {
+			return rc;
+		}
+	}
+	return 0;
+}
+
 void pm_device_children_action_run(const struct device *dev,
 				   enum pm_device_action action,
 				   pm_device_action_failed_cb_t failure_cb)
 {
-	const device_handle_t *handles;
-	size_t handle_count = 0U;
-	int rc = 0;
+	struct pm_visitor_context visitor_context = {
+		.failure_cb = failure_cb,
+		.action = action
+	};
 
-	/*
-	 * We don't use device_supported_foreach here because we don't want the
-	 * early exit behaviour of that function. Even if the N'th device fails
-	 * to PM_DEVICE_ACTION_TURN_ON for example, we still want to run the
-	 * action on the N+1'th device.
-	 */
-	handles = device_supported_handles_get(dev, &handle_count);
-
-	for (size_t i = 0U; i < handle_count; ++i) {
-		device_handle_t dh = handles[i];
-		const struct device *cdev = device_from_handle(dh);
-
-		if (cdev == NULL) {
-			continue;
-		}
-
-		rc = pm_device_action_run(cdev, action);
-		if ((failure_cb != NULL) && (rc < 0)) {
-			/* Stop the iteration if the callback requests it */
-			if (!failure_cb(cdev, rc)) {
-				break;
-			}
-		}
-	}
+	(void)device_supported_foreach(dev, pm_device_children_visitor, &visitor_context);
 }
 
 int pm_device_state_get(const struct device *dev,

@@ -100,7 +100,8 @@ static int get_buzzer_index(uint16_t obj_inst_id)
 static int start_buzzer(struct ipso_buzzer_data *buzzer)
 {
 	uint32_t temp = 0U;
-	char path[MAX_RESOURCE_LEN];
+	struct lwm2m_obj_path path = LWM2M_OBJ(IPSO_OBJECT_BUZZER_ID, buzzer->obj_inst_id,
+					       DIGITAL_INPUT_STATE_RID);
 
 	/* make sure buzzer is currently not active */
 	if (buzzer->active) {
@@ -116,9 +117,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 	/* TODO: check delay_duration > 0 */
 
 	buzzer->trigger_offset = k_uptime_get();
-	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_BUZZER_ID,
-		 buzzer->obj_inst_id, DIGITAL_INPUT_STATE_RID);
-	lwm2m_engine_set_bool(path, true);
+	lwm2m_set_bool(&path, true);
 
 	temp = (uint32_t)(buzzer->delay_duration * MSEC_PER_SEC);
 	k_work_reschedule(&buzzer->buzzer_work, K_MSEC(temp));
@@ -128,16 +127,15 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 
 static int stop_buzzer(struct ipso_buzzer_data *buzzer, bool cancel)
 {
-	char path[MAX_RESOURCE_LEN];
+	struct lwm2m_obj_path path = LWM2M_OBJ(IPSO_OBJECT_BUZZER_ID, buzzer->obj_inst_id,
+					       DIGITAL_INPUT_STATE_RID);
 
 	/* make sure buzzer is currently active */
 	if (!buzzer->active) {
 		return -EINVAL;
 	}
 
-	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_BUZZER_ID,
-		 buzzer->obj_inst_id, DIGITAL_INPUT_STATE_RID);
-	lwm2m_engine_set_bool(path, false);
+	lwm2m_set_bool(&path, false);
 
 	if (cancel) {
 		k_work_cancel_delayable(&buzzer->buzzer_work);
@@ -245,7 +243,7 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_buzzer_init(const struct device *dev)
+static int ipso_buzzer_init(void)
 {
 	buzzer.obj_id = IPSO_OBJECT_BUZZER_ID;
 	buzzer.version_major = BUZZER_VERSION_MAJOR;

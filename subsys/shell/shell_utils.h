@@ -61,7 +61,7 @@ const struct shell_static_entry *z_shell_find_cmd(
 /* @internal @brief Function returns pointer to a shell's subcommands array
  * for a level given by argc and matching command patter provided in argv.
  *
- * @param shell		Entry. NULL for root entry.
+ * @param sh		Entry. NULL for root entry.
  * @param argc		Number of arguments.
  * @param argv		Pointer to an array with arguments.
  * @param match_arg	Subcommand level of last matching argument.
@@ -79,18 +79,18 @@ const struct shell_static_entry *z_shell_get_last_command(
 					bool only_static);
 
 void z_shell_spaces_trim(char *str);
-void z_shell_cmd_trim(const struct shell *shell);
+void z_shell_cmd_trim(const struct shell *sh);
 
 const struct shell_static_entry *root_cmd_find(const char *syntax);
 
-static inline void z_transport_buffer_flush(const struct shell *shell)
+static inline void z_transport_buffer_flush(const struct shell *sh)
 {
-	z_shell_fprintf_buffer_flush(shell->fprintf_ctx);
+	z_shell_fprintf_buffer_flush(sh->fprintf_ctx);
 }
 
-static inline bool z_shell_in_select_mode(const struct shell *shell)
+static inline bool z_shell_in_select_mode(const struct shell *sh)
 {
-	return shell->ctx->selected_cmd == NULL ? false : true;
+	return sh->ctx->selected_cmd == NULL ? false : true;
 }
 
 #ifdef __cplusplus

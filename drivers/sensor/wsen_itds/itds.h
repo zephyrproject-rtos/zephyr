@@ -113,6 +113,7 @@ struct itds_device_data {
 
 #ifdef CONFIG_ITDS_TRIGGER
 	sensor_trigger_handler_t handler_drdy;
+	const struct sensor_trigger *trigger_drdy;
 #endif /* CONFIG_ITDS_TRIGGER */
 };
 

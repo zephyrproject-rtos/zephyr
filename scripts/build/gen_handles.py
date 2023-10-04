@@ -36,17 +36,18 @@ from elf_parser import ZephyrElf
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..',
                                 'dts', 'python-devicetree', 'src'))
-from devicetree import edtlib  # pylint: disable=unused-import
 
 def parse_args():
     global args
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("-k", "--kernel", required=True,
                         help="Input zephyr ELF binary")
+    parser.add_argument("--dynamic-handles", action="store_true",
+                        help="Indicates if device handles are dynamic")
     parser.add_argument("-d", "--num-dynamic-devices", required=False, default=0,
                         type=int, help="Input number of dynamic devices allowed")
     parser.add_argument("-o", "--output-source", required=True,
@@ -94,7 +95,7 @@ def c_handle_comment(dev, handles):
     lines.append(' */')
     return lines
 
-def c_handle_array(dev, handles, extra_support_handles=0):
+def c_handle_array(dev, handles, dynamic_handles, extra_support_handles=0):
     handles = [
         *[str(d.handle) for d in handles["depends"]],
         'DEVICE_HANDLE_SEP',
@@ -104,8 +105,16 @@ def c_handle_array(dev, handles, extra_support_handles=0):
         *(extra_support_handles * ['DEVICE_HANDLE_NULL']),
         'DEVICE_HANDLE_ENDS',
     ]
+    ctype = (
+        '{:s}Z_DECL_ALIGN(device_handle_t) '
+        '__attribute__((__section__(".__device_handles_pass2")))'
+    ).format('const ' if not dynamic_handles else '')
     return [
-        'const Z_DECL_ALIGN(device_handle_t) __attribute__((__section__(".__device_handles_pass2")))',
+        # The `extern` line pretends this was first declared in some .h
+        # file to silence "should it be static?" warnings in some
+        # compilers and static analyzers.
+        'extern {:s} {:s}[{:d}];'.format(ctype, dev.ordinals.sym.name, len(handles)),
+        ctype,
         '{:s}[] = {{ {:s} }};'.format(dev.ordinals.sym.name, ', '.join(handles)),
     ]
 
@@ -117,6 +126,13 @@ def main():
         edt = pickle.load(f)
 
     parsed_elf = ZephyrElf(args.kernel, edt, args.start_symbol)
+    if parsed_elf.relocatable:
+        # While relocatable elf files will load cleanly, the pointers pulled from
+        # the symbol table are invalid (as expected, because the structures have not
+        # yet been allocated addresses). Fixing this will require iterating over
+        # the relocation sections to find the symbols those pointers will end up
+        # referring to.
+        sys.exit('Relocatable elf files are not yet supported')
 
     if args.output_graphviz:
         # Try and output the dependency tree
@@ -142,7 +158,9 @@ def main():
             }
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
             lines = c_handle_comment(dev, sorted_handles)
-            lines.extend(c_handle_array(dev, sorted_handles, extra_sups))
+            lines.extend(
+                c_handle_array(dev, sorted_handles, args.dynamic_handles, extra_sups)
+            )
             lines.extend([''])
             fp.write('\n'.join(lines))
 

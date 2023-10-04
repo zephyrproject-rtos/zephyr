@@ -88,17 +88,4 @@ endif # BT_PAC_SRC
 config BT_PACS
 	def_bool BT_PAC_SNK || BT_PAC_SRC
 
-config BT_DEBUG_PACS
-	bool "Published Audio Capabilities Service debug"
-	select DEPRECATED
-	depends on BT_PACS
-	help
-	  Use this option to enable Published Audio Capabilities Service debug
-	  logs for the Bluetooth Audio functionality.
-
-module = BT_PACS
-legacy-debug-sym = BT_DEBUG_PACS
-module-str = "Published Audio Capabilities Service"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
 endmenu

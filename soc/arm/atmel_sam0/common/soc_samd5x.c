@@ -105,7 +105,7 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samd_init(const struct device *arg)
+static int atmel_samd_init(void)
 {
 	uint32_t key;
 	uint8_t dfll_div;
@@ -118,7 +118,6 @@ static int atmel_samd_init(const struct device *arg)
 		dfll_div = 1;
 	}
 
-	ARG_UNUSED(arg);
 
 	key = irq_lock();
 

@@ -88,7 +88,7 @@ Or kick SMP zephyr.bin:
 
 .. code-block:: console
 
-    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu release 2 0xc0000000
+    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 2 release 0xc0000000
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :ref:`synchronization_sample`:

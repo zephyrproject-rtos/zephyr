@@ -46,7 +46,7 @@ int lis3mdl_trigger_set(const struct device *dev,
 		return 0;
 	}
 
-	drv_data->data_ready_trigger = *trig;
+	drv_data->data_ready_trigger = trig;
 
 	gpio_pin_interrupt_configure_dt(&config->irq_gpio,
 					GPIO_INT_EDGE_TO_ACTIVE);
@@ -79,7 +79,7 @@ static void lis3mdl_thread_cb(const struct device *dev)
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
+					     drv_data->data_ready_trigger);
 	}
 
 	gpio_pin_interrupt_configure_dt(&config->irq_gpio,

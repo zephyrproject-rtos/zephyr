@@ -18,7 +18,7 @@ static void callback(const struct device *dev, uint32_t channel,
 	printk("Pong (on channel %d)\n", channel);
 }
 
-void main(void)
+int main(void)
 {
 	struct mbox_channel tx_channel;
 	struct mbox_channel rx_channel;
@@ -33,12 +33,12 @@ void main(void)
 
 	if (mbox_register_callback(&rx_channel, callback, NULL)) {
 		printk("mbox_register_callback() error\n");
-		return;
+		return 0;
 	}
 
 	if (mbox_set_enabled(&rx_channel, 1)) {
 		printk("mbox_set_enable() error\n");
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -48,7 +48,8 @@ void main(void)
 
 		if (mbox_send(&tx_channel, NULL) < 0) {
 			printk("mbox_send() error\n");
-			return;
+			return 0;
 		}
 	}
+	return 0;
 }

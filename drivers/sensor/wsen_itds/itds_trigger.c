@@ -17,6 +17,7 @@ LOG_MODULE_DECLARE(ITDS, CONFIG_SENSOR_LOG_LEVEL);
 
 static int itds_trigger_drdy_set(const struct device *dev,
 				 enum sensor_channel chan,
+				 const struct sensor_trigger *trig,
 				 sensor_trigger_handler_t handler)
 {
 	struct itds_device_data *ddata = dev->data;
@@ -25,6 +26,7 @@ static int itds_trigger_drdy_set(const struct device *dev,
 	int ret;
 
 	ddata->handler_drdy = handler;
+	ddata->trigger_drdy = trig;
 	if (ddata->handler_drdy) {
 		drdy_en = ITDS_MASK_INT_DRDY;
 	}
@@ -54,7 +56,7 @@ int itds_trigger_set(const struct device *dev,
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		return itds_trigger_drdy_set(dev, trig->chan, handler);
+		return itds_trigger_drdy_set(dev, trig->chan, trig, handler);
 
 	default:
 		return -ENOTSUP;
@@ -68,9 +70,6 @@ static void itds_work_handler(struct k_work *work)
 	const struct device *dev = (const struct device *)ddata->dev;
 	const struct itds_device_config *cfg = dev->config;
 	uint8_t status;
-	struct sensor_trigger drdy_trigger = {
-		.chan = SENSOR_CHAN_ACCEL_XYZ,
-	};
 
 	if (i2c_reg_read_byte_dt(&cfg->i2c, ITDS_REG_STATUS,
 			      &status) < 0) {
@@ -79,8 +78,7 @@ static void itds_work_handler(struct k_work *work)
 
 	if (status & ITDS_EVENT_DRDY) {
 		if (ddata->handler_drdy) {
-			drdy_trigger.type = SENSOR_TRIG_DATA_READY;
-			ddata->handler_drdy(dev, &drdy_trigger);
+			ddata->handler_drdy(dev, ddata->trigger_drdy);
 		}
 	}
 }

@@ -859,11 +859,10 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(const struct device *unused)
+static int app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
-	ARG_UNUSED(unused);
 
 	end = (struct z_app_region *)&__app_shmem_regions_end;
 	region = (struct z_app_region *)&__app_shmem_regions_start;

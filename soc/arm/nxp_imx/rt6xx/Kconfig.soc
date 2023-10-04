@@ -109,11 +109,11 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 endif # NXP_IMX_RT6XX_BOOT_HEADER
 
-choice CODE_LOCATION
-	prompt "Code location selection"
-	default CODE_FLEXSPI
-config CODE_FLEXSPI
-	bool "Link code into external FlexSPI-controlled memory"
-endchoice
+config IMXRT6XX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable code cache for FlexSPI region at boot. If this Kconfig is
+	  cleared, the CACHE64 controller will be disabled during SOC init
 
 endif # SOC_SERIES_IMX_RT6XX

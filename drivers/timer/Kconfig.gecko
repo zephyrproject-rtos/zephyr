@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GECKO_BURTC_TIMER
+	bool "SiLabs Gecko BURTC system clock driver"
+	depends on SOC_GECKO_SERIES2
+	depends on DT_HAS_SILABS_GECKO_BURTC_ENABLED
+	select SOC_GECKO_BURTC
+	select TICKLESS_CAPABLE
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  If you enable this, BURTC will be used to provide hw_cycles and
+	  kernel ticks instead of Cortex-M SysTick. You need this for system
+	  to be able to keep track of time and wake up from EM2 & EM3 sleep
+	  states.
+
+	  NOTE:
+	  Using BURTC instead of SysTick has a large impact on kernel timing
+	  precision.
+	  1. You won't be able to use the usual 0.1ms-granularity tickless
+	     scheduling. Kernel tick duration should be at least 6 BURTC clock
+	     cycles, that is ~183 us @ 32768 Hz (LFXO, LFRCO) or
+	     ~6 ms @ 1000 Hz (ULFRCO).
+	  2. In general, accuracy of real-time scheduling by kernel will be
+	     degraded: all timeout-based facilities, such as timers, delayable
+	     work, k_sleep, will issue thread wake ups less precisely than when
+	     using SysTick timer.
+	  3. hw_cycles granularity will be equal to 1 BURTC clock, that is
+	     ~31 us @ 32768 Hz or ~1 ms @ 1000 Hz. This reduces timing
+	     precision of all code which relies on cycles API, e.g.
+	     k_cycle_get_32() and similar functions.
+
+	  If unsure, say 'N'.

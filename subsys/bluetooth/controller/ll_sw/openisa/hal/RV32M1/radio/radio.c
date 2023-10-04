@@ -16,8 +16,11 @@
 #include <errno.h>
 
 #include "util/mem.h"
+
 #include "hal/ccm.h"
 #include "hal/radio.h"
+
+#include "lll/pdu_vendor.h"
 #include "ll_sw/pdu.h"
 
 #include "fsl_xcvr.h"

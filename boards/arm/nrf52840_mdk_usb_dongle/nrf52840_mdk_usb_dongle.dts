@@ -111,7 +111,7 @@
  * fstab-stock		-compatible with Nordic nRF5 bootloader, default
  * fstab-debugger	-to use an external debugger, w/o the nRF5 bootloader
  */
-#include "fstab-stock.dts"
+#include "fstab-stock.dtsi"
 
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";

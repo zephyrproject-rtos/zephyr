@@ -5,7 +5,7 @@
 #
 
 identifier: lpcxpresso55s69_cpu0
-name: NXP LPCXpresso55S69
+name: NXP LPCXpresso55S69 (CPU0)
 type: mcu
 arch: arm
 ram: 64

@@ -11,18 +11,18 @@ description: |
 compatible: "test-gpio-basic-api"
 
 properties:
-    out-gpios:
-        type: phandle-array
-        required: true
-        description: |
-          Identity of a GPIO that will be configured as an output.  This
-          must be on the same device as in-gpios, and physically
-          connected to in-gpios.
+  out-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as an output.  This
+      must be on the same device as in-gpios, and physically
+      connected to in-gpios.
 
-    in-gpios:
-        type: phandle-array
-        required: true
-        description: |
-          Identity of a GPIO that will be configured as an input.  This
-          must be on the same device as out-gpios,and physically
-          connected to out-gpios.
+  in-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as an input.  This
+      must be on the same device as out-gpios,and physically
+      connected to out-gpios.

@@ -8,9 +8,8 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 
-static int twr_ke18f_pinmux_init(const struct device *dev)
+static int twr_ke18f_pinmux_init(void)
 {
-	ARG_UNUSED(dev);
 
 	int err; /* Used by pinctrl functions */
 

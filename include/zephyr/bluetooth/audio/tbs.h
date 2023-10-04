@@ -10,7 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_
 
-#include <zephyr/types.h>
+#include <stdint.h>
+#include <stdbool.h>
+
 #include <zephyr/bluetooth/conn.h>
 
 /* Call States */

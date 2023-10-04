@@ -5,7 +5,10 @@ common:
   harness: net
   min_ram: 128
   min_flash: 128
-  tags: net socket http
+  tags:
+    - net
+    - socket
+    - http
 tests:
   sample.net.sockets.dumb_http_server_mt:
     extra_configs:

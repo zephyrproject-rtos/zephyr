@@ -21,18 +21,18 @@ void eswifi_shell_register(struct eswifi_dev *dev)
 	eswifi = dev;
 }
 
-static int eswifi_shell_atcmd(const struct shell *shell, size_t argc,
+static int eswifi_shell_atcmd(const struct shell *sh, size_t argc,
 			      char **argv)
 {
 	int i;
 
 	if (eswifi == NULL) {
-		shell_print(shell, "no eswifi device registered");
+		shell_print(sh, "no eswifi device registered");
 		return -ENOEXEC;
 	}
 
 	if (argc < 2) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
@@ -44,9 +44,9 @@ static int eswifi_shell_atcmd(const struct shell *shell, size_t argc,
 	}
 	strcat(eswifi->buf, "\r");
 
-	shell_print(shell, "> %s", eswifi->buf);
+	shell_print(sh, "> %s", eswifi->buf);
 	eswifi_at_cmd(eswifi, eswifi->buf);
-	shell_print(shell, "< %s", eswifi->buf);
+	shell_print(sh, "< %s", eswifi->buf);
 
 	eswifi_unlock(eswifi);
 

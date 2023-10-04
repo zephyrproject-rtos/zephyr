@@ -29,6 +29,7 @@
 		uart-1 = &uart1;
 		eeprom-0 = &eeprom0;
 		eeprom-1 = &eeprom1;
+		rtc = &rtc;
 	};
 
 	chosen {

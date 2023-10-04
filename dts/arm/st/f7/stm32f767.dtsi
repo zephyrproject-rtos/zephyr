@@ -5,7 +5,7 @@
  */
 
 #include <st/f7/stm32f7.dtsi>
-#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	/* 128KB DTCM @ 20000000, 368KB SRAM1 @ 20020000,
@@ -24,6 +24,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32f767", "st,stm32f7", "simple-bus";
+
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2C00>;
 
@@ -82,7 +84,9 @@
 		sdmmc2: sdmmc@40011c00 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40011c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>,
+				 <&rcc STM32_SRC_PLL_Q SDMMC2_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 7U)>;
 			interrupts = <103 0>;
 			status = "disabled";
 		};

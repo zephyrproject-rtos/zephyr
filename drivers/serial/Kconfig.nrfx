@@ -27,32 +27,6 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
-config UART_NRF_DK_SERIAL_WORKAROUND
-	bool
-	help
-	  On some development kits there are characters being dropped by the
-	  controller chip (Segger interface) if there are burst of bytes being
-	  printed. It can lead to test failures since test out is corrupted.
-	  A workaround is to enforce gaps (by adding busy waits) in the transmission.
-	  It is recommended to enable the workaround only in the test since
-	  busy waits can impact application flow.
-
-if UART_NRF_DK_SERIAL_WORKAROUND
-
-config UART_NRF_DK_SERIAL_WORKAROUND_COUNT
-	int
-	default 64
-	help
-	  Number of bytes transferred after which a busy wait is added.
-
-config UART_NRF_DK_SERIAL_WORKAROUND_WAIT_MS
-	int
-	default 7
-	help
-	  Busy wait time (in milliseconds).
-endif
-
-
 # ----------------- port 0 -----------------
 config UART_0_NRF_UART
 	def_bool HAS_HW_NRF_UART0

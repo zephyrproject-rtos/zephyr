@@ -293,7 +293,8 @@ class Filters:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Generate twister argument files based on modified file")
+                description="Generate twister argument files based on modified file",
+                allow_abbrev=False)
     parser.add_argument('-c', '--commits', default=None,
             help="Commit range in the form: a..b")
     parser.add_argument('-m', '--modified-files', default=None,
@@ -357,12 +358,6 @@ if __name__ == "__main__":
             nodes = 1
         else:
             nodes = round(total_tests / args.tests_per_builder)
-
-        if total_tests % args.tests_per_builder != total_tests:
-            nodes = nodes + 1
-
-        if args.default_matrix > nodes > 5:
-            nodes = args.default_matrix
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")

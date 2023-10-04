@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_INFINEON_CAT1
+source "soc/arm/infineon_cat1/psoc6/Kconfig.defconfig.soc.*"
+
+config SOC_SERIES
+	default "psoc6"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 100000000
+
+config SOC_PSOC6_CM0P_IMAGE_ROM_SIZE
+	hex
+	default 0x2000 if SOC_PSOC6_CM0P_IMAGE_SLEEP
+
+config SOC_PSOC6_CM0P_IMAGE_RAM_SIZE
+	hex
+	default 0x2000 if SOC_PSOC6_CM0P_IMAGE_SLEEP
+
+endif # SOC_FAMILY_INFINEON_CAT1A

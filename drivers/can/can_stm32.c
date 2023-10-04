@@ -127,6 +127,7 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 
 	if (can->RF0R & CAN_RF0R_FOVR0) {
 		LOG_ERR("RX FIFO Overflow");
+		CAN_STATS_RX_OVERRUN_INC(dev);
 	}
 }
 
@@ -382,6 +383,8 @@ static int can_stm32_start(const struct device *dev)
 		}
 	}
 
+	CAN_STATS_RESET(dev);
+
 	ret = can_stm32_leave_init_mode(can);
 	if (ret < 0) {
 		LOG_ERR("Failed to leave init mode");
@@ -529,7 +532,7 @@ static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	ret = clock_control_get_rate(clock,
-				     (clock_control_subsys_t *) &cfg->pclken,
+				     (clock_control_subsys_t) &cfg->pclken,
 				     rate);
 	if (ret != 0) {
 		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
@@ -586,7 +589,7 @@ static int can_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
+	ret = clock_control_on(clock, (clock_control_subsys_t) &cfg->pclken);
 	if (ret != 0) {
 		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;

@@ -545,7 +545,9 @@ a.internal:visited code.literal {
 }
 
 /* Keyboard shortcuts tweaks */
-kbd, .kbd {
+kbd, .kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > kbd,
+.rst-content :not(dl.option-list) > :not(dt):not(kbd):not(.kbd) > .kbd {
     background-color: var(--kbd-background-color);
     border: 1px solid var(--kbd-outline-color);
     border-radius: 3px;

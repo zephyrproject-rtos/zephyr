@@ -70,7 +70,7 @@ void z_arm_nmi_init(void)
  *
  */
 
-void z_NmiHandlerSet(void (*pHandler)(void))
+void z_arm_nmi_set_handler(void (*pHandler)(void))
 {
 	handler = pHandler;
 }

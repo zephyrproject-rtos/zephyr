@@ -5,5 +5,5 @@ compatible: "arm,armv8-timer"
 include: base.yaml
 
 properties:
-    interrupts:
-      required: true
+  interrupts:
+    required: true

@@ -232,12 +232,9 @@ uint32_t sys_clock_cycle_get_32(void)
 	return ret;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
-
-	/* FIXME switch to 1 MHz once this is fixed in QEMU */
-	nrf_timer_prescaler_set(TIMER, NRF_TIMER_FREQ_2MHz);
+	nrf_timer_prescaler_set(TIMER, NRF_TIMER_FREQ_1MHz);
 	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
 
 	IRQ_CONNECT(TIMER0_IRQn, 1, timer0_nrf_isr, 0, 0);

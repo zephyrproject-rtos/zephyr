@@ -52,6 +52,9 @@
 		led2 = &red_led_1;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -212,4 +215,12 @@ zephyr_udc0: &usbotg_fs {
 		};
 
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };

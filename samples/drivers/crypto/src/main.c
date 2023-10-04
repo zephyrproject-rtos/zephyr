@@ -603,21 +603,21 @@ struct mode_test {
 	void (*mode_func)(const struct device *dev);
 };
 
-void main(void)
+int main(void)
 {
 #ifdef CRYPTO_DRV_NAME
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
 
 	if (!dev) {
 		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
-		return;
+		return 0;
 	}
 #else
 	const struct device *const dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Crypto device is not ready\n");
-		return;
+		return 0;
 	}
 #endif
 	const struct mode_test modes[] = {
@@ -632,7 +632,7 @@ void main(void)
 
 	if (validate_hw_compatibility(dev)) {
 		LOG_ERR("Incompatible h/w");
-		return;
+		return 0;
 	}
 
 	LOG_INF("Cipher Sample");
@@ -641,4 +641,5 @@ void main(void)
 		LOG_INF("%s", modes[i].mode);
 		modes[i].mode_func(dev);
 	}
+	return 0;
 }

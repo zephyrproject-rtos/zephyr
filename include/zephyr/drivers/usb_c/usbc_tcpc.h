@@ -116,7 +116,10 @@ struct tcpc_chip_info {
 	};
 };
 
-typedef	int (*tcpc_vconn_control_cb_t)(const struct device *dev, bool enable);
+typedef	int (*tcpc_vconn_control_cb_t)(const struct device *dev,
+		enum tc_cc_polarity pol, bool enable);
+typedef	int (*tcpc_vconn_discharge_cb_t)(const struct device *dev,
+		enum tc_cc_polarity pol, bool enable);
 typedef void (*tcpc_alert_handler_cb_t)(const struct device *dev, void *data,
 		enum tcpc_alert alert);
 
@@ -127,7 +130,9 @@ __subsystem struct tcpc_driver_api {
 	int (*select_rp_value)(const struct device *dev, enum tc_rp_value rp);
 	int (*get_rp_value)(const struct device *dev, enum tc_rp_value *rp);
 	int (*set_cc)(const struct device *dev, enum tc_cc_pull pull);
+	void (*set_vconn_discharge_cb)(const struct device *dev, tcpc_vconn_discharge_cb_t cb);
 	void (*set_vconn_cb)(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb);
+	int (*vconn_discharge)(const struct device *dev, bool enable);
 	int (*set_vconn)(const struct device *dev, bool enable);
 	int (*set_roles)(const struct device *dev, enum tc_power_role power_role,
 			enum tc_data_role data_role);
@@ -172,7 +177,7 @@ static inline int tcpc_is_cc_rp(enum tc_cc_voltage_state cc)
 static inline int tcpc_is_cc_open(enum tc_cc_voltage_state cc1,
 				  enum tc_cc_voltage_state cc2)
 {
-	return cc1 == TC_CC_VOLT_OPEN && cc2 == TC_CC_VOLT_OPEN;
+	return (cc1 < TC_CC_VOLT_RD) && (cc2 < TC_CC_VOLT_RD);
 }
 
 /**
@@ -348,6 +353,53 @@ static inline void tcpc_set_vconn_cb(const struct device *dev,
 		 "Callback pointer should not be NULL");
 
 	return api->set_vconn_cb(dev, vconn_cb);
+}
+
+/**
+ * @brief Sets a callback that can enable or discharge VCONN if the TCPC is
+ *	  unable to or the system is configured in a way that does not use
+ *	  the VCONN control capabilities of the TCPC
+ *
+ * The callback is called in the tcpc_vconn_discharge function if cb isn't NULL
+ *
+ * @param dev       Runtime device structure
+ * @param cb  pointer to the callback function that discharges vconn
+ */
+static inline void tcpc_set_vconn_discharge_cb(const struct device *dev,
+				     tcpc_vconn_discharge_cb_t cb)
+{
+	const struct tcpc_driver_api *api =
+		(const struct tcpc_driver_api *)dev->api;
+
+	__ASSERT(api->set_vconn_discharge_cb != NULL,
+		 "Callback pointer should not be NULL");
+
+	return api->set_vconn_discharge_cb(dev, cb);
+}
+
+/**
+ * @brief Discharges VCONN
+ *
+ * This function uses the TCPC to discharge VCONN if possible or calls the
+ * callback function set by tcpc_set_vconn_cb
+ *
+ * @param dev     Runtime device structure
+ * @param enable  VCONN discharge is enabled when true, it's disabled
+ *
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_vconn_discharge(const struct device *dev, bool enable)
+{
+	const struct tcpc_driver_api *api =
+		(const struct tcpc_driver_api *)dev->api;
+
+	if (api->vconn_discharge == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->vconn_discharge(dev, enable);
 }
 
 /**

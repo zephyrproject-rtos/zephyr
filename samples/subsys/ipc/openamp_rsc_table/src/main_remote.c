@@ -371,7 +371,7 @@ task_end:
 	printk("OpenAMP demo ended\n");
 }
 
-void main(void)
+int main(void)
 {
 	printk("Starting application threads!\n");
 	k_thread_create(&thread_mng_data, thread_mng_stack, APP_TASK_STACK_SIZE,
@@ -383,4 +383,5 @@ void main(void)
 	k_thread_create(&thread_tty_data, thread_tty_stack, APP_TTY_TASK_STACK_SIZE,
 			(k_thread_entry_t)app_rpmsg_tty,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	return 0;
 }

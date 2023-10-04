@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
@@ -68,7 +68,7 @@ static uint32_t hda_log_flush(void)
 #endif
 
 #if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-	z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
+	sys_cache_data_flush_range(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
 #endif
 	dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
 
@@ -358,9 +358,8 @@ void adsp_hda_log_cavstool_hook(uint32_t written)
 
 }
 
-int adsp_hda_log_cavstool_init(const struct device *dev)
+int adsp_hda_log_cavstool_init(void)
 {
-	ARG_UNUSED(dev);
 
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,
