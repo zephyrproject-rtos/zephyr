@@ -849,8 +849,6 @@ struct btp_mesh_opcodes_aggregator_init_cmd {
 
 #define BTP_MESH_COMP_CHANGE_PREPARE		0x57
 
-#define BTP_MESH_SET_COMP_ALT			0x58
-
 #define BTP_MESH_RPR_SCAN_START			0x59
 struct btp_rpr_scan_start_cmd {
 	uint16_t dst;
