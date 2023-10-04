@@ -707,6 +707,26 @@ ZTEST(devicetree_api, test_irq)
 
 	/* DT_IRQN */
 	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
+	#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)), 30, "");
+	#else
+		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)),
+			      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	#endif
+
+	/* DT_IRQN_BY_IDX */
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 0), 30, "");
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 1), 40, "");
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 2), 60, "");
+#else
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 0),
+		      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 1),
+		      ((40 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 2),
+		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+#endif
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
@@ -738,7 +758,25 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_INST_IRQ(0, priority), 3, "");
 
 	/* DT_INST_IRQN */
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
 	zassert_equal(DT_INST_IRQN(0), 30, "");
+#else
+	zassert_equal(DT_INST_IRQN(0), ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+#endif
+
+	/* DT_INST_IRQN_BY_IDX */
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 0), 30, "");
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 1), 40, "");
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 2), 60, "");
+#else
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 0),
+		      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 1),
+		      ((40 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_INST_IRQN_BY_IDX(0, 2),
+		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+#endif
 
 	/* DT_INST_IRQ_HAS_CELL_AT_IDX */
 	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, irq), "");
