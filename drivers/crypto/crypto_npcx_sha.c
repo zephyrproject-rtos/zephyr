@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(sha_npcx, CONFIG_CRYPTO_LOG_LEVEL);
 
 #define NPCX_HASH_CAPS_SUPPORT	(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
-#define NPCX_SHA256_HANDLE_SIZE 212
+#define NPCX_SHA256_HANDLE_SIZE DT_INST_PROP(0, context_buffer_size)
 #define NPCX_SHA_MAX_SESSION	1
 
 /* The status code returns from Nuvoton Cryptographic Library ROM APIs */
