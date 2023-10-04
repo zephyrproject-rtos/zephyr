@@ -768,7 +768,7 @@ void conn_mgr_online_connectivity_check(void)
 	}
 }
 
-void conn_mgr_trigger_online_connectivity_check(void)
+bool conn_mgr_trigger_online_connectivity_check(void)
 {
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
 		online_check->trickle.Imin = TRICKLE_IMIN * MSEC_PER_SEC * SEC_PER_MIN;
@@ -778,6 +778,8 @@ void conn_mgr_trigger_online_connectivity_check(void)
 
 	conn_mgr_trigger_online_checks = true;
 	k_sem_give(&conn_mgr_mon_updated);
+
+	return true;
 }
 
 int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,

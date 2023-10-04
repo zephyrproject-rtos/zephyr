@@ -161,6 +161,11 @@ void conn_mgr_online_checker_update(struct net_pkt *pkt,
 				    void *hdr,
 				    sa_family_t family,
 				    bool is_loopback);
+
+/* Used when triggering online connectivity check manually from net-shell
+ * and "net conn check" command. This is mainly for debugging purposes.
+ */
+bool conn_mgr_trigger_online_connectivity_check(void);
 #else
 static inline void conn_mgr_online_checker_update(struct net_pkt *pkt,
 						  void *hdr,
@@ -172,6 +177,12 @@ static inline void conn_mgr_online_checker_update(struct net_pkt *pkt,
 	ARG_UNUSED(family);
 	ARG_UNUSED(is_loopback);
 }
+
+static inline bool conn_mgr_trigger_online_connectivity_check(void)
+{
+	return false;
+}
+
 #endif
 /** @endcond */
 
