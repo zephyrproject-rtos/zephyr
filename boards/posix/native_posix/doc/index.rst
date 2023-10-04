@@ -323,17 +323,19 @@ The following peripherals are currently provided with this board:
   such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
 
 **Ethernet driver**:
-  A simple TAP based ethernet driver is provided. The driver will create
-  a **zeth** network interface to the host system. One can communicate with
-  Zephyr via this network interface. Multiple TAP based network interfaces can
-  be created if needed. The IP address configuration can be specified for each
-  network interface instance.
-  See :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT` option for more details.
-  The :zephyr:code-sample:`eth-native-posix` sample app provides
-  some use examples and more information about this driver configuration.
+  A simple TAP based ethernet driver is provided. The driver expects that the
+  **zeth** network interface already exists in the host system. The **zeth**
+  network interface can be created by the ``net-setup.sh`` script found in
+  the `net-tools`_ zephyr project repository. User can communicate with the
+  Zephyr instance via the **zeth** network interface. Multiple TAP based
+  network interfaces can be created if needed. The IP address configuration
+  can be specified for each network interface instance.
 
-  Note that this device can only be used with Linux hosts, and that the user
-  needs elevated permissions.
+  Note that this device can only be used with Linux hosts.
+
+.. _net-tools:
+   https://github.com/zephyrproject-rtos/net-tools
+
 
 **Bluetooth controller**:
   It's possible to use the host's Bluetooth adapter as a Bluetooth
