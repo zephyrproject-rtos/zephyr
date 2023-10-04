@@ -370,6 +370,7 @@ int z_work_submit_to_queue(struct k_work_q *queue,
 		  struct k_work *work)
 {
 	__ASSERT_NO_MSG(work != NULL);
+	__ASSERT_NO_MSG(work->handler != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
