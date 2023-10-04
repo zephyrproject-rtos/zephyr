@@ -74,7 +74,13 @@ Install with `pip install CoAPthon3`
 
 ```
 twister -p native_posix -vv --enable-slow -T tests/net/lib/lwm2m/interop
-``````
+```
+
+Or use the Docker based testing
+
+```
+./scripts/net/run-sample-tests.sh tests/net/lib/lwm2m/interop
+```
 
 ## Test specification
 

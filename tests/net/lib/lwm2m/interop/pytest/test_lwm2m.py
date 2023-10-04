@@ -112,7 +112,7 @@ def verify_LightweightM2M_1_1_int_107(shell: Shell, leshan: Leshan, endpoint: st
     lines = shell.get_filtered_output(shell.exec_command('lwm2m read 1/0/1 -u32'))
     lifetime = int(lines[0])
     assert lifetime == 120
-    logger.debug(f'sleeping for {lifetime} s')
+    logger.debug(f'Wait for update, max {lifetime} s')
     shell._device.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=lifetime)
     assert leshan.get(f'/clients/{endpoint}')
 
@@ -123,6 +123,7 @@ def verify_LightweightM2M_1_1_int_108(leshan, endpoint):
 def verify_LightweightM2M_1_1_int_109(shell: Shell, leshan: Leshan, endpoint: str):
     logger.info("LightweightM2M-1.1-int-109 - Behavior in Queue Mode")
     verify_LightweightM2M_1_1_int_107(shell, leshan, endpoint)
+    logger.debug('Wait for Queue RX OFF')
     shell._device.readlines_until(regex='.*Queue mode RX window closed', timeout=120)
     # Restore previous value
     shell.exec_command('lwm2m write 1/0/1 -u32 86400')
