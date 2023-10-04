@@ -248,6 +248,24 @@ Drivers and Sensors
 
   * GIC: Architecture version selection is now based on the device tree
 
+* Input
+
+  * New drivers: :dtcompatible:`gpio-qdec`, :dtcompatible:`st,stmpe811`.
+
+  * Drivers converted from Kscan to Input: :dtcompatible:`goodix,gt911`
+    :dtcompatible:`xptek,xpt2046` :dtcompatible:`hynitron,cst816s`
+    :dtcompatible:`microchip,cap1203`.
+
+  * Added a Kconfig option for dumping all events to the console
+    :kconfig:option:`CONFIG_INPUT_EVENT_DUMP` and new shell commands
+    :kconfig:option:`CONFIG_INPUT_SHELL`.
+
+  * Merged ``zephyr,gpio-keys`` into :dtcompatible:`gpio-keys` and added
+    ``zephyr,code`` codes to all in-tree board ``gpio-keys`` nodes.
+
+  * Renamed the callback definition macro from ``INPUT_LISTENER_CB_DEFINE`` to
+    :c:macro:`INPUT_CALLBACK_DEFINE`.
+
 * IPM
 
 * KSCAN
