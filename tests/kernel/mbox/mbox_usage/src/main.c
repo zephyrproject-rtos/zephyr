@@ -160,7 +160,7 @@ static void thread_high_prio(void *p1, void *p2, void *p3)
 	k_sem_give(&sync_sema);
 }
 
-ZTEST_USER(mbox_usage_1cpu, test_multi_thread_send_get)
+ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 {
 	static k_tid_t low_prio, high_prio;
 	struct k_mbox_msg mmsg = {0};
