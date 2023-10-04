@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -990,6 +990,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40404000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <4>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1011,6 +1013,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40408000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI2_CLK 0x2084 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1032,6 +1036,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x4040c000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x2104 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1053,6 +1059,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40c40000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
+			/* Source from audio PLL */
+			clock-mux = <6>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,

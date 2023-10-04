@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -937,11 +937,13 @@
 			#pinmux-cells = <2>;
 			reg = <0x40384000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			/* Audio PLL Output Frequency is determined by:
 			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
 			 */
-		       pll-clocks = <&anatop 0x70 0xC000 0>,
+			pll-clocks = <&anatop 0x70 0xC000 0>,
 				      <&anatop 0x70 0x7F 32>,
 				      <&anatop 0x70 0x180000 1>,
 				      <&anatop 0x80 0x3FFFFFFF 77>,
@@ -975,6 +977,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40388000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI2_CLK 0x7C 20>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0x0>,
@@ -1000,6 +1004,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x4038C000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 22>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
