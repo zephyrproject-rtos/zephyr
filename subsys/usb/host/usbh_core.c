@@ -90,8 +90,12 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
 	return ret;
 }
 
-static void usbh_thread(const struct device *dev)
+static void usbh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct uhc_event event;
 
 	while (true) {
@@ -130,7 +134,7 @@ static int uhs_pre_init(void)
 {
 	k_thread_create(&usbh_thread_data, usbh_stack,
 			K_KERNEL_STACK_SIZEOF(usbh_stack),
-			(k_thread_entry_t)usbh_thread,
+			usbh_thread,
 			NULL, NULL, NULL,
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
