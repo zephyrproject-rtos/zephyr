@@ -813,6 +813,9 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  @note When @kconfig{CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY} is enabled then the
  *        security level will always be level 3.
  *
+ *  @note When @ref BT_SECURITY_FORCE_PAIR within @p sec is enabled then the pairing
+ *        procedure will always be initiated.
+ *
  *  @param conn Connection object.
  *  @param sec Requested security level.
  *
