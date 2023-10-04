@@ -237,8 +237,12 @@ static void net_tc_rx_stats_priority_setup(struct net_if *iface,
 #endif
 
 #if NET_TC_RX_COUNT > 0
-static void tc_rx_handler(struct k_fifo *fifo)
+static void tc_rx_handler(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_fifo *fifo = p1;
 	struct net_pkt *pkt;
 
 	while (1) {
@@ -253,8 +257,12 @@ static void tc_rx_handler(struct k_fifo *fifo)
 #endif
 
 #if NET_TC_TX_COUNT > 0
-static void tc_tx_handler(struct k_fifo *fifo)
+static void tc_tx_handler(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_fifo *fifo = p1;
 	struct net_pkt *pkt;
 
 	while (1) {
@@ -309,7 +317,7 @@ void net_tc_tx_init(void)
 
 		tid = k_thread_create(&tx_classes[i].handler, tx_stack[i],
 				      K_KERNEL_STACK_SIZEOF(tx_stack[i]),
-				      (k_thread_entry_t)tc_tx_handler,
+				      tc_tx_handler,
 				      &tx_classes[i].fifo, NULL, NULL,
 				      priority, 0, K_FOREVER);
 		if (!tid) {
@@ -367,7 +375,7 @@ void net_tc_rx_init(void)
 
 		tid = k_thread_create(&rx_classes[i].handler, rx_stack[i],
 				      K_KERNEL_STACK_SIZEOF(rx_stack[i]),
-				      (k_thread_entry_t)tc_rx_handler,
+				      tc_rx_handler,
 				      &rx_classes[i].fifo, NULL, NULL,
 				      priority, 0, K_FOREVER);
 		if (!tid) {

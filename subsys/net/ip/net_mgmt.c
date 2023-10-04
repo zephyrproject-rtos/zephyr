@@ -189,8 +189,12 @@ static inline void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt
 #endif
 }
 
-static void mgmt_thread(void)
+static void mgmt_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct mgmt_event_entry mgmt_event;
 
 	while (1) {
@@ -343,7 +347,7 @@ void net_mgmt_event_init(void)
 
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
 			K_KERNEL_STACK_SIZEOF(mgmt_stack),
-			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
+			mgmt_thread, NULL, NULL, NULL,
 			THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&mgmt_thread_data, "net_mgmt");
 

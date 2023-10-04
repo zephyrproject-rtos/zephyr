@@ -4618,8 +4618,12 @@ bool net_if_is_suspended(struct net_if *iface)
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
-static void net_tx_ts_thread(void)
+static void net_tx_ts_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_pkt *pkt;
 
 	NET_DBG("Starting TX timestamp callback thread");
@@ -4880,7 +4884,7 @@ void net_if_init(void)
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
 			K_KERNEL_STACK_SIZEOF(tx_ts_stack),
-			(k_thread_entry_t)net_tx_ts_thread,
+			net_tx_ts_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_ts, "tx_tstamp");
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */

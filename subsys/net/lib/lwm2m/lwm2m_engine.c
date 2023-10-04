@@ -696,8 +696,12 @@ static void socket_reset_pollfd_events(void)
 }
 
 /* LwM2M main work loop */
-static void socket_loop(void)
+static void socket_loop(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int i, rc;
 	int64_t now, next;
 	int64_t timeout, next_retransmit;
@@ -1245,7 +1249,7 @@ static int lwm2m_engine_init(void)
 
 	/* start sock receive thread */
 	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
-			K_KERNEL_STACK_SIZEOF(engine_thread_stack), (k_thread_entry_t)socket_loop,
+			K_KERNEL_STACK_SIZEOF(engine_thread_stack), socket_loop,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
 	LOG_DBG("LWM2M engine socket receive thread started");
