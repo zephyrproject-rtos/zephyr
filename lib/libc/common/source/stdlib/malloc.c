@@ -33,10 +33,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 # if Z_MALLOC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #  define POOL_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
-#  define MALLOC_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
 # else
 #  define POOL_SECTION __noinit
-#  define MALLOC_SECTION
 # endif /* CONFIG_USERSPACE */
 
 # if defined(CONFIG_MMU) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE < 0
@@ -77,6 +75,8 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 
 #  if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0
 
+#  define HEAP_STATIC
+
 /* Static allocation of heap in BSS */
 
 #   define HEAP_SIZE	ROUND_UP(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, HEAP_ALIGN)
@@ -114,10 +114,10 @@ extern char _heap_sentry[];
 
 # endif /* else ALLOCATE_HEAP_AT_STARTUP */
 
-POOL_SECTION static struct sys_heap z_malloc_heap;
+Z_LIBC_DATA static struct sys_heap z_malloc_heap;
 
 #ifdef CONFIG_MULTITHREADING
-MALLOC_SECTION SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
+Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
 
 static inline void
 malloc_lock(void) {
@@ -225,7 +225,7 @@ static int malloc_prepare(void)
 	heap_size = HEAP_SIZE;
 #endif
 
-#if Z_MALLOC_PARTITION_EXISTS
+#if Z_MALLOC_PARTITION_EXISTS && !defined(HEAP_STATIC)
 	z_malloc_partition.start = POINTER_TO_UINT(heap_base);
 	z_malloc_partition.size = heap_size;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;

@@ -13,6 +13,7 @@ config COMMON_LIBC_TIME
 
 config COMMON_LIBC_MALLOC
 	bool "Common C library malloc implementation"
+	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
 	help
 	  Common implementation of malloc family that uses the kernel heap
 	  API.
