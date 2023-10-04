@@ -1150,6 +1150,10 @@ ZTEST(semaphore_1cpu, test_sem_queue_mutual_exclusion)
 #ifdef CONFIG_USERSPACE
 static void thread_sem_give_null(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	ztest_set_fault_valid(true);
 	k_sem_give(NULL);
 
@@ -1169,7 +1173,7 @@ static void thread_sem_give_null(void *p1, void *p2, void *p3)
 ZTEST_USER(semaphore_null_case, test_sem_give_null)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)thread_sem_give_null,
+			thread_sem_give_null,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -1181,6 +1185,10 @@ ZTEST_USER(semaphore_null_case, test_sem_give_null)
 #ifdef CONFIG_USERSPACE
 static void thread_sem_init_null(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	ztest_set_fault_valid(true);
 	k_sem_init(NULL, 0, 1);
 
@@ -1200,7 +1208,7 @@ static void thread_sem_init_null(void *p1, void *p2, void *p3)
 ZTEST_USER(semaphore_null_case, test_sem_init_null)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)thread_sem_init_null,
+			thread_sem_init_null,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -1212,6 +1220,10 @@ ZTEST_USER(semaphore_null_case, test_sem_init_null)
 #ifdef CONFIG_USERSPACE
 static void thread_sem_take_null(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	ztest_set_fault_valid(true);
 	k_sem_take(NULL, K_MSEC(1));
 
@@ -1231,7 +1243,7 @@ static void thread_sem_take_null(void *p1, void *p2, void *p3)
 ZTEST_USER(semaphore_null_case, test_sem_take_null)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)thread_sem_take_null,
+			thread_sem_take_null,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -1243,6 +1255,10 @@ ZTEST_USER(semaphore_null_case, test_sem_take_null)
 #ifdef CONFIG_USERSPACE
 static void thread_sem_reset_null(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	ztest_set_fault_valid(true);
 	k_sem_reset(NULL);
 
@@ -1262,7 +1278,7 @@ static void thread_sem_reset_null(void *p1, void *p2, void *p3)
 ZTEST_USER(semaphore_null_case, test_sem_reset_null)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)thread_sem_reset_null,
+			thread_sem_reset_null,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -1274,6 +1290,10 @@ ZTEST_USER(semaphore_null_case, test_sem_reset_null)
 #ifdef CONFIG_USERSPACE
 static void thread_sem_count_get_null(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	ztest_set_fault_valid(true);
 	k_sem_count_get(NULL);
 
@@ -1293,7 +1313,7 @@ static void thread_sem_count_get_null(void *p1, void *p2, void *p3)
 ZTEST_USER(semaphore_null_case, test_sem_count_get_null)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)thread_sem_count_get_null,
+			thread_sem_count_get_null,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);

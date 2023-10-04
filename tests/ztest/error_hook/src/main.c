@@ -201,6 +201,9 @@ void ztest_post_assert_fail_hook(void)
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int sub_type = *(int *)p1;
 
 	printk("case type is %d\n", case_type);
@@ -249,7 +252,7 @@ static int run_trigger_thread(int i)
 	}
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)tThread_entry,
+			tThread_entry,
 			(void *)&case_type, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);

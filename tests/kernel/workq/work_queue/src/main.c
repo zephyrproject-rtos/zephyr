@@ -124,12 +124,13 @@ static void reset_results(void)
 	num_results = 0;
 }
 
-static void coop_work_main(int arg1, int arg2)
+static void coop_work_main(void *p1, void *p2, void *p3)
 {
-	int i;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	int i;
 
 	/* Let the preempt thread submit the first work item. */
 	k_msleep(SUBMIT_WAIT / 2);
@@ -150,7 +151,7 @@ static void delayed_test_items_submit(void)
 	int i;
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_work_main,
+			coop_work_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
@@ -271,12 +272,13 @@ static void test_delayed_init(void)
 	}
 }
 
-static void coop_delayed_work_main(int arg1, int arg2)
+static void coop_delayed_work_main(void *p1, void *p2, void *p3)
 {
-	int i;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	int i;
 
 	/* Let the preempt thread submit the first work item. */
 	k_msleep(SUBMIT_WAIT / 2);
@@ -301,7 +303,7 @@ static void test_delayed_submit(void)
 	int i;
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_delayed_work_main,
+			coop_delayed_work_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
@@ -313,10 +315,11 @@ static void test_delayed_submit(void)
 
 }
 
-static void coop_delayed_work_cancel_main(int arg1, int arg2)
+static void coop_delayed_work_cancel_main(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	k_work_schedule(&delayed_tests[1].work, K_MSEC(WORK_ITEM_WAIT));
 
@@ -342,7 +345,7 @@ ZTEST(workqueue_delayed, test_delayed_cancel)
 	k_work_cancel_delayable(&delayed_tests[0].work);
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_delayed_work_cancel_main,
+			coop_delayed_work_cancel_main,
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");

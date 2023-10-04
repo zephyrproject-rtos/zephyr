@@ -47,6 +47,9 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p3);
+
 	int choice = *((int *)p2);
 
 	TC_PRINT("current case is %d\n", choice);
@@ -102,7 +105,7 @@ static int create_negative_test_thread(int choice)
 	case_type = choice;
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)tThread_entry_negative,
+			tThread_entry_negative,
 			&mutex, (void *)&case_type, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);

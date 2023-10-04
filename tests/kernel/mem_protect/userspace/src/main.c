@@ -451,8 +451,11 @@ ZTEST_USER(userspace, test_pass_noperms_object)
 }
 
 
-void thread_body(void)
+void thread_body(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 }
 
 /**
@@ -465,7 +468,7 @@ ZTEST_USER(userspace, test_start_kernel_thread)
 	/* Try to start a kernel thread from a usermode thread */
 	set_fault(K_ERR_KERNEL_OOPS);
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
 			K_NO_WAIT);
 	zassert_unreachable("Create a kernel thread did not fault");
@@ -568,8 +571,12 @@ ZTEST_USER(userspace, test_access_after_revoke)
 	zassert_unreachable("Using revoked object did not fault");
 }
 
-static void umode_enter_func(void)
+static void umode_enter_func(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	zassert_true(k_is_user_context(),
 		     "Thread did not enter user mode");
 }
@@ -586,7 +593,7 @@ ZTEST(userspace, test_user_mode_enter)
 {
 	clear_fault();
 
-	k_thread_user_mode_enter((k_thread_entry_t)umode_enter_func,
+	k_thread_user_mode_enter(umode_enter_func,
 				 NULL, NULL, NULL);
 }
 

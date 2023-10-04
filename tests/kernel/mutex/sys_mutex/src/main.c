@@ -88,7 +88,7 @@ static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
 #define CREATE_PARTICIPANT_THREAD(id, pri)                                     \
 		k_thread_create(&thread_##id##_thread_data, thread_##id##_stack_area,  \
 			K_THREAD_STACK_SIZEOF(thread_##id##_stack_area),                   \
-			(k_thread_entry_t)thread_##id,                                     \
+			thread_##id,                                                       \
 			NULL, NULL, NULL,                                                  \
 			pri, PARTICIPANT_THREAD_OPTIONS, K_FOREVER);
 #define START_PARTICIPANT_THREAD(id) k_thread_start(&(thread_##id##_thread_data));
@@ -395,7 +395,7 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
-			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
+			thread_12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), PARTICIPANT_THREAD_OPTIONS, K_NO_WAIT);
 	k_sleep(K_MSEC(5));     /* Give thread_12 a chance to block on the mutex */
 
