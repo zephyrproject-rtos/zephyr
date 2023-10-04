@@ -256,7 +256,7 @@ extern "C" {
  * @brief Like <tt>a == b</tt>, but does evaluation and
  * short-circuiting at C preprocessor time.
  *
- * This however only works for integer literal from 0 to 255.
+ * This however only works for integer literal from 0 to 4095.
  *
  */
 #define IS_EQ(a, b) Z_IS_EQ(a, b)
@@ -367,26 +367,26 @@ extern "C" {
 #define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
 
 /**
- * @brief UTIL_INC(x) for an integer literal x from 0 to 255 expands to an
+ * @brief UTIL_INC(x) for an integer literal x from 0 to 4095 expands to an
  * integer literal whose value is x+1.
  *
  * @see UTIL_DEC(x)
  */
-#define UTIL_INC(x) UTIL_PRIMITIVE_CAT(UTIL_INC_, x)
+#define UTIL_INC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_INC_, x)
 
 /**
- * @brief UTIL_DEC(x) for an integer literal x from 0 to 255 expands to an
+ * @brief UTIL_DEC(x) for an integer literal x from 0 to 4095 expands to an
  * integer literal whose value is x-1.
  *
  * @see UTIL_INC(x)
  */
-#define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(UTIL_DEC_, x)
+#define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(Z_UTIL_DEC_, x)
 
 /**
- * @brief UTIL_X2(y) for an integer literal y from 0 to 255 expands to an
+ * @brief UTIL_X2(y) for an integer literal y from 0 to 4095 expands to an
  * integer literal whose value is 2y.
  */
-#define UTIL_X2(y) UTIL_PRIMITIVE_CAT(UTIL_X2_, y)
+#define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
 
 
 /**
@@ -402,7 +402,7 @@ extern "C" {
  *    { MY_PWM0 , MY_PWM1 }
  *
  * @param LEN The length of the sequence. Must be an integer literal less
- *            than 255.
+ *            than 4095.
  * @param F A macro function that accepts at least two arguments:
  *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
  *          Its first argument @p i is the index in the sequence, and
