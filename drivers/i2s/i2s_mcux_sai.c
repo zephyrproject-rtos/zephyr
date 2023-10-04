@@ -577,11 +577,18 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		SAI_GetDSPConfig(&config, kSAI_FrameSyncLenOneBitClk,
 				 word_size_bits, kSAI_Stereo,
 				 dev_cfg->tx_channel);
+		/* We need to set the data word count manually, since the HAL
+		 * function does not
+		 */
+		config.serialData.dataWordNum = num_words;
+		config.frameSync.frameSyncEarly = true;
+		config.bitClock.bclkPolarity = kSAI_SampleOnFallingEdge;
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 		SAI_GetTDMConfig(&config, kSAI_FrameSyncLenPerWordWidth,
 				 word_size_bits, num_words,
 				 dev_cfg->tx_channel);
+		config.bitClock.bclkPolarity = kSAI_SampleOnFallingEdge;
 		break;
 	default:
 		LOG_ERR("Unsupported I2S data format");
@@ -629,31 +636,43 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	/* clock signal polarity */
 	switch (i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) {
 	case I2S_FMT_CLK_NF_NB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveLow;
-		config.bitClock.bclkSrcSwap = false;
+		/* No action required, leave the configuration untouched */
 		break;
 
 	case I2S_FMT_CLK_NF_IB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveLow;
-		config.bitClock.bclkSrcSwap = true;
+		/* Swap bclk polarity */
+		config.bitClock.bclkPolarity =
+			(config.bitClock.bclkPolarity == kSAI_SampleOnFallingEdge) ?
+				kSAI_SampleOnRisingEdge :
+				kSAI_SampleOnFallingEdge;
 		break;
 
 	case I2S_FMT_CLK_IF_NB:
+		/* Swap frame sync polarity */
 		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveHigh;
-		config.bitClock.bclkSrcSwap = false;
+			(config.frameSync.frameSyncPolarity == kSAI_PolarityActiveHigh) ?
+				kSAI_PolarityActiveLow :
+				kSAI_PolarityActiveHigh;
 		break;
 
 	case I2S_FMT_CLK_IF_IB:
+		/* Swap frame sync and bclk polarity */
 		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveHigh;
-		config.bitClock.bclkSrcSwap = true;
+			(config.frameSync.frameSyncPolarity == kSAI_PolarityActiveHigh) ?
+				kSAI_PolarityActiveLow :
+				kSAI_PolarityActiveHigh;
+		config.bitClock.bclkPolarity =
+			(config.bitClock.bclkPolarity == kSAI_SampleOnFallingEdge) ?
+				kSAI_SampleOnRisingEdge :
+				kSAI_SampleOnFallingEdge;
 		break;
 	}
 
-	config.frameSync.frameSyncWidth = (uint8_t)word_size_bits;
+	/* PCM short format always requires that WS be one BCLK cycle */
+	if ((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) !=
+	    I2S_FMT_DATA_FORMAT_PCM_SHORT) {
+		config.frameSync.frameSyncWidth = (uint8_t)word_size_bits;
+	}
 
 	if (dir == I2S_DIR_TX) {
 		memcpy(&dev_data->tx.cfg, i2s_cfg, sizeof(struct i2s_config));
