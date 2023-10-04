@@ -289,7 +289,7 @@ manifest:
         - debug
       revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
     - name: net-tools
-      revision: e0828aa9629b533644dc96ff6d1295c939bd713c
+      revision: d68ee9d17648a1bb3729c2023abfcb735dfe92fa
       path: tools/net-tools
       groups:
         - tools
