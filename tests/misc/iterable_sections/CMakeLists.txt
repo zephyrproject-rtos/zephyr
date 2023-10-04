@@ -12,9 +12,11 @@ zephyr_iterable_section(NAME test_ram GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} 
 zephyr_iterable_section(NAME test_ram2 GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME test_ram_named GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME test_ram_numeric NUMERIC GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+zephyr_iterable_section(NAME ramn_alt GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
 zephyr_iterable_section(NAME test_rom KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 zephyr_iterable_section(NAME test_rom2 KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 zephyr_iterable_section(NAME test_rom_named KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 zephyr_iterable_section(NAME test_rom_numeric NUMERIC KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+zephyr_iterable_section(NAME romn_alt KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
