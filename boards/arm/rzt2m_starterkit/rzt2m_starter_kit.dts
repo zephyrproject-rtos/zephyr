@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/pinctrl/renesas-rzt2m-pinctrl.h>
 #include <arm/renesas/rzt2m.dtsi>
 
 / {
@@ -18,10 +19,36 @@
 	};
 };
 
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P16_5>;
+		};
+		group2 {
+			pinmux = <UART0RX_P16_6>;
+			input-enable;
+		};
+	};
+	uart3_default: uart3_default {
+		group1 {
+			pinmux = <UART3TX_P18_0>;
+		};
+		group2 {
+			pinmux = <UART3RX_P17_7>;
+			input-enable;
+		};
+	};
+};
+
 &uart0 {
 	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 };
 
 &uart3 {
 	status = "okay";
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
 };

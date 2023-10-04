@@ -8,6 +8,7 @@
 #include "zephyr/spinlock.h"
 #include "zephyr/sys/printk.h"
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 #include <stdint.h>
@@ -20,6 +21,7 @@ LOG_MODULE_REGISTER(uart_renesas_rzt2m, CONFIG_UART_LOG_LEVEL);
 
 struct rzt2m_device_config {
 	mm_reg_t base;
+	const struct pinctrl_dev_config *pin_config;
 	uart_irq_config_func_t irq_config_func;
 };
 
@@ -297,6 +299,12 @@ static int rzt2m_uart_init(const struct device *dev)
 	*CCR3(config->base) = CCR3_DEFAULT_VALUE;
 	*CCR4(config->base) = CCR4_DEFAULT_VALUE;
 
+	/* Configure pinmuxes */
+	ret = pinctrl_apply_state(config->pin_config, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+
 	*CFCLR(config->base) = CFCLR_ALL_FLAG_CLEAR;
 	*FFCLR(config->base) = FFCLR_MASK_DRC;
 
@@ -414,6 +422,7 @@ static void uart_rzt2m_isr(const struct device *dev)
 	}
 
 #define UART_RZT2M_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct rzt2m_device_data rzt2m_uart_##n##data = {                                   \
 		.uart_cfg =                                                                        \
 			{                                                                          \
@@ -427,7 +436,9 @@ static void uart_rzt2m_isr(const struct device *dev)
 	};                                                                                         \
 	UART_RZT2M_CONFIG_FUNC(n);                                                                 \
 	static const struct rzt2m_device_config rzt2m_uart_##n##_config = {                        \
-		.base = DT_INST_REG_ADDR(n), .irq_config_func = uart##n##_rzt2m_irq_config};       \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = uart##n##_rzt2m_irq_config,                                     \
+		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                  \
 	DEVICE_DT_INST_DEFINE(n, &rzt2m_uart_init, NULL, &rzt2m_uart_##n##data,                    \
 			      &rzt2m_uart_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &rzt2m_uart_api);
