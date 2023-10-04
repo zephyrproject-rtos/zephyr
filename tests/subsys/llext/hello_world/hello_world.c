@@ -11,15 +11,14 @@
  * a function.
  */
 
-/* Various build options should be documented here to generate the test elf for
- * each architecture.
- *
- * armv7-thumb: -mlong-call -mthumb -c -o hello_world_armv7_thumb.elf hello_world.c
- */
+#include <stdint.h>
 
 extern void printk(char *fmt, ...);
+
+static const uint32_t number = 42;
 
 extern void hello_world(void)
 {
 	printk("hello world\n");
+	printk("A number is %lu\n", number);
 }
