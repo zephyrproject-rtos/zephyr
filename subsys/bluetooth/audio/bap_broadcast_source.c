@@ -770,10 +770,10 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			&param->params[subgroup_cnt];
 		const size_t subgroup_stream_param_cnt = subgroup_param->params_count;
 		struct bt_bap_stream *stream;
-		size_t stream_cnt = 0U;
+		size_t subgroup_stream_cnt = 0U;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			stream_cnt++;
+			subgroup_stream_cnt++;
 		}
 
 		/* Verify that the param stream is in the subgroup */
@@ -799,10 +799,10 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			}
 		}
 
-		if (subgroup_stream_param_cnt < stream_cnt) {
+		if (subgroup_stream_cnt < subgroup_stream_param_cnt) {
 			LOG_DBG("Invalid param->params[%zu]->params_count: %zu "
 				"(only %zu streams in subgroup)",
-				subgroup_cnt, subgroup_stream_param_cnt, stream_cnt);
+				subgroup_cnt, subgroup_stream_param_cnt, subgroup_stream_cnt);
 			return -EINVAL;
 		}
 
