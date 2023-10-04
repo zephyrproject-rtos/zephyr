@@ -248,7 +248,7 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 	zassert_true(z_is_thread_essential(), "Thread isn't set"
 		     " as essential\n");
 
-	k_thread_user_mode_enter((k_thread_entry_t)umode_entry,
+	k_thread_user_mode_enter(umode_entry,
 				 k_current_get(), NULL, NULL);
 }
 

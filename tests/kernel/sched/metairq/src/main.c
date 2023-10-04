@@ -40,7 +40,7 @@
 #define CREATE_PARTICIPANT_THREAD(id, pri, entry)                                      \
 		k_thread_create(&thread_##id##_thread_data, thread_##id##_stack_area,  \
 			K_THREAD_STACK_SIZEOF(thread_##id##_stack_area),               \
-			(k_thread_entry_t)entry,                                       \
+			entry,                                                         \
 			NULL, NULL, NULL,                                              \
 			pri, PARTICIPANT_THREAD_OPTIONS, K_FOREVER);
 #define START_PARTICIPANT_THREAD(id) k_thread_start(&(thread_##id##_thread_data));

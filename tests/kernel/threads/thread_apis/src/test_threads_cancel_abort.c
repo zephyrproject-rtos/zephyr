@@ -110,6 +110,10 @@ void *block;
 
 static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	execute_flag = 1;
 
 	zassert_unreachable("Delayed thread shouldn't be executed");
@@ -134,7 +138,7 @@ ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
 	 * current thread
 	 */
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      (k_thread_entry_t)delayed_thread_entry, NULL, NULL, NULL,
+				      delayed_thread_entry, NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(1), 0, K_MSEC(100));
 
 	/* Give up CPU */

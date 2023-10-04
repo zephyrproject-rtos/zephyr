@@ -105,8 +105,12 @@ void test_requesting_nm(void)
 		      "Requesting Net MGMT failed");
 }
 
-static void thrower_thread(void)
+static void thrower_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (1) {
 		k_sem_take(&thrower_lock, K_FOREVER);
 
@@ -253,7 +257,7 @@ static void initialize_event_tests(void)
 
 	k_thread_create(&thrower_thread_data, thrower_stack,
 			K_THREAD_STACK_SIZEOF(thrower_stack),
-			(k_thread_entry_t)thrower_thread,
+			thrower_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
