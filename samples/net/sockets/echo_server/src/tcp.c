@@ -243,7 +243,7 @@ static int process_tcp(struct data *data)
 			&tcp6_handler_thread[slot],
 			tcp6_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp6_handler_stack[slot]),
-			(k_thread_entry_t)handle_data,
+			handle_data,
 			INT_TO_POINTER(slot), data, &tcp6_handler_in_use[slot],
 			THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
@@ -267,7 +267,7 @@ static int process_tcp(struct data *data)
 			&tcp4_handler_thread[slot],
 			tcp4_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp4_handler_stack[slot]),
-			(k_thread_entry_t)handle_data,
+			handle_data,
 			INT_TO_POINTER(slot), data, &tcp4_handler_in_use[slot],
 			THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
