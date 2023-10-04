@@ -9,6 +9,12 @@ Overview
 This sample is a minimum application to demonstrate basic power management
 behavior in a basic blinking LED set up using the :ref:`GPIO API <gpio_api>` in
 low power context.
+Note that lptim instance selected for the low power timer is named **&stm32_lp_tick_source**
+When setting a prescaler to decrease the lptimer input clock frequency, the system can sleep
+for a longer  timeout value and the CONFIG_SYS_CLOCK_TICKS_PER_SEC is adjusted.
+For example, when clocking the  low power Timer with LSE clock at 32768Hz and adding a
+prescaler of <32>, then the kernel sleep period can reach 65536 * 32/32768 = 64 seconds
+CONFIG_SYS_CLOCK_TICKS_PER_SEC is set to 1024.
 
 .. _stm32-pm-blinky-sample-requirements:
 
@@ -30,7 +36,10 @@ Build and flash Blinky as follows, changing ``stm32l562e_dk`` for your board:
    :goals: build flash
    :compact:
 
-After flashing, the LED starts to blink.
+After flashing, the LED starts to blink with a fixed period (SLEEP_TIME_MS).
+When LPTIM input clock has a prescaler, longer perdiod (up to 64 seconds)
+of low power can be tested.
+
 
 PM configurations
 *****************
