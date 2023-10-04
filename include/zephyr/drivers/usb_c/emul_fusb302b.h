@@ -1,0 +1,6 @@
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_EMUL_FUSB302B_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USBC_EMUL_FUSB302B_H_
+
+void set_vbus(const struct emul *emul, int mv);
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_EMUL_FUSB302B_H_ */

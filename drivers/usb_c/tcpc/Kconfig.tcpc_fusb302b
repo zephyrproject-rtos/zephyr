@@ -2,6 +2,19 @@ config USBC_TCPC_FUSB302B
 	bool "USB-C Enable FUSB302 Driver"
 	default y
 	depends on DT_HAS_FCS_FUSB302B_ENABLED
+	depends on USBC_TCPC_DRIVER
 	select I2C
 	help
 	  FUSB302B driver
+
+if USBC_TCPC_FUSB302B
+
+config EMUL_FUSB302B
+	bool "Emulate a FUSB302B"
+	default y
+	depends on EMUL
+	depends on USBC_TCPC_FUSB302B
+	help
+	  This is an emulator for the FUSB302B.
+
+endif # USBC_TCPC_FUSB302B
