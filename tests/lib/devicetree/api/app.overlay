@@ -415,6 +415,7 @@
 			reg = <0xbbbbcccc 0x1000>;
 			interrupt-controller;
 			#interrupt-cells = <2>;
+			interrupts = <11 0>;
 		};
 
 		/* there should only be one of these */
@@ -422,6 +423,7 @@
 			compatible = "vnd,interrupt-holder";
 			status = "okay";
 			interrupts = <30 3 40 5 60 7>;
+			interrupt-parent = <&test_intc>;
 			interrupt-names = "err", "stat", "done";
 		};
 
