@@ -861,7 +861,7 @@ int usb_dc_attach(void)
 		return ret;
 	}
 
-	for (int idx = 0 ; idx < MAX_NUM_ENDPOINTS ; idx++) {
+	for (uint8_t idx = 0; idx < MAX_NUM_ENDPOINTS; idx++) {
 		udata0.ep_data[idx].ep_status = EP_INIT;
 	}
 
@@ -1063,7 +1063,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		break;
 
 	case USB_DC_EP_BULK:
+		__fallthrough;
 	case USB_DC_EP_INTERRUPT:
+		__fallthrough;
 	default:
 		if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 			ep_regs[ep_idx].ep_ctrl &= ~EP_ISO_ENABLE;
@@ -1276,36 +1278,29 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
-	uint32_t idx;
-
-	/* status IN */
-	if ((ep_idx == EP0) && (data_len == 0) &&
-		(udata0.now_token == SETUP_TOKEN)) {
-		return 0;
-	}
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
 		return -EINVAL;
 	}
 
-	/* clear fifo before write*/
 	if (ep_idx == EP0) {
+		if ((udata0.now_token == SETUP_TOKEN) && (data_len == 0)) {
+			return 0;
+		}
+		/* clear fifo before write*/
 		ff_regs[ep_idx].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
-	}
 
-	if ((ep_idx == EP0) && (udata0.st_state == SETUP_ST)) {
-		udata0.st_state = DIN_ST;
-	}
-
-	/* select FIFO */
-	if (ep_idx > EP0) {
+		if (udata0.st_state == SETUP_ST) {
+			udata0.st_state = DIN_ST;
+		}
+	} else {
 		k_sem_take(&udata0.ep_sem[ep_fifo-1], K_FOREVER);
 		it82xx2_usb_fifo_ctrl(ep);
 	}
 
 	if (data_len > udata0.ep_data[ep_idx].mps) {
 
-		for (idx = 0 ; idx < udata0.ep_data[ep_idx].mps ; idx++) {
+		for (uint32_t idx = 0; idx < udata0.ep_data[ep_idx].mps; idx++) {
 			ff_regs[ep_fifo].ep_tx_fifo_data = buf[idx];
 		}
 
@@ -1316,7 +1311,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 		LOG_DBG("data_len: %d, Write Max Packets to TX FIFO(%d)",
 			data_len, ep_idx);
 	} else {
-		for (idx = 0 ; idx < data_len ; idx++) {
+		for (uint32_t idx = 0; idx < data_len; idx++) {
 			ff_regs[ep_fifo].ep_tx_fifo_data = buf[idx];
 		}
 
@@ -1365,7 +1360,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 
 		*read_bytes = 0;
 
-		if (ep_idx > EP0) {
+		if (ep_idx > 0) {
 			ep_regs[ep_idx].ep_ctrl |= ENDPOINT_RDY;
 		}
 
@@ -1376,47 +1371,28 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		(((uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_msb) << 8);
 
 	if (ep_idx == 0) {
-	/* if ep0 check trans_type in OUT_TOKEN to
-	 * prevent wrong read_bytes cause memory error
-	 */
-		if (udata0.st_state == STATUS_ST &&
-			(ep_regs[EP0].ep_transtype_sts & DC_ALL_TRANS) == 0) {
-
+		/* Prevent wrong read_bytes cause memory error
+		 * if EP0 is in OUT status stage
+		 */
+		if (udata0.st_state == STATUS_ST) {
 			*read_bytes = 0;
 			return 0;
-
-		} else if (udata0.st_state == STATUS_ST) {
-			/* status out but rx_fifo_len not zero */
-			if (rx_fifo_len != 0) {
-				LOG_ERR("Status OUT length not 0 (%d)",
-					rx_fifo_len);
+		} else if (udata0.now_token == SETUP_TOKEN) {
+			if (rx_fifo_len == 0) {
+				LOG_ERR("Setup length 0, reset to 8");
+				rx_fifo_len = 8;
 			}
-			/* rx_fifo_len = 0; */
-			*read_bytes = 0;
-
-			return 0;
-		} else if (rx_fifo_len == 0 &&
-			udata0.now_token == SETUP_TOKEN) {
-			/* RX fifo error workaround */
-
-			/* wrong length(like 7),
-			 * may read wrong packet so clear fifo then return -1
-			 */
-			LOG_ERR("Setup length 0, reset to 8");
-			rx_fifo_len = 8;
-		} else if (rx_fifo_len != 8 &&
-			udata0.now_token == SETUP_TOKEN) {
-			LOG_ERR("Setup length: %d", rx_fifo_len);
-			/* clear rx fifo */
-			ff_regs[EP0].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
-
-			return -EIO;
+			if (rx_fifo_len != 8) {
+				LOG_ERR("Setup length: %d", rx_fifo_len);
+				ff_regs[0].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
+				return -EIO;
+			}
 		}
 	}
 
 	if (rx_fifo_len > max_data_len) {
 		*read_bytes = max_data_len;
-		for (int idx = 0 ; idx < max_data_len ; idx++) {
+		for (uint32_t idx = 0; idx < max_data_len; idx++) {
 			buf[idx] = ff_regs[ep_fifo].ep_rx_fifo_data;
 		}
 
@@ -1425,7 +1401,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 
 		*read_bytes = rx_fifo_len;
 
-		for (int idx = 0 ; idx < rx_fifo_len ; idx++) {
+		for (uint32_t idx = 0; idx < rx_fifo_len; idx++) {
 			buf[idx] = ff_regs[ep_fifo].ep_rx_fifo_data;
 		}
 
@@ -1441,27 +1417,18 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 			it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_READY);
 			udata0.ep_ready[ep_fifo - 1] = true;
 		} else if (udata0.now_token == SETUP_TOKEN) {
-
 			if (!(buf[0] & USB_EP_DIR_MASK)) {
-			/* Host to device transfer check */
+				/* request type: host-to-device transfer direction */
+				ff_regs[0].ep_tx_fifo_ctrl = FIFO_FORCE_EMPTY;
 				if (buf[6] != 0 || buf[7] != 0) {
-					/* clear tx fifo */
-					ff_regs[EP0].ep_tx_fifo_ctrl =
-					FIFO_FORCE_EMPTY;
 					/* set status IN after data OUT */
-					ep_regs[EP0].ep_ctrl |=
-					ENDPOINT_RDY | EP_OUTDATA_SEQ;
+					ep_regs[0].ep_ctrl |= ENDPOINT_RDY | EP_OUTDATA_SEQ;
 				} else {
 					/* no_data_ctrl status */
-
-					/* clear tx fifo */
-					ff_regs[EP0].ep_tx_fifo_ctrl =
-					FIFO_FORCE_EMPTY;
 					udata0.no_data_ctrl = true;
 				}
 			}
 		}
-
 	}
 
 	return 0;
@@ -1501,7 +1468,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	*read_bytes = (rx_fifo_len > max_data_len) ?
 		max_data_len : rx_fifo_len;
 
-	for (int idx = 0 ; idx < *read_bytes ; idx++) {
+	for (uint32_t idx = 0; idx < *read_bytes; idx++) {
 		buf[idx] = ff_regs[ep_fifo].ep_rx_fifo_data;
 	}
 
