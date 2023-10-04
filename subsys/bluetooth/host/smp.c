@@ -4706,6 +4706,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    conn->role == BT_HCI_ROLE_CENTRAL &&
 	    !(smp->remote_dist & BT_SMP_DIST_ID_KEY)) {
 		uint8_t smp_err;
 
