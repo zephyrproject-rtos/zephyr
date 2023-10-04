@@ -28,6 +28,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,uart-mcumgr = &uart0;
 	};
 
 	leds {
