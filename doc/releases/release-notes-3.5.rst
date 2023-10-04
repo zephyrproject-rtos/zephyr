@@ -71,6 +71,16 @@ Architectures
 
 * RISC-V
 
+  * Added support for detecting null pointer exception using PMP.
+  * Added the :kconfig:option:`CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET`
+    option to allow IRQ vector at a specified offset to meet the requirements
+    set by the Core-Local Interrupt Controller RISC-V specification.
+  * Added the :kconfig:option:`CONFIG_RISCV_SOC_HAS_CUSTOM_SYS_IO` option to
+    allow the use of custom system input/output functions.
+  * Introduced the :kconfig:option:`CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT` option
+    to set the correct alignment of the trap handling code which is dependent on
+    the ``MTVEC.BASE`` field size and is platform or application-specific.
+
 * Xtensa
 
   * Added basic MMU v2 Support.
