@@ -2285,11 +2285,15 @@ static int start_security(struct bt_conn *conn)
 
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 {
+	bool force_pair;
 	int err;
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
+
+	force_pair = sec & BT_SECURITY_FORCE_PAIR;
+	sec &= ~BT_SECURITY_FORCE_PAIR;
 
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
 		sec = BT_SECURITY_L4;
@@ -2300,13 +2304,12 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 	}
 
 	/* nothing to do */
-	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
+	if (!force_pair && (conn->sec_level >= sec || conn->required_sec_level >= sec)) {
 		return 0;
 	}
 
-	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR,
-			  sec & BT_SECURITY_FORCE_PAIR);
-	conn->required_sec_level = sec & ~BT_SECURITY_FORCE_PAIR;
+	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, force_pair);
+	conn->required_sec_level = sec;
 
 	err = start_security(conn);
 
