@@ -184,6 +184,11 @@ Required changes
   error and have to be done correctly using
   :c:func:`k_work_delayable_from_work`.
 
+* The :dtcompatible:`ti,bq274xx` driver was using incorrect units for capacity
+  and power channels, these have been fixed and scaled by x1000 factor from the
+  previous implementation, any application using them has to be changed
+  accordingly.
+
 Recommended Changes
 *******************
 
