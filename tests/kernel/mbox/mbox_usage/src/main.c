@@ -175,7 +175,6 @@ ZTEST_USER(mbox_usage_1cpu, test_multi_thread_send_get)
 				    thread_high_prio, &multi_tmbox, NULL, NULL,
 				    HIGH_PRIO, 0, K_NO_WAIT);
 
-	k_sleep(K_MSEC(20));
 	mmsg.size = sizeof(msg_data[0]);
 	mmsg.tx_data = msg_data[0];
 	mmsg.tx_target_thread = K_ANY;
