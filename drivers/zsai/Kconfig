@@ -1,0 +1,79 @@
+# ZSAI devices configuration options
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Zepyr Storage Access Interface
+#
+config ZSAI_HAS_DRIVER_ENABLED
+	bool
+	help
+	  This option is enabled when any ZSAI enabled device is present in system.
+
+config ZSAI_DEVICE_REQUIRES_ERASE
+	bool
+	help
+	  Device requires erase before write.
+
+config ZSAI_DEVICE_HAS_ERASE
+	bool
+	default y if ZSAI_DEVICE_REQUIRES_ERASE
+	help
+	  Device has erase function. It does not mean that erase is required
+	  by a device, it just means that it provides erase functionality.
+
+config ZSAI_DEVICE_HAS_NO_ERASE
+	bool
+	help
+	  Device does not require erase.
+
+if ZSAI_DEVICE_REQUIRES_ERASE
+
+config ZSAI_DEVICE_HAS_UNIFORM_PAGES
+	bool
+	help
+	  Device has uniform page layout, all pages are of the same size.
+
+config ZSAI_DEVICE_HAS_NON_UNIFORM_PAGES
+	bool
+	help
+	  Device has non-uniform page layout, sizes of pages are different.
+
+config ZSAI_DEVICE_HAS_PAGE_HOLES
+	bool
+	help
+	  Device has non linear address space where non-accessible areas appear
+	  between accessible pages.
+
+config ZSAI_DEVICE_ERASES_TO_1
+	bool
+	help
+	  Device erase bit value is 1, so byte erases to 0xff and so on.
+
+config ZSAI_DEVICE_ERASES_TO_0
+	bool
+	help
+	  Device erase bit value is 0, so byte erases to 0x00 and so on.
+
+endif # ZSAI_DEVICE_REQUIRES_ERASE
+
+menuconfig ZSAI
+	bool "Zephyr Storage Access Interface"
+	help
+	  Enable support for various devices that can be used for code and data storage
+
+if ZSAI
+
+module = ZSAI
+module-str = zsai
+source "subsys/logging/Kconfig.template.log_config"
+
+config ZSAI_INIT_PRIORITY
+	int "Zephyr Storage Access Interface init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Default priority for ZSAI device drivers initialization. Driver may provide own
+	  initialization priority konfiguration option.
+
+endif # ZSAI
