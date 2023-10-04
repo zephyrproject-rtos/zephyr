@@ -474,10 +474,6 @@ static void eth_iface_init(struct net_if *iface)
 	} else {
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);
-
-		eth_setup_host(ctx->if_name);
-
-		eth_start_script(ctx->if_name);
 	}
 }
 
@@ -573,36 +569,11 @@ static int vlan_setup(const struct device *dev, struct net_if *iface,
 }
 #endif /* CONFIG_NET_VLAN */
 
-static int eth_start_device(const struct device *dev)
-{
-	struct eth_context *context = dev->data;
-	int ret;
-
-	context->status = true;
-
-	ret = eth_if_up(context->if_name);
-
-	eth_setup_host(context->if_name);
-
-	return ret;
-}
-
-static int eth_stop_device(const struct device *dev)
-{
-	struct eth_context *context = dev->data;
-
-	context->status = false;
-
-	return eth_if_down(context->if_name);
-}
-
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_posix_native_get_capabilities,
 	.set_config = set_config,
-	.start = eth_start_device,
-	.stop = eth_stop_device,
 	.send = eth_send,
 
 #if defined(CONFIG_NET_VLAN)
