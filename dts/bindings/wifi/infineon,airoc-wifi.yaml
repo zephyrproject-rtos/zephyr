@@ -1,0 +1,50 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AIROC Wi-Fi Connectivity.
+
+    Example of enabling AIROC Wi-Fi device (for SDIO):
+      &sdhc0 {
+        status = "okay";
+
+        /* SDIO pins */
+        pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
+              &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+        pinctrl-names = "default";
+
+        /* Wifi configuration */
+        airoc-wifi {
+          status = "okay";
+          compatible = "infineon,airoc-wifi-sdio";
+
+          /* Wi-Fi control gpios */
+          wifi-reg-on-gpios    = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+          wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
+        };
+      };
+
+compatible: "infineon,airoc-wifi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  wifi-reg-on-gpios:
+    description: |
+      Power-up/down gpio to control the internal regulators used
+      by the WiFi section of AIROC Wi-Fi device.
+    type: phandle-array
+
+  wifi-host-wake-gpios:
+    description: |
+      Host wake-up gpio. Signal from the AIROC Wi-Fi device
+      to the host indicating that the device requires attention.
+    type: phandle-array
+
+  wifi-dev-wake-gpios:
+    description: |
+      WiFi device wake-up gpio. Signal from the host to the
+      AIROC Wi-Fi device indicating that the host requires attention.
+    type: phandle-array
