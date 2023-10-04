@@ -13,8 +13,6 @@ Follow this guide to:
 
 .. _host_setup:
 
-.. rst-class:: numbered-step
-
 Select and Update OS
 ********************
 
@@ -45,8 +43,6 @@ Click the operating system you are using.
       Click *Check for updates* and install any that are available.
 
 .. _install-required-tools:
-
-.. rst-class:: numbered-step
 
 Install dependencies
 ********************
@@ -177,8 +173,6 @@ The current minimum required version for the main dependencies are:
 .. _clone-zephyr:
 .. _install_py_requirements:
 .. _gs_python_deps:
-
-.. rst-class:: numbered-step
 
 Get Zephyr and install Python dependencies
 ******************************************
@@ -476,8 +470,6 @@ additional Python dependencies.
 
                   pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
-.. rst-class:: numbered-step
-
 
 Install Zephyr SDK
 ******************
@@ -643,8 +635,6 @@ that are used to emulate, flash and debug Zephyr applications.
 
 .. _getting_started_run_sample:
 
-.. rst-class:: numbered-step
-
 Build the Blinky Sample
 ***********************
 
@@ -687,8 +677,6 @@ The ``-p always`` option forces a pristine build, and is recommended for new
 users. Users may also use the ``-p auto`` option, which will use
 heuristics to determine if a pristine build is required, such as when building
 another sample.
-
-.. rst-class:: numbered-step
 
 Flash the Sample
 ****************
