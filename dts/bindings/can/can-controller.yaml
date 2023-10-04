@@ -6,7 +6,17 @@ properties:
   bus-speed:
     type: int
     required: true
-    description: bus speed in Baud/s
+    description: |
+      Initial bitrate in bit/s.
+  sample-point:
+    type: int
+    description: |
+      Initial sample point in per mille (e.g. 875 equals 87.5%).
+
+      This property is required unless the timing is specified using time quanta based properties
+      (`sjw`, `prop-seg`, `phase-seg1`, and `phase-seg2`).
+
+      If this property is present, the time quanta based timing properties are ignored.
   sjw:
     type: int
     deprecated: true
@@ -37,12 +47,6 @@ properties:
     description: |
       Initial time quanta of phase buffer 2 segment (ISO 11898-1). Deprecated in favor of setting
       advanced timing parameters from the application.
-  sample-point:
-    type: int
-    description: >
-      Sample point in permille.
-      This param is required if segments are not given.
-      If the sample point is given, the segments are ignored.
   phys:
     type: phandle
     description: |

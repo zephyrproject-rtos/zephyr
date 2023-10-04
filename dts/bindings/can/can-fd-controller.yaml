@@ -6,7 +6,17 @@ properties:
   bus-speed-data:
     type: int
     required: true
-    description: data phase bus speed in Baud/s
+    description: |
+      Initial data phase bitrate in bit/s.
+  sample-point-data:
+    type: int
+    description: |
+      Initial data phase sample point in per mille (e.g. 875 equals 87.5%).
+
+      This property is required unless the timing is specified using time quanta based properties
+      (`sjw-data`, `prop-seg-data`, `phase-seg1-data`, and `phase-seg2-data`).
+
+      If this property is present, the time quanta based timing properties are ignored.
   sjw-data:
     type: int
     deprecated: true
@@ -37,12 +47,6 @@ properties:
     description: |
       Initial time quanta of phase buffer 2 segment for the data phase (ISO11898-1:2015). Deprecated
       in favor of setting advanced timing parameters from the application.
-  sample-point-data:
-    type: int
-    description: >
-      Sample point in permille for the data phase.
-      This param is required if segments are not given.
-      If the sample point is given, the segments are ignored.
   tx-delay-comp-offset:
     type: int
     default: 0
