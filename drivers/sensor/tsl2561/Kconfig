@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Gustavo Silva
+# SPDX-License-Identifier: Apache-2.0
+
+config TSL2561
+	bool "OSRAM-AMS TSL2561 light sensor"
+	default y
+	depends on DT_HAS_AMS_TSL2561_ENABLED
+	select I2C
+	help
+	  Enable driver for TSL2561 sensor.
