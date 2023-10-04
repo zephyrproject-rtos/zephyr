@@ -36,8 +36,8 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1A)
   add_subdirectory(abstraction-rtos)
 endif()
 
-## Add btstack-integration for CYW43xx BT devices
-if (CONFIG_BT_CYW43XXX)
+## Add BT assets for AIROC devices
+if (CONFIG_BT_AIROC)
   add_subdirectory(btstack-integration)
 endif()
 
