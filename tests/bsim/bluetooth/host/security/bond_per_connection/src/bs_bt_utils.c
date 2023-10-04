@@ -88,6 +88,11 @@ DEFINE_FLAG(flag_pairing_complete);
 DEFINE_FLAG(flag_bonded);
 DEFINE_FLAG(flag_not_bonded);
 
+static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+	FAIL("Pairing failed (unexpected): reason %u\n", reason);
+}
+
 static void pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	SET_FLAG(flag_pairing_complete);
@@ -100,6 +105,7 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 }
 
 static struct bt_conn_auth_info_cb bt_conn_auth_info_cb = {
+	.pairing_failed = pairing_failed,
 	.pairing_complete = pairing_complete,
 };
 
