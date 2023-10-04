@@ -508,6 +508,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 
 			uintptr_t link_addr, op_loc, op_code;
 
+			op_loc = loc + rel.r_offset;
+
 			/* If symbol is undefined, then we need to look it up */
 			if (sym.st_shndx == SHN_UNDEF) {
 				link_addr = (uintptr_t)llext_find_sym(NULL, name);
@@ -525,15 +527,16 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 						name, link_addr, op_code);
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION) {
-				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]];
+				/* Current relocation location holds an offset into the section */
+				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
+					+ sym.st_value
+					+ *((uintptr_t *)op_loc);
 
 				LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
 			} else {
 				/* Nothing to relocate here */
 				continue;
 			}
-
-			op_loc = loc + rel.r_offset;
 
 			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
 				"%d link section %d",
