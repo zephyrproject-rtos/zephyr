@@ -285,8 +285,12 @@ static void setup_tcp_accept(struct net_context *tcp_recv6)
 	}
 }
 
-static void listen(void)
+static void listen(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_context *udp_recv6 = { 0 };
 	struct net_context *tcp_recv6 = { 0 };
 
@@ -313,7 +317,7 @@ int main(void)
 	init_app();
 
 	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)listen,
+			listen,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	return 0;
 }
