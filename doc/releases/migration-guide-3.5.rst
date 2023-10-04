@@ -178,6 +178,12 @@ Required changes
   :dtcompatible:`gpio-keys` and the callback definition has been renamed from
   ``INPUT_LISTENER_CB_DEFINE`` to :c:macro:`INPUT_CALLBACK_DEFINE`.
 
+* :c:macro:`CONTAINER_OF` now performs type checking, this was very commonly
+  misused to obtain user structure from :c:struct:`k_work` pointers without
+  passing from :c:struct:`k_work_delayable`. This would now result in a build
+  error and have to be done correctly using
+  :c:func:`k_work_delayable_from_work`.
+
 Recommended Changes
 *******************
 
