@@ -818,6 +818,10 @@ static void thread_memory_write_done(void)
 	uint32_t size = defered_wr_sz;
 	size_t overflowed_len = (curr_offset + size) - BLOCK_SIZE;
 
+	if (BLOCK_SIZE > (curr_offset + size)) {
+		overflowed_len = 0;
+	}
+
 	if (overflowed_len > 0) {
 		memmove(page, &page[BLOCK_SIZE], overflowed_len);
 	}
