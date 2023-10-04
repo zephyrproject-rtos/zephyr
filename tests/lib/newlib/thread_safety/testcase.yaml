@@ -31,6 +31,7 @@ tests:
       - userspace
     min_ram: 192
     timeout: 120
+    platform_exclude: acrn_ehl_crb  # See #61129
   libraries.libc.newlib_nano.thread_safety:
     extra_configs:
       - CONFIG_NEWLIB_LIBC_NANO=y
