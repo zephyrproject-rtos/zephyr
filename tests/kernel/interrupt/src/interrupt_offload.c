@@ -135,6 +135,10 @@ static void trigger_offload_interrupt(const bool real_irq, void *work)
 
 static void t_running(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_give(&sync_sem);
 
 	while (wait_for_end == false) {
@@ -189,7 +193,7 @@ static void run_test_offload(int case_type, int real_irq)
 	}
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)t_running,
+			t_running,
 			NULL, NULL, NULL, thread_prio,
 			K_INHERIT_PERMS, K_NO_WAIT);
 

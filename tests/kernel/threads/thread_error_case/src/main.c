@@ -35,6 +35,9 @@ static void test_thread(void *p1, void *p2, void *p3)
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int choice = *((int *)p1);
 	uint32_t perm = K_INHERIT_PERMS;
 
@@ -114,7 +117,7 @@ static void create_negative_test_thread(int choice)
 	case_type = choice;
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)tThread_entry_negative,
+			tThread_entry_negative,
 			(void *)&case_type, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);

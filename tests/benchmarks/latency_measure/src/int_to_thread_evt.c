@@ -60,14 +60,18 @@ static void worker(struct k_work *item)
  *
  * @return 0 on success
  */
-void int_thread(void)
+void int_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	k_sem_take(&INTSEMA, K_FOREVER);
 	irq_offload(latency_test_isr, NULL);
 	k_thread_suspend(k_current_get());
 }
 
-K_THREAD_DEFINE(int_thread_id, 512, (k_thread_entry_t)int_thread, NULL, NULL,
+K_THREAD_DEFINE(int_thread_id, 512, int_thread, NULL, NULL,
 		NULL, 11, 0, 0);
 
 /**
