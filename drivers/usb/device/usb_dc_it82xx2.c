@@ -471,20 +471,18 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep_idx,
 	return 0;
 }
 
-static int it82xx2_usb_dc_ip_init(uint8_t p_action)
+static int it82xx2_usb_dc_ip_init(void)
 {
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
 
-	if (p_action == 0) {
-		/* Reset Device Controller */
-		usb_regs->host_device_control = RESET_CORE;
-		k_msleep(1);
-		usb_regs->port0_misc_control &= ~(PULL_DOWN_EN);
-		usb_regs->port1_misc_control &= ~(PULL_DOWN_EN);
-		/* clear reset bit */
-		usb_regs->host_device_control = 0;
-	}
+	/* Reset Device Controller */
+	usb_regs->host_device_control = RESET_CORE;
+	k_msleep(1);
+	usb_regs->port0_misc_control &= ~(PULL_DOWN_EN);
+	usb_regs->port1_misc_control &= ~(PULL_DOWN_EN);
+	/* clear reset bit */
+	usb_regs->host_device_control = 0;
 
 	usb_regs->dc_interrupt_status =
 		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
@@ -508,7 +506,7 @@ static int it82xx2_usb_dc_attach_init(void)
 	gctrl_regs->GCTRL_MCCR &= ~(IT8XXX2_GCTRL_MCCR_USB_EN);
 	gctrl_regs->gctrl_pmer2 |= IT8XXX2_GCTRL_PMER2_USB_PAD_EN;
 
-	return it82xx2_usb_dc_ip_init(0);
+	return it82xx2_usb_dc_ip_init();
 }
 
 /* Check the condition that SETUP_TOKEN following OUT_TOKEN and return it */
@@ -568,8 +566,6 @@ static int it82xx2_setup_done(uint8_t ep_ctrl, uint8_t idx)
 	/* Set ready bit to no-data control in */
 	if (udata0.no_data_ctrl) {
 		ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
-		LOG_DBG("(%d): Set Ready Bit for no-data control", __LINE__);
-
 		udata0.no_data_ctrl = false;
 	}
 
@@ -629,7 +625,6 @@ static int it82xx2_in_done(uint8_t ep_ctrl, uint8_t idx)
 
 	if (udata0.st_state == DIN_ST && udata0.ep_data[EP0].remaining == 0) {
 		ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
-		LOG_DBG("Set EP%d Ready (%d)", idx, __LINE__);
 	}
 
 	return 0;
@@ -661,7 +656,7 @@ static int it82xx2_out_done(uint8_t idx)
 
 	/* SETUP_TOKEN follow OUT_TOKEN */
 	if (it82xx2_check_setup_following_out()) {
-		LOG_WRN("[%s] OUT => SETUP", __func__);
+		LOG_DBG("[%s] OUT => SETUP", __func__);
 		udata0.last_token = udata0.now_token;
 		udata0.now_token = SETUP_TOKEN;
 		udata0.st_state = SETUP_ST;
@@ -671,7 +666,6 @@ static int it82xx2_out_done(uint8_t idx)
 		/* NOTE: set ready bit to no-data control in */
 		if (udata0.no_data_ctrl) {
 			ep_regs[EP0].ep_ctrl |= ENDPOINT_RDY;
-			LOG_DBG("Set Ready Bit for no-data control");
 			udata0.no_data_ctrl = false;
 		}
 	}
@@ -790,13 +784,7 @@ static void it82xx2_usb_dc_isr(void)
 			RX_LINE_RESET) {
 			usb_dc_reset();
 			usb_regs->dc_interrupt_status = DC_RESET_EVENT;
-
-			if (udata0.usb_status_cb) {
-				(*(udata0.usb_status_cb))(USB_DC_RESET, NULL);
-			}
-
 			return;
-
 		} else {
 			usb_regs->dc_interrupt_status = DC_RESET_EVENT;
 		}
@@ -1133,13 +1121,12 @@ int usb_dc_ep_enable(const uint8_t ep)
 	}
 
 	if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
-		LOG_DBG("ep_idx < 4");
 		ep_regs[ep_idx].ep_ctrl |= ENDPOINT_EN;
-		LOG_DBG("EP%d Enabled %02x", ep_idx, ep_regs[ep_idx].ep_ctrl);
 	} else {
-		LOG_DBG("ep_idx >= 4");
 		it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_ENABLE);
 	}
+
+	LOG_DBG("Endpoint 0x%02x is enabled", ep);
 
 	return 0;
 }
@@ -1380,7 +1367,6 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 
 		if (ep_idx > EP0) {
 			ep_regs[ep_idx].ep_ctrl |= ENDPOINT_RDY;
-			LOG_DBG("Set EP%d Ready(%d)", ep_idx, __LINE__);
 		}
 
 		return 0;
@@ -1453,7 +1439,6 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 		if (ep_fifo > EP0) {
 			ep_regs[ep_fifo].ep_ctrl |= ENDPOINT_RDY;
 			it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_READY);
-			LOG_DBG("(%d): Set EP%d Ready", __LINE__, ep_idx);
 			udata0.ep_ready[ep_fifo - 1] = true;
 		} else if (udata0.now_token == SETUP_TOKEN) {
 
@@ -1466,8 +1451,6 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 					/* set status IN after data OUT */
 					ep_regs[EP0].ep_ctrl |=
 					ENDPOINT_RDY | EP_OUTDATA_SEQ;
-					LOG_DBG("Set EP%d Ready(%d)",
-						ep_idx, __LINE__);
 				} else {
 					/* no_data_ctrl status */
 
@@ -1523,10 +1506,6 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	}
 
 	LOG_DBG("Read %d packets", *read_bytes);
-
-	if (ep_idx > EP0) {
-		LOG_DBG("RX buf[0]: 0x%02X", buf[0]);
-	}
 
 	return 0;
 }
