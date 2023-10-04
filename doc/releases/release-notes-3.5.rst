@@ -313,6 +313,9 @@ Drivers and Sensors
 
 * Sensor
 
+  * Reworked the :dtcompatible:`ti,bq274xx` to add ``BQ27427`` support, fixed
+    units for capacity and power channels.
+
 * Serial
 
   * Added support for Nuvoton NuMaker M46x
