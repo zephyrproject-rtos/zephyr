@@ -45,7 +45,6 @@ struct i2c_gecko_data {
 	uint32_t dev_config;
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_target_config *target_cfg;
-	volatile bool target_read;
 #endif
 };
 
@@ -81,9 +80,6 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 	struct i2c_gecko_data *data = dev->data;
 	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
 	uint32_t baudrate;
-#if defined(CONFIG_I2C_TARGET)
-	const struct i2c_gecko_config *config = dev->config;
-#endif
 
 	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
@@ -108,7 +104,6 @@ static int i2c_gecko_configure(const struct device *dev, uint32_t dev_config_raw
 
 #if defined(CONFIG_I2C_TARGET)
 	i2cInit.master = 0;
-	BUS_RegBitWrite(&(config->base->CTRL), _I2C_CTRL_AUTOACK_SHIFT, 1);
 #endif
 
 	I2C_Init(base, &i2cInit);
@@ -212,7 +207,8 @@ static int i2c_gecko_target_register(const struct device *dev, struct i2c_target
 	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_SADDRMASK_MASK);
 
 	I2C_IntDisable(config->base, _I2C_IEN_MASK);
-	I2C_IntEnable(config->base, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);
+	I2C_IntEnable(config->base, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_ACK | I2C_IEN_SSTOP |
+					    I2C_IEN_BUSERR | I2C_IEN_ARBLOST);
 
 	config->irq_config_func(dev);
 
@@ -242,57 +238,60 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 };
 
 #if defined(CONFIG_I2C_TARGET)
-static void i2c_gecko_isr(const struct device *dev)
+void i2c_gecko_isr(const struct device *dev)
 {
 	const struct i2c_gecko_config *config = dev->config;
 	struct i2c_gecko_data *data = dev->data;
-	uint32_t status;
-	uint32_t rx_data;
+
+	uint32_t pending;
+	uint32_t rx_byte;
 	uint8_t tx_byte;
 
-	status = config->base->IF;
+	pending = config->base->IF;
 
-	if (status & I2C_IF_ADDR && status & I2C_IF_RXDATAV) {
-		/* Address Match */
-		rx_data = config->base->RXDATA;
-		if (rx_data & 0x1) {
-			data->target_read = true;
+	/* If some sort of fault, abort transfer. */
+	if (pending & (I2C_IF_BUSERR | I2C_IF_ARBLOST)) {
+		LOG_ERR("I2C Bus Error");
+		I2C_IntClear(config->base, I2C_IF_BUSERR);
+		I2C_IntClear(config->base, I2C_IF_ARBLOST);
+	} else {
+		if (pending & I2C_IF_ADDR) {
+			/* Address Match, indicating that reception is started */
+			rx_byte = config->base->RXDATA;
+			config->base->CMD = I2C_CMD_ACK;
 
-			data->target_cfg->callbacks->read_requested(data->target_cfg, &tx_byte);
+			/* Check if read bit set */
+			if (rx_byte & 0x1) {
+				data->target_cfg->callbacks->read_requested(data->target_cfg,
+									    &tx_byte);
+				config->base->TXDATA = tx_byte;
+			} else {
+				data->target_cfg->callbacks->write_requested(data->target_cfg);
+			}
+
+			I2C_IntClear(config->base, I2C_IF_ADDR | I2C_IF_RXDATAV);
+		} else if (pending & I2C_IF_RXDATAV) {
+			rx_byte = config->base->RXDATA;
+			/* Read new data and write to target address */
+			data->target_cfg->callbacks->write_received(data->target_cfg, rx_byte);
+			config->base->CMD = I2C_CMD_ACK;
+
+			I2C_IntClear(config->base, I2C_IF_RXDATAV);
+		}
+
+		if (pending & I2C_IF_ACK) {
+			/* Leader ACK'ed, so requesting more data */
+			data->target_cfg->callbacks->read_processed(data->target_cfg, &tx_byte);
 			config->base->TXDATA = tx_byte;
 
-			I2C_IntEnable(config->base, I2C_IEN_BUSHOLD);
-		} else {
-			data->target_read = false;
-			data->target_cfg->callbacks->write_requested(data->target_cfg);
+			I2C_IntClear(config->base, I2C_IF_ACK);
 		}
-		I2C_IntClear(config->base, I2C_IF_ADDR);
-		I2C_IntClear(config->base, I2C_IF_RXDATAV);
-	} else if (status & I2C_IF_RXDATAV) {
-		if (data->target_read == true) {
-			LOG_ERR("Unexpected Data");
-		} else {
-			rx_data = config->base->RXDATA;
-			data->target_cfg->callbacks->write_received(data->target_cfg, rx_data);
+
+		if (pending & I2C_IF_SSTOP) {
+			/* End of transaction */
+			data->target_cfg->callbacks->stop(data->target_cfg);
+			I2C_IntClear(config->base, I2C_IF_SSTOP);
 		}
-		I2C_IntClear(config->base, I2C_IF_RXDATAV);
-	} else if (data->target_read && status & I2C_IF_BUSHOLD && !(status & I2C_IF_SSTOP)) {
-		data->target_cfg->callbacks->read_processed(data->target_cfg, &tx_byte);
-		config->base->TXDATA = tx_byte;
-
-		I2C_IntClear(config->base, I2C_IF_BUSHOLD);
-	}
-
-	if (status & I2C_IF_SSTOP) {
-		if (config->base->STATUS & I2C_STATUS_RXDATAV) {
-			LOG_ERR("Still valid data");
-		}
-		/* Stop received, reception is ended */
-		data->target_cfg->callbacks->stop(data->target_cfg);
-
-		I2C_IntClear(config->base, I2C_IF_SSTOP);
-		I2C_IntClear(config->base, I2C_IF_BUSHOLD);
-		I2C_IntDisable(config->base, I2C_IEN_BUSHOLD);
 	}
 }
 #endif
