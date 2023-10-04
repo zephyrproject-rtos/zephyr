@@ -1157,6 +1157,9 @@ This has been fixed in main for v3.0.0
 - `PR 42167 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
 
+CVE-2022
+========
+
 CVE-2022-0553
 -------------
 
@@ -1263,6 +1266,9 @@ DoS: Invalid Initialization in le_read_buffer_size_complete()
 
 - `Zephyr project bug tracker GHSA-w525-fm68-ppq3
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-w525-fm68-ppq3>`_
+
+CVE-2023
+========
 
 CVE-2023-0396
 -------------
