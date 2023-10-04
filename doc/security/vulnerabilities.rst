@@ -1339,6 +1339,11 @@ This has been fixed in main for v3.4.0
 - `PR 56709 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
 
+CVE-2023-4257
+-------------
+
+Under embargo until 2023/10/12
+
 CVE-2023-4258
 -------------
 
@@ -1404,6 +1409,21 @@ This has been fixed in main for v3.4.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/59157>`_
 - `PR 59018 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/59018>`_
+
+CVE-2023-4424
+-------------
+
+Under embargo until 2023/11/01
+
+CVE-2023-5055
+-------------
+
+Under embargo until 2023/11/01
+
+CVE-2023-5139
+-------------
+
+Under embargo until 2023/10/25
 
 CVE-2023-5184
 -------------
