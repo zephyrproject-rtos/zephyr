@@ -113,6 +113,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned int key = arch_irq_lock();
 	uint32_t dt, start_ms = k_uptime_get_32();
 
@@ -159,7 +160,7 @@ void z_impl_z_test_1cpu_start(void)
 	 */
 	for (int i = 0; i < num_cpus - 1; i++) {
 		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				(k_thread_entry_t)cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
+				cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
 				0, K_NO_WAIT);
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
@@ -558,7 +559,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		get_start_time_cyc();
 		k_thread_create(&ztest_thread, ztest_thread_stack,
 				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
-				(k_thread_entry_t)test_cb, suite, test, data,
+				test_cb, suite, test, data,
 				CONFIG_ZTEST_THREAD_PRIORITY,
 				K_INHERIT_PERMS, K_FOREVER);
 
