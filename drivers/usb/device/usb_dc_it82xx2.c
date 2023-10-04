@@ -211,12 +211,13 @@ static const uint8_t ep_fifo_res[3] = {3, 1, 2};
 /* Mapping the enum it82xx2_extend_ep_ctrl code to their corresponding bit in
  * the EP45/67/89/1011/1213/1415 Extended Control Registers.
  */
-static const uint8_t ext_ctrl_tbl[7] = {
+static const uint8_t ext_ctrl_tbl[8] = {
 	EPN0_ISO_ENABLE,
 	EPN0_ISO_ENABLE,
 	EPN0_SEND_STALL,
 	EPN0_SEND_STALL,
 	EPN0_SEND_STALL,
+	EPN0_OUTDATA_SEQ,
 	EPN0_OUTDATA_SEQ,
 	EPN0_OUTDATA_SEQ,
 };
@@ -363,9 +364,8 @@ static void it82xx2_epn0n1_ext_ctrl_cfg_seq_inv(uint8_t reg_idx,
 	volatile uint8_t *epn0n1_ext_ctrl =
 		usb_regs->fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl;
 
-	bool check = (set_clr) ?
-		(epn0n1_ext_ctrl[reg_idx] & EPN0_OUTDATA_SEQ) :
-		(epn0n1_ext_ctrl[reg_idx] & EPN1_OUTDATA_SEQ);
+	bool check = (set_clr) ? (epn0n1_ext_ctrl[reg_idx] & EPN1_OUTDATA_SEQ)
+			       : (epn0n1_ext_ctrl[reg_idx] & EPN0_OUTDATA_SEQ);
 
 	(check) ? (epn0n1_ext_ctrl[reg_idx] &= ~(bit_mask)) :
 		(epn0n1_ext_ctrl[reg_idx] |= bit_mask);
@@ -441,7 +441,11 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep_idx,
 	if ((ctrl >= EXT_EP_DIR_IN) && (ctrl < EXT_EP_READY)) {
 		/* From EXT_EP_DIR_IN to EXT_EP_DISABLE */
 		reg_idx = ep_fifo_res[ep_idx % FIFO_NUM];
-		mask = 1 << (ext_ep_bit_shift[ep_idx - 4] * 2 + 1);
+		if (ctrl == EXT_EP_DIR_IN || ctrl == EXT_EP_DIR_OUT) {
+			mask = BIT(ext_ep_bit_shift[ep_idx - 4] * 2 + 1);
+		} else {
+			mask = BIT(ext_ep_bit_shift[ep_idx - 4] * 2);
+		}
 		flag = epn_ext_ctrl_tbl[ctrl - EXT_EP_DIR_IN];
 		it82xx2_epn_ext_ctrl_cfg1(reg_idx, mask, flag);
 
@@ -451,13 +455,28 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep_idx,
 		flag = !!(ep_idx & 1);
 		mask = flag ? (ext_ctrl_tbl[ctrl] << 4) : (ext_ctrl_tbl[ctrl]);
 
-		if (ctrl == EXT_EP_CHECK_STALL) {
+		switch (ctrl) {
+		case EXT_EP_CHECK_STALL:
 			return it82xx2_epn01n1_check_stall(reg_idx, mask);
-		} else if (ctrl == EXT_EP_DATA_SEQ_INV) {
-			it82xx2_epn0n1_ext_ctrl_cfg_seq_inv(
-				reg_idx, mask, flag);
-		} else {
-			it82xx2_epn0n1_ext_ctrl_cfg(reg_idx, mask, flag);
+		case EXT_EP_DATA_SEQ_INV:
+			it82xx2_epn0n1_ext_ctrl_cfg_seq_inv(reg_idx, mask, flag);
+			break;
+		case EXT_EP_ISO_DISABLE:
+			__fallthrough;
+		case EXT_EP_CLEAR_STALL:
+			__fallthrough;
+		case EXT_EP_DATA_SEQ_0:
+			it82xx2_epn0n1_ext_ctrl_cfg(reg_idx, mask, false);
+			break;
+		case EXT_EP_ISO_ENABLE:
+			__fallthrough;
+		case EXT_EP_SEND_STALL:
+			__fallthrough;
+		case EXT_EP_DATA_SEQ_1:
+			it82xx2_epn0n1_ext_ctrl_cfg(reg_idx, mask, true);
+			break;
+		default:
+			break;
 		}
 	} else if (ctrl == EXT_EP_READY) {
 		reg_idx = (ep_idx - 4) >> 1;
@@ -1125,6 +1144,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 	if (!IT8XXX2_IS_EXTEND_ENDPOINT(ep_idx)) {
 		ep_regs[ep_idx].ep_ctrl |= ENDPOINT_EN;
 	} else {
+		uint8_t ep_fifo = ep_fifo_res[ep_idx % FIFO_NUM];
+
+		ep_regs[ep_fifo].ep_ctrl |= ENDPOINT_EN;
 		it82xx2_usb_extend_ep_ctrl(ep_idx, EXT_EP_ENABLE);
 	}
 
