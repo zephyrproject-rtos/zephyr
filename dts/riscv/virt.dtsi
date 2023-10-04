@@ -164,7 +164,7 @@
 
 		plic: interrupt-controller@c000000 {
 			riscv,max-priority = <7>;
-			riscv,ndev = < 0x35 >;
+			riscv,ndev = < 1024 >;
 			reg = <0x0c000000 0x04000000>;
 			interrupts-extended = <
 				&hlic0 0x0b &hlic0 0x09
