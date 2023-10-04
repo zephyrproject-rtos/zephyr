@@ -667,7 +667,7 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 	struct json_obj_key_value kv;
 	int64_t decoded_fields = 0;
 	size_t i;
-	int ret;
+	int64_t ret;
 
 	while (!obj_next(obj, &kv)) {
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
