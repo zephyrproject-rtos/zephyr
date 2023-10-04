@@ -4,3 +4,15 @@ config USBC_VBUS_FUSB302B
 	depends on DT_HAS_FCS_FUSB302B_VBUS_ENABLED
 	help
 	  Measure VBUS with FUSB302B
+
+if USBC_VBUS_FUSB302B
+
+config EMUL_VBUS_FUSB302B
+	bool "Emulate a FUSB302B (VBUS)"
+	default y
+	depends on EMUL
+	depends on USBC_VBUS_FUSB302B
+	help
+	  This is an emulator for the FUSB302B VBUS component.
+
+endif
