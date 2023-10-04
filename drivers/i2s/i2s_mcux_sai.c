@@ -660,9 +660,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("tx slab free_list = 0x%x",
 			(uint32_t)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("tx slab num_blocks = %d",
-			(uint32_t)i2s_cfg->mem_slab->num_blocks);
+			(uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("tx slab block_size = %d",
-			(uint32_t)i2s_cfg->mem_slab->block_size);
+			(uint32_t)i2s_cfg->mem_slab->info.block_size);
 		LOG_DBG("tx slab buffer = 0x%x",
 			(uint32_t)i2s_cfg->mem_slab->buffer);
 
@@ -693,9 +693,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("rx slab free_list = 0x%x",
 			(uint32_t)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("rx slab num_blocks = %d",
-			(uint32_t)i2s_cfg->mem_slab->num_blocks);
+			(uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("rx slab block_size = %d",
-			(uint32_t)i2s_cfg->mem_slab->block_size);
+			(uint32_t)i2s_cfg->mem_slab->info.block_size);
 		LOG_DBG("rx slab buffer = 0x%x",
 			(uint32_t)i2s_cfg->mem_slab->buffer);
 
