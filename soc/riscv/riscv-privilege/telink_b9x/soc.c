@@ -31,6 +31,10 @@
 #define CLK_60MHZ                   60000000u
 #define CLK_96MHZ                   96000000u
 
+/* MID register flash size */
+#define FLASH_MID_SIZE_OFFSET       16
+#define FLASH_MID_SIZE_MASK         0x00ff0000
+
 /* Power Mode value */
 #if CONFIG_SOC_RISCV_TELINK_B91
 	#if DT_ENUM_IDX(DT_NODELABEL(power), power_mode) == 0
@@ -238,4 +242,49 @@ void soc_b9x_restore(void)
 	}
 }
 
+/**
+ * @brief Check mounted flash size (should be greater than in .dts).
+ */
+static int soc_b9x_check_flash(void)
+{
+	static const size_t dts_flash_size = DT_REG_SIZE(DT_CHOSEN(zephyr_flash));
+	size_t hw_flash_size = 0;
+
+	const flash_capacity_e hw_flash_cap =
+		(flash_read_mid() & FLASH_MID_SIZE_MASK) >> FLASH_MID_SIZE_OFFSET;
+
+	switch (hw_flash_cap) {
+	case FLASH_SIZE_1M:
+		hw_flash_size = 1 * 1024 * 1024;
+		break;
+	case FLASH_SIZE_2M:
+		hw_flash_size = 2 * 1024 * 1024;
+		break;
+	case FLASH_SIZE_4M:
+		hw_flash_size = 4 * 1024 * 1024;
+		break;
+	case FLASH_SIZE_8M:
+		hw_flash_size = 8 * 1024 * 1024;
+		break;
+#if CONFIG_SOC_RISCV_TELINK_B92
+	case FLASH_SIZE_16M:
+		hw_flash_size = 16 * 1024 * 1024;
+		break;
+#endif /* CONFIG_SOC_RISCV_TELINK_B92 */
+	default:
+		break;
+	}
+
+	if (hw_flash_size < dts_flash_size) {
+		printk("!!! flash error: expected (.dts) %u, actually %u\n",
+			dts_flash_size, hw_flash_size);
+		extern void abort(void);
+		abort();
+	}
+
+	return 0;
+}
+
 SYS_INIT(soc_b9x_init, PRE_KERNEL_1, 0);
+
+SYS_INIT(soc_b9x_check_flash, POST_KERNEL, 0);
