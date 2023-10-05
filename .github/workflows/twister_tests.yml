@@ -9,6 +9,7 @@ on:
     - main
     - v*-branch
     paths:
+    - 'scripts/pylib/build_helpers/domains.py'
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
@@ -18,6 +19,7 @@ on:
     - main
     - v*-branch
     paths:
+    - 'scripts/pylib/build_helpers/domains.py'
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'

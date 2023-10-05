@@ -10,6 +10,7 @@ Domain class.
 
 from dataclasses import dataclass
 
+
 import yaml
 import pykwalify.core
 import logging
