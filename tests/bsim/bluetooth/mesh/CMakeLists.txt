@@ -30,6 +30,7 @@ if(CONFIG_SETTINGS)
    src/test_dfu.c
    src/test_blob.c
    src/test_sar.c
+   src/test_lcd.c
  )
  endif()
 
@@ -78,7 +79,6 @@ else()
    src/test_blob.c
    src/test_op_agg.c
    src/test_sar.c
-   src/test_lcd.c
   )
  endif()
 

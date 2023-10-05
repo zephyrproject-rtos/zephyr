@@ -6,6 +6,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # Test that the LCD server model is able to split the
 # composition data when the total size exceeds the maximum access message size.
+# The test environment simulates a scenario where the server has completed DFU.
 #
 # Test procedure:
 # 0. Provisioning and setup. Server and client has same comp data.
@@ -20,10 +21,13 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 6. Client merges the two samples and checks that the collected data is
 #    correctly merged, continuous, and matches its local comp data.
 conf=prj_mesh1d1_conf
-RunTest mesh_lcd_test_split_comp_data \
-	lcd_cli_split_comp_data_request lcd_srv_comp_data_status_respond
+overlay=overlay_pst_conf
+RunTest mesh_lcd_test_comp129_data_split_dfu \
+	lcd_srv_comp_data_status_respond \
+	lcd_cli_split_comp_data_request -- -argstest page=129 comp-changed-mode=1
 
 conf=prj_mesh1d1_conf
-overlay=overlay_psa_conf
-RunTest mesh_lcd_test_split_comp_data_psa \
-	lcd_cli_split_comp_data_request lcd_srv_comp_data_status_respond
+overlay="overlay_pst_conf_overlay_psa_conf"
+RunTest mesh_lcd_test_comp129_data_split_dfu \
+	lcd_srv_comp_data_status_respond \
+	lcd_cli_split_comp_data_request -- -argstest page=129 comp-changed-mode=1
