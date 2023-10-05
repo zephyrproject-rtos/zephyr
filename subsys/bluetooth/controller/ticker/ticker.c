@@ -1257,6 +1257,7 @@ void ticker_worker(void *param)
 	uint32_t ticks_elapsed;
 	uint32_t ticks_expired;
 	uint8_t ticker_id_head;
+	uint32_t ticks_now;
 
 	/* Defer worker if job running */
 	instance->worker_trigger = 1U;
@@ -1270,8 +1271,10 @@ void ticker_worker(void *param)
 		return;
 	}
 
+	ticks_now = cntr_cnt_get();
+
 	/* Get ticks elapsed since last job execution */
-	ticks_elapsed = ticker_ticks_diff_get(cntr_cnt_get(),
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now,
 					      instance->ticks_current);
 
 	/* Initialize actual elapsed ticks being consumed */
