@@ -24,14 +24,6 @@ include: [spi-device.yaml, ws2812.yaml]
 
 properties:
 
-  spi-cpol:
-    type: boolean
-    description: Set SPI clock polarity.
-
-  spi-cpha:
-    type: boolean
-    description: Set SPI clock phase.
-
   spi-one-frame:
     type: int
     required: true
