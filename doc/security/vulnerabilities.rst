@@ -1363,6 +1363,19 @@ This has been fixed in main for v3.5.0
 - `PR 60079 fix for 3.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/60079>`_
 
+CVE-2023-4260
+-------------
+
+Off-by-one buffer overflow vulnerability in the Zephyr FS subsystem
+
+- `Zephyr project bug tracker GHSA-gj27-862r-55wh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gj27-862r-55wh>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63079 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63079>`_
+
 CVE-2023-4262
 -------------
 
