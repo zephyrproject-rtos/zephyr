@@ -2532,6 +2532,36 @@ next_state:
 				break;
 			}
 
+			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
+
+			/* Check if v4-mapping-to-v6 needs to be done for
+			 * the accepted socket.
+			 */
+			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+			    net_context_get_family(conn->context) == AF_INET &&
+			    net_context_get_family(context) == AF_INET6 &&
+			    !net_context_is_v6only_set(context)) {
+				struct in6_addr mapped;
+
+				net_ipv6_addr_create_v4_mapped(
+					&net_sin(&conn->context->remote)->sin_addr,
+					&mapped);
+				net_ipaddr_copy(&net_sin6(&conn->context->remote)->sin6_addr,
+						&mapped);
+
+				net_sin6(&conn->context->remote)->sin6_family = AF_INET6;
+
+				NET_DBG("Setting v4 mapped address %s",
+					net_sprint_ipv6_addr(&mapped));
+
+				/* Note that we cannot set the local address to IPv6 one
+				 * as that is used to match the connection, and not just
+				 * for printing. The remote address is only used for
+				 * passing it to accept() and printing it by "net conn"
+				 * command.
+				 */
+			}
+
 			accept_cb(conn->context, &context->remote,
 				  sizeof(struct sockaddr), 0, context);
 
