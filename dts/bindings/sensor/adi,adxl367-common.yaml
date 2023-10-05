@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  odr:
+    type: int
+    default: 0
+    description: |
+          Accelerometer sampling frequency (ODR). Default is power on reset value.
+            0 # 12.5Hz
+            1 # 25Hz
+            2 # 50Hz
+            3 # 100Hz
+            4 # 200Hz
+            5 # 400Hz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
