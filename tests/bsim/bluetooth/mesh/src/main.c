@@ -14,6 +14,7 @@ extern struct bst_test_list *test_provision_pst_install(struct bst_test_list *te
 #if defined(CONFIG_BT_MESH_V1d1)
 extern struct bst_test_list *test_dfu_install(struct bst_test_list *test);
 extern struct bst_test_list *test_blob_pst_install(struct bst_test_list *test);
+extern struct bst_test_list *test_lcd_install(struct bst_test_list *test);
 extern struct bst_test_list *test_sar_pst_install(struct bst_test_list *test);
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -39,7 +40,6 @@ extern struct bst_test_list *test_adv_install(struct bst_test_list *test);
 extern struct bst_test_list *test_blob_install(struct bst_test_list *test);
 extern struct bst_test_list *test_op_agg_install(struct bst_test_list *test);
 extern struct bst_test_list *test_sar_install(struct bst_test_list *test);
-extern struct bst_test_list *test_lcd_install(struct bst_test_list *test);
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #endif
 
@@ -51,6 +51,7 @@ bst_test_install_t test_installers[] = {
 	test_provision_pst_install,
 	test_dfu_install,
 	test_blob_pst_install,
+	test_lcd_install,
 	test_sar_pst_install,
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -75,7 +76,6 @@ bst_test_install_t test_installers[] = {
 	test_blob_install,
 	test_op_agg_install,
 	test_sar_install,
-	test_lcd_install,
 #endif /* defined(CONFIG_BT_MESH_V1d1) */
 #endif
 	NULL
