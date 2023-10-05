@@ -169,7 +169,7 @@ static bool is_substring(const char *substr, const char *str)
 	}
 
 	for (size_t pos = 0; pos < str_len; pos++) {
-		if (tolower(substr[0]) == tolower(str[pos])) {
+		if (tolower(substr[pos]) == tolower(str[pos])) {
 			if (pos + sub_str_len > str_len) {
 				return false;
 			}
