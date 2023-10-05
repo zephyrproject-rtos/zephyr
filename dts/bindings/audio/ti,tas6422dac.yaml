@@ -10,3 +10,23 @@ include: i2c-device.yaml
 properties:
   mute-gpios:
     type: phandle-array
+
+  tdm-slots:
+    type: string
+    description:
+      TDM slots selection. The default is set to the reset value (slots 1-2)
+    default: "1-2"
+    enum:
+      - "1-2"
+      - "3-4"
+      - "5-6"
+      - "7-8"
+
+  tdm-slot-size:
+    type: string
+    description:
+      TDM slot size. The default is set to the reset value (slot size 24-bit or 32-bit)
+    default: "24-bit or 32-bit"
+    enum:
+      - "24-bit or 32-bit"
+      - "16-bit"

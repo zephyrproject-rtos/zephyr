@@ -22,16 +22,6 @@ LOG_MODULE_REGISTER(tas6422dac);
 #define CODEC_OUTPUT_VOLUME_MAX (24 * 2)
 #define CODEC_OUTPUT_VOLUME_MIN (-100 * 2)
 
-struct codec_driver_config {
-	struct i2c_dt_spec bus;
-#if TAS6422DAC_MUTE_GPIO_SUPPORT
-	struct gpio_dt_spec mute_gpio;
-#endif /* TAS6422DAC_MUTE_GPIO_SUPPORT */
-};
-
-struct codec_driver_data {
-};
-
 enum tas6422dac_channel_t {
 	TAS6422DAC_CHANNEL_1,
 	TAS6422DAC_CHANNEL_2,
@@ -50,6 +40,30 @@ static enum tas6422dac_channel_t audio_to_tas6422dac_channel[] = {
 	[AUDIO_CHANNEL_SIDE_LEFT] = TAS6422DAC_CHANNEL_1,
 	[AUDIO_CHANNEL_SIDE_RIGHT] = TAS6422DAC_CHANNEL_2,
 	[AUDIO_CHANNEL_ALL] = TAS6422DAC_CHANNEL_ALL,
+};
+
+enum tas6422dac_tdm_slots_t {
+	TAS6422DAC_TDM_SLOTS_1_2 = 0,
+	TAS6422DAC_TDM_SLOTS_3_4 = 1,
+	TAS6422DAC_TDM_SLOTS_5_6 = 2,
+	TAS6422DAC_TDM_SLOTS_7_8 = 3,
+};
+
+enum tas6422dac_tdm_slot_size_t {
+	TAS6422DAC_TDM_SLOT_SIZE_24_32_BIT = 0,
+	TAS6422DAC_TDM_SLOT_SIZE_16_BIT = 1,
+};
+
+struct codec_driver_config {
+	struct i2c_dt_spec bus;
+	enum tas6422dac_tdm_slots_t tdm_slots;
+	enum tas6422dac_tdm_slot_size_t tdm_slot_size;
+#if TAS6422DAC_MUTE_GPIO_SUPPORT
+	struct gpio_dt_spec mute_gpio;
+#endif /* TAS6422DAC_MUTE_GPIO_SUPPORT */
+};
+
+struct codec_driver_data {
 };
 
 static void codec_mute_output(const struct device *dev, enum tas6422dac_channel_t channel);
@@ -244,6 +258,7 @@ static void codec_soft_reset(const struct device *dev)
 
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 {
+	const struct codec_driver_config *const dev_cfg = dev->config;
 	uint8_t val;
 
 	codec_read_reg(dev, SAP_CTRL_ADDR, &val);
@@ -266,6 +281,40 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 		break;
 	default:
 		LOG_ERR("Invalid sampling rate %zu", cfg->i2s.frame_clk_freq);
+		return -EINVAL;
+	}
+
+	/* TDM slots */
+	val &= ~(SAP_CTRL_TDM_SLOT_SELECT_MASK | SAP_CTRL_TDM_SLOT_SELECT_2_MASK);
+	switch (dev_cfg->tdm_slots) {
+	case TAS6422DAC_TDM_SLOTS_1_2:
+		val |= 0;
+		break;
+	case TAS6422DAC_TDM_SLOTS_3_4:
+		val |= SAP_CTRL_TDM_SLOT_SELECT_2;
+		break;
+	case TAS6422DAC_TDM_SLOTS_5_6:
+		val |= SAP_CTRL_TDM_SLOT_SELECT;
+		break;
+	case TAS6422DAC_TDM_SLOTS_7_8:
+		val |= SAP_CTRL_TDM_SLOT_SELECT | SAP_CTRL_TDM_SLOT_SELECT_2;
+		break;
+	default:
+		LOG_ERR("Invalid TDM slots %u", dev_cfg->tdm_slots);
+		return -EINVAL;
+	}
+
+	/* TDM slot size */
+	val &= ~SAP_CTRL_TDM_SLOT_SIZE_MASK;
+	switch (dev_cfg->tdm_slot_size) {
+	case TAS6422DAC_TDM_SLOT_SIZE_24_32_BIT:
+		val |= 0;
+		break;
+	case TAS6422DAC_TDM_SLOT_SIZE_16_BIT:
+		val |= SAP_CTRL_TDM_SLOT_SIZE;
+		break;
+	default:
+		LOG_ERR("Invalid TDM slot size %u", dev_cfg->tdm_slot_size);
 		return -EINVAL;
 	}
 
@@ -370,7 +419,10 @@ static const struct audio_codec_api codec_driver_api = {
 	static struct codec_driver_data codec_device_data_##n;                                     \
                                                                                                    \
 	static struct codec_driver_config codec_device_config_##n = {                              \
-		.bus = I2C_DT_SPEC_INST_GET(n), TAS6422DAC_MUTE_GPIO_INIT(n)};                     \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.tdm_slots = DT_ENUM_IDX(DT_DRV_INST(n), tdm_slots),                               \
+		.tdm_slot_size = DT_ENUM_IDX(DT_DRV_INST(n), tdm_slot_size),                       \
+		TAS6422DAC_MUTE_GPIO_INIT(n)};                                                     \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, codec_initialize, NULL, &codec_device_data_##n,                   \
 			      &codec_device_config_##n, POST_KERNEL,                               \
