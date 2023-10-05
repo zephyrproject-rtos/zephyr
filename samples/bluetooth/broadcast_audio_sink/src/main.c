@@ -40,7 +40,7 @@ static K_SEM_DEFINE(sem_bis_sync_requested, 0U, 1U);
 static K_SEM_DEFINE(sem_bis_synced, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
 
 /* Sample assumes that we only have a single Scan Delegator receive state */
-static const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
+static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 static struct bt_bap_broadcast_sink *broadcast_sink;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
@@ -158,20 +158,18 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.syncable = syncable_cb,
 };
 
-const struct bt_bap_scan_delegator_recv_state *broadcast_recv_state;
-
 static void pa_timer_handler(struct k_work *work)
 {
-	if (broadcast_recv_state != NULL) {
+	if (req_recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
 
-		if (broadcast_recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		if (req_recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
 		} else {
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(broadcast_recv_state->src_id,
+		bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id,
 						   pa_state);
 	}
 
@@ -228,9 +226,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 {
 	int err;
 
-	sink_recv_state = recv_state;
-
-	broadcast_recv_state = recv_state;
+	req_recv_state = recv_state;
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -257,7 +253,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	int err;
 
-	sink_recv_state = recv_state;
+	req_recv_state = recv_state;
 
 	err = bt_bap_broadcast_sink_delete(broadcast_sink);
 	if (err != 0) {
@@ -275,7 +271,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 {
 	printk("Broadcast code received for %p\n", recv_state);
 
-	sink_recv_state = recv_state;
+	req_recv_state = recv_state;
 
 	(void)memcpy(sink_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 
@@ -408,9 +404,10 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	if (broadcast_assistant_conn == NULL) {
 		/* Not requested by Broadcast Assistant */
 		k_sem_give(&sem_broadcaster_found);
-	} else if (sink_recv_state != NULL && bt_addr_le_eq(info->addr, &sink_recv_state->addr) &&
-		   info->sid == sink_recv_state->adv_sid &&
-		   broadcast_id == sink_recv_state->broadcast_id) {
+	} else if (req_recv_state != NULL &&
+		   bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
+		   info->sid == req_recv_state->adv_sid &&
+		   broadcast_id == req_recv_state->broadcast_id) {
 		k_sem_give(&sem_broadcaster_found);
 	}
 
@@ -497,7 +494,7 @@ static int reset(void)
 
 	bis_index_bitfield = 0U;
 	requested_bis_sync = 0U;
-	sink_recv_state = NULL;
+	req_recv_state = NULL;
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
