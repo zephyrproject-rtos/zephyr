@@ -25,6 +25,9 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2023-4258 `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
 
+* CVE-2023-4260 `Zephyr project bug tracker GHSA-gj27-862r-55wh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gj27-862r-55wh>`_
+
 * CVE-2023-4264 `Zephyr project bug tracker GHSA-rgx6-3w4j-gf5j
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rgx6-3w4j-gf5j>`_
 
