@@ -246,3 +246,19 @@ properties:
       - 5
       - 6
       - 7
+
+  wakeup-duration:
+    type: int
+    default: 0
+    description: |
+      The wakeup duration. Default value is the register reset value.
+      If the accelerometer readings of the all axes are higher
+      than the wakeup threshold value for the wakeup duration long,
+      then a wakeup trigger occurs. This value is 2 bits long in the
+      register and 1 LSB = 1 * 1/ODR.
+
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
