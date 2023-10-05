@@ -72,9 +72,9 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_VOLTAGE,
 	/** Battery Mode (flags) */
 	FUEL_GAUGE_SBS_MODE,
-	/** Battery desired Max Charging Current (mA) */
+	/** Battery desired Max Charging Current (uA) */
 	FUEL_GAUGE_CHARGE_CURRENT,
-	/** Battery desired Max Charging Voltage (mV) */
+	/** Battery desired Max Charging Voltage (uV) */
 	FUEL_GAUGE_CHARGE_VOLTAGE,
 	/** Alarm, Status and Error codes (flags) */
 	FUEL_GAUGE_STATUS,
@@ -153,9 +153,9 @@ union fuel_gauge_prop_val {
 	/** FUEL_GAUGE_SBS_MODE */
 	uint16_t sbs_mode;
 	/** FUEL_GAUGE_CHARGE_CURRENT */
-	uint16_t chg_current;
+	uint32_t chg_current;
 	/** FUEL_GAUGE_CHARGE_VOLTAGE */
-	uint16_t chg_voltage;
+	uint32_t chg_voltage;
 	/** FUEL_GAUGE_STATUS */
 	uint16_t fg_status;
 	/** FUEL_GAUGE_DESIGN_CAPACITY */
