@@ -57,30 +57,13 @@ LOG_MODULE_REGISTER(usb_dc_gd32);
 /* Size of a USB SETUP packet */
 #define SETUP_SIZE 8
 
-// struct usb_device_ep_state {
-// 	uint16_t ep_mps;		/** Endpoint max packet size */
-// 	uint16_t ep_pma_buf_len;	/** Previously allocated buffer size */
-// 	uint8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
-// 	uint8_t ep_stalled;	/** Endpoint stall flag */
-// 	usb_dc_ep_callback cb;	/** Endpoint callback function */
-// 	uint32_t read_count;	/** Number of bytes in read buffer  */
-// 	uint32_t read_offset;	/** Current offset in read buffer */
-// 	struct k_sem write_sem;	/** Write boolean semaphore */
-// };
-
 /* Driver state */
 struct usb_device_state {
     usb_core_driver usb_driver_st;
 	usb_dc_status_callback status_cb; /* Status callback */
-	// struct usb_device_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
-	// struct usb_device_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
  	usb_dc_ep_callback cb[2][USB_NUM_BIDIR_ENDPOINTS];	/** Endpoint callback function */
  	uint32_t read_offset[USB_NUM_BIDIR_ENDPOINTS];	/** Current offset in read buffer */
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
-
-#if defined(USB) || defined(USB_DRD_FS)
-	uint32_t pma_offset;
-#endif /* USB */
 };
 static struct usb_device_state usb_device_st;
 
@@ -92,12 +75,6 @@ static usb_transc *usb_dc_gd32_get_ep_transc(uint8_t ep_addr)
 	if (USB_EP_GET_IDX(ep_addr) >= USB_NUM_BIDIR_ENDPOINTS) {
 		return NULL;
 	}
-
-	// if (USB_EP_DIR_IS_OUT(ep_addr)) {
-	// 	ep_state_base = &usb_device_st.out_ep_state[USB_EP_GET_IDX(ep_addr)];
-	// } else {
-	// 	ep_state_base = &usb_device_st.in_ep_state[USB_EP_GET_IDX(ep_addr)];
-	// }
 
 	if (USB_EP_DIR_IS_OUT(ep_addr)) {
 		transc = &usb_device_st.usb_driver_st.dev.transc_out[USB_EP_GET_IDX(ep_addr)];
@@ -145,8 +122,8 @@ static int usb_dc_reset_enum(void)
 static void usb_dc_usbfs_gd32_isr(const void *arg)
 {
 	usb_core_driver *udev = &usb_device_st.usb_driver_st;
-	static uint32_t intr = 0, intr_prev = 0, count = 0, count_1 = 0;
-count++;
+	uint32_t intr = 0;
+	
     if (HOST_MODE != (udev->regs.gr->GINTF & GINTF_COPM)) {
 		intr = udev->regs.gr->GINTF;
         intr &= udev->regs.gr->GINTEN;
@@ -155,15 +132,7 @@ count++;
         if (!intr) {
             return;
         }
-		count_1++;
-		if (intr != intr_prev){
-			LOG_DBG("%02X, %02x, %d, %d", intr, intr_prev, count, count_1);
-			intr_prev = intr;
-			count=0;
-			count_1=0;
-		}
 
-		usbd_isr(&usb_device_st.usb_driver_st);
         /* suspend interrupt */
         if (intr & GINTF_SP) {
 			LOG_DBG("USB_DC_SUSPEND");
@@ -186,7 +155,7 @@ count++;
 			if (usb_device_st.status_cb) {
 				usb_device_st.status_cb(USB_DC_RESET, NULL);
 			}
-			usb_device_st.usb_driver_st.regs.er_out[0]->DOEPINTF = DOEPINTF_TF;
+			//usb_device_st.usb_driver_st.regs.er_out[0]->DOEPINTF = DOEPINTF_TF;
         }
 
         /* session request interrupt */
@@ -208,12 +177,8 @@ count++;
         }
 
 
-		intr = udev->regs.gr->GINTF;
-        intr &= udev->regs.gr->GINTEN;
-		if (intr == intr_prev)
-			LOG_DBG("it toujours presente %02X", intr);
+		usbd_isr(&usb_device_st.usb_driver_st);		
     }
-	intr = 0;
 }
 
 static void usb_dc_usbhs_gd32_isr(const void *arg)
@@ -224,10 +189,6 @@ static void usb_dc_usbhs_gd32_isr(const void *arg)
 static int usb_dc_gd32_clock_enable(void)
 {
 #ifdef USE_USB_FS
-    // rcu_pll48m_clock_config(RCU_PLL48MSRC_PLLQ);
-    // rcu_ck48m_clock_config(RCU_CK48MSRC_PLL48M);
-
-    // rcu_periph_clock_enable(RCU_USBFS);
 	rcu_ck48m_clock_config(RCU_CK48MSRC_IRC48M); //RCU_CK48MSRC_PLL48M);
     rcu_osci_on(RCU_IRC48M);
     rcu_periph_clock_enable(RCU_USBFS);
@@ -352,16 +313,6 @@ static int usb_dc_gd32_init(void)
 
     /* set device connect */
     usb_dc_connect(&usb_device_st.usb_driver_st);
-
-	// usb_device_st.out_ep_state[EP0_IDX].ep_mps = EP0_MPS;
-	// usb_device_st.out_ep_state[EP0_IDX].ep_type = USB_DC_EP_CONTROL;
-	// usb_device_st.in_ep_state[EP0_IDX].ep_mps = EP0_MPS;
-	// usb_device_st.in_ep_state[EP0_IDX].ep_type = USB_DC_EP_CONTROL;
-
-	/* TODO: make this dynamic (depending usage) */
-	// for (int i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-	// 	k_sem_init(&usb_device_st.in_ep_state[i].write_sem, 1, 1);
-	// }
 
     nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
 
@@ -868,7 +819,6 @@ uint8_t usbd_out_transc (usb_core_driver *udev, uint8_t ep_num)
 	/* Transaction complete, data is now stored in the buffer and ready
 	 * for the upper stack (usb_dc_ep_read to retrieve).
 	 */
-	//usb_dc_ep_get_read_count(ep, &transc->read_count);
 	usb_device_st.read_offset[ep_idx] = 0;
 
 	LOG_DBG("epnum 0x%02x, rx_count %u", ep_num, transc->xfer_count);
