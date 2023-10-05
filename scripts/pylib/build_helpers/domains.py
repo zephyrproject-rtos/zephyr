@@ -78,7 +78,7 @@ class Domains:
         # Now that self._domains has been initialized, we can leverage
         # the common checks in self.get_domain to verify this.
         self._default_domain = self.get_domain(data['default'])
-        self._flash_order = self.get_domains(data['flash_order'] or [])
+        self._flash_order = self.get_domains(data.get('flash_order', []))
 
     @staticmethod
     def from_file(domains_file):
