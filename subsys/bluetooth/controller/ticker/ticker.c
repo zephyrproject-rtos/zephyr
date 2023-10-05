@@ -2424,6 +2424,9 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			break;
 		}
 
+		/* Ensure that resched ticker is expired */
+		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
+
 		/* Check for intersection with already active node */
 		window_start_ticks = 0U;
 		if (instance->ticks_slot_previous > ticks_elapsed) {
@@ -2566,9 +2569,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			ticker_id_next = ticker_next->next;
 		}
 
-		ext_data->ticks_drift += ticks_to_expire -
-					 ticker_resched->ticks_to_expire;
-		ticker_resched->ticks_to_expire = ticks_to_expire;
+		ext_data->ticks_drift += ticks_to_expire;
 
 		/* Place the ticker node sorted by expiration time and adjust
 		 * delta times
@@ -2579,20 +2580,22 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			struct ticker_node *ticker_next;
 
 			ticker_next = &nodes[ticker_id_next];
-			if (ticker_resched->ticks_to_expire >
-			    ticker_next->ticks_to_expire) {
+			if (ticks_to_expire > ticker_next->ticks_to_expire) {
 				/* Node is after this - adjust delta */
-				ticker_resched->ticks_to_expire -=
-					ticker_next->ticks_to_expire;
+				ticks_to_expire -= ticker_next->ticks_to_expire;
+				ticker_next->ticks_to_expire +=
+					ticker_resched->ticks_to_expire;
+				ticker_resched->ticks_to_expire = 0U;
 			} else {
 				/* Node is before this one */
-				ticker_next->ticks_to_expire -=
-					ticker_resched->ticks_to_expire;
+				ticker_next->ticks_to_expire -= ticks_to_expire;
 				break;
 			}
 			ticker_id_prev = ticker_id_next;
 			ticker_id_next = ticker_next->next;
 		}
+
+		ticker_resched->ticks_to_expire += ticks_to_expire;
 
 		/* If the node moved in the list, insert it */
 		if (ticker_id_prev != TICKER_NULL) {
