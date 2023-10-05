@@ -17,7 +17,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &sramx;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,canbus = &can0;
@@ -143,20 +143,33 @@
 	pinctrl-names = "default";
 };
 
+/* Flash is divided into 32 kB sub-regions.
+ * Each sub-region can be assigned individual
+ * security tier in secure AHB controller.
+ */
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		slot0_partition: partition@0 {
-			label = "executable";
-				reg = <0x00000000 DT_SIZE_K(182)>;
-			};
-
-		storage_partition: partition@88000 {
-			label = "storage";
-			reg = <0x0002d800 DT_SIZE_K(64)>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(32)>;
 		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(96)>;
+		};
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 DT_SIZE_K(96)>;
+		};
+		storage_partition: partition@38000 {
+			label = "storage";
+			reg = <0x00038000 DT_SIZE_K(20)>;
+		};
+		/* The last 12KB are reserved for PFR on the 256KB flash.
+		 */
 	};
 };
 
