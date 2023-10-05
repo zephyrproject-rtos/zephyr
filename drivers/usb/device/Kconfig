@@ -66,6 +66,28 @@ config USB_DC_STM32_CLOCK_CHECK
 	  In specific cases, this check might provide wrong verdict and should
 	  be disabled.
 
+DT_GD32_USBHS := $(dt_nodelabel_path,usbotg_hs)
+DT_GD32_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_GD32_USBHS),maximum-speed,high-speed)
+
+config USB_DC_GD32
+	bool "USB device controller driver for GD32 devices"
+	default y
+	depends on DT_HAS_GD_GD32_OTGFS_ENABLED \
+		|| DT_HAS_GD_GD32_OTGHS_ENABLED \
+		|| DT_HAS_GD_GD32_USB_ENABLED
+	select USE_GD32_HAL_USB
+	select USB_DC_HAS_HS_SUPPORT if "$(DT_GD32_USBHS_SPEED)"
+	imply USB_DEVICE_REMOTE_WAKEUP
+	help
+	  Enable GD32 family USB device driver.
+
+config USB_DC_GD32_CLOCK_CHECK
+	bool "Runtime USB 48MHz clock check"
+	depends on USB_DC_GD32
+	default y 
+	help
+	  Enable USB clock 48MHz configuration.
+
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y

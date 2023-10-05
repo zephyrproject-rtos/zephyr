@@ -15,6 +15,8 @@ endif()
 
 set(gd32_std_dir     ${gd32_soc_dir}/standard_peripheral)
 set(gd32_std_src_dir ${gd32_std_dir}/source)
+set(gd32_usb_dir     ${gd32_soc_dir}/usb_drivers)
+set(gd32_usb_src_dir ${gd32_usb_dir}/driver/source)
 
 zephyr_library_named(hal_gigadevice)
 
@@ -56,6 +58,10 @@ zephyr_include_directories(${gd32_soc_sys_dir}/include)
 zephyr_include_directories(${gd32_std_dir}/include)
 zephyr_include_directories(${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/include)
 zephyr_include_directories(${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/common_include)
+zephyr_include_directories(${gd32_usb_dir}/driver/include)
+zephyr_include_directories(${gd32_usb_dir}/ustd/common)
+zephyr_include_directories(${gd32_usb_dir}/device/core/Include)
+zephyr_include_directories(${gd32_usb_dir}/host/core/Include)
 
 zephyr_library_sources(${gd32_soc_sys_dir}/source/system_${CONFIG_SOC_SERIES}.c)
 
@@ -94,5 +100,8 @@ zephyr_library_sources_ifdef(CONFIG_USE_GD32_TRNG     ${gd32_std_src_dir}/${CONF
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_TSI      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_tsi.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_USART    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_usart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_WWDGT    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_wwdgt.c)
+zephyr_library_sources_ifdef(CONFIG_USE_GD32_USBD     ${gd32_usb_src_dir}/drv_usb_core.c
+                                                      ${gd32_usb_src_dir}/drv_usb_dev.c
+                                                      ${gd32_usb_src_dir}/drv_usbd_int.c)
 
 endif()
