@@ -507,6 +507,8 @@ MCUboot
   * Fixed issue with serial recovery use of MBEDTLS having undefined operations which led to usage
     faults when the secondary slot image was encrypted.
 
+  * Fixed issue with bootutil asserting on maximum alignment in non-swap modes.
+
   * Added error output when flash device fails to open and asserts are disabled, which will now
     panic the bootloader.
 
