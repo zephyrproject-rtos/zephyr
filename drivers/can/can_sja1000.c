@@ -163,6 +163,7 @@ int can_sja1000_start(const struct device *dev)
 	}
 
 	can_sja1000_clear_errors(dev);
+	CAN_STATS_RESET(dev);
 
 	err = can_sja1000_leave_reset_mode(dev);
 	if (err != 0) {
@@ -599,6 +600,59 @@ static void can_sja1000_handle_transmit_irq(const struct device *dev)
 	can_sja1000_tx_done(dev, status);
 }
 
+#ifdef CONFIG_CAN_STATS
+static void can_sja1000_handle_data_overrun_irq(const struct device *dev)
+{
+	/* See NXP SJA1000 Application Note AN97076 (figure 18) for data overrun details */
+
+	CAN_STATS_RX_OVERRUN_INC(dev);
+
+	can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_CDO);
+}
+
+static void can_sja1000_handle_bus_error_irq(const struct device *dev)
+{
+	/* See NXP SJA1000 Application Note AN97076 (tables 6 and 7) for ECC details */
+	uint8_t ecc;
+
+	/* Read the Error Code Capture register to re-activate it */
+	ecc = can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
+
+	if (ecc == (CAN_SJA1000_ECC_ERRC_OTHER_ERROR | CAN_SJA1000_ECC_DIR_TX |
+		CAN_SJA1000_ECC_SEG_ACK_SLOT)) {
+		/* Missing ACK is reported as a TX "other" error in the ACK slot */
+		CAN_STATS_ACK_ERROR_INC(dev);
+		return;
+	}
+
+	if (ecc == (CAN_SJA1000_ECC_ERRC_FORM_ERROR | CAN_SJA1000_ECC_DIR_RX |
+		CAN_SJA1000_ECC_SEG_ACK_DELIM)) {
+		/* CRC error is reported as a RX "form" error in the ACK delimiter */
+		CAN_STATS_CRC_ERROR_INC(dev);
+		return;
+	}
+
+	switch (ecc & CAN_SJA1000_ECC_ERRC_MASK) {
+	case CAN_SJA1000_ECC_ERRC_BIT_ERROR:
+		CAN_STATS_BIT_ERROR_INC(dev);
+		break;
+
+	case CAN_SJA1000_ECC_ERRC_FORM_ERROR:
+		CAN_STATS_FORM_ERROR_INC(dev);
+		break;
+	case CAN_SJA1000_ECC_ERRC_STUFF_ERROR:
+		CAN_STATS_STUFF_ERROR_INC(dev);
+		break;
+
+	case CAN_SJA1000_ECC_ERRC_OTHER_ERROR:
+		__fallthrough;
+	default:
+		/* Other error not currently reported in CAN statistics */
+		break;
+	}
+}
+#endif /* CONFIG_CAN_STATS */
+
 static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
@@ -649,6 +703,16 @@ void can_sja1000_isr(const struct device *dev)
 	if ((ir & CAN_SJA1000_IR_RI) != 0) {
 		can_sja1000_handle_receive_irq(dev);
 	}
+
+#ifdef CONFIG_CAN_STATS
+	if ((ir & CAN_SJA1000_IR_DOI) != 0) {
+		can_sja1000_handle_data_overrun_irq(dev);
+	}
+
+	if ((ir & CAN_SJA1000_IR_BEI) != 0) {
+		can_sja1000_handle_bus_error_irq(dev);
+	}
+#endif /* CONFIG_CAN_STATS */
 
 	if ((ir & CAN_SJA1000_IR_EI) != 0) {
 		can_sja1000_handle_error_warning_irq(dev);
@@ -754,6 +818,9 @@ int can_sja1000_init(const struct device *dev)
 
 	/* Enable interrupts */
 	can_sja1000_write_reg(dev, CAN_SJA1000_IER,
+#ifdef CONFIG_CAN_STATS
+			      CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
+#endif /* CONFIG_CAN_STATS */
 			      CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
 			      CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
 
