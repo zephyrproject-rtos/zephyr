@@ -1259,7 +1259,7 @@ static uint8_t init(const void *cmd, uint16_t cmd_len,
 	const struct btp_mesh_init_cmd *cp = cmd;
 	int err;
 
-	if (!cp->comp_alt) {
+	if (cp->comp == 0) {
 		LOG_WRN("Loading default comp data");
 		err = bt_mesh_init(&prov, &comp);
 	} else {
