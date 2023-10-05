@@ -59,6 +59,9 @@ extern "C" {
 #define SOC_GPIO_INPUTENABLE_POS        (5)
 #define SOC_GPIO_INPUTENABLE            (1 << SOC_GPIO_INPUTENABLE_POS)
 
+#define SOC_GPIO_HIGHZ_POS              (6)
+#define SOC_GPIO_HIGHZ                  (1 << SOC_GPIO_HIGHZ_POS)
+
 /** Type for CAT1 Soc pin. */
 typedef struct {
 	/**
@@ -96,7 +99,8 @@ typedef struct {
 		(DT_PROP(node_id, drive_open_drain) << SOC_GPIO_OPENDRAIN_POS) |   \
 		(DT_PROP(node_id, drive_open_source) << SOC_GPIO_OPENSOURCE_POS) | \
 		(DT_PROP(node_id, drive_push_pull) << SOC_GPIO_PUSHPULL_POS) |	   \
-		(DT_PROP(node_id, input_enable) << SOC_GPIO_INPUTENABLE_POS))
+		(DT_PROP(node_id, input_enable) << SOC_GPIO_INPUTENABLE_POS) | \
+		(DT_PROP(node_id, bias_high_impedance) << SOC_GPIO_HIGHZ_POS))
 
 /**
  * @brief Utility macro to initialize each pin.
