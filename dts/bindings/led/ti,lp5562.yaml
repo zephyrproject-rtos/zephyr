@@ -3,3 +3,21 @@ description: TI LP5562 LED
 compatible: "ti,lp5562"
 
 include: i2c-device.yaml
+
+properties:
+  current-red-ua:
+    type: int
+    default: 17500
+    description: LED current in microamps for red channel
+  current-green-ua:
+    type: int
+    default: 17500
+    description: LED current in microamps for green channel
+  current-blue-ua:
+    type: int
+    default: 17500
+    description: LED current in microamps for blue channel
+  current-white-ua:
+    type: int
+    default: 17500
+    description: LED current in microamps for white channel
