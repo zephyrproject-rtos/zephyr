@@ -1345,6 +1345,28 @@ This has been fixed in main for v3.4.0
 - `PR 56709 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
 
+CVE-2023-3725
+-------------
+
+Potential buffer overflow vulnerability in the Zephyr CANbus subsystem.
+
+- `Zephyr project bug tracker GHSA-2g3m-p6c7-8rr3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2g3m-p6c7-8rr3>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 61502 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61502>`_
+
+- `PR 61518 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61518>`_
+
+- `PR 61517 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61517>`_
+
+- `PR 61516 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61516>`_
+
 CVE-2023-4257
 -------------
 
