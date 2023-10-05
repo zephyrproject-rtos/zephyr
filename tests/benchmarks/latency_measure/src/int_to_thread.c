@@ -24,6 +24,7 @@
 
 #include <zephyr/kernel.h>
 #include "utils.h"
+#include "timing_sc.h"
 
 #include <zephyr/irq_offload.h>
 
@@ -43,7 +44,7 @@ static void test_isr(const void *arg)
 		k_sem_give(sem);
 	}
 
-	timestamp.sample = timing_counter_get();
+	timestamp.sample = timing_timestamp_get();
 }
 
 /**
@@ -61,7 +62,7 @@ static void int_to_interrupted_thread(uint32_t num_iterations, uint64_t *sum)
 
 	for (uint32_t i = 0; i < num_iterations; i++) {
 		irq_offload(test_isr, NULL);
-		finish = timing_counter_get();
+		finish = timing_timestamp_get();
 		start = timestamp.sample;
 
 		*sum += timing_cycles_get(&start, &finish);
@@ -92,7 +93,7 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 
 		/* 3. Obtain the start and finish timestamps */
 
-		finish = timing_counter_get();
+		finish = timing_timestamp_get();
 		start = timestamp.sample;
 
 		sum += timing_cycles_get(&start, &finish);
@@ -171,12 +172,16 @@ int int_to_thread(uint32_t num_iterations)
 
 	int_to_interrupted_thread(num_iterations, &sum);
 
+	sum -= timestamp_overhead_adjustment(0, 0);
+
 	PRINT_STATS_AVG("Switch from ISR back to interrupted thread",
 			(uint32_t)sum, num_iterations, false, "");
 
 	/* ************** */
 
 	int_to_another_thread(num_iterations, &sum, 0);
+
+	sum -= timestamp_overhead_adjustment(0, 0);
 
 	PRINT_STATS_AVG("Switch from ISR to another thread (kernel)",
 			(uint32_t)sum, num_iterations, false, "");
@@ -185,6 +190,8 @@ int int_to_thread(uint32_t num_iterations)
 
 #if CONFIG_USERSPACE
 	int_to_another_thread(num_iterations, &sum, K_USER);
+
+	sum -= timestamp_overhead_adjustment(0, K_USER);
 
 	PRINT_STATS_AVG("Switch from ISR to another thread (user)",
 			(uint32_t)sum, num_iterations, false, "");
