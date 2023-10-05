@@ -28,4 +28,11 @@ config SCAN_DELAY
 	  Time to advertise connectable for a Broadcast Assistant to connect
 	  before starting scanning for Broadcast Sources.
 
+config TARGET_BROADCAST_NAME
+	string "Target Broadcast Device Name"
+	default ""
+	help
+	  Name of target broadcast device. If not empty string, sink device
+	  will only listen to the specified broadcast source. Not case sensitive.
+
 source "Kconfig.zephyr"

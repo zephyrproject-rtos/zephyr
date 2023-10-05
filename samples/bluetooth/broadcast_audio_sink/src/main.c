@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ctype.h>
+#include <strings.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -25,6 +28,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define PA_SYNC_SKIP              5
+#define NAME_LEN                  sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
 
 static K_SEM_DEFINE(sem_connected, 0U, 1U);
 static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
@@ -56,6 +60,7 @@ static struct broadcast_sink_stream {
 static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
+
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_LC3_FREQ_16KHZ | BT_AUDIO_CODEC_LC3_FREQ_24KHZ,
@@ -444,9 +449,59 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	return false;
 }
 
+static bool is_substring(const char *substr, const char *str)
+{
+	const size_t str_len = strlen(str);
+	const size_t sub_str_len = strlen(substr);
+
+	if (sub_str_len > str_len) {
+		return false;
+	}
+
+	for (size_t pos = 0; pos < str_len; pos++) {
+		if (tolower(substr[pos]) == tolower(str[pos])) {
+			if (pos + sub_str_len > str_len) {
+				return false;
+			}
+
+			if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static bool data_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
+		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
+		return false;
+	default:
+		return true;
+	}
+}
+
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
 	if (info->interval != 0U) {
+		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
+		if (strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+			struct net_buf_simple buf_copy;
+			char name[NAME_LEN] = {0};
+
+			net_buf_simple_clone(ad, &buf_copy);
+			bt_data_parse(&buf_copy, data_cb, name);
+			if (!(is_substring(CONFIG_TARGET_BROADCAST_NAME, name))) {
+				return;
+			}
+		}
 		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
 	}
 }
@@ -735,7 +790,13 @@ int main(void)
 			}
 		}
 
-		printk("Scanning for broadcast sources\n");
+		if (strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+			printk("Scanning for broadcast sources containing`"
+			CONFIG_TARGET_BROADCAST_NAME "`\n");
+		} else {
+			printk("Scanning for broadcast sources\n");
+		}
+
 		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 		if (err != 0 && err != -EALREADY) {
 			printk("Unable to start scan for broadcast sources: %d\n",
