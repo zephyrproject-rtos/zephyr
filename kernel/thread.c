@@ -834,9 +834,11 @@ void z_init_static_threads(void)
 	 */
 	k_sched_lock();
 	_FOREACH_STATIC_THREAD(thread_data) {
-		if (!K_TIMEOUT_EQ(thread_data->init_delay, K_FOREVER)) {
+		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
+
+		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
 			schedule_new_thread(thread_data->init_thread,
-					    thread_data->init_delay);
+					    init_delay);
 		}
 	}
 	k_sched_unlock();
