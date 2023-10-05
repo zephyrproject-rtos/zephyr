@@ -209,21 +209,46 @@ PR Technical Escalation
 In cases where a contributor objects to change requests from reviewers, Zephyr
 defines the following escalation process for resolving technical disagreements.
 
+Before escalation of technical disagreements, follow the steps below:
+
 - Resolve in the PR among assignee, maintainers and reviewer.
 
   - Assignee to act as moderator if applicable.
 
-- Optionally resolve in the next `Zephyr Dev Meeting`_ or `Architecture Working
-  Group`_ meeting with more Maintainers and project stakeholders.
+- Optionally resolve in the next `Zephyr Dev Meeting`_  meeting with more
+  Maintainers and project stakeholders.
 
-  - The involved parties and the Assignee to be present when
-    the (escalated) issue is discussed.
+  - The involved parties and the Assignee to be present when the  issue is
+    discussed.
 
-- TSC: Assignees can escalate to the TSC voting members and get a binding
-  resolution in the TSC by adding the `tsc`_ label on the PR.
+- If no progress is made, the assignee (maintainer) has the right to dismiss
+  stale, unrelated or irrelevant change requests by reviewers giving the
+  reviewers a minimum of 1 business day to respond and revisit their initial
+  change requests or start the escalation process.
 
-- Assignee to ensure the resolution of the escalation is reflected in the PR
-  review.
+  The assignee has the responsibility to document the reasoning for dismissing
+  any reviews in the PR and should notify the reviewer about their review being
+  dismissed.
+
+  To give the reviewers time to respond and escalate, the assignee is
+  expected to block the PR from being merged either by not
+  approving the PR or by setting the *DNM* label.
+
+Escalation can be triggered by any party participating in the review
+process (assignee, reviewers or the original author of the change)  following
+the steps below:
+
+- Escalate to the `Architecture Working Group`_ by adding the `Architecture
+  Review` label on the PR. Beside the weekly meeting where such escalations are
+  processed, the `Architecture Working Group`_  shall facilitate an offline
+  review of the escalation if requested, especially if any of the parties can't
+  attend the meeting.
+
+- If issues are not resolved, assignees can escalate to the TSC and get a
+  binding resolution in the TSC by adding the *TSC* label on the PR.
+
+- The Assignee is expected to ensure the resolution of the escalation and the
+  outcome is documented in the related pull request or issues on Github.
 
 .. _#pr-help: https://discord.com/channels/720317445772017664/997527108844798012
 
@@ -234,8 +259,6 @@ defines the following escalation process for resolving technical disagreements.
 .. _Architecture Project: https://github.com/zephyrproject-rtos/zephyr/projects/18
 
 .. _Architecture Working Group: https://github.com/zephyrproject-rtos/zephyr/wiki/Architecture-Working-Group
-
-.. _tsc: https://github.com/zephyrproject-rtos/zephyr/labels/tsc
 
 Reviewer Expectations
 #####################
