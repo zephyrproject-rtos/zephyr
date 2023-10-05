@@ -40,6 +40,11 @@ project = "Zephyr Project"
 copyright = "2015-2023 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
+# Algolia DocSearch Configuration
+docsearch_app_id = "MG0KSQTIE6"
+docsearch_api_key = "30a946b69d7872b830aa4b80d05c7b2b"
+docsearch_index_name = "zephyrproject"
+
 # parse version from 'VERSION' file
 with open(ZEPHYR_BASE / "VERSION") as f:
     m = re.match(
@@ -89,6 +94,7 @@ extensions = [
     "sphinx_togglebutton",
     "zephyr.external_content",
     "zephyr.domain",
+    "sphinx_docsearch",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
