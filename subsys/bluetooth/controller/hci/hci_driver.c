@@ -458,7 +458,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 			/* Check validity of the data path sink. FIXME: A channel disconnect race
 			 * may cause ISO data pending without valid data path.
 			 */
-			if (stream && stream->dp) {
+			if (stream && stream->dp &&
+			    (stream->dp->path_id == BT_HCI_DATAPATH_ID_HCI)) {
 				isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
 				isoal_rx.pdu = (void *)node_rx->pdu;
 				err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
