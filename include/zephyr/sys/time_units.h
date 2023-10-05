@@ -154,12 +154,12 @@ static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 	 ((uint32_t)((__t) +						\
 		     z_tmcvt_off_div(__from_hz, __to_hz,		\
 				     __round_up, __round_off)) /	\
-	  ((__from_hz) / (__to_hz)))					\
+	  (MAX((__from_hz) / (__to_hz), 1)))				\
 	 :								\
 	 (uint32_t) (((uint64_t) (__t) +				\
 		      z_tmcvt_off_div(__from_hz, __to_hz,		\
 				      __round_up, __round_off)) /	\
-		     ((__from_hz) / (__to_hz)))				\
+		     (MAX((__from_hz) / (__to_hz), 1)))			\
 		)
 
 /* Integer multiplication 32-bit conversion */
@@ -175,7 +175,7 @@ static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 #define z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
 	((uint64_t) (__t) + z_tmcvt_off_div(__from_hz, __to_hz,		\
 					    __round_up, __round_off)) / \
-	((__from_hz) / (__to_hz))
+	(MAX((__from_hz) / (__to_hz), 1))
 
 /* Integer multiplcation 64-bit conversion */
 #define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)	\
