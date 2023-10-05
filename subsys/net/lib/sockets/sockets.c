@@ -2070,6 +2070,22 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case IPPROTO_IPV6:
 		switch (optname) {
+		case IPV6_V6ONLY:
+			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_IPV6_V6ONLY,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IPV6_TCLASS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_get_option(ctx,
@@ -2407,9 +2423,17 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 	case IPPROTO_IPV6:
 		switch (optname) {
 		case IPV6_V6ONLY:
-			/* Ignore for now. Provided to let port
-			 * existing apps.
-			 */
+			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_IPV6_V6ONLY,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+			}
+
 			return 0;
 
 		case IPV6_TCLASS:

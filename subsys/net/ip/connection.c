@@ -380,6 +380,8 @@ int net_conn_register(uint16_t proto, uint8_t family,
 
 	conn_set_used(conn);
 
+	conn->v6only = net_context_is_v6only_set(context);
+
 	conn_register_debug(conn, remote_port, local_port);
 
 	return 0;
@@ -668,7 +670,17 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 					raw_pkt_continue = true;
 				}
 			}
-			continue; /* wrong protocol family */
+
+			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+				if (!(conn->family == AF_INET6 && pkt_family == AF_INET &&
+				      !conn->v6only)) {
+					continue;
+				}
+			} else {
+				continue; /* wrong protocol family */
+			}
+
+			/* We might have a match for v4-to-v6 mapping, check more */
 		}
 
 		/* Is the candidate connection matching the packet's protocol wihin the family? */
@@ -740,7 +752,26 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
 			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
-				continue; /* wrong local address */
+
+				/* Check if we could do a v4-mapping-to-v6 and the IPv6 socket
+				 * has no IPV6_V6ONLY option set and if the local IPV6 address
+				 * is unspecified, then we could accept a connection from IPv4
+				 * address by mapping it to IPv6 address.
+				 */
+				if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+					if (!(conn->family == AF_INET6 && pkt_family == AF_INET &&
+					      !conn->v6only &&
+					      net_ipv6_is_addr_unspecified(
+						      &net_sin6(&conn->local_addr)->sin6_addr))) {
+						continue; /* wrong local address */
+					}
+				} else {
+					continue; /* wrong local address */
+				}
+
+				/* We might have a match for v4-to-v6 mapping,
+				 * continue with rank checking.
+				 */
 			}
 
 			if (best_rank < NET_CONN_RANK(conn->flags)) {
