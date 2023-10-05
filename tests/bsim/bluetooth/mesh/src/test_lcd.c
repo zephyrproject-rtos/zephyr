@@ -15,6 +15,7 @@
 
 #include <mesh/access.h>
 #include <mesh/net.h>
+#include "argparse.h"
 
 LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 
@@ -49,6 +50,41 @@ const struct bt_mesh_model_op dummy_op[] = {
 	{ 0xface, BT_MESH_LEN_MIN(1), NULL },
 	BT_MESH_MODEL_OP_END,
 };
+
+static const uint8_t elem_offset2[3] = {4, 5, 6};
+static const uint8_t additional_data[2] = {100, 200}; /* A Mesh Profile may have additional data. */
+static const struct bt_mesh_comp2_record comp_rec[40] = {
+	[0 ... 39] = {.id = 10,
+		      .version.x = 20,
+		      .version.y = 30,
+		      .version.z = 40,
+		      .elem_offset_cnt = sizeof(elem_offset2),
+		      .elem_offset = elem_offset2,
+		      .data_len = sizeof(additional_data),
+		      .data = additional_data},
+};
+static const struct bt_mesh_comp2 comp_p2 = {.record_cnt = ARRAY_SIZE(comp_rec),
+					     .record = comp_rec};
+
+static int comp_page;
+static bool comp_changed;
+static void test_args_parse(int argc, char *argv[])
+{
+	bs_args_struct_t args_struct[] = {
+		{.dest = &comp_page,
+		 .type = 'i',
+		 .name = "{page}",
+		 .option = "page",
+		 .descript = "Current composition data page"},
+		{.dest = &comp_changed,
+		 .type = 'b',
+		 .name = "{0, 1}",
+		 .option = "comp-changed-mode",
+		 .descript = "Composition data has changed"},
+	};
+
+	bs_args_parse_all_cmd_line(argc, argv, args_struct);
+}
 
 static struct bt_mesh_models_metadata_entry *dummy_meta_entry[] = {};
 
@@ -224,7 +260,7 @@ static void test_cli_max_sdu_comp_data_request(void)
 	if (err && err != -E2BIG) {
 		FAIL("CLIENT: Failed to get comp data Page 0: %d", err);
 	}
-	total_size = bt_mesh_comp_page_0_size();
+	total_size = bt_mesh_comp_page_size(0);
 
 	/* Get server composition data and check integrity */
 	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, page, offset, &srv_rsp));
@@ -238,12 +274,11 @@ static void test_cli_max_sdu_comp_data_request(void)
 static void test_cli_split_comp_data_request(void)
 {
 	int err;
-	uint8_t page = 0;
-	uint16_t offset, total_size, prev_len = 0;
+	uint16_t offset = 0, prev_len = 0;
 
-	NET_BUF_SIMPLE_DEFINE(local_comp, 200);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_1, 64);
-	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_2, 64);
+	NET_BUF_SIMPLE_DEFINE(local_comp, CONFIG_BT_MESH_COMP_PST_BUF_SIZE);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_1, 500);
+	NET_BUF_SIMPLE_DEFINE(srv_rsp_comp_2, 500);
 	net_buf_simple_init(&local_comp, 0);
 	net_buf_simple_init(&srv_rsp_comp_1, 0);
 	net_buf_simple_init(&srv_rsp_comp_2, 0);
@@ -255,32 +290,38 @@ static void test_cli_split_comp_data_request(void)
 		.data = &srv_rsp_comp_2,
 	};
 
-	bt_mesh_device_setup(&prov, &comp_1);
+	bt_mesh_device_setup(&prov, (comp_page == 0 || comp_page == 128) ? &comp_1 : &comp_2);
+	bt_mesh_comp2_register(&comp_p2);
 	prov_and_conf(cli_cfg);
-	target_node_alloc(comp_1, srv_cfg);
-
-	offset = 0;
+	target_node_alloc((comp_page == 0 || comp_page == 128) ? comp_1 : comp_2, srv_cfg);
 
 	/* Get local data */
-	err = bt_mesh_comp_data_get_page_0(&local_comp, offset);
+	err = bt_mesh_comp_data_get_page(&local_comp, comp_page, 0);
 	/* Operation is successful even if all data cannot fit in the buffer (-E2BIG) */
 	if (err && err != -E2BIG) {
-		FAIL("CLIENT: Failed to get comp data Page 0: %d", err);
+		FAIL("CLIENT: Failed to get comp data Page %d: %d", err, comp_page);
 	}
-	total_size = bt_mesh_comp_page_0_size();
+
+	uint16_t total_size = bt_mesh_comp_page_size(comp_page);
+
+	/* Verify that the total comp page size is not larger than the provided buffer */
+	ASSERT_TRUE(total_size <= CONFIG_BT_MESH_COMP_PST_BUF_SIZE);
+
+	/* Wait a bit until the server is ready to respond*/
+	k_sleep(K_SECONDS(2));
 
 	/* Get first server composition data sample and verify data */
-	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, page, offset, &srv_rsp_1));
-	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_1, &local_comp, page, offset, total_size,
-				     &prev_len);
+	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, comp_page, offset, &srv_rsp_1));
+	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_1, &local_comp, comp_page, offset,
+				     total_size, &prev_len);
 
 	prev_len = srv_rsp_comp_1.len;
-	offset += prev_len;
+	offset = prev_len;
 
 	/* Get next server composition data sample */
-	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, page, offset, &srv_rsp_2));
-	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_2, &local_comp, page, offset, total_size,
-				     &prev_len);
+	ASSERT_OK(bt_mesh_large_comp_data_get(0, SRV_ADDR, comp_page, offset, &srv_rsp_2));
+	rsp_equals_local_data_assert(SRV_ADDR, &srv_rsp_2, &local_comp, comp_page, offset,
+				     total_size, &prev_len);
 
 	/* Check data integrity of merged sample data */
 	merge_and_compare_assert(&srv_rsp_comp_1, &srv_rsp_comp_2, &local_comp);
@@ -383,8 +424,15 @@ static void test_cli_split_metadata_request(void)
 
 static void test_srv_comp_data_status_respond(void)
 {
-	bt_mesh_device_setup(&prov, &comp_1);
+	bt_mesh_device_setup(&prov, (comp_page == 0 || comp_page == 128) ? &comp_1 : &comp_2);
+	bt_mesh_comp2_register(&comp_p2);
 	prov_and_conf(srv_cfg);
+
+	/* Simulate an update of composition data */
+	if (comp_changed) {
+		bt_mesh_comp_change_prepare();
+		atomic_set_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY);
+	}
 
 	/* No server callback available. Wait 10 sec for message to be recived */
 	k_sleep(K_SECONDS(10));
@@ -411,6 +459,7 @@ static void test_srv_metadata_status_respond(void)
 	{                                                                                 \
 		.test_id = "lcd_" #role "_" #name,                                            \
 		.test_descr = description,                                                    \
+		.test_args_f = test_args_parse,                                               \
 		.test_tick_f = bt_mesh_test_timeout,                                          \
 		.test_post_init_f = test_##role##_init,                                       \
 		.test_main_f = test_##role##_##name,                                          \
