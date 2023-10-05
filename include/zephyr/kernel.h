@@ -691,8 +691,20 @@ struct _static_thread_data {
 	int init_prio;
 	uint32_t init_options;
 	const char *init_name;
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	int32_t init_delay_ms;
+#else
 	k_timeout_t init_delay;
+#endif
 };
+
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+#define Z_THREAD_INIT_DELAY_INITIALIZER(ms) .init_delay_ms = (ms)
+#define Z_THREAD_INIT_DELAY(thread) SYS_TIMEOUT_MS((thread)->init_delay_ms)
+#else
+#define Z_THREAD_INIT_DELAY_INITIALIZER(ms) .init_delay = SYS_TIMEOUT_MS(ms)
+#define Z_THREAD_INIT_DELAY(thread) (thread)->init_delay
+#endif
 
 #define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
@@ -708,7 +720,7 @@ struct _static_thread_data {
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
 	.init_name = STRINGIFY(tname),                           \
-	.init_delay = SYS_TIMEOUT_MS(delay),			 \
+	Z_THREAD_INIT_DELAY_INITIALIZER(delay)			 \
 	}
 
 /*
