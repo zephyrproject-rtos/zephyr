@@ -143,6 +143,18 @@ source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
 
+config NET_IPV4_MAPPING_TO_IPV6
+	bool "Support IPv4 mapped on IPv6 addresses"
+	depends on NET_NATIVE_IPV6
+	help
+	  Support v4-mapped-on-v6 address type. This allows IPv4 and IPv6
+	  to share a local port space. When the application gets an IPv4
+	  connection or packet to an IPv6 socket, its source address will
+	  be mapped to IPv6. This is turned off by default which means
+	  that IPV6_V6ONLY socket option is always on. If you enable this
+	  option, then you can still control the behaviour of the socket
+	  via the IPV6_V6ONLY option at runtime.
+
 config NET_SHELL
 	bool "Network shell utilities"
 	select SHELL

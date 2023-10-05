@@ -79,6 +79,9 @@ struct net_conn {
 
 	/** Flags for the connection */
 	uint8_t flags;
+
+	/** Is v4-mapping-to-v6 enabled for this connection */
+	uint8_t v6only : 1;
 };
 
 /**
