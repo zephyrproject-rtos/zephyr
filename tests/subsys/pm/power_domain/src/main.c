@@ -279,5 +279,23 @@ ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 }
 
+ZTEST(power_domain_1cpu, test_on_power_domain)
+{
+	zassert_true(device_is_ready(domain), "Device is not ready!");
+	zassert_true(device_is_ready(deva), "Device is not ready!");
+	devc = DEVICE_GET(devc);
+	zassert_true(device_is_ready(devc), "Device is not ready!");
+
+	pm_device_power_domain_remove(deva, domain);
+	zassert_false(pm_device_on_power_domain(deva), "deva is in the power domain.");
+	pm_device_power_domain_add(deva, domain);
+	zassert_true(pm_device_on_power_domain(deva), "deva is not in the power domain.");
+
+	pm_device_power_domain_add(devc, domain);
+	zassert_true(pm_device_on_power_domain(devc), "devc is not in the power domain.");
+	pm_device_power_domain_remove(devc, domain);
+	zassert_false(pm_device_on_power_domain(devc), "devc in in the power domain.");
+}
+
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
