@@ -8,11 +8,11 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BUF_ALLOC_TIMEOUT (10) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT (50) /* milliseconds */
 #define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
 #define BIG_SDU_INTERVAL_US (10000)
 
-#define BIS_ISO_CHAN_COUNT 2
+#define BIS_ISO_CHAN_COUNT MIN(2, CONFIG_BT_ISO_MAX_CHAN)
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -54,7 +54,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = sizeof(uint32_t), /* bytes */
+	.sdu = CONFIG_BT_ISO_TX_MTU, /* bytes */
 	.rtn = 1,
 	.phy = BT_GAP_LE_PHY_2M,
 };
@@ -90,7 +90,7 @@ int main(void)
 	int err;
 
 	uint32_t iso_send_count = 0;
-	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
+	uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0 };
 
 	printk("Starting ISO Broadcast Demo\n");
 
