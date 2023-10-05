@@ -1569,14 +1569,14 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 
 static void iso_rx_demux(void *param)
 {
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-	struct ll_conn_iso_stream *cis;
-	struct ll_conn_iso_group *cig;
+#if defined(CONFIG_BT_CTLR_CONN_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct ll_iso_datapath *dp;
+#endif  /* CONFIG_BT_CTLR_CONN_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 	struct node_rx_pdu *rx_pdu;
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
 	struct node_rx_hdr *rx;
 	memq_link_t *link;
+	uint16_t handle;
 
 	do {
 		link = memq_peek(memq_ull_iso_rx.head, memq_ull_iso_rx.tail,
@@ -1596,14 +1596,35 @@ static void iso_rx_demux(void *param)
 				(void)memq_dequeue(memq_ull_iso_rx.tail, &memq_ull_iso_rx.head,
 						   NULL);
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
 				rx_pdu = (struct node_rx_pdu *)rx;
-				cis = ll_conn_iso_stream_get(rx_pdu->hdr.handle);
-				cig = cis->group;
-				dp  = cis->hdr.datapath_out;
+				handle = rx_pdu->hdr.handle;
+				dp = NULL;
 
-				iso_rx_cig_ref_point_update(cig, cis, &rx_pdu->hdr.rx_iso_meta);
+				if (false) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+				} else if (IS_CIS_HANDLE(handle)) {
+					struct ll_conn_iso_stream *cis;
+					struct ll_conn_iso_group *cig;
 
+					cis = ll_conn_iso_stream_get(handle);
+					cig = cis->group;
+					dp  = cis->hdr.datapath_out;
+
+					iso_rx_cig_ref_point_update(cig, cis,
+								    &rx_pdu->hdr.rx_iso_meta);
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+				} else if (IS_SYNC_ISO_HANDLE(handle)) {
+					struct lll_sync_iso_stream *sync_stream;
+					uint16_t stream_handle;
+
+					stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
+					sync_stream = ull_sync_iso_stream_get(stream_handle);
+					dp = sync_stream ? sync_stream->dp : NULL;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+				}
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 				if (dp && dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
 					/* If vendor specific datapath pass to ISO AL here,
 					 * in case of HCI destination it will be passed in
@@ -1620,7 +1641,7 @@ static void iso_rx_demux(void *param)
 
 					LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 				}
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 
 				/* Let ISO PDU start its long journey upwards */
 				ll_iso_rx_put(link, rx);
