@@ -2483,6 +2483,10 @@ static uint8_t pacs_supported_commands(const void *cmd, uint16_t cmd_len,
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_PACS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_PACS_UPDATE_CHARACTERISTIC);
+	tester_set_bit(rp->data, BTP_PACS_SET_LOCATION);
+	tester_set_bit(rp->data, BTP_PACS_SET_AVAILABLE_CONTEXTS);
+	tester_set_bit(rp->data, BTP_PACS_SET_SUPPORTED_CONTEXTS);
 
 	*rsp_len = sizeof(*rp) + 1;
 
@@ -2535,6 +2539,52 @@ static uint8_t pacs_update_characteristic(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t pacs_set_location(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_pacs_set_location_cmd *cp = cmd;
+	int err;
+
+	err = bt_pacs_set_location((enum bt_audio_dir)cp->dir,
+				   (enum bt_audio_location)cp->location);
+
+	return (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+}
+
+static uint8_t pacs_set_available_contexts(const void *cmd, uint16_t cmd_len,
+					   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_pacs_set_available_contexts_cmd *cp = cmd;
+	int err;
+
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+					     (enum bt_audio_context)cp->sink_contexts);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+					     (enum bt_audio_context)cp->source_contexts);
+
+	return (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+}
+
+static uint8_t pacs_set_supported_contexts(const void *cmd, uint16_t cmd_len,
+					   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_pacs_set_supported_contexts_cmd *cp = cmd;
+	int err;
+
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+					     (enum bt_audio_context)cp->sink_contexts);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
+					     (enum bt_audio_context)cp->source_contexts);
+
+	return (err) ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler pacs_handlers[] = {
 	{
 		.opcode = BTP_PACS_READ_SUPPORTED_COMMANDS,
@@ -2547,6 +2597,21 @@ static const struct btp_handler pacs_handlers[] = {
 		.expect_len = sizeof(struct btp_pacs_update_characteristic_cmd),
 		.func = pacs_update_characteristic,
 	},
+	{
+		.opcode = BTP_PACS_SET_LOCATION,
+		.expect_len = sizeof(struct btp_pacs_set_location_cmd),
+		.func = pacs_set_location
+	},
+	{
+		.opcode = BTP_PACS_SET_AVAILABLE_CONTEXTS,
+		.expect_len = sizeof(struct btp_pacs_set_available_contexts_cmd),
+		.func = pacs_set_available_contexts
+	},
+	{
+		.opcode = BTP_PACS_SET_SUPPORTED_CONTEXTS,
+		.expect_len = sizeof(struct btp_pacs_set_supported_contexts_cmd),
+		.func = pacs_set_supported_contexts
+	}
 };
 
 static uint8_t bap_supported_commands(const void *cmd, uint16_t cmd_len,
