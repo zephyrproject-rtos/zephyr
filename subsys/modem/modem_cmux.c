@@ -790,7 +790,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = dlci->dlci_address,
-		.cr = false,
+		.cr = true,
 		.pf = false,
 		.type = MODEM_CMUX_FRAME_TYPE_UIH,
 		.data = buf,
