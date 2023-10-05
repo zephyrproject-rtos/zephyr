@@ -23,6 +23,7 @@
 #include <zephyr/timestamp.h>
 
 #include "utils.h"
+#include "timing_sc.h"
 
 static void alt_thread_entry(void *p1, void *p2, void *p3)
 {
@@ -37,7 +38,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 
 		/* 3. Obtain the 'finish' timestamp */
 
-		timestamp.sample = timing_counter_get();
+		timestamp.sample = timing_timestamp_get();
 
 		/* 4. Switch to <start_thread>  */
 
@@ -64,7 +65,7 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 
 		/* 1. Get 'start' timestamp */
 
-		start = timing_counter_get();
+		start = timing_timestamp_get();
 
 		/* 2. Switch to <alt_thread> */
 
@@ -126,6 +127,8 @@ static void thread_switch_yield_common(const char *description,
 	/* Get the sum total of measured cycles */
 
 	sum = timestamp.cycles;
+
+	sum -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(summary, sizeof(summary),
 		 "%s (%c -> %c)",
