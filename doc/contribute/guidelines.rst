@@ -950,10 +950,6 @@ results page where a table with all the different builds will be shown. To see
 what build or test failed click on the row that contains the failed (i.e.
 non-green) build.
 
-The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_ archives any nightly build results
-produced by CI.
-
 Contributions to External Modules
 **********************************
 
