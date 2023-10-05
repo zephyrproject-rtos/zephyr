@@ -986,8 +986,8 @@ static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
 #endif
 	node = rtio_mpsc_pop(&r->cq);
 	while (node == NULL) {
-		node = rtio_mpsc_pop(&r->cq);
 		Z_SPIN_DELAY(1);
+		node = rtio_mpsc_pop(&r->cq);
 	}
 	cqe = CONTAINER_OF(node, struct rtio_cqe, q);
 
