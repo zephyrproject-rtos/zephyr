@@ -53,6 +53,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | CANEXCEL  | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -138,6 +140,14 @@ which supports CAN 2.0 and CAN FD protocol.
 
 CAN driver supports classic (CAN 2.0) and CAN FD mode. Remote transmission request is
 not supported as this feature is not available on NXP S32 CANXL HAL.
+
+Improved Inter-Integrated Circuit (I3C)
+=======================================
+
+.. warning::
+   Due to internal structural issues, I3C mode functionality is not guaranteed on this
+   platform, so do not use the I3C driver to communicate with I3C devices. Legacy I2C
+   mode is fully functional as specified.
 
 Programming and Debugging
 *************************

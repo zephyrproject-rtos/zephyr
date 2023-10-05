@@ -21,6 +21,7 @@
 
 	aliases {
 		watchdog0 = &swt0;
+		eeprom-0 = &eeprom0;
 	};
 };
 

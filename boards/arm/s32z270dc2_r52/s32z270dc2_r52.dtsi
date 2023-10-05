@@ -49,3 +49,22 @@
 	bus-speed-data = <1000000>;
 	sample-point-data = <875>;
 };
+
+&i3c2 {
+	pinctrl-0 = <&i3c2_default>;
+	pinctrl-names = "default";
+	i2c-scl-hz = <400000>;
+	i3c-od-scl-hz = <2500000>;
+	i3c-scl-hz = <12500000>;
+	status = "okay";
+
+	eeprom0: eeprom@500000000000000010 {
+		compatible = "atmel,at24";
+		reg = <0x50 0x00 0x00000010>;
+		status = "okay";
+		size = <128>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};
