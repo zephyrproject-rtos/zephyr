@@ -875,6 +875,7 @@ static void test_drain_wait_cb(struct k_timer *timer)
 ZTEST(work_1cpu, test_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
+	struct k_work *wp = &ctx->work;
 	int rc;
 
 	/* Reset state, allow one re-submission, and use the delaying
@@ -882,10 +883,10 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 	 */
 	reset_counters();
 	atomic_set(&resubmits_left, 1);
-	k_work_init(&common_work, delay_handler);
+	k_work_init(wp, delay_handler);
 
 	/* Submit to the cooperative queue. */
-	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	rc = k_work_submit_to_queue(&coophi_queue, wp);
 	zassert_equal(rc, 1);
 	zassert_equal(coophi_counter(), 0);
 
