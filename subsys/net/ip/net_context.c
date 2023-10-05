@@ -78,6 +78,17 @@ bool net_context_is_reuseport_set(struct net_context *context)
 #endif
 }
 
+bool net_context_is_v6only_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	return context->options.ipv6_v6only;
+#else
+	ARG_UNUSED(context);
+
+	return true;
+#endif
+}
+
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static inline bool is_in_tcp_listen_state(struct net_context *context)
 {
@@ -115,7 +126,6 @@ static int check_used_port(enum net_ip_protocol proto,
 			   const struct sockaddr *local_addr,
 			   bool reuseaddr_set,
 			   bool reuseport_set)
-
 {
 	int i;
 
@@ -188,8 +198,14 @@ static int check_used_port(enum net_ip_protocol proto,
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   local_addr->sa_family == AF_INET) {
+			/* If there is an IPv6 socket already bound and
+			 * if v6only option is enabled, then it is possible to
+			 * bind IPv4 address to it.
+			 */
 			if (net_sin_ptr(&contexts[i].local)->sin_addr == NULL ||
-			    net_sin_ptr(&contexts[i].local)->sin_family != AF_INET) {
+			    ((IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) ?
+			      net_context_is_v6only_set(&contexts[i]) : true) &&
+			     net_sin_ptr(&contexts[i].local)->sin_family != AF_INET)) {
 				continue;
 			}
 
@@ -416,7 +432,10 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 #if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
 		contexts[i].options.sndtimeo = K_FOREVER;
 #endif
-
+#if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+		/* By default IPv4 and IPv6 are in different port spaces */
+		contexts[i].options.ipv6_v6only = true;
+#endif
 		if (IS_ENABLED(CONFIG_NET_IP)) {
 			(void)memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
 			(void)memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
@@ -1496,6 +1515,36 @@ static int get_context_reuseport(struct net_context *context,
 #endif
 }
 
+static int get_context_ipv6_v6only(struct net_context *context,
+				   void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.ipv6_v6only == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -1726,8 +1775,21 @@ static int context_sendto(struct net_context *context,
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
-		const struct sockaddr_in *addr4 =
-			(const struct sockaddr_in *)dst_addr;
+		const struct sockaddr_in *addr4 = (const struct sockaddr_in *)dst_addr;
+		struct sockaddr_in mapped;
+
+		/* Get the destination address from the mapped IPv6 address */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		    addr4->sin_family == AF_INET6 &&
+		    net_ipv6_addr_is_v4_mapped(&net_sin6(dst_addr)->sin6_addr)) {
+			struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+			mapped.sin_port = addr6->sin6_port;
+			mapped.sin_family = AF_INET;
+			net_ipaddr_copy(&mapped.sin_addr,
+					(struct in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
+			addr4 = &mapped;
+		}
 
 		if (msghdr) {
 			addr4 = msghdr->msg_name;
@@ -2591,6 +2653,32 @@ static int set_context_reuseport(struct net_context *context,
 #endif
 }
 
+static int set_context_ipv6_v6only(struct net_context *context,
+				   const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	bool v6only = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		v6only = true;
+	}
+
+	context->options.ipv6_v6only = v6only;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2635,6 +2723,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_REUSEPORT:
 		ret = set_context_reuseport(context, value, len);
+		break;
+	case NET_OPT_IPV6_V6ONLY:
+		ret = set_context_ipv6_v6only(context, value, len);
 		break;
 	}
 
@@ -2687,6 +2778,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_REUSEPORT:
 		ret = get_context_reuseport(context, value, len);
+		break;
+	case NET_OPT_IPV6_V6ONLY:
+		ret = get_context_ipv6_v6only(context, value, len);
 		break;
 	}
 
