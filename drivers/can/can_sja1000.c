@@ -23,19 +23,14 @@ static inline void can_sja1000_write_reg(const struct device *dev, uint8_t reg, 
 {
 	const struct can_sja1000_config *config = dev->config;
 
-	LOG_DBG("write reg %d = 0x%02x", reg, val);
 	return config->write_reg(dev, reg, val);
 }
 
 static inline uint8_t can_sja1000_read_reg(const struct device *dev, uint8_t reg)
 {
 	const struct can_sja1000_config *config = dev->config;
-	uint8_t val;
 
-	val = config->read_reg(dev, reg);
-	LOG_DBG("read reg %d = 0x%02x", reg, val);
-
-	return val;
+	return config->read_reg(dev, reg);
 }
 
 static inline int can_sja1000_enter_reset_mode(const struct device *dev)
