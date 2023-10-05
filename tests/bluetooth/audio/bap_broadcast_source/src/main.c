@@ -176,7 +176,6 @@ ZTEST_SUITE(bap_broadcast_source_test_suite, NULL, bap_broadcast_source_test_sui
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_delete)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_stream *stream = create_param->params[0].params[0].stream;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -185,9 +184,19 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_delete)
 	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
 	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
 
-	zassert_equal(create_param->qos->sdu, stream->qos->sdu, "Unexpected stream SDU");
-	zassert_equal(create_param->qos->rtn, stream->qos->rtn, "Unexpected stream RTN");
-	zassert_equal(create_param->qos->phy, stream->qos->phy, "Unexpected stream PHY");
+	for (size_t i = 0u; i < create_param->params_count; i++) {
+		for (size_t j = 0u; j < create_param->params[i].params_count; j++) {
+			const struct bt_bap_stream *stream =
+				create_param->params[i].params[j].stream;
+
+			zassert_equal(create_param->qos->sdu, stream->qos->sdu,
+				      "Unexpected stream SDU");
+			zassert_equal(create_param->qos->rtn, stream->qos->rtn,
+				      "Unexpected stream RTN");
+			zassert_equal(create_param->qos->phy, stream->qos->phy,
+				      "Unexpected stream PHY");
+		}
+	}
 
 	err = bt_bap_broadcast_source_delete(fixture->source);
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
@@ -520,22 +529,33 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_start_inval_doubl
 	zassert_not_equal(0, err, "Did not fail with starting already started source");
 }
 
-ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure)
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure_single_subgroup)
 {
 	struct bt_bap_broadcast_source_param *reconf_param = fixture->param;
-	struct bt_bap_stream *stream = reconf_param->params[0].params[0].stream;
+	const size_t subgroup_cnt = reconf_param->params_count;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
 	       reconf_param->params_count, fixture->stream_cnt);
 
 	err = bt_bap_broadcast_source_create(reconf_param, &fixture->source);
-
-	zassert_equal(reconf_param->qos->sdu, stream->qos->sdu, "Unexpected stream SDU");
-	zassert_equal(reconf_param->qos->rtn, stream->qos->rtn, "Unexpected stream RTN");
-	zassert_equal(reconf_param->qos->phy, stream->qos->phy, "Unexpected stream PHY");
-
 	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	for (size_t i = 0u; i < reconf_param->params_count; i++) {
+		for (size_t j = 0u; j < reconf_param->params[i].params_count; j++) {
+			const struct bt_bap_stream *stream =
+				reconf_param->params[i].params[j].stream;
+
+			zassert_equal(reconf_param->qos->sdu, stream->qos->sdu,
+				      "Unexpected stream SDU");
+			zassert_equal(reconf_param->qos->rtn, stream->qos->rtn,
+				      "Unexpected stream RTN");
+			zassert_equal(reconf_param->qos->phy, stream->qos->phy,
+				      "Unexpected stream PHY");
+		}
+	}
+
+	reconf_param->params_count = 1U;
 	reconf_param->qos->sdu = 100U;
 	reconf_param->qos->rtn = 3U;
 	reconf_param->qos->phy = 1U;
@@ -543,9 +563,70 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure)
 	err = bt_bap_broadcast_source_reconfig(fixture->source, reconf_param);
 	zassert_equal(0, err, "Unable to reconfigure broadcast source: err %d", err);
 
-	zassert_equal(reconf_param->qos->sdu, stream->qos->sdu, "Unexpected stream SDU");
-	zassert_equal(reconf_param->qos->rtn, stream->qos->rtn, "Unexpected stream RTN");
-	zassert_equal(reconf_param->qos->phy, stream->qos->phy, "Unexpected stream PHY");
+	for (size_t i = 0u; i < subgroup_cnt; i++) {
+		for (size_t j = 0u; j < reconf_param->params[i].params_count; j++) {
+			const struct bt_bap_stream *stream =
+				reconf_param->params[i].params[j].stream;
+
+			zassert_equal(reconf_param->qos->sdu, stream->qos->sdu,
+				      "Unexpected stream SDU");
+			zassert_equal(reconf_param->qos->rtn, stream->qos->rtn,
+				      "Unexpected stream RTN");
+			zassert_equal(reconf_param->qos->phy, stream->qos->phy,
+				      "Unexpected stream PHY");
+		}
+	}
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure_all)
+{
+	struct bt_bap_broadcast_source_param *reconf_param = fixture->param;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       reconf_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(reconf_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	for (size_t i = 0u; i < reconf_param->params_count; i++) {
+		for (size_t j = 0u; j < reconf_param->params[i].params_count; j++) {
+			const struct bt_bap_stream *stream =
+				reconf_param->params[i].params[j].stream;
+
+			zassert_equal(reconf_param->qos->sdu, stream->qos->sdu,
+				      "Unexpected stream SDU");
+			zassert_equal(reconf_param->qos->rtn, stream->qos->rtn,
+				      "Unexpected stream RTN");
+			zassert_equal(reconf_param->qos->phy, stream->qos->phy,
+				      "Unexpected stream PHY");
+		}
+	}
+
+	reconf_param->qos->sdu = 100U;
+	reconf_param->qos->rtn = 3U;
+	reconf_param->qos->phy = 1U;
+
+	err = bt_bap_broadcast_source_reconfig(fixture->source, reconf_param);
+	zassert_equal(0, err, "Unable to reconfigure broadcast source: err %d", err);
+
+	for (size_t i = 0u; i < reconf_param->params_count; i++) {
+		for (size_t j = 0u; j < reconf_param->params[i].params_count; j++) {
+			const struct bt_bap_stream *stream =
+				reconf_param->params[i].params[j].stream;
+
+			zassert_equal(reconf_param->qos->sdu, stream->qos->sdu,
+				      "Unexpected stream SDU");
+			zassert_equal(reconf_param->qos->rtn, stream->qos->rtn,
+				      "Unexpected stream RTN");
+			zassert_equal(reconf_param->qos->phy, stream->qos->phy,
+				      "Unexpected stream PHY");
+		}
+	}
 
 	err = bt_bap_broadcast_source_delete(fixture->source);
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
