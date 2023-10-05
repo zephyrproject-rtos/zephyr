@@ -48,4 +48,7 @@
 #define IP_STM_11_BASE          IP_SMU__STM_0_BASE
 #define IP_STM_12_BASE          IP_SMU__STM_2_BASE
 
+/* NETC */
+#define IP_NETC_EMDIO_0_BASE    IP_NETC__EMDIO_BASE_BASE
+
 #endif /* _NXP_S32_S32ZE_SOC_H_ */
