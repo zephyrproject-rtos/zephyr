@@ -461,6 +461,7 @@ __subsystem struct can_driver_api {
 /** @cond INTERNAL_HIDDEN */
 
 STATS_SECT_START(can)
+STATS_SECT_ENTRY32(bit_error)
 STATS_SECT_ENTRY32(bit0_error)
 STATS_SECT_ENTRY32(bit1_error)
 STATS_SECT_ENTRY32(stuff_error)
@@ -471,6 +472,7 @@ STATS_SECT_ENTRY32(rx_overrun)
 STATS_SECT_END;
 
 STATS_NAME_START(can)
+STATS_NAME(can, bit_error)
 STATS_NAME(can, bit0_error)
 STATS_NAME(can, bit1_error)
 STATS_NAME(can, stuff_error)
@@ -502,15 +504,40 @@ struct can_device_state {
 /** @endcond */
 
 /**
+ * @brief Increment the bit error counter for a CAN device
+ *
+ * The bit error counter is incremented when the CAN controller is unable to
+ * transmit either a dominant or a recessive bit.
+ *
+ * @note This error counter should only be incremented if the CAN controller is unable to
+ * distinquish between failure to transmit a dominant versus failure to transmit a recessive bit. If
+ * the CAN controller supports distinguishing between the two, the `bit0` or `bit1` error counter
+ * shall be incremented instead.
+ *
+ * @see CAN_STATS_BIT0_ERROR_INC()
+ * @see CAN_STATS_BIT1_ERROR_INC()
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_BIT_ERROR_INC(dev_)                  \
+	STATS_INC(Z_CAN_GET_STATS(dev_), bit_error)
+
+/**
  * @brief Increment the bit0 error counter for a CAN device
  *
  * The bit0 error counter is incremented when the CAN controller is unable to
  * transmit a dominant bit.
  *
+ * Incrementing this counter will automatically increment the bit error counter.
+ * @see CAN_STATS_BIT_ERROR_INC()
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
-#define CAN_STATS_BIT0_ERROR_INC(dev_)			\
-	STATS_INC(Z_CAN_GET_STATS(dev_), bit0_error)
+#define CAN_STATS_BIT0_ERROR_INC(dev_)				\
+	do {							\
+		STATS_INC(Z_CAN_GET_STATS(dev_), bit0_error);	\
+		CAN_STATS_BIT_ERROR_INC(dev_);			\
+	} while (0)
 
 /**
  * @brief Increment the bit1 (recessive) error counter for a CAN device
@@ -518,10 +545,16 @@ struct can_device_state {
  * The bit1 error counter is incremented when the CAN controller is unable to
  * transmit a recessive bit.
  *
+ * Incrementing this counter will automatically increment the bit error counter.
+ * @see CAN_STATS_BIT_ERROR_INC()
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
-#define CAN_STATS_BIT1_ERROR_INC(dev_)			\
-	STATS_INC(Z_CAN_GET_STATS(dev_), bit1_error)
+#define CAN_STATS_BIT1_ERROR_INC(dev_)				\
+	do {							\
+		STATS_INC(Z_CAN_GET_STATS(dev_), bit1_error);	\
+		CAN_STATS_BIT_ERROR_INC(dev_);			\
+	} while (0)
 
 /**
  * @brief Increment the stuffing error counter for a CAN device
@@ -610,7 +643,7 @@ struct can_device_state {
 	{								\
 		struct can_device_state *state =			\
 			CONTAINER_OF(dev->state, struct can_device_state, devstate); \
-		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 7,	\
+		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 8,	\
 			   STATS_NAME_INIT_PARMS(can));			\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
 		if (init_fn != NULL) {					\
@@ -655,6 +688,7 @@ struct can_device_state {
 
 #else /* CONFIG_CAN_STATS */
 
+#define CAN_STATS_BIT_ERROR_INC(dev_)
 #define CAN_STATS_BIT0_ERROR_INC(dev_)
 #define CAN_STATS_BIT1_ERROR_INC(dev_)
 #define CAN_STATS_STUFF_ERROR_INC(dev_)
