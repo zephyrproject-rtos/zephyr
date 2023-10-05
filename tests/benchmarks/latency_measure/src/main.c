@@ -14,17 +14,12 @@
 #include <zephyr/timestamp.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include "utils.h"
+#include "timing_sc.h"
 #include <zephyr/tc_util.h>
 
 #define NUM_ITERATIONS  10000
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
-
-#ifdef CONFIG_USERSPACE
-#define  BENCH_BMEM  K_APP_BMEM(bench_mem_partition)
-#else
-#define  BENCH_BMEM
-#endif
 
 uint32_t tm_off;
 
@@ -75,6 +70,8 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 
 	TC_START("Time Measurement");
 	TC_PRINT("Timing results: Clock frequency: %u MHz\n", freq);
+
+	timestamp_overhead_init(NUM_ITERATIONS);
 
 	/* Preemptive threads context switching */
 	thread_switch_yield(NUM_ITERATIONS, false);

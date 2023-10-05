@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include "utils.h"
+#include "timing_sc.h"
 
 static struct k_sem  sem;
 
@@ -33,7 +34,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 		 * to <start_thread>.
 		 */
 
-		mid = timing_counter_get();
+		mid = timing_timestamp_get();
 		k_sem_give(&sem);
 
 		/* 5. Share the <mid> timestamp. */
@@ -68,12 +69,12 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		 * to <alt_thread>.
 		 */
 
-		start = timing_counter_get();
+		start = timing_timestamp_get();
 		k_sem_take(&sem, K_FOREVER);
 
 		/* 3. Get the <finish> timestamp. */
 
-		finish = timing_counter_get();
+		finish = timing_timestamp_get();
 
 		/*
 		 * 4. Let <alt_thread> run so it can share its <mid>
@@ -135,6 +136,7 @@ void sema_context_switch(uint32_t num_iterations,
 	/* Retrieve the number of cycles spent taking the semaphore */
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(description, sizeof(description),
 		 "Take a semaphore (context switch %c -> %c)",
@@ -150,6 +152,7 @@ void sema_context_switch(uint32_t num_iterations,
 	/* Retrieve the number of cycles spent taking the semaphore */
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(description, sizeof(description),
 		 "Give a semaphore (context switch %c -> %c)",
@@ -183,24 +186,24 @@ static void immediate_give_take(void *p1, void *p2, void *p3)
 
 	/* 1. Give a semaphore. No threads are waiting on it */
 
-	start = timing_counter_get();
+	start = timing_timestamp_get();
 
 	for (uint32_t i = 0; i < num_iterations; i++) {
 		k_sem_give(&sem);
 	}
 
-	finish = timing_counter_get();
+	finish = timing_timestamp_get();
 	give_cycles = timing_cycles_get(&start, &finish);
 
 	/* 2. Take a semaphore--no contention */
 
-	start = timing_counter_get();
+	start = timing_timestamp_get();
 
 	for (uint32_t i = 0; i < num_iterations; i++) {
 		k_sem_take(&sem, K_NO_WAIT);
 	}
 
-	finish = timing_counter_get();
+	finish = timing_timestamp_get();
 	take_cycles = timing_cycles_get(&start, &finish);
 
 	/* 3. Post the number of cycles spent giving the semaphore */
@@ -250,6 +253,7 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	/* 5. Retrieve the number of cycles spent giving the semaphore */
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Give a semaphore (no waiters) from %s thread",
@@ -269,6 +273,7 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	/* 9. Retrieve the number of cycles spent taking the semaphore */
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Take a semaphore (no blocking) from %s thread",

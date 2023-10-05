@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include "utils.h"
+#include "timing_sc.h"
 
 static K_MUTEX_DEFINE(test_mutex);
 
@@ -30,7 +31,7 @@ static void start_lock_unlock(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	start = timing_counter_get();
+	start = timing_timestamp_get();
 
 	/* Recursively lock take the mutex */
 
@@ -38,11 +39,11 @@ static void start_lock_unlock(void *p1, void *p2, void *p3)
 		k_mutex_lock(&test_mutex, K_NO_WAIT);
 	}
 
-	finish = timing_counter_get();
+	finish = timing_timestamp_get();
 
 	lock_cycles = timing_cycles_get(&start, &finish);
 
-	start = timing_counter_get();
+	start = timing_timestamp_get();
 
 	/* Recursively unlock the mutex */
 
@@ -50,7 +51,7 @@ static void start_lock_unlock(void *p1, void *p2, void *p3)
 		k_mutex_unlock(&test_mutex);
 	}
 
-	finish = timing_counter_get();
+	finish = timing_timestamp_get();
 
 	unlock_cycles = timing_cycles_get(&start, &finish);
 
@@ -90,6 +91,7 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 	k_thread_start(&start_thread);
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
@@ -99,6 +101,7 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 			false, "");
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Unlock a mutex from %s thread",

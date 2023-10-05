@@ -22,6 +22,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include "utils.h"
+#include "timing_sc.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
@@ -38,7 +39,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 
 	/* 3. Finish measuring time to start <alt_thread> */
 
-	timestamp.sample = timing_counter_get();
+	timestamp.sample = timing_timestamp_get();
 
 	/* 4. Let <start_thread> process the time measurement. */
 
@@ -46,12 +47,12 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 
 	/* 7. Begin measuring time to suspend active thread (self/alt_thread) */
 
-	timestamp.sample = timing_counter_get();
+	timestamp.sample = timing_timestamp_get();
 	k_thread_suspend(&alt_thread);
 
 	/* 10. Finish measuring time to resume <alt_thread> (self) */
 
-	timestamp.sample = timing_counter_get();
+	timestamp.sample = timing_timestamp_get();
 
 	/* 11. Lower the priority so <start_thread> can terminate us. */
 
@@ -81,14 +82,14 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		/* 1. Measure time to create, but not start <alt_thread> */
 
 		if ((bit_options & START_ALT) == START_ALT) {
-			start = timing_counter_get();
+			start = timing_timestamp_get();
 			k_thread_create(&alt_thread, alt_stack,
 					K_THREAD_STACK_SIZEOF(alt_stack),
 					alt_thread_entry, NULL, NULL, NULL,
 					priority,
 					(bit_options & ALT_USER) == ALT_USER ?
 						K_USER : 0, K_FOREVER);
-			finish = timing_counter_get();
+			finish = timing_timestamp_get();
 
 			thread_create_sum += timing_cycles_get(&start, &finish);
 		} else {
@@ -116,7 +117,7 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 
 		/* 2. Begin measuring time to start <alt_thread> */
 
-		start = timing_counter_get();
+		start = timing_timestamp_get();
 		k_thread_start(&alt_thread);
 
 		/* 5. Process the time to start <alt_thread> */
@@ -131,12 +132,12 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		/* 8. Finish measuring time to suspend <alt_thread> */
 
 		start = timestamp.sample;
-		finish = timing_counter_get();
+		finish = timing_timestamp_get();
 		thread_suspend_sum += timing_cycles_get(&start, &finish);
 
 		/* 9. Being measuring time to resume <alt_thread> */
 
-		start = timing_counter_get();
+		start = timing_timestamp_get();
 		k_thread_resume(&alt_thread);
 
 		/* 12. Process the time it took to resume <alt_thread> */
@@ -146,9 +147,9 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 
 		/* 13. Process the time to terminate <alt_thread> */
 
-		start = timing_counter_get();
+		start = timing_timestamp_get();
 		k_thread_abort(&alt_thread);
-		finish = timing_counter_get();
+		finish = timing_timestamp_get();
 		thread_abort_sum += timing_cycles_get(&start, &finish);
 	}
 
@@ -239,6 +240,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	}
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
 	if ((bit_options & START_ALT) == START_ALT) {
@@ -255,6 +257,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	}
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
@@ -266,6 +269,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 			num_iterations, false, "");
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
@@ -277,6 +281,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 			num_iterations, false, "");
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
@@ -288,6 +293,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 			num_iterations, false, "");
 
 	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
