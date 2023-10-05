@@ -821,6 +821,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 	for (size_t i = 0U; i < param->params_count; i++) {
 		const struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
 		struct bt_audio_codec_cfg *codec_cfg;
+		struct bt_bap_stream *stream;
 
 		if (i == 0) {
 			subgroup =
@@ -837,8 +838,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			const struct bt_bap_broadcast_source_stream_param *stream_param;
 			struct bt_audio_broadcast_stream_data *stream_data;
 			struct bt_bap_stream *subgroup_stream;
-			struct bt_iso_chan_io_qos *iso_qos;
-			struct bt_bap_stream *stream;
 			size_t stream_idx;
 
 			stream_param = &subgroup_param->params[j];
@@ -853,14 +852,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 				stream_idx++;
 			}
 
-			iso_qos = stream->ep->iso->chan.qos->tx;
-
-			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-
-			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
-			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
-			stream->qos = qos;
-
 			/* Store the BIS specific codec configuration data in the broadcast source.
 			 * It is stored in the broadcast* source, instead of the stream object,
 			 * as this is only relevant for the broadcast source, and not used
@@ -869,6 +860,30 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			stream_data = &source->stream_data[stream_idx];
 			(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
 			stream_data->data_len = stream_param->data_len;
+		}
+
+		/* Apply the codec_cfg to all streams in the subgroup, and not just the ones in the
+		 * params
+		 */
+		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			struct bt_iso_chan_io_qos *iso_qos;
+
+			iso_qos = stream->ep->iso->chan.qos->tx;
+			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
+			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
+		}
+	}
+
+	/* Finally we apply the new qos and to all streams */
+	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		struct bt_bap_stream *stream;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			struct bt_iso_chan_io_qos *iso_qos;
+
+			iso_qos = stream->ep->iso->chan.qos->tx;
+			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
+			stream->qos = qos;
 		}
 	}
 
