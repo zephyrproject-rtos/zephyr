@@ -175,11 +175,11 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CHARGE_VOLTAGE:
 		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGVOLTAGE, &tmp_val);
-		val->chg_voltage = tmp_val;
+		val->chg_voltage = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_CHARGE_CURRENT:
 		rc = bq27z746_read16(dev, BQ27Z746_CHARGINGCURRENT, &tmp_val);
-		val->chg_current = tmp_val;
+		val->chg_current = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_STATUS:
 		rc = bq27z746_read16(dev, BQ27Z746_BATTERYSTATUS, &tmp_val);

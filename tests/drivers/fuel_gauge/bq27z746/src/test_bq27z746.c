@@ -139,8 +139,8 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_equal(vals[10].voltage, 1000);
 	zassert_equal(vals[11].sbs_at_rate, -2);
 	zassert_equal(vals[12].sbs_at_rate_time_to_empty, 1);
-	zassert_equal(vals[13].chg_voltage, 1);
-	zassert_equal(vals[14].chg_current, 1);
+	zassert_equal(vals[13].chg_voltage, 1000);
+	zassert_equal(vals[14].chg_current, 1000);
 	zassert_equal(vals[15].fg_status, 1);
 	zassert_equal(vals[16].design_cap, 1);
 #else

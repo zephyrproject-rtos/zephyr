@@ -127,11 +127,11 @@ static int sbs_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CHARGE_CURRENT:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_CURRENT, &tmp_val);
-		val->chg_current = tmp_val;
+		val->chg_current = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_CHARGE_VOLTAGE:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CHG_VOLTAGE, &tmp_val);
-		val->chg_voltage = tmp_val;
+		val->chg_voltage = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_STATUS:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FLAGS, &tmp_val);
