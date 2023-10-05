@@ -19,7 +19,25 @@ struct btp_pacs_read_supported_commands_rp {
 #define BTP_PACS_CHARACTERISTIC_AVAILABLE_AUDIO_CONTEXTS	0x05
 #define BTP_PACS_CHARACTERISTIC_SUPPORTED_AUDIO_CONTEXTS	0x06
 
-#define BTP_PACS_UPDATE_CHARACTERISTIC	0x02
+#define BTP_PACS_UPDATE_CHARACTERISTIC				0x02
 struct btp_pacs_update_characteristic_cmd {
 	uint8_t characteristic;
+} __packed;
+
+#define BTP_PACS_SET_LOCATION					0x03
+struct btp_pacs_set_location_cmd {
+	uint8_t dir;
+	uint32_t location;
+} __packed;
+
+#define BTP_PACS_SET_AVAILABLE_CONTEXTS				0x04
+struct btp_pacs_set_available_contexts_cmd {
+	uint16_t sink_contexts;
+	uint16_t source_contexts;
+} __packed;
+
+#define BTP_PACS_SET_SUPPORTED_CONTEXTS				0x05
+struct btp_pacs_set_supported_contexts_cmd {
+	uint16_t sink_contexts;
+	uint16_t source_contexts;
 } __packed;
