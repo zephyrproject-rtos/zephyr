@@ -70,14 +70,11 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * @brief Get the system timer frequency.
  * @return system timer frequency in Hz
  */
-static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
-{
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-	return sys_clock_hw_cycles_per_sec_runtime_get();
+#define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
 #else
-	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+#define sys_clock_hw_cycles_per_sec() CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #endif
-}
 
 /** @internal
  * Macro determines if fast conversion algorithm can be used. It checks if
