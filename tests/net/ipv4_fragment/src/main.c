@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/ztest.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>

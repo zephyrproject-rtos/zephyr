@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/smbus.h>

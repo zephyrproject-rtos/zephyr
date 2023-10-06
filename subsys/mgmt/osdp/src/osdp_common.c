@@ -12,7 +12,7 @@
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 #include <zephyr/crypto/crypto.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #endif
 
 #include "osdp_common.h"

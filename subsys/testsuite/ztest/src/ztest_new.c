@@ -22,7 +22,7 @@ static bool failed_expectation;
 #include <stdlib.h>
 #include <time.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 #else

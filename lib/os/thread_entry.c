@@ -13,7 +13,7 @@
 
 #include <zephyr/kernel.h>
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 __thread k_tid_t z_tls_current;
 #endif
