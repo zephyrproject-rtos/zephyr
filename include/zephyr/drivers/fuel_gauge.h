@@ -26,8 +26,6 @@ extern "C" {
 
 #include <zephyr/device.h>
 
-/* Keep these alphabetized wrt property name */
-
 enum fuel_gauge_prop_type {
 	/** Runtime Dynamic Battery Parameters */
 	/**
