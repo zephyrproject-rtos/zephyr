@@ -1240,6 +1240,39 @@ static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct in6_addr *add
 }
 
 /**
+ *  @brief Create IPv4 mapped IPv6 address
+ *
+ *  @param addr4 IPv4 address
+ *  @param addr6 IPv6 address to be created
+ */
+static inline void net_ipv6_addr_create_v4_mapped(const struct in_addr *addr4,
+						  struct in6_addr *addr6)
+{
+	net_ipv6_addr_create(addr6, 0, 0, 0, 0, 0, 0xffff,
+			     ntohs(addr4->s4_addr16[0]),
+			     ntohs(addr4->s4_addr16[1]));
+}
+
+/**
+ *  @brief Is the IPv6 address an IPv4 mapped one. The v4 mapped addresses
+ *         look like \::ffff:a.b.c.d
+ *
+ *  @param addr IPv6 address
+ *
+ *  @return True if IPv6 address is a IPv4 mapped address, False otherwise.
+ */
+static inline bool net_ipv6_addr_is_v4_mapped(const struct in6_addr *addr)
+{
+	if (UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
+	    UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
+	    UNALIGNED_GET(&addr->s6_addr16[5]) == 0xffff) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
  *  @brief Create IPv6 address interface identifier
  *
  *  @param addr IPv6 address
