@@ -21,7 +21,11 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct broadcast_source_stream {
+	struct bt_bap_stream stream;
+	uint16_t seq_num;
+	size_t sent_cnt;
+} streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *broadcast_source;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
@@ -39,6 +43,11 @@ static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
+	struct broadcast_source_stream *source_stream =
+		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+
+	source_stream->seq_num = 0U;
+	source_stream->sent_cnt = 0U;
 	k_sem_give(&sem_started);
 }
 
@@ -49,7 +58,8 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
-	static uint32_t sent_cnt;
+	struct broadcast_source_stream *source_stream =
+		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
 	struct net_buf *buf;
 	int ret;
 
@@ -66,8 +76,7 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++,
-				   BT_ISO_TIMESTAMP_NONE);
+	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);
@@ -75,9 +84,9 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	sent_cnt++;
-	if ((sent_cnt % 1000U) == 0U) {
-		printk("Sent %u total ISO packets\n", sent_cnt);
+	source_stream->sent_cnt++;
+	if ((source_stream->sent_cnt % 1000U) == 0U) {
+		printk("Stream %p: Sent %u total ISO packets\n", stream, source_stream->sent_cnt);
 	}
 }
 
@@ -106,7 +115,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	}
 
 	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
-		stream_params[j].stream = &streams[j];
+		stream_params[j].stream = &streams[j].stream;
 		stream_params[j].data = NULL;
 		stream_params[j].data_len = 0U;
 		bt_bap_stream_cb_register(stream_params[j].stream, &stream_ops);
@@ -249,7 +258,7 @@ int main(void)
 		/* Initialize sending */
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-				stream_sent_cb(&streams[i]);
+				stream_sent_cb(&streams[i].stream);
 			}
 		}
 
