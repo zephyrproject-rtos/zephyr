@@ -1150,10 +1150,10 @@ Release Notes:
 "Drivers: Regulators":
   status: maintained
   maintainers:
-    - gmarull
+    - aasinclair
   collaborators:
     - danieldegrasse
-    - aasinclair
+    - gmarull
   files:
     - drivers/regulator/
     - include/zephyr/drivers/regulator/
