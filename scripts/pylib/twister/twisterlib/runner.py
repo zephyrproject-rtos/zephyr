@@ -1037,6 +1037,9 @@ class ProjectBuilder(FilterBuilder):
         instance = self.instance
 
         if instance.handler.ready:
+            logger.info(f"Reset instance status from '{instance.status}' to None before run.")
+            instance.status = None
+
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 
