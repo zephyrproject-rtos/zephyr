@@ -277,5 +277,14 @@ config BT_BAP_STREAM
 	default y if BT_ASCS || BT_BAP_UNICAST_CLIENT || \
 			BT_BAP_BROADCAST_SOURCE || BT_BAP_BROADCAST_SINK
 
+config BT_BAP_DEBUG_STREAM_SEQ_NUM
+	bool "Bluetooth Audio Stream sequence number debug"
+	depends on BT_BAP_STREAM_LOG_LEVEL >= BT_BAP_STREAM_LOG_LEVEL_WRN
+	default y
+	help
+	  Use this option to enable Bluetooth Audio Stream sequence number debugging logs for
+	  the Bluetooth Audio functionality. This will provide a warning if the application
+	  provides unexpected sequence numbers.
+
 rsource "Kconfig.pacs"
 rsource "Kconfig.ascs"
