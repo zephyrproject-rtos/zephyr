@@ -569,7 +569,20 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	tcp_send_queue_flush(conn);
 
-	k_work_cancel_delayable(&conn->send_data_timer);
+	/* Cancel all possible delayed work and prevent any execution of newly scheduled work
+	 * in one of the work item handlers
+	 * Essential because the work items are destructed at the bottom of this method.
+	 * A current ongoing execution might access the connection and schedule new work
+	 * Solution:
+	 * While holding the lock, cancel all delayable work.
+	 * Because every delayable work execution takes the same lock and releases the lock,
+	 * we're either here, or currently executing one of the workers.
+	 * Then, after cancelling the workers within the lock, either those workers have finished
+	 * or have been cancelled and will not execute anymore
+	 */
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	(void)k_work_cancel_delayable(&conn->send_data_timer);
 	tcp_pkt_unref(conn->send_data);
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
@@ -580,6 +593,10 @@ static int tcp_conn_unref(struct tcp *conn)
 	(void)k_work_cancel_delayable(&conn->fin_timer);
 	(void)k_work_cancel_delayable(&conn->persist_timer);
 	(void)k_work_cancel_delayable(&conn->ack_timer);
+	(void)k_work_cancel_delayable(&conn->send_timer);
+	(void)k_work_cancel_delayable(&conn->recv_queue_timer);
+
+	k_mutex_unlock(&conn->lock);
 
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
@@ -695,10 +712,12 @@ static void tcp_send_process(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_timer);
 	bool unref;
 
+	/* take the lock to prevent a race-condition with tcp_conn_unref */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	unref = tcp_send_process_no_lock(conn);
 
+	/* release the lock only after possible scheduling of work */
 	k_mutex_unlock(&conn->lock);
 
 	if (unref) {
@@ -1403,6 +1422,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, recv_queue_timer);
 
+	/* take the lock to prevent a race-condition with tcp_conn_unref */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("Cleanup recv queue conn %p len %zd seq %u", conn,
@@ -1412,6 +1432,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 	net_buf_unref(conn->queue_recv_data->buffer);
 	conn->queue_recv_data->buffer = NULL;
 
+	/* release the lock only after possible scheduling of work */
 	k_mutex_unlock(&conn->lock);
 }
 
@@ -1423,6 +1444,7 @@ static void tcp_resend_data(struct k_work *work)
 	int ret;
 	int exp_tcp_rto;
 
+	/* take the lock to prevent a race-condition with tcp_conn_unref */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("send_data_retries=%hu", conn->send_data_retries);
@@ -1486,6 +1508,7 @@ static void tcp_resend_data(struct k_work *work)
 				    K_MSEC(exp_tcp_rto));
 
  out:
+	/* release the lock only after possible scheduling of work */
 	k_mutex_unlock(&conn->lock);
 
 	if (conn_unref) {
@@ -1498,6 +1521,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, timewait_timer);
 
+	/* no need to acquire the conn->lock as there is nothing scheduled here */
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -1516,6 +1540,7 @@ static void tcp_fin_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
 
+	/* no need to acquire the conn->lock as there is nothing scheduled here */
 	if (conn->state == TCP_SYN_RECEIVED) {
 		tcp_establish_timeout(conn);
 		return;
@@ -1532,6 +1557,7 @@ static void tcp_send_zwp(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, persist_timer);
 
+	/* take the lock to prevent a race-condition with tcp_conn_unref */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
@@ -1555,6 +1581,7 @@ static void tcp_send_zwp(struct k_work *work)
 			&tcp_work_q, &conn->persist_timer, K_MSEC(timeout));
 	}
 
+	/* release the lock only after possible scheduling of work */
 	k_mutex_unlock(&conn->lock);
 }
 
@@ -1563,10 +1590,12 @@ static void tcp_send_ack(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, ack_timer);
 
+	/* take the lock to prevent a race-condition with tcp_conn_unref */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	tcp_out(conn, ACK);
 
+	/* release the lock only after possible scheduling of work */
 	k_mutex_unlock(&conn->lock);
 }
 
