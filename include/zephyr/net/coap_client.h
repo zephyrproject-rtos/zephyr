@@ -89,6 +89,7 @@ struct coap_client_internal_request {
 	struct coap_pending pending;
 	struct coap_client_request coap_request;
 	struct coap_packet request;
+	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
 };
 
 struct coap_client {
