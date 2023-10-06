@@ -45,6 +45,9 @@ struct mcux_mipi_dsi_config {
 struct mcux_mipi_dsi_data {
 	dsi_handle_t mipi_handle;
 	struct k_sem transfer_sem;
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+	uint8_t dma_slot;
+#endif
 };
 
 
@@ -105,11 +108,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	dma_cfg.user_data = (struct device *)dev;
 	dma_cfg.head_block = &block;
 	dma_cfg.block_count = 1;
-	if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
-		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
-	} else {
-		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
-	}
+	dma_cfg.dma_slot = data->dma_slot;
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	ret = dma_config(config->smart_dma, 0, &dma_cfg);
 	if (ret < 0) {
@@ -239,6 +238,25 @@ static int dsi_mcux_attach(const struct device *dev,
 	INPUTMUX_Deinit(INPUTMUX);
 
 	if (!device_is_ready(config->smart_dma)) {
+		return -ENODEV;
+	}
+
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	switch (mdev->pixfmt) {
+	case MIPI_DSI_PIXFMT_RGB888:
+		data->dma_slot = DMA_SMARTDMA_MIPI_RGB888_DMA;
+		break;
+	case MIPI_DSI_PIXFMT_RGB565:
+		if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
+			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
+		} else {
+			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
+		}
+		break;
+	default:
+		LOG_ERR("SMARTDMA does not support pixel_format %u",
+			mdev->pixfmt);
 		return -ENODEV;
 	}
 #else
