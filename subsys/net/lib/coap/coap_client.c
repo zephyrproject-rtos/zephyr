@@ -215,12 +215,25 @@ static int coap_client_init_request(struct coap_client *client,
 				coap_block_transfer_init(&internal_req->send_blk_ctx,
 							 coap_client_default_block_size(),
 							 req->len);
+				/* Generate request tag */
+				uint8_t *tag = coap_next_token();
+
+				memcpy(internal_req->request_tag, tag, COAP_TOKEN_MAX_LEN);
 			}
 			ret = coap_append_block1_option(&internal_req->request,
 							&internal_req->send_blk_ctx);
 
 			if (ret < 0) {
 				LOG_ERR("Failed to append block1 option");
+				goto out;
+			}
+
+			ret = coap_packet_append_option(&internal_req->request,
+				COAP_OPTION_REQUEST_TAG, internal_req->request_tag,
+				COAP_TOKEN_MAX_LEN);
+
+			if (ret < 0) {
+				LOG_ERR("Failed to append request tag option");
 				goto out;
 			}
 		}
