@@ -96,7 +96,6 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 	int ret;
 
 	ARG_UNUSED(dev);
-	ARG_UNUSED(pkt);
 
 	NET_DBG("Sending data (%zd bytes) to iface %d",
 		net_pkt_get_len(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
@@ -113,6 +112,8 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 
 	ret = net_recv_data(net_pkt_iface(recv_pkt), recv_pkt);
 	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
+
+	net_pkt_unref(pkt);
 
 	return 0;
 }
