@@ -217,6 +217,12 @@ struct mipi_dsi_device {
 	uint32_t mode_flags;
 };
 
+/*
+ * Per message flag to indicate the message must be sent
+ * using Low Power Mode instead of controller default.
+ */
+#define MIPI_DSI_MSG_USE_LPM BIT(0x0)
+
 /** MIPI-DSI read/write message. */
 struct mipi_dsi_msg {
 	/** Payload data type. */
