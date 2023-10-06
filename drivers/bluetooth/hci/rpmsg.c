@@ -339,10 +339,12 @@ static int bt_rpmsg_close(void)
 {
 	int err;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-	if (err) {
-		LOG_ERR("Sending reset command failed with: %d", err);
-		return err;
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+		if (err) {
+			LOG_ERR("Sending reset command failed with: %d", err);
+			return err;
+		}
 	}
 
 	err = ipc_service_deregister_endpoint(&hci_ept);
