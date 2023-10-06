@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+import os
+from pathlib import Path
 from typing import Generator, Type
 
 import pytest
@@ -66,3 +68,23 @@ def is_mcumgr_available() -> None:
 @pytest.fixture()
 def mcumgr(is_mcumgr_available: None, dut: DeviceAdapter) -> Generator[MCUmgr, None, None]:
     yield MCUmgr.create_for_serial(dut.device_config.serial)
+
+
+@pytest.fixture(scope='session')
+def bsim_env() -> dict:
+    bsim_out_path = os.getenv('BSIM_OUT_PATH')
+    if bsim_out_path is None:
+        pytest.fail('Environmental variable BSIM_OUT_PATH has to be set.')
+    bsim_components_path = os.getenv('BSIM_COMPONENTS_PATH')
+    if bsim_components_path is None:
+        pytest.fail('Environmental variable BSIM_COMPONENTS_PATH has to be set.')
+    env = {
+        'BSIM_OUT_PATH': bsim_out_path,
+        'BSIM_COMPONENTS_PATH': bsim_components_path
+    }
+    return env
+
+
+@pytest.fixture(scope='session')
+def build_dir(twister_harness_config: TwisterHarnessConfig) -> Path:
+    return twister_harness_config.devices[0].build_dir

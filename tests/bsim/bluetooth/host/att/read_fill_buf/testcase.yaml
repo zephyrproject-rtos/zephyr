@@ -1,0 +1,9 @@
+tests:
+  bluetooth.att.read_fill_buf:
+    platform_allow:
+      - nrf52_bsim
+    integration_platforms:
+      - nrf52_bsim
+    sysbuild: true
+    harness: pytest
+    tags: bluetooth

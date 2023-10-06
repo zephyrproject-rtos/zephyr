@@ -1,0 +1,8 @@
+tests:
+  bluetooth.adv.chain:
+    platform_allow:
+      - nrf52_bsim
+    integration_platforms:
+      - nrf52_bsim
+    harness: pytest
+    tags: bluetooth

@@ -1,0 +1,19 @@
+common:
+  platform_allow:
+    - nrf52_bsim
+  integration_platforms:
+    - nrf52_bsim
+  harness: pytest
+  tags: bluetooth
+
+tests:
+  bluetooth.adv.periodic:
+    harness_config:
+      pytest_root:
+        - "pytest/test_adv_periodic.py"
+
+  bluetooth.adv.periodic_long_data:
+    extra_args: CONF_FILE=prj_long_data.conf
+    harness_config:
+      pytest_root:
+        - "pytest/test_adv_periodic_long_data.py"
