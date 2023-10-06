@@ -13,13 +13,14 @@ ability to manage loadable code extensions in the shell.
 Requirements
 ************
 
-A board with shell capable console.
+A board with a supported llext architecture and shell capable console.
 
 Building
 ********
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/llext/shell_loader
+   :board: tdk_robokit1
    :goals: build
    :compact:
 
