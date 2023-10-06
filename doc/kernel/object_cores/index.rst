@@ -31,6 +31,7 @@ Object cores have been integrated into following kernel objects:
  * :ref:`Mutexes <mutexes_v2>`
  * :ref:`Pipes <pipes_v2>`
  * :ref:`Semaphores <semaphores_v2>`
+ * :ref:`Threads <threads_v2>`
  * :ref:`Timers <timers_v2>`
  * :ref:`System Memory Blocks <sys_mem_blocks>`
 
@@ -218,6 +219,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_OBJ_CORE_PIPE`
 * :kconfig:option:`CONFIG_OBJ_CORE_SEM`
 * :kconfig:option:`CONFIG_OBJ_CORE_STACK`
+* :kconfig:option:`CONFIG_OBJ_CORE_THREAD`
 * :kconfig:option:`CONFIG_OBJ_CORE_TIMER`
 * :kconfig:option:`CONFIG_OBJ_CORE_SYS_MEM_BLOCKS`
 * :kconfig:option:`CONFIG_OBJ_CORE_STATS`
