@@ -2562,7 +2562,7 @@ next_state:
 				 */
 			}
 
-			accept_cb(conn->context, &context->remote,
+			accept_cb(conn->context, &conn->context->remote,
 				  net_context_get_family(context) == AF_INET6 ?
 				  sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
 				  0, context);
