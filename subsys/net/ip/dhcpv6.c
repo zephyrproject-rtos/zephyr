@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 
 #include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/math_extras.h>
 
 #include "dhcpv6_internal.h"

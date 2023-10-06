@@ -29,7 +29,7 @@
 LOG_MODULE_REGISTER(net_icmp, ICMP_LOG_LEVEL);
 
 #include <errno.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>

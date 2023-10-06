@@ -15,7 +15,7 @@
 
 #include <zephyr/ztest.h>
 #include <kernel_internal.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define N_VALUES 10
 

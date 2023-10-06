@@ -15,7 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>

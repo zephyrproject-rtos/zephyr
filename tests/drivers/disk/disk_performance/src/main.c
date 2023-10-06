@@ -10,7 +10,7 @@
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
 #include <zephyr/timing/timing.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME CONFIG_SDMMC_VOLUME_NAME

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "ipv4_autoconf_internal.h"
 

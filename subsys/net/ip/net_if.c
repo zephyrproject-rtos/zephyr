@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>

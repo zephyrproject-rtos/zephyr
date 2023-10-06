@@ -14,7 +14,7 @@
  * provide a random number generator.
  */
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>

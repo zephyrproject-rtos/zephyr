@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/console/uart_mux.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"
