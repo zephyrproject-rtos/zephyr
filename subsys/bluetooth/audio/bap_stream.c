@@ -277,6 +277,16 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 		return -EBADMSG;
 	}
 
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	if (stream->_prev_seq_num != 0U && seq_num != 0U &&
+	    (stream->_prev_seq_num + 1U) != seq_num) {
+		LOG_WRN("Unexpected seq_num diff between %u and %u for %p", stream->_prev_seq_num,
+			seq_num, stream);
+	}
+
+	stream->_prev_seq_num = seq_num;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
 	/* TODO: Add checks for broadcast sink */
 
 	return bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),

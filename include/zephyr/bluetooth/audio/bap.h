@@ -484,6 +484,10 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	uint16_t _prev_seq_num;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
 	/* Internally used list node */
 	sys_snode_t _node;
 };
