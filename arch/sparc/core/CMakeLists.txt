@@ -18,3 +18,4 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)

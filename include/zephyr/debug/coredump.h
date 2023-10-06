@@ -145,6 +145,7 @@ enum coredump_tgt_code {
 	COREDUMP_TGT_RISC_V,
 	COREDUMP_TGT_XTENSA,
 	COREDUMP_TGT_ARM64,
+	COREDUMP_TGT_SPARC,
 };
 
 /* Coredump header */
