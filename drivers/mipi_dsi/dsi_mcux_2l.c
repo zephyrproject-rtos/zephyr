@@ -162,7 +162,8 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 		.sendDscCmd = true,
 		.dscCmd = msg->cmd,
 		.txDataType = kDSI_TxDataDcsLongWr,
-		.flags = kDSI_TransferUseHighSpeed,
+		/* default to high speed unless told to use low power */
+		.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed,
 	};
 
 	/*
@@ -354,6 +355,8 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	dsi_xfer.txData = msg->tx_buf;
 	dsi_xfer.rxDataSize = msg->rx_len;
 	dsi_xfer.rxData = msg->rx_buf;
+	/* default to high speed unless told to use low power */
+	dsi_xfer.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed;
 
 	switch (msg->type) {
 	case MIPI_DSI_DCS_READ:
@@ -373,7 +376,6 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
-		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
 		if (msg->flags & MCUX_DSI_2L_FB_DATA) {
 			/*
 			 * Special case- transfer framebuffer data using
