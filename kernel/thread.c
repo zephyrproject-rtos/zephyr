@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/check.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>

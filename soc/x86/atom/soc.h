@@ -19,7 +19,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/device.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #endif
 
 /* PCI definitions */

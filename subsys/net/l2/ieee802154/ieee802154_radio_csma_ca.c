@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_ieee802154_csma, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/toolchain.h>
 
 #include <errno.h>

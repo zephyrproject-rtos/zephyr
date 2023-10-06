@@ -6,7 +6,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define NUM_RANDOM 100
 

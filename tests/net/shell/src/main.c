@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/udp.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "ipv4.h"
 #include "ipv6.h"

@@ -8,7 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 

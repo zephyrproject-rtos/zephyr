@@ -10,7 +10,7 @@
 #include "access.h"
 #include "dfu.h"
 #include "blob.h"
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL

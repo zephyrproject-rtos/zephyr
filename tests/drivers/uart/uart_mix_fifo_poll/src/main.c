@@ -14,7 +14,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 /* RX and TX pins have to be connected together*/
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))

@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/hash_function.h>
 #include <zephyr/ztest.h>
 

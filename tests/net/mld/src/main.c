@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "icmpv6.h"
 #include "ipv6.h"

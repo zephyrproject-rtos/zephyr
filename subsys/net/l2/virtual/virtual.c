@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_virtual, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "net_private.h"
 

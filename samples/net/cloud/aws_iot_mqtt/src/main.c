@@ -17,7 +17,7 @@
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/data/json.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/logging/log.h>
 

@@ -8,7 +8,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/busy_sim.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define BUFFER_SIZE 32
 

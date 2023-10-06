@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/igmp.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "ipv4.h"
 

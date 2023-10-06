@@ -15,7 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/lorawan/lorawan.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 

@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <stdio.h>
 
 #include "wifi.h"

@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 
 #include <zephyr/net/ppp.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "net_private.h"
 

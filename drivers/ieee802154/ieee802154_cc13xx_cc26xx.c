@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/ieee802154.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <zephyr/sys/sys_io.h>
 

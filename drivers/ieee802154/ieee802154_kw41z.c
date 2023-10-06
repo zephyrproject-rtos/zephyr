@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "fsl_xcvr.h"
 

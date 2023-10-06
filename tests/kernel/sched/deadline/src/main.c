@@ -5,7 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define NUM_THREADS 8
 /* this should be large enough for us

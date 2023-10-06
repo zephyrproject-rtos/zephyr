@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>

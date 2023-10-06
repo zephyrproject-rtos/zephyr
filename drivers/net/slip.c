@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/drivers/uart_pipe.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "slip.h"
 

@@ -7,7 +7,7 @@
 #include <zephyr/ztress.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/sys/ring_buffer.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 

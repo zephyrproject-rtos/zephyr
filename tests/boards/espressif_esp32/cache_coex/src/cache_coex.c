@@ -9,7 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/flash.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <soc/soc_memory_layout.h>
 
 /* definitions used in Flash & RAM operations */

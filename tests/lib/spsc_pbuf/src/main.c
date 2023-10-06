@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztress.h>
 #include <zephyr/sys/spsc_pbuf.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define HDR_LEN sizeof(uint32_t)
 #define TLEN(len) ROUND_UP(HDR_LEN + len, sizeof(uint32_t))
