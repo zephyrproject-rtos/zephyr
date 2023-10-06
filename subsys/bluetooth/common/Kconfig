@@ -282,6 +282,7 @@ endif # BT_ASSERT
 
 config BT_MONITOR
 	bool
+	select LOG_OUTPUT
 
 choice BT_DEBUG_TYPE
 	prompt "Bluetooth debug type"
