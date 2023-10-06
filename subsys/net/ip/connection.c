@@ -843,7 +843,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	if (best_match) {
 		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, best_match->cb,
-			best_match->user_data, best_match->flags);
+			best_match->user_data, NET_CONN_RANK(best_match->flags));
 
 		if (best_match->cb(best_match, pkt, ip_hdr, proto_hdr, best_match->user_data)
 				== NET_DROP) {
