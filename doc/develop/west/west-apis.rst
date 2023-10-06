@@ -137,13 +137,38 @@ WestCommand
    .. automethod:: add_pre_run_hook
    .. versionadded:: 1.0.0
 
-   .. automethod:: check_call
+   .. NOTE: the following 'method' (not 'automethod') directives were added for
+      expediency during the west v1.2 release time frame to work around a build
+      failure in this zephyr documentation that could not be fixed without
+      cutting a west point release. (The docstrings in west had some RST syntax
+      errors).
 
+      These should be reverted back to automethod calls at the next release.
+
+   .. method:: check_call(args, **kwargs)
+
+      Runs ``subprocess.check_call(args, **kwargs)`` after
+      logging the call at Verbosity.DBG_MORE`` level.
+
+   .. versionchanged:: 1.2.0
+      The *cwd* keyword argument was replaced with a catch-all ``**kwargs``.
    .. versionchanged:: 0.11.0
 
-   .. automethod:: check_output
+   .. method:: check_output(args, **kwargs)
 
+      Runs ``subprocess.check_output(args, **kwargs)`` after
+      logging the call at Verbosity.DBG_MORE level.
+
+   .. versionchanged:: 1.2.0
+      The *cwd* keyword argument was replaced with a catch-all ``**kwargs``.
    .. versionchanged:: 0.11.0
+
+   .. method:: run_subprocess(args, **kwargs)
+
+      Runs ``subprocess.run(args, **kwargs)`` after logging
+      the call at Verbosity.DBG_MORE level.
+
+   .. versionadded:: 1.2.0
 
    All subclasses must provide the following abstract methods, which are used
    to implement the above:
@@ -158,15 +183,23 @@ WestCommand
    "quiet" mode for west commands in a future release:
 
    .. automethod:: dbg
+   .. versionchanged:: 1.2.0
+      The *end* argument.
    .. versionadded:: 1.0.0
 
    .. automethod:: inf
+   .. versionchanged:: 1.2.0
+      The *end* argument.
    .. versionadded:: 1.0.0
 
    .. automethod:: wrn
+   .. versionchanged:: 1.2.0
+      The *end* argument.
    .. versionadded:: 1.0.0
 
    .. automethod:: err
+   .. versionchanged:: 1.2.0
+      The *end* argument.
    .. versionadded:: 1.0.0
 
    .. automethod:: die
@@ -412,6 +445,9 @@ Manifest and sub-objects
 
    .. versionadded:: 0.12.0
       The *userdata* attribute.
+
+   .. versionadded:: 1.2.0
+      The *description* attribute.
 
    Constructor:
 
