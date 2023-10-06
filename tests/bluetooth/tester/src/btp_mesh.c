@@ -1305,6 +1305,14 @@ static uint8_t init(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t start(const void *cmd, uint16_t cmd_len,
+		     void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
 	LOG_DBG("");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -4961,6 +4969,11 @@ static const struct btp_handler handlers[] = {
 		.func = proxy_solicit
 	},
 #endif
+	{
+		.opcode = BTP_MESH_START,
+		.expect_len = 0,
+		.func = start
+	},
 };
 
 
