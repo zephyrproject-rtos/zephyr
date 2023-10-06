@@ -581,6 +581,7 @@ sony	Sony Corporation
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
+sqn	Sequans Communications
 sst	Silicon Storage Technology, Inc.
 sstar	Xiamen Xingchen(SigmaStar) Technology Co., Ltd. (formerly part of MStar Semiconductor, Inc.)
 st	STMicroelectronics
