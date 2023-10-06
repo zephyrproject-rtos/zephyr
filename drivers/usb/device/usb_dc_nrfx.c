@@ -1397,6 +1397,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 		return -1;
 	}
 
+	if ((ep_cfg->ep_type != USB_DC_EP_ISOCHRONOUS) &&
+	    (NRF_USBD_EPISO_CHECK(ep_cfg->ep_addr))) {
+		LOG_WRN("iso endpoint can only be iso");
+		return -1;
+	}
+
 	return 0;
 }
 
