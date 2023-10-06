@@ -177,7 +177,7 @@ config BT_SCA_UPDATE
 	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
 endif # BT_CONN
 
-rsource "Kconfig.iso"
+rsource "Kconfig.isoc"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
