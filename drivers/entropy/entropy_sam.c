@@ -41,6 +41,8 @@ static inline uint32_t _data(Trng * const trng)
 
 static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 {
+	ARG_UNUSED(flags);
+
 	/* According to the reference manual, the generator provides
 	 * one 32-bit random value every 84 peripheral clock cycles.
 	 * MCK may not be smaller than HCLK/4, so it should not take
@@ -55,17 +57,6 @@ static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 	while (!_ready(trng)) {
 		if (timeout-- == 0) {
 			return -ETIMEDOUT;
-		}
-
-		if ((flags & ENTROPY_BUSYWAIT) == 0U) {
-			/* This internal function is used by both get_entropy,
-			 * and get_entropy_isr APIs. The later may call this
-			 * function with the ENTROPY_BUSYWAIT flag set. In
-			 * that case make no assumption that the kernel is
-			 * initialized when the function is called; so, just
-			 * do busy-wait for the random data to be ready.
-			 */
-			k_yield();
 		}
 	}
 
