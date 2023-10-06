@@ -511,11 +511,9 @@ endif()
 if(DEFINED BUILD_VERSION)
   set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
 elseif(NOT ZEPHYR_GIT_INDEX)
-  set(ZEPHYR_GIT_INDEX ZEPHYR_GIT_INDEX-NOTFOUND CACHE PATH
-    "Path to Zephyr git repository index file")
   if(EXISTS ${ZEPHYR_BASE}/.git/index)
-    set(ZEPHYR_GIT_DIR ${ZEPHYR_BASE}/.git/index CACHE PATH
-      "Path to Zephyr git repository index file" FORCE)
+    set(ZEPHYR_GIT_INDEX ${ZEPHYR_BASE}/.git/index CACHE PATH
+      "Path to Zephyr git repository index file")
   elseif(EXISTS ${ZEPHYR_BASE}/.git)
     # Likely a git-submodule. Let's ask git where the real database is located.
     find_package(Git QUIET)
@@ -535,7 +533,7 @@ elseif(NOT ZEPHYR_GIT_INDEX)
           message(WARNING "BUILD_VERSION: git rev-parse warned: ${stderr}")
         endif()
         set(ZEPHYR_GIT_INDEX ${zephyr_git_dir}/index CACHE PATH
-          "Path to Zephyr git repository index file" FORCE)
+          "Path to Zephyr git repository index file")
       endif()
     else()
       message(WARNING "Could not find git installation, "
