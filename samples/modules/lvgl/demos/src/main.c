@@ -29,9 +29,11 @@ int main(void)
 	lv_demo_benchmark();
 #elif defined(CONFIG_LV_USE_DEMO_STRESS)
 	lv_demo_stress();
+#elif defined(CONFIG_LV_USE_DEMO_WIDGETS)
+	lv_demo_widgets();
 #else
-#error Enable one of the demos CONFIG_LV_USE_DEMO_MUSIC, CONFIG_LV_USE_DEMO_BENCHMARK \
-or CONFIG_LV_USE_DEMO_STRESS.
+#error Enable one of the demos CONFIG_LV_USE_DEMO_MUSIC, CONFIG_LV_USE_DEMO_BENCHMARK ,\
+	CONFIG_LV_USE_DEMO_STRESS, or CONFIG_LV_USE_DEMO_WIDGETS
 #endif
 
 	lv_task_handler();
