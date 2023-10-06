@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2023 Arm Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,16 +14,9 @@
  * wrapped around by _isr_wrapper()).
  */
 
-#include <zephyr/toolchain.h>
-#include <zephyr/linker/sections.h>
-#include <offsets_short.h>
-#include <zephyr/arch/cpu.h>
-
-_ASM_FILE_PROLOGUE
-
-GTEXT(z_arm_exc_exit)
-GTEXT(z_arm_int_exit)
-GDATA(_kernel)
+#include <zephyr/kernel.h>
+#include <kswap.h>
+#include <cmsis_core.h>
 
 /**
  *
@@ -48,12 +42,7 @@ GDATA(_kernel)
  * }
  *
  */
-
-SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
-
-/* z_arm_int_exit falls through to z_arm_exc_exit (they are aliases of each
- * other)
- */
+FUNC_ALIAS(z_arm_exc_exit, z_arm_int_exit, void);
 
 /**
  *
@@ -63,36 +52,15 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
  * See z_arm_int_exit().
  *
  */
-
-SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
-
+Z_GENERIC_SECTION(.text._HandlerModeExit) void z_arm_exc_exit(void)
+{
 #ifdef CONFIG_PREEMPT_ENABLED
-	ldr r3, =_kernel
-
-	ldr r1, [r3, #_kernel_offset_to_current]
-	ldr r0, [r3, #_kernel_offset_to_ready_q_cache]
-	cmp r0, r1
-	beq _EXIT_EXC
-
-	/* context switch required, pend the PendSV exception */
-	ldr r1, =_SCS_ICSR
-	ldr r2, =_SCS_ICSR_PENDSV
-	str r2, [r1]
-
-_ExcExitWithGdbStub:
-
-_EXIT_EXC:
+	if (_kernel.ready_q.cache != _kernel.cpus->current) {
+		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+	}
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_STACK_SENTINEL
-	push {r0, lr}
-	bl z_check_stack_sentinel
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	pop {r0, r1}
-	mov lr, r1
-#else
-	pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	z_check_stack_sentinel();
 #endif /* CONFIG_STACK_SENTINEL */
-
-	bx lr
+}
