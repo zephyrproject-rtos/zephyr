@@ -59,6 +59,9 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.nodes import NodeMatcher, make_refnode
+from zephyr.vcs_link import vcs_link_get_url
+
+import json
 
 __version__ = "0.1.0"
 
@@ -107,6 +110,30 @@ class ConvertCodeSampleNode(SphinxTransform):
             # Remove the moved siblings from their original parent
             for sibling in siblings_to_move:
                 parent.remove(sibling)
+
+            # Set sample description as the meta description of the document for improved SEO
+            meta_description = nodes.meta()
+            meta_description["name"] = "description"
+            meta_description["content"] = node.children[0].astext()
+            node.document += meta_description
+
+            # Similarly, add a node with JSON-LD markup (only renders in HTML output) describing
+            # the code sample.
+            json_ld = nodes.raw(
+                "",
+                f"""<script type="application/ld+json">
+                {json.dumps({
+                    "@context": "http://schema.org",
+                    "@type": "SoftwareSourceCode",
+                    "name": node['name'],
+                    "description": node.children[0].astext(),
+                    "codeSampleType": "full",
+                    "codeRepository": vcs_link_get_url(self.app, self.env.docname)
+                })}
+                </script>""",
+                format="html",
+            )
+            node.document += json_ld
 
 
 class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
@@ -200,6 +227,7 @@ class CodeSampleDirective(Directive):
         code_sample_node = CodeSampleNode()
         code_sample_node["id"] = code_sample_id
         code_sample_node["name"] = name
+        code_sample_node += description_node
 
         return [code_sample_node]
 
