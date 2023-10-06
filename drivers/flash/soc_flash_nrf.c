@@ -13,9 +13,18 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/flash.h>
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_ZSAI)
+#include <zephyr/drivers/zsai.h>
+#include <zephyr/drivers/zsai_infoword.h>
+#include <zephyr/drivers/zsai_ioctl.h>
+#endif
 #include <string.h>
 #include <nrfx_nvmc.h>
 #include <nrf_erratas.h>
+#ifdef CONFIG_USERSPACE
+#include <zephyr/syscall.h>
+#include <zephyr/syscall_handler.h>
+#endif
 
 #include "soc_flash_nrf.h"
 
@@ -53,6 +62,7 @@ static int erase_op(void *context); /* instance of flash_op_handler_t */
 static int erase_synchronously(uint32_t addr, uint32_t size);
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
+#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_ZSAI)
 static const struct flash_parameters flash_nrf_parameters = {
 #if defined(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	.write_block_size = 1,
@@ -61,6 +71,7 @@ static const struct flash_parameters flash_nrf_parameters = {
 #endif
 	.erase_value = 0xff,
 };
+#endif
 
 #if defined(CONFIG_MULTITHREADING)
 /* semaphore for locking flash resources (tickers) */
@@ -261,6 +272,7 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
+#if !defined(CONFIG_SOC_FLASH_NRF_ZSAI)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static struct flash_pages_layout dev_layout;
 
@@ -272,7 +284,9 @@ static void flash_nrf_pages_layout(const struct device *dev,
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#endif
 
+#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_ZSAI)
 static const struct flash_parameters *
 flash_nrf_get_parameters(const struct device *dev)
 {
@@ -290,6 +304,99 @@ static const struct flash_driver_api flash_nrf_api = {
 	.page_layout = flash_nrf_pages_layout,
 #endif
 };
+#endif
+
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_ZSAI)
+static int flash_nrf_sys_ioctl(const struct device *dev, uint32_t id, const uintptr_t in,
+			       uintptr_t in_out)
+{
+#ifdef CONFIG_USERSPACE
+	const bool syscall_trap = z_syscall_trap();
+#endif
+	size_t size = nrfx_nvmc_flash_size_get();
+
+	switch (id) {
+	case ZSAI_IOCTL_GET_SIZE:
+#ifdef CONFIG_USERSPACE
+		Z_OOPS(z_user_to_copy(size, ((size_t *)in_out), sizeof(size_t)));
+#else
+		*((size_t *)in_out) = size;
+#endif
+		return 0;
+
+	case ZSAI_IOCTL_GET_PAGE_INFO: {
+		uint32_t offset = in;
+		struct zsai_ioctl_range *pi = (struct zsai_ioctl_range *)in_out;
+		size_t page = nrfx_nvmc_flash_page_size_get();
+
+		if (pi == NULL) {
+			/*
+			 * Does it even make sense, NULL is only one of all the
+			 * bad addresses.
+			 */
+			return -EINVAL;
+		}
+
+		if (offset >= (uint32_t)size) {
+			return -ERANGE;
+		}
+
+#ifdef CONFIG_USERSPACE
+		/* The device has unform layout of 4k pages */
+		struct zsai_ioctl_range local_pi = {
+			.offset = offset & ~(page - 1),
+			.size = page,
+		}
+		Z_OOPS(z_user_to_copy(loca_pi, in_out, sizeof(local_pi);
+#else
+		/* The device has unform layout of 4k pages */
+		pi->offset = offset & ~(page - 1);
+		pi->size = page;
+#endif
+		return 0;
+	}
+	}
+
+	return -ENOTSUP;
+}
+
+static int zsai_flash_nrf_read(const struct device *dev, void *buffer,
+			       size_t offset, size_t size)
+{
+	return flash_nrf_read(dev, offset, buffer, size);
+}
+
+static int zsai_flash_nrf_write(const struct device *dev, const void *buffer,
+				size_t offset, size_t size)
+{
+	return flash_nrf_write(dev, offset, buffer, size);
+}
+
+static int zsai_flash_erase_range(const struct device *dev,
+				  struct zsai_ioctl_range *range)
+{
+	return flash_nrf_erase(dev, (off_t)range->offset, (size_t)range->size);
+}
+
+static const struct zsai_driver_api flash_nrf_api = {
+	.read = zsai_flash_nrf_read,
+	.write = zsai_flash_nrf_write,
+	.erase_range = zsai_flash_nrf_erase_range,
+	.sys_ioctl = flash_nrf_sys_ioctl,
+};
+
+static const struct zsai_device_generic_config flash_nrf_zsai_config = {
+#if defined(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+	ZSAI_MK_INFOWORD(1, true, true, 0xff, true),
+#else
+	ZSAI_MK_INFOWORD(4, true, true, 0xff, true),
+#endif
+};
+
+#define FLASH_NRF_CONFIG_OBJ ((const void *)&flash_nrf_zsai_config)
+#else
+#define FLASH_NRF_CONFIG_OBJ NULL
+#endif
 
 static int nrf_flash_init(const struct device *dev)
 {
@@ -299,16 +406,18 @@ static int nrf_flash_init(const struct device *dev)
 	nrf_flash_sync_init();
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
+#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_ZSAI)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	dev_layout.pages_count = nrfx_nvmc_flash_page_count_get();
 	dev_layout.pages_size = nrfx_nvmc_flash_page_size_get();
+#endif
 #endif
 
 	return 0;
 }
 
 DEVICE_DT_INST_DEFINE(0, nrf_flash_init, NULL,
-		 NULL, NULL,
+		 NULL, FLASH_NRF_CONFIG_OBJ,
 		 POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		 &flash_nrf_api);
 
