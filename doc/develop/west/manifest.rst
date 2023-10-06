@@ -174,9 +174,13 @@ Here is an example. We'll assume the ``remotes`` given above.
      # [... same remotes as above...]
      projects:
        - name: proj1
+         description: the first example project
          remote: remote1
          path: extra/project-1
        - name: proj2
+         description: |
+           A multi-line description of the second example
+           project.
          repo-path: my-path
          remote: remote2
          revision: v1.3
@@ -228,6 +232,10 @@ next.
      - Mandatory; a unique name for the project. The name cannot be one of the
        reserved values "west" or "manifest". The name must be unique in the
        manifest file.
+
+   * - ``description``
+     - Optional, an informational description of the project. Added in
+       west v1.2.0.
 
    * - ``remote``, ``url``
      - Mandatory (one of the two, but not both).
@@ -331,9 +339,13 @@ so far using ``defaults`` is:
 
      projects:
        - name: proj1
+         description: the first example project
          path: extra/project-1
          revision: master
        - name: proj2
+         description: |
+           A multi-line description of the second example
+           project.
          repo-path: my-path
          remote: remote2
        - name: proj3
@@ -486,6 +498,10 @@ about the manifest file features that were introduced in that version.
    * - ``"1.0"``
      - Identical to ``"0.13"``, but available for use by users that
        do not wish to use a ``"0.x"`` version field.
+
+   * - ``"1.2"``
+     - Support for ``description:`` in ``projects:``
+       (:ref:`west-manifests-projects`)
 
 .. note::
 
