@@ -98,9 +98,6 @@ class ConvertCodeSampleNode(SphinxTransform):
             new_section = nodes.section(ids=[node["id"]])
             new_section += nodes.title(text=node["name"])
 
-            # Move existing content from the custom node to the new section
-            new_section.extend(node.children)
-
             # Move the sibling nodes under the new section
             new_section.extend(siblings_to_move)
 
