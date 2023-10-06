@@ -2562,3 +2562,30 @@ void bt_mesh_model_data_store_schedule(struct bt_mesh_model *mod)
 	mod->flags |= BT_MESH_MOD_DATA_PENDING;
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
+
+uint8_t bt_mesh_comp_parse_page(struct net_buf_simple *buf)
+{
+	uint8_t page = net_buf_simple_pull_u8(buf);
+
+	if (page >= 130U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2) &&
+	    (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
+	     IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
+		page = 130U;
+	} else if (page >= 129U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) &&
+		   (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
+		    IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
+		page = 129U;
+	} else if (page >= 128U && (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
+				    IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
+		page = 128U;
+	} else if (page >= 2U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2)) {
+		page = 2U;
+	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
+		page = 1U;
+	} else if (page != 0U) {
+		LOG_DBG("Composition page %u not available", page);
+		page = 0U;
+	}
+
+	return page;
+}

@@ -53,32 +53,12 @@ static int handle_large_comp_data_get(struct bt_mesh_model *model, struct bt_mes
 		ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 		bt_hex(buf->data, buf->len));
 
-	page = net_buf_simple_pull_u8(buf);
+	page = bt_mesh_comp_parse_page(buf);
 	offset = net_buf_simple_pull_le16(buf);
 
 	LOG_DBG("page %u offset %u", page, offset);
 
 	bt_mesh_model_msg_init(&rsp, OP_LARGE_COMP_DATA_STATUS);
-	if (page >= 130U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2) &&
-	    (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
-	     IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
-		page = 130U;
-	} else if (page >= 129U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1) &&
-		   (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
-		    IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
-		page = 129U;
-	} else if (page >= 128U && (atomic_test_bit(bt_mesh.flags, BT_MESH_COMP_DIRTY) ||
-				    IS_ENABLED(CONFIG_BT_MESH_RPR_SRV))) {
-		page = 128U;
-	} else if (page >= 2U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_2)) {
-		page = 2U;
-	} else if (page >= 1U && IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
-		page = 1U;
-	} else if (page != 0U) {
-		LOG_DBG("Composition page %u not available", page);
-		page = 0U;
-	}
-
 	net_buf_simple_add_u8(&rsp, page);
 	net_buf_simple_add_le16(&rsp, offset);
 
