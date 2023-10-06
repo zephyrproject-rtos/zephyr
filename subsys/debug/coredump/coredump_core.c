@@ -177,8 +177,8 @@ void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 	m.hdr_version = COREDUMP_MEM_HDR_VER;
 
 	if (sizeof(uintptr_t) == 8) {
-		m.start	= sys_cpu_to_le64(start_addr);
-		m.end = sys_cpu_to_le64(end_addr);
+		m.start	= sys_cpu_to_le64((uint64_t) start_addr);
+		m.end = sys_cpu_to_le64((uint64_t) end_addr);
 	} else if (sizeof(uintptr_t) == 4) {
 		m.start	= sys_cpu_to_le32(start_addr);
 		m.end = sys_cpu_to_le32(end_addr);
