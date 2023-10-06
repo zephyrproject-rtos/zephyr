@@ -396,16 +396,16 @@ Manifest and sub-objects
 
    .. (note: attributes are part of the class docstring)
 
-   .. versionchanged:: 0.8.0
-      The *west_commands* attribute is now always a list. In previous
-      releases, it could be a string or ``None``.
-
    .. versionchanged:: 0.7.0
       The *remote* attribute was removed. Its semantics could no longer
       be preserved when support for manifest ``import`` keys was added.
 
    .. versionadded:: 0.7.0
       The *remote_name* and *name_and_path* attributes.
+
+   .. versionchanged:: 0.8.0
+      The *west_commands* attribute is now always a list. In previous
+      releases, it could be a string or ``None``.
 
    .. versionadded:: 0.9.0
       The *group_filter* and *submodules* attributes.
