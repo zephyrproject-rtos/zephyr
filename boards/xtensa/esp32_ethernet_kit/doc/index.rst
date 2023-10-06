@@ -468,7 +468,7 @@ Sysbuild
 ========
 
 The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the EPS32 SoC.
+bootstrap the board with the ESP32 SoC.
 
 To build the sample application using sysbuild use the command:
 
