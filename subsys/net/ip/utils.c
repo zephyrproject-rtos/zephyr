@@ -150,9 +150,9 @@ static int net_value_to_udec(char *buf, uint32_t value, int precision)
 char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			   char *dst, size_t size)
 {
-	struct in_addr *addr;
-	struct in6_addr *addr6;
-	uint16_t *w;
+	struct in_addr *addr = NULL;
+	struct in6_addr *addr6 = NULL;
+	uint16_t *w = NULL;
 	uint8_t i, bl, bh, longest = 1U;
 	int8_t pos = -1;
 	char delim = ':';
@@ -161,11 +161,16 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	int len = -1;
 	uint16_t value;
 	bool needcolon = false;
+	bool mapped = false;
 
 	if (family == AF_INET6) {
 		addr6 = (struct in6_addr *)src;
 		w = (uint16_t *)addr6->s6_addr16;
 		len = 8;
+
+		if (net_ipv6_addr_is_v4_mapped(addr6)) {
+			mapped = true;
+		}
 
 		for (i = 0U; i < 8; i++) {
 			uint8_t j;
@@ -198,6 +203,7 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 		return NULL;
 	}
 
+print_mapped:
 	for (i = 0U; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
@@ -218,6 +224,15 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			*ptr++ = delim;
 
 			continue;
+		}
+
+		if (mapped && (i > 5)) {
+			delim = '.';
+			len = 4;
+			addr = (struct in_addr *)(&addr6->s6_addr32[3]);
+			*ptr++ = ':';
+			family = AF_INET;
+			goto print_mapped;
 		}
 
 		/* IPv6 address */
