@@ -2563,7 +2563,9 @@ next_state:
 			}
 
 			accept_cb(conn->context, &context->remote,
-				  sizeof(struct sockaddr), 0, context);
+				  net_context_get_family(context) == AF_INET6 ?
+				  sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
+				  0, context);
 
 			next = TCP_ESTABLISHED;
 
