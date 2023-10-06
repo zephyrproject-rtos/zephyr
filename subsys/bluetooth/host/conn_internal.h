@@ -12,15 +12,15 @@
 #include <zephyr/bluetooth/iso.h>
 
 typedef enum __packed {
-	BT_CONN_DISCONNECTED,
-	BT_CONN_DISCONNECT_COMPLETE,
-	BT_CONN_CONNECTING_SCAN,
-	BT_CONN_CONNECTING_AUTO,
-	BT_CONN_CONNECTING_ADV,
-	BT_CONN_CONNECTING_DIR_ADV,
-	BT_CONN_CONNECTING,
-	BT_CONN_CONNECTED,
-	BT_CONN_DISCONNECTING,
+	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
+	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
+	BT_CONN_CONNECTING_SCAN,      /* Central passive scanning */
+	BT_CONN_CONNECTING_AUTO,      /* Central connection establishment w/ filter */
+	BT_CONN_CONNECTING_ADV,       /* Peripheral connectable advertising */
+	BT_CONN_CONNECTING_DIR_ADV,   /* Peripheral directed advertising */
+	BT_CONN_CONNECTING,           /* Central connection establishment */
+	BT_CONN_CONNECTED,            /* Peripheral or Central connected */
+	BT_CONN_DISCONNECTING,        /* Peripheral or Central issued disconnection command */
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
