@@ -33,6 +33,9 @@ config USB_DEVICE_STACK
 config USB_CDC_ACM
 	default SERIAL
 
+config CONSOLE
+	default y
+
 config UART_CONSOLE
 	default CONSOLE
 
