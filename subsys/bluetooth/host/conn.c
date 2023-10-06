@@ -579,7 +579,7 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 static int do_send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_conn_tx *tx = tx_data(buf)->tx;
-	uint32_t *pending_no_cb;
+	uint32_t *pending_no_cb = NULL;
 	unsigned int key;
 	int err = 0;
 
