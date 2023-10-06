@@ -105,7 +105,11 @@ void hci_iso(struct net_buf *buf)
 
 	BT_ISO_DATA_DBG("buf %p", buf);
 
-	BT_ASSERT(buf->len >= sizeof(*hdr));
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Invalid HCI ISO packet size (%u)", buf->len);
+		net_buf_unref(buf);
+		return;
+	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
