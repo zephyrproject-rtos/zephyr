@@ -211,6 +211,9 @@
 /drivers/dma/*intel_adsp*                 @teburd @abonislawski
 /drivers/dma/*rpi_pico*                   @soburi
 /drivers/dma/*xmc4xxx*                    @talih0
+/drivers/edac                             @finikorg
+/drivers/edac/edac_ibecc                  @finikorg
+/drivers/edac/edac_intel_socfpga          @Smale-12048867
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*b91*                    @andy-liu-telink
 /drivers/entropy/*bt_hci*                 @JordanYates
