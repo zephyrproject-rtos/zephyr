@@ -47,6 +47,9 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 Kernel
 ******
 
+* Added support for dynamic thread stack allocation via :c:func:`k_thread_stack_alloc`
+* Added support for :c:func:`k_spin_trylock`
+
 Architectures
 *************
 
