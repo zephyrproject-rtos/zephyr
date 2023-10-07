@@ -85,11 +85,11 @@ Zephyr.
    :widths: 50,10
 
     _POSIX_BARRIERS,yes
-    _POSIX_CLOCK_SELECTION,
+    _POSIX_CLOCK_SELECTION,yes
     _POSIX_FSYNC,
     _POSIX_MEMLOCK,
     _POSIX_MEMLOCK_RANGE,
-    _POSIX_MONOTONIC_CLOCK,
+    _POSIX_MONOTONIC_CLOCK,yes
     _POSIX_NO_TRUNC,
     _POSIX_REALTIME_SIGNALS,
     _POSIX_SEMAPHORES,yes
@@ -104,7 +104,7 @@ Zephyr.
     _POSIX_THREAD_PRIORITY_SCHEDULING,yes
     _POSIX_THREAD_SPORADIC_SERVER,
     _POSIX_TIMEOUTS,
-    _POSIX_TIMERS,
+    _POSIX_TIMERS,yes
     _POSIX2_C_DEV,
     _POSIX2_SW_DEV,
 
@@ -453,3 +453,31 @@ POSIX_DEVICE_IO
     vprintf(),yes
     vscanf(),
     write(),yes
+
+POSIX_TIMERS
+++++++++++++
+
+.. csv-table:: POSIX_TIMERS
+   :header: API, Supported
+   :widths: 50,10
+
+    clock_getres(),
+    clock_gettime(),yes
+    clock_settime(),yes
+    nanosleep(),yes
+    timer_create(),yes
+    timer_delete(),yes
+    timer_gettime(),yes
+    timer_getoverrun(),yes
+    timer_settime(),yes
+
+POSIX_CLOCK_SELECTION
++++++++++++++++++++++
+
+.. csv-table:: POSIX_CLOCK_SELECTION
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_condattr_getclock(),yes
+    pthread_condattr_setclock(),yes
+    clock_nanosleep(),yes
