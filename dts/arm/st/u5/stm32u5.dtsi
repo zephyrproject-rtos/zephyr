@@ -443,7 +443,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
 			st,static-prescaler;
