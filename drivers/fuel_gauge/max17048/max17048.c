@@ -90,7 +90,7 @@ int max17048_voltage(const struct device *i2c_dev, uint16_t *response)
 	 * milli volts instead of volts.
 	 */
 
-	*response = *response * 78125 / 1000000;
+	*response = (uint16_t)((uint32_t)*response * 78125L / 1000000L);
 	return 0;
 }
 
