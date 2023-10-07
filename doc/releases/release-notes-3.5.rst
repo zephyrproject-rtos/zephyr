@@ -476,6 +476,25 @@ Libraries / Subsystems
 
   * Added the :ref:`binary_descriptors` (``bindesc``) subsystem.
 
+* POSIX API
+
+  * Added dynamic thread stack support for :c:func:`pthread_create`
+  * Fixed :c:func:`stat` so that it returns file stats instead of filesystem stats
+  * Implemented :c:func:`pthread_barrierattr_destroy`, :c:func:`pthread_barrierattr_getpshared`,
+    :c:func:`pthread_barrierattr_init`, :c:func:`pthread_barrierattr_setpshared`,
+    :c:func:`pthread_condattr_destroy`, :c:func:`pthread_condattr_init`,
+    :c:func:`pthread_mutexattr_destroy`, :c:func:`pthread_mutexattr_init`, :c:func:`uname`,
+    :c:func:`sigaddset`, :c:func:`sigdelset`, :c:func:`sigemptyset`, :c:func:`sigfillset`,
+    :c:func:`sigismember`, :c:func:`strsignal`, :c:func:`pthread_spin_destroy`,
+    :c:func:`pthread_spin_init`, :c:func:`pthread_spin_lock`, :c:func:`pthread_spin_trylock`,
+    :c:func:`pthread_spin_unlock`, :c:func:`timer_getoverrun`, :c:func:`pthread_condattr_getclock`,
+    :c:func:`pthread_condattr_setclock`, :c:func:`clock_nanosleep`
+  * Added support for querying the number of bytes available to read via the
+    :c:macro:`FIONREAD` request to :c:func:`ioctl`
+  * Added :kconfig:option:`CONFIG_FDTABLE` to conditionally compile file descriptor table
+  * Added logging to POSIX threads, mutexes, and condition variables
+  * Fixed :c:func:`poll` issue with event file descriptors
+
 HALs
 ****
 
