@@ -23,7 +23,7 @@ struct si7006_data {
 
 struct si7006_config {
 	struct i2c_dt_spec i2c;
-	/** Use "read temp" vs "read old temp" command, the latter only with SiLabs sensors. */
+	/* Use "read temp" vs "read old temp" command, the latter only with SiLabs sensors. */
 	uint8_t read_temp_cmd;
 };
 
@@ -59,7 +59,6 @@ static int si7006_get_humidity(const struct device *dev)
  *
  * @return int 0 on success
  */
-
 static int si7006_get_temperature(const struct device *dev)
 {
 	struct si7006_data *si_data = dev->data;
@@ -178,7 +177,6 @@ static const struct sensor_driver_api si7006_api = {
  *
  * @return 0 for success
  */
-
 static int si7006_init(const struct device *dev)
 {
 	const struct si7006_config *config = dev->config;
@@ -193,17 +191,23 @@ static int si7006_init(const struct device *dev)
 	return 0;
 }
 
-#define SI7006_DEFINE(inst, temp_cmd)							\
-	static struct si7006_data si7006_data_##inst;					\
+#define SI7006_DEFINE(inst, name, temp_cmd)						\
+	static struct si7006_data si7006_data_##name##_##inst;				\
 											\
-	static const struct si7006_config si7006_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_GET(inst),						\
+	static const struct si7006_config si7006_config_##name##_##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 		.read_temp_cmd = temp_cmd,						\
 	};										\
 											\
-	SENSOR_DEVICE_DT_DEFINE(inst, si7006_init, NULL,				\
-				&si7006_data_##inst, &si7006_config_##inst,		\
-				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api); \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL,				\
+				     &si7006_data_##name##_##inst,			\
+				     &si7006_config_##name##_##inst,			\
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
+				     &si7006_api);
 
-DT_FOREACH_STATUS_OKAY_VARGS(silabs_si7006, SI7006_DEFINE, SI7006_READ_OLD_TEMP);
-DT_FOREACH_STATUS_OKAY_VARGS(sensirion_sht21, SI7006_DEFINE, SI7006_MEAS_TEMP_MASTER_MODE);
+#define DT_DRV_COMPAT silabs_si7006
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_READ_OLD_TEMP);
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT sensirion_sht21
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_MEAS_TEMP_MASTER_MODE);
