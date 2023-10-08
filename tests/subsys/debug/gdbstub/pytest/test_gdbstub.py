@@ -4,10 +4,12 @@
 
 import os
 import subprocess
-from twister_harness import DeviceAdapter
 import sys
 import logging
 import shlex
+import re
+import pytest
+from twister_harness import DeviceAdapter
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "pylib", "twister"))
@@ -15,20 +17,54 @@ from twisterlib.cmakecache import CMakeCache
 
 logger = logging.getLogger(__name__)
 
-
-def test_gdbstub(dut: DeviceAdapter):
-    """
-    Test gdbstub feature using a gdb script. We connect to the DUT and run some
-    basic gdb commands and evaluate return code to determine pass or failure.
-    """
+@pytest.fixture()
+def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout):
     build_dir = dut.device_config.build_dir
-    cmake_cache = CMakeCache.from_file(build_dir / 'CMakeCache.txt')
-    gdb = cmake_cache.get('CMAKE_GDB', None)
-    assert gdb
+    cmake_cache = CMakeCache.from_file(os.path.join(build_dir, 'CMakeCache.txt'))
+    gdb_exec = cmake_cache.get('CMAKE_GDB', None)
+    assert gdb_exec
     source_dir = cmake_cache.get('APPLICATION_SOURCE_DIR', None)
     assert source_dir
-    cmd = [gdb, '-x', f'{source_dir}/run.gdbinit', f'{build_dir}/zephyr/zephyr.elf']
-    logger.info(f'Test command: {shlex.join(cmd)}')
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
-    logger.debug('Output:\n%s' % result.stdout)
-    assert result.returncode == 0
+    build_image = cmake_cache.get('BYPRODUCT_KERNEL_ELF_NAME', None)
+    assert build_image
+    gdb_log_file = os.path.join(build_dir, 'gdb.log')
+    cmd = [gdb_exec, '-batch', '-ex', f'set logging file {gdb_log_file}',
+           '-x', f'{source_dir}/{gdb_script}', build_image]
+    logger.info(f'Run GDB: {shlex.join(cmd)}')
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=gdb_timeout)
+    logger.info(f'GDB ends rc={result.returncode}')
+    return result
+#
+
+@pytest.fixture(scope="module")
+def expected_app():
+    return [
+    re.compile(r"Booting from ROM"),
+    re.compile(r"Booting Zephyr OS build"),
+    re.compile(r"main\(\):enter"),
+    ]
+
+@pytest.fixture(scope="module")
+def expected_gdb():
+    return [
+    re.compile(r'Breakpoint 1 at 0x'),
+    re.compile(r'Breakpoint 2 at 0x'),
+    re.compile(r'Breakpoint 1, test '),
+    re.compile(r'Breakpoint 2, main '),
+    re.compile(r'GDB:PASSED'),
+    ]
+
+def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb):
+    """
+    Test gdbstub feature using a GDB script. We connect to the DUT, run the
+    GDB script then evaluate return code and expected patterns at the GDB
+    and Test Applicaiton outputs.
+    """
+    logger.debug(f"GDB output:\n{gdb_process.stdout}\n")
+    assert gdb_process.returncode == 0
+    assert all([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in expected_gdb]), 'No expected GDB output'
+    assert 'Inferior 1 [Remote target] will be killed' in gdb_process.stdout,'Expecting explicit quit from the GDB script and kill QEMU test app.'
+    app_output = '\n'.join(dut.readlines(print_output = False))
+    logger.debug(f"App output:\n{app_output}\n")
+    assert all([ex_re.search(app_output, re.MULTILINE) for ex_re in expected_app]), 'No expected Application output'
+#

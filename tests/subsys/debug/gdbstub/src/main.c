@@ -20,19 +20,12 @@ static int test(void)
 	return a + b;
 }
 
-static void thread_entry(void *p1, void *p2, void *p3)
-{
-	printk("Hello from user thread!\n");
-}
-
 int main(void)
 {
 	int ret;
 
+	printk("%s():enter\n", __func__);
 	ret = test();
-	printk("%d\n", ret);
+	printk("ret=%d\n", ret);
 	return 0;
 }
-
-K_THREAD_DEFINE(thread, STACKSIZE, thread_entry, NULL, NULL, NULL,
-		7, K_USER, 0);
