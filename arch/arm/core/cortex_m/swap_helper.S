@@ -94,7 +94,7 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     /* store r8-12 */
     stmea r0!, {r3-r7}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    stmia r0, {v1-v8, ip}
+    stmia r0, {r4-r11, ip}
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-out thread had been using the FP registers. */
     tst lr, #_EXC_RETURN_FTYPE_Msk
@@ -135,8 +135,8 @@ out_fp_endif:
      * to pend PendSV have been taken with the current kernel
      * state and this is what we're handling currently.
      */
-    ldr v4, =_SCS_ICSR
-    ldr v3, =_SCS_ICSR_UNPENDSV
+    ldr r7, =_SCS_ICSR
+    ldr r6, =_SCS_ICSR_UNPENDSV
 
     /* _kernel is still in r1 */
 
@@ -154,8 +154,8 @@ out_fp_endif:
      * has been handled.
      */
 
-    /* _SCS_ICSR is still in v4 and _SCS_ICSR_UNPENDSV in v3 */
-    str v3, [v4, #0]
+    /* _SCS_ICSR is still in r7 and _SCS_ICSR_UNPENDSV in r6 */
+    str r6, [r7, #0]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
     /* Grab the TLS pointer */
@@ -311,7 +311,7 @@ in_fp_endif:
 
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
-    ldmia r0, {v1-v8, ip}
+    ldmia r0, {r4-r11, ip}
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
