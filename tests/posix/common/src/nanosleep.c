@@ -120,6 +120,22 @@ ZTEST(posix_apis, test_clock_nanosleep_errors_errno)
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
 }
 
+/**
+ * @brief Check that a call to nanosleep has yielded executiuon for some minimum time.
+ *
+ * Check that the actual time slept is >= the total time specified by @p s (in seconds) and
+ * @p ns (in nanoseconds).
+ *
+ * @note The time specified by @p s and @p ns is assumed to be absolute (i.e. a time-point)
+ * when @p selection is set to @ref SELECT_CLOCK_NANOSLEEP. The time is assumed to be relative
+ * when @p selection is set to @ref SELECT_NANOSLEEP.
+ *
+ * @param selection Either @ref SELECT_CLOCK_NANOSLEEP or @ref SELECT_NANOSLEEP
+ * @param clock_id The clock to test (e.g. @ref CLOCK_MONOTONIC or @ref CLOCK_REALTIME)
+ * @param flags Flags to pass to @ref clock_nanosleep
+ * @param s Partial lower bound for yielded time (in seconds)
+ * @param ns Partial lower bound for yielded time (in nanoseconds)
+ */
 static void common_lower_bound_check(int selection, clockid_t clock_id, int flags, const uint32_t s,
 				     uint32_t ns)
 {
@@ -143,7 +159,19 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
 
-	actual_ns = k_cyc_to_ns_ceil64((now - then * selection));
+	switch (selection) {
+	case SELECT_NANOSLEEP:
+		/* exp_ns and actual_ns are relative (i.e. durations) */
+		actual_ns = k_cyc_to_ns_ceil64(now + then);
+		break;
+	case SELECT_CLOCK_NANOSLEEP:
+		/* exp_ns and actual_ns are absolute (i.e. time-points) */
+		actual_ns = k_cyc_to_ns_ceil64(now);
+		break;
+	default:
+		zassert_unreachable();
+		break;
+	}
 
 	exp_ns = (uint64_t)s * NSEC_PER_SEC + ns;
 	/* round up to the nearest microsecond for k_busy_wait() */
