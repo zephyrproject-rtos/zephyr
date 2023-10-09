@@ -100,8 +100,6 @@ extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 }
 
-#define XTENSA_ERR_NORET
-
 extern uint32_t sys_clock_cycle_get_32(void);
 
 static inline uint32_t arch_k_cycle_get_32(void)
