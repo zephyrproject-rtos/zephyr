@@ -303,6 +303,16 @@
 			interrupts = <15 0>, <21 0>;
 			status = "disabled";
 		};
+
+		dma: dma@50040800 {
+			compatible = "renesas,smartbond-dma";
+			reg = <0x50040800 0x110>;
+			interrupts = <1 0>;
+			status = "disabled";
+			dma-channels = <8>;
+			block-count = <1>;
+			#dma-cells = <0>;
+		};
 	};
 };
 
