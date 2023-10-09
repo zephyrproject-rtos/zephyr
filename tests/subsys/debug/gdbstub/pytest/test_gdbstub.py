@@ -18,7 +18,7 @@ from twisterlib.cmakecache import CMakeCache
 logger = logging.getLogger(__name__)
 
 @pytest.fixture()
-def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout):
+def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout, gdb_target_remote):
     build_dir = dut.device_config.build_dir
     cmake_cache = CMakeCache.from_file(os.path.join(build_dir, 'CMakeCache.txt'))
     gdb_exec = cmake_cache.get('CMAKE_GDB', None)
@@ -28,7 +28,12 @@ def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout):
     build_image = cmake_cache.get('BYPRODUCT_KERNEL_ELF_NAME', None)
     assert build_image
     gdb_log_file = os.path.join(build_dir, 'gdb.log')
-    cmd = [gdb_exec, '-batch', '-ex', f'set logging file {gdb_log_file}',
+    cmd = [gdb_exec, '-batch',
+           '-ex', f'set pagination off',
+           '-ex', f'set trace-commands on',
+           '-ex', f'set logging file {gdb_log_file}',
+           '-ex', f'set logging enabled on',
+           '-ex', f'target remote {gdb_target_remote}',
            '-x', f'{source_dir}/{gdb_script}', build_image]
     logger.info(f'Run GDB: {shlex.join(cmd)}')
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=gdb_timeout)

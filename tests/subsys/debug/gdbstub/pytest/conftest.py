@@ -7,6 +7,7 @@
 import pytest
 
 def pytest_addoption(parser):
+    parser.addoption('--gdb_target_remote')
     parser.addoption('--gdb_timeout')
     parser.addoption('--gdb_script')
 
@@ -17,4 +18,8 @@ def gdb_script(request):
 @pytest.fixture()
 def gdb_timeout(request):
     return int(request.config.getoption('--gdb_timeout', default=60))
+
+@pytest.fixture()
+def gdb_target_remote(request):
+    return request.config.getoption('--gdb_target_remote', default=":5678")
 #
