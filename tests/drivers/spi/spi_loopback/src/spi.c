@@ -561,11 +561,19 @@ static int spi_async_call(struct spi_dt_spec *spec)
 			.buf = buffer_tx,
 			.len = BUF_SIZE,
 		},
+		{
+			.buf = buffer2_tx,
+			.len = BUF2_SIZE,
+		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
+		},
+		{
+			.buf = buffer2_rx,
+			.len = BUF2_SIZE,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -579,6 +587,8 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	int ret;
 
 	LOG_INF("Start async call");
+	memset(buffer_rx, 0, sizeof(buffer_rx));
+	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 
 	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -597,6 +607,24 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	if (result) {
 		LOG_ERR("Call code %d", ret);
 		zassert_false(result, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
+		LOG_ERR("                             vs: %s", buffer_print_rx2);
+		zassert_false(1, "Buffer 2 contents are different");
 		return -1;
 	}
 
