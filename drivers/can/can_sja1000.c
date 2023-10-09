@@ -53,6 +53,14 @@ static inline int can_sja1000_enter_reset_mode(const struct device *dev)
 	return 0;
 }
 
+static inline void can_sja1000_leave_reset_mode_nowait(const struct device *dev)
+{
+	uint8_t mod;
+
+	mod = can_sja1000_read_reg(dev, CAN_SJA1000_MOD);
+	can_sja1000_write_reg(dev, CAN_SJA1000_MOD, mod & ~(CAN_SJA1000_MOD_RM));
+}
+
 static inline int can_sja1000_leave_reset_mode(const struct device *dev)
 {
 	int retries = CAN_SJA1000_RESET_MODE_RETRIES;
@@ -590,7 +598,7 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		can_sja1000_tx_done(dev, -ENETUNREACH);
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 		if (data->started) {
-			(void)can_sja1000_leave_reset_mode(dev);
+			can_sja1000_leave_reset_mode_nowait(dev);
 		}
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
