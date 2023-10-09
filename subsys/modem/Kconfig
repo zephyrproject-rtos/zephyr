@@ -26,6 +26,14 @@ config MODEM_CMUX
 	select EVENTS
 	select CRC
 
+if MODEM_CMUX
+
+module = MODEM_CMUX
+module-str = modem_cmux
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
+
 config MODEM_PIPE
 	bool "Modem pipe module"
 
