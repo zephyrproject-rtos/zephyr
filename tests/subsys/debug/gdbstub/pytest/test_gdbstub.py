@@ -18,7 +18,7 @@ from twisterlib.cmakecache import CMakeCache
 logger = logging.getLogger(__name__)
 
 @pytest.fixture()
-def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout, gdb_target_remote):
+def gdb_process(dut: DeviceAdapter, gdb_script, gdb_timeout, gdb_target_remote) -> subprocess.CompletedProcess:
     build_dir = dut.device_config.build_dir
     cmake_cache = CMakeCache.from_file(os.path.join(build_dir, 'CMakeCache.txt'))
     gdb_exec = cmake_cache.get('CMAKE_GDB', None)
@@ -59,7 +59,15 @@ def expected_gdb():
     re.compile(r'GDB:PASSED'),
     ]
 
-def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb):
+@pytest.fixture(scope="module")
+def expected_gdb_detach():
+    return [
+    re.compile(r'Inferior.*will be killed'),  # Zephyr gdbstub
+    re.compile(r'Inferior.*detached')  # QEMU gdbstub
+    ]
+
+
+def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb, expected_gdb_detach):
     """
     Test gdbstub feature using a GDB script. We connect to the DUT, run the
     GDB script then evaluate return code and expected patterns at the GDB
@@ -68,7 +76,7 @@ def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb):
     logger.debug(f"GDB output:\n{gdb_process.stdout}\n")
     assert gdb_process.returncode == 0
     assert all([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in expected_gdb]), 'No expected GDB output'
-    assert 'Inferior 1 [Remote target] will be killed' in gdb_process.stdout,'Expecting explicit quit from the GDB script and kill QEMU test app.'
+    assert any([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in expected_gdb_detach]), 'No expected GDB quit'
     app_output = '\n'.join(dut.readlines(print_output = False))
     logger.debug(f"App output:\n{app_output}\n")
     assert all([ex_re.search(app_output, re.MULTILINE) for ex_re in expected_app]), 'No expected Application output'
