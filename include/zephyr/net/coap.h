@@ -61,6 +61,7 @@ enum coap_option_num {
 	COAP_OPTION_PROXY_URI = 35,      /**< Proxy-Uri */
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
+	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
 	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
 };
 
