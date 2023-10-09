@@ -191,11 +191,9 @@ const struct emul *emul_get_binding(const char *name);
  * @}
  */
 
-#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 #define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
-#endif /* CONFIG_HAS_DTS || __DOXYGEN__ */
 
 #ifdef __cplusplus
 }

@@ -1260,8 +1260,6 @@ static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
  * @}
  */
 
-#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
-
 /**
  * @brief Get the decoder name for the current driver
  *
@@ -1309,7 +1307,6 @@ static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
 		    ())
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL)
-#endif /* defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }
