@@ -489,10 +489,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for MAC errors */
-		if (HAL_ETH_GetDMAError(heth)) {
-			LOG_ERR("%s: ETH DMA error: macerror:%x",
+		if (HAL_ETH_GetMACError(heth)) {
+			LOG_ERR("%s: ETH MAC error: macerror:%x",
 				__func__,
-				HAL_ETH_GetDMAError(heth));
+				HAL_ETH_GetMACError(heth));
 			/* MAC errors are putting in error state*/
 			/* TODO recover from this */
 		}
