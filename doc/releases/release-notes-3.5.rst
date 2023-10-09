@@ -268,6 +268,9 @@ Drivers and Sensors
 
 * Entropy
 
+  * Added a requirement for ``entropy_get_entropy()`` to be thread-safe because
+    of random subsystem needs.
+
 * ESPI
 
 * Ethernet
