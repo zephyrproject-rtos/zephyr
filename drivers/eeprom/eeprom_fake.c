@@ -9,9 +9,9 @@
 #include <zephyr/drivers/eeprom/eeprom_fake.h>
 #include <zephyr/fff.h>
 
-#ifdef CONFIG_ZTEST_NEW_API
+#ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>
-#endif /* CONFIG_ZTEST_NEW_API */
+#endif /* CONFIG_ZTEST */
 
 #define DT_DRV_COMPAT zephyr_fake_eeprom
 
@@ -32,7 +32,7 @@ size_t fake_eeprom_size_delegate(const struct device *dev)
 	return config->size;
 }
 
-#ifdef CONFIG_ZTEST_NEW_API
+#ifdef CONFIG_ZTEST
 static void fake_eeprom_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
 	ARG_UNUSED(test);
@@ -47,7 +47,7 @@ static void fake_eeprom_reset_rule_before(const struct ztest_unit_test *test, vo
 }
 
 ZTEST_RULE(fake_eeprom_reset_rule, fake_eeprom_reset_rule_before, NULL);
-#endif /* CONFIG_ZTEST_NEW_API */
+#endif /* CONFIG_ZTEST */
 
 static const struct eeprom_driver_api fake_eeprom_driver_api = {
 	.read = fake_eeprom_read,
