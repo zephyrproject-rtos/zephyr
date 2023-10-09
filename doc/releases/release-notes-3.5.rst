@@ -328,6 +328,20 @@ Drivers and Sensors
 
 * Regulators
 
+  * Added support for GPIO-controlled voltage regulator
+
+  * Added support for AXP192 PMIC
+
+  * Added support for NXP VREF regulator
+
+  * Fixed regulators can now specify their operating voltage
+
+  * PFM mode is now support for nPM1300
+
+  * Added new API to configure "ship" mode
+
+  * Regulator shell allows to configure DVS modes
+
 * Reset
 
   * Added support for Nuvoton NuMaker M46x
