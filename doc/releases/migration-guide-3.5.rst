@@ -282,6 +282,7 @@ Recommended Changes
 * The following CAN controller devicetree properties are now deprecated in favor specifying the
   initial CAN bitrate using the ``bus-speed``, ``sample-point``, ``bus-speed-data``, and
   ``sample-point-data`` properties:
+
   * ``sjw``
   * ``prop-seg``
   * ``phase-seg1``
