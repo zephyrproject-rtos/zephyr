@@ -89,6 +89,8 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
  * for so-called high priority HCI events, which should instead be delivered to
  * the host stack through bt_recv_prio().
  *
+ * @note This function must only be called from a cooperative thread.
+ *
  * @param buf Network buffer containing data from the controller.
  *
  * @return 0 on success or negative error number on failure.
