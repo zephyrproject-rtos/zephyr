@@ -78,10 +78,10 @@ def main():
         check_assigned_sym_values(kconf)
         check_assigned_choice_values(kconf)
 
-    if kconf.syms['WARN_DEPRECATED'].tri_value == 2:
+    if kconf.syms.get('WARN_DEPRECATED', kconf.y).tri_value == 2:
         check_deprecated(kconf)
 
-    if kconf.syms['WARN_EXPERIMENTAL'].tri_value == 2:
+    if kconf.syms.get('WARN_EXPERIMENTAL', kconf.y).tri_value == 2:
         check_experimental(kconf)
 
     # Hack: Force all symbols to be evaluated, to catch warnings generated
@@ -237,8 +237,8 @@ Practices sections of the manual might be helpful too.\
 
 
 def check_deprecated(kconf):
-    deprecated = kconf.syms['DEPRECATED']
-    dep_expr = deprecated.rev_dep
+    deprecated = kconf.syms.get('DEPRECATED')
+    dep_expr = kconf.n if deprecated is None else deprecated.rev_dep
 
     if dep_expr is not kconf.n:
         selectors = [s for s in split_expr(dep_expr, OR) if expr_value(s) == 2]
@@ -248,8 +248,8 @@ def check_deprecated(kconf):
 
 
 def check_experimental(kconf):
-    experimental = kconf.syms['EXPERIMENTAL']
-    dep_expr = experimental.rev_dep
+    experimental = kconf.syms.get('EXPERIMENTAL')
+    dep_expr = kconf.n if experimental is None else experimental.rev_dep
 
     if dep_expr is not kconf.n:
         selectors = [s for s in split_expr(dep_expr, OR) if expr_value(s) == 2]
