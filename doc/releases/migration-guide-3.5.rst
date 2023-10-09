@@ -230,6 +230,11 @@ Required changes
 * ARM SoC initialization routines no longer need to call `NMI_INIT()`. The
   macro call has been removed as it was not doing anything useful.
 
+* Device dependencies (incorrectly referred as "device handles" in some areas)
+  are now an optional feature enabled by :kconfig:option:`CONFIG_DEVICE_DEPS`.
+  This means that an extra linker stage is no longer necessary if this option is
+  not enabled.
+
 Recommended Changes
 *******************
 
