@@ -941,14 +941,11 @@ int modem_cmux_attach(struct modem_cmux *cmux, struct modem_pipe *pipe)
 
 int modem_cmux_connect(struct modem_cmux *cmux)
 {
-	__ASSERT_NO_MSG(cmux->pipe != NULL);
+	int ret;
 
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false, K_NO_WAIT)) {
-		return -EALREADY;
-	}
-
-	if (k_work_delayable_is_pending(&cmux->connect_work) == false) {
-		k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	ret = modem_cmux_connect_async(cmux);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false,
@@ -963,22 +960,24 @@ int modem_cmux_connect_async(struct modem_cmux *cmux)
 {
 	__ASSERT_NO_MSG(cmux->pipe != NULL);
 
-	if (k_work_delayable_is_pending(&cmux->connect_work) == true) {
-		return -EBUSY;
+	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false, K_NO_WAIT)) {
+		return -EALREADY;
 	}
 
-	k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	if (k_work_delayable_is_pending(&cmux->connect_work) == false) {
+		k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	}
+
 	return 0;
 }
 
 int modem_cmux_disconnect(struct modem_cmux *cmux)
 {
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false, K_NO_WAIT)) {
-		return -EALREADY;
-	}
+	int ret;
 
-	if (k_work_delayable_is_pending(&cmux->disconnect_work) == false) {
-		k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	ret = modem_cmux_disconnect_async(cmux);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false,
@@ -991,11 +990,16 @@ int modem_cmux_disconnect(struct modem_cmux *cmux)
 
 int modem_cmux_disconnect_async(struct modem_cmux *cmux)
 {
-	if (k_work_delayable_is_pending(&cmux->disconnect_work) == true) {
-		return -EBUSY;
+	__ASSERT_NO_MSG(cmux->pipe != NULL);
+
+	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false, K_NO_WAIT)) {
+		return -EALREADY;
 	}
 
-	k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	if (k_work_delayable_is_pending(&cmux->disconnect_work) == false) {
+		k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	}
+
 	return 0;
 }
 
