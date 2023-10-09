@@ -357,10 +357,6 @@ static void ase_set_state_disabling(struct bt_ascs_ase *ase)
 	if (ops != NULL && ops->disabled != NULL) {
 		ops->disabled(stream);
 	}
-
-	if (ase->unexpected_iso_link_loss) {
-		ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-	}
 }
 
 static void ase_set_state_releasing(struct bt_ascs_ase *ase)
@@ -475,7 +471,11 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state)
 			break;
 		case BT_BAP_EP_STATE_ENABLING:
 		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SINK;
+			/* Source ASE transition Streaming->QoS configured is valid on case of CIS
+			 * link-loss.
+			 */
+			valid_state_transition = ase->ep.dir == BT_AUDIO_DIR_SINK ||
+						 ase->unexpected_iso_link_loss;
 			break;
 		default:
 			break;
@@ -879,20 +879,14 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	if (ep->status.state == BT_BAP_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_IDLE);
-	} else if (ep->status.state == BT_BAP_EP_STATE_STREAMING) {
-		/* CIS has been unexpectedly disconnected */
-		ase->unexpected_iso_link_loss = true;
-
-		/* The ASE state machine goes into different states from this operation
-		 * based on whether it is a source or a sink ASE.
+	} else if (ep->status.state == BT_BAP_EP_STATE_STREAMING ||
+		   ep->status.state == BT_BAP_EP_STATE_DISABLING) {
+		/* ASCS_v1.0 3.2 ASE state machine transitions
+		 *
+		 * If the server detects link loss of a CIS for an ASE in the Streaming
+		 * state or the Disabling state, the server shall immediately transition
+		 * that ASE to the QoS Configured state.
 		 */
-		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			ascs_ep_set_state(ep, BT_BAP_EP_STATE_DISABLING);
-		} else {
-			ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-		}
-	} else if (ep->status.state == BT_BAP_EP_STATE_DISABLING) {
-		/* CIS has been unexpectedly disconnected */
 		ase->unexpected_iso_link_loss = true;
 
 		ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
