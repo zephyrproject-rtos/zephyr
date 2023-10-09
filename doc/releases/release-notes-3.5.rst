@@ -201,6 +201,13 @@ Drivers and Sensors
 
 * CAN
 
+  * Added support for TI TCAN4x5x CAN-FD controller with integrated transceiver
+    (:dtcompatible:`ti,tcan4x5x`).
+  * Added support for Microchip MCP251xFD CAN-FD controller (:dtcompatible:`microchip,mcp251xfd`).
+  * Added support for CAN statistics to the Bosch M_CAN controller driver backend.
+  * Switched the NXP S32 CANXL driver to use clock control for the CAN clock instead of hard-coding
+    a CAN clock frequency in the devicetree.
+
 * Clock control
 
   * Added support for Nuvoton NuMaker M46x
