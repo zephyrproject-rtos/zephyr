@@ -1,9 +1,3 @@
-set pagination off
-set trace-commands on
-set logging enabled on
-
-target remote :5678
-
 b test
 b main.c:29
 c
