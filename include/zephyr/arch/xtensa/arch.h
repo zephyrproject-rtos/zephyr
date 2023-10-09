@@ -7,7 +7,7 @@
  * @file
  * @brief Xtensa specific kernel interface header
  * This header contains the Xtensa specific kernel interface.  It is included
- * by the generic kernel interface header (include/arch/cpu.h)
+ * by the generic kernel interface header (include/zephyr/arch/cpu.h)
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
@@ -32,6 +32,8 @@
 #include <zephyr/debug/sparse.h>
 #include <zephyr/arch/xtensa/thread_stack.h>
 #include <zephyr/sys/slist.h>
+
+#include <zephyr/drivers/timer/system_timer.h>
 
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 
@@ -61,7 +63,23 @@ struct arch_mem_domain {
 	sys_snode_t node;
 };
 
+/**
+ * @brief Generate hardware exception.
+ *
+ * This generates hardware exception which is used by ARCH_EXCEPT().
+ *
+ * @param reason_p Reason for exception.
+ */
 extern void xtensa_arch_except(int reason_p);
+
+/**
+ * @brief Generate kernel oops.
+ *
+ * This generates kernel oops which is used by arch_syscall_oops().
+ *
+ * @param reason_p Reason for exception.
+ * @param ssf Stack pointer.
+ */
 extern void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 
 #ifdef CONFIG_USERSPACE
@@ -79,9 +97,9 @@ extern void xtensa_arch_kernel_oops(int reason_p, void *ssf);
 #else
 
 #define ARCH_EXCEPT(reason_p) do { \
-	xtensa_arch_except(reason_p); \
-	CODE_UNREACHABLE; \
-} while (false)
+		xtensa_arch_except(reason_p); \
+		CODE_UNREACHABLE; \
+	} while (false)
 
 #endif
 
@@ -93,44 +111,47 @@ __syscall void xtensa_user_fault(unsigned int reason);
 extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
-}
+	{ \
+		Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
+	}
 
-extern uint32_t sys_clock_cycle_get_32(void);
-
+/** Implementation of @ref arch_k_cycle_get_32. */
 static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return sys_clock_cycle_get_32();
 }
 
-extern uint64_t sys_clock_cycle_get_64(void);
-
+/** Implementation of @ref arch_k_cycle_get_64. */
 static inline uint64_t arch_k_cycle_get_64(void)
 {
 	return sys_clock_cycle_get_64();
 }
 
+/** Implementation of @ref arch_nop. */
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
+/**
+ * @brief Lock VECBASE if supported by hardware.
+ *
+ * The bit 0 of VECBASE acts as a lock bit on hardware supporting
+ * this feature. When this bit is set, VECBASE cannot be changed
+ * until it is cleared by hardware reset. When the hardware does not
+ * support this bit, it is hardwired to 0.
+ */
 static ALWAYS_INLINE void xtensa_vecbase_lock(void)
 {
 	int vecbase;
 
 	__asm__ volatile("rsr.vecbase %0" : "=r" (vecbase));
-
-	/* In some targets the bit 0 of VECBASE works as lock bit.
-	 * When this bit set, VECBASE can't be changed until it is cleared by
-	 * reset. When the target does not have it, it is hardwired to 0.
-	 **/
 	__asm__ volatile("wsr.vecbase %0; rsync" : : "r" (vecbase | 1));
 }
 
-#if defined(CONFIG_XTENSA_RPO_CACHE)
-#if defined(CONFIG_ARCH_HAS_COHERENCE)
+#if defined(CONFIG_XTENSA_RPO_CACHE) || defined(__DOXYGEN__)
+#if defined(CONFIG_ARCH_HAS_COHERENCE) || defined(__DOXYGEN__)
+/** Implementation of @ref arch_mem_coherent. */
 static inline bool arch_mem_coherent(void *ptr)
 {
 	size_t addr = (size_t) ptr;
@@ -139,6 +160,19 @@ static inline bool arch_mem_coherent(void *ptr)
 }
 #endif
 
+/**
+ * @brief Test if a pointer is in cached region.
+ *
+ * Some hardware may map the same physical memory twice
+ * so that it can be seen in both (incoherent) cached mappings
+ * and a coherent "shared" area. This tests if a particular
+ * pointer is within the cached, coherent area.
+ *
+ * @param ptr Pointer
+ *
+ * @retval True if pointer is in cached region.
+ * @retval False if pointer is not in cached region.
+ */
 static inline bool arch_xtensa_is_ptr_cached(void *ptr)
 {
 	size_t addr = (size_t) ptr;
@@ -146,6 +180,19 @@ static inline bool arch_xtensa_is_ptr_cached(void *ptr)
 	return (addr >> 29) == CONFIG_XTENSA_CACHED_REGION;
 }
 
+/**
+ * @brief Test if a pointer is in un-cached region.
+ *
+ * Some hardware may map the same physical memory twice
+ * so that it can be seen in both (incoherent) cached mappings
+ * and a coherent "shared" area. This tests if a particular
+ * pointer is within the un-cached, incoherent area.
+ *
+ * @param ptr Pointer
+ *
+ * @retval True if pointer is not in cached region.
+ * @retval False if pointer is in cached region.
+ */
 static inline bool arch_xtensa_is_ptr_uncached(void *ptr)
 {
 	size_t addr = (size_t) ptr;
@@ -173,6 +220,7 @@ static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t 
 		return (addr & ~(7U << 29)) | rto;
 	}
 }
+
 /**
  * @brief Return cached pointer to a RAM address
  *
@@ -271,10 +319,14 @@ static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 	addr += addrincr;					\
 } while (0)
 
-#define ARCH_XTENSA_SET_RPO_TLB() do {				\
-	register uint32_t addr = 0, addrincr = 0x20000000;	\
-	FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
-} while (0)
+/**
+ * @brief Setup RPO TLB registers.
+ */
+#define ARCH_XTENSA_SET_RPO_TLB()					\
+	do {								\
+		register uint32_t addr = 0, addrincr = 0x20000000;	\
+		FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
+	} while (0)
 
 #else /* CONFIG_XTENSA_RPO_CACHE */
 
@@ -304,7 +356,17 @@ static inline void *arch_xtensa_uncached_ptr(void *ptr)
 
 #endif /* CONFIG_XTENSA_RPO_CACHE */
 
-#ifdef CONFIG_XTENSA_MMU
+#if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
+/**
+ * @brief Peform additional steps after MMU initialization.
+ *
+ * This performs additional steps related to memory management
+ * after the main MMU initialization code. This needs to defined
+ * in the SoC layer. Default is do no nothing.
+ *
+ * @param is_core0 True if this is called while executing on
+ *                 CPU core #0.
+ */
 extern void arch_xtensa_mmu_post_init(bool is_core0);
 #endif
 
