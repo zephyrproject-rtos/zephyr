@@ -11,7 +11,17 @@ tests:
     harness_config:
       pytest_root:
         - "pytest/test_gdbstub.py"
-      pytest_args: ["--gdb_timeout", "20", "--gdb_script", "test_breakpoints.gdbinit"]
+      pytest_args:
+        - "--gdb_timeout"
+        - "20"
+        - "--gdb_script"
+        - "test_breakpoints.gdbinit"
+        - "--gdb_target_remote"
+        - "tcp:127.0.0.1:5678"
     tags:
       - debug
       - gdbstub
+    extra_configs:
+      # Make sure the gdbstub port chosen is unique for this test to avoid conflicts
+      # when Twister runs tests in parallel on the same host.
+      - CONFIG_QEMU_EXTRA_FLAGS="-serial tcp:127.0.0.1:5678,server"
