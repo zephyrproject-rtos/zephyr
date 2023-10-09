@@ -20,6 +20,7 @@ struct npm1300_charger_config {
 	int32_t dischg_limit_microamp;
 	int32_t vbus_limit_microamp;
 	int32_t temp_thresholds[4U];
+	int32_t dietemp_thresholds[2U];
 	uint32_t thermistor_ohms;
 	uint16_t thermistor_beta;
 	uint8_t thermistor_idx;
@@ -57,6 +58,7 @@ struct npm1300_charger_data {
 #define CHGR_OFFSET_TRICKLE_SEL 0x0EU
 #define CHGR_OFFSET_ITERM_SEL   0x0FU
 #define CHGR_OFFSET_NTC_TEMPS   0x10U
+#define CHGR_OFFSET_DIE_TEMPS   0x18U
 #define CHGR_OFFSET_CHG_STAT    0x34U
 #define CHGR_OFFSET_ERR_REASON  0x36U
 #define CHGR_OFFSET_VBATLOW_EN  0x50U
@@ -108,10 +110,19 @@ struct adc_results_t {
 #define NTCTEMP_MSB_SHIFT 2U
 #define NTCTEMP_LSB_MASK  0x03U
 
+/* dietemp masks */
+#define DIETEMP_MSB_SHIFT 2U
+#define DIETEMP_LSB_MASK  0x03U
+
 /* VBUS masks */
 #define DETECT_HI_MASK    0x0AU
 #define DETECT_HI_CURRENT 1500000
 #define DETECT_LO_CURRENT 500000
+
+/* Dietemp calculation constants */
+#define DIETEMP_OFFSET_MDEGC 394670
+#define DIETEMP_FACTOR_MUL   3963000
+#define DIETEMP_FACTOR_DIV   5000
 
 /* Linear range for charger terminal voltage */
 static const struct linear_range charger_volt_ranges[] = {
@@ -299,6 +310,29 @@ static int set_ntc_thresholds(const struct npm1300_charger_config *const config)
 	return 0;
 }
 
+static int set_dietemp_thresholds(const struct npm1300_charger_config *const config)
+{
+	for (uint8_t idx = 0U; idx < 2U; idx++) {
+		if (config->dietemp_thresholds[idx] < INT32_MAX) {
+			/* Ref: Datasheet section 6.2.6: Charger thermal regulation */
+			int32_t numerator =
+				(DIETEMP_OFFSET_MDEGC - config->dietemp_thresholds[idx]) *
+				DIETEMP_FACTOR_DIV;
+			uint16_t code = DIV_ROUND_CLOSEST(numerator, DIETEMP_FACTOR_MUL);
+
+			int ret = mfd_npm1300_reg_write2(
+				config->mfd, CHGR_BASE, CHGR_OFFSET_DIE_TEMPS + (idx * 2U),
+				code >> DIETEMP_MSB_SHIFT, code & DIETEMP_LSB_MASK);
+
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channel chan,
 				    enum sensor_attribute attr, struct sensor_value *val)
 {
@@ -410,7 +444,7 @@ int npm1300_charger_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Configure thermistor */
+	/* Configure temperature thresholds */
 	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
 				    config->thermistor_idx + 1U);
 	if (ret != 0) {
@@ -418,6 +452,11 @@ int npm1300_charger_init(const struct device *dev)
 	}
 
 	ret = set_ntc_thresholds(config);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = set_dietemp_thresholds(config);
 	if (ret != 0) {
 		return ret;
 	}
@@ -576,6 +615,9 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 		.iterm_sel = DT_INST_ENUM_IDX(n, term_current_percent),                            \
 		.vbatlow_charge_enable = DT_INST_PROP(n, vbatlow_charge_enable),                   \
 		.disable_recharge = DT_INST_PROP(n, disable_recharge),                             \
+		.dietemp_thresholds = {DT_INST_PROP_OR(n, dietemp_stop_millidegrees, INT32_MAX),   \
+				       DT_INST_PROP_OR(n, dietemp_resume_millidegrees,             \
+						       INT32_MAX)},                                \
 		.temp_thresholds = {DT_INST_PROP_OR(n, thermistor_cold_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_cool_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
