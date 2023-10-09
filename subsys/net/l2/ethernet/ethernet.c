@@ -518,7 +518,8 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
-	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
+	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt)) &&
+	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
@@ -695,7 +696,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
-	    net_eth_is_vlan_enabled(ctx, iface)) {
+	    net_eth_is_vlan_enabled(ctx, iface) &&
+	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
 		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
 			ret = -EINVAL;
 			goto error;
