@@ -68,4 +68,5 @@ source "drivers/dma/Kconfig.andes_atcdmac300"
 
 source "drivers/dma/Kconfig.sedi"
 
+source "drivers/dma/Kconfig.smartbond"
 endif # DMA
