@@ -3267,13 +3267,13 @@ function(dt_node_has_status var)
     return()
   endif()
 
-  dt_prop(${var} PATH ${canonical} PROPERTY status)
+  dt_prop(status PATH ${canonical} PROPERTY status)
 
-  if(NOT DEFINED ${var} OR "${${var}}" STREQUAL ok)
-    set(${var} okay)
+  if(NOT DEFINED status OR status STREQUAL "ok")
+    set(status "okay")
   endif()
 
-  if(${var} STREQUAL ${DT_NODE_STATUS})
+  if(status STREQUAL "${DT_NODE_STATUS}")
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
