@@ -27,6 +27,7 @@
 	};
 
 	chosen {
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
 		/delete-property/ zephyr,flash-controller;
 		zephyr,flash = &flash1;
@@ -37,7 +38,6 @@
 		/delete-node/ memory@21000000;
 		/delete-node/ gpiote@4100a000;
 		/delete-node/ watchdog@4100b000;
-		/delete-node/ mbox@41012000;
 		/delete-node/ i2c@41013000;
 		/delete-node/ spi@41013000;
 		/delete-node/ uart@41013000;
@@ -48,7 +48,6 @@
 	};
 
 	/delete-node/ cpus;
-	/delete-node/ ipc;
 	/delete-node/ sw-pwm;
 };
 
@@ -75,3 +74,8 @@
 		};
 	};
 };
+
+/* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
+ * buffer won't be used.
+ */
+#include <../boards/arm/nrf5340dk_nrf5340/nrf5340_shared_sram_planning_conf.dtsi>
