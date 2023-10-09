@@ -149,7 +149,7 @@ extern void smp_timer_init(void);
 #endif
 #endif
 
-extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
+extern void z_early_rand_get(uint8_t *buf, size_t length);
 
 #if CONFIG_STACK_POINTER_RANDOM
 extern int z_stack_adjust_initialized;

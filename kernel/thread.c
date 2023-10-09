@@ -464,7 +464,7 @@ static size_t random_offset(size_t stack_size)
 	size_t random_val;
 
 	if (!z_stack_adjust_initialized) {
-		z_early_boot_rand_get((uint8_t *)&random_val, sizeof(random_val));
+		z_early_rand_get((uint8_t *)&random_val, sizeof(random_val));
 	} else {
 		sys_rand_get((uint8_t *)&random_val, sizeof(random_val));
 	}

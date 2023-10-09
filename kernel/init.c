@@ -510,7 +510,7 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
 __boot_func
-void z_early_boot_rand_get(uint8_t *buf, size_t length)
+void z_early_rand_get(uint8_t *buf, size_t length)
 {
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
@@ -592,7 +592,7 @@ FUNC_NORETURN void z_cstart(void)
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;
 
-	z_early_boot_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
+	z_early_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */
