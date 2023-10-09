@@ -1856,10 +1856,10 @@ bool coap_register_observer(struct coap_resource *resource,
 	return first;
 }
 
-void coap_remove_observer(struct coap_resource *resource,
+bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer)
 {
-	sys_slist_find_and_remove(&resource->observers, &observer->list);
+	return sys_slist_find_and_remove(&resource->observers, &observer->list);
 }
 
 static bool sockaddr_equal(const struct sockaddr *a,

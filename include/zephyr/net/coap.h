@@ -898,8 +898,10 @@ bool coap_register_observer(struct coap_resource *resource,
  *
  * @param resource Resource in which to remove the observer
  * @param observer Observer to be removed
+ *
+ * @return true if the observer was found and removed.
  */
-void coap_remove_observer(struct coap_resource *resource,
+bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer);
 
 /**
