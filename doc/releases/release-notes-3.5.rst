@@ -239,6 +239,23 @@ Drivers and Sensors
 * Ethernet
 
   * Added :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_RX_TIMEOUT` to set rx timeout for native posix.
+  * Added support for adin2111.
+  * Added support for NXP S32 GMAC.
+  * Added support for promiscuous mode in eth_smsc91x.
+  * Added support for STM32H5X SOC series.
+  * Added support for MDIO Clause 45 APIs.
+  * Added support for YD-ESP32 board Ethernet.
+  * Fixed stm32 to generate more unique MAC address by using device id as a base for the MAC.
+  * Fixed mcux to increase the PTP timestamp accuracy from 20us to 200ns.
+  * Fixed Ethernet max header size when using VLAN.
+  * Removed the ``mdio`` DT property. Please use :c:macro:`DT_INST_BUS()` in the driver instead.
+  * Reworked the device node hierarchy in smsc91x.
+  * Renamed the phy-dev property with phy-handle to match the Linux ethernet-controller binding
+    and move it up to ethernet.yaml so that it can be used by other drivers.
+  * Updated Ethernet PHY to use ``reg`` property in DT bindings.
+  * Updated driver DT bindings to use ``ethernet-phy`` devicetree node name consistently.
+  * Updated esp32 and sam-gmac DT so that the phy is pointed by a phandle rather than
+    a child node, this makes the phy device a child of mdio.
 
 * Flash
 
@@ -390,6 +407,13 @@ Drivers and Sensors
 
 * WiFi
 
+  * Increased esp32 default network (TCP workq, RX and mgmt event) stack sizes to 2048 bytes.
+  * Reduced the RAM usage for esp32s2_saola in Wi-Fi samples.
+  * Fixed undefined declarations in winc1500.
+  * Fixed SPI buffer length in eswifi.
+  * Fixed esp32 data sending and channel selection in AP mode.
+  * Fixed esp_at driver init and network interface dormant state setting.
+
 Networking
 **********
 
@@ -407,6 +431,16 @@ Networking
     devices that stay on for more than 49 days when the 32 bit uptime counter might roll over and
     cause CoAP packets to not timeout at all on this event.
 
+* Ethernet:
+
+  * Fixed ARP queueing so that the queued network packet is sent immediately
+    instead of queued 2nd time in the core network stack.
+
+* gPTP:
+
+  * Added support for detecting gPTP packets that use the default multicast destination address.
+  * Fixed Announce and Follow Up message handling.
+
 * LwM2M:
 
   * Added support for tickless mode. This removes the 500 ms timeout from the socket loop
@@ -414,10 +448,16 @@ Networking
     :kconfig:option:`CONFIG_LWM2M_TICKLESS`.
   * Added new :c:macro:`LWM2M_RD_CLIENT_EVENT_DEREGISTER` event.
 
-* Wi-Fi
+* Wi-Fi:
 
   * Added Passive scan support.
   * The Wi-Fi scan API updated with Wi-Fi scan parameter to allow scan mode selection.
+  * Updated TWT handling.
+  * Added support for generic network manager API.
+  * Added support for Wi-Fi mode setting and selection.
+  * Added user input validation for SSID and PSK in Wi-Fi shell.
+  * Added scan extension for specifying channels, limiting scan results, filtering SSIDs,
+    setting active and passive channel dwell times and frequency bands.
 
 USB
 ***
