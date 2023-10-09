@@ -12,6 +12,7 @@ if ZTEST
 
 config ZTEST_NEW_API
 	bool "Use the new Ztest API"
+	default y
 	help
 	  Enables the new Ztest APIs for creating suites and unit tests in
 	  separate compilation units as well as the new 'rules' API.
