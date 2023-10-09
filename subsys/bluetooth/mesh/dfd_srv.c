@@ -1015,6 +1015,13 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_start(struct bt_mesh_dfd_srv *srv,
 
 	sys_slist_init(&srv->inputs.targets);
 	for (i = 0; i < srv->target_cnt; i++) {
+		uint16_t addr = srv->targets[i].blob.addr;
+
+		memset(&srv->targets[i].blob, 0, sizeof(struct bt_mesh_blob_target));
+		memset(&srv->pull_ctxs[i], 0, sizeof(struct bt_mesh_blob_target_pull));
+		srv->targets[i].blob.addr = addr;
+		srv->targets[i].blob.pull = &srv->pull_ctxs[i];
+
 		sys_slist_append(&srv->inputs.targets, &srv->targets[i].blob.n);
 	}
 
