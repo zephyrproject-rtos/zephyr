@@ -401,6 +401,9 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 		dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
 		modem_pipe_notify_opened(&dlci->pipe);
 		k_work_cancel_delayable(&dlci->open_work);
+		k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
+		ring_buf_reset(&dlci->receive_rb);
+		k_mutex_unlock(&dlci->receive_rb_lock);
 		break;
 
 	case MODEM_CMUX_DLCI_STATE_CLOSING:
