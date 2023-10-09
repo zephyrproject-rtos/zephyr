@@ -607,6 +607,10 @@ Libraries / Subsystems
     operation for SDMMC devices in case when we align buffers on CONFIG_SDHC_BUFFER_ALIGNMENT,
     because we can avoid extra copy of data from card bffer to read/prog buffer.
 
+* Random
+
+  * ``CONFIG_XOROSHIRO_RANDOM_GENERATOR``, deprecated a long time ago, is finally removed.
+
 * Retention
 
   * Added the :ref:`blinfo_api` subsystem.
