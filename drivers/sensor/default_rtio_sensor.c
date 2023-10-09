@@ -235,7 +235,7 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 		}
 		sample_idx += num_samples;
 	}
-	LOG_DBG("Total channels in header: %zu", header->num_channels);
+	LOG_DBG("Total channels in header: %u", header->num_channels);
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
