@@ -600,6 +600,15 @@ MCUboot
 
   * The MCUboot version in this release is version ``2.0.0+0-rc1``.
 
+Nanopb
+******
+
+  * Changed project status to maintained.
+
+  * Added a separate nanopb.cmake file to be included by applications.
+
+  * Added helper cmake function ``zephyr_nanopb_sources`` to simplify ``.proto`` file inclusion.
+
 Storage
 *******
 
