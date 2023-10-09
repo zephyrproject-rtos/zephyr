@@ -617,6 +617,8 @@ zcbor
 Documentation
 *************
 
+* Upgraded Sphinx to 6.2
+
 Tests and Samples
 *****************
 
