@@ -35,6 +35,7 @@ struct npm1300_charger_data {
 	uint16_t voltage;
 	uint16_t current;
 	uint16_t temp;
+	uint16_t dietemp;
 	uint8_t status;
 	uint8_t error;
 	uint8_t ibat_stat;
@@ -66,6 +67,7 @@ struct npm1300_charger_data {
 /* nPM1300 ADC register offsets */
 #define ADC_OFFSET_TASK_VBAT 0x00U
 #define ADC_OFFSET_TASK_TEMP 0x01U
+#define ADC_OFFSET_TASK_DIE  0x02U
 #define ADC_OFFSET_CONFIG    0x09U
 #define ADC_OFFSET_NTCR_SEL  0x0AU
 #define ADC_OFFSET_TASK_AUTO 0x0CU
@@ -104,6 +106,7 @@ struct adc_results_t {
 #define ADC_LSB_MASK       0x03U
 #define ADC_LSB_VBAT_SHIFT 0U
 #define ADC_LSB_NTC_SHIFT  2U
+#define ADC_LSB_DIE_SHIFT  4U
 #define ADC_LSB_IBAT_SHIFT 4U
 
 /* NTC temp masks */
@@ -149,6 +152,17 @@ static void calc_temp(const struct npm1300_charger_config *const config, uint16_
 
 	valp->val1 = (int32_t)temp;
 	valp->val2 = (int32_t)(fmodf(temp, 1.f) * 1000000.f);
+}
+
+static void calc_dietemp(const struct npm1300_charger_config *const config, uint16_t code,
+			 struct sensor_value *valp)
+{
+	/* Ref: Datasheet Figure 36: Die temperature (Celcius) */
+	int32_t temp =
+		DIETEMP_OFFSET_MDEGC - (((int32_t)code * DIETEMP_FACTOR_MUL) / DIETEMP_FACTOR_DIV);
+
+	valp->val1 = temp / 1000;
+	valp->val2 = (temp % 1000) * 1000;
 }
 
 static uint32_t calc_ntc_res(const struct npm1300_charger_config *const config, int32_t temp_mdegc)
@@ -230,6 +244,9 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 		valp->val1 = config->dischg_limit_microamp / 1000000;
 		valp->val2 = config->dischg_limit_microamp % 1000000;
 		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		calc_dietemp(config, data->dietemp, valp);
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -264,11 +281,12 @@ int npm1300_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	data->voltage = adc_get_res(results.msb_vbat, results.lsb_a, ADC_LSB_VBAT_SHIFT);
 	data->temp = adc_get_res(results.msb_ntc, results.lsb_a, ADC_LSB_NTC_SHIFT);
+	data->dietemp = adc_get_res(results.msb_die, results.lsb_a, ADC_LSB_DIE_SHIFT);
 	data->current = adc_get_res(results.msb_ibat, results.lsb_b, ADC_LSB_IBAT_SHIFT);
 	data->ibat_stat = results.ibat_stat;
 
-	/* Trigger temperature measurement */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	/* Trigger ntc and die temperature measurements */
+	ret = mfd_npm1300_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -550,8 +568,8 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Trigger temperature measurement */
-	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U);
+	/* Trigger ntc and die temperature measurements */
+	ret = mfd_npm1300_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}
