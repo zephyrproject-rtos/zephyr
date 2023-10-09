@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_MODULES_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/crc.h>
@@ -96,26 +96,91 @@ static int modem_cmux_wrap_command(struct modem_cmux_command **command, const ui
 	return 0;
 }
 
-static struct modem_cmux_command *modem_cmux_command_wrap(uint8_t *data)
+static struct modem_cmux_command *modem_cmux_command_wrap(const uint8_t *data)
 {
 	return (struct modem_cmux_command *)data;
 }
 
-static void modem_cmux_log_unknown_frame(struct modem_cmux *cmux)
+static const char *modem_cmux_frame_type_to_str(enum modem_cmux_frame_types frame_type)
 {
-	char data[24];
-	uint8_t data_cnt = (cmux->frame.data_len < 8) ? cmux->frame.data_len : 8;
-
-	for (uint8_t i = 0; i < data_cnt; i++) {
-		snprintk(&data[i * 3], sizeof(data) - (i * 3), "%02X,", cmux->frame.data[i]);
+	switch (frame_type) {
+	case MODEM_CMUX_FRAME_TYPE_RR:
+		return "RR";
+	case MODEM_CMUX_FRAME_TYPE_UI:
+		return "UI";
+	case MODEM_CMUX_FRAME_TYPE_RNR:
+		return "RNR";
+	case MODEM_CMUX_FRAME_TYPE_REJ:
+		return "REJ";
+	case MODEM_CMUX_FRAME_TYPE_DM:
+		return "DM";
+	case MODEM_CMUX_FRAME_TYPE_SABM:
+		return "SABM";
+	case MODEM_CMUX_FRAME_TYPE_DISC:
+		return "DISC";
+	case MODEM_CMUX_FRAME_TYPE_UA:
+		return "UA";
+	case MODEM_CMUX_FRAME_TYPE_UIH:
+		return "UIH";
 	}
+	return "";
+}
 
-	/* Remove trailing */
-	if (data_cnt > 0) {
-		data[(data_cnt * 3) - 1] = '\0';
+static void modem_cmux_log_transmit_frame(const struct modem_cmux_frame *frame)
+{
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
+}
+
+static void modem_cmux_log_received_frame(const struct modem_cmux_frame *frame)
+{
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
+}
+
+static const char *modem_cmux_command_type_to_str(enum modem_cmux_command_types command_type)
+{
+	switch (command_type) {
+	case MODEM_CMUX_COMMAND_NSC:
+		return "NSC";
+	case MODEM_CMUX_COMMAND_TEST:
+		return "TEST";
+	case MODEM_CMUX_COMMAND_PSC:
+		return "PSC";
+	case MODEM_CMUX_COMMAND_RLS:
+		return "RLS";
+	case MODEM_CMUX_COMMAND_FCOFF:
+		return "FCOFF";
+	case MODEM_CMUX_COMMAND_PN:
+		return "PN";
+	case MODEM_CMUX_COMMAND_RPN:
+		return "RPN";
+	case MODEM_CMUX_COMMAND_FCON:
+		return "FCON";
+	case MODEM_CMUX_COMMAND_CLD:
+		return "CLD";
+	case MODEM_CMUX_COMMAND_SNC:
+		return "SNC";
+	case MODEM_CMUX_COMMAND_MSC:
+		return "MSC";
 	}
+	return "";
+}
 
-	LOG_DBG("ch:%u, type:%u, data:%s", cmux->frame.dlci_address, cmux->frame.type, data);
+static void modem_cmux_log_transmit_command(const struct modem_cmux_command *command)
+{
+	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
+		modem_cmux_command_type_to_str(command->type.value));
+	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
+}
+
+static void modem_cmux_log_received_command(const struct modem_cmux_command *command)
+{
+	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
+		modem_cmux_command_type_to_str(command->type.value));
+	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
 }
 
 static void modem_cmux_raise_event(struct modem_cmux *cmux, enum modem_cmux_event event)
@@ -199,6 +264,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
 	uint16_t space;
+	struct modem_cmux_command *command;
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	space = ring_buf_space_get(&cmux->transmit_rb);
@@ -206,6 +272,11 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 	if (space < MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
 		return false;
+	}
+
+	modem_cmux_log_transmit_frame(frame);
+	if (modem_cmux_wrap_command(&command, frame->data, frame->data_len) == 0) {
+		modem_cmux_log_transmit_command(command);
 	}
 
 	modem_cmux_transmit_frame(cmux, frame);
@@ -240,6 +311,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 		return -ENOMEM;
 	}
 
+	modem_cmux_log_transmit_frame(frame);
 	ret = modem_cmux_transmit_frame(cmux, frame);
 	k_mutex_unlock(&cmux->transmit_rb_lock);
 	return ret;
@@ -338,6 +410,8 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		return;
 	}
 
+	modem_cmux_log_received_command(command);
+
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_CLD:
 		modem_cmux_on_cld_command(cmux);
@@ -356,13 +430,15 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_DBG("Unknown command");
+		LOG_DBG("Unknown control command");
 		break;
 	}
 }
 
 static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 {
+	modem_cmux_log_received_frame(&cmux->frame);
+
 	switch (cmux->frame.type) {
 	case MODEM_CMUX_FRAME_TYPE_UA:
 		modem_cmux_on_control_frame_ua(cmux);
@@ -373,7 +449,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		modem_cmux_log_unknown_frame(cmux);
+		LOG_WRN("Unknown control frame type");
 		break;
 	}
 }
@@ -445,6 +521,8 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		return;
 	}
 
+	modem_cmux_log_received_frame(&cmux->frame);
+
 	switch (cmux->frame.type) {
 	case MODEM_CMUX_FRAME_TYPE_UA:
 		modem_cmux_on_dlci_frame_ua(dlci);
@@ -455,7 +533,7 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		modem_cmux_log_unknown_frame(cmux);
+		LOG_WRN("Unknown DLCI frame type");
 		break;
 	}
 }
@@ -605,7 +683,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 		/* Check if receive buffer overrun */
 		if (cmux->receive_buf_len == cmux->receive_buf_size) {
-			LOG_DBG("Receive buf overrun");
+			LOG_WRN("Receive buf overrun");
 
 			/* Drop frame */
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_EOF;
@@ -652,8 +730,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 			break;
 		}
-
-		LOG_DBG("Received frame");
 
 		/* Process frame */
 		cmux->frame.data = cmux->receive_buf;
