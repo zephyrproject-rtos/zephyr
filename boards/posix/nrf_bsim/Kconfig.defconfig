@@ -42,6 +42,29 @@ config BT_CTLR
 	default y if BOARD_NRF52_BSIM || BOARD_NRF5340BSIM_NRF5340_CPUNET
 	depends on BT
 
+config HEAP_MEM_POOL_SIZE
+	default 4096 if BT_RPMSG
+	default 4096 if NRF_802154_SER_HOST && BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 4096 if NRF_802154_SER_RADIO && BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+if BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP || BOARD_NRF5340BSIM_NRF5340_CPUNET
+
+if BOARD_NRF5340BSIM_NRF5340_CPUAPP
+
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	default y if IPC_SERVICE_BACKEND_RPMSG
+
+choice BT_HCI_BUS_TYPE
+	default BT_RPMSG
+endchoice
+
+endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP
+
 # The 15.4 driver Tx encryption is currently not functional with this
 # simulated board => we disable it by default. With this Openthread will normally
 # default to encrypt packets on its own.
