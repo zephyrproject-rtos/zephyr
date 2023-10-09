@@ -223,6 +223,8 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added support for Fujitsu MB85RCxx series I2C FRAM (:dtcompatible:`fujitsu,mb85rcxx`).
+
 * Entropy
 
 * ESPI
