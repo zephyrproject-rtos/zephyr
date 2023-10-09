@@ -2320,7 +2320,7 @@ struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_el
 struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *buf,
 						       struct bt_mesh_comp_p1_elem *elem)
 {
-	if (buf->len < 6) {
+	if (buf->len < 4) {
 		LOG_DBG("No more elements to pull or missing data");
 		return NULL;
 	}
