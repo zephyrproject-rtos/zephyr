@@ -399,6 +399,13 @@ set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
 list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
+# Also append QEMU flags from config
+if(NOT CONFIG_QEMU_EXTRA_FLAGS STREQUAL "")
+  set(config_qemu_flags ${CONFIG_QEMU_EXTRA_FLAGS})
+  separate_arguments(config_qemu_flags)
+  list(APPEND QEMU_EXTRA_FLAGS "${config_qemu_flags}")
+endif()
+
 list(APPEND MORE_FLAGS_FOR_debugserver_qemu -S)
 
 if(NOT CONFIG_QEMU_GDBSERVER_LISTEN_DEV STREQUAL "")

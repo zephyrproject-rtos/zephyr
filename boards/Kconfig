@@ -111,6 +111,15 @@ config QEMU_GDBSERVER_LISTEN_DEV
 	  as the `QEMU_EXTRA_FLAGS` environment variable. Refer to application
 	  development doc and/or QEMU invocation doc for more info.
 
+config QEMU_EXTRA_FLAGS
+	string "QEMU extra flags"
+	depends on QEMU_TARGET
+	default ""
+	help
+	  This option is to pass onto QEMU an extra list of parameters
+	  to setup devices, for example to allocate interface for Zephyr
+	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu
