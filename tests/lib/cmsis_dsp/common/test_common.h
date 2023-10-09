@@ -26,7 +26,6 @@
 #define ASSERT_MSG_ERROR_LIMIT_EXCEED		"error limit exceeded"
 #define ASSERT_MSG_INCORRECT_COMP_RESULT	"incorrect computation result"
 
-#if defined(CONFIG_ZTEST_NEW_API)
 #define DEFINE_TEST_VARIANT1(suite, name, variant, a1)                                             \
 	ZTEST(suite, test_##name##_##variant)                                                      \
 	{                                                                                          \
@@ -68,49 +67,6 @@
 	{                                                                                          \
 		test_##name(a1, a2, a3, a4, a5, a6, a7);                                           \
 	}
-#else /* !defined(CONFIG_ZTEST_NEW_API) */
-#define DEFINE_TEST_VARIANT1(name, variant, a1)		\
-	static void test_##name##_##variant(void)	\
-	{						\
-		test_##name(a1);			\
-	}
-
-#define DEFINE_TEST_VARIANT2(name, variant, a1, a2)	\
-	static void test_##name##_##variant(void)	\
-	{						\
-		test_##name(a1, a2);			\
-	}
-
-#define DEFINE_TEST_VARIANT3(name, variant, a1, a2, a3)	\
-	static void test_##name##_##variant(void)	\
-	{						\
-		test_##name(a1, a2, a3);		\
-	}
-
-#define DEFINE_TEST_VARIANT4(name, variant, a1, a2, a3, a4)	\
-	static void test_##name##_##variant(void)		\
-	{							\
-		test_##name(a1, a2, a3, a4);			\
-	}
-
-#define DEFINE_TEST_VARIANT5(name, variant, a1, a2, a3, a4, a5)	\
-	static void test_##name##_##variant(void)		\
-	{							\
-		test_##name(a1, a2, a3, a4, a5);		\
-	}
-
-#define DEFINE_TEST_VARIANT6(name, variant, a1, a2, a3, a4, a5, a6)	\
-	static void test_##name##_##variant(void)			\
-	{								\
-		test_##name(a1, a2, a3, a4, a5, a6);			\
-	}
-
-#define DEFINE_TEST_VARIANT7(name, variant, a1, a2, a3, a4, a5, a6, a7)	\
-	static void test_##name##_##variant(void)			\
-	{								\
-		test_##name(a1, a2, a3, a4, a5, a6, a7);		\
-	}
-#endif /* !defined(CONFIG_ZTEST_NEW_API) */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
