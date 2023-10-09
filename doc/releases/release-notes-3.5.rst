@@ -492,19 +492,35 @@ Drivers and Sensors
 Networking
 **********
 
-* Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
-  were more precisely specified and all in-tree call sites updated accordingly.
-  Fields for timed TX and TX/RX timestamps have been consolidated. See
-  :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
-  :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
-  documentation. As this is largely an internal API, existing applications will
-  most probably continue to work unchanged.
-
 * CoAP:
 
+  * Optimized CoAP client library to use only a single thread internally.
+  * Converted CoAP client library to use ``zsock_*`` API internally.
+  * Fixed a bug in CoAP client library, which resulted in an incorrect
+    retransmission timeout calculation.
   * Use 64 bit timer values for calculating transmission timeouts. This fixes potential problems for
     devices that stay on for more than 49 days when the 32 bit uptime counter might roll over and
     cause CoAP packets to not timeout at all on this event.
+  * API documentation improvements.
+  * Added new API functions:
+
+    * :c:func:`coap_has_descriptive_block_option`
+    * :c:func:`coap_remove_descriptive_block_option`
+    * :c:func:`coap_packet_remove_option`
+    * :c:func:`coap_packet_set_path`
+
+* Connection Manager:
+
+  * Added support for auto-connect and auto-down behaviors (controlled by
+    :c:enum:`CONN_MGR_IF_NO_AUTO_CONNECT` and :c:enum:`CONN_MGR_IF_NO_AUTO_DOWN`
+    flags).
+  * Split Connection Manager APIs into separate header files.
+  * Extended Connection Manager documentation to cover new functionalities.
+
+* DHCP:
+
+  * Added support for DHCPv4 unicast replies processing.
+  * Added support for DHCPv6 protocol.
 
 * Ethernet:
 
@@ -516,12 +532,135 @@ Networking
   * Added support for detecting gPTP packets that use the default multicast destination address.
   * Fixed Announce and Follow Up message handling.
 
+* ICMP:
+
+  * Fixed ICMPv6 error message type check.
+  * Reworked ICMP callback registration and handling, which allows to register
+    multiple handlers for the same ICMP message.
+  * Introduced an API to send ICMP Echo Request (ping).
+  * Added possibility to register offloaded ICMP ping handlers.
+  * Added support for setting packet priority for ping.
+
+* IPv6:
+
+  * Made sure that ongoing DAD procedure is cancelled when IPv6 address is removed.
+  * Fixed a bug, where Solicited-Node multicast address could be removed while
+    still in use.
+
 * LwM2M:
 
   * Added support for tickless mode. This removes the 500 ms timeout from the socket loop
     so the engine does not constantly wake up the CPU. This can be enabled by
     :kconfig:option:`CONFIG_LWM2M_TICKLESS`.
   * Added new :c:macro:`LWM2M_RD_CLIENT_EVENT_DEREGISTER` event.
+  * Block-wise sending now supports LwM2M read and composite-read operations as well.
+    When :kconfig:option:`CONFIG_LWM2M_COAP_BLOCK_TRANSFER` is enabled, any content that is larger
+    than :kconfig:option:`CONFIG_LWM2M_COAP_MAX_MSG_SIZE` is split into a block-wise transfer.
+  * Block-wise transfers don't require tokens to match anymore as this was not in line
+    with CoAP specification (CoAP doesn't require tokens re-use).
+  * Various fixes to bootstrap. Now client ensures that Bootstrap-Finish command is sent,
+    before closing the DTLS pipe. Also allows Bootstrap server to close the DTLS pipe.
+    Added timeout when waiting for bootstrap commands.
+  * Added support for X509 certificates.
+  * Various fixes to string handling. Allow setting string to zero length.
+    Ensure string termination when using string operations on opaque resources.
+  * Added support for Connection Monitoring object version 1.3.
+  * Added protection for Security object to prevent read/writes by the server.
+  * Fixed a possible notification stall in case of observation token change.
+  * Added new shell command, ``lwm2m create``, which allows to create LwM2M object instances.
+  * Added LwM2M interoperability test-suite against Leshan server.
+  * API documentation improvements.
+  * Several other minor fixes and improvements.
+
+* Misc:
+
+  * Time and timestamps in the network subsystem, PTP and IEEE 802.15.4
+    were more precisely specified and all in-tree call sites updated accordingly.
+    Fields for timed TX and TX/RX timestamps have been consolidated. See
+    :c:type:`net_time_t`, :c:struct:`net_ptp_time`, :c:struct:`ieee802154_config`,
+    :c:struct:`ieee802154_radio_api` and :c:struct:`net_pkt` for extensive
+    documentation. As this is largely an internal API, existing applications will
+    most probably continue to work unchanged.
+  * Added support for additional net_pkt filter hooks:
+
+    * :kconfig:option:`CONFIG_NET_PKT_FILTER_IPV4_HOOK`
+    * :kconfig:option:`CONFIG_NET_PKT_FILTER_IPV6_HOOK`
+    * :kconfig:option:`CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK`
+
+  * Reworked several networking components to use timepoint API.
+  * Added API functions facilitate going through all IPv4/IPv6 registered on an
+    interface (:c:func:`net_if_ipv4_addr_foreach`, :c:func:`net_if_ipv6_addr_foreach`).
+  * ``NET_EVENT_IPV6_PREFIX_ADD`` and ``NET_EVENT_IPV6_PREFIX_DEL`` events now provide
+    more detailed information about the prefix (:c:struct:`net_event_ipv6_prefix`).
+  * General cleanup of the shadowed variables across the networking subsystem.
+  * Added ``qemu_cortex_a53`` networking support.
+  * Introduced new modem subsystem.
+  * Added new :zephyr:code-sample:`cellular-modem` sample.
+  * Added support for network interface names (instead of reusing underlying device name).
+  * Removed support for Google Cloud IoT sample due to service retirement.
+  * Fixed a bug where packets passed in promiscuous mode could have been modified
+    by L2 in certain cases.
+  * Added support for setting syslog server (used for networking log backend)
+    IP address at runtime.
+  * Removed no longer used ``queued`` and ``sent`` net_pkt flags.
+  * Added support for binding zperf TCP/UDP server to a specific IP address.
+
+* MQTT-SN:
+
+  * Improved thread safety of internal buffers allocation.
+  * API documentation improvements.
+
+* OpenThread:
+
+  * Reworked :c:func:`otPlatEntropyGet` to use :c:func:`sys_csrand_get` internally.
+  * Introduced ``ieee802154_radio_openthread.h`` radio driver extension interface
+    specific for OpenThread. Added new transmit mode, specific to OpenThread,
+    :c:enum:`IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA`.
+
+* PPP:
+
+  * Fixed PPP L2 usage of the network interface carrier state.
+  * Made PPP L2 thread priority configurable (:kconfig:option:`CONFIG_NET_L2_PPP_THREAD_PRIO`).
+  * Moved PPP L2 out of experimental stage.
+  * Prevent PPP connection reestablish when carrier is down.
+
+* Sockets:
+
+  * Added support for statically allocated socketpairs (in case no heap is available).
+  * Made send timeout configurable (:kconfig:option:`CONFIG_NET_SOCKET_MAX_SEND_WAIT`).
+  * Added support for ``FIONREAD`` and ``FIONBIO`` :c:func:`ioctl` commands.
+  * Fixed input filtering for connected datagram sockets.
+  * Fixed :c:func:`getsockname` operation on unconnected sockets.
+  * Added new secure socket options for DTLS Connection ID support:
+
+    * :c:macro:`TLS_DTLS_CID`
+    * :c:macro:`TLS_DTLS_CID_VALUE`
+    * :c:macro:`TLS_DTLS_PEER_CID_VALUE`
+    * :c:macro:`TLS_DTLS_CID_STATUS`
+
+  * Added support for :c:macro:`SO_REUSEADDR` and :c:macro:`SO_REUSEPORT` socket options.
+
+* TCP:
+
+  * Fixed potential stall in data retransmission, when data was only partially acknowledged.
+  * Made TCP work queue priority configurable (:kconfig:option:`CONFIG_NET_TCP_WORKER_PRIO`).
+  * Added support for TCP new Reno collision avoidance algorithm.
+  * Fixed source address selection on bound sockets.
+  * Fixed possible memory leak in case listening socket was closed during active handshake.
+  * Fixed RST packet handling during handshake.
+  * Refactored the code responsible for connection teardown to fix found bugs and
+    simplify future maintenance.
+
+* TFTP:
+
+  * Added new :zephyr:code-sample:`tftp-client` sample.
+  * API documentation improvements.
+
+* WebSocket
+
+  * WebSocket library no longer closes underlying TCP socket automatically on disconnect.
+    This aligns with the connect behavior, where the WebSocket library expects an already
+    connected TCP socket.
 
 * Wi-Fi:
 
