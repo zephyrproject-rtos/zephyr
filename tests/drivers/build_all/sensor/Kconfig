@@ -3,7 +3,7 @@
 
 config GENERIC_SENSOR_TEST
 	bool "Compile and run the generic sensor tests"
-	depends on ZTEST && ZTEST_NEW_API
+	depends on ZTEST
 	help
 	  Enables building and running the generic sensor test suite that will
 	  iterate through the device tree and run sample path tests on any
