@@ -1023,4 +1023,8 @@ void modem_cmux_release(struct modem_cmux *cmux)
 
 	/* Unreference pipe */
 	cmux->pipe = NULL;
+
+	/* Reset events */
+	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
+	k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
 }
