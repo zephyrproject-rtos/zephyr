@@ -24,21 +24,22 @@ else()
   # SYSBuild dedicated configuration file.
 endif()
 
-if(DEFINED SB_CONF_FILE AND NOT IS_ABSOLUTE SB_CONF_FILE)
-  cmake_path(ABSOLUTE_PATH SB_CONF_FILE BASE_DIRECTORY ${APP_DIR})
-endif()
-
-if(DEFINED SB_OVERLAY_CONFIG AND NOT IS_ABSOLUTE SB_OVERLAY_CONFIG)
-  cmake_path(ABSOLUTE_PATH SB_OVERLAY_CONFIG BASE_DIRECTORY ${APP_DIR})
-endif()
-
-if(DEFINED SB_EXTRA_CONF_FILE AND NOT IS_ABSOLUTE SB_EXTRA_CONF_FILE)
-  cmake_path(ABSOLUTE_PATH SB_EXTRA_CONF_FILE BASE_DIRECTORY ${APP_DIR})
-endif()
-
 if(NOT DEFINED SB_EXTRA_CONF_FILE AND DEFINED SB_OVERLAY_CONFIG)
   set(SB_EXTRA_CONF_FILE ${SB_OVERLAY_CONFIG})
 endif()
+
+# Let SB_CONF_FILE and SB_EXTRA_CONF_FILE be relative to APP_DIR.
+# Either variable can be a list of paths, so we must make all of them absolute.
+foreach(conf_file_var SB_CONF_FILE SB_EXTRA_CONF_FILE)
+  if(DEFINED ${conf_file_var})
+    string(CONFIGURE "${${conf_file_var}}" conf_file_expanded)
+    set(${conf_file_var} "")
+    foreach(conf_file ${conf_file_expanded})
+      cmake_path(ABSOLUTE_PATH conf_file BASE_DIRECTORY ${APP_DIR})
+      list(APPEND ${conf_file_var} ${conf_file})
+    endforeach()
+  endif()
+endforeach()
 
 if(DEFINED SB_CONF_FILE AND NOT DEFINED CACHE{SB_CONF_FILE})
   # We only want to set this in cache it has been defined and is not already there.
