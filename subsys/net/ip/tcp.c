@@ -1852,8 +1852,6 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 			goto in;
 		}
 
-		net_ipaddr_copy(&conn_old->context->remote, &conn->dst.sa);
-
 		conn->accepted_conn = conn_old;
 	}
  in:
