@@ -285,3 +285,8 @@ Recommended Changes
   * ``prop-seg-data``
   * ``phase-seg1-data``
   * ``phase-seg1-data``
+
+* ``<zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>`` and
+  ``<zephyr/arch/arm/aarch32/cortex_m/cmsis.h>`` are now deprecated in favor of
+  including ``<cmsis_core.h>`` instead. The new header is part of the CMSIS glue
+  code in the ``modules`` directory.
