@@ -1005,7 +1005,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
                                                                                \
 	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
 
-#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
 /**
  * @brief Declare a device for each status "okay" devicetree node.
  *
@@ -1020,7 +1019,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
-#endif /* CONFIG_HAS_DTS */
 
 /** @endcond */
 
