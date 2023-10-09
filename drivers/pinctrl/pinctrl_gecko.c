@@ -249,6 +249,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO->USARTROUTE[usart_num].CLKROUTE =
 				(pin_config.pin << _GPIO_USART_CLKROUTE_PIN_SHIFT) |
 				(pin_config.port << _GPIO_USART_CLKROUTE_PORT_SHIFT);
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
 			break;
 
 		case GECKO_FUN_SPI_MOSI:
@@ -258,6 +260,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO->USARTROUTE[usart_num].TXROUTE =
 				(pin_config.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
 				(pin_config.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
 			break;
 
 		case GECKO_FUN_SPI_MISO:
@@ -267,6 +271,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO->USARTROUTE[usart_num].RXROUTE =
 				(pin_config.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
 				(pin_config.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
 			break;
 #endif /* CONFIG_SOC_GECKO_SERIES1 */
 #endif /* CONFIG_SPI_GECKO */
@@ -274,10 +280,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		default:
 			return -ENOTSUP;
 		}
-#if defined(CONFIG_SPI_GECKO) && !defined(CONFIG_SOC_GECKO_SERIES1)
-		GPIO_PinModeSet(pin_config.port, pin_config.pin,
-				pin_config.mode, pin_config.out);
-#endif /* defined(CONFIG_SPI_GECKO) && !defined(CONFIG_SOC_GECKO_SERIES1) */
 	}
 
 	return 0;
