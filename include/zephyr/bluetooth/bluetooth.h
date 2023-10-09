@@ -1690,6 +1690,10 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
  * to periodic advertising reports from an advertiser. Scan shall either be
  * disabled or extended scan shall be enabled.
  *
+ * This function does not timeout, and will continue to look for an advertiser until it either
+ * finds it or bt_le_per_adv_sync_delete() is called. It is thus suggested to implement a timeout
+ * when using this, if it is expected to find the advertiser within a reasonable timeframe.
+ *
  * @param[in]  param     Periodic advertising sync parameters.
  * @param[out] out_sync  Periodic advertising sync object on.
  *
