@@ -917,6 +917,21 @@ struct coap_observer *coap_find_observer_by_addr(
 	const struct sockaddr *addr);
 
 /**
+ * @brief Returns the observer that has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer_by_token(
+	struct coap_observer *observers, size_t len,
+	const uint8_t *token, uint8_t token_len);
+
+/**
  * @brief Returns the next available observer representation.
  *
  * @param observers Pointer to the array of observers

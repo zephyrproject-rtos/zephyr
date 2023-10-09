@@ -1915,6 +1915,25 @@ struct coap_observer *coap_find_observer_by_addr(
 	return NULL;
 }
 
+struct coap_observer *coap_find_observer_by_token(
+	struct coap_observer *observers, size_t len,
+	const uint8_t *token, uint8_t token_len)
+{
+	if (token_len == 0U || token_len > COAP_TOKEN_MAX_LEN) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		struct coap_observer *o = &observers[i];
+
+		if (o->tkl == token_len && memcmp(o->token, token, token_len) == 0) {
+			return o;
+		}
+	}
+
+	return NULL;
+}
+
 /**
  * @brief Internal initialization function for CoAP library.
  *
