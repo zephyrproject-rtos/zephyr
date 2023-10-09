@@ -212,6 +212,21 @@ Required changes
   ``manage_callback``, ``get_pending_int``. The public API will return
   ``-ENOSYS`` when these are not available, instead of ``-ENOTSUP``.
 
+* Platforms that implement power management hooks must explicitly select
+  :kconfig:option:`CONFIG_HAS_PM` in Kconfig. This is now a dependency of
+  :kconfig:option:`CONFIG_PM`. Before this change all platforms could enable
+  :kconfig:option:`CONFIG_PM` because empty weak stubs were provided, however,
+  this is no longer supported. As a result of this change, power management
+  hooks are no longer defined as weaks.
+
+* Multiple platforms no longer support powering the system off using
+  :c:func:`pm_state_force`. The new :c:func:`sys_poweroff` API must be used.
+  Migrated platforms include Nordic nRF, STM32, ESP32 and TI CC13XX/26XX. The
+  new API is independent from :kconfig:option:`CONFIG_PM`. It requires
+  :kconfig:option:`CONFIG_POWEROFF` to be enabled, which depends on
+  :kconfig:option:`CONFIG_HAS_POWEROFF`, an option selected by platforms
+  implementing the required new hooks.
+
 Recommended Changes
 *******************
 
