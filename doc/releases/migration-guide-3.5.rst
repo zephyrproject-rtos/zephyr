@@ -227,6 +227,9 @@ Required changes
   :kconfig:option:`CONFIG_HAS_POWEROFF`, an option selected by platforms
   implementing the required new hooks.
 
+* ARM SoC initialization routines no longer need to call `NMI_INIT()`. The
+  macro call has been removed as it was not doing anything useful.
+
 Recommended Changes
 *******************
 
