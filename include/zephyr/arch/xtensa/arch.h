@@ -46,9 +46,6 @@
  * @}
  */
 
-/* Xtensa GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
-
 #include <zephyr/arch/xtensa/exception.h>
 
 #ifdef __cplusplus
