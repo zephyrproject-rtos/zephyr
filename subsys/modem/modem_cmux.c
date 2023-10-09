@@ -960,7 +960,7 @@ int modem_cmux_connect_async(struct modem_cmux *cmux)
 {
 	__ASSERT_NO_MSG(cmux->pipe != NULL);
 
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false, K_NO_WAIT)) {
+	if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT)) {
 		return -EALREADY;
 	}
 
@@ -992,7 +992,7 @@ int modem_cmux_disconnect_async(struct modem_cmux *cmux)
 {
 	__ASSERT_NO_MSG(cmux->pipe != NULL);
 
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false, K_NO_WAIT)) {
+	if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT)) {
 		return -EALREADY;
 	}
 
