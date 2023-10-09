@@ -415,6 +415,7 @@ Networking
   * Added new :c:macro:`LWM2M_RD_CLIENT_EVENT_DEREGISTER` event.
 
 * Wi-Fi
+
   * Added Passive scan support.
   * The Wi-Fi scan API updated with Wi-Fi scan parameter to allow scan mode selection.
 
