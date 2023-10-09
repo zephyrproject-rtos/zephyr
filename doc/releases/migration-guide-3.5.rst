@@ -170,6 +170,11 @@ Required changes
     };
 
 
+* GPIO drivers not implementing IRQ related operations must now provide
+  ``NULL`` to the relevant operations: ``pin_interrupt_configure``,
+  ``manage_callback``, ``get_pending_int``. The public API will return
+  ``-ENOSYS`` when these are not available, instead of ``-ENOTSUP``.
+
 Recommended Changes
 *******************
 
