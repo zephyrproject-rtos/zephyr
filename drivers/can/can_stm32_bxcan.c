@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
-#define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
+#define CAN_INIT_TIMEOUT_MS 10
 
 #define DT_DRV_COMPAT st_stm32_bxcan
 
@@ -355,10 +355,10 @@ static int can_stm32_enter_init_mode(CAN_TypeDef *can)
 	uint32_t start_time;
 
 	can->MCR |= CAN_MCR_INRQ;
-	start_time = k_cycle_get_32();
+	start_time = k_uptime_get_32();
 
 	while ((can->MSR & CAN_MSR_INAK) == 0U) {
-		if (k_cycle_get_32() - start_time > CAN_INIT_TIMEOUT) {
+		if (k_uptime_get_32() - start_time > CAN_INIT_TIMEOUT_MS) {
 			can->MCR &= ~CAN_MCR_INRQ;
 			return -EAGAIN;
 		}
@@ -372,10 +372,10 @@ static int can_stm32_leave_init_mode(CAN_TypeDef *can)
 	uint32_t start_time;
 
 	can->MCR &= ~CAN_MCR_INRQ;
-	start_time = k_cycle_get_32();
+	start_time = k_uptime_get_32();
 
 	while ((can->MSR & CAN_MSR_INAK) != 0U) {
-		if (k_cycle_get_32() - start_time > CAN_INIT_TIMEOUT) {
+		if (k_uptime_get_32() - start_time > CAN_INIT_TIMEOUT_MS) {
 			return -EAGAIN;
 		}
 	}
@@ -388,10 +388,10 @@ static int can_stm32_leave_sleep_mode(CAN_TypeDef *can)
 	uint32_t start_time;
 
 	can->MCR &= ~CAN_MCR_SLEEP;
-	start_time = k_cycle_get_32();
+	start_time = k_uptime_get_32();
 
 	while ((can->MSR & CAN_MSR_SLAK) != 0) {
-		if (k_cycle_get_32() - start_time > CAN_INIT_TIMEOUT) {
+		if (k_uptime_get_32() - start_time > CAN_INIT_TIMEOUT_MS) {
 			return -EAGAIN;
 		}
 	}
