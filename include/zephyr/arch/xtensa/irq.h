@@ -130,6 +130,7 @@ static ALWAYS_INLINE void xtensa_irq_disable(uint32_t irq)
 	z_xt_ints_off(1 << irq);
 }
 
+/** Implementation of @ref arch_irq_lock. */
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
@@ -139,12 +140,14 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return key;
 }
 
+/** Implementation of @ref arch_irq_unlock. */
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("wsr.ps %0; rsync"
 			 :: "r"(key) : "memory");
 }
 
+/** Implementation of @ref arch_irq_unlocked. */
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return (key & 0xf) == 0; /* INTLEVEL field */

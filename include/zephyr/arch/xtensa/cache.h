@@ -22,7 +22,9 @@ BUILD_ASSERT(Z_IS_POW2(XCHAL_DCACHE_LINESIZE));
 BUILD_ASSERT(Z_IS_POW2(Z_DCACHE_MAX));
 #endif
 
-#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
+
+/** Implementation of @ref arch_dcache_flush_range. */
 static ALWAYS_INLINE int arch_dcache_flush_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
@@ -38,6 +40,7 @@ static ALWAYS_INLINE int arch_dcache_flush_range(void *addr, size_t bytes)
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_flush_and_invd_range. */
 static ALWAYS_INLINE int arch_dcache_flush_and_invd_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
@@ -53,6 +56,7 @@ static ALWAYS_INLINE int arch_dcache_flush_and_invd_range(void *addr, size_t byt
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_invd_range. */
 static ALWAYS_INLINE int arch_dcache_invd_range(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
@@ -68,6 +72,7 @@ static ALWAYS_INLINE int arch_dcache_invd_range(void *addr, size_t bytes)
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_invd_all. */
 static ALWAYS_INLINE int arch_dcache_invd_all(void)
 {
 #if XCHAL_DCACHE_SIZE
@@ -81,6 +86,7 @@ static ALWAYS_INLINE int arch_dcache_invd_all(void)
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_flush_all. */
 static ALWAYS_INLINE int arch_dcache_flush_all(void)
 {
 #if XCHAL_DCACHE_SIZE
@@ -94,6 +100,7 @@ static ALWAYS_INLINE int arch_dcache_flush_all(void)
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_flush_and_invd_all. */
 static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
 {
 #if XCHAL_DCACHE_SIZE
@@ -107,11 +114,13 @@ static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
 	return 0;
 }
 
+/** Implementation of @ref arch_dcache_enable. */
 static ALWAYS_INLINE void arch_dcache_enable(void)
 {
 	/* nothing */
 }
 
+/** Implementation of @ref arch_dcache_disable. */
 static ALWAYS_INLINE void arch_dcache_disable(void)
 {
 	/* nothing */
@@ -119,18 +128,21 @@ static ALWAYS_INLINE void arch_dcache_disable(void)
 
 #endif /* CONFIG_DCACHE */
 
-#if defined(CONFIG_ICACHE)
+#if defined(CONFIG_ICACHE) || defined(__DOXYGEN__)
 
+/** Implementation of @ref arch_icache_line_size_get. */
 static ALWAYS_INLINE size_t arch_icache_line_size_get(void)
 {
 	return -ENOTSUP;
 }
 
+/** Implementation of @ref arch_icache_flush_all. */
 static ALWAYS_INLINE int arch_icache_flush_all(void)
 {
 	return -ENOTSUP;
 }
 
+/** Implementation of @ref arch_icache_invd_all. */
 static ALWAYS_INLINE int arch_icache_invd_all(void)
 {
 #if XCHAL_ICACHE_SIZE
@@ -139,16 +151,19 @@ static ALWAYS_INLINE int arch_icache_invd_all(void)
 	return 0;
 }
 
+/** Implementation of @ref arch_icache_flush_and_invd_all. */
 static ALWAYS_INLINE int arch_icache_flush_and_invd_all(void)
 {
 	return -ENOTSUP;
 }
 
+/** Implementation of @ref arch_icache_flush_range. */
 static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
 {
 	return -ENOTSUP;
 }
 
+/** Implementation of @ref arch_icache_invd_range. */
 static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
 {
 #if XCHAL_ICACHE_SIZE
@@ -157,16 +172,19 @@ static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
 	return 0;
 }
 
+/** Implementation of @ref arch_icache_flush_and_invd_range. */
 static ALWAYS_INLINE int arch_icache_flush_and_invd_range(void *addr, size_t size)
 {
 	return -ENOTSUP;
 }
 
+/** Implementation of @ref arch_icache_enable. */
 static ALWAYS_INLINE void arch_icache_enable(void)
 {
 	/* nothing */
 }
 
+/** Implementation of @ref arch_icache_disable. */
 static ALWAYS_INLINE void arch_icache_disable(void)
 {
 	/* nothing */
