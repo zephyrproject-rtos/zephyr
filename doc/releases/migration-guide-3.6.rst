@@ -72,6 +72,10 @@ Bluetooth
   Devicetree chosen is now ``zephyr,bt-hci-ipc``. The existing sample has also
   been renamed, from ``samples/bluetooth/hci_rpmsg`` to
   ``samples/bluetooth/hci_ipc``.
+* The BT GATT callback list, appended to by :c:func:`bt_gatt_cb_register`, is no longer
+  cleared on :c:func:`bt_enable`. Callbacks can now be registered before the initial
+  call to :c:func:`bt_enable`, and should no longer be re-registered after a :c:func:`bt_disable`
+  :c:func:`bt_enable` cycle.
 
 LoRaWAN
 =======

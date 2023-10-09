@@ -370,7 +370,8 @@ struct bt_gatt_cpf {
 
 /** @brief Register GATT callbacks.
  *
- *  Register callbacks to monitor the state of GATT.
+ *  Register callbacks to monitor the state of GATT. The callback struct
+ *  must remain valid for the remainder of the program.
  *
  *  @param cb Callback struct.
  */

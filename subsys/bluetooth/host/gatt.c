@@ -80,7 +80,7 @@ struct gatt_sub {
  *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
  */
 static struct gatt_sub subscriptions[SUB_MAX];
-static sys_slist_t callback_list;
+static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
@@ -1463,8 +1463,6 @@ void bt_gatt_init(void)
 	}
 
 	bt_gatt_service_init();
-
-	sys_slist_init(&callback_list);
 
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_work_init_delayable(&db_hash.work, db_hash_process);
