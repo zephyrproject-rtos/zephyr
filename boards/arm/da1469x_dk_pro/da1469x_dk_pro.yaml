@@ -17,4 +17,5 @@ supported:
   - usb_device
   - rtc
   - crypto
+  - dma
 vendor: renesas
