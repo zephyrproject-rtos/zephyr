@@ -1348,9 +1348,7 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 	 * If sync_info is part of ADV PDU the offs_adjust field
 	 * is always set to 0.
 	 */
-	si->offs_units = OFFS_UNIT_VALUE_30_US;
-	si->offs_adjust = 0U;
-	si->offs = 0U;
+	PDU_ADV_SYNC_INFO_OFFS_SET(si, 0U, OFFS_UNIT_VALUE_30_US, 0U);
 
 	/* Fill the interval, access address and CRC init */
 	si->interval = sys_cpu_to_le16(sync->interval);
@@ -2207,18 +2205,19 @@ void ull_adv_sync_lll_syncinfo_fill(struct pdu_adv *pdu, struct lll_adv_aux *lll
 
 static void sync_info_offset_fill(struct pdu_adv_sync_info *si, uint32_t offs)
 {
+	uint8_t offs_adjust = 0U;
+
 	if (offs >= OFFS_ADJUST_US) {
 		offs -= OFFS_ADJUST_US;
-		si->offs_adjust = 1U;
+		offs_adjust = 1U;
 	}
 
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US));
-		si->offs_units = OFFS_UNIT_VALUE_300_US;
+		PDU_ADV_SYNC_INFO_OFFS_SET(si, offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US),
+					   OFFS_UNIT_VALUE_300_US, offs_adjust);
 	} else {
-		si->offs = sys_cpu_to_le16(offs);
-		si->offs_units = OFFS_UNIT_VALUE_30_US;
+		PDU_ADV_SYNC_INFO_OFFS_SET(si, offs, OFFS_UNIT_VALUE_30_US, offs_adjust);
 	}
 }
 
@@ -2328,22 +2327,22 @@ static void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 				  uint32_t remainder_us,
 				  uint32_t start_us)
 {
+	uint8_t offs_adjust = 0U;
 	uint32_t offs;
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
 
 	if (offs >= OFFS_ADJUST_US) {
 		offs -= OFFS_ADJUST_US;
-		si->offs_adjust = 1U;
+		offs_adjust = 1U;
 	}
 
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US));
-		si->offs_units = OFFS_UNIT_VALUE_300_US;
+		PDU_ADV_SYNC_INFO_OFFS_SET(si, offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US),
+					   OFFS_UNIT_VALUE_300_US, offs_adjust);
 	} else {
-		si->offs = sys_cpu_to_le16(offs);
-		si->offs_units = OFFS_UNIT_VALUE_30_US;
+		PDU_ADV_SYNC_INFO_OFFS_SET(si, offs, OFFS_UNIT_VALUE_30_US, offs_adjust);
 	}
 }
 
