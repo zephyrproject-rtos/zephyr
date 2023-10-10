@@ -43,6 +43,7 @@ enum status_thread_state {
 
 K_MUTEX_DEFINE(wpa_supplicant_mutex);
 
+extern struct k_work_q *get_workq(void);
 
 struct wpa_supp_api_ctrl {
 	const struct device *dev;
@@ -164,7 +165,8 @@ static void supp_shell_connect_status(struct k_work *work)
 			goto out;
 		}
 
-		k_work_reschedule(&wpa_supp_status_work, K_SECONDS(OP_STATUS_POLLING_INTERVAL));
+		k_work_reschedule_for_queue(get_workq(), &wpa_supp_status_work,
+					    K_SECONDS(OP_STATUS_POLLING_INTERVAL));
 		ctrl->status_thread_state = STATUS_THREAD_RUNNING;
 		k_mutex_unlock(&wpa_supplicant_mutex);
 		return;
@@ -184,7 +186,7 @@ static inline void wpa_supp_restart_status_work(void)
 	wpas_api_ctrl.terminate = 0;
 
 	/* Start afresh */
-	k_work_reschedule(&wpa_supp_status_work, K_MSEC(10));
+	k_work_reschedule_for_queue(get_workq(), &wpa_supp_status_work, K_MSEC(10));
 }
 
 static inline int chan_to_freq(int chan)
