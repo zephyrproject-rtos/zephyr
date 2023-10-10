@@ -125,6 +125,7 @@ struct bt_bap_broadcast_sink {
 	uint16_t iso_interval;
 	uint16_t biginfo_num_bis;
 	uint32_t broadcast_id; /* 24 bit */
+	uint32_t indexes_bitfield;
 	struct bt_bap_base base;
 	struct bt_audio_codec_qos codec_qos;
 	struct bt_le_per_adv_sync *pa_sync;

@@ -109,12 +109,17 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 		struct bt_bap_scan_delegator_subgroup *subgroup_param = &mod_src_param.subgroups[i];
 		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
 
-		/* Update the BIS sync indexes for the subgroup */
+		/* Update the BIS sync indexes for the subgroup based on the BASE*/
 		for (size_t j = 0U; j < subgroup->bis_count; j++) {
 			const struct bt_bap_base_bis_data *bis_data = &subgroup->bis_data[j];
 
 			subgroup_param->bis_sync |= BIT(bis_data->index);
 		}
+
+		/* Update the bis_sync so that the bis_sync value only contains the indexes that we
+		 * are actually synced to
+		 */
+		subgroup_param->bis_sync &= sink->indexes_bitfield;
 	}
 
 	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
@@ -776,6 +781,7 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 	}
 
 	sink->stream_count = 0;
+	sink->indexes_bitfield = 0U;
 }
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
@@ -1017,6 +1023,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 		return err;
 	}
 
+	sink->indexes_bitfield = indexes_bitfield;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_bap_ep *ep = streams[i]->ep;
 
