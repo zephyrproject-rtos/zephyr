@@ -222,6 +222,10 @@ Build system and infrastructure
   will be included in the final binary. Syscalls associated with disabled
   subsystems no longer have their marshalling functions generated.
 
+* Partially enabled compiler warning about shadow variables for subset of
+  in-tree code. Out-of-tree code needs to be patched before we can fully
+  enable shadow variable warnings.
+
 Drivers and Sensors
 *******************
 
