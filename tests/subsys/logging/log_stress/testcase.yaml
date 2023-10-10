@@ -6,11 +6,11 @@ common:
   integration_platforms:
     - qemu_x86
 tests:
-  logging.log_stress_light:
+  logging.stress.light:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
-  logging.log_stress_light_no_overflow:
+  logging.stress.light_no_overflow:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
@@ -23,7 +23,7 @@ tests:
       - qemu_x86
       - qemu_cortex_a9
       - qemu_x86_64
-  logging.log_stress_no_overflow:
+  logging.stress.no_overflow:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n

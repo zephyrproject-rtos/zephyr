@@ -1,5 +1,5 @@
 tests:
-  logging.log_backend_initialization:
+  logging.backend.initialization:
     integration_platforms:
       - qemu_x86
     tags:
