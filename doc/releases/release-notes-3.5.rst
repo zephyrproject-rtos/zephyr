@@ -255,6 +255,9 @@ Drivers and Sensors
 
 * DAC
 
+  * Added support for Analog Devices AD56xx
+  * Added support for NXP lpcxpresso55s36 (LPDAC)
+
 * DFU
 
 * Disk
