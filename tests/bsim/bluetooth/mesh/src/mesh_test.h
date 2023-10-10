@@ -122,6 +122,23 @@
 		}                                                                                  \
 	} while (0)
 
+#define WAIT_FOR_COND(cond, wait)                                                                  \
+	do {                                                                                       \
+		bool _err = false;                                                                 \
+		for (uint8_t sec = (wait); !(cond); sec--) {                                       \
+			if (!sec) {                                                                \
+				_err = true;                                                       \
+				break;                                                             \
+			}                                                                          \
+			k_sleep(K_SECONDS(1));                                                     \
+		}                                                                                  \
+                                                                                                   \
+		if (_err) {                                                                        \
+			bst_result = Failed;                                                       \
+			bs_trace_error_time_line("Waiting for " #cond " timed out\n");             \
+		}                                                                                  \
+	} while (0)
+
 struct bt_mesh_test_cfg {
 	uint16_t addr;
 	uint8_t dev_key[16];
