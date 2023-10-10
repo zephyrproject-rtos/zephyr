@@ -203,6 +203,14 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * Adafruit PiCowbell CAN Bus Shield for Pico
+  * Arduino UNO click shield
+  * G1120B0MIPI MIPI Display
+  * MikroElektronika MCP2518FD Click shield (CAN-FD)
+  * RK055HDMIPI4M MIPI Display
+  * RK055HDMIPI4MA0 MIPI Display
+  * Semtech SX1276MB1MAS LoRa Shield
+
 Build system and infrastructure
 *******************************
 
