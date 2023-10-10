@@ -433,9 +433,31 @@ Drivers and Sensors
 
   * NS16550: Reworked how device initialization macros.
 
-    * CONFIG_UART_NS16550_ACCESS_IOPORT and CONFIG_UART_NS16550_SIMULT_ACCESS
-      are removed. For UART using IO port access, add "io-mapped" property to
+    * ``CONFIG_UART_NS16550_ACCESS_IOPORT`` and ``CONFIG_UART_NS16550_SIMULT_ACCESS``
+      are removed. For UART using IO port access, add ``io-mapped`` property to
       device tree node.
+
+  * Added async support for ESP32S3.
+
+  * Added support for serial TTY under ``native_posix``.
+
+  * Added support for UART on Efinix Sapphire SoCs.
+
+  * Added Intel SEDI UART driver.
+
+  * Added support for UART on BCM2711.
+
+  * ``uart_stm32``:
+
+    * Added RS485 support.
+
+    * Added wide data support.
+
+  * ``uart_pl011``: added support for Ambiq SoCs.
+
+  * ``serial_test``: added support for interrupt and async APIs.
+
+  * ``uart_emul``: added support for interrupt API.
 
 * SPI
 
