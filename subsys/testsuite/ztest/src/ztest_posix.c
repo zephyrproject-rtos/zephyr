@@ -9,7 +9,7 @@
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 #include <zephyr/tc_util.h>
-#include <zephyr/ztest_test_new.h>
+#include <zephyr/ztest_test.h>
 #include "nsi_host_trampolines.h"
 
 static const char *test_args;
@@ -47,7 +47,7 @@ NATIVE_TASK(add_test_filter_option, PRE_BOOT_1, 10);
  * This makes assertions a lot more readable, and sometimes they fit on one
  * line.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param file Filename to check
  * @returns Shortened filename, or @file if it could not be shortened
@@ -176,7 +176,7 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
  * @brief Determines if the test case should run based on test cases listed
  *	  in the command line argument.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param suite - name of test suite
  * @param test  - name of unit test
@@ -197,7 +197,7 @@ bool z_ztest_should_test_run(const char *suite, const char *test)
  * @brief Determines if the test suite should run based on test cases listed
  *	  in the command line argument.
  *
- * Overrides implementation in ztest_new.c
+ * Overrides implementation in ztest.c
  *
  * @param state The current state of the machine as it relates to the test
  *		executable.

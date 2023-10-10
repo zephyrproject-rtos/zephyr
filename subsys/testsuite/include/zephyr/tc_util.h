@@ -127,18 +127,11 @@ static inline void print_nothing(const char *fmt, ...)
 }
 
 #ifndef TC_PRINT
-/* Need to check for CONFIG_ZTEST_NEW_API since the TC_PRINT
- * is also used by the old ztest.
- */
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #else
 #define TC_PRINT(fmt, ...) print_nothing(fmt, ##__VA_ARGS__)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_PRINT */
 
 #ifndef TC_SUMMARY_PRINT
@@ -146,15 +139,11 @@ static inline void print_nothing(const char *fmt, ...)
 #endif
 
 #ifndef TC_START_PRINT
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_START_PRINT(name) PRINT_DATA("START - %s\n", name);
 #else
 #define TC_START_PRINT(name) print_nothing(name)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_START_PRINT(name) PRINT_DATA("START - %s\n", name);
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_START_PRINT */
 
 #ifndef TC_START
@@ -169,15 +158,11 @@ static inline void print_nothing(const char *fmt, ...)
 #endif
 
 #ifndef TC_END_PRINT
-#ifdef CONFIG_ZTEST_NEW_API
 #if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_END_PRINT(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__); PRINT_LINE
 #else
 #define TC_END_PRINT(result, fmt, ...) print_nothing(fmt)
 #endif /* CONFIG_ZTEST_VERBOSE_OUTPUT */
-#else
-#define TC_END_PRINT(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__); PRINT_LINE
-#endif /* CONFIG_ZTEST_NEW_API */
 #endif /* TC_END_PRINT */
 
 /* prints result and the function name */
