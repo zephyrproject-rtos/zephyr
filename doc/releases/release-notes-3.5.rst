@@ -836,6 +836,10 @@ Libraries / Subsystems
 
   * Updated ``loramac-node`` from v4.6.0 to v4.7.0
 
+* CAN ISO-TP
+
+  * Added support for CAN FD.
+
 HALs
 ****
 
