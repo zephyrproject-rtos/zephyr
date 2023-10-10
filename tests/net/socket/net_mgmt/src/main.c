@@ -457,6 +457,34 @@ ZTEST_USER(net_socket_net_mgmt, test_net_mgmt_catch_user)
 	test_net_mgmt_catch_events();
 }
 
+static void test_net_mgmt_catch_events_failure(void)
+{
+#define SMALL_BUF_LEN 16
+	struct sockaddr_nm event_addr;
+	socklen_t event_addr_len;
+	uint8_t buf[SMALL_BUF_LEN];
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+	event_addr_len = sizeof(event_addr);
+
+	ret = recvfrom(fd, buf, sizeof(buf), 0,
+		       (struct sockaddr *)&event_addr,
+		       &event_addr_len);
+	zassert_equal(ret, -1, "Msg check failed, %d", errno);
+	zassert_equal(errno, EMSGSIZE, "Msg check failed, errno %d", errno);
+}
+
+ZTEST(net_socket_net_mgmt, test_net_mgmt_catch_failure_kernel)
+{
+	test_net_mgmt_catch_events_failure();
+}
+
+ZTEST_USER(net_socket_net_mgmt, test_net_mgmt_catch_failure_user)
+{
+	test_net_mgmt_catch_events_failure();
+}
+
 ZTEST(net_socket_net_mgmt, test_net_mgmt_cleanup)
 {
 	k_thread_abort(trigger_events_thread_id);
