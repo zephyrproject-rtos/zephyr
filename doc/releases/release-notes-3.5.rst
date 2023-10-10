@@ -106,6 +106,11 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Nuvoton NuMaker M46x series
+  * Added support for STM32F072X8 SoC variants
+  * Added support for STM32L051X6 SoC variants
+  * Added support for STM32L451XX SoC variants
+  * Added support for STM32L4Q5XX SoC variants
+  * Added support for STM32WBA SoC series
 
 * Removed support for these SoC series:
 
@@ -123,6 +128,8 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
   * Nuvoton NuMaker Platform M467
+  * ST Nucleo U5A5ZJ Q
+  * ST Nucleo WBA52CG
 
 * Added support for these ARM64 boards:
 
@@ -154,6 +161,8 @@ Boards & SoC Support
 * Made these changes for ARC boards:
 
 * Made these changes for ARM boards:
+
+  * ST morpho connector description was added on ST nucleo boards.
 
 * Made these changes for ARM64 boards:
 
@@ -234,6 +243,13 @@ Drivers and Sensors
 
 * ADC
 
+  * Added support for STM32F0 HSI14 clock (dedicated ADC clock)
+  * Added support for STM32 ADC source clock and prescaler. On STM32F1 and STM32F3
+    series, ADC prescaler can be configured using dedicated RCC Clock Controller
+    option.
+  * Added support for the ADC sequencer for all STM32 series (except F1)
+  * Fixed STM32F4 ADC temperature and Vbat measurement.
+
 * Battery-backed RAM
 
 * CAN
@@ -250,6 +266,9 @@ Drivers and Sensors
   * Added support for Nuvoton NuMaker M46x
 
 * Counter
+
+  * Added :kconfig:option:`CONFIG_COUNTER_RTC_STM32_SUBSECONDS` to enable subsecond as
+    the basic time tick on STM32 RTC based counter driver.
 
 * Crypto
 
@@ -306,6 +325,8 @@ Drivers and Sensors
     single Flash Interface Unit (FIU) module and Direct Read Access (DRA) mode
     for better performance.
   * Added support for Nuvoton NuMaker M46x embedded flash
+  * STM32 QSPI driver now supports Jedec SFDP parameter reading.
+  * STM32 OSPI driver now supports both Low and High ports of IO manager.
 
 * FPGA
 
@@ -318,6 +339,10 @@ Drivers and Sensors
 * hwinfo
 
 * I2C
+
+  * STM32 V1 driver now supports large transactions (more than 256 bytes chunks)
+  * STM32 V2 driver now supports 10-bit addressing.
+  * I2C devices can now be used as wakeup source from STOP modes on STM32.
 
 * I2S
 
@@ -400,6 +425,8 @@ Drivers and Sensors
 
 * PWM
 
+  * Added 4 channels capture on STM32 PWM driver.
+
 * Power domain
 
 * Regulators
@@ -428,6 +455,11 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE`.
 
   * Fixed issue with user mode support not working.
+
+* RTC
+
+  * Added support for STM32 RTC API driver. This driver is not compatible with
+    the use of RTC based implementation of COUNTER API.
 
 * SDHC
 
@@ -481,6 +513,10 @@ Drivers and Sensors
     extensibility. No action is required unless the internal timer was modified.
 
 * USB
+
+  * Added UDC driver for STM32 based MCU, relying on HAL/PCD. This driver is compatible
+    with UDC API (experimental).
+  * Added support for STM32H5 series on USB driver.
 
 * W1
 
@@ -743,6 +779,8 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS`, which automatically increments
     minimum encoding levels for in-tree groups if :kconfig:option:`CONFIG_ZCBOR_CANONICAL` is
     enabled.
+
+  * Added STM32 SPI backend for EC Host command protocol.
 
 * File systems
 
