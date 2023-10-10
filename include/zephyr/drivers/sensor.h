@@ -334,8 +334,10 @@ enum sensor_attribute {
 	 *  to the new sampling frequency.
 	 */
 	SENSOR_ATTR_FF_DUR,
-	/** Watermark % for the hardware fifo interrupt */
-	SENSOR_ATTR_FIFO_WATERMARK,
+
+	/** Hardware batch duration in ticks */
+	SENSOR_ATTR_BATCH_DURATION,
+
 	/**
 	 * Number of all common sensor attributes.
 	 */
