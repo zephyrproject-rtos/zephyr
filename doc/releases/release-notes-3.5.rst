@@ -68,6 +68,8 @@ Architectures
 
 * Xtensa
 
+  * Added basic MMU v2 Support.
+
 * POSIX
 
   * Has been reworked to use the native simulator.
@@ -109,6 +111,7 @@ Boards & SoC Support
     and CONFIG_NXP_IMX_EXTERNAL_SDRAM to enabled.
   * i.MX RT SOCs no longer support CONFIG_OCRAM_NOCACHE, as this functionality
     can be achieved using devicetree memory regions
+  * Refactored ESP32 SoC folders. So now these are a proper SoC series.
 
 * Added support for these ARC boards:
 
@@ -123,6 +126,19 @@ Boards & SoC Support
 * Added support for these X86 boards:
 
 * Added support for these Xtensa boards:
+
+  * Added ``esp32_devkitc_wroom`` and ``esp32_devkitc_wrover``.
+
+  * Added ``esp32s3_luatos_core``.
+
+  * Added ``m5stack_core2``.
+
+  * Added ``qemu_xtensa_mmu`` utilizing Diamond DC233c SoC to support
+    testing Xtensa MMU.
+
+  * Added ``xiao_esp32s3``.
+
+  * Added ``yd_esp32``.
 
 * Added support for these POSIX boards:
 
@@ -142,6 +158,12 @@ Boards & SoC Support
 
 * Made these changes for Xtensa boards:
 
+  * esp32s3_devkitm:
+
+    * Added USB-CDC support.
+
+    * Added CAN support.
+
 * Made these changes for POSIX boards:
 
   * nrf52_bsim:
@@ -160,6 +182,8 @@ Boards & SoC Support
 * Removed support for these X86 boards:
 
 * Removed support for these Xtensa boards:
+
+  * Removed ``esp32``. Use ``esp32_devkitc_*`` instead.
 
 * Made these changes in other boards:
 
