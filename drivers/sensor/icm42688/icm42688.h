@@ -380,7 +380,7 @@ struct icm42688_cfg {
 	/* TODO timestamp options */
 
 	bool fifo_en;
-	uint16_t fifo_wm;
+	int32_t batch_ticks;
 	bool fifo_hires;
 	/* TODO additional FIFO options */
 

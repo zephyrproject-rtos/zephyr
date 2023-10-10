@@ -157,13 +157,11 @@ static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 	case SENSOR_CHAN_ALL:
-		if (attr == SENSOR_ATTR_FIFO_WATERMARK) {
-			int64_t mval = sensor_value_to_micro(val);
-
-			if (mval < 0 || mval > 1000000) {
+		if (attr == SENSOR_ATTR_BATCH_DURATION) {
+			if (val->val1 < 0) {
 				return -EINVAL;
 			}
-			new_config.fifo_wm = CLAMP(mval * 2048 / 1000000, 0, 2048);
+			new_config.batch_ticks = val->val1;
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -212,6 +210,15 @@ static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
 			icm42688_gyro_reg_to_odr(cfg->gyro_odr, val);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
 			icm42688_gyro_reg_to_fs(cfg->gyro_fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	case SENSOR_CHAN_ALL:
+		if (attr == SENSOR_ATTR_BATCH_DURATION) {
+			val->val1 = cfg->batch_ticks;
+			val->val2 = 0;
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -272,7 +279,7 @@ int icm42688_init(const struct device *dev)
 	data->cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
 	data->cfg.temp_dis = false;
 	data->cfg.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM);
-	data->cfg.fifo_wm = 0;
+	data->cfg.batch_ticks = 0;
 	data->cfg.fifo_hires = 0;
 	data->cfg.interrupt1_drdy = 0;
 	data->cfg.interrupt1_fifo_ths = 0;
