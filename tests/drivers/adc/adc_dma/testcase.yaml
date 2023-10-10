@@ -4,7 +4,7 @@ common:
     - dma
     - trigger
 tests:
-  drivers.adc-dma:
+  drivers.adc.dma:
     depends_on:
       - adc
       - dma
