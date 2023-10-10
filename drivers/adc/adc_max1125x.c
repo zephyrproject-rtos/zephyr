@@ -226,7 +226,7 @@ struct max1125x_data {
 	struct k_thread thread;
 	bool differential;
 
-	K_THREAD_STACK_MEMBER(stack, CONFIG_ADC_MAX1125X_ACQUISITION_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(stack, CONFIG_ADC_MAX1125X_ACQUISITION_THREAD_STACK_SIZE);
 };
 
 static void max1125x_data_ready_handler(const struct device *dev, struct gpio_callback *gpio_cb,
