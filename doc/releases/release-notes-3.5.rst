@@ -304,6 +304,13 @@ Drivers and Sensors
 
 * I3C
 
+  * ``i3c_cdns``:
+
+    * Fixed build error when :kconfig:option:`CONFIG_I3C_USE_IBI` is disabled.
+
+    * Fixed transfer issue when controller is busy. Now wait for controller to
+      idle before proceeding with another transfer.
+
 * IEEE 802.15.4
 
   * A new mandatory method attr_get() was introduced into ieee802154_radio_api.
