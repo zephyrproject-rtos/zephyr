@@ -511,7 +511,7 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 __boot_func
 void __weak z_early_rand_get(uint8_t *buf, size_t length)
 {
-	static uint64_t state = 123456789UL;
+	static uint64_t state = (uint64_t)CONFIG_TIMER_RANDOM_INITIAL_STATE;
 	int rc;
 
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
