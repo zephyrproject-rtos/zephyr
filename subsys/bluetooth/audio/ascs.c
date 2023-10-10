@@ -147,7 +147,8 @@ static void ase_status_changed(struct bt_ascs_ase *ase, uint8_t state)
 			return;
 		}
 
-		if (conn_info.state == BT_CONN_STATE_CONNECTED) {
+		if (conn_info.state == BT_CONN_STATE_CONNECTED &&
+		    bt_gatt_is_subscribed(conn, ase->attr, BT_GATT_CCC_NOTIFY)) {
 			const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
 			const uint16_t max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
 			uint16_t ntf_size;
