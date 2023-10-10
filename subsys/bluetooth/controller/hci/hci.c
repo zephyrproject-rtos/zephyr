@@ -7053,10 +7053,10 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			LOG_DBG("    SyncInfo offs = %u, offs_unit = 0x%x, "
 			       "interval = 0x%x, sca = 0x%x, "
 			       "chan map = 0x%x 0x%x 0x%x 0x%x 0x%x, "
-			       "AA = 0x%x, CRC = 0x%x 0x%x 0x%x, "
+			       "AA = 0x%x%x%x%x, CRC = 0x%x 0x%x 0x%x, "
 			       "evt cntr = 0x%x",
-			       sys_le16_to_cpu(si->offs),
-			       si->offs_units,
+			       PDU_ADV_SYNC_INFO_OFFSET_GET(si),
+			       PDU_ADV_SYNC_INFO_OFFS_UNITS_GET(si),
 			       sys_le16_to_cpu(si->interval),
 			       ((si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 				 PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
@@ -7065,7 +7065,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			       si->sca_chm[3],
 			       (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 				~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK),
-			       sys_le32_to_cpu(si->aa),
+			       si->aa[3], si->aa[2], si->aa[1], si->aa[0],
 			       si->crc_init[0], si->crc_init[1],
 			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
 		}
