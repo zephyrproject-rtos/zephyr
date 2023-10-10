@@ -49,6 +49,8 @@ Kernel
 
 * Added support for dynamic thread stack allocation via :c:func:`k_thread_stack_alloc`
 * Added support for :c:func:`k_spin_trylock`
+* Added :c:func:`k_object_is_valid` to check if a kernel object is valid. This replaces
+  code that has been duplicated throughout the tree.
 
 Architectures
 *************
@@ -215,6 +217,10 @@ Build system and infrastructure
 
 * Added a new ``initlevels`` target for printing the final device and
   :c:macro:`SYS_INIT` initialization sequence from the final ELF file.
+
+* Reworked syscall code generations so that not all marshalling functions
+  will be included in the final binary. Syscalls associated with disabled
+  subsystems no longer have their marshalling functions generated.
 
 Drivers and Sensors
 *******************
