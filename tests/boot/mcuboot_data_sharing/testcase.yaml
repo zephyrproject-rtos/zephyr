@@ -6,7 +6,7 @@
 common:
   sysbuild: true
 tests:
-  mcuboot.data.sharing:
+  bootloader.mcuboot.data.sharing:
     platform_allow: nrf52840dk_nrf52840
     tags:
       - mcuboot
