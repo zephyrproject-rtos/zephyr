@@ -1340,7 +1340,10 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 		const struct bt_bap_scan_delegator_subgroup *param_subgroup = &param->subgroups[i];
 		struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 
-		subgroup->bis_sync = param_subgroup->bis_sync;
+		if (subgroup->bis_sync != param_subgroup->bis_sync) {
+			subgroup->bis_sync = param_subgroup->bis_sync;
+			state_changed = true;
+		}
 
 		/* If the metadata len is 0, we shall not overwrite the existing metadata */
 		if (param_subgroup->metadata_len == 0U) {
