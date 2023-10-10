@@ -110,8 +110,8 @@ kobjects = OrderedDict([
     ("k_event", ("CONFIG_EVENTS", False, True)),
     ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
     ("ztest_suite_stats", ("CONFIG_ZTEST", True, False)),
-    ("ztest_unit_test", ("CONFIG_ZTEST_NEW_API", True, False)),
-    ("ztest_test_rule", ("CONFIG_ZTEST_NEW_API", True, False)),
+    ("ztest_unit_test", ("CONFIG_ZTEST", True, False)),
+    ("ztest_test_rule", ("CONFIG_ZTEST", True, False)),
     ("rtio", ("CONFIG_RTIO", False, False)),
     ("rtio_iodev", ("CONFIG_RTIO", False, False)),
     ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False))
