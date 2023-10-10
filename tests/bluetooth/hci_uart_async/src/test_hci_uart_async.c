@@ -12,7 +12,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
-#include <zephyr/ztest_test_new.h>
+#include <zephyr/ztest_test.h>
 
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/drivers/uart/serial_test.h>
