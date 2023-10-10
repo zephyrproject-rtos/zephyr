@@ -1298,7 +1298,7 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 {
 	struct bass_recv_state_internal *internal_state = NULL;
 	struct bt_bap_scan_delegator_recv_state *state;
-	static bool state_changed;
+	bool state_changed = false;
 
 	CHECKIF(!valid_bt_bap_scan_delegator_mod_src_param(param)) {
 		return -EINVAL;
