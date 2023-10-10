@@ -118,7 +118,7 @@ struct vcnl4040_data {
 	const struct sensor_trigger *als_trigger;
 #endif
 #ifdef CONFIG_VCNL4040_TRIGGER_OWN_THREAD
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_VCNL4040_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_VCNL4040_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem trig_sem;
 #endif
