@@ -86,6 +86,11 @@ struct wpa_global *zephyr_get_default_supplicant_context(void)
 	return get_default_context()->supplicant;
 }
 
+struct k_work_q *get_workq(void)
+{
+	return &get_default_context()->iface_wq;
+}
+
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	struct supplicant_context *ctx;
