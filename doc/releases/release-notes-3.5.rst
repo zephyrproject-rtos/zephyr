@@ -357,6 +357,15 @@ Drivers and Sensors
 
 * PCIE
 
+  * Added support in shell to display PCIe capabilities.
+
+  * Added virtual channel support.
+
+  * Added kconfig :kconfig:option:`CONFIG_PCIE_INIT_PRIORITY` to specify
+    initialization priority for host controller.
+
+  * Added support to get IRQ from ACPI PCI Routing Table (PRT).
+
 * PECI
 
 * Pin control
