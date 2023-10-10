@@ -91,7 +91,7 @@ struct tsl2540_data {
 	sensor_trigger_handler_t als_handler;
 #endif
 #ifdef CONFIG_TSL2540_TRIGGER_OWN_THREAD
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_TSL2540_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_TSL2540_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem trig_sem;
 #endif

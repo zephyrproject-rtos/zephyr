@@ -625,13 +625,13 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * A user thread can only be started with a stack defined in this way if
  * the thread starting it is in supervisor mode.
  *
- * This is now deprecated, as stacks defined in this way are not usable from
- * user mode. Use K_KERNEL_STACK_MEMBER.
+ * @deprecated This is now deprecated, as stacks defined in this way are not
+ *             usable from user mode. Use K_KERNEL_STACK_MEMBER.
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
-#define K_THREAD_STACK_MEMBER(sym, size) \
+#define K_THREAD_STACK_MEMBER(sym, size) __DEPRECATED_MACRO \
 	Z_THREAD_STACK_DEFINE_IN(sym, size,)
 
 /** @} */
