@@ -1,5 +1,5 @@
 tests:
-  system.settings.file:
+  settings.file:
     platform_allow:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
@@ -8,4 +8,6 @@ tests:
       - mr_canhubk3
     integration_platforms:
       - native_posix
-    tags: settings_file
+    tags:
+      - settings
+      - file
