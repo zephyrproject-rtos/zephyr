@@ -336,7 +336,7 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	}
 
 	/* Turn off backlight (if its GPIO is defined in device tree) */
-	if (config->disp_on_gpio.port) {
+	if (config->bl_ctrl_gpio.port) {
 		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, 0);
 		if (err < 0) {
 			return err;
