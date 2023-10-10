@@ -872,6 +872,20 @@ Nanopb
 
   * Added helper cmake function ``zephyr_nanopb_sources`` to simplify ``.proto`` file inclusion.
 
+LVGL
+****
+
+  * Changed project status to maintained.
+
+  * Library has been updated to release v8.3.7.
+
+  * Added ``zephyr,lvgl-{pointer,button,encoder}-input`` pseudo device bindings.
+    :kconfig:option:`CONFIG_LV_Z_KSCAN_POINTER` is still supported but touch controllers
+    need a :dtcompatible:`zephyr,kscan-input` child node to emit input events.
+
+  * LVGL shell allows for monkey testing (requires :kconfig:option:`CONFIG_LV_USE_MONKEY`)
+    and inspecting memory usage.
+
 Storage
 *******
 
