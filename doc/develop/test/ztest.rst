@@ -10,10 +10,6 @@ test structure.
 The framework can be used in two ways, either as a generic framework for
 integration testing, or for unit testing specific modules.
 
-To enable support for the latest Ztest API, set
-:kconfig:option:`CONFIG_ZTEST_NEW_API` to ``y``. There is also a legacy API
-that is deprecated and will eventually be removed.
-
 Creating a test suite
 *********************
 
@@ -581,7 +577,7 @@ Shuffling Test Sequence
 By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
-tests.  For native posix builds you can provide the seed as an argument to
+tests.  For native simulator builds you can provide the seed as an argument to
 twister with `--seed`
 
 Static configuration of ZTEST_SHUFFLE contains:
@@ -592,7 +588,7 @@ Static configuration of ZTEST_SHUFFLE contains:
 
 Test Selection
 **************
-For POSIX enabled builds with ZTEST_NEW_API use command line arguments to list
+For tests built for native simulator, use command line arguments to list
 or select tests to run. The test argument expects a comma separated list
 of ``suite::test`` .  You can substitute the test name with an ``*`` to run all
 tests within a suite.
