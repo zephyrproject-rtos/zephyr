@@ -11,7 +11,7 @@ tests:
     integration_platforms:
       - mimxrt1064_evk
       - mimxrt595_evk_cm33
-  drivers.disk_performance.disk.nvme:
+  drivers.disk.disk_performance.disk.nvme:
     extra_configs:
       - CONFIG_NVME=y
     platform_allow: qemu_x86_64

@@ -1,5 +1,5 @@
 tests:
-  drivers.udc:
+  drivers.usb.udc:
     tags:
       - usb
       - drivers

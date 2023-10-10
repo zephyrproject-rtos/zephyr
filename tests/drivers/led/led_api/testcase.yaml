@@ -1,5 +1,5 @@
 tests:
-  drivers.led_api.i2c:
+  drivers.led.api.i2c:
     tags:
       - drivers
       - led
