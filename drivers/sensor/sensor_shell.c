@@ -122,7 +122,7 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_FEATURE_MASK] = "feature_mask",
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
-	[SENSOR_ATTR_FIFO_WATERMARK] = "fifo_wm",
+	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 };
 
 /* Forward declaration */
