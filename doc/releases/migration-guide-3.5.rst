@@ -235,6 +235,30 @@ Required changes
   This means that an extra linker stage is no longer necessary if this option is
   not enabled.
 
+* STM32 Ethernet driver was misusing :c:func:`hwinfo_get_device_id` to generate
+  last 3 bytes of mac address, resulting in a high risk of collision when using
+  SoCs from the same lot. This is now fixed to use the whole range of entropy
+  available from the unique ID (96 bits). Devices using unique ID based mac address
+  will see last 3 bytes of their MAC address modified by this change.
+
+* On all STM32 (except F1x and F37x series), two new required properties have been
+  added to ADC to configure the source clock and the prescaler.
+  ``st,adc-clock-source`` allows choosing either synchronous or asynchronous clock source.
+  ``st,adc-prescaler`` allows setting the value of the prescaler for the chosen clock source.
+  Not all combinations are allowed. Refer to the appropriate RefMan for more information.
+  When choosing asynchronous clock, the choice of the kernel source clock is made in the
+  ``clocks`` node as it is done for other peripherals, for example, to select
+  HSI16 as clock source for STM32G0:
+
+  .. code-block:: devicetree
+
+     &adc {
+         clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>,
+                  <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+       };
+
+
+
 Recommended Changes
 *******************
 
