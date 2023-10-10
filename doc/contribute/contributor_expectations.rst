@@ -235,7 +235,7 @@ Before escalation of technical disagreements, follow the steps below:
   approving the PR or by setting the *DNM* label.
 
 Escalation can be triggered by any party participating in the review
-process (assignee, reviewers or the original author of the change)  following
+process (assignee, reviewers or the original author of the change) following
 the steps below:
 
 - Escalate to the `Architecture Working Group`_ by adding the `Architecture
@@ -244,8 +244,9 @@ the steps below:
   review of the escalation if requested, especially if any of the parties can't
   attend the meeting.
 
-- If issues are not resolved, assignees can escalate to the TSC and get a
-  binding resolution in the TSC by adding the *TSC* label on the PR.
+- If all avenues of resolution and escalation have failed, assignees can escalate
+  to the TSC and get a binding resolution in the TSC by adding the *TSC* label
+  on the PR.
 
 - The Assignee is expected to ensure the resolution of the escalation and the
   outcome is documented in the related pull request or issues on Github.
@@ -267,10 +268,11 @@ Reviewer Expectations
   for more details.
 
 - The Zephyr Project recognizes that reviewers and maintainers have limited
-  bandwidth. Prioritize review requests in the following order:
+  bandwidth. As a reviewer, prioritize review requests in the following order:
 
-    #. PRs related to items in the `Zephyr Release Plan`_.
-    #. PRs that the reviewer has requested blocking changes.
+    #. PRs related to items in the `Zephyr Release Plan`_ or those targetting
+       the next release during the stabilization period (after RC1).
+    #. PRs where the reviewer has requested blocking changes.
     #. PRs assigned to the reviewer as the area maintainer.
     #. All other PRs.
 
