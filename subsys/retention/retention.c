@@ -174,8 +174,11 @@ int retention_is_valid(const struct device *dev)
 
 	retention_lock_take(dev);
 
-	/* If neither the header or checksum are enabled, return a not supported error */
-	if (config->prefix_len == 0 && config->checksum_size == 0) {
+	/* If neither the header or checksum are enabled, or if mutexes have been
+	 * disabled in a multithreading application return a not supported error
+	 */
+	if ((config->prefix_len == 0 && config->checksum_size == 0) ||
+	    (IS_ENABLED(CONFIG_RETENTION_MUTEX_FORCE_DISABLE))) {
 		rc = -ENOTSUP;
 		goto finish;
 	}
