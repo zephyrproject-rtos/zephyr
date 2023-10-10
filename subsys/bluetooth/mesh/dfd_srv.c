@@ -586,6 +586,11 @@ static int handle_upload_start_oob(struct bt_mesh_model *mod, struct bt_mesh_msg
 #endif
 		upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_BUSY_WITH_UPLOAD);
 		return 0;
+#ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
+	} else if (srv->upload.is_oob && srv->upload.is_pending_oob_check) {
+		/* Ignore the request if we didn't confirm the previous one. */
+		return 0;
+#endif
 	}
 
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
@@ -618,6 +623,8 @@ static int handle_upload_start_oob(struct bt_mesh_model *mod, struct bt_mesh_msg
 	if (status != BT_MESH_DFD_SUCCESS) {
 		upload_status_rsp(srv, ctx, status);
 		bt_mesh_dfu_slot_release(srv->upload.slot);
+	} else {
+		srv->upload.is_pending_oob_check = true;
 	}
 #else
 	upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_URI_NOT_SUPPORTED);
@@ -1211,12 +1218,15 @@ int bt_mesh_dfd_srv_oob_check_complete(struct bt_mesh_dfd_srv *srv,
 	int err;
 
 	if (slot != srv->upload.slot || !srv->upload.is_oob ||
-	    srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE) {
+	    srv->upload.phase == BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE ||
+	    !srv->upload.is_pending_oob_check) {
 		/* This should not happen, unless the application calls the function with a
 		 * "wrong" pointer or at a wrong time.
 		 */
 		return -EINVAL;
 	}
+
+	srv->upload.is_pending_oob_check = false;
 
 	if (status != BT_MESH_DFD_SUCCESS) {
 		bt_mesh_dfu_slot_release(srv->upload.slot);

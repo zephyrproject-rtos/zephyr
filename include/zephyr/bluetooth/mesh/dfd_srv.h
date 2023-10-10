@@ -228,6 +228,7 @@ struct bt_mesh_dfd_srv {
 		struct bt_mesh_blob_srv blob;
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
 		bool is_oob;
+		bool is_pending_oob_check;
 		struct {
 			uint8_t uri_len;
 			uint8_t uri[CONFIG_BT_MESH_DFU_URI_MAXLEN];
