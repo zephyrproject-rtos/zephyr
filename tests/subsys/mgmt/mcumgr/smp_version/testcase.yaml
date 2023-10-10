@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 tests:
-  smp.version:
+  mgmt.mcumgr.smp.version:
     tags:
       - smp_version
       - mcumgr
@@ -15,7 +15,7 @@ tests:
       - posix
     platform_exclude:
       - qemu_kvm_arm64
-  smp.version_no_legacy:
+  mgmt.mcumgr.smp.version_no_legacy:
     tags:
       - smp_version
       - mcumgr
