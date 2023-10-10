@@ -2795,7 +2795,7 @@ TF-M Integration:
   labels:
     - "area: TF-M"
 
-Toolchain Integration:
+"Toolchain Integration":
   status: maintained
   maintainers:
     - tejlmand
@@ -2806,6 +2806,40 @@ Toolchain Integration:
     - cmake/compiler/
     - cmake/linker/
     - cmake/toolchain/
+  labels:
+    - "area: Toolchains"
+
+"Toolchain ARC MWDT":
+  status: maintained
+  maintainers:
+    - evgeniy-paltsev
+    - abrodkin
+  files:
+    - cmake/*/arcmwdt/
+    - include/zephyr/toolchain/mwdt.h
+    - lib/libc/arcmwdt/*
+  labels:
+    - "area: Toolchains"
+
+"Toolchain arm compiler 6":
+  status: maintained
+  maintainers:
+    - tejlmand
+  files:
+    - cmake/*/armclang/
+    - cmake/linker/armlink/
+    - include/zephyr/toolchain/armclang.h
+    - lib/libc/armstdc/*
+  labels:
+    - "area: Toolchains"
+
+"Toolchain oneApi":
+  status: maintained
+  maintainers:
+    - nashif
+  files:
+    - cmake/*/oneApi/
+    - cmake/compiler/icx/
   labels:
     - "area: Toolchains"
 
