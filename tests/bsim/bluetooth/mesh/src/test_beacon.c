@@ -13,6 +13,8 @@
 #include "mesh/foundation.h"
 #include "mesh/crypto.h"
 #include "argparse.h"
+#include "mesh/proxy_cli.h"
+#include "mesh/proxy.h"
 
 #define LOG_MODULE_NAME test_beacon
 
@@ -1695,6 +1697,68 @@ static void test_rx_priv_multi_net_id(void)
 
 	PASS();
 }
+
+static void test_tx_priv_gatt_proxy(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&tx_cfg);
+	bt_mesh_iv_update_test(true);
+
+	ASSERT_TRUE(bt_mesh.iv_index == 0);
+
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
+	ASSERT_OK_MSG(bt_mesh_scan_disable(), "Failed to disable scanner");
+	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_DISABLED),
+		      "Failed to disable gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_PRIV_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+
+	/* Wait for proxy connection to complete. */
+	WAIT_FOR_COND(bt_mesh_proxy_srv_connected_cnt() == 1, 10);
+
+	/* Wait a bit so RX device can disable scanner, then start IV update */
+	k_sleep(K_SECONDS(2));
+	ASSERT_TRUE(bt_mesh_iv_update());
+
+	/* Check that IV index has updated */
+	ASSERT_TRUE(bt_mesh.iv_index == 1);
+	PASS();
+}
+
+static void test_rx_priv_gatt_proxy(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&rx_cfg);
+	bt_mesh_iv_update_test(true);
+
+	ASSERT_TRUE(bt_mesh.iv_index == 0);
+
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
+	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_DISABLED),
+		      "Failed to disable gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_PRIV_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_proxy_connect(TEST_NET_IDX1), "Failed to connect over proxy");
+
+	/* Wait for connection to complete, then disable scanner
+	 * to ensure that all RX communication arrives over GATT.
+	 */
+	WAIT_FOR_COND(bt_mesh_proxy_cli_is_connected(TEST_NET_IDX1), 10);
+	ASSERT_OK_MSG(bt_mesh_scan_disable(), "Failed to disable scanner");
+
+	/* Wait for the IV index to update.
+	 * Verifying that IV index has changed proves that a private
+	 * beacon arrived successfully over the GATT connection.
+	 */
+	WAIT_FOR_COND(bt_mesh.iv_index == 1, 10);
+
+	PASS();
+}
+
 #endif
 
 #endif /* CONFIG_BT_MESH_V1d1 */
@@ -1726,6 +1790,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, priv_net_id,   "Private Proxy: advertise Net ID"),
 	TEST_CASE(tx, priv_node_id,   "Private Proxy: advertise Node ID"),
 	TEST_CASE(tx, priv_multi_net_id,   "Private Proxy: advertise multiple Net ID"),
+	TEST_CASE(tx, priv_gatt_proxy,   "Private Proxy: Send Private Beacons over GATT"),
 #endif
 #endif
 
@@ -1743,6 +1808,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, priv_net_id,   "Private Proxy: scan for Net ID"),
 	TEST_CASE(rx, priv_node_id,   "Private Proxy: scan for Node ID"),
 	TEST_CASE(rx, priv_multi_net_id,   "Private Proxy: scan for multiple Net ID"),
+	TEST_CASE(rx, priv_gatt_proxy,   "Private Proxy: Receive Private Beacons over GATT"),
 #endif
 #endif
 	BSTEST_END_MARKER
