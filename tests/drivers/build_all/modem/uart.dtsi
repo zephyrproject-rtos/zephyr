@@ -51,6 +51,16 @@ test_gsm_ppp: gsm_ppp {
 	compatible = "zephyr,gsm-ppp";
 };
 
+test_telit_me910g1: telit_me910g1 {
+	compatible = "telit,me910g1";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+
+	mdm-dtr-gpios = <&test_gpio 0 0>;
+	mdm-ri-gpios = <&test_gpio 0 0>;
+};
+
 test_esp_at: esp_at {
 	compatible = "espressif,esp-at";
 };
