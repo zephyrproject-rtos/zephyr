@@ -15,9 +15,6 @@ config HEAP_MEM_POOL_SIZE
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-config APIC_TSC_DEADLINE_TIMER
-	default y
-
 # TSC on this board is 1.5936 GHz, HPET and APIC are 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1593600000 if APIC_TSC_DEADLINE_TIMER
