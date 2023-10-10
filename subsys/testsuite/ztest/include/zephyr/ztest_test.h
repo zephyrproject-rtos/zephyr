@@ -296,9 +296,6 @@ __syscall void __ztest_set_test_result(enum ztest_result new_result);
 __syscall void __ztest_set_test_phase(enum ztest_phase new_phase);
 #endif
 
-#ifndef ZTEST_UNITTEST
-#include <syscalls/ztest_test.h>
-#endif
 
 /**
  * @brief Fails the test if any of the registered tests did not run.
