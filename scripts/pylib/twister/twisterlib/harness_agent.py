@@ -93,11 +93,38 @@ class Agent:
 
 # class Agent
 
+class Gdbagent(Agent):
+    '''
+    Starts GDB process which executes commands or a scripted debug session
+    over the Zephyr image under the test.
+    '''
+
+    def configure(self, harness: Harness):
+        super(Gdbagent, self).configure(harness)
+    #
+
+    def start(self, command = [], timeout = 60):
+        build_dir =  self.harness.instance.build_dir
+        cmake_cache = CMakeCache.from_file(os.path.join(build_dir, "CMakeCache.txt"))
+        build_image = cmake_cache.get("BYPRODUCT_KERNEL_ELF_NAME",
+                                      os.path.join(build_dir, "zephyr/zephyr.elf"))
+        gdb_exec = cmake_cache.get("CMAKE_GDB", "gdb")
+        source_dir = cmake_cache.get("APPLICATION_SOURCE_DIR", "./")
+        gdb_log_file = os.path.join(build_dir, "gdb.log")
+
+        cmd = [gdb_exec, "-batch",
+               "-ex", f"set logging file {gdb_log_file}"
+              ]
+        cmd += command
+        cmd += ["--command", f"{source_dir}/{self.harness.agent_options}",
+                build_image
+               ]
+
+        super(Gdbagent, self).start(command = cmd, timeout = timeout)
+     #
+#
 
 class AgentImporter:
-    '''
-    Factory for Agent class instances
-    '''
 
     @staticmethod
     def get_agent_class(agent_class_name):
