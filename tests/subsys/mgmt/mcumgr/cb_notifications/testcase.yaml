@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 tests:
-  cb.notifications:
+  mgmt.mcumgr.cb.notifications:
     platform_allow:
       - qemu_cortex_m3
       - native_posix
