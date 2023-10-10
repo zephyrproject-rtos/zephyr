@@ -641,6 +641,10 @@ Libraries / Subsystems
   * Added logging to POSIX threads, mutexes, and condition variables
   * Fixed :c:func:`poll` issue with event file descriptors
 
+* LoRa/LoRaWAN
+
+  * Updated ``loramac-node`` from v4.6.0 to v4.7.0
+
 HALs
 ****
 
