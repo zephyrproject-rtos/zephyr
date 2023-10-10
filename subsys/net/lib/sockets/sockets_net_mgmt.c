@@ -209,8 +209,12 @@ again:
 
 	if (info) {
 		ret = info_len + sizeof(hdr);
-		ret = MIN(max_len, ret);
-		memcpy(&copy_to[sizeof(hdr)], info, ret);
+		if (ret > max_len) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+
+		memcpy(&copy_to[sizeof(hdr)], info, info_len);
 	} else {
 		ret = 0;
 	}
