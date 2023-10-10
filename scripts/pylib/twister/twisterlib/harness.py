@@ -14,6 +14,7 @@ import threading
 import time
 
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
+from twisterlib.harness_agent import AgentImporter, Agent
 from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.testinstance import TestInstance
 
@@ -63,22 +64,62 @@ class Harness:
         self.run_id_exists = False
         self.instance: TestInstance | None = None
         self.testcase_output = ""
+        self.agent_class = None
+        self.agent_options = None
+        self.agent_check_exit_status = False
+        self.agent: TestAgent | None = None
         self._match = False
 
-    def configure(self, instance):
+    def configure(self, instance: TestInstance, config_name = "harness_config"):
         self.instance = instance
-        config = instance.testsuite.harness_config
         self.id = instance.testsuite.id
         self.run_id = instance.run_id
         if instance.testsuite.ignore_faults:
             self.fail_on_fault = False
 
+        self.config_attribute_name = config_name
+        config = getattr(instance.testsuite, self.config_attribute_name)
         if config:
+            logger.debug(f"HARNESS:{self.__class__.__name__}:configure from '{config_name}'")
             self.type = config.get('type', None)
+            self.agent_class = config.get('agent_class', None)
+            if self.agent_class is not None and self.agent_class:
+                self.agent = AgentImporter.get_agent_class(self.agent_class.capitalize())
+                self.agent.configure(self)
+                self.agent_options = config.get('agent_options', None)
+                self.agent_check_exit_status = config.get('agent_check_exit_status', False)
+                self.agent_feed = config.get('agent_feed', config_name == 'debug_harness_config')
+            #
             self.regex = config.get('regex', [])
             self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
+
+    def start(self, command = [], timeout = 60):
+        logger.debug(f"HARNESS:{self.__class__.__name__}:start {self.config_attribute_name}"
+                     f" timeout:{timeout}, command:{command}")
+        if self.agent is not None:
+            self.agent.start(command, timeout)
+
+    def end(self):
+        if self.state is None:
+            self.set_state('failed')
+        logger.debug(f"HARNESS:{self.__class__.__name__}:end {self.config_attribute_name} state={self.state}")
+        if self.agent is not None:
+            self.agent.end()
+
+    def set_state(self, new_state):
+        if new_state != self.state:
+          logger.info(f"HARNESS:{self.__class__.__name__}:{self.config_attribute_name} change_state:"
+                      f"'{self.state}' to '{new_state}'")
+          self.state = new_state
+        # Propagate Harness state to its Test Instance
+        if self.state != 'passed' and self.instance.status == 'passed':
+            logger.info(f"HARNESS:{self.__class__.__name__}:state:'{self.state}' forces test instance to 'failed'")
+            self.instance.status = 'failed'
+            self.instance.reason = f"Harness:'{self.__class__.__name__}' is in state:'{self.state}'"
+            self.instance.add_missing_case_status('blocked', self.instance.reason)
+    #
 
     def process_test(self, line):
 
@@ -111,10 +152,8 @@ class Robot(Harness):
 
     is_robot_test = True
 
-    def configure(self, instance):
-        super(Robot, self).configure(instance)
-        self.instance = instance
-
+    def configure(self, instance: TestInstance, config_name = "harness_config"):
+        super(Robot, self).configure(instance, config_name)
         config = instance.testsuite.harness_config
         if config:
             self.path = config.get('robot_test_path', None)
@@ -160,8 +199,8 @@ class Robot(Harness):
 
 class Console(Harness):
 
-    def configure(self, instance):
-        super(Console, self).configure(instance)
+    def configure(self, instance: TestInstance, config_name = "harness_config"):
+        super(Console, self).configure(instance, config_name)
         if self.type == "one_line":
             self.pattern = re.compile(self.regex[0])
             self.patterns_expected = 1
@@ -243,8 +282,8 @@ class PytestHarnessException(Exception):
 
 class Pytest(Harness):
 
-    def configure(self, instance: TestInstance):
-        super(Pytest, self).configure(instance)
+    def configure(self, instance: TestInstance, config_name = "harness_config"):
+        super(Pytest, self).configure(instance, config_name)
         self.running_dir = instance.build_dir
         self.source_dir = instance.testsuite.source_dir
         self.report_file = os.path.join(self.running_dir, 'report.xml')

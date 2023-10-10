@@ -82,6 +82,18 @@ mapping:
         type: map
         required: false
         mapping:
+          "agent_class":
+            type: str
+            required: false
+          "agent_options":
+            type: str
+            required: false
+          "agent_check_exit_status":
+            type: bool
+            required: false
+          "agent_feed":
+            type: bool
+            required: false
           "type":
             type: str
             required: false
@@ -282,6 +294,18 @@ mapping:
             type: map
             required: false
             mapping:
+              "agent_class":
+                type: str
+                required: false
+              "agent_options":
+                type: str
+                required: false
+              "agent_check_exit_status":
+                type: bool
+                required: false
+              "agent_feed":
+                type: bool
+                required: false
               "type":
                 type: str
                 required: false
