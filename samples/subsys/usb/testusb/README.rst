@@ -49,18 +49,19 @@ To run USB tests:
       /dev/bus/usb/009/016 test 9,    4.994475 secs
       /dev/bus/usb/009/016 test 10,   11.990054 secs
 
-#. To run all the tests the Zephyr's VID / PID should be inserted to USB
+#. To run all the tests the Zephyr's VID / PID should be inserted into the USB
    driver id table. The method for loading the ``usbtest`` driver for our
    device is described here: https://lwn.net/Articles/160944/.
 
-   Since we use the "Gadget Zero" interface we specify reference device
-   ``0525:a4a0``.
+   Since we use the "Gadget Zero" interface, specify the reference device ``0525:a4a0``.
 
    .. code-block:: console
 
       $ sudo sh -c "echo 0x2fe3 0x0009 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
 
-#. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
+   **Note:** After running the above command, make sure to unplug the USB device and plug it back in for the full test suite to be available.
+
+#. Use the ``testusb`` tool in ``linux/tools/usb`` inside the Linux kernel source directory
    to start the tests.
 
    .. code-block:: console
