@@ -508,46 +508,38 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 }
 #endif /* CONFIG_MULTITHREADING */
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
 __boot_func
 void __weak z_early_rand_get(uint8_t *buf, size_t length)
 {
-#ifdef CONFIG_ENTROPY_HAS_DRIVER
-	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+	static uint64_t state = 123456789UL;
 	int rc;
 
-	if (!device_is_ready(entropy)) {
-		goto sys_rand_fallback;
+#ifdef CONFIG_ENTROPY_HAS_DRIVER
+	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+
+	if ((entropy != NULL) && device_is_ready(entropy)) {
+		/* Try to see if driver provides an ISR-specific API */
+		rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
+		if (rc > 0) {
+			length -= rc;
+			buf += rc;
+		}
 	}
-
-	/* Try to see if driver provides an ISR-specific API */
-	rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
-	if (rc == -ENOTSUP) {
-		/* Driver does not provide an ISR-specific API, assume it can
-		 * be called from ISR context
-		 */
-		rc = entropy_get_entropy(entropy, buf, length);
-	}
-
-	if (rc >= 0) {
-		return;
-	}
-
-	/* Fall through to fallback */
-
-sys_rand_fallback:
 #endif
 
-	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
-	 * primitive, like semaphores or mutexes.  It's too early in the boot
-	 * process to use any of them.  Ideally, only the path where entropy
-	 * devices are available should be built, this is only a fallback for
-	 * those devices without a HWRNG entropy driver.
-	 */
-	sys_rand_get(buf, length);
+	while (length > 0) {
+		uint32_t val;
+
+		state = state + k_cycle_get_32();
+		state = state * 2862933555777941757ULL + 3037000493ULL;
+		val = (uint32_t)(state >> 32);
+		rc = MIN(length, sizeof(val));
+		z_early_memcpy((void *)buf, &val, rc);
+
+		length -= rc;
+		buf += rc;
+	}
 }
-/* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
-#endif
 
 /**
  *
