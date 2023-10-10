@@ -402,6 +402,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.yamlfile = suite_path
         self.testcases = []
 
+        self.harness = None
+        self.debug_harness = None
+
         self.ztest_suite_names = []
 
         if data:
@@ -413,6 +416,8 @@ class TestSuite(DisablePyTestCollectionMixin):
             if k != "testcases":
                 setattr(self, k, v)
 
+        if self.debug_harness and not self.debug_harness_config:
+            raise Exception('Debug harness config error: debug harness defined without a configuration.')
         if self.harness == 'console' and not self.harness_config:
             raise Exception('Harness config error: console harness defined without a configuration.')
 
