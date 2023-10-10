@@ -253,6 +253,10 @@ manifest:
       path: modules/hal/xtensa
       groups:
         - hal
+    - name: hostap
+      repo-path: hostap
+      path: modules/lib/hostap
+      revision: 7adaff26baa48e26a32c576125e0a749a5239b12
     - name: libmetal
       revision: 03140d7f4bd9ba474ebfbb6256e84a9089248e67
       path: modules/hal/libmetal
