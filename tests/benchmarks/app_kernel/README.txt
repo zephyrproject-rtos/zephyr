@@ -1,31 +1,9 @@
-Title: Microkernel Object Performance
+Title: Kernel Object Performance
 
 Description:
 
-AppKernel is used to measure the performance of microkernel events, mutexes,
-semaphores, FIFOs, mailboxes, pipes, memory maps, and memory pools.
-
---------------------------------------------------------------------------------
-
-Building and Running Project:
-
-This project outputs to the console. It can be built and executed
-on QEMU as follows:
-
-    make run
-
---------------------------------------------------------------------------------
-
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+The app_kernel test is used to measure the performance of the following
+kernel objects: message queues, semaphores, memory slabs, mailboxes and pipes.
 
 --------------------------------------------------------------------------------
 
@@ -45,24 +23,10 @@ Sample Output:
 | signal semaphore                                                 |    NNNNNN|
 | signal to waiting high pri task                                  |    NNNNNN|
 | signal to waiting high pri task, with timeout                    |    NNNNNN|
-| signal to waitm (2)                                              |    NNNNNN|
-| signal to waitm (2), with timeout                                |    NNNNNN|
-| signal to waitm (3)                                              |    NNNNNN|
-| signal to waitm (3), with timeout                                |   NNNNNNN|
-| signal to waitm (4)                                              |   NNNNNNN|
-| signal to waitm (4), with timeout                                |   NNNNNNN|
 |-----------------------------------------------------------------------------|
 | average lock and unlock mutex                                    |    NNNNNN|
 |-----------------------------------------------------------------------------|
 | average alloc and dealloc memory page                            |    NNNNNN|
-|-----------------------------------------------------------------------------|
-| average alloc and dealloc memory pool block                      |    NNNNNN|
-|-----------------------------------------------------------------------------|
-| Signal enabled event                                             |    NNNNNN|
-| Signal event & Test event                                        |    NNNNNN|
-| Signal event & TestW event                                       |    NNNNNN|
-| Signal event with installed handler                                         |
-|    Handler responds OK                                                      |
 |-----------------------------------------------------------------------------|
 |                M A I L B O X   M E A S U R E M E N T S                      |
 |-----------------------------------------------------------------------------|
