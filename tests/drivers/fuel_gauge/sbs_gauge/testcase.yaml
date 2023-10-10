@@ -1,6 +1,5 @@
 tests:
-  # section.subsection
-  drivers.sbs_gauge_new_api.emulated:
+  drivers.fuel_gauge.sbs_gauge_new_api.emulated:
     tags:
       - drivers
       - fuel_gauge
@@ -21,7 +20,7 @@ tests:
       - rcar_salvator_xs_m3
     integration_platforms:
       - qemu_x86
-  drivers.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
+  drivers.fuel_gauge.sbs_gauge_new_api.emulated_64_bit_i2c_addr:
     tags:
       - drivers
       - fuel_gauge
@@ -40,7 +39,7 @@ tests:
     extra_args:
       - CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
       - DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
-  drivers.sbs_gauge_new_api.emulated.cutoff:
+  drivers.fuel_gauge.sbs_gauge_new_api.emulated.cutoff:
     tags:
       - drivers
       - fuel_gauge
