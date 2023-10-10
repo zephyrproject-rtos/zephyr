@@ -27,6 +27,16 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 	static struct bt_gatt_service cas;
 	int err;
 
+	CHECKIF(param->set_size == 0U) {
+		LOG_DBG("param->set_size shall be non-zero");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->rank == 0U) {
+		LOG_DBG("param->rank shall be non-zero");
+		return -EINVAL;
+	}
+
 	err = bt_csip_set_member_register(param, svc_inst);
 	if (err != 0) {
 		LOG_DBG("Failed to register CSIP");
