@@ -214,9 +214,6 @@ References
 .. _BLE SENSE:
     https://store.arduino.cc/products/arduino-nano-33-ble-sense
 
-.. _pinouts:
-    https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/pinouts
-
 .. _schematic:
     https://content.arduino.cc/assets/NANO33BLE_V2.0_sch.pdf
 
