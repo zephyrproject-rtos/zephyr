@@ -1,0 +1,100 @@
+#
+# Copyright (c) 2023 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - debug
+    - gdbstub
+  filter: CONFIG_ARCH_HAS_GDBSTUB
+  integration_platforms:
+    - qemu_x86
+
+tests:
+  # The Test Harness consumes log from its Handler as usual.
+  # The GDBstub Agent runs in parallel, its log is not parsed only saved by GDB.
+  debug.gdbstub_serial.harness_agent_runs:
+    platform_allow:
+      - qemu_x86
+    harness_config:
+      agent_class: gdbagent
+      agent_options: gdb_breakpoints_basic.gdb
+      agent_check_exit_status: false
+
+  # Unsupported modes:
+  # - single Harness ignores log from its Handler, but process log from its Agent
+  # - single Harness processes both logs from its Handler and Agent simultaneously.
+  #
+
+  # The Test Harness consumes log from its Handler as usual.
+  # The Debug Harness runs GDBstub Agent and match its patterns there.
+  debug.gdbstub_serial.harness_debug_agent_only:
+    platform_allow:
+      - qemu_x86
+    debug_harness: console
+    debug_harness_config:
+      agent_class: gdbagent
+      agent_options: gdb_breakpoints_basic.gdb
+      agent_check_exit_status: false
+      type: multi_line
+      ordered: true
+      regex:
+        - "arch_gdb_init"
+        - "Breakpoint 1 at 0x"
+        - "Breakpoint 2 at 0x"
+        - "Breakpoint 3 at 0x"
+        - "Breakpoint 4 at 0x"
+        - "Breakpoint 5 at 0x"
+        - "Breakpoint 1, main"
+        - "Breakpoint 2, _gdbstub_test_gdb_breakpoints_basic_wrapper "
+        - "Breakpoint 3, gdbstub_test_gdb_breakpoints_basic"
+        - "TEST_GDB_CMD:Start"
+        - "Breakpoint 4, function_1"
+        - "Breakpoint 5, function_1_1"
+        - "Breakpoint 4, function_1"
+        - "(Target disconnected|Remote connection closed)"
+
+  # The Console Harness consumes log from its Handler as usual and match patterns.
+  # The Debug Harness runs GDBstub Agent and match its patterns as well.
+  debug.gdbstub_serial.harness_debug_agent_both:
+    platform_allow:
+      - qemu_x86
+    debug_harness: console
+    debug_harness_config:
+      agent_class: gdbagent
+      agent_options: gdb_breakpoints_basic.gdb
+      agent_check_exit_status: false
+      type: multi_line
+      ordered: true
+      regex:
+        - "arch_gdb_init"
+        - "Breakpoint 1 at 0x"
+        - "Breakpoint 2 at 0x"
+        - "Breakpoint 3 at 0x"
+        - "Breakpoint 4 at 0x"
+        - "Breakpoint 5 at 0x"
+        - "Breakpoint 1, main"
+        - "Breakpoint 2, _gdbstub_test_gdb_breakpoints_basic_wrapper "
+        - "Breakpoint 3, gdbstub_test_gdb_breakpoints_basic"
+        - "TEST_GDB_CMD:Start"
+        - "Breakpoint 4, function_1"
+        - "Breakpoint 5, function_1_1"
+        - "Breakpoint 4, function_1"
+        - "(Target disconnected|Remote connection closed)"
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Booting from ROM"
+        - "Booting Zephyr OS build"
+        - "TEST_GDB_CMD:Start"
+        - "TEST_GDB_CMD:Exit:function_1_1.*res=40"
+        - "TEST_GDB_CMD:Exit:function_1.*res=40"
+        - "TEST_GDB_CMD:Exit:function_1_1.*res=60"
+        - "TEST_GDB_CMD:Exit:function_1.*res=60"
+        - "TEST_GDB_CMD:Done"
+  #
+#

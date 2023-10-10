@@ -915,6 +915,7 @@ class QEMUHandler(Handler):
         logger.debug(f"QEMU ({pid}) complete ({out_state}) after {handler_time} seconds")
 
         QEMUHandler._thread_update_instance_info(handler, handler_time, out_state)
+        logger.info(f"QEMU ({pid}) Test Instance status:{handler.instance.status}")
 
         QEMUHandler._thread_close_files(fifo_in, fifo_out, pid, out_fp, in_fp, log_out_fp)
 

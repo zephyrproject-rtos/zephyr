@@ -275,6 +275,10 @@ class Console(Harness):
         else:
             tc.status = "failed"
 
+        logger.debug(f"HARNESS:{self.__class__.__name__}:[ti:{self.instance.status},tc:{tc.status},ha:{self.state}]:'{line}'")
+
+# class Console
+
 
 class PytestHarnessException(Exception):
     """General exception for pytest."""
