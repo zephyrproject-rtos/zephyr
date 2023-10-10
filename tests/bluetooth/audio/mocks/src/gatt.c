@@ -18,9 +18,12 @@ LOG_MODULE_REGISTER(bt_gatt);
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \
 	FAKE(mock_bt_gatt_notify_cb)                                                               \
+	FAKE(mock_bt_gatt_is_subscribed)                                                           \
 
 DEFINE_FAKE_VALUE_FUNC(int, mock_bt_gatt_notify_cb, struct bt_conn *,
 		       struct bt_gatt_notify_params *);
+DEFINE_FAKE_VALUE_FUNC(bool, mock_bt_gatt_is_subscribed, struct bt_conn *,
+		       const struct bt_gatt_attr *, uint16_t);
 
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
@@ -53,6 +56,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn, const struct bt_gatt_attr *
 void mock_bt_gatt_init(void)
 {
 	FFF_FAKES_LIST(RESET_FAKE);
+
+	mock_bt_gatt_is_subscribed_fake.return_val = true;
 }
 
 static void notify_params_deep_copy_destroy(void)
@@ -245,4 +250,10 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 {
 	return 64;
+}
+
+bool bt_gatt_is_subscribed(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, uint16_t ccc_type)
+{
+	return mock_bt_gatt_is_subscribed(conn, attr, ccc_type);
 }
