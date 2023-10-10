@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+blah
+
 #if defined(CONFIG_WIFI_ESWIFI_BUS_UART)
 #define DT_DRV_COMPAT inventek_eswifi_uart
 #else
