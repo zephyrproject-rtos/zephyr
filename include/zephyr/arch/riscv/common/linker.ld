@@ -30,28 +30,43 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+/*
 #ifdef CONFIG_XIP
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
 #ifdef CONFIG_FLASH_LOAD_OFFSET
 #define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
 				CONFIG_FLASH_LOAD_OFFSET)
 #else /* !CONFIG_FLASH_LOAD_OFFSET */
+/*
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #endif /* CONFIG_FLASH_LOAD_OFFSET */
+/*
 #define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
  * and for that mapping to be the second register property of the spi
  * controller.
  */
+/*
 #define SPI_CTRL DT_PARENT(DT_CHOSEN(zephyr_flash))
 #define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
 #else /* CONFIG_XIP */
+/*
 #define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define ROM_SIZE KB(CONFIG_SRAM_SIZE)
-#endif /* CONFIG_XIP */
+#endif /* CONFIG_XIP */ 
+
+#ifdef CONFIG_XIP && CONFIG_CONFIG_BOARD_SECURE_IOT
+#define ROM_BASE 0x90000000
+#define ROM_SIZE KB(8192*4)
+#else /* CONFIG_BOARD_SECURE_IOT */
+#define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define ROM_SIZE KB(CONFIG_SRAM_SIZE)
+#endif
+
+
 
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
