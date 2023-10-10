@@ -177,7 +177,7 @@ int lifo_test(void)
 	fprintf(output_file, sz_description,
 			"\n\tk_lifo_init"
 			"\n\tk_lifo_get(K_FOREVER)"
-			"\n\tk_lifo_get(TICKS_NONE)"
+			"\n\tk_lifo_get(K_NO_WAIT)"
 			"\n\tk_lifo_put"
 			"\n\tk_yield");
 	printf(sz_test_start_fmt);
