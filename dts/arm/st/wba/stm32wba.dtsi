@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 
 #include <freq.h>
 
@@ -428,6 +429,18 @@
 				 <&rcc STM32_SRC_PLL1_Q RNG_SEL(3)>;
 			nist-config = <0xf00d>;
 			health-test-config = <0xaac7>;
+			status = "disabled";
+		};
+
+		gpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x1000>;
+			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-channels = <8>;
+			dma-requests = <52>;
+			dma-offset = <0>;
 			status = "disabled";
 		};
 	};
