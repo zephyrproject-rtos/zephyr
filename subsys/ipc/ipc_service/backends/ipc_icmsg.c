@@ -51,10 +51,7 @@ const static struct ipc_service_backend backend_ops = {
 
 static int backend_init(const struct device *instance)
 {
-	const struct icmsg_config_t *conf = instance->config;
-	struct icmsg_data_t *dev_data = instance->data;
-
-	return icmsg_init(conf, dev_data);
+	return 0;
 }
 
 #define DEFINE_BACKEND_DEVICE(i)						\

@@ -46,8 +46,8 @@ compatible: "zephyr,gpio-emul-sdl"
 include: base.yaml
 
 properties:
-    scancodes:
-      type: array
-      required: true
-      description: |
-        An array of SDL scancodes mapped to its GPIO index
+  scancodes:
+    type: array
+    required: true
+    description: |
+      An array of SDL scancodes mapped to its GPIO index

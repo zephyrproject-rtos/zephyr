@@ -1,0 +1,11 @@
+# NuMaker clock controller driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NUMAKER_SCC
+	bool "NuMaker system clock controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_SCC_ENABLED
+	help
+	  Enable support for NuMaker system clock controller driver

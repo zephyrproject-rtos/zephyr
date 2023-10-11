@@ -1,7 +1,12 @@
 common:
   build_only: true
-  tags: drivers pwm
+  tags:
+    - drivers
+    - pwm
 tests:
+  drivers.pwm.cc13xx_cc26xx_timer.build:
+    platform_allow: cc1352p1_launchxl
+    tags: pwm_cc13xx_cc26xx_timer
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio_brd4250b
     tags: pwm_gecko
@@ -19,7 +24,7 @@ tests:
     tags: pwm_mcux_pwt
     extra_configs:
       - CONFIG_PWM_CAPTURE=y
-  drivers.pwm.mcux.ftm.build:
+  drivers.pwm.mcux.tpm.build:
     platform_allow: frdm_kw41z
     tags: pwm_mcux_tpm
   drivers.pwm.mcux.build:
@@ -43,11 +48,17 @@ tests:
   drivers.pwm.nrf.build:
     platform_allow: nrf52840dk_nrf52840
     tags: pwm_nrfx
+  drivers.pwm.pca9685.build:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=adafruit_pca9685
+    tags: pwm_pca9685
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro
     tags: pwm_sam0_tcc
   drivers.pwm.build.sam:
-    platform_allow: sam_e70_xplained sam_v71b_xult
+    platform_allow:
+      - sam_e70_xplained
+      - sam_v71b_xult
     tags: pwm_sam
   drivers.pwm.stm32.build:
     platform_allow: disco_l475_iot1
@@ -61,3 +72,7 @@ tests:
   drivers.pwm.build.test:
     platform_allow: qemu_cortex_m3
     tags: pwm_test
+  drivers.pwm.max31790.build:
+    platform_allow: nucleo_f429zi
+    extra_args: DTC_OVERLAY_FILE=max31790.overlay
+    tags: pwm_max31790

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021-2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2023 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +12,9 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
+#include <zephyr/logging/log.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,6 +22,9 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
+
+#include <mgmt/mcumgr/util/zcbor_bulk.h>
+
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
 #endif
@@ -28,10 +33,15 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <stdio.h>
 #include <version.h>
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
+#endif
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+#include <bootutil/boot_status.h>
+#endif
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 #include <zephyr/net/hostname.h>
@@ -39,6 +49,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #endif
 #endif
+
+LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
 #ifdef CONFIG_REBOOT
 static void os_mgmt_reset_work_handler(struct k_work *work);
@@ -57,7 +69,7 @@ static K_TIMER_DEFINE(os_mgmt_reset_timer, os_mgmt_reset_cb, NULL);
  */
 #define TASKSTAT_COLUMNS_MAX	20
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 /* Thread iterator information passing structure */
 struct thread_iterator_info {
 	zcbor_state_t *zse;
@@ -82,46 +94,35 @@ extern uint8_t *MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME;
 /**
  * Command handler: os echo
  */
-#ifdef CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 static int os_mgmt_echo(struct smp_streamer *ctxt)
 {
-	struct zcbor_string value = { 0 };
-	struct zcbor_string key;
 	bool ok;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	zcbor_state_t *zse = ctxt->writer->zs;
+	struct zcbor_string data = { 0 };
+	size_t decoded;
 
-	if (!zcbor_map_start_decode(zsd)) {
-		return MGMT_ERR_EUNKNOWN;
+	struct zcbor_map_decode_key_val echo_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &data),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, echo_decode, ARRAY_SIZE(echo_decode), &decoded) == 0;
+
+	if (!ok) {
+		return MGMT_ERR_EINVAL;
 	}
 
-	do {
-		ok = zcbor_tstr_decode(zsd, &key);
-
-		if (ok) {
-			if (key.len == 1 && *key.value == 'd') {
-				ok = zcbor_tstr_decode(zsd, &value);
-				break;
-			}
-
-			ok = zcbor_any_skip(zsd, NULL);
-		}
-	} while (ok);
-
-	if (!ok || !zcbor_map_end_decode(zsd)) {
-		return MGMT_ERR_EUNKNOWN;
-	}
-
-	ok = zcbor_tstr_put_lit(zse, "r")		&&
-	     zcbor_tstr_encode(zse, &value);
+	ok = zcbor_tstr_put_lit(zse, "r")	&&
+	     zcbor_tstr_encode(zse, &data);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 #endif
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 
-#ifdef CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_NAME_FOR_NAME
 static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
@@ -130,8 +131,8 @@ os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 
 	ARG_UNUSED(idx);
 
-	if (name_len > CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN) {
-		name_len = CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN;
+	if (name_len > CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN) {
+		name_len = CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN;
 	}
 
 	return zcbor_tstr_encode_ptr(zse, thread->name, name_len);
@@ -142,11 +143,11 @@ static inline bool
 os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
 {
-	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN + 1];
+	char thread_name[CONFIG_MCUMGR_GRP_OS_TASKSTAT_THREAD_NAME_LEN + 1];
 
-#if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
+#if defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
 	idx = (int)thread->base.prio;
-#elif defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME)
+#elif defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_USE_THREAD_IDX_FOR_NAME)
 	ARG_UNUSED(thread);
 #else
 #error Unsupported option for taskstat thread name
@@ -164,7 +165,7 @@ static inline bool
 os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 				   const struct k_thread *thread)
 {
-#ifdef CONFIG_OS_MGMT_TASKSTAT_STACK_INFO
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT_STACK_INFO
 	size_t stack_size = 0;
 	size_t stack_used = 0;
 	bool ok = true;
@@ -188,7 +189,7 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 	return ok;
 #else
 	return true;
-#endif /* CONFIG_OS_MGMT_TASKSTAT_STACK_INFO */
+#endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT_STACK_INFO */
 }
 
 static inline bool
@@ -204,7 +205,7 @@ os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse,
 
 	ok = zcbor_tstr_put_lit(zse, "runtime") &&
 	zcbor_uint64_put(zse, thread_stats.execution_cycles);
-#elif !defined(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)
+#elif !defined(CONFIG_MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS)
 	ok = zcbor_tstr_put_lit(zse, "runtime") &&
 	zcbor_uint32_put(zse, 0);
 #endif
@@ -216,7 +217,7 @@ static inline bool os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
 {
 	bool ok = true;
 
-	if (!IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)) {
+	if (!IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_ONLY_SUPPORTED_STATS)) {
 		ok = zcbor_tstr_put_lit(zse, "cswcnt")		&&
 		     zcbor_uint32_put(zse, 0)			&&
 		     zcbor_tstr_put_lit(zse, "last_checkin")	&&
@@ -234,7 +235,7 @@ static inline bool
 os_mgmt_taskstat_encode_priority(zcbor_state_t *zse, const struct k_thread *thread)
 {
 	return (zcbor_tstr_put_lit(zse, "prio")					&&
-		IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY) ?
+		IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY) ?
 		zcbor_int32_put(zse, (int)thread->base.prio) :
 		zcbor_uint32_put(zse, (unsigned int)thread->base.prio) & 0xff);
 }
@@ -282,19 +283,23 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 	};
 
 	zcbor_tstr_put_lit(zse, "tasks");
-	zcbor_map_start_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS);
+	zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS);
 
 	/* Iterate the list of tasks, encoding each. */
 	k_thread_foreach(os_mgmt_taskstat_encode_one, (void *)&iterator_ctx);
 
+	if (!iterator_ctx.ok) {
+		LOG_ERR("Task iterator status is not OK");
+	}
+
 	if (!iterator_ctx.ok ||
-	    !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
+	    !zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_OS_TASKSTAT_MAX_NUM_THREADS)) {
 		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return 0;
 }
-#endif /* CONFIG_OS_MGMT_TASKSTAT */
+#endif /* CONFIG_MCUMGR_GRP_OS_TASKSTAT */
 
 #ifdef CONFIG_REBOOT
 /**
@@ -313,21 +318,48 @@ static void os_mgmt_reset_cb(struct k_timer *timer)
 
 static int os_mgmt_reset(struct smp_streamer *ctxt)
 {
-#if defined(CONFIG_MCUMGR_GRP_OS_OS_RESET_HOOK)
-	int rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, NULL, 0);
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_HOOK)
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	size_t decoded;
+	enum mgmt_cb_return status;
+	int32_t err_rc;
+	uint16_t err_group;
 
-	if (rc != MGMT_ERR_EOK) {
-		return rc;
+	struct os_mgmt_reset_data reboot_data = {
+		.force = false
+	};
+
+	struct zcbor_map_decode_key_val reset_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("force", zcbor_bool_decode, &reboot_data.force),
+	};
+
+	/* Since this is a core command, if we fail to decode the data, ignore the error and
+	 * continue with the default parameter of force being false.
+	 */
+	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, &reboot_data,
+				      sizeof(reboot_data), &err_rc, &err_group);
+
+	if (status != MGMT_CB_OK) {
+		bool ok;
+
+		if (status == MGMT_CB_ERROR_RC) {
+			return err_rc;
+		}
+
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	}
 #endif
 
-	k_timer_start(&os_mgmt_reset_timer, K_MSEC(CONFIG_OS_MGMT_RESET_MS),
+	k_timer_start(&os_mgmt_reset_timer, K_MSEC(CONFIG_MCUMGR_GRP_OS_RESET_MS),
 		      K_NO_WAIT);
 	return 0;
 }
 #endif
 
-#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS
 static int
 os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 {
@@ -335,9 +367,67 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 	bool ok;
 
 	ok = zcbor_tstr_put_lit(zse, "buf_size")		&&
-	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_SIZE)	&&
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE)	&&
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
-	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_COUNT);
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT);
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+
+#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SINGLE_SLOT
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+#define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+#else
+#define BOOTLOADER_MODE -1
+#endif
+
+static int
+os_mgmt_bootloader_info(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	struct zcbor_string query = { 0 };
+	size_t decoded;
+	bool ok;
+
+	struct zcbor_map_decode_key_val bootloader_info[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("query", zcbor_tstr_decode, &query),
+	};
+
+	if (zcbor_map_decode_bulk(zsd, bootloader_info, ARRAY_SIZE(bootloader_info), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* If no parameter is recognized then just introduce the bootloader. */
+	if (decoded == 0) {
+		ok = zcbor_tstr_put_lit(zse, "bootloader") &&
+		     zcbor_tstr_put_lit(zse, "MCUboot");
+	} else if (zcbor_map_decode_bulk_key_found(bootloader_info, ARRAY_SIZE(bootloader_info),
+		   "query") &&
+		   (sizeof("mode") - 1) == query.len &&
+		   memcmp("mode", query.value, query.len) == 0) {
+
+		ok = zcbor_tstr_put_lit(zse, "mode") &&
+		     zcbor_int32_put(zse, BOOTLOADER_MODE);
+#if IS_ENABLED(MCUBOOT_BOOTLOADER_NO_DOWNGRADE)
+		ok = zcbor_tstr_put_lit(zse, "no-downgrade") &&
+		     zcbor_bool_encode(zse, true);
+#endif
+	} else {
+		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
+	}
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
@@ -382,6 +472,12 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 		.buffer_size = sizeof(output),
 		.prior_output = &prior_output,
 	};
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
+	enum mgmt_cb_return status;
+	int32_t err_rc;
+	uint16_t err_group;
 #endif
 
 	if (zcbor_map_decode_bulk(zsd, fs_info_decode, ARRAY_SIZE(fs_info_decode), &decoded)) {
@@ -458,12 +554,14 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
 	/* Run callbacks to see if any additional handlers will add options */
 	(void)mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_CHECK, &check_data,
-				   sizeof(check_data));
+				   sizeof(check_data), &err_rc, &err_group);
 #endif
 
 	if (valid_formats != format.len) {
 		/* A provided format specifier is not valid */
-		return MGMT_ERR_EINVAL;
+		bool ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_INVALID_FORMAT);
+
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	} else if (format_bitmask == 0) {
 		/* If no value is provided, use default of kernel name */
 		format_bitmask = OS_MGMT_INFO_FORMAT_KERNEL_NAME;
@@ -621,11 +719,18 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO_CUSTOM_HOOKS
 	/* Call custom handler command for additional output/processing */
-	rc = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_APPEND, &append_data,
-				  sizeof(append_data));
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_INFO_APPEND, &append_data,
+				      sizeof(append_data), &err_rc, &err_group);
 
-	if (rc != MGMT_ERR_EOK) {
-		return rc;
+	if (status != MGMT_CB_OK) {
+		bool ok;
+
+		if (status == MGMT_CB_ERROR_RC) {
+			return err_rc;
+		}
+
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 	}
 #endif
 
@@ -639,13 +744,39 @@ fail:
 }
 #endif
 
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+/*
+ * @brief	Translate OS mgmt group error code into MCUmgr error code
+ *
+ * @param ret	#os_mgmt_err_code_t error code
+ *
+ * @return	#mcumgr_err_t error code
+ */
+static int os_mgmt_translate_error_code(uint16_t err)
+{
+	int rc;
+
+	switch (err) {
+	case OS_MGMT_ERR_INVALID_FORMAT:
+		rc = MGMT_ERR_EINVAL;
+		break;
+
+	case OS_MGMT_ERR_UNKNOWN:
+	default:
+		rc = MGMT_ERR_EUNKNOWN;
+	}
+
+	return rc;
+}
+#endif
+
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
-#ifdef CONFIG_OS_MGMT_ECHO
+#ifdef CONFIG_MCUMGR_GRP_OS_ECHO
 	[OS_MGMT_ID_ECHO] = {
 		os_mgmt_echo, os_mgmt_echo
 	},
 #endif
-#ifdef CONFIG_OS_MGMT_TASKSTAT
+#ifdef CONFIG_MCUMGR_GRP_OS_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
 	},
@@ -655,7 +786,7 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		NULL, os_mgmt_reset
 	},
 #endif
-#ifdef CONFIG_OS_MGMT_MCUMGR_PARAMS
+#ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS
 	[OS_MGMT_ID_MCUMGR_PARAMS] = {
 		os_mgmt_mcumgr_params, NULL
 	},
@@ -663,6 +794,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO
 	[OS_MGMT_ID_INFO] = {
 		os_mgmt_info, NULL
+	},
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO
+	[OS_MGMT_ID_BOOTLOADER_INFO] = {
+		os_mgmt_bootloader_info, NULL
 	},
 #endif
 };
@@ -673,14 +809,14 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_handlers = os_mgmt_group_handlers,
 	.mg_handlers_count = OS_MGMT_GROUP_SZ,
 	.mg_group_id = MGMT_GROUP_ID_OS,
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	.mg_translate_error = os_mgmt_translate_error_code,
+#endif
 };
 
-void os_mgmt_register_group(void)
+static void os_mgmt_register_group(void)
 {
 	mgmt_register_group(&os_mgmt_group);
 }
 
-void os_mgmt_module_init(void)
-{
-	os_mgmt_register_group();
-}
+MCUMGR_HANDLER_DEFINE(os_mgmt, os_mgmt_register_group);

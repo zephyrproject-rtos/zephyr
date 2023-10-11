@@ -32,6 +32,12 @@ space requirements for data items if they are added with
 :c:func:`k_lifo_alloc_put`, instead additional memory is temporarily
 allocated from the calling thread's resource pool.
 
+.. note::
+    LIFO data items are restricted to single active instance across all LIFO
+    data queues. Any attempt to re-add a LIFO data item to a queue before
+    it has been removed from the queue to which it was previously added will
+    result in undefined behavior.
+
 A data item may be **added** to a LIFO by a thread or an ISR.
 The item is given directly to a waiting thread, if one exists;
 otherwise the item is added to the LIFO's queue.

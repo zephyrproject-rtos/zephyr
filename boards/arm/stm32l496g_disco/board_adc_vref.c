@@ -8,7 +8,7 @@
 #include <stm32_ll_adc.h>
 #include <zephyr/devicetree.h>
 
-static int enable_adc_reference(const struct device *dev)
+static int enable_adc_reference(void)
 {
 	uint8_t init_status;
 	/* VREF+ is not connected to VDDA by default */

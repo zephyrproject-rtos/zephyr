@@ -31,5 +31,10 @@
 		status = "okay";
 		pinctrl-0 = <&tim5_ch1_pa0>; /* CN11 PIN28 */
 		pinctrl-names = "default";
+
+		/* At least one of the test devices need to verify
+		 * the four-channel-capture-support in this test.
+		 */
+		 four-channel-capture-support;
 	};
 };

@@ -8,3 +8,5 @@ config SBS_GAUGE_NEW_API
 	select I2C
 	help
 	  Enable I2C-based/SMBus-based driver for a Smart Battery Fuel Gauge.
+
+rsource "Kconfig.emul_sbs_gauge"

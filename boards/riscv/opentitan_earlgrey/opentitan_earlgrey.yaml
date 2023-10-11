@@ -1,0 +1,14 @@
+identifier: opentitan_earlgrey
+name: OpenTitan Earl Grey
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - watchdog
+vendor: lowrisc

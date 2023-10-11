@@ -6,7 +6,7 @@
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_GEN_PRIV_STACKS
-	SECTION_DATA_PROLOGUE(priv_stacks_noinit,,)
+	SECTION_DATA_PROLOGUE(priv_stacks_noinit,(NOLOAD),)
 	{
 	z_priv_stacks_ram_start = .;
 

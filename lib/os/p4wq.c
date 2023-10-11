@@ -5,10 +5,12 @@
  */
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/p4wq.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/iterable_sections.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
 
 LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -139,9 +141,8 @@ void k_p4wq_add_thread(struct k_p4wq *queue, struct k_thread *thread,
 			queue->flags & K_P4WQ_DELAYED_START ? K_FOREVER : K_NO_WAIT);
 }
 
-static int static_init(const struct device *dev)
+static int static_init(void)
 {
-	ARG_UNUSED(dev);
 
 	STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
 		for (int i = 0; i < pp->num; i++) {

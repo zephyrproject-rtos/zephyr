@@ -17,3 +17,5 @@ supported:
   - counter
   - sdhc
   - adc
+  - qspi
+vendor: st

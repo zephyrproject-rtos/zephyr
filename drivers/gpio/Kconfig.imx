@@ -8,5 +8,6 @@ config GPIO_IMX
 	default y
 	depends on HAS_IMX_GPIO
 	depends on DT_HAS_NXP_IMX_GPIO_ENABLED
+	select PINCTRL
 	help
 	  Enable the IMX GPIO driver.

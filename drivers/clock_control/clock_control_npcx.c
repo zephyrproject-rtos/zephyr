@@ -28,6 +28,8 @@ struct npcx_pcc_config {
 #define HAL_PMC_INST(dev) \
 	((struct pmc_reg *)((const struct npcx_pcc_config *)(dev)->config)->base_pmc)
 
+static uint8_t pddwn_ctl_val[] = {NPCX_PWDWN_CTL_INIT};
+
 /* Clock controller local functions */
 static inline int npcx_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
@@ -89,6 +91,11 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_FIU:
 		*rate = CORE_CLK/(FIUDIV_VAL + 1);
 		break;
+#if defined(FIU1DIV_VAL)
+	case NPCX_CLOCK_BUS_FIU1:
+		*rate = CORE_CLK/(FIU1DIV_VAL + 1);
+		break;
+#endif
 	case NPCX_CLOCK_BUS_CORE:
 		*rate = CORE_CLK;
 		break;
@@ -144,30 +151,36 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 };
 
 /* valid clock frequency check */
-BUILD_ASSERT(CORE_CLK <= MHZ(100) && CORE_CLK >= MHZ(4) &&
+BUILD_ASSERT(OFMCLK <= MAX_OFMCLK, "Exceed maximum OFMCLK setting");
+BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) &&
 	     OFMCLK % CORE_CLK == 0 &&
 	     OFMCLK / CORE_CLK <= 10,
 	     "Invalid CORE_CLK setting");
-BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= MHZ(50) &&
+BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
 	     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
 	     "Invalid FIUCLK setting");
-BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= MHZ(50) &&
+#if defined(FIU1DIV_VAL)
+BUILD_ASSERT(CORE_CLK / (FIU1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
+	     CORE_CLK / (FIU1DIV_VAL + 1) >= MHZ(4),
+	     "Invalid FIU1CLK setting");
+#endif
+BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
 	     CORE_CLK / (AHB6DIV_VAL + 1) >= MHZ(4),
 	     "Invalid AHB6_CLK setting");
-BUILD_ASSERT(APBSRC_CLK / (APB1DIV_VAL + 1) <= MHZ(50) &&
+BUILD_ASSERT(APBSRC_CLK / (APB1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
 	     APBSRC_CLK / (APB1DIV_VAL + 1) >= MHZ(4) &&
 	     (APB1DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB1_CLK setting");
-BUILD_ASSERT(APBSRC_CLK / (APB2DIV_VAL + 1) <= MHZ(50) &&
+BUILD_ASSERT(APBSRC_CLK / (APB2DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
 	     APBSRC_CLK / (APB2DIV_VAL + 1) >= MHZ(8) &&
 	     (APB2DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB2_CLK setting");
-BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= MHZ(50) &&
+BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
 	     APBSRC_CLK / (APB3DIV_VAL + 1) >= KHZ(12500) &&
 	     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB3_CLK setting");
 #if defined(APB4DIV_VAL)
-BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MHZ(100) &&
+BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MAX_OFMCLK &&
 	     APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(8) &&
 	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB4_CLK setting");
@@ -205,36 +218,23 @@ static int npcx_clock_control_init(const struct device *dev)
 	}
 
 	/* Set all clock prescalers of core and peripherals. */
-	inst_cdcg->HFCGP   = ((FPRED_VAL << 4) | AHB6DIV_VAL);
-	inst_cdcg->HFCBCD  = (FIUDIV_VAL << 4);
-	inst_cdcg->HFCBCD1 = (APB1DIV_VAL | (APB2DIV_VAL << 4));
-#if defined(APB4DIV_VAL)
-	inst_cdcg->HFCBCD2 = (APB3DIV_VAL | (APB4DIV_VAL << 4));
-#else
-	inst_cdcg->HFCBCD2 = APB3DIV_VAL;
-#endif
+	inst_cdcg->HFCGP   = VAL_HFCGP;
+	inst_cdcg->HFCBCD  = VAL_HFCBCD;
+	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
+	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
 
 	/*
 	 * Power-down (turn off clock) the modules initially for better
 	 * power consumption.
 	 */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL1) = 0xFB; /* No SDP_PD/FIU_PD */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL2) = 0xFF;
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL3) = 0x1F; /* No GDMA_PD */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL4) = 0xFF;
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL5) = 0xFA;
-#if CONFIG_ESPI
-	/* Don't gate the clock of the eSPI module if eSPI interface is required */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0x7F;
-#else
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xFF;
-#endif
-#if defined(CONFIG_SOC_SERIES_NPCX7)
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL7) = 0xE7;
-#elif defined(CONFIG_SOC_SERIES_NPCX9)
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL7) = 0xFF;
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL8) = 0x31;
-#endif
+	for (int i = 0; i < ARRAY_SIZE(pddwn_ctl_val); i++) {
+		NPCX_PWDWN_CTL(pmc_base, i) = pddwn_ctl_val[i];
+	}
+
+	/* Turn off the clock of the eSPI module only if eSPI isn't required */
+	if (!IS_ENABLED(CONFIG_ESPI)) {
+		NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) |= BIT(7);
+	}
 
 	return 0;
 }

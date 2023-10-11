@@ -29,8 +29,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_driver);
 
-static K_KERNEL_STACK_DEFINE(tx_stack, 256);
-static K_KERNEL_STACK_DEFINE(rx_stack, 256);
+static K_KERNEL_STACK_DEFINE(tx_stack, CONFIG_BT_DRV_TX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 
 static struct k_thread tx_thread_data;
 static struct k_thread rx_thread_data;
@@ -767,9 +767,8 @@ static const struct bt_hci_driver drv = {
 	.send		= h5_queue,
 };
 
-static int bt_uart_init(const struct device *unused)
+static int bt_uart_init(void)
 {
-	ARG_UNUSED(unused);
 
 	if (!device_is_ready(h5_dev)) {
 		return -ENODEV;

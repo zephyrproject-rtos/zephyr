@@ -5,7 +5,9 @@
 zephyr_sources(soc.c)
 zephyr_sources(ccfg.c)
 
-zephyr_library_sources_ifdef(CONFIG_PM    power.c)
-zephyr_library_sources_ifdef(CONFIG_PM_DEVICE   power.c)
+if(CONFIG_PM OR CONFIG_PM_DEVICE OR CONFIG_POWEROFF)
+  zephyr_library_sources(power.c)
+endif()
+zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_linker_sources_ifdef(CONFIG_HAS_TI_CCFG SECTIONS ccfg.ld)

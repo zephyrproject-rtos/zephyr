@@ -1,0 +1,20 @@
+# GD32VF103 SOC implementation
+
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32VF103
+	bool "GigaDevice GD32VF103 series SoC implementation"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	select BUILD_OUTPUT_HEX
+	select XIP
+	select GD32_HAS_AFIO_PINMUX
+	select GD32_HAS_IRC_40K
+	select HAS_GD32_HAL
+	select RISCV_HAS_CLIC
+
+	help
+	  Enable support for GigaDevice GD32VF1 series SoC

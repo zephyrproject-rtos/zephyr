@@ -1,0 +1,118 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x0 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		gpio-keys {
+			compatible = "gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+		};
+
+		qdec-gpio {
+			compatible = "gpio-qdec";
+			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
+			steps-per-period = <4>;
+			zephyr,axis = <0>;
+			sample-time-us = <2000>;
+			idle-timeout-ms = <200>;
+		};
+
+		longpress: longpress {
+			input = <&longpress>;
+			compatible = "zephyr,input-longpress";
+			input-codes = <0>;
+			short-codes = <0>;
+			long-codes = <0>;
+			long-delay-ms = <100>;
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x1 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			ft5336@0 {
+				compatible = "focaltech,ft5336";
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			gt911@1 {
+				compatible = "goodix,gt911";
+				reg = <0x1>;
+				irq-gpios = <&gpio0 0 0>;
+				reset-gpios = <&gpio0 0 0>;
+			};
+
+			cst816s: cst816s@2 {
+				compatible = "hynitron,cst816s";
+				reg = <0x2>;
+				irq-gpios = <&gpio0 0 0>;
+				rst-gpios = <&gpio0 0 0>;
+			};
+
+			cap1203@3 {
+				compatible = "microchip,cap1203";
+				reg = <0x3>;
+				int-gpios = <&gpio0 0 0>;
+				input-codes = <0 1 2>;
+			};
+
+			stmpe811@4 {
+				compatible = "st,stmpe811";
+				reg = <0x4>;
+				int-gpios = <&gpio0 0 0>;
+				panel-driver-settling-time-us = <10>;
+				touch-detect-delay-us = <10>;
+				touch-average-control = <1>;
+				tracking-index = <0>;
+			};
+		};
+
+		spi@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x2 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices */
+			cs-gpios = <&test_gpio 0 0>;
+
+			xpt2046@0 {
+				compatible = "xptek,xpt2046";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				int-gpios = <&test_gpio 0 0>;
+				touchscreen-size-x = <10>;
+				touchscreen-size-y = <10>;
+				min-x = <0>;
+				min-y = <0>;
+				max-x = <1>;
+				max-y = <1>;
+			};
+		};
+	};
+};

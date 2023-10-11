@@ -12,6 +12,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+
 #include <sys/types.h>
 
 /**
@@ -49,9 +50,16 @@ enum bt_mesh_feat_state {
 #define BT_MESH_BEACON_DISABLED             BT_MESH_FEATURE_DISABLED
 #define BT_MESH_BEACON_ENABLED              BT_MESH_FEATURE_ENABLED
 
+#define BT_MESH_PRIV_BEACON_DISABLED        BT_MESH_FEATURE_DISABLED
+#define BT_MESH_PRIV_BEACON_ENABLED         BT_MESH_FEATURE_ENABLED
+
 #define BT_MESH_GATT_PROXY_DISABLED         BT_MESH_FEATURE_DISABLED
 #define BT_MESH_GATT_PROXY_ENABLED          BT_MESH_FEATURE_ENABLED
 #define BT_MESH_GATT_PROXY_NOT_SUPPORTED    BT_MESH_FEATURE_NOT_SUPPORTED
+
+#define BT_MESH_PRIV_GATT_PROXY_DISABLED      BT_MESH_FEATURE_DISABLED
+#define BT_MESH_PRIV_GATT_PROXY_ENABLED       BT_MESH_FEATURE_ENABLED
+#define BT_MESH_PRIV_GATT_PROXY_NOT_SUPPORTED BT_MESH_FEATURE_NOT_SUPPORTED
 
 #define BT_MESH_FRIEND_DISABLED             BT_MESH_FEATURE_DISABLED
 #define BT_MESH_FRIEND_ENABLED              BT_MESH_FEATURE_ENABLED
@@ -73,6 +81,50 @@ void bt_mesh_beacon_set(bool beacon);
  */
 bool bt_mesh_beacon_enabled(void);
 
+/** @brief Enable or disable sending of the Mesh Private beacon.
+ *
+ *  Support for the Private beacon state must be enabled with @c
+ *  CONFIG_BT_MESH_PRIV_BEACONS.
+ *
+ *  @param priv_beacon New Mesh Private beacon state. Must be one of
+ *                     @ref BT_MESH_FEATURE_ENABLED and
+ *                     @ref BT_MESH_FEATURE_DISABLED.
+ *
+ *  @retval 0         Successfully changed the Mesh Private beacon feature state.
+ *  @retval -ENOTSUP  The Mesh Private beacon feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_priv_beacon_set(enum bt_mesh_feat_state priv_beacon);
+
+/** @brief Get the current Mesh Private beacon state.
+ *
+ *  @returns The Mesh Private beacon feature state.
+ */
+enum bt_mesh_feat_state bt_mesh_priv_beacon_get(void);
+
+/** @brief Set the current Mesh Private beacon update interval.
+ *
+ *  The Mesh Private beacon's randomization value is updated regularly to
+ *  maintain the node's privacy. The update interval controls how often
+ *  the beacon is updated, in 10 second increments.
+ *
+ * @param interval Private beacon update interval in 10 second steps, or 0 to
+ *        update on every beacon transmission.
+ */
+void bt_mesh_priv_beacon_update_interval_set(uint8_t interval);
+
+/** @brief Get the current Mesh Private beacon update interval.
+ *
+ *  The Mesh Private beacon's randomization value is updated regularly to
+ *  maintain the node's privacy. The update interval controls how often
+ *  the beacon is updated, in 10 second increments.
+ *
+ * @returns The Private beacon update interval in 10 second steps, or 0 if
+ *          the beacon is updated every time it's transmitted.
+ */
+uint8_t bt_mesh_priv_beacon_update_interval_get(void);
+
 /** @brief Set the default TTL value.
  *
  *  The default TTL value is used when no explicit TTL value is set. Models will
@@ -92,6 +144,30 @@ int bt_mesh_default_ttl_set(uint8_t default_ttl);
  *  @return The current default TTL value.
  */
 uint8_t bt_mesh_default_ttl_get(void);
+
+/** @brief Get the current Mesh On-Demand Private Proxy state.
+ *
+ *  @retval 0 or positive value  represents On-Demand Private Proxy feature state
+ *  @retval -ENOTSUP  The On-Demand Private Proxy feature is not supported.
+ */
+int bt_mesh_od_priv_proxy_get(void);
+
+/** @brief Set state of Mesh On-Demand Private Proxy.
+ *
+ *  Support for the On-Demand Private Proxy state must be enabled with @c
+ *  BT_MESH_OD_PRIV_PROXY_SRV.
+ *
+ *  @param on_demand_proxy New Mesh On-Demand Private Proxy state. Value of 0x00 means that
+ *                         advertising with Private Network Identity cannot be enabled on demand.
+ *                         Values in range 0x01 - 0xFF set interval of this advertising after
+ *                         valid Solicitation PDU is received or client disconnects.
+ *
+ *  @retval 0         Successfully changed the Mesh On-Demand Private Proxy feature state.
+ *  @retval -ENOTSUP  The On-Demand Private Proxy feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_od_priv_proxy_set(uint8_t on_demand_proxy);
 
 /** @brief Set the Network Transmit parameters.
  *
@@ -180,6 +256,29 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy);
  *  @returns The GATT Proxy feature state.
  */
 enum bt_mesh_feat_state bt_mesh_gatt_proxy_get(void);
+
+/** @brief Enable or disable the Private GATT Proxy feature.
+ *
+ *  Support for the Private GATT Proxy feature must be enabled through the
+ *  @kconfig{CONFIG_BT_MESH_PRIV_BEACONS} and @kconfig{CONFIG_BT_MESH_GATT_PROXY}
+ *  configuration options.
+ *
+ *  @param priv_gatt_proxy New Private GATT Proxy state. Must be one of
+ *                         @ref BT_MESH_FEATURE_ENABLED and
+ *                         @ref BT_MESH_FEATURE_DISABLED.
+ *
+ *  @retval 0         Successfully changed the Private GATT Proxy feature state.
+ *  @retval -ENOTSUP  The Private GATT Proxy feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_priv_gatt_proxy_set(enum bt_mesh_feat_state priv_gatt_proxy);
+
+/** @brief Get the current Private GATT Proxy state.
+ *
+ *  @returns The Private GATT Proxy feature state.
+ */
+enum bt_mesh_feat_state bt_mesh_priv_gatt_proxy_get(void);
 
 /** @brief Enable or disable the Friend feature.
  *
@@ -340,6 +439,45 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
  */
 uint8_t bt_mesh_subnet_node_id_get(uint16_t net_idx,
 				   enum bt_mesh_feat_state *node_id);
+
+/** @brief Set the Private Node Identity state of the Subnet.
+ *
+ *  The Private Node Identity state of a Subnet determines whether the Subnet
+ *  advertises connectable Private Node Identity beacons for Proxy Clients to
+ *  connect to. Once started, the Node Identity beacon runs for 60 seconds,
+ *  or until it is stopped.
+ *
+ *  Private Node Identity can only be enabled if regular Node Identity is not
+ *  enabled for any subnet.
+ *
+ *  GATT Proxy and Private Beacon support must be enabled through
+ *  @kconfig{CONFIG_BT_MESH_GATT_PROXY} and
+ *  @kconfig{CONFIG_BT_MESH_PRIV_BEACONS}.
+ *
+ *  @param net_idx      Network index.
+ *  @param priv_node_id New Private Node Identity state, must be either @ref
+ *                      BT_MESH_FEATURE_ENABLED or @ref BT_MESH_FEATURE_DISABLED.
+ *
+ *  @retval STATUS_SUCCESS Successfully set the Private Node Identity state of the Subnet.
+ *  @retval STATUS_INVALID_NETKEY The NetIdx is unknown.
+ *  @retval STATUS_FEAT_NOT_SUPP The Private Node Identity feature is not supported.
+ *  @retval STATUS_TEMP_STATE_CHG_FAIL The Private Node Identity state cannot be enabled, because
+ *                                     Node Identity state is already enabled.
+ *  @retval STATUS_CANNOT_SET Couldn't set the Private Node Identity state.
+ */
+uint8_t bt_mesh_subnet_priv_node_id_set(uint16_t net_idx,
+					enum bt_mesh_feat_state priv_node_id);
+
+/** @brief Get the Private Node Identity state of the Subnet.
+ *
+ *  @param net_idx      Network index.
+ *  @param priv_node_id Private Node Identity variable to fill.
+ *
+ *  @retval STATUS_SUCCESS Successfully populated the @c priv_node_id variable.
+ *  @retval STATUS_INVALID_NETKEY The NetIdx is unknown.
+ */
+uint8_t bt_mesh_subnet_priv_node_id_get(uint16_t net_idx,
+					enum bt_mesh_feat_state *priv_node_id);
 
 /** @brief Get a list of all known Subnet indexes.
  *

@@ -677,6 +677,12 @@ int fs_mount(struct fs_mount_t *mp)
 			continue;
 		}
 
+		CHECKIF(mp->fs_data == itr->fs_data) {
+			LOG_ERR("file system already mounted!!");
+			rc = -EBUSY;
+			goto mount_err;
+		}
+
 		if (strncmp(mp->mnt_point, itr->mnt_point, len) == 0) {
 			LOG_ERR("mount point already exists!!");
 			rc = -EBUSY;
@@ -870,7 +876,7 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 	return rc;
 }
 
-static int fs_init(const struct device *dev)
+static int fs_init(void)
 {
 	k_mutex_init(&mutex);
 	sys_dlist_init(&fs_mnt_list);

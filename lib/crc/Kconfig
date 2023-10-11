@@ -1,0 +1,16 @@
+# Copyright (c) 2016,2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+config CRC
+	bool "Cyclic redundancy check (CRC) Support"
+	help
+	  Enable use of CRC.
+
+if CRC
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select GETOPT
+	help
+	  Enable CRC checking for memory regions from the shell.
+endif # CRC

@@ -42,11 +42,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
-/* RV32M1 pinmux driver binds to the same DTS nodes,
- * and handles clock init. Only bind to these nodes if pinmux driver
- * is disabled.
- */
-#ifndef CONFIG_PINMUX
 static int pinctrl_rv32m1_init(const struct device *dev)
 {
 	const struct pinctrl_rv32m1_config *config = dev->config;
@@ -66,8 +61,7 @@ static int pinctrl_rv32m1_init(const struct device *dev)
 			    NULL,					\
 			    NULL, &pinctrl_rv32m1_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    1,						\
+			    CONFIG_PINCTRL_RV32M1_INIT_PRIORITY,	\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_RV32M1_INIT)
-#endif

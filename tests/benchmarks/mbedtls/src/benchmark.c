@@ -70,7 +70,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/kernel.h>
 
@@ -299,7 +299,7 @@ typedef struct {
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
-void main(void)
+int main(void)
 {
 	mbedtls_ssl_config conf;
 	unsigned char tmp[200];
@@ -1029,4 +1029,5 @@ void main(void)
 	}
 #endif
 	mbedtls_printf("\n       Done\n");
+	return 0;
 }

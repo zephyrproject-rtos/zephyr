@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/zephyr/ztest_error_hook.h
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/zephyr/ztest_test.h
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/zephyr/ztest_test_new.h
+)
+
 zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/testsuite/include
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include
   )
-zephyr_include_directories_ifdef(
-    CONFIG_LEGACY_INCLUDE_PATH ${ZEPHYR_BASE}/subsys/testsuite/include/zephyr)
-zephyr_include_directories_ifdef(
-    CONFIG_LEGACY_INCLUDE_PATH ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/zephyr)
 
 if(DEFINED TC_RUNID)
   zephyr_compile_definitions(TC_RUNID=${TC_RUNID})

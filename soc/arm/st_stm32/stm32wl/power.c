@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -51,22 +51,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-	case PM_STATE_SOFT_OFF:
-		LL_PWR_ClearFlag_WU();
-		switch (substate_id) {
-		case 0:
-			LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
-			break;
-		case 1:
-			LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
-			break;
-		default:
-			LOG_DBG("Unsupported power substate-id %u", substate_id);
-			return;
-		}
-		LL_LPM_EnableDeepSleep();
-		k_cpu_idle();
-		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -74,7 +58,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -84,9 +68,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LL_LPM_EnableSleep();
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
-		break;
-	case PM_STATE_SOFT_OFF:
-		/* Nothing to do. */
 		break;
 	default:
 		LOG_DBG("Unsupported power substate-id %u", state);
@@ -102,15 +83,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(const struct device *dev)
+static int stm32_power_init(void)
 {
-	ARG_UNUSED(dev);
-
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during STOP mode */
-	LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
-
 	return 0;
 }
 

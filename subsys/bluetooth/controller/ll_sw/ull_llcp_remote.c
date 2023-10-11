@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 
@@ -18,7 +19,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_settings.h"
 #include "ll_feat.h"
@@ -31,6 +35,7 @@
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
+#include "ull_internal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
@@ -44,9 +49,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
-static void rr_abort(struct ll_conn *conn);
 
 /* LLCP Remote Request FSM State */
 enum rr_state {
@@ -107,7 +110,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	return 0U;
 }
 
-static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
 		struct proc_ctx *ctx_header;
@@ -188,7 +191,7 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 
 bool llcp_rr_ispaused(struct ll_conn *conn)
 {
-	return conn->llcp.remote.pause == 1U;
+	return (conn->llcp.remote.pause == 1U);
 }
 
 void llcp_rr_pause(struct ll_conn *conn)
@@ -211,8 +214,26 @@ void llcp_rr_prt_stop(struct ll_conn *conn)
 	conn->llcp.remote.prt_expire = 0U;
 }
 
-void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_rr_flush_procedures(struct ll_conn *conn)
 {
+	struct proc_ctx *ctx;
+
+	/* Flush all pending procedures */
+	ctx = rr_dequeue(conn);
+	while (ctx) {
+		llcp_nodes_release(conn, ctx);
+		llcp_proc_ctx_release(ctx);
+		ctx = rr_dequeue(conn);
+	}
+}
+
+void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
+		struct node_rx_pdu *rx)
+{
+	/* Store RX node and link */
+	ctx->node_ref.rx = rx;
+	ctx->node_ref.link = link;
+
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
 		/* Do nothing */
@@ -286,7 +307,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		LL_ASSERT(0);
 		break;
 	}
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -317,17 +338,15 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	/* Clear TX node reference */
+	ctx->node_ref.tx_ack = NULL;
+
+	llcp_rr_check_done(conn, ctx);
 }
 
 void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	switch (ctx->proc) {
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	case PROC_DATA_LENGTH_UPDATE:
-		/* llcp_rp_comm_tx_ntf(conn, ctx); */
-		break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		llcp_rp_pu_tx_ntf(conn, ctx);
@@ -338,7 +357,7 @@ void llcp_rr_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 static void rr_act_run(struct ll_conn *conn)
@@ -418,7 +437,7 @@ static void rr_act_run(struct ll_conn *conn)
 		break;
 	}
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 }
 
 static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
@@ -521,19 +540,12 @@ static void rr_act_connect(struct ll_conn *conn)
 
 static void rr_act_disconnect(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = rr_dequeue(conn);
-
 	/*
 	 * we may have been disconnected in the
 	 * middle of a control procedure, in  which
 	 * case we need to release all contexts
 	 */
-	while (ctx != NULL) {
-		llcp_proc_ctx_release(ctx);
-		ctx = rr_dequeue(conn);
-	}
+	llcp_rr_flush_procedures(conn);
 }
 
 static void rr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
@@ -600,6 +612,14 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				 *
 				 * Local periph procedure completes with error.
 				 */
+				/* Local procedure */
+				ctx_local = llcp_lr_peek(conn);
+				if (ctx_local) {
+					/* Make sure local procedure stops expecting PDUs except
+					 * implicit UNKNOWN_RSP and REJECTs
+					 */
+					ctx_local->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
+				}
 
 				/* Run remote procedure */
 				rr_act_run(conn);
@@ -839,17 +859,25 @@ static const struct proc_role new_proc_lut[] = {
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#if !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	[PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND] = { PROC_CIS_TERMINATE, ACCEPT_ROLE_CENTRAL },
+#else
+#if !defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	[PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND] = { PROC_CIS_TERMINATE, ACCEPT_ROLE_PERIPHERAL },
+#else
 	[PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND] = { PROC_CIS_TERMINATE, ACCEPT_ROLE_BOTH },
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#endif /* !defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+#endif /* !defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	[PDU_DATA_LLCTRL_TYPE_CIS_REQ] = { PROC_CIS_CREATE, ACCEPT_ROLE_PERIPHERAL },
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { PROC_SCA_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 };
 
-void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
+void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx, bool valid_pdu)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
@@ -869,7 +897,8 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 	}
 
 	if (proc == PROC_TERMINATE) {
-		rr_abort(conn);
+		llcp_rr_terminate(conn);
+		llcp_lr_terminate(conn);
 	}
 
 	ctx = llcp_create_remote_procedure(proc);
@@ -883,26 +912,18 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 	/* Prepare procedure */
 	llcp_rr_prepare(conn, rx);
 
-	rr_check_done(conn, ctx);
+	llcp_rr_check_done(conn, ctx);
 
 	/* Handle PDU */
 	ctx = llcp_rr_peek(conn);
 	if (ctx) {
-		llcp_rr_rx(conn, ctx, rx);
+		llcp_rr_rx(conn, ctx, link, rx);
 	}
 }
 
-static void rr_abort(struct ll_conn *conn)
+void llcp_rr_terminate(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	/* Flush all pending procedures */
-	ctx = rr_dequeue(conn);
-	while (ctx) {
-		llcp_proc_ctx_release(ctx);
-		ctx = rr_dequeue(conn);
-	}
-
+	llcp_rr_flush_procedures(conn);
 	llcp_rr_prt_stop(conn);
 	rr_set_collision(conn, 0U);
 	rr_set_state(conn, RR_STATE_IDLE);
@@ -910,48 +931,24 @@ static void rr_abort(struct ll_conn *conn)
 
 #ifdef ZTEST_UNITTEST
 
-bool rr_is_disconnected(struct ll_conn *conn)
+bool llcp_rr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_DISCONNECT;
 }
 
-bool rr_is_idle(struct ll_conn *conn)
+bool llcp_rr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_IDLE;
 }
 
-void test_int_remote_pending_requests(void)
+struct proc_ctx *llcp_rr_dequeue(struct ll_conn *conn)
 {
-	struct ll_conn conn;
-	struct proc_ctx *peek_ctx;
-	struct proc_ctx *dequeue_ctx;
-	struct proc_ctx ctx;
+	return rr_dequeue(conn);
+}
 
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_llcp_init(&conn);
-
-	peek_ctx = llcp_rr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = rr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
-
-	rr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_rr_peek(&conn);
-	zassert_equal_ptr(peek_ctx, &ctx, NULL);
-
-	dequeue_ctx = rr_dequeue(&conn);
-	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
-
-	peek_ctx = llcp_rr_peek(&conn);
-	zassert_is_null(peek_ctx, NULL);
-
-	dequeue_ctx = rr_dequeue(&conn);
-	zassert_is_null(dequeue_ctx, NULL);
+void llcp_rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	rr_enqueue(conn, ctx);
 }
 
 #endif

@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,3 +12,4 @@ string
 	default "v2m_musca_b1_ns" if $(BOARD) = "v2m_musca_b1"
 	default "mimxrt1170_evk_cm4" if $(BOARD) = "mimxrt1170_evk_cm7"
 	default "mimxrt1160_evk_cm4" if $(BOARD) = "mimxrt1160_evk_cm7"
+	default "mimxrt1170_evkb_cm4" if $(BOARD) = "mimxrt1170_evkb_cm7"

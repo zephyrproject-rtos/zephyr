@@ -1,0 +1,19 @@
+identifier: intel_ehl_crb
+name: Elkhart Lake CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+  - llvm
+ram: 2048
+supported:
+  - gpio
+  - smbus
+  - smp
+  - rtc
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

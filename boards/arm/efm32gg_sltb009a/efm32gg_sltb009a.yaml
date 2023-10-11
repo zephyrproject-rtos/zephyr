@@ -1,0 +1,16 @@
+identifier: efm32gg_sltb009a
+name: EFM32GG-SLTB009A
+type: mcu
+arch: arm
+ram: 192
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - i2c
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: silabs

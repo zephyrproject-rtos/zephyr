@@ -117,43 +117,43 @@ static void display_pdo(const int idx,
 	}
 	break;
 	case PDO_BATTERY: {
-		union pd_battery_supply_pdo_source pdo;
+		union pd_battery_supply_pdo_source batt_pdo;
 
-		pdo.raw_value = pdo_value;
+		batt_pdo.raw_value = pdo_value;
 		LOG_INF("\tType:              BATTERY");
 		LOG_INF("\tMin Voltage: %d",
-			PD_CONVERT_BATTERY_PDO_VOLTAGE_TO_MV(pdo.min_voltage));
+			PD_CONVERT_BATTERY_PDO_VOLTAGE_TO_MV(batt_pdo.min_voltage));
 		LOG_INF("\tMax Voltage: %d",
-			PD_CONVERT_BATTERY_PDO_VOLTAGE_TO_MV(pdo.max_voltage));
+			PD_CONVERT_BATTERY_PDO_VOLTAGE_TO_MV(batt_pdo.max_voltage));
 		LOG_INF("\tMax Power:   %d",
-			PD_CONVERT_BATTERY_PDO_POWER_TO_MW(pdo.max_power));
+			PD_CONVERT_BATTERY_PDO_POWER_TO_MW(batt_pdo.max_power));
 	}
 	break;
 	case PDO_VARIABLE: {
-		union pd_variable_supply_pdo_source pdo;
+		union pd_variable_supply_pdo_source var_pdo;
 
-		pdo.raw_value = pdo_value;
+		var_pdo.raw_value = pdo_value;
 		LOG_INF("\tType:        VARIABLE");
 		LOG_INF("\tMin Voltage: %d",
-			PD_CONVERT_VARIABLE_PDO_VOLTAGE_TO_MV(pdo.min_voltage));
+			PD_CONVERT_VARIABLE_PDO_VOLTAGE_TO_MV(var_pdo.min_voltage));
 		LOG_INF("\tMax Voltage: %d",
-			PD_CONVERT_VARIABLE_PDO_VOLTAGE_TO_MV(pdo.max_voltage));
+			PD_CONVERT_VARIABLE_PDO_VOLTAGE_TO_MV(var_pdo.max_voltage));
 		LOG_INF("\tMax Current: %d",
-			PD_CONVERT_VARIABLE_PDO_CURRENT_TO_MA(pdo.max_current));
+			PD_CONVERT_VARIABLE_PDO_CURRENT_TO_MA(var_pdo.max_current));
 	}
 	break;
 	case PDO_AUGMENTED: {
-		union pd_augmented_supply_pdo_source pdo;
+		union pd_augmented_supply_pdo_source aug_pdo;
 
-		pdo.raw_value = pdo_value;
+		aug_pdo.raw_value = pdo_value;
 		LOG_INF("\tType:              AUGMENTED");
 		LOG_INF("\tMin Voltage:       %d",
-			PD_CONVERT_AUGMENTED_PDO_VOLTAGE_TO_MV(pdo.min_voltage));
+			PD_CONVERT_AUGMENTED_PDO_VOLTAGE_TO_MV(aug_pdo.min_voltage));
 		LOG_INF("\tMax Voltage:       %d",
-			PD_CONVERT_AUGMENTED_PDO_VOLTAGE_TO_MV(pdo.max_voltage));
+			PD_CONVERT_AUGMENTED_PDO_VOLTAGE_TO_MV(aug_pdo.max_voltage));
 		LOG_INF("\tMax Current:       %d",
-			PD_CONVERT_AUGMENTED_PDO_CURRENT_TO_MA(pdo.max_current));
-		LOG_INF("\tPPS Power Limited: %d", pdo.pps_power_limited);
+			PD_CONVERT_AUGMENTED_PDO_CURRENT_TO_MA(aug_pdo.max_current));
+		LOG_INF("\tPPS Power Limited: %d", aug_pdo.pps_power_limited);
 	}
 	break;
 	}
@@ -178,7 +178,7 @@ static int port1_policy_cb_get_snk_cap(const struct device *dev,
 	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*pdos = dpm_data->snk_caps;
-	num_pdos = &dpm_data->snk_cap_cnt;
+	*num_pdos = dpm_data->snk_cap_cnt;
 
 	return 0;
 }
@@ -260,6 +260,10 @@ static void port1_notify(const struct device *dev,
 		break;
 	case HARD_RESET_RECEIVED:
 		break;
+	case SENDER_RESPONSE_TIMEOUT:
+		break;
+	case SOURCE_CAPABILITIES_RECEIVED:
+		break;
 	}
 }
 /* usbc.rst notify end */
@@ -289,7 +293,7 @@ bool port1_policy_check(const struct device *dev,
 }
 /* usbc.rst check end */
 
-void main(void)
+int main(void)
 {
 	const struct device *usbc_port1;
 
@@ -297,7 +301,7 @@ void main(void)
 	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
 	if (!device_is_ready(usbc_port1)) {
 		LOG_ERR("PORT1 device not ready");
-		return;
+		return 0;
 	}
 
 	/* usbc.rst register start */
@@ -336,4 +340,5 @@ void main(void)
 		/* Arbitrary delay */
 		k_msleep(1000);
 	}
+	return 0;
 }

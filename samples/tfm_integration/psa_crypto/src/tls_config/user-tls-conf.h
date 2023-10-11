@@ -1,4 +1,11 @@
+/*
+ * Copyright (c) 2023 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #define MBEDTLS_USE_PSA_CRYPTO
+#define MBEDTLS_PSA_CRYPTO_C
 
 #define MBEDTLS_ENTROPY_C
 #define MBEDTLS_TEST_NULL_ENTROPY

@@ -1,0 +1,59 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Snippet tests"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+# Snippet test types used by the test implementation to steer the test logic
+choice
+	prompt "Snippet Test Type"
+	default TEST_TYPE_NONE
+
+config TEST_TYPE_NONE
+	bool "Test Type: None"
+	help
+	  Test the initial state with no snippets applied.
+
+config TEST_TYPE_FOO
+	bool "Test Type: Foo"
+	help
+	  Test the `foo` snippet from the default application snippet root.
+
+config TEST_TYPE_BAR
+	bool "Test Type: Bar"
+	help
+	  Test the `bar` snippet from an extra snippet root.
+
+config TEST_TYPE_FOO_BAR
+	bool "Test Type: Foo-Bar"
+	help
+	  Test the snippet processing order (1. foo, 2. bar)
+
+config TEST_TYPE_BAR_FOO
+	bool "Test Type: Bar-Foo"
+	help
+	  Test the snippet processing order (1. bar, 2. foo)
+
+endchoice
+
+# Test values set by the snippet config overlays and tested by the test logic
+config TEST_FOO_VAL
+	int "Test value set by the 'foo' snippet config overlay"
+	help
+	  This option's value should be overridden by the 'foo' snippet config
+	  overlay.
+
+config TEST_BAR_VAL
+	int "Test value set by the 'foo' snippet config overlay"
+	help
+	  This option's value should be overridden by the 'foo' snippet config
+	  overlay.
+
+config TEST_COMMON_VAL
+	int "Test value set by the snippet config overlays"
+	help
+	  This option's value should be overridden by the snippet config
+	  overlays.

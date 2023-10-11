@@ -107,6 +107,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                                 DEFAULT_PYOCD_TELNET_PORT))
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
+        parser.add_argument('--board-id', dest='dev_id',
+                            help='obsolete synonym for -i/--dev-id')
 
     @classmethod
     def tool_opt_help(cls) -> str:

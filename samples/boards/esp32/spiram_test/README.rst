@@ -29,7 +29,7 @@ Make sure you have your board connected over USB port.
 
 .. code-block:: console
 
-   west build -b esp32 samples/boards/esp32/spiram_test
+   west build -b esp32_devkitc_wrover samples/boards/esp32/spiram_test
    west flash
 
 If using another supported Espressif board, replace the argument in the above

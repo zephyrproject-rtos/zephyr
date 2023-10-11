@@ -217,6 +217,12 @@ over bit-rot, security issues, etc.
 The submitter of the proposal to integrate a binary blob must commit to maintain
 the integration of such blob for the foreseeable future.
 
+Regarding Continuous Integration, binary blobs will **not** be fetched in the
+project's CI infrastructure that builds and optionally executes tests and samples
+to prevent regressions and issues from entering the codebase. This includes
+both CI ran when a new GitHub Pull Request is opened as well as any other
+regularly scheduled execution of the CI infrastructure.
+
 .. _blobs-process:
 
 Submission and review process
@@ -237,7 +243,7 @@ Follow the steps below to begin the submission process:
    detail, so that you are informed of the criteria used by the TSC in order to
    approve or reject a request
 #. Use the :github:`New Binary Blobs Issue
-   <new?assignees=&labels=RFC&template=bin-blobs.md&title=>` to open an issue
+   <new?assignees=&labels=RFC&template=008_bin-blobs.md&title=>` to open an issue
 #. Fill out all required sections, making sure you provide enough detail for the
    TSC to assess the merit of the request. Additionally you must also create a Pull
    Request that demonstrates the integration of the binary blobs and then

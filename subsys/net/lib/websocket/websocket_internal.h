@@ -24,6 +24,29 @@
 #define WS_MAGIC "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 /**
+ * Websocket parser states
+ */
+enum websocket_parser_state {
+	WEBSOCKET_PARSER_STATE_OPCODE,
+	WEBSOCKET_PARSER_STATE_LENGTH,
+	WEBSOCKET_PARSER_STATE_EXT_LEN,
+	WEBSOCKET_PARSER_STATE_MASK,
+	WEBSOCKET_PARSER_STATE_PAYLOAD,
+};
+
+/**
+ * Description of external buffers for payload and receiving
+ */
+struct websocket_buffer {
+	/* external buffer */
+	uint8_t *buf;
+	/* size of external buffer */
+	size_t size;
+	/* data length in external buffer */
+	size_t count;
+};
+
+/**
  * Websocket connection information
  */
 __net_socket struct websocket_context {
@@ -59,19 +82,12 @@ __net_socket struct websocket_context {
 		int sock;
 	};
 
-	/** Temporary buffers used for HTTP handshakes and Websocket protocol
-	 * headers. User must provide the actual buffer where the headers are
+	/** Buffer for receiving from TCP socket.
+	 * This buffer used for HTTP handshakes and Websocket packet parser.
+	 * User must provide the actual buffer where the data are
 	 * stored temporarily.
 	 */
-	uint8_t *tmp_buf;
-
-	/** Temporary buffer length.
-	 */
-	size_t tmp_buf_len;
-
-	/** Current reading position in the tmp_buf
-	 */
-	size_t tmp_buf_pos;
+	struct websocket_buffer recv_buf;
 
 	/** The real TCP socket to use when sending Websocket data to peer.
 	 */
@@ -80,14 +96,17 @@ __net_socket struct websocket_context {
 	/** Websocket connection masking value */
 	uint32_t masking_value;
 
-	/** Amount of data received. */
-	uint64_t total_read;
-
 	/** Message length */
 	uint64_t message_len;
 
 	/** Message type */
 	uint32_t message_type;
+
+	/** Parser remaining length in current state */
+	uint64_t parser_remaining;
+
+	/** Parser state */
+	enum websocket_parser_state parser_state;
 
 	/** Is the message masked */
 	uint8_t masked : 1;
@@ -100,10 +119,27 @@ __net_socket struct websocket_context {
 
 	/** Did we receive all from peer during HTTP handshake */
 	uint8_t all_received : 1;
-
-	/** Header received */
-	uint8_t header_received : 1;
 };
+
+#if defined(CONFIG_NET_TEST)
+/**
+ * Websocket unit test does not use socket layer but feeds
+ * the data directly here when testing this function.
+ */
+struct test_data {
+	/** pointer to data "tx" buffer */
+	uint8_t *input_buf;
+
+	/** "tx" buffer data length */
+	size_t input_len;
+
+	/** "tx" buffer read (recv) position */
+	size_t input_pos;
+
+	/** external test context */
+	struct websocket_context *ctx;
+};
+#endif /* CONFIG_NET_TEST */
 
 /**
  * @brief Disconnect the Websocket.

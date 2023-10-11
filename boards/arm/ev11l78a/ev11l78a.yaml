@@ -1,0 +1,17 @@
+identifier: ev11l78a
+name: UPD301C Basic Sink Application Example
+type: mcu
+arch: arm
+ram: 32
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - uart
+vendor: atmel

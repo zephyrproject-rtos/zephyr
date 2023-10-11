@@ -1,5 +1,5 @@
 identifier: nucleo_f303k8
-name: ST Nucleo F303k8
+name: ST Nucleo F303K8
 type: mcu
 arch: arm
 toolchain:
@@ -9,8 +9,10 @@ toolchain:
 ram: 12
 flash: 64
 supported:
+  - adc
   - i2c
   - spi
   - gpio
   - pwm
   - counter
+vendor: st

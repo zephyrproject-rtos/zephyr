@@ -19,7 +19,7 @@ struct container_node {
 	int value;
 };
 static struct rbnode nodes[TREE_SIZE];
-static struct rbtree tree;
+static struct rbtree test_rbtree;
 
 /* Our "lessthan" is just the location of the struct */
 bool node_lessthan(struct rbnode *a, struct rbnode *b)
@@ -126,7 +126,7 @@ static int search_height_recurse(struct rbnode *node, struct rbnode
 
 	current_height++;
 	struct rbnode *ch = z_rb_child(node,
-			!tree.lessthan_fn(final_node, node));
+			!test_rbtree.lessthan_fn(final_node, node));
 
 	return search_height_recurse(ch, final_node, current_height);
 }
@@ -188,14 +188,14 @@ static void verify_rbtree_perf(struct rbnode *root, struct rbnode *test)
  */
 ZTEST(rbtree_perf, test_rbtree_perf)
 {
-	init_tree(&tree, TREE_SIZE);
-	struct rbnode *root = tree.root;
+	init_tree(&test_rbtree, TREE_SIZE);
+	struct rbnode *root = test_rbtree.root;
 	struct rbnode *test = NULL;
 
-	test = rb_get_min(&tree);
+	test = rb_get_min(&test_rbtree);
 	verify_rbtree_perf(root, test);
 
-	test = rb_get_max(&tree);
+	test = rb_get_max(&test_rbtree);
 	verify_rbtree_perf(root, test);
 
 	/* insert and remove a same node with same height.Assume that

@@ -8,55 +8,55 @@ compatible: "nxp,mcux-i2s"
 include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    dma-names:
-      required: true
+  dma-names:
+    required: true
 
-    nxp,tx-dma-channel:
-      type: int
-      required: true
-      description: tx dma channel number
+  nxp,tx-dma-channel:
+    type: int
+    required: true
+    description: tx dma channel number
 
-    nxp,rx-dma-channel:
-      type: int
-      required: true
-      description: rx dma channel number
+  nxp,rx-dma-channel:
+    type: int
+    required: true
+    description: rx dma channel number
 
-    nxp,tx-sync-mode:
-      type: boolean
-      description: tx sync mode
+  nxp,tx-sync-mode:
+    type: boolean
+    description: tx sync mode
 
-    nxp,rx-sync-mode:
-      type: boolean
-      description: rx sync mode
+  nxp,rx-sync-mode:
+    type: boolean
+    description: rx sync mode
 
-    pre-div:
-      type: int
-      description: pre divider
+  pre-div:
+    type: int
+    description: pre divider
 
-    podf:
-      type: int
-      description: post-divider fraction
+  podf:
+    type: int
+    description: post-divider fraction
 
-    pll-clocks:
-      type: phandle-array
-      description: pll settings
-      specifier-space: pll-clock
+  pll-clocks:
+    type: phandle-array
+    description: pll settings
+    specifier-space: pll-clock
 
-    pll-clock-names:
-      type: string-array
-      description: Provided names of pll-clock specifiers
+  pll-clock-names:
+    type: string-array
+    description: Provided names of pll-clock specifiers
 
-    pinmuxes:
-      type: phandle-array
-      specifier-space: pinmux
-      description: iomux settings
+  pinmuxes:
+    type: phandle-array
+    specifier-space: pinmux
+    description: iomux settings
 
-    nxp,tx-channel:
-      type: int
-      description: tx channel the maximum number is SOC dependent
+  nxp,tx-channel:
+    type: int
+    description: tx channel the maximum number is SOC dependent

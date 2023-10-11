@@ -3,5 +3,5 @@ sample:
   name: spiram_test
 tests:
   sample.board.esp32.spiram:
-    platform_allow: esp32
+    platform_allow: esp32_devkitc_wrover
     tags: esp32

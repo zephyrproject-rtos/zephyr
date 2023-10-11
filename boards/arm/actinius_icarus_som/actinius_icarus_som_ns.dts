@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf9160ns_sica.dtsi>
-#include "actinius_icarus_som_common.dts"
+#include "actinius_icarus_som_common.dtsi"
 
 / {
 	chosen {

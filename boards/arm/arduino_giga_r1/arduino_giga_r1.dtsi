@@ -1,0 +1,40 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioi 12 GPIO_ACTIVE_LOW>;
+		};
+		green_led: led_1 {
+			gpios = <&gpioj 13 GPIO_ACTIVE_LOW>;
+		};
+		blue_led: led_2 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};

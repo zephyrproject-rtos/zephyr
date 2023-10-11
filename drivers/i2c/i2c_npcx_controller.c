@@ -71,6 +71,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -109,6 +110,11 @@ enum npcx_i2c_freq {
 	NPCX_I2C_BUS_SPEED_100KHZ,
 	NPCX_I2C_BUS_SPEED_400KHZ,
 	NPCX_I2C_BUS_SPEED_1MHZ,
+};
+
+enum npcx_i2c_flag {
+	NPCX_I2C_FLAG_TARGET,
+	NPCX_I2C_FLAG_COUNT,
 };
 
 /*
@@ -155,14 +161,15 @@ struct i2c_ctrl_data {
 	uint8_t port; /* current port used the controller */
 	bool is_configured; /* is port configured? */
 	const struct npcx_i2c_timing_cfg *ptr_speed_confs;
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_target_config *target_cfg;
+	atomic_t flags;
+#endif
 };
 
 /* Driver convenience defines */
 #define HAL_I2C_INSTANCE(dev)                                                                      \
 	((struct smb_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
-
-#define HAL_I2C_FIFO_INSTANCE(dev)                                                                 \
-	((struct smb_fifo_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
 
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
@@ -180,23 +187,23 @@ static const struct npcx_i2c_timing_cfg npcx_20m_speed_confs[] = {
 /* I2C controller inline functions access shared registers */
 static inline void i2c_ctrl_start(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBCTL1 |= BIT(NPCX_SMBCTL1_START);
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_START);
 }
 
 static inline void i2c_ctrl_stop(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
 }
 
 static inline int i2c_ctrl_bus_busy(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return IS_BIT_SET(inst_fifo->SMBCST, NPCX_SMBCST_BB);
+	return IS_BIT_SET(inst->SMBCST, NPCX_SMBCST_BB);
 }
 
 static inline void i2c_ctrl_bank_sel(const struct device *dev, int bank)
@@ -282,54 +289,54 @@ static inline void i2c_ctrl_norm_free_sda(const struct device *dev)
 /* I2C controller inline functions access registers in 'FIFO' bank */
 static inline void i2c_ctrl_fifo_write(const struct device *dev, uint8_t data)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBSDA = data;
+	inst->SMBSDA = data;
 }
 
 static inline uint8_t i2c_ctrl_fifo_read(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return inst_fifo->SMBSDA;
+	return inst->SMBSDA;
 }
 
 static inline int i2c_ctrl_fifo_tx_avail(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return NPCX_I2C_FIFO_MAX_SIZE - (inst_fifo->SMBTXF_STS & 0x3f);
+	return NPCX_I2C_FIFO_MAX_SIZE - (inst->SMBTXF_STS & 0x3f);
 }
 
 static inline int i2c_ctrl_fifo_rx_occupied(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	return inst_fifo->SMBRXF_STS & 0x3f;
+	return inst->SMBRXF_STS & 0x3f;
 }
 
 static inline void i2c_ctrl_fifo_rx_setup_threshold_nack(
 		const struct device *dev, int threshold, int last)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	uint8_t value = MIN(threshold, NPCX_I2C_FIFO_MAX_SIZE);
 
-	SET_FIELD(inst_fifo->SMBRXF_CTL, NPCX_SMBRXF_CTL_RX_THR, value);
+	SET_FIELD(inst->SMBRXF_CTL, NPCX_SMBRXF_CTL_RX_THR, value);
 
 	/*
 	 * Is it last received transaction? If so, set LAST bit. Then the
 	 * hardware will generate NACK automatically when receiving last byte.
 	 */
 	if (last && (value == threshold)) {
-		inst_fifo->SMBRXF_CTL |= BIT(NPCX_SMBRXF_CTL_LAST);
+		inst->SMBRXF_CTL |= BIT(NPCX_SMBRXF_CTL_LAST);
 	}
 }
 
 static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
-	inst_fifo->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
+	inst->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
 }
 
 /*
@@ -407,7 +414,7 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 /* I2C controller local functions */
 static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 
 	if (timeout <= 0) {
 		return -EINVAL;
@@ -418,7 +425,7 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 		 * Wait till i2c bus is idle. This bit is cleared to 0
 		 * automatically after the STOP condition is generated.
 		 */
-		if (!IS_BIT_SET(inst_fifo->SMBCTL1, NPCX_SMBCTL1_STOP))
+		if (!IS_BIT_SET(inst->SMBCTL1, NPCX_SMBCTL1_STOP))
 			break;
 		k_msleep(1);
 	} while (--timeout);
@@ -465,7 +472,7 @@ static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
 
 static int i2c_ctrl_recovery(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	struct i2c_ctrl_data *const data = dev->data;
 	int ret;
 
@@ -482,9 +489,9 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 * - Wait for STOP condition completed
 	 * - Then clear BB (BUS BUSY) bit
 	 */
-	inst_fifo->SMBST = BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
+	inst->SMBST = BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
-	inst_fifo->SMBCST |= BIT(NPCX_SMBCST_BB);
+	inst->SMBCST |= BIT(NPCX_SMBCST_BB);
 	if (ret != 0) {
 		LOG_ERR("Abort i2c port%02x fail! Bus might be stalled.",
 								data->port);
@@ -496,7 +503,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 * - Wait both SCL/SDA line are high
 	 * - Enable i2c module again
 	 */
-	inst_fifo->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
+	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 	ret = i2c_ctrl_wait_idle_completed(dev, I2C_MAX_TIMEOUT);
 	if (ret != 0) {
 		LOG_ERR("Reset i2c port%02x fail! Bus might be stalled.",
@@ -741,14 +748,124 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 }
 
 /* I2C controller isr function */
+#ifdef CONFIG_I2C_TARGET
+static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+	struct i2c_ctrl_data *const data = dev->data;
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+	uint8_t val = 0;
+
+	/* A 'Bus Error' has been identified */
+	if (IS_BIT_SET(status, NPCX_SMBST_BER)) {
+		/* Clear BER Bit */
+		inst->SMBST = BIT(NPCX_SMBST_BER);
+
+		/* Notify upper layer the end of transaction */
+		if (target_cb->stop) {
+			target_cb->stop(data->target_cfg);
+		}
+
+		/* Reset i2c module in target mode */
+		inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
+		inst->SMBCTL2 |= BIT(NPCX_SMBCTL2_ENABLE);
+
+		/* End of transaction */
+		data->oper_state = NPCX_I2C_IDLE;
+		return;
+	}
+
+	/* A 'Slave Stop' Condition has been identified */
+	if (IS_BIT_SET(status, NPCX_SMBST_SLVSTP)) {
+		/* Clear SLVSTP Bit */
+		inst->SMBST = BIT(NPCX_SMBST_SLVSTP);
+		/* End of transaction */
+		data->oper_state = NPCX_I2C_IDLE;
+		/* Notify upper layer a STOP condition received */
+		if (target_cb->stop) {
+			target_cb->stop(data->target_cfg);
+		}
+		return;
+	}
+
+	/* A negative acknowledge has occurred */
+	if (IS_BIT_SET(status, NPCX_SMBST_NEGACK)) {
+		/* Clear NEGACK Bit */
+		inst->SMBST = BIT(NPCX_SMBST_NEGACK);
+		/* Do nothing in i2c target mode */
+		return;
+	}
+
+	/* A 'Target Address Match' has been identified */
+	if (IS_BIT_SET(status, NPCX_SMBST_NMATCH)) {
+		/* Clear NMATCH Bit */
+		inst->SMBST = BIT(NPCX_SMBST_NMATCH);
+
+		/* Distinguish tje direction of i2c target mode by reading XMIT bit */
+		if (IS_BIT_SET(inst->SMBST, NPCX_SMBST_XMIT)) {
+			/* Start transmitting data in i2c target mode */
+			data->oper_state = NPCX_I2C_WRITE_FIFO;
+			/* Write first requested byte after repeated start */
+			if (target_cb->read_requested) {
+				target_cb->read_requested(data->target_cfg, &val);
+			}
+			inst->SMBSDA = val;
+		} else {
+			/* Start receiving data in i2c target mode */
+			data->oper_state = NPCX_I2C_READ_FIFO;
+
+			if (target_cb->write_requested) {
+				target_cb->write_requested(data->target_cfg);
+			}
+		}
+		return;
+	}
+
+	/* Tx byte empty or Rx byte full has occurred */
+	if (IS_BIT_SET(status, NPCX_SMBST_SDAST)) {
+		if (data->oper_state == NPCX_I2C_WRITE_FIFO) {
+			/* Notify upper layer one byte will be transmitted */
+			if (target_cb->read_processed) {
+				target_cb->read_processed(data->target_cfg, &val);
+			}
+			inst->SMBSDA = val;
+		} else if (data->oper_state == NPCX_I2C_READ_FIFO) {
+			if (target_cb->write_received) {
+				val = inst->SMBSDA;
+				/* Notify upper layer one byte received */
+				target_cb->write_received(data->target_cfg, val);
+			}
+		} else {
+			LOG_ERR("Unexpected oper state %d on i2c target port%02x!",
+				data->oper_state, data->port);
+		}
+		return;
+	}
+
+	/* Clear unexpected status bits */
+	if (status != 0) {
+		inst->SMBST = status;
+		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c target port%02x!",
+			status, data->port);
+	}
+}
+#endif
+
+/* I2C controller isr function */
 static void i2c_ctrl_isr(const struct device *dev)
 {
-	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
 	struct i2c_ctrl_data *const data = dev->data;
 	uint8_t status, tmp;
 
-	status = inst_fifo->SMBST & NPCX_VALID_SMBST_MASK;
+	status = inst->SMBST & NPCX_VALID_SMBST_MASK;
 	LOG_DBG("status: %02x, %d", status, data->oper_state);
+
+#ifdef CONFIG_I2C_TARGET
+	if (atomic_test_bit(&data->flags, NPCX_I2C_FLAG_TARGET)) {
+		return i2c_ctrl_target_isr(dev, status);
+	}
+#endif
 
 	/* A 'Bus Error' has been identified */
 	if (IS_BIT_SET(status, NPCX_SMBST_BER)) {
@@ -756,7 +873,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear BER Bit */
-		inst_fifo->SMBST = BIT(NPCX_SMBST_BER);
+		inst->SMBST = BIT(NPCX_SMBST_BER);
 
 		/* Make sure slave doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_fifo_read(dev);
@@ -775,7 +892,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear NEGACK Bit */
-		inst_fifo->SMBST = BIT(NPCX_SMBST_NEGACK);
+		inst->SMBST = BIT(NPCX_SMBST_NEGACK);
 
 		/* End transaction */
 		data->oper_state = NPCX_I2C_WAIT_STOP;
@@ -795,7 +912,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 
 	/* Clear unexpected status bits */
 	if (status != 0) {
-		inst_fifo->SMBST = status;
+		inst->SMBST = status;
 		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!",
 			status, data->port);
 	}
@@ -940,12 +1057,99 @@ recover_exit:
 	return ret;
 }
 
+#ifdef CONFIG_I2C_TARGET
+int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
+				 struct i2c_target_config *target_cfg, uint8_t port)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
+	int idx_ctrl = (port & 0xF0) >> 4;
+	int idx_port = (port & 0x0F);
+	uint8_t addr = BIT(NPCX_SMBADDR1_SAEN) | target_cfg->address;
+
+	/* I2c module has been configured to target mode */
+	if (atomic_test_and_set_bit(&data->flags, NPCX_I2C_FLAG_TARGET)) {
+		return -EBUSY;
+	}
+
+	/* A transiaction is ongoing */
+	if (data->oper_state != NPCX_I2C_IDLE) {
+		atomic_clear_bit(&data->flags, NPCX_I2C_FLAG_TARGET);
+		return -EBUSY;
+	}
+
+	data->target_cfg = target_cfg;
+
+	i2c_ctrl_irq_enable(i2c_dev, 0);
+	/* Switch correct port for i2c controller first */
+	npcx_pinctrl_i2c_port_sel(idx_ctrl, idx_port);
+	/* Reset I2C module */
+	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
+	inst->SMBCTL2 |= BIT(NPCX_SMBCTL2_ENABLE);
+
+	/* Select normal bank and single byte mode for i2c target mode */
+	i2c_ctrl_bank_sel(i2c_dev, NPCX_I2C_BANK_NORMAL);
+	inst->SMBFIF_CTL &= ~BIT(NPCX_SMBFIF_CTL_FIFO_EN);
+	inst->SMBADDR1 = addr; /* Enable target mode and configure its address */
+
+	/* Reconfigure SMBCTL1 */
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
+	i2c_ctrl_irq_enable(i2c_dev, 1);
+
+	return 0;
+}
+
+int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
+				   struct i2c_target_config *target_cfg)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
+
+	/* No I2c module has been configured to target mode */
+	if (!atomic_test_bit(&data->flags, NPCX_I2C_FLAG_TARGET)) {
+		return -EINVAL;
+	}
+
+	/* A transiaction is ongoing */
+	if (data->oper_state != NPCX_I2C_IDLE) {
+		return -EBUSY;
+	}
+	data->target_cfg = NULL;
+
+	i2c_ctrl_irq_enable(i2c_dev, 0);
+	/* Reset I2C module */
+	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
+	inst->SMBCTL2 |= BIT(NPCX_SMBCTL2_ENABLE);
+
+	inst->SMBADDR1 = 0; /* Disable target mode and clear address setting */
+	/* Enable FIFO mode and select to FIFO bank for i2c controller mode */
+	inst->SMBFIF_CTL |= BIT(NPCX_SMBFIF_CTL_FIFO_EN);
+	i2c_ctrl_bank_sel(i2c_dev, NPCX_I2C_BANK_FIFO);
+
+	/* Reconfigure SMBCTL1 */
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
+	i2c_ctrl_irq_enable(i2c_dev, 1);
+
+	/* Mark it as controller mode */
+	atomic_clear_bit(&data->flags, NPCX_I2C_FLAG_TARGET);
+
+	return 0;
+}
+#endif
+
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr, int port)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 	int ret = 0;
 	uint8_t i;
+
+#ifdef CONFIG_I2C_TARGET
+	/* I2c module has been configured to target mode */
+	if (atomic_test_bit(&data->flags, NPCX_I2C_FLAG_TARGET)) {
+		return -EBUSY;
+	}
+#endif
 
 	/*
 	 * suspend-to-idle stops SMB module clocks (derived from APB2/APB3), which must remain
@@ -1042,7 +1246,7 @@ static int i2c_ctrl_init(const struct device *dev)
 
 	/* Turn on device clock first and get source clock freq. */
 	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
+		(clock_control_subsys_t) &config->clk_cfg) != 0) {
 		LOG_ERR("Turn on %s clock fail.", dev->name);
 		return -EIO;
 	}
@@ -1052,7 +1256,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	 * configuration of the device to meet SMBus timing spec. Please refer
 	 * Table 21/22/23 and section 7.5.9 SMBus Timing for more detail.
 	 */
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &i2c_rate) != 0) {
 		LOG_ERR("Get %s clock rate error.", dev->name);
 		return -EIO;
@@ -1112,7 +1316,7 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	static struct i2c_ctrl_data i2c_ctrl_data_##inst;                      \
 									       \
-	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
+	DEVICE_DT_INST_DEFINE(inst,                                            \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \

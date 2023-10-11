@@ -320,15 +320,24 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_EnableStream(dma, dma_stm32_id_to_stream(id));
 }
 
+bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
+{
+	if (LL_DMA_IsEnabledStream(dma, dma_stm32_id_to_stream(id)) == 1) {
+		return true;
+	}
+	return false;
+}
+
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	LL_DMA_DisableStream(dma, dma_stm32_id_to_stream(id));
 
-	if (!LL_DMA_IsEnabledStream(dma, dma_stm32_id_to_stream(id))) {
-		return 0;
+	while (stm32_dma_is_enabled_stream(dma, id)) {
 	}
 
-	return -EAGAIN;
+	dma_stm32_clear_tc(dma, id);
+
+	return 0;
 }
 
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id)

@@ -8,16 +8,16 @@ compatible: "can-transceiver-gpio"
 include: can-transceiver.yaml
 
 properties:
-    enable-gpios:
-      type: phandle-array
-      description: |
-        GPIO to use to enable/disable the CAN transceiver. This GPIO is driven
-        active when the CAN transceiver is enabled and inactive when the CAN
-        transceiver is disabled.
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the CAN transceiver. This GPIO is driven
+      active when the CAN transceiver is enabled and inactive when the CAN
+      transceiver is disabled.
 
-    standby-gpios:
-      type: phandle-array
-      description: |
-        GPIO to use to put the CAN transceiver into standby. This GPIO is driven
-        inactive when the CAN transceiver is enabled and active when the CAN
-        transceiver is disabled.
+  standby-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to put the CAN transceiver into standby. This GPIO is driven
+      inactive when the CAN transceiver is enabled and active when the CAN
+      transceiver is disabled.

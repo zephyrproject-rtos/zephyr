@@ -16,3 +16,4 @@ supported:
   - kscan
   - pwm
   - watchdog
+vendor: ite

@@ -8,6 +8,7 @@
 #include <st/h7/stm32h753Xi.dtsi>
 #include <st/h7/stm32h753zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32H743ZI-NUCLEO board";
@@ -20,10 +21,10 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,canbus = &can1;
+		zephyr,canbus = &fdcan1;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
@@ -48,6 +49,7 @@
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -56,6 +58,7 @@
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -134,6 +137,8 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_inp15_pa3>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -141,7 +146,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
@@ -216,4 +221,8 @@ zephyr_udc0: &usbotg_fs {
 		};
 
 	};
+};
+
+&vbat {
+	status = "okay";
 };

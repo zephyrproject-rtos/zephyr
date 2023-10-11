@@ -17,30 +17,33 @@
  * as a part of ongoing development.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
-#include <zephyr/types.h>
-#include <zephyr/sys/byteorder.h>
+#include <stdint.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
 
 /** @brief Minimum allowed value for object ID (except ID for directory listing) */
-#define BT_OTS_OBJ_ID_MIN 0x000000000100
+#define BT_OTS_OBJ_ID_MIN 0x000000000100ULL
 
 /** @brief Maximum allowed value for object ID (except ID for directory listing) */
-#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFF
+#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFFULL
 
 /** @brief ID of the Directory Listing Object */
-#define OTS_OBJ_ID_DIR_LIST     0x000000000000
+#define OTS_OBJ_ID_DIR_LIST 0x000000000000ULL
 
 /** @brief Mask for OTS object IDs, preserving the 48 bits */
 #define BT_OTS_OBJ_ID_MASK BIT64_MASK(48)
@@ -725,10 +728,28 @@ struct bt_ots_cb {
 	 */
 	void (*obj_name_written)(struct bt_ots *ots, struct bt_conn *conn,
 				 uint64_t id, const char *cur_name, const char *new_name);
+
+	/** @brief Object Calculate checksum callback
+	 *
+	 *  This callback is called when the OACP Calculate Checksum procedure is performed.
+	 *  Because object data is opaque to OTS, the application is the only one who
+	 *  knows where data is and should return pointer of actual object data.
+	 *
+	 *  @param[in]	ots      OTS instance.
+	 *  @param[in]	conn     The connection that wrote object.
+	 *  @param[in]	id       Object ID.
+	 *  @param[in]	offset   The first octet of the object contents need to be calculated.
+	 *  @param[in]	len      The length number of octets object name.
+	 *  @param[out] data     Pointer of actual object data.
+	 *
+	 *  @return 0 to accept, or any negative value to reject.
+	 */
+	int (*obj_cal_checksum)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+				off_t offset, size_t len, void **data);
 };
 
 /** @brief Descriptor for OTS initialization. */
-struct bt_ots_init {
+struct bt_ots_init_param {
 	/* OTS features */
 	struct bt_ots_feat features;
 
@@ -782,7 +803,7 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_ots_init(struct bt_ots *ots, struct bt_ots_init *ots_init);
+int bt_ots_init(struct bt_ots *ots, struct bt_ots_init_param *ots_init);
 
 /** @brief Get a free instance of OTS from the pool.
  *
@@ -888,6 +909,20 @@ struct bt_ots_client_cb {
 	 */
 	void (*obj_data_written)(struct bt_ots_client *ots_inst,
 				 struct bt_conn *conn, size_t len);
+
+	/** @brief Callback function when checksum indication is received.
+	 *
+	 *  Called when the oacp_ind_handler received response of
+	 *  OP BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC.
+	 *
+	 *  @param ots_inst          Pointer to the OTC instance.
+	 *  @param conn              The connection to the peer device.
+	 *  @param err               Error code (bt_gatt_ots_oacp_res_code).
+	 *  @param checksum          Checksum if error code is BT_GATT_OTS_OACP_RES_SUCCESS,
+	 *                           otherwise 0.
+	 */
+	void (*obj_checksum_calculated)(struct bt_ots_client *ots_inst, struct bt_conn *conn,
+					int err, uint32_t checksum);
 };
 
 /** @brief Register an Object Transfer Service Instance.
@@ -901,6 +936,17 @@ struct bt_ots_client_cb {
  *  @return int               0 if success, ERRNO on failure.
  */
 int bt_ots_client_register(struct bt_ots_client *ots_inst);
+
+/** @brief Unregister an Object Transfer Service Instance.
+ *
+ *  Unregister an Object Transfer Service instance when disconnect from the peer.
+ *  Call this function when an ACL using OTS instance is disconnected.
+ *
+ *  @param[in]  index	      Index of OTS instance.
+ *
+ *  @return int               0 if success, ERRNO on failure.
+ */
+int bt_ots_client_unregister(uint8_t index);
 
 /** @brief OTS Indicate Handler function.
  *
@@ -1011,7 +1057,7 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 
 /** @brief Write the data of the current selected object.
  *
- *  This will trigger an OACP write operation for the current size of the object
+ *  This will trigger an OACP write operation for the current object
  *  with a specified offset and then expect transferring the content via the L2CAP CoC.
  *
  *  The length of the data written to object is returned in the obj_data_written() callback.
@@ -1028,6 +1074,24 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst, struct bt_conn *conn,
 				    const void *buf, size_t len, off_t offset,
 				    enum bt_ots_oacp_write_op_mode mode);
+
+/** @brief Get the checksum of the current selected object.
+ *
+ *  This will trigger an OACP calculate checksum operation for the current object
+ *  with a specified offset and length.
+ *
+ *  The checksum goes to OACP IND and obj_checksum_calculated() callback.
+ *
+ *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
+ *  @param offset       Offset to calculate, usually 0.
+ *  @param len          Len of data to calculate checksum for. May be less than the current object's
+ *                      size, but shall not be larger.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_conn *conn,
+				      off_t offset, size_t len);
 
 /** @brief Directory listing object metadata callback
  *
@@ -1081,6 +1145,24 @@ static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
  */
 void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
 			     uint16_t count);
+
+/**
+ * @brief  Generate IEEE conform CRC32 checksum.
+ *
+ * To abstract IEEE implementation to service layer.
+ *
+ * @param  data        Pointer to data on which the CRC should be calculated.
+ * @param  len          Data length.
+ *
+ * @return CRC32 value.
+ *
+ */
+#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
+static inline uint32_t bt_ots_client_calc_checksum(const uint8_t *data, size_t len)
+{
+	return crc32_ieee(data, len);
+}
+#endif
 
 #ifdef __cplusplus
 }

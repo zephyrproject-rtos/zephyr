@@ -10,8 +10,6 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #include <string.h>
 #include "osdp_common.h"
 
-#define TAG "SC: "
-
 #define OSDP_SC_EOM_MARKER             0x80  /* End of Message Marker */
 
 /* Default key as specified in OSDP specification */
@@ -20,32 +18,44 @@ static const uint8_t osdp_scbk_default[16] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
-void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
+/**
+ * Tail memsets can be optimized away by compilers. To sidestep this problem,
+ * we cast the pointer to volatile and then operate on it.
+ */
+static void osdp_memzero(void *mem, size_t size)
+{
+	size_t i;
+	volatile uin8_t *p = mem;
+
+	for (i = 0; i < size; i++) {
+		p[i] = 0;
+	}
+}
+
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 {
 	int i;
-	struct osdp *ctx = TO_CTX(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
 	for (i = 8; i < 16; i++) {
 		scbk[i] = ~scbk[i - 8];
 	}
-	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
+	osdp_encrypt(master_key, NULL, scbk, 16);
 }
 
-void osdp_compute_session_keys(struct osdp *ctx)
+void osdp_compute_session_keys(struct osdp_pd *pd)
 {
 	int i;
-	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+	struct osdp *ctx = pd_to_osdp(pd);
+	uint8_t scbk[16];
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
+		memcpy(scbk, osdp_scbk_default, 16);
 	} else {
-		/**
-		 * Compute SCBK only in CP mode. PD mode, expect to already have
-		 * the SCBK (sent from application layer).
-		 */
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0) {
-			osdp_compute_scbk(pd, pd->sc.scbk);
+		if (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
+			osdp_compute_scbk(pd, ctx->sc_master_key, scbk);
+		} else {
+			memcpy(scbk, pd->sc.scbk, 16);
 		}
 	}
 
@@ -53,19 +63,22 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	memset(pd->sc.s_mac1, 0, 16);
 	memset(pd->sc.s_mac2, 0, 16);
 
-	pd->sc.s_enc[0]  = 0x01;  pd->sc.s_enc[1]  = 0x82;
-	pd->sc.s_mac1[0] = 0x01;  pd->sc.s_mac1[1] = 0x01;
-	pd->sc.s_mac2[0] = 0x01;  pd->sc.s_mac2[1] = 0x02;
+	pd->sc.s_enc[0] = 0x01;
+	pd->sc.s_enc[1] = 0x82;
+	pd->sc.s_mac1[0] = 0x01;
+	pd->sc.s_mac1[1] = 0x01;
+	pd->sc.s_mac2[0] = 0x01;
+	pd->sc.s_mac2[1] = 0x02;
 
 	for (i = 2; i < 8; i++) {
-		pd->sc.s_enc[i]  = pd->sc.cp_random[i - 2];
+		pd->sc.s_enc[i] = pd->sc.cp_random[i - 2];
 		pd->sc.s_mac1[i] = pd->sc.cp_random[i - 2];
 		pd->sc.s_mac2[i] = pd->sc.cp_random[i - 2];
 	}
 
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_enc,  16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac1, 16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac2, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_enc, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac1, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac2, 16);
 }
 
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
@@ -145,8 +158,7 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	int i;
 	uint8_t iv[16];
 
-	if (length % 16 != 0) {
-		LOG_ERR(TAG "decrypt_pkt invalid len:%d", length);
+	if (length <= 0 || length % 16 != 0) {
 		return -1;
 	}
 
@@ -157,15 +169,16 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 
 	osdp_decrypt(pd->sc.s_enc, iv, data, length);
 
-	while (data[length - 1] == 0x00) {
+	length--;
+	while (length && data[length] == 0x00) {
 		length--;
 	}
-	if (data[length - 1] != OSDP_SC_EOM_MARKER) {
+	if (data[length] != OSDP_SC_EOM_MARKER) {
 		return -1;
 	}
-	data[length - 1] = 0;
+	data[length] = 0;
 
-	return length - 1;
+	return length;
 }
 
 int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
@@ -192,7 +205,7 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len)
 {
 	int pad_len;
-	uint8_t buf[CONFIG_OSDP_UART_BUFFER_LENGTH] = { 0 };
+	uint8_t buf[OSDP_PACKET_BUF_SIZE] = { 0 };
 	uint8_t iv[16];
 
 	memcpy(buf, data, len);
@@ -222,18 +235,20 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 	return 0;
 }
 
-void osdp_sc_init(struct osdp_pd *pd)
+void osdp_sc_setup(struct osdp_pd *pd)
 {
-	uint8_t key[16];
+	uint8_t scbk[16];
+	bool preserve_scbk = is_pd_mode(pd) || ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-		memcpy(key, pd->sc.scbk, 16);
+	if (preserve_scbk) {
+		memcpy(scbk, pd->sc.scbk, 16);
 	}
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-		memcpy(pd->sc.scbk, key, 16);
+	if (preserve_scbk) {
+		memcpy(pd->sc.scbk, scbk, 16);
 	}
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+	osdp_memzero(scbk, sizeof(scbk));
+	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);
 		pd->sc.pd_client_uid[2] = BYTE_0(pd->id.model);
@@ -242,5 +257,7 @@ void osdp_sc_init(struct osdp_pd *pd)
 		pd->sc.pd_client_uid[5] = BYTE_1(pd->id.serial_number);
 		pd->sc.pd_client_uid[6] = BYTE_2(pd->id.serial_number);
 		pd->sc.pd_client_uid[7] = BYTE_3(pd->id.serial_number);
+	} else {
+		osdp_fill_random(pd->sc.cp_random, 8);
 	}
 }

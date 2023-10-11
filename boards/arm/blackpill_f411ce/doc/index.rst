@@ -158,13 +158,13 @@ References
 .. target-notes::
 
 .. _board release notes:
-   https://github.com/WeActTC/MiniF4-STM32F4x1/blob/master/HDK/README.md
+   https://github.com/WeActStudio/WeActStudio.MiniSTM32F4x1/blob/master/HDK/README.md
 
 .. _Zadig:
    https://zadig.akeo.ie/
 
 .. _WeAct Github:
-   https://github.com/WeActTC/MiniF4-STM32F4x1
+   https://github.com/WeActStudio/WeActStudio.MiniSTM32F4x1
 
 .. _stm32-base-board-page:
    https://stm32-base.org/boards/STM32F411CEU6-WeAct-Black-Pill-V2.0.html
@@ -173,7 +173,7 @@ References
    http://dfu-util.sourceforge.net/build.html
 
 .. _STM32F411CE website:
-   http://www.st.com/en/microcontrollers/stm32f411ce.html
+   https://www.st.com/en/microcontrollers/stm32f411ce.html
 
 .. _STM32F411x reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00119316.pdf
+   https://www.st.com/resource/en/reference_manual/dm00119316.pdf

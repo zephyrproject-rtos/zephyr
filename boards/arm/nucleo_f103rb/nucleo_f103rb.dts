@@ -8,6 +8,8 @@
 #include <st/f1/stm32f103Xb.dtsi>
 #include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F103RB-NUCLEO board";
@@ -20,7 +22,7 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -33,6 +35,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -40,6 +43,7 @@
 		led0 = &green_led_2;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -114,7 +118,18 @@
 
 	pwm1: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers2 {
+	st,prescaler = <255>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch2_pwm_in_pa1>;
 		pinctrl-names = "default";
 	};
 };

@@ -169,7 +169,7 @@ PendSV exception return sequence restores the new thread's caller-saved register
 return address, as part of unstacking the exception stack frame.
 
 The implementation of the context-switch mechanism is present in
-:file:`arch/arm/core/aarch32/swap_helper.S`.
+:file:`arch/arm/core/swap_helper.S`.
 
 Stack limit checking (Arm v8-M)
 -------------------------------
@@ -262,7 +262,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/aarch32/exc.h`.
+:file:`include/arch/arm/exc.h`.
 
 Locking and unlocking IRQs
 --------------------------
@@ -337,7 +337,7 @@ CPU Idling
 
 The Cortex-M architecture port implements both k_cpu_idle()
 and k_cpu_atomic_idle(). The implementation is present in
-:file:`arch/arm/core/aarch32/cpu_idle.S`.
+:file:`arch/arm/core/cpu_idle.S`.
 
 In both implementations, the processor
 will attempt to put the core to low power mode.
@@ -440,9 +440,8 @@ are programmed during system boot.
   SRAM. (An exception to this setting is when :kconfig:option:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
   in that case no SRAM MPU programming is done so the access is determined by the default
   Arm memory map policies, allowing for privileged-only RWX permissions on SRAM).
-* All the memory regions defined in the devicetree with the compatible
-  :dtcompatible:`zephyr,memory-region` and at least the property
-  ``zephyr,memory-region-mpu`` defining the MPU permissions for the memory region.
+* All the memory regions defined in the devicetree with the property
+  ``zephyr,memory-attr`` defining the MPU permissions for the memory region.
   See the next section for more details.
 
 The above MPU regions are defined in :file:`soc/arm/common/cortex_m/arm_mpu_regions.c`.
@@ -453,15 +452,10 @@ configure its own fixed MPU regions in the SoC definition.
 Fixed MPU regions defined in devicetree
 ---------------------------------------
 
-The user can define memory regions to be allocated and created in the linker
-script using nodes with the :dtcompatible:`zephyr,memory-region` devicetree
-compatible. When the property ``zephyr,memory-region-mpu`` is present in such
-a node, a new MPU region will be allocated and programmed during system
-boot.
-
-The property ``zephyr,memory-region-mpu`` is a string carrying the attributes
-for the MPU region. It is converted to a C token for use defining the attributes
-of the MPU region.
+When the property ``zephyr,memory-attr`` is present in a memory node, a new MPU
+region will be allocated and programmed during system boot. When used with the
+:dtcompatible:`zephyr,memory-region` devicetree compatible, it will result in a
+linker section being generated associated to that MPU region.
 
 For example, to define a new non-cacheable memory region in devicetree:
 
@@ -471,13 +465,11 @@ For example, to define a new non-cacheable memory region in devicetree:
         compatible = "zephyr,memory-region", "mmio-sram";
         reg = <0x20300000 0x100000>;
         zephyr,memory-region = "SRAM_NO_CACHE";
-        zephyr,memory-region-mpu = "RAM_NOCACHE";
+        zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
    };
 
-This will automatically create a new MPU entry in
-:zephyr_file:`soc/arm/common/cortex_m/arm_mpu_regions.c` with the correct name, base,
-size and attributes gathered directly from the devicetree. See
-:zephyr_file:`include/zephyr/linker/devicetree_regions.h` for more details.
+This will automatically create a new MPU entry in with the correct name, base,
+size and attributes gathered directly from the devicetree.
 
 Static MPU regions
 ------------------
@@ -626,7 +618,7 @@ Linking Cortex-M applications
 *****************************
 
 Most Cortex-M platforms make use of the default Cortex-M
-GCC linker script in :file:`include/arch/arm/aarch32/cortex-m/scripts/linked.ld`,
+GCC linker script in :file:`include/arch/arm/cortex-m/scripts/linked.ld`,
 although it is possible for platforms to use a custom linker
 script as well.
 

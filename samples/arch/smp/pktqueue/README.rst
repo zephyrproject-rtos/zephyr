@@ -64,7 +64,7 @@ This project outputs total time required for processing all packet headers.
 It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/smp_pktqueue
+   :zephyr-app: samples/arch/smp/pktqueue
    :host-os: unix
    :board: qemu_x86_64
    :goals: run

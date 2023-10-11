@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include "npcx9.dtsi"
+#include "npcx/npcx9.dtsi"
 
 / {
 	flash0: flash@10080000 {
@@ -26,14 +26,19 @@
 	};
 };
 
-&spi_fiu0 {
+&qspi_fiu0 {
+	status = "okay";
+
 	int_flash: w25q40@0 {
-		compatible ="jedec,spi-nor";
-		/*  4194304 bits = 512K Bytes */
-		size = <0x400000>;
+		compatible ="nuvoton,npcx-fiu-nor";
+		size = <DT_SIZE_K(512 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <50000000>;
 		status = "okay";
-		jedec-id = [ef 40 13];
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NPCX_QSPI_SW_CS1>;
+		mapped-addr = <0x64000000>;
+		pinctrl-0 = <&int_flash_sl>;
+		pinctrl-names = "default";
 	};
 };

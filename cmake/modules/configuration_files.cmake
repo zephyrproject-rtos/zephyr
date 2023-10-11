@@ -11,7 +11,10 @@
 # The following variables will be defined when this CMake module completes:
 #
 # - CONF_FILE:              List of Kconfig fragments
+# - EXTRA_CONF_FILE:        List of additional Kconfig fragments
 # - DTC_OVERLAY_FILE:       List of devicetree overlay files
+# - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
+# - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
 # - APPLICATION_CONFIG_DIR: Root folder for application configuration
 #
 # If any of the above variables are already set when this CMake module is
@@ -67,17 +70,20 @@ elseif(CACHED_CONF_FILE)
   set(CONF_FILE ${CACHED_CONF_FILE})
 elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
   set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-
+  find_package(Deprecated COMPONENTS PRJ_BOARD)
 elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE_INCLUDE_FRAGMENTS true)
+else()
+  message(FATAL_ERROR "No prj.conf file was found in the ${APPLICATION_CONFIG_DIR} folder, "
+                      "please read the Zephyr documentation on application development.")
 endif()
 
 if(CONF_FILE_INCLUDE_FRAGMENTS)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
 
-set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder")
+set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder" FORCE)
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
@@ -111,3 +117,7 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
 # The DTC_OVERLAY_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
+
+zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
+zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
+zephyr_get(DTS_EXTRA_CPPFLAGS SYSBUILD LOCAL MERGE REVERSE)

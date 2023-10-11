@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,9 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/sys/slist.h>
 #include "../host/conn_internal.h"
+#include "../host/hci_core.h"
 
 #include <zephyr/logging/log.h>
 
@@ -31,87 +33,93 @@ LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 
 #include "audio_internal.h"
 #include "pacs_internal.h"
-#include "unicast_server.h"
+#include "bap_unicast_server.h"
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
+#define READ_BUF_SEM_TIMEOUT    K_MSEC(50)
 
-#define PACS(_name, _work_handler) \
-	struct pacs _name = { \
-		.work = Z_WORK_DELAYABLE_INITIALIZER(_work_handler), \
-	};
+#if defined(CONFIG_BT_PAC_SRC)
+static uint32_t pacs_src_location;
+static sys_slist_t src_pacs_list = SYS_SLIST_STATIC_INIT(&src_pacs_list);
+#endif /* CONFIG_BT_PAC_SRC */
 
-#define PACS_LOCATION(_name, _work_handler) \
-	struct pacs_location _name = { \
-		.work = Z_WORK_DELAYABLE_INITIALIZER(_work_handler), \
-	};
-
-struct pacs_location {
-	struct k_work_delayable work;
-	uint32_t location;
-};
-
-struct pacs {
-	struct k_work_delayable work;
-	sys_slist_t list;
-};
+#if defined(CONFIG_BT_PAC_SNK)
+static uint32_t pacs_snk_location;
+static sys_slist_t snk_pacs_list = SYS_SLIST_STATIC_INIT(&snk_pacs_list);
+#endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SNK)
 static uint16_t snk_available_contexts;
-static const uint16_t snk_supported_contexts = CONFIG_BT_PACS_SNK_CONTEXT;
+static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
-static const uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static const uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 static uint16_t src_available_contexts;
-static const uint16_t src_supported_contexts = CONFIG_BT_PACS_SRC_CONTEXT;
+static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
 #else
-static const uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static const uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 #endif /* CONFIG_BT_PAC_SRC */
 
-NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
+enum {
+	FLAG_ACTIVE,
+	FLAG_SINK_PAC_CHANGED,
+	FLAG_SINK_AUDIO_LOCATIONS_CHANGED,
+	FLAG_SOURCE_PAC_CHANGED,
+	FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED,
+	FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED,
+	FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED,
+	FLAG_NUM,
+};
 
-static ssize_t pac_data_add(struct net_buf_simple *buf, size_t count,
-			    struct bt_codec_data *data)
-{
-	size_t len = 0;
+static struct pacs_client {
+	bt_addr_le_t addr;
 
-	for (size_t i = 0; i < count; i++) {
-		struct bt_pac_ltv *ltv;
-		struct bt_data *d = &data[i].data;
-		const size_t ltv_len = sizeof(*ltv) + d->data_len;
+	/* Pending notification flags */
+	ATOMIC_DEFINE(flags, FLAG_NUM);
+} clients[CONFIG_BT_MAX_PAIRED];
 
-		if (net_buf_simple_tailroom(buf) < ltv_len) {
-			return -ENOMEM;
-		}
+static atomic_t notify_rdy;
 
-		ltv = net_buf_simple_add(buf, sizeof(*ltv));
-		ltv->len = d->data_len + sizeof(ltv->type);
-		ltv->type = d->type;
-		net_buf_simple_add_mem(buf, d->data, d->data_len);
+static K_SEM_DEFINE(read_buf_sem, 1, 1);
+NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
-		len += ltv_len;
-	}
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) || defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir);
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE || CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE*/
+static int pacs_gatt_notify(struct bt_conn *conn,
+			    const struct bt_uuid *uuid,
+			    const struct bt_gatt_attr *attr,
+			    const void *data,
+			    uint16_t len);
+static void deferred_nfy_work_handler(struct k_work *work);
 
-	return len;
-}
+static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
 struct pac_records_build_data {
 	struct bt_pacs_read_rsp *rsp;
 	struct net_buf_simple *buf;
 };
 
+static void pacs_set_notify_bit(int bit)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		if (atomic_test_bit(clients[i].flags, FLAG_ACTIVE)) {
+			atomic_set_bit(clients[i].flags, bit);
+		}
+	}
+}
+
 static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 {
 	struct pac_records_build_data *data = user_data;
-	struct bt_codec *codec = cap->codec;
+	const struct bt_audio_codec_cap *codec_cap = cap->codec_cap;
 	struct net_buf_simple *buf = data->buf;
 	struct net_buf_simple_state state;
-	struct bt_pac_ltv_data *cc, *meta;
 	struct bt_pac_codec *pac_codec;
-	ssize_t len;
 
 	net_buf_simple_save(buf, &state);
 
@@ -120,42 +128,30 @@ static bool build_pac_records(const struct bt_pacs_cap *cap, void *user_data)
 	}
 
 	pac_codec = net_buf_simple_add(buf, sizeof(*pac_codec));
-	pac_codec->id = codec->id;
-	pac_codec->cid = sys_cpu_to_le16(codec->cid);
-	pac_codec->vid = sys_cpu_to_le16(codec->vid);
+	pac_codec->id = codec_cap->id;
+	pac_codec->cid = sys_cpu_to_le16(codec_cap->cid);
+	pac_codec->vid = sys_cpu_to_le16(codec_cap->vid);
 
-	if (net_buf_simple_tailroom(buf) < sizeof(*cc)) {
+	if (net_buf_simple_tailroom(buf) < (sizeof(struct bt_pac_ltv_data) + codec_cap->data_len)) {
 		goto fail;
 	}
 
-	cc = net_buf_simple_add(buf, sizeof(*cc));
+	net_buf_simple_add_u8(buf, codec_cap->data_len);
+	net_buf_simple_add_mem(buf, codec_cap->data, codec_cap->data_len);
 
-	len = pac_data_add(buf, codec->data_count, codec->data);
-	if (len < 0 || len > UINT8_MAX) {
+	if (net_buf_simple_tailroom(buf) < (sizeof(struct bt_pac_ltv_data) + codec_cap->meta_len)) {
 		goto fail;
 	}
 
-	cc->len = len;
-
-	if (net_buf_simple_tailroom(buf) < sizeof(*meta)) {
-		goto fail;
-	}
-
-	meta = net_buf_simple_add(buf, sizeof(*meta));
-
-	len = pac_data_add(buf, codec->meta_count, codec->meta);
-	if (len < 0 || len > UINT8_MAX) {
-		goto fail;
-	}
-
-	meta->len = len;
+	net_buf_simple_add_u8(buf, codec_cap->meta_len);
+	net_buf_simple_add_mem(buf, codec_cap->meta, codec_cap->meta_len);
 
 	data->rsp->num_pac++;
 
 	return true;
 
 fail:
-	__ASSERT(true, "No space for %p", cap);
+	__ASSERT(false, "No space for %p", cap);
 
 	net_buf_simple_restore(buf, &state);
 
@@ -174,8 +170,7 @@ static void foreach_cap(sys_slist_t *list, bt_pacs_cap_foreach_func_t func,
 	}
 }
 
-static void get_pac_records(struct bt_conn *conn, sys_slist_t *list,
-			    struct net_buf_simple *buf)
+static void get_pac_records(sys_slist_t *list, struct net_buf_simple *buf)
 {
 	struct pac_records_build_data data;
 
@@ -209,11 +204,13 @@ static ssize_t available_contexts_read(struct bt_conn *conn,
 				 sizeof(context));
 }
 
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 static void supported_context_cfg_changed(const struct bt_gatt_attr *attr,
 					  uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 static ssize_t supported_context_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
@@ -230,14 +227,9 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				 sizeof(context));
 }
 
-static void available_contexts_notify(struct k_work *work);
-static K_WORK_DELAYABLE_DEFINE(available_contexts_work, available_contexts_notify);
-
 static int set_available_contexts(uint16_t contexts, uint16_t *available,
-				  const uint16_t supported)
+				  uint16_t supported)
 {
-	int err;
-
 	if (contexts & ~supported) {
 		return -ENOTSUP;
 	}
@@ -248,55 +240,111 @@ static int set_available_contexts(uint16_t contexts, uint16_t *available,
 
 	*available = contexts;
 
-	err = k_work_reschedule(&available_contexts_work, PAC_NOTIFY_TIMEOUT);
-	if (err < 0) {
-		return err;
+	pacs_set_notify_bit(FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
+	k_work_submit(&deferred_nfy_work);
+
+	return 0;
+}
+
+static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
+				  uint16_t *available)
+{
+	int err;
+	uint16_t tmp_supported = *supported;
+	uint16_t tmp_available = *available;
+
+	/* Ensure unspecified is always supported */
+	contexts |= BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+
+	if (*supported == contexts) {
+		return 0;
+	}
+
+	*supported = contexts;
+
+	/* Update available contexts if needed*/
+	if ((contexts & *available) != *available) {
+		err = set_available_contexts(contexts & *available, available, contexts);
+		if (err) {
+			*available = tmp_available;
+			*supported = tmp_supported;
+
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)) {
+		pacs_set_notify_bit(FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
+		k_work_submit(&deferred_nfy_work);
 	}
 
 	return 0;
 }
 
 #if defined(CONFIG_BT_PAC_SNK)
-static void pac_notify_snk(struct k_work *work);
-static PACS(snk_pacs, pac_notify_snk);
-
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
+	ssize_t ret_val;
+	int err;
+
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
 
-	get_pac_records(conn, &snk_pacs.list, &read_buf);
+	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
+	get_pac_records(&snk_pacs_list, &read_buf);
+
+	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				    read_buf.len);
+
+	k_sem_give(&read_buf_sem);
+
+	return ret_val;
 }
+
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+static const struct bt_uuid *pacs_snk_uuid = BT_UUID_PACS_SNK;
 
 static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 
 static inline int set_snk_available_contexts(uint16_t contexts)
 {
 	return set_available_contexts(contexts, &snk_available_contexts,
 				      snk_supported_contexts);
 }
+
+static inline int set_snk_supported_contexts(uint16_t contexts)
+{
+	return set_supported_contexts(contexts, &snk_supported_contexts,
+				      &snk_available_contexts);
+}
 #else
 static inline int set_snk_available_contexts(uint16_t contexts)
+{
+	return -ENOTSUP;
+}
+
+static inline int set_snk_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-static void pac_notify_snk_loc(struct k_work *work);
-static PACS_LOCATION(snk_location, pac_notify_snk_loc);
-
 static ssize_t snk_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
-	uint32_t location = sys_cpu_to_le32(snk_location.location);
+	uint32_t location = sys_cpu_to_le32(pacs_snk_location);
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
 
@@ -304,27 +352,32 @@ static ssize_t snk_loc_read(struct bt_conn *conn,
 				 sizeof(location));
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+static const struct bt_uuid *pacs_snk_loc_uuid = BT_UUID_PACS_SNK_LOC;
+
 static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 
-static int set_snk_location(enum bt_audio_location audio_location)
+static void set_snk_location(enum bt_audio_location audio_location)
 {
-	if (audio_location == snk_location.location) {
-		return 0;
+	if (audio_location == pacs_snk_location) {
+		return;
 	}
 
-	snk_location.location = audio_location;
+	pacs_snk_location = audio_location;
 
-	k_work_reschedule(&snk_location.work, PAC_NOTIFY_TIMEOUT);
-
-	return 0;
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)) {
+		pacs_set_notify_bit(FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+	}
 }
 #else
-static int set_snk_location(enum bt_audio_location location)
+static void set_snk_location(enum bt_audio_location location)
 {
-	return -ENOTSUP;
+	return;
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 
@@ -333,7 +386,6 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
-	int err;
 	enum bt_audio_location location;
 
 	if (offset) {
@@ -350,57 +402,76 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	err = set_snk_location(location);
-	if (err != 0) {
-		LOG_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-	}
+	set_snk_location(location);
 
 	return len;
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 
 #if defined(CONFIG_BT_PAC_SRC)
-static void pac_notify_src(struct k_work *work);
-static PACS(src_pacs, pac_notify_src);
-
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
+	ssize_t ret_val;
+	int err;
+
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
 
-	get_pac_records(conn, &src_pacs.list, &read_buf);
+	err = k_sem_take(&read_buf_sem, READ_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
+	get_pac_records(&src_pacs_list, &read_buf);
+
+	ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
+				    read_buf.len);
+
+	k_sem_give(&read_buf_sem);
+
+	return ret_val;
 }
+
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+static const struct bt_uuid *pacs_src_uuid = BT_UUID_PACS_SRC;
 
 static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 
 static inline int set_src_available_contexts(uint16_t contexts)
 {
 	return set_available_contexts(contexts, &src_available_contexts,
 				      src_supported_contexts);
 }
+
+static inline int set_src_supported_contexts(uint16_t contexts)
+{
+	return set_supported_contexts(contexts, &src_supported_contexts,
+				      &src_available_contexts);
+}
 #else
 static inline int set_src_available_contexts(uint16_t contexts)
+{
+	return -ENOTSUP;
+}
+
+static inline int set_src_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-static void pac_notify_src_loc(struct k_work *work);
-static PACS_LOCATION(src_location, pac_notify_src_loc);
-
 static ssize_t src_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
-	uint32_t location = sys_cpu_to_le32(src_location.location);
+	uint32_t location = sys_cpu_to_le32(pacs_src_location);
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
 
@@ -408,27 +479,32 @@ static ssize_t src_loc_read(struct bt_conn *conn,
 				 sizeof(location));
 }
 
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+static const struct bt_uuid *pacs_src_loc_uuid = BT_UUID_PACS_SRC_LOC;
+
 static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
-static int set_src_location(enum bt_audio_location audio_location)
+static void set_src_location(enum bt_audio_location audio_location)
 {
-	if (audio_location == src_location.location) {
-		return 0;
+	if (audio_location == pacs_src_location) {
+		return;
 	}
 
-	src_location.location = audio_location;
+	pacs_src_location = audio_location;
 
-	k_work_reschedule(&src_location.work, PAC_NOTIFY_TIMEOUT);
-
-	return 0;
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)) {
+		pacs_set_notify_bit(FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+	}
 }
 #else
-static int set_src_location(enum bt_audio_location location)
+static void set_src_location(enum bt_audio_location location)
 {
-	return -ENOTSUP;
+	return;
 }
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 
@@ -437,7 +513,6 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
-	int err;
 	uint32_t location;
 
 	if (offset) {
@@ -454,140 +529,206 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	err = set_src_location(location);
-	if (err != 0) {
-		LOG_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
-	}
+	set_src_location(location);
 
 	return len;
 }
 #endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 
+
+static sys_slist_t *pacs_get(enum bt_audio_dir dir)
+{
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK)
+	case BT_AUDIO_DIR_SINK:
+		return &snk_pacs_list;
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SRC)
+	case BT_AUDIO_DIR_SOURCE:
+		return &src_pacs_list;
+#endif /* CONFIG_BT_PAC_SRC */
+	default:
+		return NULL;
+	}
+}
+
+#define BT_PACS_SNK_PROP \
+	BT_GATT_CHRC_READ \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+#define BT_PAC_SNK(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK, \
+		      BT_PACS_SNK_PROP, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      _read, NULL, NULL), \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE, (BT_AUDIO_CCC(snk_cfg_changed),))
+
+#define BT_PACS_SNK_LOC_PROP \
+	BT_GATT_CHRC_READ \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (|BT_GATT_CHRC_WRITE)) \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+
+#define BT_PACS_SNK_LOC_PERM \
+	BT_GATT_PERM_READ_ENCRYPT \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (|BT_GATT_PERM_WRITE_ENCRYPT))
+
+#define BT_PACS_SNK_LOC(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC, \
+		      BT_PACS_SNK_LOC_PROP, \
+		      BT_PACS_SNK_LOC_PERM, \
+		      _read, \
+		      COND_CODE_1(CONFIG_BT_PAC_SNK_LOC_WRITEABLE, (snk_loc_write), (NULL)), \
+		      NULL), \
+	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (BT_AUDIO_CCC(snk_loc_cfg_changed),))
+
+#define BT_PACS_SRC_PROP \
+	BT_GATT_CHRC_READ \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+#define BT_PAC_SRC(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC, \
+		      BT_PACS_SRC_PROP, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      _read, NULL, NULL), \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE, (BT_AUDIO_CCC(src_cfg_changed),))
+
+#define BT_PACS_SRC_LOC_PROP \
+	BT_GATT_CHRC_READ \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (|BT_GATT_CHRC_WRITE)) \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+
+#define BT_PACS_SRC_LOC_PERM \
+	BT_GATT_PERM_READ_ENCRYPT \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (|BT_GATT_PERM_WRITE_ENCRYPT))
+
+#define BT_PACS_SRC_LOC(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC, \
+		      BT_PACS_SRC_LOC_PROP, \
+		      BT_PACS_SRC_LOC_PERM, \
+		      _read, \
+		      COND_CODE_1(CONFIG_BT_PAC_SRC_LOC_WRITEABLE, (src_loc_write), (NULL)), \
+		      NULL), \
+	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (BT_AUDIO_CCC(src_loc_cfg_changed),))
+
+#define BT_PAC_AVAILABLE_CONTEXT(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_AVAILABLE_CONTEXT, \
+		      BT_GATT_CHRC_READ|BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      _read, NULL, NULL), \
+	BT_AUDIO_CCC(available_context_cfg_changed),
+
+#define BT_PACS_SUPPORTED_CONTEXT_PROP \
+	BT_GATT_CHRC_READ \
+	IF_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+
+#define BT_PAC_SUPPORTED_CONTEXT(_read) \
+	BT_AUDIO_CHRC(BT_UUID_PACS_SUPPORTED_CONTEXT, \
+		      BT_PACS_SUPPORTED_CONTEXT_PROP, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      _read, NULL, NULL), \
+	IF_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE, \
+		   (BT_AUDIO_CCC(supported_context_cfg_changed),))
+
 BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS),
 #if defined(CONFIG_BT_PAC_SNK)
-	BT_AUDIO_CHRC(BT_UUID_PACS_SNK,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      snk_read, NULL, NULL),
-	BT_AUDIO_CCC(snk_cfg_changed),
+	BT_PAC_SNK(snk_read)
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
-	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
-		      snk_loc_read, snk_loc_write, NULL),
-#else
-	BT_AUDIO_CHRC(BT_UUID_PACS_SNK_LOC,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      snk_loc_read, NULL, NULL),
-#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
-	BT_AUDIO_CCC(snk_loc_cfg_changed),
+	BT_PACS_SNK_LOC(snk_loc_read)
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
-	BT_AUDIO_CHRC(BT_UUID_PACS_SRC,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      src_read, NULL, NULL),
-	BT_AUDIO_CCC(src_cfg_changed),
+	BT_PAC_SRC(src_read)
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-#if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
-	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
-		      src_loc_read, src_loc_write, NULL),
-#else
-	BT_AUDIO_CHRC(BT_UUID_PACS_SRC_LOC,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      src_loc_read, NULL, NULL),
-#endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
-	BT_AUDIO_CCC(src_loc_cfg_changed),
+	BT_PACS_SRC_LOC(src_loc_read)
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
-	BT_AUDIO_CHRC(BT_UUID_PACS_AVAILABLE_CONTEXT,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      available_contexts_read, NULL, NULL),
-	BT_AUDIO_CCC(available_context_cfg_changed),
-	BT_AUDIO_CHRC(BT_UUID_PACS_SUPPORTED_CONTEXT,
-		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_READ_ENCRYPT,
-		      supported_context_read, NULL, NULL),
-	BT_AUDIO_CCC(supported_context_cfg_changed)
+	BT_PAC_AVAILABLE_CONTEXT(available_contexts_read)
+	BT_PAC_SUPPORTED_CONTEXT(supported_context_read)
 );
 
-#if defined(CONFIG_BT_PAC_SNK_LOC)
-static void pac_notify_snk_loc(struct k_work *work)
+static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir)
 {
-	struct pacs_location *location = CONTAINER_OF(work, struct pacs_location, work);
-	uint32_t location_le = sys_cpu_to_le32(location->location);
+	uint32_t location_le;
 	int err;
+	const struct bt_uuid *uuid;
 
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK_LOC, pacs_svc.attrs, &location_le,
-				  sizeof(location_le));
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+		location_le = sys_cpu_to_le32(pacs_snk_location);
+		uuid = pacs_snk_loc_uuid;
+		break;
+#else
+		return -ENOTSUP;
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
+	case BT_AUDIO_DIR_SOURCE:
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+		location_le = sys_cpu_to_le32(pacs_src_location);
+		uuid = pacs_src_loc_uuid;
+		break;
+#else
+		return -ENOTSUP;
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
+	default:
+		return -EINVAL;
+	}
+
+	err = pacs_gatt_notify(conn, uuid, pacs_svc.attrs, &location_le, sizeof(location_le));
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_WRN("PACS notify_loc failed: %d", err);
+		return err;
 	}
+
+	return 0;
 }
-#endif /* CONFIG_BT_PAC_SNK_LOC */
 
-#if defined(CONFIG_BT_PAC_SRC_LOC)
-static void pac_notify_src_loc(struct k_work *work)
+static int pac_notify(struct bt_conn *conn, enum bt_audio_dir dir)
 {
-	struct pacs_location *location = CONTAINER_OF(work, struct pacs_location, work);
-	uint32_t location_le = sys_cpu_to_le32(location->location);
-	int err;
-
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC_LOC, pacs_svc.attrs, &location_le,
-				  sizeof(location_le));
-	if (err != 0 && err != -ENOTCONN) {
-		LOG_WRN("PACS notify_loc failed: %d", err);
-	}
-}
-#endif /* CONFIG_BT_PAC_SRC_LOC */
-
-#if defined(CONFIG_BT_PAC_SNK)
-static void pac_notify_snk(struct k_work *work)
-{
-	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
-	int err;
-
-	get_pac_records(NULL, &pac->list, &read_buf);
-
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK, pacs_svc.attrs,
-				  read_buf.data, read_buf.len);
-	if (err != 0 && err != -ENOTCONN) {
-		LOG_WRN("PACS notify failed: %d", err);
-	}
-}
-#endif /* CONFIG_BT_PAC_SNK */
-
-#if defined(CONFIG_BT_PAC_SRC)
-static void pac_notify_src(struct k_work *work)
-{
-	struct pacs *pac = CONTAINER_OF(work, struct pacs, work);
 	int err = 0;
+	sys_slist_t *pacs;
+	const struct bt_uuid *uuid;
 
-	get_pac_records(NULL, &pac->list, &read_buf);
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	case BT_AUDIO_DIR_SINK:
+		uuid = pacs_snk_uuid;
+		break;
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	case BT_AUDIO_DIR_SOURCE:
+		uuid = pacs_src_uuid;
+		break;
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+	default:
+		return -EINVAL;
+	}
 
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC, pacs_svc.attrs,
-				  read_buf.data, read_buf.len);
+	err = k_sem_take(&read_buf_sem, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		return err;
+	}
+
+	pacs = pacs_get(dir);
+	__ASSERT(pacs, "Failed to get pacs.\n");
+	get_pac_records(pacs, &read_buf);
+
+	err = pacs_gatt_notify(conn, uuid, pacs_svc.attrs,
+			       read_buf.data, read_buf.len);
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_WRN("PACS notify failed: %d", err);
 	}
-}
-#endif /* CONFIG_BT_PAC_SRC */
 
-static void pacs_changed(struct pacs *caps)
-{
-	k_work_reschedule(&caps->work, PAC_NOTIFY_TIMEOUT);
+	k_sem_give(&read_buf_sem);
+
+	if (err == -ENOTCONN) {
+		return 0;
+	} else {
+		return 0;
+	}
 }
 
-static void available_contexts_notify(struct k_work *work)
+static int available_contexts_notify(struct bt_conn *conn)
 {
 	struct bt_pacs_context context = {
 		.snk = sys_cpu_to_le16(snk_available_contexts),
@@ -595,12 +736,235 @@ static void available_contexts_notify(struct k_work *work)
 	};
 	int err;
 
-	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_AVAILABLE_CONTEXT, pacs_svc.attrs,
+	err = pacs_gatt_notify(conn, BT_UUID_PACS_AVAILABLE_CONTEXT, pacs_svc.attrs,
 				  &context, sizeof(context));
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_WRN("Available Audio Contexts notify failed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int supported_contexts_notify(struct bt_conn *conn)
+{
+	struct bt_pacs_context context = {
+		.snk = sys_cpu_to_le16(snk_supported_contexts),
+		.src = sys_cpu_to_le16(src_supported_contexts),
+	};
+	int err;
+
+	err = pacs_gatt_notify(conn, BT_UUID_PACS_SUPPORTED_CONTEXT, pacs_svc.attrs,
+				  &context, sizeof(context));
+	if (err != 0 && err != -ENOTCONN) {
+		LOG_WRN("Supported Audio Contexts notify failed: %d", err);
+
+		return err;
+	}
+	return 0;
+}
+
+void pacs_gatt_notify_complete_cb(struct bt_conn *conn, void *user_data)
+{
+	/* Notification done, clear bit and reschedule work */
+	atomic_clear(&notify_rdy);
+	k_work_submit(&deferred_nfy_work);
+}
+
+static int pacs_gatt_notify(struct bt_conn *conn,
+			    const struct bt_uuid *uuid,
+			    const struct bt_gatt_attr *attr,
+			    const void *data,
+			    uint16_t len)
+{
+	int err;
+	struct bt_gatt_notify_params params;
+
+	memset(&params, 0, sizeof(params));
+	params.uuid = uuid;
+	params.attr = attr;
+	params.data = data;
+	params.len  = len;
+	params.func = pacs_gatt_notify_complete_cb;
+
+	/* Mark notification in progress */
+	atomic_set(&notify_rdy, 1);
+
+	err = bt_gatt_notify_cb(conn, &params);
+	if (err != 0) {
+		atomic_clear(&notify_rdy);
+	}
+
+	if (err && err != -ENOTCONN) {
+		return err;
+	}
+
+	return 0;
+}
+
+static void notify_cb(struct bt_conn *conn, void *data)
+{
+	struct pacs_client *client = &clients[bt_conn_index(conn)];
+	struct bt_conn_info info;
+	int err = 0;
+
+	LOG_DBG("");
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	/* Check if we have unverified notifications in progress */
+	if (atomic_get(&notify_rdy)) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) &&
+	    atomic_test_bit(client->flags, FLAG_SINK_PAC_CHANGED)) {
+		LOG_DBG("Notifying Sink PAC");
+		err = pac_notify(conn, BT_AUDIO_DIR_SINK);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_SINK_PAC_CHANGED);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) &&
+	    atomic_test_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED)) {
+		LOG_DBG("Notifying Sink Audio Location");
+		err = pac_notify_loc(conn, BT_AUDIO_DIR_SINK);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
+		}
+	}
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE) &&
+	    atomic_test_bit(client->flags, FLAG_SOURCE_PAC_CHANGED)) {
+		LOG_DBG("Notifying Source PAC");
+		err = pac_notify(conn, BT_AUDIO_DIR_SOURCE);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_SOURCE_PAC_CHANGED);
+		}
+	}
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE) &&
+	    atomic_test_and_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED)) {
+		LOG_DBG("Notifying Source Audio Location");
+		err = pac_notify_loc(conn, BT_AUDIO_DIR_SOURCE);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
+		}
+	}
+
+	if (atomic_test_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED)) {
+		LOG_DBG("Notifying Available Contexts");
+		err = available_contexts_notify(conn);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE) &&
+	    atomic_test_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED)) {
+		LOG_DBG("Notifying Supported Contexts");
+		err = supported_contexts_notify(conn);
+		if (!err) {
+			atomic_clear_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
+		}
 	}
 }
+
+static void deferred_nfy_work_handler(struct k_work *work)
+{
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
+}
+
+static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
+		bonded ? "" : "not ");
+
+	if (!bonded) {
+		return;
+	}
+
+	/* Check if already in list, and do nothing if it is */
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		if (atomic_test_bit(clients[i].flags, FLAG_ACTIVE) &&
+		    bt_addr_le_eq(bt_conn_get_dst(conn), &clients[i].addr)) {
+			return;
+		}
+	}
+
+	/* Else add the device */
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		if (!atomic_test_bit(clients[i].flags, FLAG_ACTIVE)) {
+			atomic_set_bit(clients[i].flags, FLAG_ACTIVE);
+			memcpy(&clients[i].addr, bt_conn_get_dst(conn), sizeof(bt_addr_le_t));
+
+			/* Send out all pending notifications */
+			k_work_submit(&deferred_nfy_work);
+			return;
+		}
+	}
+}
+
+static void pacs_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
+{
+	/* Find the device entry to delete */
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		/* Check if match, and if active, if so, reset */
+		if (atomic_test_bit(clients[i].flags, FLAG_ACTIVE) &&
+		    bt_addr_le_eq(peer, &clients[i].addr)) {
+			for (size_t j = 0U; j < FLAG_NUM; j++) {
+				atomic_clear_bit(clients[i].flags, j);
+			}
+			(void)memset(&clients[i].addr, 0, sizeof(bt_addr_le_t));
+			return;
+		}
+	}
+}
+
+static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
+				  enum bt_security_err err)
+{
+	LOG_DBG("%s changed security level to %d", bt_addr_le_str(bt_conn_get_dst(conn)), level);
+
+	if (err != 0 || conn->encrypt == 0) {
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		for (size_t j = 0U; j < FLAG_NUM; j++) {
+			if (atomic_test_bit(clients[i].flags, j)) {
+
+				/**
+				 *  It's enough that one flag is set, as the defer work will go
+				 * through all notifiable characteristics
+				 */
+				k_work_submit(&deferred_nfy_work);
+				return;
+			}
+		}
+	}
+}
+
+static struct bt_conn_cb conn_callbacks = {
+	.security_changed = pacs_security_changed,
+};
+
+static struct bt_conn_auth_info_cb auth_callbacks = {
+	.pairing_complete = pacs_auth_pairing_complete,
+	.bond_deleted = pacs_bond_deleted
+};
 
 bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
 {
@@ -615,25 +979,9 @@ bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
 	return false;
 }
 
-static struct pacs *pacs_get(enum bt_audio_dir dir)
-{
-	switch (dir) {
-#if defined(CONFIG_BT_PAC_SNK)
-	case BT_AUDIO_DIR_SINK:
-		return &snk_pacs;
-#endif /* CONFIG_BT_PAC_SNK */
-#if defined(CONFIG_BT_PAC_SRC)
-	case BT_AUDIO_DIR_SOURCE:
-		return &src_pacs;
-#endif /* CONFIG_BT_PAC_SRC */
-	default:
-		return NULL;
-	}
-}
-
 void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func, void *user_data)
 {
-	struct pacs *pac;
+	sys_slist_t *pac;
 
 	CHECKIF(func == NULL) {
 		LOG_ERR("func is NULL");
@@ -645,30 +993,67 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func,
 		return;
 	}
 
-	foreach_cap(&pac->list, func, user_data);
+	foreach_cap(pac, func, user_data);
+}
+
+static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void *data)
+{
+	for (uint8_t i = 0; i < ARRAY_SIZE(clients); i++) {
+		/* Check if device is registered, it not, add it */
+		if (!atomic_test_bit(clients[i].flags, FLAG_ACTIVE)) {
+			char addr_str[BT_ADDR_LE_STR_LEN];
+
+			atomic_set_bit(clients[i].flags, FLAG_ACTIVE);
+			memcpy(&clients[i].addr, &info->addr, sizeof(bt_addr_le_t));
+			bt_addr_le_to_str(&clients[i].addr, addr_str, sizeof(addr_str));
+			LOG_DBG("Added %s to bonded list\n", addr_str);
+			return;
+		}
+	}
 }
 
 /* Register Audio Capability */
 int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
-	struct pacs *pac;
+	const struct bt_audio_codec_cap *codec_cap;
+	static bool callbacks_registered;
+	sys_slist_t *pac;
 
-	if (!cap || !cap->codec) {
+	if (!cap || !cap->codec_cap) {
 		return -EINVAL;
 	}
+
+	codec_cap = cap->codec_cap;
 
 	pac = pacs_get(dir);
 	if (!pac) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, dir, cap->codec->id,
-	       cap->codec->cid, cap->codec->vid);
+	/* Restore bonding list */
+	bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
 
-	sys_slist_append(&pac->list, &cap->_node);
+	LOG_DBG("cap %p dir %s codec_cap id 0x%02x codec_cap cid 0x%04x codec_cap vid 0x%04x", cap,
+		bt_audio_dir_str(dir), codec_cap->id, codec_cap->cid, codec_cap->vid);
 
-	pacs_changed(pac);
+	sys_slist_append(pac, &cap->_node);
+
+	if (!callbacks_registered) {
+		bt_conn_cb_register(&conn_callbacks);
+		bt_conn_auth_info_cb_register(&auth_callbacks);
+
+		callbacks_registered = true;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) && dir == BT_AUDIO_DIR_SINK) {
+		pacs_set_notify_bit(FLAG_SINK_PAC_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE) && dir == BT_AUDIO_DIR_SOURCE) {
+		pacs_set_notify_bit(FLAG_SOURCE_PAC_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+	}
 
 	return 0;
 }
@@ -676,7 +1061,7 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 /* Unregister Audio Capability */
 int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
-	struct pacs *pac;
+	sys_slist_t *pac;
 
 	if (!cap) {
 		return -EINVAL;
@@ -687,13 +1072,28 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	LOG_DBG("cap %p dir 0x%02x", cap, dir);
+	LOG_DBG("cap %p dir %s", cap, bt_audio_dir_str(dir));
 
-	if (!sys_slist_find_and_remove(&pac->list, &cap->_node)) {
+	if (!sys_slist_find_and_remove(pac, &cap->_node)) {
 		return -ENOENT;
 	}
 
-	pacs_changed(pac);
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	case BT_AUDIO_DIR_SINK:
+		pacs_set_notify_bit(FLAG_SINK_PAC_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+		break;
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE) */
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	case BT_AUDIO_DIR_SOURCE:
+		pacs_set_notify_bit(FLAG_SOURCE_PAC_CHANGED);
+		k_work_submit(&deferred_nfy_work);
+		break;
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+	default:
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -702,12 +1102,16 @@ int bt_pacs_set_location(enum bt_audio_dir dir, enum bt_audio_location location)
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
-		return set_snk_location(location);
+		set_snk_location(location);
+		break;
 	case BT_AUDIO_DIR_SOURCE:
-		return set_src_location(location);
+		set_src_location(location);
+		break;
+	default:
+		return -EINVAL;
 	}
 
-	return -EINVAL;
+	return 0;
 }
 
 int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
@@ -717,6 +1121,18 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context 
 		return set_snk_available_contexts(contexts);
 	case BT_AUDIO_DIR_SOURCE:
 		return set_src_available_contexts(contexts);
+	}
+
+	return -EINVAL;
+}
+
+int bt_pacs_set_supported_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return set_snk_supported_contexts(contexts);
+	case BT_AUDIO_DIR_SOURCE:
+		return set_src_supported_contexts(contexts);
 	}
 
 	return -EINVAL;

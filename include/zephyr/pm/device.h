@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_BUSY,
 	/** Indicate if the device failed to power up. */
 	PM_DEVICE_FLAG_TURN_ON_FAILED,
+	/** Indicate if the device has claimed a power domain */
+	PM_DEVICE_FLAG_PD_CLAIMED,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
@@ -43,8 +46,10 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_RUNTIME_ENABLED,
 	/** Indicates if the device pm is locked.  */
 	PM_DEVICE_FLAG_STATE_LOCKED,
-	/** Indicateds if the device is used as a power domain */
+	/** Indicates if the device is used as a power domain */
 	PM_DEVICE_FLAG_PD,
+	/** Indicates if device runtime PM should be automatically enabled */
+	PM_DEVICE_FLAG_RUNTIME_AUTO,
 };
 
 /** @endcond */
@@ -162,6 +167,22 @@ struct pm_device {
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
+ * @brief Utility macro to initialize #pm_device flags
+ *
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ */
+#define Z_PM_DEVICE_FLAGS(node_id)					 \
+	(COND_CODE_1(							 \
+		 DT_NODE_EXISTS(node_id),				 \
+		 ((DT_PROP_OR(node_id, wakeup_source, 0)		 \
+			 << PM_DEVICE_FLAG_WS_CAPABLE) |		 \
+		  (DT_PROP_OR(node_id, zephyr_pm_device_runtime_auto, 0) \
+			 << PM_DEVICE_FLAG_RUNTIME_AUTO) |		 \
+		  (DT_NODE_HAS_COMPAT(node_id, power_domain) <<		 \
+			 PM_DEVICE_FLAG_PD)),				 \
+		 (0)))
+
+/**
  * @brief Utility macro to initialize #pm_device.
  *
  * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
@@ -171,18 +192,13 @@ struct pm_device {
  * @param node_id Devicetree node for the initialized device (can be invalid).
  * @param pm_action_cb Device PM control callback function.
  */
-#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)			\
-	{								\
-		Z_PM_DEVICE_RUNTIME_INIT(obj)				\
-		.action_cb = pm_action_cb,				\
-		.state = PM_DEVICE_STATE_ACTIVE,			\
-		.flags = ATOMIC_INIT(COND_CODE_1(			\
-				DT_NODE_EXISTS(node_id),		\
-				((DT_PROP_OR(node_id, wakeup_source, 0) \
-				  << PM_DEVICE_FLAG_WS_CAPABLE) |	\
-				 (DT_NODE_HAS_COMPAT(node_id, power_domain) << \
-				  PM_DEVICE_FLAG_PD)), (0))),		\
-		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			\
+#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)		  \
+	{							  \
+		Z_PM_DEVICE_RUNTIME_INIT(obj)			  \
+		.action_cb = pm_action_cb,			  \
+		.state = PM_DEVICE_STATE_ACTIVE,		  \
+		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id)), \
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)		  \
 	}
 
 /**
@@ -195,7 +211,7 @@ struct pm_device {
 /**
  * @brief Define device PM slot.
  *
- * This macro defines a pointer to a device in the z_pm_device_slots region.
+ * This macro defines a pointer to a device in the pm_device_slots region.
  * When invoked for each device with PM, it will effectively result in a device
  * pointer array with the same size of the actual devices with PM enabled. This
  * is used internally by the PM subsystem to keep track of suspended devices
@@ -204,9 +220,8 @@ struct pm_device {
  * @param dev_id Device id.
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
-	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(__pm_slot_, dev_id) __used				\
-	__attribute__((__section__(".z_pm_device_slots")))
+	static const STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
+			_CONCAT(__pm_slot_, dev_id))
 
 #ifdef CONFIG_PM_DEVICE
 /**
@@ -561,10 +576,27 @@ int pm_device_power_domain_remove(const struct device *dev,
  *
  * @param dev Device instance.
  *
- * @retval true If device is currently powered
+ * @retval true If device is currently powered, or is assumed to be powered
+ * (i.e. it does not support PM or is not under a PM domain)
  * @retval false If device is not currently powered
  */
 bool pm_device_is_powered(const struct device *dev);
+
+/**
+ * @brief Setup a device driver into the lowest valid power mode
+ *
+ * This helper function is intended to be called at the end of a driver
+ * init function to automatically setup the device into the lowest power
+ * mode. It assumes that the device has been configured as if it is in
+ * @ref PM_DEVICE_STATE_OFF.
+ *
+ * @param dev Device instance.
+ * @param action_cb Device PM control callback function.
+ * @retval 0 On success.
+ * @retval -errno Error code from @a action_cb on failure.
+ */
+int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb);
+
 #else
 static inline int pm_device_state_get(const struct device *dev,
 				      enum pm_device_state *state)
@@ -637,12 +669,16 @@ static inline bool pm_device_on_power_domain(const struct device *dev)
 static inline int pm_device_power_domain_add(const struct device *dev,
 					     const struct device *domain)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
 	return -ENOSYS;
 }
 
 static inline int pm_device_power_domain_remove(const struct device *dev,
 						const struct device *domain)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
 	return -ENOSYS;
 }
 
@@ -651,6 +687,19 @@ static inline bool pm_device_is_powered(const struct device *dev)
 	ARG_UNUSED(dev);
 	return true;
 }
+
+static inline int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb)
+{
+	int rc;
+
+	/* When power management is not enabled, all drivers should initialise to active state */
+	rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
+	if (rc == 0) {
+		rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	}
+	return rc;
+}
+
 #endif /* CONFIG_PM_DEVICE */
 
 /** @} */

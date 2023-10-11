@@ -11,7 +11,7 @@ common:
 
 tests:
   sample.subsys.edac:
-    platform_allow: ehl_crb
+    platform_allow: intel_ehl_crb
     integration_platforms:
-      - ehl_crb
+      - intel_ehl_crb
     tags: edac

@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL ISH CPU
+
+compatible: "intel,ish"
+
+include: cpu.yaml

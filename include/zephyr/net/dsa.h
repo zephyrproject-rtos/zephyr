@@ -16,7 +16,7 @@
 
 /**
  * @brief DSA definitions and helpers
- * @defgroup DSA - Distributed Switch Architecture definitions and helpers
+ * @defgroup DSA Distributed Switch Architecture definitions and helpers
  * @ingroup networking
  * @{
  */

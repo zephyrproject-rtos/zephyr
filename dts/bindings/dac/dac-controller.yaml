@@ -6,6 +6,6 @@
 include: base.yaml
 
 properties:
-    "#io-channel-cells":
-      type: int
-      required: true
+  "#io-channel-cells":
+    type: int
+    required: true

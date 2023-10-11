@@ -19,6 +19,8 @@ struct mcux_iuart_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
+	/* initial parity, 0 for none, 1 for odd, 2 for even */
+	uint8_t parity;
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -241,10 +243,26 @@ static int mcux_iuart_init(const struct device *dev)
 	uart_config.enableRx = true;
 	uart_config.baudRate_Bps = config->baud_rate;
 
+	clock_control_on(config->clock_dev, config->clock_subsys);
+	switch (config->parity) {
+	case UART_CFG_PARITY_NONE:
+		uart_config.parityMode = kUART_ParityDisabled;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		uart_config.parityMode = kUART_ParityEven;
+		break;
+	case UART_CFG_PARITY_ODD:
+		uart_config.parityMode = kUART_ParityOdd;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	UART_Init(config->base, &uart_config, clock_freq);
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
+		clock_control_off(config->clock_dev, config->clock_subsys);
 		return err;
 	}
 
@@ -311,6 +329,7 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
+	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
 }

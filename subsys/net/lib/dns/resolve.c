@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <zephyr/types.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -413,7 +413,7 @@ static inline void invoke_query_callback(int status,
 	/* Only notify if the slot is neither released nor in the process of
 	 * being released.
 	 */
-	if (pending_query->query != NULL)  {
+	if (pending_query->query != NULL && pending_query->cb != NULL)  {
 		pending_query->cb(status, info, pending_query->user_data);
 	}
 }
@@ -1075,7 +1075,7 @@ static void query_timeout(struct k_work *work)
 	 */
 	ret = k_mutex_lock(&pending_query->ctx->lock, K_NO_WAIT);
 	if (ret != 0) {
-		struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+		struct k_work_delayable *dwork2 = k_work_delayable_from_work(work);
 
 		/*
 		 * Reschedule query timeout handler with some delay, so that all
@@ -1085,7 +1085,7 @@ static void query_timeout(struct k_work *work)
 		 * Timeout value was arbitrarily chosen and can be updated in
 		 * future if needed.
 		 */
-		k_work_reschedule(dwork, K_MSEC(10));
+		k_work_reschedule(dwork2, K_MSEC(10));
 		return;
 	}
 
@@ -1386,6 +1386,59 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 	return ret;
 }
 
+static bool dns_server_exists(struct dns_resolve_context *ctx,
+			      const struct sockaddr *addr)
+{
+	for (int i = 0; i < SERVER_COUNT; i++) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && (addr->sa_family == AF_INET) &&
+		    (ctx->servers[i].dns_server.sa_family == AF_INET)) {
+			if (net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
+					      &net_sin(&ctx->servers[i].dns_server)->sin_addr)) {
+				return true;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && (addr->sa_family == AF_INET6) &&
+		    (ctx->servers[i].dns_server.sa_family == AF_INET6)) {
+			if (net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
+					      &net_sin6(&ctx->servers[i].dns_server)->sin6_addr)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+static bool dns_servers_exists(struct dns_resolve_context *ctx,
+			       const char *servers[],
+			       const struct sockaddr *servers_sa[])
+{
+	if (servers) {
+		for (int i = 0; i < SERVER_COUNT && servers[i]; i++) {
+			struct sockaddr addr;
+
+			if (!net_ipaddr_parse(servers[i], strlen(servers[i]), &addr)) {
+				continue;
+			}
+
+			if (!dns_server_exists(ctx, &addr)) {
+				return false;
+			}
+		}
+	}
+
+	if (servers_sa) {
+		for (int i = 0; i < SERVER_COUNT && servers_sa[i]; i++) {
+			if (!dns_server_exists(ctx, servers_sa[i])) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers[],
 			    const struct sockaddr *servers_sa[])
@@ -1397,6 +1450,12 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	if (dns_servers_exists(ctx, servers, servers_sa)) {
+		/* DNS servers did not change. */
+		err = 0;
+		goto unlock;
+	}
 
 	if (ctx->state == DNS_RESOLVE_CONTEXT_DEACTIVATING) {
 		err = -EBUSY;

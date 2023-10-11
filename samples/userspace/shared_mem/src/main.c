@@ -100,7 +100,7 @@ _app_ct_d char ctMSG[] = "CT!\n";
 
 
 
-void main(void)
+int main(void)
 {
 	struct k_mem_partition *enc_parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
@@ -193,13 +193,14 @@ void main(void)
 	k_thread_start(&ct_thread);
 	k_sem_give(&allforone);
 	printk("CT thread started\n");
+	return 0;
 }
 
 
 
 /*
  * The enc thread.
- * Function: initialize the the simulation of the wheels.
+ * Function: initialize the simulation of the wheels.
  * Copy memory from pt thread and encrypt to a local buffer
  * then copy to the ct thread.
  */

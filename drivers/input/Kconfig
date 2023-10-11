@@ -1,0 +1,21 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if INPUT
+
+menu "Input drivers"
+
+source "drivers/input/Kconfig.cap1203"
+source "drivers/input/Kconfig.cst816s"
+source "drivers/input/Kconfig.ft5336"
+source "drivers/input/Kconfig.gpio_keys"
+source "drivers/input/Kconfig.gpio_qdec"
+source "drivers/input/Kconfig.gt911"
+source "drivers/input/Kconfig.npcx"
+source "drivers/input/Kconfig.sdl"
+source "drivers/input/Kconfig.stmpe811"
+source "drivers/input/Kconfig.xpt2046"
+
+endmenu # Input Drivers
+
+endif # INPUT

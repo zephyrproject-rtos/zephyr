@@ -4,4 +4,6 @@ common:
 
 tests:
   logging.log_cache:
-    tags: log_cache logging
+    tags:
+      - log_cache
+      - logging

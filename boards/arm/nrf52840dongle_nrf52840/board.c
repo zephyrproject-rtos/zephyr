@@ -7,9 +7,8 @@
 #include <zephyr/init.h>
 #include <hal/nrf_power.h>
 
-static int board_nrf52840dongle_nrf52840_init(const struct device *dev)
+static int board_nrf52840dongle_nrf52840_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* if the nrf52840dongle_nrf52840 board is powered from USB
 	 * (high voltage mode), GPIO output voltage is set to 1.8 volts by

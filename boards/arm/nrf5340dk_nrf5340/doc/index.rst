@@ -310,12 +310,12 @@ Testing the LEDs and buttons in the nRF5340 DK
 There are 2 samples that allow you to test that the buttons (switches) and
 LEDs on the board are working properly with Zephyr:
 
-* :ref:`blinky-sample`
-* :ref:`button-sample`
+* :zephyr:code-sample:`blinky`
+* :zephyr:code-sample:`button`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf5340dk_nrf5340/nrf5340_cpuapp_common.dts`.
+:zephyr_file:`boards/arm/nrf5340dk_nrf5340/nrf5340_cpuapp_common.dtsi`.
 
 References
 **********

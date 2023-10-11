@@ -1,0 +1,20 @@
+# Copyright (c) 2019 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPSS DMA Controller node
+
+compatible: "intel,lpss"
+
+include: dma-controller.yaml
+
+properties:
+  "#dma-cells":
+    const: 1
+
+  dma-parent:
+    type: phandle
+    description: |
+      Parent device for LPSS DMA to get its base address.
+
+dma-cells:
+  - channel

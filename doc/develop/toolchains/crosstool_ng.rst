@@ -1,5 +1,13 @@
-Crosstool-NG
-############
+.. _toolchain_xtools:
+
+Crosstool-NG (Deprecated)
+#########################
+
+.. warning::
+
+   ``xtools`` toolchain variant is deprecated. The
+   :ref:`cross-compile toolchain variant <other_x_compilers>` should be used
+   when using a custom toolchain built with Crosstool-NG.
 
 You can build toolchains from source code using crosstool-NG.
 

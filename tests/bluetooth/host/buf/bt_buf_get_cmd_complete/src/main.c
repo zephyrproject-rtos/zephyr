@@ -37,17 +37,15 @@ ZTEST_SUITE(bt_buf_get_cmd_complete_returns_null, NULL, NULL, tc_setup, NULL, NU
  *  Expected behaviour:
  *   - net_buf_alloc() to be called with the correct memory allocation pool
  *     and the same timeout value passed to bt_buf_get_cmd_complete()
- *   - bt_dev.sent_cmd value isn't changed after calling bt_buf_get_cmd_complete()
+ *   - bt_dev.sent_cmd value is cleared after calling bt_buf_get_cmd_complete()
  *   - bt_buf_get_cmd_complete() returns NULL
  */
 ZTEST(bt_buf_get_cmd_complete_returns_null, test_returns_null_sent_cmd_is_null)
 {
 	struct net_buf *returned_buf;
-	struct net_buf *sent_cmd_not_changing_value;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	bt_dev.sent_cmd = NULL;
-	sent_cmd_not_changing_value = bt_dev.sent_cmd;
 
 	struct net_buf_pool *memory_pool;
 
@@ -68,8 +66,8 @@ ZTEST(bt_buf_get_cmd_complete_returns_null, test_returns_null_sent_cmd_is_null)
 	zassert_is_null(returned_buf,
 			"bt_buf_get_cmd_complete() returned non-NULL value while expecting NULL");
 
-	zassert_equal(bt_dev.sent_cmd, sent_cmd_not_changing_value,
-		     "bt_buf_get_cmd_complete() caused bt_dev.sent_cmd value to be changed");
+	zassert_equal(bt_dev.sent_cmd, NULL,
+		     "bt_buf_get_cmd_complete() didn't clear bt_dev.sent_cmd");
 }
 
 /*
@@ -83,7 +81,7 @@ ZTEST(bt_buf_get_cmd_complete_returns_null, test_returns_null_sent_cmd_is_null)
  *  Expected behaviour:
  *   - net_buf_alloc() to be called with the correct memory allocation pool
  *     and the same timeout value passed to bt_buf_get_cmd_complete()
- *   - bt_dev.sent_cmd value isn't changed after calling bt_buf_get_cmd_complete()
+ *   - bt_dev.sent_cmd value is cleared after calling bt_buf_get_cmd_complete()
  *   - bt_buf_get_cmd_complete() returns the same value returned by net_buf_alloc_fixed()
  *   - Return buffer type is set to BT_BUF_EVT
  */
@@ -92,11 +90,9 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
 	uint8_t returned_buffer_type;
-	struct net_buf *sent_cmd_not_changing_value;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	bt_dev.sent_cmd = NULL;
-	sent_cmd_not_changing_value = bt_dev.sent_cmd;
 
 	struct net_buf_pool *memory_pool;
 
@@ -122,8 +118,8 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
 		      "bt_buf_get_cmd_complete() returned incorrect buffer type %u, expected %u (%s)",
 		      returned_buffer_type, BT_BUF_EVT, STRINGIFY(BT_BUF_EVT));
 
-	zassert_equal(bt_dev.sent_cmd, sent_cmd_not_changing_value,
-		     "bt_buf_get_cmd_complete() caused bt_dev.sent_cmd value to be changed");
+	zassert_equal(bt_dev.sent_cmd, NULL,
+		     "bt_buf_get_cmd_complete() didn't clear bt_dev.sent_cmd");
 }
 
 /*
@@ -135,7 +131,7 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
  *
  *  Expected behaviour:
  *   - net_buf_alloc() isn't called
- *   - bt_dev.sent_cmd value isn't changed after calling bt_buf_get_cmd_complete()
+ *   - bt_dev.sent_cmd value is cleared after calling bt_buf_get_cmd_complete()
  *   - bt_buf_get_cmd_complete() returns the same value set to bt_dev.sent_cmd
  *   - Return buffer type is set to BT_BUF_EVT
  */
@@ -144,18 +140,15 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
 	uint8_t returned_buffer_type;
-	struct net_buf *sent_cmd_not_changing_value;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	bt_dev.sent_cmd = &expected_buf;
-	sent_cmd_not_changing_value = bt_dev.sent_cmd;
 
 	net_buf_ref_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
 
-	expect_single_call_net_buf_reserve(bt_dev.sent_cmd);
-	expect_single_call_net_buf_ref(bt_dev.sent_cmd);
+	expect_single_call_net_buf_reserve(&expected_buf);
 	expect_not_called_net_buf_alloc();
 
 	zassert_equal(returned_buf, &expected_buf,
@@ -166,6 +159,6 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
 		      "bt_buf_get_cmd_complete() returned incorrect buffer type %u, expected %u (%s)",
 		      returned_buffer_type, BT_BUF_EVT, STRINGIFY(BT_BUF_EVT));
 
-	zassert_equal(bt_dev.sent_cmd, sent_cmd_not_changing_value,
-		     "bt_buf_get_cmd_complete() caused bt_dev.sent_cmd value to be changed");
+	zassert_equal(bt_dev.sent_cmd, NULL,
+		     "bt_buf_get_cmd_complete() didn't clear bt_dev.sent_cmd");
 }

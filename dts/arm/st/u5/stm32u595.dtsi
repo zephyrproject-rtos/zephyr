@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2023 PSICONTROl nv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+
+
+/ {
+	soc {
+		compatible = "st,stm32u595", "st,stm32u5", "simple-bus";
+
+		pinctrl: pin-controller@42020000 {
+			compatible = "st,stm32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42020000 0x2800>;
+
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42022400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000200>;
+			};
+		};
+
+		usart6: serial@40006400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40006400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			resets = <&rctl STM32_RESET(APB1L, 25U)>;
+			interrupts = <126 0>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@40009800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000040>;
+			interrupts = <128 0>, <127 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c6: i2c@40009c00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000080>;
+			interrupts = <130 0>, <129 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+	};
+};

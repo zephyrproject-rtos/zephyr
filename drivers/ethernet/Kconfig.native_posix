@@ -5,7 +5,7 @@
 
 menuconfig ETH_NATIVE_POSIX
 	bool "Native Posix Ethernet driver"
-	depends on ARCH_POSIX
+	depends on ARCH_POSIX && EXTERNAL_LIBC
 	help
 	  Enable native posix ethernet driver. Note, this driver is run inside
 	  a process in your host system.
@@ -124,5 +124,15 @@ config ETH_NATIVE_POSIX_MAC_ADDR
 	  aa:33:cc:22:e2:c0).  The default is an empty string, which
 	  means the code will make 00:00:5E:00:53:XX, where XX will be
 	  random.
+
+config ETH_NATIVE_POSIX_RX_TIMEOUT
+	int "Ethernet RX timeout"
+	default 1 if NET_GPTP
+	default 50
+	range 1 100
+	help
+	  Native posix ethernet driver repeatedly checks for new data.
+	  Specify how long the thread sleeps between these checks if no new data
+	  available.
 
 endif # ETH_NATIVE_POSIX

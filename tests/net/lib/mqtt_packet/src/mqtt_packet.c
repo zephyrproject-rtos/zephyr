@@ -1125,8 +1125,6 @@ static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test)
 
 ZTEST(mqtt_packet_fn, test_mqtt_packet)
 {
-	TC_START("MQTT Library test");
-
 	int rc;
 	int i;
 

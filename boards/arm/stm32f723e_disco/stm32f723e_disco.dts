@@ -8,6 +8,7 @@
 #include <st/f7/stm32f723Xe.dtsi>
 #include <st/f7/stm32f723i(c-e)kx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
@@ -18,6 +19,7 @@
 		zephyr,shell-uart = &usart6;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &mx25r512;
 	};
 
 	leds {
@@ -41,6 +43,7 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -49,6 +52,7 @@
 		led1 = &red_led;
 		led2 = &green_led;
 		sw0 = &user_button;
+		spi-flash0 = &mx25r512;
 	};
 };
 
@@ -110,6 +114,25 @@
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pb4 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		&quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
+		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	flash-id = <1>;
+	status = "okay";
+
+	mx25r512: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		qspi-max-frequency = <8000000>;
+		size = <DT_SIZE_M(512)>; /* 64 MBytes */
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_4_4";
+	};
 };
 
 zephyr_udc0: &usbotg_fs {

@@ -93,6 +93,7 @@ typedef int (*w1_write_block_t)(const struct device *dev, const uint8_t *buffer,
 typedef size_t (*w1_get_slave_count_t)(const struct device *dev);
 typedef int (*w1_configure_t)(const struct device *dev,
 			      enum w1_settings_type type, uint32_t value);
+typedef int (*w1_change_bus_lock_t)(const struct device *dev, bool lock);
 
 __subsystem struct w1_driver_api {
 	w1_reset_bus_t reset_bus;
@@ -103,6 +104,7 @@ __subsystem struct w1_driver_api {
 	w1_read_block_t read_block;
 	w1_write_block_t write_block;
 	w1_configure_t configure;
+	w1_change_bus_lock_t change_bus_lock;
 };
 /** @endcond */
 
@@ -112,6 +114,11 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
 	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
+	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
+
+	if (api->change_bus_lock) {
+		return api->change_bus_lock(dev, lock);
+	}
 
 	if (lock) {
 		return k_mutex_lock(&ctrl_data->bus_lock, K_FOREVER);
@@ -341,13 +348,55 @@ static inline int z_impl_w1_configure(const struct device *dev,
  * @name 1-Wire ROM Commands
  * @{
  */
+
+/**
+ * This command allows the bus master to read the slave devices without
+ * providing their ROM code.
+ */
 #define W1_CMD_SKIP_ROM			0xCC
+
+/**
+ * This command allows the bus master to address a specific slave device by
+ * providing its ROM code.
+ */
 #define W1_CMD_MATCH_ROM		0x55
+
+/**
+ * This command allows the bus master to resume a previous read out from where
+ * it left off.
+ */
 #define W1_CMD_RESUME			0xA5
+
+/**
+ * This command allows the bus master to read the ROM code from a single slave
+ * device.
+ * This command should be used when there is only a single slave device on the
+ * bus.
+ */
 #define W1_CMD_READ_ROM			0x33
+
+/**
+ * This command allows the bus master to discover the addresses (i.e., ROM
+ * codes) of all slave devices on the bus.
+ */
 #define W1_CMD_SEARCH_ROM		0xF0
+
+/**
+ * This command allows the bus master to identify which devices have experienced
+ * an alarm condition.
+ */
 #define W1_CMD_SEARCH_ALARM		0xEC
+
+/**
+ * This command allows the bus master to address all devices on the bus and then
+ * switch them to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_SKIP_ROM	0x3C
+
+/**
+ * This command allows the bus master to address a specific device and switch it
+ * to overdrive speed.
+ */
 #define W1_CMD_OVERDRIVE_MATCH_ROM	0x69
 
 /** @} */

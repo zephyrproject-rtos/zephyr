@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/nuvoton_numaker/*/Kconfig.defconfig.series"
+
+if SOC_FAMILY_NUMAKER
+
+config RESET
+	default y
+
+endif

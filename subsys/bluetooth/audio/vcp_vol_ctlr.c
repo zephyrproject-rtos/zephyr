@@ -28,35 +28,6 @@ LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
 
 #include "common/bt_str.h"
 
-struct bt_vcp_vol_ctlr {
-	struct vcs_state state;
-	uint8_t flags;
-
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t state_handle;
-	uint16_t control_handle;
-	uint16_t flag_handle;
-	struct bt_gatt_subscribe_params state_sub_params;
-	struct bt_gatt_discover_params state_sub_disc_params;
-	struct bt_gatt_subscribe_params flag_sub_params;
-	struct bt_gatt_discover_params flag_sub_disc_params;
-	bool cp_retried;
-
-	bool busy;
-	struct vcs_control_vol cp_val;
-	struct bt_gatt_write_params write_params;
-	struct bt_gatt_read_params read_params;
-	struct bt_gatt_discover_params discover_params;
-	struct bt_uuid_16 uuid;
-	struct bt_conn *conn;
-
-	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST];
-	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST];
-};
-
 /* Callback functions */
 static struct bt_vcp_vol_ctlr_cb *vcp_vol_ctlr_cb;
 
@@ -467,8 +438,6 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			int err;
-
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->ccc_handle = 0;
@@ -544,8 +513,13 @@ static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t 
 {
 	int err;
 
-	CHECKIF(vol_ctlr->conn == NULL) {
-		LOG_DBG("NULL conn");
+	CHECKIF(vol_ctlr == NULL) {
+		LOG_DBG("NULL ctlr");
+		return -EINVAL;
+	}
+
+	if (vol_ctlr->conn == NULL) {
+		LOG_DBG("NULL ctlr conn");
 		return -EINVAL;
 	}
 
@@ -754,6 +728,11 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 		return -EINVAL;
 	}
 
+	CHECKIF(out_vol_ctlr == NULL) {
+		LOG_DBG("NULL ctlr");
+		return -EINVAL;
+	}
+
 	vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
 
 	if (vol_ctlr->busy) {
@@ -865,6 +844,11 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr, struct bt_c
 		return -EINVAL;
 	}
 
+	CHECKIF(conn == NULL) {
+		LOG_DBG("NULL conn pointer");
+		return -EINVAL;
+	}
+
 	if (vol_ctlr->conn == NULL) {
 		LOG_DBG("vol_ctlr pointer not associated with a connection. "
 			"Do discovery first");
@@ -879,8 +863,13 @@ int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
-	CHECKIF(vol_ctlr->conn == NULL) {
-		LOG_DBG("NULL conn");
+	CHECKIF(vol_ctlr == NULL) {
+		LOG_DBG("NULL ctlr");
+		return -EINVAL;
+	}
+
+	if (vol_ctlr->conn == NULL) {
+		LOG_DBG("NULL ctlr conn");
 		return -EINVAL;
 	}
 
@@ -908,8 +897,13 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
-	CHECKIF(vol_ctlr->conn == NULL) {
-		LOG_DBG("NULL conn");
+	CHECKIF(vol_ctlr == NULL) {
+		LOG_DBG("NULL ctlr");
+		return -EINVAL;
+	}
+
+	if (vol_ctlr->conn == NULL) {
+		LOG_DBG("NULL ctlr conn");
 		return -EINVAL;
 	}
 
@@ -957,8 +951,13 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 {
 	int err;
 
-	CHECKIF(vol_ctlr->conn == NULL) {
-		LOG_DBG("NULL conn");
+	CHECKIF(vol_ctlr == NULL) {
+		LOG_DBG("NULL ctlr");
+		return -EINVAL;
+	}
+
+	if (vol_ctlr->conn == NULL) {
+		LOG_DBG("NULL ctlr conn");
 		return -EINVAL;
 	}
 

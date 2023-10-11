@@ -36,7 +36,7 @@
 		jtag_uart: uart@201000 {
 			compatible = "altr,jtag-uart";
 			reg = <0x201000 0x400>;
-
+			interrupts = <0>;
 			status = "disabled";
 		};
 

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f411Xe.dtsi>
 #include <st/f4/stm32f411v(c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F411E-DISCO board";
@@ -15,8 +16,10 @@
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,shell-uart = &usart2;
+		zephyr,uart-mcumgr = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -59,7 +62,8 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -75,6 +79,8 @@
 		pwm-led3 = &blue_pwm_led;
 		magn0 = &lsm303agr_magn;
 		accel0 = &lsm303agr_accel;
+		mcuboot-button0 = &user_button;
+		mcuboot-led0 = &orange_led_3;
 	};
 };
 
@@ -157,4 +163,33 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(128)>;
+		};
+
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 DT_SIZE_K(128)>;
+		};
+
+		scratch_partition: partition@60000 {
+			label = "image-scratch";
+			reg = <0x00060000 DT_SIZE_K(128)>;
+		};
+	};
 };

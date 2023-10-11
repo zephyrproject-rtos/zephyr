@@ -9,6 +9,8 @@ config ENTROPY_GECKO_TRNG
 	default y
 	depends on DT_HAS_SILABS_GECKO_TRNG_ENABLED
 	select ENTROPY_HAS_DRIVER
+	select CRYPTO_ACC_GECKO_TRNG if SOC_SERIES_EFR32BG22
+	select CRYPTO_ACC_GECKO_TRNG if SOC_SERIES_EFR32BG27
 	help
 	  This option enables the true random number generator
 	  driver based on the TRNG.

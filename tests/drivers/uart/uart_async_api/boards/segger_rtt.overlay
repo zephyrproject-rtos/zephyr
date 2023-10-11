@@ -5,7 +5,7 @@
 		zephyr,console = &rtt0;
 	};
 
-	rtt0: rtt_chan0 {
+	dut: rtt0: rtt_chan0 {
 		compatible = "segger,rtt-uart";
 		status = "okay";
 	};

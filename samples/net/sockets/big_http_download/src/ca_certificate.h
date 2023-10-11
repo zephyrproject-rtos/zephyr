@@ -13,9 +13,14 @@
  * certificate in PEM format, you can enable support for it in Kconfig.
  */
 
-/* Let's Encrypt Authority X3 for https://www.7-zip.org */
-static const unsigned char ca_certificate[] = {
-#include "lets-encrypt-r3.der.inc"
+/* ISRG Root X1 for https://launchpad.net/ubuntu
+ * DigiCert Global Root G2 for possible redirects
+ */
+static const unsigned char *ca_certificates[] = {
+#include "isrgrootx1.pem"
+,
+#include "DigiCertGlobalRootG2.crt.pem"
 };
+
 
 #endif /* __CA_CERTIFICATE_H__ */

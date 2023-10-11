@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BSIM_NRFXX
+
+# The following file is normally parsed only for the ARM architecture, which is
+# used by Nordic SoCs, so to make the symbols defined in this file available for
+# the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
+# must be read also from here.
+source "soc/arm/nordic_nrf/Kconfig.peripherals"
+
+endif # SOC_SERIES_BSIM_NRFXX
+
+
+# This would eventually be shared by a possible family of simulated NRF boards
+# which use BabbleSim. When that happens, we can move this to a common
+# Kconfig file
+
+config SOC_SERIES_BSIM_NRFXX
+	bool
+	depends on SOC_POSIX
+	help
+	  Any NRF simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF52X
+	bool
+	depends on SOC_SERIES_BSIM_NRFXX
+	help
+	  Any NRF52 simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF53X
+	bool
+	depends on SOC_SERIES_BSIM_NRFXX
+	help
+	  Any NRF53 simulated SOC with BabbleSim, based on the POSIX arch

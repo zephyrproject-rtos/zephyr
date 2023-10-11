@@ -301,6 +301,8 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 
 	net_if_ipv4_addr_add(eswifi->iface, &addr, NET_ADDR_DHCP, 0);
 
+	eswifi->sta.connected = true;
+
 	LOG_DBG("Connected!");
 
 	eswifi_unlock(eswifi);
@@ -326,9 +328,58 @@ static int eswifi_disconnect(struct eswifi_dev *eswifi)
 		err = -EIO;
 	}
 
+	eswifi->sta.connected = false;
+
 	eswifi_unlock(eswifi);
 
 	return err;
+}
+
+static void eswifi_status_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct eswifi_dev *eswifi;
+	char status[] = "CS\r";
+	char rssi[] = "CR\r";
+	char *rsp;
+	int ret;
+
+	eswifi = CONTAINER_OF(dwork, struct eswifi_dev, status_work);
+
+	eswifi_lock(eswifi);
+
+	if (eswifi->role == ESWIFI_ROLE_AP) {
+		goto done;
+	}
+
+	ret = eswifi_at_cmd_rsp(eswifi, status, &rsp);
+	if (ret < 1) {
+		LOG_ERR("Unable to retrieve status");
+		goto done;
+	}
+
+	if (rsp[0] == '0' && eswifi->sta.connected) {
+		eswifi->sta.connected = false;
+		wifi_mgmt_raise_disconnect_result_event(eswifi->iface, 0);
+		goto done;
+	} else if (rsp[0] == '1' && !eswifi->sta.connected) {
+		eswifi->sta.connected = true;
+		wifi_mgmt_raise_connect_result_event(eswifi->iface, 0);
+	}
+
+	ret = eswifi_at_cmd_rsp(eswifi, rssi, &rsp);
+	if (ret < 1) {
+		LOG_ERR("Unable to retrieve rssi");
+		/* continue */
+	} else {
+		eswifi->sta.rssi = atoi(rsp);
+	}
+
+	k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
+				    K_MSEC(1000 * 30));
+
+done:
+	eswifi_unlock(eswifi);
 }
 
 static void eswifi_request_work(struct k_work *item)
@@ -344,6 +395,8 @@ static void eswifi_request_work(struct k_work *item)
 	case ESWIFI_REQ_CONNECT:
 		err = eswifi_connect(eswifi);
 		wifi_mgmt_raise_connect_result_event(eswifi->iface, err);
+		k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
+					    K_MSEC(1000));
 		break;
 	case ESWIFI_REQ_DISCONNECT:
 		err = eswifi_disconnect(eswifi);
@@ -422,9 +475,58 @@ static void eswifi_iface_init(struct net_if *iface)
 
 }
 
-static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
+int eswifi_mgmt_iface_status(const struct device *dev,
+			     struct wifi_iface_status *status)
 {
 	struct eswifi_dev *eswifi = dev->data;
+	struct eswifi_sta *sta = &eswifi->sta;
+
+	/* Update status */
+	eswifi_status_work(&eswifi->status_work.work);
+
+	if (!sta->connected) {
+		status->state = WIFI_STATE_DISCONNECTED;
+		return 0;
+	}
+
+	status->state = WIFI_STATE_COMPLETED;
+	status->ssid_len = strnlen(sta->ssid, WIFI_SSID_MAX_LEN);
+	strncpy(status->ssid, sta->ssid, status->ssid_len);
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->channel = 0;
+
+	if (eswifi->role == ESWIFI_ROLE_CLIENT) {
+		status->iface_mode = WIFI_MODE_INFRA;
+	} else {
+		status->iface_mode = WIFI_MODE_AP;
+	}
+
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+
+	switch (sta->security) {
+	case ESWIFI_SEC_OPEN:
+		status->security = WIFI_SECURITY_TYPE_NONE;
+		break;
+	case ESWIFI_SEC_WPA2_MIXED:
+		status->security = WIFI_SECURITY_TYPE_PSK;
+		break;
+	default:
+		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	}
+
+	status->mfp = WIFI_MFP_DISABLE;
+	status->rssi = sta->rssi;
+
+	return 0;
+}
+
+static int eswifi_mgmt_scan(const struct device *dev,
+			    struct wifi_scan_params *params,
+			    scan_result_cb_t cb)
+{
+	struct eswifi_dev *eswifi = dev->data;
+
+	ARG_UNUSED(params);
 
 	LOG_DBG("");
 
@@ -653,14 +755,14 @@ static int eswifi_init(const struct device *dev)
 	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
-	if (!device_is_ready(cfg->resetn.port)) {
+	if (!gpio_is_ready_dt(&cfg->resetn)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->resetn.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->resetn, GPIO_OUTPUT_INACTIVE);
 
-	if (!device_is_ready(cfg->wakeup.port)) {
+	if (!gpio_is_ready_dt(&cfg->wakeup)) {
 		LOG_ERR("%s: device %s is not ready", dev->name,
 				cfg->wakeup.port->name);
 		return -ENODEV;
@@ -672,19 +774,31 @@ static int eswifi_init(const struct device *dev)
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY - 1, NULL);
 
 	k_work_init(&eswifi->request_work, eswifi_request_work);
+	k_work_init_delayable(&eswifi->status_work, eswifi_status_work);
 
 	eswifi_shell_register(eswifi);
 
 	return 0;
 }
 
-static const struct net_wifi_mgmt_offload eswifi_offload_api = {
-	.wifi_iface.init = eswifi_iface_init,
+static enum offloaded_net_if_types eswifi_get_type(void)
+{
+	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
+}
+
+static const struct wifi_mgmt_ops eswifi_mgmt_api = {
 	.scan		= eswifi_mgmt_scan,
 	.connect	= eswifi_mgmt_connect,
 	.disconnect	= eswifi_mgmt_disconnect,
 	.ap_enable	= eswifi_mgmt_ap_enable,
 	.ap_disable	= eswifi_mgmt_ap_disable,
+	.iface_status	= eswifi_mgmt_iface_status,
+};
+
+static const struct net_wifi_mgmt_offload eswifi_offload_api = {
+	.wifi_iface.iface_api.init = eswifi_iface_init,
+	.wifi_iface.get_type = eswifi_get_type,
+	.wifi_mgmt_api = &eswifi_mgmt_api,
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,

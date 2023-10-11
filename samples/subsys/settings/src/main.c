@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#if IS_ENABLED(CONFIG_SETTINGS_FILE)
+#if defined(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
 #endif
@@ -422,7 +422,7 @@ static void example_initialization(void)
 {
 	int rc;
 
-#if IS_ENABLED(CONFIG_SETTINGS_FILE)
+#if defined(CONFIG_SETTINGS_FILE)
 	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 	/* mounting info */
@@ -534,7 +534,7 @@ void example_runtime_usage(void)
 	       source_name_val);
 }
 
-void main(void)
+int main(void)
 {
 
 	int i;
@@ -560,7 +560,7 @@ void main(void)
 		example_direct_load_subtree();
 
 		/*-------------------------
-		 * delete certain kay-value
+		 * delete certain key-value
 		 */
 		example_delete();
 
@@ -576,4 +576,5 @@ void main(void)
 	example_runtime_usage();
 
 	printk("\n*** THE END  ***\n");
+	return 0;
 }

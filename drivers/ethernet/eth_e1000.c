@@ -89,10 +89,10 @@ static struct net_if *get_iface(struct e1000_dev *ctx, uint16_t vlan_tag)
 static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 {
 	return
-#if IS_ENABLED(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
-#if IS_ENABLED(CONFIG_ETH_E1000_PTP_CLOCK)
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 		ETHERNET_PTP |
 #endif
 		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
@@ -319,6 +319,11 @@ static const struct ethernet_api e1000_api = {
 	.send			= e1000_send,
 };
 
+#define E1000_DT_INST_IRQ_FLAGS(inst)					\
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense),			\
+		    (DT_INST_IRQ(inst, sense)),				\
+		    (DT_INST_IRQ(inst, flags)))
+
 #define E1000_PCI_INIT(inst)						\
 	DEVICE_PCIE_INST_DECLARE(inst);					\
 									\
@@ -331,9 +336,9 @@ static const struct ethernet_api e1000_api = {
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\
 			    e1000_isr, DEVICE_DT_INST_GET(inst),	\
-			    DT_INST_IRQ(inst, sense));			\
+			    E1000_DT_INST_IRQ_FLAGS(inst));		\
 									\
-		irq_enable(DT_INST_IRQN(0));				\
+		irq_enable(DT_INST_IRQN(inst));				\
 		iow32(dev, CTRL, CTRL_SLU); /* Set link up */		\
 		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);			\
 	}								\

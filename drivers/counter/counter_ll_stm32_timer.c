@@ -18,6 +18,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
+/* L0 series MCUs only have 16-bit timers and don't have below macro defined */
+#ifndef IS_TIM_32B_COUNTER_INSTANCE
+#define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
+#endif
+
 /** Maximum number of timer channels. */
 #define TIMER_MAX_CH 4U
 
@@ -37,7 +42,10 @@ static void(*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 };
 
 /** Channel to compare get function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
 	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
@@ -62,7 +70,10 @@ static void(*const disable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
 
 #ifdef CONFIG_ASSERT
 /** Channel to interrupt enable check function mapping. */
-#if !defined(CONFIG_SOC_SERIES_STM32F4X)
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP1X)
 static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(const TIM_TypeDef *) = {
 	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
 	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
@@ -150,17 +161,11 @@ static int counter_stm32_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-/* Return true if value equals 2^n - 1 */
-static inline bool counter_stm32_is_bit_mask(uint32_t val)
-{
-	return !(val & (val + 1U));
-}
-
 static uint32_t counter_stm32_ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
 	uint32_t to_top;
 
-	if (likely(counter_stm32_is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val1 + val2) & top;
 	}
 
@@ -171,7 +176,7 @@ static uint32_t counter_stm32_ticks_add(uint32_t val1, uint32_t val2, uint32_t t
 
 static uint32_t counter_stm32_ticks_sub(uint32_t val, uint32_t old, uint32_t top)
 {
-	if (likely(counter_stm32_is_bit_mask(top))) {
+	if (likely(IS_BIT_MASK(top))) {
 		return (val - old) & top;
 	}
 
@@ -378,7 +383,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 		return -ENODEV;
 	}
 
-	r = clock_control_get_rate(clk, (clock_control_subsys_t *)pclken,
+	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
 				   &bus_clk);
 	if (r < 0) {
 		return r;
@@ -392,11 +397,19 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 	}
 #else
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
+#else
 		apb_psc = STM32_APB1_PRESCALER;
+#endif
 	}
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_STM32G0X)
 	else {
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
+#else
 		apb_psc = STM32_APB2_PRESCALER;
+#endif
 	}
 #endif
 #endif
@@ -464,7 +477,7 @@ static int counter_stm32_init_timer(const struct device *dev)
 
 	/* initialize clock and check its speed  */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t *)&cfg->pclken);
+			     (clock_control_subsys_t)&cfg->pclken);
 	if (r < 0) {
 		LOG_ERR("Could not initialize clock (%d)", r);
 		return r;
@@ -482,7 +495,7 @@ static int counter_stm32_init_timer(const struct device *dev)
 	}
 
 	/* Reset timer to default state using RCC */
-	reset_line_toggle_dt(&data->reset);
+	(void)reset_line_toggle_dt(&data->reset);
 
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);

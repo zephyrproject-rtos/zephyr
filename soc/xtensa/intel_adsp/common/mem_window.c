@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/cpu.h>
@@ -10,7 +10,7 @@
 #include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <mem_window.h>
-#include <soc.h>
+#include <soc_util.h>
 
 /* host windows */
 #define DMWBA(win_base) (win_base + 0x0)
@@ -37,6 +37,14 @@ __imr int mem_win_init(const struct device *dev)
 	return 0;
 }
 
+void mem_window_idle_exit(void)
+{
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(0)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(1)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(2)));
+	mem_win_init(DEVICE_DT_GET(MEM_WINDOW_NODE(3)));
+}
+
 #define MEM_WINDOW_DEFINE(n)                                                                       \
 	static const struct mem_win_config mem_win_config_##n = {                                  \
 		.base_addr = DT_REG_ADDR(MEM_WINDOW_NODE(n)),                                      \
@@ -46,8 +54,9 @@ __imr int mem_win_init(const struct device *dev)
 		.mem_base = DT_REG_ADDR(DT_PHANDLE(MEM_WINDOW_NODE(n), memory)) + WIN_OFFSET(n),   \
 		.initialize = DT_PROP(MEM_WINDOW_NODE(n), initialize),                             \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL, &mem_win_config_##n, EARLY, \
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL,                             \
+			&mem_win_config_##n, PRE_KERNEL_1,                                         \
+			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 #if DT_NODE_HAS_STATUS(MEM_WINDOW_NODE(0), okay)
 MEM_WINDOW_DEFINE(0)

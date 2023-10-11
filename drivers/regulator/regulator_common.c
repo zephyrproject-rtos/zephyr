@@ -7,26 +7,61 @@
 
 void regulator_common_data_init(const struct device *dev)
 {
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	struct regulator_common_data *data = dev->data;
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_init(&data->lock);
+#endif
 	data->refcnt = 0;
 }
 
-int regulator_common_init_enable(const struct device *dev)
+int regulator_common_init(const struct device *dev, bool is_enabled)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_driver_api *api = dev->api;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
+	int32_t current_uv;
+	int ret;
 
-	if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
-		const struct regulator_driver_api *api =
-			(const struct regulator_driver_api *)dev->api;
+	if (config->initial_mode != REGULATOR_INITIAL_MODE_UNKNOWN) {
+		ret = regulator_set_mode(dev, config->initial_mode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
-		int ret;
+	if (config->init_uv > INT32_MIN) {
+		ret = regulator_set_voltage(dev, config->init_uv, config->init_uv);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
+	/* If we have valid range values, we try to match them before enabling */
+	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
+
+		ret = regulator_get_voltage(dev, &current_uv);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Snap to closest interval value if out of range */
+		if (current_uv < config->min_uv) {
+			ret = regulator_set_voltage(dev, config->min_uv, config->min_uv);
+			if (ret < 0) {
+				return ret;
+			}
+		} else if (current_uv > config->max_uv) {
+			ret = regulator_set_voltage(dev, config->max_uv, config->max_uv);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	if (is_enabled) {
+		data->refcnt++;
+	} else if ((config->flags & REGULATOR_INIT_ENABLED) != 0U) {
 		ret = api->enable(dev);
 		if (ret < 0) {
 			return ret;
@@ -40,12 +75,9 @@ int regulator_common_init_enable(const struct device *dev)
 
 int regulator_enable(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_driver_api *api = dev->api;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	int ret = 0;
 
 	/* enable not supported (always on) */
@@ -58,7 +90,9 @@ int regulator_enable(const struct device *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 
 	data->refcnt++;
 
@@ -69,25 +103,29 @@ int regulator_enable(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	k_mutex_unlock(&data->lock);
+#endif
 
 	return ret;
 }
 
 bool regulator_is_enabled(const struct device *dev)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	bool enabled;
 
 	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
 		enabled = true;
 	} else {
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 		(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 		enabled = data->refcnt != 0;
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 		k_mutex_unlock(&data->lock);
+#endif
 	}
 
 	return enabled;
@@ -95,12 +133,9 @@ bool regulator_is_enabled(const struct device *dev)
 
 int regulator_disable(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	struct regulator_common_data *data =
-		(struct regulator_common_data *)dev->data;
+	const struct regulator_driver_api *api = dev->api;
+	const struct regulator_common_config *config = dev->config;
+	struct regulator_common_data *data = dev->data;
 	int ret = 0;
 
 	/* disable not supported (always on) */
@@ -113,7 +148,9 @@ int regulator_disable(const struct device *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
+#endif
 
 	data->refcnt--;
 
@@ -124,7 +161,9 @@ int regulator_disable(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	k_mutex_unlock(&data->lock);
+#endif
 
 	return ret;
 }
@@ -132,13 +171,12 @@ int regulator_disable(const struct device *dev)
 bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 				    int32_t max_uv)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
+	const struct regulator_common_config *config = dev->config;
 	unsigned int volt_cnt;
 
 	/* voltage may not be allowed, even if supported */
-	if ((min_uv < config->min_uv) || (max_uv > config->max_uv)) {
-		return -EINVAL;
+	if ((min_uv > config->max_uv) || (max_uv < config->min_uv)) {
+		return false;
 	}
 
 	volt_cnt = regulator_count_voltages(dev);
@@ -148,7 +186,7 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 
 		(void)regulator_list_voltage(dev, idx, &volt_uv);
 
-		if ((volt_uv > min_uv) && (volt_uv < max_uv)) {
+		if ((volt_uv >= min_uv) && (volt_uv <= max_uv)) {
 			return true;
 		}
 	}
@@ -159,17 +197,15 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 			  int32_t max_uv)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_voltage == NULL) {
 		return -ENOSYS;
 	}
 
 	/* voltage may not be allowed, even if supported */
-	if ((min_uv < config->min_uv) || (max_uv > config->max_uv)) {
+	if ((min_uv > config->max_uv) || (max_uv < config->min_uv)) {
 		return -EINVAL;
 	}
 
@@ -179,17 +215,15 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 				int32_t max_ua)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_current_limit == NULL) {
 		return -ENOSYS;
 	}
 
 	/* current limit may not be allowed, even if supported */
-	if ((min_ua < config->min_ua) || (max_ua > config->max_ua)) {
+	if ((min_ua > config->max_ua) || (max_ua < config->min_ua)) {
 		return -EINVAL;
 	}
 
@@ -198,10 +232,8 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode)
 {
-	const struct regulator_common_config *config =
-		(struct regulator_common_config *)dev->config;
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_common_config *config = dev->config;
+	const struct regulator_driver_api *api = dev->api;
 
 	if (api->set_mode == NULL) {
 		return -ENOSYS;

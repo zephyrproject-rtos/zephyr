@@ -25,8 +25,8 @@ compatible: "gd,gd32-cctl"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-    "#clock-cells":
-      const: 1
+  "#clock-cells":
+    const: 1
 
 clock-cells:
   - id

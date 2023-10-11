@@ -3,49 +3,49 @@ description: Atmel SAM0 SERCOM UART driver
 compatible: "atmel,sam0-uart"
 
 include:
-    - name: uart-controller.yaml
-    - name: pinctrl-device.yaml
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    clock-names:
-      required: true
+  clock-names:
+    required: true
 
-    rxpo:
-      type: int
-      required: true
-      description: Receive Data Pinout
+  rxpo:
+    type: int
+    required: true
+    description: Receive Data Pinout
 
-    txpo:
-      type: int
-      required: true
-      description: Transmit Data Pinout
+  txpo:
+    type: int
+    required: true
+    description: Transmit Data Pinout
 
-    collision-detection:
-      type: boolean
-      description: Enable collision detection for half-duplex mode.
+  collision-detection:
+    type: boolean
+    description: Enable collision detection for half-duplex mode.
 
-    dmas:
-      description: |
-        Optional TX & RX dma specifiers.  Each specifier will have a phandle
-        reference to the dmac controller, the channel number, and peripheral
-        trigger source.
+  dmas:
+    description: |
+      Optional TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dmac controller, the channel number, and peripheral
+      trigger source.
 
-        For example dmas for TX, RX on SERCOM3
-           dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
+      For example dmas for TX, RX on SERCOM3
+         dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
 
-    dma-names:
-      description: |
-        Required if the dmas property exists.  This should be "tx" and "rx"
-        to match the dmas property.
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
 
-        For example
-           dma-names = "tx", "rx";
+      For example
+         dma-names = "tx", "rx";

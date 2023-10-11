@@ -28,14 +28,11 @@ Options
   ${BASE_PATH}/modules/${MODULE_NAME}/Kconfig.
 """
 
-from distutils.command.build import build
-from itertools import chain
 import json
-from operator import mod
 import os
-from pathlib import Path
-import re
 import sys
+from itertools import chain
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -47,10 +44,9 @@ from sphinx.domains import Domain, ObjType
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import ExtensionError
 from sphinx.roles import XRefRole
-from sphinx.util import progress_message
+from sphinx.util.display import progress_message
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode
-
 
 __version__ = "0.1.0"
 
@@ -64,8 +60,8 @@ sys.path.insert(0, str(SCRIPTS))
 KCONFIGLIB = SCRIPTS / "kconfig"
 sys.path.insert(0, str(KCONFIGLIB))
 
-import zephyr_module
 import kconfiglib
+import zephyr_module
 
 
 def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
@@ -225,7 +221,7 @@ class KconfigDomain(Domain):
         """Register a new Kconfig option to the domain."""
 
         self.data["options"].append(
-            (option, option, "option", self.env.docname, option, -1)
+            (option, option, "option", self.env.docname, option, 1)
         )
 
 

@@ -7,7 +7,7 @@ menu "ATT and GATT Options"
 
 config BT_ATT_ENFORCE_FLOW
 	bool "Enforce strict flow control semantics for incoming PDUs"
-	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || ARCH_POSIX)
+	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || ARCH_POSIX || BT_SPI_BLUENRG)
 	help
 	  Enforce flow control rules on incoming PDUs, preventing a peer
 	  from sending new requests until a previous one has been responded
@@ -61,6 +61,19 @@ config BT_EATT_AUTO_CONNECT
 	  connection to a peer is established.
 
 endif # BT_EATT
+
+config BT_GATT_AUTO_RESUBSCRIBE
+	bool "Automatic re-subscription to characteristics"
+	default y
+	imply BT_GATT_AUTO_SEC_REQ
+	depends on BT_GATT_CLIENT
+	help
+	  Quirk: upon re-establishing a bonded connection, assumes the remote
+	  forgot the CCC values and sets them again. If this behavior is not
+	  desired for a particular subscription, set the
+	  `BT_GATT_SUBSCRIBE_FLAG_NO_RESUB` flag.
+	  This also means that upon a reconnection, the application will get an
+	  unprompted call to its `subscribe` callback.
 
 config BT_GATT_AUTO_SEC_REQ
 	bool "Automatic security re-establishment request as a peripheral"
@@ -210,26 +223,26 @@ if BT_GAP_PERIPHERAL_PREF_PARAMS
 config BT_PERIPHERAL_PREF_MIN_INT
 	int "Peripheral preferred minimum connection interval in 1.25ms units"
 	default 24
-	range 6 65535
+	range 6 65535 if !BT_CONN_PARAM_ANY
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
 config BT_PERIPHERAL_PREF_MAX_INT
 	int "Peripheral preferred maximum connection interval in 1.25ms units"
 	default 40
-	range 6 65535
+	range 6 65535 if !BT_CONN_PARAM_ANY
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
 config BT_PERIPHERAL_PREF_LATENCY
 	int "Peripheral preferred peripheral latency in Connection Intervals"
 	default 0
-	range 0 499
+	range 0 499 if !BT_CONN_PARAM_ANY
 
 config BT_PERIPHERAL_PREF_TIMEOUT
 	int "Peripheral preferred supervision timeout in 10ms units"
 	default 42
-	range 10 65535
+	range 10 65535 if !BT_CONN_PARAM_ANY
 	help
 	  It is up to user to provide valid timeout which pass required minimum
 	  value: in milliseconds it shall be larger than
@@ -262,33 +275,5 @@ config DEVICE_NAME_GATT_WRITABLE_AUTHEN
 	  authenticated to write to the device name GAP characteristic.
 
 endif #BT_DEVICE_NAME_GATT_WRITABLE
-
-if BT_DEBUG
-
-config BT_DEBUG_ATT
-	bool "Bluetooth Attribute Protocol (ATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Attribute Protocol (ATT).
-
-module = BT_ATT
-legacy-debug-sym = BT_DEBUG_ATT
-module-str = "Bluetooth Attribute Protocol (ATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-config BT_DEBUG_GATT
-	bool "Bluetooth Generic Attribute Profile (GATT) debug"
-	select DEPRECATED
-	help
-	  This option enables debug support for the Bluetooth
-	  Generic Attribute Profile (GATT).
-
-module = BT_GATT
-legacy-debug-sym = BT_DEBUG_GATT
-module-str = "Bluetooth Generic Attribute Profile (GATT)"
-source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
-
-endif # BT_DEBUG
 
 endmenu

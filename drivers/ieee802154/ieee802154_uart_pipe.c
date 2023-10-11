@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/init.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/net/ieee802154_radio.h>
@@ -154,7 +154,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 		}
 #endif
 
-		if (ieee802154_radio_handle_ack(upipe->iface, pkt) == NET_OK) {
+		if (ieee802154_handle_ack(upipe->iface, pkt) == NET_OK) {
 			LOG_DBG("ACK packet handled");
 			goto out;
 		}
@@ -181,9 +181,7 @@ done:
 
 static enum ieee802154_hw_caps upipe_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-		IEEE802154_HW_2_4_GHZ |
-		IEEE802154_HW_FILTER;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER;
 }
 
 static int upipe_cca(const struct device *dev)
@@ -329,6 +327,20 @@ static int upipe_stop(const struct device *dev)
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
+/* API implementation: attr_get */
+static int upipe_attr_get(const struct device *dev, enum ieee802154_attr attr,
+			  struct ieee802154_attr_value *value)
+{
+	ARG_UNUSED(dev);
+
+	return ieee802154_attr_get_channel_page_and_range(
+		attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		&drv_attr.phy_supported_channels, value);
+}
+
 static int upipe_init(const struct device *dev)
 {
 	struct upipe_context *upipe = dev->data;
@@ -391,6 +403,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.tx			= upipe_tx,
 	.start			= upipe_start,
 	.stop			= upipe_stop,
+	.attr_get		= upipe_attr_get,
 };
 
 NET_DEVICE_DT_INST_DEFINE(0, upipe_init, NULL, &upipe_context_data, NULL,

@@ -8,18 +8,27 @@ compatible: "nordic,nrf-timer"
 include: base.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    cc-num:
-      type: int
-      required: true
-      description: Number of capture/compare (CC) registers available
+  cc-num:
+    type: int
+    required: true
+    description: Number of capture/compare (CC) registers available
 
-    interrupts:
-      required: true
+  max-bit-width:
+    type: int
+    required: true
+    description: Maximum bit width supported
 
-    prescaler:
-      type: int
-      required: true
-      description: Prescaler value determines frequency (16MHz/2^prescaler)
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: Prescaler value determines frequency (base_frequency/2^prescaler)
+
+  zli:
+    type: boolean
+    description: Enable event handler in the ZLI (Zero latency interrupt) context

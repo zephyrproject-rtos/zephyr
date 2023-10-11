@@ -15,6 +15,28 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
+#if defined(RCC_CFGR_ADCPRE)
+#define z_adc_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_ ## v
+#define adc_prescaler(v) z_adc_prescaler(v)
+#elif defined(RCC_CFGR2_ADC1PRES)
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    LL_RCC_ADC1_CLKSRC_HCLK, \
+		    LL_RCC_ADC1_CLKSRC_PLL_DIV_ ## v)
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#else
+#define z_adc12_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    LL_RCC_ADC12_CLKSRC_HCLK, \
+		    LL_RCC_ADC12_CLKSRC_PLL_DIV_ ## v)
+#define adc12_prescaler(v) z_adc12_prescaler(v)
+#define z_adc34_prescaler(v) \
+	COND_CODE_1(IS_EQ(v, 0), \
+		    LL_RCC_ADC34_CLKSRC_HCLK, \
+		    LL_RCC_ADC34_CLKSRC_PLL_DIV_ ## v)
+#define adc34_prescaler(v) z_adc34_prescaler(v)
+#endif
+
 #if defined(STM32_PLL_ENABLED)
 
 /**
@@ -144,6 +166,9 @@ uint32_t get_pllout_frequency(void)
  */
 void config_enable_default_clocks(void)
 {
+	/* Enable PWR clock, required to access BDCR and PWR_CR */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
 #ifndef CONFIG_SOC_SERIES_STM32F3X
 #if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
 	/* Enable System Configuration Controller clock. */

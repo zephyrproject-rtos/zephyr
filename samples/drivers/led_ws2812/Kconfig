@@ -6,4 +6,14 @@
 config SPI
 	default y
 
+menu "WS2812 Sample Configuration"
+
+config SAMPLE_LED_UPDATE_DELAY
+	int "Delay between LED updates in ms"
+	default 50
+	help
+	  Delay between LED updates in ms.
+
+endmenu
+
 source "Kconfig.zephyr"

@@ -1,0 +1,81 @@
+# Copyright (c) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_CMSIS_NN_MODULE
+	bool
+
+menuconfig CMSIS_NN
+	bool "CMSIS-NN Library Support"
+	depends on CPU_CORTEX_M
+	select CMSIS_DSP
+	help
+	  This option enables the CMSIS-NN library.
+
+if CMSIS_NN
+
+config CMSIS_NN_ACTIVATION
+	bool "Activation"
+	help
+	  This option enables the NN libraries for the activation layers
+	  It can perform activation layers, including ReLU (Rectified
+	  Linear Unit), sigmoid, and tanh.
+
+config CMSIS_NN_BASICMATH
+	bool "Basic Math for NN"
+	help
+	  This option enables the NN libraries for the basic maths operations.
+	  It adds functionality for element-wise add and multiplication functions.
+
+config CMSIS_NN_CONCATENATION
+	bool "Concatenation"
+	help
+	  This option enables the NN libraries for the concatenation layers.
+
+config CMSIS_NN_CONVOLUTION
+	bool "Convolution"
+	imply CMSIS_NN_NNSUPPORT
+	help
+	  Collection of convolution, depthwise convolution functions and
+	  their variants. The convolution is implemented in 2 steps: im2col
+	  and GEMM. GEMM is performed with CMSIS-DSP arm_mat_mult similar options.
+
+config CMSIS_NN_FULLYCONNECTED
+	bool "Fully Connected"
+	imply CMSIS_NN_NNSUPPORT
+	help
+	  Collection of fully-connected and matrix multiplication functions.
+
+config CMSIS_NN_NNSUPPORT
+	bool "NN Support"
+	help
+	  When off, its default behavior is all tables are included.
+
+config CMSIS_NN_POOLING
+	bool "Pooling"
+	imply CMSIS_NN_NNSUPPORT
+	help
+	  This option enables pooling layers, including max pooling,
+	  and average pooling.
+
+config CMSIS_NN_RESHAPE
+	bool "Reshape"
+	help
+	  This option enables the NN libraries for the reshape layers.
+
+config CMSIS_NN_SOFTMAX
+	bool "Softmax"
+	help
+	  This option enables the NN libraries for the softmax layers (exp2 based).
+
+config CMSIS_NN_SVD
+	bool "SVD"
+	imply CMSIS_NN_NNSUPPORT
+	help
+	  This option enabled the NN libraries for Single Value Decomposition Filter layers.
+
+config CMSIS_NN_LSTM
+	bool "Long Short-Term Memory"
+	help
+	  This option enables the NN libraries for Long Short-Term Memory.
+
+endif #CMSIS_NN

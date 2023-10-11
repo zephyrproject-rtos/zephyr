@@ -57,11 +57,6 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  selected if hardware entropy driver is designed to be a random
 	  number generator source.
 
-config XOROSHIRO_RANDOM_GENERATOR
-	bool "Use Xoroshiro128+ as PRNG (DEPRECATED)"
-	help
-	  This is deprecated, please use XOSHIRO_RANDOM_GENERATOR instead.
-
 config XOSHIRO_RANDOM_GENERATOR
 	bool "Use Xoshiro128++ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
@@ -77,8 +72,7 @@ endchoice # RNG_GENERATOR_CHOICE
 # enabling CS generators. ENTROPY_HAS_DRIVER is the flag indicating the
 # CS entropy source.
 #
-config CSPRING_ENABLED
-#	bool "Cryptographically secure RNG functions enabled"
+config CSPRNG_ENABLED
 	bool
 	default y
 	depends on ENTROPY_HAS_DRIVER

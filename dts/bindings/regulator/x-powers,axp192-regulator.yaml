@@ -1,0 +1,67 @@
+# Copyright (c), 2021 NXP
+# Copyright (c), 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  AXP192 PMIC
+
+  The PMIC has three DCDC converters and two LDOs (LDO1 cannot be disabled).
+  All need to be defined as children nodes.
+  For example:
+
+  i2c {
+    pmic@34 {
+      reg = <0x34>;
+      ...
+      regulators {
+        compatible = "x-powers,axp192-regulator";
+
+        DCDC1 {
+          /* all properties for DCDC1 */
+        };
+        DCDC2 {
+          /* all properties for DCDC2 */
+        };
+        DCDC3 {
+          /* all properties for DCDC3 */
+        };
+        LDOIO0 {
+          /* all properties for LDOIO0 */
+        };
+        LDO2 {
+          /* all properties for LDO2 */
+        };
+        LDO3 {
+          /* all properties for LDO3 */
+        };
+      };
+    };
+  };
+
+compatible: "x-powers,axp192-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-initial-mode
+        - regulator-allowed-modes
+
+  properties:
+    regulator-initial-mode:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 1
+      description: |
+        Initial operating mode. AXP192 supports 2 different power modes:
+        AXP192_DCDC_MODE_AUTO: Auto (0, default)
+        AXP192_DCDC_MODE_PWM:  PWM

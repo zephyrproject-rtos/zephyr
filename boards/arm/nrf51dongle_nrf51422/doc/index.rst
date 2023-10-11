@@ -132,7 +132,7 @@ Segger IC.
 Testing the LEDs on the nRF51 Dongle
 ************************************
 
-Build and flash the :ref:`blinky-sample` sample to test that the onboard LED
+Build and flash the :zephyr:code-sample:`blinky` sample to test that the onboard LED
 is working properly with Zephyr.
 
 References

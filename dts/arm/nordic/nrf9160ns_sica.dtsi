@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <nordic/nrf9160ns.dtsi>
+#include <nordic/nrf91ns.dtsi>
 
 &flash0 {
 	reg = <0x00000000 DT_SIZE_K(1024)>;
@@ -17,6 +17,7 @@
 
 / {
 	soc {
-		compatible = "nordic,nRF9160-SICA", "nordic,nRF9160", "nordic,nRF91", "simple-bus";
+		compatible = "nordic,nrf9160-sica", "nordic,nrf9160",
+			     "nordic,nrf91", "simple-bus";
 	};
 };

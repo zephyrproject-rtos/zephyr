@@ -7,8 +7,8 @@ include: [gpio-controller.yaml, base.yaml]
 on-bus: xlnx,xps-gpio-1.00.a
 
 properties:
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
 gpio-cells:
   - pin

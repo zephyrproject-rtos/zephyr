@@ -13,11 +13,6 @@
 #include <zephyr/sys/util_macro.h>
 
 /**
- * @brief Macro used to test if the current's sign bit is set
- */
-#define INA23X_CURRENT_SIGN_BIT        BIT(15)
-
-/**
  * @brief Macro used to check if the current's LSB is 1mA
  */
 #define INA23X_CURRENT_LSB_1MA         1

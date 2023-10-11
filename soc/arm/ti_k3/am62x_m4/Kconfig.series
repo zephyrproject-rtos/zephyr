@@ -1,0 +1,22 @@
+# Texas Instruments Sitara AM62x-SK-M4 EVM
+#
+# Copyright (c) 2023 Texas Instruments Incorporated
+# Copyright (c) 2023 L Lakshmanan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM62X_M4
+	bool "TI AM62X M4 Core Series"
+	select SOC_FAMILY_TI_K3
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_DWT
+	select OPENAMP_RSC_TABLE
+	select UART_NS16550_ACCESS_WORD_ONLY
+	select EXTERNAL_ADDRESS_TRANSLATION
+	select MM_DRV
+	select MM_TI_RAT
+	help
+	  Enable support for AM62X M4 Series.

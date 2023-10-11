@@ -68,7 +68,7 @@ static void trigger_handler(const struct device *dev,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	static struct sensor_value del, fid_get;
 	int ret;
@@ -77,12 +77,12 @@ void main(void)
 
 	if (dev ==  NULL) {
 		printk("Error: no device found\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(dev)) {
 		printk("Error: Device %s is not ready\n", dev->name);
-		return;
+		return 0;
 	}
 
 	template_count_get(dev);
@@ -91,7 +91,7 @@ void main(void)
 	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_RECORD_DEL, &del);
 	if (ret != 0) {
 		printk("Sensor attr set failed %d\n", ret);
-		return;
+		return 0;
 	}
 	printk("Fingerprint Deleted at ID #%d\n", del.val1);
 
@@ -99,7 +99,7 @@ void main(void)
 					SENSOR_ATTR_R502A_RECORD_FREE_IDX, &fid_get);
 	if (ret != 0) {
 		printk("Sensor attr get failed %d\n", ret);
-		return;
+		return 0;
 	}
 	printk("Fingerprint template free idx at ID #%d\n", fid_get.val1);
 
@@ -116,8 +116,9 @@ void main(void)
 		ret = sensor_trigger_set(dev, &trig, trigger_handler);
 		if (ret != 0) {
 			printk("Could not set trigger\n");
-			return;
+			return 0;
 		}
 	}
 
+	return 0;
 }

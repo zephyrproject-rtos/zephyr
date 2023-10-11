@@ -13,3 +13,6 @@ supported:
   - gpio
 testing:
   default: true
+  ignore_tags:
+    - net
+vendor: arm

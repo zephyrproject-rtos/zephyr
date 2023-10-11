@@ -20,3 +20,6 @@ supported:
   - spi
   - uart
   - watchdog
+  - dma
+  - spi
+vendor: gd

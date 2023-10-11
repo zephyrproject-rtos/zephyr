@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <soc.h>
 
 #include "hal/cpu.h"
@@ -21,6 +21,8 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "pdu_vendor.h"
 #include "pdu.h"
 
 #include "lll.h"
@@ -33,12 +35,15 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_aux.h"
+#include "lll_adv_sync.h"
 #include "lll_filter.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
+
+#include "ull_adv_types.h"
 
 #include "hal/debug.h"
 
@@ -105,38 +110,54 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	uint32_t ticks_at_event, ticks_at_start;
-	struct pdu_adv *pri_pdu, *sec_pdu;
-	struct pdu_adv_aux_ptr *aux_ptr;
-	struct pdu_adv_ext_hdr *pri_hdr;
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv *sec_pdu;
 	struct lll_adv_aux *lll;
 	struct lll_adv *lll_adv;
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
-	uint8_t *pri_dptr;
+	uint8_t chan_idx;
 	uint8_t phy_s;
+	uint32_t ret;
 	uint8_t upd;
 	uint32_t aa;
 
 	DEBUG_RADIO_START_A(1);
 
 	lll = p->param;
+	lll_adv = lll->adv;
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	upd = 0U;
 	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
 	LL_ASSERT(sec_pdu);
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	struct ll_adv_aux_set *aux;
+
+	/* Get reference to extended header */
+	com_hdr = (void *)&sec_pdu->adv_ext_ind;
+
+	aux = HDR_LLL2ULL(lll);
+	chan_idx = lll_chan_sel_2(lll->data_chan_counter, aux->data_chan_id,
+				  aux->chm[aux->chm_first].data_chan_map,
+				  aux->chm[aux->chm_first].data_chan_count);
+
+#else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+	struct pdu_adv_aux_ptr *aux_ptr;
+	struct pdu_adv_ext_hdr *pri_hdr;
+	struct pdu_adv *pri_pdu;
+	uint8_t *pri_dptr;
+
 	/* Get reference to primary PDU */
-	lll_adv = lll->adv;
 	pri_pdu = lll_adv_data_curr_get(lll_adv);
 	LL_ASSERT(pri_pdu->type == PDU_ADV_TYPE_EXT_IND);
 
 	/* Get reference to extended header */
-	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
-	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
+	com_hdr = (void *)&pri_pdu->adv_ext_ind;
+	pri_hdr = (void *)com_hdr->ext_hdr_adv_data;
 	pri_dptr = pri_hdr->data;
 
 	/* NOTE: We shall be here in auxiliary PDU prepare due to
@@ -144,7 +165,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * flags. Hence, ext_hdr_len is non-zero, an explicit check
 	 * is not needed.
 	 */
-	LL_ASSERT(pri_com_hdr->ext_hdr_len);
+	LL_ASSERT(com_hdr->ext_hdr_len);
 
 	/* traverse through adv_addr, if present */
 	if (pri_hdr->adv_addr) {
@@ -173,6 +194,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		return 0;
 	}
 
+	chan_idx = aux_ptr->chan_idx;
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 	/* Increment counter used in ULL for channel index calculation */
 	lll->data_chan_counter++;
 
@@ -198,14 +222,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 					PDU_AC_CRC_IV);
 
-	/* Use channel idx in aux_ptr */
-	lll_chan_set(aux_ptr->chan_idx);
+	/* Use channel idx calculated or that was in aux_ptr */
+	lll_chan_set(chan_idx);
 
 	/* Set the Radio Tx Packet */
 	radio_pkt_tx_set(sec_pdu);
 
 	/* Switch to Rx if connectable or scannable */
-	if (pri_com_hdr->adv_mode & (BT_HCI_LE_ADV_PROP_CONN |
+	if (com_hdr->adv_mode & (BT_HCI_LE_ADV_PROP_CONN |
 				     BT_HCI_LE_ADV_PROP_SCAN)) {
 
 		struct pdu_adv *scan_pdu;
@@ -293,20 +317,30 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	uint32_t overhead;
+
+	overhead = lll_preempt_calc(ull, (TICKER_ID_ADV_AUX_BASE + ull_adv_aux_lll_handle_get(lll)),
+				    ticks_at_event);
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_ADV_AUX_BASE +
-				   ull_adv_aux_lll_handle_get(lll)),
-			     ticks_at_event)) {
+	if (overhead) {
+		LL_ASSERT_OVERHEAD(overhead);
+
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
 
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
+		return -ECANCELED;
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC) &&
+	    IS_ENABLED(CONFIG_BT_TICKER_EXT_EXPIRE_INFO) &&
+	    sec_pdu->adv_ext_ind.ext_hdr_len &&
+	    sec_pdu->adv_ext_ind.ext_hdr.sync_info) {
+		ull_adv_sync_lll_syncinfo_fill(sec_pdu, lll);
+	}
+
+	ret = lll_prepare_done(lll);
+	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_START_A(1);
 
@@ -360,7 +394,7 @@ static void isr_tx_chain(void *param)
 						 lll->phy_s, lll->phy_flags);
 	} else {
 		radio_isr_set(isr_done, lll_aux);
-		radio_switch_complete_and_disable();
+		radio_switch_complete_and_b2b_tx_disable();
 	}
 
 	radio_pkt_tx_set(pdu);

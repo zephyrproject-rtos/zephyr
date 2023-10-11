@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 
@@ -61,11 +61,6 @@ struct net_if_test {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
-
-static int net_iface_dev_init(const struct device *dev)
-{
-	return 0;
-}
 
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
@@ -120,7 +115,7 @@ static struct ethernet_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 net_iface_dev_init,
+			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,

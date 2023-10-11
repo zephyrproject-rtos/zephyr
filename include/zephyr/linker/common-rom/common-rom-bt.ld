@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
 #if defined(CONFIG_BT_BREDR)
@@ -17,6 +19,10 @@
 	ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
 
 	ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
+
+#if defined(CONFIG_BT_TESTING)
+	ITERABLE_SECTION_ROM(bt_mesh_beacon_cb, 4)
+#endif
 #endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)

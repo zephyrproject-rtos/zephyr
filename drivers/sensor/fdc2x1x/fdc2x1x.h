@@ -155,7 +155,7 @@ struct fdc2x1x_data {
 
 	struct k_mutex trigger_mutex;
 	sensor_trigger_handler_t drdy_handler;
-	struct sensor_trigger drdy_trigger;
+	const struct sensor_trigger *drdy_trigger;
 	const struct device *dev;
 
 #ifdef CONFIG_FDC2X1X_TRIGGER_OWN_THREAD

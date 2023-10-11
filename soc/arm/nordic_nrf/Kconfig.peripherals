@@ -13,16 +13,19 @@ config HAS_HW_NRF_BPROT
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
 config HAS_HW_NRF_CC310
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_310))
 
 config HAS_HW_NRF_CC312
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_312))
 
 config HAS_HW_NRF_CCM
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
 
 config HAS_HW_NRF_CCM_LFLEN_8BIT
 	def_bool $(dt_nodelabel_bool_prop,ccm,length-field-length-8-bits)
+
+config HAS_HW_NRF_CCM_HEADERMASK
+	def_bool $(dt_nodelabel_bool_prop,ccm,headermask-supported)
 
 config HAS_HW_NRF_CLOCK
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CLOCK))
@@ -69,8 +72,8 @@ config HAS_HW_NRF_GPIO1
 config HAS_HW_NRF_GPIOTE
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
 
-config HAS_HW_NRF_I2S
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_I2S))
+config HAS_HW_NRF_I2S0
+	def_bool $(dt_nodelabel_enabled_with_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
 
 config HAS_HW_NRF_IPC
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_IPC))
@@ -299,28 +302,3 @@ config HAS_HW_NRF_WDT0
 
 config HAS_HW_NRF_WDT1
 	def_bool $(dt_nodelabel_enabled_with_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
-
-# Reserved HW peripherals
-config NRF_HW_TIMER0_RESERVED
-	bool
-
-config NRF_HW_TIMER1_RESERVED
-	bool
-
-config NRF_HW_TIMER2_RESERVED
-	bool
-
-config NRF_HW_TIMER3_RESERVED
-	bool
-
-config NRF_HW_TIMER4_RESERVED
-	bool
-
-config NRF_HW_RTC0_RESERVED
-	bool
-
-config NRF_HW_RTC1_RESERVED
-	bool
-
-config NRF_HW_RTC2_RESERVED
-	bool

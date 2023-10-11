@@ -14,7 +14,7 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
@@ -99,24 +99,6 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 int net_tcp_get(struct net_context *context);
 #else
 static inline int net_tcp_get(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
- * @brief Unref TCP parts of a context
- *
- * @param context Network context
- *
- * @return 0 if successful, < 0 on error
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_unref(struct net_context *context);
-#else
-static inline int net_tcp_unref(struct net_context *context)
 {
 	ARG_UNUSED(context);
 
@@ -431,6 +413,15 @@ static inline int net_tcp_get_option(struct net_context *context,
  * @return semaphore indicating if transfers are blocked
  */
 struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
+
+/**
+ * @brief Obtain a semaphore indicating if connection is connected.
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if connection is connected
+ */
+struct k_sem *net_tcp_conn_sem_get(struct net_context *context);
 
 #ifdef __cplusplus
 }

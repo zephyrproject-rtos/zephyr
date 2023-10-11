@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
+
+#include <zephyr/ztest.h>
 
 #define STACK_SIZE 1024
 
@@ -44,7 +45,7 @@ void initialize_thread_attr(pthread_attr_t *attr)
 	pthread_attr_setschedparam(attr, &schedparam);
 }
 
-ZTEST(posix_apis, test_posix_semaphore)
+ZTEST(posix_apis, test_semaphore)
 {
 	pthread_t thread1, thread2;
 	pthread_attr_t attr1, attr2;

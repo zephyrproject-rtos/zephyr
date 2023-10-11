@@ -27,13 +27,13 @@ static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
 static void dma_user_callback(const struct device *dma_dev, void *arg,
-			      uint32_t id, int error_code)
+			      uint32_t id, int status)
 {
-	if (error_code == 0) {
+	if (status >= 0) {
 		TC_PRINT("DMA completed successfully\n");
 		dma_stat = DMA_OP_STAT_SUCCESS;
 	} else {
-		TC_PRINT("DMA error occurred!! (%d)\n", error_code);
+		TC_PRINT("DMA error occurred!! (%d)\n", status);
 		dma_stat = DMA_OP_STAT_ERR;
 	}
 }

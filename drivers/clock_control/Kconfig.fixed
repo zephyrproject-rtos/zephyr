@@ -1,0 +1,10 @@
+# Fixed clock control driver config
+
+# Copyright (c) 2022 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_FIXED_RATE_CLOCK
+	bool "Fixed Clock Clock Control"
+	default n
+	help
+	  Enable driver for devicetree defined fixed clocks.

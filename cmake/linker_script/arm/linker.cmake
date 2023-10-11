@@ -84,7 +84,7 @@ zephyr_linker_section_configure(SECTION .text INPUT ".glue_7")
 zephyr_linker_section_configure(SECTION .text INPUT ".vfp11_veneer")
 zephyr_linker_section_configure(SECTION .text INPUT ".v4_bx")
 
-if(CONFIG_CPLUSPLUS)
+if(CONFIG_CPP)
   zephyr_linker_section(NAME .ARM.extab GROUP ROM_REGION)
   zephyr_linker_section_configure(SECTION .ARM.extab INPUT ".gnu.linkonce.armextab.*")
 endif()
@@ -134,6 +134,8 @@ if(NOT CONFIG_USERSPACE)
   # will not be cleared during the boot process.
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
 endif()
+
+include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
 
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")

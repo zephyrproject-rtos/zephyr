@@ -1,0 +1,15 @@
+# Ambiq SDK I2C
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config I2C_AMBIQ
+	bool "AMBIQ I2C driver"
+	default y
+	depends on DT_HAS_AMBIQ_I2C_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_I2C
+	help
+	  Enable driver for Ambiq I2C.

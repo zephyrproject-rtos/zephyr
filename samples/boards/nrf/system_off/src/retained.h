@@ -7,7 +7,8 @@
 #ifndef RETAINED_H_
 #define RETAINED_H_
 
-#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Example of validatable retained data. */
 struct retained_data {

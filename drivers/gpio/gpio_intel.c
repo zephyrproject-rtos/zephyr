@@ -157,7 +157,7 @@ static bool check_perm(const struct device *dev, uint32_t raw_pin)
 	}
 
 	/* Also need to make sure the function of pad is GPIO */
-	offset = data->pad_base + (raw_pin << 3);
+	offset = data->pad_base + (raw_pin << 4);
 	val = sys_read32(regs(dev) + offset);
 	if (val & PAD_CFG0_PMODE_MASK) {
 		/* mode is not zero => not functioning as GPIO */

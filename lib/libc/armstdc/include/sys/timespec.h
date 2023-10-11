@@ -9,11 +9,7 @@
 #define ZEPHYR_LIB_LIBC_ARMSTDC_INCLUDE_SYS_TIMESPEC_H_
 
 #include <sys/types.h>
-
-struct timespec {
-	time_t tv_sec;
-	long tv_nsec;
-};
+#include <sys/_timespec.h>
 
 struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */

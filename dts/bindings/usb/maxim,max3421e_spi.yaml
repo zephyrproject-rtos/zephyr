@@ -9,18 +9,17 @@ compatible: "maxim,max3421e_spi"
 include: [spi-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
-      required: true
-      description: |
-        Interrupt pin of MAX3421E, active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of MAX3421E, active low.
+      If connected directly the MCU pin should be configured
+      as active low.
 
-    reset-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        RESET pin of MAX3421E, active low.
-        If connected directly the MCU pin should be configured
-        as active low.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin of MAX3421E, active low.
+      If connected directly the MCU pin should be configured
+      as active low.

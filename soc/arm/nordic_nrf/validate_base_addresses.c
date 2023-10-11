@@ -60,6 +60,16 @@
 #define NRF_WDT0 NRF_WDT
 #endif
 
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+#if !defined(NRF_POWER_GPREGRET1) && defined(NRF_POWER_BASE)
+#define NRF_POWER_GPREGRET1 (0x51c + NRF_POWER_BASE)
+#endif
+
+#if !defined(NRF_POWER_GPREGRET2) && defined(NRF_POWER_BASE)
+#define NRF_POWER_GPREGRET2 (0x520 + NRF_POWER_BASE)
+#endif
+#endif
+
 /**
  * Check that a devicetree node's "reg" base address matches the
  * correct value from the MDK.
@@ -189,3 +199,9 @@ CHECK_DT_REG(vmc, NRF_VMC);
 CHECK_DT_REG(wdt, NRF_WDT0);	/* this should be the same node as wdt0 */
 CHECK_DT_REG(wdt0, NRF_WDT0);
 CHECK_DT_REG(wdt1, NRF_WDT1);
+
+/* nRF51/nRF52-specific addresses */
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+CHECK_DT_REG(gpregret1, NRF_POWER_GPREGRET1);
+CHECK_DT_REG(gpregret2, NRF_POWER_GPREGRET2);
+#endif

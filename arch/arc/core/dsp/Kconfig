@@ -16,6 +16,12 @@ config ARC_DSP
 	help
 	  This option enables DSP and DSP instructions.
 
+config ARC_DSP_TURNED_OFF
+	bool "Turn off DSP if it presents"
+	depends on !ARC_DSP
+	help
+	  This option disables DSP block via resetting DSP_CRTL register.
+
 config ARC_DSP_SHARING
 	bool "DSP register sharing"
 	depends on ARC_DSP && MULTITHREADING

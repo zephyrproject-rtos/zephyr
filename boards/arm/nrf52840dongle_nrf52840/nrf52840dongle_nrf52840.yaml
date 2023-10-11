@@ -18,3 +18,5 @@ supported:
   - watchdog
   - counter
   - netif:openthread
+  - gpio
+vendor: nordic

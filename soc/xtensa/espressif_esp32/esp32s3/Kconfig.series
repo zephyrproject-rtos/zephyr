@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	bool "ESP32-S3 Series"
+	select XTENSA
+	select SOC_FAMILY_ESP32
+	select DYNAMIC_INTERRUPTS
+	select ARCH_SUPPORTS_COREDUMP
+	select CLOCK_CONTROL
+	select PINCTRL
+	select XIP if !MCUBOOT
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
+
+config SOC_ESP32S3_PROCPU
+	bool "Application runs in ESP32S3 PROCPU (core 0)"
+	depends on SOC_SERIES_ESP32S3
+	help
+	  When this SOC is enabled, it will run application on PROCPU (core 0). It will automatically
+	  enable AMP support by building, flashing and loading APPCPU (core 1) image if exists.
+
+config SOC_ESP32S3_APPCPU
+	bool "Application runs in ESP32S3 APPCPU (core 1)"
+	depends on SOC_SERIES_ESP32S3
+	help
+	  When this SOC is enabled, it will run application on APPCPU (core 1). It is expected that
+	  there is another image running on PROCPU (core 0) to trigger the AMP support.

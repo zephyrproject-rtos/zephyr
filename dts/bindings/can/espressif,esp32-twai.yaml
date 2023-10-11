@@ -8,25 +8,25 @@ compatible: "espressif,esp32-twai"
 include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    clocks:
-      required: true
+  clocks:
+    required: true
 
-    pinctrl-0:
-      required: true
+  pinctrl-0:
+    required: true
 
-    pinctrl-names:
-      required: true
+  pinctrl-names:
+    required: true
 
-    clkout-divider:
-      type: int
-      description: |
-        Clock divider for the CLKOUT signal. If not set, the CLKOUT signal is turned off.
+  clkout-divider:
+    type: int
+    description: |
+      Clock divider for the CLKOUT signal. If not set, the CLKOUT signal is turned off.
 
-        Valid values are 1 or any even number from 2 to 14 for ESP32 and 2 to 490 for newer
-        Espressif MCUs like ESP32-C3.
+      Valid values are 1 or any even number from 2 to 14 for ESP32 and 2 to 490 for newer
+      Espressif MCUs like ESP32-C3.

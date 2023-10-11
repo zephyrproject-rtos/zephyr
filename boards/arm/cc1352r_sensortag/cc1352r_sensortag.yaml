@@ -12,4 +12,7 @@ supported:
   - gpio
   - i2c
   - spi
+  - watchdog
   - adc
+  - hwinfo
+vendor: ti

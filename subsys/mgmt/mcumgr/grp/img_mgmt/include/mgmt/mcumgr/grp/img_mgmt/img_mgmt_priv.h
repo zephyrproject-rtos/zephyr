@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,61 @@ int img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned in
 int img_mgmt_swap_type(int slot);
 
 /**
+ * @brief Returns image that the given slot belongs to.
+ *
+ * @param slot			A slot number.
+ *
+ * @return 0 based image number.
+ */
+static inline int img_mgmt_slot_to_image(int slot)
+{
+	__ASSERT(slot >= 0 && slot < (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER << 1),
+		 "Impossible slot number");
+
+	return (slot >> 1);
+}
+
+/**
+ * @brief Get slot number of alternate (inactive) image pair
+ *
+ * @param slot			A slot number.
+ *
+ * @return Number of other slot in pair
+ */
+static inline int img_mgmt_get_opposite_slot(int slot)
+{
+	__ASSERT(slot >= 0 && slot < (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER << 1),
+		 "Impossible slot number");
+
+	return (slot ^ 1);
+}
+
+enum img_mgmt_next_boot_type {
+	/** The normal boot to active or non-active slot */
+	NEXT_BOOT_TYPE_NORMAL	=	0,
+	/** The test/non-permanent boot to non-active slot */
+	NEXT_BOOT_TYPE_TEST	=	1,
+	/** Next boot will be revert to already confirmed slot; this
+	 * type of next boot means that active slot is not confirmed
+	 * yet as it has been marked for test in previous boot.
+	 */
+	NEXT_BOOT_TYPE_REVERT	=	2
+};
+
+/**
+ * @brief Get next boot slot number for a given image.
+ *
+ * @param image			An image number.
+ * @param type			Type of next boot
+ *
+ * @return Number of slot, from pair of slots assigned to image, that will
+ * boot on next reset. User needs to compare this slot against active slot
+ * to check whether application image will change for the next boot.
+ * @return -1 in case when next boot slot can not be established.
+ */
+int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type);
+
+/**
  * Collects information about the specified image slot.
  *
  * @return Flags of the specified image slot
@@ -134,6 +189,18 @@ int img_mgmt_erase_if_needed(uint32_t off, uint32_t len);
 int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			    struct img_mgmt_upload_action *action);
 
+/**
+ * @brief	Takes the image management lock (if enabled) to prevent other
+ *		threads interfering with an ongoing operation.
+ */
+void img_mgmt_take_lock(void);
+
+/**
+ * @brief	Releases the held image management lock (if enabled) to allow
+ *		other threads to use image management operations.
+ */
+void img_mgmt_release_lock(void);
+
 #define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
 int img_mgmt_erased_val(int slot, uint8_t *erased_val);
 
@@ -141,6 +208,7 @@ int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
 int img_mgmt_state_read(struct smp_streamer *ctxt);
 int img_mgmt_state_write(struct smp_streamer *njb);
+int img_mgmt_flash_area_id(int slot);
 
 #ifdef __cplusplus
 }

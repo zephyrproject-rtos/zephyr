@@ -22,20 +22,20 @@ on:
     - 'west.yml'
     - '.github/workflows/doc-build.yml'
     - 'scripts/dts/**'
-    - 'scripts/requirements-doc.txt'
+    - 'doc/requirements.txt'
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.14.0
+  WEST_VERSION: 1.0.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
-  DOXYGEN_VERSION: 1.9.4
+  DOXYGEN_VERSION: 1.9.6
 
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-22.04
+    runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
@@ -44,12 +44,26 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Rebase
+      continue-on-error: true
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PR_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        git config --global user.email "actions@zephyrproject.org"
+        git config --global user.name "Github Actions"
+        git rebase origin/${BASE_REF}
+        git log --graph --oneline HEAD...${PR_HEAD}
 
     - name: install-pkgs
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build graphviz
-        wget --no-verbose https://downloads.sourceforge.net/project/doxygen/rel-${DOXYGEN_VERSION}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
@@ -57,12 +71,12 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+        key: pip-${{ hashFiles('doc/requirements.txt') }}
 
     - name: install-pip
       run: |
         sudo pip3 install -U setuptools wheel pip
-        pip3 install -r scripts/requirements-doc.txt
+        pip3 install -r doc/requirements.txt
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
 
@@ -71,6 +85,7 @@ jobs:
         west init -l .
 
     - name: build-docs
+      shell: bash
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
           DOC_TAG="release"
@@ -84,7 +99,7 @@ jobs:
           DOC_TARGET="html"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -t publish" make -C doc ${DOC_TARGET}
+        DOC_TAG=${DOC_TAG} SPHINXOPTS_EXTRA="-q -t publish" make -C doc ${DOC_TARGET}
 
     - name: compress-docs
       run: |
@@ -116,7 +131,7 @@ jobs:
   doc-build-pdf:
     name: "Documentation Build (PDF)"
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-20.04
+    runs-on: zephyr-runner-linux-x64-4xlarge
     container: texlive/texlive:latest
     timeout-minutes: 60
     concurrency:
@@ -130,18 +145,24 @@ jobs:
     - name: install-pkgs
       run: |
         apt-get update
-        apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
+        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+        key: pip-${{ hashFiles('doc/requirements.txt') }}
+
+    - name: setup-venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
 
     - name: install-pip
       run: |
         pip3 install -U setuptools wheel pip
-        pip3 install -r scripts/requirements-doc.txt
+        pip3 install -r doc/requirements.txt
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
 
@@ -150,6 +171,8 @@ jobs:
         west init -l .
 
     - name: build-docs
+      shell: bash
+      continue-on-error: true
       run: |
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
           DOC_TAG="release"
@@ -160,7 +183,11 @@ jobs:
         DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
 
     - name: upload-build
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: pdf-output
-        path: doc/_build/latex/zephyr.pdf
+        if-no-files-found: ignore
+        path: |
+          doc/_build/latex/zephyr.pdf
+          doc/_build/latex/zephyr.log

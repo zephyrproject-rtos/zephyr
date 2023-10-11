@@ -4,7 +4,6 @@
 config ZTEST
 	bool "Zephyr testing framework"
 	select TEST
-	select OUTPUT_SYMBOLS
 	help
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.
@@ -20,6 +19,7 @@ config ZTEST_NEW_API
 config ZTEST_STACK_SIZE
 	int "Test function thread stack size"
 	default 2048 if COVERAGE_GCOV
+	default 2048 if X86
 	default 1024
 
 config ZTEST_TEST_DELAY_MS
@@ -103,6 +103,15 @@ config ZTEST_NO_YIELD
 	  spin in a loop. This is useful for low power mode tests, where
 	  yielding to the idle thread may put the board into a low power state
 	  where a debugger cannot connect to it.
+
+config ZTEST_WARN_NO_OPTIMIZATIONS
+	bool "Warn when running tests with CONFIG_NO_OPTIMIZATIONS"
+	default y if !(ARCH_POSIX || COVERAGE)
+	depends on NO_OPTIMIZATIONS
+	help
+	  Print a CMake warning when building ztests with no compiler
+	  optimizations. Please don't file issues when running tests that are
+	  not explicitly tuned to work in this configuration.
 
 if ZTEST_NEW_API
 

@@ -2,35 +2,57 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-config MCUMGR_SMP_REASSEMBLY
+# The Kconfig file is dedicated to transport subdirectory of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# transport, in general, that are not otherwise controlled by
+# options belonging to transport specifically.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_ -- general transport options;
+#  MCUMGR_TRANSPORT_WORKQUEUE -- for workqueue configuration;
+#  MCUMGR_TRANSPORT_NETBUF -- for Net Buf related configuration.
+
+config MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE
+	int "MCUmgr transport workqueue stack size"
+	default 2048
+	help
+	  Stack size of the MCUmgr for transport subsystem work queue.
+
+config MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO
+	int "MCUmgr transport workqueue thread priority"
+	default 3
+	help
+	  Scheduling priority of the MCUmgr transport subsystem work queue.
+
+config MCUMGR_TRANSPORT_REASSEMBLY
 	bool
 	help
 	  Enable structures and functions needed for packet reassembly by SMP backend.
 
-config MCUMGR_BUF_COUNT
+config MCUMGR_TRANSPORT_NETBUF_COUNT
 	int "Number of mcumgr buffers"
-	default 2 if MCUMGR_SMP_UDP
+	default 2 if MCUMGR_TRANSPORT_UDP
 	default 4
 	help
 	  The number of net_bufs to allocate for mcumgr.  These buffers are
 	  used for both requests and responses.
 
-config MCUMGR_BUF_SIZE
+config MCUMGR_TRANSPORT_NETBUF_SIZE
 	int "Size of each mcumgr buffer"
-	default 2048 if MCUMGR_SMP_UDP
+	default 2048 if MCUMGR_TRANSPORT_UDP
 	default 384
 	help
 	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
 	  the following relation:
-	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
-	  In case when MCUMGR_SMP_SHELL is enabled this value should be set to
-	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+	  MCUMGR_TRANSPORT_NETBUF_SIZE >= transport-specific-MTU + transport-overhead
+	  In case when MCUMGR_TRANSPORT_SHELL is enabled this value should be set to
+	  at least MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
 
-config MCUMGR_BUF_USER_DATA_SIZE
+config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
 	int "Size of mcumgr buffer user data"
-	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
-	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
-	default 8 if MCUMGR_SMP_BT
+	default 24 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV6
+	default 8 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV4
+	default 8 if MCUMGR_TRANSPORT_BT
 	default 4
 	help
 	  The size, in bytes, of user data to allocate for each mcumgr buffer.
@@ -39,6 +61,10 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  setting. A value of 4 is sufficient for UART and shell, a value of 8
 	  is sufficient for Bluetooth. For UDP, the userdata must be large
 	  enough to hold a IPv4/IPv6 address.
+
+module = MCUMGR_TRANSPORT
+module-str = mcumgr_transport
+source "subsys/logging/Kconfig.template.log_config"
 
 rsource "Kconfig.dummy"
 

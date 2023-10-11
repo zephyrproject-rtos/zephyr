@@ -7,15 +7,16 @@
 
 #include "test_fat.h"
 #include <ff.h>
+#ifdef CONFIG_DISK_DRIVER_FLASH
 #include <zephyr/storage/flash_map.h>
-
-/* FatFs work area */
-static FATFS fat_fs;
+#else
+#include <zephyr/storage/disk_access.h>
+#endif
 
 /* mounting info */
 static struct fs_mount_t fatfs_mnt = {
 	.type = FS_FATFS,
-	.mnt_point = "/NAND:",
+	.mnt_point = "/"DISK_NAME":",
 	.fs_data = &fat_fs,
 };
 
@@ -24,11 +25,12 @@ void test_fs_mkfs_ops(void);
 
 struct fs_mount_t *fs_mkfs_mp = &fatfs_mnt;
 const int fs_mkfs_type = FS_FATFS;
-uintptr_t fs_mkfs_dev_id = (uintptr_t) "NAND:";
+uintptr_t fs_mkfs_dev_id = (uintptr_t) DISK_NAME":";
 int fs_mkfs_flags;
-const char *some_file_path = "/NAND:/SOME";
-const char *other_dir_path = "/NAND:/OTHER";
+const char *some_file_path = "/"DISK_NAME":/SOME";
+const char *other_dir_path = "/"DISK_NAME":/OTHER";
 
+#ifdef CONFIG_DISK_DRIVER_FLASH
 static int wipe_partition(void)
 {
 	/* In this test the first partition on flash device is used for FAT */
@@ -54,6 +56,50 @@ static int wipe_partition(void)
 
 	return TC_PASS;
 }
+#else
+static uint8_t erase_buffer[4096] = { 0 };
+
+static int wipe_partition(void)
+{
+	uint32_t sector_size;
+	uint32_t sector_count;
+	uint32_t sector_wr_jmp;
+	uint32_t sector_wr_size;
+
+	if (disk_access_init(DISK_NAME)) {
+		TC_PRINT("Failed to init disk "DISK_NAME"\n");
+		return TC_FAIL;
+	}
+	if (disk_access_ioctl(DISK_NAME, DISK_IOCTL_GET_SECTOR_COUNT, &sector_count)) {
+		TC_PRINT("Failed to get disk "DISK_NAME" sector count\n");
+		return TC_FAIL;
+	}
+	if (disk_access_ioctl(DISK_NAME, DISK_IOCTL_GET_SECTOR_SIZE, &sector_size)) {
+		TC_PRINT("Failed to get disk "DISK_NAME" sector size\n");
+		return TC_FAIL;
+	}
+
+	if (sector_size > ARRAY_SIZE(erase_buffer)) {
+		TC_PRINT("Predefined \"erase_buffer\" to small to handle single sector\n");
+		return TC_FAIL;
+	}
+
+	sector_wr_size = MIN(sector_size, ARRAY_SIZE(erase_buffer));
+	sector_wr_jmp = sector_wr_size / sector_wr_size;
+	TC_PRINT("For "DISK_NAME" using sector write size "PRIu32" to write "PRIu32" at once\n",
+		 sector_wr_size, sector_wr_jmp);
+
+	for (uint32_t sector_idx = 0; sector_idx < sector_count; sector_idx += sector_wr_jmp) {
+		if (disk_access_write(DISK_NAME, erase_buffer, sector_idx, 1)) {
+			TC_PRINT("Faield to \"erase\" sector "PRIu32" to "DISK_NAME"\n",
+				 sector_idx);
+			return TC_FAIL;
+		}
+	}
+
+	return TC_PASS;
+}
+#endif
 
 ZTEST(fat_fs_mkfs, test_mkfs_simple)
 {

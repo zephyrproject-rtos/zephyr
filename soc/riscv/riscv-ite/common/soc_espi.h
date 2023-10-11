@@ -24,6 +24,14 @@ extern "C" {
  */
 void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable);
 
+/**
+ * @brief eSPI transaction interrupt control
+ *
+ * @param dev pointer to eSPI device
+ * @param enable/disable eSPI transaction interrupt
+ */
+void espi_it8xxx2_enable_trans_irq(const struct device *dev, bool enable);
+
 #ifdef __cplusplus
 }
 #endif

@@ -21,27 +21,54 @@
 
 extern int error_count;
 
-#define PRINT_OVERFLOW_ERROR()			\
-	printk(" Error: tick occurred\n")
+#define TICK_OCCURRENCE_ERROR  "Error: Tick Occurred"
 
 #ifdef CSV_FORMAT_OUTPUT
-#define FORMAT "%-60s,%8u,%8u\n"
+#define FORMAT_STR   "%-52s,%s,%s,%s\n"
+#define CYCLE_FORMAT "%8u"
+#define NSEC_FORMAT  "%8u"
 #else
-#define FORMAT "%-60s:%8u cycles , %8u ns\n"
+#define FORMAT_STR   "%-52s:%s , %s : %s\n"
+#define CYCLE_FORMAT "%8u cycles"
+#define NSEC_FORMAT  "%8u ns"
 #endif
 
-#define PRINT_F(...)						\
-	{							\
-		char sline[256]; 				\
-		snprintk(sline, 254, FORMAT, ##__VA_ARGS__); 	\
-		printk("%s", sline);			     	\
-	}
+/**
+ * @brief Display a line of statistics
+ *
+ * This macro displays the following:
+ *  1. Test description summary
+ *  2. Number of cycles - See Note
+ *  3. Number of nanoseconds - See Note
+ *  4. Additional notes describing the nature of any errors
+ *
+ * Note - If the @a error parameter is not false, then the test has no
+ * numerical information to print and it will instead print "FAILED".
+ */
+#define PRINT_F(summary, cycles, nsec, error, notes)                     \
+	do {                                                             \
+		char cycle_str[32];                                      \
+		char nsec_str[32];                                       \
+									 \
+		if (!error) {                                            \
+			snprintk(cycle_str, 30, CYCLE_FORMAT, cycles);   \
+			snprintk(nsec_str, 30, NSEC_FORMAT, nsec);       \
+		} else {                                                 \
+			snprintk(cycle_str, 30, "%15s", "FAILED");       \
+			snprintk(nsec_str, 30, "%15s", "FAILED");        \
+		}                                                        \
+		printk(FORMAT_STR, summary, cycle_str, nsec_str, notes); \
+	} while (0)
 
-#define PRINT_STATS(x, y) \
-	PRINT_F(x, y, (uint32_t)timing_cycles_to_ns(y))
+#define PRINT_STATS(summary, value, error, notes)     \
+	PRINT_F(summary, value,                       \
+		(uint32_t)timing_cycles_to_ns(value), \
+		error, notes)
 
-#define PRINT_STATS_AVG(x, y, counter)	\
-	PRINT_F(x, y / counter, (uint32_t)timing_cycles_to_ns_avg(y, counter));
+#define PRINT_STATS_AVG(summary, value, counter, error, notes)      \
+	PRINT_F(summary, value / counter,                           \
+		(uint32_t)timing_cycles_to_ns_avg(value, counter),  \
+		error, notes);
 
 
 #endif

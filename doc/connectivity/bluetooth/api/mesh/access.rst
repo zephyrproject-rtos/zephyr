@@ -149,6 +149,76 @@ storage. The model can retrieve the data by calling the ``read_cb`` passed as
 a parameter to the callback. See the :ref:`settings_api` module documentation for
 details.
 
+When model data changes frequently, storing it on every change may lead to
+increased wear of flash. To reduce the wear, the model can postpone storing of
+data by calling :c:func:`bt_mesh_model_data_store_schedule`. The stack will
+schedule a work item with delay defined by the
+:kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option. When the work item is
+running, the stack will call the :c:member:`bt_mesh_model_cb.pending_store`
+callback for every model that has requested storing of data. The model can
+then call :c:func:`bt_mesh_model_data_store` to store the data.
+
+If :kconfig:option:`CONFIG_BT_MESH_SETTINGS_WORKQ` is enabled, the
+:c:member:`bt_mesh_model_cb.pending_store` callback is called from a dedicated
+thread. This allows the stack to process other incoming and outgoing messages
+while model data is being stored. It is recommended to use this option and the
+:c:func:`bt_mesh_model_data_store_schedule` function when large amount of data
+needs to be stored.
+
+Composition Data
+================
+
+.. note::
+
+   The implementation of the Bluetooth Mesh Protocol Specification version 1.1
+   is currently in an experimental state. For Bluetooth Mesh Profile Specification
+   version 1.0.1, only Composition Data Page 0 is supported. Users that are developing
+   for Bluetooth Mesh Profile Specification version 1.0.1 may therefore disregard all
+   parts of the following section mentioning the :ref:`bluetooth_mesh_lcd_srv`
+   model and Composition Data Pages 1, 2, 128, 129 and 130.
+
+The Composition Data provides information about a mesh device.
+A device's Composition Data holds information about the elements on the
+device, the models that it supports, and other features. The Composition
+Data is split into different pages, where each page contains specific feature
+information about the device. In order to access this information, the user
+may use the :ref:`bluetooth_mesh_models_cfg_srv` model or, if supported,
+the :ref:`bluetooth_mesh_lcd_srv` model.
+
+Composition Data Page 0 and 128
+-------------------------------
+
+Composition Data Page 0 provides the fundemental information about a device, and
+is mandatory for all mesh devices. It contains the element and model composition,
+the supported features, and manufacturer information. Composition Data Page 128
+mirrors Page 0 and is used to represent the new content of the Composition Data
+Page 0 after a device firmware update.
+
+Composition Data Page 1 and 129
+-------------------------------
+
+Composition Data Page 1 provides information about the relationships between models,
+and is mandatory for all mesh devices. A model may extend and/or correspond to one
+or more models. A model can extend another model by calling :c:func:`bt_mesh_model_extend`,
+or correspond to another model by calling :c:func:`bt_mesh_model_correspond`.
+:kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE` specifies how many model
+relations can be stored in the composition on a device, and this number should reflect the
+number of :c:func:`bt_mesh_model_extend` and :c:func:`bt_mesh_model_correspond` calls.
+Composition Data Page 129 mirrors Page 1 and is used to represent the new content of
+the Composition Data Page 1 after a device firmware update.
+
+Composition Data Page 2 and 130
+-------------------------------
+
+Composition Data Page 2 provides information for supported mesh profiles. Mesh profile
+specifications define product requirements for devices that want to support a specific
+Bluetooth SIG defined profile. Currently supported profiles can be found in section
+3.12 in `Bluetooth SIG Assigned Numbers
+<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+Composition Data Page 2 is only mandatory for devices that claim support for one or more
+mesh profile(s). Composition Data Page 130 mirrors Page 2 and is used to represent the
+new content of the Composition Data Page 2 after a device firmware update.
+
 API reference
 *************
 

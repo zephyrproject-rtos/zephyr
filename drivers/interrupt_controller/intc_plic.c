@@ -14,20 +14,38 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
 
+#define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
+/*
+ * These registers' offset are defined in the RISCV PLIC specs, see:
+ * https://github.com/riscv/riscv-plic-spec
+ */
+#define PLIC_REG_PRIO_OFFSET 0x0
+#define PLIC_REG_IRQ_EN_OFFSET 0x2000
+#define PLIC_REG_REGS_OFFSET 0x200000
+/*
+ * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
+ * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
+ * in Linux's SiFive PLIC driver
+ */
+#define PLIC_REG_TRIG_TYPE_OFFSET 0x1080
+
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
-#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
-#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME(0, irq_en)
-#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME(0, reg)
+#define PLIC_PRIO	(PLIC_BASE_ADDR(0) + PLIC_REG_PRIO_OFFSET)
+#define PLIC_IRQ_EN	(PLIC_BASE_ADDR(0) + PLIC_REG_IRQ_EN_OFFSET)
+#define PLIC_REG	(PLIC_BASE_ADDR(0) + PLIC_REG_REGS_OFFSET)
 
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
+
+#define PLIC_EDGE_TRIG_TYPE (PLIC_BASE_ADDR(0) + PLIC_REG_TRIG_TYPE_OFFSET)
+#define PLIC_EDGE_TRIG_SHIFT  5
 
 struct plic_regs_t {
 	uint32_t threshold_prio;
@@ -37,10 +55,29 @@ struct plic_regs_t {
 static int save_irq;
 
 /**
+ * @brief return edge irq value or zero
+ *
+ * In the event edge irq is enable this will return the trigger
+ * value of the irq. In the event edge irq is not supported this
+ * routine will return 0
+ *
+ * @param irq IRQ number to add to the trigger
+ *
+ * @return irq value when enabled 0 otherwise
+ */
+static int riscv_plic_is_edge_irq(uint32_t irq)
+{
+	volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
+
+	trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
+	return *trig & BIT(irq);
+}
+
+/**
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_enable function to enable external interrupts for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *
@@ -61,7 +98,7 @@ void riscv_plic_irq_enable(uint32_t irq)
  * @brief Disable a riscv PLIC-specific interrupt line
  *
  * This routine disables a RISCV PLIC-specific interrupt line.
- * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
+ * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGED
  * arch_irq_disable function to disable external interrupts, for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
  *
@@ -135,6 +172,7 @@ static void plic_irq_handler(const void *arg)
 
 	uint32_t irq;
 	struct _isr_table_entry *ite;
+	int edge_irq;
 
 	/* Get the IRQ number generating the interrupt */
 	irq = regs->claim_complete;
@@ -154,6 +192,16 @@ static void plic_irq_handler(const void *arg)
 	if (irq == 0U || irq >= PLIC_IRQS)
 		z_irq_spurious(NULL);
 
+	edge_irq = riscv_plic_is_edge_irq(irq);
+
+	/*
+	 * For edge triggered interrupts, write to the claim_complete register
+	 * to indicate to the PLIC controller that the IRQ has been handled
+	 * for edge triggered interrupts.
+	 */
+	if (edge_irq)
+		regs->claim_complete = save_irq;
+
 	irq += CONFIG_2ND_LVL_ISR_TBL_OFFSET;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
@@ -162,9 +210,11 @@ static void plic_irq_handler(const void *arg)
 
 	/*
 	 * Write to claim_complete register to indicate to
-	 * PLIC controller that the IRQ has been handled.
+	 * PLIC controller that the IRQ has been handled
+	 * for level triggered interrupts.
 	 */
-	regs->claim_complete = save_irq;
+	if (!edge_irq)
+		regs->claim_complete = save_irq;
 }
 
 /**
@@ -174,7 +224,6 @@ static void plic_irq_handler(const void *arg)
  */
 static int plic_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
 
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
@@ -210,4 +259,5 @@ static int plic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
+DEVICE_DT_INST_DEFINE(0, plic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

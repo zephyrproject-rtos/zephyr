@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <zephyr/linker/iterable_sections.h>
+
 	ITERABLE_SECTION_ROM(tracing_backend, 4)
 
 	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig COREDUMP_DEVICE
-	bool "Coredump pseudo-device driver"
+	bool "Coredump pseudo-device drivers"
 	help
 	  Enable support for a pseudo-device to help capturing
 	  desired data into core dumps.

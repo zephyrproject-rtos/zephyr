@@ -25,36 +25,36 @@ properties:
     required: true
 
 child-binding:
-    description: NuMicro pin controller pin group
-    child-binding:
-      description: |
-        NuMicro pin controller pin configuration node
-      include:
-        - name: pincfg-node.yaml
-          property-allowlist:
-            - bias-pull-down
-            - bias-pull-up
-            - drive-open-drain
-            - input-schmitt-enable
-            - input-disable
-      properties:
-        pinmux:
-          required: true
-          type: array
-          description: |
-            Pin mux selections for this group. See the SoC level pinctrl dtsi file
-            for a defined list of these options.
-        slew-rate:
-          default: "normal"
-          type: string
-          enum:
-            - "normal"
-            - "high"
-            - "fast"
-          description: |
-            Pin output slew rate. Sets the HSRENx register. If not set, defaults to the
-            reset value (normal).
-        input-debounce:
-          type: boolean
-          description: |
-            enable the input debounce function
+  description: NuMicro pin controller pin group
+  child-binding:
+    description: |
+      NuMicro pin controller pin configuration node
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+          - input-schmitt-enable
+          - input-disable
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections for this group. See the SoC level pinctrl dtsi file
+          for a defined list of these options.
+      slew-rate:
+        default: "normal"
+        type: string
+        enum:
+          - "normal"
+          - "high"
+          - "fast"
+        description: |
+          Pin output slew rate. Sets the HSRENx register. If not set, defaults to the
+          reset value (normal).
+      input-debounce:
+        type: boolean
+        description: |
+          enable the input debounce function

@@ -34,7 +34,7 @@ extern "C" {
  * The following #defines are used to configure the I2S controller.
  */
 
-
+/** I2S data stream format options */
 typedef uint8_t i2s_fmt_t;
 
 /** Data Format bit field position. */
@@ -159,14 +159,16 @@ typedef uint8_t i2s_fmt_t;
 /** Invert frame clock */
 #define I2S_FMT_FRAME_CLK_INV               BIT(5)
 
-/** NF represents "Normal Frame" whereas IF represents "Inverted Frame"
- *  NB represents "Normal Bit Clk" whereas IB represents "Inverted Bit clk"
- */
+/** Normal Frame, Normal Bit Clk */
 #define I2S_FMT_CLK_NF_NB		(0 << I2S_FMT_CLK_FORMAT_SHIFT)
+/** Normal Frame, Inverted Bit Clk */
 #define I2S_FMT_CLK_NF_IB		(1 << I2S_FMT_CLK_FORMAT_SHIFT)
+/** Inverted Frame, Normal Bit Clk */
 #define I2S_FMT_CLK_IF_NB		(2 << I2S_FMT_CLK_FORMAT_SHIFT)
+/** Inverted Frame, Inverted Bit Clk */
 #define I2S_FMT_CLK_IF_IB		(3 << I2S_FMT_CLK_FORMAT_SHIFT)
 
+/** I2S configuration options */
 typedef uint8_t i2s_opt_t;
 
 /** Run bit clock continuously */
@@ -287,25 +289,25 @@ enum i2s_trigger_cmd {
  *
  * @remark When I2S data format is selected parameter channels is ignored,
  * number of words in a frame is always 2.
- *
- * @param word_size Number of bits representing one data word.
- * @param channels Number of words per frame.
- * @param format Data stream format as defined by I2S_FMT_* constants.
- * @param options Configuration options as defined by I2S_OPT_* constants.
- * @param frame_clk_freq Frame clock (WS) frequency, this is sampling rate.
- * @param mem_slab memory slab to store RX/TX data.
- * @param block_size Size of one RX/TX memory block (buffer) in bytes.
- * @param timeout Read/Write timeout. Number of milliseconds to wait in case TX
- *        queue is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
  */
 struct i2s_config {
+	/** Number of bits representing one data word. */
 	uint8_t word_size;
+	/** Number of words per frame. */
 	uint8_t channels;
+	/** Data stream format as defined by I2S_FMT_* constants. */
 	i2s_fmt_t format;
+	/** Configuration options as defined by I2S_OPT_* constants. */
 	i2s_opt_t options;
+	/** Frame clock (WS) frequency, this is sampling rate. */
 	uint32_t frame_clk_freq;
+	/** Memory slab to store RX/TX data. */
 	struct k_mem_slab *mem_slab;
+	/** Size of one RX/TX memory block (buffer) in bytes. */
 	size_t block_size;
+	/** Read/Write timeout. Number of milliseconds to wait in case TX queue
+	 * is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
+	 */
 	int32_t timeout;
 };
 

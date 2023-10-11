@@ -10,11 +10,10 @@ compatible: "usb-ulpi-phy"
 include: phy-controller.yaml
 
 properties:
-    "#phy-cells":
-      const: 0
+  "#phy-cells":
+    const: 0
 
-    reset-gpios:
-      type: phandle-array
-      required: false
-      description: |
-        GPIO connected to the ulpi RESET pin.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ulpi RESET pin.

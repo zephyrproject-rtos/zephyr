@@ -147,7 +147,7 @@
 			reg = <0xf0006000 0x1000>;
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
-
+			fifo-depth = <32>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -158,7 +158,7 @@
 			reg = <0xf0007000 0x1000>;
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
-
+			fifo-depth = <32>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 

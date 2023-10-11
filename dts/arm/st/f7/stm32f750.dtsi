@@ -5,3 +5,9 @@
  */
 
 #include <st/f7/stm32f746.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f750", "st,stm32f7", "simple-bus";
+	};
+};

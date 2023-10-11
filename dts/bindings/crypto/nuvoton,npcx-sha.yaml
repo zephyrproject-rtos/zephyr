@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NPCX Crypto SHA accelerator.
+
+compatible: "nuvoton,npcx-sha"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  context-buffer-size:
+    type: int
+    required: true
+    description: |
+      Size of the pre-allocated buffer for the SHA ROM API to store the
+      intermdiate computation result and final digest.

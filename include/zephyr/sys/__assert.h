@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /* Wrapper around printk to avoid including printk.h in assert.h */
-void assert_print(const char *fmt, ...);
+void __printf_like(1, 2) assert_print(const char *fmt, ...);
 
 #ifdef __cplusplus
 }

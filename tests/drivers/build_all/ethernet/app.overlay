@@ -34,11 +34,14 @@
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
 				compatible = "microchip,enc28j60";
 				reg = <0x0>;
+				full-duplex;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 00 00 00];
@@ -58,6 +61,64 @@
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_adin1110: adin1110@3 {
+				compatible = "adi,adin1110";
+				reg = <0x3>;
+				spi-max-frequency = <25000000>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				port1 {
+					local-mac-address = [ CA 2F B7 10 23 63 ];
+				};
+
+				mdio {
+					compatible = "adi,adin2111-mdio";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					ethernet-phy@1 {
+						reg = <0x1>;
+						compatible = "adi,adin2111-phy";
+						status = "okay";
+					};
+				};
+			};
+
+			test_spi_adin2111: adin2111@4 {
+				compatible = "adi,adin2111";
+				reg = <0x4>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				port1 {
+					local-mac-address = [ CA 2F B7 10 23 63 ];
+				};
+				port2 {
+					local-mac-address = [ 3C 82 D4 A2 29 8E ];
+				};
+
+				mdio {
+					compatible = "adi,adin2111-mdio";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					ethernet-phy@1 {
+						reg = <0x1>;
+						compatible = "adi,adin2111-phy";
+						status = "okay";
+					};
+					ethernet-phy@2 {
+						reg = <0x2>;
+						compatible = "adi,adin2111-phy";
+						status = "okay";
+					};
+				};
 			};
 		};
 	};

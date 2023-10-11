@@ -13,15 +13,15 @@
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 USBD_CONFIGURATION_DEFINE(config_1,
 			  USB_SCD_SELF_POWERED,
 			  200);
 
 USBD_DESC_LANG_DEFINE(sample_lang);
-USBD_DESC_STRING_DEFINE(sample_mfr, "ZEPHYR", 1);
-USBD_DESC_STRING_DEFINE(sample_product, "Zephyr USBD ACM console", 2);
-USBD_DESC_STRING_DEFINE(sample_sn, "0123456789ABCDEF", 3);
+USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, "ZEPHYR");
+USBD_DESC_PRODUCT_DEFINE(sample_product, "Zephyr USBD ACM console");
+USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn, "0123456789ABCDEF");
 
 USBD_DEVICE_DEFINE(sample_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
@@ -75,18 +75,18 @@ static int enable_usb_device_next(void)
 }
 #endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
 
-void main(void)
+int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	uint32_t dtr = 0;
 
-#if IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 	if (enable_usb_device_next()) {
-		return;
+		return 0;
 	}
 #else
 	if (usb_enable(NULL)) {
-		return;
+		return 0;
 	}
 #endif
 

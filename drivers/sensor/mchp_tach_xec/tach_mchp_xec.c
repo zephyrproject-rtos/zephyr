@@ -15,13 +15,16 @@
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
-#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/drivers/sensor.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+
+#include <zephyr/pm/device.h>
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/policy.h>
+#endif
 
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -31,12 +34,11 @@ struct tach_xec_config {
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
-#ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
-#endif
 };
 
 struct tach_xec_data {
+	uint32_t control;
 	uint16_t count;
 };
 
@@ -56,6 +58,9 @@ int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	struct tach_regs * const tach = cfg->regs;
 	uint8_t poll_count = 0;
 
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	while (poll_count < PIN_STS_TIMEOUT) {
 		/* See whether internal counter is already latched */
 		if (tach->STATUS & MCHP_TACH_STS_CNT_RDY) {
@@ -69,7 +74,9 @@ int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		/* Allow other threads to run while we sleep */
 		k_usleep(USEC_PER_MSEC);
 	}
-
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	if (poll_count == PIN_STS_TIMEOUT) {
 		return -EINVAL;
 	}
@@ -121,19 +128,47 @@ static void tach_xec_sleep_clr(const struct device *dev)
 #endif
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int tach_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct tach_xec_config * const cfg = dev->config;
+	struct tach_xec_data * const data = dev->data;
+	struct tach_regs * const tach = cfg->regs;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (data->control & MCHP_TACH_CTRL_EN) {
+			tach->CONTROL |= MCHP_TACH_CTRL_EN;
+			data->control &= (~MCHP_TACH_CTRL_EN);
+		}
+	break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (tach->CONTROL & MCHP_TACH_CTRL_EN) {
+			/* Take a backup */
+			data->control = tach->CONTROL;
+			tach->CONTROL &= (~MCHP_TACH_CTRL_EN);
+		}
+	break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static int tach_xec_init(const struct device *dev)
 {
 	const struct tach_xec_config * const cfg = dev->config;
 	struct tach_regs * const tach = cfg->regs;
 
-#ifdef CONFIG_PINCTRL
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
 		LOG_ERR("XEC TACH pinctrl init failed (%d)", ret);
 		return ret;
 	}
-#endif
 
 	tach_xec_sleep_clr(dev);
 
@@ -150,8 +185,6 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 	.channel_get = tach_xec_channel_get,
 };
 
-#ifdef CONFIG_PINCTRL
-#define XEC_TACH_PINCTRL_DEF(inst) PINCTRL_DT_INST_DEFINE(inst)
 #define XEC_TACH_CONFIG(inst)						\
 	static const struct tach_xec_config tach_xec_config_##inst = {	\
 		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
@@ -161,28 +194,19 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 	}
-#else
-#define XEC_TACH_PINCTRL_DEF(inst)
-#define XEC_TACH_CONFIG(inst)						\
-	static const struct tach_xec_config tach_xec_config_##inst = {	\
-		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
-		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),		\
-		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),	\
-		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
-	}
-#endif
 
 #define TACH_XEC_DEVICE(id)						\
 	static struct tach_xec_data tach_xec_data_##id;			\
 									\
-	XEC_TACH_PINCTRL_DEF(id);					\
+	PINCTRL_DT_INST_DEFINE(id);					\
 									\
 	XEC_TACH_CONFIG(id);						\
 									\
+	PM_DEVICE_DT_INST_DEFINE(id, tach_xec_pm_action);		\
+									\
 	SENSOR_DEVICE_DT_INST_DEFINE(id,				\
 			    tach_xec_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(id),			\
 			    &tach_xec_data_##id,			\
 			    &tach_xec_config_##id,			\
 			    POST_KERNEL,				\

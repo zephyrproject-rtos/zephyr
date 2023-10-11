@@ -1,7 +1,8 @@
-.. _zperf-sample:
+.. zephyr:code-sample:: zperf
+   :name: zperf: Network Traffic Generator
+   :relevant-api: net_config
 
-zperf: Network Traffic Generator
-################################
+   Use the zperf shell utility to evaluate network bandwidth.
 
 Description
 ***********
@@ -31,8 +32,9 @@ the target platform must provide a network interface supported by Zephyr.
 This sample application has been tested on the following platforms:
 
 - Freedom Board (FRDM K64F)
-- Quark SE C1000 Development Board
 - QEMU x86
+- Arm FVP BaseR AEMv8-R
+- ARM BASE RevC AEMv8A Fixed Virtual Platforms
 
 Requirements
 ************

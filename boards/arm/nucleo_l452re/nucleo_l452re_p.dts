@@ -14,7 +14,7 @@
 	model = "STMicroelectronics STM32L452RE-P-NUCLEO board";
 	compatible = "st,stm32l452re-nucleo";
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;

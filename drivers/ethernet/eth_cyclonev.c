@@ -60,7 +60,7 @@ struct eth_cyclonev_config {
 	uint8_t *base;
 	/** BBRAM size (Unit:bytes) */
 	int size;
-	int inst_num;
+	uint32_t emac_index;
 	void (*irq_config)(void);
 };
 
@@ -315,6 +315,7 @@ static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_confi
 				   const struct ethernet_config *config)
 {
 	struct eth_cyclonev_priv *p = dev->data;
+	const struct eth_cyclonev_config *cv_config = dev->config;
 	uint32_t reg_val;
 	int ret = 0;
 
@@ -323,7 +324,7 @@ static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_confi
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(p->mac_addr, config->mac_address.addr, sizeof(p->mac_addr));
-		eth_cyclonev_set_mac_addr(p->mac_addr, p->instance, 0, p); /* Set MAC address */
+		eth_cyclonev_set_mac_addr(p->mac_addr, cv_config->emac_index, 0, p); /* Set MAC */
 		net_if_set_link_addr(p->iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 		break;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
@@ -546,6 +547,7 @@ abort:
 void eth_cyclonev_isr(const struct device *dev)
 {
 	struct eth_cyclonev_priv *p = dev->data;
+	const struct eth_cyclonev_config *config = dev->config;
 	uint32_t irq_status = 0;
 	uint32_t irq_status_emac = 0;
 
@@ -617,7 +619,7 @@ void eth_cyclonev_isr(const struct device *dev)
 				return;
 			}
 
-			set_mac_conf_status(p->instance, &cfg_reg_set, p);
+			set_mac_conf_status(config->emac_index, &cfg_reg_set, p);
 			sys_write32(cfg_reg_set, GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
 			eth_cyclonev_start(dev);
@@ -857,22 +859,21 @@ int eth_cyclonev_probe(const struct device *dev)
 	p->base_addr = (mem_addr_t)config->base;
 	p->running = 0;
 	p->initialised = 0;
-	p->instance = config->inst_num;
 
 	/* EMAC HPS Interface Initialization */
 
 	/* Reset the EMAC */
-	eth_cyclonev_reset(p->instance);
+	eth_cyclonev_reset(config->emac_index);
 
 	/* Reset the PHY  */
-	ret = alt_eth_phy_reset(p->instance, p);
+	ret = alt_eth_phy_reset(config->emac_index, p);
 	if (ret != 0) {
 		LOG_ERR("alt_eth_phy_reset failure!\n");
 		return ret;
 	}
 
 	/* Configure the PHY */
-	ret = alt_eth_phy_config(p->instance, p);
+	ret = alt_eth_phy_config(config->emac_index, p);
 	if (ret != 0) {
 		LOG_ERR("alt_eth_phy_config failure!\n");
 		return ret;
@@ -891,7 +892,7 @@ int eth_cyclonev_probe(const struct device *dev)
 	 *operation is completed).
 	 */
 
-	ret = eth_cyclonev_software_reset(p->instance, p);
+	ret = eth_cyclonev_software_reset(config->emac_index, p);
 	if (ret != 0) {
 		LOG_ERR("eth_cyclonev_software_reset failure!\n");
 		return ret;
@@ -993,7 +994,7 @@ int eth_cyclonev_probe(const struct device *dev)
 				   /* Enable Transmission to PHY */
 	);
 
-	ret = set_mac_conf_status(p->instance, &mac_config_reg_settings, p);
+	ret = set_mac_conf_status(config->emac_index, &mac_config_reg_settings, p);
 	if (ret != 0) {
 		return -1;
 	}
@@ -1004,7 +1005,7 @@ int eth_cyclonev_probe(const struct device *dev)
 	 */
 
 	memcpy(p->mac_addr, eth_cyclonev_mac_addr, sizeof(p->mac_addr));
-	eth_cyclonev_set_mac_addr(p->mac_addr, p->instance, 0, p);
+	eth_cyclonev_set_mac_addr(p->mac_addr, config->emac_index, 0, p);
 
 	/* 5. Program the following fields to set the appropriate filters for the
 	 * incoming frames in the MAC Frame Filter Register:
@@ -1142,30 +1143,28 @@ const struct ethernet_api eth_cyclonev_api = {.iface_api.init = eth_cyclonev_ifa
 					      .stop = eth_cyclonev_stop,
 					      .set_config = eth_cyclonev_set_config};
 
-#define CYCLONEV_ETH_INIT(inst)                                                                    \
-                                              \
-	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data;                                \
-	static void eth_cyclonev_##inst##_irq_config(void);			\
-	\
-		static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = {            \
-			.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),               \
-			.size = DT_INST_REG_SIZE(inst),                           \
-			.inst_num = inst,                                     \
-			.irq_config = eth_cyclonev_##inst##_irq_config,         \
-	};   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL,			\
-					&eth_cyclonev_##inst##_data, \
-					&eth_cyclonev_##inst##_cfg,		\
-					CONFIG_ETH_INIT_PRIORITY,		\
-					&eth_cyclonev_api,           \
-					NET_ETH_MTU);                   \
-					\
-	static void eth_cyclonev_##inst##_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority), eth_cyclonev_isr,	\
-			    DEVICE_DT_INST_GET(inst),			\
-			    0);			\
-		irq_enable(DT_INST_IRQN(inst));				\
-	}
+#define CYCLONEV_ETH_INIT(inst) \
+	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data; \
+	static void eth_cyclonev_##inst##_irq_config(void); \
+ \
+	static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = { \
+			.base = (uint8_t *)(DT_INST_REG_ADDR(inst)), \
+			.size = DT_INST_REG_SIZE(inst), \
+			.emac_index = DT_INST_PROP(inst, emac_index), \
+			.irq_config = eth_cyclonev_##inst##_irq_config, \
+	}; \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL, \
+			&eth_cyclonev_##inst##_data, \
+			&eth_cyclonev_##inst##_cfg, \
+			CONFIG_ETH_INIT_PRIORITY, \
+			&eth_cyclonev_api, \
+			NET_ETH_MTU); \
+ \
+	static void eth_cyclonev_##inst##_irq_config(void) \
+	{ \
+		IRQ_CONNECT(DT_INST_IRQN(inst), \
+			    DT_INST_IRQ(inst, priority), eth_cyclonev_isr, \
+			    DEVICE_DT_INST_GET(inst), \
+			    0); \
+		irq_enable(DT_INST_IRQN(inst)); \
 DT_INST_FOREACH_STATUS_OKAY(CYCLONEV_ETH_INIT)

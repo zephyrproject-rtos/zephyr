@@ -5,8 +5,8 @@ compatible: "openisa,rv32m1-lpuart"
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true

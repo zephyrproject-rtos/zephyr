@@ -1,0 +1,22 @@
+/*
+ * Copyright 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "test_common.dtsi"
+
+/ {
+	regulator {
+		/* Arduino D10 */
+		enable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+	resources {
+		/* Arduino D11 */
+		check-gpios = <&gpio0 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};
+
+&uart1 {
+	/* Default-enabled Arduino UART steals the pins we want. */
+	status = "disabled";
+};

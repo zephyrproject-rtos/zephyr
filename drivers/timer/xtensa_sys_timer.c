@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
@@ -120,9 +120,8 @@ void smp_timer_init(void)
 }
 #endif
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
 	set_ccompare(ccount() + CYC_PER_TICK);

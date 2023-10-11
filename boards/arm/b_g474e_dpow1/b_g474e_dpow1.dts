@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g4/stm32g474Xe.dtsi>
 #include <st/g4/stm32g474r(b-c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "B-G474E-DPOW1 Discovery board";
@@ -44,22 +45,27 @@
 		joystick_sel: button0 {
 			label = "JOYSTICK_SEL";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 		joystick_left: button1 {
 			label = "JOYSTICK_LEFT";
 			gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 		joystick_down: button2 {
 			label = "JOYSTICK_DOWN";
 			gpios = <&gpioc 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 		joystick_right: button3 {
 			label = "JOYSTICK_RIGHT";
 			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 		joystick_up: button4 {
 			label = "JOYSTICK_UP";
 			gpios = <&gpiob 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
 		};
 	};
 
@@ -77,11 +83,21 @@
 	};
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &clk_hsi48 {
 	status = "okay";
 };
 
 &clk_hsi {
+	status = "okay";
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 
@@ -105,7 +121,8 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&analog_pc10 &analog_pc11>;
+	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -117,6 +134,8 @@
 &adc2 {
 	pinctrl-0 = <&adc2_in8_pc2>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 
 	#address-cells = <1>;

@@ -24,6 +24,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_audio, CONFIG_USB_AUDIO_LOG_LEVEL);
 
+struct feature_volume {
+	int16_t volume_max;
+	int16_t volume_min;
+	int16_t volume_res;
+};
+
 /* Device data structure */
 struct usb_audio_dev_data {
 	const struct usb_audio_ops *ops;
@@ -40,6 +46,9 @@ struct usb_audio_dev_data {
 
 	/* Not applicable for Headphones, left with 0 */
 	uint16_t in_frame_size;
+
+	/* Not applicable for not support volume feature device */
+	struct feature_volume volumes;
 
 	bool rx_enable;
 	bool tx_enable;
@@ -146,11 +155,14 @@ static struct usb_ep_cfg_data dev##_usb_audio_ep_data_##i[] = {		  \
 
 #define DEFINE_AUDIO_DEV_DATA(dev, i, __out_pool, __in_pool_size)   \
 	static uint8_t dev##_controls_##i[FEATURES_SIZE(dev, i)] = {0};\
-	static struct usb_audio_dev_data dev##_audio_dev_data_##i = \
-		{ .pool = __out_pool,				    \
-		  .in_frame_size = __in_pool_size,		    \
-		  .controls = {dev##_controls_##i, NULL},	    \
-		  .ch_cnt = {(CH_CNT(dev, i) + 1), 0}		    \
+	static struct usb_audio_dev_data dev##_audio_dev_data_##i =	\
+		{ .pool = __out_pool,					\
+		  .in_frame_size = __in_pool_size,			\
+		  .controls = {dev##_controls_##i, NULL},		\
+		  .ch_cnt = {(CH_CNT(dev, i) + 1), 0},			\
+		  .volumes.volume_max = GET_VOLUME(dev, i, volume_max), \
+		  .volumes.volume_min = GET_VOLUME(dev, i, volume_min), \
+		  .volumes.volume_res = GET_VOLUME(dev, i, volume_res), \
 		}
 
 #define DEFINE_AUDIO_DEV_DATA_BIDIR(dev, i, __out_pool, __in_pool_size)	   \
@@ -161,7 +173,10 @@ static struct usb_ep_cfg_data dev##_usb_audio_ep_data_##i[] = {		  \
 		  .in_frame_size = __in_pool_size,			   \
 		  .controls = {dev##_controls0_##i, dev##_controls1_##i},  \
 		  .ch_cnt = {(CH_CNT(dev##_MIC, i) + 1),		   \
-			     (CH_CNT(dev##_HP, i) + 1)}			   \
+			     (CH_CNT(dev##_HP, i) + 1)},		   \
+		  .volumes.volume_max = GET_VOLUME(dev, i, volume_max),	   \
+		  .volumes.volume_min = GET_VOLUME(dev, i, volume_min),	   \
+		  .volumes.volume_res = GET_VOLUME(dev, i, volume_res),	   \
 		}
 
 /**
@@ -292,12 +307,10 @@ static void audio_interface_config(struct usb_desc_header *head,
 	struct usb_if_descriptor *iface = (struct usb_if_descriptor *)head;
 	struct cs_ac_if_descriptor *header;
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor *iad =
 		(struct usb_association_descriptor *)
 		((char *)iface - sizeof(struct usb_association_descriptor));
 	iad->bFirstInterface = bInterfaceNumber;
-#endif
 	fix_fu_descriptors(iface);
 
 	/* Audio Control Interface */
@@ -543,6 +556,67 @@ static int handle_fu_mute_req(struct usb_audio_dev_data *audio_dev_data,
 	return -EINVAL;
 }
 
+
+static int handle_fu_volume_req(struct usb_audio_dev_data *audio_dev_data,
+				struct usb_setup_packet *setup, int32_t *len, uint8_t **data,
+				struct usb_audio_fu_evt *evt, uint8_t device)
+{
+	uint8_t ch = (setup->wValue) & 0xFF;
+	uint8_t ch_cnt = audio_dev_data->ch_cnt[device];
+	uint8_t *controls = audio_dev_data->controls[device];
+	uint8_t *control_val = &controls[POS(VOLUME, ch, ch_cnt)];
+	int16_t target_vol = 0;
+	int16_t temp_vol = 0;
+
+	if (usb_reqtype_is_to_device(setup)) {
+		/* Check if *len has valid value */
+		if (*len != LEN(1, VOLUME)) {
+			LOG_ERR("*len: %d, LEN(1, VOLUME): %d", *len, LEN(1, VOLUME));
+			return -EINVAL;
+		}
+		if (setup->bRequest == USB_AUDIO_SET_CUR) {
+			target_vol = *((int16_t *)*data);
+			if (!IN_RANGE(target_vol, audio_dev_data->volumes.volume_min,
+				      audio_dev_data->volumes.volume_max)) {
+				LOG_ERR("Volume out of range: %d", target_vol);
+				return -EINVAL;
+			}
+			if (target_vol % audio_dev_data->volumes.volume_res != 0) {
+				target_vol = ROUND_UP(target_vol,
+					audio_dev_data->volumes.volume_res);
+			}
+			evt->val = control_val;
+			evt->val_len = *len;
+			*((int16_t *)evt->val) = sys_le16_to_cpu(target_vol);
+			return 0;
+		}
+	} else {
+		if (setup->bRequest == USB_AUDIO_GET_CUR) {
+			*len = LEN(ch_cnt, VOLUME);
+			temp_vol = sys_cpu_to_le16(*(int16_t *)control_val);
+			memcpy(*data, &temp_vol, *len);
+			return 0;
+		} else if (setup->bRequest == USB_AUDIO_GET_MIN) {
+			*len = sizeof(audio_dev_data->volumes.volume_min);
+			temp_vol = sys_cpu_to_le16(audio_dev_data->volumes.volume_min);
+			memcpy(*data, &temp_vol, *len);
+			return 0;
+		} else if (setup->bRequest == USB_AUDIO_GET_MAX) {
+			*len = sizeof(audio_dev_data->volumes.volume_max);
+			temp_vol = sys_cpu_to_le16(audio_dev_data->volumes.volume_max);
+			memcpy(*data, &temp_vol, *len);
+			return 0;
+		} else if (setup->bRequest == USB_AUDIO_GET_RES) {
+			*len = sizeof(audio_dev_data->volumes.volume_res);
+			temp_vol = sys_cpu_to_le16(audio_dev_data->volumes.volume_res);
+			memcpy(*data, &temp_vol, *len);
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
 /**
  * @brief Handler for feature unit requests.
  *
@@ -590,6 +664,10 @@ static int handle_feature_unit_req(struct usb_audio_dev_data *audio_dev_data,
 	switch (cs) {
 	case USB_AUDIO_FU_MUTE_CONTROL:
 		ret = handle_fu_mute_req(audio_dev_data, pSetup,
+					 len, data, &evt, device);
+		break;
+	case USB_AUDIO_FU_VOLUME_CONTROL:
+		ret = handle_fu_volume_req(audio_dev_data, pSetup,
 					 len, data, &evt, device);
 		break;
 	default:
@@ -933,7 +1011,7 @@ void usb_audio_register(const struct device *dev,
 			    &usb_audio_device_init,			  \
 			    NULL,					  \
 			    &dev##_audio_dev_data_##i,			  \
-			    &dev##_audio_config_##i, APPLICATION,	  \
+			    &dev##_audio_config_##i, POST_KERNEL,	  \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
 			    DUMMY_API)
 

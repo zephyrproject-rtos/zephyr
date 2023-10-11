@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
+/*
+ * This sample app launches a shell. Interact with it using the `sensor` command. See
+ * `drivers/sensor/sensor_shell.c`. There is nothing to do in the main thread.
+ */
 
-LOG_MODULE_REGISTER(app);
+int main(void)
+{
+	return 0;
+}

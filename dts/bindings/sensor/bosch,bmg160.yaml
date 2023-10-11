@@ -10,5 +10,5 @@ compatible: "bosch,bmg160"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-    int-gpios:
-      type: phandle-array
+  int-gpios:
+    type: phandle-array

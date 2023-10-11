@@ -21,3 +21,4 @@ supported:
 testing:
   ignore_tags:
     - net
+vendor: nordic

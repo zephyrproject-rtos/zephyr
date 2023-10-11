@@ -65,12 +65,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	stack_init->mstatus = MSTATUS_DEF_RESTORE;
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Shared FP mode: enable FPU of threads with K_FP_REGS. */
-	if ((thread->base.user_options & K_FP_REGS) != 0) {
-		stack_init->mstatus |= MSTATUS_FS_INIT;
-	}
-	thread->callee_saved.fcsr = 0;
+#if defined(CONFIG_FPU_SHARING)
+	/* thread birth happens through the exception return path */
+	thread->arch.exception_depth = 1;
 #elif defined(CONFIG_FPU)
 	/* Unshared FP mode: enable FPU of each thread. */
 	stack_init->mstatus |= MSTATUS_FS_INIT;
@@ -80,9 +77,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Clear user thread context */
 	z_riscv_pmp_usermode_init(thread);
 	thread->arch.priv_stack_start = 0;
-
-	/* the unwound stack pointer upon exiting exception */
-	stack_init->sp = (unsigned long)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
@@ -120,72 +114,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
 }
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-int arch_float_disable(struct k_thread *thread)
-{
-	unsigned int key;
-
-	if (thread != _current) {
-		return -EINVAL;
-	}
-
-	if (arch_is_in_isr()) {
-		return -EINVAL;
-	}
-
-	/* Ensure a preemptive context switch does not occur */
-	key = irq_lock();
-
-	/* Disable all floating point capabilities for the thread */
-	thread->base.user_options &= ~K_FP_REGS;
-
-	/* Clear the FS bits to disable the FPU. */
-	__asm__ volatile (
-		"mv t0, %0\n"
-		"csrrc x0, mstatus, t0\n"
-		:
-		: "r" (MSTATUS_FS_MASK)
-		);
-
-	irq_unlock(key);
-
-	return 0;
-}
-
-
-int arch_float_enable(struct k_thread *thread, unsigned int options)
-{
-	unsigned int key;
-
-	if (thread != _current) {
-		return -EINVAL;
-	}
-
-	if (arch_is_in_isr()) {
-		return -EINVAL;
-	}
-
-	/* Ensure a preemptive context switch does not occur */
-	key = irq_lock();
-
-	/* Enable all floating point capabilities for the thread. */
-	thread->base.user_options |= K_FP_REGS;
-
-	/* Set the FS bits to Initial and clear the fcsr to enable the FPU. */
-	__asm__ volatile (
-		"mv t0, %0\n"
-		"csrrs x0, mstatus, t0\n"
-		"fscsr x0, x0\n"
-		:
-		: "r" (MSTATUS_FS_INIT)
-		);
-
-	irq_unlock(key);
-
-	return 0;
-}
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #ifdef CONFIG_USERSPACE
 
@@ -242,8 +170,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_riscv_pmp_usermode_prepare(_current);
 	z_riscv_pmp_usermode_enable(_current);
 
-	/* exception stack has to be in mscratch */
-	csr_write(mscratch, top_of_priv_stack);
+	/* preserve stack pointer for next exception entry */
+	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
 
 	is_user_mode = true;
 
@@ -262,3 +190,39 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 }
 
 #endif /* CONFIG_USERSPACE */
+
+#ifndef CONFIG_MULTITHREADING
+
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+
+FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t main_entry,
+							    void *p1, void *p2, void *p3)
+{
+	void *main_stack;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	_kernel.cpus[0].id = 0;
+	_kernel.cpus[0].irq_stack = (Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]) +
+				     K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
+
+	main_stack = (Z_THREAD_STACK_BUFFER(z_main_stack) +
+		      K_THREAD_STACK_SIZEOF(z_main_stack));
+
+	__asm__ volatile (
+	"mv sp, %0; jalr ra, %1, 0"
+	:
+	: "r" (main_stack), "r" (main_entry)
+	: "memory");
+
+	/* infinite loop */
+	irq_lock();
+	while (true) {
+	}
+
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
+}
+#endif /* !CONFIG_MULTITHREADING */

@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @brief Heap Management
  * @defgroup heaps Heap Management
+ * @ingroup os_services
  * @{
  * @}
  */
@@ -65,7 +66,7 @@ extern "C" {
  * Enumeration type for some common memory region attributes.
  *
  */
-enum smh_reg_attr {
+enum shared_multi_heap_attr {
 	/** cacheable */
 	SMH_REG_ATTR_CACHEABLE,
 
@@ -87,7 +88,7 @@ enum smh_reg_attr {
  */
 struct shared_multi_heap_region {
 	/** Memory heap attribute */
-	unsigned int attr;
+	uint32_t attr;
 
 	/** Memory heap starting virtual address */
 	uintptr_t addr;
@@ -125,7 +126,7 @@ int shared_multi_heap_pool_init(void);
  * @retval ptr		a valid pointer to heap memory.
  * @retval err		NULL if no memory is available.
  */
-void *shared_multi_heap_alloc(unsigned int attr, size_t bytes);
+void *shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes);
 
 /**
  * @brief Allocate aligned memory from the memory shared multi-heap pool
@@ -141,7 +142,8 @@ void *shared_multi_heap_alloc(unsigned int attr, size_t bytes);
  * @retval ptr		a valid pointer to heap memory.
  * @retval err		NULL if no memory is available.
  */
-void *shared_multi_heap_aligned_alloc(unsigned int attr, size_t align, size_t bytes);
+void *shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr,
+				      size_t align, size_t bytes);
 
 /**
  * @brief Free memory from the shared multi-heap pool

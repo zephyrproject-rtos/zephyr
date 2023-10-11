@@ -66,7 +66,7 @@ struct sht3xd_data {
 	uint16_t rh_high;
 
 	sensor_trigger_handler_t handler;
-	struct sensor_trigger trigger;
+	const struct sensor_trigger *trigger;
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE);

@@ -1,7 +1,7 @@
 # Atmel SAM V71 MCU series configuration options
 
-# Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2016 Piotr Mienkowski
+# Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_SAMV71

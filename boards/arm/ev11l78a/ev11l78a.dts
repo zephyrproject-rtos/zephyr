@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2023, Meta Platforms, Inc. and its affiliates.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <freq.h>
+#include <mem.h>
+#include <atmel/samd20.dtsi>
+#include <atmel/samx2xx16.dtsi>
+#include "ev11l78a-pinctrl.dtsi"
+
+/ {
+	model = "Microchip EV11L78A";
+	compatible = "atmel,samd20e16", "atmel,samd20";
+
+	aliases {
+		led0 = &cap_mis_led;
+		spi0 = &sercom0;
+		i2c0 = &sercom3;
+	};
+
+	chosen {
+		zephyr,console = &sercom1;
+		zephyr,shell-uart = &sercom1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		cap_mis_led: led_0 {
+			gpios = <&porta 23 GPIO_ACTIVE_HIGH>;
+			label = "CAP_MIS";
+		};
+	};
+
+	csa_i_sense: i_sense {
+		compatible = "current-sense-amplifier";
+		io-channels = <&adc 5>;
+		sense-resistor-micro-ohms = <4000>;
+		sense-gain-mult = <100>;
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(48)>;
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&porta 10 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
+
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_HIGH>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_i2c_default>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@c000 {
+			label = "storage";
+			reg = <DT_SIZE_K(64-16) DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&adc {
+	status = "okay";
+	prescaler = <32>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_VDD_1_2";
+		zephyr,vref-mv = <1650>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <4>;
+	};
+
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};

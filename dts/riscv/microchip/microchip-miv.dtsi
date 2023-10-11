@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "microchip,miv", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32ima_zicsr_zifencei";
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "microchip,miv-soc", "simple-bus";
+		ranges;
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 0x40000>;
+		};
+
+		sram0: memory@80040000 {
+			compatible = "mmio-sram";
+			reg = <0x80040000 0x40000>;
+		};
+
+		clint: clint@44000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			reg = <0x44000000 0x10000>;
+		};
+
+		plic: interrupt-controller@40000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x40000000 0x04000000>;
+			riscv,max-priority = <1>;
+			riscv,ndev = <31>;
+		};
+
+		uart0: uart@70001000 {
+			compatible = "microchip,coreuart";
+			reg = <0x70001000 0x1000>;
+			status = "disabled";
+			current-speed = <0>;
+			clock-frequency = <0>;
+		};
+	};
+};

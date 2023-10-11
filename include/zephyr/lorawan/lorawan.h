@@ -11,7 +11,7 @@
  * @file
  * @brief Public LoRaWAN APIs
  * @defgroup lorawan_api LoRaWAN APIs
- * @ingroup subsystem
+ * @ingroup connectivity
  * @{
  */
 
@@ -107,9 +107,12 @@ struct lorawan_join_otaa {
 	 * increasing for each OTAA join with the same EUI. The DevNonce
 	 * should be stored in non-volatile memory by the application.
 	 */
-	uint32_t dev_nonce;
+	uint16_t dev_nonce;
 };
 
+/**
+ * @brief LoRaWAN join parameters for activation by personalization (ABP)
+ */
 struct lorawan_join_abp {
 	/** Device address on the network */
 	uint32_t dev_addr;
@@ -121,6 +124,9 @@ struct lorawan_join_abp {
 	uint8_t *app_eui;
 };
 
+/**
+ * @brief LoRaWAN join parameters
+ */
 struct lorawan_join_config {
 	union {
 		struct lorawan_join_otaa otaa;
@@ -130,16 +136,22 @@ struct lorawan_join_config {
 	/** Device EUI. Optional if a secure element is present. */
 	uint8_t *dev_eui;
 
+	/** Activation mode */
 	enum lorawan_act_type mode;
 };
 
 #define LW_RECV_PORT_ANY UINT16_MAX
 
+/**
+ * @brief LoRaWAN downlink callback parameters
+ */
 struct lorawan_downlink_cb {
-	/* Port to handle messages for:
-	 *               Port 0: TX packet acknowledgements
-	 *          Ports 1-255: Standard downlink port
-	 *     LW_RECV_PORT_ANY: All downlinks
+	/**
+	 * @brief Port to handle messages for.
+	 *
+	 * - Port 0: TX packet acknowledgements
+	 * - Ports 1-255: Standard downlink port
+	 * - LW_RECV_PORT_ANY: All downlinks
 	 */
 	uint16_t port;
 	/**
@@ -317,6 +329,38 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
  * @return 0 if successful, negative errno otherwise
  */
 int lorawan_set_region(enum lorawan_region region);
+
+#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
+
+/**
+ * @brief Run Application Layer Clock Synchronization service
+ *
+ * This service sends out its current time in a regular interval (configurable
+ * via Kconfig) and receives a correction offset from the application server if
+ * the clock deviation is considered too large.
+ *
+ * Clock synchronization is required for firmware upgrades over multicast
+ * sessions, but can also be used independent of a FUOTA process.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_clock_sync_run(void);
+
+/**
+ * @brief Retrieve the current synchronized time
+ *
+ * This function uses the GPS epoch format, as used in all LoRaWAN services.
+ *
+ * The GPS epoch started on 1980-01-06T00:00:00Z, but has since diverged
+ * from UTC, as it does not consider corrections like leap seconds.
+ *
+ * @param gps_time Synchronized time in GPS epoch format truncated to 32-bit.
+ *
+ * @return 0 if successful, -EAGAIN if the clock is not yet synchronized.
+ */
+int lorawan_clock_sync_get(uint32_t *gps_time);
+
+#endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
 #ifdef __cplusplus
 }

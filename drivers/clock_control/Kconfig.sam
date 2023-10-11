@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SAM
+	bool "Atmel SAM clock control"
+	default y
+	depends on DT_HAS_ATMEL_SAM_PMC_ENABLED
+	help
+	  Enable driver for Atmel SAM Clock Control.

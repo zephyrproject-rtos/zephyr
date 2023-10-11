@@ -14,7 +14,8 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				   uint16_t *cis_handle);
 uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 				 uint8_t cig_id,
-				 uint16_t cis_handle);
+				 uint16_t cis_handle,
+				 uint16_t *conn_event_count);
 void ull_peripheral_iso_update_peer_sca(struct ll_conn *acl);
 void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 				      uint32_t ticks_at_expire,

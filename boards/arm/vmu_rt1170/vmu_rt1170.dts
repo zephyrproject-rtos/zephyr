@@ -1,0 +1,437 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt11xx_cm7.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include "vmu_rt1170.dtsi"
+
+/ {
+	model = "NXP VMU RT1170";
+	compatible = "nxp,mimxrt1176";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		watchdog0 = &wdog1;
+		sdhc0 = &usdhc1;
+	};
+
+	chosen {
+		zephyr,sram = &ocram1; /* TODO Merge with other OCRAM */
+		zephyr,sram1 = &ocram2; /* TODO Merge with other OCRAM */
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan1;
+		zephyr,flash-controller = &mx25um51345g;
+		zephyr,flash = &mx25um51345g;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/* This regulator controls VDD_3V3_SD_CARD onboard supply */
+	reg-3v3-sdcard {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sdcard";
+		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_5V_PERIPH onboard supply */
+	reg-5v-periph {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-5v-periph";
+		enable-gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_5V_HIPOWER onboard supply */
+	reg-5v-hipower {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-5v-hipower";
+		enable-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls the VDD_3V3_SENSORS1 onboard supply. */
+	reg-3v3-sensors-1 {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sensors-1";
+		enable-gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls the VDD_3V3_SENSORS2 onboard supply. */
+	reg-3v3-sensors-2 {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sensors-2";
+		enable-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls the VDD_3V3_SENSORS3 onboard supply. */
+	reg-3v3-sensors-3 {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sensors-3";
+		enable-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls the VDD_3V3_SENSORS4 onboard supply. */
+	reg-3v3-sensors-4 {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sensors-4";
+		enable-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_3V3_SPEKTRUM onboard supply */
+	reg-3v3-spektrum {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-spektrum";
+		enable-gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls ETH_VDD_3V3 supply to power up the TJA1103 PHY */
+	reg-eth-power {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-eth-power";
+		enable-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+};
+
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&gpio7 {
+	status = "okay";
+};
+
+&gpio8 {
+	status = "okay";
+};
+
+&gpio9 {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart4 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flexcan2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flexcan3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&lpspi1 {
+	status = "okay";
+	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
+
+	icm42688_0: icm42688p0@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-hz = <1000>;
+		accel-fs = <16>;
+		gyro-hz = <1000>;
+		gyro-fs = <2000>;
+	};
+};
+
+&lpspi2 {
+	status = "okay";
+	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
+
+	icm42688_1: icm42688p1@0 {
+		compatible = "invensense,icm42688";
+		reg = <0>;
+		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <24000000>;
+		accel-hz = <1000>;
+		accel-fs = <16>;
+		gyro-hz = <1000>;
+		gyro-fs = <2000>;
+	};
+};
+
+&lpspi3 {
+	status = "okay";
+	cs-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>,
+		<&gpio2 18 GPIO_ACTIVE_LOW>;
+
+
+	bmi08x_accel: bmi08x@0 {
+		compatible = "bosch,bmi08x-accel";
+		reg = <0>;
+		int-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <10000000>;
+		int1-map-io = <0x01>;
+		int2-map-io = <0x00>;
+		int1-conf-io = <0x04>;
+		int2-conf-io = <0x00>;
+		accel-hz = "800";
+		accel-fs = <24>;
+	};
+
+	bmi08x_gyro: bmi08x@1 {
+		compatible = "bosch,bmi08x-gyro";
+		reg = <1>;
+		int-gpios = <&gpio2 28 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <10000000>;
+		int3-4-map-io = <0x01>;
+		int3-4-conf-io = <0x02>;
+		gyro-hz = "1000_116";
+		gyro-fs = <1000>;
+	};
+};
+
+&lpspi6 {
+	status = "okay";
+};
+
+&lpi2c1 {
+	status = "okay";
+
+	ist8310: ist8310@e {
+		compatible = "isentek,ist8310";
+		reg = <0xe>;
+
+	};
+
+	ncp5623c: ncp5623c@39 {
+		compatible = "onnn,ncp5623c";
+		reg = <0x39>;
+
+		led_0 {
+			label = "GNSS LED";
+			index = <0>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+	};
+};
+
+&lpi2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	bmp388_0: bmp388@76 {
+		compatible = "bosch,bmp388";
+		int-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+		reg = <0x76>;
+		status = "okay";
+		odr = "50";
+		osr-press = <4>;
+		osr-temp = <2>;
+	};
+};
+
+&lpi2c3 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		reg = <0x10>;
+	};
+
+	bmp388_1: bmp388@77 {
+		compatible = "bosch,bmp388";
+		reg = <0x77>;
+		status = "okay";
+		odr = "50";
+		osr-press = <4>;
+		osr-temp = <2>;
+	};
+};
+
+&lpi2c6 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch1>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm1_pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch2>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm1_pwm2	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch3>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm0	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch4>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm1	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch5>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm2	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch6>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm3	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch7>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm3_pwm0	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_vmu_ch8>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+
+&gpt5 {
+	compatible = "nxp,gpt-ppm-input";
+	pinctrl-0 = <&pinmux_gpt_ppm>;
+	pinctrl-names = "default";
+	capture-channel = <1>;
+};
+
+&usdhc1 {
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&lpadc1 {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
+&enet1g {
+	status = "okay";
+	int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};

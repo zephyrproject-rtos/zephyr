@@ -280,7 +280,7 @@ To initially discover a device to connect to the application will likely
 use the :c:func:`bt_le_scan_start` API, wait for an appropriate device
 to be found (using the scan callback), stop scanning using
 :c:func:`bt_le_scan_stop` and then connect to the device using
-:c:func:`bt_conn_create_le`. If the central wants to keep
+:c:func:`bt_conn_le_create`. If the central wants to keep
 automatically reconnecting to the peripheral it should use the
 :c:func:`bt_le_set_auto_conn` API.
 
@@ -409,106 +409,6 @@ configuration options needed will look something like the following:
 Once enabled, it is the responsibility of the application to call
 settings_load() after having initialized Bluetooth (using the
 bt_enable() API).
-
-Bluetooth Low Energy Controller
-*******************************
-
-Hardware Requirements
-=====================
-
-Nordic Semiconductor
---------------------
-
-The Nordic Semiconductor Bluetooth Low Energy Controller implementation
-requires the following hardware peripherals.
-
-#. Clock
-
-   * A Low Frequency Clock (LFCLOCK) or sleep clock, for low power consumption
-     between Bluetooth radio events
-   * A High Frequency Clock (HFCLOCK) or active clock, for high precision
-     packet timing and software based transceiver state switching with
-     inter-frame space (tIFS) timing inside Bluetooth radio events
-
-#. Real Time Counter (RTC)
-
-   * 1 instance
-   * 2 capture/compare registers
-
-#. Timer
-
-   * 2 instances, one each for packet timing and tIFS software switching,
-     respectively
-   * 7 capture/compare registers (3 mandatory, 1 optional for ISR profiling, 4
-     for single timer tIFS switching) on first instance
-   * 4 capture/compare registers for second instance, if single tIFS timer is
-     not used.
-
-#. Programmable Peripheral Interconnect (PPI)
-
-   * 21 channels (20 channels when not using pre-defined channels)
-   * 2 channel groups for software-based tIFS switching
-
-#. Distributed Programmable Peripheral Interconnect (DPPI)
-
-   * 20 channels
-   * 2 channel groups for s/w tIFS switching
-
-#. Software Interrupt (SWI)
-
-   * 3 instances, for Lower Link Layer, Upper Link Layer High priority, and
-     Upper Link Layer Low priority execution
-
-#. Radio
-
-   * 2.4 GHz radio transceiver with multiple radio standards such as 1 Mbps, 2
-     Mbps and Long Range Bluetooth Low Energy technology
-
-#. Random Number Generator (RNG)
-
-   * 1 instance
-
-#. AES electronic codebook mode encryption (ECB)
-
-   * 1 instance
-
-#. Cipher Block Chaining - Message Authentication Code with Counter Mode
-   encryption (CCM)
-
-   * 1 instance
-
-#. Accelerated address resolver (AAR)
-
-   * 1 instance
-
-#. GPIO
-
-   * 2 GPIO pins for PA and LNA, 1 each.
-   * 10 Debug GPIO pins (optional)
-
-#. GPIO tasks and events (GPIOTE)
-
-   * 1 instance
-   * 1 channel for PA/LNA
-
-#. Temperature sensor (TEMP)
-
-   * For RC calibration
-
-#. Interprocess Communication peripheral (IPC)
-
-   * For HCI interface
-
-#. UART
-
-   * For HCI interface
-
-Standard
-========
-
-Split
-=====
-
 
 
 .. _Bluetooth Specification: https://www.bluetooth.com/specifications/bluetooth-core-specification

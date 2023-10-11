@@ -225,7 +225,7 @@ static struct mpl_group group_p = {
 	.next	= NULL,
 };
 
-static struct mpl_mediaplayer pl = {
+static struct mpl_mediaplayer media_player = {
 	.name			  = CONFIG_BT_MPL_MEDIA_PLAYER_NAME,
 	.icon_url		  = CONFIG_BT_MPL_ICON_URL,
 	.group			  = &group_1,
@@ -717,29 +717,29 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 
 	LOG_DBG_OBJ_ID("Object Id selected: ", id);
 
-	if (id == pl.icon_id) {
+	if (id == media_player.icon_id) {
 		LOG_DBG("Icon Object ID");
 		(void)setup_icon_object();
-	} else if (id == pl.group->track->segments_id) {
+	} else if (id == media_player.group->track->segments_id) {
 		LOG_DBG("Current Track Segments Object ID");
-		(void)setup_segments_object(pl.group->track);
-	} else if (id == pl.group->track->id) {
+		(void)setup_segments_object(media_player.group->track);
+	} else if (id == media_player.group->track->id) {
 		LOG_DBG("Current Track Object ID");
-		(void)setup_track_object(pl.group->track);
-	} else if (pl.next_track_set && id == pl.next.track->id) {
+		(void)setup_track_object(media_player.group->track);
+	} else if (media_player.next_track_set && id == media_player.next.track->id) {
 		/* Next track, if the next track has been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(pl.next.track);
-	} else if (id == pl.group->track->next->id) {
+		(void)setup_track_object(media_player.next.track);
+	} else if (id == media_player.group->track->next->id) {
 		/* Next track, if next track has not been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(pl.group->track->next);
-	} else if (id == pl.group->parent->id) {
+		(void)setup_track_object(media_player.group->track->next);
+	} else if (id == media_player.group->parent->id) {
 		LOG_DBG("Parent Group Object ID");
-		(void)setup_parent_group_object(pl.group);
-	} else if (id == pl.group->id) {
+		(void)setup_parent_group_object(media_player.group);
+	} else if (id == media_player.group->id) {
 		LOG_DBG("Current Group Object ID");
-		(void)setup_group_object(pl.group);
+		(void)setup_group_object(media_player.group);
 	} else {
 		LOG_ERR("Unknown Object ID");
 		obj.busy = false;
@@ -762,7 +762,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 		LOG_DBG("Icon Obj Type");
 		if (obj.add_type == MPL_OBJ_ICON) {
 			obj.add_type = MPL_OBJ_NONE;
-			pl.icon_id = id;
+			media_player.icon_id = id;
 		} else {
 			LOG_DBG("Unexpected object creation");
 		}
@@ -772,7 +772,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 		LOG_DBG("Track Segments Obj Type");
 		if (obj.add_type == MPL_OBJ_TRACK_SEGMENTS) {
 			obj.add_type = MPL_OBJ_NONE;
-			pl.group->track->segments_id = id;
+			media_player.group->track->segments_id = id;
 		} else {
 			LOG_DBG("Unexpected object creation");
 		}
@@ -794,7 +794,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 		if (obj.add_type == MPL_OBJ_PARENT_GROUP) {
 			LOG_DBG("Parent group");
 			obj.add_type = MPL_OBJ_NONE;
-			pl.group->parent->id = id;
+			media_player.group->parent->id = id;
 		} else if (obj.add_type == MPL_OBJ_GROUP) {
 			LOG_DBG("Other group");
 			obj.add_type = MPL_OBJ_NONE;
@@ -1419,18 +1419,18 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_prev_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For previous track, the position is reset to 0 */
 			/* even if we stay at the same track (goto start of */
 			/* track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -1439,68 +1439,68 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		 * The case where the next track has been set explicitly breaks somewhat
 		 * with the "next" order hardcoded into the group and track structure
 		 */
-		if (pl.next_track_set) {
+		if (media_player.next_track_set) {
 			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&pl)) {
-				do_group_change_notifications(&pl);
+			if (do_next_track_next_track_set(&media_player)) {
+				do_group_change_notifications(&media_player);
 			}
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
-		} else if (do_next_track_normal_order(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
+		} else if (do_next_track_normal_order(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_first_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For first track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_last_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For last track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&pl, command->param)) {
-				pl.track_pos = 0;
-				do_track_change_notifications(&pl);
+			if (do_goto_track(&media_player, command->param)) {
+				media_player.track_pos = 0;
+				do_track_change_notifications(&media_player);
 			} else {
 				/* For goto track, the position is reset to 0 */
 				/* even if we stay at the same track (goto */
 				/* start of track) */
-				pl.track_pos = 0;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				media_player.track_pos = 0;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
-			pl.state = MEDIA_PROXY_STATE_PAUSED;
-			media_proxy_pl_media_state_cb(pl.state);
+			media_player.state = MEDIA_PROXY_STATE_PAUSED;
+			media_proxy_pl_media_state_cb(media_player.state);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -1508,38 +1508,38 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
-		do_full_prev_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_prev_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
-		do_full_next_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_next_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
-		do_full_first_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_first_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
-		do_full_last_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_last_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
-			do_full_goto_group(&pl, command->param);
-			pl.state = MEDIA_PROXY_STATE_PAUSED;
-			media_proxy_pl_media_state_cb(pl.state);
+			do_full_goto_group(&media_player, command->param);
+			media_player.state = MEDIA_PROXY_STATE_PAUSED;
+			media_proxy_pl_media_state_cb(media_player.state);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -1570,34 +1570,34 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* We're in playing state, seeking speed must have been zero */
-		pl.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MEDIA_PROXY_STATE_SEEKING;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
+		media_player.state = MEDIA_PROXY_STATE_SEEKING;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in playing state, seeking speed must have been zero */
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MEDIA_PROXY_STATE_SEEKING;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
+		media_player.state = MEDIA_PROXY_STATE_SEEKING;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
-		pl.track_pos = 0;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_player.track_pos = 0;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -1605,59 +1605,59 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (command->param >
-			    pl.group->track->duration - pl.track_pos) {
-				pl.track_pos = pl.group->track->duration;
-			} else if (command->param < -pl.track_pos) {
-				pl.track_pos = 0;
+			    media_player.group->track->duration - media_player.track_pos) {
+				media_player.track_pos = media_player.group->track->duration;
+			} else if (command->param < -media_player.track_pos) {
+				media_player.track_pos = 0;
 			} else {
-				pl.track_pos += command->param;
+				media_player.track_pos += command->param;
 			}
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than <margin> */
 		/* into the segment, otherwise go to start of segment */
-		if (pl.track_pos - PREV_MARGIN <
-		    pl.group->track->segment->pos) {
-			do_prev_segment(&pl);
+		if (media_player.track_pos - PREV_MARGIN <
+		    media_player.group->track->segment->pos) {
+			do_prev_segment(&media_player);
 		}
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-		do_next_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_next_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-		do_first_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_first_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
-		do_last_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_last_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param) {
 			if (command->param != 0) {
-				do_goto_segment(&pl, command->param);
-				pl.track_pos = pl.group->track->segment->pos;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				do_goto_segment(&media_player, command->param);
+				media_player.track_pos = media_player.group->track->segment->pos;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -1669,30 +1669,30 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_prev_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For previous track, the position is reset to 0 */
 			/* even if we stay at the same track (goto start of */
 			/* track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (pl.next_track_set) {
+		if (media_player.next_track_set) {
 			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&pl)) {
-				do_group_change_notifications(&pl);
+			if (do_next_track_next_track_set(&media_player)) {
+				do_group_change_notifications(&media_player);
 			}
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
-		} else if (do_next_track_normal_order(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
+		} else if (do_next_track_normal_order(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
@@ -1700,42 +1700,42 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_first_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For first track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_last_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For last track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&pl, command->param)) {
-				pl.track_pos = 0;
-				do_track_change_notifications(&pl);
+			if (do_goto_track(&media_player, command->param)) {
+				media_player.track_pos = 0;
+				do_track_change_notifications(&media_player);
 			} else {
 				/* For goto track, the position is reset to 0 */
 				/* even if we stay at the same track (goto */
 				/* start of track) */
-				pl.track_pos = 0;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				media_player.track_pos = 0;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
@@ -1744,28 +1744,28 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
-		do_full_prev_group(&pl);
+		do_full_prev_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
-		do_full_next_group(&pl);
+		do_full_next_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
-		do_full_first_group(&pl);
+		do_full_first_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
-		do_full_last_group(&pl);
+		do_full_last_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
-			do_full_goto_group(&pl, command->param);
+			do_full_goto_group(&media_player, command->param);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -1791,8 +1791,8 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 	}
 	switch (command->opcode) {
 	case MEDIA_PROXY_OP_PLAY:
-		pl.state = MEDIA_PROXY_STATE_PLAYING;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.state = MEDIA_PROXY_STATE_PLAYING;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -1803,27 +1803,27 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* We're in paused state, seeking speed must have been zero */
-		pl.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MEDIA_PROXY_STATE_SEEKING;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
+		media_player.state = MEDIA_PROXY_STATE_SEEKING;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in paused state, seeking speed must have been zero */
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MEDIA_PROXY_STATE_SEEKING;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
+		media_player.state = MEDIA_PROXY_STATE_SEEKING;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
-		pl.track_pos = 0;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_player.track_pos = 0;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -1831,59 +1831,80 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (command->param >
-			    pl.group->track->duration - pl.track_pos) {
-				pl.track_pos = pl.group->track->duration;
-			} else if (command->param < -pl.track_pos) {
-				pl.track_pos = 0;
+			    media_player.group->track->duration - media_player.track_pos) {
+				media_player.track_pos = media_player.group->track->duration;
+			} else if (command->param < -media_player.track_pos) {
+				media_player.track_pos = 0;
 			} else {
-				pl.track_pos += command->param;
+				media_player.track_pos += command->param;
 			}
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
-		if (pl.track_pos - PREV_MARGIN <
-		    pl.group->track->segment->pos) {
-			do_prev_segment(&pl);
+		if (media_player.group->track->segment != NULL) {
+			if (media_player.track_pos - PREV_MARGIN <
+			    media_player.group->track->segment->pos) {
+				do_prev_segment(&media_player);
+			}
+
+			media_player.track_pos = media_player.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-		do_next_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (media_player.group->track->segment != NULL) {
+			do_next_segment(&media_player);
+			media_player.track_pos = media_player.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-		do_first_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (media_player.group->track->segment != NULL) {
+			do_first_segment(&media_player);
+			media_player.track_pos = media_player.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
-		do_last_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		if (media_player.group->track->segment != NULL) {
+			do_last_segment(&media_player);
+			media_player.track_pos = media_player.group->track->segment->pos;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
+			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
+		} else {
+			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+		}
+
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
-		if (command->use_param) {
+		if (command->use_param && media_player.group->track->segment != NULL) {
 			if (command->param != 0) {
-				do_goto_segment(&pl, command->param);
-				pl.track_pos = pl.group->track->segment->pos;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				do_goto_segment(&media_player, command->param);
+				media_player.track_pos = media_player.group->track->segment->pos;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -1895,30 +1916,30 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_prev_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For previous track, the position is reset to 0 */
 			/* even if we stay at the same track (goto start of */
 			/* track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (pl.next_track_set) {
+		if (media_player.next_track_set) {
 			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&pl)) {
-				do_group_change_notifications(&pl);
+			if (do_next_track_next_track_set(&media_player)) {
+				do_group_change_notifications(&media_player);
 			}
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
-		} else if (do_next_track_normal_order(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
+		} else if (do_next_track_normal_order(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
@@ -1926,42 +1947,42 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_first_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For first track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_last_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For last track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&pl, command->param)) {
-				pl.track_pos = 0;
-				do_track_change_notifications(&pl);
+			if (do_goto_track(&media_player, command->param)) {
+				media_player.track_pos = 0;
+				do_track_change_notifications(&media_player);
 			} else {
 				/* For goto track, the position is reset to 0 */
 				/* even if we stay at the same track (goto */
 				/* start of track) */
-				pl.track_pos = 0;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				media_player.track_pos = 0;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
@@ -1970,28 +1991,28 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
-		do_full_prev_group(&pl);
+		do_full_prev_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
-		do_full_next_group(&pl);
+		do_full_next_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
-		do_full_first_group(&pl);
+		do_full_first_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
-		do_full_last_group(&pl);
+		do_full_last_group(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
-			do_full_goto_group(&pl, command->param);
+			do_full_goto_group(&media_player, command->param);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -2017,19 +2038,19 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 	}
 	switch (command->opcode) {
 	case MEDIA_PROXY_OP_PLAY:
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MEDIA_PROXY_STATE_PLAYING;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.state = MEDIA_PROXY_STATE_PLAYING;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		/* TODO: Set track and track position */
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -2040,31 +2061,31 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		/* What about FR followed by FF? */
 		/* Currently, the seeking speed may also become	 zero */
 		/* Lowest value allowed by spec is -64, notify on change only */
-		if (pl.seeking_speed_factor >= -(MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
+		if (media_player.seeking_speed_factor >= -(MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
 						 - MPL_SEEKING_SPEED_FACTOR_STEP)) {
-			pl.seeking_speed_factor -= MPL_SEEKING_SPEED_FACTOR_STEP;
-			media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+			media_player.seeking_speed_factor -= MPL_SEEKING_SPEED_FACTOR_STEP;
+			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* Highest value allowed by spec is 64, notify on change only */
-		if (pl.seeking_speed_factor <= (MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
+		if (media_player.seeking_speed_factor <= (MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
 						- MPL_SEEKING_SPEED_FACTOR_STEP)) {
-			pl.seeking_speed_factor += MPL_SEEKING_SPEED_FACTOR_STEP;
-			media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+			media_player.seeking_speed_factor += MPL_SEEKING_SPEED_FACTOR_STEP;
+			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		}
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.track_pos = 0;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
-		media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.track_pos = 0;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
+		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
@@ -2072,59 +2093,59 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (command->param >
-			    pl.group->track->duration - pl.track_pos) {
-				pl.track_pos = pl.group->track->duration;
-			} else if (command->param < -pl.track_pos) {
-				pl.track_pos = 0;
+			    media_player.group->track->duration - media_player.track_pos) {
+				media_player.track_pos = media_player.group->track->duration;
+			} else if (command->param < -media_player.track_pos) {
+				media_player.track_pos = 0;
 			} else {
-				pl.track_pos += command->param;
+				media_player.track_pos += command->param;
 			}
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
-		if (pl.track_pos - PREV_MARGIN <
-		    pl.group->track->segment->pos) {
-			do_prev_segment(&pl);
+		if (media_player.track_pos - PREV_MARGIN <
+		    media_player.group->track->segment->pos) {
+			do_prev_segment(&media_player);
 		}
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-		do_next_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_next_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-		do_first_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_first_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
-		do_last_segment(&pl);
-		pl.track_pos = pl.group->track->segment->pos;
-		media_proxy_pl_track_position_cb(pl.track_pos);
+		do_last_segment(&media_player);
+		media_player.track_pos = media_player.group->track->segment->pos;
+		media_proxy_pl_track_position_cb(media_player.track_pos);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param) {
 			if (command->param != 0) {
-				do_goto_segment(&pl, command->param);
-				pl.track_pos = pl.group->track->segment->pos;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				do_goto_segment(&media_player, command->param);
+				media_player.track_pos = media_player.group->track->segment->pos;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -2136,89 +2157,89 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_prev_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For previous track, the position is reset to 0 */
 			/* even if we stay at the same track (goto start of */
 			/* track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (pl.next_track_set) {
+		if (media_player.next_track_set) {
 			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&pl)) {
-				do_group_change_notifications(&pl);
+			if (do_next_track_next_track_set(&media_player)) {
+				do_group_change_notifications(&media_player);
 			}
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
-		} else if (do_next_track_normal_order(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
+		} else if (do_next_track_normal_order(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_first_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For first track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&pl)) {
-			pl.track_pos = 0;
-			do_track_change_notifications(&pl);
+		if (do_last_track(&media_player)) {
+			media_player.track_pos = 0;
+			do_track_change_notifications(&media_player);
 		} else {
 			/* For last track, the position is reset to 0 even */
 			/* if we stay at the same track (goto start of track) */
-			pl.track_pos = 0;
-			media_proxy_pl_track_position_cb(pl.track_pos);
+			media_player.track_pos = 0;
+			media_proxy_pl_track_position_cb(media_player.track_pos);
 		}
-		pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&pl, command->param)) {
-				pl.track_pos = 0;
-				do_track_change_notifications(&pl);
+			if (do_goto_track(&media_player, command->param)) {
+				media_player.track_pos = 0;
+				do_track_change_notifications(&media_player);
 			} else {
 				/* For goto track, the position is reset to 0 */
 				/* even if we stay at the same track (goto */
 				/* start of track) */
-				pl.track_pos = 0;
-				media_proxy_pl_track_position_cb(pl.track_pos);
+				media_player.track_pos = 0;
+				media_proxy_pl_track_position_cb(media_player.track_pos);
 			}
-			pl.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-			pl.state = MEDIA_PROXY_STATE_PAUSED;
-			media_proxy_pl_media_state_cb(pl.state);
+			media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+			media_player.state = MEDIA_PROXY_STATE_PAUSED;
+			media_proxy_pl_media_state_cb(media_player.state);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -2226,38 +2247,38 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
-		do_full_prev_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_prev_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
-		do_full_next_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_next_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
-		do_full_first_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_first_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
-		do_full_last_group(&pl);
-		pl.state = MEDIA_PROXY_STATE_PAUSED;
-		media_proxy_pl_media_state_cb(pl.state);
+		do_full_last_group(&media_player);
+		media_player.state = MEDIA_PROXY_STATE_PAUSED;
+		media_proxy_pl_media_state_cb(media_player.state);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
-			do_full_goto_group(&pl, command->param);
-			pl.state = MEDIA_PROXY_STATE_PAUSED;
-			media_proxy_pl_media_state_cb(pl.state);
+			do_full_goto_group(&media_player, command->param);
+			media_player.state = MEDIA_PROXY_STATE_PAUSED;
+			media_proxy_pl_media_state_cb(media_player.state);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -2358,97 +2379,97 @@ static bool find_group_by_id(const struct mpl_mediaplayer *pl, uint64_t id,
 
 const char *get_player_name(void)
 {
-	return pl.name;
+	return media_player.name;
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 uint64_t get_icon_id(void)
 {
-	return pl.icon_id;
+	return media_player.icon_id;
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 const char *get_icon_url(void)
 {
-	return pl.icon_url;
+	return media_player.icon_url;
 }
 
 const char *get_track_title(void)
 {
-	return pl.group->track->title;
+	return media_player.group->track->title;
 }
 
 int32_t get_track_duration(void)
 {
-	return pl.group->track->duration;
+	return media_player.group->track->duration;
 }
 
 int32_t get_track_position(void)
 {
-	return pl.track_pos;
+	return media_player.track_pos;
 }
 
 void set_track_position(int32_t position)
 {
-	int32_t old_pos = pl.track_pos;
+	int32_t old_pos = media_player.track_pos;
 	int32_t new_pos;
 
 	if (position >= 0) {
-		if (position > pl.group->track->duration) {
+		if (position > media_player.group->track->duration) {
 			/* Do not go beyond end of track */
-			new_pos = pl.group->track->duration;
+			new_pos = media_player.group->track->duration;
 		} else {
 			new_pos = position;
 		}
 	} else {
 		/* Negative position, handle as offset from _end_ of track */
 		/* (Note minus sign below) */
-		if (position < -pl.group->track->duration) {
+		if (position < -media_player.group->track->duration) {
 			new_pos = 0;
 		} else {
 			/* (Remember position is negative) */
-			new_pos = pl.group->track->duration + position;
+			new_pos = media_player.group->track->duration + position;
 		}
 	}
 
 	LOG_DBG("Pos. given: %d, resulting pos.: %d (duration is %d)", position, new_pos,
-		pl.group->track->duration);
+		media_player.group->track->duration);
 
 	if (new_pos != old_pos) {
 		/* Set new position and notify it */
-		pl.track_pos = new_pos;
+		media_player.track_pos = new_pos;
 		media_proxy_pl_track_position_cb(new_pos);
 	}
 }
 
 int8_t get_playback_speed(void)
 {
-	return pl.playback_speed_param;
+	return media_player.playback_speed_param;
 }
 
 void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
-	if (speed != pl.playback_speed_param) {
-		pl.playback_speed_param = speed;
-		media_proxy_pl_playback_speed_cb(pl.playback_speed_param);
+	if (speed != media_player.playback_speed_param) {
+		media_player.playback_speed_param = speed;
+		media_proxy_pl_playback_speed_cb(media_player.playback_speed_param);
 	}
 }
 
 int8_t get_seeking_speed(void)
 {
-	return pl.seeking_speed_factor;
+	return media_player.seeking_speed_factor;
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 uint64_t get_track_segments_id(void)
 {
-	return pl.group->track->segments_id;
+	return media_player.group->track->segments_id;
 }
 
 uint64_t get_current_track_id(void)
 {
-	return pl.group->track->id;
+	return media_player.group->track->id;
 }
 
 void set_current_track_id(uint64_t id)
@@ -2458,19 +2479,18 @@ void set_current_track_id(uint64_t id)
 
 	LOG_DBG_OBJ_ID("Track ID to set: ", id);
 
-	if (find_track_by_id(&pl, id, &group, &track)) {
-
-		if (pl.group != group) {
-			pl.group = group;
-			do_group_change_notifications(&pl);
+	if (find_track_by_id(&media_player, id, &group, &track)) {
+		if (media_player.group != group) {
+			media_player.group = group;
+			do_group_change_notifications(&media_player);
 
 			/* Group change implies track change (even if same track in other group) */
-			pl.group->track = track;
-			do_track_change_notifications(&pl);
+			media_player.group->track = track;
+			do_track_change_notifications(&media_player);
 
-		} else if (pl.group->track != track) {
-			pl.group->track = track;
-			do_track_change_notifications(&pl);
+		} else if (media_player.group->track != track) {
+			media_player.group->track = track;
+			do_track_change_notifications(&media_player);
 		}
 		return;
 	}
@@ -2485,13 +2505,13 @@ void set_current_track_id(uint64_t id)
 uint64_t get_next_track_id(void)
 {
 	/* If the next track has been set explicitly */
-	if (pl.next_track_set) {
-		return pl.next.track->id;
+	if (media_player.next_track_set) {
+		return media_player.next.track->id;
 	}
 
 	/* Normal playing order */
-	if (pl.group->track->next) {
-		return pl.group->track->next->id;
+	if (media_player.group->track->next) {
+		return media_player.group->track->next->id;
 	}
 
 	/* Return zero value to indicate that there is no next track */
@@ -2505,11 +2525,11 @@ void set_next_track_id(uint64_t id)
 
 	LOG_DBG_OBJ_ID("Next Track ID to set: ", id);
 
-	if (find_track_by_id(&pl, id, &group, &track)) {
+	if (find_track_by_id(&media_player, id, &group, &track)) {
 
-		pl.next_track_set = true;
-		pl.next.group = group;
-		pl.next.track = track;
+		media_player.next_track_set = true;
+		media_player.next.group = group;
+		media_player.next.track = track;
 		media_proxy_pl_next_track_id_cb(id);
 		return;
 	}
@@ -2519,12 +2539,12 @@ void set_next_track_id(uint64_t id)
 
 uint64_t get_parent_group_id(void)
 {
-	return pl.group->parent->id;
+	return media_player.group->parent->id;
 }
 
 uint64_t get_current_group_id(void)
 {
-	return pl.group->id;
+	return media_player.group->id;
 }
 
 void set_current_group_id(uint64_t id)
@@ -2534,17 +2554,17 @@ void set_current_group_id(uint64_t id)
 
 	LOG_DBG_OBJ_ID("Group ID to set: ", id);
 
-	if (find_group_by_id(&pl, id, &group)) {
+	if (find_group_by_id(&media_player, id, &group)) {
 
-		if (pl.group != group) {
+		if (media_player.group != group) {
 			/* Change to found group */
-			pl.group = group;
-			do_group_change_notifications(&pl);
+			media_player.group = group;
+			do_group_change_notifications(&media_player);
 
 			/* And change to first track in group */
-			track_change = do_first_track(&pl);
+			track_change = do_first_track(&media_player);
 			if (track_change) {
-				do_track_change_notifications(&pl);
+				do_track_change_notifications(&media_player);
 			}
 		}
 		return;
@@ -2556,27 +2576,27 @@ void set_current_group_id(uint64_t id)
 
 uint8_t get_playing_order(void)
 {
-	return pl.playing_order;
+	return media_player.playing_order;
 }
 
 void set_playing_order(uint8_t order)
 {
-	if (order != pl.playing_order) {
-		if (BIT(order - 1) & pl.playing_orders_supported) {
-			pl.playing_order = order;
-			media_proxy_pl_playing_order_cb(pl.playing_order);
+	if (order != media_player.playing_order) {
+		if (BIT(order - 1) & media_player.playing_orders_supported) {
+			media_player.playing_order = order;
+			media_proxy_pl_playing_order_cb(media_player.playing_order);
 		}
 	}
 }
 
 uint16_t get_playing_orders_supported(void)
 {
-	return pl.playing_orders_supported;
+	return media_player.playing_orders_supported;
 }
 
 uint8_t get_media_state(void)
 {
-	return pl.state;
+	return media_player.state;
 }
 
 void send_command(const struct mpl_cmd *command)
@@ -2589,9 +2609,9 @@ void send_command(const struct mpl_cmd *command)
 		LOG_DBG("opcode: %d", command->opcode);
 	}
 
-	if (pl.state < MEDIA_PROXY_STATE_LAST) {
+	if (media_player.state < MEDIA_PROXY_STATE_LAST) {
 		ntf.requested_opcode = command->opcode;
-		command_handlers[pl.state](command, &ntf);
+		command_handlers[media_player.state](command, &ntf);
 	} else {
 		LOG_DBG("INVALID STATE");
 	}
@@ -2599,47 +2619,45 @@ void send_command(const struct mpl_cmd *command)
 
 uint32_t get_commands_supported(void)
 {
-	return pl.opcodes_supported;
+	return media_player.opcodes_supported;
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
+
+static bool parse_sci(struct bt_data *data, void *user_data)
+{
+	LOG_DBG("type: %u len %u", data->type, data->data_len);
+	LOG_HEXDUMP_DBG(data->data, data->data_len, "param:");
+
+	if (data->type < MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME ||
+	    data->type > MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS) {
+		LOG_DBG("Invalid search type: %u", data->type);
+		return false;
+	}
+
+	return true;
+}
+
 static void parse_search(const struct mpl_search *search)
 {
-	uint8_t index = 0;
-	struct mpl_sci sci;
-	uint8_t sci_num = 0;
 	bool search_failed = false;
 
 	if (search->len > SEARCH_LEN_MAX) {
 		LOG_WRN("Search too long (%d) - aborting", search->len);
 		search_failed = true;
 	} else {
-		LOG_DBG("Parsing %d octets search", search->len);
+		uint8_t search_ltv[SEARCH_LEN_MAX];
+		struct net_buf_simple buf;
 
-		while (search->len - index > 0) {
-			sci.len = (uint8_t)search->search[index++];
-			if (sci.len < SEARCH_SCI_LEN_MIN) {
-				LOG_WRN("Invalid length field - too small");
-				search_failed = true;
-				break;
-			}
-			if (sci.len > (search->len - index)) {
-				LOG_WRN("Incomplete search control item");
-				search_failed = true;
-				break;
-			}
-			sci.type = (uint8_t)search->search[index++];
-			if (sci.type <  MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME ||
-			    sci.type > MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS) {
-				search_failed = true;
-				break;
-			}
-			(void)memcpy(&sci.param, &search->search[index], sci.len - 1);
-			index += sci.len - 1;
+		/* Copy so that we can parse it using the net_buf_simple when search is const */
+		memcpy(search_ltv, search->search, search->len);
 
-			LOG_DBG("SCI # %d: type: %d", sci_num, sci.type);
-			LOG_HEXDUMP_DBG(sci.param, sci.len - 1, "param:");
-			sci_num++;
+		net_buf_simple_init_with_data(&buf, search_ltv, search->len);
+
+		bt_data_parse(&buf, parse_sci, NULL);
+
+		if (buf.len != 0U) {
+			search_failed = true;
 		}
 	}
 
@@ -2647,15 +2665,15 @@ static void parse_search(const struct mpl_search *search)
 	/* For now, just fake it. */
 
 	if (search_failed) {
-		pl.search_results_id = 0;
+		media_player.search_results_id = 0;
 		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_FAILURE);
 	} else {
 		/* Use current group as search result for now */
-		pl.search_results_id = pl.group->id;
+		media_player.search_results_id = media_player.group->id;
 		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_SUCCESS);
 	}
 
-	media_proxy_pl_search_results_id_cb(pl.search_results_id);
+	media_proxy_pl_search_results_id_cb(media_player.search_results_id);
 }
 
 void send_search(const struct mpl_search *search)
@@ -2671,13 +2689,13 @@ void send_search(const struct mpl_search *search)
 
 uint64_t get_search_results_id(void)
 {
-	return pl.search_results_id;
+	return media_player.search_results_id;
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 uint8_t get_content_ctrl_id(void)
 {
-	return pl.content_ctrl_id;
+	return media_player.content_ctrl_id;
 }
 
 int media_proxy_pl_init(void)
@@ -2710,21 +2728,21 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_MCS */
 
 	/* Get a Content Control ID */
-	pl.content_ctrl_id = bt_ccid_get_value();
+	media_player.content_ctrl_id = bt_ccid_get_value();
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* Initialize the object content buffer */
 	net_buf_simple_init(obj.content, 0);
 
 	/* Icon Object */
-	ret = add_icon_object(&pl);
+	ret = add_icon_object(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Unable to add icon object, error %d", ret);
 		return ret;
 	}
 
 	/* Add all tracks and groups to OTS */
-	ret = add_group_and_track_objects(&pl);
+	ret = add_group_and_track_objects(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Error adding tracks and groups to OTS, error %d", ret);
 		return ret;
@@ -2733,7 +2751,7 @@ int media_proxy_pl_init(void)
 	/* Initial setup of Track Segments Object */
 	/* TODO: Later, this should be done when the tracks are added */
 	/* but for no only one of the tracks has segments .*/
-	ret = add_current_track_segments_object(&pl);
+	ret = add_current_track_segments_object(&media_player);
 	if (ret < 0) {
 		LOG_ERR("Error adding Track Segments Object to OTS, error %d", ret);
 		return ret;
@@ -2741,41 +2759,41 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	/* Set up the calls structure */
-	pl.calls.get_player_name              = get_player_name;
+	media_player.calls.get_player_name              = get_player_name;
 #ifdef CONFIG_BT_MPL_OBJECTS
-	pl.calls.get_icon_id                  = get_icon_id;
+	media_player.calls.get_icon_id                  = get_icon_id;
 #endif /* CONFIG_BT_MPL_OBJECTS */
-	pl.calls.get_icon_url                 = get_icon_url;
-	pl.calls.get_track_title              = get_track_title;
-	pl.calls.get_track_duration           = get_track_duration;
-	pl.calls.get_track_position           = get_track_position;
-	pl.calls.set_track_position           = set_track_position;
-	pl.calls.get_playback_speed           = get_playback_speed;
-	pl.calls.set_playback_speed           = set_playback_speed;
-	pl.calls.get_seeking_speed            = get_seeking_speed;
+	media_player.calls.get_icon_url                 = get_icon_url;
+	media_player.calls.get_track_title              = get_track_title;
+	media_player.calls.get_track_duration           = get_track_duration;
+	media_player.calls.get_track_position           = get_track_position;
+	media_player.calls.set_track_position           = set_track_position;
+	media_player.calls.get_playback_speed           = get_playback_speed;
+	media_player.calls.set_playback_speed           = set_playback_speed;
+	media_player.calls.get_seeking_speed            = get_seeking_speed;
 #ifdef CONFIG_BT_MPL_OBJECTS
-	pl.calls.get_track_segments_id        = get_track_segments_id;
-	pl.calls.get_current_track_id         = get_current_track_id;
-	pl.calls.set_current_track_id         = set_current_track_id;
-	pl.calls.get_next_track_id            = get_next_track_id;
-	pl.calls.set_next_track_id            = set_next_track_id;
-	pl.calls.get_parent_group_id          = get_parent_group_id;
-	pl.calls.get_current_group_id         = get_current_group_id;
-	pl.calls.set_current_group_id         = set_current_group_id;
+	media_player.calls.get_track_segments_id        = get_track_segments_id;
+	media_player.calls.get_current_track_id         = get_current_track_id;
+	media_player.calls.set_current_track_id         = set_current_track_id;
+	media_player.calls.get_next_track_id            = get_next_track_id;
+	media_player.calls.set_next_track_id            = set_next_track_id;
+	media_player.calls.get_parent_group_id          = get_parent_group_id;
+	media_player.calls.get_current_group_id         = get_current_group_id;
+	media_player.calls.set_current_group_id         = set_current_group_id;
 #endif /* CONFIG_BT_MPL_OBJECTS */
-	pl.calls.get_playing_order            = get_playing_order;
-	pl.calls.set_playing_order            = set_playing_order;
-	pl.calls.get_playing_orders_supported = get_playing_orders_supported;
-	pl.calls.get_media_state              = get_media_state;
-	pl.calls.send_command                 = send_command;
-	pl.calls.get_commands_supported       = get_commands_supported;
+	media_player.calls.get_playing_order            = get_playing_order;
+	media_player.calls.set_playing_order            = set_playing_order;
+	media_player.calls.get_playing_orders_supported = get_playing_orders_supported;
+	media_player.calls.get_media_state              = get_media_state;
+	media_player.calls.send_command                 = send_command;
+	media_player.calls.get_commands_supported       = get_commands_supported;
 #ifdef CONFIG_BT_MPL_OBJECTS
-	pl.calls.send_search                  = send_search;
-	pl.calls.get_search_results_id        = get_search_results_id;
+	media_player.calls.send_search                  = send_search;
+	media_player.calls.get_search_results_id        = get_search_results_id;
 #endif /* CONFIG_BT_MPL_OBJECTS */
-	pl.calls.get_content_ctrl_id          = get_content_ctrl_id;
+	media_player.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
-	ret = media_proxy_pl_register(&pl.calls);
+	ret = media_proxy_pl_register(&media_player.calls);
 	if (ret < 0) {
 		LOG_ERR("Unable to register player");
 		return ret;
@@ -2795,53 +2813,53 @@ void mpl_debug_dump_state(void)
 	struct mpl_track *track;
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-	LOG_DBG("Mediaplayer name: %s", pl.name);
+	LOG_DBG("Mediaplayer name: %s", media_player.name);
 
 #if CONFIG_BT_MPL_OBJECTS
-	(void)bt_ots_obj_id_to_str(pl.icon_id, t, sizeof(t));
+	(void)bt_ots_obj_id_to_str(media_player.icon_id, t, sizeof(t));
 	LOG_DBG("Icon ID: %s", t);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-	LOG_DBG("Icon URL: %s", pl.icon_url);
-	LOG_DBG("Track position: %d", pl.track_pos);
-	LOG_DBG("Media state: %d", pl.state);
-	LOG_DBG("Playback speed parameter: %d", pl.playback_speed_param);
-	LOG_DBG("Seeking speed factor: %d", pl.seeking_speed_factor);
-	LOG_DBG("Playing order: %d", pl.playing_order);
-	LOG_DBG("Playing orders supported: 0x%x", pl.playing_orders_supported);
-	LOG_DBG("Opcodes supported: %d", pl.opcodes_supported);
-	LOG_DBG("Content control ID: %d", pl.content_ctrl_id);
+	LOG_DBG("Icon URL: %s", media_player.icon_url);
+	LOG_DBG("Track position: %d", media_player.track_pos);
+	LOG_DBG("Media state: %d", media_player.state);
+	LOG_DBG("Playback speed parameter: %d", media_player.playback_speed_param);
+	LOG_DBG("Seeking speed factor: %d", media_player.seeking_speed_factor);
+	LOG_DBG("Playing order: %d", media_player.playing_order);
+	LOG_DBG("Playing orders supported: 0x%x", media_player.playing_orders_supported);
+	LOG_DBG("Opcodes supported: %d", media_player.opcodes_supported);
+	LOG_DBG("Content control ID: %d", media_player.content_ctrl_id);
 
 #if CONFIG_BT_MPL_OBJECTS
-	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
+	(void)bt_ots_obj_id_to_str(media_player.group->parent->id, t, sizeof(t));
 	LOG_DBG("Current group's parent: %s", t);
 
-	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
+	(void)bt_ots_obj_id_to_str(media_player.group->id, t, sizeof(t));
 	LOG_DBG("Current group: %s", t);
 
-	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
+	(void)bt_ots_obj_id_to_str(media_player.group->track->id, t, sizeof(t));
 	LOG_DBG("Current track: %s", t);
 
-	if (pl.next_track_set) {
-		(void)bt_ots_obj_id_to_str(pl.next.track->id, t, sizeof(t));
+	if (media_player.next_track_set) {
+		(void)bt_ots_obj_id_to_str(media_player.next.track->id, t, sizeof(t));
 		LOG_DBG("Next track: %s", t);
-	} else if (pl.group->track->next) {
-		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
+	} else if (media_player.group->track->next) {
+		(void)bt_ots_obj_id_to_str(media_player.group->track->next->id, t,
 					   sizeof(t));
 		LOG_DBG("Next track: %s", t);
 	} else {
 		LOG_DBG("No next track");
 	}
 
-	if (pl.search_results_id) {
-		(void)bt_ots_obj_id_to_str(pl.search_results_id, t, sizeof(t));
+	if (media_player.search_results_id) {
+		(void)bt_ots_obj_id_to_str(media_player.search_results_id, t, sizeof(t));
 		LOG_DBG("Search results: %s", t);
 	} else {
 		LOG_DBG("No search results");
 	}
 
 	LOG_DBG("Groups and tracks:");
-	group = pl.group;
+	group = media_player.group;
 
 	while (group->prev != NULL) {
 		group = group->prev;
@@ -2878,14 +2896,24 @@ void mpl_debug_dump_state(void)
 void mpl_test_unset_parent_group(void)
 {
 	LOG_DBG("Setting current group to be it's own parent");
-	pl.group->parent = pl.group;
+	media_player.group->parent = media_player.group;
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 void mpl_test_media_state_set(uint8_t state)
 {
-	pl.state = state;
-	media_proxy_pl_media_state_cb(pl.state);
+	media_player.state = state;
+	media_proxy_pl_media_state_cb(media_player.state);
+}
+
+void mpl_test_player_name_changed_cb(void)
+{
+	media_proxy_pl_name_cb(media_player.name);
+}
+
+void mpl_test_player_icon_url_changed_cb(void)
+{
+	media_proxy_pl_icon_url_cb(media_player.icon_url);
 }
 
 void mpl_test_track_changed_cb(void)
@@ -2895,70 +2923,70 @@ void mpl_test_track_changed_cb(void)
 
 void mpl_test_title_changed_cb(void)
 {
-	media_proxy_pl_track_title_cb(pl.group->track->title);
+	media_proxy_pl_track_title_cb(media_player.group->track->title);
 }
 
 void mpl_test_duration_changed_cb(void)
 {
-	media_proxy_pl_track_duration_cb(pl.group->track->duration);
+	media_proxy_pl_track_duration_cb(media_player.group->track->duration);
 }
 
 void mpl_test_position_changed_cb(void)
 {
-	media_proxy_pl_track_position_cb(pl.track_pos);
+	media_proxy_pl_track_position_cb(media_player.track_pos);
 }
 
 void mpl_test_playback_speed_changed_cb(void)
 {
-	media_proxy_pl_playback_speed_cb(pl.playback_speed_param);
+	media_proxy_pl_playback_speed_cb(media_player.playback_speed_param);
 }
 
 void mpl_test_seeking_speed_changed_cb(void)
 {
-	media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+	media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 void mpl_test_current_track_id_changed_cb(void)
 {
-	media_proxy_pl_current_track_id_cb(pl.group->track->id);
+	media_proxy_pl_current_track_id_cb(media_player.group->track->id);
 }
 
 void mpl_test_next_track_id_changed_cb(void)
 {
-	media_proxy_pl_next_track_id_cb(pl.group->track->next->id);
+	media_proxy_pl_next_track_id_cb(media_player.group->track->next->id);
 }
 
 void mpl_test_parent_group_id_changed_cb(void)
 {
-	media_proxy_pl_parent_group_id_cb(pl.group->id);
+	media_proxy_pl_parent_group_id_cb(media_player.group->id);
 }
 
 void mpl_test_current_group_id_changed_cb(void)
 {
-	media_proxy_pl_current_group_id_cb(pl.group->id);
+	media_proxy_pl_current_group_id_cb(media_player.group->id);
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 void mpl_test_playing_order_changed_cb(void)
 {
-	media_proxy_pl_playing_order_cb(pl.playing_order);
+	media_proxy_pl_playing_order_cb(media_player.playing_order);
 }
 
 void mpl_test_media_state_changed_cb(void)
 {
-	media_proxy_pl_media_state_cb(pl.playing_order);
+	media_proxy_pl_media_state_cb(media_player.playing_order);
 }
 
 void mpl_test_opcodes_supported_changed_cb(void)
 {
-	media_proxy_pl_commands_supported_cb(pl.opcodes_supported);
+	media_proxy_pl_commands_supported_cb(media_player.opcodes_supported);
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 void mpl_test_search_results_changed_cb(void)
 {
-	media_proxy_pl_search_cb(pl.search_results_id);
+	media_proxy_pl_search_cb(media_player.search_results_id);
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 

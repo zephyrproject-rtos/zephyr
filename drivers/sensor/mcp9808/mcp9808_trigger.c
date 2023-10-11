@@ -78,7 +78,7 @@ static void process_int(const struct device *dev)
 	struct mcp9808_data *data = dev->data;
 
 	if (data->trigger_handler) {
-		data->trigger_handler(dev, &data->trig);
+		data->trigger_handler(dev, data->trig);
 	}
 
 	if (data->trigger_handler) {
@@ -100,7 +100,7 @@ int mcp9808_trigger_set(const struct device *dev,
 
 	setup_int(dev, false);
 
-	data->trig = *trig;
+	data->trig = trig;
 	data->trigger_handler = handler;
 
 	if (handler != NULL) {
@@ -176,7 +176,7 @@ int mcp9808_setup_interrupt(const struct device *dev)
 	data->work.handler = mcp9808_gpio_thread_cb;
 #endif /* trigger type */
 
-	if (!device_is_ready(cfg->int_gpio.port)) {
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}

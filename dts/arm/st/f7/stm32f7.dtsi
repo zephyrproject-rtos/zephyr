@@ -6,14 +6,18 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <zephyr/dt-bindings/clock/stm32f4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32f7_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/adc/stm32f4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32f2_4_7_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <freq.h>
 
 / {
@@ -39,6 +43,13 @@
 				arm,num-mpu-regions = <8>;
 			};
 		};
+	};
+
+	quadspi_memory: memory@90000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "QSPI";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
 	};
 
 	clocks {
@@ -124,7 +135,15 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
+			#address-cells = <1>;
 			reg = <0x40013c00 0x400>;
+			num-lines = <16>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
+				     <10 0>, <23 0>, <40 0>;
+			interrupt-names = "line0", "line1", "line2", "line3",
+					  "line4", "line5-9", "line10-15";
+			line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+				      <4 1>, <5 5>, <10 6>;
 		};
 
 		pinctrl: pin-controller@40020000 {
@@ -379,13 +398,12 @@
 		};
 
 		can1: can@40006400 {
-			compatible = "st,stm32-can";
+			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sjw = <1>;
 			sample-point = <875>;
 		};
 
@@ -421,6 +439,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -437,6 +460,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -455,6 +483,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -472,6 +505,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers6: timers@40001000 {
@@ -483,6 +521,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -494,6 +537,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40010400 {
@@ -528,6 +576,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers10: timers@40014400 {
@@ -544,6 +597,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -562,6 +620,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers12: timers@40001800 {
@@ -578,6 +641,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
@@ -596,6 +664,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers14: timers@40002000 {
@@ -613,6 +686,11 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -624,7 +702,8 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 
@@ -657,33 +736,51 @@
 		};
 
 		adc1: adc@40012000 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012000 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
 			interrupts = <18 0>;
 			status = "disabled";
-			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 15 28 56 84 112 144 480>;
+			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc2: adc@40012100 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012100 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 15 28 56 84 112 144 480>;
+			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc3: adc@40012200 {
-			compatible = "st,stm32-adc";
+			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012200 0x50>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 15 28 56 84 112 144 480>;
+			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {
@@ -717,14 +814,17 @@
 			compatible = "st,stm32-rng";
 			reg = <0x50060800 0x400>;
 			interrupts = <80 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 
 		sdmmc1: sdmmc@40012c00 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40012c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>,
+				 <&rcc STM32_SRC_PLL_Q SDMMC1_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 11U)>;
 			interrupts = <49 0>;
 			status = "disabled";
 		};
@@ -755,6 +855,21 @@
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
+		io-channels = <&adc1 18>;
+		status = "disabled";
+	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FFF7A2A>;
+		vrefint-cal-mv = <3300>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
 		io-channels = <&adc1 18>;
 		status = "disabled";
 	};

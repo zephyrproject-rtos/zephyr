@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Joel Guittet
+# Wio Terminal  board configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "wio_terminal"
+	depends on BOARD_WIO_TERMINAL
+
+config LV_COLOR_16_SWAP
+	default y if LVGL

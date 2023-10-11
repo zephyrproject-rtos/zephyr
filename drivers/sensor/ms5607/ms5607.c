@@ -155,7 +155,7 @@ static int ms5607_channel_get(const struct device *dev,
 		val->val2 = data->pressure % 100 * 10000;
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

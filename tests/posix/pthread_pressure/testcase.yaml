@@ -1,0 +1,13 @@
+common:
+  tags: posix
+  min_ram: 64
+  arch_exclude:
+    - posix
+  integration_platforms:
+    - qemu_riscv64_smp
+tests:
+  portability.posix.pthread_pressure:
+    extra_configs:
+      # Enabled for GitHub CI to reduce host scheduling noise while running
+      # several concurrent Qemu processes each under stressful SMP load.
+      - CONFIG_PTHREAD_CREATE_BARRIER=y

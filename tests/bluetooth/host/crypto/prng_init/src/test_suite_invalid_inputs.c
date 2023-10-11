@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <host/crypto.h>
+#include "host_mocks/assert.h"
+#include "mocks/crypto_help_utils.h"
 #include "mocks/hci_core.h"
 #include "mocks/hci_core_expects.h"
 #include "mocks/hmac_prng.h"
 #include "mocks/hmac_prng_expects.h"
-#include "mocks/crypto_help_utils.h"
-#include "host_mocks/assert.h"
+
+#include <zephyr/kernel.h>
+
+#include <host/crypto.h>
 
 ZTEST_SUITE(prng_init_invalid_cases, NULL, NULL, NULL, NULL, NULL);
 
@@ -35,7 +37,7 @@ ZTEST(prng_init_invalid_cases, test_bt_hci_le_rand_fails)
 
 	expect_call_count_bt_hci_le_rand(1, expected_args_history);
 
-	zassert_true(err < 0, "'%s()' returned unexpected error code %d", test_unit_name, err);
+	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
 
 /*
@@ -62,7 +64,7 @@ ZTEST(prng_init_invalid_cases, test_tc_hmac_prng_init_fails)
 	expect_call_count_bt_hci_le_rand(1, expected_args_history);
 	expect_single_call_tc_hmac_prng_init(hmac_prng, 8);
 
-	zassert_true(err == -EIO, "'%s()' returned unexpected error code %d", test_unit_name, err);
+	zassert_true(err == -EIO, "Unexpected error code '%d' was returned", err);
 }
 
 /*
@@ -92,5 +94,5 @@ ZTEST(prng_init_invalid_cases, test_prng_reseed_fails)
 	expect_single_call_tc_hmac_prng_init(hmac_prng, 8);
 	expect_single_call_tc_hmac_prng_reseed(hmac_prng, 32, sizeof(int64_t));
 
-	zassert_true(err == -EIO, "'%s()' returned unexpected error code %d", test_unit_name, err);
+	zassert_true(err == -EIO, "Unexpected error code '%d' was returned", err);
 }

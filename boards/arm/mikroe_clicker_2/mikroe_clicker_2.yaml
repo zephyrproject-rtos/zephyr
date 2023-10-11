@@ -12,3 +12,4 @@ supported:
   - spi
   - i2c
   - adc
+vendor: mikroe

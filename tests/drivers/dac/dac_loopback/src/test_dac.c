@@ -26,8 +26,7 @@
  * point is at half of the full scale voltage.
  */
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+#if defined(CONFIG_BOARD_NUCLEO_L152RE) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_STM32L562E_DK) || \
 	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
@@ -44,13 +43,20 @@
 #define DAC_RESOLUTION		12
 
 #define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
+#if defined(CONFIG_BOARD_STM32L562E_DK)
+#define ADC_CHANNEL_ID		13
+#else
 #define ADC_CHANNEL_ID		1
+#endif /* CONFIG_BOARD_STM32L562E_DK */
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+/* The STM32L562E_DK does not accept ADC_ACQ_TIME_DEFAULT (=0) but the MAX one */
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_MAX
 
-#elif defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
+
+#elif defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_G071RB)
@@ -68,7 +74,8 @@
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+/* The NUCLEO_G071RB does not accept ADC_ACQ_TIME_DEFAULT (=0) but the MAX one */
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_MAX
 
 #elif defined(CONFIG_BOARD_TWR_KE18F)
 
@@ -118,6 +125,22 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_CHANNEL_ID		23
 
+#elif defined(CONFIG_BOARD_LPCXPRESSO55S36)
+
+/* DAC0 output is internally available on ADC0_SE4 */
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_EXTERNAL0
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_CHANNEL_ID		0
+#define ADC_1ST_CHANNEL_INPUT	4
+
 #elif defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK)  || \
@@ -148,7 +171,8 @@
 
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DAC_CHANNEL_ID,
-	.resolution = DAC_RESOLUTION
+	.resolution = DAC_RESOLUTION,
+	.buffered = true
 };
 
 static const struct adc_channel_cfg adc_ch_cfg = {
@@ -160,7 +184,8 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 #if defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
+	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP) || \
+	defined(CONFIG_BOARD_LPCXPRESSO55S36)
 	.input_positive   = ADC_1ST_CHANNEL_INPUT,
 #endif
 };

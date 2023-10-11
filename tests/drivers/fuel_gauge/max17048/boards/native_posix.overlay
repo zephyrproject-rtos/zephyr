@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	max17048: max17048@36 {
+		compatible = "maxim,max17048";
+		reg = <0x36>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2022 Google Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/gpio/gpio_enable_disable_interrupt test in Zephyr.
+
+compatible: "test-gpio-enable-disable-interrupt"
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as an input for interrupt.

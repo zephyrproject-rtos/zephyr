@@ -17,5 +17,5 @@ supported:
   - usb_device
   - pwm
   - can
-  - canfd
   - hwinfo
+vendor: tdk

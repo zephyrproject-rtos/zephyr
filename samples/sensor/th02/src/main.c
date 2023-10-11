@@ -23,7 +23,7 @@ static struct channel_info info[] = {
 	{ SENSOR_CHAN_HUMIDITY, },
 };
 
-void main(void)
+int main(void)
 {
 	const struct device *const glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
 	const struct device *const th02 = DEVICE_DT_GET_ONE(hoperf_th02);
@@ -33,12 +33,12 @@ void main(void)
 
 	if (!device_is_ready(th02)) {
 		printk("TH02 is not ready\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(glcd)) {
 		printk("Grove LCD not ready\n");
-		return;
+		return 0;
 	}
 
 	/* configure LCD */
@@ -84,4 +84,5 @@ void main(void)
 
 		k_sleep(K_MSEC(2000));
 	}
+	return 0;
 }

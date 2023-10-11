@@ -20,6 +20,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_CODEC_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_CODEC_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

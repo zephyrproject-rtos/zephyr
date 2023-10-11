@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BBRAM
-	bool "Battery-backed RAM drivers"
+	bool "Battery-backed RAM (BBRAM) drivers"
 	help
 	  Enable BBRAM (battery-backed RAM) driver configuration.
 
@@ -23,6 +23,9 @@ config BBRAM_INIT_PRIORITY
 	# In STM32, BBRAM is a part of RTC. In this case init priority must be
 	# lower than COUNTER_INIT_PRIORITY.
 	default 65 if BBRAM_STM32
+	# MCP7940N is an I2C device, therefore the init priority must be
+	# greater than I2C_INIT_PRIORITY.
+	default 55 if BBRAM_MICROCHIP_MCP7940N
 	default 10
 	help
 	  BBRAM driver initialization priority
@@ -32,6 +35,8 @@ source "drivers/bbram/Kconfig.npcx"
 source "drivers/bbram/Kconfig.it8xxx2"
 
 source "drivers/bbram/Kconfig.bbram_emul"
+
+source "drivers/bbram/Kconfig.microchip"
 
 source "drivers/bbram/Kconfig.xec"
 

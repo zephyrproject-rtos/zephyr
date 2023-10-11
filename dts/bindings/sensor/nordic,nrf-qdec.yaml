@@ -8,63 +8,36 @@ compatible: "nordic,nrf-qdec"
 include: [sensor-device.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    a-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  pinctrl-0:
+    required: true
 
-        The A pin to use.
+  enable-pin:
+    type: int
+    description: |
+      The enable pin to use, to enable a connected QDEC device
 
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for the A pin, set:
+      For pins P0.0 through P0.31, use the pin number. For example,
+      to use P0.16 for the A pin, set:
 
-            a-pin = <16>;
+          enable-pin = <16>;
 
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for the A pin, set:
+      For pins P1.0 through P1.31, add 32 to the pin number. For
+      example, to use P1.2 for the A pin, set:
 
-            a-pin = <34>;  /* 32 + 2 */
+          enable-pin = <34>;  /* 32 + 2 */
 
-    b-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
+  led-pre:
+    type: int
+    description: Time LED is enabled prior to sampling event (in us)
+    required: true
 
-        The B pin to use. The pin numbering scheme is the same as
-        the a-pin property's.
-
-    led-pin:
-      type: int
-      deprecated: true
-      description: |
-        IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled.
-
-        The LED pin to use for a light based QDEC device. The pin
-        numbering scheme is the same as the a-pin property's.
-
-    enable-pin:
-      type: int
-      description: |
-        The enable pin to use, to enable a connected QDEC device. The
-        pin numbering scheme is the same as the a-pin property's.
-
-    led-pre:
-      type: int
-      description: Time LED is enabled prior to sampling event (in us)
-      required: true
-
-    steps:
-      type: int
-      description: Number of steps on the rotating wheel
-      required: true
+  steps:
+    type: int
+    description: Number of steps on the rotating wheel
+    required: true

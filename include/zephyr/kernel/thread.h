@@ -12,6 +12,7 @@
 #endif
 
 #include <zephyr/kernel/stats.h>
+#include <zephyr/sys/arch_interface.h>
 
 /**
  * @typedef k_thread_entry_t
@@ -120,8 +121,12 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
+#if CONFIG_MP_MAX_NUM_CPUS <= 8
 	uint8_t cpu_mask;
+#else
+	uint16_t cpu_mask;
 #endif
+#endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */
 	void *swap_data;
@@ -264,6 +269,9 @@ struct k_thread {
 
 	uint32_t   events;
 	uint32_t   event_options;
+
+	/** true if timeout should not wake the thread */
+	bool no_wake_on_timeout;
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -339,15 +347,15 @@ struct k_thread {
 	struct _pipe_desc pipe_desc;
 #endif
 
+#ifdef CONFIG_OBJ_CORE_THREAD
+	struct k_obj_core  obj_core;
+#endif
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
 
 typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
-
-void z_init_cpu(int id);
-void z_sched_ipi(void);
-void z_smp_start_cpu(int id);
 
 #endif

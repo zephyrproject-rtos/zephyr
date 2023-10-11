@@ -21,6 +21,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
+#include <zephyr/arch/arm64/mm.h>
 
 struct _callee_saved {
 	uint64_t x19;
@@ -50,8 +51,18 @@ struct z_arm64_fp_context {
 };
 
 struct _thread_arch {
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_MMU)
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
+#if defined(CONFIG_ARM_MMU)
 	struct arm_mmu_ptables *ptables;
+#endif
+#if defined(CONFIG_ARM_MPU)
+	struct dynamic_region_info regions[ARM64_MPU_MAX_DYNAMIC_REGIONS];
+	uint8_t region_num;
+	atomic_t flushing;
+#endif
+#endif
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	uint64_t stack_limit;
 #endif
 #ifdef CONFIG_FPU_SHARING
 	struct z_arm64_fp_context saved_fp_context;

@@ -57,4 +57,12 @@ config SOC_PART_NUMBER_KINETIS_KV5X
 	  number selection choice defines the default value for this
 	  string.
 
+config KINETIS_KV5X_ENABLE_CODE_CACHE
+	bool "Code cache"
+	default y
+
+config KINETIS_KV5X_ENABLE_DATA_CACHE
+	bool "Data cache"
+	default y
+
 endif # SOC_SERIES_KINETIS_KV5X

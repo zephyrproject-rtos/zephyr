@@ -87,6 +87,7 @@ IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, UPSTREAM_DATA, 0x00);
 IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, PUT_FLASH_NP_DATA, 0x80);
 
 /* GPIO register structure check */
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 IT8XXX2_REG_SIZE_CHECK(gpio_it8xxx2_regs, 0x100);
 IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR, 0x00);
 IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR31, 0xD5);
@@ -96,6 +97,16 @@ IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR29, 0xEE);
 IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR2, 0xF1);
 IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR7, 0xF6);
 IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR14, 0xFD);
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+IT8XXX2_REG_SIZE_CHECK(gpio_it8xxx2_regs, 0x2f);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR, 0x00);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR2, 0x11);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR7, 0x16);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR12, 0x1b);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_PGWCR, 0x1f);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR21, 0x26);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR30, 0x2d);
+#endif
 
 /* GCTRL register structure check */
 IT8XXX2_REG_SIZE_CHECK(gctrl_it8xxx2_regs, 0x88);
@@ -105,11 +116,16 @@ IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_WNCKR, 0x0b);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_SPCTRL1, 0x0d);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_SPCTRL4, 0x1c);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_RSTC5, 0x21);
+IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, gctrl_pmer2, 0x33);
+IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_EPLR, 0x37);
+IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_IVTBAR, 0x41);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_MCCR2, 0x44);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_P80H81HSR, 0x50);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_P80HDR, 0x51);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_H2ROFSR, 0x53);
+IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_RVILMCR0, 0x5D);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_ECHIPID2, 0x86);
+IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_ECHIPID3, 0x87);
 
 /* PECI register structure check */
 IT8XXX2_REG_SIZE_CHECK(peci_it8xxx2_regs, 0x0F);
@@ -128,6 +144,51 @@ IT8XXX2_REG_OFFSET_CHECK(peci_it8xxx2_regs, WFCSV, 0x0B);
 IT8XXX2_REG_OFFSET_CHECK(peci_it8xxx2_regs, RFCSV, 0x0C);
 IT8XXX2_REG_OFFSET_CHECK(peci_it8xxx2_regs, AWFCSV, 0x0D);
 IT8XXX2_REG_OFFSET_CHECK(peci_it8xxx2_regs, PADCTLR, 0x0E);
+
+/* USB Device register structure check */
+IT8XXX2_REG_SIZE_CHECK(usb_it82xx2_regs, 0xE9);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_ctrl, 0x00);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_trans_type, 0x01);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_line_ctrl, 0x02);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_sof_enable, 0x03);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_addr, 0x04);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_tx_endp, 0x05);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_frame_num_msp, 0x06);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_frame_num_lsp, 0x07);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_interrupt_status, 0x08);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_interrupt_mask, 0x09);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_rx_status, 0x0A);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_rx_pid, 0x0B);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, misc_control, 0x0C);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, misc_status, 0x0D);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_rx_connect_state, 0x0E);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_sof_timer_msb, 0x0F);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[0].ep_ctrl, 0x40);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[0].ep_status, 0x41);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	usb_ep_regs[EP0].ep_transtype_sts, 0x42);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	usb_ep_regs[EP0].ep_nak_transtype_sts, 0x43);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[3].ep_ctrl, 0x4C);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[3].ep_status, 0x4D);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	usb_ep_regs[EP3].ep_transtype_sts, 0x4E);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	usb_ep_regs[EP3].ep_nak_transtype_sts, 0x4F);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, dc_control, 0x50);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, dc_frame_num_lsp, 0x56);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[0].ep_rx_fifo_data, 0x60);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[0].ep_tx_fifo_ctrl, 0x74);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl, 0x98);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl, 0xB8);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
+	fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl, 0xD6);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_device_control, 0xE0);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, port1_misc_control, 0xE8);
+
+
 /* KSCAN register structure check */
 IT8XXX2_REG_SIZE_CHECK(kscan_it8xxx2_regs, 0x0F);
 IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSOL, 0x00);
@@ -140,9 +201,27 @@ IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSOLGOEN, 0x0e);
 IT8XXX2_REG_SIZE_CHECK(adc_it8xxx2_regs, 0x6d);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCGCR, 0x03);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, VCH0DATM, 0x19);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCIVMFSCS1, 0x55);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCIVMFSCS2, 0x56);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCIVMFSCS3, 0x57);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[0].VCHCTL, 0x60);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[2].VCHDATM, 0x67);
 IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCDVSTS2, 0x6c);
+
+/* Watchdog register structure check */
+IT8XXX2_REG_SIZE_CHECK(wdt_it8xxx2_regs, 0x0f);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ETWCFG, 0x01);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1PSR, 0x02);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1CNTLHR, 0x03);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET1CNTLLR, 0x04);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ETWCTRL, 0x05);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDCNTLR, 0x06);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDKEYR, 0x07);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, EWDCNTHR, 0x09);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2PSR, 0x0a);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLHR, 0x0b);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLLR, 0x0c);
+IT8XXX2_REG_OFFSET_CHECK(wdt_it8xxx2_regs, ET2CNTLH2R, 0x0e);
 
 /* SPISC register structure check */
 IT8XXX2_REG_SIZE_CHECK(spisc_it8xxx2_regs, 0x28);
@@ -153,3 +232,11 @@ IT8XXX2_REG_OFFSET_CHECK(spisc_it8xxx2_regs, SPISC_RXFRDRB1, 0x0d);
 IT8XXX2_REG_OFFSET_CHECK(spisc_it8xxx2_regs, SPISC_FTCB1R, 0x19);
 IT8XXX2_REG_OFFSET_CHECK(spisc_it8xxx2_regs, SPISC_HPR2, 0x1e);
 IT8XXX2_REG_OFFSET_CHECK(spisc_it8xxx2_regs, SPISC_RXVLISR, 0x27);
+
+/* PWM register structure check */
+IT8XXX2_REG_SIZE_CHECK(pwm_it8xxx2_regs, 0x4a);
+IT8XXX2_REG_OFFSET_CHECK(pwm_it8xxx2_regs, C0CPRS, 0x00);
+IT8XXX2_REG_OFFSET_CHECK(pwm_it8xxx2_regs, CTR1M, 0x10);
+IT8XXX2_REG_OFFSET_CHECK(pwm_it8xxx2_regs, C4CPRS, 0x27);
+IT8XXX2_REG_OFFSET_CHECK(pwm_it8xxx2_regs, CTR2, 0x42);
+IT8XXX2_REG_OFFSET_CHECK(pwm_it8xxx2_regs, PWMODENR, 0x49);

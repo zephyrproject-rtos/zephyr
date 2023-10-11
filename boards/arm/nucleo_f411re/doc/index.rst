@@ -188,13 +188,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo F411RE website:
-   http://www.st.com/en/evaluation-tools/nucleo-f411re.html
+   https://www.st.com/en/evaluation-tools/nucleo-f411re.html
 
 .. _STM32 Nucleo-64 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00105823.pdf
+   https://www.st.com/resource/en/user_manual/dm00105823.pdf
 
 .. _STM32F411RE on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f411re.html
+   https://www.st.com/en/microcontrollers/stm32f411re.html
 
 .. _STM32F411 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00119316.pdf
+   https://www.st.com/resource/en/reference_manual/dm00119316.pdf

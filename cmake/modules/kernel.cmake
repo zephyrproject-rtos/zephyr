@@ -23,6 +23,7 @@
 include_guard(GLOBAL)
 
 find_package(TargetTools)
+find_package(ScaTools)
 
 # As this module is not intended for direct loading, but should be loaded through
 # find_package(Zephyr) then it won't be loading any Zephyr CMake modules by itself.
@@ -141,7 +142,8 @@ enable_language(C CXX ASM)
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatibility with certain C flags.
 zephyr_check_compiler_flag(C "" toolchain_is_ok)
-assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
+assert(toolchain_is_ok "The toolchain is unable to build a dummy C file.\
+ Move ${USER_CACHE_DIR}, re-run and look at CMakeError.log")
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 

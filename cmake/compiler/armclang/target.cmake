@@ -11,7 +11,10 @@ find_program(CMAKE_ASM_COMPILER ${CROSS_COMPILE}armclang PATHS ${TOOLCHAIN_HOME}
 #
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
-set(CMAKE_SYSTEM_PROCESSOR ${GCC_M_CPU})
+
+# Strip out any trailing +<FOO> from GCC_M_CPU for cases when GCC_M_CPU is
+# 'cortex-m33+nodsp' we need that to be 'cortex-m33' for CMAKE_SYSTEM_PROCESSOR
+string(REGEX REPLACE "\\+.*" "" CMAKE_SYSTEM_PROCESSOR ${GCC_M_CPU})
 
 list(APPEND TOOLCHAIN_C_FLAGS
   -fshort-enums
@@ -32,12 +35,16 @@ else()
   list(APPEND TOOLCHAIN_C_FLAGS -mabi=aapcs)
 
   if(CONFIG_FPU)
-    list(APPEND TOOLCHAIN_C_FLAGS   -mfpu=${GCC_M_FPU})
+    if(NOT "${GCC_M_FPU}" STREQUAL "auto")
+      list(APPEND TOOLCHAIN_C_FLAGS   -mfpu=${GCC_M_FPU})
+    endif()
     if    (CONFIG_FP_SOFTABI)
       list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=softfp)
     elseif(CONFIG_FP_HARDABI)
       list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=hard)
     endif()
+  else()
+    list(APPEND TOOLCHAIN_C_FLAGS   -mfloat-abi=soft)
   endif()
 endif()
 

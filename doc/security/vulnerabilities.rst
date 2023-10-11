@@ -1157,6 +1157,9 @@ This has been fixed in main for v3.0.0
 - `PR 42167 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
 
+CVE-2022
+========
+
 CVE-2022-0553
 -------------
 
@@ -1242,3 +1245,253 @@ This has been fixed in main for v3.2.0
 
 - `PR 47959 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/47959>`_
+
+CVE-2022-2993
+--------------
+
+bt: host: Wrong key validation check
+
+This has been fixed in main for v3.2.0
+
+- `Zephyr project bug tracker GHSA-3286-jgjx-8cvr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3286-jgjx-8cvr>`_
+
+- `PR 48733 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/48733>`_
+
+CVE-2022-3806
+-------------
+
+DoS: Invalid Initialization in le_read_buffer_size_complete()
+
+- `Zephyr project bug tracker GHSA-w525-fm68-ppq3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-w525-fm68-ppq3>`_
+
+CVE-2023
+========
+
+CVE-2023-0396
+-------------
+
+Buffer Overreads in Bluetooth HCI
+
+- `Zephyr project bug tracker GHSA-8rpp-6vxq-pqg3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8rpp-6vxq-pqg3>`_
+
+CVE-2023-0397
+-------------
+
+DoS: Invalid Initialization in le_read_buffer_size_complete()
+
+- `Zephyr project bug tracker GHSA-wc2h-h868-q7hj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wc2h-h868-q7hj>`_
+
+This has been fixed in main for v3.3.0
+
+- `PR 54905 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/54905>`_
+
+- `PR 47957 fix for v3.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55024>`_
+
+- `PR 47958 fix for v3.1.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55023>`_
+
+- `PR 47959 fix for v2.7.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/55022>`_
+
+CVE-2023-0779
+-------------
+
+net: shell: Improper input validation
+
+- `Zephyr project bug tracker GHSA-9xj8-6989-r549
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xj8-6989-r549>`_
+
+This has been fixed in main for v3.3.0
+
+- `PR 54371 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/54371>`_
+
+- `PR 54380 fix for v3.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/54380>`_
+
+- `PR 54381 fix for v2.7.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/54381>`_
+
+CVE-2023-1901
+-------------
+
+HCI send_sync Dangling Semaphore Reference Re-use
+
+- `Zephyr project bug tracker GHSA-xvvm-8mcm-9cq3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xvvm-8mcm-9cq3>`_
+
+This has been fixed in main for v3.4.0
+
+- `PR 56709 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
+
+CVE-2023-1902
+-------------
+
+HCI Connection Creation Dangling State Reference Re-use
+
+- `Zephyr project bug tracker GHSA-fx9g-8fr2-q899
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fx9g-8fr2-q899>`_
+
+This has been fixed in main for v3.4.0
+
+- `PR 56709 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/56709>`_
+
+CVE-2023-3725
+-------------
+
+Potential buffer overflow vulnerability in the Zephyr CANbus subsystem.
+
+- `Zephyr project bug tracker GHSA-2g3m-p6c7-8rr3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2g3m-p6c7-8rr3>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 61502 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61502>`_
+
+- `PR 61518 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61518>`_
+
+- `PR 61517 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61517>`_
+
+- `PR 61516 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61516>`_
+
+CVE-2023-4257
+-------------
+
+Under embargo until 2023/10/12
+
+CVE-2023-4258
+-------------
+
+bt: mesh: vulnerability in provisioning protocol implementation on provisionee side
+
+- `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 59467 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/59467>`_
+
+- `PR 60078 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60078>`_
+
+- `PR 60079 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60079>`_
+
+CVE-2023-4259
+-------------
+
+Buffer overflow vulnerabilities in the Zephyr eS-WiFi driver
+
+- `Zephyr project bug tracker GHSA-gghm-c696-f4j4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gghm-c696-f4j4>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63074 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63074>`_
+
+- `PR 63750 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63750>`_
+
+CVE-2023-4260
+-------------
+
+Off-by-one buffer overflow vulnerability in the Zephyr FS subsystem
+
+- `Zephyr project bug tracker GHSA-gj27-862r-55wh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gj27-862r-55wh>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63079 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63079>`_
+
+CVE-2023-4262
+-------------
+
+Potential buffer overflow vulnerabilities in the Zephyr Mgmt subsystem
+
+- `Zephyr project bug tracker GHSA-56p9-5p3v-hhrc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-56p9-5p3v-hhrc>`_
+
+- This issue has not been fixed.
+
+CVE-2023-4264
+-------------
+
+Potential buffer overflow vulnerabilities in the Zephyr Bluetooth subsystem
+
+- `Zephyr project bug tracker GHSA-rgx6-3w4j-gf5j
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rgx6-3w4j-gf5j>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 58834 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/58834>`_
+
+- `PR 60465 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60465>`_
+
+- `PR 61845 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61845>`_
+
+- `PR 61385 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61385>`_
+
+CVE-2023-4265
+-------------
+
+Two potential buffer overflow vulnerabilities in Zephyr USB code
+
+- `Zephyr project bug tracker GHSA-4vgv-5r6q-r6xh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vgv-5r6q-r6xh>`_
+
+This has been fixed in main for v3.4.0
+
+- `PR 59157 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/59157>`_
+- `PR 59018 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/59018>`_
+
+CVE-2023-4424
+-------------
+
+Under embargo until 2023/11/01
+
+CVE-2023-5055
+-------------
+
+Under embargo until 2023/11/01
+
+CVE-2023-5139
+-------------
+
+Under embargo until 2023/10/25
+
+CVE-2023-5184
+-------------
+
+Potential signed to unsigned conversion errors and buffer overflow
+vulnerabilities in the Zephyr IPM driver
+
+- `Zephyr project bug tracker GHSA-8x3p-q3r5-xh9g
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8x3p-q3r5-xh9g>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63069 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63069>`_

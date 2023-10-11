@@ -45,7 +45,7 @@ void worker_thread(void *p1, void *p2, void *p3)
 	k_mutex_unlock(&mutex);
 }
 
-void main(void)
+int main(void)
 {
 	k_tid_t tid[NUM_THREADS];
 
@@ -83,4 +83,5 @@ void main(void)
 		__func__, (int)NUM_THREADS);
 
 	k_mutex_unlock(&mutex);
+	return 0;
 }

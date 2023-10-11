@@ -19,3 +19,4 @@ testing:
     - bluetooth
     - flash
     - newlib
+vendor: sifive

@@ -56,6 +56,10 @@ struct lll_sync_iso {
 
 	uint8_t next_chan_use;
 
+	/* Encryption */
+	uint8_t giv[8];
+	struct ccm ccm_rx;
+
 	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t chm_chan_count:6;
 
@@ -70,7 +74,6 @@ struct lll_sync_iso {
 	struct node_rx_pdu *payload[BT_CTLR_SYNC_ISO_STREAM_MAX]
 				   [PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
-	uint8_t payload_head;
 	uint8_t payload_tail;
 
 	uint32_t window_widening_periodic_us;

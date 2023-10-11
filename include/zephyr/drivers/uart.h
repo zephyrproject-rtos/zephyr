@@ -31,11 +31,11 @@ extern "C" {
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
-	UART_LINE_CTRL_BAUD_RATE = BIT(0),
-	UART_LINE_CTRL_RTS = BIT(1),
-	UART_LINE_CTRL_DTR = BIT(2),
-	UART_LINE_CTRL_DCD = BIT(3),
-	UART_LINE_CTRL_DSR = BIT(4),
+	UART_LINE_CTRL_BAUD_RATE = BIT(0), /**< Baud rate */
+	UART_LINE_CTRL_RTS = BIT(1),       /**< Request To Send (RTS) */
+	UART_LINE_CTRL_DTR = BIT(2),       /**< Data Terminal Ready (DTR) */
+	UART_LINE_CTRL_DCD = BIT(3),       /**< Data Carrier Detect (DCD) */
+	UART_LINE_CTRL_DSR = BIT(4),       /**< Data Set Ready (DSR) */
 };
 
 /**
@@ -69,32 +69,34 @@ enum uart_rx_stop_reason {
 	 * support collision checking.
 	 */
 	UART_ERROR_COLLISION = (1 << 4),
+	/** @brief Noise error */
+	UART_ERROR_NOISE = (1 << 5),
 };
 
 /** @brief Parity modes */
 enum uart_config_parity {
-	UART_CFG_PARITY_NONE,
-	UART_CFG_PARITY_ODD,
-	UART_CFG_PARITY_EVEN,
-	UART_CFG_PARITY_MARK,
-	UART_CFG_PARITY_SPACE,
+	UART_CFG_PARITY_NONE,   /**< No parity */
+	UART_CFG_PARITY_ODD,    /**< Odd parity */
+	UART_CFG_PARITY_EVEN,   /**< Even parity */
+	UART_CFG_PARITY_MARK,   /**< Mark parity */
+	UART_CFG_PARITY_SPACE,  /**< Space parity */
 };
 
 /** @brief Number of stop bits. */
 enum uart_config_stop_bits {
-	UART_CFG_STOP_BITS_0_5,
-	UART_CFG_STOP_BITS_1,
-	UART_CFG_STOP_BITS_1_5,
-	UART_CFG_STOP_BITS_2,
+	UART_CFG_STOP_BITS_0_5,  /**< 0.5 stop bit */
+	UART_CFG_STOP_BITS_1,    /**< 1 stop bit */
+	UART_CFG_STOP_BITS_1_5,  /**< 1.5 stop bits */
+	UART_CFG_STOP_BITS_2,    /**< 2 stop bits */
 };
 
 /** @brief Number of data bits. */
 enum uart_config_data_bits {
-	UART_CFG_DATA_BITS_5,
-	UART_CFG_DATA_BITS_6,
-	UART_CFG_DATA_BITS_7,
-	UART_CFG_DATA_BITS_8,
-	UART_CFG_DATA_BITS_9,
+	UART_CFG_DATA_BITS_5,    /**< 5 data bits */
+	UART_CFG_DATA_BITS_6,    /**< 6 data bits */
+	UART_CFG_DATA_BITS_7,    /**< 7 data bits */
+	UART_CFG_DATA_BITS_8,    /**< 8 data bits */
+	UART_CFG_DATA_BITS_9,    /**< 9 data bits */
 };
 
 /**
@@ -105,27 +107,21 @@ enum uart_config_data_bits {
  * In other cases, flow control is managed by hardware/driver.
  */
 enum uart_config_flow_control {
-	UART_CFG_FLOW_CTRL_NONE,
-	UART_CFG_FLOW_CTRL_RTS_CTS,
-	UART_CFG_FLOW_CTRL_DTR_DSR,
-	UART_CFG_FLOW_CTRL_RS485,
+	UART_CFG_FLOW_CTRL_NONE,     /**< No flow control */
+	UART_CFG_FLOW_CTRL_RTS_CTS,  /**< RTS/CTS flow control */
+	UART_CFG_FLOW_CTRL_DTR_DSR,  /**< DTR/DSR flow control */
+	UART_CFG_FLOW_CTRL_RS485,    /**< RS485 flow control */
 };
 
 /**
  * @brief UART controller configuration structure
- *
- * @param baudrate  Baudrate setting in bps
- * @param parity    Parity bit, use @ref uart_config_parity
- * @param stop_bits Stop bits, use @ref uart_config_stop_bits
- * @param data_bits Data bits, use @ref uart_config_data_bits
- * @param flow_ctrl Flow control setting, use @ref uart_config_flow_control
  */
 struct uart_config {
-	uint32_t baudrate;
-	uint8_t parity;
-	uint8_t stop_bits;
-	uint8_t data_bits;
-	uint8_t flow_ctrl;
+	uint32_t baudrate;  /**< Baudrate setting in bps */
+	uint8_t parity;     /**< Parity bit, use @ref uart_config_parity */
+	uint8_t stop_bits;  /**< Stop bits, use @ref uart_config_stop_bits */
+	uint8_t data_bits;  /**< Data bits, use @ref uart_config_data_bits */
+	uint8_t flow_ctrl;  /**< Flow control setting, use @ref uart_config_flow_control */
 };
 
 /**
@@ -175,9 +171,10 @@ typedef void (*uart_irq_config_func_t)(const struct device *dev);
  *    generated. It can happen multiples times for the same buffer. RX timeout
  *    is counted from last byte received i.e. if no data was received, there
  *    won't be any timeout event.
- * 4. After buffer is filled #UART_RX_RDY will be generated, immediately
- *    followed by #UART_RX_BUF_RELEASED indicating that current buffer
- *    is no longer used.
+ * 4. #UART_RX_BUF_RELEASED event will be generated when the current buffer is
+ *    no longer used by the driver. It will immediately follow #UART_RX_RDY event.
+ *    Depending on the implementation buffer may be released when it is completely
+ *    or partially filled.
  * 5. If there was second buffer provided, it will become current buffer and
  *    we start again at point 2.
  *    If no second buffer was specified receiving is stopped and
@@ -282,7 +279,7 @@ struct uart_event_rx {
 
 /** @brief UART RX buffer released event data. */
 struct uart_event_rx_buf {
-	/* @brief Pointer to buffer that is no longer in use. */
+	/** @brief Pointer to buffer that is no longer in use. */
 	uint8_t *buf;
 };
 
@@ -374,10 +371,12 @@ __subsystem struct uart_driver_api {
 	/** Console I/O function */
 	int (*err_check)(const struct device *dev);
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/** UART configuration functions */
 	int (*configure)(const struct device *dev,
 			 const struct uart_config *cfg);
 	int (*config_get)(const struct device *dev, struct uart_config *cfg);
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -627,6 +626,7 @@ static inline void z_impl_uart_poll_out_u16(const struct device *dev,
  * @retval -errno Negative errno code in case of failure.
  * @retval -ENOSYS If configuration is not supported by device
  *                  or driver does not support setting configuration in runtime.
+ * @retval -ENOTSUP If API is not enabled.
  */
 __syscall int uart_configure(const struct device *dev,
 			     const struct uart_config *cfg);
@@ -634,6 +634,7 @@ __syscall int uart_configure(const struct device *dev,
 static inline int z_impl_uart_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->api;
 
@@ -641,6 +642,11 @@ static inline int z_impl_uart_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->configure(dev, cfg);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	return -ENOTSUP;
+#endif
 }
 
 /**
@@ -655,6 +661,7 @@ static inline int z_impl_uart_configure(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code in case of failure.
  * @retval -ENOSYS If driver does not support getting current configuration.
+ * @retval -ENOTSUP If API is not enabled.
  */
 __syscall int uart_config_get(const struct device *dev,
 			      struct uart_config *cfg);
@@ -662,6 +669,7 @@ __syscall int uart_config_get(const struct device *dev,
 static inline int z_impl_uart_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->api;
 
@@ -670,6 +678,11 @@ static inline int z_impl_uart_config_get(const struct device *dev,
 	}
 
 	return api->config_get(dev, cfg);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	return -ENOTSUP;
+#endif
 }
 
 /**
@@ -772,9 +785,6 @@ static inline int uart_fifo_fill_u16(const struct device *dev,
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
  *
- * Note that the calling context only applies to physical UARTs and
- * no to the virtual ones found in USB CDC ACM code.
- *
  * @param dev UART device instance.
  * @param rx_data Data container.
  * @param size Container size.
@@ -815,9 +825,6 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data,
  * detected, uart_fifo_read() must be called until it reads all
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
- *
- * Note that the calling context only applies to physical UARTs and
- * no to the virtual ones found in USB CDC ACM code.
  *
  * @param dev UART device instance.
  * @param rx_data Wide data container.
@@ -1160,10 +1167,14 @@ static inline int z_impl_uart_irq_update(const struct device *dev)
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
  * @param user_data Data to pass to callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_user_data_set(const struct device *dev,
-						   uart_irq_callback_user_data_t cb,
-						   void *user_data)
+static inline int uart_irq_callback_user_data_set(const struct device *dev,
+						  uart_irq_callback_user_data_t cb,
+						  void *user_data)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api =
@@ -1171,11 +1182,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
 
 	if ((api != NULL) && (api->irq_callback_set != NULL)) {
 		api->irq_callback_set(dev, cb, user_data);
+		return 0;
+	} else {
+		return -ENOSYS;
 	}
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
+	return -ENOTSUP;
 #endif
 }
 
@@ -1187,11 +1202,15 @@ static inline void uart_irq_callback_user_data_set(const struct device *dev,
  *
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
+ *
+ * @retval 0 On success.
+ * @retval -ENOSYS If this function is not implemented.
+ * @retval -ENOTSUP If API is not enabled.
  */
-static inline void uart_irq_callback_set(const struct device *dev,
+static inline int uart_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb)
 {
-	uart_irq_callback_user_data_set(dev, cb, NULL);
+	return uart_irq_callback_user_data_set(dev, cb, NULL);
 }
 
 /**

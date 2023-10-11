@@ -17,13 +17,17 @@
  * @{
  */
 
+#include <stdint.h>
 #include <stddef.h>
-#include <zephyr/sys/slist.h>
+
 #include <sys/types.h>
+
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -388,9 +392,15 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
  *  All services registered after settings_load will trigger a new database hash
  *  calculation and a new hash stored.
  *
+ *  There are two situations where this function can be called: either before
+ *  `bt_init()` has been called, or after `settings_load()` has been called.
+ *  Registering a service in the middle is not supported and will return an
+ *  error.
+ *
  *  @param svc Service containing the available attributes
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @return -EAGAIN if `bt_init()` has been called but `settings_load()` hasn't yet.
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
@@ -1448,10 +1458,10 @@ struct bt_gatt_discover_params {
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Only for stack-internal use, used for automatic discovery. */
 	struct bt_gatt_subscribe_params *sub_params;
-#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 #if defined(CONFIG_BT_EATT)
 	enum bt_att_chan_opt chan_opt;
 #endif /* CONFIG_BT_EATT */
@@ -1500,6 +1510,9 @@ struct bt_gatt_read_params;
 
 /** @typedef bt_gatt_read_func_t
  *  @brief Read callback function
+ *
+ *  When reading using by_uuid, `params->start_handle` is the attribute handle
+ *  for this `data` item.
  *
  *  @param conn Connection object.
  *  @param err ATT error code.
@@ -1778,8 +1791,22 @@ enum {
 	 *
 	 *  If set, indicates write operation is pending waiting remote end to
 	 *  respond.
+	 *
+	 *  @note Internal use only.
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
+
+	/** @brief Sent flag
+	 *
+	 *  If set, indicates that a subscription request (CCC write) has
+	 *  already been sent in the active connection.
+	 *
+	 *  Used to avoid sending subscription requests multiple times when the
+	 *  @kconfig{CONFIG_BT_GATT_AUTO_RESUBSCRIBE} quirk is enabled.
+	 *
+	 *  @note Internal use only.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_SENT,
 
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
@@ -1799,12 +1826,12 @@ struct bt_gatt_subscribe_params {
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
 	uint16_t ccc_handle;
-#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Subscribe End handle (for automatic discovery) */
 	uint16_t end_handle;
 	/** Discover parameters used when ccc_handle = 0 */
 	struct bt_gatt_discover_params *disc_params;
-#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+#endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */
 	uint16_t value;
 #if defined(CONFIG_BT_SMP)
@@ -1834,12 +1861,12 @@ struct bt_gatt_subscribe_params {
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
- *  @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *
- *  @note Notifications are asynchronous therefore the parameters need to
- *        remain valid while subscribed.
+ *  @note Notifications are asynchronous therefore the @p params must remain
+ *        valid while subscribed and cannot be reused for additional subscriptions
+ *        whilst active.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.

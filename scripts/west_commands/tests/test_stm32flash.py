@@ -102,7 +102,7 @@ def test_stm32flash_create(cc, req, action, runner_config):
     else:
         args = ['--action', action, '--baud-rate', TEST_BAUD, '--start-addr', TEST_ADDR]
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=False)
     Stm32flashBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = Stm32flashBinaryRunner.create(runner_config, arg_namespace)

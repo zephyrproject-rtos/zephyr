@@ -1,0 +1,11 @@
+# Copyright (c) 2017, 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XTENSA_DC233C
+	bool "Xtensa dc233c core"
+	select XTENSA
+	select XTENSA_HAL
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select CPU_HAS_MMU
+	select ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU

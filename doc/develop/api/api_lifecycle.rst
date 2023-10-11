@@ -41,7 +41,7 @@ Peripheral APIs (Hardware Related)
 
 When introducing an API (public header file with documentation) for a new
 peripheral or driver subsystem, review of the API is enforced and is driven by
-the API working group consisting of representatives from different vendors.
+the Architecture working group consisting of representatives from different vendors.
 
 The API shall be promoted to ``unstable`` when it has at least two
 implementations on different hardware platforms.
@@ -195,7 +195,7 @@ The following are the requirements for deprecating an existing API:
   The API needs to be marked as deprecated in at least two full releases.
   For example, if an API was first deprecated in release 1.14,
   it will be ready to be removed in 1.16 at the earliest.
-  There may be special circumstances, determined by the API working group,
+  There may be special circumstances, determined by the Architecture working group,
   where an API is deprecated sooner.
 - What is required when deprecating:
 

@@ -44,7 +44,7 @@ References
 .. target-notes::
 
 .. _Dragonclaw Schematics:
-   https://chromium.googlesource.com/chromiumos/platform/ec/+/HEAD/docs/schematics/dragonclaw
+   https://www.chromium.org/chromium-os/dragonclaw/dragonclaw_v0.2.html
 
 .. _Chromium EC Flashing Documentation:
    https://chromium.googlesource.com/chromiumos/platform/ec#Flashing-via-the-servo-debug-board

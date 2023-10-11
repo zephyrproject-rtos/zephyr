@@ -78,14 +78,14 @@ static int settings_runtime_load(void)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -99,8 +99,9 @@ void main(void)
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
-		return;
+		return 0;
 	}
 
 	printk("Advertising successfully started\n");
+	return 0;
 }

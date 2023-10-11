@@ -184,16 +184,16 @@ ZTEST(test_log_api, test_log_various_messages)
 	LOG_DBG(TEST_MSG_0, ll, ull, i);
 
 #ifdef CONFIG_FPU
-	float f = -1.2356;
+	float f = -1.2356f;
 	double d = -1.2356;
 
-	snprintk(str, sizeof(str), TEST_MSG_1, f, 100,  d);
+	snprintk(str, sizeof(str), TEST_MSG_1, (double)f, 100,  d);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
 				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, str);
 
-	LOG_INF(TEST_MSG_1, f, 100, d);
+	LOG_INF(TEST_MSG_1, (double)f, 100, d);
 #endif /* CONFIG_FPU */
 
 	snprintk(str, sizeof(str), "wrn %s", dstr);
@@ -350,12 +350,11 @@ static size_t get_long_hexdump(void)
 
 	return CONFIG_LOG_BUFFER_SIZE -
 		/* First message */
-		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
-			 extra_msg_sz,
+		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + extra_msg_sz,
 			 CBPRINTF_PACKAGE_ALIGNMENT) -
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 CBPRINTF_PACKAGE_ALIGNMENT) - CBPRINTF_PACKAGE_ALIGNMENT;
+			 CBPRINTF_PACKAGE_ALIGNMENT);
 }
 
 /*
@@ -363,7 +362,7 @@ static size_t get_long_hexdump(void)
  * there is no room. However, if after discarding all messages there is still no
  * room then current log is discarded.
  */
-static uint8_t data[CONFIG_LOG_BUFFER_SIZE];
+static uint8_t log_buf[CONFIG_LOG_BUFFER_SIZE];
 
 ZTEST(test_log_api, test_log_overflow)
 {
@@ -380,7 +379,7 @@ ZTEST(test_log_api, test_log_overflow)
 	}
 
 	for (int i = 0; i < CONFIG_LOG_BUFFER_SIZE; i++) {
-		data[i] = i;
+		log_buf[i] = i;
 	}
 
 	uint32_t hexdump_len = get_long_hexdump();
@@ -389,23 +388,22 @@ ZTEST(test_log_api, test_log_overflow)
 	exp_timestamp++;
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test 100 100");
 	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
-					 LOG_LEVEL_INF, "hexdump", data, hexdump_len);
+					 LOG_LEVEL_INF, "hexdump", log_buf, hexdump_len);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test2");
 	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(),
 					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 					exp_timestamp++, "hexdump",
-					data, hexdump_len);
+					log_buf, hexdump_len);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
 				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "test2");
 	mock_log_backend_drop_record(&backend1, 1);
 
 	LOG_INF("test %d %d", 100, 100);
-	LOG_HEXDUMP_INF(data, hexdump_len, "hexdump");
+	LOG_HEXDUMP_INF(log_buf, hexdump_len, "hexdump");
 	LOG_INF("test2");
 
 	process_and_validate(false, false);
-
 
 	log_setup(false);
 
@@ -416,7 +414,7 @@ ZTEST(test_log_api, test_log_overflow)
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test");
 	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
-					 LOG_LEVEL_INF, "test", data, hexdump_len + 1);
+					 LOG_LEVEL_INF, "test", log_buf, hexdump_len + 1);
 	/* Log2 allocation is not destructive if request exceeds the
 	 * capacity.
 	 */
@@ -426,7 +424,7 @@ ZTEST(test_log_api, test_log_overflow)
 	mock_log_backend_drop_record(&backend1, 1);
 
 	LOG_INF("test");
-	LOG_HEXDUMP_INF(data, hexdump_len + 1, "test");
+	LOG_HEXDUMP_INF(log_buf, hexdump_len + 1, "test");
 
 	process_and_validate(false, false);
 
@@ -447,7 +445,6 @@ ZTEST(test_log_api, test_log_overflow)
 
 ZTEST(test_log_api, test_log_arguments)
 {
-	return;
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
 	log_setup(false);
@@ -478,21 +475,26 @@ ZTEST(test_log_api, test_log_arguments)
 
 	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10");
 	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11");
-	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
 
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
-	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
-		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
 	process_and_validate(false, false);
 
+	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
 	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13");
-	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
+
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+
+	process_and_validate(false, false);
+
+	MOCK_LOG_FRONT_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 
@@ -568,16 +570,14 @@ ZTEST(test_log_api, test_log_from_declared_module)
  * adding new message will lead to one message drop, otherwise 2 message will
  * be dropped.
  */
-static size_t get_short_msg_capacity(bool *remainder)
+static size_t get_short_msg_capacity(void)
 {
-	*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG_SIMPLE_MSG_LEN) ?
-			true : false;
-
-	return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG_SIMPLE_MSG_LEN;
+	return CONFIG_LOG_BUFFER_SIZE / LOG_SIMPLE_MSG_LEN;
 }
 
 static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 {
+	printk("ex dropped:%d\n", exp_dropped);
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
 	log_setup(false);
@@ -628,14 +628,13 @@ ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 		ztest_test_skip();
 	}
 
-	bool remainder;
-	uint32_t capacity = get_short_msg_capacity(&remainder);
+	uint32_t capacity = get_short_msg_capacity();
 
 	log_n_messages(capacity, 0);
 
 	/* Expect messages dropped when logger more than buffer capacity. */
-	log_n_messages(capacity + 1, 1 + (remainder ? 1 : 0));
-	log_n_messages(capacity + 2, 2 + (remainder ? 1 : 0));
+	log_n_messages(capacity + 1, 1);
+	log_n_messages(capacity + 2, 2);
 }
 
 /* Test checks if panic is correctly executed. On panic logger should flush all

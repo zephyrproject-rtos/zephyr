@@ -7,9 +7,10 @@
 #include <st/u5/stm32u575Xi.dtsi>
 #include <st/u5/stm32u575zitxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
 			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
@@ -30,6 +31,22 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led_1: green_led_1 {
+			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green led";
+		};
+
+		pwm_led_2: blue_led_1 {
+			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "blue led";
 		};
 	};
 };
@@ -111,7 +128,39 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in18_pb0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+	pinctrl-0 = <&tim3_ch2_pc7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers4 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm4: pwm {
+		pinctrl-0 = <&tim4_ch2_pb7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &iwdg {
@@ -122,12 +171,20 @@
 	status = "okay";
 };
 
-&can1 {
+&fdcan1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
 	status = "okay";
 };

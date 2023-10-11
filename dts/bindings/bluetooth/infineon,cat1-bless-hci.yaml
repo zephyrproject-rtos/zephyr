@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses Infineon's Host Controller Interface
+
+compatible: "infineon,cat1-bless-hci"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true

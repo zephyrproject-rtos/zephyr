@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <mbedtls/entropy.h>
 
 #include <mbedtls/debug.h>
@@ -83,9 +83,8 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
 }
 #endif /* CONFIG_MBEDTLS_ZEPHYR_ENTROPY */
 
-static int _mbedtls_init(const struct device *device)
+static int _mbedtls_init(void)
 {
-	ARG_UNUSED(device);
 
 	init_heap();
 
@@ -96,4 +95,15 @@ static int _mbedtls_init(const struct device *device)
 	return 0;
 }
 
+#if defined(CONFIG_MBEDTLS_INIT)
 SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
+#endif
+
+/* if CONFIG_MBEDTLS_INIT is not defined then this function
+ * should be called by the platform before any mbedtls functionality
+ * is used
+ */
+int mbedtls_init(void)
+{
+	return _mbedtls_init();
+}

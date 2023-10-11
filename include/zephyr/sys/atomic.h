@@ -147,7 +147,7 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
- * @return true if the bit was set, false if it wasn't.
+ * @return false if the bit was already cleared, true if it wasn't.
  */
 static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
 {
@@ -171,7 +171,7 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
- * @return true if the bit was set, false if it wasn't.
+ * @return true if the bit was already set, false if it wasn't.
  */
 static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
 {

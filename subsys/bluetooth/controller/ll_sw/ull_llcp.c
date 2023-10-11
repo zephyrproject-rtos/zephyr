@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/ccm.h"
 
@@ -18,7 +19,10 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
+
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
@@ -43,7 +47,7 @@
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
-#include "ull_periph_internal.h"
+#include "ull_peripheral_internal.h"
 
 #include <soc.h>
 #include "hal/debug.h"
@@ -276,6 +280,38 @@ void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask re
 	}
 }
 
+void llcp_rx_node_retain(struct proc_ctx *ctx)
+{
+	LL_ASSERT(ctx->node_ref.rx);
+
+	/* Mark RX node to NOT release */
+	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+
+	/* store link element reference to use once this node is moved up */
+	ctx->node_ref.rx->hdr.link = ctx->node_ref.link;
+}
+
+void llcp_nodes_release(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_RETAIN) {
+		/* RX node retained, so release */
+		ctx->node_ref.rx->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->node_ref.rx;
+	}
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	if (ctx->proc == PROC_PHY_UPDATE && ctx->data.pu.ntf_dle_node) {
+		/* RX node retained, so release */
+		ctx->data.pu.ntf_dle_node->hdr.link->mem = conn->llcp.rx_node_release;
+		conn->llcp.rx_node_release = ctx->data.pu.ntf_dle_node;
+	}
+#endif
+
+	if (ctx->node_ref.tx) {
+		ctx->node_ref.tx->next = conn->llcp.tx_node_release;
+		conn->llcp.tx_node_release = ctx->node_ref.tx;
+	}
+}
+
 /*
  * LLCP Procedure Creation
  */
@@ -293,7 +329,8 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->collision = 0U;
 	ctx->done = 0U;
 	ctx->rx_greedy = 0U;
-	ctx->tx_ack = NULL;
+	ctx->node_ref.rx = NULL;
+	ctx->node_ref.tx_ack = NULL;
 
 	/* Clear procedure data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
@@ -529,7 +566,7 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	/* Reset the feature exchange fields */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
-	conn->llcp.fex.features_used = LL_FEAT;
+	conn->llcp.fex.features_used = ll_feat_get();
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Reset encryption related state */
@@ -554,6 +591,9 @@ void ull_llcp_init(struct ll_conn *conn)
 
 	conn->llcp.tx_q_pause_data_mask = 0;
 	conn->lll.event_counter = 0;
+
+	conn->llcp.tx_node_release = NULL;
+	conn->llcp.rx_node_release = NULL;
 }
 
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
@@ -570,12 +610,6 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 	ARG_UNUSED(conn);
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 	tx_release(tx);
-}
-
-void ull_cp_release_ntf(struct node_rx_pdu *ntf)
-{
-	ntf->hdr.next = NULL;
-	ll_rx_mem_release((void **)&ntf);
 }
 
 static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
@@ -658,6 +692,41 @@ void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 	}
 }
 
+void ull_cp_release_nodes(struct ll_conn *conn)
+{
+	struct node_rx_pdu *rx;
+	struct node_tx *tx;
+
+	/* release any llcp retained rx nodes */
+	rx = conn->llcp.rx_node_release;
+	while (rx) {
+		struct node_rx_hdr *hdr;
+
+		/* traverse to next rx node */
+		hdr = &rx->hdr;
+		rx = hdr->link->mem;
+
+		/* Mark for buffer for release */
+		hdr->type = NODE_RX_TYPE_RELEASE;
+
+		/* enqueue rx node towards Thread */
+		ll_rx_put(hdr->link, hdr);
+	}
+	conn->llcp.rx_node_release = NULL;
+
+	/* release any llcp pre-allocated tx nodes */
+	tx = conn->llcp.tx_node_release;
+	while (tx) {
+		struct node_tx *tx_release;
+
+		tx_release = tx;
+		tx = tx->next;
+
+		ull_cp_release_tx(conn, tx_release);
+	}
+	conn->llcp.tx_node_release = NULL;
+}
+
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {
@@ -698,7 +767,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
-uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
+uint8_t ull_cp_feature_exchange(struct ll_conn *conn, uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
 
@@ -706,6 +775,8 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	ctx->data.fex.host_initiated = host_initiated;
 
 	llcp_lr_enqueue(conn, ctx);
 
@@ -826,7 +897,8 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
-	llcp_lr_abort(conn);
+	llcp_lr_terminate(conn);
+	llcp_rr_terminate(conn);
 
 	ctx = llcp_create_local_procedure(PROC_TERMINATE);
 	if (!ctx) {
@@ -871,8 +943,11 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	struct ll_conn_iso_group *cig;
 	struct proc_ctx *ctx;
 
-	if (conn->lll.handle != cis->lll.acl_handle) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (!conn->llcp.fex.valid) {
+		/* No feature exchange was performed so initiate before CIS Create */
+		if (ull_cp_feature_exchange(conn, 0U) != BT_HCI_ERR_SUCCESS) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	ctx = llcp_create_local_procedure(PROC_CIS_CREATE);
@@ -889,23 +964,22 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 	ctx->data.cis_create.p_phy = cis->lll.rx.phy;
 	ctx->data.cis_create.c_sdu_interval = cig->c_sdu_interval;
 	ctx->data.cis_create.p_sdu_interval = cig->p_sdu_interval;
-	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_octets;
-	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_octets;
+	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_pdu;
+	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_pdu;
 	ctx->data.cis_create.c_max_sdu = cis->c_max_sdu;
 	ctx->data.cis_create.p_max_sdu = cis->p_max_sdu;
 	ctx->data.cis_create.iso_interval = cig->iso_interval;
 	ctx->data.cis_create.framed = cis->framed;
-	ctx->data.cis_create.nse = cis->lll.num_subevents;
+	ctx->data.cis_create.nse = cis->lll.nse;
 	ctx->data.cis_create.sub_interval = cis->lll.sub_interval;
-	ctx->data.cis_create.c_bn = cis->lll.tx.burst_number;
-	ctx->data.cis_create.p_bn = cis->lll.rx.burst_number;
-	ctx->data.cis_create.c_ft = cis->lll.tx.flush_timeout;
-	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
+	ctx->data.cis_create.c_bn = cis->lll.tx.bn;
+	ctx->data.cis_create.p_bn = cis->lll.rx.bn;
+	ctx->data.cis_create.c_ft = cis->lll.tx.ft;
+	ctx->data.cis_create.p_ft = cis->lll.rx.ft;
 
-	ctx->data.cis_create.conn_event_count =
-		ull_central_iso_cis_offset_get(cis->lll.handle,
-					       &ctx->data.cis_create.cis_offset_min,
-					       &ctx->data.cis_create.cis_offset_max);
+	/* ctx->data.cis_create.conn_event_count will be filled when Tx PDU is
+	 * enqueued.
+	 */
 
 	llcp_lr_enqueue(conn, ctx);
 
@@ -1230,6 +1304,21 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 	conn->llcp.cte_req.req_interval = 0U;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min,
+				 uint32_t cis_offset_max)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		ctx->data.cis_create.cis_offset_max = cis_offset_max;
+
+		llcp_lp_cc_offset_calc_reply(conn, ctx);
+	}
+}
+
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 {
@@ -1241,7 +1330,6 @@ bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
 	}
 
 	return false;
-
 }
 
 uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
@@ -1256,12 +1344,23 @@ uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
 	return 0xFFFF;
 }
 
-void ull_cp_cc_accept(struct ll_conn *conn)
+void ull_cp_cc_accept(struct ll_conn *conn, uint32_t cis_offset_min)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		if (cis_offset_min > ctx->data.cis_create.cis_offset_min) {
+			if (cis_offset_min > ctx->data.cis_create.cis_offset_max) {
+				ctx->data.cis_create.error = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+				llcp_rp_cc_reject(conn, ctx);
+
+				return;
+			}
+
+			ctx->data.cis_create.cis_offset_min = cis_offset_min;
+		}
+
 		llcp_rp_cc_accept(conn, ctx);
 	}
 }
@@ -1276,7 +1375,66 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code)
 		llcp_rp_cc_reject(conn, ctx);
 	}
 }
-#endif /* defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_rp_cc_awaiting_established(ctx);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_awaiting_established(ctx);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+	return false;
+}
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_cp_cc_cancel(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_cancel(conn, ctx);
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
+void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.error = error_code;
+		llcp_rp_cc_established(conn, ctx);
+		llcp_rr_check_done(conn, ctx);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.error = error_code;
+		llcp_lp_cc_established(conn, ctx);
+		llcp_lr_check_done(conn, ctx);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 bool ull_lp_cc_is_active(struct ll_conn *conn)
@@ -1288,6 +1446,15 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 		return llcp_lp_cc_is_active(ctx);
 	}
 	return false;
+}
+
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+
+	return (ctx != NULL);
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
@@ -1613,13 +1780,13 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. local request */
 		llcp_lr_tx_ack(conn, ctx, tx);
 	}
 
 	ctx = llcp_rr_peek(conn);
-	if (ctx && ctx->tx_ack == tx) {
+	if (ctx && ctx->node_ref.tx_ack == tx) {
 		/* TX ack re. remote response */
 		llcp_rr_tx_ack(conn, ctx, tx);
 	}
@@ -1642,7 +1809,7 @@ void ull_cp_tx_ntf(struct ll_conn *conn)
 	}
 }
 
-void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
+void ull_cp_rx(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx_l;
 	struct proc_ctx *ctx_r;
@@ -1696,15 +1863,18 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 					 pdu_is_unknown(pdu, ctx_r) ||
 					 pdu_is_reject_ext(pdu, ctx_r));
 
-			if (unexpected_l && unexpected_r) {
-				/* Local active procedure
-				 * Unexpected local procedure PDU
-				 * Remote active procedure
-				 * Unexpected remote procedure PDU
+			if (unexpected_l == unexpected_r) {
+				/* Both Local and Remote procedure active
+				 * and PDU is either
+				 * unexpected by both
+				 * or
+				 * expected by both
+				 *
+				 * Both situations is a result of invalid behaviour
 				 */
-
-				/* Invalid Behaviour */
-				conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+				conn->llcp_terminate.reason_final =
+					unexpected_r ? BT_HCI_ERR_LMP_PDU_NOT_ALLOWED :
+						       BT_HCI_ERR_UNSPECIFIED;
 			} else if (unexpected_l) {
 				/* Local active procedure
 				 * Unexpected local procedure PDU
@@ -1713,7 +1883,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in remote procedure */
-				llcp_rr_rx(conn, ctx_r, rx);
+				llcp_rr_rx(conn, ctx_r, link, rx);
 			} else if (unexpected_r) {
 				/* Local active procedure
 				 * Expected local procedure PDU
@@ -1722,17 +1892,11 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in local procedure */
-				llcp_lr_rx(conn, ctx_l, rx);
-			} else {
-				/* Local active procedure
-				 * Expected local procedure PDU
-				 * Remote active procedure
-				 * Expected remote procedure PDU
-				 */
-
-				/* This cannot happen */
-				LL_ASSERT(0);
+				llcp_lr_rx(conn, ctx_l, link, rx);
 			}
+			/* no else clause as this cannot occur with the logic above:
+			 * if they are not identical then one must be true
+			 */
 		} else {
 			/* Local active procedure
 			 * No remote active procedure
@@ -1750,7 +1914,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 				/* Process PDU as a new remote request */
 				LL_ASSERT(pdu_valid);
-				llcp_rr_new(conn, rx, true);
+				llcp_rr_new(conn, link, rx, true);
 			} else {
 				/* Local active procedure
 				 * Expected local procedure PDU
@@ -1758,7 +1922,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU in local procedure */
-				llcp_lr_rx(conn, ctx_l, rx);
+				llcp_lr_rx(conn, ctx_l, link, rx);
 			}
 		}
 	} else if (ctx_r) {
@@ -1767,177 +1931,48 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 		 */
 
 		/* Process PDU in remote procedure */
-		llcp_rr_rx(conn, ctx_r, rx);
+		llcp_rr_rx(conn, ctx_r, link, rx);
 	} else {
 		/* No local active procedure
 		 * No remote active procedure
 		 */
 
 		/* Process PDU as a new remote request */
-		llcp_rr_new(conn, rx, pdu_valid);
+		llcp_rr_new(conn, link, rx, pdu_valid);
 	}
 }
 
 #ifdef ZTEST_UNITTEST
 
-static uint16_t local_ctx_buffers_free(void)
+uint16_t llcp_local_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_local_ctx.free);
 }
 
-static uint16_t remote_ctx_buffers_free(void)
+uint16_t llcp_remote_ctx_buffers_free(void)
 {
 	return mem_free_count_get(mem_remote_ctx.free);
 }
 
-uint16_t ctx_buffers_free(void)
+uint16_t llcp_ctx_buffers_free(void)
 {
-	return local_ctx_buffers_free() + remote_ctx_buffers_free();
+	return llcp_local_ctx_buffers_free() + llcp_remote_ctx_buffers_free();
 }
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-uint8_t common_tx_buffer_alloc_count(void)
+uint8_t llcp_common_tx_buffer_alloc_count(void)
 {
 	return common_tx_buffer_alloc;
 }
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-void test_int_mem_proc_ctx(void)
+struct proc_ctx *llcp_proc_ctx_acquire(void)
 {
-	struct proc_ctx *ctx1;
-	struct proc_ctx *ctx2;
-	int nr_of_free_ctx;
-
-	ull_cp_init();
-
-	nr_of_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM +
-		      CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM, NULL);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-		/* The previous acquire should be valid */
-		zassert_not_null(ctx1, NULL);
-	}
-
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 0);
-
-	ctx2 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* The last acquire should fail */
-	zassert_is_null(ctx2, NULL);
-
-	llcp_proc_ctx_release(ctx1);
-	nr_of_free_ctx = local_ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, 1);
-
-	ctx1 = proc_ctx_acquire(&mem_local_ctx);
-
-	/* Releasing returns the context to the avilable pool */
-	zassert_not_null(ctx1, NULL);
+	return proc_ctx_acquire(&mem_local_ctx);
 }
 
-void test_int_mem_tx(void)
+struct proc_ctx *llcp_create_procedure(enum llcp_proc proc)
 {
-	bool peek;
-#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
-					CONFIG_BT_CTLR_LLCP_CONN * \
-					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
-#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
-	struct ll_conn conn;
-	struct node_tx *txl[TX_BUFFER_POOL_SIZE];
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-	ull_llcp_init(&conn);
-
-	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
-
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		peek = llcp_tx_alloc_peek(&conn, ctx);
-
-		/* The previous tx alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		txl[i] = llcp_tx_alloc(&conn, ctx);
-
-		/* The previous alloc should be valid */
-		zassert_not_null(txl[i], NULL);
-	}
-
-	peek = llcp_tx_alloc_peek(&conn, ctx);
-
-	/* The last tx alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
-		ull_cp_release_tx(&conn, txl[i]);
-	}
+	return create_procedure(proc, &mem_local_ctx);
 }
-
-void test_int_create_proc(void)
-{
-	struct proc_ctx *ctx;
-
-	ull_cp_init();
-
-	ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	zassert_not_null(ctx, NULL);
-
-	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
-	zassert_equal(ctx->collision, 0);
-
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
-		zassert_not_null(ctx, NULL);
-		ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
-	}
-
-	zassert_is_null(ctx, NULL);
-}
-
-void test_int_llcp_init(void)
-{
-	struct ll_conn conn;
-
-	ull_cp_init();
-
-	ull_llcp_init(&conn);
-
-	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
-
-	ull_llcp_init(&conn);
-
-	zassert_equal(conn.llcp.local.pause, 0);
-	zassert_equal(conn.llcp.remote.pause, 0);
-}
-
 #endif

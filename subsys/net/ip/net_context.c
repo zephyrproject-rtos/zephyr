@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "net_stats.h"
 
-#if IS_ENABLED(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_TCP)
 #include "tcp.h"
 #endif
 
@@ -60,10 +60,61 @@ static struct net_context contexts[NET_MAX_CONTEXT];
  */
 static struct k_sem contexts_lock;
 
+bool net_context_is_reuseaddr_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEADDR)
+	return context->options.reuseaddr;
+#else
+	return false;
+#endif
+}
+
+bool net_context_is_reuseport_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	return context->options.reuseport;
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
+static inline bool is_in_tcp_listen_state(struct net_context *context)
+{
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_type(context) == SOCK_STREAM &&
+	    net_context_get_state(context) == NET_CONTEXT_LISTENING) {
+		return true;
+	}
+
+	return false;
+#else
+	return false;
+#endif
+}
+
+static inline bool is_in_tcp_time_wait_state(struct net_context *context)
+{
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_type(context) == SOCK_STREAM) {
+		const struct tcp *tcp_conn = context->tcp;
+
+		if (net_tcp_get_state(tcp_conn) == TCP_TIME_WAIT) {
+			return true;
+		}
+	}
+
+	return false;
+#else
+	return false;
+#endif
+}
+
 static int check_used_port(enum net_ip_protocol proto,
 			   uint16_t local_port,
-			   const struct sockaddr *local_addr)
+			   const struct sockaddr *local_addr,
+			   bool reuseaddr_set,
+			   bool reuseport_set)
 
 {
 	int i;
@@ -81,8 +132,37 @@ static int check_used_port(enum net_ip_protocol proto,
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    local_addr->sa_family == AF_INET6) {
-			if (net_sin6_ptr(&contexts[i].local)->sin6_addr == NULL) {
+			if (net_sin6_ptr(&contexts[i].local)->sin6_addr == NULL ||
+			    net_sin6_ptr(&contexts[i].local)->sin6_family != AF_INET6) {
 				continue;
+			}
+
+			if ((net_ipv6_is_addr_unspecified(
+					net_sin6_ptr(&contexts[i].local)->sin6_addr) ||
+			     net_ipv6_is_addr_unspecified(
+					&net_sin6(local_addr)->sin6_addr))) {
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be unspecified.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   !is_in_tcp_listen_state(&contexts[i]) &&
+					   !(net_ipv6_is_addr_unspecified(
+						net_sin6_ptr(&contexts[i].local)->sin6_addr) &&
+					     net_ipv6_is_addr_unspecified(
+						&net_sin6(local_addr)->sin6_addr))) {
+					/* In case of REUSEADDR, only one context may be
+					 * bound to the unspecified address, but not both.
+					 * Furthermore, in case the existing context is in
+					 * TCP LISTEN state, we ignore the REUSEADDR option
+					 * (Linux behavior).
+					 */
+					continue;
+				} else {
+					return -EEXIST;
+				}
 			}
 
 			if (net_ipv6_addr_cmp(
@@ -90,12 +170,55 @@ static int check_used_port(enum net_ip_protocol proto,
 							     sin6_addr,
 				    &((struct sockaddr_in6 *)
 				      local_addr)->sin6_addr)) {
-				return -EEXIST;
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be bound to exactly the same address.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   is_in_tcp_time_wait_state(&contexts[i])) {
+					/* With REUSEADDR, the existing context must be
+					 * in the TCP TIME_WAIT state.
+					 */
+					continue;
+				} else {
+					return -EEXIST;
+				}
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   local_addr->sa_family == AF_INET) {
-			if (net_sin_ptr(&contexts[i].local)->sin_addr == NULL) {
+			if (net_sin_ptr(&contexts[i].local)->sin_addr == NULL ||
+			    net_sin_ptr(&contexts[i].local)->sin_family != AF_INET) {
 				continue;
+			}
+
+			if ((net_ipv4_is_addr_unspecified(
+					net_sin_ptr(&contexts[i].local)->sin_addr) ||
+			     net_ipv4_is_addr_unspecified(
+					&net_sin(local_addr)->sin_addr))) {
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be unspecified.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   !is_in_tcp_listen_state(&contexts[i]) &&
+					   !(net_ipv4_is_addr_unspecified(
+						net_sin_ptr(&contexts[i].local)->sin_addr) &&
+					     net_ipv4_is_addr_unspecified(
+						&net_sin(local_addr)->sin_addr))) {
+					/* In case of REUSEADDR, only one context may be
+					 * bound to the unspecified address, but not both.
+					 * Furthermore, in case the existing context is in
+					 * TCP LISTEN state, we ignore the REUSEADDR option
+					 * (Linux behavior).
+					 */
+					continue;
+				} else {
+					return -EEXIST;
+				}
 			}
 
 			if (net_ipv4_addr_cmp(
@@ -103,7 +226,21 @@ static int check_used_port(enum net_ip_protocol proto,
 							      sin_addr,
 				    &((struct sockaddr_in *)
 				      local_addr)->sin_addr)) {
-				return -EEXIST;
+				if (reuseport_set &&
+				    net_context_is_reuseport_set(&contexts[i])) {
+					/* When both context have the REUSEPORT set, both
+					 * may be bound to exactly the same address.
+					 */
+					continue;
+				} else if (reuseaddr_set &&
+					   is_in_tcp_time_wait_state(&contexts[i])) {
+					/* With REUSEADDR, the existing context must be
+					 * in the TCP TIME_WAIT state.
+					 */
+					continue;
+				} else {
+					return -EEXIST;
+				}
 			}
 		}
 	}
@@ -119,7 +256,7 @@ static uint16_t find_available_port(struct net_context *context,
 	do {
 		local_port = sys_rand32_get() | 0x8000;
 	} while (check_used_port(net_context_get_proto(context),
-				 htons(local_port), addr) == -EEXIST);
+				 htons(local_port), addr, false, false) == -EEXIST);
 
 	return htons(local_port);
 }
@@ -132,7 +269,7 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 {
-	return check_used_port(proto, htons(local_port), local_addr) != 0;
+	return check_used_port(proto, htons(local_port), local_addr, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -337,6 +474,8 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 			*context = NULL;
 			return ret;
 		}
+
+		net_context_set_iface(*context, net_if_get_default());
 	}
 
 	return 0;
@@ -358,8 +497,6 @@ int net_context_unref(struct net_context *context)
 	}
 
 	k_mutex_lock(&context->lock, K_FOREVER);
-
-	net_tcp_unref(context);
 
 	if (context->conn_handler) {
 		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
@@ -572,34 +709,33 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
-		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
-		    net_if_is_ip_offloaded(iface)) {
-			net_context_set_iface(context, iface);
-
-			return net_offload_bind(iface,
-						context,
-						addr,
-						addrlen);
-		}
-
 		k_mutex_lock(&context->lock, K_FOREVER);
-
-		ret = 0;
 
 		net_context_set_iface(context, iface);
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
 		net_sin6_ptr(&context->local)->sin6_addr = ptr;
+
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+			k_mutex_unlock(&context->lock);
+			return net_offload_bind(iface, context, addr, addrlen);
+		}
+
+		ret = 0;
 		if (addr6->sin6_port) {
-			ret = check_used_port(AF_INET6, addr6->sin6_port,
-					      addr);
-			if (!ret) {
-				net_sin6_ptr(&context->local)->sin6_port =
-					addr6->sin6_port;
-			} else {
+			ret = check_used_port(context->proto,
+					      addr6->sin6_port,
+					      addr,
+					      net_context_is_reuseaddr_set(context),
+					      net_context_is_reuseport_set(context));
+			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr6->sin6_port));
+				ret = -EADDRINUSE;
 				goto unlock_ipv6;
+			} else {
+				net_sin6_ptr(&context->local)->sin6_port =
+					addr6->sin6_port;
 			}
 		} else {
 			addr6->sin6_port =
@@ -670,34 +806,33 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
-		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
-		    net_if_is_ip_offloaded(iface)) {
-			net_context_set_iface(context, iface);
-
-			return net_offload_bind(iface,
-						context,
-						addr,
-						addrlen);
-		}
-
 		k_mutex_lock(&context->lock, K_FOREVER);
-
-		ret = 0;
 
 		net_context_set_iface(context, iface);
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
 		net_sin_ptr(&context->local)->sin_addr = ptr;
+
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+			k_mutex_unlock(&context->lock);
+			return net_offload_bind(iface, context, addr, addrlen);
+		}
+
+		ret = 0;
 		if (addr4->sin_port) {
-			ret = check_used_port(AF_INET, addr4->sin_port,
-					      addr);
-			if (!ret) {
-				net_sin_ptr(&context->local)->sin_port =
-					addr4->sin_port;
-			} else {
+			ret = check_used_port(context->proto,
+					      addr4->sin_port,
+					      addr,
+					      net_context_is_reuseaddr_set(context),
+					      net_context_is_reuseport_set(context));
+			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr4->sin_port));
+					ret = -EADDRINUSE;
 				goto unlock_ipv4;
+			} else {
+				net_sin_ptr(&context->local)->sin_port =
+					addr4->sin_port;
 			}
 		} else {
 			addr4->sin_port =
@@ -757,10 +892,13 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ll_addr->sll_ifindex;
 		net_sll_ptr(&context->local)->sll_protocol =
 			ll_addr->sll_protocol;
+
+		net_if_lock(iface);
 		net_sll_ptr(&context->local)->sll_addr =
 			net_if_get_link_addr(iface)->addr;
 		net_sll_ptr(&context->local)->sll_halen =
 			net_if_get_link_addr(iface)->len;
+		net_if_unlock(iface);
 
 		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
 			context, htons(net_context_get_proto(context)),
@@ -897,6 +1035,11 @@ int net_context_create_ipv4_new(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(context->options.dscp_ecn));
+	/* Direct priority takes precedence over DSCP */
+	if (!IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+		net_pkt_set_priority(pkt, net_ipv4_dscp_to_priority(
+			net_ipv4_get_dscp(context->options.dscp_ecn)));
+	}
 #endif
 
 	return net_ipv4_create(pkt, src, dst);
@@ -927,6 +1070,11 @@ int net_context_create_ipv6_new(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(context->options.dscp_ecn));
+	/* Direct priority takes precedence over DSCP */
+	if (!IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+		net_pkt_set_priority(pkt, net_ipv6_dscp_to_priority(
+			net_ipv6_get_dscp(context->options.dscp_ecn)));
+	}
 #endif
 
 	return net_ipv6_create(pkt, src, dst);
@@ -949,6 +1097,11 @@ int net_context_connect(struct net_context *context,
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (net_context_get_state(context) == NET_CONTEXT_CONNECTING) {
+		ret = -EALREADY;
+		goto unlock;
+	}
 
 	if (!net_context_is_used(context)) {
 		ret = -EBADF;
@@ -1096,6 +1249,8 @@ int net_context_connect(struct net_context *context,
 		ret = 0;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_type(context) == SOCK_STREAM) {
+		NET_ASSERT(laddr != NULL);
+
 		ret = net_tcp_connect(context, addr, laddr, rport, lport,
 				      timeout, cb, user_data);
 	} else {
@@ -1289,6 +1444,58 @@ static int get_context_dscp_ecn(struct net_context *context,
 #endif
 }
 
+static int get_context_reuseaddr(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEADDR)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.reuseaddr == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_reuseport(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.reuseport == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -1439,9 +1646,7 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 		if (cmsg->cmsg_len == CMSG_LEN(sizeof(uint64_t)) &&
 		    cmsg->cmsg_level == SOL_SOCKET &&
 		    cmsg->cmsg_type == SCM_TXTIME) {
-			uint64_t txtime = *(uint64_t *)CMSG_DATA(cmsg);
-
-			net_pkt_set_txtime(pkt, txtime);
+			net_pkt_set_timestamp_ns(pkt, *(net_time_t *)CMSG_DATA(cmsg));
 			break;
 		}
 	}
@@ -1763,6 +1968,21 @@ static int context_sendto(struct net_context *context,
 		net_pkt_cursor_init(pkt);
 
 		if (net_context_get_proto(context) == IPPROTO_RAW) {
+			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
+
+			/* Set the family to pkt if detected */
+			switch (type) {
+			case 0x60:
+				net_pkt_set_family(pkt, AF_INET6);
+				break;
+			case 0x40:
+				net_pkt_set_family(pkt, AF_INET);
+				break;
+			default:
+				/* Not IP traffic, let it go forward as it is */
+				break;
+			}
+
 			/* Pass to L2: */
 			ret = net_send_data(pkt);
 		} else {
@@ -2134,8 +2354,6 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		int ret;
-
 		/* Make sure we have the lock, then the
 		 * net_context_packet_received() callback will release the
 		 * semaphore when data has been received.
@@ -2144,14 +2362,11 @@ int net_context_recv(struct net_context *context,
 
 		k_mutex_unlock(&context->lock);
 
-		ret = k_sem_take(&context->recv_data_wait, timeout);
+		if (k_sem_take(&context->recv_data_wait, timeout) == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 
 		k_mutex_lock(&context->lock, K_FOREVER);
-
-		if (ret == -EAGAIN) {
-			ret = -ETIMEDOUT;
-			goto unlock;
-		}
 	}
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
@@ -2332,6 +2547,50 @@ static int set_context_dscp_ecn(struct net_context *context,
 #endif
 }
 
+static int set_context_reuseaddr(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEADDR)
+	bool reuseaddr = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		reuseaddr = true;
+	}
+
+	context->options.reuseaddr = reuseaddr;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_reuseport(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+	bool reuseport = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		reuseport = true;
+	}
+
+	context->options.reuseport = reuseport;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2370,6 +2629,12 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_DSCP_ECN:
 		ret = set_context_dscp_ecn(context, value, len);
+		break;
+	case NET_OPT_REUSEADDR:
+		ret = set_context_reuseaddr(context, value, len);
+		break;
+	case NET_OPT_REUSEPORT:
+		ret = set_context_reuseport(context, value, len);
 		break;
 	}
 
@@ -2416,6 +2681,12 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_DSCP_ECN:
 		ret = get_context_dscp_ecn(context, value, len);
+		break;
+	case NET_OPT_REUSEADDR:
+		ret = get_context_reuseaddr(context, value, len);
+		break;
+	case NET_OPT_REUSEPORT:
+		ret = get_context_reuseport(context, value, len);
 		break;
 	}
 

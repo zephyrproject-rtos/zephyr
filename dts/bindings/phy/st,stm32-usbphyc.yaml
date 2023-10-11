@@ -8,8 +8,8 @@ compatible: "st,stm32-usbphyc"
 include: phy-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    "#phy-cells":
-      const: 0
+  "#phy-cells":
+    const: 0

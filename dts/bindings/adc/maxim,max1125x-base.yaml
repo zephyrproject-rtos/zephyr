@@ -1,0 +1,36 @@
+# Common fields for Analog Devices MAX1125x
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+  gpio0-enable:
+    type: boolean
+    description: this option for gpio0 enable or disable
+  gpio1-enable:
+    type: boolean
+    description: this option for gpio1 enable or disable
+  gpio0-direction:
+    type: boolean
+    description: this option for gpio0 direction enable for input, disable for output
+  gpio1-direction:
+    type: boolean
+    description: this option for gpio0 direction enable for input, disable for output
+  gpo0-enable:
+    type: boolean
+    description: this option for gpo0 enable or disable
+  gpo1-enable:
+    type: boolean
+    description: this option for gpo1 enable or disable
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      gpio for data ready, becomes active when a conversion result is ready
+  self-calibration:
+    type: boolean
+    description: start self calibration during channel setup
+
+io-channel-cells:
+  - input

@@ -7,14 +7,11 @@
 
 / {
 	regulator {
-		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>; /* Arduino D0 */
+		/* Arduino D0 */
+		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 	};
 	resources {
-		check-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  /* Arduino D1 */
+		/* Arduino D1 */
+		check-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
-};
-
-&uart1 {
-	/* Default-enabled Arduino UART steals the pins we want. */
-	status = "disabled";
 };

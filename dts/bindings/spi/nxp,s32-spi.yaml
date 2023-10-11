@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP S32 SPI controller
@@ -20,11 +20,8 @@ properties:
     description: |
       The number of the Chip Select signals.
 
-  clock-frequency:
-    type: int
+  clocks:
     required: true
-    description: |
-      Module clock frequency in Hz.
 
   pinctrl-0:
     required: true
@@ -34,13 +31,11 @@ properties:
 
   slave:
     type: boolean
-    required: false
     description: |
       Select if the SPI module is intended to be used in slave mode.
 
   spi-sck-cs-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between the stop of clock signal and
       deactivating Chip Select at the stop of transfer. If CS remains
@@ -51,7 +46,6 @@ properties:
 
   spi-cs-sck-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between activating Chip Select and the start
       of clock signal at the start of transfer. If CS remains asserted
@@ -62,7 +56,6 @@ properties:
 
   spi-cs-cs-delay:
     type: int
-    required: false
     description: |
       A delay in nanoseconds between deactivating Chip Select at the stop
       of previous transfer and activating Chip Select at the start of

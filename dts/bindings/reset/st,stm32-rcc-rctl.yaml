@@ -24,14 +24,14 @@ compatible: "st,stm32-rcc-rctl"
 include: [reset-controller.yaml, base.yaml]
 
 properties:
-    "#reset-cells":
-      const: 1
+  "#reset-cells":
+    const: 1
 
-    set-bit-to-deassert:
-      type: boolean
-      description: |
-        Indicates if the driver should set bit in clear register to
-        deassert reset.
+  set-bit-to-deassert:
+    type: boolean
+    description: |
+      Indicates if the driver should set bit in clear register to
+      deassert reset.
 
 reset-cells:
   - id

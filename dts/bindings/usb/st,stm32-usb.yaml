@@ -8,35 +8,28 @@ compatible: "st,stm32-usb"
 include: [usb-ep.yaml, pinctrl-device.yaml]
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    ram-size:
-      type: int
-      required: true
-      description: |
-        Size of USB dedicated RAM. STM32 SOC's reference
-        manual defines USB packet SRAM size.
+  ram-size:
+    type: int
+    required: true
+    description: |
+      Size of USB dedicated RAM. STM32 SOC's reference
+      manual defines USB packet SRAM size.
 
-    disconnect-gpios:
-      type: phandle-array
-      description: |
-        Some boards use a USB DISCONNECT pin to enable
-        the pull-up resistor on USB Data Positive signal.
+  disconnect-gpios:
+    type: phandle-array
+    description: |
+      Some boards use a USB DISCONNECT pin to enable
+      the pull-up resistor on USB Data Positive signal.
 
-    phys:
-      type: phandle
-      description: PHY provider specifier
+  phys:
+    type: phandle
+    description: PHY provider specifier
 
-    enable-pin-remap:
-      type: boolean
-      description: |
-        For STM32F0 series SoCs on QFN28 and TSSOP20 packages
-        enable PIN pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6).
-        Deprecated in favor of 'remap-pa11-pa12' from 'st-stm32-pinctrl'
-
-    clocks:
-      required: true
+  clocks:
+    required: true

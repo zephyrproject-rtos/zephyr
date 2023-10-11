@@ -12,7 +12,7 @@ import mmap
 import glob
 from typing import List
 from twisterlib.mixins import DisablePyTestCollectionMixin
-from twisterlib.environment import canonical_topdir
+from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
 
 logger = logging.getLogger('twister')
@@ -76,6 +76,10 @@ def scan_file(inf_name):
     new_suite_regex = re.compile(
         br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
         re.MULTILINE)
+    testcase_regex = re.compile(
+        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
+        re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
     # Since ztest provides a plain test_main implementation it is OK to:
     # 1. register test suites and not call the run function iff the test
@@ -107,6 +111,8 @@ def scan_file(inf_name):
                 [m for m in regular_suite_regex.finditer(main_c)]
             registered_suite_regex_matches = \
                 [m for m in registered_suite_regex.finditer(main_c)]
+            new_suite_testcase_regex_matches = \
+                [m for m in testcase_regex.finditer(main_c)]
             new_suite_regex_matches = \
                 [m for m in new_suite_regex.finditer(main_c)]
 
@@ -127,7 +133,7 @@ def scan_file(inf_name):
                     _extract_ztest_suite_names(registered_suite_regex_matches)
                 testcase_names, warnings = \
                     _find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
-            elif new_suite_regex_matches:
+            elif new_suite_regex_matches or new_suite_testcase_regex_matches:
                 ztest_suite_names = \
                     _extract_ztest_suite_names(new_suite_regex_matches)
                 testcase_names, warnings = \
@@ -250,6 +256,28 @@ def _find_ztest_testcases(search_area, testcase_regex):
 
     return testcase_names, warnings
 
+def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> list:
+    """
+    Find C or C++ sources in the directory specified by "path"
+    """
+    if not os.path.isdir(path):
+        return []
+
+    # back up previous CWD
+    oldpwd = os.getcwd()
+    os.chdir(path)
+
+    filenames = []
+    for ext in extensions:
+        # glob.glob('**/*.c') does not pick up the base directory
+        filenames += [os.path.join(path, x) for x in glob.glob(f'*.{ext}')]
+        # glob matches in subdirectories too
+        filenames += [os.path.join(path, x) for x in glob.glob(f'**/*.{ext}')]
+
+    # restore previous CWD
+    os.chdir(oldpwd)
+
+    return filenames
 
 def scan_testsuite_path(testsuite_path):
     subcases = []
@@ -259,7 +287,9 @@ def scan_testsuite_path(testsuite_path):
     ztest_suite_names = []
 
     src_dir_path = _find_src_dir_path(testsuite_path)
-    for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
+    for filename in find_c_files_in(src_dir_path):
+        if os.stat(filename).st_size == 0:
+            continue
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
@@ -278,9 +308,9 @@ def scan_testsuite_path(testsuite_path):
                 ztest_suite_names += result.ztest_suite_names
 
         except ValueError as e:
-            logger.error("%s: can't find: %s" % (filename, e))
+            logger.error("%s: error parsing source file: %s" % (filename, e))
 
-    for filename in glob.glob(os.path.join(testsuite_path, "*.c*")):
+    for filename in find_c_files_in(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
@@ -340,7 +370,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
 
-    def __init__(self, suite_root, suite_path, name, data=None):
+    def __init__(self, suite_root, suite_path, name, data=None, detailed_test_id=True):
         """TestSuite constructor.
 
         This gets called by TestPlan as it finds and reads test yaml files.
@@ -361,10 +391,14 @@ class TestSuite(DisablePyTestCollectionMixin):
         """
 
         workdir = os.path.relpath(suite_path, suite_root)
-        self.name = self.get_unique(suite_root, workdir, name)
+
+        assert self.check_suite_name(name, suite_root, workdir)
+        self.detailed_test_id = detailed_test_id
+        self.name = self.get_unique(suite_root, workdir, name) if self.detailed_test_id else name
         self.id = name
 
         self.source_dir = suite_path
+        self.source_dir_rel = os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base)
         self.yamlfile = suite_path
         self.testcases = []
 
@@ -407,24 +441,24 @@ class TestSuite(DisablePyTestCollectionMixin):
     def get_unique(testsuite_root, workdir, name):
 
         canonical_testsuite_root = os.path.realpath(testsuite_root)
-        relative_ts_root = os.path.relpath(canonical_testsuite_root,
-                                               start=canonical_topdir)
-        # Include path in name for name uniqueness.
-        # Replace all '..' with a single 'external' for external tests.
-        # FIXME: We should not depend on path of test for unique names.
-        is_external = Path(canonical_topdir) not in Path(canonical_testsuite_root).parents
-        if is_external:
-            relative_ts_parts = Path(relative_ts_root).parts
-            if ".." in relative_ts_parts:
-                relative_ts_parts = tuple(part for part in relative_ts_parts if part != "..")
-                relative_ts_root = os.path.join("external", *relative_ts_parts)
+        if Path(canonical_zephyr_base) in Path(canonical_testsuite_root).parents:
+            # This is in ZEPHYR_BASE, so include path in name for uniqueness
+            # FIXME: We should not depend on path of test for unique names.
+            relative_ts_root = os.path.relpath(canonical_testsuite_root,
+                                               start=canonical_zephyr_base)
+        else:
+            relative_ts_root = ""
 
         # workdir can be "."
         unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name))
+        return unique
+
+    @staticmethod
+    def check_suite_name(name, testsuite_root, workdir):
         check = name.split(".")
         if len(check) < 2:
             raise TwisterException(f"""bad test name '{name}' in {testsuite_root}/{workdir}. \
 Tests should reference the category and subsystem with a dot as a separator.
                     """
                     )
-        return unique
+        return True

@@ -60,13 +60,3 @@ config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_NXP_PCAL6408A),i2c)
 
 endif # BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160_NS
-
-config UART_NRF_DK_SERIAL_WORKAROUND
-	default y if ZTEST
-
-# When the nRF DK serial workaround is enabled, increase the stack size in
-# tests built with no optimizations, as the standard size may be insufficient
-# then. Use 512 to align with the FPU_SHARING case, where the default value
-# is also modified.
-config TEST_EXTRA_STACK_SIZE
-	default 512 if UART_NRF_DK_SERIAL_WORKAROUND && NO_OPTIMIZATIONS

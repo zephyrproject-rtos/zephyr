@@ -15,16 +15,26 @@
 
 #include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/init.h>
 #include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+struct waitq_walk_data {
+	sys_dlist_t *list;
+	size_t       bytes_requested;
+	size_t       bytes_available;
+};
+
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     void *data, size_t bytes_to_read,
 			     size_t *bytes_read, size_t min_xfer,
 			     k_timeout_t timeout);
+#ifdef CONFIG_OBJ_CORE_PIPE
+static struct k_obj_type obj_type_pipe;
+#endif
+
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -44,6 +54,10 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	sys_dlist_init(&pipe->poll_events);
 #endif
 	z_object_init(pipe);
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+	k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+#endif
 }
 
 int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
@@ -201,6 +215,27 @@ static size_t pipe_xfer(unsigned char *dest, size_t dest_size,
 }
 
 /**
+ * @brief Callback routine used to populate wait list
+ *
+ * @return 1 to stop further walking; 0 to continue walking
+ */
+static int pipe_walk_op(struct k_thread *thread, void *data)
+{
+	struct waitq_walk_data *walk_data = data;
+	struct _pipe_desc *desc = (struct _pipe_desc *)thread->base.swap_data;
+
+	sys_dlist_append(walk_data->list, &desc->node);
+
+	walk_data->bytes_available += desc->bytes_to_xfer;
+
+	if (walk_data->bytes_available >= walk_data->bytes_requested) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Popluate pipe descriptors for copying to/from waiters' buffers
  *
  * This routine cycles through the waiters on the wait queue and creates
@@ -213,22 +248,15 @@ static size_t pipe_waiter_list_populate(sys_dlist_t  *list,
 					_wait_q_t    *wait_q,
 					size_t        bytes_to_xfer)
 {
-	struct k_thread  *thread;
-	struct _pipe_desc *curr;
-	size_t num_bytes = 0U;
+	struct waitq_walk_data walk_data;
 
-	_WAIT_Q_FOR_EACH(wait_q, thread) {
-		curr = (struct _pipe_desc *)thread->base.swap_data;
+	walk_data.list            = list;
+	walk_data.bytes_requested = bytes_to_xfer;
+	walk_data.bytes_available = 0;
 
-		sys_dlist_append(list, &curr->node);
+	(void) z_sched_waitq_walk(wait_q, pipe_walk_op, &walk_data);
 
-		num_bytes += curr->bytes_to_xfer;
-		if (num_bytes >= bytes_to_xfer) {
-			break;
-		}
-	}
-
-	return num_bytes;
+	return walk_data.bytes_available;
 }
 
 /**
@@ -329,9 +357,10 @@ static size_t pipe_write(struct k_pipe *pipe, sys_dlist_t *src_list,
 			}
 		} else if (dest->bytes_to_xfer == 0U) {
 
-			/* A thread's read request has been satisfied. */
+			/* The thread's read request has been satisfied. */
 
-			(void) z_sched_wake(&pipe->wait_q.readers, 0, NULL);
+			z_unpend_thread(dest->thread);
+			z_ready_thread(dest->thread);
 
 			*reschedule = true;
 		}
@@ -353,6 +382,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		      k_timeout_t timeout)
 {
 	struct _pipe_desc  pipe_desc[2];
+	struct _pipe_desc  isr_desc;
 	struct _pipe_desc *src_desc;
 	sys_dlist_t        dest_list;
 	sys_dlist_t        src_list;
@@ -408,7 +438,12 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		return -EIO;
 	}
 
-	src_desc = &_current->pipe_desc;
+	/*
+	 * Do not use the pipe descriptor stored within k_thread if
+	 * invoked from within an ISR as that is not safe to do.
+	 */
+
+	src_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	src_desc->buffer        = data;
 	src_desc->bytes_to_xfer = bytes_to_write;
@@ -457,6 +492,16 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.writers, timeout, NULL);
 
+	/*
+	 * On SMP systems, threads in the processing list may timeout before
+	 * the data has finished copying. The following spin lock/unlock pair
+	 * prevents those threads from executing further until the data copying
+	 * is complete.
+	 */
+
+	key = k_spin_lock(&pipe->lock);
+	k_spin_unlock(&pipe->lock, key);
+
 	*bytes_written = bytes_to_write - src_desc->bytes_to_xfer;
 
 	int ret = pipe_return_code(min_xfer, src_desc->bytes_to_xfer,
@@ -490,6 +535,7 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 {
 	sys_dlist_t         src_list;
 	struct _pipe_desc   pipe_desc[2];
+	struct _pipe_desc   isr_desc;
 	struct _pipe_desc  *dest_desc;
 	struct _pipe_desc  *src_desc;
 	size_t         num_bytes_read = 0U;
@@ -530,7 +576,12 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 		return -EIO;
 	}
 
-	dest_desc = &_current->pipe_desc;
+	/*
+	 * Do not use the pipe descriptor stored within k_thread if
+	 * invoked from within an ISR as that is not safe to do.
+	 */
+
+	dest_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
 	dest_desc->buffer = data;
 	dest_desc->bytes_to_xfer = bytes_to_read;
@@ -566,7 +617,8 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 
 			/* The thread's write request has been satisfied. */
 
-			(void) z_sched_wake(&pipe->wait_q.writers, 0, NULL);
+			z_unpend_thread(src_desc->thread);
+			z_ready_thread(src_desc->thread);
 
 			reschedule_needed = true;
 		}
@@ -625,6 +677,16 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 	_current->base.swap_data = dest_desc;
 
 	z_sched_wait(&pipe->lock, key, &pipe->wait_q.readers, timeout, NULL);
+
+	/*
+	 * On SMP systems, threads in the processing list may timeout before
+	 * the data has finished copying. The following spin lock/unlock pair
+	 * prevents those threads from executing further until the data copying
+	 * is complete.
+	 */
+
+	key = k_spin_lock(&pipe->lock);
+	k_spin_unlock(&pipe->lock, key);
 
 	*bytes_read = bytes_to_read - dest_desc->bytes_to_xfer;
 
@@ -746,4 +808,25 @@ size_t z_vrfy_k_pipe_write_avail(struct k_pipe *pipe)
 	return z_impl_k_pipe_write_avail(pipe);
 }
 #include <syscalls/k_pipe_write_avail_mrsh.c>
+#endif
+
+#ifdef CONFIG_OBJ_CORE_PIPE
+static int init_pipe_obj_core_list(void)
+{
+	/* Initialize pipe object type */
+
+	z_obj_type_init(&obj_type_pipe, K_OBJ_TYPE_PIPE_ID,
+			offsetof(struct k_pipe, obj_core));
+
+	/* Initialize and link statically defined pipes */
+
+	STRUCT_SECTION_FOREACH(k_pipe, pipe) {
+		k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif

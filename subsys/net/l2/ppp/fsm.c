@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 
 #include <zephyr/net/ppp.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "net_private.h"
 
@@ -389,6 +389,10 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		}
 
 		iface = ppp_fsm_iface(fsm);
+	}
+
+	if (!net_if_is_carrier_ok(iface)) {
+		return -ENETDOWN;
 	}
 
 	if (fsm) {

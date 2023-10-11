@@ -15,6 +15,9 @@ from itertools import islice
 import logging
 import copy
 import shutil
+import random
+import snippets
+from pathlib import Path
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -29,6 +32,7 @@ from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
+from twisterlib.quarantine import Quarantine
 
 
 from zephyr_module import parse_modules
@@ -46,6 +50,8 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
 import scl
 class Filters:
+    # platform keys
+    PLATFORM_KEY = 'platform key filter'
     # filters provided on command line by the user/tester
     CMD_LINE = 'command line filter'
     # filters in the testsuite yaml definition
@@ -56,7 +62,16 @@ class Filters:
     QUARENTINE = 'Quarantine filter'
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
+    # in case of incompatibility between selected and allowed toolchains.
+    TOOLCHAIN = 'Toolchain filter'
+    # in case an optional module is not available
+    MODULE = 'Module filter'
 
+
+class TestLevel:
+    name = None
+    levels = []
+    scenarios = []
 
 class TestPlan:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -69,6 +84,8 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
+    tc_schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "test-config-schema.yaml")
+
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
@@ -79,7 +96,7 @@ class TestPlan:
 
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
-        self.quarantine = {}
+        self.quarantine = None
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
@@ -89,12 +106,54 @@ class TestPlan:
         self.instances = dict()
         self.warnings = 0
 
+        self.scenarios = []
+
         self.hwm = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = []
 
         self.run_individual_testsuite = []
+        self.levels = []
+        self.test_config =  {}
+
+
+    def get_level(self, name):
+        level = next((l for l in self.levels if l.name == name), None)
+        return level
+
+    def parse_configuration(self, config_file):
+        if os.path.exists(config_file):
+            tc_schema = scl.yaml_load(self.tc_schema_path)
+            self.test_config = scl.yaml_load_verify(config_file, tc_schema)
+        else:
+            raise TwisterRuntimeError(f"File {config_file} not found.")
+
+        levels = self.test_config.get('levels', [])
+
+        # Do first pass on levels to get initial data.
+        for level in levels:
+            adds = []
+            for s in  level.get('adds', []):
+                r = re.compile(s)
+                adds.extend(list(filter(r.fullmatch, self.scenarios)))
+
+            tl = TestLevel()
+            tl.name = level['name']
+            tl.scenarios = adds
+            tl.levels = level.get('inherits', [])
+            self.levels.append(tl)
+
+        # Go over levels again to resolve inheritance.
+        for level in levels:
+            inherit = level.get('inherits', [])
+            _level = self.get_level(level['name'])
+            if inherit:
+                for inherted_level in inherit:
+                    _inherited = self.get_level(inherted_level)
+                    _inherited_scenarios = _inherited.scenarios
+                    level_scenarios = _level.scenarios
+                    level_scenarios.extend(_inherited_scenarios)
 
     def find_subtests(self):
         sub_tests = self.options.sub_test
@@ -121,6 +180,13 @@ class TestPlan:
             raise TwisterRuntimeError("No test cases found at the specified location...")
 
         self.find_subtests()
+        # get list of scenarios we have parsed into one list
+        for _, ts in self.testsuites.items():
+            self.scenarios.append(ts.id)
+
+        self.report_duplicates()
+
+        self.parse_configuration(config_file=self.env.test_config)
         self.add_configurations()
 
         if self.load_errors:
@@ -128,15 +194,18 @@ class TestPlan:
 
         # handle quarantine
         ql = self.options.quarantine_list
-        if ql:
-            self.load_quarantine(ql)
-
         qv = self.options.quarantine_verify
-        if qv:
-            if not ql:
-                logger.error("No quarantine list given to be verified")
-                raise TwisterRuntimeError("No quarantine list given to be verified")
-
+        if qv and not ql:
+            logger.error("No quarantine list given to be verified")
+            raise TwisterRuntimeError("No quarantine list given to be verified")
+        if ql:
+            for quarantine_file in ql:
+                try:
+                    # validate quarantine yaml file against the provided schema
+                    scl.yaml_load_verify(quarantine_file, self.quarantine_schema)
+                except scl.EmptyYamlFileException:
+                    logger.debug(f'Quarantine file {quarantine_file} is empty')
+            self.quarantine = Quarantine(ql)
 
     def load(self):
 
@@ -152,15 +221,14 @@ class TestPlan:
             self.load_from_file(self.options.load_tests)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         elif self.options.test_only:
-            # Get list of connected hardware and filter tests to only be run on connected hardware
-            # in cases where no platform was specified when running the tests.
-            # If the platform does not exist in the hardware map, just skip it.
-            connected_list = []
-            if not self.options.platform:
-                for connected in self.hwm.duts:
-                    if connected['connected']:
-                        connected_list.append(connected['platform'])
-
+            # Get list of connected hardware and filter tests to only be run on connected hardware.
+            # If the platform does not exist in the hardware map or was not specified by --platform,
+            # just skip it.
+            connected_list = self.options.platform
+            if self.options.exclude_platform:
+                for excluded in self.options.exclude_platform:
+                    if excluded in connected_list:
+                        connected_list.remove(excluded)
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
@@ -195,6 +263,17 @@ class TestPlan:
                                 key=lambda x: x[0][x[0].find("/") + 1:]))
         else:
             self.instances = OrderedDict(sorted(self.instances.items()))
+
+        if self.options.shuffle_tests:
+            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
+            if self.options.shuffle_tests_seed is not None:
+                seed_value = self.options.shuffle_tests_seed
+
+            logger.info(f"Shuffle tests with seed: {seed_value}")
+            random.seed(seed_value)
+            temp_list = list(self.instances.items())
+            random.shuffle(temp_list)
+            self.instances = OrderedDict(temp_list)
 
         # Do calculation based on what is actually going to be run and evaluated
         # at runtime, ignore the cases we already know going to be skipped.
@@ -234,10 +313,7 @@ class TestPlan:
 
 
     def report(self):
-        if self.options.list_test_duplicates:
-            self.report_duplicates()
-            return 0
-        elif self.options.test_tree:
+        if self.options.test_tree:
             self.report_test_tree()
             return 0
         elif self.options.list_tests:
@@ -250,18 +326,16 @@ class TestPlan:
         return 1
 
     def report_duplicates(self):
-        all_identifiers = []
-        for _, ts in self.testsuites.items():
-            all_identifiers.append(ts.id)
-        dupes = [item for item, count in collections.Counter(all_identifiers).items() if count > 1]
+        dupes = [item for item, count in collections.Counter(self.scenarios).items() if count > 1]
         if dupes:
-            print("Tests with duplicate identifiers:")
+            msg = "Duplicated test scenarios found:\n"
             for dupe in dupes:
-                print("- {}".format(dupe))
+                msg += ("- {} found in:\n".format(dupe))
                 for dc in self.get_testsuite(dupe):
-                    print("  - {}".format(dc.name))
+                    msg += ("  - {}\n".format(dc.yamlfile))
+            raise TwisterRuntimeError(msg)
         else:
-            print("No duplicates found.")
+            logger.debug("No duplicates found.")
 
     def report_tag_list(self):
         tags = set()
@@ -357,6 +431,7 @@ class TestPlan:
             logger.debug("Reading platform configuration files under %s..." %
                          board_root)
 
+            platform_config = self.test_config.get('platforms', {})
             for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
                 try:
                     platform = Platform()
@@ -364,37 +439,47 @@ class TestPlan:
                     if platform.name in [p.name for p in self.platforms]:
                         logger.error(f"Duplicate platform {platform.name} in {file}")
                         raise Exception(f"Duplicate platform identifier {platform.name} found")
-                    if platform.twister:
-                        self.platforms.append(platform)
+
+                    if not platform.twister:
+                        continue
+
+                    self.platforms.append(platform)
+                    if not platform_config.get('override_default_platforms', False):
                         if platform.default:
+                            logger.debug(f"adding {platform.name} to default platforms")
                             self.default_platforms.append(platform.name)
-                        # support board@revision
-                        # if there is already an existed <board>_<revision>.yaml, then use it to
-                        # load platform directly, otherwise, iterate the directory to
-                        # get all valid board revision based on each <board>_<revision>.conf.
-                        if not "@" in platform.name:
-                            tmp_dir = os.listdir(os.path.dirname(file))
-                            for item in tmp_dir:
-                                # Need to make sure the revision matches
-                                # the permitted patterns as described in
-                                # cmake/modules/extensions.cmake.
-                                revision_patterns = ["[A-Z]",
-                                                     "[0-9]+",
-                                                     "(0|[1-9][0-9]*)(_[0-9]+)*(_[0-9]+)*"]
+                    else:
+                        if platform.name in platform_config.get('default_platforms', []):
+                            logger.debug(f"adding {platform.name} to default platforms")
+                            self.default_platforms.append(platform.name)
 
-                                for pattern in revision_patterns:
-                                    result = re.match(f"{platform.name}_(?P<revision>{pattern})\\.conf", item)
-                                    if result:
-                                        revision = result.group("revision")
-                                        yaml_file = f"{platform.name}_{revision}.yaml"
-                                        if yaml_file not in tmp_dir:
-                                            platform_revision = copy.deepcopy(platform)
-                                            revision = revision.replace("_", ".")
-                                            platform_revision.name = f"{platform.name}@{revision}"
-                                            platform_revision.default = False
-                                            self.platforms.append(platform_revision)
+                    # support board@revision
+                    # if there is already an existed <board>_<revision>.yaml, then use it to
+                    # load platform directly, otherwise, iterate the directory to
+                    # get all valid board revision based on each <board>_<revision>.conf.
+                    if '@' not in platform.name:
+                        tmp_dir = os.listdir(os.path.dirname(file))
+                        for item in tmp_dir:
+                            # Need to make sure the revision matches
+                            # the permitted patterns as described in
+                            # cmake/modules/extensions.cmake.
+                            revision_patterns = ["[A-Z]",
+                                                    "[0-9]+",
+                                                    "(0|[1-9][0-9]*)(_[0-9]+)*(_[0-9]+)*"]
 
-                                        break
+                            for pattern in revision_patterns:
+                                result = re.match(f"{platform.name}_(?P<revision>{pattern})\\.conf", item)
+                                if result:
+                                    revision = result.group("revision")
+                                    yaml_file = f"{platform.name}_{revision}.yaml"
+                                    if yaml_file not in tmp_dir:
+                                        platform_revision = copy.deepcopy(platform)
+                                        revision = revision.replace("_", ".")
+                                        platform_revision.name = f"{platform.name}@{revision}"
+                                        platform_revision.default = False
+                                        self.platforms.append(platform_revision)
+
+                                    break
 
 
                 except RuntimeError as e:
@@ -428,18 +513,26 @@ class TestPlan:
                 logger.debug("Found possible testsuite in " + dirpath)
 
                 suite_yaml_path = os.path.join(dirpath, filename)
+                suite_path = os.path.dirname(suite_yaml_path)
+
+                for alt_config_root in self.env.alt_config_root:
+                    alt_config = os.path.join(os.path.abspath(alt_config_root),
+                                              os.path.relpath(suite_path, root),
+                                              filename)
+                    if os.path.exists(alt_config):
+                        logger.info("Using alternative configuration from %s" %
+                                    os.path.normpath(alt_config))
+                        suite_yaml_path = alt_config
+                        break
 
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
-
-                    suite_path = os.path.dirname(suite_yaml_path)
-
                     subcases, ztest_suite_names = scan_testsuite_path(suite_path)
 
                     for name in parsed_data.scenarios.keys():
                         suite_dict = parsed_data.get_scenario(name)
-                        suite = TestSuite(root, suite_path, name, data=suite_dict)
+                        suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
                         suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         if testsuite_filter:
                             if suite.name and suite.name in testsuite_filter:
@@ -448,7 +541,7 @@ class TestPlan:
                             self.testsuites[suite.name] = suite
 
                 except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (suite_path, e))
+                    logger.error(f"{suite_path}: can't load (skipping): {e!r}")
                     self.load_errors += 1
         return len(self.testsuites)
 
@@ -462,35 +555,6 @@ class TestPlan:
                 selected_platform = platform
                 break
         return selected_platform
-
-    def load_quarantine(self, file):
-        """
-        Loads quarantine list from the given yaml file. Creates a dictionary
-        of all tests configurations (platform + scenario: comment) that shall be
-        skipped due to quarantine
-        """
-
-        # Load yaml into quarantine_yaml
-        quarantine_yaml = scl.yaml_load_verify(file, self.quarantine_schema)
-
-        # Create quarantine_list with a product of the listed
-        # platforms and scenarios for each entry in quarantine yaml
-        quarantine_list = []
-        for quar_dict in quarantine_yaml:
-            if quar_dict['platforms'][0] == "all":
-                plat = self.platform_names
-            else:
-                plat = quar_dict['platforms']
-                self.verify_platforms_existence(plat, "quarantine-list")
-            comment = quar_dict.get('comment', "NA")
-            quarantine_list.append([{".".join([p, s]): comment}
-                                   for p in plat for s in quar_dict['scenarios']])
-
-        # Flatten the quarantine_list
-        quarantine_list = [it for sublist in quarantine_list for it in sublist]
-        # Change quarantine_list into a dictionary
-        for d in quarantine_list:
-            self.quarantine.update(d)
 
     def load_from_file(self, file, filter_platform=[]):
         with open(file, "r") as json_test_plan:
@@ -514,7 +578,8 @@ class TestPlan:
                 instance.run = instance.check_runnable(
                     self.options.enable_slow,
                     tfilter,
-                    self.options.fixture
+                    self.options.fixture,
+                    self.hwm
                 )
 
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
@@ -561,6 +626,7 @@ class TestPlan:
 
         toolchain = self.env.toolchain
         platform_filter = self.options.platform
+        vendor_filter = self.options.vendor
         exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
         arch_filter = self.options.arch
@@ -570,37 +636,45 @@ class TestPlan:
         runnable = (self.options.device_testing or self.options.filter == 'runnable')
         force_toolchain = self.options.force_toolchain
         force_platform = self.options.force_platform
+        slow_only = self.options.enable_slow_only
+        ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
+        logger.debug("  vendor filter: " + str(vendor_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
         logger.debug("     tag_filter: " + str(tag_filter))
         logger.debug("    exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
+        vendor_platforms = False
         emulation_platforms = False
-
 
         if all_filter:
             logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter and not emu_filter:
+        elif not platform_filter and not emu_filter and not vendor_filter:
             logger.info("Selecting default platforms per test case")
             default_platforms = True
         elif emu_filter:
             logger.info("Selecting emulation platforms per test case")
             emulation_platforms = True
+        elif vendor_filter:
+            vendor_platforms = True
 
         if platform_filter:
             self.verify_platforms_existence(platform_filter, f"platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
             platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
+        elif vendor_filter:
+            platforms = list(filter(lambda p: p.vendor in vendor_filter, self.platforms))
+            logger.info(f"Selecting platforms by vendors: {','.join(vendor_filter)}")
         elif arch_filter:
             platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
         elif default_platforms:
-            _platforms = list(filter(lambda p: p.default, self.platforms))
+            _platforms = list(filter(lambda p: p.name in self.default_platforms, self.platforms))
             platforms = []
             # default platforms that can't be run are dropped from the list of
             # the default platforms list. Default platforms should always be
@@ -614,11 +688,13 @@ class TestPlan:
         else:
             platforms = self.platforms
 
+        platform_config = self.test_config.get('platforms', {})
         logger.info("Building initial testsuite list...")
 
-        for ts_name, ts in self.testsuites.items():
+        keyed_tests = {}
 
-            if ts.build_on_all and not platform_filter:
+        for ts_name, ts in self.testsuites.items():
+            if ts.build_on_all and not platform_filter and platform_config.get('increased_platform_scope', True):
                 platform_scope = self.platforms
             elif ts.integration_platforms and self.options.integration:
                 self.verify_platforms_existence(
@@ -632,7 +708,7 @@ class TestPlan:
 
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
-            if ts.platform_allow and not platform_filter and not integration:
+            if ts.platform_allow and not platform_filter and not integration and platform_config.get('increased_platform_scope', True):
                 self.verify_platforms_existence(
                     ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
@@ -641,7 +717,6 @@ class TestPlan:
                 if not c:
                     platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
-
             # list of instances per testsuite, aka configurations.
             instance_list = []
             for plat in platform_scope:
@@ -654,13 +729,9 @@ class TestPlan:
                 instance.run = instance.check_runnable(
                     self.options.enable_slow,
                     tfilter,
-                    self.options.fixture
+                    self.options.fixture,
+                    self.hwm
                 )
-                if runnable and self.hwm.duts:
-                    for h in self.hwm.duts:
-                        if h.platform == plat.name:
-                            if ts.harness_config.get('fixture') in h.fixtures:
-                                instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
@@ -671,7 +742,13 @@ class TestPlan:
 
                 if ts.modules and self.modules:
                     if not set(ts.modules).issubset(set(self.modules)):
-                        instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.TESTSUITE)
+                        instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.MODULE)
+
+                if self.options.level:
+                    tl = self.get_level(self.options.level)
+                    planned_scenarios = tl.scenarios
+                    if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
+                        instance.add_filter("Not part of requested test plan", Filters.TESTSUITE)
 
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.PLATFORM)
@@ -684,6 +761,9 @@ class TestPlan:
 
                 if tag_filter and not ts.tags.intersection(tag_filter):
                     instance.add_filter("Command line testsuite tag filter", Filters.CMD_LINE)
+
+                if slow_only and not ts.slow:
+                    instance.add_filter("Not a slow test", Filters.CMD_LINE)
 
                 if exclude_tag and ts.tags.intersection(exclude_tag):
                     instance.add_filter("Command line testsuite exclude filter", Filters.CMD_LINE)
@@ -706,19 +786,21 @@ class TestPlan:
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
-                    instance.add_filter("In test case toolchain exclude", Filters.TESTSUITE)
+                    instance.add_filter("In test case toolchain exclude", Filters.TOOLCHAIN)
 
                 if platform_filter and plat.name not in platform_filter:
                     instance.add_filter("Command line platform filter", Filters.CMD_LINE)
 
-                if ts.platform_allow and plat.name not in ts.platform_allow:
+                if ts.platform_allow \
+                        and plat.name not in ts.platform_allow \
+                        and not (platform_filter and force_platform):
                     instance.add_filter("Not in testsuite platform allow list", Filters.TESTSUITE)
 
                 if ts.platform_type and plat.type not in ts.platform_type:
                     instance.add_filter("Not in testsuite platform type list", Filters.TESTSUITE)
 
                 if ts.toolchain_allow and toolchain not in ts.toolchain_allow:
-                    instance.add_filter("Not in testsuite toolchain allow list", Filters.TESTSUITE)
+                    instance.add_filter("Not in testsuite toolchain allow list", Filters.TOOLCHAIN)
 
                 if not plat.env_satisfied:
                     instance.add_filter("Environment ({}) not satisfied".format(", ".join(plat.env)), Filters.PLATFORM)
@@ -731,6 +813,10 @@ class TestPlan:
 
                 if plat.ram < ts.min_ram:
                     instance.add_filter("Not enough RAM", Filters.PLATFORM)
+
+                if ts.harness:
+                    if ts.harness == 'robot' and plat.simulation != 'renode':
+                        instance.add_filter("No robot support for the selected platform", Filters.SKIP)
 
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))
@@ -746,14 +832,82 @@ class TestPlan:
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
 
-                test_configuration = ".".join([instance.platform.name,
-                                               instance.testsuite.id])
-                # skip quarantined tests
-                if test_configuration in self.quarantine and not self.options.quarantine_verify:
-                    instance.add_filter(f"Quarantine: {self.quarantine[test_configuration]}", Filters.QUARENTINE)
-                # run only quarantined test to verify their statuses (skip everything else)
-                if self.options.quarantine_verify and test_configuration not in self.quarantine:
-                    instance.add_filter("Not under quarantine", Filters.QUARENTINE)
+                if ts.required_snippets:
+                    missing_snippet = False
+                    snippet_args = {"snippets": ts.required_snippets}
+                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)])
+
+                    # Search and check that all required snippet files are found
+                    for this_snippet in snippet_args['snippets']:
+                        if this_snippet not in found_snippets:
+                            logger.error(f"Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
+                            instance.status = "error"
+                            instance.reason = f"Snippet {this_snippet} not found"
+                            missing_snippet = True
+                            break
+
+                    if not missing_snippet:
+                        # Look for required snippets and check that they are applicable for these
+                        # platforms/boards
+                        for this_snippet in found_snippets:
+                            matched_snippet_board = False
+
+                            # If the "appends" key is present with at least one entry then this
+                            # snippet applies to all boards and further platform-specific checks
+                            # are not required
+                            if found_snippets[this_snippet].appends:
+                                continue
+
+                            for this_board in found_snippets[this_snippet].board2appends:
+                                if this_board.startswith('/'):
+                                    match = re.search(this_board[1:-1], plat.name)
+                                    if match is not None:
+                                        matched_snippet_board = True
+                                        break
+                                elif this_board == plat.name:
+                                    matched_snippet_board = True
+                                    break
+
+                            if matched_snippet_board is False:
+                                instance.add_filter("Snippet not supported", Filters.PLATFORM)
+                                break
+
+                # platform_key is a list of unique platform attributes that form a unique key a test
+                # will match against to determine if it should be scheduled to run. A key containing a
+                # field name that the platform does not have will filter the platform.
+                #
+                # A simple example is keying on arch and simulation to run a test once per unique (arch, simulation) platform.
+                if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
+                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
+                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
+                    key_fields = sorted(set(ts.platform_key))
+                    key = [getattr(plat, key_field) for key_field in key_fields]
+                    has_all_fields = True
+                    for key_field in key_fields:
+                        if key_field is None or key_field == 'na':
+                            has_all_fields = False
+                    if has_all_fields:
+                        test_key = copy.deepcopy(key)
+                        test_key.append(ts.name)
+                        test_key = tuple(test_key)
+                        keyed_test = keyed_tests.get(test_key)
+                        if keyed_test is not None:
+                            plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
+                            instance.add_filter(f"Excluded test already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
+                        else:
+                            keyed_tests[test_key] = {'plat': plat, 'ts': ts}
+                    else:
+                        instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
+
+                # handle quarantined tests
+                if self.quarantine:
+                    matched_quarantine = self.quarantine.get_matched_quarantine(
+                        instance.testsuite.id, plat.name, plat.arch, plat.simulation
+                    )
+                    if matched_quarantine and not self.options.quarantine_verify:
+                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
+                    if not matched_quarantine and self.options.quarantine_verify:
+                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
@@ -776,7 +930,7 @@ class TestPlan:
                     else:
                         self.add_instances(instance_list)
                 else:
-                    instances = list(filter(lambda ts: ts.platform.default, instance_list))
+                    instances = list(filter(lambda ts: ts.platform.name in self.default_platforms, instance_list))
                     self.add_instances(instances)
             elif integration:
                 instances = list(filter(lambda item:  item.platform.name in ts.integration_platforms, instance_list))
@@ -785,7 +939,11 @@ class TestPlan:
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
-                    instance.add_filter("Not an emulated platform", Filters.PLATFORM)
+                    instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
+            elif vendor_platforms:
+                self.add_instances(instance_list)
+                for instance in list(filter(lambda inst: not inst.platform.vendor in vendor_filter, instance_list)):
+                    instance.add_filter("Not a selected vendor platform", Filters.CMD_LINE)
             else:
                 self.add_instances(instance_list)
 
@@ -796,16 +954,7 @@ class TestPlan:
 
         filtered_instances = list(filter(lambda item:  item.status == "filtered", self.instances.values()))
         for filtered_instance in filtered_instances:
-            # If integration mode is on all skips on integration_platforms are treated as errors.
-            if self.options.integration and filtered_instance.platform.name in filtered_instance.testsuite.integration_platforms \
-                and "Quarantine" not in filtered_instance.reason:
-                # Do not treat this as error if filter type is command line
-                filters = {t['type'] for t in filtered_instance.filters}
-                if Filters.CMD_LINE in filters or Filters.SKIP in filters:
-                    continue
-                filtered_instance.status = "error"
-                filtered_instance.reason += " but is one of the integration platforms"
-                self.instances[filtered_instance.name] = filtered_instance
+            change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
 
@@ -879,3 +1028,17 @@ class TestPlan:
         instance.build_dir = link_path
 
         self.link_dir_counter += 1
+
+
+def change_skip_to_error_if_integration(options, instance):
+    ''' All skips on integration_platforms are treated as errors.'''
+    if instance.platform.name in instance.testsuite.integration_platforms \
+        and "quarantine" not in instance.reason.lower():
+        # Do not treat this as error if filter type is command line
+        filters = {t['type'] for t in instance.filters}
+        ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
+                         Filters.TOOLCHAIN, Filters.MODULE}
+        if filters.intersection(ignore_filters):
+            return
+        instance.status = "error"
+        instance.reason += " but is one of the integration platforms"

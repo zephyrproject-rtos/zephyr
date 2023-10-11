@@ -107,11 +107,6 @@ static size_t eeprom_stm32_size(const struct device *dev)
 	return config->size;
 }
 
-static int eeprom_stm32_init(const struct device *dev)
-{
-	return 0;
-}
-
 static const struct eeprom_driver_api eeprom_stm32_api = {
 	.read = eeprom_stm32_read,
 	.write = eeprom_stm32_write,
@@ -123,6 +118,5 @@ static const struct eeprom_stm32_config eeprom_config = {
 	.size = DT_INST_REG_SIZE(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &eeprom_stm32_init, NULL, NULL,
-		    &eeprom_config, POST_KERNEL,
-		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
+		      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);

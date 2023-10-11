@@ -1,7 +1,8 @@
-.. _cfb_custom_fonts:
+.. zephyr:code-sample:: cfb-custom-fonts
+   :name: Custom fonts
+   :relevant-api: monochrome_character_framebuffer
 
-Custom Fonts
-############
+   Generate and use a custom font.
 
 Overview
 ********

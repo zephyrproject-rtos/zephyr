@@ -8,7 +8,7 @@
 
 #include <limits.h>
 
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
@@ -113,9 +113,8 @@ uint64_t sys_clock_cycle_get_64(void)
 	return OSTIMER_GetCurrentTimerValue(base);
 }
 
-static int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* Configure event timer's ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -123,9 +122,9 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
 
-	if (DT_INST_PROP(0, wakeup_source)) {
-		EnableDeepSleepIRQ(DT_INST_IRQN(0));
-	}
+#if (DT_INST_PROP(0, wakeup_source))
+	EnableDeepSleepIRQ(DT_INST_IRQN(0));
+#endif
 
 	/* Initialize the OS timer, setting clock configuration. */
 	OSTIMER_Init(base);

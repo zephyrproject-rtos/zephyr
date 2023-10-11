@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "icmpv4.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
+#include "dhcpv4.h"
 #include "ipv4.h"
 
 BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE);
@@ -302,6 +303,15 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
+
+	net_pkt_set_family(pkt, PF_INET);
+
+	if (!net_pkt_filter_ip_recv_ok(pkt)) {
+		/* drop the packet */
+		return NET_DROP;
+	}
+
 	if ((!net_ipv4_is_my_addr((struct in_addr *)hdr->dst) &&
 	     !net_ipv4_is_addr_mcast((struct in_addr *)hdr->dst) &&
 	     !(hdr->proto == IPPROTO_UDP &&
@@ -309,7 +319,8 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		/* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
 		(IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
 		 net_ipv4_addr_cmp((struct in_addr *)hdr->dst,
-				   net_ipv4_unspecified_address()))))) ||
+				   net_ipv4_unspecified_address())) ||
+		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr *)hdr->dst))) {
 		NET_DBG("DROP: not for me");
@@ -325,10 +336,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 			goto drop;
 		}
 	}
-
-	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
-
-	net_pkt_set_family(pkt, PF_INET);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
 		/* Check if this is a fragmented packet, and if so, handle reassembly */

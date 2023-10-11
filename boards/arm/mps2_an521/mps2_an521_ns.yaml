@@ -12,7 +12,8 @@ toolchain:
 testing:
   default: true
   only_tags:
-     - arm
-     - kernel
-     - tfm
-     - userspace
+    - arm
+    - kernel
+    - tfm
+    - userspace
+    - trusted-firmware-m

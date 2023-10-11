@@ -11,6 +11,32 @@ tests:
     min_flash: 250
     min_ram: 32
     harness: none
-    tags: samples display gui
+    tags:
+      - samples
+      - display
+      - gui
+      - lvgl
     modules:
       - lvgl
+    integration_platforms:
+      - native_posix_64
+  sample.display.lvgl.rk055hdmipi4m:
+    # This sample is intended to test the RT1170 and RT595, which require
+    # a display shield to work with LVGL
+    min_flash: 250
+    # The minimum RAM needed for this display is actually around 8MB,
+    # but the RT595 uses external PSRAM for the display buffer
+    min_ram: 32
+    harness: none
+    tags:
+      - samples
+      - display
+      - gui
+    modules:
+      - lvgl
+    extra_args: SHIELD="rk055hdmipi4m"
+    platform_allow:
+      - mimxrt1170_evk_cm7
+      - mimxrt595_evk_cm33
+    integration_platforms:
+      - mimxrt1170_evk_cm7

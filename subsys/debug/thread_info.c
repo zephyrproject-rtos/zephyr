@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,7 @@ enum {
 	THREAD_INFO_OFFSET_T_PREEMPT_FLOAT,
 	THREAD_INFO_OFFSET_T_COOP_FLOAT,
 	THREAD_INFO_OFFSET_T_ARM_EXC_RETURN,
+	THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE,
 };
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -38,7 +40,7 @@ enum {
  * Only version 1 is backward compatible to version 0.
  */
 __attribute__((used, section(".dbg_thread_info")))
-size_t _kernel_thread_info_offsets[] = {
+const size_t _kernel_thread_info_offsets[] = {
 	/* Version 0 starts */
 	[THREAD_INFO_OFFSET_VERSION] = 1,
 	[THREAD_INFO_OFFSET_K_CURR_THREAD] = offsetof(struct _cpu, current),
@@ -106,6 +108,10 @@ size_t _kernel_thread_info_offsets[] = {
 	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempt_float),
 	[THREAD_INFO_OFFSET_T_COOP_FLOAT] = THREAD_INFO_UNIMPLEMENTED,
+#elif defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_ARM64)
+	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
+							saved_fp_context),
+	[THREAD_INFO_OFFSET_T_COOP_FLOAT] = THREAD_INFO_UNIMPLEMENTED,
 #elif defined(CONFIG_FPU) && defined(CONFIG_X86)
 #if defined(CONFIG_X86_64)
 	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
@@ -132,16 +138,23 @@ size_t _kernel_thread_info_offsets[] = {
 #else
 	[THREAD_INFO_OFFSET_T_ARM_EXC_RETURN] = THREAD_INFO_UNIMPLEMENTED,
 #endif /* CONFIG_ARM_STORE_EXC_RETURN */
+#if defined(CONFIG_ARC)
+	[THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE] = offsetof(struct _thread_arch,
+						relinquish_cause),
+#else
+	[THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE] = THREAD_INFO_UNIMPLEMENTED,
+#endif /* CONFIG_ARC */
 };
-extern size_t __attribute__((alias("_kernel_thread_info_offsets")))
+
+extern const size_t __attribute__((alias("_kernel_thread_info_offsets")))
 		_kernel_openocd_offsets;
 
 __attribute__((used, section(".dbg_thread_info")))
-size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);
-extern size_t __attribute__((alias("_kernel_thread_info_num_offsets")))
+const size_t _kernel_thread_info_num_offsets = ARRAY_SIZE(_kernel_thread_info_offsets);
+extern const size_t __attribute__((alias("_kernel_thread_info_num_offsets")))
 		_kernel_openocd_num_offsets;
 
 __attribute__((used, section(".dbg_thread_info")))
-uint8_t _kernel_thread_info_size_t_size = (uint8_t)sizeof(size_t);
-extern uint8_t __attribute__((alias("_kernel_thread_info_size_t_size")))
+const uint8_t _kernel_thread_info_size_t_size = (uint8_t)sizeof(size_t);
+extern const uint8_t __attribute__((alias("_kernel_thread_info_size_t_size")))
 		_kernel_openocd_size_t_size;

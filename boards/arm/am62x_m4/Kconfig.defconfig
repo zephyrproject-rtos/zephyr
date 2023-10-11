@@ -1,0 +1,20 @@
+# Texas Instruments Sitara AM62x-SK-M4 EVM
+#
+# Copyright (c) 2023 Texas Instruments Incorporated
+# Copyright (c) 2023 L Lakshmanan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AM62X_M4_SK
+
+config BOARD
+	default "am62x_m4_sk"
+
+endif # BOARD_AM62X_M4_SK
+
+if BOARD_AM62X_M4_PHYBOARD_LYRA
+
+config BOARD
+	default "am62x_m4_phyboard_lyra"
+
+endif # BOARD_AM62X_M4_PHYBOARD_LYRA

@@ -7,7 +7,9 @@
 /dts-v1/;
 #include <st/f7/stm32f769Xi.dtsi>
 #include <st/f7/stm32f769nihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32F769I DISCOVERY board";
@@ -20,7 +22,6 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
-		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -28,6 +29,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 
 	leds {
@@ -55,7 +57,13 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft6202>;
 	};
 
 	aliases {
@@ -64,7 +72,6 @@
 		led2 = &green_led_3;
 		led3 = &red_led_4;
 		sw0 = &user_button;
-		kscan0 = &touch_controller;
 		spi-flash0 = &mx25l51245g;
 	};
 };
@@ -122,7 +129,7 @@ arduino_serial: &usart6 {};
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	touch_controller: ft6202@2a {
+	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
 		int-gpios = <&gpioi 13 0>;

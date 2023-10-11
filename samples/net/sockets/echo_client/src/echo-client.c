@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
-#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 
 #if defined(CONFIG_USERSPACE)
 #include <zephyr/app_memory/app_memdomain.h>
@@ -247,7 +247,6 @@ static void init_app(void)
 	if (err < 0) {
 		LOG_ERR("Failed to register public certificate: %d", err);
 	}
-#endif
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	err = tls_credential_add(PSK_TAG,
@@ -264,17 +263,20 @@ static void init_app(void)
 	if (err < 0) {
 		LOG_ERR("Failed to register PSK ID: %d", err);
 	}
-#endif
+#endif /* defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) */
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
 
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
 		net_mgmt_init_event_callback(&mgmt_cb,
 					     event_handler, EVENT_MASK);
 		net_mgmt_add_event_callback(&mgmt_cb);
 
-		net_conn_mgr_resend_status();
+		conn_mgr_mon_resend_status();
 	}
 
 	init_vlan();
+	init_udp();
 }
 
 static int start_client(void)
@@ -307,7 +309,7 @@ static int start_client(void)
 	return ret;
 }
 
-void main(void)
+int main(void)
 {
 	init_app();
 
@@ -330,4 +332,5 @@ void main(void)
 #else
 	exit(start_client());
 #endif
+	return 0;
 }

@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32g051", "st,stm32g0", "simple-bus";
+
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
@@ -16,6 +18,11 @@
 			interrupts = <17 0>;
 			interrupt-names = "global";
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -27,6 +34,11 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		timers15: timers@40014000 {
@@ -43,6 +55,11 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 

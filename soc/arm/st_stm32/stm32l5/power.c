@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	if (state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", state);
@@ -66,7 +66,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	if (state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power substate-id %u", state);
@@ -98,17 +98,11 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(const struct device *dev)
+static int stm32_power_init(void)
 {
-	ARG_UNUSED(dev);
 
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-#ifdef CONFIG_DEBUG
-	/* Enable the Debug Module during all and any Low power mode */
-	LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
 
 	return 0;
 }

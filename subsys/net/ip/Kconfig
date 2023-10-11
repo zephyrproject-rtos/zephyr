@@ -2,6 +2,7 @@
 
 # Copyright (c) 2016 Intel Corporation.
 # Copyright (c) 2021 Nordic Semiconductor
+# Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 menu "IP stack"
@@ -52,6 +53,14 @@ config NET_OFFLOAD
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
+config NET_OFFLOADING_SUPPORT
+	bool
+	default y if NET_OFFLOAD || NET_SOCKETS_OFFLOAD
+	help
+	  Hidden option that is set if either NET_OFFLOAD or
+	  NET_SOCKETS_OFFLOAD is set. This allows us to check
+	  only one option instead of two.
+
 if NET_OFFLOAD
 module = NET_OFFLOAD
 module-dep = NET_LOG
@@ -71,7 +80,7 @@ config NET_RAW_MODE
 
 if !NET_RAW_MODE
 
-choice
+choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
 	default NET_QEMU_PPP if NET_PPP
 	default NET_QEMU_SLIP
@@ -289,6 +298,12 @@ config NET_RX_DEFAULT_PRIORITY
 	  What is the default network RX packet priority if user has not set
 	  one. The value 0 means lowest priority and 7 is the highest.
 
+config NET_ALLOW_ANY_PRIORITY
+	bool "Allow any network packet priority to be used"
+	help
+	  If this is set, then any user given network packet priority can be used. Otherwise
+	  the network packet priorities are limited to 0-7 range.
+
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
 	default y
@@ -455,6 +470,14 @@ config NET_TCP_FAST_RETRANSMIT
 	  In that case a retransmission is triggerd to avoid having to wait for
 	  the retransmit timer to elapse.
 
+config NET_TCP_CONGESTION_AVOIDANCE
+	bool "Implement a congestion avoidance algorithm in TCP"
+	depends on NET_TCP
+	default y
+	help
+	  To avoid overstressing a link reduce the transmission rate as soon as
+	  packets are starting to drop.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	depends on NET_TCP
@@ -480,7 +503,7 @@ config NET_TCP_MAX_RECV_WINDOW_SIZE
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"
 	depends on NET_TCP
-	default 100
+	default 2000
 	range 0 10000
 	help
 	  If we receive out-of-order TCP data, we queue it. This value tells
@@ -494,8 +517,20 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
+config NET_TCP_PKT_ALLOC_TIMEOUT
+	int "How long to wait for a TCP packet allocation (in ms)"
+	depends on NET_TCP
+	default 100
+	range 10 1000
+	help
+	  The TCP network stack allocates packets from the buffers and the
+	  allocation can take some time depending on the situation.
+	  This value indicates how long the stack should wait for the packet to
+	  be allocated, before returning an internal error and trying again.
+
 config NET_TCP_WORKQ_STACK_SIZE
 	int "TCP work queue thread stack size"
+	default 1200 if X86
 	default 1024
 	depends on NET_TCP
 	help
@@ -512,6 +547,22 @@ config NET_TCP_ISN_RFC6528
 	  Implement Initial Sequence Number calculation as described in
 	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
 	  If this is not set, then sys_rand32_get() is used for ISN value.
+
+config NET_TCP_WORKER_PRIO
+	int "Priority of the TCP work queue"
+	default 2
+	depends on NET_TCP
+	help
+	  Set the priority of the the TCP worker queue, that handles all
+	  transmission and maintenance within the TCP stack.
+	  Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
+	  Make sure the priority is lower than lower layer TX threads to
+	  avoid the TCP stack consume all net_bufs before transferring
+	  execution to the lower layer network stack, with a high risk of
+	  running out of net_bufs.
 
 config NET_TEST_PROTOCOL
 	bool "JSON based test protocol (UDP)"
@@ -535,6 +586,7 @@ config NET_UDP_CHECKSUM
 
 config NET_UDP_MISSING_CHECKSUM
 	bool "Accept missing checksum (IPv4 only)"
+	default y
 	depends on NET_UDP && NET_IPV4
 	help
 	  RFC 768 states the possibility to have a missing checksum, for
@@ -645,6 +697,20 @@ config NET_CONTEXT_DSCP_ECN
 	  Notification values on net_context. Those values are then used in
 	  IPv4/IPv6 header when sending packets over net_context.
 
+config NET_CONTEXT_REUSEADDR
+	bool "Add REUSEADDR support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEADDR flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address.
+
+config NET_CONTEXT_REUSEPORT
+	bool "Add REUSEPORT support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEPORT flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address and port combination.
+
 config NET_TEST
 	bool "Network Testing"
 	help
@@ -754,7 +820,9 @@ config NET_BUF_DATA_POOL_SIZE
 
 config NET_PKT_BUF_USER_DATA_SIZE
 	int "Size of user_data available in rx and tx network buffers"
+	default BT_CONN_TX_USER_DATA_SIZE if NET_L2_BT
 	default 4
+	range BT_CONN_TX_USER_DATA_SIZE 16 if NET_L2_BT
 	range 4 16
 	help
 	  User data size used in rx and tx network buffers.
@@ -813,14 +881,34 @@ config NET_DEFAULT_IF_PPP
 	bool "PPP interface"
 	depends on NET_L2_PPP
 
+config NET_DEFAULT_IF_WIFI
+	bool "WiFi interface"
+	depends on NET_L2_ETHERNET
+
 endchoice
+
+config NET_INTERFACE_NAME
+	bool "Allow setting a name to a network interface"
+	default y
+	help
+	  Allow application to set a name to the network interface in order
+	  to simplify network interface management.
+
+config NET_INTERFACE_NAME_LEN
+	int "Network interface max name length"
+	default 8
+	range 1 15
+	depends on NET_INTERFACE_NAME
+	help
+	  Maximum length of the network interface name.
 
 config NET_PKT_TIMESTAMP
 	bool "Network packet timestamp support"
 	help
 	  Enable network packet timestamp support. This is needed for
 	  example in gPTP which needs to know how long it takes to send
-	  a network packet.
+	  a network packet or for timed radio protocols like IEEE 802.15.4
+	  CSL and TSCH.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"

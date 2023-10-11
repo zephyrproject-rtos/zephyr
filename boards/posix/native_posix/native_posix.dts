@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <posix/posix.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -20,10 +21,8 @@
 		zephyr,flash = &flash0;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flashcontroller0;
-		zephyr,ec-host-interface = &hcp;
 		zephyr,display = &sdl_dc;
 		zephyr,canbus = &can_loopback0;
-		zephyr,keyboard-scan = &sdl_kscan;
 	};
 
 	aliases {
@@ -31,7 +30,7 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		led0 = &led0;
-		kscan0 = &sdl_kscan;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -40,6 +39,11 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&input_sdl_touch>;
 	};
 
 	cpus {
@@ -156,11 +160,6 @@
 		compatible = "zephyr,native-posix-counter";
 	};
 
-	hcp: ec-host-cmd-periph {
-		status = "okay";
-		compatible = "zephyr,sim-ec-host-cmd-periph";
-	};
-
 	gpio0: gpio@800 {
 		status = "okay";
 		compatible = "zephyr,gpio-emul";
@@ -183,14 +182,13 @@
 		width = <320>;
 	};
 
-	sdl_kscan: sdl_kscan {
-		compatible = "zephyr,sdl-kscan";
+	input_sdl_touch: input-sdl-touch {
+		compatible = "zephyr,input-sdl-touch";
 	};
 
 	can_loopback0: can_loopback0 {
 		status = "okay";
 		compatible = "zephyr,can-loopback";
-		sjw = <1>;
 		sample-point = <875>;
 		bus-speed = <125000>;
 	};
@@ -202,8 +200,20 @@
 		 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
 		 */
 		host-interface = "zcan0";
-		sjw = <1>;
 		sample-point = <875>;
 		bus-speed = <125000>;
+	};
+
+	rtc: rtc {
+		status = "okay";
+		compatible = "zephyr,rtc-emul";
+		alarms-count = <2>;
+	};
+
+	adc0: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <2>;
+		#io-channel-cells = <1>;
+		status = "okay";
 	};
 };

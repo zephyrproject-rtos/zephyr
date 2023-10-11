@@ -1,0 +1,18 @@
+sample:
+  name: GPIO with custom devicetree binding
+tests:
+  sample.basic.custom_dts_binding:
+    tags:
+      - gpio
+      - devicetree
+    platform_allow: nucleo_l073rz
+    integration_platforms:
+      - nucleo_l073rz
+    depends_on: gpio
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Initializing pin with inactive level."
+        - "Waiting one second."
+        - "Setting pin to active level."

@@ -832,7 +832,9 @@ sa_end:
 
 	compressed = inline_pos - pkt->buffer->data;
 
-	net_buf_pull(pkt->buffer, compressed);
+	net_pkt_cursor_init(pkt);
+	net_pkt_pull(pkt, compressed);
+	net_pkt_compact(pkt);
 
 	return compressed;
 }

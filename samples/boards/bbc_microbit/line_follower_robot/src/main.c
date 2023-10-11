@@ -95,17 +95,17 @@ static void line_follow(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
-	if (!device_is_ready(left_gpio.port) ||
-	    !device_is_ready(right_gpio.port)) {
+	if (!gpio_is_ready_dt(&left_gpio) ||
+	    !gpio_is_ready_dt(&right_gpio)) {
 		printk("Left/Right GPIO controllers not ready.\n");
-		return;
+		return 0;
 	}
 
 	if (!device_is_ready(motorctl.bus)) {
 		printk("Motor controller I2C bus not ready.\n");
-		return;
+		return 0;
 	}
 
 	/* Setup gpio to read data from digital line sensors of the robot */
@@ -123,4 +123,5 @@ void main(void)
 	while (1) {
 		line_follow();
 	}
+	return 0;
 }

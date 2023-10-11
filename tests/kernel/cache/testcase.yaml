@@ -1,4 +1,22 @@
 tests:
   kernel.cache.api:
-    tags: kernel cache
+    tags:
+      - kernel
+      - cache
     filter: CONFIG_CACHE_MANAGEMENT
+    integration_platforms:
+      - qemu_xtensa
+      - qemu_cortex_a53
+      - nsim_em
+  kernel.cache.api.minimallibc:
+    tags:
+      - kernel
+      - cache
+      - libc
+    filter: CONFIG_CACHE_MANAGEMENT and CONFIG_MINIMAL_LIBC_SUPPORTED
+    integration_platforms:
+      - qemu_xtensa
+      - qemu_cortex_a53
+      - nsim_em
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

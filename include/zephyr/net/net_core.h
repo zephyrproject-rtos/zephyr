@@ -29,6 +29,7 @@ extern "C" {
 /**
  * @brief Networking
  * @defgroup networking Networking
+ * @ingroup connectivity
  * @{
  * @}
  */

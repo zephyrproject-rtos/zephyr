@@ -1,27 +1,37 @@
 # Copyright Runtime.io 2018. All rights reserved.
-# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig MCUMGR_SMP_UART
+# The Kconfig file is dedicated to UART transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_UART_
+
+menuconfig MCUMGR_TRANSPORT_UART
 	bool "UART mcumgr SMP transport"
+	depends on CONSOLE
+	depends on BASE64
 	select UART_MCUMGR
-	select BASE64
 	help
 	  Enables handling of SMP commands received over UART.  This is a
-	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
+	  lightweight alternative to MCUMGR_TRANSPORT_SHELL.  It allows mcumgr
 	  commands to be received over UART without requiring an additional
 	  thread.
 
-if UART_ASYNC_API && MCUMGR_SMP_UART
+if MCUMGR_TRANSPORT_UART
 
-menuconfig MCUMGR_SMP_UART_ASYNC
+if UART_ASYNC_API
+
+menuconfig MCUMGR_TRANSPORT_UART_ASYNC
 	bool "Use async UART API when available"
 	help
 	  The option enables use of UART async API when available for selected mcumgr uart port.
 
-if MCUMGR_SMP_UART_ASYNC
+if MCUMGR_TRANSPORT_UART_ASYNC
 
-config MCUMGR_SMP_UART_ASYNC_BUFS
+config MCUMGR_TRANSPORT_UART_ASYNC_BUFS
 	int "Number of async RX UART buffers"
 	range 2 8
 	default 2
@@ -31,21 +41,22 @@ config MCUMGR_SMP_UART_ASYNC_BUFS
 	  receive data without stopping due to running out of buffer space.  At least two buffers
 	  area required for smooth RX operation.
 
-config MCUMGR_SMP_UART_ASYNC_BUF_SIZE
+config MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE
 	int "Size of single async RX UART buffer"
 	default 64
 	help
 	  The size of single buffer for asynchronous RX.
 
-endif # MCUMGR_SMP_UART_ASYNC
+endif # MCUMGR_TRANSPORT_UART_ASYNC
 
 endif # UART_ASYNC_API
 
-config MCUMGR_SMP_UART_MTU
+config MCUMGR_TRANSPORT_UART_MTU
 	int "UART SMP MTU"
 	default 256
-	depends on MCUMGR_SMP_UART
 	help
 	  Maximum size of SMP frames sent and received over UART, in bytes.
 	  This value must satisfy the following relation:
-	  MCUMGR_SMP_UART_MTU <= MCUMGR_BUF_SIZE + 2
+	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+
+endif # MCUMGR_TRANSPORT_UART

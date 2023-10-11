@@ -25,8 +25,13 @@ extern "C" {
 /** Number of used VRING buffers. */
 #define VRING_COUNT	(2)
 
-/** VRING alignment. */
-#define VRING_ALIGNMENT	CONFIG_IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
+/**
+ * Memory alignment.
+ *
+ * This should take into account the cache line if the cache is enabled, otherwise
+ * it should be naturally aligned to the machine word size.
+ */
+#define MEM_ALIGNMENT	CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
 /**
  * @typedef ipc_notify_cb

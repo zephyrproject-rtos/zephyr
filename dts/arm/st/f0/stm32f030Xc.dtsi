@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <st/f0/stm32f030.dtsi>
+#include <st/f0/stm32f030X8.dtsi>
 
 / {
 	sram0: memory@20000000 {
@@ -15,18 +15,9 @@
 	soc {
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
+				erase-block-size = <2048>;
 				reg = <0x08000000 DT_SIZE_K(256)>;
 			};
-		};
-
-		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
-			interrupts = <26 3>;
-			status = "disabled";
 		};
 
 		/*
@@ -68,6 +59,17 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
 			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			resets = <&rctl STM32_RESET(APB1, 5U)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 		};
 	};

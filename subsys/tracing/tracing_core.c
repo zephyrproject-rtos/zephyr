@@ -87,9 +87,8 @@ static void tracing_set_state(enum tracing_state state)
 	atomic_set(&tracing_state, state);
 }
 
-static int tracing_init(const struct device *arg)
+static int tracing_init(void)
 {
-	ARG_UNUSED(arg);
 
 	tracing_buffer_init();
 

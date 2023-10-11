@@ -1,0 +1,204 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Lexmark International, Inc.
+
+# ARM architecture VFP configuration options
+
+# Math coprocessor symbols; these should be selected by the CPU symbol to
+# indicate that the CPU core can be configured with the specified
+# coprocessor(s).
+
+config CPU_HAS_VFP
+	bool
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
+	help
+	  This option signifies the support for a Vectored Floating-Point (VFP)
+	  coprocessor.
+
+config CPU_HAS_NEON
+	bool
+	select CPU_HAS_FPU
+	help
+	  This option signifies the support for a NEON (Advanced SIMD) coprocessor.
+
+# VFP type symbols; these should be selected by the SoC symbol to specify the
+# type of the VFP core instantiated by the SoC.
+
+config VFP_SP_D16
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports only single-precision operations with 16 double-word
+	  registers.
+
+config VFP_SP_D16_FP16
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half- and single-precision operations with 16
+	  double-word registers.
+
+config VFP_SP_D16_FP16_FMAC
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_FMAC
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half- and single-precision operations (including fused
+	  multiply-accumulate) with 16 double-word registers.
+
+config VFP_DP_D16
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports single- and double-precision operations with 16
+	  double-word registers.
+
+config VFP_DP_D16_FP16
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single- and double-precision operations with 16
+	  double-word registers.
+
+config VFP_DP_D16_FP16_FMAC
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_FMAC
+	select VFP_FEATURE_REGS_S32_D16
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single- and double-precision operations
+	  (including fused multiply-accumulate) with 16 double-word registers.
+
+config VFP_U_DP_D16_FP16_FMAC
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_FMAC
+	select VFP_FEATURE_REGS_S32_D16
+	select VFP_FEATURE_TRAP
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single-, double-precision operations (including
+	  fused multiply-accumulate) and floating-point exception trapping with 16
+	  double-word registers.
+
+config VFP_DP_D32_FP16_FMAC
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_FMAC
+	select VFP_FEATURE_REGS_S64_D32
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single- and double-precision operations
+	  (including fused multiply-accumulate) with 32 double-word registers.
+
+config VFP_U_DP_D32_FP16_FMAC
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_HALF_PRECISION
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_FMAC
+	select VFP_FEATURE_REGS_S64_D32
+	select VFP_FEATURE_TRAP
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single-, double-precision operations (including
+	  fused multiply-accumulate) and floating-point exception trapping with 32
+	  double-word registers.
+
+if CPU_HAS_VFP
+
+# VFP feature symbols; these are the helper symbols used by the floating-point
+# support code to resolve the supported VFP features.
+
+config VFP_FEATURE_HALF_PRECISION
+	bool
+	help
+	  This option signifies that the VFP coprocessor supports
+	  half-precision operations (half-precision extension).
+
+config VFP_FEATURE_SINGLE_PRECISION
+	bool
+	help
+	  This option signifies that the VFP coprocessor supports
+	  single-precision operations.
+
+config VFP_FEATURE_DOUBLE_PRECISION
+	bool
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	help
+	  This option signifies that the VFP coprocessor supports
+	  double-precision operations.
+
+config VFP_FEATURE_VECTOR
+	bool
+	help
+	  This option signifies that the VFP coprocessor supports vector
+	  operations.
+
+config VFP_FEATURE_FMAC
+	bool
+	help
+	  This option signifies that the VFP coprocessor supports the fused
+	  multiply-accumulate operations.
+
+config VFP_FEATURE_REGS_S32_D16
+	bool
+	help
+	  This option signifies that the VFP coprocessor implements 16
+	  double-precision (32 single-precision) floating-point registers.
+
+config VFP_FEATURE_REGS_S64_D32
+	bool
+	help
+	  This option signifies that the VFP coprocessor implements 32
+	  double-precision (64 single-precision) floating-point registers.
+
+config VFP_FEATURE_TRAP
+	bool
+	help
+	  This option signifies that the VFP coprocessor supports the trapping
+	  of floating-point exceptions to allow software implementation of
+	  the unsupported VFP instructions.
+
+endif # CPU_HAS_VFP
+
+# Advanced SIMD type symbols; these should be selected by the SoC symbol to
+# specify the type of the VFP core instantiated by the SoC.
+
+config NEON
+	bool
+	select CPU_HAS_NEON
+	help
+	  This option signifies the use of a NEON Advanced SIMD coprocessor.

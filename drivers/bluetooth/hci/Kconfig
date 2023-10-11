@@ -7,25 +7,23 @@ comment "Bluetooth HCI Driver Options"
 
 config BT_UART
 	bool
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
 
 choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
 
 config BT_H4
 	bool "H:4 UART"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
 	select EXPERIMENTAL
-	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
@@ -41,7 +39,7 @@ config BT_RPMSG
 
 config BT_SPI
 	bool "SPI HCI"
-	depends on SPI
+	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
@@ -55,6 +53,20 @@ config BT_STM32_IPM
 	select HAS_STM32LIB
 	help
 	  TODO
+
+config BT_SILABS_HCI
+	bool "Silicon Labs Bluetooth interface"
+	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24 || SOC_SERIES_EFR32BG27
+	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
+	select SOC_GECKO_USE_RAIL
+	select ENTROPY_GENERATOR
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
 
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
@@ -76,8 +88,16 @@ config BT_B91
 	help
 	  Telink B91 HCI bluetooth interface
 
+config BT_PSOC6_BLESS
+	bool "PSOC6 BLESS driver"
+	select BT_HCI_SETUP
+	help
+	  PSOC6 BLESS driver with BLE Controller which operates in
+	  Single CPU mode.
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
+	select BT_HAS_HCI_VS
 	help
 	  This is intended for unit tests where no internal driver
 	  should be selected.
@@ -109,6 +129,19 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
+menuconfig BT_CYW43XXX
+	bool "CYW43XXX BT connectivity"
+	default y
+	select BT_HCI_SETUP
+	depends on GPIO
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
+	depends on BT_H4
+	help
+	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
+	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
+	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.infineon"
+
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
@@ -134,3 +167,26 @@ config BT_HCI_SETUP
 	  The user should generally avoid changing it via menuconfig or in
 	  configuration files. This option are enabled by the vendor-specific
 	  HCI extension, where the Setup function is implemented.
+
+config BT_DRV_TX_STACK_SIZE
+	int
+	default 256
+	help
+	  Stack size for the HCI driver's TX thread.
+
+config BT_DRV_RX_STACK_SIZE
+	int
+	default 512 if BT_SPI
+	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
+	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
+	default 256
+	help
+	  Stack size for the HCI driver's RX thread.
+
+config BT_SILABS_HCI_BUFFER_MEMORY
+	int "Silicon Labs Bluetooth Library memory buffer size"
+	depends on BT_SILABS_HCI
+	default 6144
+	help
+	  Select the size of allocated memory buffer for the Silicon Labs
+	  Bluetooth Library.

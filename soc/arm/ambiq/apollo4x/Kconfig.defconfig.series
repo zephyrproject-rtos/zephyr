@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+if SOC_SERIES_APOLLO4X
+
+source "soc/arm/ambiq/apollo4x/Kconfig.defconfig.apollo4*"
+
+config SOC_SERIES
+	default "apollo4x"
+
+endif # SOC_SERIES_APOLLO4X

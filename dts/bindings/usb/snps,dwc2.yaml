@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: DesignWare OTG USB 2.0 controller
+
+compatible: "snps,dwc2"
+
+include: [base.yaml]
+
+bus: usb
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  phys:
+    type: phandle

@@ -32,3 +32,7 @@
 		/* usbc.rst usbc-port end */
 	};
 };
+
+&ucpd1 {
+	dead-battery;
+};

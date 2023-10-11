@@ -8,15 +8,15 @@ compatible: "nuvoton,npcx-miwu"
 include: [base.yaml]
 
 properties:
-    index:
-        type: int
-        required: true
-        description: index of miwu device
+  index:
+    type: int
+    required: true
+    description: index of miwu device
 
-    "#miwu-cells":
-        type: int
-        required: true
-        description: Number of items to present a MIWU input souce specifier
+  "#miwu-cells":
+    type: int
+    required: true
+    description: Number of items to present a MIWU input souce specifier
 
 miwu-cells:
   - group

@@ -452,6 +452,7 @@ struct net_stats_eth {
 	net_stats_t tx_dropped;
 	net_stats_t tx_timeout_count;
 	net_stats_t tx_restart_queue;
+	net_stats_t unknown_protocol;
 #ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
 	/** Array is terminated with an entry containing a NULL key */
 	struct net_stats_eth_vendor *vendor;

@@ -19,3 +19,4 @@ supported:
   - usb_device
   - watchdog
   - lora
+vendor: rak

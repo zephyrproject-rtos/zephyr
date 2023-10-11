@@ -108,10 +108,13 @@ struct ll_sync_iso_set {
 	/* Periodic Advertising Sync that contained the BIGInfo */
 	struct ll_sync_set *sync;
 
+	/* Periodic Advertising Sync timeout */
 	uint16_t timeout;
-
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
-	uint16_t timeout_expire;
+	uint16_t timeout_expire; /* timeout countdown */
+
+	/* Encryption */
+	uint8_t gltk[16];
 
 	/* node rx type with memory aligned storage for sync lost reason.
 	 * HCI will reference the value using the pdu member of

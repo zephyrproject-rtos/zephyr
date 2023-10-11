@@ -12,8 +12,9 @@ extern "C" {
 #endif
 
 /* slp_idx = [0, 4], bitpos = [0, 31] refer above */
-#define MCHP_XEC_PCR_SCR_ENCODE(slp_idx, bitpos)			\
-	(((uint16_t)(slp_idx) & 0x7u) | (((uint16_t)bitpos & 0x1fu) << 3))
+#define MCHP_XEC_PCR_SCR_ENCODE(slp_idx, bitpos, domain)			\
+	((((uint32_t)(domain) & 0xff) << 24) | (((bitpos) & 0x1f) << 3)		\
+	 | ((uint32_t)(slp_idx) & 0x7))
 
 #define MCHP_XEC_PCR_SCR_GET_IDX(e)	((e) & 0x7u)
 #define MCHP_XEC_PCR_SCR_GET_BITPOS(e)	(((e) & 0xf8u) >> 3)

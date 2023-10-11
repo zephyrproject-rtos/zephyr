@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Stephen Boylan <stephen.boylan@beechwoods.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RPI_PICO_PIO
+	bool "Raspberry Pi PICO PIO SPI controller driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_SPI_PIO_ENABLED
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	help
+	  Enable driving SPI via PIO on the PICO

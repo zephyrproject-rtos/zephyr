@@ -1,0 +1,12 @@
+common:
+  build_only: true
+  filter: CONFIG_PLIC
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv64
+  tags:
+    - drivers
+    - interrupt
+    - plic
+tests:
+  drivers.interrupt_controller.intc_plic.build: {}

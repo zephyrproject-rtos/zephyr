@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_MCUX_DCP
+	bool "NXP Data Co-Processor (DCP) driver"
+	default y
+	depends on HAS_MCUX_CACHE
+	depends on DT_HAS_NXP_MCUX_DCP_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  Enable NXP Data Co-Processor (DCP) driver.
+
+config CRYPTO_MCUX_DCP_MAX_SESSION
+	int "Maximum number of sessions NXP DCP crypto driver can handle"
+	range 1 4
+	default 2
+	depends on CRYPTO_MCUX_DCP
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.

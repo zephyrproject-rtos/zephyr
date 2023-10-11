@@ -107,7 +107,7 @@ features:
      - N/A
 
 The default configuration can be found in the Kconfig
-:zephyr_file:`boards/arm/tdk_robokit1/tdk_robotkit1_defconfig`.
+:zephyr_file:`boards/arm/tdk_robokit1/tdk_robokit1_defconfig`.
 
 Connections and IOs
 ===================

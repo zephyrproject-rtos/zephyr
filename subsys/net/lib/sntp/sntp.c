@@ -164,7 +164,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	}
 
 	ctx->sock.fds[ctx->sock.nfds].fd = ctx->sock.fd;
-	ctx->sock.fds[ctx->sock.nfds].events = POLLIN;
+	ctx->sock.fds[ctx->sock.nfds].events = ZSOCK_POLLIN;
 	ctx->sock.nfds++;
 
 	return 0;

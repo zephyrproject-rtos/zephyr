@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Laird Connectivity
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +8,11 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "bl652_dvk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Laird BL652 DVK";
-	compatible = "laird,bl652_dvk";
+	compatible = "lairdconnect,bl652_dvk";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -40,10 +42,12 @@
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 		button2: button_2 {
 			gpios = <&gpio0 15 GPIO_PULL_UP>;
 			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -56,11 +60,16 @@
 		mcuboot-button0 = &button1;
 		mcuboot-led0 = &led1;
 		watchdog0 = &wdt0;
+		bbram0 = &extrtc0;
 	};
 };
 
 &adc {
 	status = "okay";
+};
+
+&uicr {
+	gpio-as-nreset;
 };
 
 &gpiote {
@@ -93,6 +102,12 @@
 		reg = <0x60>;
 		#io-channel-cells = <1>;
 		status = "disabled";
+	};
+
+	extrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6f>;
+		status = "okay";
 	};
 };
 

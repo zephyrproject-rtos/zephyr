@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   check_compliance:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -27,7 +27,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
         pip3 install west
 
     - name: west setup
@@ -44,6 +44,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
+        west config manifest.group-filter -- +ci,+optional
         west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
     - name: Run Compliance Tests
@@ -61,7 +62,7 @@ jobs:
 
     - name: upload-results
       uses: actions/upload-artifact@v3
-      continue-on-error: True
+      continue-on-error: true
       with:
         name: compliance.xml
         path: compliance.xml

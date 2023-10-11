@@ -176,7 +176,7 @@ static inline bool tach_npcx_is_captured(const struct device *dev)
 
 	LOG_DBG("port A is captured %d, port b is captured %d",
 		IS_BIT_SET(inst->TECTRL, NPCX_TECTRL_TAPND),
-		IS_BIT_SET(inst->TECTRL, NPCX_TECTRL_TAPND));
+		IS_BIT_SET(inst->TECTRL, NPCX_TECTRL_TBPND));
 
 	/*
 	 * In mode 5, the flag TAPND or TBPND indicates a input captured on
@@ -259,6 +259,8 @@ int tach_npcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	if (tach_npcx_is_underflow(dev)) {
 		/* Clear pending flags */
 		tach_npcx_clear_underflow_flag(dev);
+		/* Clear stale captured data */
+		tach_npcx_clear_captured_flag(dev);
 		data->capture = 0;
 
 		return 0;
@@ -320,14 +322,14 @@ static int tach_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on tachometer clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 					&config->clk_cfg, &data->input_clk);
 	if (ret < 0) {
 		LOG_ERR("Get tachometer clock rate error %d", ret);

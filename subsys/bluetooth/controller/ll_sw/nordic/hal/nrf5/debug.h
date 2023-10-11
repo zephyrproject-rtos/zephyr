@@ -33,6 +33,7 @@
 #define DEBUG_PIN9       BIT(DEBUG_PIN_IDX9)
 #if defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP) || \
 	(defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS) && defined(CONFIG_BUILD_WITH_TFM))
+#include <soc_secure.h>
 #define DEBUG_SETUP() \
 	do { \
 		soc_secure_gpio_pin_mcu_select(32 + DEBUG_PIN_IDX0, NRF_GPIO_PIN_SEL_NETWORK); \
@@ -342,4 +343,40 @@
 #define DEBUG_RADIO_PREPARE_M(flag)
 #define DEBUG_RADIO_START_M(flag)
 #define DEBUG_RADIO_CLOSE_M(flag)
+#endif /* CONFIG_BT_CTLR_DEBUG_PINS */
+
+#if defined(CONFIG_BT_CTLR_DEBUG_PINS) || \
+	defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
+#define DEBUG_COEX_PORT NRF_P1
+#define DEBUG_COEX_PIN_GRANT BIT(12)
+#define DEBUG_COEX_PIN_IRQ BIT(13)
+#define DEBUG_COEX_PIN_MASK    (DEBUG_COEX_PIN_IRQ | DEBUG_COEX_PIN_GRANT)
+#define DEBUG_COEX_INIT() \
+	do { \
+		DEBUG_COEX_PORT->DIRSET = DEBUG_COEX_PIN_MASK; \
+		DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_MASK; \
+	} while (0)
+
+#define DEBUG_COEX_GRANT(flag) \
+	do { \
+		if (flag) { \
+			DEBUG_COEX_PORT->OUTSET = DEBUG_COEX_PIN_GRANT; \
+		} else { \
+			DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_GRANT; \
+		} \
+	} while (0)
+
+
+#define DEBUG_COEX_IRQ(flag) \
+	do { \
+		if (flag) { \
+			DEBUG_COEX_PORT->OUTSET = DEBUG_COEX_PIN_IRQ; \
+		} else { \
+			DEBUG_COEX_PORT->OUTCLR = DEBUG_COEX_PIN_IRQ; \
+		} \
+	} while (0)
+#else
+#define DEBUG_COEX_INIT()
+#define DEBUG_COEX_GRANT(flag)
+#define DEBUG_COEX_IRQ(flag)
 #endif /* CONFIG_BT_CTLR_DEBUG_PINS */

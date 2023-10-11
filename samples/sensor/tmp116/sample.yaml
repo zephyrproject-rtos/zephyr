@@ -9,7 +9,7 @@ tests:
     tags: sensors
     depends_on: i2c
     harness_config:
-        type: one_line
-        regex:
-            - "temp is (.*) oC"
-        fixture: fixture_i2c_tmp116
+      type: one_line
+      regex:
+        - "temp is (.*) oC"
+      fixture: fixture_i2c_tmp116

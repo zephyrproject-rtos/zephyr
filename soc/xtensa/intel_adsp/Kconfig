@@ -6,6 +6,7 @@
 config SOC_FAMILY_INTEL_ADSP
 	select WINSTREAM
 	select ARCH_SUPPORTS_COREDUMP
+	select CPU_HAS_DCACHE
 	bool
 
 if SOC_FAMILY_INTEL_ADSP
@@ -93,6 +94,13 @@ config ADSP_INIT_HPSRAM
 	default y
 	help
 	  Need to init HP SRAM.
+
+config ADSP_POWER_DOWN_HPSRAM
+	bool
+	default n if ZTEST
+	default y
+	help
+	 Switch off HP SRAM during power down.
 
 config ADSP_DISABLE_L2CACHE_AT_BOOT
 	bool

@@ -8,5 +8,7 @@ toolchain:
   - xtools
 supported:
   - counter
+  - gpio
 ram: 24
 flash: 192
+vendor: nordic

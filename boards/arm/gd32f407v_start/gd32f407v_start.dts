@@ -7,6 +7,7 @@
 
 #include <gigadevice/gd32f4xx/gd32f407xk.dtsi>
 #include "gd32f407v_start-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "GigaDevice GD32F407V-START";
@@ -31,6 +32,7 @@
 		user_key: user_key {
 			label = "USER_KEY";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 

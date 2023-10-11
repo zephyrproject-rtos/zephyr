@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt1024.dtsi>
 #include "mimxrt1024_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP MIMXRT1024-EVK board";
@@ -53,6 +54,7 @@
 		user_button: button-1 {
 			label = "User SW4";
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -95,8 +97,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	int-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
-	reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+	int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 	ptp {
 		status = "okay";
 		pinctrl-0 = <&pinmux_ptp>;

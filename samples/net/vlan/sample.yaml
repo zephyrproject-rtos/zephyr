@@ -1,6 +1,8 @@
 common:
   harness: net
-  tags: net vlan
+  tags:
+    - net
+    - vlan
 sample:
   description: Test VLAN functionality
   name: VLAN sample app

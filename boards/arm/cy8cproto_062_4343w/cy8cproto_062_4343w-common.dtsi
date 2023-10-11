@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2021 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_bt;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt13 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&gpio_prt12 {
+	status = "okay";
+};
+
+&gpio_prt13 {
+	status = "okay";
+};

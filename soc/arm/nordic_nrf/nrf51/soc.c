@@ -14,47 +14,25 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void z_arm_nmi_init(void);
-#define NMI_INIT() z_arm_nmi_init()
-#else
-#define NMI_INIT()
-#endif
-
-#include <system_nrf51.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+#ifdef CONFIG_NRF_STORE_REBOOT_TYPE_GPREGRET
 /* Overrides the weak ARM implementation:
-   Set general purpose retention register and reboot */
+ * Set general purpose retention register and reboot
+ * This is deprecated and has been replaced with the boot mode retention
+ * subsystem
+ */
 void sys_arch_reboot(int type)
 {
 	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
 	NVIC_SystemReset();
 }
-
-static int nordicsemi_nrf51_init(const struct device *arg)
-{
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
-	return 0;
-}
+#endif
 
 #define DELAY_CALL_OVERHEAD_US 2
 
@@ -67,5 +45,3 @@ void arch_busy_wait(uint32_t time_us)
 	time_us -= DELAY_CALL_OVERHEAD_US;
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf51_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+#include "../../../boards/nrf52840dk_nrf52840_mem.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

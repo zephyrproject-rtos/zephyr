@@ -295,7 +295,7 @@ k_cpu_idle() unconditionally unmasks interrupts.
         k_sem_give(&my_sem);
     }
 
-    void main(void)
+    int main(void)
     {
         k_sem_init(&my_sem, 0, 1);
 
@@ -337,7 +337,7 @@ like in this example.
         k_sem_give(&my_sem);
     }
 
-    void main(void)
+    int main(void)
     {
         k_sem_init(&my_sem, 0, 1);
 
@@ -377,7 +377,7 @@ i.e. not doing any real work, like in this example below.
 
 .. code-block:: c
 
-    void main(void)
+    int main(void)
     {
         /* ... do some system/application initialization */
 

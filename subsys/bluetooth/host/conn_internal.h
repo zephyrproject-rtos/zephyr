@@ -12,15 +12,15 @@
 #include <zephyr/bluetooth/iso.h>
 
 typedef enum __packed {
-	BT_CONN_DISCONNECTED,
-	BT_CONN_DISCONNECT_COMPLETE,
-	BT_CONN_CONNECTING_SCAN,
-	BT_CONN_CONNECTING_AUTO,
-	BT_CONN_CONNECTING_ADV,
-	BT_CONN_CONNECTING_DIR_ADV,
-	BT_CONN_CONNECTING,
-	BT_CONN_CONNECTED,
-	BT_CONN_DISCONNECTING,
+	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
+	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
+	BT_CONN_CONNECTING_SCAN,      /* Central passive scanning */
+	BT_CONN_CONNECTING_AUTO,      /* Central connection establishment w/ filter */
+	BT_CONN_CONNECTING_ADV,       /* Peripheral connectable advertising */
+	BT_CONN_CONNECTING_DIR_ADV,   /* Peripheral directed advertising */
+	BT_CONN_CONNECTING,           /* Central connection establishment */
+	BT_CONN_CONNECTED,            /* Peripheral or Central connected */
+	BT_CONN_DISCONNECTING,        /* Peripheral or Central issued disconnection command */
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
@@ -146,20 +146,9 @@ struct bt_conn_tx {
 	uint32_t pending_no_cb;
 };
 
-struct acl_data {
-	/* Extend the bt_buf user data */
-	struct bt_buf_data buf_data;
-
-	/* Index into the bt_conn storage array */
-	uint8_t  index;
-
-	/** ACL connection handle */
-	uint16_t handle;
-};
-
 struct bt_conn {
 	uint16_t			handle;
-	uint8_t			type;
+	enum bt_conn_type	type;
 	uint8_t			role;
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
@@ -254,6 +243,15 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data);
 
+/* Thin wrapper over `bt_conn_send_cb`
+ *
+ * Used to set the TS_Flag bit in `buf`'s metadata.
+ *
+ * Return values & buf ownership same as parent.
+ */
+int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb, bool has_ts);
+
 static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	return bt_conn_send_cb(conn, buf, NULL, NULL);
@@ -299,7 +297,7 @@ void bt_conn_disconnect_all(uint8_t id);
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size);
 
 /* Look up an existing connection */
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type);
 
 static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
@@ -356,6 +354,9 @@ void notify_le_phy_updated(struct bt_conn *conn);
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BT_SMP)
+/* If role specific LTK is present */
+bool bt_conn_ltk_present(const struct bt_conn *conn);
+
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len);

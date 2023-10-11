@@ -53,7 +53,7 @@ The Uniform Resource Identifier shall follow the format specified in the
 Bluetooth Core Specification Supplement. The URI must start with a URI scheme,
 encoded as a single utf-8 data point, or the special ``none`` scheme, encoded
 as ``0x01``. The available schemes are listed on the `Bluetooth website
-<https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
+<https://www.bluetooth.com/specifications/assigned-numbers/>`_.
 
 Examples of encoded URIs:
 
@@ -78,7 +78,7 @@ itself using the Health Server
 
 The Unprovisioned device automatically responds to the invite by presenting a
 list of its capabilities, including the supported Out of Band Authentication
-methods.
+methods and algorithms.
 
 Public key exchange
 ===================
@@ -147,6 +147,9 @@ response should be fed back to the Provisioning API through
 :c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_number`. If
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
+
+If Provisionee wants to mandate OOB authentication, it is mandatory to use
+the BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM algorithm.
 
 Data transfer
 =============

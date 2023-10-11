@@ -126,7 +126,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32373C-EVAL
 -----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -139,7 +139,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -153,7 +153,7 @@ References
 .. target-notes::
 
 .. _STM32373C-EVAL website:
-   http://www.st.com/en/evaluation-tools/stm32373c-eval.html
+   https://www.st.com/en/evaluation-tools/stm32373c-eval.html
 
 .. _STM32F373VCT6 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00041563.pdf
+   https://www.st.com/resource/en/reference_manual/dm00041563.pdf

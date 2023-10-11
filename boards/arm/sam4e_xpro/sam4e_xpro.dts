@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2023 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <atmel/sam4e16e.dtsi>
 #include "sam4e_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
@@ -15,10 +16,12 @@
 
 	aliases {
 		i2c-0 = &twi0;
+		pwm-0 = &pwm0;
 		led0 = &yellow_led_1;
 		sw0 = &user_button;
 		wdog = &wdt;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -40,8 +43,8 @@
 		compatible = "gpio-keys";
 		user_button: button_1 {
 			label = "User Button";
-			gpios = <&pioa 2 (GPIO_PULL_UP |
-					   GPIO_ACTIVE_LOW)>;
+			gpios = <&pioa 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -125,6 +128,20 @@
 	clock-frequency = <120000000>;
 };
 
+&afec0 {
+	status = "okay";
+
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
+};
+
+&afec1 {
+	status = "okay";
+
+	pinctrl-0 = <&afec1_default>;
+	pinctrl-names = "default";
+};
+
 &twi0 {
 	status = "okay";
 
@@ -172,12 +189,7 @@
 
 	zephyr,random-mac-address;
 
-	phy: phy {
-		compatible = "ethernet-phy";
-		status = "okay";
-		address = <0>;
-		mdio = <&mdio>;
-	};
+	phy-handle = <&phy>;
 };
 
 &mdio {
@@ -185,6 +197,30 @@
 
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-0 = <&hsmci_default>;
+	pinctrl-names = "default";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &wdt {

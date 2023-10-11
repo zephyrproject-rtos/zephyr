@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Piotr Mienkowski
+ * Copyright (c) 2023, Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +32,7 @@
 #include <soc.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -51,11 +53,11 @@ struct counter_sam_dev_cfg {
 	uint32_t reg_cmr;
 	uint32_t reg_rc;
 	void (*irq_config_func)(const struct device *dev);
+	const struct atmel_sam_pmc_config clock_cfg[TCCHANNEL_NUMBER];
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t clk_sel;
 	bool nodivclk;
 	uint8_t tc_chan_num;
-	uint8_t periph_id[TCCHANNEL_NUMBER];
 };
 
 struct counter_sam_alarm_data {
@@ -322,7 +324,8 @@ static int counter_sam_initialize(const struct device *dev)
 	}
 
 	/* Enable channel's clock */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id[dev_cfg->tc_chan_num]);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&dev_cfg->clock_cfg[dev_cfg->tc_chan_num]);
 
 	/* Clock and Mode Selection */
 	tc_ch->TC_CMR = dev_cfg->reg_cmr;
@@ -384,7 +387,7 @@ static const struct counter_sam_dev_cfg counter_##n##_sam_config = { \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	.nodivclk = DT_INST_PROP(n, nodivclk),			\
 	.tc_chan_num = DT_INST_PROP_OR(n, channel, 0),		\
-	.periph_id = DT_INST_PROP(n, peripheral_id),		\
+	.clock_cfg = SAM_DT_INST_CLOCKS_PMC_CFG(n),		\
 };								\
 								\
 static struct counter_sam_dev_data counter_##n##_sam_data;	\

@@ -31,7 +31,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                  default_key,
                  key,
                  pty,
-                 tool_opt
+                 tool_opt,
+                 do_sign,
                  ):
         super().__init__(cfg)
 
@@ -50,6 +51,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
             self.key = os.path.join(DEFAULT_KEY_DIR, default_key)
 
         self.tool_opt_args = tool_opt
+        self.do_sign = do_sign
 
     @classmethod
     def name(cls):
@@ -82,6 +84,18 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
+        # We now have `west flash` -> `west build` -> `west sign` so
+        # `west flash` -> `west sign` is not needed anymore; it's also
+        # slower because not concurrent. However, for backwards
+        # compatibility keep signing here if some explicit rimage
+        # --option was passed. Some of these options may differ from the
+        # current `west sign` configuration; we take "precedence" by
+        # running last.
+        do_sign = (
+            args.rimage_tool != DEFAULT_RIMAGE_TOOL or
+            args.config_dir != DEFAULT_CONFIG_DIR or
+            args.key is not None
+        )
         return IntelAdspBinaryRunner(cfg,
                                     remote_host=args.remote_host,
                                     rimage_tool=args.rimage_tool,
@@ -89,21 +103,15 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                                     default_key=args.default_key,
                                     key=args.key,
                                     pty=args.pty,
-                                    tool_opt=args.tool_opt
+                                    tool_opt=args.tool_opt,
+                                    do_sign=do_sign,
                                     )
 
     def do_run(self, command, **kwargs):
         self.logger.info('Starting Intel ADSP runner')
 
-        # Always re-sign because here we cannot know whether `west
-        # flash` was invoked with `--skip-rebuild` or not and we have no
-        # way to tell whether there was any code change either.
-        #
-        # Signing does not belong here; it should be invoked either from
-        # some CMakeLists.txt file or an optional hook in some generic
-        # `west flash` code but right now it's in neither so we have to
-        # do this.
-        self.sign(**kwargs)
+        if self.do_sign:
+            self.sign(**kwargs)
 
         if re.search("intel_adsp_cavs", self.platform):
             self.require(self.cavstool)

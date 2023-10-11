@@ -216,9 +216,8 @@ int arch_icache_flush_and_invd_range(void *addr, size_t size)
 	return -ENOTSUP;
 }
 
-static int init_dcache(const struct device *unused)
+static int init_dcache(void)
 {
-	ARG_UNUSED(unused);
 
 	arch_dcache_enable();
 

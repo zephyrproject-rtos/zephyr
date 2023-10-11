@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SERIAL
-	bool "Serial Drivers"
+	bool "Serial drivers"
 	help
 	  Enable options for serial drivers.
 
@@ -75,6 +75,21 @@ config UART_INTERRUPT_DRIVEN
 	help
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
+
+config UART_EXCLUSIVE_API_CALLBACKS
+	bool "Use exclusive callbacks for multiple APIs"
+	depends on UART_ASYNC_API && UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  When multiple set of APIs support callbacks, enabling this
+	  option will result in only the callbacks of one set of API
+	  being active at a time. Setting a new callback to one set of
+	  API will remove callbacks to other set of APIs. For example,
+	  calling uart_callback_set() would disable the callback
+	  previously set via uart_irq_callback_set().
+
+	  Says yes unless you are absolutely sure you know what you are
+	  doing and promise not to file bug when things do not work out.
 
 config UART_LINE_CTRL
 	bool "Serial Line Control API"
@@ -204,10 +219,30 @@ source "drivers/serial/Kconfig.neorv32"
 
 source "drivers/serial/Kconfig.xen"
 
+source "drivers/serial/Kconfig.ifx_cat1"
+
 source "drivers/serial/Kconfig.smartbond"
 
-source "drivers/serial/Kconfig.s32"
+source "drivers/serial/Kconfig.nxp_s32"
 
 source "drivers/serial/Kconfig.cdns"
+
+source "drivers/serial/Kconfig.opentitan"
+
+source "drivers/serial/Kconfig.altera"
+
+source "drivers/serial/Kconfig.hostlink"
+
+source "drivers/serial/Kconfig.emul"
+
+source "drivers/serial/Kconfig.native_tty"
+
+source "drivers/serial/Kconfig.numaker"
+
+source "drivers/serial/Kconfig.efinix_sapphire"
+
+source "drivers/serial/Kconfig.sedi"
+
+source "drivers/serial/Kconfig.bcm2711"
 
 endif # SERIAL

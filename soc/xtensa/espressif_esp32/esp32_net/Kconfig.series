@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32_NET
+	bool "ESP32-NET Series"
+	select XTENSA
+	select SOC_FAMILY_ESP32
+	select CLOCK_CONTROL
+	select DYNAMIC_INTERRUPTS
+	select HAS_ESPRESSIF_HAL
+	help
+	  Enable support for Espressif ESP32_NET

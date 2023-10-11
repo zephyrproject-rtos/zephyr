@@ -9,7 +9,7 @@
 #include "rpmsg_backend.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
@@ -75,11 +75,9 @@ static void ns_bind_cb(struct rpmsg_device *rdev,
 
 #endif
 
-static int rpmsg_service_init(const struct device *dev)
+static int rpmsg_service_init(void)
 {
 	int32_t err;
-
-	(void)dev;
 
 	LOG_DBG("RPMsg service initialization start");
 

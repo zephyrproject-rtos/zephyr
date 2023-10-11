@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/types.h"
-#include "ztest.h"
+#include <zephyr/types.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
@@ -20,13 +20,15 @@
 #include "util/memq.h"
 #include "util/dbuf.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
 #include "ll_feat.h"
 
 #include "lll.h"
-#include "lll_df_types.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn_iso.h"
 
 #include "lll_conn.h"
@@ -1211,8 +1213,8 @@ void helper_pdu_verify_cis_ind(const char *file, uint32_t line, struct pdu_data 
 	zassert_mem_equal(pdu->llctrl.cis_ind.cis_sync_delay, p->cis_sync_delay,
 			  sizeof(p->cis_sync_delay),
 			  "cis_sync_delay mismatch.\nCalled at %s:%d\n", file, line);
-
-	pdu->llctrl.cis_ind.conn_event_count = p->conn_event_count;
+	zassert_equal(pdu->llctrl.cis_ind.conn_event_count, p->conn_event_count,
+		      "conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_cis_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu,

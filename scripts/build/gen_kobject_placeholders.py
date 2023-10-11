@@ -108,7 +108,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
 
     parser.add_argument("--object", required=True,
                         help="Points to kobject_prebuilt_hash.c.obj")

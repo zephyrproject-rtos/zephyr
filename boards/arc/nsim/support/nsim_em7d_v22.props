@@ -19,6 +19,11 @@
 	nsim_isa_dsp_complex_option=1
 	nsim_isa_dsp_divsqrt_option=1
 	nsim_isa_dsp_accshift_option=1
+	nsim_isa_fpuda_option=1
+	nsim_isa_fpus_div_option=1
+	nsim_isa_fpu_mac_option=1
+	nsim_isa_fpu_fast_mpy_option=0
+	nsim_isa_fpu_fast_div_option=0
 	nsim_isa_enable_timer_0=1
 	nsim_isa_timer_0_int_level=1
 	nsim_isa_enable_timer_1=1

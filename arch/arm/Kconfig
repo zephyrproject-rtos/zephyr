@@ -45,7 +45,41 @@ config CODE_DATA_RELOCATION_SRAM
 	  config is used to create an MPU entry for the SRAM space used for code
 	  relocation.
 
-rsource "core/aarch32/Kconfig"
-rsource "core/aarch32/Kconfig.vfp"
+config ARM_ON_ENTER_CPU_IDLE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can be used to prevent the CPU from actually
+	  entering sleep by skipping the WFE/WFI instruction.
+
+config ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle_prepare()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can prepare data to upcoming call to
+	  z_arm_on_enter_cpu_idle(). The z_arm_on_enter_cpu_idle_prepare differs
+	  from z_arm_on_enter_cpu_idle because it is called before interrupts are
+	  disabled.
+
+config ARM_ON_EXIT_CPU_IDLE
+	bool
+	help
+	  Enables a possibility to inject SoC-specific code just after WFI/WFE
+	  instructions of the cpu idle implementation.
+
+	  Enabling this option requires that the SoC provides a soc_cpu_idle.h
+	  header file which defines SOC_ON_EXIT_CPU_IDLE macro guarded by
+	  _ASMLANGUAGE.
+
+	  The SOC_ON_EXIT_CPU_IDLE macro is expanded just after
+	  WFI/WFE instructions before any memory access is performed. The purpose
+	  of the SOC_ON_EXIT_CPU_IDLE is to perform an action that mitigate issues
+	  observed on some SoCs caused by a memory access following WFI/WFE
+	  instructions.
+
+rsource "core/Kconfig"
+rsource "core/Kconfig.vfp"
 
 endmenu

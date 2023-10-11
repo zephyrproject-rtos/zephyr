@@ -1,0 +1,7 @@
+# Copyright © 2023 Keith Packard
+# SPDX-License-Identifier: Apache-2.0
+
+config NEWLIB_LIBC_SUPPORTED
+	def_bool y
+	help
+	  Espressif supports newlib for C and C++ development.

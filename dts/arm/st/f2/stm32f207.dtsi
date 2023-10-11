@@ -8,6 +8,8 @@
 
 / {
 	soc {
+		compatible = "st,stm32f207", "st,stm32f2", "simple-bus";
+
 		mac: ethernet@40028000 {
 			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;

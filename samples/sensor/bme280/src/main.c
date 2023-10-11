@@ -35,12 +35,12 @@ static const struct device *get_bme280_device(void)
 	return dev;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = get_bme280_device();
 
 	if (dev == NULL) {
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -57,4 +57,5 @@ void main(void)
 
 		k_sleep(K_MSEC(1000));
 	}
+	return 0;
 }

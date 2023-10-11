@@ -5,12 +5,18 @@ Application Development
 
 .. note::
 
-   In this document, we'll assume your **application directory** is
-   :file:`<home>/app`, and that its **build directory** is
-   :file:`<home>/app/build`.
-   (These terms are defined in the following Overview.)
-   On Linux/macOS, <home> is equivalent to ``~``, whereas on Windows it's
-   ``%userprofile%``.
+   In this document, we'll assume:
+
+   - your **application directory**, :file:`<app>`, is something like :file:`<home>/zephyrproject/app`
+   - its **build directory** is :file:`<app>/build`
+
+   These terms are defined below. On Linux/macOS, <home> is equivalent to
+   ``~``. On Windows, it's ``%userprofile%``.
+
+   Keeping your application inside the workspace (:file:`<home>/zephyrproject`)
+   makes it easier to use ``west build`` and other commands with it. (You can
+   put your application anywhere as long as :ref:`ZEPHYR_BASE
+   <important-build-vars>` is set appropriately, though.)
 
 Overview
 ********
@@ -18,24 +24,28 @@ Overview
 Zephyr's build system is based on `CMake`_.
 
 The build system is application-centric, and requires Zephyr-based applications
-to initiate building the kernel source tree. The application build controls
+to initiate building the Zephyr source code. The application build controls
 the configuration and build process of both the application and Zephyr itself,
 compiling them into a single binary.
 
-Zephyr's base directory hosts Zephyr's own source code, its kernel
-configuration options, and its build definitions.
+The main zephyr repository contains Zephyr's source code, configuration files,
+and build system. You also likely have installed various :ref:`modules`
+alongside the zephyr repository, which provide third party source code
+integration.
 
-The files in the **application directory** link Zephyr with the
+The files in the **application directory** link Zephyr and any modules with the
 application. This directory contains all application-specific files, such as
-configuration options and source code.
+application-specific configuration files and source code.
 
-An application in its simplest form has the following contents:
+Here are the files in a simple Zephyr application:
 
 .. code-block:: none
 
-   <home>/app
+   <app>
    ├── CMakeLists.txt
+   ├── app.overlay
    ├── prj.conf
+   ├── VERSION
    └── src
        └── main.c
 
@@ -44,25 +54,46 @@ These contents are:
 * **CMakeLists.txt**: This file tells the build system where to find the other
   application files, and links the application directory with Zephyr's CMake
   build system. This link provides features supported by Zephyr's build system,
-  such as board-specific kernel configuration files, the ability to run and
+  such as board-specific configuration files, the ability to run and
   debug compiled binaries on real or emulated hardware, and more.
 
-* **Kernel configuration files**: An application typically provides a
-  Kconfig configuration file (usually called :file:`prj.conf`) that specifies
-  application-specific values for one or more kernel configuration options.
-  These application settings are merged with board-specific settings to produce
-  a kernel configuration.
+* **app.overlay**: This is a devicetree overlay file that specifies
+  application-specific changes which should be applied to the base devicetree
+  for any board you build for. The purpose of devicetree overlays is
+  usually to configure something about the hardware used by the application.
+
+  The build system looks for :file:`app.overlay` by default, but you can add
+  more devicetree overlays, and other default files are also searched for.
+
+  See :ref:`devicetree` for more information about devicetree.
+
+* **prj.conf**: This is a Kconfig fragment that specifies application-specific
+  values for one or more Kconfig options. These application settings are merged
+  with other settings to produce the final configuration. The purpose of
+  Kconfig fragments is usually to configure the software features used by
+  the application.
+
+  The build system looks for :file:`prj.conf` by default, but you can add more
+  Kconfig fragments, and other default files are also searched for.
 
   See :ref:`application-kconfig` below for more information.
 
-* **Application source code files**: An application typically provides one
-  or more application-specific files, written in C or assembly language. These
-  files are usually located in a sub-directory called :file:`src`.
+* **VERSION**: A text file that contains several version information fields.
+  These fields let you manage the lifecycle of the application and automate
+  providing the application version when signing application images.
 
-Once an application has been defined, you can use CMake to create project files
-for building it from a directory where you want to host these files. This is
-known as the **build directory**. Application build artifacts are always
-generated in a build directory; Zephyr does not support "in-tree" builds.
+  See :ref:`app-version-details` for more information about this file and how to use it.
+
+* **main.c**: A source code file. Applications typically contain source files
+  written in C, C++, or assembly language. The Zephyr convention is to place
+  them in a subdirectory of :file:`<app>` named :file:`src`.
+
+Once an application has been defined, you will use CMake to generate a **build
+directory**, which contains the files you need to build the application and
+Zephyr, then link them together into a final binary you can run on your board.
+The easiest way to do this is with :ref:`west build <west-building>`, but you
+can use CMake directly also. Application build artifacts are always generated
+in a separate build directory: Zephyr does not support "in-tree" builds.
 
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
@@ -72,25 +103,36 @@ applications, followed by more detailed reference material.
 Application types
 *****************
 
-Based on where the source code of the application is located we can distinguish
-between three basic application types.
+We distinguish three basic types of Zephyr application based on where
+:file:`<app>` is located:
 
-* Zephyr repository application
-* Zephyr workspace application
-* Zephyr freestanding application
+.. table::
 
-You can find out more about how the build system supports all the application
-types described in this section in the :ref:`cmake_pkg` section.
+   +------------------------------+--------------------------------+
+   | Application type             | :file:`<app>` location         |
+   +------------------------------+--------------------------------+
+   | :ref:`repository             | zephyr repository              |
+   | <zephyr-repo-app>`           |                                |
+   +------------------------------+--------------------------------+
+   | :ref:`workspace              | west workspace where Zephyr is |
+   | <zephyr-workspace-app>`      | installed                      |
+   +------------------------------+--------------------------------+
+   | :ref:`freestanding           | other locations                |
+   | <zephyr-freestanding-app>`   |                                |
+   +------------------------------+--------------------------------+
+
+We'll discuss these more below. To learn how the build system supports each
+type, see :ref:`cmake_pkg`.
 
 .. _zephyr-repo-app:
 
 Zephyr repository application
 =============================
 
-An application located within the ``zephyr`` folder in a Zephyr :ref:`west
-workspace <west-workspaces>` is referred to as a Zephyr repository application.
-In the following example, the :ref:`hello_world sample <hello_world>` is a
-Zephyr repository application:
+An application located within the ``zephyr`` source code repository in a Zephyr
+:ref:`west workspace <west-workspaces>` is referred to as a Zephyr repository
+application. In the following example, the :ref:`hello_world sample
+<hello_world>` is a Zephyr repository application:
 
 .. code-block:: none
 
@@ -113,9 +155,8 @@ Zephyr workspace application
 ============================
 
 An application located within a :ref:`workspace <west-workspaces>`, but outside
-the Zephyr repository (and thus folder) itself, is referred to as a Zephyr
-workspace application.  In the following example, ``app`` is a Zephyr workspace
-application:
+the zephyr repository itself, is referred to as a Zephyr workspace application.
+In the following example, ``app`` is a Zephyr workspace application:
 
 .. code-block:: none
 
@@ -156,35 +197,117 @@ following example, ``app`` is a Zephyr freestanding application:
         └── src/
             └── main.c
 
-Example workspace application
-******************************
-
-A reference :ref:`workspace application <zephyr-workspace-app>` contained in its
-own Git repository can be found in the `Example Application`_ repository.
-It can be used as a reference on how to structure out-of-tree, Zephyr-based workspace applications
-using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree
-use of features commonly used in applications such as:
-
-- Custom boards
-- Custom devicetree bindings
-- Custom drivers
-- Continuous Integration (CI) setup
-- An example west :ref:`extension <west-extensions>` command
+.. _zephyr-creating-app:
 
 Creating an Application
 ***********************
 
-Follow these steps to create a new application directory. (Refer to
-the `Example Application`_ repository for a reference standalone application in its own Git repository
-or to :ref:`samples-and-demos` for existing applications provided as part of
-Zephyr.)
+In Zephyr, you can either use a reference workspace application or create your application by hand.
 
-#. Create an application directory on your workstation computer, outside of the
-   Zephyr base directory.  Usually you'll want to create it somewhere under
-   your user's home directory.
+.. _zephyr-creating-app-from-example:
 
-   For example, in a Unix shell or Windows ``cmd.exe`` prompt, navigate to
-   where you want to create your application, then enter:
+Using a Reference Workspace Application
+=======================================
+
+The `example-application`_ Git repository contains a reference :ref:`workspace
+application <zephyr-workspace-app>`. It is recommended to use it as a reference
+when creating your own application as described in the following sections.
+
+The example-application repository demonstrates how to use several
+commonly-used features, such as:
+
+- Custom :ref:`board ports <board_porting_guide>`
+- Custom :ref:`devicetree bindings <dt-bindings>`
+- Custom :ref:`device drivers <device_model_api>`
+- Continuous Integration (CI) setup, including using :ref:`twister <twister_script>`
+- A custom west :ref:`extension command <west-extensions>`
+
+Basic example-application Usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The easiest way to get started with the example-application repository within
+an existing Zephyr workspace is to follow these steps:
+
+.. code-block:: console
+
+   cd <home>/zephyrproject
+   git clone https://github.com/zephyrproject-rtos/example-application my-app
+
+The directory name :file:`my-app` above is arbitrary: change it as needed. You
+can now go into this directory and adapt its contents to suit your needs. Since
+you are using an existing Zephyr workspace, you can use ``west build`` or any
+other west commands to build, flash, and debug.
+
+Advanced example-application Usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also use the example-application repository as a starting point for
+building your own customized Zephyr-based software distribution. This lets you
+do things like:
+
+- remove Zephyr modules you don't need
+- add additional custom repositories of your own
+- override repositories provided by Zephyr with your own versions
+- share the results with others and collaborate further
+
+The example-application repository contains a :file:`west.yml` file and is
+therefore also a west :ref:`manifest repository <west-workspace>`. Use this to
+create a new, customized workspace by following these steps:
+
+.. code-block:: console
+
+   cd <home>
+   mkdir my-workspace
+   cd my-workspace
+   git clone https://github.com/zephyrproject-rtos/example-application my-manifest-repo
+   west init -l my-manifest-repo
+
+This will create a new workspace with the :ref:`T2 topology <west-t2>`, with
+:file:`my-manifest-repo` as the manifest repository. The :file:`my-workspace`
+and :file:`my-manifest-repo` names are arbitrary: change them as needed.
+
+Next, customize the manifest repository. The initial contents of this
+repository will match the example-application's contents when you clone it. You
+can then edit :file:`my-manifest-repo/west.yml` to your liking, changing the
+set of repositories in it as you wish. See :ref:`west-manifest-import` for many
+examples of how to add or remove different repositories from your workspace as
+needed. Make any other changes you need to other files.
+
+When you are satisfied, you can run:
+
+.. code-block::
+
+   west update
+
+and your workspace will be ready for use.
+
+If you push the resulting :file:`my-manifest-repo` repository somewhere else,
+you can share your work with others. For example, let's say you push the
+repository to ``https://git.example.com/my-manifest-repo``. Other people can
+then set up a matching workspace by running:
+
+.. code-block::
+
+   west init -m https://git.example.com/my-manifest-repo my-workspace
+   cd my-workspace
+   west update
+
+From now on, you can collaborate on the shared software by pushing changes to
+the repositories you are using and updating :file:`my-manifest-repo/west.yml`
+as needed to add and remove repositories, or change their contents.
+
+.. _zephyr-creating-app-by-hand:
+
+Creating an Application by Hand
+===============================
+
+You can follow these steps to create a basic application directory from
+scratch. However, using the `example-application`_ repository or one of
+Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
+
+#. Create an application directory.
+
+   For example, in a Unix shell or Windows ``cmd.exe`` prompt:
 
    .. code-block:: console
 
@@ -194,10 +317,12 @@ Zephyr.)
 
       Building Zephyr or creating an application in a directory with spaces
       anywhere on the path is not supported. So the Windows path
-      :file:`C:\\Users\\YourName\\app` will work, but :file:`C:\\Users\\Your
-      Name\\app` will not.
+      :file:`C:\\Users\\YourName\\app` will work, but
+      :file:`C:\\Users\\Your Name\\app` will not.
 
-#. It's recommended to place all application source code in a subdirectory
+#. Create your source code files.
+
+   It's recommended to place all application source code in a subdirectory
    named :file:`src`.  This makes it easier to distinguish between project
    files and sources.
 
@@ -223,35 +348,38 @@ Zephyr.)
 
       target_sources(app PRIVATE src/main.c)
 
-   ``cmake_minimum_required()`` is required to be in your
-   :file:`CMakeLists.txt` by CMake. It is also invoked by the Zephyr
-   package. The most recent of the two versions will be enforced by CMake.
+   Notes:
 
-   ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
-   CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
-   target is how you include them in the build. The Zephyr package will define
-   ``Zephyr-Kernel`` as a CMake project and enable support for the ``C``,
-   ``CXX``, ``ASM`` languages.
+   - The ``cmake_minimum_required()`` call is required by CMake. It is also
+     invoked by the Zephyr package on the next line. CMake will error out if
+     its version is older than either the version in your
+     :file:`CMakeLists.txt` or the version number in the Zephyr package.
 
-   ``project(my_zephyr_app)`` is required for defining your application
-   project.  This must be called after ``find_package(Zephyr)`` to avoid
-   interference with Zephyr's ``project(Zephyr-Kernel)``.
+   - ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
+     CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
+     target is how you include them in the build. The Zephyr package will
+     define ``Zephyr-Kernel`` as a CMake project and enable support for the
+     ``C``, ``CXX``, ``ASM`` languages.
 
-   ``target_sources(app PRIVATE src/main.c)`` is to add your source file to the
-   ``app`` target. This must come after ``find_package(Zephyr)`` which defines
-   the target.
+   - ``project(my_zephyr_app)`` defines your application's CMake
+     project.  This must be called after ``find_package(Zephyr)`` to avoid
+     interference with Zephyr's ``project(Zephyr-Kernel)``.
 
-#. Set Kconfig configuration options. See :ref:`application-kconfig`.
+   - ``target_sources(app PRIVATE src/main.c)`` is to add your source file to
+     the ``app`` target. This must come after ``find_package(Zephyr)`` which
+     defines the target. You can add as many files as you want with
+     ``target_sources()``.
 
-#. Configure any devicetree overlays needed by your application.
-   See :ref:`set-devicetree-overlays`.
+#. Create at least one Kconfig fragment for your application (usually named
+   :file:`prj.conf`) and set Kconfig option values needed by your application
+   there. See :ref:`application-kconfig`. If no Kconfig options need to be set,
+   create an empty file.
 
-.. note::
+#. Configure any devicetree overlays needed by your application, usually in a
+   file named :file:`app.overlay`. See :ref:`set-devicetree-overlays`.
 
-   ``include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)``
-   is still supported for backward compatibility with older applications.
-   Including ``boilerplate.cmake`` directly in the sample still requires using
-   :ref:`zephyr-env` before building the application.
+#. Set up any other files you may need, such as :ref:`twister <twister_script>`
+   configuration files, continuous integration files, documentation, etc.
 
 .. _important-build-vars:
 
@@ -291,7 +419,7 @@ should know about.
 
   See :ref:`initial-conf` for more information.
 
-* :makevar:`OVERLAY_CONFIG`: Additional Kconfig configuration fragment files.
+* :makevar:`EXTRA_CONF_FILE`: Additional Kconfig configuration fragment files.
   Multiple filenames can be separated with either spaces or semicolons. This
   can be useful in order to leave :makevar:`CONF_FILE` at its default value,
   but "mix in" some additional configuration options.
@@ -303,19 +431,21 @@ should know about.
 
 * :makevar:`SHIELD`: see :ref:`shields`
 
-* :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
+* :makevar:`ZEPHYR_MODULES`: A `CMake list`_ containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
   the application build. See :ref:`modules` for details. If you set this
   variable, it must be a complete list of all modules to use, as the build
   system will not automatically pick up any modules from west.
 
-* :makevar:`ZEPHYR_EXTRA_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
+* :makevar:`EXTRA_ZEPHYR_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
   will be added to the list of modules found via west, instead of replacing it.
 
 .. note::
 
    You can use a :ref:`cmake_build_config_package` to share common settings for
    these variables.
+
+.. _zephyr-app-cmakelists:
 
 Application CMakeLists.txt
 **************************
@@ -451,6 +581,8 @@ For example:
       ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
       ${app_provision_hex})
 
+.. _zephyr-app-cmakecache:
+
 CMakeCache.txt
 **************
 
@@ -474,8 +606,8 @@ Application Configuration Directory
 
 Zephyr will use configuration files from the application's configuration
 directory except for files with an absolute path provided by the arguments
-described earlier, for example ``CONF_FILE``, ``OVERLAY_CONFIG``, and
-``DTC_OVERLAY_FILE``.
+described earlier, for example ``CONF_FILE``, ``EXTRA_CONF_FILE``,
+``DTC_OVERLAY_FILE``, and ``EXTRA_DTC_OVERLAY_FILE``.
 
 The application configuration directory is defined by the
 ``APPLICATION_CONFIG_DIR`` variable.
@@ -501,7 +633,7 @@ assignment:
 
 .. code-block:: none
 
-   CONFIG_CPLUSPLUS=y
+   CONFIG_CPP=y
 
 Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
 started.
@@ -645,14 +777,7 @@ Using CMake directly:
 Basics
 ======
 
-.. note::
-
-   In the below example, ``west`` is used outside of a west workspace. For this
-   to work, you must set the ``ZEPHYR_BASE`` environment variable to the path
-   of your zephyr git repository, using one of the methods on the
-   :ref:`Environment Variables <env_vars>` page.
-
-#. Navigate to the application directory :file:`<home>/app`.
+#. Navigate to the application directory :file:`<app>`.
 #. Enter the following commands to build the application's :file:`zephyr.elf`
    image for the board specified in the command-line parameters:
 
@@ -691,7 +816,7 @@ When using the Ninja generator a build directory looks like this:
 
 .. code-block:: none
 
-   <home>/app/build
+   <app>/build
    ├── build.ninja
    ├── CMakeCache.txt
    ├── CMakeFiles
@@ -751,7 +876,7 @@ the build system to rebuild the entire application from scratch with the
 following procedure:
 
 #. Open a terminal console on your host computer, and navigate to the
-   build directory :file:`<home>/app/build`.
+   build directory :file:`<app>/build`.
 
 #. Enter one of the following commands, depending on whether you want to use
    ``west`` or ``cmake`` directly to delete the application's generated
@@ -844,7 +969,7 @@ hardware:
    this via USB.
 
 #. Run one of these console commands from the build directory,
-   :file:`<home>/app/build`, to flash the compiled Zephyr image and run it on
+   :file:`<app>/build`, to flash the compiled Zephyr image and run it on
    your board:
 
    .. code-block:: console
@@ -894,7 +1019,7 @@ hardware. Follow these instructions to run an application via QEMU:
    - ``qemu_cortex_m3`` to emulate running on an ARM Cortex M3-based board
 
 #. Run one of these console commands from the build directory,
-   :file:`<home>/app/build`, to run the Zephyr binary in QEMU:
+   :file:`<app>/build`, to run the Zephyr binary in QEMU:
 
    .. code-block:: console
 
@@ -928,121 +1053,6 @@ again.
    You can choose a specific emulator by appending ``_<emulator>`` to your
    target name, for example ``west build -t run_qemu`` or ``ninja run_qemu``
    for QEMU.
-
-.. _application_debugging:
-
-Application Debugging
-*********************
-
-This section is a quick hands-on reference to start debugging your
-application with QEMU. Most content in this section is already covered in
-`QEMU`_ and `GNU_Debugger`_ reference manuals.
-
-.. _QEMU: http://wiki.qemu.org/Main_Page
-
-.. _GNU_Debugger: http://www.gnu.org/software/gdb
-
-In this quick reference, you'll find shortcuts, specific environmental
-variables, and parameters that can help you to quickly set up your debugging
-environment.
-
-The simplest way to debug an application running in QEMU is using the GNU
-Debugger and setting a local GDB server in your development system through QEMU.
-
-You will need an Executable and Linkable Format (ELF) binary image for
-debugging purposes.  The build system generates the image in the build
-directory.  By default, the kernel binary name is
-:file:`zephyr.elf`. The name can be changed using a Kconfig option.
-
-We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
-server instance. This port number can be changed for a port that best suits the
-development environment.
-
-You can run QEMU to listen for a "gdb connection" before it starts executing any
-code to debug it.
-
-.. code-block:: bash
-
-   qemu -s -S <image>
-
-will setup Qemu to listen on port 1234 and wait for a GDB connection to it.
-
-The options used above have the following meaning:
-
-* ``-S`` Do not start CPU at startup; rather, you must type 'c' in the
-  monitor.
-* ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
-  TCP port 1234.
-
-To debug with QEMU and to start a GDB server and wait for a remote connect, run
-either of the following inside the build directory of an application:
-
-.. code-block:: bash
-
-   ninja debugserver
-
-The build system will start a QEMU instance with the CPU halted at startup
-and with a GDB server instance listening at the TCP port 1234.
-
-Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
-instance on every run.
-In this example, the initialization file points to the GDB server instance.
-It configures a connection to a remote target at the local host on the TCP
-port 1234. The initialization sets the kernel's root directory as a
-reference.
-
-The :file:`.gdbinit` file contains the following lines:
-
-.. code-block:: bash
-
-   target remote localhost:1234
-   dir ZEPHYR_BASE
-
-.. note::
-
-   Substitute the correct :ref:`ZEPHYR_BASE <important-build-vars>` for your
-   system.
-
-Execute the application to debug from the same directory that you chose for
-the :file:`gdbinit` file. The command can include the ``--tui`` option
-to enable the use of a terminal user interface. The following commands
-connects to the GDB server using :file:`gdb`. The command loads the symbol
-table from the elf binary file. In this example, the elf binary file name
-corresponds to :file:`zephyr.elf` file:
-
-.. code-block:: bash
-
-   ..../path/to/gdb --tui zephyr.elf
-
-.. note::
-
-   The GDB version on the development system might not support the --tui
-   option. Please make sure you use the GDB binary from the SDK which
-   corresponds to the toolchain that has been used to build the binary.
-
-If you are not using a .gdbinit file, issue the following command inside GDB to
-connect to the remote GDB server on port 1234:
-
-.. code-block:: bash
-
-   (gdb) target remote localhost:1234
-
-Finally, the command below connects to the GDB server using the Data
-Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
-elf binary file, in this instance, the :file:`zephyr.elf` file.
-
-The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
-development system by default. Follow your system instructions to install
-it. For example, use ``sudo apt-get install ddd`` on an Ubuntu system.
-
-.. code-block:: bash
-
-   ddd --gdb --debugger "gdb zephyr.elf"
-
-
-Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
-change depending on the toolchain you are using and your cross-development
-tools.
 
 .. _custom_board_definition:
 
@@ -1276,136 +1286,7 @@ Cache variable:
    :goals: build
    :compact:
 
-
-
-Debug with Eclipse
-******************
-
-Overview
-========
-
-CMake supports generating a project description file that can be imported into
-the Eclipse Integrated Development Environment (IDE) and used for graphical
-debugging.
-
-The `GNU MCU Eclipse plug-ins`_ provide a mechanism to debug ARM projects in
-Eclipse with pyOCD, Segger J-Link, and OpenOCD debugging tools.
-
-The following tutorial demonstrates how to debug a Zephyr application in
-Eclipse with pyOCD in Windows. It assumes you have already installed the GCC
-ARM Embedded toolchain and pyOCD.
-
-Set Up the Eclipse Development Environment
-==========================================
-
-#. Download and install `Eclipse IDE for C/C++ Developers`_.
-
-#. In Eclipse, install the GNU MCU Eclipse plug-ins by opening the menu
-   ``Window->Eclipse Marketplace...``, searching for ``GNU MCU Eclipse``, and
-   clicking ``Install`` on the matching result.
-
-#. Configure the path to the pyOCD GDB server by opening the menu
-   ``Window->Preferences``, navigating to ``MCU``, and setting the ``Global
-   pyOCD Path``.
-
-Generate and Import an Eclipse Project
-======================================
-
-#. Set up a GNU Arm Embedded toolchain as described in
-   :ref:`toolchain_gnuarmemb`.
-
-#. Navigate to a folder outside of the Zephyr tree to build your application.
-
-   .. code-block:: console
-
-      # On Windows
-      cd %userprofile%
-
-   .. note::
-      If the build directory is a subdirectory of the source directory, as is
-      usually done in Zephyr, CMake will warn:
-
-      "The build directory is a subdirectory of the source directory.
-
-      This is not supported well by Eclipse.  It is strongly recommended to use
-      a build directory which is a sibling of the source directory."
-
-#. Configure your application with CMake and build it with ninja. Note the
-   different CMake generator specified by the ``-G"Eclipse CDT4 - Ninja"``
-   argument. This will generate an Eclipse project description file,
-   :file:`.project`, in addition to the usual ninja build files.
-
-   .. zephyr-app-commands::
-      :tool: all
-      :app: %ZEPHYR_BASE%\samples\synchronization
-      :host-os: win
-      :board: frdm_k64f
-      :gen-args: -G"Eclipse CDT4 - Ninja"
-      :goals: build
-      :compact:
-
-#. In Eclipse, import your generated project by opening the menu
-   ``File->Import...`` and selecting the option ``Existing Projects into
-   Workspace``. Browse to your application build directory in the choice,
-   ``Select root directory:``. Check the box for your project in the list of
-   projects found and click the ``Finish`` button.
-
-Create a Debugger Configuration
-===============================
-
-#. Open the menu ``Run->Debug Configurations...``.
-
-#. Select ``GDB PyOCD Debugging``, click the ``New`` button, and configure the
-   following options:
-
-   - In the Main tab:
-
-     - Project: ``my_zephyr_app@build``
-     - C/C++ Application: :file:`zephyr/zephyr.elf`
-
-   - In the Debugger tab:
-
-     - pyOCD Setup
-
-       - Executable path: :file:`${pyocd_path}\\${pyocd_executable}`
-       - Uncheck "Allocate console for semihosting"
-
-     - Board Setup
-
-       - Bus speed: 8000000 Hz
-       - Uncheck "Enable semihosting"
-
-     - GDB Client Setup
-
-       - Executable path example (use your ``GNUARMEMB_TOOLCHAIN_PATH``):
-         :file:`C:\\gcc-arm-none-eabi-6_2017-q2-update\\bin\\arm-none-eabi-gdb.exe`
-
-   - In the SVD Path tab:
-
-     - File path: :file:`<workspace
-       top>\\modules\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
-
-     .. note::
-	This is optional. It provides the SoC's memory-mapped register
-	addresses and bitfields to the debugger.
-
-#. Click the ``Debug`` button to start debugging.
-
-RTOS Awareness
-==============
-
-Support for Zephyr RTOS awareness is implemented in `pyOCD v0.11.0`_ and later.
-It is compatible with GDB PyOCD Debugging in Eclipse, but you must enable
-CONFIG_DEBUG_THREAD_INFO=y in your application.
-
-
-
 .. _CMake: https://www.cmake.org
 .. _CMake introduction: https://cmake.org/cmake/help/latest/manual/cmake.1.html#description
-.. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
-.. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
-.. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
-.. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
-.. _using Chocolatey: https://chocolatey.org/packages/RapidEE
-.. _Example Application: https://github.com/zephyrproject-rtos/example-application
+.. _example-application: https://github.com/zephyrproject-rtos/example-application

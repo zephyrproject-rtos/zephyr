@@ -15,6 +15,13 @@ config DMA_IPROC_PAX_V2
 	depends on DT_HAS_BRCM_IPROC_PAX_DMA_V2_ENABLED
 	depends on PCIE_EP_IPROC_V2
 
+config DMA_IPROC_PAX_V2_INIT_PRIORITY
+	int "Broadcom PAX v2 initialization priority"
+	default 51
+	depends on DMA_IPROC_PAX_V2
+	help
+	  Broadcom PAX v2 initialization priority.
+
 if DMA_IPROC_PAX || DMA_IPROC_PAX_V2
 
 config DMA_IPROC_PAX_DEBUG

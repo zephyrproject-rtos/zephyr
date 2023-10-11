@@ -26,7 +26,7 @@ enum threshold_state {
 
 atomic_val_t stop;
 
-const struct sensor_trigger trigger = {
+const struct sensor_trigger sensor_trig = {
 	.type = SENSOR_TRIG_THRESHOLD,
 	.chan = SENSOR_CHAN_VOLTAGE
 };
@@ -97,21 +97,21 @@ void threshold_trigger_handler(const struct device *dev,
 	enable_threshold(dev, true);
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *const adc_cmp = DEVICE_DT_GET(ADC_CMP_NODE);
 	int err;
 
 	if (!device_is_ready(adc_cmp)) {
 		printf("ADC CMP: Error, device is not ready");
-		return;
+		return 0;
 	}
 
-	err = sensor_trigger_set(adc_cmp, &trigger,
+	err = sensor_trigger_set(adc_cmp, &sensor_trig,
 		threshold_trigger_handler);
 	if (err) {
 		printf("ADC CMP: Error setting handler");
-		return;
+		return 0;
 	}
 
 	set_upper_threshold(adc_cmp);
@@ -123,4 +123,5 @@ void main(void)
 	}
 
 	printf("ADC CMP: Exiting application");
+	return 0;
 }

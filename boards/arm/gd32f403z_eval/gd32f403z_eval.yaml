@@ -15,3 +15,6 @@ supported:
   - counter
   - pwm
   - watchdog
+  - dma
+  - spi
+vendor: gd

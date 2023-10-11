@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
@@ -386,7 +387,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	k_mem_slab_free(&fifo_elem_slab, (void **)&ev->block.data);
+	k_mem_slab_free(&fifo_elem_slab, (void *)ev->block.data);
 }
 
 /**
@@ -686,7 +687,7 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 	case USBD_POWERED:
 		usbd_enable_endpoints(ctx);
-		nrfx_usbd_start(true);
+		nrfx_usbd_start(IS_ENABLED(CONFIG_USB_DEVICE_SOF));
 		ctx->ready = true;
 
 		LOG_DBG("USB Powered");
@@ -1046,7 +1047,6 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
  */
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
-	struct nrf_usbd_ep_ctx *ep_ctx;
 	struct usbd_event evt = {0};
 	bool put_evt = false;
 
@@ -1080,7 +1080,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		}
 		break;
 
-	case NRFX_USBD_EVT_EPTRANSFER:
+	case NRFX_USBD_EVT_EPTRANSFER: {
+		struct nrf_usbd_ep_ctx *ep_ctx;
+
 		ep_ctx = endpoint_ctx(p_event->data.eptransfer.ep);
 		switch (ep_ctx->cfg.type) {
 		case USB_DC_EP_CONTROL:
@@ -1097,6 +1099,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 			break;
 		}
 		break;
+	}
 
 	case NRFX_USBD_EVT_SETUP: {
 		nrfx_usbd_setup_t drv_setup;
@@ -1391,6 +1394,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	if ((ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) &&
 	    (!NRF_USBD_EPISO_CHECK(ep_cfg->ep_addr))) {
 		LOG_WRN("invalid endpoint type");
+		return -1;
+	}
+
+	if ((ep_cfg->ep_type != USB_DC_EP_ISOCHRONOUS) &&
+	    (NRF_USBD_EPISO_CHECK(ep_cfg->ep_addr))) {
+		LOG_WRN("iso endpoint can only be iso");
 		return -1;
 	}
 
@@ -1869,7 +1878,7 @@ int usb_dc_wakeup_request(void)
 	return 0;
 }
 
-static int usb_init(const struct device *arg)
+static int usb_init(void)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	nrfx_err_t err;

@@ -235,4 +235,4 @@ should see the following message in the terminal:
    https://madmachine.io
 
 .. _SwiftIO API Reference:
-   https://swiftioapi.madmachine.io
+   https://madmachineio.github.io/SwiftIO/documentation/swiftio/

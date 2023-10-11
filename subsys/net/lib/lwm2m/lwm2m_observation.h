@@ -8,22 +8,22 @@
 #include "lwm2m_object.h"
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
-int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
+int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path);
 
 #define MAX_TOKEN_LEN 8
 
 struct observe_node {
 	sys_snode_t node;
-	sys_slist_t path_list;	      /* List of Observation path */
-	uint8_t token[MAX_TOKEN_LEN]; /* Observation Token */
-	int64_t event_timestamp;      /* Timestamp for trig next Notify  */
-	int64_t last_timestamp;	      /* Timestamp from last Notify */
+	sys_slist_t path_list;               /* List of Observation path */
+	uint8_t token[MAX_TOKEN_LEN];        /* Observation Token */
+	int64_t event_timestamp;             /* Timestamp for trig next Notify  */
+	int64_t last_timestamp;	             /* Timestamp from last Notify */
+	struct lwm2m_message *active_notify; /* Currently active notification */
 	uint32_t counter;
 	uint16_t format;
 	uint8_t tkl;
-	bool resource_update : 1;     /* Resource is updated */
-	bool composite : 1;	      /* Composite Observation */
-	bool active_tx_operation : 1; /* Active Notification  process ongoing */
+	bool resource_update : 1;            /* Resource is updated */
+	bool composite : 1;                  /* Composite Observation */
 };
 /* Attribute handling. */
 
@@ -61,13 +61,29 @@ struct lwm2m_obj_path_list {
 void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
 				 struct lwm2m_obj_path_list path_object_buf[],
 				 uint8_t path_object_size);
-/* Add new Path to the list */
+/**
+ * Add new path to the list while maintaining hierarchical sort order
+ *
+ * @param lwm2m_path_list sorted path list
+ * @param lwm2m_free_list free list
+ * @param path path to be added
+ * @return 0 on success or a negative error code
+ */
 int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
-				  struct lwm2m_obj_path *path);
+				  const struct lwm2m_obj_path *path);
 
-int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_path *path,
+int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, const struct lwm2m_obj_path *path,
 				 void **ref);
-/* Remove paths when parent already exist in the list. */
+
+/**
+ * Remove paths when parent already exists in the list
+ *
+ * @note Path list must be sorted
+ * @see lwm2m_engine_add_path_to_list()
+ *
+ * @param lwm2m_path_list sorted path list
+ * @param lwm2m_free_list free list
+ */
 void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
 
 /* Resources */

@@ -1,8 +1,8 @@
 .. _sdhc_api:
 
 
-SDHC
-####
+Secure Digital High Capacity (SDHC)
+###################################
 
 The SDHC api offers a generic interface for interacting with an SD host
 controller device. It is used by the SD subsystem, and is not intended to be
@@ -16,7 +16,8 @@ SD Host Controller
 
 An SD host controller is a device capable of sending SD commands to an attached
 SD card. These commands can be sent using the native SD protocol, or over SPI.
-the SDHC api is designed to provide a generic way to send commands to and
+Some SD host controllers are also capable of communicating with MMC devices.
+The SDHC api is designed to provide a generic way to send commands to and
 interact with attached SD devices.
 
 Requests

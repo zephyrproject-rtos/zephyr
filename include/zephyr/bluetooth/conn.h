@@ -18,12 +18,14 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_err.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,9 +98,9 @@ enum {
 
 /** Preferred PHY parameters for LE connections */
 struct bt_conn_le_phy_param {
-	uint16_t options;     /** Connection PHY options. */
-	uint8_t  pref_tx_phy; /** Bitmask of preferred transmit PHYs */
-	uint8_t  pref_rx_phy; /** Bitmask of preferred receive PHYs */
+	uint16_t options; /**< Connection PHY options. */
+	uint8_t  pref_tx_phy; /**< Bitmask of preferred transmit PHYs */
+	uint8_t  pref_rx_phy; /**< Bitmask of preferred receive PHYs */
 };
 
 /** Initialize PHY parameters
@@ -194,6 +196,21 @@ struct bt_conn_le_data_len_param {
 	BT_CONN_LE_DATA_LEN_PARAM(BT_GAP_DATA_LEN_MAX, \
 				  BT_GAP_DATA_TIME_MAX)
 
+/** Connection Type */
+enum __packed bt_conn_type {
+	/** LE Connection Type */
+	BT_CONN_TYPE_LE = BIT(0),
+	/** BR/EDR Connection Type */
+	BT_CONN_TYPE_BR = BIT(1),
+	/** SCO Connection Type */
+	BT_CONN_TYPE_SCO = BIT(2),
+	/** ISO Connection Type */
+	BT_CONN_TYPE_ISO = BIT(3),
+	/** All Connection Type */
+	BT_CONN_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR |
+			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO,
+};
+
 /** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
@@ -215,13 +232,24 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  */
 void bt_conn_unref(struct bt_conn *conn);
 
-/** @brief Iterate through all existing connections.
+/** @brief Iterate through all bt_conn objects.
+ *
+ * Iterates trough all bt_conn objects that are alive in the Host allocator.
+ *
+ * To find established connections, combine this with @ref bt_conn_get_info.
+ * Check that @ref bt_conn_info.state is @ref BT_CONN_STATE_CONNECTED.
+ *
+ * Thread safety: This API is thread safe, but it does not guarantee a
+ * sequentially-consistent view for objects allocated during the current
+ * invocation of this API. E.g. If preempted while allocations A then B then C
+ * happen then results may include A and C but miss B.
  *
  * @param type  Connection Type
  * @param func  Function to call for each connection.
  * @param data  Data to pass to the callback function.
  */
-void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
+void bt_conn_foreach(enum bt_conn_type type,
+		     void (*func)(struct bt_conn *conn, void *data),
 		     void *data);
 
 /** @brief Look up an existing connection by address.
@@ -258,21 +286,6 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  */
 uint8_t bt_conn_index(const struct bt_conn *conn);
 
-/** Connection Type */
-enum {
-	/** LE Connection Type */
-	BT_CONN_TYPE_LE = BIT(0),
-	/** BR/EDR Connection Type */
-	BT_CONN_TYPE_BR = BIT(1),
-	/** SCO Connection Type */
-	BT_CONN_TYPE_SCO = BIT(2),
-	/** ISO Connection Type */
-	BT_CONN_TYPE_ISO = BIT(3),
-	/** All Connection Type */
-	BT_CONN_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR |
-			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO,
-};
-
 /** LE Connection Info Structure */
 struct bt_conn_le_info {
 	/** Source (Local) Identity Address */
@@ -285,9 +298,9 @@ struct bt_conn_le_info {
 	const bt_addr_le_t *local;
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
-	uint16_t interval; /** Connection interval */
-	uint16_t latency; /** Connection peripheral latency */
-	uint16_t timeout; /** Connection supervision timeout */
+	uint16_t interval; /**< Connection interval */
+	uint16_t latency; /**< Connection peripheral latency */
+	uint16_t timeout; /**< Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	const struct bt_conn_le_phy_info      *phy;
@@ -299,12 +312,24 @@ struct bt_conn_le_info {
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 };
 
-/* Multiply bt 1.25 to get MS */
-#define BT_CONN_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
+/** @brief Convert connection interval to milliseconds
+ *
+ *  Multiply by 1.25 to get milliseconds.
+ *
+ *  Note that this may be inaccurate, as something like 7.5 ms cannot be
+ *  accurately presented with integers.
+ */
+#define BT_CONN_INTERVAL_TO_MS(interval) ((interval) * 5U / 4U)
+
+/** @brief Convert connection interval to microseconds
+ *
+ *  Multiply by 1250 to get microseconds.
+ */
+#define BT_CONN_INTERVAL_TO_US(interval) ((interval) * 1250U)
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
-	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
+	const bt_addr_t *dst; /**< Destination (Remote) BR/EDR address */
 };
 
 enum {
@@ -366,7 +391,7 @@ struct bt_security_info {
 /** Connection Info Structure */
 struct bt_conn_info {
 	/** Connection Type. */
-	uint8_t type;
+	enum bt_conn_type type;
 	/** Connection Role. */
 	uint8_t role;
 	/** Which local identity the connection was created with */
@@ -452,6 +477,19 @@ struct bt_conn_le_tx_power {
 
 	/** Output: maximum transmit power level */
 	int8_t max_level;
+};
+
+/** @brief Passkey Keypress Notification type
+ *
+ *  The numeric values are the same as in the Core specification for Pairing
+ *  Keypress Notification PDU.
+ */
+enum bt_conn_auth_keypress {
+	BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED = 0x00,
+	BT_CONN_AUTH_KEYPRESS_DIGIT_ENTERED = 0x01,
+	BT_CONN_AUTH_KEYPRESS_DIGIT_ERASED = 0x02,
+	BT_CONN_AUTH_KEYPRESS_CLEARED = 0x03,
+	BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED = 0x04,
 };
 
 /** @brief Get connection info
@@ -661,11 +699,6 @@ struct bt_conn_le_create_param {
  *  The application must disable explicit scanning before initiating
  *  a new LE connection.
  *
- *  When @kconfig{CONFIG_BT_PRIVACY} enabled and @p peer is an identity address
- *  from a local bond, this API will connect to an advertisement with either:
- *    - the address being an RPA resolved from the IRK obtained during bonding.
- *    - the passed identity address, if the local identity is not in Network Privacy Mode.
- *
  *  @param[in]  peer         Remote address.
  *  @param[in]  create_param Create connection parameters.
  *  @param[in]  conn_param   Initial connection parameters.
@@ -678,7 +711,41 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
 
-/** @brief Automatically connect to remote devices in the filter accept list..
+struct bt_conn_le_create_synced_param {
+
+	/** @brief Remote address
+	 *
+	 * The peer must be synchronized to the PAwR train.
+	 *
+	 */
+	const bt_addr_le_t *peer;
+
+	/** The subevent where the connection will be initiated. */
+	uint8_t subevent;
+};
+
+/** @brief Create a connection to a synced device
+ *
+ *  Initiate a connection to a synced device from a Periodic Advertising
+ *  with Responses (PAwR) train.
+ *
+ *  The caller gets a new reference to the connection object which must be
+ *  released with bt_conn_unref() once done using the object.
+ *
+ *  This uses the Periodic Advertising Connection Procedure.
+ *
+ *  @param[in]  adv          The adverting set the PAwR advertiser belongs to.
+ *  @param[in]  synced_param Create connection parameters.
+ *  @param[in]  conn_param   Initial connection parameters.
+ *  @param[out] conn         Valid connection object on success.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
+			     const struct bt_conn_le_create_synced_param *synced_param,
+			     const struct bt_le_conn_param *conn_param, struct bt_conn **conn);
+
+/** @brief Automatically connect to remote devices in the filter accept list.
  *
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
@@ -727,9 +794,11 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  strong key this function does nothing.
  *
  *  If the device has no bond information for the peer and is not already paired
- *  then the pairing procedure will be initiated. If the device has bond
- *  information or is already paired and the keys are too weak then the pairing
- *  procedure will be initiated.
+ *  then the pairing procedure will be initiated. Note that @p sec has no effect
+ *  on the security level selected for the pairing process. The selection is
+ *  instead controlled by the values of the registered @ref bt_conn_auth_cb. If
+ *  the device has bond information or is already paired and the keys are too
+ *  weak then the pairing procedure will be initiated.
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
@@ -743,6 +812,9 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *
  *  @note When @kconfig{CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY} is enabled then the
  *        security level will always be level 3.
+ *
+ *  @note When @ref BT_SECURITY_FORCE_PAIR within @p sec is enabled then the pairing
+ *        procedure will always be initiated.
  *
  *  @param conn Connection object.
  *  @param sec Requested security level.
@@ -1013,15 +1085,41 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
-/** @brief Allow/disallow remote OOB data to be used for pairing.
+/** @brief Set/clear the bonding flag for a given connection.
  *
- *  Set/clear the OOB data flag for SMP Pairing Request/Response data.
- *  The initial value of this flag depends on BT_OOB_DATA_PRESENT Kconfig
- *  setting.
+ *  Set/clear the Bonding flag in the Authentication Requirements of
+ *  SMP Pairing Request/Response data for a given connection.
  *
- *  @param enable Value allowing/disallowing remote OOB data.
+ *  The bonding flag for a given connection cannot be set/cleared if
+ *  security procedures in the SMP module have already started.
+ *  This function can be called only once per connection.
+ *
+ *  If the bonding flag is not set/cleared for a given connection,
+ *  the value will depend on global configuration which is set using
+ *  bt_set_bondable.
+ *  The default value of the global configuration is defined using
+ *  CONFIG_BT_BONDABLE Kconfig option.
+ *
+ *  @param conn Connection object.
+ *  @param enable Value allowing/disallowing to be bondable.
  */
-void bt_set_oob_data_flag(bool enable);
+int bt_conn_set_bondable(struct bt_conn *conn, bool enable);
+
+/** @brief Allow/disallow remote LE SC OOB data to be used for pairing.
+ *
+ *  Set/clear the OOB data flag for LE SC SMP Pairing Request/Response data.
+ *
+ *  @param enable Value allowing/disallowing remote LE SC OOB data.
+ */
+void bt_le_oob_set_sc_flag(bool enable);
+
+/** @brief Allow/disallow remote legacy OOB data to be used for pairing.
+ *
+ *  Set/clear the OOB data flag for legacy SMP Pairing Request/Response data.
+ *
+ *  @param enable Value allowing/disallowing remote legacy OOB data.
+ */
+void bt_le_oob_set_legacy_flag(bool enable);
 
 /** @brief Set OOB Temporary Key to be used for pairing
  *
@@ -1215,6 +1313,32 @@ struct bt_conn_auth_cb {
 	 *  @param passkey Passkey to show to the user.
 	 */
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+	/** @brief Receive Passkey Keypress Notification during pairing
+	 *
+	 *  This allows the remote device to use the local device to give users
+	 *  feedback on the progress of entering the passkey over there. This is
+	 *  useful when the remote device itself has no display suitable for
+	 *  showing the progress.
+	 *
+	 *  The handler of this callback is expected to keep track of the number
+	 *  of digits entered and show a password-field-like feedback to the
+	 *  user.
+	 *
+	 *  This callback is only relevant while the local side does Passkey
+	 *  Display.
+	 *
+	 *  The event type is verified to be in range of the enum. No other
+	 *  sanitization has been done. The remote could send a large number of
+	 *  events of any type in any order.
+	 *
+	 *  @param conn The related connection.
+	 *  @param type Type of event. Verified in range of the enum.
+	 */
+	void (*passkey_display_keypress)(struct bt_conn *conn,
+					 enum bt_conn_auth_keypress type);
+#endif
 
 	/** @brief Request the user to enter a passkey.
 	 *
@@ -1429,6 +1553,23 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
+
+/** @brief Send Passkey Keypress Notification during pairing
+ *
+ *  This function may be called only after passkey_entry callback from
+ *  bt_conn_auth_cb structure was called.
+ *
+ *  Requires @kconfig{CONFIG_BT_PASSKEY_KEYPRESS}.
+ *
+ *  @param conn Destination for the notification.
+ *  @param type What keypress event type to send. @see bt_conn_auth_keypress.
+ *
+ *  @retval 0 Success
+ *  @retval -EINVAL Improper use of the API.
+ *  @retval -ENOMEM Failed to allocate.
+ *  @retval -ENOBUFS Failed to allocate.
+ */
+int bt_conn_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress type);
 
 /** @brief Cancel ongoing authenticated pairing.
  *

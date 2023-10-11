@@ -25,6 +25,11 @@
 	};
 };
 
+&clk_hsi48 {
+	/* HSI48 required for USB */
+	status = "okay";
+};
+
 &rcc {
 	d1cpre = <1>;
 	hpre = <1>;
@@ -97,7 +102,7 @@
 	pinctrl-names = "default";
 };
 
-&can1 {
+&fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_ph13>;
 	pinctrl-names = "default";
 };

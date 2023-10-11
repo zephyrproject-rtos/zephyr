@@ -23,15 +23,17 @@ extern "C" {
 /**
  * @brief hid.h API
  * @defgroup usb_hid_definitions USB HID common definitions
+ * @ingroup usb
  * @{
- * @}
  */
 
 /**
- * @defgroup usb_hid_types USB HID types and values
- * @ingroup usb_hid_definitions
+ * @name USB HID types and values
  * @{
  */
+
+/** HID Specification release v1.11 */
+#define USB_HID_VERSION			0x0111
 
 /** USB HID Class HID descriptor type */
 #define USB_DESC_HID			0x21
@@ -165,7 +167,6 @@ extern "C" {
 
 /**
  * @defgroup usb_hid_items USB HID Item helpers
- * @ingroup usb_hid_definitions
  * @{
  */
 
@@ -416,7 +417,6 @@ extern "C" {
 
 /**
  * @defgroup usb_hid_mk_report_desc Mouse and keyboard report descriptors
- * @ingroup usb_hid_definitions
  * @{
  */
 
@@ -636,6 +636,10 @@ enum hid_kbd_led {
 	HID_KBD_LED_COMPOSE	= 0x08,
 	HID_KBD_LED_KANA	= 0x10,
 };
+
+/**
+ * @}
+ */
 
 /**
  * @}

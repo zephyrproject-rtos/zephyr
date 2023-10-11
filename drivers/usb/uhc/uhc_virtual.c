@@ -78,24 +78,16 @@ static int vrt_xfer_control(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct net_buf *buf = xfer->buf;
 	struct uvb_packet *uvb_pkt;
-	struct net_buf *buf;
+	uint8_t *data = NULL;
+	size_t length = 0;
 
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
-		return -ENODATA;
-	}
-
-	if (!uhc_xfer_is_queued(xfer) && xfer->setup) {
-		return -EINVAL;
-	}
-
-	if (!xfer->setup) {
+	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP,
 					xfer->addr, USB_CONTROL_EP_OUT,
-					buf->data, buf->len);
+					xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
 			return -ENOMEM;
@@ -103,17 +95,11 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_SETUP;
 		priv->busy = true;
-		uhc_xfer_setup(xfer);
-		uhc_xfer_queued(xfer);
 
 		return uvb_advert_pkt(priv->host_node, uvb_pkt);
 	}
 
-	if (buf->size != 0) {
-		uint8_t *data;
-		size_t length;
-
-		LOG_DBG("Handle DATA stage");
+	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
 			length = MIN(net_buf_tailroom(buf), xfer->mps);
 			data = net_buf_tail(buf);
@@ -122,6 +108,7 @@ static int vrt_xfer_control(const struct device *dev,
 			data = buf->data;
 		}
 
+		LOG_DBG("Handle DATA stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
 					xfer->addr, xfer->ep,
 					data, length);
@@ -132,7 +119,11 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 		priv->busy = true;
-	} else {
+
+		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+	}
+
+	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
 		uint8_t ep;
 
 		LOG_DBG("Handle STATUS stage");
@@ -144,7 +135,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
 					xfer->addr, ep,
-					buf->data, 0);
+					NULL, 0);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
 			return -ENOMEM;
@@ -152,26 +143,21 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 		priv->busy = true;
+
+		return uvb_advert_pkt(priv->host_node, uvb_pkt);
 	}
 
-	return uvb_advert_pkt(priv->host_node, uvb_pkt);
+	return -EINVAL;
 }
 
 static int vrt_xfer_bulk(const struct device *dev,
 			 struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct net_buf *buf = xfer->buf;
 	struct uvb_packet *uvb_pkt;
-	struct net_buf *buf;
 	uint8_t *data;
 	size_t length;
-	int ret;
-
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		LOG_ERR("No buffers to handle");
-		return -ENODATA;
-	}
 
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
 		length = MIN(net_buf_tailroom(buf), xfer->mps);
@@ -188,12 +174,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	ret = uvb_advert_pkt(priv->host_node, uvb_pkt);
-	if (!ret) {
-		uhc_xfer_queued(xfer);
-	}
-
-	return ret;
+	return uvb_advert_pkt(priv->host_node, uvb_pkt);
 }
 
 static int vrt_schedule_xfer(const struct device *dev)
@@ -218,49 +199,67 @@ static int vrt_schedule_xfer(const struct device *dev)
 	return vrt_xfer_bulk(dev, priv->last_xfer);
 }
 
-static int vrt_hrslt_success(const struct device *dev,
-			     struct uvb_packet *const pkt)
+static void vrt_hrslt_success(const struct device *dev,
+			      struct uvb_packet *const pkt)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
+	bool finished = false;
 	size_t length;
-	int err = 0;
-
-	buf = k_fifo_peek_head(&xfer->queue);
-	if (buf == NULL) {
-		return -ENODATA;
-	}
 
 	switch (pkt->request) {
 	case UVB_REQUEST_SETUP:
-		err = uhc_xfer_done(xfer);
+		if (xfer->buf != NULL) {
+			xfer->stage = UHC_CONTROL_STAGE_DATA;
+		} else {
+			xfer->stage = UHC_CONTROL_STAGE_STATUS;
+		}
+
 		break;
 	case UVB_REQUEST_DATA:
+		if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
+			LOG_DBG("Status stage finished");
+			finished = true;
+			break;
+		}
+
 		if (USB_EP_DIR_IS_OUT(pkt->ep)) {
 			length = MIN(buf->len, xfer->mps);
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
-				err = uhc_xfer_done(xfer);
+				if (pkt->ep == USB_CONTROL_EP_OUT) {
+					xfer->stage = UHC_CONTROL_STAGE_STATUS;
+				} else {
+					finished = true;
+				}
 			}
 		} else {
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
 			if (pkt->length > xfer->mps) {
-				LOG_ERR("Ambiguous packet with the length %u",
+				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
-			LOG_DBG("IN chunk %zu out of %u", length, net_buf_tailroom(buf));
+			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
 			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
-				err = uhc_xfer_done(xfer);
+				if (pkt->ep == USB_CONTROL_EP_IN) {
+					xfer->stage = UHC_CONTROL_STAGE_STATUS;
+				} else {
+					finished = true;
+				}
 			}
 		}
 		break;
 	}
 
-	return err;
+	if (finished) {
+		LOG_DBG("Transfer finished");
+		uhc_xfer_return(dev, xfer, 0);
+		priv->last_xfer = NULL;
+	}
 }
 
 static void vrt_xfer_drop_active(const struct device *dev, int err)
@@ -278,7 +277,7 @@ static int vrt_handle_reply(const struct device *dev,
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
-	int ret;
+	int ret = 0;
 
 	if (xfer == NULL) {
 		LOG_ERR("No transfers to handle");
@@ -286,47 +285,19 @@ static int vrt_handle_reply(const struct device *dev,
 		goto handle_reply_err;
 	}
 
-	/* If an active xfer is not marked then something has gone wrong */
-	if (!uhc_xfer_is_queued(xfer)) {
-		LOG_ERR("Active transfer not queued");
-		vrt_xfer_drop_active(dev, -EINVAL);
-		ret = -EINVAL;
-		goto handle_reply_err;
-	}
-
-	/* There should always be a buffer in the fifo when a xfer is active */
-	if (k_fifo_is_empty(&xfer->queue)) {
-		LOG_ERR("No buffers to handle");
-		vrt_xfer_drop_active(dev, -ENODATA);
-		ret = -ENODATA;
-		goto handle_reply_err;
-	}
+	priv->busy = false;
 
 	switch (pkt->reply) {
 	case UVB_REPLY_NACK:
 		/* Restart last transaction */
-		priv->busy = false;
 		break;
 	case UVB_REPLY_STALL:
 		vrt_xfer_drop_active(dev, -EPIPE);
-		priv->busy = false;
 		break;
 	case UVB_REPLY_ACK:
-		ret = vrt_hrslt_success(dev, pkt);
-		priv->busy = false;
-		if (ret) {
-			vrt_xfer_drop_active(dev, ret);
-		} else {
-			if (k_fifo_is_empty(&xfer->queue)) {
-				LOG_DBG("Transfer done");
-				uhc_xfer_return(dev, xfer, 0);
-				priv->last_xfer = NULL;
-			}
-		}
-
+		vrt_hrslt_success(dev, pkt);
 		break;
 	default:
-		priv->busy = false;
 		vrt_xfer_drop_active(dev, -EINVAL);
 		ret = -EINVAL;
 		break;
@@ -349,7 +320,11 @@ static void xfer_work_handler(struct k_work *work)
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_REPLY:
-			vrt_handle_reply(dev, ev->pkt);
+			err = vrt_handle_reply(dev, ev->pkt);
+			if (unlikely(err)) {
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
+			}
+
 			schedule = true;
 			break;
 		case UHC_VRT_EVT_XFER:
@@ -374,11 +349,11 @@ static void xfer_work_handler(struct k_work *work)
 		if (schedule && !priv->busy) {
 			err = vrt_schedule_xfer(dev);
 			if (unlikely(err)) {
-				uhc_submit_event(dev, UHC_EVT_ERROR, err, NULL);
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
 			}
 		}
 
-		k_mem_slab_free(&uhc_vrt_slab, (void **)&ev);
+		k_mem_slab_free(&uhc_vrt_slab, (void *)ev);
 	}
 }
 
@@ -411,7 +386,7 @@ static void vrt_device_act(const struct device *dev,
 		type = UHC_EVT_ERROR;
 	}
 
-	uhc_submit_event(dev, type, 0, NULL);
+	uhc_submit_event(dev, type, 0);
 }
 
 static void uhc_vrt_uvb_cb(const void *const vrt_priv,

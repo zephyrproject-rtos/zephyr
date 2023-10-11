@@ -11,15 +11,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
-#include <zephyr/irq.h>
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_bus.h>
+
+#include <cmsis_core.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -29,21 +27,8 @@
  *
  * @return 0
  */
-static int stm32l0_init(const struct device *arg)
+static int stm32l0_init(void)
 {
-	uint32_t key;
-
-	ARG_UNUSED(arg);
-
-	key = irq_lock();
-
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-
-	irq_unlock(key);
-
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 2.1 MHz from MSI */
 	SystemCoreClock = 2097152;

@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT espressif_esp32_i2c
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/i2c_reg.h>
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <hal/i2c_ll.h>
@@ -242,21 +241,25 @@ static int i2c_esp32_recover(const struct device *dev)
 static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	if (config->scl_timeout > 0) {
 		i2c_sclk_t sclk = i2c_get_clk_src(config->bitrate);
-		uint32_t clk_freq_mhz = I2C_LL_CLK_SRC_FREQ(sclk);
-		uint32_t timeout_cycles = MIN(I2C_TIME_OUT_REG_V,
+		uint32_t clk_freq_mhz = i2c_clk_alloc[sclk];
+		uint32_t timeout_cycles = MIN(I2C_LL_MAX_TIMEOUT,
 					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
-		sys_clear_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
-		sys_set_bits(I2C_TO_REG(config->index), timeout_cycles << I2C_TIME_OUT_REG_S);
+		i2c_hal_set_tout(&data->hal, timeout_cycles);
 		LOG_DBG("SCL timeout: %d us, value: %d", config->scl_timeout, timeout_cycles);
 	} else {
 		/* Disabling the timeout by clearing the I2C_TIME_OUT_EN bit does not seem to work,
 		 * at least for ESP32-C3 (tested with communication to bq76952 chip). So we set the
 		 * timeout to maximum supported value instead.
 		 */
-		sys_set_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32)
+		i2c_hal_set_tout(&data->hal, I2C_LL_MAX_TIMEOUT);
+#else
+		i2c_hal_set_tout_en(&data->hal, 0);
+#endif
 	}
 }
 
@@ -397,8 +400,9 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
+	uint32_t msg_len = msg->len;
+	uint8_t *msg_buf = msg->buf;
 	uint8_t rd_filled = 0;
-	uint8_t *read_pr = NULL;
 	int ret = 0;
 
 	data->status = I2C_STATUS_READ;
@@ -410,50 +414,35 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	while (msg->len) {
-		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
-
-		read_pr = msg->buf;
-		msg->len -= rd_filled;
-
-		if (rd_filled) {
-			cmd.ack_val = 0,
-			cmd.byte_num = rd_filled;
-
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
-			i2c_hal_enable_master_rx_it(&data->hal);
-			ret = i2c_esp32_transmit(dev);
-			if (ret < 0) {
-				return ret;
-			}
-			i2c_hal_read_rxfifo(&data->hal, read_pr, rd_filled);
-			msg->buf += rd_filled;
-		}
+	while (msg_len) {
+		rd_filled = (msg_len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg_len - 1);
 
 		/* I2C master won't acknowledge the last byte read from the
 		 * slave device. Divide the read command in two segments as
 		 * recommended by the ESP32 Technical Reference Manual.
 		 */
-		if (msg->len == 1) {
-			cmd.ack_val = 1,
-			cmd.byte_num = 1,
-			msg->len = 0;
-			read_pr = msg->buf;
-
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
-			i2c_hal_enable_master_rx_it(&data->hal);
-			ret = i2c_esp32_transmit(dev);
-			if (ret < 0) {
-				return ret;
-			}
-			i2c_hal_read_rxfifo(&data->hal, read_pr, 1);
-			msg->buf += 1;
+		if (msg_len == 1) {
+			rd_filled = 1;
+			cmd.ack_val = 1;
+		} else {
+			cmd.ack_val = 0;
 		}
-	}
-	return 0;
+		cmd.byte_num = rd_filled;
 
+		i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+		i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+		i2c_hal_enable_master_rx_it(&data->hal);
+		ret = i2c_esp32_transmit(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		i2c_hal_read_rxfifo(&data->hal, msg_buf, rd_filled);
+		msg_buf += rd_filled;
+		msg_len -= rd_filled;
+	}
+
+	return 0;
 }
 
 static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
@@ -496,7 +485,8 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint8_t wr_filled = 0;
-	uint8_t *write_pr = NULL;
+	uint32_t msg_len = msg->len;
+	uint8_t *msg_buf = msg->buf;
 	int ret = 0;
 
 	data->status = I2C_STATUS_WRITE;
@@ -510,16 +500,12 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	while (msg->len) {
-		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
-
-		write_pr = msg->buf;
-		msg->buf += wr_filled;
-		msg->len -= wr_filled;
+	while (msg_len) {
+		wr_filled = (msg_len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg_len;
 		cmd.byte_num = wr_filled;
 
 		if (wr_filled > 0) {
-			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
+			i2c_hal_write_txfifo(&data->hal, msg_buf, wr_filled);
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
 			i2c_hal_enable_master_tx_it(&data->hal);
@@ -528,6 +514,9 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 				return ret;
 			}
 		}
+
+		msg_buf += wr_filled;
+		msg_len -= wr_filled;
 	}
 
 	return 0;
@@ -571,10 +560,18 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	struct i2c_msg *current, *next;
+	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
 	if (!num_msgs) {
 		return 0;
+	}
+
+	while (i2c_hal_is_bus_busy(&data->hal)) {
+		k_busy_wait(1);
+		if (timeout-- == 0) {
+			return -EBUSY;
+		}
 	}
 
 	/* Check for validity of all messages before transfer */
@@ -685,12 +682,12 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	if (!device_is_ready(config->scl.gpio.port)) {
+	if (!gpio_is_ready_dt(&config->scl.gpio)) {
 		LOG_ERR("SCL GPIO device is not ready");
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->sda.gpio.port)) {
+	if (!gpio_is_ready_dt(&config->sda.gpio)) {
 		LOG_ERR("SDA GPIO device is not ready");
 		return -EINVAL;
 	}

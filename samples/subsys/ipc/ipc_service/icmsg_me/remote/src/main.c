@@ -18,7 +18,7 @@ K_THREAD_STACK_DEFINE(ipc1_stack, STACKSIZE);
 
 static volatile uint8_t ipc0A_received_data;
 static volatile uint8_t ipc0B_received_data;
-static volatile uint8_t ipc1_received_data;
+static const void *ipc1_received_data;
 
 static K_SEM_DEFINE(ipc0A_bound_sem, 0, 1);
 static K_SEM_DEFINE(ipc0B_bound_sem, 0, 1);
@@ -194,7 +194,8 @@ static void ipc1_ept_bound(void *priv)
 
 static void ipc1_ept_recv(const void *data, size_t len, void *priv)
 {
-	ipc1_received_data = *((uint8_t *) data);
+	ipc_service_hold_rx_buffer(&ipc1_ept, (void *)data);
+	ipc1_received_data = data;
 
 	k_sem_give(&ipc1_data_sem);
 }
@@ -236,16 +237,38 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 	k_sem_take(&ipc1_bound_sem, K_FOREVER);
 
 	while (message < 99) {
+		void *tx_buffer;
+		uint32_t tx_buffer_size = sizeof(message);
+
 		k_sem_take(&ipc1_data_sem, K_FOREVER);
-		message = ipc1_received_data;
+		message = *((uint8_t *) ipc1_received_data);
+
+		ret = ipc_service_release_rx_buffer(&ipc1_ept, (void *) ipc1_received_data);
+		if (ret < 0) {
+			printk("release_rx_buffer() failed with ret %d\n", ret);
+			break;
+		}
 
 		printk("REMOTE [1]: %d\n", message);
 
 		message++;
 
-		ret = ipc_service_send(&ipc1_ept, &message, sizeof(message));
+		ret = ipc_service_get_tx_buffer(&ipc1_ept, &tx_buffer, &tx_buffer_size, K_NO_WAIT);
 		if (ret < 0) {
-			printk("send_message(%d) failed with ret %d\n", message, ret);
+			printk("get_tx_buffer(%u) failed with ret %d\n", sizeof(message), ret);
+			break;
+		}
+		if (tx_buffer_size != sizeof(message)) {
+			printk("get_tx_buffer modified buffer size to unexpected value %u\n",
+					tx_buffer_size);
+			break;
+		}
+
+		*((uint8_t *) tx_buffer) = message;
+
+		ret = ipc_service_send_nocopy(&ipc1_ept, tx_buffer, tx_buffer_size);
+		if (ret < 0) {
+			printk("send_message_nocopy(%u) failed with ret %d\n", message, ret);
 			break;
 		}
 	}

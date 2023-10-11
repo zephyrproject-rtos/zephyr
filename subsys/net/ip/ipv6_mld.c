@@ -17,6 +17,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/icmp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -194,12 +195,20 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 		}
 	}
 
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
+	}
+
+	if (!net_if_is_up(iface)) {
+		return -ENETDOWN;
+	}
+
 	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	net_if_ipv6_maddr_join(maddr);
+	net_if_ipv6_maddr_join(iface, maddr);
 
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
@@ -222,6 +231,10 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
 		return -EINVAL;
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
 	}
 
 	ret = mld_send_generic(iface, addr, NET_IPV6_MLDv2_MODE_IS_INCLUDE);
@@ -296,12 +309,15 @@ drop:
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
 
-static enum net_verdict handle_mld_query(struct net_pkt *pkt,
-					 struct net_ipv6_hdr *ip_hdr,
-					 struct net_icmp_hdr *icmp_hdr)
+static int handle_mld_query(struct net_icmp_ctx *ctx,
+			    struct net_pkt *pkt,
+			    struct net_icmp_ip_hdr *hdr,
+			    struct net_icmp_hdr *icmp_hdr,
+			    void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
 					      struct net_icmpv6_mld_query);
+	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	uint16_t length = net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
 	uint16_t pkt_len;
@@ -340,23 +356,22 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 
 	send_mld_report(net_pkt_iface(pkt));
 
-	net_pkt_unref(pkt);
-
-	return NET_OK;
+	return 0;
 
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
-	return NET_DROP;
+	return -EIO;
 }
-
-static struct net_icmpv6_handler mld_query_input_handler = {
-	.type = NET_ICMPV6_MLD_QUERY,
-	.code = 0,
-	.handler = handle_mld_query,
-};
 
 void net_ipv6_mld_init(void)
 {
-	net_icmpv6_register_handler(&mld_query_input_handler);
+	static struct net_icmp_ctx ctx;
+	int ret;
+
+	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY, 0, handle_mld_query);
+	if (ret < 0) {
+		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_MLD_QUERY),
+			ret);
+	}
 }

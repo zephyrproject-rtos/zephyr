@@ -5,4 +5,4 @@ description: GPIO destination for mapping test
 compatible: "gpio-dst"
 
 gpio-cells:
-    - val
+  - val

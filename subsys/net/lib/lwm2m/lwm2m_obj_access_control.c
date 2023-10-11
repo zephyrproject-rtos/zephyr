@@ -420,7 +420,7 @@ static struct lwm2m_engine_obj_inst *ac_create(uint16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ac_control_init(const struct device *dev)
+static int ac_control_init(void)
 {
 	ac_obj.obj_id = LWM2M_OBJECT_ACCESS_CONTROL_ID;
 	ac_obj.version_major = ACCESS_CONTROL_VERSION_MAJOR;
@@ -432,10 +432,10 @@ static int ac_control_init(const struct device *dev)
 	ac_obj.create_cb = ac_create;
 	lwm2m_register_obj(&ac_obj);
 
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-	/* add the objects/object instances that were created before the ac control object */
-	add_existing_objects();
-#endif /* CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP */
+	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)) {
+		/* add the objects/object instances that were created before the ac control */
+		add_existing_objects();
+	}
 	return 0;
 }
 

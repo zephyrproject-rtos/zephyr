@@ -18,7 +18,11 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/device.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
+#endif
+
+#ifdef CONFIG_GPIO_INTEL
+#include "soc_gpio.h"
 #endif
 
 #if DT_ON_BUS(DT_CHOSEN(zephyr_console), pcie)

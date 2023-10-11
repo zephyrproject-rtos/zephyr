@@ -1,13 +1,28 @@
 common:
   depends_on: i2c
-  tags: drivers i2c
+  tags:
+    - drivers
+    - i2c
   harness: ztest
   harness_config:
     fixture: i2c_bus_short
 
 tests:
   drivers.i2c.target_api.dual_role:
-    platform_allow: nucleo_f091rc stm32f072b_disco nucleo_g071rb rpi_pico
+    platform_allow:
+      - nucleo_f746zg
+      - nucleo_g474re
+      - nucleo_f091rc
+      - stm32f072b_disco
+      - nucleo_g071rb
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_wl55jc
+      - nucleo_l073rz
+      - nucleo_l152re
+      - rpi_pico
+      - efr32bg22_brd4184a
+      - mr_canhubk3
     integration_platforms:
       - nucleo_f091rc
     extra_configs:

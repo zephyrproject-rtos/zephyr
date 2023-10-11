@@ -26,7 +26,7 @@ void test_fs_mkfs_simple(void)
 	ret = fs_mount(fs_mkfs_mp);
 
 	if (fs_mkfs_mp->type == FS_LITTLEFS) {
-		zassert_equal(ret, -EILSEQ, "Expected EILSEQ got %d", ret);
+		zassert_equal(ret, -EFAULT, "Expected EFAULT got %d", ret);
 	} else if (fs_mkfs_mp->type == FS_FATFS) {
 		zassert_equal(ret, -ENODEV, "Expected ENODEV got %d", ret);
 	}

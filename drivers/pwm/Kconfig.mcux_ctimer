@@ -1,0 +1,9 @@
+# (c) Meta Platforms, Inc. and affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MCUX_CTIMER
+	bool "MCUX CTimer PWM driver"
+	default y
+	depends on DT_HAS_NXP_CTIMER_PWM_ENABLED
+	help
+	  Enable ctimer based pwm driver.

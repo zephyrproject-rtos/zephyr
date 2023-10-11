@@ -1,0 +1,22 @@
+identifier: nrf9161dk_nrf9161
+name: nRF9161-DK-NRF9161
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+vendor: nordic

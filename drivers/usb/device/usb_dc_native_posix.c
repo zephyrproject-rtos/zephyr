@@ -356,6 +356,10 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		uint8_t ep_idx = USB_EP_GET_IDX(ep);
 		struct usb_ep_ctrl_prv *ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 
+		if (data_len > ARRAY_SIZE(ctrl->buf)) {
+			return -EINVAL;
+		}
+
 		memcpy(ctrl->buf, data, data_len);
 		ctrl->buf_len = data_len;
 	}
@@ -525,8 +529,15 @@ int handle_usb_control(struct usbip_header *hdr)
 	ep_ctrl->cb(ep_idx, USB_DC_EP_SETUP);
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		uint32_t data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+
 		/* Data OUT stage availably */
-		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		if (data_len > ARRAY_SIZE(ep_ctrl->buf)) {
+			return -EIO;
+		}
+
+		ep_ctrl->data_len = data_len;
+
 		if (usbip_recv(ep_ctrl->buf, ep_ctrl->data_len) < 0) {
 			return -EIO;
 		}
@@ -546,13 +557,22 @@ int handle_usb_data(struct usbip_header *hdr)
 	uint8_t ep;
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		uint32_t data_len;
+
 		if (ep_idx >= USBIP_OUT_EP_NUM) {
 			return -EINVAL;
 		}
 
 		ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_OUT;
-		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+
+		if (data_len > ARRAY_SIZE(ep_ctrl->buf)) {
+			return -EIO;
+		}
+
+		ep_ctrl->data_len = data_len;
+
 		if (usbip_recv(ep_ctrl->buf, ep_ctrl->data_len) < 0) {
 			return -EIO;
 		}

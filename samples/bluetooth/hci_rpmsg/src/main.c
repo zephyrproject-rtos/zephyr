@@ -24,10 +24,7 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/hci_vs.h>
 
-#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 #include <zephyr/logging/log_ctrl.h>
-#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
-
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hci_rpmsg, CONFIG_BT_LOG_LEVEL);
@@ -79,6 +76,12 @@ static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	LOG_DBG("len %u", hdr->param_len);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -110,6 +113,12 @@ static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	LOG_DBG("len %u", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -137,6 +146,12 @@ static struct net_buf *hci_rpmsg_iso_recv(uint8_t *data, size_t remaining)
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr->len))) {
 		LOG_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	if (remaining > net_buf_tailroom(buf)) {
+		LOG_ERR("Not enough space in buffer");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -269,10 +284,10 @@ static void hci_rpmsg_send(struct net_buf *buf, bool is_fatal_err)
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 	/* Generate an error event only when IPC service endpoint is already bound. */
 	if (ipc_ept_ready) {
 		/* Prepare vendor specific HCI debug event */
@@ -286,24 +301,27 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
 		}
 	} else {
-		LOG_ERR("IPC endpoint is not redy yet: %s at %d", __FILE__, __LINE__);
+		LOG_ERR("IPC endpoint is not ready yet: %s at %d", __FILE__, __LINE__);
 	}
 
 	LOG_ERR("Halting system");
 
+#else /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
+	LOG_ERR("Controller assert in: %s at %d", file, line);
+
+#endif /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
+
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
+
 	while (true) {
 	};
-#else
-	LOG_ERR("Controller assert in: %s at %d", file, line);
-#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
-	LOG_PANIC();
-
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
@@ -323,6 +341,9 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 	}
 
 	LOG_ERR("Halting system");
+
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
 
 	while (true) {
 	};
@@ -353,7 +374,7 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 	},
 };
 
-void main(void)
+int main(void)
 {
 	int err;
 	const struct device *hci_ipc_instance =
@@ -377,7 +398,7 @@ void main(void)
 
 	/* Initialize IPC service instance and register endpoint. */
 	err = ipc_service_open_instance(hci_ipc_instance);
-	if (err) {
+	if (err < 0 && err != -EALREADY) {
 		LOG_ERR("IPC service instance initialization failed: %d\n", err);
 	}
 
@@ -394,4 +415,5 @@ void main(void)
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 		hci_rpmsg_send(buf, HCI_REGULAR_MSG);
 	}
+	return 0;
 }

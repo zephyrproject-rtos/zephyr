@@ -13,3 +13,6 @@ supported:
   - gpio
   - netif:eth
   - memc
+  - adc
+  - counter
+vendor: st

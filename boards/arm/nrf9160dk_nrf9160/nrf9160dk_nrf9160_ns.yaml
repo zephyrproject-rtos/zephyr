@@ -17,3 +17,5 @@ supported:
   - pwm
   - watchdog
   - netif:modem
+  - gpio
+vendor: nordic

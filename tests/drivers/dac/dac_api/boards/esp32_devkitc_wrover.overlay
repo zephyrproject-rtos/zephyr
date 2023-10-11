@@ -1,0 +1,9 @@
+/*
+ * Copyright 2022 Espressif (Shanghai)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac {
+	status = "okay";
+};

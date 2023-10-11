@@ -15,10 +15,10 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
-if DISPLAY
+config INPUT
+	default y if LVGL
 
-config KSCAN
-	default y
+if DISPLAY
 
 # MEMC needs to be enabled in order to store
 # display buffer to external SDRAM connected to FMC
@@ -27,12 +27,12 @@ config MEMC
 
 endif # DISPLAY
 
-if KSCAN
+if INPUT
 
-config KSCAN_FT5336_INTERRUPT
+config INPUT_FT5336_INTERRUPT
 	default y
 
-endif # KSCAN
+endif # INPUT
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS

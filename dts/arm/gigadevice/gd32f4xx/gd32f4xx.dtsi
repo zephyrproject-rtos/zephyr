@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -618,26 +619,28 @@
 		};
 
 		dma0: dma@40026000 {
-			compatible = "gd,gd32-dma";
+			compatible = "gd,gd32-dma-v1";
 			reg = <0x40026000 0x400>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
 				     <15 0>, <16 0>, <17 0>, <47 0>;
 			clocks = <&cctl GD32_CLOCK_DMA0>;
 			resets = <&rctl GD32_RESET_DMA0>;
 			dma-channels = <8>;
-			#dma-cells = <1>;
+			gd,mem2mem;
+			#dma-cells = <4>;
 			status = "disabled";
 		};
 
 		dma1: dma@40026400 {
-			compatible = "gd,gd32-dma";
+			compatible = "gd,gd32-dma-v1";
 			reg = <0x40026400 0x400>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>,
 				     <60 0>, <68 0>, <69 0>, <70 0>;
 			clocks = <&cctl GD32_CLOCK_DMA1>;
 			resets = <&rctl GD32_RESET_DMA1>;
 			dma-channels = <8>;
-			#dma-cells = <1>;
+			gd,mem2mem;
+			#dma-cells = <4>;
 			status = "disabled";
 		};
 	};

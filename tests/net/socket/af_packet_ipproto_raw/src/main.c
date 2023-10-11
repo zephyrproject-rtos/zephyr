@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <fcntl.h>
 
@@ -35,7 +35,7 @@ static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)
 	ARG_UNUSED(pkt);
 
 	/* Loopback the data back to stack: */
-	NET_DBG("Dummy device: Loopbacking data (%d bytes) to iface %d\n", net_pkt_get_len(pkt),
+	NET_DBG("Dummy device: Loopbacking data (%zd bytes) to iface %d\n", net_pkt_get_len(pkt),
 	    net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);

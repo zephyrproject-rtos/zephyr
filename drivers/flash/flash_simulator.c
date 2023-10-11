@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,25 +7,22 @@
 #define DT_DRV_COMPAT zephyr_sim_flash
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/stats/stats.h>
 #include <string.h>
 
 #ifdef CONFIG_ARCH_POSIX
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <errno.h>
-
+#include "flash_simulator_native.h"
 #include "cmdline.h"
 #include "soc.h"
+#define DEFAULT_FLASH_FILE_PATH "flash.bin"
 
 #endif /* CONFIG_ARCH_POSIX */
 
@@ -147,9 +144,18 @@ STATS_NAME_END(flash_sim_thresholds);
 static uint8_t *mock_flash;
 static int flash_fd = -1;
 static const char *flash_file_path;
-static const char default_flash_file_path[] = "flash.bin";
+static bool flash_erase_at_start;
+static bool flash_rm_at_exit;
+static bool flash_in_ram;
+#else
+#if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
+#define FLASH_SIMULATOR_MREGION \
+	LINKER_DT_NODE_REGION_NAME( \
+	DT_PHANDLE(DT_PARENT(SOC_NV_FLASH_NODE), memory_region))
+static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE] Z_GENERIC_SECTION(FLASH_SIMULATOR_MREGION);
 #else
 static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
+#endif
 #endif /* CONFIG_ARCH_POSIX */
 
 static const struct flash_driver_api flash_sim_api;
@@ -369,62 +375,39 @@ static const struct flash_driver_api flash_sim_api = {
 
 static int flash_mock_init(const struct device *dev)
 {
-	struct stat f_stat;
 	int rc;
+	ARG_UNUSED(dev);
 
-	if (flash_file_path == NULL) {
-		flash_file_path = default_flash_file_path;
+	if (flash_in_ram == false && flash_file_path == NULL) {
+		flash_file_path = DEFAULT_FLASH_FILE_PATH;
 	}
 
-	flash_fd = open(flash_file_path, O_RDWR | O_CREAT, (mode_t)0600);
-	if (flash_fd == -1) {
-		posix_print_warning("Failed to open flash device file "
-				    "%s: %s\n",
-				    flash_file_path, strerror(errno));
+	rc = flash_mock_init_native(flash_in_ram, &mock_flash, FLASH_SIMULATOR_FLASH_SIZE,
+				    &flash_fd, flash_file_path, FLASH_SIMULATOR_ERASE_VALUE,
+				    flash_erase_at_start);
+
+	if (rc < 0) {
 		return -EIO;
+	} else {
+		return 0;
 	}
-
-	rc = fstat(flash_fd, &f_stat);
-	if (rc) {
-		posix_print_warning("Failed to get status of flash device file "
-				    "%s: %s\n",
-				    flash_file_path, strerror(errno));
-		return -EIO;
-	}
-
-	if (ftruncate(flash_fd, FLASH_SIMULATOR_FLASH_SIZE) == -1) {
-		posix_print_warning("Failed to resize flash device file "
-				    "%s: %s\n",
-				    flash_file_path, strerror(errno));
-		return -EIO;
-	}
-
-	mock_flash = mmap(NULL, FLASH_SIMULATOR_FLASH_SIZE,
-			  PROT_WRITE | PROT_READ, MAP_SHARED, flash_fd, 0);
-	if (mock_flash == MAP_FAILED) {
-		posix_print_warning("Failed to mmap flash device file "
-				    "%s: %s\n",
-				    flash_file_path, strerror(errno));
-		return -EIO;
-	}
-
-	if (f_stat.st_size == 0) {
-		/* erase the memory unit by pulling all bits to one */
-		(void)memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE,
-			     FLASH_SIMULATOR_FLASH_SIZE);
-	}
-
-	return 0;
 }
 
 #else
-
+#if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
 static int flash_mock_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+	return 0;
+}
+#else
+static int flash_mock_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
 	memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE, ARRAY_SIZE(mock_flash));
 	return 0;
 }
-
+#endif /* DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region) */
 #endif /* CONFIG_ARCH_POSIX */
 
 static int flash_init(const struct device *dev)
@@ -443,27 +426,37 @@ DEVICE_DT_INST_DEFINE(0, flash_init, NULL,
 
 static void flash_native_posix_cleanup(void)
 {
-	if ((mock_flash != MAP_FAILED) && (mock_flash != NULL)) {
-		munmap(mock_flash, FLASH_SIMULATOR_FLASH_SIZE);
-	}
-
-	if (flash_fd != -1) {
-		close(flash_fd);
-	}
+	flash_mock_cleanup_native(flash_in_ram, flash_fd, mock_flash,
+				  FLASH_SIMULATOR_FLASH_SIZE, flash_file_path,
+				  flash_rm_at_exit);
 }
 
 static void flash_native_posix_options(void)
 {
 	static struct args_struct_t flash_options[] = {
-		{ .manual = false,
-		  .is_mandatory = false,
-		  .is_switch = false,
-		  .option = "flash",
+		{ .option = "flash",
 		  .name = "path",
 		  .type = 's',
 		  .dest = (void *)&flash_file_path,
-		  .call_when_found = NULL,
-		  .descript = "Path to binary file to be used as flash" },
+		  .descript = "Path to binary file to be used as flash, by default \""
+				DEFAULT_FLASH_FILE_PATH "\""},
+		{ .is_switch = true,
+		  .option = "flash_erase",
+		  .type = 'b',
+		  .dest = (void *)&flash_erase_at_start,
+		  .descript = "Erase the flash content at startup" },
+		{ .is_switch = true,
+		  .option = "flash_rm",
+		  .type = 'b',
+		  .dest = (void *)&flash_rm_at_exit,
+		  .descript = "Remove the flash file when terminating the execution" },
+		{ .is_switch = true,
+		  .option = "flash_in_ram",
+		  .type = 'b',
+		  .dest = (void *)&flash_in_ram,
+		  .descript = "Instead of a file, keep the file content just in RAM. If this is "
+			      "set, flash, flash_erase & flash_rm are ignored. The flash content"
+			      " is always erased at startup" },
 		ARG_TABLE_ENDMARKER
 	};
 
