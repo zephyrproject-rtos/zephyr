@@ -214,6 +214,13 @@ NSI_TASK(phy_sync_ctrl_register_args, PRE_BOOT_1, 10);
 
 void phy_sync_ctrl_connect_to_2G4_phy(void)
 {
+	static bool ever_run;
+
+	if (ever_run) {
+		return;
+	}
+	ever_run = true;
+
 	bs_trace_raw(9, "%s: Connecting to phy...\n", __func__);
 	hwll_connect_to_phy(bsim_args_get_2G4_device_nbr(),
 			    bsim_args_get_simid(),
@@ -223,6 +230,13 @@ void phy_sync_ctrl_connect_to_2G4_phy(void)
 
 void phy_sync_ctrl_pre_boot2(void)
 {
+	static bool ever_run;
+
+	if (ever_run) {
+		return;
+	}
+	ever_run = true;
+
 	if (((sync_args.start_offset > 0) && (sync_args.delay_init))
 		|| sync_args.sync_preinit) {
 		/* Delay the next steps until the simulation time has
@@ -235,6 +249,13 @@ void phy_sync_ctrl_pre_boot2(void)
 
 void phy_sync_ctrl_pre_boot3(void)
 {
+	static bool ever_run;
+
+	if (ever_run) {
+		return;
+	}
+	ever_run = true;
+
 	/*
 	 * If sync_preboot was set, we sync with the phy
 	 * right before booting the CPU
