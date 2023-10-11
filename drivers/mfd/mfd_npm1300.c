@@ -79,12 +79,14 @@ static void gpio_callback(const struct device *dev, struct gpio_callback *cb, ui
 static void work_callback(struct k_work *work)
 {
 	struct mfd_npm1300_data *data = CONTAINER_OF(work, struct mfd_npm1300_data, work);
+	const struct mfd_npm1300_config *config = data->dev->config;
 	uint8_t buf[MAIN_SIZE];
 	int ret;
 
 	/* Read all MAIN registers into temporary buffer */
 	ret = mfd_npm1300_reg_read_burst(data->dev, MAIN_BASE, 0U, buf, sizeof(buf));
 	if (ret < 0) {
+		k_work_submit(&data->work);
 		return;
 	}
 
@@ -97,9 +99,15 @@ static void work_callback(struct k_work *work)
 			ret = mfd_npm1300_reg_write(data->dev, MAIN_BASE, offset,
 						    event_reg[i].mask);
 			if (ret < 0) {
+				k_work_submit(&data->work);
 				return;
 			}
 		}
+	}
+
+	/* Resubmit handler to queue if interrupt is still active */
+	if (gpio_pin_get_dt(&config->host_int_gpios) != 0) {
+		k_work_submit(&data->work);
 	}
 }
 
