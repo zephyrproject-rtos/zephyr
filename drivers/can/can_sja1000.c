@@ -292,8 +292,11 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 		frame->id |= FIELD_PREP(GENMASK(4, 0),
 				can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
 
-		for (i = 0; i < frame->dlc; i++) {
-			frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_EFF_DATA + i);
+		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+			for (i = 0; i < frame->dlc; i++) {
+				frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_EFF_DATA +
+								      i);
+			}
 		}
 	} else {
 		frame->id = FIELD_PREP(GENMASK(10, 3),
@@ -301,8 +304,11 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 		frame->id |= FIELD_PREP(GENMASK(2, 0),
 				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
 
-		for (i = 0; i < frame->dlc; i++) {
-			frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_SFF_DATA + i);
+		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+			for (i = 0; i < frame->dlc; i++) {
+				frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_SFF_DATA +
+								      i);
+			}
 		}
 	}
 }
@@ -334,8 +340,11 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID4,
 				FIELD_GET(GENMASK(4, 0), frame->id) << 3);
 
-		for (i = 0; i < frame->dlc; i++) {
-			can_sja1000_write_reg(dev, CAN_SJA1000_EFF_DATA + i, frame->data[i]);
+		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+			for (i = 0; i < frame->dlc; i++) {
+				can_sja1000_write_reg(dev, CAN_SJA1000_EFF_DATA + i,
+						      frame->data[i]);
+			}
 		}
 	} else {
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
@@ -343,8 +352,11 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
 				FIELD_GET(GENMASK(2, 0), frame->id) << 5);
 
-		for (i = 0; i < frame->dlc; i++) {
-			can_sja1000_write_reg(dev, CAN_SJA1000_SFF_DATA + i, frame->data[i]);
+		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+			for (i = 0; i < frame->dlc; i++) {
+				can_sja1000_write_reg(dev, CAN_SJA1000_SFF_DATA + i,
+						      frame->data[i]);
+			}
 		}
 	}
 }
