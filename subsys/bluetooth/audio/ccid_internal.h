@@ -23,4 +23,16 @@
  */
 uint8_t bt_ccid_get_value(void);
 
+/**
+ * @brief Get the GATT attribute of a CCID value
+ *
+ * Searches the current GATT database for a CCID characteristic that has the supplied CCID value.
+ *
+ * @param ccid The CCID the search for
+ *
+ * @retval NULL if none was found
+ * @retval A pointer to a GATT attribute if found
+ */
+const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid);
+
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_ */
