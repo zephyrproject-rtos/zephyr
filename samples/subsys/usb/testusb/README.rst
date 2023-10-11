@@ -59,7 +59,7 @@ To run USB tests:
 
       $ sudo sh -c "echo 0x2fe3 0x0009 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
 
-   .. note: After running the command, unplug and re-plug the USB device to enable the full test suite.
+   .. note:: After running the command, unplug and re-plug the USB device to enable the full test suite.
 
 #. Use the ``testusb`` tool in ``linux/tools/usb`` inside the Linux kernel source directory
    to start the tests.
