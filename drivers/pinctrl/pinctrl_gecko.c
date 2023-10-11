@@ -15,6 +15,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #ifdef CONFIG_SOC_GECKO_SERIES1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
 #else
+	#ifndef USART_NUM
+	#define USART_NUM(ref)	(((ref) == USART0) ? 0 \
+			       : -1)
+	#endif
 	int usart_num = USART_NUM(base);
 #endif
 

@@ -29,6 +29,8 @@
 #if (USART_COUNT == 1)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
 			       : -1)
+#define USART_NUM(ref)	(((ref) == USART0) ? 0 \
+			       : -1)
 #elif (USART_COUNT == 2)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
 			       : ((ref) == USART1) ? cmuClock_USART1 \
