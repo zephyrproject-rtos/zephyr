@@ -5,7 +5,7 @@
 
 choice
 	prompt "Default System Timer"
-	default HPET
+	default APIC_TSC_DEADLINE_TIMER
 	depends on X86
 	help
 	  Select Default System Timer.
