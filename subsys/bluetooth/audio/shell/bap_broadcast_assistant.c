@@ -25,6 +25,8 @@
 #include "audio.h"
 
 #define INVALID_BROADCAST_ID 0xFFFFFFFFU
+/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
+#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
 
 static struct bt_bap_base received_base;
 
@@ -453,7 +455,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (bis_sync > UINT32_MAX) {
+		if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -640,7 +642,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (bis_sync > UINT32_MAX) {
+		} else if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -738,7 +740,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (bis_sync > UINT32_MAX) {
+		if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
